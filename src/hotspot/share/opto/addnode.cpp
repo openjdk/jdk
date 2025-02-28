@@ -457,9 +457,7 @@ Node* AddNode::find_simple_lshift_pattern(Node* n, BasicType bt, jlong* multipli
       return nullptr;
     }
 
-    *multiplier = bt == T_INT
-                    ? java_shift_left(1, con->get_int(), T_INT)
-                    : java_shift_left(1, con->get_int(), T_LONG);
+    *multiplier = bt == java_shift_left(1, con->get_int(), bt);
     return n->in(1);
   }
 
@@ -521,9 +519,7 @@ Node* AddNode::find_power_of_two_addition_pattern(Node* n, BasicType bt, jlong* 
         return nullptr;
       }
 
-      lhs_multiplier = bt == T_INT
-                       ? java_shift_left(1, con->get_int(), T_INT)
-                       : java_shift_left(1, con->get_int(), T_LONG);
+      lhs_multiplier = java_shift_left(1, con->get_int(), bt);
     }
 
     // AddNode(LShiftNode(a, CON), a)?
@@ -543,9 +539,7 @@ Node* AddNode::find_power_of_two_addition_pattern(Node* n, BasicType bt, jlong* 
           return nullptr;
         }
 
-        *multiplier = lhs_multiplier + (bt == T_INT
-                      ? java_shift_left(1, con->get_int(), T_INT)
-                      : java_shift_left(1, con->get_int(), T_LONG));
+        *multiplier = lhs_multiplier + java_shift_left(1, con->get_int(), bt);
       }
 
       return lhs->in(1);
