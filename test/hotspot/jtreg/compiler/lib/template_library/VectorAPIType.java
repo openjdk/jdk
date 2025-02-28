@@ -23,9 +23,15 @@
 
 package compiler.lib.template_library;
 
+import java.util.List;
+import java.util.Random;
+import jdk.test.lib.Utils;
+
 import compiler.lib.template_framework.Name;
 
 class VectorAPIType extends Type {
+    private static final Random RANDOM = Utils.getRandomInstance();
+
     public static final VectorAPIType BYTE_64  = new VectorAPIType(Type.bytes(), 8);
     public static final VectorAPIType BYTE_128 = new VectorAPIType(Type.bytes(), 16);
     public static final VectorAPIType BYTE_256 = new VectorAPIType(Type.bytes(), 32);
@@ -79,6 +85,8 @@ class VectorAPIType extends Type {
 
     @Override
     public final Object con() {
-        return "/* TODO */ null";
+        int r = RANDOM.nextInt(32);
+        if (r == 0) { return "null"; }
+        return List.of(vectorType, ".broadcast(", species, ", ", elementType.con(), ")");
     }
 }
