@@ -180,12 +180,12 @@ public class StreamHandler extends Handler {
      * {@code OutputStream}, the {@code Formatter}'s "head" string is
      * written to the stream before the {@code LogRecord} is written.
      *
-     * @implSpec this method avoids acquiring locks during {@code LogRecord}
+     * @implSpec This method avoids acquiring locks during {@code LogRecord}
      * formatting, but {@code this} instance is synchronized when writing to the
      * output stream. To avoid deadlock risk, subclasses must not hold locks
      * while calling {@code super.publish()}. Specifically, subclasses must
      * not define the overridden {@code publish()} method to be
-     * {@code synchronized}.
+     * {@code synchronized} if they call {@code super.publish()}.
      *
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published
@@ -236,7 +236,9 @@ public class StreamHandler extends Handler {
      * please find a better name if you do ;).
      */
     void synchronousPostWriteHook() {
-        // Empty by default.
+        // Empty by default. We could do:
+        //    assert Thread.holdsLock(this);
+        // but this is already covered by unit tests.
     }
 
     /**
@@ -275,7 +277,7 @@ public class StreamHandler extends Handler {
         }
     }
 
-    // Called synchronously.
+    // Called synchronously with "this" handler instance locked.
     private void flushAndClose() {
         Writer writer = this.writer;
         if (writer != null) {
