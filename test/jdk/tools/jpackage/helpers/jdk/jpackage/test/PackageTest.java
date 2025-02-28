@@ -502,7 +502,7 @@ public final class PackageTest extends RunnablePackageTest {
             }
 
             switch (action) {
-                case UNPACK: {
+                case UNPACK -> {
                     cmd.setUnpackedPackageLocation(null);
                     final var unpackRootDir = TKit.createTempDirectory(
                             String.format("unpacked-%s", type.getName()));
@@ -511,40 +511,37 @@ public final class PackageTest extends RunnablePackageTest {
                         state.deleteUnpackDirs.add(unpackDir);
                     }
                     cmd.setUnpackedPackageLocation(unpackDir);
-                    break;
                 }
 
-                case INSTALL: {
+                case INSTALL -> {
                     cmd.setUnpackedPackageLocation(null);
                     final int installExitCode = packageHandlers.install(cmd);
                     TKit.assertEquals(expectedInstallExitCode, installExitCode,
                             String.format("Check installer exited with %d code", expectedInstallExitCode));
-                    break;
                 }
 
-                case UNINSTALL: {
+                case UNINSTALL -> {
                     cmd.setUnpackedPackageLocation(null);
                     packageHandlers.uninstall(cmd);
-                    break;
                 }
 
-                case CREATE:
+                case CREATE -> {
                     cmd.setUnpackedPackageLocation(null);
                     handler.processAction(action, cmd, expectedJPackageExitCode);
-                    break;
+                }
 
-                case INITIALIZE:
+                case INITIALIZE -> {
                     handler.processAction(action, cmd, expectedJPackageExitCode);
-                    break;
+                }
 
-                case FINALIZE:
+                case FINALIZE -> {
                     state.deleteUnpackDirs.forEach(TKit::deleteDirectoryRecursive);
                     state.deleteUnpackDirs.clear();
-                    break;
+                }
 
-                default:
+                default -> {
                     handler.processAction(action, cmd.createImmutableCopy(), expectedJPackageExitCode);
-                    break;
+                }
             }
         }
 
@@ -674,15 +671,15 @@ public final class PackageTest extends RunnablePackageTest {
 
         public void processAction(Action action, JPackageCommand cmd, int expectedJPackageExitCode) {
             switch (action) {
-                case INITIALIZE:
+                case INITIALIZE -> {
                     initializers.forEach(v -> v.accept(cmd));
                     if (cmd.isImagePackageType()) {
                         throw new UnsupportedOperationException();
                     }
                     cmd.executePrerequisiteActions();
-                    break;
+                }
 
-                case CREATE:
+                case CREATE -> {
                     Executor.Result result = cmd.execute(expectedJPackageExitCode);
                     if (expectedJPackageExitCode == 0) {
                         TKit.assertFileExists(cmd.outputBundle());
@@ -692,28 +689,30 @@ public final class PackageTest extends RunnablePackageTest {
                         });
                     }
                     verifyPackageBundle(cmd, result, expectedJPackageExitCode);
-                    break;
+                }
 
-                case VERIFY_INSTALL:
+                case VERIFY_INSTALL -> {
                     if (expectedJPackageExitCode == 0) {
                         verifyPackageInstalled(cmd);
                     }
-                    break;
+                }
 
-                case VERIFY_UNINSTALL:
+                case VERIFY_UNINSTALL -> {
                     if (expectedJPackageExitCode == 0) {
                         verifyPackageUninstalled(cmd);
                     }
-                    break;
+                }
 
-                case PURGE:
+                case PURGE -> {
                     var bundle = cmd.outputBundle();
                     if (toSupplier(() -> TKit.deleteIfExists(bundle)).get()) {
                         TKit.trace(String.format("Deleted [%s] package", bundle));
                     }
-                    break;
-
-                default: // NOP
+                }
+                
+                default -> {
+                    // NOP
+                }
             }
         }
 

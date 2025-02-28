@@ -26,7 +26,6 @@ import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;

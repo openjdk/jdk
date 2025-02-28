@@ -22,15 +22,12 @@
  */
 package jdk.jpackage.test;
 
-import static java.util.stream.Collectors.toMap;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -404,7 +401,7 @@ public class PackageTestTest extends JUnitAdapter {
         }
 
         void configureUninstallVerifiers(PackageTest test, Consumer<Verifiable> verifiableAccumulator) {
-            for (final var verifier  : uninstallVerifiers) {
+            for (final var verifier : uninstallVerifiers) {
                 verifiableAccumulator.accept(verifier);
                 test.addUninstallVerifier(verifier);
             }
