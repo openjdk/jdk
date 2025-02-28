@@ -91,11 +91,11 @@ public final class PropertyInfo {
                 if (writeType == null) {
                     this.write = info;
                     writeType = info.type;
-                } else if (null != this.write && this.write.method.isDefault()) {
+                } else if (isParentOfIncoming(this.write, info)) {
                     this.write = info;
                     writeType = info.type;
                 } else if (writeType.isAssignableFrom(info.type)) {
-                    if ((this.write == null) || (!info.method.isDefault() && this.write.type.isAssignableFrom(info.type))) {
+                    if ((this.write == null) || this.write.type.isAssignableFrom(info.type)) {
                         this.write = info;
                         writeType = info.type;
                     }
@@ -309,5 +309,17 @@ public final class PropertyInfo {
         return !map.isEmpty()
                 ? Collections.unmodifiableMap(map)
                 : Collections.emptyMap();
+    }
+
+    private static boolean isParentOfIncoming(MethodInfo current, MethodInfo incoming) {
+        if (null == current) {
+            return false;
+        }
+        Class<?> currentClass = current.method.getDeclaringClass();
+        Class<?> incomingClass = incoming.method.getDeclaringClass();
+        if (currentClass == incomingClass) {
+            return false;
+        }
+        return currentClass.isAssignableFrom(incomingClass);
     }
 }

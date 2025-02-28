@@ -230,7 +230,7 @@ public class DefaultMethodBeanPropertyTest {
     public interface A5 {
         default public void setParentFoo(Integer num) {
         }
-        default public void setFoo(Integer num) {
+        default public void setFoo(String num) {
         }
     }
 
@@ -239,15 +239,11 @@ public class DefaultMethodBeanPropertyTest {
         }
         public void setLocalFoo(Long num) {
         }
-        // PropertyInfo behavior is undefined if the same setter
-        // with different arg type exists in the same class.
-        // public void setLocalFoo(Float num) {
-        // }
     }
 
     public static void testScenario5() {
         verifyMethods(B5.class,
-            "public default void DefaultMethodBeanPropertyTest$A5.setFoo(java.lang.Integer)",
+            "public default void DefaultMethodBeanPropertyTest$A5.setFoo(java.lang.String)",
             "public default void DefaultMethodBeanPropertyTest$A5.setParentFoo(java.lang.Integer)",
             "public void DefaultMethodBeanPropertyTest$B5.setFoo(java.lang.Number)",
             "public void DefaultMethodBeanPropertyTest$B5.setLocalFoo(java.lang.Long)"
@@ -274,7 +270,7 @@ public class DefaultMethodBeanPropertyTest {
     }
 
     public class B6 extends A6 {
-        public void setFoo(Number num) {
+        public void setFoo(String num) {
         }
         public void setLocalFoo(Long num) {
         }
@@ -284,13 +280,13 @@ public class DefaultMethodBeanPropertyTest {
         verifyMethods(B6.class,
             "public void DefaultMethodBeanPropertyTest$A6.setFoo(java.lang.Integer)",
             "public void DefaultMethodBeanPropertyTest$A6.setParentFoo(java.lang.Integer)",
-            "public void DefaultMethodBeanPropertyTest$B6.setFoo(java.lang.Number)",
+            "public void DefaultMethodBeanPropertyTest$B6.setFoo(java.lang.String)",
             "public void DefaultMethodBeanPropertyTest$B6.setLocalFoo(java.lang.Long)"
         );
         verifyProperties(B6.class,
             "public final native java.lang.Class java.lang.Object.getClass()",
             "public void DefaultMethodBeanPropertyTest$A6.setParentFoo(java.lang.Integer)",
-            "public void DefaultMethodBeanPropertyTest$B6.setFoo(java.lang.Number)",
+            "public void DefaultMethodBeanPropertyTest$B6.setFoo(java.lang.String)",
             "public void DefaultMethodBeanPropertyTest$B6.setLocalFoo(java.lang.Long)"
         );
     }
@@ -325,6 +321,76 @@ public class DefaultMethodBeanPropertyTest {
         verifyProperties(D7.class,
             "public final native java.lang.Class java.lang.Object.getClass()",
             "public void DefaultMethodBeanPropertyTest$D7.setValue(java.lang.Runnable)"
+        );
+    }
+
+//////////////////////////////////////
+//                                  //
+//          SCENARIO 8              //
+//                                  //
+//////////////////////////////////////
+
+    public interface A8 {
+        default public void setFoo(Float num) {
+        }
+        default public void setFoo2(Integer num) {
+        }
+    }
+    public interface B8 extends A8 {
+        default public void setFoo(Integer num) {
+        }
+        default public void setFoo2(Float num) {
+        }
+    }
+
+    public class C8 implements B8 {
+    }
+
+    public static void testScenario8() {
+        verifyMethods(C8.class,
+            "public default void DefaultMethodBeanPropertyTest$A8.setFoo(java.lang.Float)",
+            "public default void DefaultMethodBeanPropertyTest$A8.setFoo2(java.lang.Integer)",
+            "public default void DefaultMethodBeanPropertyTest$B8.setFoo(java.lang.Integer)",
+            "public default void DefaultMethodBeanPropertyTest$B8.setFoo2(java.lang.Float)"
+        );
+        verifyProperties(C8.class,
+            "public final native java.lang.Class java.lang.Object.getClass()",
+            "public default void DefaultMethodBeanPropertyTest$B8.setFoo(java.lang.Integer)",
+            "public default void DefaultMethodBeanPropertyTest$B8.setFoo2(java.lang.Float)"
+        );
+    }
+
+//////////////////////////////////////
+//                                  //
+//          SCENARIO 9              //
+//                                  //
+//////////////////////////////////////
+
+    public class A9 {
+        public void setFoo(Object value) {
+        }
+        public void setFoo(String value) {
+        }
+        public void setFoo2(Object value) {
+        }
+        public void setFoo2(Integer value) {
+        }
+        // For the same setters with inconvertible arg types PropertyInfo behavior is undefined.
+        // public void setLocalFoo3(Long num) { }
+        // public void setLocalFoo3(Float num) { }
+    }
+
+    public static void testScenario9() {
+        verifyMethods(A9.class,
+            "public void DefaultMethodBeanPropertyTest$A9.setFoo(java.lang.String)",
+            "public void DefaultMethodBeanPropertyTest$A9.setFoo(java.lang.Object)",
+            "public void DefaultMethodBeanPropertyTest$A9.setFoo2(java.lang.Integer)",
+            "public void DefaultMethodBeanPropertyTest$A9.setFoo2(java.lang.Object)"
+        );
+        verifyProperties(A9.class,
+            "public final native java.lang.Class java.lang.Object.getClass()",
+            "public void DefaultMethodBeanPropertyTest$A9.setFoo(java.lang.String)",
+            "public void DefaultMethodBeanPropertyTest$A9.setFoo2(java.lang.Integer)"
         );
     }
 
@@ -383,5 +449,7 @@ public class DefaultMethodBeanPropertyTest {
         testScenario5();
         testScenario6();
         testScenario7();
+        testScenario8();
+        testScenario9();
     }
 }
