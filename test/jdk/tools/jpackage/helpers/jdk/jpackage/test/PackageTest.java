@@ -709,7 +709,7 @@ public final class PackageTest extends RunnablePackageTest {
                         TKit.trace(String.format("Deleted [%s] package", bundle));
                     }
                 }
-                
+
                 default -> {
                     // NOP
                 }
