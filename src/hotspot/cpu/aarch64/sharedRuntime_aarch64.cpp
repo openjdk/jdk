@@ -1377,6 +1377,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     int stack_slots = -1;
     int interpreted_entry_offset = -1;
     int vep_offset = -1;
+
+    // First instruction must be a nop as it may need to be patched after relocation
+    __ nop();
+
     if (method->is_continuation_enter_intrinsic()) {
       gen_continuation_enter(masm,
                              method,
