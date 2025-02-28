@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ public class NodeQuickSearch implements SearchProvider {
                             if (theGraph != null) {
                                 editor.getModel().selectGraph(theGraph);
                             }
-                            editor.clearSelectedNodes();
+                            editor.clearSelectedElements();
                             editor.addSelectedNodes(nodeSet, true);
                             editor.centerSelectedNodes();
                             editor.requestActive();
@@ -151,7 +151,7 @@ public class NodeQuickSearch implements SearchProvider {
                                 if (theGraph != null) {
                                     editor.getModel().selectGraph(theGraph);
                                 }
-                                editor.clearSelectedNodes();
+                                editor.clearSelectedElements();
                                 editor.addSelectedNodes(tmpSet, true);
                                 editor.centerSelectedNodes();
                                 editor.requestActive();
