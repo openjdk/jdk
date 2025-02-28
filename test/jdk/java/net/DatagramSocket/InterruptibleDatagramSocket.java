@@ -80,16 +80,11 @@ public class InterruptibleDatagramSocket {
             if (interruptible)
                 throw e;
             System.out.println("Got expected SocketTimeoutException: " + e);
-        } catch (SocketException e) {
-            if ((e.getCause() instanceof ClosedByInterruptException) && interruptible) {
-                System.out.println("Got expected ClosedByInterruptException: " + e);
-            } else {
+        } catch (SocketException | ClosedByInterruptException e) {
+            if (!interruptible) {
                 throw e;
             }
-        } catch (ClosedByInterruptException e) {
-            if (!interruptible)
-                throw e;
-            System.out.println("Got expected ClosedByInterruptException: " + e);
+            System.out.println("Got expected: " + e);
         }
         if (s.isClosed() && !interruptible)
             throw new RuntimeException("DatagramSocket should not be closed");
@@ -98,23 +93,29 @@ public class InterruptibleDatagramSocket {
     }
 
     public static void main(String[] args) throws Exception {
-        if (Thread.currentThread().isVirtual()) {
-            throw new jtreg.SkippedException(
-                    "skipping test execution - main thread is a virtual thread");
-        }
+        final boolean isVirtualThread = Thread.currentThread().isVirtual();
         try (DatagramSocket s = new DatagramSocket()) {
-            System.out.println("Testing interrupt of DatagramSocket receive " +
-                    "on endpoint " + s.getLocalSocketAddress());
-            test(s, false);
+            System.out.println(
+                    (isVirtualThread ? "(virtual thread) " : "")
+                            + "Testing interrupt of DatagramSocket receive "
+                            + "on endpoint " + s.getLocalSocketAddress()
+            );
+            test(s, isVirtualThread);
         }
         try (DatagramSocket s = new MulticastSocket()) {
-            System.out.println("Testing interrupt of MulticastSocket receive" +
-                    " on endpoint " + s.getLocalSocketAddress());
-            test(s, false);
+            System.out.println(
+                    (isVirtualThread ? "(virtual thread) " : "")
+                            + "Testing interrupt of MulticastSocket receive "
+                            + "on endpoint " + s.getLocalSocketAddress()
+            );
+            test(s, isVirtualThread);
         }
         try (DatagramSocket s = DatagramChannel.open().bind(null).socket()) {
-            System.out.println("Testing interrupt of DatagramChannel socket " +
-                    "receive on endpoint " + s.getLocalSocketAddress());
+            System.out.println(
+                    (isVirtualThread ? "(virtual thread) " : "")
+                            + "Testing interrupt of DatagramChannel socket "
+                            + "receive on endpoint " + s.getLocalSocketAddress()
+            );
             test(s, true);
         }
     }
