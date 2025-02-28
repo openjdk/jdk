@@ -27,8 +27,8 @@
 
 #include "nmt/allocationSite.hpp"
 #include "nmt/vmatree.hpp"
+#include "nmt/regionsTree.hpp"
 #include "runtime/atomic.hpp"
-#include "utilities/linkedlist.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
@@ -42,7 +42,7 @@
 // changes nodes in the tree, the summary of the changes is returned back in a SummaryDiff struct. This struct shows that how much reserve/commit amount
 // of any specific MemTag is changed. The summary of every operation is accumulated in VirtualMemorySummary class.
 //
-// Not all operations are valid in VMT. The following predicates are checked before the operation is applied to the tree nad/or VirtualMemorySummary:
+// Not all operations are valid in VMT. The following predicates are checked before the operation is applied to the tree and/or VirtualMemorySummary:
 //   - committed size of a MemTag should be <= of its reserved size
 //   - uncommitted size of a MemTag should be <= of its committed size
 //   - released size of a MemTag should be <= of its reserved size
@@ -124,8 +124,9 @@ class VirtualMemorySnapshot : public ResourceObj {
   inline void clean() {
 
     for (int index = 0; index < mt_number_of_tags; index ++) {
-      if (index != NMTUtil::tag_to_index(mtThreadStack))
+      if (index != NMTUtil::tag_to_index(mtThreadStack)) {
         _virtual_memory[index] = VirtualMemory();
+      }
     }
   }
 
@@ -297,20 +298,17 @@ class CommittedMemoryRegion : public VirtualMemoryRegion {
   NativeCallStack  _stack;
 
  public:
-  CommittedMemoryRegion() :
-    VirtualMemoryRegion((address)1, 1), _stack(NativeCallStack::empty_stack()) { }
+  CommittedMemoryRegion()
+    : VirtualMemoryRegion((address)1, 1), _stack(NativeCallStack::empty_stack()) { }
 
-  CommittedMemoryRegion(address addr, size_t size, const NativeCallStack& stack) :
-    VirtualMemoryRegion(addr, size), _stack(stack) { }
+  CommittedMemoryRegion(address addr, size_t size, const NativeCallStack& stack)
+    : VirtualMemoryRegion(addr, size), _stack(stack) { }
 
   inline void set_call_stack(const NativeCallStack& stack) { _stack = stack; }
   inline const NativeCallStack* call_stack() const         { return &_stack; }
+  bool equals(const ReservedMemoryRegion& other) const;
 };
 
-
-typedef LinkedListIterator<CommittedMemoryRegion> CommittedRegionIterator;
-
-int compare_committed_region(const CommittedMemoryRegion&, const CommittedMemoryRegion&);
 class ReservedMemoryRegion : public VirtualMemoryRegion {
  private:
   NativeCallStack  _stack;
@@ -318,20 +316,21 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 
  public:
   bool is_valid() { return base() != (address)1 && size() != 1;}
-  ReservedMemoryRegion() :
-    VirtualMemoryRegion((address)1, 1), _stack(NativeCallStack::empty_stack()), _mem_tag(mtNone) { }
+
+  ReservedMemoryRegion()
+    : VirtualMemoryRegion((address)1, 1), _stack(NativeCallStack::empty_stack()), _mem_tag(mtNone) { }
 
   ReservedMemoryRegion(address base, size_t size, const NativeCallStack& stack,
-    MemTag mem_tag = mtNone) :
-    VirtualMemoryRegion(base, size), _stack(stack), _mem_tag(mem_tag) { }
+    MemTag mem_tag = mtNone)
+    : VirtualMemoryRegion(base, size), _stack(stack), _mem_tag(mem_tag) { }
 
 
-  ReservedMemoryRegion(address base, size_t size) :
-    VirtualMemoryRegion(base, size), _stack(NativeCallStack::empty_stack()), _mem_tag(mtNone) { }
+  ReservedMemoryRegion(address base, size_t size)
+    : VirtualMemoryRegion(base, size), _stack(NativeCallStack::empty_stack()), _mem_tag(mtNone) { }
 
   // Copy constructor
-  ReservedMemoryRegion(const ReservedMemoryRegion& rr) :
-    VirtualMemoryRegion(rr.base(), rr.size()) {
+  ReservedMemoryRegion(const ReservedMemoryRegion& rr)
+    : VirtualMemoryRegion(rr.base(), rr.size()) {
     *this = rr;
   }
 
@@ -359,20 +358,17 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
   const char* tag_name() const { return NMTUtil::tag_to_name(_mem_tag); }
 };
 
-int compare_reserved_region_base(const ReservedMemoryRegion& r1, const ReservedMemoryRegion& r2);
-
 class VirtualMemoryWalker : public StackObj {
  public:
    virtual bool do_allocation_site(const ReservedMemoryRegion* rgn) { return false; }
 };
 
-class RegionsTree;
+
 class VirtualMemoryTracker {
- private:
-  RegionsTree *_tree;
+  RegionsTree _tree;
 
  public:
-  VirtualMemoryTracker(bool is_detailed_mode);
+  VirtualMemoryTracker(bool is_detailed_mode) : _tree(is_detailed_mode) { }
 
   void add_reserved_region       (address base_addr, size_t size, const NativeCallStack& stack, MemTag mem_tag = mtNone);
   void add_committed_region      (address base_addr, size_t size, const NativeCallStack& stack);
@@ -395,7 +391,7 @@ class VirtualMemoryTracker {
   // Snapshot current thread stacks
   void snapshot_thread_stacks();
   void apply_summary_diff(VMATree::SummaryDiff diff);
-  RegionsTree* tree() { return _tree; }
+  RegionsTree* tree() { return &_tree; }
 
   class Instance : public AllStatic {
     friend class VirtualMemoryTrackerTest;

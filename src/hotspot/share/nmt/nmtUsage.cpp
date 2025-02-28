@@ -47,7 +47,7 @@ void NMTUsage::walk_thread_stacks() {
   // much memory had been committed if they are backed by virtual memory. This
   // needs to happen before we take the snapshot of the virtual memory since it
   // will update this information.
-  MemTracker::snapshot_thread_stacks();
+  VirtualMemoryTracker::Instance::snapshot_thread_stacks();
 }
 
 void NMTUsage::update_malloc_usage() {

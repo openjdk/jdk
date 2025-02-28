@@ -23,19 +23,6 @@
  */
 #include "nmt/regionsTree.hpp"
 
-ReservedMemoryRegion RegionsTree::find_reserved_region(address addr) {
-    ReservedMemoryRegion rmr;
-    auto contain_region = [&](ReservedMemoryRegion& region_in_tree) {
-      if (region_in_tree.contain_address(addr)) {
-        rmr = region_in_tree;
-        return false;
-      }
-      return true;
-    };
-    visit_reserved_regions(contain_region);
-    return rmr;
-}
-
 VMATree::SummaryDiff RegionsTree::commit_region(address addr, size_t size, const NativeCallStack& stack) {
   return commit_mapping((VMATree::position)addr, size, make_region_data(stack, mtNone), /*use tag inplace*/ true);
 }
@@ -43,3 +30,28 @@ VMATree::SummaryDiff RegionsTree::commit_region(address addr, size_t size, const
 VMATree::SummaryDiff RegionsTree::uncommit_region(address addr, size_t size) {
   return uncommit_mapping((VMATree::position)addr, size, make_region_data(NativeCallStack::empty_stack(), mtNone));
 }
+
+#ifdef ASSERT
+void RegionsTree::NodeHelper::print_on(outputStream* st) {
+  auto st_str = [&](VMATree::StateType s){
+    return s == VMATree::StateType::Released ? "Rl" :
+           s == VMATree::StateType::Reserved ? "Rv" : "Cm";
+  };
+  st->print_cr("pos: " INTPTR_FORMAT " "
+                "%s, %s <|> %s, %s",
+                p2i((address)position()),
+                st_str(in_state()),
+                NMTUtil::tag_to_name(in_tag()),
+                st_str(out_state()),
+                NMTUtil::tag_to_name(out_tag())
+                );
+}
+
+void RegionsTree::print_on(outputStream* st) {
+  visit_in_order([&](Node* node) {
+    NodeHelper curr(node);
+    curr.print_on(st);
+    return true;
+  });
+}
+#endif

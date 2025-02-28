@@ -59,16 +59,16 @@ public:
 
   // Bit fields view: bit 0 for Reserved, bit 1 for Committed.
   // Setting a region as Committed preserves the Reserved state.
-  enum class StateType : uint8_t { Reserved = 1, Committed = 3, Released = 0, COUNT = 4 };
+  enum class StateType : uint8_t { Reserved = 1, Committed = 3, Released = 0, st_number_of_states = 4 };
 
 private:
-  static const char* statetype_strings[static_cast<uint8_t>(StateType::COUNT)];
+  static const char* statetype_strings[static_cast<uint8_t>(StateType::st_number_of_states)];
 
 public:
   NONCOPYABLE(VMATree);
 
   static const char* statetype_to_string(StateType type) {
-    assert(type < StateType::COUNT, "must be");
+    assert(type < StateType::st_number_of_states, "must be");
     return statetype_strings[static_cast<uint8_t>(type)];
   }
 

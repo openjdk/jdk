@@ -23,6 +23,7 @@
 
 #include "nmt/memTracker.hpp"
 #include "nmt/regionsTree.hpp"
+#include "nmt/regionsTree.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"

@@ -26,6 +26,7 @@
 #include "nmt/memTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "nmt/regionsTree.hpp"
+#include "nmt/regionsTree.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/ostream.hpp"
 
@@ -53,9 +54,9 @@ void VirtualMemorySummary::snapshot(VirtualMemorySnapshot* s) {
 bool VirtualMemoryTracker::Instance::initialize(NMT_TrackingLevel level) {
   assert(_tracker == nullptr, "only call once");
   if (level >= NMT_summary) {
-    _tracker = static_cast<VirtualMemoryTracker*>(os::malloc(sizeof(VirtualMemoryTracker), mtNMT));
-    if (_tracker == nullptr) return false;
-    new (_tracker) VirtualMemoryTracker(level == NMT_detail);
+    void* tracker = os::malloc(sizeof(VirtualMemoryTracker), mtNMT);
+    if (tracker == nullptr) return false;
+    _tracker = new (tracker) VirtualMemoryTracker(level == NMT_detail);
     return _tracker->tree() != nullptr;
   }
   return true;
@@ -96,6 +97,7 @@ void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
   MemTag tag = mtNone;
   auto print_err = [&](const char* str) {
     return;
+    // Will be commented out after 8350567. The error outputs corrupt the jdk-image.
     // log_error(nmt)("summary mismatch, at %s, for %s,"
     //                " diff-reserved:  %ld"
     //                " diff-committed: %ld"
@@ -111,13 +113,14 @@ void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
     reserved = VirtualMemorySummary::as_snapshot()->by_type(tag)->reserved();
     committed = VirtualMemorySummary::as_snapshot()->by_type(tag)->committed();
     if (reserve_delta != 0) {
-      if (reserve_delta > 0)
+      if (reserve_delta > 0) {
         VirtualMemorySummary::record_reserved_memory(reserve_delta, tag);
-      else {
-        if ((size_t)-reserve_delta <= reserved)
+      } else {
+        if ((size_t)-reserve_delta <= reserved) {
           VirtualMemorySummary::record_released_memory(-reserve_delta, tag);
-        else
+        } else {
           print_err("release");
+        }
       }
     }
     if (commit_delta != 0) {
@@ -125,14 +128,16 @@ void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
         if ((size_t)commit_delta <= ((size_t)reserve_delta + reserved)) {
           VirtualMemorySummary::record_committed_memory(commit_delta, tag);
         }
-        else
+        else {
           print_err("commit");
+        }
       }
       else {
-        if ((size_t)-commit_delta <= committed)
+        if ((size_t)-commit_delta <= committed) {
           VirtualMemorySummary::record_uncommitted_memory(-commit_delta, tag);
-        else
+        } else {
           print_err("uncommit");
+        }
       }
     }
   }
@@ -189,8 +194,9 @@ bool VirtualMemoryTracker::Instance::print_containing_region(const void* p, outp
 bool VirtualMemoryTracker::print_containing_region(const void* p, outputStream* st) {
   ReservedMemoryRegion rmr = tree()->find_reserved_region((address)p);
   log_debug(nmt)("containing rgn: base=" INTPTR_FORMAT, p2i(rmr.base()));
-  if (!rmr.contain_address((address)p))
+  if (!rmr.contain_address((address)p)) {
     return false;
+  }
   st->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "], tag %s",
                p2i(p), p2i(rmr.base()), p2i(rmr.end()), NMTUtil::tag_to_enum_name(rmr.mem_tag()));
   if (MemTracker::tracking_level() == NMT_detail) {
@@ -209,20 +215,13 @@ bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   MemTracker::NmtVirtualMemoryLocker nvml;
   tree()->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
     log_info(nmt)("region in walker vmem, base: " INTPTR_FORMAT " size: %zu , %s, committed: %zu",
-     p2i(rgn.base()), rgn.size(), rgn.tag_name(), rgn.committed_size());
-    if (!walker->do_allocation_site(&rgn))
+                  p2i(rgn.base()), rgn.size(), rgn.tag_name(), rgn.committed_size());
+    if (!walker->do_allocation_site(&rgn)) {
       return false;
+    }
     return true;
   });
   return true;
-}
-
-int compare_committed_region(const CommittedMemoryRegion& r1, const CommittedMemoryRegion& r2) {
-  return r1.compare(r2);
-}
-
-int compare_reserved_region_base(const ReservedMemoryRegion& r1, const ReservedMemoryRegion& r2) {
-  return r1.compare(r2);
 }
 
 size_t ReservedMemoryRegion::committed_size() const {
@@ -316,7 +315,6 @@ public:
           committed_size = stack_bottom + stack_size - committed_start;
         }
         VirtualMemoryTracker::Instance::add_committed_region(committed_start, committed_size, ncs);
-        //log_warning(cds)("st start: " INTPTR_FORMAT " size: " SIZE_FORMAT, p2i(committed_start), committed_size);
         DEBUG_ONLY(found_stack = true;)
       }
 #ifdef ASSERT
@@ -334,7 +332,19 @@ void VirtualMemoryTracker::Instance::snapshot_thread_stacks() {
   walk_virtual_memory(&walker);
 }
 
-  VirtualMemoryTracker::VirtualMemoryTracker(bool is_detailed_mode) {
-    _tree = static_cast<RegionsTree*>(os::malloc(sizeof(RegionsTree), mtNMT));
-    new(_tree) RegionsTree(is_detailed_mode);
-  }
+ReservedMemoryRegion RegionsTree::find_reserved_region(address addr) {
+    ReservedMemoryRegion rmr;
+    auto contain_region = [&](ReservedMemoryRegion& region_in_tree) {
+      if (region_in_tree.contain_address(addr)) {
+        rmr = region_in_tree;
+        return false;
+      }
+      return true;
+    };
+    visit_reserved_regions(contain_region);
+    return rmr;
+}
+
+bool CommittedMemoryRegion::equals(const ReservedMemoryRegion& rmr) const {
+  return size() == rmr.size() && call_stack()->equals(*(rmr.call_stack()));
+}

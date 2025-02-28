@@ -32,7 +32,7 @@
 
 #include "memory/memoryReserver.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/regionsTree.hpp"
+#include "nmt/regionsTree.inline.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -63,11 +63,6 @@ static void diagnostic_print(const ReservedMemoryRegion& rmr) {
     LOG("   committed region: " PTR_FORMAT ", size %X", p2i(region.base()), region.size());
     return true;
   });
-  // CommittedRegionIterator iter = rmr->iterate_committed_regions();
-  // LOG("In reserved region " PTR_FORMAT ", size " SIZE_FORMAT_HEX ":", p2i(rmr.base()), rmr.size());
-  // for (const CommittedMemoryRegion* region = iter.next(); region != nullptr; region = iter.next()) {
-  //   LOG("   committed region: " PTR_FORMAT ", size " SIZE_FORMAT_HEX, p2i(region->base()), region->size());
-  // }
 }
 
 static void check_inner(const ReservedMemoryRegion& rmr, R* regions, size_t regions_size, const char* file, int line) {
@@ -87,15 +82,6 @@ static void check_inner(const ReservedMemoryRegion& rmr, R* regions, size_t regi
     i++;
     return true;
   });
-
-
-  // for (const CommittedMemoryRegion* region = iter.next(); region != nullptr; region = iter.next()) {
-  //   EXPECT_LT(i, regions_size) << WHERE;
-  //   EXPECT_EQ(region->base(), regions[i]._addr) << WHERE;
-  //   EXPECT_EQ(region->size(), regions[i]._size) << WHERE;
-  //   size += region->size();
-  //   i++;
-  // }
 
   EXPECT_EQ(i, regions_size) << WHERE;
   EXPECT_EQ(size, rmr.committed_size()) << WHERE;

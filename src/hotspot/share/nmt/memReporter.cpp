@@ -31,6 +31,7 @@
 #include "nmt/memTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
 #include "nmt/regionsTree.hpp"
+#include "nmt/regionsTree.inline.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/debug.hpp"
@@ -437,7 +438,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
     bool reserved_and_committed = false;
     VirtualMemoryTracker::Instance::tree()->visit_committed_regions(*reserved_rgn,
                                                                   [&](CommittedMemoryRegion& committed_rgn) {
-      if (committed_rgn.size() == reserved_rgn->size() && committed_rgn.call_stack()->equals(*stack)) {
+      if (committed_rgn.equals(*reserved_rgn)) {
         // One region spanning the entire reserved region, with the same stack trace.
         // Don't print this regions because the "reserved and committed" line above
         // already indicates that the region is committed.

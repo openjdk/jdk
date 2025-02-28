@@ -51,14 +51,6 @@ class MemTracker : AllStatic {
 
  public:
 
-  static void snapshot_thread_stacks() {
-    VirtualMemoryTracker::Instance::snapshot_thread_stacks();
-  }
-
-  static bool walk_virtual_memory(VirtualMemoryWalker* walker) {
-    return VirtualMemoryTracker::Instance::walk_virtual_memory(walker);
-  }
-
   // Initializes NMT to whatever -XX:NativeMemoryTracking says.
   //  - Can only be called once.
   //  - NativeMemoryTracking must be validated beforehand.

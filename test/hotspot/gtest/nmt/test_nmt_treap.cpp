@@ -27,8 +27,6 @@
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
-#include "utilities/linkedlist.hpp"
-
 class NMTTreapTest : public testing::Test {
 public:
   struct Cmp {

@@ -27,8 +27,10 @@
 #include "logging/log.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/vmatree.hpp"
-#include "nmt/virtualMemoryTracker.hpp"
 
+
+class ReservedMemoryRegion;
+class CommittedMemoryRegion;
 // RegionsTree extends VMATree to add some more specific API and also defines a helper
 // for processing the tree nodes in a shorter and more meaningful way.
 class RegionsTree : public VMATree {
@@ -53,96 +55,31 @@ class RegionsTree : public VMATree {
       NodeHelper(Node* node) : _node(node) { }
       inline bool is_valid() { return _node != nullptr; }
       inline void clear_node() { _node = nullptr; }
-      inline VMATree::position position() { return _node->key(); }
-      inline bool is_committed_begin() { return ((uint8_t)out_state() & (uint8_t)VMATree::StateType::Committed) >= 2; }
-      inline bool is_released_begin() { return out_state() == VMATree::StateType::Released; }
-      inline bool is_reserved_begin() { return ((uint8_t)out_state() & (uint8_t)VMATree::StateType::Reserved) == 1; }
-      inline VMATree::StateType in_state() { return _node->val().in.type(); }
-      inline VMATree::StateType out_state() { return _node->val().out.type(); }
-      inline size_t distance_from(NodeHelper& other) { return position() - other.position(); }
-      inline NativeCallStackStorage::StackIndex out_stack_index() { return _node->val().out.stack(); }
-      inline MemTag in_tag() { return _node->val().in.mem_tag(); }
-      inline MemTag out_tag() { return _node->val().out.mem_tag(); }
+      inline VMATree::position position() const { return _node->key(); }
+      inline bool is_committed_begin() const { return ((uint8_t)out_state() & (uint8_t)VMATree::StateType::Committed) >= 2; }
+      inline bool is_released_begin() const { return out_state() == VMATree::StateType::Released; }
+      inline bool is_reserved_begin() const { return ((uint8_t)out_state() & (uint8_t)VMATree::StateType::Reserved) == 1; }
+      inline VMATree::StateType in_state() const { return _node->val().in.type(); }
+      inline VMATree::StateType out_state() const { return _node->val().out.type(); }
+      inline size_t distance_from(const NodeHelper& other) const {
+        assert (position() > other.position(), "negative distance");
+        return position() - other.position();
+      }
+      inline NativeCallStackStorage::StackIndex out_stack_index() const { return _node->val().out.stack(); }
+      inline MemTag in_tag() const { return _node->val().in.mem_tag(); }
+      inline MemTag out_tag() const { return _node->val().out.mem_tag(); }
       inline void set_in_tag(MemTag tag) { _node->val().in.set_tag(tag); }
       inline void set_out_tag(MemTag tag) { _node->val().out.set_tag(tag); }
-      inline void print_on(outputStream* st) {
-        auto st_str = [&](int s){
-          return s == (int)VMATree::StateType::Released ? "Rl" :
-                 s ==  (int)VMATree::StateType::Reserved ? "Rv" : "Cm";
-        };
-        st->print_cr("pos: " INTPTR_FORMAT " "
-                     "%s, %s <|> %s, %s",
-                     p2i((address)position()),
-                     st_str((int)in_state()),
-                     NMTUtil::tag_to_name(in_tag()),
-                     st_str((int)out_state()),
-                     NMTUtil::tag_to_name(out_tag())
-                     );
-      }
+      DEBUG_ONLY(void print_on(outputStream* st);)
     };
 
-  void print_on(outputStream* st) {
-    visit_in_order([&](Node* node) {
-      NodeHelper curr(node);
-      curr.print_on(st);
-      return true;
-    });
-  }
+  DEBUG_ONLY(void print_on(outputStream* st);)
 
   template<typename F>
-  void visit_committed_regions(const ReservedMemoryRegion& rgn, F func) {
-    position start = (position)rgn.base();
-    size_t end = (size_t)rgn.end() + 1;
-    size_t comm_size = 0;
-
-    NodeHelper prev;
-    visit_range_in_order(start, end, [&](Node* node) {
-      NodeHelper curr(node);
-      if (prev.is_valid() && prev.is_committed_begin()) {
-        CommittedMemoryRegion cmr((address)prev.position(), curr.distance_from(prev), stack(curr));
-        if (!func(cmr))
-          return false;
-      }
-      prev = curr;
-      return true;
-    });
-  }
+  void visit_committed_regions(const ReservedMemoryRegion& rgn, F func);
 
   template<typename F>
-  void visit_reserved_regions(F func) {
-    NodeHelper begin_node, prev;
-    size_t rgn_size = 0;
-
-    visit_in_order([&](Node* node) {
-      NodeHelper curr(node);
-      if (prev.is_valid()) {
-        rgn_size += curr.distance_from(prev);
-      } else {
-        begin_node = curr;
-        rgn_size = 0;
-      }
-      prev = curr;
-      if (curr.is_released_begin() || begin_node.out_tag() != curr.out_tag()) {
-        auto st = stack(curr);
-        if (rgn_size == 0) {
-          prev.clear_node();
-          return true;
-        }
-        ReservedMemoryRegion rmr((address)begin_node.position(), rgn_size, st, begin_node.out_tag());
-        if (!func(rmr))
-          return false;
-        rgn_size = 0;
-        if (!curr.is_released_begin())
-          begin_node = curr;
-        else {
-          begin_node.clear_node();
-          prev.clear_node();
-        }
-      }
-
-      return true;
-    });
-  }
+  void visit_reserved_regions(F func);
 
   inline RegionData make_region_data(const NativeCallStack& ncs, MemTag tag) {
     return RegionData(_ncs_storage.push(ncs), tag);
