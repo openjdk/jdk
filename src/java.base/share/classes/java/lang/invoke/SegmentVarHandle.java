@@ -46,7 +46,7 @@ final class SegmentVarHandle extends VarHandle {
     final boolean be;
     /** The layout the accessed segment must be compatible with. */
     final MemoryLayout enclosing;
-    /** The fixed offset value, if exists. vform decides if the fixed offset is used. */
+    /** The offset value, if is constant. vform decides if offset is constant or variable. */
     final long offset;
 
     SegmentVarHandle(VarForm form, boolean be, MemoryLayout enclosing, long offset, boolean exact) {

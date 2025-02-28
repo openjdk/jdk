@@ -95,9 +95,13 @@ public final class Utils {
     }
 
     /**
-     * This method returns a var handle that takes a memory segment and offset (MS, long). If it has strides, it also
-     * takes a raw offset (MS, long, long), which the var handle does not perform any size or alignment checks against.
-     * Such checks are added (using adaptation) by {@link LayoutPath#dereferenceHandle()}.
+     * This method returns a var handle that accesses a target layout in an enclosing layout, taking the memory offset
+     * and the base offset of the enclosing layout in the segment.
+     * <p>
+     * If the offset of the target layout in the enclosing layout is constant, the coordinates are (MS, long).
+     * If the offset of the target layout in the enclosing layout is variable, the coordinates are (MS, long, long).
+     * The trailing long is a pre-validated, variable extra offset, which the var handle does not perform any size or
+     * alignment checks against. Such checks are added (using adaptation) by {@link LayoutPath#dereferenceHandle()}.
      * <p>
      * We provide two level of caching of the generated var handles. First, the var handle associated
      * with a {@link ValueLayout#varHandle()} call is cached inside a stable field of the value layout implementation.
@@ -107,7 +111,7 @@ public final class Utils {
      *
      * @param enclosing the enclosing context of the value layout
      * @param layout the value layout for which a raw memory segment var handle is to be created
-     * @param constantOffset if the VH uses a constant offset instead of taking an offset
+     * @param constantOffset if the VH carries a constant offset instead of taking a variable offset
      * @param offset the offset if it is a constant
      * @return a raw memory segment var handle
      */

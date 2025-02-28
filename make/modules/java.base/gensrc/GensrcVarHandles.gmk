@@ -168,8 +168,6 @@ endef
 # Setup a rule for generating a memory segment var handle view class
 # Param 1 - Variable declaration prefix
 # Param 2 - Type with first letter capitalized
-# TODO decide if CAS/Bitwise/AtomicAdd should be enabled for subints
-# Remove comments # before $1_ARGS += below to enable them
 define GenerateVarHandleMemorySegment
 
   $1_Type := $2
@@ -185,8 +183,6 @@ define GenerateVarHandleMemorySegment
     $1_RawBoxType := $$($1_BoxType)
 
     $1_ARGS += -Kbyte
-    # $1_ARGS += -KCAS
-    # $1_ARGS += -KBitwise
     $1_ARGS += -KShorterThanInt
   endif
 
@@ -199,9 +195,6 @@ define GenerateVarHandleMemorySegment
     $1_RawBoxType := $$($1_BoxType)
 
     $1_ARGS += -Kbyte
-    # $1_ARGS += -KCAS
-    # $1_ARGS += -KAtomicAdd
-    # $1_ARGS += -KBitwise
     $1_ARGS += -KShorterThanInt
   endif
 
@@ -213,9 +206,6 @@ define GenerateVarHandleMemorySegment
     $1_RawType := $$($1_Type)
     $1_RawBoxType := $$($1_BoxType)
 
-    # $1_ARGS += -KCAS
-    # $1_ARGS += -KAtomicAdd
-    # $1_ARGS += -KBitwise
     $1_ARGS += -KShorterThanInt
   endif
 
@@ -227,9 +217,6 @@ define GenerateVarHandleMemorySegment
     $1_RawType := $$($1_Type)
     $1_RawBoxType := $$($1_BoxType)
 
-    # $1_ARGS += -KCAS
-    # $1_ARGS += -KAtomicAdd
-    # $1_ARGS += -KBitwise
     $1_ARGS += -KShorterThanInt
   endif
 

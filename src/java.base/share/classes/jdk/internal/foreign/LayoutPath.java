@@ -207,7 +207,7 @@ public class LayoutPath {
         }
 
         boolean constantOffset = strides.length == 0;
-        // (MS, long, long) if non-constant offset, (MS, long) if constant offset
+        // (MS, long, long) if variable offset, (MS, long) if constant offset
         VarHandle handle = Utils.makeRawSegmentViewVarHandle(rootLayout(), valueLayout, constantOffset, offset);
         if (!constantOffset) {
             MethodHandle offsetAdapter = offsetHandle();  // Adapter performs the bound checks

@@ -293,12 +293,12 @@ final class VarHandles {
 
     /**
      * Creates a memory segment view var handle accessing a {@code carrier} element. It has access coordinates
-     * {@code (MS, long)} if {@code noStride}, {@code (MS, long, (unchecked) long)} otherwise.
+     * {@code (MS, long)} if {@code constantOffset}, {@code (MS, long, (validated) long)} otherwise.
      * <p>
      * The resulting var handle will take a memory segment as first argument (the segment to be dereferenced),
      * and a {@code long} as second argument (the offset into the segment). Both arguments are checked.
      * <p>
-     * If {@code noStride == false}, the resulting var handle will take a third unchecked additional
+     * If {@code constantOffset == false}, the resulting var handle will take a third pre-validated additional
      * offset instead of the given fixed {@code offset}, and caller must ensure that passed additional offset,
      * either to the handle (such as computing through method handles) or as fixed {@code offset} here, is valid.
      *
@@ -306,7 +306,7 @@ final class VarHandles {
      * @param enclosing the enclosing layout to perform bound and alignment checks against
      * @param alignmentMask alignment of this accessed element in the enclosing layout
      * @param constantOffset if access path has a constant offset value, i.e. it has no strides
-     * @param offset the constant offset, if there is one
+     * @param offset the offset value, if the offset is constant
      * @param byteOrder the byte order
      * @return the created var handle
      */

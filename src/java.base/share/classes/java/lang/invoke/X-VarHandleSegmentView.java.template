@@ -41,16 +41,16 @@ import static java.lang.invoke.SegmentVarHandle.*;
 #end[byte]
     static VarForm selectForm(long alignmentMask, boolean constantOffset) {
 #if[byte]
-        return constantOffset ? CONSTANT_OFFSET_FORM : TAKE_OFFSET_FORM;
+        return constantOffset ? CONSTANT_OFFSET_FORM : VARIABLE_OFFSET_FORM;
 #else[byte]
         return (alignmentMask & NON_PLAIN_ACCESS_MIN_ALIGN_MASK) != NON_PLAIN_ACCESS_MIN_ALIGN_MASK ?
-                (constantOffset ? CONSTANT_OFFSET_FORM : TAKE_OFFSET_FORM) :
-                (constantOffset ? VarHandleSegmentAs$Type$sAligned.CONSTANT_OFFSET_FORM : VarHandleSegmentAs$Type$sAligned.TAKE_OFFSET_FORM);
+                (constantOffset ? CONSTANT_OFFSET_FORM : VARIABLE_OFFSET_FORM) :
+                (constantOffset ? VarHandleSegmentAs$Type$sAligned.CONSTANT_OFFSET_FORM : VarHandleSegmentAs$Type$sAligned.VARIABLE_OFFSET_FORM);
 #end[byte]
     }
 
     static final VarForm CONSTANT_OFFSET_FORM = new VarForm(VarHandleSegmentAs$Type$s.class, MemorySegment.class, $type$.class, long.class);
-    static final VarForm TAKE_OFFSET_FORM = new VarForm(VarHandleSegmentAs$Type$s.class, MemorySegment.class, $type$.class, long.class, long.class);
+    static final VarForm VARIABLE_OFFSET_FORM = new VarForm(VarHandleSegmentAs$Type$s.class, MemorySegment.class, $type$.class, long.class, long.class);
 
     VarHandleSegmentAs$Type$s() { throw new AssertionError(); }
 
@@ -120,7 +120,7 @@ import static java.lang.invoke.SegmentVarHandle.*;
 final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
 
     static final VarForm CONSTANT_OFFSET_FORM = new VarForm(VarHandleSegmentAs$Type$sAligned.class, VarHandleSegmentAs$Type$s.CONSTANT_OFFSET_FORM);
-    static final VarForm TAKE_OFFSET_FORM = new VarForm(VarHandleSegmentAs$Type$sAligned.class, VarHandleSegmentAs$Type$s.TAKE_OFFSET_FORM);
+    static final VarForm VARIABLE_OFFSET_FORM = new VarForm(VarHandleSegmentAs$Type$sAligned.class, VarHandleSegmentAs$Type$s.VARIABLE_OFFSET_FORM);
 
     VarHandleSegmentAs$Type$sAligned() { throw new AssertionError(); }
 #end[byte]
