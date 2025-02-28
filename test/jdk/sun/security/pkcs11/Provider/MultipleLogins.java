@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,17 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8240256 8269034
+ * @summary
+ * @library /test/lib/ /sun/security/pkcs11/
+ * @modules jdk.crypto.cryptoki/sun.security.pkcs11
+ * @run main/othervm
+ *        -DCUSTOM_P11_CONFIG=${test.src}/MultipleLogins-nss.txt
+ *        -DCUSTOM_DB_DIR=./nss/db
+ *        MultipleLogins
+ */
 
 import sun.security.pkcs11.SunPKCS11;
 
@@ -30,9 +41,16 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
+import jdk.test.lib.Utils;
+
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.*;
+import java.util.List;
 
 import jdk.test.lib.util.ForceGC;
 import jtreg.SkippedException;
@@ -42,7 +60,32 @@ public class MultipleLogins {
     private static final int NUM_PROVIDERS = 20;
     private static final SunPKCS11[] providers = new SunPKCS11[NUM_PROVIDERS];
 
+    private static void copyDbFiles() throws IOException {
+        final var testFolder = System.getProperty("test.src", ".");
+        final var srcDbFolder = Paths.get(testFolder).getParent().resolve("nss", "db");
+
+        // Getting path & creating the temporary scratch directory ./nss/db
+        final var nssFolder = Path.of(".").resolve("nss");
+        Files.createDirectory(nssFolder);
+        final var destination = nssFolder.resolve("db");
+
+        final var sourceFiles = List.of(
+                srcDbFolder.resolve("cert9.db"),
+                srcDbFolder.resolve("key4.db"),
+                srcDbFolder.resolve("cert8.db"),
+                srcDbFolder.resolve("key3.db")
+        );
+
+        final var copiedFiles = Utils.copyFiles(sourceFiles, destination, StandardCopyOption.REPLACE_EXISTING);
+        copiedFiles.forEach(path -> path.toFile().setWritable(true));
+
+        System.out.println("NSS db files copied to: ");
+        copiedFiles.forEach(System.out::println);
+    }
+
     public static void main(String[] args) throws Exception {
+        copyDbFiles();
+
         String nssConfig = null;
         try {
             nssConfig = PKCS11Test.getNssConfig();
