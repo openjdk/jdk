@@ -182,6 +182,8 @@ class PhiNode : public TypeNode {
 
   bool must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const;
 
+  bool is_split_through_mergemem_terminating();
+
 public:
   // Node layout (parallels RegionNode):
   enum { Region,                // Control input is the Phi's region.

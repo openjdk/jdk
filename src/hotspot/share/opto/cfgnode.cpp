@@ -2055,6 +2055,47 @@ bool PhiNode::must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const {
   return false;
 }
 
+// Check if splitting a bot memory Phi through a parent MergeMem may lead to
+// non-termination. For more details, see comments at the call site in
+// PhiNode::Ideal. This is really a const method, but Node_List currently only
+// permits non-const elements.
+bool PhiNode::is_split_through_mergemem_terminating() {
+  ResourceMark rm;
+  VectorSet visited;
+  Node_List worklist;
+  worklist.push(this);
+  visited.set(this->_idx);
+  auto maybe_add_to_worklist = [&](Node* input) {
+    if (input != nullptr &&
+        (input->is_MergeMem() || input->is_memory_phi()) &&
+        !visited.test_set(input->_idx)) {
+      worklist.push(input);
+      assert(input->adr_type() == TypePtr::BOTTOM,
+          "should only visit bottom memory");
+    }
+  };
+  while (worklist.size() > 0) {
+    Node* n = worklist.pop();
+    if (n->is_MergeMem()) {
+      Node* input = n->as_MergeMem()->base_memory();
+      if (input == this) {
+        return false;
+      }
+      maybe_add_to_worklist(input);
+    } else {
+      assert(n->is_memory_phi(), "invariant");
+      for (uint i = PhiNode::Input; i < n->req(); i++) {
+        Node* input = n->in(i);
+        if (input == this) {
+          return false;
+        }
+        maybe_add_to_worklist(input);
+      }
+    }
+  }
+  return true;
+}
+
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Must preserve
 // the CFG, but we can still strip out dead paths.
@@ -2390,7 +2431,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // This split breaks the circularity and consequently does not lead to
     // non-termination.
     uint merge_width = 0;
-    bool split_must_terminate = false; // Is splitting guaranteed to terminate?
+    bool split_always_terminates = false; // Is splitting guaranteed to terminate?
     for( uint i=1; i<req(); ++i ) {// For all paths in
       Node *ii = in(i);
       // TOP inputs should not be counted as safe inputs because if the
@@ -2403,7 +2444,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         MergeMemNode* n = ii->as_MergeMem();
         merge_width = MAX2(merge_width, n->req());
         if (n->base_memory() == this) {
-          split_must_terminate = true;
+          split_always_terminates = true;
         }
       }
     }
@@ -2428,44 +2469,9 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // are two Phis involved. Repeatedly splitting the Phis through the
     // MergeMem leads to non-termination. We check for non-termination below.
     // Only check for non-termination if necessary.
-    if (!split_must_terminate && adr_type() == TypePtr::BOTTOM &&
+    if (!split_always_terminates && adr_type() == TypePtr::BOTTOM &&
         merge_width > Compile::AliasIdxRaw) {
-      ResourceMark rm;
-      VectorSet visited;
-      Node_List worklist;
-      worklist.push(this);
-      visited.set(this->_idx);
-      auto maybe_add_to_worklist = [&](Node* input) {
-        if (input != nullptr &&
-            (input->is_MergeMem() || input->is_memory_phi()) &&
-            !visited.test_set(input->_idx)) {
-          worklist.push(input);
-          assert(input->adr_type() == TypePtr::BOTTOM,
-                 "should only visit bottom memory");
-        }
-      };
-      split_must_terminate = true; // Assume no circularity until proven otherwise.
-      while (split_must_terminate && worklist.size() > 0) {
-        Node* n = worklist.pop();
-        if (n->is_MergeMem()) {
-          Node* input = n->as_MergeMem()->base_memory();
-          if (input == this) {
-            split_must_terminate = false;
-            break;
-          }
-          maybe_add_to_worklist(input);
-        } else {
-          assert(n->is_memory_phi(), "invariant");
-          for (uint i = PhiNode::Input; i < n->req(); i++) {
-            Node* input = n->in(i);
-            if (input == this) {
-              split_must_terminate = false;
-              break;
-            }
-            maybe_add_to_worklist(input);
-          }
-        }
-      }
+      split_always_terminates = is_split_through_mergemem_terminating();
     }
 
     if (merge_width > Compile::AliasIdxRaw) {
@@ -2498,7 +2504,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             }
           }
         }
-      } else if (split_must_terminate) {
+      } else if (split_always_terminates) {
         // If all inputs reference this phi (directly or through data nodes) -
         // it is a dead loop.
         bool saw_safe_input = false;
