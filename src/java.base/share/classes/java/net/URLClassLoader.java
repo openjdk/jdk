@@ -392,20 +392,10 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
             // Check if package already loaded.
             Manifest man = res.getManifest();
             if (getAndVerifyPackage(pkgname, man, url) == null) {
-                try {
-                    if (man != null) {
-                        definePackage(pkgname, man, url);
-                    } else {
-                        definePackage(pkgname, null, null, null, null, null, null, null);
-                    }
-                } catch (IllegalArgumentException iae) {
-                    // parallel-capable class loaders: re-verify in case of a
-                    // race condition
-                    if (getAndVerifyPackage(pkgname, man, url) == null) {
-                        // Should never happen
-                        throw new AssertionError("Cannot find package " +
-                                                 pkgname);
-                    }
+                if (man != null) {
+                    definePackage(pkgname, man, url);
+                } else {
+                    definePackage(pkgname, null, null, null, null, null, null, null);
                 }
             }
         }
