@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
@@ -668,7 +667,7 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
     // terminating the VM so we check one more time.
 
     // create the zip entry
-    ClassPathZipEntry* zip_entry = ClassLoader::create_class_path_zip_entry(segment, true);
+    ClassPathZipEntry* zip_entry = ClassLoader::create_class_path_zip_entry(segment);
     if (zip_entry == nullptr) {
       return JVMTI_ERROR_ILLEGAL_ARGUMENT;
     }
@@ -710,7 +709,7 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
 
     // create the zip entry (which will open the zip file and hence
     // check that the segment is indeed a zip file).
-    ClassPathZipEntry* zip_entry = ClassLoader::create_class_path_zip_entry(segment, false);
+    ClassPathZipEntry* zip_entry = ClassLoader::create_class_path_zip_entry(segment);
     if (zip_entry == nullptr) {
       return JVMTI_ERROR_ILLEGAL_ARGUMENT;
     }
@@ -1804,12 +1803,39 @@ JvmtiEnv::NotifyFramePop(jthread thread, jint depth) {
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
 
-  SetFramePopClosure op(this, state, depth);
+  SetOrClearFramePopClosure op(this, state, true /* set */, depth);
   MutexLocker mu(current, JvmtiThreadState_lock);
   JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
   return op.result();
 } /* end NotifyFramePop */
 
+// Threads_lock NOT held, java_thread not protected by lock
+jvmtiError
+JvmtiEnv::ClearAllFramePops(jthread thread) {
+  ResourceMark rm;
+  JvmtiVTMSTransitionDisabler disabler(thread);
+  JavaThread* current = JavaThread::current();
+  ThreadsListHandle tlh(current);
+
+  JavaThread* java_thread = nullptr;
+  oop thread_obj = nullptr;
+  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, current, &java_thread, &thread_obj);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
+  }
+
+  HandleMark hm(current);
+  Handle thread_handle(current, thread_obj);
+  JvmtiThreadState *state = JvmtiThreadState::state_for(java_thread, thread_handle);
+  if (state == nullptr) {
+    return JVMTI_ERROR_THREAD_NOT_ALIVE;
+  }
+
+  SetOrClearFramePopClosure op(this, state, false /* clear all frame pops*/);
+  MutexLocker mu(current, JvmtiThreadState_lock);
+  JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
+  return op.result();
+} /* end ClearAllFramePops */
 
   //
   // Force Early Return functions
@@ -2691,19 +2717,10 @@ JvmtiEnv::GetSourceFileName(oop k_mirror, char** source_name_ptr) {
 // modifiers_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::GetClassModifiers(oop k_mirror, jint* modifiers_ptr) {
-  JavaThread* current_thread  = JavaThread::current();
-  jint result = 0;
+  jint result = java_lang_Class::modifiers(k_mirror);
   if (!java_lang_Class::is_primitive(k_mirror)) {
-    Klass* k = java_lang_Class::as_Klass(k_mirror);
-    NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
-    result = k->modifier_flags();
-
     // Reset the deleted  ACC_SUPER bit (deleted in compute_modifier_flags()).
-    if (k->is_super()) {
-      result |= JVM_ACC_SUPER;
-    }
-  } else {
-    result = (JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
+    result |= JVM_ACC_SUPER;
   }
   *modifiers_ptr = result;
 

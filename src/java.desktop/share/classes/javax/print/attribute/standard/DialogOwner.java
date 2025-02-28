@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public final class DialogOwner implements PrintRequestAttribute {
     private static final long serialVersionUID = -1901909867156076547L;
 
     /**
-     * The owner of the dialog.
+     * @serial The owner of the dialog.
      */
     private Window owner;
     private transient long id;

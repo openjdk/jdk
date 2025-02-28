@@ -43,6 +43,7 @@ class OuterStripMinedLoopEndNode;
 class PredicateBlock;
 class PathFrequency;
 class PhaseIdealLoop;
+class LoopSelector;
 class UnswitchedLoopSelector;
 class VectorSet;
 class VSharedData;
@@ -79,7 +80,12 @@ protected:
          SubwordLoop           = 1<<13,
          ProfileTripFailed     = 1<<14,
          LoopNestInnerLoop     = 1<<15,
-         LoopNestLongOuterLoop = 1<<16 };
+         LoopNestLongOuterLoop = 1<<16,
+         MultiversionFastLoop         = 1<<17,
+         MultiversionSlowLoop         = 2<<17,
+         MultiversionDelayedSlowLoop  = 3<<17,
+         MultiversionFlagsMask        = 3<<17,
+       };
   char _unswitch_count;
   enum { _unswitch_max=3 };
 
@@ -318,6 +324,32 @@ public:
   int  node_count_before_unroll()            { return _node_count_before_unroll; }
   void set_slp_max_unroll(int unroll_factor) { _slp_maximum_unroll_factor = unroll_factor; }
   int  slp_max_unroll() const                { return _slp_maximum_unroll_factor; }
+
+  // Multiversioning allows us to duplicate a CountedLoop, and have two versions, and the multiversion_if
+  // decides which one is taken:
+  // (1) fast_loop: We enter this loop by default, by default the multiversion_if has its condition set to
+  //                "true", guarded by a OpaqueMultiversioning. If we want to make a speculative assumption
+  //                for an optimization, we can add the runtime-check to the multiversion_if, and if the
+  //                assumption fails we take the slow_loop instead, where we do not make the same speculative
+  //                assumption.
+  //                We call it the "fast_loop" because it has more optimizations, enabled by the speculative
+  //                runtime-checks at the multiversion_if, and we expect the fast_loop to execute faster.
+  // (2) slow_loop: By default, it is not taken, until a runtime-check is added to the multiversion_if while
+  //                optimizing the fast_looop. If such a runtime-check is never added, then after loop-opts
+  //                the multiversion_if constant folds to true, and the slow_loop is folded away. To save
+  //                compile time, we delay the optimization of the slow_loop until a runtime-check is added
+  //                to the multiversion_if, at which point we resume optimizations for the slow_loop.
+  //                We call it the "slow_loop" because it has fewer optimizations, since this is the fall-back
+  //                loop where we do not make any of the speculative assumptions we make for the fast_loop.
+  //                Hence, we expect the slow_loop to execute slower.
+  bool is_multiversion()                   const { return (_loop_flags & MultiversionFlagsMask) != Normal; }
+  bool is_multiversion_fast_loop()         const { return (_loop_flags & MultiversionFlagsMask) == MultiversionFastLoop; }
+  bool is_multiversion_slow_loop()         const { return (_loop_flags & MultiversionFlagsMask) == MultiversionSlowLoop; }
+  bool is_multiversion_delayed_slow_loop() const { return (_loop_flags & MultiversionFlagsMask) == MultiversionDelayedSlowLoop; }
+  void set_multiversion_fast_loop()         { assert(!is_multiversion(), ""); _loop_flags |= MultiversionFastLoop; }
+  void set_multiversion_slow_loop()         { assert(!is_multiversion(), ""); _loop_flags |= MultiversionSlowLoop; }
+  void set_multiversion_delayed_slow_loop() { assert(!is_multiversion(), ""); _loop_flags |= MultiversionDelayedSlowLoop; }
+  void set_no_multiversion()                { assert( is_multiversion(), ""); _loop_flags &= ~MultiversionFlagsMask; }
 
   virtual LoopNode* skip_strip_mined(int expect_skeleton = 1);
   OuterStripMinedLoopNode* outer_loop() const;
@@ -946,7 +978,8 @@ private:
   static void ensure_zero_trip_guard_proj(Node* node, bool is_main_loop);
 #endif
  private:
-  static void get_template_assertion_predicates(ParsePredicateSuccessProj* parse_predicate_proj, Unique_Node_List& list, bool get_opaque = false);
+  static void get_opaque_template_assertion_predicate_nodes(ParsePredicateSuccessProj* parse_predicate_proj,
+                                                            Unique_Node_List& list);
   void update_main_loop_assertion_predicates(CountedLoopNode* main_loop_head);
   void initialize_assertion_predicates_for_peeled_loop(CountedLoopNode* peeled_loop_head,
                                                        CountedLoopNode* remaining_loop_head,
@@ -954,13 +987,20 @@ private:
                                                        const Node_List& old_new);
   void initialize_assertion_predicates_for_main_loop(CountedLoopNode* pre_loop_head,
                                                      CountedLoopNode* main_loop_head,
-                                                     uint first_node_index_in_cloned_loop_body,
+                                                     uint first_node_index_in_pre_loop_body,
+                                                     uint last_node_index_in_pre_loop_body,
+                                                     DEBUG_ONLY(uint last_node_index_from_backedge_goo COMMA)
                                                      const Node_List& old_new);
   void initialize_assertion_predicates_for_post_loop(CountedLoopNode* main_loop_head, CountedLoopNode* post_loop_head,
                                                      uint first_node_index_in_cloned_loop_body, bool insert_vectorized_drain);
   void create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head, CountedLoopNode* target_loop_head,
-                                           const NodeInLoopBody& _node_in_loop_body, bool clone_template,
-                                           const bool insert_vectorized_drain);
+                                           const NodeInLoopBody& _node_in_loop_body, bool clone_template);
+  void create_assertion_predicates_at_main_or_post_loop(CountedLoopNode* source_loop_head,
+                                                        CountedLoopNode* target_loop_head,
+                                                        const NodeInLoopBody& _node_in_loop_body, bool clone_template);
+  void rewire_old_target_loop_entry_dependency_to_new_entry(LoopNode* target_loop_head,
+                                                            const Node* old_target_loop_entry,
+                                                            uint node_index_before_new_assertion_predicate_nodes);
   void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol);
   void log_loop_tree();
@@ -1381,10 +1421,9 @@ public:
                                       bool* p_short_scale, int depth);
 
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
-  IfTrueNode* create_new_if_for_predicate(
-      ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason, int opcode,
-      bool rewire_uncommon_proj_phi_inputs = false,
-      AssertionPredicateType assertion_predicate_type = AssertionPredicateType::None);
+  IfTrueNode* create_new_if_for_predicate(const ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
+                                          Deoptimization::DeoptReason reason, int opcode,
+                                          bool rewire_uncommon_proj_phi_inputs = false);
 
  private:
   // Helper functions for create_new_if_for_predicate()
@@ -1481,6 +1520,8 @@ public:
   static void trace_loop_unswitching_impossible(const LoopNode* original_head);
   static void trace_loop_unswitching_result(const UnswitchedLoopSelector& unswitched_loop_selector,
                                             const LoopNode* original_head, const LoopNode* new_head);
+  static void trace_loop_multiversioning_result(const LoopSelector& loop_selector,
+                                                const LoopNode* original_head, const LoopNode* new_head);
 #endif
 
  public:
@@ -1506,6 +1547,11 @@ public:
     TriedAndFailed,  // We tried to vectorize, but failed.
   };
   AutoVectorizeStatus auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared);
+
+  void maybe_multiversion_for_auto_vectorization_runtime_checks(IdealLoopTree* lpt, Node_List& old_new);
+  void do_multiversioning(IdealLoopTree* lpt, Node_List& old_new);
+  IfTrueNode* create_new_if_for_multiversion(IfTrueNode* multiversioning_fast_proj);
+  bool try_resume_optimizations_for_delayed_slow_loop(IdealLoopTree* lpt);
 
   // Move an unordered Reduction out of loop if possible
   void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);
@@ -1693,28 +1739,7 @@ private:
     _nodes_required = UINT_MAX;
   }
 
- public:
-  // Clone Parse Predicates to slow and fast loop when unswitching a loop
-  void clone_parse_and_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, Node_List& old_new,
-                                                               IfProjNode*& true_path_loop_entry,
-                                                               IfProjNode*& false_path_loop_entry);
  private:
-  void clone_loop_predication_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
-                                                            const PredicateBlock* predicate_block,
-                                                            Deoptimization::DeoptReason reason,
-                                                            IfProjNode*& true_path_loop_entry,
-                                                            IfProjNode*& false_path_loop_entry);
-  void clone_parse_predicate_to_unswitched_loops(const PredicateBlock* predicate_block, Deoptimization::DeoptReason reason,
-                                                 IfProjNode*& iffast_pred, IfProjNode*& ifslow_pred);
-  IfProjNode* clone_parse_predicate_to_unswitched_loop(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
-                                                       Deoptimization::DeoptReason reason, bool slow_loop);
-  void clone_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
-                                                     ParsePredicateSuccessProj* old_parse_predicate_proj,
-                                                     ParsePredicateNode* true_path_loop_parse_predicate,
-                                                     ParsePredicateNode* false_path_loop_parse_predicate);
-  IfTrueNode* clone_assertion_predicate_for_unswitched_loops(IfTrueNode* template_assertion_predicate_success_proj,
-                                                             ParsePredicateNode* unswitched_loop_parse_predicate);
-  static void check_cloned_parse_predicate_for_unswitching(const Node* new_entry, bool is_fast_loop) PRODUCT_RETURN;
 
   bool _created_loop_node;
   DEBUG_ONLY(void dump_idoms(Node* early, Node* wrong_lca);)
