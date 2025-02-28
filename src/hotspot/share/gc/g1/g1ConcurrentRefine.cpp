@@ -125,14 +125,14 @@ void G1ConcurrentRefineThreadControl::stop() {
 G1ConcurrentRefineWorkState::G1ConcurrentRefineWorkState(uint max_reserved_regions) :
   _state(State::Idle),
   _refine_work_epoch(0),
-  _sweep_state(new G1CardTableClaimTable(G1CollectedHeap::get_chunks_per_region_for_merge())),
+  _sweep_table(new G1CardTableClaimTable(G1CollectedHeap::get_chunks_per_region_for_merge())),
   _stats()
 {
-  _sweep_state->initialize(max_reserved_regions);
+  _sweep_table->initialize(max_reserved_regions);
 }
 
 G1ConcurrentRefineWorkState::~G1ConcurrentRefineWorkState() {
-  delete _sweep_state;
+  delete _sweep_table;
 }
 
 void G1ConcurrentRefineWorkState::set_state_start_time() {
@@ -269,7 +269,7 @@ void G1ConcurrentRefineWorkState::snapshot_heap() {
 
   set_state_start_time();
 
-  snapshot_heap_into(_sweep_state);
+  snapshot_heap_into(_sweep_table);
 
   advance_state(State::SweepRT);
 }
@@ -281,7 +281,7 @@ bool G1ConcurrentRefineWorkState::sweep_rt_step() {
 
   G1ConcurrentRefine* cr = G1CollectedHeap::heap()->concurrent_refine();
 
-  G1ConcurrentRefineWorkTask task(_sweep_state, &_stats, cr->num_threads_wanted());
+  G1ConcurrentRefineWorkTask task(_sweep_table, &_stats, cr->num_threads_wanted());
   cr->run_with_refinement_workers(&task);
 
   if (task.sweep_completed()) {
@@ -332,18 +332,16 @@ bool G1ConcurrentRefineWorkState::complete(bool concurrent, bool print_log) {
   return has_sweep_rt_work;
 }
 
-void G1ConcurrentRefineWorkState::snapshot_heap_into(G1CardTableClaimTable* sweep_state) {
-  sweep_state->reset_all_claims_to_claimed();
+void G1ConcurrentRefineWorkState::snapshot_heap_into(G1CardTableClaimTable* sweep_table) {
+  // G1CollectedHeap::heap_region_iterate() will only visit committed regions. In the
+  // state table 
+  sweep_table->reset_all_claims_to_claimed();
 
   class SnapshotRegionsClosure : public G1HeapRegionClosure {
-    G1CardTableClaimTable* _sweep_state;
+    G1CardTableClaimTable* _sweep_table;
 
   public:
-    size_t _num_clean;
-    size_t _num_dirty;
-    size_t _num_to_cset;
-
-    SnapshotRegionsClosure(G1CardTableClaimTable* sweep_state) : G1HeapRegionClosure(), _sweep_state(sweep_state), _num_clean(0), _num_dirty(0), _num_to_cset(0) { }
+    SnapshotRegionsClosure(G1CardTableClaimTable* sweep_table) : G1HeapRegionClosure(), _sweep_table(sweep_table) { }
 
     bool do_heap_region(G1HeapRegion* r) override {
       if (!r->is_free()) {
@@ -352,11 +350,11 @@ void G1ConcurrentRefineWorkState::snapshot_heap_into(G1CardTableClaimTable* swee
         // that were allocated before the handshake; the handshake makes such
         // regions' metadata visible to all threads, and we do not care about
         // humongous regions that were allocated afterwards.
-        _sweep_state->reset_to_unclaimed(r->hrm_index());
+        _sweep_table->reset_to_unclaimed(r->hrm_index());
       }
       return false;
     }
-  } cl(sweep_state);
+  } cl(sweep_table);
   G1CollectedHeap::heap()->heap_region_iterate(&cl);
 }
 
@@ -398,7 +396,7 @@ void G1ConcurrentRefine::run_with_refinement_workers(WorkerTask* task) {
 void G1ConcurrentRefine::notify_region_reclaimed(G1HeapRegion* r) {
   assert_at_safepoint();
   if (_refine_state.is_in_progress()) {
-    _refine_state.sweep_state()->claim_all_cards(r->hrm_index());
+    _refine_state.sweep_table()->claim_all_cards(r->hrm_index());
   }
 }
 
@@ -517,7 +515,7 @@ public:
   size_t sampled_code_root_rs_length() const { return _sampled_code_root_rs_length; }
 };
 
-// Adjust the target length (in regions) of the young gen, based on the the
+// Adjust the target length (in regions) of the young gen, based on the
 // current length of the remembered sets.
 //
 // At the end of the GC G1 determines the length of the young gen based on

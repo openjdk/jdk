@@ -90,7 +90,7 @@
 class G1RemSetScanState : public CHeapObj<mtGC> {
   class G1DirtyRegions;
 
-  G1CardTableClaimTable _card_state;
+  G1CardTableClaimTable _card_claim_table;
   // The complete set of regions which card table needs to be cleared at the end
   // of GC because we scribbled over these card table entries.
   //
@@ -142,11 +142,11 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
     }
 
     void add_dirty_region(uint region) {
-    if (_contains[region]) {
-      return;
-    }
+      if (_contains[region]) {
+        return;
+      }
 
-    bool marked_as_dirty = Atomic::cmpxchg(&_contains[region], false, true) == false;
+      bool marked_as_dirty = Atomic::cmpxchg(&_contains[region], false, true) == false;
       if (marked_as_dirty) {
         uint allocated = Atomic::fetch_then_add(&_cur_idx, 1u);
         _buffer[allocated] = region;
@@ -234,7 +234,7 @@ class G1ClearCardTableTask : public G1AbstractSubTask {
 
 public:
   G1RemSetScanState() :
-    _card_state(G1CollectedHeap::get_chunks_per_region_for_scan()),
+    _card_claim_table(G1CollectedHeap::get_chunks_per_region_for_scan()),
     _all_dirty_regions(nullptr),
     _next_dirty_regions(nullptr),
     _scan_top(nullptr) { }
@@ -243,8 +243,8 @@ public:
     FREE_C_HEAP_ARRAY(HeapWord*, _scan_top);
   }
 
-  void initialize(size_t max_reserved_regions) {
-    _card_state.initialize(max_reserved_regions);
+  void initialize(uint max_reserved_regions) {
+    _card_claim_table.initialize(max_reserved_regions);
     _scan_top = NEW_C_HEAP_ARRAY(HeapWord*, max_reserved_regions, mtGC);
   }
 
@@ -253,7 +253,7 @@ public:
   // become used during the collection these values must be valid
   // for those regions as well.
   void prepare() {
-    size_t max_reserved_regions = _card_state.max_reserved_regions();
+    size_t max_reserved_regions = _card_claim_table.max_reserved_regions();
 
     for (size_t i = 0; i < max_reserved_regions; i++) {
       clear_scan_top((uint)i);
@@ -268,7 +268,7 @@ public:
     // regions.
     //assert(_next_dirty_regions->size() == 0, "next dirty regions must be empty");
 
-    _card_state.reset_all_claims_to_unclaimed();
+    _card_claim_table.reset_all_claims_to_unclaimed();
   }
 
   void complete_evac_phase(bool merge_dirty_regions) {
@@ -331,7 +331,7 @@ public:
   }
 
   bool has_cards_to_scan(uint region) {
-    return _card_state.has_unclaimed_cards(region);
+    return _card_claim_table.has_unclaimed_cards(region);
   }
 
   void add_dirty_region(uint const region) {
@@ -367,7 +367,7 @@ public:
   }
 
   G1CardTableChunkClaimer claimer(uint region_idx) {
-    return G1CardTableChunkClaimer(&_card_state, region_idx);
+    return G1CardTableChunkClaimer(&_card_claim_table, region_idx);
   }
 };
 
@@ -827,20 +827,20 @@ class MergeRefinementTableTask : public WorkerTask {
       while (claim.has_next()) {
         size_t const start_idx = region_card_base_idx + claim.value();
 
-        size_t* card_cur_card = (size_t*)card_table->byte_for_index(start_idx);
+        size_t* card_cur_word = (size_t*)card_table->byte_for_index(start_idx);
 
         size_t* refinement_cur_card = (size_t*)refinement_table->byte_for_index(start_idx);
         size_t* const refinement_end_card = refinement_cur_card + claim.size() / (sizeof(size_t) / sizeof(G1CardTable::CardValue));
 
-        for (; refinement_cur_card < refinement_end_card; ++refinement_cur_card, ++card_cur_card) {
+        for (; refinement_cur_card < refinement_end_card; ++refinement_cur_card, ++card_cur_word) {
           size_t value = *refinement_cur_card;
           *refinement_cur_card = G1CardTable::WordAllClean;
           // Dirty is "0", so we need to logically-and here. This is also safe
           // for all other possible values in the card table; at this point this
           // can be either g1_dirty_card or g1_to_cset_card which will both be
           // scanned.
-          size_t new_value = *card_cur_card & value;
-          *card_cur_card = new_value;
+          size_t new_value = *card_cur_word & value;
+          *card_cur_word = new_value;
         }
       }
 
@@ -1237,7 +1237,7 @@ static void merge_refinement_table() {
   bool has_sweep_claims = state.complete(false);
   if (has_sweep_claims) {
     log_debug(gc, refine)("Continue existing work");
-    claim = state.sweep_state();
+    claim = state.sweep_table();
   } else {
     // Refinement has been interrupted without having a snapshot. There may
     // be a mix of already swapped and not-swapped card tables assigned to threads,

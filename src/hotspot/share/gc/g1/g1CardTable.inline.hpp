@@ -44,6 +44,12 @@ inline bool G1CardTable::mark_clean_as_from_remset(CardValue* card) {
 }
 
 // Returns bits from a where mask is 0, and bits from b where mask is 1.
+//
+// Example:
+// a      = 0xAAAAAAAA
+// b      = 0xBBBBBBBB
+// mask   = 0xFF00FF00
+// result = 0xBBAABBAA
 inline size_t blend(size_t a, size_t b, size_t mask) {
   return a ^ ((a ^ b) & mask);
 }

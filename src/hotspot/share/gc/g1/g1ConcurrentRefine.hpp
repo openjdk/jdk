@@ -113,7 +113,7 @@ class G1ConcurrentRefineWorkState {
   size_t _refine_work_epoch;
 
   // Current heap snapshot.
-  G1CardTableClaimTable* _sweep_state;
+  G1CardTableClaimTable* _sweep_table;
 
   // Start times for all states.
   Ticks _state_start[static_cast<uint>(State::Last)];
@@ -145,9 +145,9 @@ public:
 
   bool complete(bool concurrent, bool print_log = true);
 
-  static void snapshot_heap_into(G1CardTableClaimTable* sweep_state);
+  static void snapshot_heap_into(G1CardTableClaimTable* sweep_table);
 
-  G1CardTableClaimTable* sweep_state() { return _sweep_state; }
+  G1CardTableClaimTable* sweep_table() { return _sweep_table; }
   G1ConcurrentRefineStats* stats() { return &_stats; }
   void reset_stats();
 

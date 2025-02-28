@@ -42,7 +42,7 @@ G1CardTableClaimTable::~G1CardTableClaimTable() {
   FREE_C_HEAP_ARRAY(uint, _card_claims);
 }
 
-void G1CardTableClaimTable::initialize(size_t max_reserved_regions) {
+void G1CardTableClaimTable::initialize(uint max_reserved_regions) {
   assert(_card_claims == nullptr, "Must not be initialized twice");
   _card_claims = NEW_C_HEAP_ARRAY(uint, max_reserved_regions, mtGC);
   _max_reserved_regions = max_reserved_regions;
