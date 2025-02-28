@@ -159,11 +159,7 @@
                    volatile_static_field,                                                                                            \
                    unchecked_nonstatic_field,                                                                                        \
                    volatile_nonstatic_field,                                                                                         \
-                   nonproduct_nonstatic_field,                                                                                       \
-                   c1_nonstatic_field,                                                                                               \
-                   c2_nonstatic_field,                                                                                               \
-                   unchecked_c1_static_field,                                                                                        \
-                   unchecked_c2_static_field)                                                                                        \
+                   nonproduct_nonstatic_field)                                                                                       \
                                                                                                                                      \
   /*************/                                                                                                                    \
   /* GC fields */                                                                                                                    \
@@ -571,8 +567,6 @@
   nonstatic_field(nmethod,                     _comp_level,                                   CompLevel)                             \
   volatile_nonstatic_field(nmethod,            _exception_cache,                              ExceptionCache*)                       \
                                                                                                                                      \
-  unchecked_c2_static_field(Deoptimization,    _trap_reason_name,                             void*)                                 \
-                                                                                                                                     \
   nonstatic_field(Deoptimization::UnrollBlock, _size_of_deoptimized_frame,                    int)                                   \
   nonstatic_field(Deoptimization::UnrollBlock, _caller_adjustment,                            int)                                   \
   nonstatic_field(Deoptimization::UnrollBlock, _number_of_frames,                             int)                                   \
@@ -852,10 +846,7 @@
                  declare_toplevel_type,                                   \
                  declare_oop_type,                                        \
                  declare_integer_type,                                    \
-                 declare_unsigned_integer_type,                           \
-                 declare_c1_toplevel_type,                                \
-                 declare_c2_type,                                         \
-                 declare_c2_toplevel_type)                                \
+                 declare_unsigned_integer_type)                           \
                                                                           \
   /*************************************************************/         \
   /* Java primitive types -- required by the SA implementation */         \
@@ -1114,8 +1105,8 @@
   declare_type(UpcallStub,               RuntimeBlob)                     \
   declare_type(SafepointBlob,            SingletonBlob)                   \
   declare_type(DeoptimizationBlob,       SingletonBlob)                   \
-  declare_c2_type(ExceptionBlob,         SingletonBlob)                   \
-  declare_c2_type(UncommonTrapBlob,      RuntimeBlob)                     \
+  COMPILER2_PRESENT(declare_type(ExceptionBlob,    SingletonBlob))        \
+  COMPILER2_PRESENT(declare_type(UncommonTrapBlob, RuntimeBlob))          \
                                                                           \
   /***************************************/                               \
   /* PcDesc and other compiled code info */                               \
@@ -1162,12 +1153,6 @@
   /**************/                                                        \
                                                                           \
   declare_toplevel_type(OopStorage)                                       \
-                                                                          \
-  /**********************/                                                \
-  /* Runtime1 (C1 only) */                                                \
-  /**********************/                                                \
-                                                                          \
-  declare_c1_toplevel_type(Runtime1)                                      \
                                                                           \
   /************/                                                          \
   /* Monitors */                                                          \
@@ -1229,7 +1214,6 @@
    declare_integer_type(Location::Type)                                   \
    declare_integer_type(Location::Where)                                  \
    declare_integer_type(JVMFlag::Flags)                                   \
-   COMPILER2_PRESENT(declare_integer_type(OptoReg::Name))                 \
                                                                           \
    declare_toplevel_type(CHeapObj<mtInternal>)                            \
             declare_type(Array<int>, MetaspaceObj)                        \
@@ -1320,10 +1304,7 @@
 
 #define VM_INT_CONSTANTS(declare_constant,                                \
                          declare_constant_with_value,                     \
-                         declare_preprocessor_constant,                   \
-                         declare_c1_constant,                             \
-                         declare_c2_constant,                             \
-                         declare_c2_preprocessor_constant)                \
+                         declare_preprocessor_constant)                   \
                                                                           \
   /****************/                                                      \
   /* GC constants */                                                      \
@@ -1785,8 +1766,8 @@
                                                                           \
   declare_constant(ConcreteRegisterImpl::number_of_registers)             \
   declare_preprocessor_constant("REG_COUNT", REG_COUNT)                   \
-  declare_c2_preprocessor_constant("SAVED_ON_ENTRY_REG_COUNT", SAVED_ON_ENTRY_REG_COUNT) \
-  declare_c2_preprocessor_constant("C_SAVED_ON_ENTRY_REG_COUNT", C_SAVED_ON_ENTRY_REG_COUNT) \
+  COMPILER2_PRESENT(declare_preprocessor_constant("SAVED_ON_ENTRY_REG_COUNT", SAVED_ON_ENTRY_REG_COUNT)) \
+  COMPILER2_PRESENT(declare_preprocessor_constant("C_SAVED_ON_ENTRY_REG_COUNT", C_SAVED_ON_ENTRY_REG_COUNT)) \
                                                                           \
   /************/                                                          \
   /* PerfData */                                                          \
@@ -1837,7 +1818,7 @@
 // enums, etc., while "declare_preprocessor_constant" must be used for
 // all #defined constants.
 
-#define VM_LONG_CONSTANTS(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \
+#define VM_LONG_CONSTANTS(declare_constant, declare_preprocessor_constant) \
                                                                           \
   /****************/                                                      \
   /* GC constants */                                                      \
@@ -1903,108 +1884,6 @@
 # define ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT(a, b, c)
 #endif /* PRODUCT */
 
-// Generate and check a nonstatic field in C1 builds
-#ifdef COMPILER1
-# define GENERATE_C1_NONSTATIC_VM_STRUCT_ENTRY(a, b, c) GENERATE_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define CHECK_C1_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)    CHECK_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define ENSURE_C1_FIELD_TYPE_PRESENT(a, b, c)          ENSURE_FIELD_TYPE_PRESENT(a, b, c)
-#else
-# define GENERATE_C1_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define CHECK_C1_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define ENSURE_C1_FIELD_TYPE_PRESENT(a, b, c)
-#endif /* COMPILER1 */
-// Generate and check a nonstatic field in C2 builds
-#ifdef COMPILER2
-# define GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY(a, b, c) GENERATE_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define CHECK_C2_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)    CHECK_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define ENSURE_C2_FIELD_TYPE_PRESENT(a, b, c)          ENSURE_FIELD_TYPE_PRESENT(a, b, c)
-#else
-# define GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define CHECK_C2_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define ENSURE_C2_FIELD_TYPE_PRESENT(a, b, c)
-#endif /* COMPILER2 */
-
-// Generate but do not check a static field in C1 builds
-#ifdef COMPILER1
-# define GENERATE_C1_UNCHECKED_STATIC_VM_STRUCT_ENTRY(a, b, c) GENERATE_UNCHECKED_STATIC_VM_STRUCT_ENTRY(a, b, c)
-#else
-# define GENERATE_C1_UNCHECKED_STATIC_VM_STRUCT_ENTRY(a, b, c)
-#endif /* COMPILER1 */
-
-// Generate but do not check a static field in C2 builds
-#ifdef COMPILER2
-# define GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY(a, b, c) GENERATE_UNCHECKED_STATIC_VM_STRUCT_ENTRY(a, b, c)
-#else
-# define GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY(a, b, c)
-#endif /* COMPILER2 */
-
-//--------------------------------------------------------------------------------
-// VMTypeEntry build-specific macros
-//
-
-#ifdef COMPILER1
-# define GENERATE_C1_TOPLEVEL_VM_TYPE_ENTRY(a)               GENERATE_TOPLEVEL_VM_TYPE_ENTRY(a)
-# define CHECK_C1_TOPLEVEL_VM_TYPE_ENTRY(a)
-#else
-# define GENERATE_C1_TOPLEVEL_VM_TYPE_ENTRY(a)
-# define CHECK_C1_TOPLEVEL_VM_TYPE_ENTRY(a)
-#endif /* COMPILER1 */
-
-#ifdef COMPILER2
-# define GENERATE_C2_VM_TYPE_ENTRY(a, b)                     GENERATE_VM_TYPE_ENTRY(a, b)
-# define CHECK_C2_VM_TYPE_ENTRY(a, b)                        CHECK_VM_TYPE_ENTRY(a, b)
-# define GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY(a)               GENERATE_TOPLEVEL_VM_TYPE_ENTRY(a)
-# define CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY(a)
-#else
-# define GENERATE_C2_VM_TYPE_ENTRY(a, b)
-# define CHECK_C2_VM_TYPE_ENTRY(a, b)
-# define GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY(a)
-# define CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY(a)
-#endif /* COMPILER2 */
-
-
-//--------------------------------------------------------------------------------
-// VMIntConstantEntry build-specific macros
-//
-
-// Generate an int constant for a C1 build
-#ifdef COMPILER1
-# define GENERATE_C1_VM_INT_CONSTANT_ENTRY(name)  GENERATE_VM_INT_CONSTANT_ENTRY(name)
-#else
-# define GENERATE_C1_VM_INT_CONSTANT_ENTRY(name)
-#endif /* COMPILER1 */
-
-// Generate an int constant for a C2 build
-#ifdef COMPILER2
-# define GENERATE_C2_VM_INT_CONSTANT_ENTRY(name)                      GENERATE_VM_INT_CONSTANT_ENTRY(name)
-# define GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY(name, value)  GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY(name, value)
-#else
-# define GENERATE_C2_VM_INT_CONSTANT_ENTRY(name)
-# define GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY(name, value)
-#endif /* COMPILER1 */
-
-
-//--------------------------------------------------------------------------------
-// VMLongConstantEntry build-specific macros
-//
-
-// Generate a long constant for a C1 build
-#ifdef COMPILER1
-# define GENERATE_C1_VM_LONG_CONSTANT_ENTRY(name)  GENERATE_VM_LONG_CONSTANT_ENTRY(name)
-#else
-# define GENERATE_C1_VM_LONG_CONSTANT_ENTRY(name)
-#endif /* COMPILER1 */
-
-// Generate a long constant for a C2 build
-#ifdef COMPILER2
-# define GENERATE_C2_VM_LONG_CONSTANT_ENTRY(name)                     GENERATE_VM_LONG_CONSTANT_ENTRY(name)
-# define GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY(name, value) GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY(name, value)
-#else
-# define GENERATE_C2_VM_LONG_CONSTANT_ENTRY(name)
-# define GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY(name, value)
-#endif /* COMPILER1 */
-
-
 //
 // Instantiation of VMStructEntries, VMTypeEntries and VMIntConstantEntries
 //
@@ -2018,39 +1897,26 @@ VMStructEntry VMStructs::localHotSpotVMStructs[] = {
              GENERATE_VOLATILE_STATIC_VM_STRUCT_ENTRY,
              GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
              GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-             GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
-             GENERATE_C1_NONSTATIC_VM_STRUCT_ENTRY,
-             GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY,
-             GENERATE_C1_UNCHECKED_STATIC_VM_STRUCT_ENTRY,
-             GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY)
+             GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
 
   VM_STRUCTS_OS(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                 GENERATE_STATIC_VM_STRUCT_ENTRY,
                 GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
                 GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
-                GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY,
-                GENERATE_C1_UNCHECKED_STATIC_VM_STRUCT_ENTRY,
-                GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY)
+                GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
   VM_STRUCTS_CPU(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                  GENERATE_STATIC_VM_STRUCT_ENTRY,
                  GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
                  GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                 GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
-                 GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY,
-                 GENERATE_C1_UNCHECKED_STATIC_VM_STRUCT_ENTRY,
-                 GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY)
+                 GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
   VM_STRUCTS_OS_CPU(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                     GENERATE_STATIC_VM_STRUCT_ENTRY,
                     GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
                     GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                    GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
-                    GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY,
-                    GENERATE_C1_UNCHECKED_STATIC_VM_STRUCT_ENTRY,
-                    GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY)
+                    GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
   GENERATE_VM_STRUCT_LAST_ENTRY()
 };
@@ -2065,38 +1931,25 @@ VMTypeEntry VMStructs::localHotSpotVMTypes[] = {
            GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
            GENERATE_OOP_VM_TYPE_ENTRY,
            GENERATE_INTEGER_VM_TYPE_ENTRY,
-           GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY,
-           GENERATE_C1_TOPLEVEL_VM_TYPE_ENTRY,
-           GENERATE_C2_VM_TYPE_ENTRY,
-           GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
-
+           GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY)
 
   VM_TYPES_OS(GENERATE_VM_TYPE_ENTRY,
               GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
               GENERATE_OOP_VM_TYPE_ENTRY,
               GENERATE_INTEGER_VM_TYPE_ENTRY,
-              GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY,
-              GENERATE_C1_TOPLEVEL_VM_TYPE_ENTRY,
-              GENERATE_C2_VM_TYPE_ENTRY,
-              GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
+              GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY)
 
   VM_TYPES_CPU(GENERATE_VM_TYPE_ENTRY,
                GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
                GENERATE_OOP_VM_TYPE_ENTRY,
                GENERATE_INTEGER_VM_TYPE_ENTRY,
-               GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY,
-               GENERATE_C1_TOPLEVEL_VM_TYPE_ENTRY,
-               GENERATE_C2_VM_TYPE_ENTRY,
-               GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
+               GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY)
 
   VM_TYPES_OS_CPU(GENERATE_VM_TYPE_ENTRY,
                   GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
                   GENERATE_OOP_VM_TYPE_ENTRY,
                   GENERATE_INTEGER_VM_TYPE_ENTRY,
-                  GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY,
-                  GENERATE_C1_TOPLEVEL_VM_TYPE_ENTRY,
-                  GENERATE_C2_VM_TYPE_ENTRY,
-                  GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
+                  GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY)
 
   GENERATE_VM_TYPE_LAST_ENTRY()
 };
@@ -2109,28 +1962,16 @@ VMIntConstantEntry VMStructs::localHotSpotVMIntConstants[] = {
 
   VM_INT_CONSTANTS(GENERATE_VM_INT_CONSTANT_ENTRY,
                    GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY,
-                   GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY,
-                   GENERATE_C1_VM_INT_CONSTANT_ENTRY,
-                   GENERATE_C2_VM_INT_CONSTANT_ENTRY,
-                   GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
+                   GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 
   VM_INT_CONSTANTS_OS(GENERATE_VM_INT_CONSTANT_ENTRY,
-                      GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY,
-                      GENERATE_C1_VM_INT_CONSTANT_ENTRY,
-                      GENERATE_C2_VM_INT_CONSTANT_ENTRY,
-                      GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
+                      GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 
   VM_INT_CONSTANTS_CPU(GENERATE_VM_INT_CONSTANT_ENTRY,
-                       GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY,
-                       GENERATE_C1_VM_INT_CONSTANT_ENTRY,
-                       GENERATE_C2_VM_INT_CONSTANT_ENTRY,
-                       GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
+                       GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 
   VM_INT_CONSTANTS_OS_CPU(GENERATE_VM_INT_CONSTANT_ENTRY,
-                          GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY,
-                          GENERATE_C1_VM_INT_CONSTANT_ENTRY,
-                          GENERATE_C2_VM_INT_CONSTANT_ENTRY,
-                          GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
+                          GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 #ifdef VM_INT_CPU_FEATURE_CONSTANTS
   VM_INT_CPU_FEATURE_CONSTANTS
 #endif
@@ -2145,28 +1986,16 @@ size_t VMStructs::localHotSpotVMIntConstantsLength() {
 VMLongConstantEntry VMStructs::localHotSpotVMLongConstants[] = {
 
   VM_LONG_CONSTANTS(GENERATE_VM_LONG_CONSTANT_ENTRY,
-                    GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY,
-                    GENERATE_C1_VM_LONG_CONSTANT_ENTRY,
-                    GENERATE_C2_VM_LONG_CONSTANT_ENTRY,
-                    GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
+                    GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
 
   VM_LONG_CONSTANTS_OS(GENERATE_VM_LONG_CONSTANT_ENTRY,
-                       GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY,
-                       GENERATE_C1_VM_LONG_CONSTANT_ENTRY,
-                       GENERATE_C2_VM_LONG_CONSTANT_ENTRY,
-                       GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
+                       GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
 
   VM_LONG_CONSTANTS_CPU(GENERATE_VM_LONG_CONSTANT_ENTRY,
-                        GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY,
-                        GENERATE_C1_VM_LONG_CONSTANT_ENTRY,
-                        GENERATE_C2_VM_LONG_CONSTANT_ENTRY,
-                        GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
+                        GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
 
   VM_LONG_CONSTANTS_OS_CPU(GENERATE_VM_LONG_CONSTANT_ENTRY,
-                           GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY,
-                           GENERATE_C1_VM_LONG_CONSTANT_ENTRY,
-                           GENERATE_C2_VM_LONG_CONSTANT_ENTRY,
-                           GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
+                           GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
 #ifdef VM_LONG_CPU_FEATURE_CONSTANTS
   VM_LONG_CPU_FEATURE_CONSTANTS
 #endif
@@ -2220,58 +2049,38 @@ void VMStructs::init() {
              CHECK_VOLATILE_STATIC_VM_STRUCT_ENTRY,
              CHECK_NO_OP,
              CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
-             CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
-             CHECK_C1_NONSTATIC_VM_STRUCT_ENTRY,
-             CHECK_C2_NONSTATIC_VM_STRUCT_ENTRY,
-             CHECK_NO_OP,
-             CHECK_NO_OP);
-
+             CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
   VM_STRUCTS_CPU(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
                  CHECK_STATIC_VM_STRUCT_ENTRY,
                  CHECK_NO_OP,
                  CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
-                 CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
-                 CHECK_C2_NONSTATIC_VM_STRUCT_ENTRY,
-                 CHECK_NO_OP,
-                 CHECK_NO_OP);
+                 CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
   VM_STRUCTS_OS_CPU(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
                     CHECK_STATIC_VM_STRUCT_ENTRY,
                     CHECK_NO_OP,
                     CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
-                    CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
-                    CHECK_C2_NONSTATIC_VM_STRUCT_ENTRY,
-                    CHECK_NO_OP,
-                    CHECK_NO_OP);
+                    CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
   VM_TYPES(CHECK_VM_TYPE_ENTRY,
            CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
            CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
            CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-           CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-           CHECK_C1_TOPLEVEL_VM_TYPE_ENTRY,
-           CHECK_C2_VM_TYPE_ENTRY,
-           CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY);
+           CHECK_SINGLE_ARG_VM_TYPE_NO_OP)
 
 
   VM_TYPES_CPU(CHECK_VM_TYPE_ENTRY,
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-               CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-               CHECK_C1_TOPLEVEL_VM_TYPE_ENTRY,
-               CHECK_C2_VM_TYPE_ENTRY,
-               CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY);
+               CHECK_SINGLE_ARG_VM_TYPE_NO_OP)
 
   VM_TYPES_OS_CPU(CHECK_VM_TYPE_ENTRY,
                   CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
                   CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
                   CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-                  CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-                  CHECK_C1_TOPLEVEL_VM_TYPE_ENTRY,
-                  CHECK_C2_VM_TYPE_ENTRY,
-                  CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY);
+                  CHECK_SINGLE_ARG_VM_TYPE_NO_OP)
 
   //
   // Split VM_STRUCTS() invocation into two parts to allow MS VC++ 6.0
@@ -2295,39 +2104,26 @@ void VMStructs::init() {
              CHECK_NO_OP,
              CHECK_NO_OP,
              CHECK_NO_OP,
-             CHECK_NO_OP,
-             CHECK_NO_OP,
-             CHECK_NO_OP,
-             CHECK_NO_OP,
-             CHECK_NO_OP);
+             CHECK_NO_OP)
 
   VM_STRUCTS(CHECK_NO_OP,
              ENSURE_FIELD_TYPE_PRESENT,
              ENSURE_FIELD_TYPE_PRESENT,
              CHECK_NO_OP,
              ENSURE_FIELD_TYPE_PRESENT,
-             ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT,
-             ENSURE_C1_FIELD_TYPE_PRESENT,
-             ENSURE_C2_FIELD_TYPE_PRESENT,
-             CHECK_NO_OP,
-             CHECK_NO_OP);
+             ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT)
 
   VM_STRUCTS_CPU(ENSURE_FIELD_TYPE_PRESENT,
                  ENSURE_FIELD_TYPE_PRESENT,
                  CHECK_NO_OP,
                  ENSURE_FIELD_TYPE_PRESENT,
-                 ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT,
-                 ENSURE_C2_FIELD_TYPE_PRESENT,
-                 CHECK_NO_OP,
-                 CHECK_NO_OP);
+                 ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT)
+
   VM_STRUCTS_OS_CPU(ENSURE_FIELD_TYPE_PRESENT,
                     ENSURE_FIELD_TYPE_PRESENT,
                     CHECK_NO_OP,
                     ENSURE_FIELD_TYPE_PRESENT,
-                    ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT,
-                    ENSURE_C2_FIELD_TYPE_PRESENT,
-                    CHECK_NO_OP,
-                    CHECK_NO_OP);
+                    ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT)
 #endif // !_WINDOWS
 }
 
