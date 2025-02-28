@@ -4097,21 +4097,19 @@ pipe_class fp_div_d(fRegD dst, fRegD src1, fRegD src2)
   FPU    : S5;
 %}
 
-pipe_class fp_sqrt_s(fRegF dst, fRegF src1, fRegF src2)
+pipe_class fp_sqrt_s(fRegF dst, fRegF src)
 %{
   single_instruction;
-  src1   : S1(read);
-  src2   : S2(read);
+  src    : S1(read);
   dst    : S5(write);
   DECODE : ID;
   FPU    : S5;
 %}
 
-pipe_class fp_sqrt_d(fRegD dst, fRegD src1, fRegD src2)
+pipe_class fp_sqrt_d(fRegD dst, fRegD src)
 %{
   single_instruction;
-  src1   : S1(read);
-  src2   : S2(read);
+  src    : S1(read);
   dst    : S5(write);
   DECODE : ID;
   FPU    : S5;
