@@ -28,13 +28,13 @@ import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Label;
 import java.awt.Point;
+import java.awt.Robot;
 
 /**
  * @test
  * @key headful
  * @bug 7157680
  * @library /lib/client
- * @build ExtendedRobot
  * @author Sergey Bylokhov
  * @run main/othervm -Dsun.java2d.uiScale=1 PaintNativeOnUpdate
  */
@@ -43,7 +43,7 @@ public final class PaintNativeOnUpdate extends Label {
     private boolean fullUpdate = true;
 
     public static void main(final String[] args) throws AWTException {
-        ExtendedRobot robot = new ExtendedRobot();
+        Robot robot = new Robot();
         robot.setAutoDelay(50);
         final Frame frame = new Frame();
         final Component label = new PaintNativeOnUpdate();
