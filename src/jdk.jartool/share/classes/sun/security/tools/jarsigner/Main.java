@@ -237,7 +237,6 @@ public class Main {
     private boolean badNetscapeCertType = false;
     private boolean signerSelfSigned = false;
     private boolean allAliasesFound = true;
-    private boolean differentStreamAndFile = false;
 
     private Throwable chainNotValidatedReason = null;
     private Throwable tsaChainNotValidatedReason = null;
@@ -729,20 +728,11 @@ public class Main {
         throw new ExitException(0);
     }
 
-    // A JarEntry with its type:
-    // 1 = Present only in LOC (Local File Header)
-    // 2 = Present only in CEN (Central Directory)
-    // 3 = Present in both LOC and CEN
-    record FullEntry(JarEntry je, int type) {}
-
     void verifyJar(String jarName)
         throws Exception
     {
         boolean anySigned = false;  // if there exists entry inside jar signed
-
         JarFile jf = null;
-        JarInputStream jis = null;
-
         Map<String,String> digestMap = new HashMap<>();
         Map<String,PKCS7> sigMap = new HashMap<>();
         Map<String,String> sigNameMap = new HashMap<>();
@@ -750,10 +740,8 @@ public class Main {
         Map<String,Set<String>> entriesInSF = new HashMap<>();
 
         try {
-            // Open the JAR file using both CEN-based and stream-based approaches
             jf = new JarFile(jarName, true);
-            jis = new JarInputStream(new FileInputStream(jarName), true);
-            Vector<FullEntry> entriesVec = new Vector<>();
+            Vector<JarEntry> entriesVec = new Vector<>();
             byte[] buffer = new byte[8192];
 
             String suffix1 = "-Digest-Manifest";
@@ -762,61 +750,12 @@ public class Main {
             int suffixLength1 = suffix1.length();
             int suffixLength2 = suffix2.length();
 
-            // Store all entries from JarFile into a list for cross-checking
-            ArrayList<JarEntry> cen = Collections.list(jf.entries());
-
-            /*
-             * First pass: Iterate through JarInputStream. Check if each
-             * entry is in the CEN list and sets the type classification
-             * accordingly.
-             */
-            boolean inStream = true;
-            while (true) {
-                int type = 0;
-                JarEntry je = null;
-                InputStream is = null;
-                if (inStream) {
-                    je = jis.getNextJarEntry();
-                    if (je == null) {
-                        inStream = false;
-                    } else {
-                        is = jis;
-                        var inCEN = false;
-                        // Cross-check if this entry exists in the CEN list
-                        for (var i = 0; i < cen.size(); i++) {
-                            if (JUZFA.getLocPOS(je) == JUZFA.getLocPOS(cen.get(i))
-                                    && je.getName().equals(cen.get(i).getName())) {
-                                cen.remove(i);
-                                inCEN = true;
-                                break;
-                            }
-                        }
-                        if (inCEN) {
-                            type = 3;
-                        } else {
-                            type = 1;
-                            differentStreamAndFile = true;
-                        }
-                    }
-                }
-
-                // Second pass: Process remaining CEN entries that are not in LOC
-                if (!inStream) {
-                    if (cen.isEmpty()) break;
-                    je = cen.removeFirst();
-                    if (je.getName().equalsIgnoreCase(JarFile.MANIFEST_NAME)
-                            || je.getName().equalsIgnoreCase("META-INF/")) {
-                        type = 3;
-                    } else {
-                        type = 2;
-                        differentStreamAndFile = true;
-                    }
-                    is = jf.getInputStream(je);
-                }
-
-                entriesVec.addElement(new FullEntry(je, type));
-                String name = je.getName();
-                try {
+            Enumeration<JarEntry> entries = jf.entries();
+            while (entries.hasMoreElements()) {
+                JarEntry je = entries.nextElement();
+                entriesVec.addElement(je);
+                try (InputStream is = jf.getInputStream(je)) {
+                    String name = je.getName();
                     if (signatureRelated(name)
                             && SignatureFileVerifier.isBlockOrSF(name)) {
                         String alias = name.substring(name.lastIndexOf('/') + 1,
@@ -855,7 +794,7 @@ public class Main {
                                 }
                             } else {
                                 sigNameMap.put(alias, name);
-                                sigMap.put(alias, new PKCS7(is.readAllBytes()));
+                                sigMap.put(alias, new PKCS7(is));
                             }
                         } catch (IOException ioe) {
                             unparsableSignatures.putIfAbsent(alias, String.format(
@@ -867,8 +806,6 @@ public class Main {
                             // if  a signature/digest check fails.
                         }
                     }
-                } finally {
-                    if (is != jis) is.close();
                 }
             }
 
@@ -882,25 +819,17 @@ public class Main {
 
             if (man != null) {
                 if (verbose != null) System.out.println();
-                Enumeration<FullEntry> e = entriesVec.elements();
+                Enumeration<JarEntry> e = entriesVec.elements();
 
                 String tab = rb.getString("6SPACE");
 
                 while (e.hasMoreElements()) {
-                    FullEntry entry = e.nextElement();
-                    JarEntry je = entry.je();
-                    int type = entry.type();
+                    JarEntry je = e.nextElement();
                     String name = je.getName();
-                    int externalAttributes = -1;
-                    JarEntry cenEntry = jf.getJarEntry(name);
-                    if (cenEntry != null) {
-                        externalAttributes = JUZFA.getExternalFileAttributes(cenEntry);
-                    }
 
-                    if (!externalFileAttributesDetected && externalAttributes != -1) {
+                    if (!externalFileAttributesDetected && JUZFA.getExternalFileAttributes(je) != -1) {
                         externalFileAttributesDetected = true;
                     }
-
                     hasSignature |= signatureRelated(name) && SignatureFileVerifier.isBlockOrSF(name);
 
                     CodeSigner[] signers = je.getCodeSigners();
@@ -1003,11 +932,6 @@ public class Main {
                         fb.append(s).append(' ').
                                 append(new Date(je.getTime()).toString());
                         fb.append(' ').append(name);
-                        if (type == 1) {
-                            fb.append(rb.getString(".JarInputStream.only."));
-                        } else if (type == 2) {
-                            fb.append(rb.getString(".JarFile.only."));
-                        }
 
                         output.get(label).add(fb.toString());
                     }
@@ -1272,10 +1196,6 @@ public class Main {
         // only in verifying
         if (!allAliasesFound) {
             warnings.add(rb.getString("This.jar.contains.signed.entries.that.s.not.signed.by.alias.in.this.keystore."));
-        }
-
-        if (differentStreamAndFile) {
-            warnings.add(rb.getString("Different.content.observed.in.JarInputStream.and.JarFile."));
         }
 
         if (signerSelfSigned) {
