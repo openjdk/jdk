@@ -42,7 +42,12 @@ public class ModDNodeTests {
     }
 
     @Run(test = {"constant", "notConstant", "veryNotConstant",
-            "unusedResult", "repeatedlyUnused", "unusedResultAfterLoopOpt1", "unusedResultAfterLoopOpt2"})
+            "unusedResult",
+            "repeatedlyUnused",
+            "unusedResultAfterLoopOpt1",
+            "unusedResultAfterLoopOpt2",
+            "unusedResultAfterLoopOpt3",
+    })
     public void runMethod() {
         Asserts.assertEQ(constant(), q % 72.0d % 30.0d);
         Asserts.assertEQ(alsoConstant(), q % 31.432d);
@@ -54,6 +59,7 @@ public class ModDNodeTests {
         repeatedlyUnused(1.1d, 2.2d);
         Asserts.assertEQ(unusedResultAfterLoopOpt1(1.1d, 2.2d), 0.d);
         Asserts.assertEQ(unusedResultAfterLoopOpt2(1.1d, 2.2d), 0.d);
+        Asserts.assertEQ(unusedResultAfterLoopOpt3(1.1d, 2.2d), 0.d);
     }
 
     @Test
@@ -139,6 +145,10 @@ public class ModDNodeTests {
         }
     }
 
+    // The difference between unusedResultAfterLoopOpt1 and unusedResultAfterLoopOpt2
+    // is that they exercise a slightly different reason why the node is being removed,
+    // and thus a different execution path. In unusedResultAfterLoopOpt1 the modulo is
+    // used in the traps of the parse predicate. In unusedResultAfterLoopOpt2, it is not.
     @Test
     @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
     @IR(counts = {IRNode.MOD_D, "1"}, phase = CompilePhase.ITER_GVN2)
@@ -161,9 +171,29 @@ public class ModDNodeTests {
 
     @Test
     @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
-    @IR(counts = {IRNode.MOD_D, "2"}, phase = CompilePhase.AFTER_CLOOPS)
+    @IR(counts = {IRNode.MOD_D, "1"}, phase = CompilePhase.AFTER_CLOOPS)
     @IR(failOn = IRNode.MOD_D, phase = CompilePhase.PHASEIDEALLOOP1)
     public double unusedResultAfterLoopOpt2(double x, double y) {
+        int a = 77;
+        int b = 0;
+        do {
+            a--;
+            b++;
+        } while (a > 0);
+
+        double unused = x % y;
+
+        if (b == 78) { // dead
+            return unused;
+        }
+        return 0.d;
+    }
+
+    @Test
+    @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(counts = {IRNode.MOD_D, "2"}, phase = CompilePhase.AFTER_CLOOPS)
+    @IR(failOn = IRNode.MOD_D, phase = CompilePhase.PHASEIDEALLOOP1)
+    public double unusedResultAfterLoopOpt3(double x, double y) {
         double unused = x % y;
 
         int a = 77;
