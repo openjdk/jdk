@@ -2632,7 +2632,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         public void insertUpdate(DocumentEvent e) {
             final Integer pos = e.getOffset();
             if (SwingUtilities.isEventDispatchThread()) {
-                firePropertyChange(ACCESSIBLE_TEXT_PROPERTY, null, pos);
+                if (!(getAccessibleContext().getAccessibleParent() instanceof JSpinner.NumberEditor)) {
+                    firePropertyChange(ACCESSIBLE_TEXT_PROPERTY, null, pos);
+                }
             } else {
                 Runnable doFire = new Runnable() {
                     public void run() {
@@ -2654,7 +2656,9 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         public void removeUpdate(DocumentEvent e) {
             final Integer pos = e.getOffset();
             if (SwingUtilities.isEventDispatchThread()) {
-                firePropertyChange(ACCESSIBLE_TEXT_PROPERTY, null, pos);
+                if (!(getAccessibleContext().getAccessibleParent() instanceof JSpinner.NumberEditor)) {
+                    firePropertyChange(ACCESSIBLE_TEXT_PROPERTY, null, pos);
+                }
             } else {
                 Runnable doFire = new Runnable() {
                     public void run() {
