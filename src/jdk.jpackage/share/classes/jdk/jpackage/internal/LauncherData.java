@@ -185,10 +185,6 @@ final class LauncherData {
         }
 
         Path mainJarDir = StandardBundlerParam.SOURCE_DIR.fetchFrom(params);
-        if (mainJarDir == null && launcherData.qualifiedClassName == null) {
-            throw new ConfigException(I18N.getString("error.no-input-parameter"),
-                    null);
-        }
 
         final Path mainJarPath;
         if (launcherData.mainJarName != null && mainJarDir != null) {
