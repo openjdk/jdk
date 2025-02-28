@@ -57,11 +57,6 @@ static inline int cg_v2_controller_index(const char* name) {
     return -1;
   }
 }
-static inline bool cg_v2_required(int index) {
-  // For cgroups v2, cpuacct is rolled into cpu, and the pids and cpuset controllers
-  // are optional; the remaining controllers, cpu and memory, are required.
-  return index == CPU_IDX || index == MEMORY_IDX;
-}
 
 CgroupSubsystem* CgroupSubsystemFactory::create() {
   CgroupV1MemoryController* memory = nullptr;
@@ -292,10 +287,10 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
         if ((i = cg_v2_controller_index(controller)) != -1) {
           cg_infos[i]._name = os::strdup(controller);
           cg_infos[i]._enabled = true;
-          log_debug(os, container)("v2 controller %s is enabled and %s", cg_infos[i]._name,
-                                   cg_v2_required(i) ? "required" : "relevant");
-        } else {
-          log_debug(os, container)("v2 controller %s is enabled but not relevant", controller);
+          if (i == PIDS_IDX || i == CPUSET_IDX) {
+            log_debug(os, container)("Detected optional %s controller entry in %s",
+                                     controller, controllers_file);
+          }
         }
       }
       #undef ISSPACE_CHARS
@@ -309,12 +304,13 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
       if (i == CPUACCT_IDX) {
         continue;
       }
-      if (cg_v2_required(i)) {
+      // For cgroups v2, cpuacct is rolled into cpu, and the pids and cpuset controllers
+      // are optional; the remaining controllers, cpu and memory, are required.
+      if (i == CPU_IDX || i == MEMORY_IDX) {
         all_required_controllers_enabled = all_required_controllers_enabled && cg_infos[i]._enabled;
       }
       if (log_is_enabled(Debug, os, container) && !cg_infos[i]._enabled) {
-        log_debug(os, container)("v2 controller %s is %s but not enabled", cg_controller_name[i],
-                                 cg_v2_required(i) ? "required" : "relevant");
+        log_debug(os, container)("controller %s is not enabled", cg_controller_name[i]);
       }
     }
   } else {
