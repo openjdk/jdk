@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,35 +39,29 @@ import javax.swing.SwingUtilities;
  * @test
  * @key headful
  * @bug 4213634 8017187
- * @author Scott Violet
  * @library ../../regtesthelpers
  * @build Util
  * @run main bug4213634
  */
 
-
 public class bug4213634 {
 
-    private JMenu menu;
+    private static JMenu menu;
+    private static JFrame frame;
+    private static Robot robot;
 
-    private JFrame frame;
-
-    public static void main(String[] args) throws Throwable {
-        new bug4213634();
-    }
-
-    bug4213634() throws AWTException, InterruptedException, InvocationTargetException {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                createAndShowGUI();
-            }
+    public static void main(String[] args) throws Exception {
+        robot = new Robot();
+        SwingUtilities.invokeAndWait(() -> {
+            createAndShowGUI();
         });
 
+        robot.waitForIdle();
+        robot.delay(1000);
         test();
     }
 
-    public  void createAndShowGUI() {
+    public static void createAndShowGUI() {
         frame = new JFrame("TEST");
         JMenuBar mb = new JMenuBar();
         menu = mb.add(createMenu("1 - First Menu", true));
@@ -77,33 +71,30 @@ public class bug4213634 {
         frame.getContentPane().add("Center", ta);
         JButton button = new JButton("Test");
         frame.getContentPane().add("South", button);
-        frame.setBounds(100, 100, 400, 400);
+        frame.setSize(400, 400);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         button.requestFocusInWindow();
     }
 
-    private void test() throws AWTException, InterruptedException, InvocationTargetException {
-        Robot robot = new Robot();
-        robot.setAutoDelay(50);
-        robot.waitForIdle();
+    private static void test() throws AWTException, InterruptedException, InvocationTargetException {
 
         Util.hitMnemonics(robot, KeyEvent.VK_1);
         robot.waitForIdle();
+        robot.delay(100);
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                if (!menu.isSelected()) {
-                    throw new RuntimeException(
-                        "Failed: Menu didn't remain posted at end of test");
-                } else {
-                    System.out.println("Test passed!");
-                    frame.dispose();
-                }
+        SwingUtilities.invokeAndWait(() -> {
+            frame.dispose();
+            if (!menu.isSelected()) {
+                throw new RuntimeException(
+                    "Failed: Menu didn't remain posted at end of test");
+            } else {
+                System.out.println("Test passed!");
             }
         });
     }
-    private JMenu createMenu(String str, boolean bFlag) {
+
+    private static JMenu createMenu(String str, boolean bFlag) {
         JMenuItem menuitem;
         JMenu menu = new JMenu(str);
         menu.setMnemonic(str.charAt(0));
@@ -116,8 +107,9 @@ public class bug4213634 {
                         "Failed: Mnemonic activated");
                 }
             });
-            if(bFlag)
+            if (bFlag) {
                 menuitem.setMnemonic('0' + i);
+            }
             menu.add(menuitem);
         }
         return menu;
