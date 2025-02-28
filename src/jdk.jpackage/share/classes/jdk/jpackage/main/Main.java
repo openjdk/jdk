@@ -25,15 +25,16 @@
 
 package jdk.jpackage.main;
 
-import jdk.internal.opt.CommandLine;
-import jdk.jpackage.internal.Arguments;
-import jdk.jpackage.internal.Log;
-import jdk.jpackage.internal.CLIHelp;
-import java.io.PrintWriter;
-import java.util.ResourceBundle;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.NoSuchFileException;
 import java.text.MessageFormat;
+import java.util.ResourceBundle;
+import jdk.internal.opt.CommandLine;
+import jdk.jpackage.internal.Arguments;
+import jdk.jpackage.internal.CLIHelp;
+import jdk.jpackage.internal.Log;
 
 public class Main {
 
@@ -69,7 +70,7 @@ public class Main {
             String[] newArgs;
             try {
                 newArgs = CommandLine.parse(args);
-            } catch (FileNotFoundException fnfe) {
+            } catch (FileNotFoundException|NoSuchFileException fnfe) {
                 Log.fatalError(MessageFormat.format(I18N.getString(
                         "ERR_CannotParseOptions"), fnfe.getMessage()));
                 return 1;
