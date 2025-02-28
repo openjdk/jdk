@@ -32,6 +32,7 @@ import java.util.ListIterator;
 import com.sun.tools.javac.code.DeferredLintHandler;
 import com.sun.tools.javac.code.DeferredLintHandler.LintLogger;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -87,6 +88,11 @@ public class LexicalLintHandler {
      */
     public <T extends JCTree> T endDecl(T decl, int endPos) {
         Assert.check(!flushed);
+        Assert.check(decl.getTag() == Tag.MODULEDEF
+                  || decl.getTag() == Tag.PACKAGEDEF
+                  || decl.getTag() == Tag.CLASSDEF
+                  || decl.getTag() == Tag.METHODDEF
+                  || decl.getTag() == Tag.VARDEF);
         declNodes.addLast(new DeclNode(decl, endPos));
         return decl;
     }
