@@ -31,7 +31,6 @@ import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.TKit;
 
 /*
@@ -70,19 +69,6 @@ public final class AppVersionTest {
                 "--app-version", "7.5.81"}}
         }));
 
-        // These are invalid version strings.
-        // Don't need to test all invalid input as this is handled in
-        // PlatformVersionTest unit test
-        if (TKit.isWindows()) {
-            data.addAll(List.of(new Object[][]{
-                {null, "Hello", new String[]{"--app-version", "256"}}
-            }));
-        } else if (TKit.isOSX()) {
-            data.addAll(List.of(new Object[][]{
-                {null, "Hello", new String[]{"--app-version", "0.2"}}
-            }));
-        }
-
         return data;
     }
 
@@ -95,17 +81,6 @@ public final class AppVersionTest {
 
     @Test
     public void test() throws XPathExpressionException, IOException {
-        if (expectedVersion == null) {
-            new PackageTest()
-            .setExpectedExitCode(1)
-            .configureHelloApp(javaAppDesc)
-            .addInitializer(cmd -> {
-                cmd.addArguments(jpackageArgs);
-            })
-            .run();
-            return;
-        }
-
         JPackageCommand cmd = JPackageCommand.helloAppImage(javaAppDesc);
         if (jpackageArgs != null) {
             cmd.addArguments(jpackageArgs);
