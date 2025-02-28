@@ -732,6 +732,7 @@ public final class QuicConnectionStreams {
         }
         var sender = senderImpl(stream);
         if (sender != null) {
+            sender.resetAcknowledged(reset.finalSize());
             removeStream(streamId, stream);
             if (debug.on()) {
                 debug.log("acknowledged reset for stream %d", streamId);
