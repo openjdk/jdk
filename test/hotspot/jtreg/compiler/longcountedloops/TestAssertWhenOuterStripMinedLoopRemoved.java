@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,37 +19,37 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.code;
+/*
+ * @test
+ * @bug 8347040
+ * @summary C2: assert(!loop->_body.contains(in)) failed
+ * @run main/othervm -XX:-BackgroundCompilation TestAssertWhenOuterStripMinedLoopRemoved
+ */
 
-import java.util.*;
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.types.*;
-import sun.jvm.hotspot.utilities.Observable;
-import sun.jvm.hotspot.utilities.Observer;
 
-/** ExceptionBlob: used for exception unwinding in compiled code
-    (currently only used by Compiler 2) */
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
-public class ExceptionBlob extends SingletonBlob {
-  static {
-    VM.registerVMInitializedObserver(new Observer() {
-        public void update(Observable o, Object data) {
-          initialize(VM.getVM().getTypeDataBase());
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+
+public class TestAssertWhenOuterStripMinedLoopRemoved {
+    static final int COUNT = 100000;
+    static final MemorySegment segment = Arena.global().allocate(JAVA_LONG, COUNT);
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 10000; i++) {
+            test();
         }
-      });
-  }
+    }
 
-  private static void initialize(TypeDataBase db) {
-    Type type = db.lookupType("ExceptionBlob");
-
-    // FIXME: add any needed fields
-  }
-
-  public ExceptionBlob(Address addr) {
-    super(addr);
-  }
+    static void test() {
+        var i = 0;
+        var j = 0;
+        while (i < 100000) {
+            segment.setAtIndex(JAVA_LONG, i++, 0);
+            segment.setAtIndex(JAVA_LONG, j++, 0);
+        }
+    }
 }

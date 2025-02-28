@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,12 +67,8 @@ import javax.management.remote.JMXProviderException;
 import javax.management.remote.JMXServerErrorException;
 
 /**
- *  |----- Original Description Coming From Tonga Original Source Code -------|
- *  |                                                                         |
- *  | That class creates an ArrayList and fill it with an instance of each of |
- *  | the Exception class of the JMX API.                                     |
- *  | It's dedicated to use by ExceptionTest.                                 |
- *  |-------------------------------------------------------------------------|
+ * This class creates an ArrayList and fills it with an instance of each
+ * Exception class in the JMX API.  Used by ExceptionTest.
  */
 public class ExceptionFactory {
 
