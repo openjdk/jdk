@@ -43,6 +43,8 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import java.util.Arrays;
+import javax.swing.UnsupportedLookAndFeelException;
 
 public class bug8033699 {
 
@@ -57,64 +59,74 @@ public class bug8033699 {
     private static JRadioButton radioBtnSingle;
 
     public static void main(String[] args) throws Throwable {
-        SwingUtilities.invokeAndWait(() -> {
-            changeLAF();
-            createAndShowGUI();
-        });
+        // Get all installed Look and Feels
+        UIManager.LookAndFeelInfo[] lafs = UIManager.getInstalledLookAndFeels();
 
-        robot = new Robot();
-        robot.waitForIdle();
-        robot.delay(1000);
+        // Iterate over each LaF
+        for (UIManager.LookAndFeelInfo laf : lafs) {
+            try {
 
-        // tab key test grouped radio button
-        runTest1();
-        robot.delay(100);
+                SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
 
-        // tab key test non-grouped radio button
-        runTest2();
-        robot.delay(100);
+                SwingUtilities.invokeAndWait(() -> {
+                    createAndShowGUI();
+                });
 
-        // shift tab key test grouped and non-grouped radio button
-        runTest3();
-        robot.delay(100);
+                robot = new Robot();
+                robot.waitForIdle();
+                robot.delay(1000);
 
-        // left/up key test in grouped radio button
-        runTest4();
-        robot.delay(100);
+                // tab key test grouped radio button
+                runTest1();
+                robot.delay(100);
 
-        // down/right key test in grouped radio button
-        runTest5();
-        robot.delay(100);
+                // tab key test non-grouped radio button
+                runTest2();
+                robot.delay(100);
 
-        // tab from radio button in group to next component in the middle of button group layout
-        runTest6();
-        robot.delay(100);
+                // shift tab key test grouped and non-grouped radio button
+                runTest3();
+                robot.delay(100);
 
-        // tab to radio button in group from component in the middle of button group layout
-        runTest7();
-        robot.delay(100);
+                // left/up key test in grouped radio button
+                runTest4();
+                robot.delay(100);
 
-        // down key circle back to first button in grouped radio button
-        runTest8();
-        robot.delay(100);
+                // down/right key test in grouped radio button
+                runTest5();
+                robot.delay(100);
 
-        // Verify that ActionListener is called when a RadioButton is selected using arrow key.
-        runTest9();
-        robot.delay(100);
+                // tab from radio button in group to next component in the middle of button group layout
+                runTest6();
+                robot.delay(100);
 
-        SwingUtilities.invokeAndWait(() -> mainFrame.dispose());
+                // tab to radio button in group from component in the middle of button group layout
+                runTest7();
+                robot.delay(100);
+
+                // down key circle back to first button in grouped radio button
+                runTest8();
+                robot.delay(100);
+
+                // Verify that ActionListener is called when a RadioButton is selected using arrow key.
+                runTest9();
+                robot.delay(100);
+
+                SwingUtilities.invokeAndWait(() -> mainFrame.dispose());
+            } catch (Exception e) {
+                System.err.println("Error testing LaF: " + laf.getName());
+                e.printStackTrace();
+            }
+        }
     }
 
-    private static void changeLAF() {
-        String currentLAF = UIManager.getLookAndFeel().toString();
-        System.out.println(currentLAF);
-        currentLAF = currentLAF.toLowerCase();
-        if (currentLAF.contains("nimbus")) {
-            try {
-                UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+        try {
+            UIManager.setLookAndFeel(laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException |
+                 IllegalAccessException | UnsupportedLookAndFeelException e) {
+            System.err.println("Error setting LaF: " + laf.getName());
+            e.printStackTrace();
         }
     }
 
