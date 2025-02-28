@@ -138,26 +138,27 @@ public class UdpTest extends Tests {
         s1 = new DatagramSocket ();
         s2 = new DatagramSocket ();
         s1.setSoTimeout (4000);
-        long t1 = System.currentTimeMillis();
+        long t1 = System.nanoTime();
         try {
             s1.receive (new DatagramPacket (new byte [128], 128));
             throw new Exception ("expected receive timeout ");
         } catch (SocketTimeoutException e) {
         }
-        checkTime (System.currentTimeMillis() - t1, 4000);
+        final long expectedTimeInNanos = 4000000000L;
+        checkTime (System.nanoTime() - t1, expectedTimeInNanos);
 
         /* check data can be exchanged now */
 
         simpleDataExchange (s1, ia6addr, s2, ia4addr);
 
         /* double check timeout still works */
-        t1 = System.currentTimeMillis();
+        t1 = System.nanoTime();
         try {
             s1.receive (new DatagramPacket (new byte [128], 128));
             throw new Exception ("expected receive timeout ");
         } catch (SocketTimeoutException e) {
         }
-        checkTime (System.currentTimeMillis() - t1, 4000);
+        checkTime (System.nanoTime() - t1, expectedTimeInNanos);
 
         /* check receive works after a delay < timeout */
 
@@ -174,9 +175,11 @@ public class UdpTest extends Tests {
                 } catch (Exception e) {}
             }
         });
-        t1 = System.currentTimeMillis();
+        t1 = System.nanoTime();
         s1.receive (new DatagramPacket (new byte [128], 128));
-        checkTime (System.currentTimeMillis() - t1, 2000, 10000);
+        final long startTimeInNanos = 2000000000L;
+        final long endTimeInNanos =10000000000L;
+        checkTime (System.nanoTime() - t1, startTimeInNanos, endTimeInNanos);
         s1.close ();
         s2.close ();
         System.out.println ("Test2: OK");
