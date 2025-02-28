@@ -24,6 +24,7 @@
 package compiler.lib.template_library;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import compiler.lib.template_framework.Name;
 
@@ -55,37 +56,56 @@ public abstract class Type implements Name.Type {
         booleans()
     );
 
-    public static final List<Type> VECTOR_API_TYPES = List.of(
+    public static final List<VectorAPIType> VECTOR_API_BYTE_TYPES = List.of(
         VectorAPIType.BYTE_64,
         VectorAPIType.BYTE_128,
         VectorAPIType.BYTE_256,
-        VectorAPIType.BYTE_512,
+        VectorAPIType.BYTE_512
+    );
 
+    public static final List<VectorAPIType> VECTOR_API_SHORT_TYPES = List.of(
         VectorAPIType.SHORT_64,
         VectorAPIType.SHORT_128,
         VectorAPIType.SHORT_256,
-        VectorAPIType.SHORT_512,
+        VectorAPIType.SHORT_512
+    );
 
+    public static final List<VectorAPIType> VECTOR_API_INT_TYPES = List.of(
         VectorAPIType.INT_64,
         VectorAPIType.INT_128,
         VectorAPIType.INT_256,
-        VectorAPIType.INT_512,
+        VectorAPIType.INT_512
+    );
 
+    public static final List<VectorAPIType> VECTOR_API_LONG_TYPES = List.of(
         VectorAPIType.LONG_64,
         VectorAPIType.LONG_128,
         VectorAPIType.LONG_256,
-        VectorAPIType.LONG_512,
+        VectorAPIType.LONG_512
+    );
 
+    public static final List<VectorAPIType> VECTOR_API_FLOAT_TYPES = List.of(
         VectorAPIType.FLOAT_64,
         VectorAPIType.FLOAT_128,
         VectorAPIType.FLOAT_256,
-        VectorAPIType.FLOAT_512,
+        VectorAPIType.FLOAT_512
+    );
 
+    public static final List<VectorAPIType> VECTOR_API_DOUBLE_TYPES = List.of(
         VectorAPIType.DOUBLE_64,
         VectorAPIType.DOUBLE_128,
         VectorAPIType.DOUBLE_256,
         VectorAPIType.DOUBLE_512
     );
+
+    public static final List<VectorAPIType> VECTOR_API_TYPES = Stream.of(
+        VECTOR_API_BYTE_TYPES,
+        VECTOR_API_SHORT_TYPES,
+        VECTOR_API_INT_TYPES,
+        VECTOR_API_LONG_TYPES,
+        VECTOR_API_FLOAT_TYPES,
+        VECTOR_API_DOUBLE_TYPES
+    ).flatMap((List<VectorAPIType> l) -> l.stream()).toList();
 
     /**
      * Returns name of the type that can be used in Java code.

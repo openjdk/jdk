@@ -29,7 +29,7 @@ import jdk.test.lib.Utils;
 
 import compiler.lib.template_framework.Name;
 
-class VectorAPIType extends Type {
+public class VectorAPIType extends Type {
     private static final Random RANDOM = Utils.getRandomInstance();
 
     public static final VectorAPIType BYTE_64  = new VectorAPIType(Type.bytes(), 8);
@@ -67,7 +67,7 @@ class VectorAPIType extends Type {
     public final String vectorType;
     public final String species;
 
-    VectorAPIType(PrimitiveType elementType, int length) {
+    private VectorAPIType(PrimitiveType elementType, int length) {
         this.elementType = elementType;
         this.length = length;
         this.vectorType = elementType.vectorAPITypeName();

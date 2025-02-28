@@ -24,9 +24,10 @@
 package compiler.lib.template_library;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Stream;
 
-public class Operations {
+final class Operations {
 
     private static final List<Operation> BYTE_OPERATIONS = List.of(
         // Note: the standard integer arithmetic operations are only defined for int/long.
@@ -308,4 +309,13 @@ public class Operations {
         DOUBLE_OPERATIONS,
         BOOLEAN_OPERATIONS
     ).flatMap((List<Operation> l) -> l.stream()).toList();
+
+    private static final List<Operation> generateVectorAPIOperations() {
+        List<Operation> ops = new ArrayList<Operation>();
+
+        // Ensure the list is immutable.
+        return List.copyOf(ops);
+    }
+
+    public static final List<Operation> VECTOR_API_OPERATIONS = generateVectorAPIOperations();
 }
