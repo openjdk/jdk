@@ -36,6 +36,10 @@ public class JVMCI {
 
     @NativeImageReinitialize private static boolean initializing;
 
+    static {
+        Services.checkJVMCIEnabled();
+    }
+
     public static void initialize() {
         // force static initializer
     }
