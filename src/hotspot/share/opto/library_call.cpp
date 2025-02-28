@@ -233,28 +233,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   }
   assert(merged_memory(), "");
 
-  if(intrinsic_id() == vmIntrinsics::_digestBase_implCompressMB) {
-      fprintf(stderr, "try_to_inline call for _digestBase_implCompressMB\n");
-  } else if(intrinsic_id() == vmIntrinsics::_sha3_implCompress) {
-      fprintf(stderr, "try_to_inline call for _sha3_implCompress\n");
-  } else if(intrinsic_id() == vmIntrinsics::_double_keccak) {
-      fprintf(stderr, "try_to_inline call for _double_keccak\n");
-  } else if(intrinsic_id() == vmIntrinsics::_kyberNtt) {
-      fprintf(stderr, "try_to_inline call for _kyberNtt\n");
-  } else if(intrinsic_id() == vmIntrinsics::_kyberInverseNtt) {
-      fprintf(stderr, "try_to_inline call for _kyberInverseNtt\n");
-  } else if(intrinsic_id() == vmIntrinsics::_kyberNttMult) {
-      fprintf(stderr, "try_to_inline call for _kyberNttMult\n");
-  } else if(intrinsic_id() == vmIntrinsics::_kyberAddPoly_2) {
-      fprintf(stderr, "try_to_inline call for _kyberAddPoly_2\n");
-  } else if(intrinsic_id() == vmIntrinsics::_kyberAddPoly_3) {
-      fprintf(stderr, "try_to_inline call for _kyberAddPoly_3\n");
-  } else if(intrinsic_id() == vmIntrinsics::_kyber12To16) {
-      fprintf(stderr, "try_to_inline call for _kyber12To16\n");
-  } else if(intrinsic_id() == vmIntrinsics::_kyberBarrettReduce) {
-      fprintf(stderr, "try_to_inline call for _kyberBarrettReduce\n");
-  }
-
   switch (intrinsic_id()) {
   case vmIntrinsics::_hashCode:                 return inline_native_hashcode(intrinsic()->is_virtual(), !is_static);
   case vmIntrinsics::_identityHashCode:         return inline_native_hashcode(/*!virtual*/ false,         is_static);

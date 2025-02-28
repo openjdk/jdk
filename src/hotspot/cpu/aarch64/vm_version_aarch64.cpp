@@ -702,7 +702,6 @@ void VM_Version::print_platform_virtualization_info(outputStream* st) {
 void VM_Version::initialize_cpu_information(void) {
   // do nothing if cpu info has been initialized
   if (_initialized) {
-    fprintf(stderr, "_features_string = \"%s\"", _features_string);
     return;
   }
 
