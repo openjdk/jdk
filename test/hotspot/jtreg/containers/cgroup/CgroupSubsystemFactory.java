@@ -54,13 +54,13 @@ public class CgroupSubsystemFactory {
     private static final int INVALID_CGROUPS_V2 = 3;
     private static final int INVALID_CGROUPS_V1 = 4;
     private static final int INVALID_CGROUPS_NO_MOUNT = 5;
+    private static final int INVALID_CGROUPS_GENERIC = 6;
     private Path existingDirectory;
     private Path cgroupv1CgroupsJoinControllers;
     private Path cgroupv1SelfCgroupsJoinControllers;
     private Path cgroupv1MountInfoJoinControllers;
     private Path cgroupv1CgInfoZeroHierarchy;
     private Path cgroupv1MntInfoZeroHierarchy;
-    private Path cgroupv2CgInfoZeroHierarchy;
     private Path cgroupv2MntInfoZeroHierarchy;
     private Path cgroupv2MntInfoDouble;
     private Path cgroupv2MntInfoDouble2;
@@ -81,9 +81,16 @@ public class CgroupSubsystemFactory {
     private Path cgroupV2SelfCgroup;
     private Path cgroupV2MntInfoMissingCgroupv2;
     private Path cgroupv1MntInfoMissingMemoryController;
-    private Path cgroupv2CgInfoNoZeroHierarchyOnlyFreezer;
     private Path cgroupv2MntInfoNoZeroHierarchyOnlyFreezer;
     private Path cgroupv2SelfNoZeroHierarchyOnlyFreezer;
+    private Path sysFsCgroupCgroupControllersTypicalPath;
+    private Path sysFsCgroupCgroupControllersEmptyPath;
+    private Path sysFsCgroupCgroupControllersBlankLinePath;
+    private Path sysFsCgroupCgroupControllersNoMemoryPath;
+    private Path sysFsCgroupCgroupControllersNoCpuPath;
+    private Path sysFsCgroupCgroupControllersNoPidsPath;
+    private Path sysFsCgroupCgroupControllersCpuMemoryOnlyPath;
+    private Path sysFsCgroupCgroupControllersExtraWhitespacePath;
     private String procSelfCgroupHybridContent = "11:hugetlb:/\n" +
             "10:devices:/user.slice\n" +
             "9:pids:/user.slice/user-15263.slice/user@15263.service\n" +
@@ -108,6 +115,14 @@ public class CgroupSubsystemFactory {
             "2:perf_event:/\n" +
             "1:name=systemd:/user.slice/user-1000.slice/session-2.scope\n" +
             "0::/user.slice/user-1000.slice/session-2.scope\n";
+    private String sysFsCgroupCgroupControllersTypicalContent = "cpuset cpu io memory hugetlb pids rdma misc\n";
+    private String sysFsCgroupCgroupControllersEmptyContent = "";
+    private String sysFsCgroupCgroupControllersBlankLineContent = "\n";
+    private String sysFsCgroupCgroupControllersNoMemoryContent = "cpuset cpu io hugetlb pids rdma misc\n";
+    private String sysFsCgroupCgroupControllersNoCpuContent = "cpuset io memory hugetlb pids rdma misc\n";
+    private String sysFsCgroupCgroupControllersNoPidsContent = "cpuset cpu io memory hugetlb rdma misc\n";
+    private String sysFsCgroupCgroupControllersCpuMemoryOnlyContent = "memory cpu\n";
+    private String sysFsCgroupCgroupControllersExtraWhitespaceContent = "   cpu\t  \fmemory\r \n";
     private String cgroupsZeroHierarchy =
             "#subsys_name hierarchy num_cgroups enabled\n" +
             "cpuset 0 1 1\n" +
@@ -231,9 +246,32 @@ public class CgroupSubsystemFactory {
             Path cgroupsZero = Paths.get(existingDirectory.toString(), "cgroups_zero");
             Files.writeString(cgroupsZero, cgroupsZeroHierarchy, StandardCharsets.UTF_8);
             cgroupv1CgInfoZeroHierarchy = cgroupsZero;
-            cgroupv2CgInfoZeroHierarchy = cgroupsZero;
             cgroupv1MntInfoZeroHierarchy = Paths.get(existingDirectory.toString(), "mountinfo_empty");
             Files.writeString(cgroupv1MntInfoZeroHierarchy, mntInfoEmpty);
+
+            sysFsCgroupCgroupControllersTypicalPath = Paths.get(existingDirectory.toString(), "sys_fs_cgroup_cgroup_controllers_typical");
+            Files.writeString(sysFsCgroupCgroupControllersTypicalPath, sysFsCgroupCgroupControllersTypicalContent, StandardCharsets.UTF_8);
+
+            sysFsCgroupCgroupControllersEmptyPath = Paths.get(existingDirectory.toString(), "sys_fs_cgroup_cgroup_controllers_empty");
+            Files.writeString(sysFsCgroupCgroupControllersEmptyPath, sysFsCgroupCgroupControllersEmptyContent, StandardCharsets.UTF_8);
+
+            sysFsCgroupCgroupControllersBlankLinePath = Paths.get(existingDirectory.toString(), "sys_fs_cgroup_cgroup_controllers_blank_line");
+            Files.writeString(sysFsCgroupCgroupControllersBlankLinePath, sysFsCgroupCgroupControllersBlankLineContent, StandardCharsets.UTF_8);
+
+            sysFsCgroupCgroupControllersNoMemoryPath = Paths.get(existingDirectory.toString(), "sys_fs_cgroup_cgroup_controllers_no_memory");
+            Files.writeString(sysFsCgroupCgroupControllersNoMemoryPath, sysFsCgroupCgroupControllersNoMemoryContent, StandardCharsets.UTF_8);
+
+            sysFsCgroupCgroupControllersNoCpuPath = Paths.get(existingDirectory.toString(), "sys_fs_cgroup_cgroup_controllers_no_cpu");
+            Files.writeString(sysFsCgroupCgroupControllersNoCpuPath, sysFsCgroupCgroupControllersNoCpuContent, StandardCharsets.UTF_8);
+
+            sysFsCgroupCgroupControllersNoPidsPath = Paths.get(existingDirectory.toString(), "sys_fs_cgroup_cgroup_controllers_no_pids");
+            Files.writeString(sysFsCgroupCgroupControllersNoPidsPath, sysFsCgroupCgroupControllersNoPidsContent, StandardCharsets.UTF_8);
+
+            sysFsCgroupCgroupControllersCpuMemoryOnlyPath = Paths.get(existingDirectory.toString(), "sys_fs_cgroup_cgroup_controllers_cpu_memory_only");
+            Files.writeString(sysFsCgroupCgroupControllersCpuMemoryOnlyPath, sysFsCgroupCgroupControllersCpuMemoryOnlyContent, StandardCharsets.UTF_8);
+
+            sysFsCgroupCgroupControllersExtraWhitespacePath = Paths.get(existingDirectory.toString(), "sys_fs_cgroup_cgroup_controllers_extra_whitespace");
+            Files.writeString(sysFsCgroupCgroupControllersExtraWhitespacePath, sysFsCgroupCgroupControllersExtraWhitespaceContent, StandardCharsets.UTF_8);
 
             cgroupv2MntInfoZeroHierarchy = Paths.get(existingDirectory.toString(), "mountinfo_cgroupv2");
             Files.writeString(cgroupv2MntInfoZeroHierarchy, mntInfoCgroupsV2Only);
@@ -301,9 +339,6 @@ public class CgroupSubsystemFactory {
             cgroupv1MountInfoJoinControllers = Paths.get(existingDirectory.toString(), "mntinfo_cgv1_join_controllers");
             Files.writeString(cgroupv1MountInfoJoinControllers, mntInfoCgroupv1JoinControllers);
 
-            cgroupv2CgInfoNoZeroHierarchyOnlyFreezer = Paths.get(existingDirectory.toString(), "cgroups_cgv2_non_zero_only_freezer");
-            Files.writeString(cgroupv2CgInfoNoZeroHierarchyOnlyFreezer, cgroupsNonZeroHierarchyOnlyFreezer);
-
             cgroupv2SelfNoZeroHierarchyOnlyFreezer = Paths.get(existingDirectory.toString(), "self_cgroup_non_zero_only_freezer");
             Files.writeString(cgroupv2SelfNoZeroHierarchyOnlyFreezer, cgroupv1SelfOnlyFreezerContent);
 
@@ -330,7 +365,7 @@ public class CgroupSubsystemFactory {
         String procCgroups = cgroupv1CgroupsJoinControllers.toString();
         String procSelfCgroup = cgroupv1SelfCgroupsJoinControllers.toString();
         String procSelfMountinfo = cgroupv1MountInfoJoinControllers.toString();
-        int retval = wb.validateCgroup(procCgroups, procSelfCgroup, procSelfMountinfo);
+        int retval = wb.validateCgroup(false, procCgroups, procSelfCgroup, procSelfMountinfo);
         Asserts.assertEQ(CGROUPS_V1, retval, "Join controllers should be properly detected");
         Asserts.assertTrue(isValidCgroup(retval));
         System.out.println("testCgroupv1JoinControllerMounts PASSED!");
@@ -340,7 +375,7 @@ public class CgroupSubsystemFactory {
         String procCgroups = cgroupv1CgInfoNonZeroHierarchy.toString();
         String procSelfCgroup = cgroupV1SelfCgroup.toString();
         String procSelfMountinfo = mountInfo.toString();
-        int retval = wb.validateCgroup(procCgroups, procSelfCgroup, procSelfMountinfo);
+        int retval = wb.validateCgroup(false, procCgroups, procSelfCgroup, procSelfMountinfo);
         Asserts.assertEQ(CGROUPS_V1, retval, "Multiple controllers, but only one in /sys/fs/cgroup");
         Asserts.assertTrue(isValidCgroup(retval));
         System.out.println("testCgroupv1MultipleControllerMounts PASSED!");
@@ -350,7 +385,7 @@ public class CgroupSubsystemFactory {
         String procCgroups = cgroupv1CgInfoZeroHierarchy.toString();
         String procSelfCgroup = cgroupV1SelfCgroup.toString();
         String procSelfMountinfo = cgroupv1MntInfoSystemdOnly.toString();
-        int retval = wb.validateCgroup(procCgroups, procSelfCgroup, procSelfMountinfo);
+        int retval = wb.validateCgroup(false, procCgroups, procSelfCgroup, procSelfMountinfo);
         Asserts.assertEQ(INVALID_CGROUPS_NO_MOUNT, retval, "Only systemd mounted. Invalid");
         Asserts.assertFalse(isValidCgroup(retval));
         System.out.println("testCgroupv1SystemdOnly PASSED!");
@@ -360,17 +395,17 @@ public class CgroupSubsystemFactory {
         String procCgroups = cgroupv1CgInfoZeroHierarchy.toString();
         String procSelfCgroup = cgroupV1SelfCgroup.toString();
         String procSelfMountinfo = cgroupv1MntInfoZeroHierarchy.toString();
-        int retval = wb.validateCgroup(procCgroups, procSelfCgroup, procSelfMountinfo);
+        int retval = wb.validateCgroup(false, procCgroups, procSelfCgroup, procSelfMountinfo);
         Asserts.assertEQ(INVALID_CGROUPS_NO_MOUNT, retval, "No cgroups mounted in /proc/self/mountinfo. Invalid.");
         Asserts.assertFalse(isValidCgroup(retval));
         System.out.println("testCgroupv1NoMounts PASSED!");
     }
 
     public void testCgroupv2NoCgroup2Fs(WhiteBox wb) {
-        String procCgroups = cgroupv2CgInfoZeroHierarchy.toString();
+        String sysFsCgroupCgroupControllers = sysFsCgroupCgroupControllersTypicalPath.toString();
         String procSelfCgroup = cgroupV2SelfCgroup.toString();
         String procSelfMountinfo = cgroupV2MntInfoMissingCgroupv2.toString();
-        int retval = wb.validateCgroup(procCgroups, procSelfCgroup, procSelfMountinfo);
+        int retval = wb.validateCgroup(true, sysFsCgroupCgroupControllers, procSelfCgroup, procSelfMountinfo);
         Asserts.assertEQ(INVALID_CGROUPS_V2, retval, "No cgroup2 filesystem in /proc/self/mountinfo. Invalid.");
         Asserts.assertFalse(isValidCgroup(retval));
         System.out.println("testCgroupv2NoCgroup2Fs PASSED!");
@@ -380,17 +415,17 @@ public class CgroupSubsystemFactory {
         String procCgroups = cgroupv1CgInfoNonZeroHierarchy.toString();
         String procSelfCgroup = cgroupV1SelfCgroup.toString();
         String procSelfMountinfo = cgroupv1MntInfoMissingMemoryController.toString();
-        int retval = wb.validateCgroup(procCgroups, procSelfCgroup, procSelfMountinfo);
+        int retval = wb.validateCgroup(false, procCgroups, procSelfCgroup, procSelfMountinfo);
         Asserts.assertEQ(INVALID_CGROUPS_V1, retval, "Required memory controller path missing in mountinfo. Invalid.");
         Asserts.assertFalse(isValidCgroup(retval));
         System.out.println("testCgroupv1MissingMemoryController PASSED!");
     }
 
     public void testCgroupv2(WhiteBox wb, Path mountInfo) {
-        String procCgroups = cgroupv2CgInfoZeroHierarchy.toString();
+        String sysFsCgroupCgroupControllers  = sysFsCgroupCgroupControllersTypicalPath.toString();
         String procSelfCgroup = cgroupV2SelfCgroup.toString();
         String procSelfMountinfo = mountInfo.toString();
-        int retval = wb.validateCgroup(procCgroups, procSelfCgroup, procSelfMountinfo);
+        int retval = wb.validateCgroup(true, sysFsCgroupCgroupControllers, procSelfCgroup, procSelfMountinfo);
         Asserts.assertEQ(CGROUPS_V2, retval, "Expected");
         Asserts.assertTrue(isValidCgroup(retval));
         System.out.println("testCgroupv2 PASSED!");
@@ -400,7 +435,7 @@ public class CgroupSubsystemFactory {
         String procCgroups = cgroupv1CgInfoNonZeroHierarchy.toString();
         String procSelfCgroup = cgroupV1SelfCgroup.toString();
         String procSelfMountinfo = cgroupv1MntInfoNonZeroHierarchy.toString();
-        int retval = wb.validateCgroup(procCgroups, procSelfCgroup, procSelfMountinfo);
+        int retval = wb.validateCgroup(false, procCgroups, procSelfCgroup, procSelfMountinfo);
         Asserts.assertEQ(CGROUPS_V1, retval, "Hybrid cgroups expected as cgroups v1");
         Asserts.assertTrue(isValidCgroup(retval));
         System.out.println("testCgroupv1Hybrid PASSED!");
@@ -410,20 +445,90 @@ public class CgroupSubsystemFactory {
         String procCgroups = cgroupv1CgInfoNonZeroHierarchy.toString();
         String procSelfCgroup = cgroupV1SelfCgroup.toString();
         String procSelfMountinfo = cgroupv1MntInfoNonZeroHierarchyOtherOrder.toString();
-        int retval = wb.validateCgroup(procCgroups, procSelfCgroup, procSelfMountinfo);
+        int retval = wb.validateCgroup(false, procCgroups, procSelfCgroup, procSelfMountinfo);
         Asserts.assertEQ(CGROUPS_V1, retval, "Hybrid cgroups expected as cgroups v1");
         Asserts.assertTrue(isValidCgroup(retval));
         System.out.println("testCgroupv1HybridMntInfoOrder PASSED!");
     }
 
     public void testNonZeroHierarchyOnlyFreezer(WhiteBox wb) {
-        String cgroups = cgroupv2CgInfoNoZeroHierarchyOnlyFreezer.toString();
+        String sysFsCgroupCgroupControllers = sysFsCgroupCgroupControllersTypicalPath.toString();
         String mountInfo = cgroupv2MntInfoNoZeroHierarchyOnlyFreezer.toString();
         String selfCgroup = cgroupv2SelfNoZeroHierarchyOnlyFreezer.toString();
-        int retval = wb.validateCgroup(cgroups, selfCgroup, mountInfo);
+        int retval = wb.validateCgroup(true, sysFsCgroupCgroupControllers, selfCgroup, mountInfo);
         Asserts.assertEQ(CGROUPS_V2, retval, "All V1 controllers are ignored");
         Asserts.assertTrue(isValidCgroup(retval));
         System.out.println("testNonZeroHierarchyOnlyFreezer PASSED!");
+    }
+
+    public void testCgroupv2ControllerFileEmpty(WhiteBox wb, Path mountInfo) {
+        String sysFsCgroupCgroupControllers  = sysFsCgroupCgroupControllersEmptyPath.toString();
+        String procSelfCgroup = cgroupV2SelfCgroup.toString();
+        String procSelfMountinfo = mountInfo.toString();
+        int retval = wb.validateCgroup(true, sysFsCgroupCgroupControllers, procSelfCgroup, procSelfMountinfo);
+        Asserts.assertEQ(INVALID_CGROUPS_V2, retval, "Empty cgroup v2 controllers file. Invalid.");
+        Asserts.assertFalse(isValidCgroup(retval));
+        System.out.println("testCgroupv2ControllerFileEmpty PASSED!");
+    }
+
+    public void testCgroupv2ControllerFileBlankLine(WhiteBox wb, Path mountInfo) {
+        String sysFsCgroupCgroupControllers  = sysFsCgroupCgroupControllersBlankLinePath.toString();
+        String procSelfCgroup = cgroupV2SelfCgroup.toString();
+        String procSelfMountinfo = mountInfo.toString();
+        int retval = wb.validateCgroup(true, sysFsCgroupCgroupControllers, procSelfCgroup, procSelfMountinfo);
+        Asserts.assertEQ(INVALID_CGROUPS_GENERIC, retval, "cgroup v2 controllers file contains a single blank line. Invalid.");
+        Asserts.assertFalse(isValidCgroup(retval));
+        System.out.println("testCgroupv2ControllerFileBlankLine PASSED!");
+    }
+
+    public void testCgroupv2ControllerFileNoMemory(WhiteBox wb, Path mountInfo) {
+        String sysFsCgroupCgroupControllers  = sysFsCgroupCgroupControllersNoMemoryPath.toString();
+        String procSelfCgroup = cgroupV2SelfCgroup.toString();
+        String procSelfMountinfo = mountInfo.toString();
+        int retval = wb.validateCgroup(true, sysFsCgroupCgroupControllers, procSelfCgroup, procSelfMountinfo);
+        Asserts.assertEQ(INVALID_CGROUPS_GENERIC, retval, "cgroup v2 memory controller disabled. Invalid.");
+        Asserts.assertFalse(isValidCgroup(retval));
+        System.out.println("testCgroupv2ControllerFileNoMemory PASSED!");
+    }
+
+    public void testCgroupv2ControllerFileNoCpu(WhiteBox wb, Path mountInfo) {
+        String sysFsCgroupCgroupControllers  = sysFsCgroupCgroupControllersNoCpuPath.toString();
+        String procSelfCgroup = cgroupV2SelfCgroup.toString();
+        String procSelfMountinfo = mountInfo.toString();
+        int retval = wb.validateCgroup(true, sysFsCgroupCgroupControllers, procSelfCgroup, procSelfMountinfo);
+        Asserts.assertEQ(INVALID_CGROUPS_GENERIC, retval, "cgroup v2 cpu controller disabled. Invalid.");
+        Asserts.assertFalse(isValidCgroup(retval));
+        System.out.println("testCgroupv2ControllerFileNoCpu PASSED!");
+    }
+
+    public void testCgroupv2ControllerFileNoPids(WhiteBox wb, Path mountInfo) {
+        String sysFsCgroupCgroupControllers  = sysFsCgroupCgroupControllersNoPidsPath.toString();
+        String procSelfCgroup = cgroupV2SelfCgroup.toString();
+        String procSelfMountinfo = mountInfo.toString();
+        int retval = wb.validateCgroup(true, sysFsCgroupCgroupControllers, procSelfCgroup, procSelfMountinfo);
+        Asserts.assertEQ(CGROUPS_V2, retval, "cgroup v2 pids controller disabled.  Valid.");
+        Asserts.assertTrue(isValidCgroup(retval));
+        System.out.println("testCgroupv2ControllerFileNoPids PASSED!");
+    }
+
+    public void testCgroupv2ControllerFileCpuMemoryOnly(WhiteBox wb, Path mountInfo) {
+        String sysFsCgroupCgroupControllers  = sysFsCgroupCgroupControllersCpuMemoryOnlyPath.toString();
+        String procSelfCgroup = cgroupV2SelfCgroup.toString();
+        String procSelfMountinfo = mountInfo.toString();
+        int retval = wb.validateCgroup(true, sysFsCgroupCgroupControllers, procSelfCgroup, procSelfMountinfo);
+        Asserts.assertEQ(CGROUPS_V2, retval, "only cgroup v2 memory and cpu controllers enabled.  Valid.");
+        Asserts.assertTrue(isValidCgroup(retval));
+        System.out.println("testCgroupv2ControllerFileCpuMemoryOnly PASSED!");
+    }
+
+    public void testCgroupv2ControllerFileExtraWhitespace(WhiteBox wb, Path mountInfo) {
+        String sysFsCgroupCgroupControllers  = sysFsCgroupCgroupControllersExtraWhitespacePath.toString();
+        String procSelfCgroup = cgroupV2SelfCgroup.toString();
+        String procSelfMountinfo = mountInfo.toString();
+        int retval = wb.validateCgroup(true, sysFsCgroupCgroupControllers, procSelfCgroup, procSelfMountinfo);
+        Asserts.assertEQ(CGROUPS_V2, retval, "cgroup v2 controllers file contains extra whitespace.  Valid.");
+        Asserts.assertTrue(isValidCgroup(retval));
+        System.out.println("testCgroupv2ControllerFileExtraWhitespace PASSED!");
     }
 
     public static void main(String[] args) throws Exception {
@@ -436,6 +541,13 @@ public class CgroupSubsystemFactory {
             test.testCgroupv2(wb, test.cgroupv2MntInfoZeroHierarchy);
             test.testCgroupv2(wb, test.cgroupv2MntInfoDouble);
             test.testCgroupv2(wb, test.cgroupv2MntInfoDouble2);
+            test.testCgroupv2ControllerFileEmpty(wb, test.cgroupv2MntInfoZeroHierarchy);
+            test.testCgroupv2ControllerFileBlankLine(wb, test.cgroupv2MntInfoZeroHierarchy);
+            test.testCgroupv2ControllerFileNoMemory(wb, test.cgroupv2MntInfoZeroHierarchy);
+            test.testCgroupv2ControllerFileNoCpu(wb, test.cgroupv2MntInfoZeroHierarchy);
+            test.testCgroupv2ControllerFileNoPids(wb, test.cgroupv2MntInfoZeroHierarchy);
+            test.testCgroupv2ControllerFileCpuMemoryOnly(wb, test.cgroupv2MntInfoZeroHierarchy);
+            test.testCgroupv2ControllerFileExtraWhitespace(wb, test.cgroupv2MntInfoZeroHierarchy);
             test.testCgroupV1Hybrid(wb);
             test.testCgroupV1HybridMntInfoOrder(wb);
             test.testCgroupv1MissingMemoryController(wb);
