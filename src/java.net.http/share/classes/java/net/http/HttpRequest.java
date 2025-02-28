@@ -133,10 +133,6 @@ public abstract class HttpRequest {
          * establish an HTTP/3 connection, before attempting a TLS connection over TCP.
          * If, after an implementation specific timeout, no reply is obtained to the first
          * initial Quic packet, the TLS/TCP connection will be attempted.
-         * <br> Otherwise, if no preferred version is configured on the {@code HttpRequest}
-         * and the {@link HttpClient.Builder#version(Version) HttpClient preferred
-         * version} is {@linkplain Version#HTTP_3 HTTP/3}, both connections will be attempted
-         * in parallel.
          * <p>
          * When attempting an HTTP/3 connection in this mode, the {@code HttpClient} will
          * use any <a href="https://www.rfc-editor.org/rfc/rfc7838">HTTP Alternative Services</a>
