@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      7025314 8023700 7198273 8025633 8026567 8081854 8196027 8182765
- *           8196200 8196202 8223378 8258659 8261976 8320458 8329537
+ *           8196200 8196202 8223378 8258659 8261976 8320458 8329537 8350638
  * @summary  Make sure the Next/Prev Class links iterate through all types.
  *           Make sure the navagation is 2 columns, not 3.
  * @library  /tools/lib ../../lib

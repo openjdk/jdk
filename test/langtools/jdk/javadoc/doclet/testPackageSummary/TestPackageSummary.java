@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8189841 8253117 8263507 8320458
+ * @bug 8189841 8253117 8263507 8320458 8350638
  * @summary Error in alternate row coloring in package-summary files
  * @summary Improve structure of package summary pages
  * @library  ../../lib/

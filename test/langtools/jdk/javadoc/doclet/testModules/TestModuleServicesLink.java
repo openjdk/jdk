@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8185151 8196200 8261976
+ * @bug 8185151 8196200 8261976 8350638
  * @summary test that navigation summary links are not linked when there are no dependencies
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
