@@ -987,7 +987,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         assert (encrypted.flags & ProtectionRecord.COALESCED) == 0 : "coalesced packets not supported";
         // encryption of the datagram is complete, now push the encrypted
         // datagram through the endpoint
-        if (Log.quicPacketOut(packet)) {
+        if (Log.quicPacketOutLoggable(packet)) {
             Log.logQuicPacketOut(logTag(), packet);
         }
         pushEncryptedDatagram(encrypted);
@@ -1935,7 +1935,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         if (debug.on()) {
             debug.log("processDecrypted %s(%d)", packetType, packetNumber);
         }
-        if (Log.quicPacketIn(quicPacket)) {
+        if (Log.quicPacketInLoggable(quicPacket)) {
             Log.logQuicPacketIn(logTag(), quicPacket);
         }
         if (packetType != PacketType.VERSIONS) {

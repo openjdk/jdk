@@ -263,10 +263,6 @@ public abstract class Log implements System.Logger {
 
     public static boolean altsvc() { return headers(); }
 
-    public static boolean quicAll() {
-        return (logging & QUIC) != 0 && quictypes == ALL;
-    }
-
     public static boolean quicRetransmit() {
         return (logging & QUIC) != 0 && (quictypes & QUIC_RETRANSMIT) != 0;
     }
@@ -328,20 +324,22 @@ public abstract class Log implements System.Logger {
         return (quictypes & QUIC_CONTROL) != 0;
     }
 
-    public static boolean quicPacketOut(QuicPacket packet) {
+    private static boolean quicPacketLoggable(QuicPacket packet) {
         return (logging & QUIC) != 0
                 && (quictypes == QUIC_ALL
                 || stream(packet.frames()).anyMatch(Log::isLogging));
+    }
+
+    public static boolean quicPacketOutLoggable(QuicPacket packet) {
+        return quicPacketLoggable(packet);
     }
 
     private static <T> Stream<T> stream(Collection<T> list) {
         return list == null ? Stream.empty() : list.stream();
     }
 
-    public static boolean quicPacketIn(QuicPacket packet) {
-        return (logging & QUIC) != 0
-                && (quictypes == QUIC_ALL
-                || stream(packet.frames()).anyMatch(Log::isLogging));
+    public static boolean quicPacketInLoggable(QuicPacket packet) {
+        return quicPacketLoggable(packet);
     }
 
     public static void logQuic(String s, Object... s1) {
@@ -351,14 +349,14 @@ public abstract class Log implements System.Logger {
     }
 
     public static void logQuicPacketOut(String connectionTag, QuicPacket packet) {
-        if (quicPacketOut(packet)) {
+        if (quicPacketOutLoggable(packet)) {
             logger.log(Level.INFO, "QUIC: {0} OUT: {1}",
                     connectionTag, packet.prettyPrint());
         }
     }
 
     public static void logQuicPacketIn(String connectionTag, QuicPacket packet) {
-        if (quicPacketIn(packet)) {
+        if (quicPacketInLoggable(packet)) {
             logger.log(Level.INFO, "QUIC: {0} IN: {1}",
                     connectionTag, packet.prettyPrint());
         }

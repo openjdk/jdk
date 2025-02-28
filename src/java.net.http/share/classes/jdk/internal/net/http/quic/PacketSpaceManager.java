@@ -576,16 +576,28 @@ public sealed class PacketSpaceManager implements PacketSpace
         }
 
         void logNoDeadline(Deadline newDeadline, boolean onlyNoDeadline) {
-            if (Log.quicAll()) {
+            if (Log.quicRetransmit()) {
                 if (Deadline.MAX.equals(newDeadline)) {
                     if (shouldLogWhenNoDeadline()) {
                         Log.logQuic("{0}: {1} no deadline, task unscheduled",
                                 packetEmitter.logTag(), packetNumberSpace);
                     } // else: no changes...
                 } else if (!onlyNoDeadline && shouldLogWhenNewDeadline()) {
-                    Log.logQuic("{0}: {1} new deadline computed in {2}ms",
-                            packetEmitter.logTag(), packetNumberSpace,
-                            Long.toString(now().until(newDeadline, ChronoUnit.MILLIS)));
+                    if (Deadline.MIN.equals(newDeadline)) {
+                        Log.logQuic("{0}: {1} Deadline.MIN, task will be rescheduled immediately",
+                                packetEmitter.logTag(), packetNumberSpace);
+                    } else {
+                        try {
+                            Log.logQuic("{0}: {1} new deadline computed, deadline in {2}ms",
+                                    packetEmitter.logTag(), packetNumberSpace,
+                                    Long.toString(now().until(newDeadline, ChronoUnit.MILLIS)));
+                        } catch (ArithmeticException ae) {
+                            Log.logError("Unexpected exception while logging deadline "
+                                    + newDeadline + ": " + ae);
+                            Log.logError(ae);
+                            assert false : "Unexpected ArithmeticException: " + ae;
+                        }
+                    }
                 }
             }
         }
