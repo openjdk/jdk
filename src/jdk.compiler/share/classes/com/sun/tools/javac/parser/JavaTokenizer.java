@@ -25,7 +25,6 @@
 
 package com.sun.tools.javac.parser;
 
-import com.sun.tools.javac.code.DeferredLintHandler;
 import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Source.Feature;
@@ -85,11 +84,6 @@ public class JavaTokenizer extends UnicodeReader {
     private final Log log;
 
     /**
-     * The deferred lint handler. Required for recognizing @SuppressWarnings.
-     */
-    private final DeferredLintHandler deferredLintHandler;
-
-    /**
      * The token factory. Copied from scanner factory.
      */
     private final Tokens tokens;
@@ -140,6 +134,11 @@ public class JavaTokenizer extends UnicodeReader {
     protected boolean hasEscapeSequences;
 
     /**
+     * The lexical lint handler facilitates applying {@code @SuppressWarnings} to lexical warnings.
+     */
+    protected final LexicalLintHandler lexicalLintHandler = new LexicalLintHandler();
+
+    /**
      * Construct a Java token scanner from the input character buffer.
      *
      * @param fac  the factory which created this Scanner.
@@ -164,7 +163,6 @@ public class JavaTokenizer extends UnicodeReader {
         this.tokens = fac.tokens;
         this.source = fac.source;
         this.preview = fac.preview;
-        this.deferredLintHandler = fac.deferredLintHandler;
         this.enableLineDocComments = fac.enableLineDocComments;
         this.sb = new StringBuilder(256);
     }
@@ -184,7 +182,8 @@ public class JavaTokenizer extends UnicodeReader {
             lexError(DiagnosticFlag.SOURCE_LEVEL, pos, feature.error(source.name));
         } else if (preview.isPreview(feature)) {
             //use of preview feature, warn
-            preview.warnPreview(pos, feature);
+            SimpleDiagnosticPosition diagPos = new SimpleDiagnosticPosition(pos);
+            lexicalLintHandler.report(diagPos, lint -> preview.warnPreview(lint, diagPos, feature));
         }
     }
 
@@ -216,18 +215,15 @@ public class JavaTokenizer extends UnicodeReader {
     }
 
     /**
-     * Report a warning at the given position using the provided arguments.
+     * Report a warning at the given position using the provided arguments,
+     * if the lint category is not disabled by {@code @SuppressWarnings}.
      *
      * @param pos    position in input buffer.
      * @param key    error key to report.
      */
     protected void lexWarning(int pos, JCDiagnostic.LintWarning key) {
-        deferredLintHandler.push(pos);
-        try {
-            deferredLintHandler.report(lint -> lint.logIfEnabled(new SimpleDiagnosticPosition(pos), key));
-        } finally {
-            deferredLintHandler.pop();
-        }
+        DiagnosticPosition dp = new SimpleDiagnosticPosition(pos) ;
+        lexicalLintHandler.report(dp, key);
     }
 
     /**

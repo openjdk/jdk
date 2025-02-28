@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,10 @@ public class VirtualParser extends JavacParser {
          */
         private Token prevToken;
 
+        /** Our {@link LexicalLintHandler}. This is never flushed, so warnings are never realized.
+         */
+        private final LexicalLintHandler lintHandler = new LexicalLintHandler();
+
         public VirtualScanner(Lexer s) {
             while (s instanceof VirtualScanner virtualScanner) {
                 s = virtualScanner.S;
@@ -165,6 +169,11 @@ public class VirtualParser extends JavacParser {
         @Override
         public LineMap getLineMap() {
             return S.getLineMap();
+        }
+
+        @Override
+        public LexicalLintHandler lintHandler() {
+            return lintHandler;
         }
 
         public void commit() {

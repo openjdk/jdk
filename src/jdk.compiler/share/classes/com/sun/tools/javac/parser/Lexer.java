@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.tools.javac.parser;
 import java.util.Queue;
 
 import com.sun.tools.javac.parser.Tokens.*;
+import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Position.LineMap;
 
 /**
@@ -103,4 +104,22 @@ public interface Lexer {
      * token.
      */
     Queue<Comment> getDocComments();
+
+    /**
+     * Get the {@link LexicalLintHandler} associated with this instance.
+     */
+    LexicalLintHandler lintHandler();
+
+    /**
+     * Finish parsing a declaration that supports {@code @SuppressWarnings}.
+     *
+     * <p>
+     * This is a convenience method for when the ending position equals {@code prevToken().endPos}.
+     *
+     * @param decl the newly parsed declaration
+     * @return the given {@code decl} (for fluent chaining)
+     */
+    default <T extends JCTree> T endDecl(T decl) {
+        return lintHandler().endDecl(decl, prevToken().endPos);
+    }
 }

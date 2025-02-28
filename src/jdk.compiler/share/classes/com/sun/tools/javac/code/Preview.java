@@ -25,7 +25,6 @@
 
 package com.sun.tools.javac.code;
 
-import com.sun.tools.javac.code.DeferredLintHandler;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source.Feature;
@@ -70,9 +69,6 @@ public class Preview {
     /** flag: are preview features enabled */
     private final boolean enabled;
 
-    /** the deferred lint warning handler */
-    private final DeferredLintHandler deferredLintHandler;
-
     /** the diag handler to manage preview feature usage diagnostics */
     private final MandatoryWarningHandler previewHandler;
 
@@ -106,9 +102,8 @@ public class Preview {
         names = Names.instance(context);
         enabled = options.isSet(PREVIEW);
         log = Log.instance(context);
-        rootLint = Lint.instance(context);
         source = Source.instance(context);
-        deferredLintHandler = DeferredLintHandler.instance(context);
+        rootLint = Lint.instance(context);
         previewHandler = new MandatoryWarningHandler(log, source, true, LintCategory.PREVIEW);
         forcePreview = options.isSet("forcePreview");
         majorVersionToSource = initMajorVersionToSourceMap();
@@ -160,27 +155,6 @@ public class Preview {
                 .anyMatch(ed -> ed.modules.contains(m)) ||
                //the specification lists the java.se module as participating in preview:
                m.name == names.java_se;
-    }
-
-    /**
-     * Report usage of a preview feature. Usages reported through this method will affect the
-     * set of sourcefiles with dependencies on preview features.
-     *
-     * <p>
-     * This method is intended to be used during parsing, when declarations do not exist yet.
-     * The warning is deferred until the applicable {@lint Lint} configuration is known.
-     *
-     * @param pos the position at which the preview feature was used.
-     * @param feature the preview feature used.
-     */
-    public void warnPreview(int pos, Feature feature) {
-        DiagnosticPosition diagPos = new SimpleDiagnosticPosition(pos);
-        deferredLintHandler.push(pos);
-        try {
-            deferredLintHandler.report(lint -> warnPreview(lint, diagPos, feature));
-        } finally {
-            deferredLintHandler.pop();
-        }
     }
 
     /**

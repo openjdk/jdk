@@ -37,6 +37,7 @@ import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.source.tree.ModuleTree.ModuleKind;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.DeferredLintHandler.LintLogger;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.parser.Tokens.*;
@@ -580,7 +581,7 @@ public class JavacParser implements Parser {
      *  3. At the end of the "signature" of the declaration
      *     (that is, before any initialization or body for the
      *     declaration) any other "recent" comments are
-     *     reported to the {@link #deferredLintHandler}.
+     *     reported to the {@link LexicalLintHandler}.
      *
      *  @param dc the primary documentation comment
      */
@@ -621,7 +622,7 @@ public class JavacParser implements Parser {
     }
 
     /**
-     * Reports an individual dangling comment using the {@link #deferredLintHandler}.
+     * Reports an individual dangling comment using the {@link LexicalLintHandler}.
      * The comment may or not may generate an actual diagnostic, depending on
      * the settings for {@code -Xlint} and/or {@code @SuppressWarnings}.
      *
@@ -629,17 +630,8 @@ public class JavacParser implements Parser {
      */
     void reportDanglingDocComment(Comment c) {
         var pos = c.getPos();
-        if (pos != null) {
-            deferredLintHandler.push(pos.getPreferredPosition());
-            try {
-                deferredLintHandler.report(lint -> {
-                    if (lint.isEnabled(Lint.LintCategory.DANGLING_DOC_COMMENTS) && !shebang(c, pos)) {
-                        log.warning(pos, LintWarnings.DanglingDocComment);
-                    }
-                });
-            } finally {
-                deferredLintHandler.pop();
-            }
+        if (pos != null && !shebang(c, pos)) {
+            S.lintHandler().report(pos, LintWarnings.DanglingDocComment);
         }
     }
 
@@ -667,27 +659,6 @@ public class JavacParser implements Parser {
 
     protected void storeEnd(JCTree tree, int endpos) {
         endPosTable.storeEnd(tree, endpos);
-
-        // Module, package, class, method, and variable declarations remember their end positions
-        switch (tree.getTag()) {
-        case MODULEDEF:
-            ((JCModuleDecl)tree).endPos = endpos;
-            break;
-        case PACKAGEDEF:
-            ((JCPackageDecl)tree).endPos = endpos;
-            break;
-        case CLASSDEF:
-            ((JCClassDecl)tree).endPos = endpos;
-            break;
-        case METHODDEF:
-            ((JCMethodDecl)tree).endPos = endpos;
-            break;
-        case VARDEF:
-            ((JCVariableDecl)tree).endPos = endpos;
-            break;
-        default:
-            break;
-        }
     }
 
     protected <T extends JCTree> T to(T t) {
@@ -1009,7 +980,7 @@ public class JavacParser implements Parser {
                 if (Feature.UNNAMED_VARIABLES.allowedInSource(source) && name == names.underscore) {
                     name = names.empty;
                 }
-                JCVariableDecl var = toP(F.at(varPos).VarDef(mods, name, e, null));
+                JCVariableDecl var = S.endDecl(toP(F.at(varPos).VarDef(mods, name, e, null)));
                 if (e == null) {
                     var.startPos = pos;
                     if (var.name == names.underscore && !allowVar) {
@@ -2748,7 +2719,6 @@ public class JavacParser implements Parser {
             List<JCTree> defs = classInterfaceOrRecordBody(names.empty, false, false);
             JCModifiers mods = F.at(Position.NOPOS).Modifiers(0);
             body = toP(F.at(pos).AnonymousClassDef(mods, defs));
-            storeEnd(body, S.prevToken().endPos);
         }
         return toP(F.at(newpos).NewClass(encl, typeArgs, t, args, body));
     }
@@ -3819,7 +3789,7 @@ public class JavacParser implements Parser {
                 }
             }
         }
-        JCVariableDecl result = toP(F.at(pos).VarDef(mods, name, type, init, declaredUsingVar));
+        JCVariableDecl result = S.endDecl(toP(F.at(pos).VarDef(mods, name, type, init, declaredUsingVar)));
         attach(result, dc);
         result.startPos = startPos;
         return result;
@@ -3910,9 +3880,7 @@ public class JavacParser implements Parser {
                         log.error(token.pos, Errors.WrongReceiver);
                     }
                 }
-                JCVariableDecl result = toP(F.at(pos).ReceiverVarDef(mods, pn, type));
-                storeEnd(result, S.prevToken().endPos);
-                return result;
+                return S.endDecl(toP(F.at(pos).ReceiverVarDef(mods, pn, type)));
             }
         } else {
             /** if it is a lambda parameter and the token kind is not an identifier,
@@ -3937,10 +3905,8 @@ public class JavacParser implements Parser {
             name = names.empty;
         }
 
-        JCVariableDecl result = toP(F.at(pos).VarDef(mods, name, type, null,
-                type != null && type.hasTag(IDENT) && ((JCIdent)type).name == names.var));
-        storeEnd(result, S.prevToken().endPos);
-        return result;
+        return S.endDecl(toP(F.at(pos).VarDef(mods, name, type, null,
+                type != null && type.hasTag(IDENT) && ((JCIdent)type).name == names.var)));
     }
 
     /** Resources = Resource { ";" Resources }
@@ -4009,8 +3975,7 @@ public class JavacParser implements Parser {
             nextToken();
             JCExpression pid = qualident(false);
             accept(SEMI);
-            JCPackageDecl pd = toP(F.at(packagePos).PackageDecl(annotations, pid));
-            storeEnd(pd, S.prevToken().endPos);
+            JCPackageDecl pd = S.endDecl(toP(F.at(packagePos).PackageDecl(annotations, pid)));
             attach(pd, firstToken.docComment());
             consumedToplevelDoc = true;
             defs.append(pd);
@@ -4120,7 +4085,7 @@ public class JavacParser implements Parser {
                 firstTypeDecl = false;
             }
         }
-        List<JCTree> topLevelDefs = isImplicitClass ? constructImplicitClass(defs.toList(), S.prevToken().endPos) : defs.toList();
+        List<JCTree> topLevelDefs = isImplicitClass ?  constructImplicitClass(defs.toList()) : defs.toList();
         JCTree.JCCompilationUnit toplevel = F.at(firstToken.pos).TopLevel(topLevelDefs);
         if (!consumedToplevelDoc)
             attach(toplevel, firstToken.docComment());
@@ -4132,11 +4097,12 @@ public class JavacParser implements Parser {
             toplevel.lineMap = S.getLineMap();
         this.endPosTable.setParser(null); // remove reference to parser
         toplevel.endPositions = this.endPosTable;
+        S.lintHandler().flushTo(deferredLintHandler);
         return toplevel;
     }
 
     // Restructure top level to be an implicitly declared class.
-    private List<JCTree> constructImplicitClass(List<JCTree> origDefs, int endPos) {
+    private List<JCTree> constructImplicitClass(List<JCTree> origDefs) {
         ListBuffer<JCTree> topDefs = new ListBuffer<>();
         ListBuffer<JCTree> defs = new ListBuffer<>();
 
@@ -4166,7 +4132,6 @@ public class JavacParser implements Parser {
         JCClassDecl implicit = F.at(primaryPos).ClassDef(
                 implicitMods, name, List.nil(), null, List.nil(), List.nil(),
                 defs.toList());
-        storeEnd(implicit, endPos);
         topDefs.append(implicit);
         return topDefs.toList();
     }
@@ -4185,8 +4150,7 @@ public class JavacParser implements Parser {
         int endPos = S.prevToken().endPos;
         accept(EOF);
 
-        JCModuleDecl result = toP(F.at(pos).ModuleDef(mods, kind, name, directives));
-        storeEnd(result, endPos);
+        JCModuleDecl result = S.lintHandler().endDecl(toP(F.at(pos).ModuleDef(mods, kind, name, directives)), endPos);
         attach(result, dc);
         return result;
     }
@@ -4387,9 +4351,8 @@ public class JavacParser implements Parser {
         saveDanglingDocComments(dc);
 
         List<JCTree> defs = classInterfaceOrRecordBody(name, false, false);
-        JCClassDecl result = toP(F.at(pos).ClassDef(
-            mods, name, typarams, extending, implementing, permitting, defs));
-        storeEnd(result, S.prevToken().endPos);
+        JCClassDecl result = S.endDecl(toP(F.at(pos).ClassDef(
+            mods, name, typarams, extending, implementing, permitting, defs)));
         attach(result, dc);
         return result;
     }
@@ -4438,8 +4401,8 @@ public class JavacParser implements Parser {
             JCVariableDecl field = fields.get(i);
             defs = defs.prepend(field);
         }
-        JCClassDecl result = toP(F.at(pos).ClassDef(mods, name, typarams, null, implementing, defs));
-        storeEnd(result, endPos);
+        JCClassDecl result = S.lintHandler().endDecl(
+            toP(F.at(pos).ClassDef(mods, name, typarams, null, implementing, defs)), endPos);
         attach(result, dc);
         return result;
     }
@@ -4478,9 +4441,8 @@ public class JavacParser implements Parser {
 
         List<JCTree> defs;
         defs = classInterfaceOrRecordBody(name, true, false);
-        JCClassDecl result = toP(F.at(pos).ClassDef(
-            mods, name, typarams, null, extending, permitting, defs));
-        storeEnd(result, S.prevToken().endPos);
+        JCClassDecl result = S.endDecl(toP(F.at(pos).ClassDef(
+            mods, name, typarams, null, extending, permitting, defs)));
         attach(result, dc);
         return result;
     }
@@ -4526,10 +4488,9 @@ public class JavacParser implements Parser {
 
         List<JCTree> defs = enumBody(name);
         mods.flags |= Flags.ENUM;
-        JCClassDecl result = toP(F.at(pos).
+        JCClassDecl result = S.endDecl(toP(F.at(pos).
             ClassDef(mods, name, List.nil(),
-                     null, implementing, defs));
-        storeEnd(result, S.prevToken().endPos);
+                     null, implementing, defs)));
         attach(result, dc);
         return result;
     }
@@ -4668,12 +4629,10 @@ public class JavacParser implements Parser {
             createPos = identPos;
         JCIdent ident = F.at(identPos).Ident(enumName);
         JCNewClass create = F.at(createPos).NewClass(null, typeArgs, ident, args, body);
-        int endPos = S.prevToken().endPos;
         if (createPos != identPos)
-            storeEnd(create, endPos);
+            storeEnd(create, S.prevToken().endPos);
         ident = F.at(identPos).Ident(enumName);
-        JCTree result = toP(F.at(pos).VarDef(mods, name, ident, create));
-        storeEnd(result, endPos);
+        JCTree result = S.endDecl(toP(F.at(pos).VarDef(mods, name, ident, create)));
         attach(result, dc);
         return result;
     }
@@ -5100,10 +5059,9 @@ public class JavacParser implements Parser {
             }
 
             JCMethodDecl result =
-                    toP(F.at(pos).MethodDef(mods, name, type, typarams,
+                    S.endDecl(toP(F.at(pos).MethodDef(mods, name, type, typarams,
                                             receiverParam, params, thrown,
-                                            body, defaultValue));
-            storeEnd(result, S.prevToken().endPos);
+                                            body, defaultValue)));
             attach(result, dc);
             return result;
         } finally {
@@ -5612,7 +5570,8 @@ public class JavacParser implements Parser {
             log.error(DiagnosticFlag.SOURCE_LEVEL, pos, feature.error(source.name));
         } else if (preview.isPreview(feature)) {
             //use of preview feature, warn
-            preview.warnPreview(pos, feature);
+            SimpleDiagnosticPosition diagPos = new SimpleDiagnosticPosition(pos);
+            S.lintHandler().report(diagPos, lint -> preview.warnPreview(lint, diagPos, feature));
         }
     }
 
