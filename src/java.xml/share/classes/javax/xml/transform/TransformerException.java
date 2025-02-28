@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class TransformerException extends Exception {
 
     private static final long serialVersionUID = 975798773772956428L;
 
-    /** Field locator specifies where the error occurred */
+    /** @serial Field locator specifies where the error occurred */
     @SuppressWarnings("serial") // Type of field is not Serializable
     SourceLocator locator;
 
@@ -68,7 +68,7 @@ public class TransformerException extends Exception {
         this.locator = location;
     }
 
-    /** Field containedException specifies a wrapped exception.  May be null. */
+    /** @serial Field containedException specifies a wrapped exception.  May be null. */
     Throwable containedException;
 
     /**

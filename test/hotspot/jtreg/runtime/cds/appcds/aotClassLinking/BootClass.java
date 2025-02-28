@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,9 @@
  *
  */
 
-#ifndef SHARE_GC_PARALLEL_PSGENERATIONCOUNTERS_HPP
-#define SHARE_GC_PARALLEL_PSGENERATIONCOUNTERS_HPP
-
-#include "gc/parallel/psVirtualspace.hpp"
-#include "gc/shared/generationCounters.hpp"
-#include "runtime/perfData.hpp"
-
-// A PSGenerationCounter is a holder class for performance counters
-// that track a generation
-
-class PSGenerationCounters: public GenerationCounters {
-  friend class VMStructs;
-
- private:
-  PSVirtualSpace*      _ps_virtual_space;
-
- public:
-  PSGenerationCounters(const char* name, int ordinal, int spaces,
-                       size_t min_capacity, size_t max_capacity, PSVirtualSpace* v);
-
-  void update_all() {
-    assert(_virtual_space == nullptr, "Only one should be in use");
-    _current_size->set_value(_ps_virtual_space->committed_size());
-  }
-};
-
-#endif // SHARE_GC_PARALLEL_PSGENERATIONCOUNTERS_HPP
+// This is a test class to be loaded by the boot loader.
+public class BootClass {
+    public void func(String s) {
+        System.out.println(s);
+    }
+}
