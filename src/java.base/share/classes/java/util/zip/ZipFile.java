@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -617,7 +617,6 @@ public class ZipFile implements ZipConstants, Closeable {
         e.size = CENLEN(cen, pos);
         e.csize = CENSIZ(cen, pos);
         e.method = CENHOW(cen, pos);
-        e.locPOS = CENOFF(cen, pos);
         if (CENVEM_FA(cen, pos) == FILE_ATTRIBUTES_UNIX) {
             // read all bits in this field, including sym link attributes
             e.externalFileAttributes = CENATX_PERMS(cen, pos) & 0xFFFF;
@@ -1104,10 +1103,6 @@ public class ZipFile implements ZipConstants, Closeable {
                     ze.externalFileAttributes = externalFileAttributes;
                 }
 
-                @Override
-                public long getLocPOS(ZipEntry ze) {
-                    return ze.getLocPOS();
-                }
              }
         );
     }
