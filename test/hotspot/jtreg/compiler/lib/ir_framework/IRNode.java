@@ -2592,8 +2592,8 @@ public class IRNode {
     private static void macroNodes(String irNodePlaceholder, String irNodeRegex) {
         String regex = START + irNodeRegex + MID + END;
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.BEFORE_MACRO_EXPANSION, regex,
-                CompilePhase.BEFORE_STRINGOPTS,
-                CompilePhase.BEFORE_MACRO_EXPANSION));
+                                                                          CompilePhase.BEFORE_STRINGOPTS,
+                                                                          CompilePhase.BEFORE_MACRO_EXPANSION));
     }
 
     private static void callOfNodes(String irNodePlaceholder, String callRegex) {

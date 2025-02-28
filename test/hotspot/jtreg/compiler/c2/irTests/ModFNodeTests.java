@@ -127,7 +127,6 @@ public class ModFNodeTests {
     }
 
     @Test
-    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
     @IR(failOn = IRNode.MOD_F, phase = CompilePhase.ITER_GVN1)
     @IR(counts = {IRNode.MOD_F, "1"}, phase = CompilePhase.AFTER_PARSING)
     public void unusedResult(float x, float y) {
@@ -135,7 +134,6 @@ public class ModFNodeTests {
     }
 
     @Test
-    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
     @IR(failOn = IRNode.MOD_F, phase = CompilePhase.ITER_GVN1)
     @IR(counts = {IRNode.MOD_F, "1"}, phase = CompilePhase.AFTER_PARSING)
     public void repeatedlyUnused(float x, float y) {
@@ -148,9 +146,8 @@ public class ModFNodeTests {
     // The difference between unusedResultAfterLoopOpt1 and unusedResultAfterLoopOpt2
     // is that they exercise a slightly different reason why the node is being removed,
     // and thus a different execution path. In unusedResultAfterLoopOpt1 the modulo is
-    // used in the traps of the parse predicate. In unusedResultAfterLoopOpt2, it is not.
+    // used in the traps of the parse predicates. In unusedResultAfterLoopOpt2, it is not.
     @Test
-    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
     @IR(counts = {IRNode.MOD_F, "1"}, phase = CompilePhase.ITER_GVN2)
     @IR(failOn = IRNode.MOD_F, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     public float unusedResultAfterLoopOpt1(float x, float y) {
@@ -170,7 +167,6 @@ public class ModFNodeTests {
     }
 
     @Test
-    @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
     @IR(counts = {IRNode.MOD_F, "1"}, phase = CompilePhase.AFTER_CLOOPS)
     @IR(failOn = IRNode.MOD_F, phase = CompilePhase.PHASEIDEALLOOP1)
     public float unusedResultAfterLoopOpt2(float x, float y) {
@@ -190,7 +186,6 @@ public class ModFNodeTests {
     }
 
     @Test
-    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
     @IR(counts = {IRNode.MOD_F, "2"}, phase = CompilePhase.AFTER_CLOOPS)
     @IR(failOn = IRNode.MOD_F, phase = CompilePhase.PHASEIDEALLOOP1)
     public float unusedResultAfterLoopOpt3(float x, float y) {

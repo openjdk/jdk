@@ -127,7 +127,6 @@ public class ModDNodeTests {
     }
 
     @Test
-    @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
     @IR(failOn = IRNode.MOD_D, phase = CompilePhase.ITER_GVN1)
     @IR(counts = {IRNode.MOD_D, "1"}, phase = CompilePhase.AFTER_PARSING)
     public void unusedResult(double x, double y) {
@@ -135,7 +134,6 @@ public class ModDNodeTests {
     }
 
     @Test
-    @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
     @IR(failOn = IRNode.MOD_D, phase = CompilePhase.ITER_GVN1)
     @IR(counts = {IRNode.MOD_D, "1"}, phase = CompilePhase.AFTER_PARSING)
     public void repeatedlyUnused(double x, double y) {
@@ -148,9 +146,8 @@ public class ModDNodeTests {
     // The difference between unusedResultAfterLoopOpt1 and unusedResultAfterLoopOpt2
     // is that they exercise a slightly different reason why the node is being removed,
     // and thus a different execution path. In unusedResultAfterLoopOpt1 the modulo is
-    // used in the traps of the parse predicate. In unusedResultAfterLoopOpt2, it is not.
+    // used in the traps of the parse predicates. In unusedResultAfterLoopOpt2, it is not.
     @Test
-    @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
     @IR(counts = {IRNode.MOD_D, "1"}, phase = CompilePhase.ITER_GVN2)
     @IR(failOn = IRNode.MOD_D, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     public double unusedResultAfterLoopOpt1(double x, double y) {
@@ -170,7 +167,6 @@ public class ModDNodeTests {
     }
 
     @Test
-    @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
     @IR(counts = {IRNode.MOD_D, "1"}, phase = CompilePhase.AFTER_CLOOPS)
     @IR(failOn = IRNode.MOD_D, phase = CompilePhase.PHASEIDEALLOOP1)
     public double unusedResultAfterLoopOpt2(double x, double y) {
@@ -190,7 +186,6 @@ public class ModDNodeTests {
     }
 
     @Test
-    @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
     @IR(counts = {IRNode.MOD_D, "2"}, phase = CompilePhase.AFTER_CLOOPS)
     @IR(failOn = IRNode.MOD_D, phase = CompilePhase.PHASEIDEALLOOP1)
     public double unusedResultAfterLoopOpt3(double x, double y) {
