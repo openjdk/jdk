@@ -2136,6 +2136,9 @@ void C2_MacroAssembler::enc_cmove(int cmpFlag, Register op1, Register op2, Regis
 void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRegister src2,
                                   FLOAT_TYPE ft, bool is_min) {
   assert_different_registers(dst, src1, src2);
+  if (ft == FLOAT_TYPE::half_precision) {
+    assert_cond(UseZfh);
+  }
 
   Label Done, Compare;
 

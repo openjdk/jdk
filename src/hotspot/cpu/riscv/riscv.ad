@@ -3071,7 +3071,6 @@ operand immF0()
 // Half Float Immediate
 operand immH()
 %{
-  predicate((UseZfh || UseZfhmin));
   match(ConH);
 
   op_cost(0);
@@ -3082,7 +3081,7 @@ operand immH()
 // Half Float Immediate: +0.0f.
 operand immH0()
 %{
-  predicate((UseZfh || UseZfhmin) && jint_cast(n->geth()) == 0);
+  predicate(jint_cast(n->geth()) == 0);
   match(ConH);
 
   op_cost(0);
@@ -4953,7 +4952,9 @@ instruct loadConH(fRegF dst, immH con) %{
   %}
 
   ins_encode %{
+    assert(UseZfh || UseZfhmin, "must");
     __ flh(as_FloatRegister($dst$$reg), $constantaddress($con));
+    // TODO: add zfa instructions for half float, and optimize here.
   %}
 
   ins_pipe(fp_load_constant_s);
@@ -4967,6 +4968,7 @@ instruct loadConH0(fRegF dst, immH0 con) %{
   format %{ "fmv.h.x $dst, zr\t# float, #@loadConH0" %}
 
   ins_encode %{
+    assert(UseZfh || UseZfhmin, "must");
     __ fmv_h_x(as_FloatRegister($dst$$reg), zr);
   %}
 
@@ -8320,7 +8322,7 @@ instruct binOps_HF_reg(fRegF dst, fRegF src1, fRegF src2)
       case Op_SubHF: __ fsub_h($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister); break;
       case Op_MulHF: __ fmul_h($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister); break;
       case Op_DivHF: __ fdiv_h($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister); break;
-      default: assert(false, "%s", NodeClassNames[opcode]); break;
+      default: assert(false, "%s is not supported here", NodeClassNames[opcode]); break;
     }
   %}
   ins_pipe(fp_dop_reg_reg_s);
@@ -8341,7 +8343,7 @@ instruct min_max_HF_reg(fRegF dst, fRegF src1, fRegF src2)
       case Op_MaxHF: __ minmax_fp($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
                                   __ FLOAT_TYPE::half_precision, false);
                      break;
-      default: assert(false, "%s", NodeClassNames[opcode]); break;
+      default: assert(false, "%s is not supported here", NodeClassNames[opcode]); break;
     }
   %}
   ins_pipe(pipe_class_default);

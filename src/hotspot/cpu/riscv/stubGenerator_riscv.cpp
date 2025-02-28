@@ -6160,7 +6160,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-
   // x10 = input (float16)
   // f10 = result (float)
   // t1  = temporary register
@@ -6189,7 +6188,6 @@ class StubGenerator: public StubCodeGenerator {
     __ ret();
     return entry;
   }
-
 
 #endif // COMPILER2_OR_JVMCI
 
