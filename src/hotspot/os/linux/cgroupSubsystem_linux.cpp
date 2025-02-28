@@ -80,6 +80,9 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
   struct statfs fsstat = {};
   bool cgroups_v2_enabled = false;
 
+  // Assume cgroups v2 is usable by the JDK iff /sys/fs/cgroup has the cgroup v2
+  // file system magic.  If it does not then heuristics are required to determine
+  // if cgroups v1 is usable or not.
   if (statfs(sys_fs_cgroup, &fsstat) != -1) {
     cgroups_v2_enabled = (fsstat.f_type == CGROUP2_SUPER_MAGIC);
     if (cgroups_v2_enabled) {
