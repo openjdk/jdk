@@ -1854,14 +1854,14 @@ void InsEncode::output(FILE *fp) {
   fprintf(fp,"InsEncode: ");
   _encoding.reset();
 
-  while ( (encoding = (NameAndList*)_encoding.iter()) != 0 ) {
+  while ( (encoding = (NameAndList*)_encoding.iter()) != nullptr ) {
     // Output the encoding being used
     fprintf(fp,"%s(", encoding->name() );
 
     // Output its parameter list, if any
     bool first_param = true;
     encoding->reset();
-    while (  (parameter = encoding->iter()) != 0 ) {
+    while (  (parameter = encoding->iter()) != nullptr ) {
       // Output the ',' between parameters
       if ( ! first_param )  fprintf(fp,", ");
       first_param = false;
@@ -3305,7 +3305,7 @@ void ComponentList::output(FILE *fp) {
 MatchNode::MatchNode(ArchDesc &ad, const char *result, const char *mexpr,
                      const char *opType, MatchNode *lChild, MatchNode *rChild)
   : _AD(ad), _result(result), _name(mexpr), _opType(opType),
-    _lChild(lChild), _rChild(rChild), _internalop(0), _numleaves(0),
+    _lChild(lChild), _rChild(rChild), _internalop(nullptr), _numleaves(0),
     _commutative_id(0) {
   _numleaves = (lChild ? lChild->_numleaves : 0)
                + (rChild ? rChild->_numleaves : 0);
@@ -3314,14 +3314,14 @@ MatchNode::MatchNode(ArchDesc &ad, const char *result, const char *mexpr,
 MatchNode::MatchNode(ArchDesc &ad, MatchNode& mnode)
   : _AD(ad), _result(mnode._result), _name(mnode._name),
     _opType(mnode._opType), _lChild(mnode._lChild), _rChild(mnode._rChild),
-    _internalop(0), _numleaves(mnode._numleaves),
+    _internalop(nullptr), _numleaves(mnode._numleaves),
     _commutative_id(mnode._commutative_id) {
 }
 
 MatchNode::MatchNode(ArchDesc &ad, MatchNode& mnode, int clone)
   : _AD(ad), _result(mnode._result), _name(mnode._name),
     _opType(mnode._opType),
-    _internalop(0), _numleaves(mnode._numleaves),
+    _internalop(nullptr), _numleaves(mnode._numleaves),
     _commutative_id(mnode._commutative_id) {
   if (mnode._lChild) {
     _lChild = new MatchNode(ad, *mnode._lChild, clone);
@@ -3624,7 +3624,7 @@ void MatchNode::dump() {
 }
 
 void MatchNode::output(FILE *fp) {
-  if (_lChild==0 && _rChild==0) {
+  if (_lChild==nullptr && _rChild==nullptr) {
     fprintf(fp," %s",_name);    // operand
   }
   else {
