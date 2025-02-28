@@ -673,165 +673,205 @@
     __ addv(v28, __ T2S, v29, v30);                    //       add     v28.2S, v29.2S, v30.2S
     __ addv(v2, __ T4S, v3, v4);                       //       add     v2.4S, v3.4S, v4.4S
     __ addv(v25, __ T2D, v26, v27);                    //       add     v25.2D, v26.2D, v27.2D
-    __ fadd(v5, __ T2S, v6, v7);                       //       fadd    v5.2S, v6.2S, v7.2S
-    __ fadd(v3, __ T4S, v4, v5);                       //       fadd    v3.4S, v4.4S, v5.4S
-    __ fadd(v8, __ T2D, v9, v10);                      //       fadd    v8.2D, v9.2D, v10.2D
-    __ subv(v22, __ T8B, v23, v24);                    //       sub     v22.8B, v23.8B, v24.8B
-    __ subv(v19, __ T16B, v20, v21);                   //       sub     v19.16B, v20.16B, v21.16B
-    __ subv(v13, __ T4H, v14, v15);                    //       sub     v13.4H, v14.4H, v15.4H
-    __ subv(v5, __ T8H, v6, v7);                       //       sub     v5.8H, v6.8H, v7.8H
-    __ subv(v29, __ T2S, v30, v31);                    //       sub     v29.2S, v30.2S, v31.2S
-    __ subv(v24, __ T4S, v25, v26);                    //       sub     v24.4S, v25.4S, v26.4S
-    __ subv(v21, __ T2D, v22, v23);                    //       sub     v21.2D, v22.2D, v23.2D
-    __ fsub(v26, __ T2S, v27, v28);                    //       fsub    v26.2S, v27.2S, v28.2S
-    __ fsub(v24, __ T4S, v25, v26);                    //       fsub    v24.4S, v25.4S, v26.4S
-    __ fsub(v3, __ T2D, v4, v5);                       //       fsub    v3.2D, v4.2D, v5.2D
-    __ mulv(v24, __ T8B, v25, v26);                    //       mul     v24.8B, v25.8B, v26.8B
-    __ mulv(v26, __ T16B, v27, v28);                   //       mul     v26.16B, v27.16B, v28.16B
-    __ mulv(v23, __ T4H, v24, v25);                    //       mul     v23.4H, v24.4H, v25.4H
-    __ mulv(v15, __ T8H, v16, v17);                    //       mul     v15.8H, v16.8H, v17.8H
-    __ mulv(v21, __ T2S, v22, v23);                    //       mul     v21.2S, v22.2S, v23.2S
-    __ mulv(v3, __ T4S, v4, v5);                       //       mul     v3.4S, v4.4S, v5.4S
-    __ fabd(v24, __ T2S, v25, v26);                    //       fabd    v24.2S, v25.2S, v26.2S
-    __ fabd(v8, __ T4S, v9, v10);                      //       fabd    v8.4S, v9.4S, v10.4S
-    __ fabd(v25, __ T2D, v26, v27);                    //       fabd    v25.2D, v26.2D, v27.2D
-    __ faddp(v20, __ T2S, v21, v22);                   //       faddp   v20.2S, v21.2S, v22.2S
-    __ faddp(v16, __ T4S, v17, v18);                   //       faddp   v16.4S, v17.4S, v18.4S
-    __ faddp(v17, __ T2D, v18, v19);                   //       faddp   v17.2D, v18.2D, v19.2D
-    __ fmul(v2, __ T2S, v3, v4);                       //       fmul    v2.2S, v3.2S, v4.2S
-    __ fmul(v1, __ T4S, v2, v3);                       //       fmul    v1.4S, v2.4S, v3.4S
-    __ fmul(v0, __ T2D, v1, v2);                       //       fmul    v0.2D, v1.2D, v2.2D
-    __ mlav(v24, __ T4H, v25, v26);                    //       mla     v24.4H, v25.4H, v26.4H
+    __ sqaddv(v5, __ T8B, v6, v7);                     //       sqadd   v5.8B, v6.8B, v7.8B
+    __ sqaddv(v3, __ T16B, v4, v5);                    //       sqadd   v3.16B, v4.16B, v5.16B
+    __ sqaddv(v8, __ T4H, v9, v10);                    //       sqadd   v8.4H, v9.4H, v10.4H
+    __ sqaddv(v22, __ T8H, v23, v24);                  //       sqadd   v22.8H, v23.8H, v24.8H
+    __ sqaddv(v19, __ T2S, v20, v21);                  //       sqadd   v19.2S, v20.2S, v21.2S
+    __ sqaddv(v13, __ T4S, v14, v15);                  //       sqadd   v13.4S, v14.4S, v15.4S
+    __ sqaddv(v5, __ T2D, v6, v7);                     //       sqadd   v5.2D, v6.2D, v7.2D
+    __ uqaddv(v29, __ T8B, v30, v31);                  //       uqadd   v29.8B, v30.8B, v31.8B
+    __ uqaddv(v24, __ T16B, v25, v26);                 //       uqadd   v24.16B, v25.16B, v26.16B
+    __ uqaddv(v21, __ T4H, v22, v23);                  //       uqadd   v21.4H, v22.4H, v23.4H
+    __ uqaddv(v26, __ T8H, v27, v28);                  //       uqadd   v26.8H, v27.8H, v28.8H
+    __ uqaddv(v24, __ T2S, v25, v26);                  //       uqadd   v24.2S, v25.2S, v26.2S
+    __ uqaddv(v3, __ T4S, v4, v5);                     //       uqadd   v3.4S, v4.4S, v5.4S
+    __ uqaddv(v24, __ T2D, v25, v26);                  //       uqadd   v24.2D, v25.2D, v26.2D
+    __ fadd(v26, __ T2S, v27, v28);                    //       fadd    v26.2S, v27.2S, v28.2S
+    __ fadd(v23, __ T4S, v24, v25);                    //       fadd    v23.4S, v24.4S, v25.4S
+    __ fadd(v15, __ T2D, v16, v17);                    //       fadd    v15.2D, v16.2D, v17.2D
+    __ subv(v21, __ T8B, v22, v23);                    //       sub     v21.8B, v22.8B, v23.8B
+    __ subv(v3, __ T16B, v4, v5);                      //       sub     v3.16B, v4.16B, v5.16B
+    __ subv(v24, __ T4H, v25, v26);                    //       sub     v24.4H, v25.4H, v26.4H
+    __ subv(v8, __ T8H, v9, v10);                      //       sub     v8.8H, v9.8H, v10.8H
+    __ subv(v25, __ T2S, v26, v27);                    //       sub     v25.2S, v26.2S, v27.2S
+    __ subv(v20, __ T4S, v21, v22);                    //       sub     v20.4S, v21.4S, v22.4S
+    __ subv(v16, __ T2D, v17, v18);                    //       sub     v16.2D, v17.2D, v18.2D
+    __ sqsubv(v17, __ T8B, v18, v19);                  //       sqsub   v17.8B, v18.8B, v19.8B
+    __ sqsubv(v2, __ T16B, v3, v4);                    //       sqsub   v2.16B, v3.16B, v4.16B
+    __ sqsubv(v1, __ T4H, v2, v3);                     //       sqsub   v1.4H, v2.4H, v3.4H
+    __ sqsubv(v0, __ T8H, v1, v2);                     //       sqsub   v0.8H, v1.8H, v2.8H
+    __ sqsubv(v24, __ T2S, v25, v26);                  //       sqsub   v24.2S, v25.2S, v26.2S
+    __ sqsubv(v4, __ T4S, v5, v6);                     //       sqsub   v4.4S, v5.4S, v6.4S
+    __ sqsubv(v3, __ T2D, v4, v5);                     //       sqsub   v3.2D, v4.2D, v5.2D
+    __ uqsubv(v12, __ T8B, v13, v14);                  //       uqsub   v12.8B, v13.8B, v14.8B
+    __ uqsubv(v31, __ T16B, v0, v1);                   //       uqsub   v31.16B, v0.16B, v1.16B
+    __ uqsubv(v28, __ T4H, v29, v30);                  //       uqsub   v28.4H, v29.4H, v30.4H
+    __ uqsubv(v10, __ T8H, v11, v12);                  //       uqsub   v10.8H, v11.8H, v12.8H
+    __ uqsubv(v26, __ T2S, v27, v28);                  //       uqsub   v26.2S, v27.2S, v28.2S
+    __ uqsubv(v2, __ T4S, v3, v4);                     //       uqsub   v2.4S, v3.4S, v4.4S
+    __ uqsubv(v12, __ T2D, v13, v14);                  //       uqsub   v12.2D, v13.2D, v14.2D
+    __ fsub(v18, __ T2S, v19, v20);                    //       fsub    v18.2S, v19.2S, v20.2S
+    __ fsub(v31, __ T4S, v0, v1);                      //       fsub    v31.4S, v0.4S, v1.4S
+    __ fsub(v1, __ T2D, v2, v3);                       //       fsub    v1.2D, v2.2D, v3.2D
+    __ mulv(v13, __ T8B, v14, v15);                    //       mul     v13.8B, v14.8B, v15.8B
+    __ mulv(v29, __ T16B, v30, v31);                   //       mul     v29.16B, v30.16B, v31.16B
+    __ mulv(v0, __ T4H, v1, v2);                       //       mul     v0.4H, v1.4H, v2.4H
+    __ mulv(v19, __ T8H, v20, v21);                    //       mul     v19.8H, v20.8H, v21.8H
+    __ mulv(v12, __ T2S, v13, v14);                    //       mul     v12.2S, v13.2S, v14.2S
+    __ mulv(v17, __ T4S, v18, v19);                    //       mul     v17.4S, v18.4S, v19.4S
+    __ fabd(v22, __ T2S, v23, v24);                    //       fabd    v22.2S, v23.2S, v24.2S
+    __ fabd(v13, __ T4S, v14, v15);                    //       fabd    v13.4S, v14.4S, v15.4S
+    __ fabd(v28, __ T2D, v29, v30);                    //       fabd    v28.2D, v29.2D, v30.2D
+    __ faddp(v30, __ T2S, v31, v0);                    //       faddp   v30.2S, v31.2S, v0.2S
+    __ faddp(v31, __ T4S, v0, v1);                     //       faddp   v31.4S, v0.4S, v1.4S
+    __ faddp(v1, __ T2D, v2, v3);                      //       faddp   v1.2D, v2.2D, v3.2D
+    __ fmul(v26, __ T2S, v27, v28);                    //       fmul    v26.2S, v27.2S, v28.2S
+    __ fmul(v28, __ T4S, v29, v30);                    //       fmul    v28.4S, v29.4S, v30.4S
+    __ fmul(v4, __ T2D, v5, v6);                       //       fmul    v4.2D, v5.2D, v6.2D
+    __ mlav(v30, __ T4H, v31, v0);                     //       mla     v30.4H, v31.4H, v0.4H
     __ mlav(v4, __ T8H, v5, v6);                       //       mla     v4.8H, v5.8H, v6.8H
-    __ mlav(v3, __ T2S, v4, v5);                       //       mla     v3.2S, v4.2S, v5.2S
-    __ mlav(v12, __ T4S, v13, v14);                    //       mla     v12.4S, v13.4S, v14.4S
-    __ fmla(v31, __ T2S, v0, v1);                      //       fmla    v31.2S, v0.2S, v1.2S
-    __ fmla(v28, __ T4S, v29, v30);                    //       fmla    v28.4S, v29.4S, v30.4S
-    __ fmla(v10, __ T2D, v11, v12);                    //       fmla    v10.2D, v11.2D, v12.2D
-    __ mlsv(v26, __ T4H, v27, v28);                    //       mls     v26.4H, v27.4H, v28.4H
-    __ mlsv(v2, __ T8H, v3, v4);                       //       mls     v2.8H, v3.8H, v4.8H
-    __ mlsv(v12, __ T2S, v13, v14);                    //       mls     v12.2S, v13.2S, v14.2S
-    __ mlsv(v18, __ T4S, v19, v20);                    //       mls     v18.4S, v19.4S, v20.4S
-    __ fmls(v31, __ T2S, v0, v1);                      //       fmls    v31.2S, v0.2S, v1.2S
-    __ fmls(v1, __ T4S, v2, v3);                       //       fmls    v1.4S, v2.4S, v3.4S
-    __ fmls(v13, __ T2D, v14, v15);                    //       fmls    v13.2D, v14.2D, v15.2D
-    __ fdiv(v29, __ T2S, v30, v31);                    //       fdiv    v29.2S, v30.2S, v31.2S
-    __ fdiv(v0, __ T4S, v1, v2);                       //       fdiv    v0.4S, v1.4S, v2.4S
-    __ fdiv(v19, __ T2D, v20, v21);                    //       fdiv    v19.2D, v20.2D, v21.2D
-    __ maxv(v12, __ T8B, v13, v14);                    //       smax    v12.8B, v13.8B, v14.8B
-    __ maxv(v17, __ T16B, v18, v19);                   //       smax    v17.16B, v18.16B, v19.16B
-    __ maxv(v22, __ T4H, v23, v24);                    //       smax    v22.4H, v23.4H, v24.4H
-    __ maxv(v13, __ T8H, v14, v15);                    //       smax    v13.8H, v14.8H, v15.8H
-    __ maxv(v28, __ T2S, v29, v30);                    //       smax    v28.2S, v29.2S, v30.2S
-    __ maxv(v30, __ T4S, v31, v0);                     //       smax    v30.4S, v31.4S, v0.4S
-    __ smaxp(v31, __ T8B, v0, v1);                     //       smaxp   v31.8B, v0.8B, v1.8B
-    __ smaxp(v1, __ T16B, v2, v3);                     //       smaxp   v1.16B, v2.16B, v3.16B
-    __ smaxp(v26, __ T4H, v27, v28);                   //       smaxp   v26.4H, v27.4H, v28.4H
-    __ smaxp(v28, __ T8H, v29, v30);                   //       smaxp   v28.8H, v29.8H, v30.8H
-    __ smaxp(v4, __ T2S, v5, v6);                      //       smaxp   v4.2S, v5.2S, v6.2S
-    __ smaxp(v30, __ T4S, v31, v0);                    //       smaxp   v30.4S, v31.4S, v0.4S
-    __ fmax(v4, __ T2S, v5, v6);                       //       fmax    v4.2S, v5.2S, v6.2S
-    __ fmax(v6, __ T4S, v7, v8);                       //       fmax    v6.4S, v7.4S, v8.4S
-    __ fmax(v30, __ T2D, v31, v0);                     //       fmax    v30.2D, v31.2D, v0.2D
-    __ minv(v26, __ T8B, v27, v28);                    //       smin    v26.8B, v27.8B, v28.8B
-    __ minv(v18, __ T16B, v19, v20);                   //       smin    v18.16B, v19.16B, v20.16B
-    __ minv(v9, __ T4H, v10, v11);                     //       smin    v9.4H, v10.4H, v11.4H
-    __ minv(v8, __ T8H, v9, v10);                      //       smin    v8.8H, v9.8H, v10.8H
-    __ minv(v12, __ T2S, v13, v14);                    //       smin    v12.2S, v13.2S, v14.2S
-    __ minv(v0, __ T4S, v1, v2);                       //       smin    v0.4S, v1.4S, v2.4S
-    __ sminp(v20, __ T8B, v21, v22);                   //       sminp   v20.8B, v21.8B, v22.8B
-    __ sminp(v1, __ T16B, v2, v3);                     //       sminp   v1.16B, v2.16B, v3.16B
-    __ sminp(v24, __ T4H, v25, v26);                   //       sminp   v24.4H, v25.4H, v26.4H
-    __ sminp(v2, __ T8H, v3, v4);                      //       sminp   v2.8H, v3.8H, v4.8H
-    __ sminp(v0, __ T2S, v1, v2);                      //       sminp   v0.2S, v1.2S, v2.2S
-    __ sminp(v9, __ T4S, v10, v11);                    //       sminp   v9.4S, v10.4S, v11.4S
-    __ fmin(v24, __ T2S, v25, v26);                    //       fmin    v24.2S, v25.2S, v26.2S
-    __ fmin(v26, __ T4S, v27, v28);                    //       fmin    v26.4S, v27.4S, v28.4S
-    __ fmin(v16, __ T2D, v17, v18);                    //       fmin    v16.2D, v17.2D, v18.2D
-    __ facgt(v30, __ T2S, v31, v0);                    //       facgt   v30.2S, v31.2S, v0.2S
-    __ facgt(v3, __ T4S, v4, v5);                      //       facgt   v3.4S, v4.4S, v5.4S
-    __ facgt(v10, __ T2D, v11, v12);                   //       facgt   v10.2D, v11.2D, v12.2D
+    __ mlav(v6, __ T2S, v7, v8);                       //       mla     v6.2S, v7.2S, v8.2S
+    __ mlav(v30, __ T4S, v31, v0);                     //       mla     v30.4S, v31.4S, v0.4S
+    __ fmla(v26, __ T2S, v27, v28);                    //       fmla    v26.2S, v27.2S, v28.2S
+    __ fmla(v18, __ T4S, v19, v20);                    //       fmla    v18.4S, v19.4S, v20.4S
+    __ fmla(v9, __ T2D, v10, v11);                     //       fmla    v9.2D, v10.2D, v11.2D
+    __ mlsv(v8, __ T4H, v9, v10);                      //       mls     v8.4H, v9.4H, v10.4H
+    __ mlsv(v12, __ T8H, v13, v14);                    //       mls     v12.8H, v13.8H, v14.8H
+    __ mlsv(v0, __ T2S, v1, v2);                       //       mls     v0.2S, v1.2S, v2.2S
+    __ mlsv(v20, __ T4S, v21, v22);                    //       mls     v20.4S, v21.4S, v22.4S
+    __ fmls(v1, __ T2S, v2, v3);                       //       fmls    v1.2S, v2.2S, v3.2S
+    __ fmls(v24, __ T4S, v25, v26);                    //       fmls    v24.4S, v25.4S, v26.4S
+    __ fmls(v2, __ T2D, v3, v4);                       //       fmls    v2.2D, v3.2D, v4.2D
+    __ fdiv(v0, __ T2S, v1, v2);                       //       fdiv    v0.2S, v1.2S, v2.2S
+    __ fdiv(v9, __ T4S, v10, v11);                     //       fdiv    v9.4S, v10.4S, v11.4S
+    __ fdiv(v24, __ T2D, v25, v26);                    //       fdiv    v24.2D, v25.2D, v26.2D
+    __ maxv(v26, __ T8B, v27, v28);                    //       smax    v26.8B, v27.8B, v28.8B
+    __ maxv(v16, __ T16B, v17, v18);                   //       smax    v16.16B, v17.16B, v18.16B
+    __ maxv(v30, __ T4H, v31, v0);                     //       smax    v30.4H, v31.4H, v0.4H
+    __ maxv(v3, __ T8H, v4, v5);                       //       smax    v3.8H, v4.8H, v5.8H
+    __ maxv(v10, __ T2S, v11, v12);                    //       smax    v10.2S, v11.2S, v12.2S
+    __ maxv(v23, __ T4S, v24, v25);                    //       smax    v23.4S, v24.4S, v25.4S
+    __ umaxv(v10, __ T8B, v11, v12);                   //       umax    v10.8B, v11.8B, v12.8B
+    __ umaxv(v4, __ T16B, v5, v6);                     //       umax    v4.16B, v5.16B, v6.16B
+    __ umaxv(v18, __ T4H, v19, v20);                   //       umax    v18.4H, v19.4H, v20.4H
+    __ umaxv(v2, __ T8H, v3, v4);                      //       umax    v2.8H, v3.8H, v4.8H
+    __ umaxv(v11, __ T2S, v12, v13);                   //       umax    v11.2S, v12.2S, v13.2S
+    __ umaxv(v8, __ T4S, v9, v10);                     //       umax    v8.4S, v9.4S, v10.4S
+    __ smaxp(v10, __ T8B, v11, v12);                   //       smaxp   v10.8B, v11.8B, v12.8B
+    __ smaxp(v15, __ T16B, v16, v17);                  //       smaxp   v15.16B, v16.16B, v17.16B
+    __ smaxp(v17, __ T4H, v18, v19);                   //       smaxp   v17.4H, v18.4H, v19.4H
+    __ smaxp(v2, __ T8H, v3, v4);                      //       smaxp   v2.8H, v3.8H, v4.8H
+    __ smaxp(v10, __ T2S, v11, v12);                   //       smaxp   v10.2S, v11.2S, v12.2S
+    __ smaxp(v12, __ T4S, v13, v14);                   //       smaxp   v12.4S, v13.4S, v14.4S
+    __ fmax(v12, __ T2S, v13, v14);                    //       fmax    v12.2S, v13.2S, v14.2S
+    __ fmax(v15, __ T4S, v16, v17);                    //       fmax    v15.4S, v16.4S, v17.4S
+    __ fmax(v13, __ T2D, v14, v15);                    //       fmax    v13.2D, v14.2D, v15.2D
+    __ minv(v2, __ T8B, v3, v4);                       //       smin    v2.8B, v3.8B, v4.8B
+    __ minv(v7, __ T16B, v8, v9);                      //       smin    v7.16B, v8.16B, v9.16B
+    __ minv(v20, __ T4H, v21, v22);                    //       smin    v20.4H, v21.4H, v22.4H
+    __ minv(v26, __ T8H, v27, v28);                    //       smin    v26.8H, v27.8H, v28.8H
+    __ minv(v16, __ T2S, v17, v18);                    //       smin    v16.2S, v17.2S, v18.2S
+    __ minv(v4, __ T4S, v5, v6);                       //       smin    v4.4S, v5.4S, v6.4S
+    __ uminv(v2, __ T8B, v3, v4);                      //       umin    v2.8B, v3.8B, v4.8B
+    __ uminv(v4, __ T16B, v5, v6);                     //       umin    v4.16B, v5.16B, v6.16B
+    __ uminv(v12, __ T4H, v13, v14);                   //       umin    v12.4H, v13.4H, v14.4H
+    __ uminv(v18, __ T8H, v19, v20);                   //       umin    v18.8H, v19.8H, v20.8H
+    __ uminv(v21, __ T2S, v22, v23);                   //       umin    v21.2S, v22.2S, v23.2S
+    __ uminv(v16, __ T4S, v17, v18);                   //       umin    v16.4S, v17.4S, v18.4S
+    __ sminp(v18, __ T8B, v19, v20);                   //       sminp   v18.8B, v19.8B, v20.8B
+    __ sminp(v11, __ T16B, v12, v13);                  //       sminp   v11.16B, v12.16B, v13.16B
+    __ sminp(v21, __ T4H, v22, v23);                   //       sminp   v21.4H, v22.4H, v23.4H
+    __ sminp(v23, __ T8H, v24, v25);                   //       sminp   v23.8H, v24.8H, v25.8H
+    __ sminp(v12, __ T2S, v13, v14);                   //       sminp   v12.2S, v13.2S, v14.2S
+    __ sminp(v26, __ T4S, v27, v28);                   //       sminp   v26.4S, v27.4S, v28.4S
+    __ fmin(v23, __ T2S, v24, v25);                    //       fmin    v23.2S, v24.2S, v25.2S
+    __ fmin(v28, __ T4S, v29, v30);                    //       fmin    v28.4S, v29.4S, v30.4S
+    __ fmin(v14, __ T2D, v15, v16);                    //       fmin    v14.2D, v15.2D, v16.2D
+    __ facgt(v11, __ T2S, v12, v13);                   //       facgt   v11.2S, v12.2S, v13.2S
+    __ facgt(v24, __ T4S, v25, v26);                   //       facgt   v24.4S, v25.4S, v26.4S
+    __ facgt(v1, __ T2D, v2, v3);                      //       facgt   v1.2D, v2.2D, v3.2D
 
 // VectorScalarNEONInstruction
-    __ fmlavs(v5, __ T2S, v6, v7, 1);                  //       fmla    v5.2S, v6.2S, v7.S[1]
-    __ mulvs(v9, __ T4S, v10, v11, 0);                 //       mul     v9.4S, v10.4S, v11.S[0]
-    __ fmlavs(v5, __ T2D, v6, v7, 0);                  //       fmla    v5.2D, v6.2D, v7.D[0]
-    __ fmlsvs(v5, __ T2S, v6, v7, 0);                  //       fmls    v5.2S, v6.2S, v7.S[0]
+    __ fmlavs(v15, __ T2S, v0, v1, 0);                 //       fmla    v15.2S, v0.2S, v1.S[0]
     __ mulvs(v8, __ T4S, v9, v10, 1);                  //       mul     v8.4S, v9.4S, v10.S[1]
-    __ fmlsvs(v5, __ T2D, v6, v7, 0);                  //       fmls    v5.2D, v6.2D, v7.D[0]
-    __ fmulxvs(v6, __ T2S, v7, v8, 0);                 //       fmulx   v6.2S, v7.2S, v8.S[0]
-    __ mulvs(v6, __ T4S, v7, v8, 1);                   //       mul     v6.4S, v7.4S, v8.S[1]
-    __ fmulxvs(v3, __ T2D, v4, v5, 0);                 //       fmulx   v3.2D, v4.2D, v5.D[0]
-    __ mulvs(v13, __ T4H, v14, v15, 2);                //       mul     v13.4H, v14.4H, v15.H[2]
-    __ mulvs(v2, __ T8H, v3, v4, 4);                   //       mul     v2.8H, v3.8H, v4.H[4]
-    __ mulvs(v2, __ T2S, v3, v4, 0);                   //       mul     v2.2S, v3.2S, v4.S[0]
-    __ mulvs(v9, __ T4S, v10, v11, 1);                 //       mul     v9.4S, v10.4S, v11.S[1]
+    __ fmlavs(v1, __ T2D, v2, v3, 0);                  //       fmla    v1.2D, v2.2D, v3.D[0]
+    __ fmlsvs(v6, __ T2S, v7, v8, 0);                  //       fmls    v6.2S, v7.2S, v8.S[0]
+    __ mulvs(v8, __ T4S, v9, v10, 2);                  //       mul     v8.4S, v9.4S, v10.S[2]
+    __ fmlsvs(v1, __ T2D, v2, v3, 1);                  //       fmls    v1.2D, v2.2D, v3.D[1]
+    __ fmulxvs(v5, __ T2S, v6, v7, 0);                 //       fmulx   v5.2S, v6.2S, v7.S[0]
+    __ mulvs(v2, __ T4S, v3, v4, 3);                   //       mul     v2.4S, v3.4S, v4.S[3]
+    __ fmulxvs(v7, __ T2D, v8, v9, 0);                 //       fmulx   v7.2D, v8.2D, v9.D[0]
+    __ mulvs(v15, __ T4H, v0, v1, 3);                  //       mul     v15.4H, v0.4H, v1.H[3]
+    __ mulvs(v10, __ T8H, v11, v12, 0);                //       mul     v10.8H, v11.8H, v12.H[0]
+    __ mulvs(v10, __ T2S, v11, v12, 0);                //       mul     v10.2S, v11.2S, v12.S[0]
+    __ mulvs(v14, __ T4S, v15, v16, 2);                //       mul     v14.4S, v15.4S, v16.S[2]
 
 // NEONVectorCompare
     __ cm(Assembler::GT, v21, __ T8B, v22, v23);       //       cmgt    v21.8B, v22.8B, v23.8B
-    __ cm(Assembler::GT, v16, __ T16B, v17, v18);      //       cmgt    v16.16B, v17.16B, v18.16B
-    __ cm(Assembler::GT, v18, __ T4H, v19, v20);       //       cmgt    v18.4H, v19.4H, v20.4H
-    __ cm(Assembler::GT, v11, __ T8H, v12, v13);       //       cmgt    v11.8H, v12.8H, v13.8H
-    __ cm(Assembler::GT, v21, __ T2S, v22, v23);       //       cmgt    v21.2S, v22.2S, v23.2S
+    __ cm(Assembler::GT, v27, __ T16B, v28, v29);      //       cmgt    v27.16B, v28.16B, v29.16B
+    __ cm(Assembler::GT, v25, __ T4H, v26, v27);       //       cmgt    v25.4H, v26.4H, v27.4H
+    __ cm(Assembler::GT, v5, __ T8H, v6, v7);          //       cmgt    v5.8H, v6.8H, v7.8H
+    __ cm(Assembler::GT, v1, __ T2S, v2, v3);          //       cmgt    v1.2S, v2.2S, v3.2S
     __ cm(Assembler::GT, v23, __ T4S, v24, v25);       //       cmgt    v23.4S, v24.4S, v25.4S
-    __ cm(Assembler::GT, v12, __ T2D, v13, v14);       //       cmgt    v12.2D, v13.2D, v14.2D
-    __ cm(Assembler::GE, v26, __ T8B, v27, v28);       //       cmge    v26.8B, v27.8B, v28.8B
-    __ cm(Assembler::GE, v23, __ T16B, v24, v25);      //       cmge    v23.16B, v24.16B, v25.16B
-    __ cm(Assembler::GE, v28, __ T4H, v29, v30);       //       cmge    v28.4H, v29.4H, v30.4H
-    __ cm(Assembler::GE, v14, __ T8H, v15, v16);       //       cmge    v14.8H, v15.8H, v16.8H
-    __ cm(Assembler::GE, v11, __ T2S, v12, v13);       //       cmge    v11.2S, v12.2S, v13.2S
-    __ cm(Assembler::GE, v24, __ T4S, v25, v26);       //       cmge    v24.4S, v25.4S, v26.4S
-    __ cm(Assembler::GE, v1, __ T2D, v2, v3);          //       cmge    v1.2D, v2.2D, v3.2D
-    __ cm(Assembler::EQ, v12, __ T8B, v13, v14);       //       cmeq    v12.8B, v13.8B, v14.8B
+    __ cm(Assembler::GT, v16, __ T2D, v17, v18);       //       cmgt    v16.2D, v17.2D, v18.2D
+    __ cm(Assembler::GE, v31, __ T8B, v0, v1);         //       cmge    v31.8B, v0.8B, v1.8B
+    __ cm(Assembler::GE, v5, __ T16B, v6, v7);         //       cmge    v5.16B, v6.16B, v7.16B
+    __ cm(Assembler::GE, v12, __ T4H, v13, v14);       //       cmge    v12.4H, v13.4H, v14.4H
+    __ cm(Assembler::GE, v9, __ T8H, v10, v11);        //       cmge    v9.8H, v10.8H, v11.8H
+    __ cm(Assembler::GE, v28, __ T2S, v29, v30);       //       cmge    v28.2S, v29.2S, v30.2S
+    __ cm(Assembler::GE, v15, __ T4S, v16, v17);       //       cmge    v15.4S, v16.4S, v17.4S
+    __ cm(Assembler::GE, v29, __ T2D, v30, v31);       //       cmge    v29.2D, v30.2D, v31.2D
+    __ cm(Assembler::EQ, v22, __ T8B, v23, v24);       //       cmeq    v22.8B, v23.8B, v24.8B
     __ cm(Assembler::EQ, v31, __ T16B, v0, v1);        //       cmeq    v31.16B, v0.16B, v1.16B
-    __ cm(Assembler::EQ, v10, __ T4H, v11, v12);       //       cmeq    v10.4H, v11.4H, v12.4H
-    __ cm(Assembler::EQ, v16, __ T8H, v17, v18);       //       cmeq    v16.8H, v17.8H, v18.8H
-    __ cm(Assembler::EQ, v7, __ T2S, v8, v9);          //       cmeq    v7.2S, v8.2S, v9.2S
-    __ cm(Assembler::EQ, v2, __ T4S, v3, v4);          //       cmeq    v2.4S, v3.4S, v4.4S
-    __ cm(Assembler::EQ, v3, __ T2D, v4, v5);          //       cmeq    v3.2D, v4.2D, v5.2D
-    __ cm(Assembler::HI, v13, __ T8B, v14, v15);       //       cmhi    v13.8B, v14.8B, v15.8B
-    __ cm(Assembler::HI, v19, __ T16B, v20, v21);      //       cmhi    v19.16B, v20.16B, v21.16B
-    __ cm(Assembler::HI, v17, __ T4H, v18, v19);       //       cmhi    v17.4H, v18.4H, v19.4H
-    __ cm(Assembler::HI, v16, __ T8H, v17, v18);       //       cmhi    v16.8H, v17.8H, v18.8H
-    __ cm(Assembler::HI, v3, __ T2S, v4, v5);          //       cmhi    v3.2S, v4.2S, v5.2S
-    __ cm(Assembler::HI, v1, __ T4S, v2, v3);          //       cmhi    v1.4S, v2.4S, v3.4S
+    __ cm(Assembler::EQ, v19, __ T4H, v20, v21);       //       cmeq    v19.4H, v20.4H, v21.4H
+    __ cm(Assembler::EQ, v31, __ T8H, v0, v1);         //       cmeq    v31.8H, v0.8H, v1.8H
+    __ cm(Assembler::EQ, v5, __ T2S, v6, v7);          //       cmeq    v5.2S, v6.2S, v7.2S
+    __ cm(Assembler::EQ, v14, __ T4S, v15, v16);       //       cmeq    v14.4S, v15.4S, v16.4S
+    __ cm(Assembler::EQ, v18, __ T2D, v19, v20);       //       cmeq    v18.2D, v19.2D, v20.2D
+    __ cm(Assembler::HI, v31, __ T8B, v0, v1);         //       cmhi    v31.8B, v0.8B, v1.8B
+    __ cm(Assembler::HI, v18, __ T16B, v19, v20);      //       cmhi    v18.16B, v19.16B, v20.16B
+    __ cm(Assembler::HI, v27, __ T4H, v28, v29);       //       cmhi    v27.4H, v28.4H, v29.4H
+    __ cm(Assembler::HI, v20, __ T8H, v21, v22);       //       cmhi    v20.8H, v21.8H, v22.8H
+    __ cm(Assembler::HI, v16, __ T2S, v17, v18);       //       cmhi    v16.2S, v17.2S, v18.2S
+    __ cm(Assembler::HI, v12, __ T4S, v13, v14);       //       cmhi    v12.4S, v13.4S, v14.4S
     __ cm(Assembler::HI, v11, __ T2D, v12, v13);       //       cmhi    v11.2D, v12.2D, v13.2D
-    __ cm(Assembler::HS, v30, __ T8B, v31, v0);        //       cmhs    v30.8B, v31.8B, v0.8B
-    __ cm(Assembler::HS, v5, __ T16B, v6, v7);         //       cmhs    v5.16B, v6.16B, v7.16B
-    __ cm(Assembler::HS, v8, __ T4H, v9, v10);         //       cmhs    v8.4H, v9.4H, v10.4H
-    __ cm(Assembler::HS, v15, __ T8H, v16, v17);       //       cmhs    v15.8H, v16.8H, v17.8H
-    __ cm(Assembler::HS, v29, __ T2S, v30, v31);       //       cmhs    v29.2S, v30.2S, v31.2S
-    __ cm(Assembler::HS, v30, __ T4S, v31, v0);        //       cmhs    v30.4S, v31.4S, v0.4S
-    __ cm(Assembler::HS, v0, __ T2D, v1, v2);          //       cmhs    v0.2D, v1.2D, v2.2D
-    __ fcm(Assembler::EQ, v20, __ T2S, v21, v22);      //       fcmeq   v20.2S, v21.2S, v22.2S
-    __ fcm(Assembler::EQ, v7, __ T4S, v8, v9);         //       fcmeq   v7.4S, v8.4S, v9.4S
+    __ cm(Assembler::HS, v9, __ T8B, v10, v11);        //       cmhs    v9.8B, v10.8B, v11.8B
+    __ cm(Assembler::HS, v6, __ T16B, v7, v8);         //       cmhs    v6.16B, v7.16B, v8.16B
+    __ cm(Assembler::HS, v30, __ T4H, v31, v0);        //       cmhs    v30.4H, v31.4H, v0.4H
+    __ cm(Assembler::HS, v17, __ T8H, v18, v19);       //       cmhs    v17.8H, v18.8H, v19.8H
+    __ cm(Assembler::HS, v27, __ T2S, v28, v29);       //       cmhs    v27.2S, v28.2S, v29.2S
+    __ cm(Assembler::HS, v28, __ T4S, v29, v30);       //       cmhs    v28.4S, v29.4S, v30.4S
+    __ cm(Assembler::HS, v30, __ T2D, v31, v0);        //       cmhs    v30.2D, v31.2D, v0.2D
+    __ fcm(Assembler::EQ, v7, __ T2S, v8, v9);         //       fcmeq   v7.2S, v8.2S, v9.2S
+    __ fcm(Assembler::EQ, v10, __ T4S, v11, v12);      //       fcmeq   v10.4S, v11.4S, v12.4S
     __ fcm(Assembler::EQ, v20, __ T2D, v21, v22);      //       fcmeq   v20.2D, v21.2D, v22.2D
-    __ fcm(Assembler::GT, v23, __ T2S, v24, v25);      //       fcmgt   v23.2S, v24.2S, v25.2S
-    __ fcm(Assembler::GT, v28, __ T4S, v29, v30);      //       fcmgt   v28.4S, v29.4S, v30.4S
-    __ fcm(Assembler::GT, v21, __ T2D, v22, v23);      //       fcmgt   v21.2D, v22.2D, v23.2D
-    __ fcm(Assembler::GE, v27, __ T2S, v28, v29);      //       fcmge   v27.2S, v28.2S, v29.2S
-    __ fcm(Assembler::GE, v25, __ T4S, v26, v27);      //       fcmge   v25.4S, v26.4S, v27.4S
-    __ fcm(Assembler::GE, v5, __ T2D, v6, v7);         //       fcmge   v5.2D, v6.2D, v7.2D
+    __ fcm(Assembler::GT, v10, __ T2S, v11, v12);      //       fcmgt   v10.2S, v11.2S, v12.2S
+    __ fcm(Assembler::GT, v4, __ T4S, v5, v6);         //       fcmgt   v4.4S, v5.4S, v6.4S
+    __ fcm(Assembler::GT, v24, __ T2D, v25, v26);      //       fcmgt   v24.2D, v25.2D, v26.2D
+    __ fcm(Assembler::GE, v17, __ T2S, v18, v19);      //       fcmge   v17.2S, v18.2S, v19.2S
+    __ fcm(Assembler::GE, v17, __ T4S, v18, v19);      //       fcmge   v17.4S, v18.4S, v19.4S
+    __ fcm(Assembler::GE, v22, __ T2D, v23, v24);      //       fcmge   v22.2D, v23.2D, v24.2D
 
 // SVEComparisonWithZero
-    __ sve_fcm(Assembler::EQ, p0, __ D, p7, z23, 0.0); //       fcmeq   p0.d, p7/z, z23.d, #0.0
-    __ sve_fcm(Assembler::GT, p2, __ S, p7, z12, 0.0); //       fcmgt   p2.s, p7/z, z12.s, #0.0
-    __ sve_fcm(Assembler::GE, p7, __ D, p7, z29, 0.0); //       fcmge   p7.d, p7/z, z29.d, #0.0
-    __ sve_fcm(Assembler::LT, p9, __ S, p3, z31, 0.0); //       fcmlt   p9.s, p3/z, z31.s, #0.0
-    __ sve_fcm(Assembler::LE, p9, __ D, p6, z31, 0.0); //       fcmle   p9.d, p6/z, z31.d, #0.0
-    __ sve_fcm(Assembler::NE, p10, __ S, p2, z16, 0.0); //      fcmne   p10.s, p2/z, z16.s, #0.0
+    __ sve_fcm(Assembler::EQ, p1, __ S, p5, z29, 0.0); //       fcmeq   p1.s, p5/z, z29.s, #0.0
+    __ sve_fcm(Assembler::GT, p9, __ D, p0, z19, 0.0); //       fcmgt   p9.d, p0/z, z19.d, #0.0
+    __ sve_fcm(Assembler::GE, p7, __ S, p4, z6, 0.0);  //       fcmge   p7.s, p4/z, z6.s, #0.0
+    __ sve_fcm(Assembler::LT, p5, __ D, p0, z13, 0.0); //       fcmlt   p5.d, p0/z, z13.d, #0.0
+    __ sve_fcm(Assembler::LE, p15, __ S, p4, z19, 0.0); //      fcmle   p15.s, p4/z, z19.s, #0.0
+    __ sve_fcm(Assembler::NE, p1, __ D, p3, z16, 0.0); //       fcmne   p1.d, p3/z, z16.d, #0.0
 
 // SVEComparisonWithImm
-    __ sve_cmp(Assembler::EQ, p4, __ D, p4, z6, 11);   //       cmpeq   p4.d, p4/z, z6.d, #11
-    __ sve_cmp(Assembler::GT, p14, __ B, p2, z30, 4);  //       cmpgt   p14.b, p2/z, z30.b, #4
-    __ sve_cmp(Assembler::GE, p5, __ D, p4, z4, 1);    //       cmpge   p5.d, p4/z, z4.d, #1
-    __ sve_cmp(Assembler::LT, p11, __ D, p3, z3, 6);   //       cmplt   p11.d, p3/z, z3.d, #6
-    __ sve_cmp(Assembler::LE, p9, __ S, p0, z19, -1);  //       cmple   p9.s, p0/z, z19.s, #-1
-    __ sve_cmp(Assembler::NE, p3, __ S, p2, z12, -3);  //       cmpne   p3.s, p2/z, z12.s, #-3
-    __ sve_cmp(Assembler::HS, p11, __ D, p4, z1, 20);  //       cmphs   p11.d, p4/z, z1.d, #20
-    __ sve_cmp(Assembler::HI, p8, __ S, p5, z2, 53);   //       cmphi   p8.s, p5/z, z2.s, #53
-    __ sve_cmp(Assembler::LS, p5, __ D, p6, z21, 49);  //       cmpls   p5.d, p6/z, z21.d, #49
-    __ sve_cmp(Assembler::LO, p13, __ B, p7, z3, 97);  //       cmplo   p13.b, p7/z, z3.b, #97
+    __ sve_cmp(Assembler::EQ, p5, __ D, p6, z21, -4);  //       cmpeq   p5.d, p6/z, z21.d, #-4
+    __ sve_cmp(Assembler::GT, p13, __ B, p7, z3, 8);   //       cmpgt   p13.b, p7/z, z3.b, #8
+    __ sve_cmp(Assembler::GE, p9, __ H, p7, z17, 11);  //       cmpge   p9.h, p7/z, z17.h, #11
+    __ sve_cmp(Assembler::LT, p7, __ S, p5, z7, 15);   //       cmplt   p7.s, p5/z, z7.s, #15
+    __ sve_cmp(Assembler::LE, p12, __ D, p6, z2, 2);   //       cmple   p12.d, p6/z, z2.d, #2
+    __ sve_cmp(Assembler::NE, p5, __ S, p0, z23, 2);   //       cmpne   p5.s, p0/z, z23.s, #2
+    __ sve_cmp(Assembler::HS, p0, __ D, p5, z25, 11);  //       cmphs   p0.d, p5/z, z25.d, #11
+    __ sve_cmp(Assembler::HI, p9, __ B, p7, z12, 120); //       cmphi   p9.b, p7/z, z12.b, #120
+    __ sve_cmp(Assembler::LS, p14, __ D, p1, z16, 37); //       cmpls   p14.d, p1/z, z16.d, #37
+    __ sve_cmp(Assembler::LO, p14, __ B, p1, z18, 29); //       cmplo   p14.b, p1/z, z18.b, #29
 
 // SpecialCases
     __ ccmn(zr, zr, 3u, Assembler::LE);                //       ccmn    xzr, xzr, #3, LE
@@ -1086,229 +1126,239 @@
     __ fmovd(v0, -1.0625);                             //       fmov d0, #-1.0625
 
 // LSEOp
-    __ swp(Assembler::xword, r19, r17, r9);            //       swp     x19, x17, [x9]
-    __ ldadd(Assembler::xword, r28, r27, r15);         //       ldadd   x28, x27, [x15]
-    __ ldbic(Assembler::xword, r7, r21, r23);          //       ldclr   x7, x21, [x23]
-    __ ldeor(Assembler::xword, zr, r25, r2);           //       ldeor   xzr, x25, [x2]
-    __ ldorr(Assembler::xword, zr, r27, r15);          //       ldset   xzr, x27, [x15]
-    __ ldsmin(Assembler::xword, r10, r23, r19);        //       ldsmin  x10, x23, [x19]
-    __ ldsmax(Assembler::xword, r3, r16, r0);          //       ldsmax  x3, x16, [x0]
-    __ ldumin(Assembler::xword, r25, r26, r23);        //       ldumin  x25, x26, [x23]
-    __ ldumax(Assembler::xword, r2, r16, r12);         //       ldumax  x2, x16, [x12]
+    __ swp(Assembler::xword, r15, r9, r23);            //       swp     x15, x9, [x23]
+    __ ldadd(Assembler::xword, r8, r2, r28);           //       ldadd   x8, x2, [x28]
+    __ ldbic(Assembler::xword, r21, zr, r5);           //       ldclr   x21, xzr, [x5]
+    __ ldeor(Assembler::xword, r27, r0, r17);          //       ldeor   x27, x0, [x17]
+    __ ldorr(Assembler::xword, r15, r4, r26);          //       ldset   x15, x4, [x26]
+    __ ldsmin(Assembler::xword, r8, r28, r22);         //       ldsmin  x8, x28, [x22]
+    __ ldsmax(Assembler::xword, r27, r27, r25);        //       ldsmax  x27, x27, [x25]
+    __ ldumin(Assembler::xword, r23, r0, r4);          //       ldumin  x23, x0, [x4]
+    __ ldumax(Assembler::xword, r6, r16, r0);          //       ldumax  x6, x16, [x0]
 
 // LSEOp
-    __ swpa(Assembler::xword, r4, r28, r30);           //       swpa    x4, x28, [x30]
-    __ ldadda(Assembler::xword, r29, r16, r27);        //       ldadda  x29, x16, [x27]
-    __ ldbica(Assembler::xword, r6, r9, r29);          //       ldclra  x6, x9, [x29]
-    __ ldeora(Assembler::xword, r16, r7, r4);          //       ldeora  x16, x7, [x4]
-    __ ldorra(Assembler::xword, r7, r15, r9);          //       ldseta  x7, x15, [x9]
-    __ ldsmina(Assembler::xword, r23, r8, r2);         //       ldsmina x23, x8, [x2]
-    __ ldsmaxa(Assembler::xword, r28, r21, sp);        //       ldsmaxa x28, x21, [sp]
-    __ ldumina(Assembler::xword, r5, r27, r0);         //       ldumina x5, x27, [x0]
-    __ ldumaxa(Assembler::xword, r17, r15, r4);        //       ldumaxa x17, x15, [x4]
+    __ swpa(Assembler::xword, r4, r15, r1);            //       swpa    x4, x15, [x1]
+    __ ldadda(Assembler::xword, r10, r7, r5);          //       ldadda  x10, x7, [x5]
+    __ ldbica(Assembler::xword, r10, r28, r7);         //       ldclra  x10, x28, [x7]
+    __ ldeora(Assembler::xword, r20, r23, r21);        //       ldeora  x20, x23, [x21]
+    __ ldorra(Assembler::xword, r6, r11, r8);          //       ldseta  x6, x11, [x8]
+    __ ldsmina(Assembler::xword, r17, zr, r6);         //       ldsmina x17, xzr, [x6]
+    __ ldsmaxa(Assembler::xword, r17, r2, r12);        //       ldsmaxa x17, x2, [x12]
+    __ ldumina(Assembler::xword, r30, r29, r3);        //       ldumina x30, x29, [x3]
+    __ ldumaxa(Assembler::xword, r27, r22, r29);       //       ldumaxa x27, x22, [x29]
 
 // LSEOp
-    __ swpal(Assembler::xword, r26, r8, r28);          //       swpal   x26, x8, [x28]
-    __ ldaddal(Assembler::xword, r22, r27, r27);       //       ldaddal x22, x27, [x27]
-    __ ldbical(Assembler::xword, r25, r23, r0);        //       ldclral x25, x23, [x0]
-    __ ldeoral(Assembler::xword, r4, r6, r15);         //       ldeoral x4, x6, [x15]
-    __ ldorral(Assembler::xword, r0, r4, r15);         //       ldsetal x0, x4, [x15]
-    __ ldsminal(Assembler::xword, r1, r10, r7);        //       ldsminal        x1, x10, [x7]
-    __ ldsmaxal(Assembler::xword, r5, r10, r28);       //       ldsmaxal        x5, x10, [x28]
-    __ lduminal(Assembler::xword, r7, r20, r23);       //       lduminal        x7, x20, [x23]
-    __ ldumaxal(Assembler::xword, r21, r6, r11);       //       ldumaxal        x21, x6, [x11]
+    __ swpal(Assembler::xword, r14, r13, r28);         //       swpal   x14, x13, [x28]
+    __ ldaddal(Assembler::xword, r17, r24, r5);        //       ldaddal x17, x24, [x5]
+    __ ldbical(Assembler::xword, r2, r14, r10);        //       ldclral x2, x14, [x10]
+    __ ldeoral(Assembler::xword, r16, r11, r27);       //       ldeoral x16, x11, [x27]
+    __ ldorral(Assembler::xword, r23, r12, r4);        //       ldsetal x23, x12, [x4]
+    __ ldsminal(Assembler::xword, r22, r17, r4);       //       ldsminal        x22, x17, [x4]
+    __ ldsmaxal(Assembler::xword, r1, r19, r16);       //       ldsmaxal        x1, x19, [x16]
+    __ lduminal(Assembler::xword, r16, r13, r14);      //       lduminal        x16, x13, [x14]
+    __ ldumaxal(Assembler::xword, r12, r2, r17);       //       ldumaxal        x12, x2, [x17]
 
 // LSEOp
-    __ swpl(Assembler::xword, r8, r17, sp);            //       swpl    x8, x17, [sp]
-    __ ldaddl(Assembler::xword, r6, r17, r2);          //       ldaddl  x6, x17, [x2]
-    __ ldbicl(Assembler::xword, r12, r30, r29);        //       ldclrl  x12, x30, [x29]
-    __ ldeorl(Assembler::xword, r3, r27, r22);         //       ldeorl  x3, x27, [x22]
-    __ ldorrl(Assembler::xword, r29, r14, r13);        //       ldsetl  x29, x14, [x13]
-    __ ldsminl(Assembler::xword, r28, r17, r24);       //       ldsminl x28, x17, [x24]
-    __ ldsmaxl(Assembler::xword, r5, r2, r14);         //       ldsmaxl x5, x2, [x14]
-    __ lduminl(Assembler::xword, r10, r16, r11);       //       lduminl x10, x16, [x11]
-    __ ldumaxl(Assembler::xword, r27, r23, r12);       //       ldumaxl x27, x23, [x12]
+    __ swpl(Assembler::xword, r3, r21, r23);           //       swpl    x3, x21, [x23]
+    __ ldaddl(Assembler::xword, r5, r6, r7);           //       ldaddl  x5, x6, [x7]
+    __ ldbicl(Assembler::xword, r19, r13, r28);        //       ldclrl  x19, x13, [x28]
+    __ ldeorl(Assembler::xword, r17, r16, r6);         //       ldeorl  x17, x16, [x6]
+    __ ldorrl(Assembler::xword, r2, r29, r3);          //       ldsetl  x2, x29, [x3]
+    __ ldsminl(Assembler::xword, r4, r6, r15);         //       ldsminl x4, x6, [x15]
+    __ ldsmaxl(Assembler::xword, r20, r13, r12);       //       ldsmaxl x20, x13, [x12]
+    __ lduminl(Assembler::xword, r20, r8, r25);        //       lduminl x20, x8, [x25]
+    __ ldumaxl(Assembler::xword, r20, r19, r0);        //       ldumaxl x20, x19, [x0]
 
 // LSEOp
-    __ swp(Assembler::word, r4, r22, r17);             //       swp     w4, w22, [x17]
-    __ ldadd(Assembler::word, r4, r1, r19);            //       ldadd   w4, w1, [x19]
-    __ ldbic(Assembler::word, r16, r16, r13);          //       ldclr   w16, w16, [x13]
-    __ ldeor(Assembler::word, r14, r12, r2);           //       ldeor   w14, w12, [x2]
-    __ ldorr(Assembler::word, r17, r3, r21);           //       ldset   w17, w3, [x21]
-    __ ldsmin(Assembler::word, r23, r5, r6);           //       ldsmin  w23, w5, [x6]
-    __ ldsmax(Assembler::word, r7, r19, r13);          //       ldsmax  w7, w19, [x13]
-    __ ldumin(Assembler::word, r28, r17, r16);         //       ldumin  w28, w17, [x16]
-    __ ldumax(Assembler::word, r6, r2, r29);           //       ldumax  w6, w2, [x29]
+    __ swp(Assembler::word, r11, r24, r6);             //       swp     w11, w24, [x6]
+    __ ldadd(Assembler::word, r20, zr, r14);           //       ldadd   w20, wzr, [x14]
+    __ ldbic(Assembler::word, r16, r6, r0);            //       ldclr   w16, w6, [x0]
+    __ ldeor(Assembler::word, r7, r15, r19);           //       ldeor   w7, w15, [x19]
+    __ ldorr(Assembler::word, r26, r9, r10);           //       ldset   w26, w9, [x10]
+    __ ldsmin(Assembler::word, r23, r21, r22);         //       ldsmin  w23, w21, [x22]
+    __ ldsmax(Assembler::word, r28, r2, r3);           //       ldsmax  w28, w2, [x3]
+    __ ldumin(Assembler::word, r15, r19, r20);         //       ldumin  w15, w19, [x20]
+    __ ldumax(Assembler::word, r7, r4, r29);           //       ldumax  w7, w4, [x29]
 
 // LSEOp
-    __ swpa(Assembler::word, r3, r4, r6);              //       swpa    w3, w4, [x6]
-    __ ldadda(Assembler::word, r16, r20, r13);         //       ldadda  w16, w20, [x13]
-    __ ldbica(Assembler::word, r12, r20, r8);          //       ldclra  w12, w20, [x8]
-    __ ldeora(Assembler::word, r25, r20, r19);         //       ldeora  w25, w20, [x19]
-    __ ldorra(Assembler::word, r0, r11, r24);          //       ldseta  w0, w11, [x24]
-    __ ldsmina(Assembler::word, r6, r20, sp);          //       ldsmina w6, w20, [sp]
-    __ ldsmaxa(Assembler::word, r14, r16, r6);         //       ldsmaxa w14, w16, [x6]
-    __ ldumina(Assembler::word, r0, r7, r15);          //       ldumina w0, w7, [x15]
-    __ ldumaxa(Assembler::word, r19, r26, r9);         //       ldumaxa w19, w26, [x9]
+    __ swpa(Assembler::word, r7, r0, r9);              //       swpa    w7, w0, [x9]
+    __ ldadda(Assembler::word, r16, r20, r23);         //       ldadda  w16, w20, [x23]
+    __ ldbica(Assembler::word, r4, r16, r10);          //       ldclra  w4, w16, [x10]
+    __ ldeora(Assembler::word, r23, r11, r25);         //       ldeora  w23, w11, [x25]
+    __ ldorra(Assembler::word, r6, zr, r16);           //       ldseta  w6, wzr, [x16]
+    __ ldsmina(Assembler::word, r13, r23, r12);        //       ldsmina w13, w23, [x12]
+    __ ldsmaxa(Assembler::word, r1, r14, r9);          //       ldsmaxa w1, w14, [x9]
+    __ ldumina(Assembler::word, r21, r16, r26);        //       ldumina w21, w16, [x26]
+    __ ldumaxa(Assembler::word, r15, r4, r4);          //       ldumaxa w15, w4, [x4]
 
 // LSEOp
-    __ swpal(Assembler::word, r10, r23, r21);          //       swpal   w10, w23, [x21]
-    __ ldaddal(Assembler::word, r22, r28, r2);         //       ldaddal w22, w28, [x2]
-    __ ldbical(Assembler::word, r3, r15, r19);         //       ldclral w3, w15, [x19]
-    __ ldeoral(Assembler::word, r20, r7, r4);          //       ldeoral w20, w7, [x4]
-    __ ldorral(Assembler::word, r29, r7, r0);          //       ldsetal w29, w7, [x0]
-    __ ldsminal(Assembler::word, r9, r16, r20);        //       ldsminal        w9, w16, [x20]
-    __ ldsmaxal(Assembler::word, r23, r4, r16);        //       ldsmaxal        w23, w4, [x16]
-    __ lduminal(Assembler::word, r10, r23, r11);       //       lduminal        w10, w23, [x11]
-    __ ldumaxal(Assembler::word, r25, r6, sp);         //       ldumaxal        w25, w6, [sp]
+    __ swpal(Assembler::word, r16, r8, r6);            //       swpal   w16, w8, [x6]
+    __ ldaddal(Assembler::word, r30, r4, r29);         //       ldaddal w30, w4, [x29]
+    __ ldbical(Assembler::word, r17, r29, r26);        //       ldclral w17, w29, [x26]
+    __ ldeoral(Assembler::word, r9, r15, r2);          //       ldeoral w9, w15, [x2]
+    __ ldorral(Assembler::word, r11, r29, r3);         //       ldsetal w11, w29, [x3]
+    __ ldsminal(Assembler::word, r7, r1, r27);         //       ldsminal        w7, w1, [x27]
+    __ ldsmaxal(Assembler::word, r21, r16, r14);       //       ldsmaxal        w21, w16, [x14]
+    __ lduminal(Assembler::word, r8, r16, r22);        //       lduminal        w8, w16, [x22]
+    __ ldumaxal(Assembler::word, r25, r5, r20);        //       ldumaxal        w25, w5, [x20]
 
 // LSEOp
-    __ swpl(Assembler::word, r16, r13, r23);           //       swpl    w16, w13, [x23]
-    __ ldaddl(Assembler::word, r12, r1, r14);          //       ldaddl  w12, w1, [x14]
-    __ ldbicl(Assembler::word, r9, r21, r16);          //       ldclrl  w9, w21, [x16]
-    __ ldeorl(Assembler::word, r26, r15, r4);          //       ldeorl  w26, w15, [x4]
-    __ ldorrl(Assembler::word, r4, r16, r8);           //       ldsetl  w4, w16, [x8]
-    __ ldsminl(Assembler::word, r6, r30, r4);          //       ldsminl w6, w30, [x4]
-    __ ldsmaxl(Assembler::word, r29, r17, r29);        //       ldsmaxl w29, w17, [x29]
-    __ lduminl(Assembler::word, r26, r9, r15);         //       lduminl w26, w9, [x15]
-    __ ldumaxl(Assembler::word, r2, r11, r29);         //       ldumaxl w2, w11, [x29]
+    __ swpl(Assembler::word, r21, r16, r23);           //       swpl    w21, w16, [x23]
+    __ ldaddl(Assembler::word, r16, r30, r20);         //       ldaddl  w16, w30, [x20]
+    __ ldbicl(Assembler::word, r20, r0, r4);           //       ldclrl  w20, w0, [x4]
+    __ ldeorl(Assembler::word, r19, r24, r4);          //       ldeorl  w19, w24, [x4]
+    __ ldorrl(Assembler::word, r20, r4, r24);          //       ldsetl  w20, w4, [x24]
+    __ ldsminl(Assembler::word, r26, r19, r2);         //       ldsminl w26, w19, [x2]
+    __ ldsmaxl(Assembler::word, r8, r8, r14);          //       ldsmaxl w8, w8, [x14]
+    __ lduminl(Assembler::word, r24, r16, sp);         //       lduminl w24, w16, [sp]
+    __ ldumaxl(Assembler::word, r22, r4, sp);          //       ldumaxl w22, w4, [sp]
 
 // SHA3SIMDOp
-    __ bcax(v3, __ T16B, v7, v1, v27);                 //       bcax            v3.16B, v7.16B, v1.16B, v27.16B
-    __ eor3(v21, __ T16B, v18, v14, v8);               //       eor3            v21.16B, v18.16B, v14.16B, v8.16B
-    __ rax1(v18, __ T2D, v22, v25);                    //       rax1            v18.2D, v22.2D, v25.2D
-    __ xar(v5, __ T2D, v20, v21, 37);                  //       xar             v5.2D, v20.2D, v21.2D, #37
+    __ bcax(v1, __ T16B, v10, v20, v12);               //       bcax            v1.16B, v10.16B, v20.16B, v12.16B
+    __ eor3(v0, __ T16B, v9, v7, v24);                 //       eor3            v0.16B, v9.16B, v7.16B, v24.16B
+    __ rax1(v18, __ T2D, v4, v27);                     //       rax1            v18.2D, v4.2D, v27.2D
+    __ xar(v6, __ T2D, v10, v27, 48);                  //       xar             v6.2D, v10.2D, v27.2D, #48
 
 // SHA512SIMDOp
-    __ sha512h(v23, __ T2D, v16, v30);                 //       sha512h         q23, q16, v30.2D
-    __ sha512h2(v20, __ T2D, v20, v0);                 //       sha512h2                q20, q20, v0.2D
-    __ sha512su0(v4, __ T2D, v19);                     //       sha512su0               v4.2D, v19.2D
-    __ sha512su1(v24, __ T2D, v4, v20);                //       sha512su1               v24.2D, v4.2D, v20.2D
+    __ sha512h(v13, __ T2D, v16, v31);                 //       sha512h         q13, q16, v31.2D
+    __ sha512h2(v22, __ T2D, v22, v20);                //       sha512h2                q22, q22, v20.2D
+    __ sha512su0(v31, __ T2D, v29);                    //       sha512su0               v31.2D, v29.2D
+    __ sha512su1(v9, __ T2D, v14, v20);                //       sha512su1               v9.2D, v14.2D, v20.2D
 
 // SVEBinaryImmOp
-    __ sve_add(z4, __ D, 210u);                        //       add     z4.d, z4.d, #0xd2
-    __ sve_sub(z19, __ B, 71u);                        //       sub     z19.b, z19.b, #0x47
-    __ sve_and(z8, __ H, 49663u);                      //       and     z8.h, z8.h, #0xc1ff
-    __ sve_eor(z31, __ S, 4294967231u);                //       eor     z31.s, z31.s, #0xffffffbf
-    __ sve_orr(z1, __ H, 16368u);                      //       orr     z1.h, z1.h, #0x3ff0
+    __ sve_add(z7, __ S, 231u);                        //       add     z7.s, z7.s, #0xe7
+    __ sve_sub(z9, __ H, 115u);                        //       sub     z9.h, z9.h, #0x73
+    __ sve_and(z12, __ S, 4287102855u);                //       and     z12.s, z12.s, #0xff87ff87
+    __ sve_eor(z9, __ S, 3825205247u);                 //       eor     z9.s, z9.s, #0xe3ffffff
+    __ sve_orr(z18, __ S, 1u);                         //       orr     z18.s, z18.s, #0x1
 
 // SVEBinaryImmOp
-    __ sve_add(z0, __ H, 61u);                         //       add     z0.h, z0.h, #0x3d
-    __ sve_sub(z24, __ S, 36u);                        //       sub     z24.s, z24.s, #0x24
-    __ sve_and(z27, __ B, 243u);                       //       and     z27.b, z27.b, #0xf3
-    __ sve_eor(z24, __ H, 65534u);                     //       eor     z24.h, z24.h, #0xfffe
-    __ sve_orr(z22, __ S, 4294967293u);                //       orr     z22.s, z22.s, #0xfffffffd
+    __ sve_add(z3, __ H, 65u);                         //       add     z3.h, z3.h, #0x41
+    __ sve_sub(z15, __ H, 131u);                       //       sub     z15.h, z15.h, #0x83
+    __ sve_and(z4, __ H, 508u);                        //       and     z4.h, z4.h, #0x1fc
+    __ sve_eor(z0, __ H, 64512u);                      //       eor     z0.h, z0.h, #0xfc00
+    __ sve_orr(z3, __ B, 225u);                        //       orr     z3.b, z3.b, #0xe1
 
 // SVEBinaryImmOp
-    __ sve_add(z29, __ H, 113u);                       //       add     z29.h, z29.h, #0x71
-    __ sve_sub(z20, __ B, 165u);                       //       sub     z20.b, z20.b, #0xa5
-    __ sve_and(z28, __ H, 32256u);                     //       and     z28.h, z28.h, #0x7e00
-    __ sve_eor(z12, __ S, 4287102855u);                //       eor     z12.s, z12.s, #0xff87ff87
-    __ sve_orr(z9, __ S, 3825205247u);                 //       orr     z9.s, z9.s, #0xe3ffffff
+    __ sve_add(z29, __ H, 199u);                       //       add     z29.h, z29.h, #0xc7
+    __ sve_sub(z4, __ S, 63u);                         //       sub     z4.s, z4.s, #0x3f
+    __ sve_and(z24, __ D, 18428729675200069887u);      //       and     z24.d, z24.d, #0xffc00000000000ff
+    __ sve_eor(z11, __ D, 17296056810822168583u);      //       eor     z11.d, z11.d, #0xf007f007f007f007
+    __ sve_orr(z31, __ S, 32768u);                     //       orr     z31.s, z31.s, #0x8000
 
 // SVEBinaryImmOp
-    __ sve_add(z18, __ S, 41u);                        //       add     z18.s, z18.s, #0x29
-    __ sve_sub(z0, __ B, 98u);                         //       sub     z0.b, z0.b, #0x62
-    __ sve_and(z8, __ H, 32768u);                      //       and     z8.h, z8.h, #0x8000
-    __ sve_eor(z4, __ H, 508u);                        //       eor     z4.h, z4.h, #0x1fc
-    __ sve_orr(z0, __ H, 64512u);                      //       orr     z0.h, z0.h, #0xfc00
+    __ sve_add(z30, __ S, 179u);                       //       add     z30.s, z30.s, #0xb3
+    __ sve_sub(z20, __ B, 163u);                       //       sub     z20.b, z20.b, #0xa3
+    __ sve_and(z3, __ B, 225u);                        //       and     z3.b, z3.b, #0xe1
+    __ sve_eor(z9, __ S, 4164941887u);                 //       eor     z9.s, z9.s, #0xf83ff83f
+    __ sve_orr(z0, __ B, 239u);                        //       orr     z0.b, z0.b, #0xef
 
 // SVEBinaryImmOp
-    __ sve_add(z3, __ B, 79u);                         //       add     z3.b, z3.b, #0x4f
-    __ sve_sub(z19, __ D, 84u);                        //       sub     z19.d, z19.d, #0x54
-    __ sve_and(z24, __ B, 62u);                        //       and     z24.b, z24.b, #0x3e
-    __ sve_eor(z24, __ D, 18428729675200069887u);      //       eor     z24.d, z24.d, #0xffc00000000000ff
-    __ sve_orr(z11, __ D, 17296056810822168583u);      //       orr     z11.d, z11.d, #0xf007f007f007f007
+    __ sve_add(z14, __ B, 95u);                        //       add     z14.b, z14.b, #0x5f
+    __ sve_sub(z21, __ H, 139u);                       //       sub     z21.h, z21.h, #0x8b
+    __ sve_and(z30, __ H, 126u);                       //       and     z30.h, z30.h, #0x7e
+    __ sve_eor(z23, __ H, 57855u);                     //       eor     z23.h, z23.h, #0xe1ff
+    __ sve_orr(z28, __ B, 191u);                       //       orr     z28.b, z28.b, #0xbf
 
 // SVEBinaryImmOp
-    __ sve_add(z31, __ S, 115u);                       //       add     z31.s, z31.s, #0x73
-    __ sve_sub(z3, __ D, 134u);                        //       sub     z3.d, z3.d, #0x86
-    __ sve_and(z22, __ S, 4042322160u);                //       and     z22.s, z22.s, #0xf0f0f0f0
-    __ sve_eor(z3, __ B, 225u);                        //       eor     z3.b, z3.b, #0xe1
-    __ sve_orr(z9, __ S, 4164941887u);                 //       orr     z9.s, z9.s, #0xf83ff83f
+    __ sve_add(z7, __ D, 175u);                        //       add     z7.d, z7.d, #0xaf
+    __ sve_sub(z14, __ B, 66u);                        //       sub     z14.b, z14.b, #0x42
+    __ sve_and(z26, __ B, 131u);                       //       and     z26.b, z26.b, #0x83
+    __ sve_eor(z17, __ B, 96u);                        //       eor     z17.b, z17.b, #0x60
+    __ sve_orr(z20, __ H, 16368u);                     //       orr     z20.h, z20.h, #0x3ff0
 
 // SVEVectorOp
-    __ sve_add(z0, __ D, z4, z2);                      //       add     z0.d, z4.d, z2.d
-    __ sve_sub(z14, __ S, z6, z11);                    //       sub     z14.s, z6.s, z11.s
-    __ sve_fadd(z14, __ S, z17, z30);                  //       fadd    z14.s, z17.s, z30.s
-    __ sve_fmul(z3, __ S, z3, z23);                    //       fmul    z3.s, z3.s, z23.s
-    __ sve_fsub(z3, __ S, z24, z28);                   //       fsub    z3.s, z24.s, z28.s
-    __ sve_abs(z19, __ D, p5, z7);                     //       abs     z19.d, p5/m, z7.d
-    __ sve_add(z21, __ H, p3, z5);                     //       add     z21.h, p3/m, z21.h, z5.h
-    __ sve_and(z26, __ S, p1, z22);                    //       and     z26.s, p1/m, z26.s, z22.s
-    __ sve_asr(z17, __ H, p0, z3);                     //       asr     z17.h, p0/m, z17.h, z3.h
-    __ sve_bic(z20, __ H, p3, z8);                     //       bic     z20.h, p3/m, z20.h, z8.h
-    __ sve_clz(z14, __ H, p4, z17);                    //       clz     z14.h, p4/m, z17.h
-    __ sve_cnt(z13, __ D, p6, z18);                    //       cnt     z13.d, p6/m, z18.d
-    __ sve_eor(z19, __ H, p2, z16);                    //       eor     z19.h, p2/m, z19.h, z16.h
-    __ sve_lsl(z27, __ S, p5, z28);                    //       lsl     z27.s, p5/m, z27.s, z28.s
-    __ sve_lsr(z8, __ D, p2, z5);                      //       lsr     z8.d, p2/m, z8.d, z5.d
-    __ sve_mul(z28, __ H, p2, z0);                     //       mul     z28.h, p2/m, z28.h, z0.h
-    __ sve_neg(z25, __ B, p5, z21);                    //       neg     z25.b, p5/m, z21.b
-    __ sve_not(z3, __ B, p5, z26);                     //       not     z3.b, p5/m, z26.b
-    __ sve_orr(z26, __ S, p7, z19);                    //       orr     z26.s, p7/m, z26.s, z19.s
-    __ sve_rbit(z1, __ D, p3, z14);                    //       rbit    z1.d, p3/m, z14.d
-    __ sve_revb(z14, __ H, p0, z18);                   //       revb    z14.h, p0/m, z18.h
-    __ sve_smax(z31, __ S, p5, z23);                   //       smax    z31.s, p5/m, z31.s, z23.s
-    __ sve_smin(z30, __ B, p3, z8);                    //       smin    z30.b, p3/m, z30.b, z8.b
-    __ sve_sub(z0, __ S, p3, z23);                     //       sub     z0.s, p3/m, z0.s, z23.s
-    __ sve_fabs(z0, __ D, p4, z26);                    //       fabs    z0.d, p4/m, z26.d
-    __ sve_fadd(z24, __ D, p3, z22);                   //       fadd    z24.d, p3/m, z24.d, z22.d
-    __ sve_fdiv(z2, __ D, p0, z11);                    //       fdiv    z2.d, p0/m, z2.d, z11.d
-    __ sve_fmax(z12, __ D, p5, z24);                   //       fmax    z12.d, p5/m, z12.d, z24.d
-    __ sve_fmin(z9, __ D, p7, z17);                    //       fmin    z9.d, p7/m, z9.d, z17.d
-    __ sve_fmul(z20, __ D, p5, z4);                    //       fmul    z20.d, p5/m, z20.d, z4.d
-    __ sve_fneg(z13, __ D, p7, z22);                   //       fneg    z13.d, p7/m, z22.d
-    __ sve_frintm(z31, __ D, p6, z18);                 //       frintm  z31.d, p6/m, z18.d
-    __ sve_frintn(z15, __ D, p2, z13);                 //       frintn  z15.d, p2/m, z13.d
-    __ sve_frintp(z20, __ S, p1, z1);                  //       frintp  z20.s, p1/m, z1.s
-    __ sve_fsqrt(z14, __ S, p0, z7);                   //       fsqrt   z14.s, p0/m, z7.s
-    __ sve_fsub(z12, __ D, p4, z4);                    //       fsub    z12.d, p4/m, z12.d, z4.d
-    __ sve_fmad(z15, __ S, p0, z3, z30);               //       fmad    z15.s, p0/m, z3.s, z30.s
-    __ sve_fmla(z20, __ D, p1, z20, z31);              //       fmla    z20.d, p1/m, z20.d, z31.d
-    __ sve_fmls(z13, __ D, p3, z9, z14);               //       fmls    z13.d, p3/m, z9.d, z14.d
-    __ sve_fmsb(z1, __ S, p3, z28, z3);                //       fmsb    z1.s, p3/m, z28.s, z3.s
-    __ sve_fnmad(z26, __ S, p2, z25, z9);              //       fnmad   z26.s, p2/m, z25.s, z9.s
-    __ sve_fnmsb(z26, __ D, p2, z14, z1);              //       fnmsb   z26.d, p2/m, z14.d, z1.d
-    __ sve_fnmla(z26, __ D, p1, z29, z20);             //       fnmla   z26.d, p1/m, z29.d, z20.d
-    __ sve_fnmls(z6, __ D, p7, z13, z1);               //       fnmls   z6.d, p7/m, z13.d, z1.d
-    __ sve_mla(z11, __ B, p2, z1, z1);                 //       mla     z11.b, p2/m, z1.b, z1.b
-    __ sve_mls(z27, __ B, p6, z15, z2);                //       mls     z27.b, p6/m, z15.b, z2.b
-    __ sve_and(z30, z17, z25);                         //       and     z30.d, z17.d, z25.d
-    __ sve_eor(z2, z24, z3);                           //       eor     z2.d, z24.d, z3.d
-    __ sve_orr(z29, z13, z3);                          //       orr     z29.d, z13.d, z3.d
-    __ sve_bic(z14, z16, z28);                         //       bic     z14.d, z16.d, z28.d
-    __ sve_uzp1(z4, __ S, z11, z27);                   //       uzp1    z4.s, z11.s, z27.s
-    __ sve_uzp2(z2, __ D, z16, z1);                    //       uzp2    z2.d, z16.d, z1.d
-    __ sve_fabd(z7, __ D, p5, z31);                    //       fabd    z7.d, p5/m, z7.d, z31.d
-    __ sve_bext(z16, __ S, z10, z22);                  //       bext    z16.s, z10.s, z22.s
-    __ sve_bdep(z29, __ B, z7, z22);                   //       bdep    z29.b, z7.b, z22.b
-    __ sve_eor3(z12, z24, z11);                        //       eor3    z12.d, z12.d, z24.d, z11.d
+    __ sve_add(z14, __ H, z19, z17);                   //       add     z14.h, z19.h, z17.h
+    __ sve_sub(z13, __ D, z25, z18);                   //       sub     z13.d, z25.d, z18.d
+    __ sve_fadd(z19, __ S, z9, z16);                   //       fadd    z19.s, z9.s, z16.s
+    __ sve_fmul(z27, __ D, z23, z28);                  //       fmul    z27.d, z23.d, z28.d
+    __ sve_fsub(z8, __ D, z8, z5);                     //       fsub    z8.d, z8.d, z5.d
+    __ sve_sqadd(z28, __ H, z10, z0);                  //       sqadd   z28.h, z10.h, z0.h
+    __ sve_sqsub(z25, __ B, z22, z21);                 //       sqsub   z25.b, z22.b, z21.b
+    __ sve_uqadd(z3, __ B, z23, z26);                  //       uqadd   z3.b, z23.b, z26.b
+    __ sve_uqsub(z26, __ S, z30, z19);                 //       uqsub   z26.s, z30.s, z19.s
+    __ sve_abs(z1, __ D, p3, z14);                     //       abs     z1.d, p3/m, z14.d
+    __ sve_add(z14, __ B, p0, z18);                    //       add     z14.b, p0/m, z14.b, z18.b
+    __ sve_and(z31, __ S, p5, z23);                    //       and     z31.s, p5/m, z31.s, z23.s
+    __ sve_asr(z30, __ B, p3, z8);                     //       asr     z30.b, p3/m, z30.b, z8.b
+    __ sve_bic(z0, __ S, p3, z23);                     //       bic     z0.s, p3/m, z0.s, z23.s
+    __ sve_clz(z0, __ D, p4, z26);                     //       clz     z0.d, p4/m, z26.d
+    __ sve_cnt(z24, __ S, p3, z22);                    //       cnt     z24.s, p3/m, z22.s
+    __ sve_eor(z2, __ S, p0, z11);                     //       eor     z2.s, p0/m, z2.s, z11.s
+    __ sve_lsl(z12, __ D, p5, z24);                    //       lsl     z12.d, p5/m, z12.d, z24.d
+    __ sve_lsr(z9, __ S, p7, z17);                     //       lsr     z9.s, p7/m, z9.s, z17.s
+    __ sve_mul(z20, __ S, p5, z4);                     //       mul     z20.s, p5/m, z20.s, z4.s
+    __ sve_neg(z13, __ D, p7, z22);                    //       neg     z13.d, p7/m, z22.d
+    __ sve_not(z31, __ S, p6, z18);                    //       not     z31.s, p6/m, z18.s
+    __ sve_orr(z15, __ D, p2, z13);                    //       orr     z15.d, p2/m, z15.d, z13.d
+    __ sve_rbit(z20, __ H, p1, z1);                    //       rbit    z20.h, p1/m, z1.h
+    __ sve_revb(z14, __ H, p0, z7);                    //       revb    z14.h, p0/m, z7.h
+    __ sve_smax(z12, __ D, p4, z4);                    //       smax    z12.d, p4/m, z12.d, z4.d
+    __ sve_smin(z15, __ D, p0, z3);                    //       smin    z15.d, p0/m, z15.d, z3.d
+    __ sve_umax(z1, __ S, p5, z5);                     //       umax    z1.s, p5/m, z1.s, z5.s
+    __ sve_umin(z31, __ H, p7, z13);                   //       umin    z31.h, p7/m, z31.h, z13.h
+    __ sve_sub(z9, __ B, p3, z30);                     //       sub     z9.b, p3/m, z9.b, z30.b
+    __ sve_fabs(z15, __ S, p7, z3);                    //       fabs    z15.s, p7/m, z3.s
+    __ sve_fadd(z26, __ S, p2, z25);                   //       fadd    z26.s, p2/m, z26.s, z25.s
+    __ sve_fdiv(z1, __ S, p6, z10);                    //       fdiv    z1.s, p6/m, z1.s, z10.s
+    __ sve_fmax(z1, __ S, p5, z26);                    //       fmax    z1.s, p5/m, z1.s, z26.s
+    __ sve_fmin(z29, __ S, p5, z17);                   //       fmin    z29.s, p5/m, z29.s, z17.s
+    __ sve_fmul(z28, __ D, p3, z1);                    //       fmul    z28.d, p3/m, z28.d, z1.d
+    __ sve_fneg(z11, __ S, p2, z1);                    //       fneg    z11.s, p2/m, z1.s
+    __ sve_frintm(z1, __ S, p6, z27);                  //       frintm  z1.s, p6/m, z27.s
+    __ sve_frintn(z2, __ D, p1, z30);                  //       frintn  z2.d, p1/m, z30.d
+    __ sve_frintp(z25, __ D, p0, z2);                  //       frintp  z25.d, p0/m, z2.d
+    __ sve_fsqrt(z3, __ S, p6, z29);                   //       fsqrt   z3.s, p6/m, z29.s
+    __ sve_fsub(z3, __ D, p5, z14);                    //       fsub    z3.d, p5/m, z3.d, z14.d
+    __ sve_fmad(z28, __ D, p4, z4, z11);               //       fmad    z28.d, p4/m, z4.d, z11.d
+    __ sve_fmla(z16, __ D, p0, z16, z1);               //       fmla    z16.d, p0/m, z16.d, z1.d
+    __ sve_fmls(z7, __ D, p5, z31, z28);               //       fmls    z7.d, p5/m, z31.d, z28.d
+    __ sve_fmsb(z10, __ S, p5, z17, z29);              //       fmsb    z10.s, p5/m, z17.s, z29.s
+    __ sve_fnmad(z22, __ S, p1, z12, z24);             //       fnmad   z22.s, p1/m, z12.s, z24.s
+    __ sve_fnmsb(z9, __ S, p2, z11, z0);               //       fnmsb   z9.s, p2/m, z11.s, z0.s
+    __ sve_fnmla(z23, __ S, p5, z20, z4);              //       fnmla   z23.s, p5/m, z20.s, z4.s
+    __ sve_fnmls(z15, __ D, p3, z4, z30);              //       fnmls   z15.d, p3/m, z4.d, z30.d
+    __ sve_mla(z27, __ H, p1, z21, z26);               //       mla     z27.h, p1/m, z21.h, z26.h
+    __ sve_mls(z31, __ H, p0, z25, z4);                //       mls     z31.h, p0/m, z25.h, z4.h
+    __ sve_and(z6, z3, z21);                           //       and     z6.d, z3.d, z21.d
+    __ sve_eor(z25, z24, z30);                         //       eor     z25.d, z24.d, z30.d
+    __ sve_orr(z31, z17, z1);                          //       orr     z31.d, z17.d, z1.d
+    __ sve_bic(z12, z30, z13);                         //       bic     z12.d, z30.d, z13.d
+    __ sve_uzp1(z25, __ D, z29, z1);                   //       uzp1    z25.d, z29.d, z1.d
+    __ sve_uzp2(z23, __ B, z31, z20);                  //       uzp2    z23.b, z31.b, z20.b
+    __ sve_fabd(z21, __ D, p1, z31);                   //       fabd    z21.d, p1/m, z21.d, z31.d
+    __ sve_bext(z27, __ D, z22, z8);                   //       bext    z27.d, z22.d, z8.d
+    __ sve_bdep(z26, __ B, z20, z5);                   //       bdep    z26.b, z20.b, z5.b
+    __ sve_eor3(z18, z18, z13);                        //       eor3    z18.d, z18.d, z18.d, z13.d
+    __ sve_sqadd(z21, __ S, p2, z0);                   //       sqadd   z21.s, p2/m, z21.s, z0.s
+    __ sve_sqsub(z10, __ S, p7, z7);                   //       sqsub   z10.s, p7/m, z10.s, z7.s
+    __ sve_uqadd(z6, __ D, p7, z20);                   //       uqadd   z6.d, p7/m, z6.d, z20.d
+    __ sve_uqsub(z28, __ H, p3, z17);                  //       uqsub   z28.h, p3/m, z28.h, z17.h
 
 // SVEReductionOp
-    __ sve_andv(v11, __ B, p2, z0);                    //       andv b11, p2, z0.b
-    __ sve_orv(v23, __ B, p5, z20);                    //       orv b23, p5, z20.b
-    __ sve_eorv(v3, __ B, p3, z15);                    //       eorv b3, p3, z15.b
-    __ sve_smaxv(v30, __ B, p6, z27);                  //       smaxv b30, p6, z27.b
-    __ sve_sminv(v21, __ D, p6, z10);                  //       sminv d21, p6, z10.d
-    __ sve_fminv(v3, __ S, p6, z4);                    //       fminv s3, p6, z4.s
-    __ sve_fmaxv(v6, __ S, p0, z21);                   //       fmaxv s6, p0, z21.s
-    __ sve_fadda(v25, __ D, p6, z30);                  //       fadda d25, p6, d25, z30.d
-    __ sve_uaddv(v31, __ H, p4, z1);                   //       uaddv d31, p4, z1.h
+    __ sve_andv(v19, __ H, p2, z26);                   //       andv h19, p2, z26.h
+    __ sve_orv(v24, __ H, p0, z11);                    //       orv h24, p0, z11.h
+    __ sve_eorv(v28, __ S, p5, z23);                   //       eorv s28, p5, z23.s
+    __ sve_smaxv(v28, __ D, p5, z20);                  //       smaxv d28, p5, z20.d
+    __ sve_sminv(v24, __ B, p0, z27);                  //       sminv b24, p0, z27.b
+    __ sve_fminv(v23, __ S, p3, z12);                  //       fminv s23, p3, z12.s
+    __ sve_fmaxv(v13, __ D, p7, z26);                  //       fmaxv d13, p7, z26.d
+    __ sve_fadda(v20, __ D, p1, z2);                   //       fadda d20, p1, d20, z2.d
+    __ sve_uaddv(v29, __ S, p0, z29);                  //       uaddv d29, p0, z29.s
 
 // AddWideNEONOp
-    __ saddwv(v12, v13, __ T8H, v14, __ T8B);          //       saddw   v12.8H, v13.8H, v14.8B
-    __ saddwv2(v30, v31, __ T8H, v0, __ T16B);         //       saddw2  v30.8H, v31.8H, v0.16B
-    __ saddwv(v13, v14, __ T4S, v15, __ T4H);          //       saddw   v13.4S, v14.4S, v15.4H
+    __ saddwv(v3, v4, __ T8H, v5, __ T8B);             //       saddw   v3.8H, v4.8H, v5.8B
+    __ saddwv2(v4, v5, __ T8H, v6, __ T16B);           //       saddw2  v4.8H, v5.8H, v6.16B
+    __ saddwv(v5, v6, __ T4S, v7, __ T4H);             //       saddw   v5.4S, v6.4S, v7.4H
     __ saddwv2(v8, v9, __ T4S, v10, __ T8H);           //       saddw2  v8.4S, v9.4S, v10.8H
-    __ saddwv(v25, v26, __ T2D, v27, __ T2S);          //       saddw   v25.2D, v26.2D, v27.2S
-    __ saddwv2(v29, v30, __ T2D, v31, __ T4S);         //       saddw2  v29.2D, v30.2D, v31.4S
-    __ uaddwv(v1, v2, __ T8H, v3, __ T8B);             //       uaddw   v1.8H, v2.8H, v3.8B
-    __ uaddwv2(v31, v0, __ T8H, v1, __ T16B);          //       uaddw2  v31.8H, v0.8H, v1.16B
-    __ uaddwv(v23, v24, __ T4S, v25, __ T4H);          //       uaddw   v23.4S, v24.4S, v25.4H
-    __ uaddwv2(v31, v0, __ T4S, v1, __ T8H);           //       uaddw2  v31.4S, v0.4S, v1.8H
-    __ uaddwv(v20, v21, __ T2D, v22, __ T2S);          //       uaddw   v20.2D, v21.2D, v22.2S
-    __ uaddwv2(v0, v1, __ T2D, v2, __ T4S);            //       uaddw2  v0.2D, v1.2D, v2.4S
+    __ saddwv(v28, v29, __ T2D, v30, __ T2S);          //       saddw   v28.2D, v29.2D, v30.2S
+    __ saddwv2(v13, v14, __ T2D, v15, __ T4S);         //       saddw2  v13.2D, v14.2D, v15.4S
+    __ uaddwv(v17, v18, __ T8H, v19, __ T8B);          //       uaddw   v17.8H, v18.8H, v19.8B
+    __ uaddwv2(v13, v14, __ T8H, v15, __ T16B);        //       uaddw2  v13.8H, v14.8H, v15.16B
+    __ uaddwv(v14, v15, __ T4S, v16, __ T4H);          //       uaddw   v14.4S, v15.4S, v16.4H
+    __ uaddwv2(v8, v9, __ T4S, v10, __ T8H);           //       uaddw2  v8.4S, v9.4S, v10.8H
+    __ uaddwv(v10, v11, __ T2D, v12, __ T2S);          //       uaddw   v10.2D, v11.2D, v12.2S
+    __ uaddwv2(v8, v9, __ T2D, v10, __ T4S);           //       uaddw2  v8.2D, v9.2D, v10.4S
 
     __ bind(forth);
 
@@ -1327,30 +1377,30 @@
     0x9101a1a0,     0xb10a5cc8,     0xd10810aa,     0xf10fd061,
     0x120cb166,     0x321764bc,     0x52174681,     0x720c0227,
     0x9241018e,     0xb25a2969,     0xd278b411,     0xf26aad01,
-    0x14000000,     0x17ffffd7,     0x14000441,     0x94000000,
-    0x97ffffd4,     0x9400043e,     0x3400000a,     0x34fffa2a,
-    0x3400876a,     0x35000008,     0x35fff9c8,     0x35008708,
-    0xb400000b,     0xb4fff96b,     0xb40086ab,     0xb500001d,
-    0xb5fff91d,     0xb500865d,     0x10000013,     0x10fff8b3,
-    0x100085f3,     0x90000013,     0x36300016,     0x3637f836,
-    0x36308576,     0x3758000c,     0x375ff7cc,     0x3758850c,
+    0x14000000,     0x17ffffd7,     0x14000473,     0x94000000,
+    0x97ffffd4,     0x94000470,     0x3400000a,     0x34fffa2a,
+    0x34008daa,     0x35000008,     0x35fff9c8,     0x35008d48,
+    0xb400000b,     0xb4fff96b,     0xb4008ceb,     0xb500001d,
+    0xb5fff91d,     0xb5008c9d,     0x10000013,     0x10fff8b3,
+    0x10008c33,     0x90000013,     0x36300016,     0x3637f836,
+    0x36308bb6,     0x3758000c,     0x375ff7cc,     0x37588b4c,
     0x128313a0,     0x528a32c7,     0x7289173b,     0x92ab3acc,
     0xd2a0bf94,     0xf2c285e8,     0x9358722f,     0x330e652f,
     0x53067f3b,     0x93577c53,     0xb34a1aac,     0xd35a4016,
     0x13946c63,     0x93c3dbc8,     0x54000000,     0x54fff5a0,
-    0x540082e0,     0x54000001,     0x54fff541,     0x54008281,
-    0x54000002,     0x54fff4e2,     0x54008222,     0x54000002,
-    0x54fff482,     0x540081c2,     0x54000003,     0x54fff423,
-    0x54008163,     0x54000003,     0x54fff3c3,     0x54008103,
-    0x54000004,     0x54fff364,     0x540080a4,     0x54000005,
-    0x54fff305,     0x54008045,     0x54000006,     0x54fff2a6,
-    0x54007fe6,     0x54000007,     0x54fff247,     0x54007f87,
-    0x54000008,     0x54fff1e8,     0x54007f28,     0x54000009,
-    0x54fff189,     0x54007ec9,     0x5400000a,     0x54fff12a,
-    0x54007e6a,     0x5400000b,     0x54fff0cb,     0x54007e0b,
-    0x5400000c,     0x54fff06c,     0x54007dac,     0x5400000d,
-    0x54fff00d,     0x54007d4d,     0x5400000e,     0x54ffefae,
-    0x54007cee,     0x5400000f,     0x54ffef4f,     0x54007c8f,
+    0x54008920,     0x54000001,     0x54fff541,     0x540088c1,
+    0x54000002,     0x54fff4e2,     0x54008862,     0x54000002,
+    0x54fff482,     0x54008802,     0x54000003,     0x54fff423,
+    0x540087a3,     0x54000003,     0x54fff3c3,     0x54008743,
+    0x54000004,     0x54fff364,     0x540086e4,     0x54000005,
+    0x54fff305,     0x54008685,     0x54000006,     0x54fff2a6,
+    0x54008626,     0x54000007,     0x54fff247,     0x540085c7,
+    0x54000008,     0x54fff1e8,     0x54008568,     0x54000009,
+    0x54fff189,     0x54008509,     0x5400000a,     0x54fff12a,
+    0x540084aa,     0x5400000b,     0x54fff0cb,     0x5400844b,
+    0x5400000c,     0x54fff06c,     0x540083ec,     0x5400000d,
+    0x54fff00d,     0x5400838d,     0x5400000e,     0x54ffefae,
+    0x5400832e,     0x5400000f,     0x54ffef4f,     0x540082cf,
     0xd40658e1,     0xd4014d22,     0xd4046543,     0xd4273f60,
     0xd44cad80,     0xd503201f,     0xd503203f,     0xd503205f,
     0xd503209f,     0xd50320bf,     0xd503219f,     0xd50323bf,
@@ -1453,44 +1503,54 @@
     0x0e351e93,     0x4e381ef6,     0x0eac1d6a,     0x4ea61ca4,
     0x2e211c1f,     0x6e371ed5,     0x0e2a8528,     0x4e21841f,
     0x0e758693,     0x4e6c856a,     0x0ebe87bc,     0x4ea48462,
-    0x4efb8759,     0x0e27d4c5,     0x4e25d483,     0x4e6ad528,
-    0x2e3886f6,     0x6e358693,     0x2e6f85cd,     0x6e6784c5,
-    0x2ebf87dd,     0x6eba8738,     0x6ef786d5,     0x0ebcd77a,
-    0x4ebad738,     0x4ee5d483,     0x0e3a9f38,     0x4e3c9f7a,
-    0x0e799f17,     0x4e719e0f,     0x0eb79ed5,     0x4ea59c83,
-    0x2ebad738,     0x6eaad528,     0x6efbd759,     0x2e36d6b4,
-    0x6e32d630,     0x6e73d651,     0x2e24dc62,     0x6e23dc41,
-    0x6e62dc20,     0x0e7a9738,     0x4e6694a4,     0x0ea59483,
-    0x4eae95ac,     0x0e21cc1f,     0x4e3ecfbc,     0x4e6ccd6a,
-    0x2e7c977a,     0x6e649462,     0x2eae95ac,     0x6eb49672,
-    0x0ea1cc1f,     0x4ea3cc41,     0x4eefcdcd,     0x2e3fffdd,
-    0x6e22fc20,     0x6e75fe93,     0x0e2e65ac,     0x4e336651,
-    0x0e7866f6,     0x4e6f65cd,     0x0ebe67bc,     0x4ea067fe,
-    0x0e21a41f,     0x4e23a441,     0x0e7ca77a,     0x4e7ea7bc,
-    0x0ea6a4a4,     0x4ea0a7fe,     0x0e26f4a4,     0x4e28f4e6,
-    0x4e60f7fe,     0x0e3c6f7a,     0x4e346e72,     0x0e6b6d49,
-    0x4e6a6d28,     0x0eae6dac,     0x4ea26c20,     0x0e36aeb4,
-    0x4e23ac41,     0x0e7aaf38,     0x4e64ac62,     0x0ea2ac20,
-    0x4eabad49,     0x0ebaf738,     0x4ebcf77a,     0x4ef2f630,
-    0x2ea0effe,     0x6ea5ec83,     0x6eeced6a,     0x0fa710c5,
-    0x4f8b8149,     0x4fc710c5,     0x0f8750c5,     0x4faa8128,
-    0x4fc750c5,     0x2f8890e6,     0x4fa880e6,     0x6fc59083,
-    0x0f6f81cd,     0x4f448862,     0x0f848062,     0x4fab8149,
-    0x0e3736d5,     0x4e323630,     0x0e743672,     0x4e6d358b,
-    0x0eb736d5,     0x4eb93717,     0x4eee35ac,     0x0e3c3f7a,
-    0x4e393f17,     0x0e7e3fbc,     0x4e703dee,     0x0ead3d8b,
-    0x4eba3f38,     0x4ee33c41,     0x2e2e8dac,     0x6e218c1f,
-    0x2e6c8d6a,     0x6e728e30,     0x2ea98d07,     0x6ea48c62,
-    0x6ee58c83,     0x2e2f35cd,     0x6e353693,     0x2e733651,
-    0x6e723630,     0x2ea53483,     0x6ea33441,     0x6eed358b,
-    0x2e203ffe,     0x6e273cc5,     0x2e6a3d28,     0x6e713e0f,
-    0x2ebf3fdd,     0x6ea03ffe,     0x6ee23c20,     0x0e36e6b4,
-    0x4e29e507,     0x4e76e6b4,     0x2eb9e717,     0x6ebee7bc,
-    0x6ef7e6d5,     0x2e3de79b,     0x6e3be759,     0x6e67e4c5,
-    0x65d23ee0,     0x65903d92,     0x65d03fa7,     0x65912fe9,
-    0x65d13bf9,     0x65932a0a,     0x25cb90c4,     0x25040bde,
-    0x25c11085,     0x25c62c6b,     0x259f2279,     0x259d8993,
-    0x24e5102b,     0x24ad5458,     0x24ec7ab5,     0x24387c6d,
+    0x4efb8759,     0x0e270cc5,     0x4e250c83,     0x0e6a0d28,
+    0x4e780ef6,     0x0eb50e93,     0x4eaf0dcd,     0x4ee70cc5,
+    0x2e3f0fdd,     0x6e3a0f38,     0x2e770ed5,     0x6e7c0f7a,
+    0x2eba0f38,     0x6ea50c83,     0x6efa0f38,     0x0e3cd77a,
+    0x4e39d717,     0x4e71d60f,     0x2e3786d5,     0x6e258483,
+    0x2e7a8738,     0x6e6a8528,     0x2ebb8759,     0x6eb686b4,
+    0x6ef28630,     0x0e332e51,     0x4e242c62,     0x0e632c41,
+    0x4e622c20,     0x0eba2f38,     0x4ea62ca4,     0x4ee52c83,
+    0x2e2e2dac,     0x6e212c1f,     0x2e7e2fbc,     0x6e6c2d6a,
+    0x2ebc2f7a,     0x6ea42c62,     0x6eee2dac,     0x0eb4d672,
+    0x4ea1d41f,     0x4ee3d441,     0x0e2f9dcd,     0x4e3f9fdd,
+    0x0e629c20,     0x4e759e93,     0x0eae9dac,     0x4eb39e51,
+    0x2eb8d6f6,     0x6eafd5cd,     0x6efed7bc,     0x2e20d7fe,
+    0x6e21d41f,     0x6e63d441,     0x2e3cdf7a,     0x6e3edfbc,
+    0x6e66dca4,     0x0e6097fe,     0x4e6694a4,     0x0ea894e6,
+    0x4ea097fe,     0x0e3ccf7a,     0x4e34ce72,     0x4e6bcd49,
+    0x2e6a9528,     0x6e6e95ac,     0x2ea29420,     0x6eb696b4,
+    0x0ea3cc41,     0x4ebacf38,     0x4ee4cc62,     0x2e22fc20,
+    0x6e2bfd49,     0x6e7aff38,     0x0e3c677a,     0x4e326630,
+    0x0e6067fe,     0x4e656483,     0x0eac656a,     0x4eb96717,
+    0x2e2c656a,     0x6e2664a4,     0x2e746672,     0x6e646462,
+    0x2ead658b,     0x6eaa6528,     0x0e2ca56a,     0x4e31a60f,
+    0x0e73a651,     0x4e64a462,     0x0eaca56a,     0x4eaea5ac,
+    0x0e2ef5ac,     0x4e31f60f,     0x4e6ff5cd,     0x0e246c62,
+    0x4e296d07,     0x0e766eb4,     0x4e7c6f7a,     0x0eb26e30,
+    0x4ea66ca4,     0x2e246c62,     0x6e266ca4,     0x2e6e6dac,
+    0x6e746e72,     0x2eb76ed5,     0x6eb26e30,     0x0e34ae72,
+    0x4e2dad8b,     0x0e77aed5,     0x4e79af17,     0x0eaeadac,
+    0x4ebcaf7a,     0x0eb9f717,     0x4ebef7bc,     0x4ef0f5ee,
+    0x2eaded8b,     0x6ebaef38,     0x6ee3ec41,     0x0f81100f,
+    0x4faa8128,     0x4fc31041,     0x0f8850e6,     0x4f8a8928,
+    0x4fc35841,     0x2f8790c5,     0x4fa48862,     0x6fc99107,
+    0x0f71800f,     0x4f4c816a,     0x0f8c816a,     0x4f9089ee,
+    0x0e3736d5,     0x4e3d379b,     0x0e7b3759,     0x4e6734c5,
+    0x0ea33441,     0x4eb93717,     0x4ef23630,     0x0e213c1f,
+    0x4e273cc5,     0x0e6e3dac,     0x4e6b3d49,     0x0ebe3fbc,
+    0x4eb13e0f,     0x4eff3fdd,     0x2e388ef6,     0x6e218c1f,
+    0x2e758e93,     0x6e618c1f,     0x2ea78cc5,     0x6eb08dee,
+    0x6ef48e72,     0x2e21341f,     0x6e343672,     0x2e7d379b,
+    0x6e7636b4,     0x2eb23630,     0x6eae35ac,     0x6eed358b,
+    0x2e2b3d49,     0x6e283ce6,     0x2e603ffe,     0x6e733e51,
+    0x2ebd3f9b,     0x6ebe3fbc,     0x6ee03ffe,     0x0e29e507,
+    0x4e2ce56a,     0x4e76e6b4,     0x2eace56a,     0x6ea6e4a4,
+    0x6efae738,     0x2e33e651,     0x6e33e651,     0x6e78e6f6,
+    0x659237a1,     0x65d02279,     0x659030c7,     0x65d121a5,
+    0x6591327f,     0x65d32e01,     0x25dc9aa5,     0x25081c7d,
+    0x254b1e29,     0x258f34e7,     0x25c2385c,     0x258282f5,
+    0x24e2d720,     0x243e1d99,     0x24e9661e,     0x2427664e,
     0xba5fd3e3,     0x3a5f03e5,     0xfa411be4,     0x7a42cbe2,
     0x93df03ff,     0xc820ffff,     0x8822fc7f,     0xc8247cbf,
     0x88267fff,     0x4e010fe0,     0x5e040420,     0x4e081fe1,
@@ -1553,52 +1613,55 @@
     0x1e741000,     0x1e743000,     0x1e761000,     0x1e763000,
     0x1e781000,     0x1e783000,     0x1e7a1000,     0x1e7a3000,
     0x1e7c1000,     0x1e7c3000,     0x1e7e1000,     0x1e7e3000,
-    0xf8338131,     0xf83c01fb,     0xf82712f5,     0xf83f2059,
-    0xf83f31fb,     0xf82a5277,     0xf8234010,     0xf83972fa,
-    0xf8226190,     0xf8a483dc,     0xf8bd0370,     0xf8a613a9,
-    0xf8b02087,     0xf8a7312f,     0xf8b75048,     0xf8bc43f5,
-    0xf8a5701b,     0xf8b1608f,     0xf8fa8388,     0xf8f6037b,
-    0xf8f91017,     0xf8e421e6,     0xf8e031e4,     0xf8e150ea,
-    0xf8e5438a,     0xf8e772f4,     0xf8f56166,     0xf86883f1,
-    0xf8660051,     0xf86c13be,     0xf86322db,     0xf87d31ae,
-    0xf87c5311,     0xf86541c2,     0xf86a7170,     0xf87b6197,
-    0xb8248236,     0xb8240261,     0xb83011b0,     0xb82e204c,
-    0xb83132a3,     0xb83750c5,     0xb82741b3,     0xb83c7211,
-    0xb82663a2,     0xb8a380c4,     0xb8b001b4,     0xb8ac1114,
-    0xb8b92274,     0xb8a0330b,     0xb8a653f4,     0xb8ae40d0,
-    0xb8a071e7,     0xb8b3613a,     0xb8ea82b7,     0xb8f6005c,
-    0xb8e3126f,     0xb8f42087,     0xb8fd3007,     0xb8e95290,
-    0xb8f74204,     0xb8ea7177,     0xb8f963e6,     0xb87082ed,
-    0xb86c01c1,     0xb8691215,     0xb87a208f,     0xb8643110,
-    0xb866509e,     0xb87d43b1,     0xb87a71e9,     0xb86263ab,
-    0xce216ce3,     0xce0e2255,     0xce798ed2,     0xce959685,
-    0xce7e8217,     0xce608694,     0xcec08264,     0xce748898,
-    0x25e0da44,     0x2521c8f3,     0x05801548,     0x0540cbdf,
-    0x05006521,     0x2560c7a0,     0x25a1c498,     0x058026bb,
-    0x05407dd8,     0x0500f3d6,     0x2560ce3d,     0x2521d4b4,
-    0x05803cbc,     0x05404d6c,     0x05001b89,     0x25a0c532,
-    0x2521cc40,     0x05800c08,     0x054074c4,     0x050034a0,
-    0x2520c9e3,     0x25e1ca93,     0x05803e98,     0x05425238,
-    0x050024cb,     0x25a0ce7f,     0x25e1d0c3,     0x05802676,
-    0x05401e63,     0x05002d49,     0x04e20080,     0x04ab04ce,
-    0x659e022e,     0x65970863,     0x659c0703,     0x04d6b4f3,
-    0x04400cb5,     0x049a06da,     0x04508071,     0x045b0d14,
-    0x0459b22e,     0x04daba4d,     0x04590a13,     0x0493979b,
-    0x04d188a8,     0x0450081c,     0x0417b6b9,     0x041eb743,
-    0x04981e7a,     0x05e78dc1,     0x0564824e,     0x048816ff,
-    0x040a0d1e,     0x04810ee0,     0x04dcb340,     0x65c08ed8,
-    0x65cd8162,     0x65c6970c,     0x65c79e29,     0x65c29494,
-    0x04ddbecd,     0x65c2ba5f,     0x65c0a9af,     0x6581a434,
-    0x658da0ee,     0x65c1908c,     0x65be806f,     0x65ff0694,
-    0x65ee2d2d,     0x65a3af81,     0x65a9cb3a,     0x65e1e9da,
-    0x65f447ba,     0x65e17da6,     0x0401482b,     0x040279fb,
-    0x0439323e,     0x04a33302,     0x046331bd,     0x04fc320e,
-    0x05bb6964,     0x05e16e02,     0x65c897e7,     0x4596b150,
-    0x4516b4fd,     0x0438396c,     0x041a280b,     0x04183697,
-    0x04192de3,     0x04083b7e,     0x04ca3955,     0x65873883,
-    0x658622a6,     0x65d83bd9,     0x0441303f,     0x0e2e11ac,
-    0x4e2013fe,     0x0e6f11cd,     0x4e6a1128,     0x0ebb1359,
-    0x4ebf13dd,     0x2e231041,     0x6e21101f,     0x2e791317,
-    0x6e61101f,     0x2eb612b4,     0x6ea21020,
+    0xf82f82e9,     0xf8280382,     0xf83510bf,     0xf83b2220,
+    0xf82f3344,     0xf82852dc,     0xf83b433b,     0xf8377080,
+    0xf8266010,     0xf8a4802f,     0xf8aa00a7,     0xf8aa10fc,
+    0xf8b422b7,     0xf8a6310b,     0xf8b150df,     0xf8b14182,
+    0xf8be707d,     0xf8bb63b6,     0xf8ee838d,     0xf8f100b8,
+    0xf8e2114e,     0xf8f0236b,     0xf8f7308c,     0xf8f65091,
+    0xf8e14213,     0xf8f071cd,     0xf8ec6222,     0xf86382f5,
+    0xf86500e6,     0xf873138d,     0xf87120d0,     0xf862307d,
+    0xf86451e6,     0xf874418d,     0xf8747328,     0xf8746013,
+    0xb82b80d8,     0xb83401df,     0xb8301006,     0xb827226f,
+    0xb83a3149,     0xb83752d5,     0xb83c4062,     0xb82f7293,
+    0xb82763a4,     0xb8a78120,     0xb8b002f4,     0xb8a41150,
+    0xb8b7232b,     0xb8a6321f,     0xb8ad5197,     0xb8a1412e,
+    0xb8b57350,     0xb8af6084,     0xb8f080c8,     0xb8fe03a4,
+    0xb8f1135d,     0xb8e9204f,     0xb8eb307d,     0xb8e75361,
+    0xb8f541d0,     0xb8e872d0,     0xb8f96285,     0xb87582f0,
+    0xb870029e,     0xb8741080,     0xb8732098,     0xb8743304,
+    0xb87a5053,     0xb86841c8,     0xb87873f0,     0xb87663e4,
+    0xce343141,     0xce076120,     0xce7b8c92,     0xce9bc146,
+    0xce7f820d,     0xce7486d6,     0xcec083bf,     0xce7489c9,
+    0x25a0dce7,     0x2561ce69,     0x05804d6c,     0x05401b89,
+    0x05000012,     0x2560c823,     0x2561d06f,     0x058074c4,
+    0x054034a0,     0x05001e63,     0x2560d8fd,     0x25a1c7e4,
+    0x05825238,     0x054024cb,     0x0500881f,     0x25a0d67e,
+    0x2521d474,     0x05801e63,     0x05402d49,     0x05001ec0,
+    0x2520cbee,     0x2561d175,     0x05807cbe,     0x05401d77,
+    0x05000edc,     0x25e0d5e7,     0x2521c84e,     0x05800e5a,
+    0x05401e31,     0x05006534,     0x0471026e,     0x04f2072d,
+    0x65900133,     0x65dc0afb,     0x65c50508,     0x0460115c,
+    0x04351ad9,     0x043a16e3,     0x04b31fda,     0x04d6adc1,
+    0x0400024e,     0x049a16ff,     0x04108d1e,     0x049b0ee0,
+    0x04d9b340,     0x049aaed8,     0x04990162,     0x04d3970c,
+    0x04919e29,     0x04901494,     0x04d7becd,     0x049eba5f,
+    0x04d809af,     0x05678434,     0x056480ee,     0x04c8108c,
+    0x04ca006f,     0x048914a1,     0x044b1dbf,     0x04010fc9,
+    0x049cbc6f,     0x65808b3a,     0x658d9941,     0x65869741,
+    0x6587963d,     0x65c28c3c,     0x049da82b,     0x6582bb61,
+    0x65c0a7c2,     0x65c1a059,     0x658dbba3,     0x65c195c3,
+    0x65eb909c,     0x65e10210,     0x65fc37e7,     0x65bdb62a,
+    0x65b8c596,     0x65a0e969,     0x65a45697,     0x65fe6c8f,
+    0x045a46bb,     0x0444633f,     0x04353066,     0x04be3319,
+    0x0461323f,     0x04ed33cc,     0x05e16bb9,     0x05346ff7,
+    0x65c887f5,     0x45c8b2db,     0x4505b69a,     0x043239b2,
+    0x44988815,     0x449a9cea,     0x44d99e86,     0x445b8e3c,
+    0x045a2b53,     0x04582178,     0x049936fc,     0x04c8369c,
+    0x040a2378,     0x65872d97,     0x65c63f4d,     0x65d82454,
+    0x048123bd,     0x0e251083,     0x4e2610a4,     0x0e6710c5,
+    0x4e6a1128,     0x0ebe13bc,     0x4eaf11cd,     0x2e331251,
+    0x6e2f11cd,     0x2e7011ee,     0x6e6a1128,     0x2eac116a,
+    0x6eaa1128,
   };
 // END  Generated code -- do not edit
