@@ -213,9 +213,12 @@ public:
       return (Cell)(outer()->max_locals() + stack_size());
     }
 
+    Cell local_limit_cell() const { return (Cell) outer()->max_locals(); }
+
     // Cell creation
     Cell      local(int lnum) const {
       assert(lnum < outer()->max_locals(), "index check");
+      assert(Cell_0 <= lnum && lnum <= Cell_max, "out of Cell's range");
       return (Cell)(lnum);
     }
 

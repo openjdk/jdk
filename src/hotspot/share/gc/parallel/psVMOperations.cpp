@@ -43,14 +43,10 @@ void VM_ParallelCollectForAllocation::doit() {
 
   GCCauseSetter gccs(heap, _gc_cause);
   _result = heap->satisfy_failed_allocation(_word_size, _is_tlab);
-
-  if (_result == nullptr && GCLocker::is_active_and_needs_gc()) {
-    set_gc_locked();
-  }
 }
 
 static bool is_cause_full(GCCause::Cause cause) {
-  return (cause != GCCause::_gc_locker) && (cause != GCCause::_wb_young_gc)
+  return (cause != GCCause::_wb_young_gc)
          DEBUG_ONLY(&& (cause != GCCause::_scavenge_alot));
 }
 
@@ -64,5 +60,5 @@ void VM_ParallelGCCollect::doit() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   GCCauseSetter gccs(heap, _gc_cause);
-  heap->try_collect_at_safepoint(_full);
+  heap->collect_at_safepoint(_full);
 }
