@@ -376,8 +376,9 @@ static bool rematerialize_objects(JavaThread* thread, int exec_mode, nmethod* co
       realloc_failures = Deoptimization::realloc_objects(thread, &deoptee, &map, objects, THREAD);
       JRT_END
     }
-    bool skip_internal = (compiled_method != nullptr) && !compiled_method->is_compiled_by_jvmci();
-    Deoptimization::reassign_fields(&deoptee, &map, objects, realloc_failures, skip_internal);
+    guarantee(compiled_method != nullptr, "deopt must be associated with an nmethod");
+    bool is_jvmci = compiled_method->is_compiled_by_jvmci();
+    Deoptimization::reassign_fields(&deoptee, &map, objects, realloc_failures, is_jvmci);
     if (TraceDeoptimization) {
       print_objects(deoptee_thread, objects, realloc_failures);
     }
@@ -1451,27 +1452,51 @@ public:
   }
 };
 
-static int compare(ReassignedField* left, ReassignedField* right) {
+// Keep in sync with ciInstanceKlass::compute_nonstatic_fields
+static int sort_field_by_offset(ReassignedField* left, ReassignedField* right) {
   return left->_offset - right->_offset;
 }
 
-// Restore fields of an eliminated instance object using the same field order
-// returned by HotSpotResolvedObjectTypeImpl.getInstanceFields(true)
-static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap* reg_map, ObjectValue* sv, int svIndex, oop obj, bool skip_internal) {
+static void append_fields(GrowableArray<ReassignedField>* fields, InstanceKlass* ik, bool is_jvmci) {
+  for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
+    if (!fs.access_flags().is_static() && (is_jvmci || !fs.field_flags().is_injected())) {
+      ReassignedField field;
+      field._offset = fs.offset();
+      field._type = Signature::basic_type(fs.signature());
+      fields->append(field);
+    }
+  }
+}
+
+// Gets the fields of `klass` that are eliminated by escape analysis and need to be reassigned
+static GrowableArray<ReassignedField>* get_reassigned_fields(InstanceKlass* klass, bool is_jvmci) {
   GrowableArray<ReassignedField>* fields = new GrowableArray<ReassignedField>();
   InstanceKlass* ik = klass;
-  while (ik != nullptr) {
-    for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
-      if (!fs.access_flags().is_static() && (!skip_internal || !fs.field_flags().is_injected())) {
-        ReassignedField field;
-        field._offset = fs.offset();
-        field._type = Signature::basic_type(fs.signature());
-        fields->append(field);
-      }
+  if (is_jvmci) {
+    // JVMCI uses HotSpotResolvedObjectTypeImpl.getInstanceFields
+    GrowableArray<InstanceKlass*>* hierarchy = new GrowableArray<InstanceKlass*>();
+    while (ik != nullptr) {
+      hierarchy->append(ik);
+      ik = ik->superklass();
     }
-    ik = ik->superklass();
+    for (int i = hierarchy->length() - 1; i >= 0; i--) {
+      ik = hierarchy->at(i);
+      append_fields(fields, ik, true);
+    }
+  } else {
+    // C2 uses sort_field_by_offset (see ciInstanceKlass::compute_nonstatic_fields)
+    while (ik != nullptr) {
+      append_fields(fields, ik, false);
+      ik = ik->superklass();
+    }
+    fields->sort(sort_field_by_offset);
   }
-  fields->sort(compare);
+  return fields;
+}
+
+// Restore fields of an eliminated instance object employing the same field order used by the compiler.
+static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap* reg_map, ObjectValue* sv, int svIndex, oop obj, bool is_jvmci) {
+  GrowableArray<ReassignedField>* fields = get_reassigned_fields(klass, is_jvmci);
   for (int i = 0; i < fields->length(); i++) {
     ScopeValue* scope_field = sv->field_at(svIndex);
     StackValue* value = StackValue::create_stack_value(fr, reg_map, scope_field);
@@ -1553,7 +1578,7 @@ static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap
 }
 
 // restore fields of all eliminated objects and arrays
-void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal) {
+void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool is_jvmci) {
   for (int i = 0; i < objects->length(); i++) {
     assert(objects->at(i)->is_object(), "invalid debug information");
     ObjectValue* sv = (ObjectValue*) objects->at(i);
@@ -1597,7 +1622,7 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
     }
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
-      reassign_fields_by_klass(ik, fr, reg_map, sv, 0, obj(), skip_internal);
+      reassign_fields_by_klass(ik, fr, reg_map, sv, 0, obj(), is_jvmci);
     } else if (k->is_typeArray_klass()) {
       TypeArrayKlass* ak = TypeArrayKlass::cast(k);
       reassign_type_array_elements(fr, reg_map, sv, (typeArrayOop) obj(), ak->element_type());
