@@ -48,6 +48,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicReference;
@@ -987,8 +988,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * @throws NullPointerException if the specified value is null
      */
     public boolean containsValue(Object value) {
-        if (value == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(value, "Provided value cannot be null!");
         Node<K,V>[] t;
         if ((t = table) != null) {
             Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length);
@@ -1020,8 +1020,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     /** Implementation for put and putIfAbsent */
     final V putVal(K key, V value, boolean onlyIfAbsent) {
-        if (key == null) throw new NullPointerException("key cannot be null!");
-        if (value == null) throw new NullPointerException("value cannot be null!");
+        Objects.requireNonNull(key, "key cannot be null!");
+        Objects.requireNonNull(value, "value cannot be null!");
         int hash = spread(key.hashCode());
         int binCount = 0;
         for (Node<K,V>[] tab = table;;) {
@@ -1563,8 +1563,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * @return {@inheritDoc ConcurrentMap}
      */
     public boolean remove(Object key, Object value) {
-        if (key == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(key, "Provided key cannot be null!");
         return value != null && replaceNode(key, null, value) != null;
     }
 
@@ -1575,8 +1574,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * @return {@inheritDoc ConcurrentMap}
      */
     public boolean replace(K key, V oldValue, V newValue) {
-        if (key == null || oldValue == null || newValue == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(key, "Provided key cannot be null!");
+        Objects.requireNonNull(oldValue, "Provided oldValue cannot be null!");
+        Objects.requireNonNull(newValue, "Provided newValue cannot be null!");
         return replaceNode(key, newValue, oldValue) != null;
     }
 
@@ -1588,8 +1588,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * @throws NullPointerException if the specified key or value is null
      */
     public V replace(K key, V value) {
-        if (key == null || value == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(key, "Provided key cannot be null!");
+        Objects.requireNonNull(value, "Provided value cannot be null!");
         return replaceNode(key, value, null);
     }
 
@@ -1612,7 +1612,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     public void forEach(BiConsumer<? super K, ? super V> action) {
-        if (action == null) throw new NullPointerException();
+        Objects.requireNonNull(action, "Provided action cannot be null!");
         Node<K,V>[] t;
         if ((t = table) != null) {
             Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length);
@@ -1623,7 +1623,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
-        if (function == null) throw new NullPointerException();
+        Objects.requireNonNull(function, "Provided function cannot be null!");
         Node<K,V>[] t;
         if ((t = table) != null) {
             Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length);
@@ -1645,7 +1645,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * Helper method for EntrySetView.removeIf.
      */
     boolean removeEntryIf(Predicate<? super Entry<K,V>> function) {
-        if (function == null) throw new NullPointerException();
+        Objects.requireNonNull(function, "Provided function cannot be null!");
         Node<K,V>[] t;
         boolean removed = false;
         if ((t = table) != null) {
@@ -1665,7 +1665,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * Helper method for ValuesView.removeIf.
      */
     boolean removeValueIf(Predicate<? super V> function) {
-        if (function == null) throw new NullPointerException();
+        Objects.requireNonNull(function, "Provided function cannot be null!");
         Node<K,V>[] t;
         boolean removed = false;
         if ((t = table) != null) {
@@ -1706,8 +1706,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      *         in which case the mapping is left unestablished
      */
     public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
-        if (key == null || mappingFunction == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(key, "Provided key cannot be null!");
+        Objects.requireNonNull(mappingFunction, "Provided mappingFunction cannot be null!");
         int h = spread(key.hashCode());
         V val = null;
         int binCount = 0;
@@ -1818,8 +1818,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      *         in which case the mapping is unchanged
      */
     public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        if (key == null || remappingFunction == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(key, "Provided key cannot be null!");
+        Objects.requireNonNull(remappingFunction, "Provided remappingFunction cannot be null!");
         int h = spread(key.hashCode());
         V val = null;
         int delta = 0;
@@ -1913,8 +1913,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public V compute(K key,
                      BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        if (key == null || remappingFunction == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(key, "Provided key cannot be null!");
+        Objects.requireNonNull(remappingFunction, "Provided remappingFunction cannot be null!");
         int h = spread(key.hashCode());
         V val = null;
         int delta = 0;
@@ -2041,8 +2041,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      *         in which case the mapping is unchanged
      */
     public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
-        if (key == null || value == null || remappingFunction == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(key, "Provided key cannot be null!");
+        Objects.requireNonNull(value, "Provided value cannot be null!");
+        Objects.requireNonNull(remappingFunction, "Provided remappingFunction cannot be null!");
         int h = spread(key.hashCode());
         V val = null;
         int delta = 0;
@@ -2235,8 +2236,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * @throws NullPointerException if the mappedValue is null
      */
     public KeySetView<K,V> keySet(V mappedValue) {
-        if (mappedValue == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(mappedValue, "Provided mappedValue cannot be null!");
         return new KeySetView<K,V>(this, mappedValue);
     }
 
@@ -3560,7 +3560,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
          * re-establish). We do not and cannot guarantee more.
          */
         public V setValue(V value) {
-            if (value == null) throw new NullPointerException();
+            Objects.requireNonNull(value, "Provided value cannot be null!");
             V v = val;
             val = value;
             map.put(key, value);
@@ -3585,13 +3585,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         }
 
         public void forEachRemaining(Consumer<? super K> action) {
-            if (action == null) throw new NullPointerException();
+            Objects.requireNonNull(action, "Provided action cannot be null!");
             for (Node<K,V> p; (p = advance()) != null;)
                 action.accept(p.key);
         }
 
         public boolean tryAdvance(Consumer<? super K> action) {
-            if (action == null) throw new NullPointerException();
+            Objects.requireNonNull(action, "Provided action cannot be null!");
             Node<K,V> p;
             if ((p = advance()) == null)
                 return false;
@@ -3624,13 +3624,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         }
 
         public void forEachRemaining(Consumer<? super V> action) {
-            if (action == null) throw new NullPointerException();
+            Objects.requireNonNull(action, "Provided action cannot be null!");
             for (Node<K,V> p; (p = advance()) != null;)
                 action.accept(p.val);
         }
 
         public boolean tryAdvance(Consumer<? super V> action) {
-            if (action == null) throw new NullPointerException();
+            Objects.requireNonNull(action, "Provided action cannot be null!");
             Node<K,V> p;
             if ((p = advance()) == null)
                 return false;
@@ -3664,13 +3664,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         }
 
         public void forEachRemaining(Consumer<? super Map.Entry<K,V>> action) {
-            if (action == null) throw new NullPointerException();
+            Objects.requireNonNull(action, "Provided action cannot be null!");
             for (Node<K,V> p; (p = advance()) != null; )
                 action.accept(new MapEntry<K,V>(p.key, p.val, map));
         }
 
         public boolean tryAdvance(Consumer<? super Map.Entry<K,V>> action) {
-            if (action == null) throw new NullPointerException();
+            Objects.requireNonNull(action, "Provided action cannot be null!");
             Node<K,V> p;
             if ((p = advance()) == null)
                 return false;
@@ -3714,7 +3714,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public void forEach(long parallelismThreshold,
                         BiConsumer<? super K,? super V> action) {
-        if (action == null) throw new NullPointerException();
+        Objects.requireNonNull(action, "Provided action cannot be null!");
         new ForEachMappingTask<K,V>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              action).invoke();
@@ -3736,8 +3736,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     public <U> void forEach(long parallelismThreshold,
                             BiFunction<? super K, ? super V, ? extends U> transformer,
                             Consumer<? super U> action) {
-        if (transformer == null || action == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(action, "Provided action cannot be null!");
         new ForEachTransformedMappingTask<K,V,U>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              transformer, action).invoke();
@@ -3761,7 +3761,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public <U> U search(long parallelismThreshold,
                         BiFunction<? super K, ? super V, ? extends U> searchFunction) {
-        if (searchFunction == null) throw new NullPointerException();
+        Objects.requireNonNull(searchFunction, "Provided searchFunction cannot be null!");
         return new SearchMappingsTask<K,V,U>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              searchFunction, new AtomicReference<U>()).invoke();
@@ -3786,8 +3786,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     public <U> U reduce(long parallelismThreshold,
                         BiFunction<? super K, ? super V, ? extends U> transformer,
                         BiFunction<? super U, ? super U, ? extends U> reducer) {
-        if (transformer == null || reducer == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new MapReduceMappingsTask<K,V,U>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, transformer, reducer).invoke();
@@ -3812,8 +3812,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                  ToDoubleBiFunction<? super K, ? super V> transformer,
                                  double basis,
                                  DoubleBinaryOperator reducer) {
-        if (transformer == null || reducer == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new MapReduceMappingsToDoubleTask<K,V>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, transformer, basis, reducer).invoke();
@@ -3838,8 +3838,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                              ToLongBiFunction<? super K, ? super V> transformer,
                              long basis,
                              LongBinaryOperator reducer) {
-        if (transformer == null || reducer == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new MapReduceMappingsToLongTask<K,V>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, transformer, basis, reducer).invoke();
@@ -3864,8 +3864,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                            ToIntBiFunction<? super K, ? super V> transformer,
                            int basis,
                            IntBinaryOperator reducer) {
-        if (transformer == null || reducer == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new MapReduceMappingsToIntTask<K,V>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, transformer, basis, reducer).invoke();
@@ -3881,7 +3881,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public void forEachKey(long parallelismThreshold,
                            Consumer<? super K> action) {
-        if (action == null) throw new NullPointerException();
+        Objects.requireNonNull(action, "Provided action cannot be null!");
         new ForEachKeyTask<K,V>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              action).invoke();
@@ -3903,8 +3903,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     public <U> void forEachKey(long parallelismThreshold,
                                Function<? super K, ? extends U> transformer,
                                Consumer<? super U> action) {
-        if (transformer == null || action == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(action, "Provided action cannot be null!");
         new ForEachTransformedKeyTask<K,V,U>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              transformer, action).invoke();
@@ -3928,7 +3928,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public <U> U searchKeys(long parallelismThreshold,
                             Function<? super K, ? extends U> searchFunction) {
-        if (searchFunction == null) throw new NullPointerException();
+        Objects.requireNonNull(searchFunction, "Provided searchFunction cannot be null!");
         return new SearchKeysTask<K,V,U>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              searchFunction, new AtomicReference<U>()).invoke();
@@ -3947,7 +3947,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public K reduceKeys(long parallelismThreshold,
                         BiFunction<? super K, ? super K, ? extends K> reducer) {
-        if (reducer == null) throw new NullPointerException();
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new ReduceKeysTask<K,V>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, reducer).invoke();
@@ -3972,8 +3972,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     public <U> U reduceKeys(long parallelismThreshold,
                             Function<? super K, ? extends U> transformer,
          BiFunction<? super U, ? super U, ? extends U> reducer) {
-        if (transformer == null || reducer == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new MapReduceKeysTask<K,V,U>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, transformer, reducer).invoke();
@@ -3998,8 +3998,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                      ToDoubleFunction<? super K> transformer,
                                      double basis,
                                      DoubleBinaryOperator reducer) {
-        if (transformer == null || reducer == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new MapReduceKeysToDoubleTask<K,V>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, transformer, basis, reducer).invoke();
@@ -4024,8 +4024,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                  ToLongFunction<? super K> transformer,
                                  long basis,
                                  LongBinaryOperator reducer) {
-        if (transformer == null || reducer == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new MapReduceKeysToLongTask<K,V>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, transformer, basis, reducer).invoke();
@@ -4050,8 +4050,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                ToIntFunction<? super K> transformer,
                                int basis,
                                IntBinaryOperator reducer) {
-        if (transformer == null || reducer == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new MapReduceKeysToIntTask<K,V>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, transformer, basis, reducer).invoke();
@@ -4067,8 +4067,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public void forEachValue(long parallelismThreshold,
                              Consumer<? super V> action) {
-        if (action == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(action, "Provided action cannot be null!");
         new ForEachValueTask<K,V>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              action).invoke();
@@ -4090,8 +4089,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     public <U> void forEachValue(long parallelismThreshold,
                                  Function<? super V, ? extends U> transformer,
                                  Consumer<? super U> action) {
-        if (transformer == null || action == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(action, "Provided action cannot be null!");
         new ForEachTransformedValueTask<K,V,U>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              transformer, action).invoke();
@@ -4115,7 +4114,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public <U> U searchValues(long parallelismThreshold,
                               Function<? super V, ? extends U> searchFunction) {
-        if (searchFunction == null) throw new NullPointerException();
+        Objects.requireNonNull(searchFunction, "Provided searchFunction cannot be null!");
         return new SearchValuesTask<K,V,U>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              searchFunction, new AtomicReference<U>()).invoke();
@@ -4133,7 +4132,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public V reduceValues(long parallelismThreshold,
                           BiFunction<? super V, ? super V, ? extends V> reducer) {
-        if (reducer == null) throw new NullPointerException();
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new ReduceValuesTask<K,V>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, reducer).invoke();
@@ -4158,8 +4157,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     public <U> U reduceValues(long parallelismThreshold,
                               Function<? super V, ? extends U> transformer,
                               BiFunction<? super U, ? super U, ? extends U> reducer) {
-        if (transformer == null || reducer == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new MapReduceValuesTask<K,V,U>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, transformer, reducer).invoke();
@@ -4184,8 +4183,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                        ToDoubleFunction<? super V> transformer,
                                        double basis,
                                        DoubleBinaryOperator reducer) {
-        if (transformer == null || reducer == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new MapReduceValuesToDoubleTask<K,V>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, transformer, basis, reducer).invoke();
@@ -4210,8 +4209,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                    ToLongFunction<? super V> transformer,
                                    long basis,
                                    LongBinaryOperator reducer) {
-        if (transformer == null || reducer == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new MapReduceValuesToLongTask<K,V>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, transformer, basis, reducer).invoke();
@@ -4236,8 +4235,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                  ToIntFunction<? super V> transformer,
                                  int basis,
                                  IntBinaryOperator reducer) {
-        if (transformer == null || reducer == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new MapReduceValuesToIntTask<K,V>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, transformer, basis, reducer).invoke();
@@ -4253,7 +4252,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public void forEachEntry(long parallelismThreshold,
                              Consumer<? super Map.Entry<K,V>> action) {
-        if (action == null) throw new NullPointerException();
+        Objects.requireNonNull(action, "Provided action cannot be null!");
         new ForEachEntryTask<K,V>(null, batchFor(parallelismThreshold), 0, 0, table,
                                   action).invoke();
     }
@@ -4274,8 +4273,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     public <U> void forEachEntry(long parallelismThreshold,
                                  Function<Map.Entry<K,V>, ? extends U> transformer,
                                  Consumer<? super U> action) {
-        if (transformer == null || action == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(action, "Provided action cannot be null!");
         new ForEachTransformedEntryTask<K,V,U>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              transformer, action).invoke();
@@ -4299,7 +4298,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public <U> U searchEntries(long parallelismThreshold,
                                Function<Map.Entry<K,V>, ? extends U> searchFunction) {
-        if (searchFunction == null) throw new NullPointerException();
+        Objects.requireNonNull(searchFunction, "Provided searchFunction cannot be null!");
         return new SearchEntriesTask<K,V,U>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              searchFunction, new AtomicReference<U>()).invoke();
@@ -4317,7 +4316,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public Map.Entry<K,V> reduceEntries(long parallelismThreshold,
                                         BiFunction<Map.Entry<K,V>, Map.Entry<K,V>, ? extends Map.Entry<K,V>> reducer) {
-        if (reducer == null) throw new NullPointerException();
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new ReduceEntriesTask<K,V>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, reducer).invoke();
@@ -4342,8 +4341,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     public <U> U reduceEntries(long parallelismThreshold,
                                Function<Map.Entry<K,V>, ? extends U> transformer,
                                BiFunction<? super U, ? super U, ? extends U> reducer) {
-        if (transformer == null || reducer == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new MapReduceEntriesTask<K,V,U>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, transformer, reducer).invoke();
@@ -4368,8 +4367,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                         ToDoubleFunction<Map.Entry<K,V>> transformer,
                                         double basis,
                                         DoubleBinaryOperator reducer) {
-        if (transformer == null || reducer == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new MapReduceEntriesToDoubleTask<K,V>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, transformer, basis, reducer).invoke();
@@ -4394,8 +4393,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                     ToLongFunction<Map.Entry<K,V>> transformer,
                                     long basis,
                                     LongBinaryOperator reducer) {
-        if (transformer == null || reducer == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new MapReduceEntriesToLongTask<K,V>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, transformer, basis, reducer).invoke();
@@ -4420,8 +4419,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                   ToIntFunction<Map.Entry<K,V>> transformer,
                                   int basis,
                                   IntBinaryOperator reducer) {
-        if (transformer == null || reducer == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(transformer, "Provided transformer cannot be null!");
+        Objects.requireNonNull(reducer, "Provided reducer cannot be null!");
         return new MapReduceEntriesToIntTask<K,V>
             (null, batchFor(parallelismThreshold), 0, 0, table,
              null, transformer, basis, reducer).invoke();
@@ -4560,7 +4559,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         }
 
         public boolean removeAll(Collection<?> c) {
-            if (c == null) throw new NullPointerException();
+            Objects.requireNonNull(c, "Provided collection cannot be null!");
             boolean modified = false;
             // Use (c instanceof Set) as a hint that lookup in c is as
             // efficient as this view
@@ -4582,7 +4581,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         }
 
         public final boolean retainAll(Collection<?> c) {
-            if (c == null) throw new NullPointerException();
+            Objects.requireNonNull(c, "Provided collection cannot be null!");
             boolean modified = false;
             for (Iterator<E> it = iterator(); it.hasNext();) {
                 if (!c.contains(it.next())) {
@@ -4719,7 +4718,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         }
 
         public void forEach(Consumer<? super K> action) {
-            if (action == null) throw new NullPointerException();
+            Objects.requireNonNull(action, "Provided action cannot be null!");
             Node<K,V>[] t;
             if ((t = map.table) != null) {
                 Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length);
@@ -4769,7 +4768,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         }
 
         @Override public boolean removeAll(Collection<?> c) {
-            if (c == null) throw new NullPointerException();
+            Objects.requireNonNull(c, "Provided collection cannot be null!");
             boolean modified = false;
             for (Iterator<V> it = iterator(); it.hasNext();) {
                 if (c.contains(it.next())) {
@@ -4793,7 +4792,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         }
 
         public void forEach(Consumer<? super V> action) {
-            if (action == null) throw new NullPointerException();
+            Objects.requireNonNull(action, "Provided action cannot be null!");
             Node<K,V>[] t;
             if ((t = map.table) != null) {
                 Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length);
@@ -4885,7 +4884,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         }
 
         public void forEach(Consumer<? super Map.Entry<K,V>> action) {
-            if (action == null) throw new NullPointerException();
+            Objects.requireNonNull(action, "Provided action cannot be null!");
             Node<K,V>[] t;
             if ((t = map.table) != null) {
                 Traverser<K,V> it = new Traverser<K,V>(t, t.length, 0, t.length);
