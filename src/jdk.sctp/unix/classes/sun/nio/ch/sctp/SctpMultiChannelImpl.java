@@ -62,6 +62,7 @@ import sun.nio.ch.NativeThread;
 import sun.nio.ch.IOStatus;
 import sun.nio.ch.IOUtil;
 import sun.nio.ch.Net;
+import sun.nio.ch.NIOUtil;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
 import sun.nio.ch.Util;
@@ -280,7 +281,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
 
     @Override
     protected void implConfigureBlocking(boolean block) throws IOException {
-        IOUtil.configureBlocking(fd, block);
+        NIOUtil.configureBlocking(fd, block);
     }
 
     @Override

@@ -62,10 +62,4 @@ public class RegistryFileTypeDetector
     }
 
     private static native String queryStringValue(long subKey, long name);
-
-    static {
-        // nio.dll has dependency on net.dll
-        jdk.internal.loader.BootLoader.loadLibrary("net");
-        jdk.internal.loader.BootLoader.loadLibrary("nio");
-    }
 }
