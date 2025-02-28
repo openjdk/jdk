@@ -38,7 +38,9 @@
 #include "utilities/globalDefinitions.hpp"
 
 // Inlined from <linux/magic.h> for portability.
-#define CGROUP2_SUPER_MAGIC 0x63677270
+#ifndef CGROUP2_SUPER_MAGIC
+#  define CGROUP2_SUPER_MAGIC 0x63677270
+#endif
 
 // controller names have to match the *_IDX indices
 static const char* cg_controller_name[] = { "cpuset", "cpu", "cpuacct", "memory", "pids" };
