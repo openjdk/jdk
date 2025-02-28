@@ -115,7 +115,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 #ifdef COMPILER2
-#include "opto/matcher.hpp"
+#include "opto/optoreg.hpp"
 #endif // COMPILER2
 
 #include CPU_HEADER(vmStructs)
@@ -703,8 +703,6 @@
   static_field(ObjectSynchronizer,             _in_use_list,                                  MonitorList)                           \
   volatile_nonstatic_field(MonitorList,        _head,                                         ObjectMonitor*)                        \
                                                                                                                                      \
-  unchecked_c2_static_field(Matcher,           _regEncode,                          sizeof(Matcher::_regEncode)) /* NOTE: no type */ \
-                                                                                                                                     \
   /*********************/                                                                                                            \
   /* -XX flags         */                                                                                                            \
   /*********************/                                                                                                            \
@@ -1060,7 +1058,6 @@
   declare_toplevel_type(ThreadsSMRSupport)                                \
   declare_toplevel_type(ThreadsList)                                      \
   declare_toplevel_type(LockStack)                                        \
-  declare_c2_toplevel_type(Matcher)                                       \
                                                                           \
   /***************/                                                       \
   /* Interpreter */                                                       \
@@ -1284,7 +1281,6 @@
   declare_toplevel_type(Mutex)                                            \
   declare_toplevel_type(Mutex*)                                           \
   declare_toplevel_type(nmethod*)                                         \
-  COMPILER2_PRESENT(declare_unsigned_integer_type(node_idx_t))            \
   declare_toplevel_type(ObjectMonitor*)                                   \
   declare_toplevel_type(oop*)                                             \
   declare_toplevel_type(OopMapCache*)                                     \
@@ -1341,6 +1337,7 @@
   /******************/                                                    \
                                                                           \
   declare_preprocessor_constant("ASSERT", DEBUG_ONLY(1) NOT_DEBUG(0))     \
+  declare_preprocessor_constant("COMPILER2", COMPILER2)                   \
                                                                           \
   /****************/                                                      \
   /* Object sizes */                                                      \
@@ -1688,12 +1685,6 @@
   declare_constant(LM_MONITOR)                                            \
   declare_constant(LM_LEGACY)                                             \
   declare_constant(LM_LIGHTWEIGHT)                                        \
-                                                                          \
-  /*********************/                                                 \
-  /* Matcher (C2 only) */                                                 \
-  /*********************/                                                 \
-                                                                          \
-  declare_c2_preprocessor_constant("Matcher::interpreter_frame_pointer_reg", Matcher::interpreter_frame_pointer_reg()) \
                                                                           \
   /*********************************************/                         \
   /* MethodCompilation (globalDefinitions.hpp) */                         \

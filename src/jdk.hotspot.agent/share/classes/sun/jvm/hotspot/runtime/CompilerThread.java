@@ -42,9 +42,7 @@ public class CompilerThread extends JavaThread {
 
   private static AddressField envField;
 
-  private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type      = db.lookupType("CompilerThread");
-  }
+  private static synchronized void initialize(TypeDataBase db) throws WrongTypeException { }
 
   public CompilerThread(Address addr) {
     super(addr);

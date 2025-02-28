@@ -476,7 +476,7 @@ public class VM {
         usingServerCompiler = false;
       } else {
         // Determine whether C2 is present
-        if (db.lookupType("Matcher", false) != null) {
+        if (db.lookupIntConstant("COMPILER2") != null) {
           usingServerCompiler = true;
         } else {
           usingClientCompiler = true;
