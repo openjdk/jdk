@@ -122,12 +122,16 @@ public class ModFNodeTests {
 
     @Test
     @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(failOn = IRNode.MOD_F, phase = CompilePhase.ITER_GVN1)
+    @IR(counts = {IRNode.MOD_F, "1"}, phase = CompilePhase.AFTER_PARSING)
     public void unusedResult(float x, float y) {
         float unused = x % y;
     }
 
     @Test
     @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(failOn = IRNode.MOD_F, phase = CompilePhase.ITER_GVN1)
+    @IR(counts = {IRNode.MOD_F, "1"}, phase = CompilePhase.AFTER_PARSING)
     public void repeatedlyUnused(float x, float y) {
         float unused = 1.f;
         for (int i = 0; i < 100_000; i++) {
@@ -137,6 +141,8 @@ public class ModFNodeTests {
 
     @Test
     @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(counts = {IRNode.MOD_F, "1"}, phase = CompilePhase.ITER_GVN2)
+    @IR(failOn = IRNode.MOD_F, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     public float unusedResultAfterLoopOpt1(float x, float y) {
         float unused = x % y;
 
@@ -155,6 +161,8 @@ public class ModFNodeTests {
 
     @Test
     @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(counts = {IRNode.MOD_F, "2"}, phase = CompilePhase.AFTER_CLOOPS)
+    @IR(failOn = IRNode.MOD_F, phase = CompilePhase.PHASEIDEALLOOP1)
     public float unusedResultAfterLoopOpt2(float x, float y) {
         float unused = x % y;
 
