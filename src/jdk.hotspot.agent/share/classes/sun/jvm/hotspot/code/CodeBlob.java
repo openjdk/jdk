@@ -52,6 +52,8 @@ public class CodeBlob extends VMObject {
   private static CIntegerField dataOffsetField;
   private static CIntegerField frameSizeField;
   private static AddressField  oopMapsField;
+  private static AddressField  mutableDataField;
+  private static CIntegerField mutableDataSizeField;
   private static CIntegerField callerMustGCArgumentsField;
 
   // Kinds of CodeBlobs that we need to know about.
@@ -82,6 +84,8 @@ public class CodeBlob extends VMObject {
     frameSizeField           = type.getCIntegerField("_frame_size");
     oopMapsField             = type.getAddressField("_oop_maps");
     callerMustGCArgumentsField = type.getCIntegerField("_caller_must_gc_arguments");
+    mutableDataField         = type.getAddressField("_mutable_data");
+    mutableDataSizeField     = type.getCIntegerField("_mutable_data_size");
 
     if (VM.getVM().isServerCompiler()) {
       matcherInterpreterFramePointerReg =
@@ -145,6 +149,15 @@ public class CodeBlob extends VMObject {
 
   public int getHeaderSize()      { return (int) headerSizeField.getValue(addr); }
 
+
+  // Mutable data
+  public int getMutableDataSize()   { return (int) mutableDataSizeField.getValue(addr); }
+
+  public Address mutableDataBegin() { return mutableDataField.getValue(addr); }
+
+  public Address mutableDataEnd()   { return mutableDataBegin().addOffsetTo(getMutableDataSize());  }
+
+
   public long getFrameSizeWords() {
     return (int) frameSizeField.getValue(addr);
   }
@@ -184,12 +197,13 @@ public class CodeBlob extends VMObject {
     return null;
   }
 
-  // FIXME: add getRelocationSize()
   public int getContentSize()      { return (int) contentEnd().minus(contentBegin()); }
 
   public int getCodeSize()         { return (int) codeEnd()   .minus(codeBegin());    }
 
   public int getDataSize()         { return (int) dataEnd()   .minus(dataBegin());    }
+
+  public int getRelocationSize()   { return (int) relocationSizeField.getValue(addr); }
 
   // Containment
   public boolean blobContains(Address addr)    { return headerBegin() .lessThanOrEqual(addr) && dataEnd()   .greaterThan(addr); }
