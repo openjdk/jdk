@@ -151,12 +151,6 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                                 "message.app-image-dir-does-not-exist.advice"),
                                 PREDEFINED_APP_IMAGE.getID()));
             }
-            if (APP_NAME.fetchFrom(params) == null) {
-                throw new ConfigException(
-                        I18N.getString("message.app-image-requires-app-name"),
-                        I18N.getString(
-                            "message.app-image-requires-app-name.advice"));
-            }
             if (AppImageFile.load(applicationImage).isSigned()) {
                 if (!Files.exists(
                         PackageFile.getPathInAppImage(applicationImage))) {
