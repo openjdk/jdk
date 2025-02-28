@@ -25,11 +25,22 @@
 package com.sun.crypto.provider;
 
 import sun.security.util.CurveDB;
-import sun.security.util.Debug;
 import sun.security.util.ECUtil;
 
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.CipherSpi;
+import javax.crypto.DecapsulateException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KDF;
+import javax.crypto.KEM;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.ShortBufferException;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.HKDFParameterSpec;
+import javax.crypto.spec.HPKEParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -291,7 +302,8 @@ public class HPKE extends CipherSpi {
                             DHKEM.labeledInfo(suite_id, "sec".getBytes(StandardCharsets.UTF_8),
                                     exporter_context, L), L));
                 } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {
-                    throw new ProviderException("Internal error", e);
+                    // algorithm not accepted by HKDF, L too big or too small
+                    throw new IllegalArgumentException("Invalid input", e);
                 }
             }
 

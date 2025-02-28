@@ -27,18 +27,47 @@ package com.sun.crypto.provider;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.*;
+import java.security.AsymmetricKey;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.ProviderException;
+import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.XECPublicKey;
-import java.security.spec.*;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.ECPrivateKeySpec;
+import java.security.spec.ECPublicKeySpec;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.security.spec.NamedParameterSpec;
+import java.security.spec.XECPrivateKeySpec;
+import java.security.spec.XECPublicKeySpec;
 import java.util.Arrays;
 import java.util.Objects;
-import javax.crypto.*;
+import javax.crypto.DecapsulateException;
+import javax.crypto.KDF;
+import javax.crypto.KEM;
+import javax.crypto.KEMSpi;
+import javax.crypto.KeyAgreement;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import sun.security.jca.JCAUtil;
-import sun.security.util.*;
+import sun.security.util.ArrayUtil;
+import sun.security.util.CurveDB;
+import sun.security.util.ECUtil;
+import sun.security.util.InternalPrivateKey;
+import sun.security.util.NamedCurve;
+import sun.security.util.SliceableSecretKey;
 
 // Implementing DHKEM defined inside https://www.rfc-editor.org/rfc/rfc9180.html,
 // without the AuthEncap and AuthDecap functions
@@ -403,6 +432,9 @@ public class DHKEM implements KEMSpi {
         return o.toByteArray();
     }
 
+    // I2OSP(n, w) as defined in RFC 9180 Section 3.
+    // In DHKEM and HPKE, number is always <65536
+    // and converted to at most 2 bytes.
     public static byte[] I2OSP(int n, int w) {
         assert n < 65536;
         assert w == 1 || w == 2;

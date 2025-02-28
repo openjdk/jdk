@@ -90,8 +90,8 @@ public class KAT9180 {
         var c2 = Cipher.getInstance("HPKE");
         var ts = JSONValue.parse(new String(Files.readAllBytes(archivePath), StandardCharsets.UTF_8));
         for (var tg : ts.asArray()) {
-            var mode = tg.get("mode").asString();
-            if (mode.equals("0") || mode.equals("1")) {
+            var mode = Integer.parseInt(tg.get("mode").asString());
+            if (mode == 0 || mode == 1) {
                 System.err.print('I');
                 var kem_id = Integer.parseInt(tg.get("kem_id").asString());
                 var kdf_id = Integer.parseInt(tg.get("kdf_id").asString());
@@ -101,7 +101,7 @@ public class KAT9180 {
                 var info = h.parseHex(tg.get("info").asString());
                 var kpR = new DHKEM.RFC9180DeriveKeyPairSR(ikmR).derive(kem_id);
                 var spec = HPKEParameterSpec.of(kem_id, kdf_id, aead_id).info(info);
-                if (mode.equals("1")) {
+                if (mode == 1) {
                     spec = spec.psk(
                             new SecretKeySpec(h.parseHex(tg.get("psk").asString()), "Generic"),
                             h.parseHex(tg.get("psk_id").asString()));
