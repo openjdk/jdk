@@ -410,49 +410,24 @@ void NMT_MemoryLogRecorder::finish(void) {
   os::exit(0);
 }
 
-long int histogramLimits[] = {32, 64, 128, 256, 512, 1024, 4096, 8192, 16896};
-//long int histogramLimits[] = {16, 32, 48, 64, 80, 96, 112, 128, 256, 512, 1024, 4096, 8192, 16896, 65536};
-const long int histogramLimitsSize = (long int)(sizeof(histogramLimits)/sizeof(long int));
-const char *histogramChars[] = {"▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"};
-typedef struct HistogramBuckets {
-  long int buckets[histogramLimitsSize+1];
-} HistogramBuckets;
-
 void NMT_MemoryLogRecorder::replay(const int pid) {
   //fprintf(stderr, "NMT_MemoryLogRecorder::replay(\"%s\", %d)\n", path, pid);
   static const char *path = ".";
-  setlocale(LC_NUMERIC, "");
   NMT_MemoryLogRecorder *recorder = NMT_MemoryLogRecorder::instance();
   recorder->lock();
 
-  // compare the recorded and current levels of NMT and exit if different
   file_info log_fi = _open_file_and_read(INFO_LOG_FILE, path, pid);
   if (log_fi.fd == -1) {
     return;
   }
   size_t* status_file_bytes = (size_t*)log_fi.ptr;
   NMT_TrackingLevel recorded_nmt_level = (NMT_TrackingLevel)status_file_bytes[0];
+  // compare the recorded and current levels of NMT and flag if different
   bool timeOnly = NMTUtil::parse_tracking_level(NativeMemoryTracking) != recorded_nmt_level;
   if (timeOnly) {
     tty->print("\n\nNativeMemoryTracking mismatch [%s != %s].\n", NMTUtil::tracking_level_to_string(recorded_nmt_level), NMTUtil::tracking_level_to_string(NMTUtil::parse_tracking_level(NativeMemoryTracking)));
     tty->print("(Can not be used for memory usage comparison)\n");
   }
-
-  file_info threads_fi = _open_file_and_read(THREADS_LOG_FILE, path, pid);
-  if (threads_fi.fd == -1) {
-    return;
-  }
-  thread_name_info* thread_entries = (thread_name_info*)threads_fi.ptr;
-  long int countThreads = (long int)(threads_fi.size / sizeof(thread_name_info));
-  long int* histogramsThreads = nullptr;
-#if !defined(_WIN64)
-  long int size_threads = (long int)(countThreads * sizeof(long int));
-  histogramsThreads = (long int*)::mmap(NULL, size_threads, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
-  assert(histogramsThreads != MAP_FAILED, "histogramsThreads != MAP_FAILED");
-#endif
-//  for (int i = 0; i < countThreads; i++) {
-//    fprintf(stderr, "thread: %64s:%6ld\n", thread_entries[i].name, thread_entries[i].thread);
-//  }
 
   // open records file for reading the memory allocations to "play back"
   file_info records_fi = _open_file_and_read(ALLOCS_LOG_FILE, path, pid);
@@ -474,17 +449,11 @@ void NMT_MemoryLogRecorder::replay(const int pid) {
     tty->print("Can't construct benchmark_file_path [%s].", benchmark_file_path);
     os::exit(-1);
   }
-  int benchmark_fd = _prepare_log_file(benchmark_file_path, nullptr);
-  if (benchmark_fd == -1) {
+  int benchmark_log_fd = _prepare_log_file(nullptr, BENCHMARK_LOG_FILE);
+  if (benchmark_log_fd == -1) {
     tty->print("Can't open [%s].", benchmark_file_path);
     os::exit(-1);
   }
-
-  long int requestedByCategory[mt_number_of_tags] = {0};
-  long int allocatedByCategory[mt_number_of_tags] = {0};
-  long int nmtObjectsByCategory[mt_number_of_tags] = {0};
-  long int timeByCategory[mt_number_of_tags] = {0};
-  HistogramBuckets histogramByCategory[mt_number_of_tags] = {0};
 
   long int countFree = 0;
   long int countMalloc = 0;
@@ -582,47 +551,29 @@ void NMT_MemoryLogRecorder::replay(const int pid) {
       requestedTotal += requested;
       actualTotal += actual;
 
-      requestedByCategory[NMTUtil::tag_to_index(mem_tag)] += requested;
-      allocatedByCategory[NMTUtil::tag_to_index(mem_tag)] += actual;
       if (IS_FREE(e)) {
         if (mem_tag != mtNone) {
           headers--;
-          nmtObjectsByCategory[NMTUtil::tag_to_index(mem_tag)]--;
         }
       } else if IS_MALLOC(e) {
         headers++;
-        nmtObjectsByCategory[NMTUtil::tag_to_index(mem_tag)]++;
       }
     }
     long int duration = (start > 0) ? (end - start) : 0;
-    timeByCategory[NMTUtil::tag_to_index(mem_tag)] += duration;
     nanoseconds += duration;
 
-    _write_and_check(benchmark_fd, &duration, sizeof(duration));
-    _write_and_check(benchmark_fd, &requested, sizeof(requested));
-    _write_and_check(benchmark_fd, &actual, sizeof(actual));
+    // write final results into its own log file that we can later parse it using 3rd party tool
+    // where we can do histograms and go into custom details
+    _write_and_check(benchmark_log_fd, &duration, sizeof(duration));
+    _write_and_check(benchmark_log_fd, &requested, sizeof(requested));
+    _write_and_check(benchmark_log_fd, &actual, sizeof(actual));
     char type = (IS_MALLOC(e) * 1) | (IS_REALLOC(e) * 2) | (IS_FREE(e) * 4);
-    _write_and_check(benchmark_fd, &type, sizeof(type));
+    _write_and_check(benchmark_log_fd, &type, sizeof(type));
     //fprintf(stderr, " %9ld:%9ld:%9ld %d:%d:%d\n", requested, actual, duration, IS_MALLOC(e), IS_REALLOC(e), IS_FREE(e));
-
-    bool found = false;
-    for (int i = 0; i < countThreads; i++) {
-      if (e->thread == thread_entries[i].thread) {
-        histogramsThreads[i]++;
-        found = true;
-        break;
-      }
-    }
-
-    HistogramBuckets* histogram = &histogramByCategory[NMTUtil::tag_to_index(mem_tag)];
-    for (int s = histogramLimitsSize; s >= 0; s--) {
-      if (actual >= histogramLimits[s]) {
-        histogram->buckets[s]++;
-        break;
-      }
-    }
   }
 
+  // present the results
+  setlocale(LC_NUMERIC, "");
   setlocale(LC_ALL, "");
   long int overhead_NMT = 0;
   if (MemTracker::enabled()) {
@@ -637,75 +588,14 @@ void NMT_MemoryLogRecorder::replay(const int pid) {
     fprintf(stderr, "[samples:" LD_FORMAT "] [NMT headers:" LD_FORMAT "]\n", count, headers);
     fprintf(stderr, "[malloc#:" LD_FORMAT "] [realloc#:" LD_FORMAT "] [free#:" LD_FORMAT "]\n", countMalloc, countRealloc, countFree);
     fprintf(stderr, "memory requested:" LD_FORMAT " bytes, allocated:" LD_FORMAT " bytes\n", requestedTotal, actualTotal);
-    fprintf(stderr, "malloc overhead=" LD_FORMAT " bytes [%2.2f%%], NMT headers overhead=" LD_FORMAT " bytes [%2.2f%%]\n", overhead_malloc, overheadPercentage_malloc, overhead_NMT, overheadPercentage_NMT);
+    fprintf(stderr, "malloc overhead:" LD_FORMAT " bytes [%2.2f%%], NMT headers overhead:" LD_FORMAT " bytes [%2.2f%%]\n", overhead_malloc, overheadPercentage_malloc, overhead_NMT, overheadPercentage_NMT);
     fprintf(stderr, "\n");
-    fprintf(stderr, "%22s: %12s: %12s: %12s: %12s: %12s: %12s: %12s:\n", "NMT type", "objects", "bytes", "time", "objects%", "bytes%", "time%", "overhead%");
-    fprintf(stderr, "-------------------------------------------------------------------------------------------------------------------------\n");
-    for (int i = 0; i < mt_number_of_tags; i++) {
-      double overhead = 0.0;
-      if (requestedByCategory[i] > 0) {
-        overhead = 100.0 * ((double)allocatedByCategory[i] - (double)requestedByCategory[i]) / (double)requestedByCategory[i];
-      }
-      fprintf(stderr, "%22s: %'12ld  %'12ld   %'12ld", NMTUtil::tag_to_name(NMTUtil::index_to_tag(i)), nmtObjectsByCategory[i], allocatedByCategory[i], timeByCategory[i]);
-      double countPercentage = 100.0 * ((double)nmtObjectsByCategory[i] / (double)headers);
-      if (countPercentage > 10.0) {
-        fprintf(stderr, "        %.1f%%", countPercentage);
-      } else {
-        fprintf(stderr, "         %.1f%%", countPercentage);
-      }
-      double bytesPercentage = 100.0 * ((double)allocatedByCategory[i] / (double)actualTotal);
-      if (bytesPercentage > 10.0) {
-        fprintf(stderr, "         %.1f%%", bytesPercentage);
-      } else {
-        fprintf(stderr, "          %.1f%%", bytesPercentage);
-      }
-      double timePercentage = 100.0 * ((double)timeByCategory[i] / (double)nanoseconds);
-      if (timePercentage > 10.0) {
-        fprintf(stderr, "         %.1f%%", timePercentage);
-      } else {
-        fprintf(stderr, "          %.1f%%", timePercentage);
-      }
-      if (overhead > 100.0) {
-        fprintf(stderr, "        %.1f%%", overhead);
-      } else if (overhead > 10.0) {
-        fprintf(stderr, "         %.1f%%", overhead);
-      } else {
-        fprintf(stderr, "          %.1f%%", overhead);
-      }
-      fprintf(stderr, "    ");
-
-      HistogramBuckets* histogram = &histogramByCategory[i];
-      long int max = 0;
-      for (int s = histogramLimitsSize; s >= 0; s--) {
-        if (histogram->buckets[s] > max) {
-          max = histogram->buckets[s];
-        }
-      }
-      for (int s = 0; s < histogramLimitsSize; s++) {
-        int index = (int)(100.0 * ((double)histogram->buckets[s] / (double)max)) % 8;
-        fprintf(stderr, "%s", histogramChars[index]);
-      }
-      fprintf(stderr, "\n");
-    }
   }
 
-  fprintf(stderr, "\n\n");
-  fprintf(stderr, "threads allocations info:\n\n");
-  fprintf(stderr, "%64s: %15s: %8s:\n", "thread", "operations", "ops%");
-  fprintf(stderr, "--------------------------------------------------------------------------------------------\n");
-  for (int i = 0; i < countThreads; i++) {
-    double percentageOps = 100.0 * (double)histogramsThreads[i] / (double)count;
-    if (percentageOps < 10.0) {
-      fprintf(stderr, "%64s: " LD_FORMAT2 " [ops]     %.2f%%\n", thread_entries[i].name, histogramsThreads[i], percentageOps);
-    } else {
-      fprintf(stderr, "%64s: " LD_FORMAT2 " [ops]    %.2f%%\n", thread_entries[i].name, histogramsThreads[i], percentageOps);
-    }
-  }
-
+  // clean up
   _close_and_check(log_fi.fd);
-  _close_and_check(threads_fi.fd);
   _close_and_check(records_fi.fd);
-  _close_and_check(benchmark_fd);
+  _close_and_check(benchmark_log_fd);
   FREE_C_HEAP_ARRAY(char, benchmark_file_path);
 
   for (off_t i = 0; i < count; i++) {
@@ -716,7 +606,6 @@ void NMT_MemoryLogRecorder::replay(const int pid) {
   }
 #if !defined(_WIN64)
   munmap((void*)pointers, size_pointers);
-  munmap((void*)histogramsThreads, size_threads);
 #endif
 
   recorder->unlock();
