@@ -239,6 +239,72 @@ public class CgroupSubsystemFactory {
     private String mntInfoOnlyFreezerInV1 =
             "32 23 0:27 / /sys/fs/cgroup rw,nosuid,nodev,noexec,relatime shared:9 - cgroup2 cgroup2 rw,nsdelegate,memory_recursiveprot\n" +
             "911 32 0:47 / /sys/fs/cgroup/freezer rw,relatime shared:476 - cgroup freezer rw,freezer\n";
+    // Test RHEL 8 (cgroups v1) with cpuset controller disabled via the kernel command line.
+    // # grep cgroup /boot/grub2/grubenv
+    // kernelopts=[...] cgroup_disable=cpuset
+    private String procCgroupsCgroupsV1CpusetDisabledContent =
+            "#subsys_name	hierarchy	num_cgroups	enabled\n" +
+            "cpuset	0	1	0\n" +
+            "cpu	8	1	1\n" +
+            "cpuacct	8	1	1\n" +
+            "blkio	7	1	1\n" +
+            "memory	9	114	1\n" +
+            "devices	3	67	1\n" +
+            "freezer	2	1	1\n" +
+            "net_cls	6	1	1\n" +
+            "perf_event	4	1	1\n" +
+            "net_prio	6	1	1\n" +
+            "hugetlb	11	1	1\n" +
+            "pids	10	91	1\n" +
+            "rdma	5	1	1\n";
+    private String procSelfCgroupCgroupsV1CpusetDisabledContent =
+            "11:hugetlb:/\n" +
+            "10:pids:/user.slice/user-0.slice/session-1.scope\n" +
+            "9:memory:/user.slice/user-0.slice/session-1.scope\n" +
+            "8:cpu,cpuacct:/\n" +
+            "7:blkio:/\n" +
+            "6:net_cls,net_prio:/\n" +
+            "5:rdma:/\n" +
+            "4:perf_event:/\n" +
+            "3:devices:/system.slice/sshd.service\n" +
+            "2:freezer:/\n" +
+            "1:name=systemd:/user.slice/user-0.slice/session-1.scope\n";
+    private String procSelfMountinfoCgroupsV1CpusetDisabledContent =
+            "22 93 0:21 / /sys rw,nosuid,nodev,noexec,relatime shared:2 - sysfs sysfs rw,seclabel\n" +
+            "23 93 0:5 / /proc rw,nosuid,nodev,noexec,relatime shared:25 - proc proc rw\n" +
+            "24 93 0:6 / /dev rw,nosuid shared:21 - devtmpfs devtmpfs rw,seclabel,size=632252k,nr_inodes=158063,mode=755\n" +
+            "25 22 0:7 / /sys/kernel/security rw,nosuid,nodev,noexec,relatime shared:3 - securityfs securityfs rw\n" +
+            "26 24 0:22 / /dev/shm rw,nosuid,nodev shared:22 - tmpfs tmpfs rw,seclabel\n" +
+            "27 24 0:23 / /dev/pts rw,nosuid,noexec,relatime shared:23 - devpts devpts rw,seclabel,gid=5,mode=620,ptmxmode=000\n" +
+            "28 93 0:24 / /run rw,nosuid,nodev shared:24 - tmpfs tmpfs rw,seclabel,mode=755\n" +
+            "29 22 0:25 / /sys/fs/cgroup ro,nosuid,nodev,noexec shared:4 - tmpfs tmpfs ro,seclabel,mode=755\n" +
+            "30 29 0:26 / /sys/fs/cgroup/systemd rw,nosuid,nodev,noexec,relatime shared:5 - cgroup cgroup rw,seclabel,xattr,release_agent=/usr/lib/systemd/systemd-cgroups-agent,name=systemd\n" +
+            "31 22 0:27 / /sys/fs/pstore rw,nosuid,nodev,noexec,relatime shared:16 - pstore pstore rw,seclabel\n" +
+            "32 22 0:28 / /sys/fs/bpf rw,nosuid,nodev,noexec,relatime shared:17 - bpf bpf rw,mode=700\n" +
+            "33 29 0:29 / /sys/fs/cgroup/freezer rw,nosuid,nodev,noexec,relatime shared:6 - cgroup cgroup rw,seclabel,freezer\n" +
+            "34 29 0:30 / /sys/fs/cgroup/devices rw,nosuid,nodev,noexec,relatime shared:7 - cgroup cgroup rw,seclabel,devices\n" +
+            "35 29 0:31 / /sys/fs/cgroup/perf_event rw,nosuid,nodev,noexec,relatime shared:8 - cgroup cgroup rw,seclabel,perf_event\n" +
+            "36 29 0:32 / /sys/fs/cgroup/rdma rw,nosuid,nodev,noexec,relatime shared:9 - cgroup cgroup rw,seclabel,rdma\n" +
+            "37 29 0:33 / /sys/fs/cgroup/net_cls,net_prio rw,nosuid,nodev,noexec,relatime shared:10 - cgroup cgroup rw,seclabel,net_cls,net_prio\n" +
+            "38 29 0:34 / /sys/fs/cgroup/blkio rw,nosuid,nodev,noexec,relatime shared:11 - cgroup cgroup rw,seclabel,blkio\n" +
+            "39 29 0:35 / /sys/fs/cgroup/cpu,cpuacct rw,nosuid,nodev,noexec,relatime shared:12 - cgroup cgroup rw,seclabel,cpu,cpuacct\n" +
+            "40 29 0:36 / /sys/fs/cgroup/memory rw,nosuid,nodev,noexec,relatime shared:13 - cgroup cgroup rw,seclabel,memory\n" +
+            "41 29 0:37 / /sys/fs/cgroup/pids rw,nosuid,nodev,noexec,relatime shared:14 - cgroup cgroup rw,seclabel,pids\n" +
+            "42 29 0:38 / /sys/fs/cgroup/hugetlb rw,nosuid,nodev,noexec,relatime shared:15 - cgroup cgroup rw,seclabel,hugetlb\n" +
+            "43 22 0:12 / /sys/kernel/tracing rw,relatime shared:18 - tracefs none rw,seclabel\n" +
+            "90 22 0:39 / /sys/kernel/config rw,relatime shared:19 - configfs configfs rw\n" +
+            "93 1 253:0 / / rw,relatime shared:1 - xfs /dev/mapper/rhel-root rw,seclabel,attr2,inode64,logbufs=8,logbsize=32k,noquota\n" +
+            "44 22 0:20 / /sys/fs/selinux rw,relatime shared:20 - selinuxfs selinuxfs rw\n" +
+            "45 24 0:19 / /dev/mqueue rw,relatime shared:26 - mqueue mqueue rw,seclabel\n" +
+            "46 23 0:40 / /proc/sys/fs/binfmt_misc rw,relatime shared:27 - autofs systemd-1 rw,fd=31,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=28718\n" +
+            "47 24 0:41 / /dev/hugepages rw,relatime shared:28 - hugetlbfs hugetlbfs rw,seclabel,pagesize=2M\n" +
+            "48 22 0:8 / /sys/kernel/debug rw,relatime shared:29 - debugfs debugfs rw,seclabel\n" +
+            "49 22 0:42 / /sys/fs/fuse/connections rw,relatime shared:30 - fusectl fusectl rw\n" +
+            "114 93 252:1 / /boot rw,relatime shared:61 - xfs /dev/vda1 rw,seclabel,attr2,inode64,logbufs=8,logbsize=32k,noquota\n" +
+            "466 28 0:46 / /run/user/0 rw,nosuid,nodev,relatime shared:251 - tmpfs tmpfs rw,seclabel,size=130188k,mode=700\n";
+    private Path procCgroupsCgroupsV1CpusetDisabledPath;
+    private Path procSelfCgroupCgroupsV1CpusetDisabledPath;
+    private Path procSelfMountinfoCgroupsV1CpusetDisabledPath;
 
     private void setup() {
         try {
@@ -344,6 +410,13 @@ public class CgroupSubsystemFactory {
 
             cgroupv2MntInfoNoZeroHierarchyOnlyFreezer = Paths.get(existingDirectory.toString(), "self_mountinfo_cgv2_non_zero_only_freezer");
             Files.writeString(cgroupv2MntInfoNoZeroHierarchyOnlyFreezer, mntInfoOnlyFreezerInV1);
+
+            procCgroupsCgroupsV1CpusetDisabledPath = Paths.get(existingDirectory.toString(), "proc_cgroups_cgroups_v1_cpuset_disabled");
+            Files.writeString(procCgroupsCgroupsV1CpusetDisabledPath, procCgroupsCgroupsV1CpusetDisabledContent);
+            procSelfCgroupCgroupsV1CpusetDisabledPath = Paths.get(existingDirectory.toString(), "proc_self_cgroup_cgroups_v1_cpuset_disabled");
+            Files.writeString(procSelfCgroupCgroupsV1CpusetDisabledPath, procSelfCgroupCgroupsV1CpusetDisabledContent);
+            procSelfMountinfoCgroupsV1CpusetDisabledPath = Paths.get(existingDirectory.toString(), "proc_self_mountinfo_cgroups_v1_cpuset_disabled");
+            Files.writeString(procSelfMountinfoCgroupsV1CpusetDisabledPath, procSelfMountinfoCgroupsV1CpusetDisabledContent);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -531,6 +604,16 @@ public class CgroupSubsystemFactory {
         System.out.println("testCgroupv2ControllerFileExtraWhitespace PASSED!");
     }
 
+    public void testCgroupv1CpusetDisabled(WhiteBox wb) {
+        String procCgroups = procCgroupsCgroupsV1CpusetDisabledPath.toString();
+        String procSelfCgroup = procSelfCgroupCgroupsV1CpusetDisabledPath.toString();
+        String procSelfMountinfo = procSelfMountinfoCgroupsV1CpusetDisabledPath.toString();
+        int retval = wb.validateCgroup(false, procCgroups, procSelfCgroup, procSelfMountinfo);
+        Asserts.assertEQ(INVALID_CGROUPS_GENERIC, retval, "Required cpuset controller disabled in /proc/cgroups. Invalid.");
+        Asserts.assertFalse(isValidCgroup(retval));
+        System.out.println("testCgroupv1CpusetDisabled PASSED!");
+    }
+
     public static void main(String[] args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
         CgroupSubsystemFactory test = new CgroupSubsystemFactory();
@@ -562,6 +645,7 @@ public class CgroupSubsystemFactory {
             test.testCgroupv1MultipleControllerMounts(wb, test.cgroupv1MntInfoDoublePids2);
             test.testCgroupv1JoinControllerCombo(wb);
             test.testNonZeroHierarchyOnlyFreezer(wb);
+            test.testCgroupv1CpusetDisabled(wb);
         } finally {
             test.teardown();
         }

@@ -333,7 +333,6 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
         cg_infos[MEMORY_IDX]._hierarchy_id = hierarchy_id;
         cg_infos[MEMORY_IDX]._enabled = (enabled == 1);
       } else if (strcmp(name, "cpuset") == 0) {
-        log_debug(os, container)("Detected optional cpuset controller entry in %s", controllers_file);
         cg_infos[CPUSET_IDX]._name = os::strdup(name);
         cg_infos[CPUSET_IDX]._hierarchy_id = hierarchy_id;
         cg_infos[CPUSET_IDX]._enabled = (enabled == 1);
@@ -353,8 +352,8 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
       }
     }
     for (int i = 0; i < CG_INFO_LENGTH; i++) {
-      // pids and cpuset controllers are optional. All other controllers are required
-      if (i != PIDS_IDX && i != CPUSET_IDX) {
+      // pids controller is optional. All other controllers are required
+      if (i != PIDS_IDX) {
         all_required_controllers_enabled = all_required_controllers_enabled && cg_infos[i]._enabled;
       }
       if (log_is_enabled(Debug, os, container) && !cg_infos[i]._enabled) {
