@@ -177,7 +177,7 @@ public class UdpTest extends Tests {
         });
         t1 = System.nanoTime();
         s1.receive (new DatagramPacket (new byte [128], 128));
-        final long startTimeInNanos = 2000000000L;
+        final long startTimeInNanos = TimeUnit.SECONDS.toNanos(2);
         final long endTimeInNanos =10000000000L;
         checkTime (System.nanoTime() - t1, startTimeInNanos, endTimeInNanos);
         s1.close ();
