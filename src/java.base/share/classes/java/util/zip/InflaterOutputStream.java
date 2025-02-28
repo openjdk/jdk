@@ -34,6 +34,20 @@ import java.util.Objects;
  * Implements an output stream filter for uncompressing data stored in the
  * "deflate" compression format.
  *
+ * <h2><a id="inflater-usage">Inflater Usage</a></h2>
+ * <p>This class uses an {@link Inflater} for uncompressing the data. Two forms of constructors
+ * are available for constructing an {@code InflaterOutputStream} - one which accepts
+ * an {@code Inflater} and one which doesn't. The constructors that don't accept an
+ * {@code Inflater} will create and use an {@code Inflater} instance of their own.
+ * The {@code Inflater} instance created in those cases will be
+ * {@linkplain Inflater#close() closed} when the {@code InflaterOutputStream} instance itself
+ * is {@linkplain #close() closed}.
+ * On the other hand, if an {@code InflaterOutputStream} was
+ * constructed by passing it an {@code Inflater}, then closing the {@code InflaterOutputStream}
+ * will not close the passed {@code Inflater}. In those cases, it is the responsibility of
+ * the caller to close the {@code Inflater} as and when appropriate, after the
+ * {@code InflaterOutputStream} has been closed.
+ *
  * @since       1.6
  * @author      David R Tribble (david@tribble.com)
  *

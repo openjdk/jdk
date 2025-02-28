@@ -38,6 +38,19 @@ import java.io.IOException;
  * or method in this class will cause a {@link NullPointerException} to be
  * thrown.
  *
+ * <h2><a id="deflater-usage">Deflater Usage</a></h2>
+ * <p>This class uses a {@link Deflater} for compressing the data. Two forms of constructors
+ * are available for constructing a {@code DeflaterOutputStream} - one which accepts
+ * a {@code Deflater} and one which doesn't. The constructors that don't accept a {@code Deflater}
+ * will create and use a {@code Deflater} instance of their own. The {@code Deflater} instance
+ * created in those cases will be {@linkplain Deflater#close() closed} when the
+ * {@code DeflaterOutputStream} instance itself is {@linkplain #close() closed}.
+ * On the other hand, if a {@code DeflaterOutputStream} was
+ * constructed by passing it a {@code Deflater}, then closing the {@code DeflaterOutputStream}
+ * will not close the passed {@code Deflater}. In those cases, it is the responsibility of
+ * the caller to close the {@code Deflater} as and when appropriate, after the
+ * {@code DeflaterOutputStream} has been closed.
+ *
  * @see         Deflater
  * @author      David Connelly
  * @since 1.1
