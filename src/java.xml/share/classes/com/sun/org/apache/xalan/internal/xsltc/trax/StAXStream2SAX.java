@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,7 +281,9 @@ public class StAXStream2SAX implements XMLReader, Locator {
         int textLength = staxStreamReader.getTextLength();
         char[] chars = new char[textLength];
 
-        staxStreamReader.getTextCharacters(0, chars, 0, textLength);
+        if (textLength > 0) {
+            staxStreamReader.getTextCharacters(0, chars, 0, textLength);
+        }
 
         try {
             _sax.characters(chars, 0, chars.length);
