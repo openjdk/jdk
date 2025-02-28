@@ -858,9 +858,9 @@ public class ForkJoinPool extends AbstractExecutorService
      * requirements, uses of the commonPool that require async because
      * caller-runs need not apply, ensure threads are enabled (by
      * setting parallelism) via method asyncCommonPool before
-     * proceeding. (In principle, these need to ensure at least one
-     * worker, but due to other backward compatibility contraints,
-     * ensure two.)
+     * proceeding. (In principle, overriding zero parallelism needs to
+     * ensure at least one worker, but due to other backward
+     * compatibility contraints, ensures two.)
      *
      * As a more appropriate default in managed environments, unless
      * overridden by system properties, we use workers of subclass
@@ -2068,8 +2068,8 @@ public class ForkJoinPool extends AbstractExecutorService
             ((e & SHUTDOWN) != 0L && ac == 0 && quiescent() > 0) ||
             (qs = queues) == null || (n = qs.length) <= 0)
             return IDLE;                      // terminating
-        int prechecks = Math.min(ac, 2);      // reactivation threshold
-        for (int k = Math.max(n + (n << 1), SPIN_WAITS << 1);;) {
+        int prechecks = 3;                    // reactivation threshold
+        for (int k = Math.max(n << 2, SPIN_WAITS << 1);;) {
             WorkQueue q; int cap; ForkJoinTask<?>[] a; long c;
             if (w.phase == activePhase)
                 return activePhase;
@@ -2962,9 +2962,9 @@ public class ForkJoinPool extends AbstractExecutorService
      * event-style asynchronous tasks.  For default value, use {@code
      * false}.
      *
-     * @param corePoolSize ignored: used in previous versions of this
+     * @param corePoolSize ignored: used in previous releases of this
      * class but no longer applicable. Using {@code 0} maintains
-     * compatibility across versions.
+     * compatibility across releases.
      *
      * @param maximumPoolSize the maximum number of threads allowed.
      * When the maximum is reached, attempts to replace blocked
@@ -3126,8 +3126,8 @@ public class ForkJoinPool extends AbstractExecutorService
      */
     static ForkJoinPool asyncCommonPool() {
         ForkJoinPool cp; int p;
-        if ((p = (cp = common).parallelism) < 2)
-            U.compareAndSetInt(cp, PARALLELISM, p, 2);
+        if ((p = (cp = common).parallelism) == 0)
+            U.compareAndSetInt(cp, PARALLELISM, 0, 2);
         return cp;
     }
 

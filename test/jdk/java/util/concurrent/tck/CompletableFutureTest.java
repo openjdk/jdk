@@ -32,6 +32,7 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -101,7 +102,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         assertNull(result);
 
         try {
-            f.get(randomExpiredTimeout(), randomTimeUnit());
+            f.get(1, NANOSECONDS);
             shouldThrow();
         }
         catch (TimeoutException success) {}

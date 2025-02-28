@@ -507,7 +507,7 @@ public class ForkJoinPool20Test extends JSR166TestCase {
             }};
 
         try (PoolCleaner cleaner = cleaner(p, done)) {
-            for (int i = p.getParallelism(); i--> 0; ) {
+            for (int i = p.getParallelism(); i-- > 0; ) {
                 switch (rnd.nextInt(4)) {
                 case 0: p.execute(r); break;
                 case 1: assertFalse(p.submit(r).isDone()); break;
@@ -520,7 +520,6 @@ public class ForkJoinPool20Test extends JSR166TestCase {
             p.shutdown();
             done.countDown();   // release blocking tasks
             assertTrue(p.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
-
         }
     }
 
@@ -566,7 +565,7 @@ public class ForkJoinPool20Test extends JSR166TestCase {
     }
 
     /**
-     * submitWithTimeout cancels task after timeout
+     * submitWithTimeout (eventually) cancels task after timeout
      */
     public void testSubmitWithTimeoutCancels() throws InterruptedException {
         final ForkJoinPool p = ForkJoinPool.commonPool();
@@ -629,6 +628,7 @@ public class ForkJoinPool20Test extends JSR166TestCase {
         ForkJoinTask<?> task = p.submitWithTimeout(c, LONGER_DELAY_MS, MILLISECONDS, null);
         Thread.sleep(timeoutMillis());
         assertFalse(task.isCancelled());
+        assertEquals(task.join(), Boolean.TRUE);
     }
 
     /**
