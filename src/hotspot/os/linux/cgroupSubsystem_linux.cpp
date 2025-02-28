@@ -287,7 +287,8 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     if ((p = fgets(buf, MAXPATHLEN, controllers)) != nullptr) {
       char* controller = nullptr;
       int i;
-      while ((controller = strsep(&p, " \n\t\r\f\v")) != nullptr) {
+      #define ISSPACE_CHARS " \n\t\r\f\v"
+      while ((controller = strsep(&p, ISSPACE_CHARS)) != nullptr) {
         // Skip empty string due to line ending in delimiter, '\n'.
         if (strcmp(controller, "") == 0) {
           continue;
@@ -301,6 +302,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
           log_debug(os, container)("v2 controller %s is enabled but not relevant", controller);
         }
       }
+      #undef ISSPACE_CHARS
     } else {
       log_debug(os, container)("Can't read %s, %s", controllers_file, os::strerror(errno));
       *flags = INVALID_CGROUPS_V2;
