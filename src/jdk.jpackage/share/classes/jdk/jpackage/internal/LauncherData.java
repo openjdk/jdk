@@ -178,11 +178,6 @@ final class LauncherData {
         launcherData.qualifiedClassName = getMainClass(params);
 
         launcherData.mainJarName = getMainJarName(params);
-        if (launcherData.mainJarName == null && launcherData.qualifiedClassName
-                == null) {
-            throw new ConfigException(I18N.getString("error.no-main-jar-parameter"),
-                    null);
-        }
 
         Path mainJarDir = StandardBundlerParam.SOURCE_DIR.fetchFrom(params);
 
