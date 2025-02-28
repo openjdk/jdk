@@ -41,6 +41,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.PortUnreachableException;
 import java.net.SocketTimeoutException;
+import java.util.concurrent.TimeUnit;
 
 public class UdpTest extends Tests {
     static DatagramSocket c3, s1, s2, s3;
