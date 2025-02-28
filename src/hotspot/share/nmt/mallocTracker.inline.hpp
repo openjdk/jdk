@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 SAP SE. All rights reserved.
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ inline bool MallocMemorySummary::check_exceeds_limit(size_t s, MemTag mem_tag) {
       // Category Limit?
       l = MallocLimitHandler::category_limit(mem_tag);
       if (l->sz > 0) {
-        const MallocMemory* mm = as_snapshot()->by_type(mem_tag);
+        const MallocMemory* mm = as_snapshot()->by_tag(mem_tag);
         size_t so_far = mm->malloc_size() + mm->arena_size();
         if ((so_far + s) > l->sz) {
           return category_limit_reached(mem_tag, s, so_far, l);
