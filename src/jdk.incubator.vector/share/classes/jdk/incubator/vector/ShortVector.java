@@ -3061,7 +3061,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
             return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        ((AbstractMask<Short>)m)
+            .checkIndexByLane(offset, a.length, vsp.iota(), 1);
         return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
@@ -3242,7 +3243,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
             return vsp.dummyVector().fromCharArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        ((AbstractMask<Short>)m)
+            .checkIndexByLane(offset, a.length, vsp.iota(), 1);
         return vsp.dummyVector().fromCharArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
@@ -3430,7 +3432,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
             return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_IN_RANGE).maybeSwap(bo);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 2, ms.byteSize());
+        ((AbstractMask<Short>)m)
+            .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 2);
         return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_OUT_OF_RANGE).maybeSwap(bo);
     }
 
@@ -3498,7 +3501,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
         } else {
             ShortSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                ((AbstractMask<Short>)m)
+                    .checkIndexByLane(offset, a.length, vsp.iota(), 1);
             }
             intoArray0(a, offset, m);
         }
@@ -3647,7 +3651,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
         } else {
             ShortSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                ((AbstractMask<Short>)m)
+                    .checkIndexByLane(offset, a.length, vsp.iota(), 1);
             }
             intoCharArray0(a, offset, m);
         }
@@ -3774,7 +3779,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
             }
             ShortSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
-                checkMaskFromIndexSize(offset, vsp, m, 2, ms.byteSize());
+                ((AbstractMask<Short>)m)
+                    .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 2);
             }
             maybeSwap(bo).intoMemorySegment0(ms, offset, m);
         }
@@ -4025,26 +4031,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
     }
 
     // End of low-level memory operations.
-
-    private static
-    void checkMaskFromIndexSize(int offset,
-                                ShortSpecies vsp,
-                                VectorMask<Short> m,
-                                int scale,
-                                int limit) {
-        ((AbstractMask<Short>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
-
-    private static
-    void checkMaskFromIndexSize(long offset,
-                                ShortSpecies vsp,
-                                VectorMask<Short> m,
-                                int scale,
-                                long limit) {
-        ((AbstractMask<Short>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
 
     @ForceInline
     private void conditionalStoreNYI(int offset,
