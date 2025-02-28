@@ -1543,7 +1543,7 @@ void os::jvm_path(char *buf, jint buflen) {
         // Add the appropriate JVM variant subdir
         len = strlen(buf);
         jrelib_p = buf + len;
-        snprintf(jrelib_p, buflen-len, "/%s", JVM_VARIANT);
+        snprintf(jrelib_p, buflen-len, "/%s", Abstract_VM_Version::vm_variant());
         if (0 != access(buf, F_OK)) {
           snprintf(jrelib_p, buflen-len, "%s", "");
         }

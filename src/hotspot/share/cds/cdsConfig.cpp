@@ -89,7 +89,7 @@ char* CDSConfig::default_archive_path() {
     stringStream tmp;
     const char* subdir = WINDOWS_ONLY("bin") NOT_WINDOWS("lib");
     tmp.print("%s%s%s%s%s%sclasses", Arguments::get_java_home(), os::file_separator(), subdir,
-              os::file_separator(), JVM_VARIANT, os::file_separator());
+              os::file_separator(), Abstract_VM_Version::vm_variant(), os::file_separator());
 #ifdef _LP64
     if (!UseCompressedOops) {
       tmp.print_raw("_nocoops");
