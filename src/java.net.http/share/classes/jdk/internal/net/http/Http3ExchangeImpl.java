@@ -852,6 +852,13 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         }
     }
 
+    @Override
+    void expectContinueFailed(int rcode) {
+        // Have to mark request as sent, due to no request body being sent in the
+        // event of a 417 Expectation Failed or some other non 100 response code
+        requestSent();
+    }
+
     // methods to update state and remove stream when finished
 
     void requestSent() {

@@ -25,6 +25,7 @@
  * @test
  * @summary Tests Http3 expect continue
  * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @compile ../ReferenceTracker.java
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run testng/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=errors,requests,headers
@@ -51,6 +52,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Builder;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -60,6 +62,8 @@ import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
 import static org.testng.Assert.*;
 
 public class Http3ExpectContinueTest implements HttpServerAdapters {
+
+    ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
 
     Http3TestServer http3TestServer;
 
@@ -88,7 +92,14 @@ public class Http3ExpectContinueTest implements HttpServerAdapters {
             throws CancellationException, InterruptedException, ExecutionException, IOException {
 
         err.printf("\nTesting URI: %s, exceptionally: %b\n", uri, exceptionally);
-        try (HttpClient client = newClientBuilderForH3().proxy(Builder.NO_PROXY).version(HTTP_3).sslContext(sslContext).build()) {
+        out.printf("\nTesting URI: %s, exceptionally: %b\n", uri, exceptionally);
+        HttpClient client = newClientBuilderForH3().
+                proxy(Builder.NO_PROXY)
+                .version(HTTP_3).sslContext(sslContext)
+                .build();
+        AssertionError failed = null;
+        TRACKER.track(client);
+        try {
             HttpResponse<String> resp = null;
             Throwable testThrowable = null;
 
@@ -108,6 +119,32 @@ public class Http3ExpectContinueTest implements HttpServerAdapters {
                 testThrowable = e.getCause();
             }
             verifyRequest(uri.getPath(), expectedStatusCode, resp, exceptionally, testThrowable);
+        } catch (Throwable x) {
+            failed = new AssertionError("Unexpected exception:" + x, x);
+        } finally {
+            client.shutdown();
+            if (!client.awaitTermination(Duration.ofMillis(1000))) {
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                var error = TRACKER.check(tracker, 2000);
+                if (error != null || failed != null) {
+                    var ex = failed == null ? error : failed;
+                    err.printf("FAILED URI: %s, exceptionally: %b, error: %s\n", uri, exceptionally, ex);
+                    out.printf("FAILED URI: %s, exceptionally: %b, error: %s\n", uri, exceptionally, ex);
+                }
+                if (error != null) {
+                    if (failed != null) {
+                        failed.addSuppressed(error);
+                        throw failed;
+                    }
+                    throw error;
+                }
+            }
+        }
+        if (failed != null) {
+            err.printf("FAILED URI: %s, exceptionally: %b, error: %s\n", uri, exceptionally, failed);
+            out.printf("FAILED URI: %s, exceptionally: %b, error: %s\n", uri, exceptionally, failed);
+            throw failed;
         }
     }
 
@@ -135,6 +172,8 @@ public class Http3ExpectContinueTest implements HttpServerAdapters {
 
     @AfterTest
     public void teardown() throws IOException {
+        var error = TRACKER.check(500);
+        if (error != null) throw error;
         http3TestServer.stop();
     }
 
