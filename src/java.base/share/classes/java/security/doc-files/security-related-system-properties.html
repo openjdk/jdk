@@ -1,0 +1,194 @@
+<!doctype html>
+<!--
+ Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Security-Related System Properties</title>
+    <style>
+        #debug {
+         border: 1px solid black;
+         border-collapse: collapse;
+         margin: 0 auto;
+        }
+        #debug caption {
+          font-weight: bold;
+          font-size: smaller;
+        }
+        #debug, #debug th, #debug td {
+         border: 1px solid black;
+         padding: 2px .5em;
+        }
+        #debug tbody th {
+         font-weight: normal;
+         text-align:left;
+        }
+    </style>
+</head>
+<body LANG="en-US" DIR="LTR">
+<H1 style="text-align:center">Security-Related System Properties</H1>
+<p>
+    There are several system properties used to
+    alter the mechanisms and behavior of the various classes of the
+    java.security package. Some are checked only once at startup of the VM,
+    and therefore are best set using the -D option of the java command,
+    while others have a more dynamic nature and can also be changed using
+    the <a href="../../lang/System.html#setProperty(java.lang.String,java.lang.String)">System.setProperty()</a> API.
+    </P>
+<a id="security.debug"></a>
+<H2>Debug</H2>
+<p><B>{@systemProperty java.security.debug}</B><BR></p>
+        <p>To monitor security access, you can set the java.security.debug system property,
+        which determines what trace messages are printed during execution.
+        To view security properties, security providers, and TLS-related settings,
+        specify the -XshowSettings:security option in the java command.
+        You can enable debugging in JGSS and other related technologies with various system properties or environment variables.
+        The following table lists java.security.debug options table:</p>
+
+<table id="debug">
+    <caption><b>Security Debug Options</b></caption>
+    <thead>
+    <tr>
+        <th scope="col">Option</th>
+        <th scope="col">Description</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th scope="row"><code>all</code></th>
+        <td><code>Turn on all the debugging options</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>certpath</code></th>
+        <td>Turns on debugging for the PKIX CertPathValidator and CertPathBuilder implementations. Use the ocsp option with the certpath option for OCSP protocol tracing. A hexadecimal dump of the OCSP request and response bytes is displayed.
+            You can use the following options with the certpath option:
+            <ul>
+                <li><code><b>ocsp:</b> Dump OCSP protocol exchanges</code></li>
+                <li><code><b>verbose:</b> Print additional debugging information</code></li>
+            </ul>
+        </td>
+    </tr>
+    <tr>
+        <th scope="row"><code>configfile</code></th>
+        <td><code>JAAS (Java Authentication and Authorization Service) configuration file loading</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>configparser</code></th>
+        <td><code>JAAS configuration file parsing</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>gssloginconfig</code></th>
+        <td><code>Java GSS (Generic Security Services) login configuration file debugging</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>jar</code></th>
+        <td><code>JAR file verification</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>jca</code></th>
+        <td><code>JCA engine class debugging</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>keystore</code></th>
+        <td><code>Keystore debugging</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>logincontext</code></th>
+        <td><code>LoginContext results</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>pcsc</code></th>
+        <td><code>Java Smart Card I/O and SunPCSC provider debugging</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>pkcs11</code></th>
+        <td><code>PKCS11 session manager debugging</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>pkcs11keystore</code></th>
+        <td><code>PKCS11 KeyStore debugging</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>pkcs12</code></th>
+        <td><code>PKCS12 KeyStore debugging</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>properties</code></th>
+        <td><code>java.security configuration file debugging</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>provider</code></th>
+        <td>Security provider debugging The following options can be used with the provider option:
+            engine=(engines) : The output is displayed only for a specified list of JCA engines.
+            The supported values for (engines) are:
+            <ul>
+                <li><code>Cipher</code></li>
+                <li><code>KeyAgreement</code></li>
+                <li><code>KeyGenerator</code></li>
+                <li><code>KeyPairGenerator</code></li>
+                <li><code>KeyStore</code></li>
+                <li><code>Mac</code></li>
+                <li><code>MessageDigest</code></li>
+                <li><code>SecureRandom</code></li>
+                <li><code>Signature</code></li>
+            </ul>
+        </td>
+    </tr>
+    <tr>
+        <th scope="row"><code>scl</code></th>
+        <td><code>Permissions that SecureClassLoader assigns</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>securerandom</code></th>
+        <td><code>SecureRandom debugging</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>sunpkcs11</code></th>
+        <td><code>SunPKCS11 provider debugging</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>+thread</code></th>
+        <td><code>Print thread and caller information</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>+timestamp</code></th>
+        <td><code>Print timestamp information</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>ts</code></th>
+        <td><code>Timestamping debugging</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>x509</code></th>
+        <td><code>X.509 certificate debugging. You can use the following option with X.509</code>
+            <ul>
+                <li><code><b>ava:</b> Embed non-printable/non-escaped characters in AVA components as hex strings</code></li>
+            </ul>
+        </td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

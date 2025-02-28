@@ -61,7 +61,7 @@ import java.util.concurrent.CompletableFuture;
 import static java.lang.String.format;
 import static jdk.internal.net.http.common.Utils.isValidName;
 import static jdk.internal.net.http.common.Utils.stringOf;
-import static jdk.internal.util.Exceptions.filterHostName;
+import static jdk.internal.util.Exceptions.filterNetInfo;
 import static jdk.internal.util.Exceptions.throwException;
 
 public class OpeningHandshake {
@@ -339,10 +339,10 @@ public class OpeningHandshake {
             throw illegal("invalid URI scheme: " + scheme);
         if (uri.getHost() == null)
             throwException(IllegalArgumentException.class, "URI must contain a host%s",
-                           filterHostName(uri.toString()).prefixWith(": "));
+                           filterNetInfo(uri.toString()).prefixWith(": "));
         if (uri.getFragment() != null)
             throwException(IllegalArgumentException.class, "URI must not contain a fragment%s",
-                           filterHostName(uri.toString()).prefixWith(": "));
+                           filterNetInfo(uri.toString()).prefixWith(": "));
         return uri;
     }
 

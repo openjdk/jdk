@@ -37,7 +37,7 @@ import sun.net.spi.DefaultProxySelector;
 import sun.net.www.ParseUtil;
 
 import static sun.net.util.IPAddressUtil.isIPv6LiteralAddress;
-import static jdk.internal.util.Exceptions.filterHostName;
+import static jdk.internal.util.Exceptions.filterSocketInfo;
 import static jdk.internal.util.Exceptions.throwException;
 
 /**
@@ -332,7 +332,7 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             // SOCKS Protocol version 4 doesn't know how to deal with
             // DOMAIN type of addresses (unresolved addresses here)
             if (epoint.isUnresolved())
-                throwException(UnknownHostException.class, filterHostName(epoint.toString()));
+                throwException(UnknownHostException.class, filterSocketInfo(epoint.toString()));
             connectV4(in, out, epoint, deadlineMillis);
             return;
         }
@@ -351,7 +351,7 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             // SOCKS Protocol version 4 doesn't know how to deal with
             // DOMAIN type of addresses (unresolved addresses here)
             if (epoint.isUnresolved())
-                throwException(UnknownHostException.class, filterHostName(epoint.toString()));
+                throwException(UnknownHostException.class, filterSocketInfo(epoint.toString()));
             connectV4(in, out, epoint, deadlineMillis);
             return;
         }

@@ -26,7 +26,7 @@
 package java.net;
 
 import java.util.Objects;
-import static jdk.internal.util.Exceptions.filterHostName;
+import static jdk.internal.util.Exceptions.filterNetInfo;
 import static jdk.internal.util.Exceptions.throwException;
 
 /**
@@ -98,7 +98,7 @@ public class Proxy {
         if ((type == Type.DIRECT) || !(sa instanceof InetSocketAddress)) {
             throwException(IllegalArgumentException.class,
                            "type " + type + " is not compatible with address %s",
-                           filterHostName(sa.toString())
+                           filterNetInfo(sa.toString())
                                .replaceWith("type " + sa.getClass().toString()));
         }
         this.type = type;

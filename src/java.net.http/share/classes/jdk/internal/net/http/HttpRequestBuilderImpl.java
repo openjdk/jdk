@@ -39,7 +39,7 @@ import static java.util.Objects.requireNonNull;
 import static jdk.internal.net.http.common.Utils.isValidName;
 import static jdk.internal.net.http.common.Utils.isValidValue;
 import static jdk.internal.net.http.common.Utils.newIAE;
-import static jdk.internal.util.Exceptions.filterHostName;
+import static jdk.internal.util.Exceptions.filterNetInfo;
 import static jdk.internal.util.Exceptions.throwException;
 
 public class HttpRequestBuilderImpl implements HttpRequest.Builder {
@@ -85,7 +85,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
         }
         if (uri.getHost() == null) {
             throwException(IllegalArgumentException.class, "unsupported URI %s",
-                           filterHostName(uri.toString()));
+                           filterNetInfo(uri.toString()));
         }
     }
 

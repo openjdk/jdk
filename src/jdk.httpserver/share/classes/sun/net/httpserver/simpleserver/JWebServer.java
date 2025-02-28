@@ -38,7 +38,7 @@ public class JWebServer {
     private static final String DEFAULT_JWEBSERVER_MAX_CONNECTIONS = "200";
 
     private static final String SYS_PROP_ENHANCED_EXCEP = "jdk.includeInExceptions";
-    private static final String DEFAULT_ENHANCED_EXCEP = "hostInfo";
+    private static final String DEFAULT_ENHANCED_EXCEP = "net";
     /**
      * This constructor should never be called.
      */

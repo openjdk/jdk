@@ -192,11 +192,10 @@ public final class ResponseBodyHandlers {
         static final UncheckedIOException unchecked(ResponseInfo rinfo,
                                                     String msg) {
             String s;
-            if (Exceptions.enhancedHostExceptions()) {
+            if (Exceptions.enhancedNetExceptions()) {
                 s = String.format("%s in response [%d, %s]", msg, rinfo.statusCode(), rinfo.headers());
             } else {
-                s = String.format("%s in response [%d] %s", msg, rinfo.statusCode(),
-                                                                 Exceptions.enhancedDisabledMsg());
+                s = String.format("%s in response [%d]", msg, rinfo.statusCode());
             }
             return new UncheckedIOException(new IOException(s));
         }

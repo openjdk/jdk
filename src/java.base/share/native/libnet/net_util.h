@@ -116,12 +116,6 @@ JNIEXPORT jint JNICALL ipv6_available();
 JNIEXPORT jint JNICALL reuseport_available();
 
 /**
- * Message appended to exception texts when enhanced exceptions disabled
- * Must be kept consistent with Java implementation
- */
-#define ENH_DISABLED_MSG "[enhanced exceptions disabled]"
-
-/**
  * This function will fill a SOCKETADDRESS structure from an InetAddress
  * object.
  *

@@ -1282,19 +1282,18 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 #             in the categories above. This include URL/URI, NetworkInterface
 #             and URLConnection among others.
 #
+#  hostInfo - Special value which signifies the three categories above combined
+#             (socket, addressLookup, net). This is provided for compatibility 
+#             with previous releases.
+#
 #  jar     - enables more detailed information in the IOExceptions thrown
 #             by classes in the java.util.jar package
 #
 #  userInfo - enables more detailed information in exceptions which may contain
 #             user identity information
 #
-# For compatibility with previous releases, the special value hostInfo encompasses
-# all the network related categories (socket,addressLookup,net)
 # The property setting in this file can be overridden by a system property of
 # the same name, with the same syntax and possible values.
-#
-# When enhanced exceptions are disabled the following string is appended
-# to each restricted exception message "[enhanced exceptions disabled]"
 #
 #jdk.includeInExceptions=hostInfo,jar,userInfo
 #

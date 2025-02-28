@@ -44,10 +44,6 @@ import jdk.internal.misc.VM;
  * of the same exception type with an "enhanced" message
  * description.
  *
- * If the system/security property "jdk.includeInExceptions" is not
- * set or does not contain the category hostInfo,
- * then the original exception is returned.
- *
  * Code using this mechanism should use one of the static throwException
  * methods below to generate and throw the exception in one method.
  * exception() methods are also provided to generate an exception which
@@ -55,27 +51,21 @@ import jdk.internal.misc.VM;
  * can generate a formatted (enhanced or restricted) string only.
  *
  * The SensitiveInfo objects should be generated with one of the following:
- *     public static SensitiveInfo filterHostName(String host)
+ *     public static SensitiveInfo filterLookupInfo(String host)
+ *     public static SensitiveInfo filterSocketInfo(String host)
+ *     public static SensitiveInfo filterNetInfo(String host)
  *     public static SensitiveInfo filterJarName(String name)
  *     public static SensitiveInfo filterUserName(String name)
  */
 public final class Exceptions {
     private Exceptions() {}
 
-    private static volatile boolean enhancedHostExceptionText;
+    private static volatile boolean enhancedSocketExceptionText;
+    private static volatile boolean enhancedNetExceptionText;
+    private static volatile boolean enhancedLookupExceptionText;
     private static volatile boolean enhancedUserExceptionText;
     private static volatile boolean enhancedJarExceptionText;
     private static volatile boolean initialized = false;
-
-    /**
-     * Suffix added to all exception messages when enhanced exceptions are disabled
-     */
-    private static final String ENH_DISABLED_MSG = "[enhanced exceptions disabled]";
-
-
-    public static String enhancedDisabledMsg() {
-        return ENH_DISABLED_MSG;
-    }
 
     /**
      * Base class for generating exception messages that may
@@ -88,7 +78,7 @@ public final class Exceptions {
      * Sub-class for any new category that needs to be independently
      * controlled. Consider using a unique value for the
      * SecurityProperties.includedInExceptions(String value) mechanism
-     * Current values defined are "hostInfo", "jar" and "userInfo"
+     * Current values defined are "socket", "jar" and "userInfo"
      * New code can also piggy back on existing categories
      *
      * A SensitiveInfo contains the following components
@@ -199,14 +189,37 @@ public final class Exceptions {
         throw ex;
     }
 
-    static final class HostInfo extends SensitiveInfo {
-        public HostInfo(String host) {
+    static final class SocketInfo extends SensitiveInfo {
+        public SocketInfo(String host) {
              super(host);
         }
         @Override
         public String output() {
             setup();
-            return super.output(enhancedHostExceptionText);
+            return super.output(enhancedSocketExceptionText);
+        }
+    }
+
+    static final class NetInfo extends SensitiveInfo {
+        public NetInfo(String host) {
+             super(host);
+        }
+        @Override
+        public String output() {
+            setup();
+            return super.output(enhancedNetExceptionText);
+        }
+    }
+
+
+    static final class LookupInfo extends SensitiveInfo {
+        public LookupInfo(String host) {
+             super(host);
+        }
+        @Override
+        public String output() {
+            setup();
+            return super.output(enhancedLookupExceptionText);
         }
     }
 
@@ -258,8 +271,16 @@ public final class Exceptions {
         return sb.toString();
     }
 
-    public static SensitiveInfo filterHostName(String host) {
-        return new HostInfo(host);
+    public static SensitiveInfo filterSocketInfo(String host) {
+        return new SocketInfo(host);
+    }
+
+    public static SensitiveInfo filterNetInfo(String host) {
+        return new NetInfo(host);
+    }
+
+    public static SensitiveInfo filterLookupInfo(String host) {
+        return new LookupInfo(host);
     }
 
     public static SensitiveInfo filterJarName(String name) {
@@ -285,8 +306,7 @@ public final class Exceptions {
             if (!info.enhanced())
                 enhanced = false;
         }
-        return trim(String.format(format, (Object[])args) +
-                        (enhanced ? "" : " " + ENH_DISABLED_MSG));
+        return trim(String.format(format, (Object[])args));
     }
 
     /**
@@ -300,15 +320,32 @@ public final class Exceptions {
     public static void setup() {
         if (initialized || !VM.isBooted())
             return;
-        enhancedHostExceptionText = SecurityProperties.includedInExceptions("hostInfo");
+        // for compatibility
+        var hostCompatFlag = SecurityProperties.includedInExceptions("hostInfo");
+        enhancedSocketExceptionText = SecurityProperties.includedInExceptions("socket") 
+                                      | hostCompatFlag;
+        enhancedNetExceptionText = SecurityProperties.includedInExceptions("net")
+                                      | hostCompatFlag;
+        enhancedLookupExceptionText = SecurityProperties.includedInExceptions("addressLookup")
+                                      | hostCompatFlag;
         enhancedUserExceptionText = SecurityProperties.includedInExceptions("userInfo");
         enhancedJarExceptionText =  SecurityProperties.INCLUDE_JAR_NAME_IN_EXCEPTIONS;
         initialized = true;
     }
 
-    public static boolean enhancedHostExceptions() {
+    public static boolean enhancedNetExceptions() {
         setup();
-        return enhancedHostExceptionText;
+        return enhancedNetExceptionText;
+    }
+
+    public static boolean enhancedSocketExceptions() {
+        setup();
+        return enhancedSocketExceptionText;
+    }
+
+    public static boolean enhancedLookupExceptions() {
+        setup();
+        return enhancedLookupExceptionText;
     }
 
     /**
@@ -320,8 +357,8 @@ public final class Exceptions {
         if (addr == null) {
             return e;
         }
-        if (!enhancedHostExceptionText) {
-            return create(e, e.getMessage() + " " + ENH_DISABLED_MSG);
+        if (!enhancedSocketExceptionText) {
+            return create(e, e.getMessage());
         }
         if (addr instanceof UnixDomainSocketAddress) {
             return ofUnixDomain(e, (UnixDomainSocketAddress)addr);

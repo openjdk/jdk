@@ -192,7 +192,7 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
     if (enhancedExceptions) {
         size = strlen(hostname);
     } else {
-        size = strlen(ENH_DISABLED_MSG) + 1;
+        size = 0;
     }
     size += strlen(error_string) + 3;
 
@@ -202,7 +202,7 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
         if (enhancedExceptions) {
             snprintf(buf, size, "%s: %s", hostname, error_string);
         } else {
-            snprintf(buf, size, " %s %s", error_string, ENH_DISABLED_MSG);
+            snprintf(buf, size, " %s", error_string);
         }
         s = JNU_NewStringPlatform(env, buf);
         if (s != NULL) {

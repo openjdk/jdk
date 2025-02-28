@@ -84,7 +84,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     if (error) {
         // report error
         NET_ThrowByNameWithLastError(env, "java/net/UnknownHostException",
-            getEnhancedExceptionsAllowed(env) ? hostname : ENH_DISABLED_MSG);
+            getEnhancedExceptionsAllowed(env) ? hostname : "");
         goto cleanupAndReturn;
     } else {
         int i = 0, inetCount = 0, inet6Count = 0, inetIndex = 0,

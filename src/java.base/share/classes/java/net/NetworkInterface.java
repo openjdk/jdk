@@ -34,7 +34,7 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import static jdk.internal.util.Exceptions.filterHostName;
+import static jdk.internal.util.Exceptions.filterNetInfo;
 import static jdk.internal.util.Exceptions.throwException;
 
 /**
@@ -326,7 +326,7 @@ public final class NetworkInterface {
             }
         } else {
             throwException(IllegalArgumentException.class, "invalid address type%s",
-                           filterHostName(addr.toString()).prefixWith(": "));
+                           filterNetInfo(addr.toString()).prefixWith(": "));
         }
         return getByInetAddress0(addr);
     }

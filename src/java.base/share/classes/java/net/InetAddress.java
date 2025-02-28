@@ -70,7 +70,7 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV4_FIRST;
 import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6;
 import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
 import static jdk.internal.util.Exceptions.exception;
-import static jdk.internal.util.Exceptions.filterHostName;
+import static jdk.internal.util.Exceptions.filterLookupInfo;
 import static jdk.internal.util.Exceptions.throwException;
 
 /**
@@ -907,7 +907,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         @Override
         public InetAddress[] get() throws UnknownHostException {
             if (inetAddresses == null) {
-                throwException(UnknownHostException.class, filterHostName(host));
+                throwException(UnknownHostException.class, filterLookupInfo(host));
             }
             return inetAddresses;
         }
@@ -1101,7 +1101,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                     }
                     if (inetAddresses == null || inetAddresses.length == 0) {
                         if (ex == null) {
-                            throwException(UnknownHostException.class, filterHostName(host));
+                            throwException(UnknownHostException.class, filterLookupInfo(host));
                         } else {
                             throw ex;
                         }
@@ -1214,16 +1214,16 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             } catch (IOException e) {
                 throwException(UnknownHostException.class,
                                "Unable to resolve address %s as hosts file %s not found",
-                               filterHostName(Arrays.toString(addr)),
-                               filterHostName(hostsFile)
+                               filterLookupInfo(Arrays.toString(addr)),
+                               filterLookupInfo(hostsFile)
                                    .replaceWith("from ${jdk.net.hosts.file} system property"));
             }
 
             if ((host == null) || (host.isEmpty()) || (host.equals(" "))) {
                 throwException(UnknownHostException.class,
                                "Requested address %s resolves to an invalid entry in hosts file %s",
-                               filterHostName(Arrays.toString(addr)),
-                               filterHostName(hostsFile)
+                               filterLookupInfo(Arrays.toString(addr)),
+                               filterLookupInfo(hostsFile)
                                    .replaceWith("from ${jdk.net.hosts.file} system property"));
             }
             return host;
@@ -1287,7 +1287,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             } catch (IOException e) {
                 throwException(UnknownHostException.class,
                                "Unable to resolve host %s as hosts file %s not found",
-                               filterHostName(host), filterHostName(hostsFile)
+                               filterLookupInfo(host), filterLookupInfo(hostsFile)
                                    .replaceWith("from ${jdk.net.hosts.file} system property"));
 
             }
@@ -1321,7 +1321,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                 throws UnknownHostException {
             if (addressesList.isEmpty()) {
                 throwException(UnknownHostException.class, "Unable to resolve host %s in hosts file %s",
-                               filterHostName(hostName), filterHostName(hostsFile)
+                               filterLookupInfo(hostName), filterLookupInfo(hostsFile)
                                    .replaceWith("from ${jdk.net.hosts.file} system property"));
             }
         }
@@ -1560,7 +1560,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                     inetAddress = Inet4Address.parseAddressString(host, false);
                 } catch (IllegalArgumentException iae) {
                     UnknownHostException uhe = exception(UnknownHostException.class,
-                                                         filterHostName(host));
+                                                         filterLookupInfo(host));
                     uhe.initCause(iae);
                     throw uhe;
                 }
@@ -1588,7 +1588,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     private static UnknownHostException invalidIPv6LiteralException(String host, boolean wrapInBrackets) {
         String hostString = wrapInBrackets ? "[" + host + "]" : host;
         return exception(UnknownHostException.class, "%sinvalid IPv6 address literal",
-                         filterHostName(hostString).suffixWith(": "));
+                         filterLookupInfo(hostString).suffixWith(": "));
     }
 
     /**
@@ -1726,7 +1726,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         InetAddress[] result = addresses == null ? null
                 : addresses.toArray(InetAddress[]::new);
         if (result == null || result.length == 0) {
-            throw ex == null ? exception(UnknownHostException.class, filterHostName(host))
+            throw ex == null ? exception(UnknownHostException.class, filterLookupInfo(host))
                              : ex;
         }
         return result;
@@ -1800,7 +1800,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             } catch (UnknownHostException uhe) {
                 // Rethrow with a more informative error message.
                     UnknownHostException uhe2 = exception(UnknownHostException.class,
-                        filterHostName(local).suffixWith(": ") + uhe.getMessage());
+                        filterLookupInfo(local).suffixWith(": ") + uhe.getMessage());
                 uhe2.initCause(uhe);
                 throw uhe2;
             }
