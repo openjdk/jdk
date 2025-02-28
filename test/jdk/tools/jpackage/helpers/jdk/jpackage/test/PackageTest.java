@@ -472,7 +472,7 @@ public final class PackageTest extends RunnablePackageTest {
                                 handler -> {
                                     unpackDir = TKit.createTempDirectory(
                                             String.format("unpacked-%s",
-                                                    type.getName()));
+                                                    type.getType()));
                                     unpackDir = handler.apply(cmd, unpackDir);
                                     cmd.setUnpackedPackageLocation(unpackDir);
                                 });
