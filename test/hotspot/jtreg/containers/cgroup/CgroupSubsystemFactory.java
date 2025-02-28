@@ -383,7 +383,7 @@ public class CgroupSubsystemFactory {
 
     public void testCgroupv1SystemdOnly(WhiteBox wb) {
         String procCgroups = cgroupv1CgInfoZeroHierarchy.toString();
-        String procSelfCgroup = cgroupV1SelfCgroup.toString();
+        String procSelfCgroup = cgroupV2SelfCgroup.toString();
         String procSelfMountinfo = cgroupv1MntInfoSystemdOnly.toString();
         int retval = wb.validateCgroup(false, procCgroups, procSelfCgroup, procSelfMountinfo);
         Asserts.assertEQ(INVALID_CGROUPS_NO_MOUNT, retval, "Only systemd mounted. Invalid");
@@ -393,7 +393,7 @@ public class CgroupSubsystemFactory {
 
     public void testCgroupv1NoMounts(WhiteBox wb) {
         String procCgroups = cgroupv1CgInfoZeroHierarchy.toString();
-        String procSelfCgroup = cgroupV1SelfCgroup.toString();
+        String procSelfCgroup = cgroupV2SelfCgroup.toString();
         String procSelfMountinfo = cgroupv1MntInfoZeroHierarchy.toString();
         int retval = wb.validateCgroup(false, procCgroups, procSelfCgroup, procSelfMountinfo);
         Asserts.assertEQ(INVALID_CGROUPS_NO_MOUNT, retval, "No cgroups mounted in /proc/self/mountinfo. Invalid.");

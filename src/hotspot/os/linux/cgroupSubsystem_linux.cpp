@@ -265,7 +265,6 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
   FILE *cgroup = nullptr;
   char buf[MAXPATHLEN+1];
   char *p;
-  bool is_cgroupsV2 = true;
   // true iff all required controllers, memory, cpu, cpuacct are enabled
   // at the kernel level.
   // pids might not be enabled on older Linux distros (SLES 12.1, RHEL 7.1)
@@ -363,7 +362,6 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     for (int i = 0; i < CG_INFO_LENGTH; i++) {
       // pids and cpuset controllers are optional. All other controllers are required
       if (i != PIDS_IDX && i != CPUSET_IDX) {
-        is_cgroupsV2 = is_cgroupsV2 && cg_infos[i]._hierarchy_id == 0;
         all_required_controllers_enabled = all_required_controllers_enabled && cg_infos[i]._enabled;
       }
       if (log_is_enabled(Debug, os, container) && !cg_infos[i]._enabled) {
@@ -413,7 +411,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
       continue;
     }
 
-    while (!is_cgroupsV2 && (token = strsep(&controllers, ",")) != nullptr) {
+    while (!cgroups_v2_enabled && (token = strsep(&controllers, ",")) != nullptr) {
       if (strcmp(token, "memory") == 0) {
         assert(hierarchy_id == cg_infos[MEMORY_IDX]._hierarchy_id, "/proc/cgroups and /proc/self/cgroup hierarchy mismatch for memory");
         cg_infos[MEMORY_IDX]._cgroup_path = os::strdup(cgroup_path);
@@ -432,7 +430,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
         cg_infos[PIDS_IDX]._cgroup_path = os::strdup(cgroup_path);
       }
     }
-    if (is_cgroupsV2) {
+    if (cgroups_v2_enabled) {
       // On some systems we have mixed cgroups v1 and cgroups v2 controllers (e.g. freezer on cg1 and
       // all relevant controllers on cg2). Only set the cgroup path when we see a hierarchy id of 0.
       if (hierarchy_id != 0) {
@@ -468,14 +466,14 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     char *cptr = tmpcgroups;
     char *token;
 
-    /* Cgroup v2 relevant info. We only look for the _mount_path iff is_cgroupsV2 so
+    /* Cgroup v2 relevant info. We only look for the _mount_path iff cgroups_v2_enabled so
      * as to avoid memory stomping of the _mount_path pointer later on in the cgroup v1
      * block in the hybrid case.
      *
      * We collect the read only mount option in the cgroup infos so as to have that
      * info ready when determining is_containerized().
      */
-    if (is_cgroupsV2 && match_mount_info_line(p,
+    if (cgroups_v2_enabled && match_mount_info_line(p,
                                               tmproot,
                                               tmpmount,
                                               mount_opts,
@@ -554,7 +552,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     return false;
   }
 
-  if (is_cgroupsV2) {
+  if (cgroups_v2_enabled) {
     if (!cgroupv2_mount_point_found) {
       log_trace(os, container)("Mount point for cgroupv2 not found in /proc/self/mountinfo");
       cleanup(cg_infos);
