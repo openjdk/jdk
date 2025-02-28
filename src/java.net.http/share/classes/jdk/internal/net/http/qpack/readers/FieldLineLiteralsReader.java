@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ public final class FieldLineLiteralsReader extends FieldLineReader {
 
     public FieldLineLiteralsReader(long maxSectionSize, AtomicLong sectionSizeTracker,
                                    QPACK.Logger logger) {
-        super(maxSectionSize, sectionSizeTracker);
+        // Dynamic table is not needed for literals reader
+        super(null, maxSectionSize, sectionSizeTracker);
         this.logger = logger;
         stringReader = new StringReader(new ReaderError(QPACK_DECOMPRESSION_FAILED, false));
         name = new StringBuilder(512);

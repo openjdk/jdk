@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,7 @@ import jdk.internal.net.http.qpack.DynamicTable;
 import jdk.internal.net.http.qpack.FieldSectionPrefix;
 import jdk.internal.net.http.qpack.HeaderField;
 import jdk.internal.net.http.qpack.QPACK;
-import jdk.internal.net.http.qpack.QPackException;
-import jdk.internal.net.http.qpack.StaticTable;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -41,15 +38,12 @@ import static java.lang.String.format;
 import static jdk.internal.net.http.qpack.QPACK.Logger.Level.NORMAL;
 
 public final class FieldLineIndexedReader extends FieldLineReader {
-    private boolean fromStaticTable;
-    private final DynamicTable dynamicTable;
     private final IntegerReader integerReader;
     private final QPACK.Logger logger;
 
     public FieldLineIndexedReader(DynamicTable dynamicTable, long maxSectionSize,
                                   AtomicLong sectionSizeTracker, QPACK.Logger logger) {
-        super(maxSectionSize, sectionSizeTracker);
-        this.dynamicTable = dynamicTable;
+        super(dynamicTable, maxSectionSize, sectionSizeTracker);
         this.logger = logger;
         integerReader = new IntegerReader(
                 new ReaderError(Http3Error.QPACK_DECOMPRESSION_FAILED, false));
@@ -78,26 +72,12 @@ public final class FieldLineIndexedReader extends FieldLineReader {
             logger.log(NORMAL, () -> format("%s index %s", fromStaticTable ? "Static" : "Dynamic",
                        absoluteIndex));
         }
-        HeaderField f = getHeaderFieldAt(absoluteIndex);
+        checkEntryIndex(absoluteIndex, prefix);
+        HeaderField f = entryAtIndex(absoluteIndex);
         checkSectionSize(DynamicTable.headerSize(f));
         action.onIndexed(absoluteIndex, f.name(), f.value());
         reset();
         return true;
-    }
-
-    private HeaderField getHeaderFieldAt(long index) {
-        HeaderField f;
-        try {
-            if (fromStaticTable) {
-                f = StaticTable.HTTP3.get(index);
-            } else {
-                f = dynamicTable.get(index);
-            }
-        } catch (IndexOutOfBoundsException e) {
-            throw QPackException.decompressionFailed(
-                    new IOException("header fields table index", e), true);
-        }
-        return f;
     }
 
     public void reset() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,7 @@ import jdk.internal.net.http.qpack.DynamicTable;
 import jdk.internal.net.http.qpack.FieldSectionPrefix;
 import jdk.internal.net.http.qpack.HeaderField;
 import jdk.internal.net.http.qpack.QPACK;
-import jdk.internal.net.http.qpack.QPackException;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -43,7 +41,6 @@ public final class FieldLineNameRefPostBaseReader extends FieldLineReader {
     private long intValue;
     private boolean hideIntermediary;
     private boolean huffmanValue;
-    private final DynamicTable dynamicTable;
     private final StringBuilder value;
     private final IntegerReader integerReader;
     private final StringReader stringReader;
@@ -53,8 +50,7 @@ public final class FieldLineNameRefPostBaseReader extends FieldLineReader {
 
     FieldLineNameRefPostBaseReader(DynamicTable dynamicTable, long maxSectionSize,
                                    AtomicLong sectionSizeTracker, QPACK.Logger logger) {
-        super(maxSectionSize, sectionSizeTracker);
-        this.dynamicTable = dynamicTable;
+        super(dynamicTable, maxSectionSize, sectionSizeTracker);
         this.logger = logger;
         var errorToReport = new ReaderError(QPACK_DECOMPRESSION_FAILED, false);
         integerReader = new IntegerReader(errorToReport);
@@ -91,7 +87,8 @@ public final class FieldLineNameRefPostBaseReader extends FieldLineReader {
                     "literal with post-base name reference (%s, %s, '%s', huffman=%b)",
                     absoluteIndex, prefix.base(), value, huffmanValue));
         }
-        HeaderField f = getHeaderFieldAt(absoluteIndex);
+        checkEntryIndex(absoluteIndex, prefix);
+        HeaderField f = entryAtIndex(absoluteIndex);
         String valueStr = value.toString();
         checkSectionSize(DynamicTable.headerSize(f.name(), valueStr));
         action.onLiteralWithNameReference(absoluteIndex,
@@ -119,17 +116,6 @@ public final class FieldLineNameRefPostBaseReader extends FieldLineReader {
         stringReader.reset();
 
         return true;
-    }
-
-    private HeaderField getHeaderFieldAt(long index) {
-        HeaderField f;
-        try {
-            f = dynamicTable.get(index);
-        } catch (IndexOutOfBoundsException e) {
-            var ex = new IOException("header fields table index", e);
-            throw QPackException.decompressionFailed(ex, true);
-        }
-        return f;
     }
 
     public void reset() {

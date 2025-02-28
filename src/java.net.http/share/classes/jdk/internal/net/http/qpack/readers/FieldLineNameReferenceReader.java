@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,7 @@ import jdk.internal.net.http.qpack.DynamicTable;
 import jdk.internal.net.http.qpack.FieldSectionPrefix;
 import jdk.internal.net.http.qpack.HeaderField;
 import jdk.internal.net.http.qpack.QPACK;
-import jdk.internal.net.http.qpack.QPackException;
-import jdk.internal.net.http.qpack.StaticTable;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -43,9 +40,7 @@ import static jdk.internal.net.http.qpack.QPACK.Logger.Level.NORMAL;
 public final class FieldLineNameReferenceReader extends FieldLineReader {
     private long intValue;
     private boolean hideIntermediary;
-    private boolean fromStaticTable;
     private boolean huffmanValue;
-    private final DynamicTable dynamicTable;
     private final StringBuilder value;
     private final IntegerReader integerReader;
     private final StringReader stringReader;
@@ -55,8 +50,7 @@ public final class FieldLineNameReferenceReader extends FieldLineReader {
 
     FieldLineNameReferenceReader(DynamicTable dynamicTable, long maxSectionSize,
                                  AtomicLong sectionSizeTracker, QPACK.Logger logger) {
-        super(maxSectionSize, sectionSizeTracker);
-        this.dynamicTable = dynamicTable;
+        super(dynamicTable, maxSectionSize, sectionSizeTracker);
         this.logger = logger;
         var errorToReport = new ReaderError(QPACK_DECOMPRESSION_FAILED, false);
         integerReader = new IntegerReader(errorToReport);
@@ -94,7 +88,8 @@ public final class FieldLineNameReferenceReader extends FieldLineReader {
                     fromStaticTable ? "static" : "dynamic", intValue, value, huffmanValue));
         }
         long absoluteIndex = fromStaticTable ? intValue : prefix.base() - 1 - intValue;
-        HeaderField f = getHeaderFieldAt(absoluteIndex);
+        checkEntryIndex(absoluteIndex, prefix);
+        HeaderField f = entryAtIndex(absoluteIndex);
         String valueStr = value.toString();
         checkSectionSize(DynamicTable.headerSize(f.name(), valueStr));
         action.onLiteralWithNameReference(absoluteIndex, f.name(), valueStr,
@@ -122,21 +117,6 @@ public final class FieldLineNameReferenceReader extends FieldLineReader {
         stringReader.reset();
 
         return true;
-    }
-
-    private HeaderField getHeaderFieldAt(long index) {
-        HeaderField f;
-        try {
-            if (fromStaticTable) {
-                f = StaticTable.HTTP3.get(index);
-            } else {
-                f = dynamicTable.get(index);
-            }
-        } catch (IndexOutOfBoundsException e) {
-            throw QPackException.decompressionFailed(
-                    new IOException("header fields table index", e), true);
-        }
-        return f;
     }
 
     public void reset() {
