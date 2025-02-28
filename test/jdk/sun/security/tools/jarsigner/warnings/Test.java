@@ -155,8 +155,6 @@ public abstract class Test {
 
     static final String JAR_VERIFIED = "jar verified.";
 
-    static final String JAR_VERIFIED_UNSIGNED = "jar is unsigned.";
-
     static final String JAR_VERIFIED_WITH_SIGNER_ERRORS
             = "jar verified, with signer errors.";
 
@@ -236,18 +234,8 @@ public abstract class Test {
         if (count > 0) {
             analyzer.shouldMatch(WARNING_OR_ERROR);
         }
-
         if (expectedExitCode == 0) {
             analyzer.shouldContain(JAR_VERIFIED);
-        } else if (expectedExitCode == 16) {
-            // Allow either of the expected messages for exit code 16
-            boolean foundMessage =
-                analyzer.getOutput().contains(JAR_VERIFIED_UNSIGNED) ||
-                analyzer.getOutput().contains(HAS_UNSIGNED_ENTRY_VERIFYING_WARNING);
-
-            if (!foundMessage) {
-                throw new RuntimeException("Expected jarsigner message not found");
-            }
         } else {
             analyzer.shouldContain(JAR_VERIFIED_WITH_SIGNER_ERRORS);
         }
