@@ -417,8 +417,6 @@ class TemplateAssertionPredicate : public CommonAssertionPredicate {
                                                             PhaseIdealLoop* phase) const;
   void replace_opaque_stride_input(Node* new_stride, PhaseIterGVN& igvn) const;
   InitializedAssertionPredicate initialize(PhaseIdealLoop* phase) const;
-  void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
-                                     const PhaseIdealLoop* phase) const;
   void kill(PhaseIdealLoop* phase) const;
   static bool is_predicate(const Node* node);
 

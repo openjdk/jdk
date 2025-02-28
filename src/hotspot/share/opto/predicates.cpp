@@ -190,9 +190,9 @@ TemplateAssertionPredicate TemplateAssertionPredicate::clone_and_replace_opaque_
                                                                                       Node* new_opaque_input,
                                                                                       PhaseIdealLoop* phase) const {
   DEBUG_ONLY(verify();)
-  IfNode* if_node = head();
   OpaqueLoopInitNode* new_opaque_init = new OpaqueLoopInitNode(phase->C, new_opaque_input);
   phase->register_new_node(new_opaque_init, new_control);
+  IfNode* if_node = head();
   TemplateAssertionExpression template_assertion_expression(opaque_node());
   OpaqueTemplateAssertionPredicateNode* new_opaque_node =
       template_assertion_expression.clone_and_replace_init(new_control, new_opaque_init, phase);
@@ -225,7 +225,7 @@ InitializedAssertionPredicate TemplateAssertionPredicate::initialize(PhaseIdealL
 // Kills the Template Assertion Predicate by setting the condition to true. Will be folded away in the next IGVN round.
 void TemplateAssertionPredicate::kill(PhaseIdealLoop* phase) const {
   ConINode* true_con = phase->intcon(1);
-  phase->igvn().replace_input_of(_if_node, 1, true_con);
+  phase->igvn().replace_input_of(head(), 1, true_con);
 }
 
 #ifdef ASSERT

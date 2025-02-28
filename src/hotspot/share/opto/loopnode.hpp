@@ -994,10 +994,13 @@ private:
   void initialize_assertion_predicates_for_post_loop(CountedLoopNode* main_loop_head, CountedLoopNode* post_loop_head,
                                                      uint first_node_index_in_cloned_loop_body, bool insert_vectorized_drain);
   void create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head, CountedLoopNode* target_loop_head,
-                                           const NodeInLoopBody& _node_in_loop_body, bool clone_template);
+                                           const NodeInLoopBody& _node_in_loop_body, bool clone_template,
+                                           const bool insert_vectorized_drain);
   void create_assertion_predicates_at_main_or_post_loop(CountedLoopNode* source_loop_head,
                                                         CountedLoopNode* target_loop_head,
-                                                        const NodeInLoopBody& _node_in_loop_body, bool clone_template);
+                                                        const NodeInLoopBody& _node_in_loop_body,
+                                                        bool clone_template,
+                                                        bool insert_vectorized_drain);
   void rewire_old_target_loop_entry_dependency_to_new_entry(LoopNode* target_loop_head,
                                                             const Node* old_target_loop_entry,
                                                             uint node_index_before_new_assertion_predicate_nodes);
@@ -1348,8 +1351,8 @@ public:
                                    Node_List*& split_if_set, Node_List*& split_bool_set,
                                    Node_List*& split_cex_set, Node_List& worklist,
                                    uint new_counter, CloneLoopMode mode);
-  void handle_data_uses_for_vectorized_drain(Node* old, Node_List& old_new,
-                                             IdealLoopTree* loop, IdealLoopTree* companion_loop,
+  void handle_data_uses_for_vectorized_drain(Node* main_old, Node_List& old_new,
+                                             IdealLoopTree* loop, IdealLoopTree* outer_loop,
                                              Node_List& worklist, uint new_counter);
   void clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealLoopTree *loop,
                         IdealLoopTree* outer_loop, int dd, Node_List &old_new,
@@ -1379,13 +1382,15 @@ public:
   // If Node n lives in the back_ctrl block, we clone a private version of n
   // in preheader_ctrl block and return that, otherwise return n.
   Node *clone_up_backedge_goo( Node *back_ctrl, Node *preheader_ctrl, Node *n, VectorSet &visited, Node_Stack &clones );
-  // If Node n lives in the back_ctrl block, we clone a private version of n
-  // in preheader_ctrl block and return that, otherwise return a phi node
-  // merging the main loop and the pre loop.
-  // When n is dead, return nullptr.
-  Node* clone_up_vectorized_drain_backedge_goo(Node* back_ctrl, Node* preheader_ctrl, Node* n,
-                                               VectorSet& visited, Node_Stack& clones,
-                                               Node* merge_point, Node* main_phi);
+  // If Node 'main_incr' lives in the 'main_backedge_ctrl' block, we clone
+  // a private version of 'main_incr' in 'drain_entry' block and return that,
+  // otherwise return a phi node 'main_merge_phi' merging exit values from
+  // the main loop and the pre loop.
+  // When 'main_incr' is dead, return nullptr.
+  Node* clone_up_vectorized_drain_backedge_goo(Node* main_backedge_ctrl, Node* drain_entry,
+                                               Node* main_incr, VectorSet& visited,
+                                               Node_Stack& clones, Node* main_merge_region,
+                                               Node* main_phi);
 
   // Take steps to maximally unroll the loop.  Peel any odd iterations, then
   // unroll to do double iterations.  The next round of major loop transforms
@@ -1830,7 +1835,7 @@ public:
                 Node* side_by_side_idom, CloneMap* cm, Node_List &worklist);
   void fix_ctrl_uses_for_common_loop(Node* use, Node* newuse, Node_List& old_new,
                                      IdealLoopTree* use_loop, Node* side_by_side_idom);
-  void fix_ctrl_uses_for_vectorized_drain(Node* use, Node* newuse, Node_List& old_new,
+  void fix_ctrl_uses_for_vectorized_drain(Node* main_use, Node* drain_use, Node_List& old_new,
                                           IdealLoopTree* use_loop);
 
   void fix_data_uses(Node_List& body, IdealLoopTree* loop, CloneLoopMode mode, IdealLoopTree* outer_loop,
