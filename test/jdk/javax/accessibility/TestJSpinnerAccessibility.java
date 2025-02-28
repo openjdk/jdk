@@ -66,7 +66,7 @@ public class TestJSpinnerAccessibility {
 
     private static JFrame createUI() {
         JFrame frame = new JFrame("A Frame with JSpinner");
-        SpinnerModel spinnerModel = new SpinnerNumberModel(5, 0,20,1);
+        SpinnerModel spinnerModel = new SpinnerNumberModel(5, 0, 20, 1);
         JSpinner spinner = new JSpinner(spinnerModel);
         frame.getContentPane().add(spinner, BorderLayout.CENTER);
         frame.setSize(200, 100);
