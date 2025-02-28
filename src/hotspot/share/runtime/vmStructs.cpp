@@ -1318,7 +1318,7 @@
   /******************/                                                    \
                                                                           \
   declare_preprocessor_constant("ASSERT", DEBUG_ONLY(1) NOT_DEBUG(0))     \
-  declare_preprocessor_constant("COMPILER2", COMPILER2)                   \
+  declare_preprocessor_constant("COMPILER2", COMPILER2_PRESENT(1) NOT_COMPILER2(0)) \
                                                                           \
   /****************/                                                      \
   /* Object sizes */                                                      \
