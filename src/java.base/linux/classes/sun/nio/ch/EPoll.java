@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,96 +26,118 @@
 package sun.nio.ch;
 
 import java.io.IOException;
-import jdk.internal.misc.Unsafe;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+
+import jdk.internal.ffi.generated.epoll.epoll_data;
+import jdk.internal.ffi.generated.epoll.epoll_event;
+import jdk.internal.ffi.generated.epoll.epoll_h;
+import jdk.internal.ffi.generated.errno.errno_h;
+import jdk.internal.ffi.util.ErrnoTools;
+import jdk.internal.ffi.util.FFMUtils;
+
+import static jdk.internal.ffi.generated.epoll.epoll_h.epoll_create1;
+import static jdk.internal.ffi.generated.epoll.epoll_h.epoll_ctl;
+import static jdk.internal.ffi.generated.epoll.epoll_h.epoll_wait;
 
 /**
  * Provides access to the Linux epoll facility.
  */
 
 class EPoll {
+
     private EPoll() { }
 
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
-
-    /**
-     * typedef union epoll_data {
-     *     void *ptr;
-     *     int fd;
-     *     __uint32_t u32;
-     *     __uint64_t u64;
-     *  } epoll_data_t;
-     *
-     * struct epoll_event {
-     *     __uint32_t events;
-     *     epoll_data_t data;
-     * }
-     */
-    static {
-        IOUtil.load();
-    }
-    private static final int SIZEOF_EPOLLEVENT   = eventSize();
-    private static final int OFFSETOF_EVENTS     = eventsOffset();
-    private static final int OFFSETOF_FD         = dataOffset();
-
     // opcodes
-    static final int EPOLL_CTL_ADD  = 1;
-    static final int EPOLL_CTL_DEL  = 2;
-    static final int EPOLL_CTL_MOD  = 3;
+    static final int EPOLL_CTL_ADD = epoll_h.EPOLL_CTL_ADD();
+    static final int EPOLL_CTL_DEL = epoll_h.EPOLL_CTL_DEL();
+    static final int EPOLL_CTL_MOD = epoll_h.EPOLL_CTL_MOD();
 
     // events
-    static final int EPOLLIN   = 0x1;
-    static final int EPOLLOUT  = 0x4;
+    static final int EPOLLIN = epoll_h.EPOLLIN();
+    static final int EPOLLOUT = epoll_h.EPOLLOUT();
 
     // flags
-    static final int EPOLLONESHOT   = (1 << 30);
+    static final int EPOLLONESHOT = epoll_h.EPOLLONESHOT();
 
     /**
      * Allocates a poll array to handle up to {@code count} events.
      */
-    static long allocatePollArray(int count) {
-        return unsafe.allocateMemory(count * SIZEOF_EPOLLEVENT);
+    static MemorySegment allocatePollArray(int count) {
+        return epoll_event.allocateArray(count, FFMUtils.SEGMENT_ALLOCATOR);
     }
 
     /**
      * Free a poll array
      */
-    static void freePollArray(long address) {
-        unsafe.freeMemory(address);
+    static void freePollArray(MemorySegment memoryHandle) {
+        FFMUtils.free(memoryHandle);
     }
 
     /**
      * Returns event[i];
      */
-    static long getEvent(long address, int i) {
-        return address + (SIZEOF_EPOLLEVENT*i);
+    static MemorySegment getEvent(MemorySegment memoryHandle, int i) {
+        return epoll_event.asSlice(memoryHandle, i);
     }
 
     /**
      * Returns event->data.fd
      */
-    static int getDescriptor(long eventAddress) {
-        return unsafe.getInt(eventAddress + OFFSETOF_FD);
+    static int getDescriptor(MemorySegment eventMemory) {
+        return epoll_data.fd(epoll_event.data(eventMemory));
     }
 
     /**
      * Returns event->events
      */
-    static int getEvents(long eventAddress) {
-        return unsafe.getInt(eventAddress + OFFSETOF_EVENTS);
+    static int getEvents(MemorySegment eventMemory) {
+        return epoll_event.events(eventMemory);
     }
 
-    // -- Native methods --
+    static int create() throws IOException {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment errnoCaptureMS = ErrnoTools.allocateCaptureStateSegment(arena);
+            int epfd = epoll_create1(errnoCaptureMS, epoll_h.EPOLL_CLOEXEC());
+            if (epfd < 0) {
+                int errno = ErrnoTools.errno(errnoCaptureMS);
+                throw ErrnoTools.IOExceptionWithLastError(errno, "epoll_create1 failed.", arena);
+            }
+            return epfd;
+        }
+    }
 
-    private static native int eventSize();
+    static int ctl(int epfd, int opcode, int fd, int events) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment epoll_eventMS = arena.allocate(epoll_event.layout());
 
-    private static native int eventsOffset();
+            epoll_event.events(epoll_eventMS, events);
+            var dataMS = epoll_event.data(epoll_eventMS);
+            epoll_data.fd(dataMS, fd);
+            MemorySegment errnoCaptureMS = ErrnoTools.allocateCaptureStateSegment(arena);
+            int res = epoll_ctl(epfd, opcode, fd, epoll_eventMS, errnoCaptureMS);
+            if (res == 0) {
+                return 0;
+            } else {
+                return ErrnoTools.errno(errnoCaptureMS);
+            }
+        }
+    }
 
-    private static native int dataOffset();
-
-    static native int create() throws IOException;
-
-    static native int ctl(int epfd, int opcode, int fd, int events);
-
-    static native int wait(int epfd, long pollAddress, int numfds, int timeout)
-        throws IOException;
+    static int wait(int epfd, MemorySegment events, int numfds, int timeout)
+            throws IOException {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment errnoCaptureMS = ErrnoTools.allocateCaptureStateSegment(arena);
+            int res = epoll_wait(epfd, events, numfds, timeout, errnoCaptureMS);
+            if (res < 0) {
+                int errno = ErrnoTools.errno(errnoCaptureMS);
+                if (errno == errno_h.EINTR()) {
+                    return IOStatus.INTERRUPTED;
+                } else {
+                    throw ErrnoTools.IOExceptionWithLastError(errno, "epoll_wait failed.", arena);
+                }
+            }
+            return res;
+        }
+    }
 }

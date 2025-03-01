@@ -25,7 +25,12 @@
 
 package sun.nio.ch;
 
+import jdk.internal.ffi.generated.kqueue.kqueue_h;
+import jdk.internal.misc.Blocker;
+
 import java.io.IOException;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
@@ -35,11 +40,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import jdk.internal.misc.Blocker;
 
-import static sun.nio.ch.KQueue.EVFILT_READ;
-import static sun.nio.ch.KQueue.EVFILT_WRITE;
-import static sun.nio.ch.KQueue.EV_ADD;
-import static sun.nio.ch.KQueue.EV_DELETE;
+import static sun.nio.ch.KQueue.*;
 
 /**
  * KQueue based Selector implementation for macOS
@@ -54,7 +57,7 @@ class KQueueSelectorImpl extends SelectorImpl {
     private final int kqfd;
 
     // address of poll array (event list) when polling for pending events
-    private final long pollArrayAddress;
+    private final MemorySegment pollArrayAddress;
 
     // file descriptors used for interrupt
     private final int fd0;
@@ -78,7 +81,7 @@ class KQueueSelectorImpl extends SelectorImpl {
     KQueueSelectorImpl(SelectorProvider sp) throws IOException {
         super(sp);
 
-        this.kqfd = KQueue.create();
+        this.kqfd = kqueue_h.kqueue();
         this.pollArrayAddress = KQueue.allocatePollArray(MAX_KEVENTS);
 
         try {
@@ -245,15 +248,15 @@ class KQueueSelectorImpl extends SelectorImpl {
         pollCount++;
 
         for (int i = 0; i < numEntries; i++) {
-            long kevent = KQueue.getEvent(pollArrayAddress, i);
-            int fd = KQueue.getDescriptor(kevent);
+            MemorySegment eventMS = KQueue.getEvent(pollArrayAddress, i);
+            int fd = (int) KQueue.getDescriptor(eventMS);
             if (fd == fd0) {
                 interrupted = true;
             } else {
                 SelectionKeyImpl ski = fdToKey.get(fd);
                 if (ski != null) {
                     int rOps = 0;
-                    short filter = KQueue.getFilter(kevent);
+                    short filter = KQueue.getFilter(eventMS);
                     if (filter == EVFILT_READ) {
                         rOps |= Net.POLLIN;
                     } else if (filter == EVFILT_WRITE) {
