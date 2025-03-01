@@ -47,6 +47,7 @@ class Method;
 class methodHandle;
 class RegisterMap;
 class vframeArray;
+class jvmtiDeferredLocalVariableSet;
 
 enum class DerivedPointerIterationMode {
   _with_table,
@@ -91,6 +92,8 @@ class frame {
 
   const ImmutableOopMap* get_oop_map() const;
 
+  address* orig_pc_addr(stackChunkOop chunk, nmethod* nm) const;
+
  public:
   // Constructors
   frame();
@@ -124,7 +127,11 @@ class frame {
   // Return the original PC for the given PC if:
   // (a) the given PC belongs to an nmethod and
   // (b) it is a deopt PC
-  address get_deopt_original_pc() const;
+  address get_deopt_original_pc(stackChunkOop chunk) const;
+
+  // Accessor/mutator for the original pc of a frame before a frame was deopted.
+  address get_original_pc(stackChunkOop chunk, nmethod* nm) const;
+  void    set_original_pc(stackChunkOop chunk, nmethod* nm, address pc);
 
   void set_pc(address newpc);
 
@@ -173,6 +180,10 @@ class frame {
   intptr_t* id(void) const;
   bool is_younger(intptr_t* id) const;
   bool is_older(intptr_t* id) const;
+
+  // A notion of frame identity which supports off heap frames.  This value can only be used for
+  // equality comparisons and is typed differently from frame::id to distinguish the values.
+  inline intptr_t frame_identity(const RegisterMap* reg_map) const;
 
   // testers
 
@@ -278,6 +289,10 @@ class frame {
 
   // Support for deoptimization
   void deoptimize(JavaThread* thread);
+
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred_locals(stackChunkOop chunk) const;
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* create_deferred_locals(stackChunkOop chunk) const;
+  void clear_deferred_locals(stackChunkOop chunk);
 
   // The frame's original SP, before any extension by an interpreted callee;
   // used for packing debug info into vframeArray objects and vframeArray lookup.
