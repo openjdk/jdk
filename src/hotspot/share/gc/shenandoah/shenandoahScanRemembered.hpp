@@ -401,7 +401,7 @@ public:
 
   ShenandoahCardCluster(ShenandoahDirectCardMarkRememberedSet* rs) {
     _rs = rs;
-    _object_starts = NEW_C_HEAP_ARRAY(crossing_info, rs->total_cards(), mtGC);
+    _object_starts = NEW_C_HEAP_ARRAY(crossing_info, rs->total_cards()+1, mtGC);
     for (size_t i = 0; i < rs->total_cards(); i++) {
       _object_starts[i].short_word = 0;
     }

@@ -68,8 +68,6 @@ public:
 
   size_t last_valid_index();
 
-  CardValue* byte_map_base() const override;
-
   CardValue* swap_read_and_write_tables() {
     swap(_read_byte_map, _write_byte_map);
     swap(_read_byte_map_base, _write_byte_map_base);

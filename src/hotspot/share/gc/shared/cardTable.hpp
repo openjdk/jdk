@@ -120,7 +120,7 @@ public:
            p2i(p), p2i(_whole_heap.start()), p2i(_whole_heap.end()));
     CardValue* local_byte_map_base = byte_map_base();
     CardValue* result = &local_byte_map_base[uintptr_t(p) >> _card_shift];
-    assert(result >= byte_map() && result < (byte_map() + _byte_map_size),
+    assert(result >= _byte_map && result < (_byte_map + _byte_map_size),
            "out of bounds accessor for card marking array");
     return result;
   }
@@ -142,10 +142,10 @@ public:
 
   // Mapping from card marking array entry to address of first word
   HeapWord* addr_for(const CardValue* p) const {
-    assert(p >= byte_map() && p < byte_map() + _byte_map_size,
+    assert(p >= _byte_map && p < _byte_map + _byte_map_size,
            "out of bounds access to card marking array. p: " PTR_FORMAT
            " _byte_map: " PTR_FORMAT " _byte_map + _byte_map_size: " PTR_FORMAT,
-           p2i(p), p2i(byte_map()), p2i(byte_map() + _byte_map_size));
+           p2i(p), p2i(_byte_map), p2i(_byte_map) + _byte_map_size);
     // As _byte_map_base may be "negative" (the card table has been allocated before
     // the heap in memory), do not use pointer_delta() to avoid the assertion failure.
     size_t delta = p - byte_map_base();
@@ -163,11 +163,11 @@ public:
            "Attempt to access p = " PTR_FORMAT " out of bounds of "
            " card marking array's _whole_heap = [" PTR_FORMAT "," PTR_FORMAT ")",
            p2i(p), p2i(_whole_heap.start()), p2i(_whole_heap.end()));
-    return byte_for(p) - byte_map();
+    return byte_for(p) - _byte_map;
   }
 
   CardValue* byte_for_index(const size_t card_index) const {
-    return byte_map() + card_index;
+    return _byte_map + card_index;
   }
 
   // Resize one of the regions covered by the remembered set.
@@ -200,9 +200,7 @@ public:
   // This would be the 0th element of _byte_map, if the heap started at 0x0.
   // But since the heap starts at some higher address, this points to somewhere
   // before the beginning of the actual _byte_map.
-  virtual CardValue* byte_map_base() const { return _byte_map_base; }
-
-  virtual CardValue* byte_map() const { return _byte_map; }
+  CardValue* byte_map_base() const { return _byte_map_base; }
 
   virtual bool is_in_young(const void* p) const = 0;
 

@@ -101,7 +101,3 @@ CardValue* ShenandoahCardTable::read_byte_for(const void* p) {
 size_t ShenandoahCardTable::last_valid_index() {
   return CardTable::last_valid_index();
 }
-
-CardValue* ShenandoahCardTable::byte_map_base() const {
-  return ShenandoahThreadLocalData::card_table(Thread::current());
-}
