@@ -218,6 +218,7 @@ final class DelayScheduler extends Thread {
             active = -1;
         else {
             try {
+                p.onDelaySchedulerStart(this);
                 loop(p);
             } finally {
                 restingSize = 0;
@@ -229,38 +230,49 @@ final class DelayScheduler extends Thread {
 
     /**
      * After initialization, repeatedly:
-     * 1. Process pending tasks in batches, to add or remove from heap
-     * 2. Check for shutdown, either exiting or preparing for shutdown when empty
-     * 3. Trigger all enabled tasks by externally submitting them to pool
-     * 4. If active, set tentatively inactive,
+     * 1. If apparently no work,
+     *    if active, set tentatively inactive,
      *    else park until next trigger time, or indefinitely if none
+     * 2. Process pending tasks in batches, to add or remove from heap
+     * 3. Check for shutdown, either exiting or preparing for shutdown when empty
+     * 4. Trigger all enabled tasks by submitting them to pool or run if immediate
      */
     private void loop(ForkJoinPool p) {
-        p.onDelaySchedulerStart(this);
         ScheduledForkJoinTask<?>[] h =         // heap array
             new ScheduledForkJoinTask<?>[INITIAL_HEAP_CAPACITY];
         int cap = h.length, n = 0, prevRunStatus = 0; // n is heap size
+        long parkTime = 0L;                    // zero for untimed park
         for (;;) {                             // loop until stopped
-            ScheduledForkJoinTask<?> t; int runStatus;
-            while (pending != null &&          // process pending tasks
+            ScheduledForkJoinTask<?> q, t; int runStatus;
+            if ((q = pending) == null) {
+                restingSize = n;
+                if (active != 0)               // deactivate and recheck
+                    U.compareAndSetInt(this, ACTIVE, 1, 0);
+                else {
+                    Thread.interrupted();      // clear before park
+                    U.park(false, parkTime);
+                }
+                q = pending;
+            }
+
+            while (q != null &&                // process pending tasks
                    (t = (ScheduledForkJoinTask<?>)
                     U.getAndSetReference(this, PENDING, null)) != null) {
                 ScheduledForkJoinTask<?> next;
                 do {
-                    next = t.nextPending;
-                    long d = t.when;
-                    int i = t.heapIndex, stat = t.status;
-                    if (next != null)
+                    int i;
+                    if ((next = t.nextPending) != null)
                         t.nextPending = null;
-                    if (i >= 0) {
-                        t.heapIndex = -1;
+                    if ((i = t.heapIndex) >= 0) {
+                        t.heapIndex = -1;      // remove cancelled task
                         if (i < cap && h[i] == t)
                             n = replace(h, i, n);
                     }
-                    else if (stat >= 0) {
-                        if (n >= cap || n < 0) // couldn't resize
-                            t.trySetCancelled();
-                        else {                 // add and sift up
+                    else if (n >= cap || n < 0)
+                        t.trySetCancelled();   // couldn't resize
+                    else {
+                        long d = t.when;       // add and sift up
+                        if (t.status >= 0) {
                             ScheduledForkJoinTask<?> parent;
                             int k = n++, pk, newCap;
                             while (k > 0 &&
@@ -274,27 +286,28 @@ final class DelayScheduler extends Thread {
                             h[k] = t;
                             if (n >= cap && (newCap = cap << 1) > cap) {
                                 ScheduledForkJoinTask<?>[] a = null;
-                                try {           // try to resize
+                                try {          // try to resize
                                     a = Arrays.copyOf(h, newCap);
                                 } catch (Error | RuntimeException ex) {
                                 }
                                 if (a != null && a.length == newCap) {
-                                    cap = newCap; // else keep using old array
-                                    h = a;
+                                    cap = newCap;
+                                    h = a;     // else keep using old array
                                 }
                             }
                         }
                     }
                 } while ((t = next) != null);
+                q = pending;
             }
 
-            if ((runStatus = p.shutdownStatus(this)) != 0) {
+            if (p != null && (runStatus = p.shutdownStatus(this)) != 0) {
                 if ((n = tryStop(p, h, n, runStatus, prevRunStatus)) < 0)
                     break;
                 prevRunStatus = runStatus;
             }
 
-            long parkTime = 0L;             // zero for untimed park
+            parkTime = 0L;
             if (n > 0 && h.length > 0) {    // submit enabled tasks
                 long now = now();
                 do {
@@ -309,20 +322,11 @@ final class DelayScheduler extends Thread {
                         if (stat >= 0) {
                             if (f.isImmediate)
                                 f.doExec();
-                            else
+                            else if (p != null)
                                 p.executeEnabledScheduledTask(f);
                         }
                     }
                 } while ((n = replace(h, 0, n)) > 0);
-            }
-
-            if (pending == null) {
-                restingSize = n;
-                Thread.interrupted();       // clear before park
-                if (active == 0)
-                    U.park(false, parkTime);
-                else                        // deactivate and recheck
-                    U.compareAndSetInt(this, ACTIVE, 1, 0);
             }
         }
     }
