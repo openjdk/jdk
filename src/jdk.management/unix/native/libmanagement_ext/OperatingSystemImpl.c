@@ -314,6 +314,21 @@ Java_com_sun_management_internal_OperatingSystemImpl_getOpenFileDescriptorCount0
     free(fds);
 
     return nfiles;
+#elif defined(__FreeBSD__)
+    int mib[4];
+    int error;
+    int nfds;
+    size_t len;
+
+    len = sizeof(nfds);
+    mib[0] = CTL_KERN;
+    mib[1] = KERN_PROC;
+    mib[2] = KERN_PROC_NFDS;
+    mib[3] = 0;
+
+    if (sysctl(mib, 4, &nfds, &len, NULL, 0) == -1)
+        return -1;
+    return nfds;
 #elif defined(_ALLBSD_SOURCE)
     /*
      * XXXBSD: there's no way available to do it in FreeBSD, AFAIK.
