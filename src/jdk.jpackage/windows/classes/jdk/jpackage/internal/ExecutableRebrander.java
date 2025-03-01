@@ -24,100 +24,104 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.WinExePackage;
+import jdk.jpackage.internal.model.WinLauncher;
+import jdk.jpackage.internal.model.WinApplication;
+import jdk.jpackage.internal.model.DottedVersion;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.function.Supplier;
-import static jdk.jpackage.internal.OverridableResource.createResource;
-import static jdk.jpackage.internal.ShortPathUtils.adjustPath;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.COPYRIGHT;
-import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
-import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
-import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
-import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import static jdk.jpackage.internal.WindowsAppImageBuilder.ICON_ICO;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 @SuppressWarnings("restricted")
 final class ExecutableRebrander {
-    private static final ResourceBundle I18N = ResourceBundle.getBundle(
-            "jdk.jpackage.internal.resources.WinResources");
 
-    private static final String LAUNCHER_PROPERTIES_TEMPLATE =
-            "WinLauncher.template";
-
-    private static final String INSTALLER_PROPERTIES_TEMPLATE =
-            "WinInstaller.template";
-
-    private static final String INSTALLER_PROPERTIES_RESOURE_DIR_ID =
-            "WinInstaller.properties";
-
-
-    void rebrandInstaller(Map<String, ? super Object> params, Path target)
-            throws IOException {
-        Path icon = ICON_ICO.fetchFrom(params);
-        rebrandExecutable(params, icon, () -> {
-            return createResource(INSTALLER_PROPERTIES_TEMPLATE, params).setPublicName(
-                    INSTALLER_PROPERTIES_RESOURE_DIR_ID);
-        }, target);
+    ExecutableRebrander(WinExePackage pkg,
+            Function<String, OverridableResource> resourceSupplier,
+            UpdateResourceAction... extraActions) {
+        this(ExecutableProperties.create(pkg), resourceSupplier.apply(
+                "WinInstaller.template").setPublicName("WinInstaller.properties"),
+                extraActions);
     }
 
-    void rebrandLauncher(Map<String, ? super Object> params, Path icon,
-            Path target) throws IOException {
-        rebrandExecutable(params, icon, () -> {
-            return createResource(
-                    LAUNCHER_PROPERTIES_TEMPLATE, params).setPublicName(
-                            APP_NAME.fetchFrom(params) + ".properties");
-        }, target);
+    ExecutableRebrander(WinApplication app, WinLauncher launcher,
+            Function<String, OverridableResource> resourceSupplier,
+            UpdateResourceAction... extraActions) {
+        this(ExecutableProperties.create(app, launcher), resourceSupplier.apply(
+                "WinLauncher.template").setPublicName(
+                        launcher.executableName() + ".properties"), extraActions);
     }
 
-    private void rebrandExecutable(Map<String, ? super Object> params, Path icon,
-            Supplier<OverridableResource> resourceSupplier, Path target) throws
-            IOException {
-        if (!target.isAbsolute() || (icon != null && !icon.isAbsolute())) {
-            Path absIcon = null;
-            if (icon != null) {
-                absIcon = icon.toAbsolutePath();
+    private ExecutableRebrander(ExecutableProperties props,
+            OverridableResource propertiesFileResource,
+            UpdateResourceAction... extraActions) {
+        this.extraActions = List.of(extraActions);
+        this.propertiesFileResource = propertiesFileResource;
+
+        this.props = new HashMap<>();
+
+        validateValueAndPut(this.props, Map.entry("COMPANY_NAME", props.vendor), "vendor");
+        validateValueAndPut(this.props, Map.entry("FILE_DESCRIPTION",props.description), "description");
+        validateValueAndPut(this.props, Map.entry("FILE_VERSION", props.version.toString()), "version");
+        validateValueAndPut(this.props, Map.entry("LEGAL_COPYRIGHT", props.copyright), "copyright");
+        validateValueAndPut(this.props, Map.entry("PRODUCT_NAME", props.name), "name");
+
+        this.props.put("FIXEDFILEINFO_FILE_VERSION", toFixedFileVersion(props.version));
+        this.props.put("INTERNAL_NAME", props.executableName);
+        this.props.put("ORIGINAL_FILENAME", props.executableName);
+    }
+
+    void execute(BuildEnv env, Path target, Optional<Path> icon) {
+        String[] propsArray = toStringArray(propertiesFileResource, props);
+
+        UpdateResourceAction versionSwapper = resourceLock -> {
+            if (versionSwap(resourceLock, propsArray) != 0) {
+                throw new RuntimeException(MessageFormat.format(I18N.getString(
+                        "error.version-swap"), target));
             }
-            rebrandExecutable(params, absIcon, resourceSupplier,
-                    target.toAbsolutePath());
-            return;
-        }
-        rebrandExecutable(params, target, (resourceLock) -> {
-            rebrandProperties(resourceLock, resourceSupplier.get(),
-                    createSubstituteData(
-                            params), target);
-            if (icon != null) {
-                iconSwapWrapper(resourceLock, icon.toString());
-            }
-        });
-    }
+        };
 
-    ExecutableRebrander addAction(UpdateResourceAction action) {
-        if (extraActions == null) {
-            extraActions = new ArrayList<>();
-        }
-        extraActions.add(action);
-        return this;
-    }
+        Optional<UpdateResourceAction> updateIcon = icon
+                .map(Path::toAbsolutePath)
+                .map(ShortPathUtils::adjustPath)
+                .map(absIcon -> {
+                    return resourceLock -> {
+                        if (iconSwap(resourceLock, absIcon.toString()) != 0) {
+                            throw new RuntimeException(MessageFormat.format(
+                                    I18N.getString("error.icon-swap"), absIcon));
+                        }
+                    };
+                });
 
-    private void rebrandExecutable(Map<String, ? super Object> params,
-            final Path target, UpdateResourceAction action) throws IOException {
         try {
-            String tempDirectory = TEMP_ROOT.fetchFrom(params)
-                    .toAbsolutePath().toString();
+            if (updateIcon.isEmpty()) {
+                rebrandExecutable(env, target, versionSwapper);
+            } else {
+                rebrandExecutable(env, target, versionSwapper, updateIcon.orElseThrow());
+            }
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private static void rebrandExecutable(BuildEnv env,
+            final Path target, UpdateResourceAction ... actions) throws IOException {
+        try {
+            String tempDirectory = env.buildRoot().toAbsolutePath().toString();
             if (WindowsDefender.isThereAPotentialWindowsDefenderIssue(
                     tempDirectory)) {
                 Log.verbose(MessageFormat.format(I18N.getString(
@@ -136,11 +140,8 @@ final class ExecutableRebrander {
 
             final boolean resourceUnlockedSuccess;
             try {
-                action.editResource(resourceLock);
-                if (extraActions != null) {
-                    for (UpdateResourceAction extraAction : extraActions) {
-                        extraAction.editResource(resourceLock);
-                    }
+                for (var action : actions) {
+                    action.editResource(resourceLock);
                 }
             } finally {
                 if (resourceLock == 0) {
@@ -167,102 +168,83 @@ final class ExecutableRebrander {
         }
     }
 
-    @FunctionalInterface
-    static interface UpdateResourceAction {
-        public void editResource(long resourceLock) throws IOException;
-    }
-
-    private static String getFixedFileVersion(String value) {
-        int addComponentsCount = 4
-                - DottedVersion.greedy(value).getComponents().length;
+    private static String toFixedFileVersion(DottedVersion value) {
+        int addComponentsCount = 4 - value.getComponents().length;
         if (addComponentsCount > 0) {
-            StringBuilder sb = new StringBuilder(value);
+            StringBuilder sb = new StringBuilder(value.toComponentsString());
             do {
                 sb.append('.');
                 sb.append(0);
             } while (--addComponentsCount > 0);
             return sb.toString();
         }
-        return value;
+        return value.toComponentsString();
     }
 
-    private Map<String, String> createSubstituteData(
-            Map<String, ? super Object> params) {
-        Map<String, String> data = new HashMap<>();
-
-        String fixedFileVersion = getFixedFileVersion(VERSION.fetchFrom(params));
-
-        // mapping Java parameters in strings for version resource
-        validateValueAndPut(data, "COMPANY_NAME", VENDOR, params);
-        validateValueAndPut(data, "FILE_DESCRIPTION", DESCRIPTION, params);
-        validateValueAndPut(data, "FILE_VERSION", VERSION, params);
-        validateValueAndPut(data, "LEGAL_COPYRIGHT", COPYRIGHT, params);
-        validateValueAndPut(data, "PRODUCT_NAME", APP_NAME, params);
-        data.put("FIXEDFILEINFO_FILE_VERSION", fixedFileVersion);
-
-        return data;
-    }
-
-    private void rebrandProperties(long resourceLock, OverridableResource properties,
-            Map<String, String> data, Path target) throws IOException {
-
-        String targetExecutableName = IOUtils.getFileName(target).toString();
-        data.put("INTERNAL_NAME", targetExecutableName);
-        data.put("ORIGINAL_FILENAME", targetExecutableName);
-
+    private static String[] toStringArray(
+            OverridableResource propertiesFileResource,
+            Map<String, String> props) {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        properties
-            .setSubstitutionData(data)
-            .setCategory(I18N.getString("resource.executable-properties-template"))
-            .saveToStream(buffer);
+        try {
+            propertiesFileResource
+                    .setSubstitutionData(props)
+                    .setCategory(I18N.getString(
+                            "resource.executable-properties-template"))
+                    .saveToStream(buffer);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
 
-        final List<String> propList = new ArrayList<>();
         try (Reader reader = new InputStreamReader(new ByteArrayInputStream(
                 buffer.toByteArray()), StandardCharsets.UTF_8)) {
-            final Properties configProp = new Properties();
+            var configProp = new Properties();
             configProp.load(reader);
-            configProp.forEach((k, v) -> {
-                propList.add(k.toString());
-                propList.add(v.toString());
-            });
+            return configProp.entrySet().stream().flatMap(e -> Stream.of(
+                    e.getKey().toString(), e.getValue().toString())).toArray(
+                    String[]::new);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
-
-        versionSwapWrapper(resourceLock, propList.toArray(String[]::new),
-                target.toString());
     }
 
-    private static void validateValueAndPut(
-            Map<String, String> data, String key,
-            BundlerParamInfo<String> param,
-            Map<String, ? super Object> params) {
-        String value = param.fetchFrom(params);
-        if (value.contains("\r") || value.contains("\n")) {
-            Log.error("Configuration Parameter " + param.getID()
+    private static void validateValueAndPut(Map<String, String> target,
+            Map.Entry<String, String> e, String label) {
+        if (e.getValue().contains("\r") || e.getValue().contains("\n")) {
+            Log.error("Configuration parameter " + label
                     + " contains multiple lines of text, ignore it");
-            data.put(key, "");
-            return;
+            e = Map.entry(e.getKey(), "");
         }
-        data.put(key, value);
+        target.put(e.getKey(), e.getValue());
     }
 
-    private static void iconSwapWrapper(long resourceLock,
-            String iconTarget) {
-        iconTarget = adjustPath(iconTarget);
-        if (iconSwap(resourceLock, iconTarget) != 0) {
-            throw new RuntimeException(MessageFormat.format(I18N.getString(
-                    "error.icon-swap"), iconTarget));
+    @FunctionalInterface
+    static interface UpdateResourceAction {
+        public void editResource(long resourceLock) throws IOException;
+    }
+
+    private static record ExecutableProperties(String vendor, String description,
+            DottedVersion version, String copyright, String name, String executableName) {
+        static ExecutableProperties create(WinApplication app,
+                WinLauncher launcher) {
+            return new ExecutableProperties(app.vendor(), launcher.description(),
+                    app.winVersion(), app.copyright(), launcher.name(),
+                    launcher.executableNameWithSuffix());
+        }
+
+        static ExecutableProperties create(WinExePackage pkg) {
+            return new ExecutableProperties(pkg.app().vendor(),
+                    pkg.description(), DottedVersion.lazy(pkg.version()),
+                    pkg.app().copyright(), pkg.packageName(),
+                    pkg.packageFileNameWithSuffix());
         }
     }
 
-    private static void versionSwapWrapper(long resourceLock,
-            String[] executableProperties, String target) {
-        if (versionSwap(resourceLock, executableProperties) != 0) {
-            throw new RuntimeException(MessageFormat.format(I18N.getString(
-                    "error.version-swap"), target));
-        }
-    }
+    private final Map<String, String> props;
+    private final List<UpdateResourceAction> extraActions;
+    private final OverridableResource propertiesFileResource;
 
-    private List<UpdateResourceAction> extraActions;
+    private static final ResourceBundle I18N = ResourceBundle.getBundle(
+            "jdk.jpackage.internal.resources.WinResources");
 
     static {
         System.loadLibrary("jpackage");
@@ -272,7 +254,7 @@ final class ExecutableRebrander {
 
     private static native boolean unlockResource(long resourceLock);
 
-    private static native int iconSwap(long resourceLock, String iconTarget);
+    private static native int iconSwap(long resourceLock, String newIcon);
 
     private static native int versionSwap(long resourceLock, String[] executableProperties);
 }
