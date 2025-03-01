@@ -645,6 +645,10 @@ void CDSConfig::set_has_aot_linked_classes(bool has_aot_linked_classes) {
   _has_aot_linked_classes |= has_aot_linked_classes;
 }
 
+bool CDSConfig::is_initing_classes_at_dump_time() {
+  return is_dumping_heap() && is_dumping_aot_linked_classes();
+}
+
 bool CDSConfig::is_dumping_invokedynamic() {
   // Requires is_dumping_aot_linked_classes(). Otherwise the classes of some archived heap
   // objects used by the archive indy callsites may be replaced at runtime.
@@ -657,7 +661,7 @@ bool CDSConfig::is_dumping_invokedynamic() {
 // Archived MethodHandles are required for higher-level optimizations such as AOT resolution of invokedynamic
 // and dynamic proxies.
 bool CDSConfig::is_dumping_method_handles() {
-  return is_dumping_aot_linked_classes() && is_dumping_heap();
+  return is_initing_classes_at_dump_time();
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

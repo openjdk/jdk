@@ -94,7 +94,7 @@ bool AOTClassInitializer::is_allowed(AllowedSpec* specs, InstanceKlass* ik) {
 
 bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   assert(!ArchiveBuilder::current()->is_in_buffer_space(ik), "must be source klass");
-  if (!CDSConfig::is_dumping_method_handles()) {
+  if (!CDSConfig::is_initing_classes_at_dump_time()) {
     return false;
   }
 
@@ -107,7 +107,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   // Automatic selection for aot-inited classes
   // ==========================================
   //
-  // When CDSConfig::is_dumping_method_handles() is enabled,
+  // When CDSConfig::is_initing_classes_at_dump_time is enabled,
   // AOTArtifactFinder::find_artifacts() finds the classes of all
   // heap objects that are reachable from HeapShared::_run_time_special_subgraph,
   // and mark these classes as aot-inited. This preserves the initialized

@@ -1480,13 +1480,13 @@ bool HeapShared::archive_reachable_objects_from(int level,
                  p2i(scratch_java_mirror(orig_obj)));
   }
 
-  if (CDSConfig::is_dumping_method_handles()) {
+  if (CDSConfig::is_initing_classes_at_dump_time()) {
     if (java_lang_Class::is_instance(orig_obj)) {
       orig_obj = scratch_java_mirror(orig_obj);
       assert(orig_obj != nullptr, "must be archived");
     }
   } else if (java_lang_Class::is_instance(orig_obj) && subgraph_info != _dump_time_special_subgraph) {
-    // Without CDSConfig::is_dumping_method_handles(), we only allow archived objects to
+    // Without CDSConfig::is_initing_classes_at_dump_time(), we only allow archived objects to
     // point to the mirrors of (1) j.l.Object, (2) primitive classes, and (3) box classes. These are initialized
     // very early by HeapShared::init_box_classes().
     if (orig_obj == vmClasses::Object_klass()->java_mirror()
@@ -1549,7 +1549,7 @@ bool HeapShared::archive_reachable_objects_from(int level,
   WalkOopAndArchiveClosure walker(level, record_klasses_only, subgraph_info, orig_obj);
   orig_obj->oop_iterate(&walker);
 
-  if (CDSConfig::is_dumping_method_handles()) {
+  if (CDSConfig::is_initing_classes_at_dump_time()) {
     // The enum klasses are archived with aot-initialized mirror.
     // See AOTClassInitializer::can_archive_initialized_mirror().
   } else {
@@ -1689,7 +1689,7 @@ void HeapShared::verify_reachable_objects_from(oop obj) {
 #endif
 
 void HeapShared::check_special_subgraph_classes() {
-  if (CDSConfig::is_dumping_method_handles()) {
+  if (CDSConfig::is_initing_classes_at_dump_time()) {
     // We can have aot-initialized classes (such as Enums) that can reference objects
     // of arbitrary types. Currently, we trust the JEP 483 implementation to only
     // aot-initialize classes that are "safe".
