@@ -32,7 +32,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPairGenerator;
-import java.util.Arrays;
 
 /*
  * @test
@@ -52,38 +51,47 @@ public class Compliance {
 
         // Default values
         var spec = HPKEParameterSpec.of();
-        Asserts.assertEQ(spec.kdf_id(), 0);
-        Asserts.assertEQ(spec.kem_id(), 0);
-        Asserts.assertEQ(spec.aead_id(), 0);
+        Asserts.assertEQ(spec.kem_id(), -1);
+        Asserts.assertEQ(spec.kdf_id(), -1);
+        Asserts.assertEQ(spec.aead_id(), -1);
         Asserts.assertEQ(spec.authKey(), null);
         Asserts.assertEQ(spec.encapsulation(), null);
-        Asserts.assertTrue(Arrays.equals(spec.info(), new byte[0]));
+        Asserts.assertEqualsByteArray(spec.info(), new byte[0]);
         Asserts.assertEQ(spec.psk(), null);
-        Asserts.assertTrue(Arrays.equals(spec.psk_id(), new byte[0]));
+        Asserts.assertEqualsByteArray(spec.psk_id(), new byte[0]);
 
         // Partial default values
-        var spec2 = HPKEParameterSpec.of(1, 1, 1);
-        Asserts.assertEQ(spec2.kdf_id(), 1);
-        Asserts.assertEQ(spec2.kem_id(), 1);
-        Asserts.assertEQ(spec2.aead_id(), 1);
+        var spec2 = HPKEParameterSpec.of(0, 0, 0);
+        Asserts.assertEQ(spec2.kdf_id(), 0);
+        Asserts.assertEQ(spec2.kem_id(), 0);
+        Asserts.assertEQ(spec2.aead_id(), 0);
         Asserts.assertEQ(spec2.authKey(), null);
         Asserts.assertEQ(spec2.encapsulation(), null);
-        Asserts.assertTrue(Arrays.equals(spec2.info(), new byte[0]));
+        Asserts.assertEqualsByteArray(spec2.info(), new byte[0]);
         Asserts.assertEQ(spec2.psk(), null);
-        Asserts.assertTrue(Arrays.equals(spec2.psk_id(), new byte[0]));
+        Asserts.assertEqualsByteArray(spec2.psk_id(), new byte[0]);
 
         HPKEParameterSpec.of(65535, 65535, 65535);
 
         // Cannot provide zero identifiers
         Utils.runAndCheckException(
-                () -> HPKEParameterSpec.of(0, 1, 1),
-                InvalidAlgorithmParameterException.class);
+                () -> HPKEParameterSpec.of(-1, 0, 0),
+                IllegalArgumentException.class);
         Utils.runAndCheckException(
-                () -> HPKEParameterSpec.of(1, 0, 1),
-                InvalidAlgorithmParameterException.class);
+                () -> HPKEParameterSpec.of(0, -1, 0),
+                IllegalArgumentException.class);
         Utils.runAndCheckException(
-                () -> HPKEParameterSpec.of(1, 1, 0),
-                InvalidAlgorithmParameterException.class);
+                () -> HPKEParameterSpec.of(0, 0, -1),
+                IllegalArgumentException.class);
+        Utils.runAndCheckException(
+                () -> HPKEParameterSpec.of(65536, 0, 0),
+                IllegalArgumentException.class);
+        Utils.runAndCheckException(
+                () -> HPKEParameterSpec.of(0, 65536, 0),
+                IllegalArgumentException.class);
+        Utils.runAndCheckException(
+                () -> HPKEParameterSpec.of(0, 0, 65536),
+                IllegalArgumentException.class);
 
         Asserts.assertTrue(spec.authKey(null).authKey() == null);
         Asserts.assertTrue(spec.authKey(kp.getPrivate()).authKey() != null);
@@ -94,10 +102,10 @@ public class Compliance {
         Utils.runAndCheckException(
                 () -> spec.info(null),
                 NullPointerException.class);
-        Asserts.assertTrue(Arrays.equals(spec.info(info).info(), info));
+        Asserts.assertEqualsByteArray(spec.info(info).info(), info);
 
         Asserts.assertTrue(spec.encapsulation(null).encapsulation() == null);
-        Asserts.assertTrue(Arrays.equals(spec.encapsulation(info).encapsulation(), info));
+        Asserts.assertEqualsByteArray(spec.encapsulation(info).encapsulation(), info);
         Asserts.assertTrue(spec.encapsulation(info).encapsulation(null).encapsulation() == null);
 
         // psk_id can be empty but not null
@@ -113,10 +121,10 @@ public class Compliance {
                 () -> spec.psk(null, psk_id),
                 InvalidAlgorithmParameterException.class);
 
-        Asserts.assertTrue(Arrays.equals(spec.psk(psk, psk_id).psk().getEncoded(), psk.getEncoded()));
-        Asserts.assertTrue(Arrays.equals(spec.psk(psk, psk_id).psk_id(), psk_id));
+        Asserts.assertEqualsByteArray(spec.psk(psk, psk_id).psk().getEncoded(), psk.getEncoded());
+        Asserts.assertEqualsByteArray(spec.psk(psk, psk_id).psk_id(), psk_id);
         Asserts.assertTrue(spec.psk(null, new byte[0]).psk() == null);
-        Asserts.assertTrue(Arrays.equals(spec.psk(null, new byte[0]).psk_id(), new byte[0]));
+        Asserts.assertEqualsByteArray(spec.psk(null, new byte[0]).psk_id(), new byte[0]);
 
         // HPKE
         var c1 = Cipher.getInstance("HPKE");
@@ -172,6 +180,9 @@ public class Compliance {
 
         // Unknown identifiers
         Utils.runAndCheckException(
+                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), HPKEParameterSpec.of(0, 1, 1)),
+                InvalidAlgorithmParameterException.class);
+        Utils.runAndCheckException(
                 () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), HPKEParameterSpec.of(0x200, 1, 1)),
                 InvalidAlgorithmParameterException.class);
         Utils.runAndCheckException(
@@ -200,16 +211,18 @@ public class Compliance {
         c1.updateAAD(aad);
         var ct = c1.doFinal(new byte[2]);
 
-        c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(), HPKEParameterSpec.of().encapsulation(c1.getIV()));
+        c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(),
+                HPKEParameterSpec.of().encapsulation(c1.getIV()));
+        Asserts.assertEQ(c2.getIV(), null);
         c2.getBlockSize();
         c2.getOutputSize(100);
         c2.updateAAD(aad);
-        Asserts.assertTrue(Arrays.equals(c2.doFinal(ct), new byte[2]));
+        Asserts.assertEqualsByteArray(c2.doFinal(ct), new byte[2]);
 
         c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(), new IvParameterSpec(c1.getIV()));
         c2.updateAAD(aad);
         c2.update(ct);
-        Asserts.assertTrue(Arrays.equals(c2.doFinal(), new byte[2]));
+        Asserts.assertEqualsByteArray(c2.doFinal(), new byte[2]);
 
         // info and psk
         var kp2 = KeyPairGenerator.getInstance("X25519").generateKeyPair();
@@ -223,7 +236,7 @@ public class Compliance {
                         .psk(psk, psk_id)
                         .encapsulation(c1.getIV()));
         ct = c1.doFinal(new byte[2]);
-        Asserts.assertTrue(Arrays.equals(c2.doFinal(ct), new byte[2]));
+        Asserts.assertEqualsByteArray(c2.doFinal(ct), new byte[2]);
 
         // mod_auth, wrong key type
         Utils.runAndCheckException(

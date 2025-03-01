@@ -347,7 +347,8 @@ public class DHKEM implements KEMSpi {
                 int counter = 0;
                 while (sk.signum() == 0 || sk.compareTo(curve.getOrder()) >= 0) {
                     if (counter > 255) {
-                        throw new RuntimeException();
+                        // So unlucky and should not happen
+                        throw new ProviderException("DeriveKeyPairError");
                     }
                     byte[] bytes = kdf.deriveData(labeledExpand(builder,
                             suiteId, CANDIDATE, I2OSP(counter, 1), Nsk));

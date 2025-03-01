@@ -168,7 +168,8 @@ public class HPKE extends CipherSpi {
     protected void engineInit(int opmode, Key key,
             AlgorithmParameters params, SecureRandom random)
             throws InvalidAlgorithmParameterException {
-        throw new InvalidAlgorithmParameterException();
+        throw new InvalidAlgorithmParameterException(
+                "Does not support init from AlgorithmParameters");
     }
 
     // state is ENCRYPT_AND_EXPORT after this call succeeds
@@ -268,10 +269,11 @@ public class HPKE extends CipherSpi {
                         cipher = null;
                         Nk = -1;
                     }
-                    default -> throw new InvalidAlgorithmParameterException();
+                    default -> throw new InvalidAlgorithmParameterException(
+                            "Unknown aead_id: " + id);
                 }
             } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-                throw new ProviderException(e);
+                throw new ProviderException("Internal error", e);
             }
             Nn = 12; Nt = 16;
         }
@@ -284,7 +286,7 @@ public class HPKE extends CipherSpi {
                     cipher.init(opmode, key, new GCMParameterSpec(Nt * 8, nonce));
                 }
             } catch (InvalidAlgorithmParameterException | InvalidKeyException e) {
-                throw new ProviderException(e);
+                throw new ProviderException("Internal error", e);
             }
         }
     }
@@ -459,11 +461,11 @@ public class HPKE extends CipherSpi {
             try {
                 return KEM.getInstance("DHKEM");
             } catch (NoSuchAlgorithmException e) {
-                throw new ProviderException(e);
+                throw new ProviderException("Internal error", e);
             }
         }
 
-        private int paramsFromKey(AsymmetricKey k) throws InvalidKeyException {
+        private int kemIdFromKey(AsymmetricKey k) throws InvalidKeyException {
             var p = k.getParams();
             if (p instanceof ECParameterSpec ecp) {
                 if (ECUtil.equals(ecp, CurveDB.P_256)) {
@@ -485,8 +487,8 @@ public class HPKE extends CipherSpi {
 
         private void setParams(AsymmetricKey key, HPKEParameterSpec p)
                 throws InvalidKeyException, InvalidAlgorithmParameterException {
-            if (p.kem_id() == 0) {
-                int kem_id = paramsFromKey(key);
+            if (p.kem_id() == -1) {
+                int kem_id = kemIdFromKey(key);
                 int kdf_id = switch (kem_id) {
                     case 0x10, 0x20 -> 0x1;
                     case 0x11 -> 0x2;

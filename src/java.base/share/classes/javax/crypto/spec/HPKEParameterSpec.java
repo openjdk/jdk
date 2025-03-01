@@ -53,13 +53,12 @@ import java.util.Objects;
  * method.
  * <li>
  * The {@link #of(int, int, int)} method creates an object whose KEM, KDF,
- * and AEAD algorithms are determined by the specified numeric identifiers,
- * which must not be zero.
+ * and AEAD algorithms are determined by the specified numeric identifiers.
  * </ul>
  * The terms "KEM algorithm identifiers", "KDF algorithm identifiers", and
- * "AEAD algorithm identifiers" refer to the numeric values (for example,
- * {@code kem_id}, {@code kdf_id}, and {@code aead_id}) as defined in
- * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#section-7">Section 7</a>
+ * "AEAD algorithm identifiers" refer to their respective numeric values
+ * (specifically, {@code kem_id}, {@code kdf_id}, and {@code aead_id}) as
+ * defined in <a href="https://www.rfc-editor.org/rfc/rfc9180.html#section-7">Section 7</a>
  * of RFC 9180 and the
  * <a href="https://www.iana.org/assignments/hpke/hpke.xhtml">IANA HPKE page</a>.
  * <p>
@@ -218,7 +217,8 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      * @return a new {@code HPKEParameterSpec} object
      */
     public static HPKEParameterSpec of() {
-        return new HPKEParameterSpec(0, 0, 0, new byte[0], null, new byte[0], null, null);
+        return new HPKEParameterSpec(-1, -1, -1,
+                new byte[0], null, new byte[0], null, null);
     }
 
     /**
@@ -226,19 +226,22 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      * specified KEM, KDF, and AEAD algorithm identifiers in {@code mode_base}
      * mode with an empty {@code info}.
      *
-     * @param kem_id identifier for KEM, must not be zero
-     * @param kdf_id identifier for KDF, must not be zero
-     * @param aead_id identifier for AEAD, must not be zero
+     * @param kem_id identifier for KEM, must be between 0 and 65535 (inclusive)
+     * @param kdf_id identifier for KDF, must be between 0 and 65535 (inclusive)
+     * @param aead_id identifier for AEAD, must be between 0 and 65535 (inclusive)
      * @return a new {@code HPKEParameterSpec} object
-     * @throws InvalidAlgorithmParameterException if any of the provided
-     *      identifiers is zero
+     * @throws IllegalArgumentException if any input value
+     *      is out of range (must be between 0 and 65535, inclusive).
      */
-    public static HPKEParameterSpec of(int kem_id, int kdf_id, int aead_id)
-            throws InvalidAlgorithmParameterException {
-        if (kem_id < 1 || kem_id > 65535
-                || kdf_id < 1 || kdf_id > 65535
-                || aead_id < 1 || aead_id > 65535) {
-            throw new InvalidAlgorithmParameterException();
+    public static HPKEParameterSpec of(int kem_id, int kdf_id, int aead_id) {
+        if (kem_id < 0 || kem_id > 65535) {
+            throw new IllegalArgumentException("Invalid kem_id: " + kem_id);
+        }
+        if (kdf_id < 0 || kdf_id > 65535) {
+            throw new IllegalArgumentException("Invalid kdf_id: " + kdf_id);
+        }
+        if (aead_id < 0 || aead_id > 65535) {
+            throw new IllegalArgumentException("Invalid aead_id: " + aead_id);
         }
         return new HPKEParameterSpec(kem_id, kdf_id, aead_id,
                 new byte[0], null, new byte[0], null, null);
@@ -252,6 +255,7 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      * this value to a maximum of 64 bytes.
      *
      * @param info application-specific info. Must not be {@code null}.
+     *      If set to empty, the previous info is cleared.
      *      The contents of the array are copied to protect
      *      against subsequent modification.
      * @return a new {@code HPKEParameterSpec} object
@@ -322,21 +326,21 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
     }
 
     /**
-     * {@return the identifier for KEM, 0 if determined by key type}
+     * {@return the identifier for KEM, -1 if unspecified}
      */
     public int kem_id() {
         return kem_id;
     }
 
     /**
-     * {@return the identifier for KDF, 0 if determined by key type}
+     * {@return the identifier for KDF, -1 if unspecified}
      */
     public int kdf_id() {
         return kdf_id;
     }
 
     /**
-     * {@return the identifier for AEAD, 0 if determined by key type}
+     * {@return the identifier for AEAD, -1 if unspecified}
      */
     public int aead_id() {
         return aead_id;
