@@ -925,7 +925,7 @@ _unwind___jsvml_cos8_ha_z0_B1_B10:
 
         ALIGN 004H
 _unwind___jsvml_cos8_ha_z0_B12_B16:
-        DD      3470081
+        DD      2945793
         DD      8606963
         DD      8418537
         DD      8479967
@@ -945,10 +945,6 @@ _unwind___jsvml_cos8_ha_z0_B12_B16:
         DD      3311688
         DD      3569725
         DD      3827762
-        DD      8157991
-        DD      8219422
-        DD      8280853
-        DD      8342284
         DD      5183488
         DD      10343424
         DD      10944768
