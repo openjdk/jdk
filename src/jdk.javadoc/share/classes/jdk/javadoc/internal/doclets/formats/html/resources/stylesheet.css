@@ -276,6 +276,10 @@ ol.sub-nav-list li:not(:first-child) {
 ol.sub-nav-list a {
     padding: 3px;
 }
+ol.sub-nav-list a.current-selection {
+    background-color: var(--toc-background-color);
+    border-radius: 3px;
+}
 .sub-nav .nav-list-search {
     flex: 1 1 10%;
     margin: 0 15px;
