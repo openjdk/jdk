@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,8 @@ public class ExecutorShutdown implements HttpServerAdapters {
                 accepted = t;
             } else if (t instanceof IOException io) {
                 var msg = io.getMessage();
-                if (msg != null && msg.matches("Stream [1-9][0-9]* cancelled")) {
+                // Stream 0 cancelled should also be accepted
+                if (msg != null && msg.matches("Stream (0|([1-9][0-9]*)) cancelled")) {
                     out.println(what + ": Accepting Stream cancelled as a valid cause: " + io);
                     accepted = t;
                 }
