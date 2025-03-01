@@ -158,6 +158,10 @@ private:
     void init(T v)        { start = cur = peak = v; }
     void update(T v)      { cur = v; if (v > peak) peak = v; }
     dT end_delta() const  { return (dT)cur - (dT)start; }
+    // Returns the peak size during this phase: how high usage rose above either
+    // start or end of phase. The background is that we want to know the max. memory
+    // consumption during this phase, but that may not be reflected by the start or the
+    // end counters if an Arena was created during the phase and only lived temporarily.
     size_t temporary_peak_size() const { return MIN2(peak - cur, peak - start); }
   };
   struct Entry {
