@@ -777,8 +777,11 @@ public sealed class ICC_Profile implements Serializable
     /**
      * Constructs an {@code ICC_Profile} object whose loading will be deferred.
      * The ID will be 0 until the profile is loaded.
+     *
      * <p>
-     * Note: ProfileDeferralInfo used for only built-in profile construction.
+     * Note: {@code ProfileDeferralInfo} is used for only built-in profile
+     * creation and all built-in profiles should be constructed using it.
+     * </p>
      */
     ICC_Profile(ProfileDeferralInfo pdi) {
         deferralInfo = pdi;
