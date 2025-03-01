@@ -304,11 +304,10 @@ public class DHKEM implements KEMSpi {
         private SecretKey ExtractAndExpand(SecretKey dh, byte[] kem_context, String alg)
                 throws NoSuchAlgorithmException {
             var kdf = KDF.getInstance(hkdfAlgorithm);
-            var ext = labeledBuilder(suiteId, EAE_PRK).addIKM(dh);
+            var builder = labeledExtact(suiteId, EAE_PRK).addIKM(dh);
             try {
-                return kdf.deriveKey(alg, ext.thenExpand(
-                        labeledInfo(suiteId, SHARED_SECRET, kem_context, Nsecret),
-                        Nsecret));
+                return kdf.deriveKey(alg,
+                        labeledExpand(builder, suiteId, SHARED_SECRET, kem_context, Nsecret));
             } catch (InvalidAlgorithmParameterException e) {
                 throw new ProviderException(e);
             }
@@ -339,7 +338,7 @@ public class DHKEM implements KEMSpi {
         // For KAT tests only. See RFC9180DeriveKeyPairSR.
         public KeyPair deriveKeyPair(byte[] ikm) throws Exception {
             var kdf = KDF.getInstance(hkdfAlgorithm);
-            var extract = labeledBuilder(suiteId, DKP_PRK).addIKM(ikm);
+            var builder = labeledExtact(suiteId, DKP_PRK).addIKM(ikm);
             if (isEC()) {
                 NamedCurve curve = (NamedCurve) spec;
                 BigInteger sk = BigInteger.ZERO;
@@ -348,8 +347,8 @@ public class DHKEM implements KEMSpi {
                     if (counter > 255) {
                         throw new RuntimeException();
                     }
-                    byte[] bytes = kdf.deriveData(extract.thenExpand(labeledInfo(
-                            suiteId, CANDIDATE, I2OSP(counter, 1), Nsk), Nsk));
+                    byte[] bytes = kdf.deriveData(labeledExpand(builder,
+                            suiteId, CANDIDATE, I2OSP(counter, 1), Nsk));
                     // bitmask is defined to be 0xFF for P-256 and P-384, and 0x01 for P-521
                     if (this == Params.P521) {
                         bytes[0] = (byte) (bytes[0] & 0x01);
@@ -360,8 +359,8 @@ public class DHKEM implements KEMSpi {
                 PrivateKey k = DeserializePrivateKey(sk.toByteArray());
                 return new KeyPair(getPublicKey(k), k);
             } else {
-                byte[] sk = kdf.deriveData(extract.thenExpand(
-                        labeledInfo(suiteId, SK, EMPTY, Nsk), Nsk));
+                byte[] sk = kdf.deriveData(labeledExpand(builder,
+                        suiteId, SK, EMPTY, Nsk));
                 PrivateKey k = DeserializePrivateKey(sk);
                 return new KeyPair(getPublicKey(k), k);
             }
@@ -445,16 +444,32 @@ public class DHKEM implements KEMSpi {
         }
     }
 
-    // Create an HKDFParameterSpec.Builder with HPKE label.
+    // Create a LabeledExtract builder with labels.
     // You can add more IKM and salt into the result.
-    public static HKDFParameterSpec.Builder labeledBuilder(
+    public static HKDFParameterSpec.Builder labeledExtact(
             byte[] suiteId, byte[] label) {
         return HKDFParameterSpec.ofExtract()
                 .addIKM(HPKE_V1).addIKM(suiteId).addIKM(label);
     }
 
-    // Create an HPKE labeled info
-    public static byte[] labeledInfo(byte[] suiteId, byte[] label, byte[] info, int L) {
+    // Create a labeled info from info and labels
+    private static byte[] labeledInfo(
+            byte[] suiteId, byte[] label, byte[] info, int L) {
         return concat(I2OSP(L, 2), HPKE_V1, suiteId, label, info);
+    }
+
+    // LabeledExpand from a builder
+    public static HKDFParameterSpec labeledExpand(
+            HKDFParameterSpec.Builder builder,
+            byte[] suiteId, byte[] label, byte[] info, int L) {
+        return builder.thenExpand(
+                labeledInfo(suiteId, label, info, L), L);
+    }
+
+    // LabeledExpand from a prk
+    public static HKDFParameterSpec labeledExpand(
+            SecretKey prk, byte[] suiteId, byte[] label, byte[] info, int L) {
+        return HKDFParameterSpec.expandOnly(
+                prk, labeledInfo(suiteId, label, info, L), L);
     }
 }

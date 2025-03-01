@@ -240,12 +240,16 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
                 || aead_id < 1 || aead_id > 65535) {
             throw new InvalidAlgorithmParameterException();
         }
-        return new HPKEParameterSpec(kem_id, kdf_id, aead_id, new byte[0], null, new byte[0], null, null);
+        return new HPKEParameterSpec(kem_id, kdf_id, aead_id,
+                new byte[0], null, new byte[0], null, null);
     }
 
     /**
      * Creates a new {@code HPKEParameterSpec} object with a different
      * {@code info} value.
+     * <p>
+     * For interoperability, RFC 9180 Section 7.2.1 recommends limiting
+     * this value to a maximum of 64 bytes.
      *
      * @param info application-specific info. Must not be {@code null}.
      *      The contents of the array are copied to protect
@@ -261,6 +265,9 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
     /**
      * Creates a new {@code HPKEParameterSpec} object with different
      * {@code psk} value and {@code psk_id} values.
+     * <p>
+     * For interoperability, RFC 9180 Section 7.2.1 recommends limiting both
+     * values to a maximum of 64 bytes.
      *
      * @param psk pre-shared key. Set to {@code null} if no pre-shared key is used.
      * @param psk_id identifier for PSK. Set to empty if no pre-shared key is used.

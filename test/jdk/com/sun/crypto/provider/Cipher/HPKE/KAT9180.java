@@ -53,13 +53,13 @@ import java.util.HexFormat;
 /// The JSON file can either be hosted on an artifactory server or
 /// provided via a local path with
 /// ```
-/// jtreg -Djdk.test.lib.artifacts.test-vectors=<local-json-file> KAT9180.java
+/// jtreg -Djdk.test.lib.artifacts.rfc9180-test-vectors=<local-json-file> KAT9180.java
 /// ```
 public class KAT9180 {
 
     @Artifact(
-            organization = "jpg.tests.jdk.ietf.rfc9180",
-            name = "test-vectors",
+            organization = "jpg.tests.jdk.ietf",
+            name = "rfc9180-test-vectors",
             revision = "5f503c5",
             extension = "json",
             unpack = false)
