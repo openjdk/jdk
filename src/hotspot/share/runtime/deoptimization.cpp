@@ -36,6 +36,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "interpreter/bytecode.hpp"
+#include "interpreter/bytecode.inline.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
@@ -642,7 +643,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   if (deopt_sender.is_interpreted_frame()) {
     methodHandle method(current, deopt_sender.interpreter_frame_method());
     Bytecode_invoke cur(method, deopt_sender.interpreter_frame_bci());
-    if (!cur.is_invokedynamic() && MethodHandles::has_member_arg(cur.klass(), cur.name())) {
+    if (cur.has_member_arg()) {
       // This should cover all real-world cases.  One exception is a pathological chain of
       // MH.linkToXXX() linker calls, which only trusted code could do anyway.  To handle that case, we
       // would need to get the size from the resolved method entry.  Another exception would
@@ -945,7 +946,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
       if (Bytecodes::is_invoke(cur_code)) {
         Bytecode_invoke invoke(mh, iframe->interpreter_frame_bci());
         cur_invoke_parameter_size = invoke.size_of_parameters();
-        if (i != 0 && !invoke.is_invokedynamic() && MethodHandles::has_member_arg(invoke.klass(), invoke.name())) {
+        if (i != 0 && invoke.has_member_arg()) {
           callee_size_of_parameters++;
         }
       }
