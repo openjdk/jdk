@@ -26,6 +26,7 @@ package com.sun.crypto.provider;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.Serial;
 import java.math.BigInteger;
 import java.security.AsymmetricKey;
 import java.security.InvalidAlgorithmParameterException;
@@ -152,7 +153,8 @@ public class DHKEM implements KEMSpi {
     // Not really a random. For KAT test only. It generates key pair from ikm.
     public static class RFC9180DeriveKeyPairSR extends SecureRandom {
 
-        static final long serialVersionUID = 0L;
+        @Serial
+        private static final long serialVersionUID = 0L;
 
         private final byte[] ikm;
 
@@ -161,7 +163,7 @@ public class DHKEM implements KEMSpi {
             this.ikm = ikm;
         }
 
-        public KeyPair derive(Params params) {
+        private KeyPair derive(Params params) {
             try {
                 return params.deriveKeyPair(ikm);
             } catch (Exception e) {
@@ -275,7 +277,7 @@ public class DHKEM implements KEMSpi {
 
         // The final shared secret derivation of either the encapsulator
         // or the decapsulator. The key slicing is implemented inside.
-        // Throws UOE if cannot get a slice of the key.
+        // Throws UOE if a slice of the key cannot be found.
         private SecretKey deriveKey(String alg, int from, int to,
                 byte[] kem_context, SecretKey dh)
                 throws NoSuchAlgorithmException {
@@ -304,7 +306,7 @@ public class DHKEM implements KEMSpi {
         private SecretKey ExtractAndExpand(SecretKey dh, byte[] kem_context, String alg)
                 throws NoSuchAlgorithmException {
             var kdf = KDF.getInstance(hkdfAlgorithm);
-            var builder = labeledExtact(suiteId, EAE_PRK).addIKM(dh);
+            var builder = labeledExtract(suiteId, EAE_PRK).addIKM(dh);
             try {
                 return kdf.deriveKey(alg,
                         labeledExpand(builder, suiteId, SHARED_SECRET, kem_context, Nsecret));
@@ -338,7 +340,7 @@ public class DHKEM implements KEMSpi {
         // For KAT tests only. See RFC9180DeriveKeyPairSR.
         public KeyPair deriveKeyPair(byte[] ikm) throws Exception {
             var kdf = KDF.getInstance(hkdfAlgorithm);
-            var builder = labeledExtact(suiteId, DKP_PRK).addIKM(ikm);
+            var builder = labeledExtract(suiteId, DKP_PRK).addIKM(ikm);
             if (isEC()) {
                 NamedCurve curve = (NamedCurve) spec;
                 BigInteger sk = BigInteger.ZERO;
@@ -446,7 +448,7 @@ public class DHKEM implements KEMSpi {
 
     // Create a LabeledExtract builder with labels.
     // You can add more IKM and salt into the result.
-    public static HKDFParameterSpec.Builder labeledExtact(
+    public static HKDFParameterSpec.Builder labeledExtract(
             byte[] suiteId, byte[] label) {
         return HKDFParameterSpec.ofExtract()
                 .addIKM(HPKE_V1).addIKM(suiteId).addIKM(label);

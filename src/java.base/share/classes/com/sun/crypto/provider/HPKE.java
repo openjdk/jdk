@@ -41,7 +41,6 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.HPKEParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.ByteArrayOutputStream;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.AsymmetricKey;
@@ -424,7 +423,7 @@ public class HPKE extends CipherSpi {
                 }
             }
 
-            var usePSK = usePSK(params.psk(), params.psk_id());
+            var usePSK = usePSK(params.psk());
             int mode = params.authKey() == null ? (usePSK ? 1 : 0) : (usePSK ? 3 : 2);
             context = KeySchedule(mode, shared_secret,
                     params.info(),
@@ -486,7 +485,6 @@ public class HPKE extends CipherSpi {
 
         private void setParams(AsymmetricKey key, HPKEParameterSpec p)
                 throws InvalidKeyException, InvalidAlgorithmParameterException {
-            this.params = p;
             if (p.kem_id() == 0) {
                 int kem_id = paramsFromKey(key);
                 int kdf_id = switch (kem_id) {
@@ -525,7 +523,7 @@ public class HPKE extends CipherSpi {
             aead = new AEAD(params.aead_id());
         }
 
-        private static int[][][] disabledIdentifiers;
+        private static final int[][][] disabledIdentifiers;
         static {
             disabledIdentifiers = new int[3][][];
             List<int[]> disabledKEMs = new ArrayList<>();
@@ -600,9 +598,9 @@ public class HPKE extends CipherSpi {
                 SecretKey psk,
                 byte[] psk_id) {
             try {
-                var psk_id_hash_x = DHKEM.labeledExtact(suite_id, PSK_ID_HASH)
+                var psk_id_hash_x = DHKEM.labeledExtract(suite_id, PSK_ID_HASH)
                         .addIKM(psk_id).extractOnly();
-                var info_hash_x = DHKEM.labeledExtact(suite_id, INFO_HASH)
+                var info_hash_x = DHKEM.labeledExtract(suite_id, INFO_HASH)
                         .addIKM(info).extractOnly();
 
                 // deriveData must and can be called because all info to
@@ -612,9 +610,11 @@ public class HPKE extends CipherSpi {
                         kdf.deriveData(psk_id_hash_x),
                         kdf.deriveData(info_hash_x));
 
-                var secret_x_builder = DHKEM.labeledExtact(suite_id, SECRET);
-                if (psk != null) secret_x_builder = secret_x_builder.addIKM(psk);
-                secret_x_builder = secret_x_builder.addSalt(shared_secret);
+                var secret_x_builder = DHKEM.labeledExtract(suite_id, SECRET);
+                if (psk != null) {
+                    secret_x_builder.addIKM(psk);
+                }
+                secret_x_builder.addSalt(shared_secret);
 
                 // A new KDF object must be created because secret_x_builder
                 // might contain provider-specific keys which the previous
@@ -641,7 +641,7 @@ public class HPKE extends CipherSpi {
         }
     }
 
-    private static boolean usePSK(SecretKey psk, byte[] psk_id) {
+    private static boolean usePSK(SecretKey psk) {
         return psk != null;
     }
 
