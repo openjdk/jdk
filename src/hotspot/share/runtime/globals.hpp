@@ -1997,6 +1997,10 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseThreadsLockThrottleLock, true, DIAGNOSTIC,               \
           "Use an extra lock during Thread start and exit to alleviate"     \
           "contention on Threads_lock.")                                    \
+                                                                            \
+  product(int, ProfileCaptureRatio, 1,                                 \
+          "Reduce profile captures")                                        \
+          range(1, 4096)
 
 // end of RUNTIME_FLAGS
 

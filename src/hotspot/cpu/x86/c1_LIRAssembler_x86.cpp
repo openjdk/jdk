@@ -1693,8 +1693,11 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
   assert_different_registers(obj, k_RInfo, klass_RInfo);
 
+
+
   __ testptr(obj, obj);
   if (op->should_profile()) {
+
     Label not_null;
     Register mdo  = klass_RInfo;
     __ mov_metadata(mdo, md->constant_encoding());
@@ -1707,6 +1710,9 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ bind(not_null);
 
     Label update_done;
+
+    __ maybe_skip(r14, k_RInfo, update_done);
+
     Register recv = k_RInfo;
     __ load_klass(recv, obj, tmp_load_klass);
     type_profile_helper(mdo, md, data, recv, &update_done);
@@ -2816,6 +2822,8 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
 
 
 void LIR_Assembler::align_call(LIR_Code code) {
+  if (ProfileCaptureRatio != 1)   __ movl(Address(r15_thread, JavaThread::profile_rng_offset()), r14);
+
   // make sure that the displacement word of the call ends up word aligned
   int offset = __ offset();
   switch (code) {
@@ -2839,6 +2847,8 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   __ call(AddressLiteral(op->addr(), rtype));
   add_call_info(code_offset(), op->info());
   __ post_call_nop();
+
+  if (ProfileCaptureRatio != 1)   __ movl(r14, Address(r15_thread, JavaThread::profile_rng_offset()));
 }
 
 
@@ -2848,6 +2858,8 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   assert((__ offset() - NativeCall::instruction_size + NativeCall::displacement_offset) % BytesPerWord == 0,
          "must be aligned");
   __ post_call_nop();
+
+  if (ProfileCaptureRatio != 1)   __ movl(r14, Address(r15_thread, JavaThread::profile_rng_offset()));
 }
 
 
@@ -3495,11 +3507,136 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ load_klass(result, obj, rscratch1);
 }
 
+long ibar, ifoo;
+
+void foo() {
+  asm("nop");
+}
+
+void bar() {
+  asm("nop");
+}
+
+void LIR_Assembler::inc_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op,
+                                    int profile_limit) {
+  Register temp = temp_op->as_register();
+  Address dest_adr = as_Address(addr->as_address_ptr());
+
+  assert(ProfileCaptureRatio != 1, "ProfileCaptureRatio must be != 1");
+
+  int profile_capture_ratio = ProfileCaptureRatio;
+
+  if (profile_limit) {
+    int ratio = sqrt(profile_limit);
+    profile_capture_ratio = round_down_power_of_2(ratio);
+  }
+
+  int ratio_shift = exact_log2(profile_capture_ratio);
+  int threshold = (1ull << 32) >> ratio_shift;
+
+  assert(threshold > 0, "must be");
+
+  if (getenv("APH_TRACE")) {
+    __ lea(temp, ExternalAddress((address)&ifoo));
+    __ incl(Address(temp));
+  }
+
+  __ step_random(r14, temp);
+
+  Label dont;
+
+  // __ call_VM_leaf_base(CAST_FROM_FN_PTR(address, &bar), 0);
+
+  if (incr->is_register()) {
+    Register inc = incr->as_register();
+    __ movl(dest->as_register(), inc);
+    __ cmpl(r14, threshold);
+    __ jccb(Assembler::aboveEqual, dont);
+
+    // __ call_VM_leaf_base(CAST_FROM_FN_PTR(address, &foo), 0);
+    if (getenv("APH_TRACE")) {
+      __ lea(temp, ExternalAddress((address)&ibar));
+      __ incl(Address(temp));
+    }
+
+    __ movl(temp, dest_adr);
+    __ sall(inc, ratio_shift);
+    __ addl(temp, inc);
+    __ movl(dest_adr, temp);
+    __ movl(dest->as_register(), temp);
+  } else {
+    switch (dest->type()) {
+        case T_INT: {
+          jint inc = incr->as_constant_ptr()->as_jint_bits() * profile_capture_ratio;
+          __ movl(dest->as_register(), inc);
+          __ cmpl(r14, threshold);
+          __ jccb(Assembler::aboveEqual, dont);
+
+          // __ call_VM_leaf_base(CAST_FROM_FN_PTR(address, &foo), 0);
+          if (getenv("APH_TRACE")) {
+            __ lea(temp, ExternalAddress((address)&ibar));
+            __ incl(Address(temp));
+          }
+
+          __ movl(temp, dest_adr);
+          __ addl(temp, inc);
+          __ movl(dest_adr, temp);
+          __ movl(dest->as_register(), temp);
+
+          break;
+        }
+        case T_LONG: {
+          jint inc = incr->as_constant_ptr()->as_jint_bits() * profile_capture_ratio;
+          __ movq(dest->as_register_lo(), (jlong)inc);
+          __ cmpl(r14, threshold);
+          __ jccb(Assembler::aboveEqual, dont);
+
+          // __ call_VM_leaf_base(CAST_FROM_FN_PTR(address, &foo), 0);
+          if (getenv("APH_TRACE")) {
+            __ lea(temp, ExternalAddress((address)&ibar));
+            __ incl(Address(temp));
+          }
+
+          __ movq(temp, dest_adr);
+          __ addq(temp, inc);
+          __ movq(dest_adr, temp);
+          __ movq(dest->as_register_lo(), temp);
+
+          break;
+        }
+      default:
+        ShouldNotReachHere();
+    }
+  }
+  __ bind(dont);
+}
+
+int ibaz;
+
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethod* method = op->profiled_method();
   int bci          = op->profiled_bci();
   ciMethod* callee = op->profiled_callee();
   Register tmp_load_klass = LP64_ONLY(rscratch1) NOT_LP64(noreg);
+
+  Label dont;
+
+  Register temp = op->tmp1()->as_register_lo();
+
+  int ratio_shift = exact_log2(ProfileCaptureRatio);
+  int threshold = (1ull << 32) / ProfileCaptureRatio;
+
+  if (ProfileCaptureRatio != 1) {
+    __ step_random(r14, temp);
+
+    if (getenv("APH_TRACE")) {
+      __ lea(temp, ExternalAddress((address)&ibaz));
+      __ incl(Address(temp));
+    }
+
+    __ cmpl(r14, threshold);
+    __ jcc(Assembler::aboveEqual, dont);
+  }
 
   // Update counter for all call types
   ciMethodData* md = method->method_data_or_null();
@@ -3532,7 +3669,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         if (known_klass->equals(receiver)) {
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
           __ addptr(data_addr, DataLayout::counter_increment);
-          return;
+          goto exit;
         }
       }
 
@@ -3548,7 +3685,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
           __ mov_metadata(recv_addr, known_klass->constant_encoding(), rscratch1);
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
           __ addptr(data_addr, DataLayout::counter_increment);
-          return;
+          goto exit;
         }
       }
     } else {
@@ -3565,7 +3702,12 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
     // Static call
     __ addptr(counter_addr, DataLayout::counter_increment);
   }
+
+ exit:
+  __ bind(dont);
 }
+
+int kludge;
 
 void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   Register obj = op->obj()->as_register();
@@ -3603,6 +3745,24 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 #endif
   }
 #endif
+
+  if (ProfileCaptureRatio != 1) {
+
+    // Subsampling profile capture
+    int ratio_shift = exact_log2(ProfileCaptureRatio);
+    int threshold = (1ull << 32) >> ratio_shift;
+    // Can't use tmp here because sometimes obj == tmp!
+    __ step_random(r14, rscratch1);
+
+    __ cmpl(r14, threshold);
+    __ jcc(Assembler::aboveEqual, next);
+  }
+
+  if (getenv("APH_TRACE2")) {
+    __ lea(tmp, ExternalAddress((address)&kludge));
+    __ incl(Address(tmp));
+  }
+
   if (do_null) {
     __ testptr(obj, obj);
     __ jccb(Assembler::notZero, update);
@@ -3839,12 +3999,17 @@ void LIR_Assembler::leal(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_code, Co
 
 void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* args, LIR_Opr tmp, CodeEmitInfo* info) {
   assert(!tmp->is_valid(), "don't need temporary");
+  if (ProfileCaptureRatio != 1)   __ movl(Address(r15_thread, JavaThread::profile_rng_offset()), r14);
+
   __ call(RuntimeAddress(dest));
   if (info != nullptr) {
     add_call_info_here(info);
   }
   __ post_call_nop();
+  if (ProfileCaptureRatio != 1)   __ movl(r14, Address(r15_thread, JavaThread::profile_rng_offset()));
 }
+
+
 
 
 void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
