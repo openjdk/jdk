@@ -1345,6 +1345,16 @@ public class IRNode {
         superWordNodes(MAX_REDUCTION_V, "MaxReductionV");
     }
 
+    public static final String NEG_F = PREFIX + "NEG_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(NEG_F, "NegF");
+    }
+
+    public static final String NEG_D = PREFIX + "NEG_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(NEG_D, "NegD");
+    }
+
     public static final String NEG_VF = VECTOR_PREFIX + "NEG_VF" + POSTFIX;
     static {
         vectorNode(NEG_VF, "NegVF", TYPE_FLOAT);
@@ -1533,6 +1543,16 @@ public class IRNode {
     public static final String REVERSE_BYTES_VL = VECTOR_PREFIX + "REVERSE_BYTES_VL" + POSTFIX;
     static {
         vectorNode(REVERSE_BYTES_VL, "ReverseBytesV", TYPE_LONG);
+    }
+
+    public static final String REVERSE_BYTES_I = PREFIX + "REVERSE_BYTES_I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(REVERSE_BYTES_I, "ReverseBytesI");
+    }
+
+    public static final String REVERSE_BYTES_L = PREFIX + "REVERSE_BYTES_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(REVERSE_BYTES_L, "ReverseBytesL");
     }
 
     public static final String REVERSE_I = PREFIX + "REVERSE_I" + POSTFIX;
