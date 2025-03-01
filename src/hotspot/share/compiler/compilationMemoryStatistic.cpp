@@ -303,7 +303,7 @@ int ArenaStatCounter::retrieve_live_node_count() const {
 #ifdef COMPILER2
   if (_comp_type == compiler_c2) {
     // Update C2 node count
-    // Careful, Compile::current() may be NULL in a short time window when Compile itself
+    // Careful, Compile::current() may be null in a short time window when Compile itself
     // is still being constructed.
     if (Compile::current() != nullptr) {
       result = Compile::current()->live_nodes();
