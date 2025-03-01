@@ -39,7 +39,7 @@ import java.util.Objects;
  * or method in this class will cause a {@link NullPointerException} to be
  * thrown.
  *
- * <h2><a id="inflater-usage">Inflater Usage</a></h2>
+ * <h2 id="inflater-usage">Inflater Usage</h2>
  * <p>This class uses an {@link Inflater} for uncompressing the data. Two forms of constructors
  * are available for constructing an {@code InflaterInputStream} - one which accepts
  * an {@code Inflater} and one which doesn't. The constructors that don't accept an
@@ -91,10 +91,8 @@ public class InflaterInputStream extends FilterInputStream {
      * Creates a new input stream with the specified decompressor and
      * buffer size.
      *
-     * @implSpec {@linkplain #close() Closing} the {@code InflaterInputStream}
-     * will not close the given {@code inf}. After the {@code InflaterInputStream}
-     * is closed, the caller is responsible for
-     * {@linkplain Inflater#close() closing the Inflater} if it is no longer needed.
+     * @apiNote {@linkplain #close() Closing} the {@code InflaterInputStream}
+     * {@linkplain ##inflater-usage will not close} the given {@code inf}.
      *
      * @param in the input stream
      * @param inf the decompressor ("inflater")
@@ -116,10 +114,8 @@ public class InflaterInputStream extends FilterInputStream {
      * Creates a new input stream with the specified decompressor and a
      * default buffer size.
      *
-     * @implSpec {@linkplain #close() Closing} the {@code InflaterInputStream}
-     * will not close the given {@code inf}. After the {@code InflaterInputStream}
-     * is closed, the caller is responsible for
-     * {@linkplain Inflater#close() closing the Inflater} if it is no longer needed.
+     * @apiNote {@linkplain #close() Closing} the {@code InflaterInputStream}
+     * {@linkplain ##inflater-usage will not close} the given {@code inf}.
      *
      * @param in the input stream
      * @param inf the decompressor ("inflater")
@@ -277,6 +273,11 @@ public class InflaterInputStream extends FilterInputStream {
     /**
      * Closes this input stream and releases any system resources associated
      * with the stream.
+     *
+     * @apiNote If this {@code InflaterInputStream} was constructed by passing
+     * an {@code Inflater}, then this method {@linkplain ##inflater-usage does not close}
+     * that {@code Inflater}.
+     *
      * @throws    IOException if an I/O error has occurred
      */
     @Override

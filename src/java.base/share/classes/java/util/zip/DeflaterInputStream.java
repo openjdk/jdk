@@ -34,7 +34,7 @@ import java.util.Objects;
  * Implements an input stream filter for compressing data in the "deflate"
  * compression format.
  *
- * <h2><a id="deflater-usage">Deflater Usage</a></h2>
+ * <h2 id="deflater-usage">Deflater Usage</h2>
  * <p>This class uses a {@link Deflater} for compressing the data. Two forms of constructors
  * are available for constructing a {@code DeflaterInputStream} - one which accepts
  * a {@code Deflater} and one which doesn't. The constructors that don't accept a {@code Deflater}
@@ -96,10 +96,8 @@ public class DeflaterInputStream extends FilterInputStream {
      * Creates a new input stream with the specified compressor and a
      * default buffer size.
      *
-     * @implSpec {@linkplain #close() Closing} the {@code DeflaterInputStream}
-     * will not close the given {@code defl}. After the {@code DeflaterInputStream}
-     * is closed, the caller is responsible for
-     * {@linkplain Deflater#close() closing the Deflater} if it is no longer needed.
+     * @apiNote {@linkplain #close() Closing} the {@code DeflaterInputStream}
+     * {@linkplain ##deflater-usage will not close} the given {@code defl}.
      *
      * @param in input stream to read the uncompressed data to
      * @param defl compressor ("deflater") for this stream
@@ -113,10 +111,8 @@ public class DeflaterInputStream extends FilterInputStream {
      * Creates a new input stream with the specified compressor and buffer
      * size.
      *
-     * @implSpec {@linkplain #close() Closing} the {@code DeflaterInputStream}
-     * will not close the given {@code defl}. After the {@code DeflaterInputStream}
-     * is closed, the caller is responsible for
-     * {@linkplain Deflater#close() closing the Deflater} if it is no longer needed.
+     * @apiNote {@linkplain #close() Closing} the {@code DeflaterInputStream}
+     * {@linkplain ##deflater-usage will not close} the given {@code defl}.
      *
      * @param in input stream to read the uncompressed data to
      * @param defl compressor ("deflater") for this stream
@@ -143,6 +139,10 @@ public class DeflaterInputStream extends FilterInputStream {
     /**
      * Closes this input stream and its underlying input stream, discarding
      * any pending uncompressed data.
+     *
+     * @apiNote If this {@code DeflaterInputStream} was constructed by passing
+     * a {@code Deflater}, then this method {@linkplain ##deflater-usage does not close}
+     * that {@code Deflater}.
      *
      * @throws IOException if an I/O error occurs
      */

@@ -38,7 +38,7 @@ import java.io.IOException;
  * or method in this class will cause a {@link NullPointerException} to be
  * thrown.
  *
- * <h2><a id="deflater-usage">Deflater Usage</a></h2>
+ * <h2 id="deflater-usage">Deflater Usage</h2>
  * <p>This class uses a {@link Deflater} for compressing the data. Two forms of constructors
  * are available for constructing a {@code DeflaterOutputStream} - one which accepts
  * a {@code Deflater} and one which doesn't. The constructors that don't accept a {@code Deflater}
@@ -77,10 +77,8 @@ public class DeflaterOutputStream extends FilterOutputStream {
      * Creates a new output stream with the specified compressor,
      * buffer size and flush mode.
      *
-     * @implSpec {@linkplain #close() Closing} the {@code DeflaterOutputStream}
-     * will not close the given {@code def}. After the {@code DeflaterOutputStream}
-     * is closed, the caller is responsible for
-     * {@linkplain Deflater#close() closing the Deflater} if it is no longer needed.
+     * @apiNote {@linkplain #close() Closing} the {@code DeflaterOutputStream}
+     * {@linkplain ##deflater-usage will not close} the given {@code def}.
      *
      * @param out the output stream
      * @param def the compressor ("deflater")
@@ -118,10 +116,8 @@ public class DeflaterOutputStream extends FilterOutputStream {
      * <p>The new output stream instance is created as if by invoking
      * the 4-argument constructor {@code DeflaterOutputStream(out, def, size, false)}.
      *
-     * @implSpec {@linkplain #close() Closing} the {@code DeflaterOutputStream}
-     * will not close the given {@code def}. After the {@code DeflaterOutputStream}
-     * is closed, the caller is responsible for
-     * {@linkplain Deflater#close() closing the Deflater} if it is no longer needed.
+     * @apiNote {@linkplain #close() Closing} the {@code DeflaterOutputStream}
+     * {@linkplain ##deflater-usage will not close} the given {@code def}.
      *
      * @param out the output stream
      * @param def the compressor ("deflater")
@@ -136,10 +132,8 @@ public class DeflaterOutputStream extends FilterOutputStream {
      * Creates a new output stream with the specified compressor, flush
      * mode and a default buffer size.
      *
-     * @implSpec {@linkplain #close() Closing} the {@code DeflaterOutputStream}
-     * will not close the given {@code def}. After the {@code DeflaterOutputStream}
-     * is closed, the caller is responsible for
-     * {@linkplain Deflater#close() closing the Deflater} if it is no longer needed.
+     * @apiNote {@linkplain #close() Closing} the {@code DeflaterOutputStream}
+     * {@linkplain ##deflater-usage will not close} the given {@code def}.
      *
      * @param out the output stream
      * @param def the compressor ("deflater")
@@ -165,10 +159,8 @@ public class DeflaterOutputStream extends FilterOutputStream {
      * <p>The new output stream instance is created as if by invoking
      * the 3-argument constructor {@code DeflaterOutputStream(out, def, false)}.
      *
-     * @implSpec {@linkplain #close() Closing} the {@code DeflaterOutputStream}
-     * will not close the given {@code def}. After the {@code DeflaterOutputStream}
-     * is closed, the caller is responsible for
-     * {@linkplain Deflater#close() closing the Deflater} if it is no longer needed.
+     * @apiNote {@linkplain #close() Closing} the {@code DeflaterOutputStream}
+     * {@linkplain ##deflater-usage will not close} the given {@code def}.
      *
      * @param out the output stream
      * @param def the compressor ("deflater")
@@ -274,6 +266,11 @@ public class DeflaterOutputStream extends FilterOutputStream {
     /**
      * Writes remaining compressed data to the output stream and closes the
      * underlying stream.
+     *
+     * @apiNote If this {@code DeflaterOutputStream} was constructed by passing
+     * a {@code Deflater}, then this method {@linkplain ##deflater-usage does not close}
+     * that {@code Deflater}.
+     *
      * @throws    IOException if an I/O error has occurred
      */
     @Override

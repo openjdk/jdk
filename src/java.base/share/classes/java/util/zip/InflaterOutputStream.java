@@ -34,7 +34,7 @@ import java.util.Objects;
  * Implements an output stream filter for uncompressing data stored in the
  * "deflate" compression format.
  *
- * <h2><a id="inflater-usage">Inflater Usage</a></h2>
+ * <h2 id="inflater-usage">Inflater Usage</h2>
  * <p>This class uses an {@link Inflater} for uncompressing the data. Two forms of constructors
  * are available for constructing an {@code InflaterOutputStream} - one which accepts
  * an {@code Inflater} and one which doesn't. The constructors that don't accept an
@@ -97,10 +97,8 @@ public class InflaterOutputStream extends FilterOutputStream {
      * Creates a new output stream with the specified decompressor and a
      * default buffer size.
      *
-     * @implSpec {@linkplain #close() Closing} the {@code InflaterOutputStream}
-     * will not close the given {@code infl}. After the {@code InflaterOutputStream}
-     * is closed, the caller is responsible for
-     * {@linkplain Inflater#close() closing the Inflater} if it is no longer needed.
+     * @apiNote {@linkplain #close() Closing} the {@code InflaterOutputStream}
+     * {@linkplain ##inflater-usage will not close} the given {@code infl}.
      *
      * @param out output stream to write the uncompressed data to
      * @param infl decompressor ("inflater") for this stream
@@ -114,10 +112,8 @@ public class InflaterOutputStream extends FilterOutputStream {
      * Creates a new output stream with the specified decompressor and
      * buffer size.
      *
-     * @implSpec {@linkplain #close() Closing} the {@code InflaterOutputStream}
-     * will not close the given {@code infl}. After the {@code InflaterOutputStream}
-     * is closed, the caller is responsible for
-     * {@linkplain Inflater#close() closing the Inflater} if it is no longer needed.
+     * @apiNote {@linkplain #close() Closing} the {@code InflaterOutputStream}
+     * {@linkplain ##inflater-usage will not close} the given {@code infl}.
      *
      * @param out output stream to write the uncompressed data to
      * @param infl decompressor ("inflater") for this stream
@@ -144,6 +140,10 @@ public class InflaterOutputStream extends FilterOutputStream {
     /**
      * Writes any remaining uncompressed data to the output stream and closes
      * the underlying output stream.
+     *
+     * @apiNote If this {@code InflaterOutputStream} was constructed by passing
+     * an {@code Inflater}, then this method {@linkplain ##inflater-usage does not close}
+     * that {@code Inflater}.
      *
      * @throws IOException if an I/O error occurs
      */
