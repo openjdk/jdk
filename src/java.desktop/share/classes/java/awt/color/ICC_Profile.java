@@ -113,45 +113,32 @@ public sealed class ICC_Profile implements Serializable
      * This check is used in {@link #setData(int, byte[])} to prevent modifying
      * built-in profiles.
      */
-    private boolean builtIn = false;
+    private final boolean builtIn;
 
     /**
      * The lazy registry of singleton profile objects for specific built-in
      * color spaces defined in the ColorSpace class (e.g. CS_sRGB),
      * see getInstance(int cspace) factory method.
      */
-    private static class BuiltInProfile {
+    private interface BuiltInProfile {
         /*
          * Deferral is only used for standard profiles. Enabling the appropriate
          * access privileges is handled at a lower level.
          */
-        private static final ICC_Profile SRGB;
-        private static final ICC_Profile LRGB;
-        private static final ICC_Profile XYZ;
-        private static final ICC_Profile PYCC;
-        private static final ICC_Profile GRAY;
+        ICC_Profile SRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
+                "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
 
-        static {
-            SRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
-                    "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
-            SRGB.builtIn = true;
+        ICC_Profile LRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
+                "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
 
-            LRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
-                    "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
-            LRGB.builtIn = true;
+        ICC_Profile XYZ = new ICC_Profile(new ProfileDeferralInfo(
+                "CIEXYZ.pf", ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT));
 
-            XYZ = new ICC_Profile(new ProfileDeferralInfo(
-                    "CIEXYZ.pf", ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT));
-            XYZ.builtIn = true;
+        ICC_Profile PYCC = new ICC_Profile(new ProfileDeferralInfo(
+                "PYCC.pf", ColorSpace.TYPE_3CLR, 3, CLASS_COLORSPACECONVERSION));
 
-            PYCC = new ICC_Profile(new ProfileDeferralInfo(
-                    "PYCC.pf", ColorSpace.TYPE_3CLR, 3, CLASS_COLORSPACECONVERSION));
-            PYCC.builtIn = true;
-
-            GRAY = new ICC_ProfileGray(new ProfileDeferralInfo(
-                    "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY));
-            GRAY.builtIn = true;
-        }
+        ICC_Profile GRAY = new ICC_ProfileGray(new ProfileDeferralInfo(
+                "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY));
     }
 
     static {
@@ -784,14 +771,18 @@ public sealed class ICC_Profile implements Serializable
      */
     ICC_Profile(Profile p) {
         cmmProfile = p;
+        builtIn = false;
     }
 
     /**
      * Constructs an {@code ICC_Profile} object whose loading will be deferred.
      * The ID will be 0 until the profile is loaded.
+     * <p>
+     * Note: ProfileDeferralInfo used for only built-in profile construction.
      */
     ICC_Profile(ProfileDeferralInfo pdi) {
         deferralInfo = pdi;
+        builtIn = true;
     }
 
     /**
@@ -1167,7 +1158,7 @@ public sealed class ICC_Profile implements Serializable
      * @param  tagData the data to set for the specified tag signature
      * @throws IllegalArgumentException if {@code tagSignature} is not a
      *         signature as defined in the ICC specification.
-     * @throws IllegalArgumentException if a content of the {@code tagData}
+     * @throws IllegalArgumentException if the content of the {@code tagData}
      *         array can not be interpreted as valid tag data, corresponding to
      *         the {@code tagSignature}
      * @throws IllegalArgumentException if this is a built-in profile for one
