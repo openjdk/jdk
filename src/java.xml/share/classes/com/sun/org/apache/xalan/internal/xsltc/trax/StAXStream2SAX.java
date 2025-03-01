@@ -275,9 +275,6 @@ public class StAXStream2SAX implements XMLReader, Locator {
     }
 
     private void handleCharacters() throws XMLStreamException {
-
-        // workaround for bugid 5046319 - switch over to commented section
-        // below when it is fixed.
         int textLength = staxStreamReader.getTextLength();
         char[] chars = new char[textLength];
 
@@ -290,19 +287,6 @@ public class StAXStream2SAX implements XMLReader, Locator {
         } catch (SAXException e) {
             throw new XMLStreamException(e);
         }
-
-
-//        int start = 0;
-//        int len;
-//        do {
-//            len = staxStreamReader.getTextCharacters(start, buf, 0, buf.length);
-//            start += len;
-//            try {
-//                _sax.characters(buf, 0, len);
-//            } catch (SAXException e) {
-//                throw new XMLStreamException(e);
-//            }
-//        } while (len == buf.length);
     }
 
     private void handleEndElement() throws XMLStreamException {
