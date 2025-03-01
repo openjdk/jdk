@@ -49,51 +49,27 @@
 // entry is read without a lock, only the resolved state guarantees that
 // the entry in the constant pool is a klass object and not a Symbol*.
 
-// This represents a JVM_CONSTANT_Class, JVM_CONSTANT_UnresolvedClass, or
-// JVM_CONSTANT_UnresolvedClassInError slot in the constant pool.
-class CPKlassSlot {
-  // cp->symbol_at(_name_index) gives the name of the class.
-  int _name_index;
-
-  // cp->_resolved_klasses->at(_resolved_klass_index) gives the Klass* for the class.
-  int _resolved_klass_index;
-public:
-  enum {
-    // This is used during constant pool merging where the resolved klass index is
-    // not yet known, and will be computed at a later stage (during a call to
-    // initialize_unresolved_klasses()).
-    _temp_resolved_klass_index = 0xffff
-  };
-  CPKlassSlot(int n, int rk) {
-    _name_index = n;
-    _resolved_klass_index = rk;
-  }
-  int name_index() const {
-    return _name_index;
-  }
-  int resolved_klass_index() const {
-    assert(_resolved_klass_index != _temp_resolved_klass_index, "constant pool merging was incomplete");
-    return _resolved_klass_index;
-  }
-};
-
 class ConstantPool : public Metadata {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class BytecodeInterpreter;  // Directly extracts a klass in the pool for fast instanceof/checkcast
   friend class Universe;             // For null constructor
   friend class AOTConstantPoolResolver;
+
  private:
   // If you add a new field that points to any metaspace object, you
   // must add this field to ConstantPool::metaspace_pointers_do().
   Array<u1>*           _tags;        // the tag array describing the constant pool's contents
   ConstantPoolCache*   _cache;       // the cache holding interpreter runtime information
   InstanceKlass*       _pool_holder; // the corresponding class
-  Array<u2>*           _operands;    // for variable-sized (InvokeDynamic) nodes, usually empty
 
   // Consider using an array of compressed klass pointers to
   // save space on 64-bit platforms.
   Array<Klass*>*       _resolved_klasses;
+
+  // Support for indy/condy BootstrapMethods attribute, with variable-sized entries
+  Array<u4>*           _bsm_attribute_offsets;  // offsets to the BSMAEs
+  Array<u2>*           _bsm_attribute_entries;  // BSMAttributeEntry structs (variable-sized)
 
   u2              _major_version;        // major version number of class file
   u2              _minor_version;        // minor version number of class file
@@ -130,7 +106,8 @@ class ConstantPool : public Metadata {
 
   u1* tag_addr_at(int cp_index) const            { return tags()->adr_at(cp_index); }
 
-  void set_operands(Array<u2>* operands)       { _operands = operands; }
+  void set_bsm_attribute_offsets(Array<u4>* offs) { _bsm_attribute_offsets = offs; }
+  void set_bsm_attribute_entries(Array<u2>* data) { _bsm_attribute_entries = data; }
 
   u2 flags() const                             { return _flags; }
   void set_flags(u2 f)                         { _flags = f; }
@@ -164,6 +141,11 @@ class ConstantPool : public Metadata {
   }
   static void check_and_add_dumped_interned_string(oop obj);
 
+  #define assert_valid_tag(cp, cp_index, expr)                         \
+    assert(cp->tag_at(cp_index).expr,                                  \
+           "Corrupted constant pool"                                   \
+           " [%d]: tag=%d", cp_index, cp->tag_at(cp_index).value())
+
   ConstantPool(Array<u1>* tags);
   ConstantPool();
  public:
@@ -172,7 +154,8 @@ class ConstantPool : public Metadata {
   virtual bool is_constantPool() const      { return true; }
 
   Array<u1>* tags() const                   { return _tags; }
-  Array<u2>* operands() const               { return _operands; }
+  Array<u2>* bsm_attribute_entries() const  { return _bsm_attribute_entries; }
+  Array<u4>* bsm_attribute_offsets() const  { return _bsm_attribute_offsets; }
 
   bool has_preresolution() const            { return (_flags & _has_preresolution) != 0; }
   void set_has_preresolution() {
@@ -254,10 +237,16 @@ class ConstantPool : public Metadata {
   void allocate_resolved_klasses(ClassLoaderData* loader_data, int num_klasses, TRAPS);
   void initialize_unresolved_klasses(ClassLoaderData* loader_data, TRAPS);
 
-  // Given the per-instruction index of an indy instruction, report the
-  // main constant pool entry for its bootstrap specifier.
-  // From there, uncached_name/signature_ref_at will get the name/type.
-  inline u2 invokedynamic_bootstrap_ref_index_at(int indy_index) const;
+  // Correct access to resolved_klasses:
+  Klass* resolved_klass_at_acquire(int resolved_klass_index) const {
+    // NOT: return resolved_klasses()->at(resolved_klass_index);
+    return resolved_klasses()->at_acquire(resolved_klass_index);
+    // Must do an acquire here in case another thread resolved the klass
+    // behind our back, lest we later load stale values thru the oop.
+  }
+  void resolved_klass_release_at_put(int resolved_klass_index, Klass* klass) const {
+    resolved_klasses()->release_at_put(resolved_klass_index, klass);
+  }
 
   // Assembly code support
   static ByteSize tags_offset()         { return byte_offset_of(ConstantPool, _tags); }
@@ -266,6 +255,11 @@ class ConstantPool : public Metadata {
   static ByteSize resolved_klasses_offset()    { return byte_offset_of(ConstantPool, _resolved_klasses); }
 
   // Storing constants
+
+  static juint combine_u2_fields(juint low_short, juint high_short) {
+    return build_int_from_shorts(checked_cast<u2>(low_short),
+                                 checked_cast<u2>(high_short));
+  }
 
   // For temporary use while constructing constant pool
   void klass_index_at_put(int cp_index, int name_index) {
@@ -278,16 +272,14 @@ class ConstantPool : public Metadata {
 
   void unresolved_klass_at_put(int cp_index, int name_index, int resolved_klass_index) {
     release_tag_at_put(cp_index, JVM_CONSTANT_UnresolvedClass);
-
-    assert((name_index & 0xffff0000) == 0, "must be");
-    assert((resolved_klass_index & 0xffff0000) == 0, "must be");
     *int_at_addr(cp_index) =
-      build_int_from_shorts((jushort)resolved_klass_index, (jushort)name_index);
+      build_int_from_shorts(checked_cast<u2>(resolved_klass_index),
+                            checked_cast<u2>(name_index));
   }
 
   void method_handle_index_at_put(int cp_index, int ref_kind, int ref_index) {
     tag_at_put(cp_index, JVM_CONSTANT_MethodHandle);
-    *int_at_addr(cp_index) = ((jint) ref_index<<16) | ref_kind;
+    *int_at_addr(cp_index) = combine_u2_fields(ref_kind, ref_index);
   }
 
   void method_type_index_at_put(int cp_index, int ref_index) {
@@ -295,14 +287,14 @@ class ConstantPool : public Metadata {
     *int_at_addr(cp_index) = ref_index;
   }
 
-  void dynamic_constant_at_put(int cp_index, int bsms_attribute_index, int name_and_type_index) {
+  void dynamic_constant_at_put(int cp_index, int bsm_attribute_index, int name_and_type_index) {
     tag_at_put(cp_index, JVM_CONSTANT_Dynamic);
-    *int_at_addr(cp_index) = ((jint) name_and_type_index<<16) | bsms_attribute_index;
+    *int_at_addr(cp_index) = combine_u2_fields(bsm_attribute_index, name_and_type_index);
   }
 
-  void invoke_dynamic_at_put(int cp_index, int bsms_attribute_index, int name_and_type_index) {
+  void invoke_dynamic_at_put(int cp_index, int bsm_attribute_index, int name_and_type_index) {
     tag_at_put(cp_index, JVM_CONSTANT_InvokeDynamic);
-    *int_at_addr(cp_index) = ((jint) name_and_type_index<<16) | bsms_attribute_index;
+    *int_at_addr(cp_index) = combine_u2_fields(bsm_attribute_index, name_and_type_index);
   }
 
   void unresolved_string_at_put(int cp_index, Symbol* s) {
@@ -358,22 +350,22 @@ class ConstantPool : public Metadata {
 
   void field_at_put(int cp_index, int class_index, int name_and_type_index) {
     tag_at_put(cp_index, JVM_CONSTANT_Fieldref);
-    *int_at_addr(cp_index) = ((jint) name_and_type_index<<16) | class_index;
+    *int_at_addr(cp_index) = combine_u2_fields(class_index, name_and_type_index);
   }
 
   void method_at_put(int cp_index, int class_index, int name_and_type_index) {
     tag_at_put(cp_index, JVM_CONSTANT_Methodref);
-    *int_at_addr(cp_index) = ((jint) name_and_type_index<<16) | class_index;
+    *int_at_addr(cp_index) = combine_u2_fields(class_index, name_and_type_index);
   }
 
   void interface_method_at_put(int cp_index, int class_index, int name_and_type_index) {
     tag_at_put(cp_index, JVM_CONSTANT_InterfaceMethodref);
-    *int_at_addr(cp_index) = ((jint) name_and_type_index<<16) | class_index;  // Not so nice
+    *int_at_addr(cp_index) = combine_u2_fields(class_index, name_and_type_index);
   }
 
   void name_and_type_at_put(int cp_index, int name_index, int signature_index) {
     tag_at_put(cp_index, JVM_CONSTANT_NameAndType);
-    *int_at_addr(cp_index) = ((jint) signature_index<<16) | name_index;  // Not so nice
+    *int_at_addr(cp_index) = combine_u2_fields(name_index, signature_index);
   }
 
   // Tag query
@@ -383,59 +375,162 @@ class ConstantPool : public Metadata {
   // Fetching constants
 
   Klass* klass_at(int cp_index, TRAPS) {
+    //FIXME: use inline fastpath in KlassReference::klass()
+    // return KlassReference(this, cp_index).klass(THREAD);
     constantPoolHandle h_this(THREAD, this);
     return klass_at_impl(h_this, cp_index, THREAD);
   }
 
-  CPKlassSlot klass_slot_at(int cp_index) const {
-    assert(tag_at(cp_index).is_unresolved_klass() || tag_at(cp_index).is_klass(),
-           "Corrupted constant pool");
-    int value = *int_at_addr(cp_index);
-    int name_index = extract_high_short_from_int(value);
-    int resolved_klass_index = extract_low_short_from_int(value);
-    return CPKlassSlot(name_index, resolved_klass_index);
+  Klass* resolved_klass_at(int cp_index) {
+    Klass* k = KlassReference(this, cp_index).resolved_klass(this);
+    assert(k != nullptr, "must be");
+    return k;
   }
 
-  Symbol* klass_name_at(int cp_index) const;  // Returns the name, w/o resolving.
-  int klass_name_index_at(int cp_index) const {
-    return klass_slot_at(cp_index).name_index();
+  Symbol* klass_name_at(int cp_index) const {
+    // there are about 70 uses of this utility function
+    return KlassReference(this, cp_index).name(this);
   }
+
+  // This represents a JVM_CONSTANT_Class, JVM_CONSTANT_UnresolvedClass, or
+  // JVM_CONSTANT_UnresolvedClassInError slot in the constant pool.
+  class KlassReference {
+    // some of these could be u1, but let's just keep it uniform
+   private:
+    // JVM_CONSTANT_Class or a related tag (gives resolution state)
+    u2 _tag;
+    // index of Class entry
+    u2 _klass_index;
+    // cp->symbol_at(_name_index) gives the name of the class.
+    u2 _name_index;
+    // cp->_resolved_klasses->at(_resolved_klass_index) gives the Klass* for the class.
+    u2 _resolved_klass_index;
+
+    DEBUG_ONLY(const ConstantPool* _check_cp;)
+
+    void record_cp(const ConstantPool* cp) {
+      DEBUG_ONLY(_check_cp = cp);
+    }
+    #ifdef ASSERT
+    bool is_same_cp(const ConstantPool* cp) const {
+      return _check_cp == cp;  // "wrong CP pointer"
+    }
+    #endif
+
+   public:
+    constantTag tag() const             { return constantTag((jbyte)_tag); }
+    bool is_resolved() const            { return tag().is_klass(); }
+    int name_index() const              { return _name_index; }
+    int resolved_klass_index() const    { return _resolved_klass_index; }
+
+    // utility methods for mapping indexes to metadata items
+    Symbol* name(const ConstantPool* cp) const {
+      assert(is_same_cp(cp), "wrong CP pointer");
+      return cp->symbol_at(name_index());
+    }
+    Klass* resolved_klass(const ConstantPool* cp) const {
+      assert(is_same_cp(cp), "wrong CP pointer");
+      guarantee(is_resolved(), "must resolve first");
+      Klass* k = cp->resolved_klass_at_acquire(_resolved_klass_index);
+      // We always publish the Klass* before updating the tag, so k != nullptr.
+      //FIXME: (8349405) This assert should be true.
+      //assert(k != nullptr, "pointer must be published before caller asks");
+      return k;
+    }
+    Klass* klass(ConstantPool* cp, TRAPS) {
+      if (is_resolved()) {
+        //FIXME: (8349405) This fast path should work unconditionally:
+        //  return resolved_klass(cp);
+        Klass* k = resolved_klass(cp);
+        if (k != nullptr)  return k;
+      }
+      constantPoolHandle h_cp(THREAD, cp);
+      return ConstantPool::klass_at_impl(h_cp, _klass_index, THREAD);
+    }
+
+    // duplicates for clients holding a CP handle
+    Symbol* name(const constantPoolHandle& cp) const {
+      return name(cp());
+    }
+    Klass* resolved_klass(const constantPoolHandle& cp) const {
+      return resolved_klass(cp());
+    }
+    Klass* klass(const constantPoolHandle cp, TRAPS) {
+      if (is_resolved()) {
+        Klass* k = resolved_klass(cp());
+        if (k != nullptr)  return k;
+      }
+      return ConstantPool::klass_at_impl(cp, _klass_index, THREAD);
+    }
+
+    enum {
+      // This is used during constant pool merging where the resolved klass index is
+      // not yet known, and will be computed at a later stage (during a call to
+      // initialize_unresolved_klasses()).
+      _temp_resolved_klass_index = 0xffff
+    };
+
+    // You can always create a blank one, containing only zeroes.
+    KlassReference()
+      : _tag(JVM_CONSTANT_Invalid), _klass_index(0),
+        _name_index(0), _resolved_klass_index(0)
+    {
+      record_cp(nullptr);  // non-garbage value
+    }
+
+    // usage:
+    //   KlassReference ref(my_cp, my_cp_index);
+    //   int ni = ref.name_index();
+    //   Symbol* ns = ref.name(my_cp);
+    KlassReference(const ConstantPool* cp, int cp_index) {
+      DEBUG_ONLY(record_cp(cp));
+      assert_valid_tag(cp, cp_index, is_klass_or_reference());
+      _tag                  = cp->tag_at(cp_index).value();
+      _klass_index          = cp_index;
+      jint bits             = *cp->int_at_addr(cp_index);
+      _name_index           = extract_high_short_from_int(bits);
+      _resolved_klass_index = extract_low_short_from_int(bits);
+      assert_valid_tag(cp, _name_index, is_symbol());
+    }
+
+    KlassReference(const constantPoolHandle& cp, u2 cp_index)
+      : KlassReference(cp(), cp_index) { }
+  };
 
   Klass* resolved_klass_at(int cp_index) const;  // Used by Compiler
 
   // RedefineClasses() API support:
-  Symbol* klass_at_noresolve(int cp_index) { return klass_name_at(cp_index); }
   void temp_unresolved_klass_at_put(int cp_index, int name_index) {
     // Used only during constant pool merging for class redefinition. The resolved klass index
     // will be initialized later by a call to initialize_unresolved_klasses().
-    unresolved_klass_at_put(cp_index, name_index, CPKlassSlot::_temp_resolved_klass_index);
+    unresolved_klass_at_put(cp_index, name_index, KlassReference::_temp_resolved_klass_index);
   }
 
   jint int_at(int cp_index) const {
-    assert(tag_at(cp_index).is_int(), "Corrupted constant pool");
+    assert_valid_tag(this, cp_index, is_int());
     return *int_at_addr(cp_index);
   }
 
   jlong long_at(int cp_index) {
-    assert(tag_at(cp_index).is_long(), "Corrupted constant pool");
+    assert_valid_tag(this, cp_index, is_long());
     // return *long_at_addr(cp_index);
     u8 tmp = Bytes::get_native_u8((address)&base()[cp_index]);
     return *((jlong*)&tmp);
   }
 
   jfloat float_at(int cp_index) {
-    assert(tag_at(cp_index).is_float(), "Corrupted constant pool");
+    assert_valid_tag(this, cp_index, is_float());
     return *float_at_addr(cp_index);
   }
 
   jdouble double_at(int cp_index) {
-    assert(tag_at(cp_index).is_double(), "Corrupted constant pool");
+    assert_valid_tag(this, cp_index, is_double());
     u8 tmp = Bytes::get_native_u8((address)&base()[cp_index]);
     return *((jdouble*)&tmp);
   }
 
   Symbol* symbol_at(int cp_index) const {
-    assert(tag_at(cp_index).is_utf8(), "Corrupted constant pool");
+    assert_valid_tag(this, cp_index, is_utf8());
     return *symbol_at_addr(cp_index);
   }
 
@@ -454,7 +549,7 @@ class ConstantPool : public Metadata {
   // only called when we are sure a string entry is already resolved (via an
   // earlier string_at call.
   oop resolved_string_at(int cp_index) {
-    assert(tag_at(cp_index).is_string(), "Corrupted constant pool");
+    assert_valid_tag(this, cp_index, is_string());
     // Must do an acquire here in case another thread resolved the klass
     // behind our back, lest we later load stale values thru the oop.
     // we might want a volatile_obj_at in ObjArrayKlass.
@@ -463,7 +558,7 @@ class ConstantPool : public Metadata {
   }
 
   Symbol* unresolved_string_at(int cp_index) {
-    assert(tag_at(cp_index).is_string(), "Corrupted constant pool");
+    assert_valid_tag(this, cp_index, is_string());
     return *symbol_at_addr(cp_index);
   }
 
@@ -473,207 +568,130 @@ class ConstantPool : public Metadata {
   // or vice versa.
   char* string_at_noresolve(int cp_index);
 
-  jint name_and_type_at(int cp_index) {
-    assert(tag_at(cp_index).is_name_and_type(), "Corrupted constant pool");
-    return *int_at_addr(cp_index);
-  }
+  // All the relevant components of a CONSTANT_NameAndType CP entry.
+  // Other more complex CP entries, that represent symbolic references,
+  // are built on top of this one.  We use inheritance, specifically
+  // instance layout extension, to build the symbolic references on
+  // top of this one.  That way, all of them inherit the same name
+  // and signature API.
+  //
+  // This struct and its subtypes is cheap to build.  Also, it is cheap
+  // to optimize away unused field values within the struct, if the
+  // object construction is inlined correctly.
+  //
+  // Warning:  Please keep these structs simple, just tuples of
+  // index values and other small integers.  It's probably a bad
+  // idea to add destructors, virtual methods, or pointer fields.
+  class NTReference {
+    // some of these could be u1, but let's just keep it uniform
+   protected:
+    u2 _tag;                      // tag of the CP node *using* the name&type
+                                  // it is protected so it can be reassigned
+   private:
+    u2 _nt_index;                 // index of the name&type being used
+    u2 _name_index;               // index of a name symbol (from name&type)
+    u2 _signature_index;          // index of a signature symbol
 
-  int method_handle_ref_kind_at(int cp_index) {
-    assert(tag_at(cp_index).is_method_handle() ||
-           tag_at(cp_index).is_method_handle_in_error(), "Corrupted constant pool");
-    return extract_low_short_from_int(*int_at_addr(cp_index));  // mask out unwanted ref_index bits
-  }
-  int method_handle_index_at(int cp_index) {
-    assert(tag_at(cp_index).is_method_handle() ||
-           tag_at(cp_index).is_method_handle_in_error(), "Corrupted constant pool");
-    return extract_high_short_from_int(*int_at_addr(cp_index));  // shift out unwanted ref_kind bits
-  }
-  int method_type_index_at(int cp_index) {
-    assert(tag_at(cp_index).is_method_type() ||
-           tag_at(cp_index).is_method_type_in_error(), "Corrupted constant pool");
-    return *int_at_addr(cp_index);
-  }
+    DEBUG_ONLY(const ConstantPool* _check_cp;)
 
-  // Derived queries:
-  Symbol* method_handle_name_ref_at(int cp_index) {
-    int member = method_handle_index_at(cp_index);
-    return uncached_name_ref_at(member);
-  }
-  Symbol* method_handle_signature_ref_at(int cp_index) {
-    int member = method_handle_index_at(cp_index);
-    return uncached_signature_ref_at(member);
-  }
-  u2 method_handle_klass_index_at(int cp_index) {
-    int member = method_handle_index_at(cp_index);
-    return uncached_klass_ref_index_at(member);
-  }
-  Symbol* method_type_signature_at(int cp_index) {
-    int sym = method_type_index_at(cp_index);
-    return symbol_at(sym);
-  }
+   protected:
+    void record_cp(const ConstantPool* cp) {
+      DEBUG_ONLY(_check_cp = cp);
+    }
+    #ifdef ASSERT
+    bool is_same_cp(const ConstantPool* cp) const {
+      return _check_cp == cp;  // "wrong CP pointer"
+    }
+    #endif
 
-  u2 bootstrap_name_and_type_ref_index_at(int cp_index) {
-    assert(tag_at(cp_index).has_bootstrap(), "Corrupted constant pool");
-    return extract_high_short_from_int(*int_at_addr(cp_index));
-  }
-  u2 bootstrap_methods_attribute_index(int cp_index) {
-    assert(tag_at(cp_index).has_bootstrap(), "Corrupted constant pool");
-    return extract_low_short_from_int(*int_at_addr(cp_index));
-  }
-  int bootstrap_operand_base(int cp_index) {
-    int bsms_attribute_index = bootstrap_methods_attribute_index(cp_index);
-    return operand_offset_at(operands(), bsms_attribute_index);
-  }
-  // The first part of the operands array consists of an index into the second part.
-  // Extract a 32-bit index value from the first part.
-  static int operand_offset_at(Array<u2>* operands, int bsms_attribute_index) {
-    int n = (bsms_attribute_index * 2);
-    assert(n >= 0 && n+2 <= operands->length(), "oob");
-    // The first 32-bit index points to the beginning of the second part
-    // of the operands array.  Make sure this index is in the first part.
-    DEBUG_ONLY(int second_part = build_int_from_shorts(operands->at(0),
-                                                       operands->at(1)));
-    assert(second_part == 0 || n+2 <= second_part, "oob (2)");
-    int offset = build_int_from_shorts(operands->at(n+0),
-                                       operands->at(n+1));
-    // The offset itself must point into the second part of the array.
-    assert(offset == 0 || (offset >= second_part && offset <= operands->length()), "oob (3)");
-    return offset;
-  }
-  static void operand_offset_at_put(Array<u2>* operands, int bsms_attribute_index, int offset) {
-    int n = bsms_attribute_index * 2;
-    assert(n >= 0 && n+2 <= operands->length(), "oob");
-    operands->at_put(n+0, extract_low_short_from_int(offset));
-    operands->at_put(n+1, extract_high_short_from_int(offset));
-  }
-  static int operand_array_length(Array<u2>* operands) {
-    if (operands == nullptr || operands->length() == 0)  return 0;
-    int second_part = operand_offset_at(operands, 0);
-    return (second_part / 2);
-  }
+   public:
+    constantTag tag() const       { return constantTag((jbyte)_tag); }
+    int name_index() const        { return _name_index; }
+    int signature_index() const   { return _signature_index; }
+    int nt_index() const          { return _nt_index; }
 
-#ifdef ASSERT
-  // operand tuples fit together exactly, end to end
-  static int operand_limit_at(Array<u2>* operands, int bsms_attribute_index) {
-    int nextidx = bsms_attribute_index + 1;
-    if (nextidx == operand_array_length(operands))
-      return operands->length();
-    else
-      return operand_offset_at(operands, nextidx);
-  }
-  int bootstrap_operand_limit(int cp_index) {
-    int bsms_attribute_index = bootstrap_methods_attribute_index(cp_index);
-    return operand_limit_at(operands(), bsms_attribute_index);
-  }
-#endif //ASSERT
+    // utility methods for mapping indexes to metadata items
+    Symbol* name(const ConstantPool* cp) const {
+      assert(is_same_cp(cp), "wrong CP pointer");
+      return cp->symbol_at(name_index());
+    }
+    Symbol* signature(const ConstantPool* cp) const {
+      assert(is_same_cp(cp), "wrong CP pointer");
+      return cp->symbol_at(signature_index());
+    }
+    // and a duplicate set for clients holding a CP handle
+    Symbol* name(const constantPoolHandle& cp) const {
+      return name(cp());
+    }
+    Symbol* signature(const constantPoolHandle& cp) const {
+      return signature(cp());
+    }
 
-  // Layout of InvokeDynamic and Dynamic bootstrap method specifier
-  // data in second part of operands array.  This encodes one record in
-  // the BootstrapMethods attribute.  The whole specifier also includes
-  // the name and type information from the main constant pool entry.
-  enum {
-         _indy_bsm_offset  = 0,  // CONSTANT_MethodHandle bsm
-         _indy_argc_offset = 1,  // u2 argc
-         _indy_argv_offset = 2   // u2 argv[argc]
+    // You can always create a blank one, containing only zeroes.
+    NTReference()
+      : _tag(JVM_CONSTANT_Invalid),
+        _nt_index(0), _name_index(0), _signature_index(0)
+    {
+      record_cp(nullptr);  // non-garbage value
+    }
+
+    // usage:
+    //   NTReference nt(my_cp, my_cp_index);
+    //   int ni = nt.name_index();
+    //   Symbol* sig = nt.signature(my_cp);
+    NTReference(const ConstantPool* cp, u2 cp_index)
+      : NTReference(/*allow_malformed*/ false, cp, cp_index) { }
+    NTReference(const constantPoolHandle& cp, u2 cp_index)
+      : NTReference(cp(), cp_index) { }
+
+  private:
+    // The allow_malformed option is only used by the classfile
+    // parser's early validation logic.  It suppresses a single
+    // assert that is normally done.  If the assert would
+    // fail because there is no NameAndType at the address,
+    // the data structure is not populated with name and type.
+    friend class ConstantPool;
+    NTReference(bool allow_malformed, const ConstantPool* cp, u2 cp_index) {
+      DEBUG_ONLY(record_cp(cp));
+      _nt_index = cp_index;
+      if (allow_malformed && !cp->tag_at(cp_index).is_name_and_type()) {
+        // This path is used only in CP validation phases of the classfile parser.
+        // In addition, it only happens when the classfile parser is parsing
+        // a classfile with a malformed NameAndType reference but has not yet
+        // gotten around to throwing an exception for the classfile.
+        // The only calls which can set allow_malformed to true originate
+        // from the classfile parser, which is a friend of this class
+        // (and also RawReference) so it can set that flag to true.
+        //
+        // We could make a separate function for it.  Common code is better,
+        // because then there are fewer code paths that need exercise.
+        return;
+      }
+      // This is where 99.9999% of the code goes:
+      assert_valid_tag(cp, cp_index, is_name_and_type());
+      jint bits        = *cp->int_at_addr(cp_index);
+      _name_index      = extract_low_short_from_int(bits);
+      _signature_index = extract_high_short_from_int(bits);
+      _tag             = JVM_CONSTANT_NameAndType;  // may be overwritten
+      // Note: subtypes of NTReference will overwrite this->_tag.
+    }
   };
 
-  // These functions are used in RedefineClasses for CP merge
-
-  int operand_offset_at(int bsms_attribute_index) {
-    assert(0 <= bsms_attribute_index &&
-           bsms_attribute_index < operand_array_length(operands()),
-           "Corrupted CP operands");
-    return operand_offset_at(operands(), bsms_attribute_index);
-  }
-  u2 operand_bootstrap_method_ref_index_at(int bsms_attribute_index) {
-    int offset = operand_offset_at(bsms_attribute_index);
-    return operands()->at(offset + _indy_bsm_offset);
-  }
-  u2 operand_argument_count_at(int bsms_attribute_index) {
-    int offset = operand_offset_at(bsms_attribute_index);
-    u2 argc = operands()->at(offset + _indy_argc_offset);
-    return argc;
-  }
-  u2 operand_argument_index_at(int bsms_attribute_index, int j) {
-    int offset = operand_offset_at(bsms_attribute_index);
-    return operands()->at(offset + _indy_argv_offset + j);
-  }
-  int operand_next_offset_at(int bsms_attribute_index) {
-    int offset = operand_offset_at(bsms_attribute_index) + _indy_argv_offset
-                   + operand_argument_count_at(bsms_attribute_index);
-    return offset;
-  }
-  // Compare a bootstrap specifier data in the operands arrays
-  bool compare_operand_to(int bsms_attribute_index1, const constantPoolHandle& cp2,
-                          int bsms_attribute_index2);
-  // Find a bootstrap specifier data in the operands array
-  int find_matching_operand(int bsms_attribute_index, const constantPoolHandle& search_cp,
-                            int operands_cur_len);
-  // Resize the operands array with delta_len and delta_size
-  void resize_operands(int delta_len, int delta_size, TRAPS);
-  // Extend the operands array with the length and size of the ext_cp operands
-  void extend_operands(const constantPoolHandle& ext_cp, TRAPS);
-  // Shrink the operands array to a smaller array with new_len length
-  void shrink_operands(int new_len, TRAPS);
-
-  u2 bootstrap_method_ref_index_at(int cp_index) {
-    assert(tag_at(cp_index).has_bootstrap(), "Corrupted constant pool");
-    int op_base = bootstrap_operand_base(cp_index);
-    return operands()->at(op_base + _indy_bsm_offset);
-  }
-  u2 bootstrap_argument_count_at(int cp_index) {
-    assert(tag_at(cp_index).has_bootstrap(), "Corrupted constant pool");
-    int op_base = bootstrap_operand_base(cp_index);
-    u2 argc = operands()->at(op_base + _indy_argc_offset);
-    DEBUG_ONLY(int end_offset = op_base + _indy_argv_offset + argc;
-               int next_offset = bootstrap_operand_limit(cp_index));
-    assert(end_offset == next_offset, "matched ending");
-    return argc;
-  }
-  u2 bootstrap_argument_index_at(int cp_index, int j) {
-    int op_base = bootstrap_operand_base(cp_index);
-    DEBUG_ONLY(int argc = operands()->at(op_base + _indy_argc_offset));
-    assert((uint)j < (uint)argc, "oob");
-    return operands()->at(op_base + _indy_argv_offset + j);
+  constantTag tag_ref_at(int which, Bytecodes::Code code) {
+    return tag_at(to_cp_index(which, code));
   }
 
-  // The following methods (name/signature/klass_ref_at, klass_ref_at_noresolve,
-  // name_and_type_ref_index_at) all expect to be passed indices obtained
+  int to_cp_index(int which, Bytecodes::Code code) const;
+
+  bool is_resolved(int which, Bytecodes::Code code);
+
+  // The following method expects to be passed indices obtained
   // directly from the bytecode.
   // If the indices are meant to refer to fields or methods, they are
   // actually rewritten indices that point to entries in their respective structures
   // i.e. ResolvedMethodEntries or ResolvedFieldEntries.
   // The routine to_cp_index manages the adjustment
   // of these values back to constant pool indices.
-
-  // There are also "uncached" versions which do not adjust the operand index; see below.
-
-  // Lookup for entries consisting of (klass_index, name_and_type index)
-  Klass* klass_ref_at(int which, Bytecodes::Code code, TRAPS);
-  Symbol* klass_ref_at_noresolve(int which, Bytecodes::Code code);
-  Symbol* name_ref_at(int which, Bytecodes::Code code) {
-    int name_index = name_ref_index_at(name_and_type_ref_index_at(which, code));
-    return symbol_at(name_index);
-  }
-  Symbol* signature_ref_at(int which, Bytecodes::Code code) {
-    int signature_index = signature_ref_index_at(name_and_type_ref_index_at(which, code));
-    return symbol_at(signature_index);
-  }
-
-  u2 klass_ref_index_at(int which, Bytecodes::Code code);
-  u2 name_and_type_ref_index_at(int which, Bytecodes::Code code);
-
-  constantTag tag_ref_at(int cp_cache_index, Bytecodes::Code code);
-
-  int to_cp_index(int which, Bytecodes::Code code);
-
-  bool is_resolved(int which, Bytecodes::Code code);
-
-  // Lookup for entries consisting of (name_index, signature_index)
-  u2 name_ref_index_at(int cp_index);            // ==  low-order jshort of name_and_type_at(cp_index)
-  u2 signature_ref_index_at(int cp_index);       // == high-order jshort of name_and_type_at(cp_index)
-
-  BasicType basic_type_for_signature_at(int cp_index) const;
 
   // Resolve string constants (to prevent allocation during compilation)
   void resolve_string_constants(TRAPS) {
@@ -723,12 +741,13 @@ private:
     return resolve_constant_at_impl(h_this, cp_index, _possible_index_sentinel, &found_it, THREAD);
   }
 
-  void copy_bootstrap_arguments_at(int cp_index,
+  void copy_bootstrap_arguments_at(int bsme_index,
                                    int start_arg, int end_arg,
                                    objArrayHandle info, int pos,
                                    bool must_resolve, Handle if_not_available, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    copy_bootstrap_arguments_at_impl(h_this, cp_index, start_arg, end_arg,
+    copy_bootstrap_arguments_at_impl(h_this, bsme_index,
+                                     start_arg, end_arg,
                                      info, pos, must_resolve, if_not_available, THREAD);
   }
 
@@ -769,20 +788,285 @@ private:
   static bool has_local_signature_at_if_loaded     (const constantPoolHandle& this_cp, int which, Bytecodes::Code code);
   static Klass*            klass_at_if_loaded      (const constantPoolHandle& this_cp, int which);
 
-  // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the
-  // future by other Java code. These take constant pool indices rather than
-  // constant pool cache indices as do the peer methods above.
-  Symbol* uncached_klass_ref_at_noresolve(int cp_index);
-  Symbol* uncached_name_ref_at(int cp_index) {
-    int name_index = name_ref_index_at(uncached_name_and_type_ref_index_at(cp_index));
-    return symbol_at(name_index);
+  // Common structure for the following tags:
+  // CONSTANT_Fieldref, CONSTANT_Methodref, CONSTANT_InterfaceMethodref
+  // CONSTANT_InvokeDynamic, CONSTANT_Dynamic
+  // This is less common than FMReference or BootstrapReference,
+  // but is handy in a few places.
+  // A "raw" reference is a 3-tuple of (x, name, type), where x
+  // is the index of a klass or a bootstrap attribute entry.
+  // Since the CP node structure is identical, we treat "triples"
+  // using common code.
+  class FMReference;         // subclass of RawReference
+  class BootstrapReference;  // ditto
+  class RawReference : public NTReference {
+   private:
+    // a NameAndType has two u2 indexes, and here is the third:
+    u2 _third_index;              // klass index or bsme index
+
+   public:
+    // utility methods for mapping indexes to metadata items
+    int third_index() const       { return _third_index; }
+
+    // You can always create a blank one, containing only zeroes.
+    RawReference() : _third_index(0) { }
+
+    // usage:
+    //   RawReference r3(my_cp, my_cp_index);
+    //   int ni = r3.name_index();
+    //   Symbol* sig = r3.signature(my_cp);
+    //   int bsme = r3.tag().has_bootstrap() ? r3.third_index() : -1;
+    RawReference(const ConstantPool* cp, u2 cp_index)
+      : RawReference(false, cp, cp_index) { }
+    RawReference(const constantPoolHandle& cp, u2 cp_index)
+      : RawReference(cp(), cp_index) { }
+
+    RawReference(const ConstantPool* cp, int cp_cache_index, Bytecodes::Code code)
+      : RawReference(cp, cp->to_cp_index(cp_cache_index, code)) { }
+    RawReference(const constantPoolHandle& cp, int cp_cache_index, Bytecodes::Code code)
+      : RawReference(cp(), cp_cache_index, code) { }
+
+    // checked narrowing operations (in-place downcasts)
+    const FMReference& as_FMRef() {
+      assert(tag().is_field_or_method(), "must be valid as FMReference");
+      return *(const FMReference*)this;
+    }
+    const BootstrapReference& as_BSRef() {
+      assert(tag().has_bootstrap(), "must be valid as BootstrapReference");
+      return *(const BootstrapReference*)this;
+    }
+
+   private:
+    // The allow_malformed option is only used by the classfile
+    // parser's early validation logic.  It suppresses a single
+    // assert that is normally done.  If the assert would
+    // fail because there is no NameAndType at the address,
+    // the data structure is not populated with name and type.
+    friend class ConstantPool;
+    RawReference(bool allow_malformed,
+                 const ConstantPool* cp, u2 cp_index) {
+      constantTag tag = cp->tag_at(cp_index);
+      assert_valid_tag(cp, cp_index, has_name_and_type());
+      // unpack immediate bits in this CP entry
+      jint ref_bits = *cp->int_at_addr(cp_index);
+      int nt_index    = extract_high_short_from_int(ref_bits);
+      int third_index = extract_low_short_from_int(ref_bits);
+
+      // given nt_index, we can now initialize the NameAndType parts:
+      *(NTReference*)this = cp->possibly_malformed_NTReference_at(nt_index, allow_malformed);
+      // allow_malformed relaxes one assert on the nested NameAndType,
+      // when called from classfile parser, only.
+
+      // fill in the subclass bits
+      _third_index = third_index;
+      assert(tag.has_name_and_type(), "");  // caller responsibility
+      _tag         = tag.value();  // must overwrite earlier tag, do it last
+    }
+  };
+ private:
+  // These are private to hide the possibility of malformation from public view.
+  NTReference possibly_malformed_NTReference_at(u2 cp_index, bool allow_malformed) const {
+    return NTReference(allow_malformed, this, cp_index);
   }
-  Symbol* uncached_signature_ref_at(int cp_index) {
-    int signature_index = signature_ref_index_at(uncached_name_and_type_ref_index_at(cp_index));
-    return symbol_at(signature_index);
+  RawReference possibly_malformed_RawReference_at(u2 cp_index) const {
+    bool allow_malformed = true;
+    return RawReference(allow_malformed, this, cp_index);
   }
-  u2 uncached_klass_ref_index_at(int cp_index);
-  u2 uncached_name_and_type_ref_index_at(int cp_index);
+ public:
+
+  // CONSTANT_Fieldref, CONSTANT_Methodref, CONSTANT_InterfaceMethodref
+  class FMReference : public RawReference {
+   public:
+    int klass_index() const       { return third_index(); }
+
+    Symbol* klass_name(const ConstantPool* cp) const {
+      assert(is_same_cp(cp), "wrong CP pointer");
+      return KlassReference(cp, klass_index()).name(cp);
+    }
+    Klass* klass(ConstantPool* cp, TRAPS) const {
+      assert(is_same_cp(cp), "wrong CP pointer");
+      //FIXME: Use fast path after 8349405 is addressed.
+      //return KlassReference(cp, klass_index()).klass(cp, THREAD);
+      return cp->klass_at(klass_index(), THREAD);
+    }
+    Symbol* klass_name(const constantPoolHandle& cp) const {
+      return klass_name(cp());
+    }
+    Klass* klass(const constantPoolHandle& cp, TRAPS) const {
+      return klass(cp(), THREAD);
+    }
+
+    // You can always create a blank one, containing only zeroes.
+    FMReference() { }
+
+    // usage:
+    //   FMReference mref(my_cp, my_cp_index);
+    //   int ni = mref.name_index();
+    //   Symbol* sig = mref.signature(my_cp);
+    //   Klass* holder = mref.klass(my_cp, CHECK);
+    FMReference(const ConstantPool* cp, u2 cp_index) {
+      assert_valid_tag(cp, cp_index, is_field_or_method());
+      *(RawReference*)this = RawReference(cp, cp_index);
+      assert(sizeof(*this) == sizeof(RawReference), "no new fields in this class");
+    }
+    FMReference(const constantPoolHandle& cp, u2 cp_index)
+      : FMReference(cp(), cp_index) { }
+
+    FMReference(const ConstantPool* cp, int cp_cache_index, Bytecodes::Code code)
+      : FMReference(cp, cp->to_cp_index(cp_cache_index, code)) { }
+    FMReference(const constantPoolHandle& cp, int cp_cache_index, Bytecodes::Code code)
+      : FMReference(cp(), cp_cache_index, code) { }
+  };
+
+  // CONSTANT_MethodHandle is the most complex.  It contains a whole
+  // field or method reference (with NameAndType) and adds more bits.
+  class MethodHandleReference : public FMReference {
+   private:
+    u2 _ref_kind;
+    u2 _ref_index;
+
+   public:
+    int ref_kind() const          { return _ref_kind; }
+    int ref_index() const         { return _ref_index; }
+
+    // You can always create a blank one, containing only zeroes.
+    MethodHandleReference() { }
+
+    MethodHandleReference(const ConstantPool* cp, u2 cp_index) {
+      assert_valid_tag(cp, cp_index, is_method_handle_or_error());
+      jint bits  = *cp->int_at_addr(cp_index);
+      int kind   = extract_low_short_from_int(bits);  // mask out unwanted ref_index bits
+      int member = extract_high_short_from_int(bits);  // shift out unwanted ref_kind bits
+      *(FMReference*)this = FMReference(cp, member);
+      _ref_kind  = kind;
+      _ref_index = member;
+      _tag       = JVM_CONSTANT_MethodHandle;  // must overwrite earlier tag
+    }
+    MethodHandleReference(const constantPoolHandle& cp, u2 cp_index)
+      : MethodHandleReference(cp(), cp_index) { }
+  };
+
+  // CONSTANT_MethodType is very simple.  It has only a signature, not
+  // even a name&type.  But for better uniformity we will wrap it up.
+  class MethodTypeReference : public NTReference {
+   public:
+    // You can always create a blank one, containing only zeroes.
+    MethodTypeReference() { }
+
+    MethodTypeReference(const ConstantPool* cp, u2 cp_index) {
+      DEBUG_ONLY(record_cp(cp));
+      assert_valid_tag(cp, cp_index, is_method_type_or_error());
+      int signature_index = *cp->int_at_addr(cp_index);
+      _signature_index = signature_index;
+      _tag = JVM_CONSTANT_MethodType;
+    }
+    MethodTypeReference(const constantPoolHandle& cp, u2 cp_index)
+      : MethodTypeReference(cp(), cp_index) { }
+  };
+
+  // A single entry from a BootstrapMethods (BSM) attribute.
+  // It is an overlaid view of two or more consuctive u2 words within the
+  // ConstantPool::bsm_attribute_entries array.
+  // To its closest friends, a BSMAttributeEntry goes by the name "bsme".
+  class BSMAttributeEntry {
+   private:
+    u2 _bootstrap_method_index;
+    u2 _argument_count;
+    // C++ does not have a "Flexible Array Member" feature.
+    //u2 _argument_indexes[_argument_count];
+    const u2* argument_indexes() const { return (const u2*)(this+1); }
+
+    // These are overlays on top of Array<u2> data.  Do not construct.
+    BSMAttributeEntry() { ShouldNotReachHere(); }
+
+    // See also parse_classfile_bootstrap_methods_attribute in the class
+    // file parser, which builds this layout.
+
+   public:
+    int bootstrap_method_index() const { return _bootstrap_method_index; }
+    int argument_count()         const { return _argument_count; }
+    int argument_index(int n)    const { assert((uint)n < _argument_count, "oob");
+                                         return argument_indexes()[n];
+                                       }
+
+    // utility methods for mapping BSM index to the metadata item
+    MethodHandleReference bootstrap_method(const ConstantPool* cp) const {
+      return MethodHandleReference(cp, bootstrap_method_index());
+    }
+    // and a duplicate for clients holding a CP handle
+    MethodHandleReference bootstrap_method(const constantPoolHandle& cp) const {
+      return bootstrap_method(cp());
+    }
+
+   private:
+    // how to locate one of these inside a packed u2 data array:
+    friend class ConstantPool;  // uses entry_at_offset
+    static BSMAttributeEntry* entry_at_offset(Array<u2>* entries, int offset) {
+      assert(0 <= offset && offset+2 <= entries->length(), "oob-1");
+      // do not bother to copy u2 data; just overlay the struct within the array
+      BSMAttributeEntry* bsme = (BSMAttributeEntry*) entries->adr_at(offset);
+      assert(offset+2+bsme->argument_count() <= entries->length(), "oob-2");
+      return bsme;
+    }
+  };
+
+  BSMAttributeEntry* bsm_attribute_entry(int bsm_attribute_index) const {
+    int offset = bsm_attribute_offsets()->at(bsm_attribute_index);
+    return BSMAttributeEntry::entry_at_offset(bsm_attribute_entries(), offset);
+  }
+  int bsm_attribute_count() const {
+    if (bsm_attribute_offsets() == nullptr)  return 0;  // just in case
+    return bsm_attribute_offsets()->length();
+  }
+
+  // Compare BSM attribute entries between two CPs
+  bool compare_bsme_to(int bsme_index1, const constantPoolHandle& cp2,
+                       int bsme_index2);
+  // Find a matching BSM attribute entries in another CP
+  int find_matching_bsme(int bsme_index, const constantPoolHandle& search_cp,
+                         int search_len);
+  // Resize the BSM data arrays with delta_len and delta_size
+  void resize_bsm_data(int delta_len, int delta_size, TRAPS);
+  // Extend the BSM data arrays with the length and size of the BSM data in ext_cp
+  void extend_bsm_data(const constantPoolHandle& ext_cp, TRAPS);
+  // Shrink the BSM data arrays to a smaller array with new_len length
+  void shrink_bsm_data(int new_len, TRAPS);
+
+  // CONSTANT_InvokeDynamic, CONSTANT_Dynamic
+  class BootstrapReference : public RawReference {
+   public:
+    int bsme_index() const        { return third_index(); }
+
+    BSMAttributeEntry* bsme(const ConstantPool* cp) const {
+      assert(is_same_cp(cp), "wrong CP pointer");
+      return cp->bsm_attribute_entry(bsme_index());
+    }
+    // and a duplicate for clients holding a CP handle
+    BSMAttributeEntry* bsme(const constantPoolHandle& cp) const {
+      return bsme(cp());
+    }
+
+    // You can always create a blank one, containing only zeroes.
+    BootstrapReference() { }
+
+    // usage:
+    //   BootstrapReference bsref(my_cp, my_cp_index);
+    //   int ni = bsref.name_index();
+    //   Symbol* sig = bsref.signature(my_cp);
+    //   BSMAttributeEntry* bsme = bsref.bsme(my_cp);
+    BootstrapReference(const ConstantPool* cp, u2 cp_index) {
+      assert_valid_tag(cp, cp_index, has_bootstrap());
+      *(RawReference*)this = RawReference(cp, cp_index);
+      assert(sizeof(*this) == sizeof(RawReference), "no new fields in this class");
+    }
+    BootstrapReference(const constantPoolHandle& cp, u2 cp_index)
+      : BootstrapReference(cp(), cp_index) { }
+
+    BootstrapReference(const ConstantPool* cp, int cp_cache_index, Bytecodes::Code code)
+      : BootstrapReference(cp, cp->to_cp_index(cp_cache_index, code)) { }
+    BootstrapReference(const constantPoolHandle& cp, int cp_cache_index, Bytecodes::Code code)
+      : BootstrapReference(cp(), cp_cache_index, code) { }
+  };
 
   // Sharing
   int pre_resolve_shared_klasses(TRAPS);
@@ -798,12 +1082,12 @@ private:
 
   // Used while constructing constant pool (only by ClassFileParser)
   jint klass_index_at(int cp_index) {
-    assert(tag_at(cp_index).is_klass_index(), "Corrupted constant pool");
+    assert_valid_tag(this, cp_index, is_klass_index());
     return *int_at_addr(cp_index);
   }
 
   jint string_index_at(int cp_index) {
-    assert(tag_at(cp_index).is_string_index(), "Corrupted constant pool");
+    assert_valid_tag(this, cp_index, is_string_index());
     return *int_at_addr(cp_index);
   }
 
@@ -822,7 +1106,8 @@ private:
 
   static oop resolve_constant_at_impl(const constantPoolHandle& this_cp, int cp_index, int cache_index,
                                       bool* status_return, TRAPS);
-  static void copy_bootstrap_arguments_at_impl(const constantPoolHandle& this_cp, int cp_index,
+  static void copy_bootstrap_arguments_at_impl(const constantPoolHandle& this_cp,
+                                               int bsme_index,
                                                int start_arg, int end_arg,
                                                objArrayHandle info, int pos,
                                                bool must_resolve, Handle if_not_available, TRAPS);
@@ -842,7 +1127,7 @@ private:
   }
   static void copy_cp_to_impl(const constantPoolHandle& from_cp, int start_cpi, int end_cpi, const constantPoolHandle& to_cp, int to_cpi, TRAPS);
   static void copy_entry_to(const constantPoolHandle& from_cp, int from_cpi, const constantPoolHandle& to_cp, int to_cpi);
-  static void copy_operands(const constantPoolHandle& from_cp, const constantPoolHandle& to_cp, TRAPS);
+  static void copy_bsm_data(const constantPoolHandle& from_cp, const constantPoolHandle& to_cp, TRAPS);
   int  find_matching_entry(int pattern_i, const constantPoolHandle& search_cp);
   int  version() const                    { return _saved._version; }
   void set_version(int version)           { _saved._version = version; }
@@ -904,19 +1189,31 @@ private:
   const char* internal_name() const { return "{constant pool}"; }
 
   // ResolvedFieldEntry getters
-  inline ResolvedFieldEntry* resolved_field_entry_at(int field_index);
+  inline ResolvedFieldEntry* resolved_field_entry_at(int field_index) const;
   inline int resolved_field_entries_length() const;
 
   // ResolvedMethodEntry getters
-  inline ResolvedMethodEntry* resolved_method_entry_at(int method_index);
+  inline ResolvedMethodEntry* resolved_method_entry_at(int method_index) const;
   inline int resolved_method_entries_length() const;
   inline oop appendix_if_resolved(int method_index) const;
 
   // ResolvedIndyEntry getters
-  inline ResolvedIndyEntry* resolved_indy_entry_at(int index);
+  inline ResolvedIndyEntry* resolved_indy_entry_at(int index) const;
   inline int resolved_indy_entries_length() const;
   inline oop resolved_reference_from_indy(int index) const;
   inline oop resolved_reference_from_method(int index) const;
+
+  #undef assert_valid_tag
 };
+
+// FIXME: Do we want these?
+using KlassReference = ConstantPool::KlassReference;
+using NTReference = ConstantPool::NTReference;
+using RawReference = ConstantPool::RawReference;
+using FMReference = ConstantPool::FMReference;
+using BootstrapReference = ConstantPool::BootstrapReference;
+using MethodHandleReference = ConstantPool::MethodHandleReference;
+using MethodTypeReference = ConstantPool::MethodTypeReference;
+using BSMAttributeEntry = ConstantPool::BSMAttributeEntry;
 
 #endif // SHARE_OOPS_CONSTANTPOOL_HPP
