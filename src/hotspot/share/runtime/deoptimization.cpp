@@ -1452,13 +1452,13 @@ public:
   }
 };
 
-// Keep in sync with ciInstanceKlass::compute_nonstatic_fields
-static int sort_field_by_offset(ReassignedField* left, ReassignedField* right) {
-  return left->_offset - right->_offset;
-}
-
-static void append_fields(GrowableArray<ReassignedField>* fields, InstanceKlass* ik, bool is_jvmci) {
-  for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
+// Gets the fields of `klass` that are eliminated by escape analysis and need to be reassigned
+static GrowableArray<ReassignedField>* get_reassigned_fields(InstanceKlass* klass, GrowableArray<ReassignedField>* fields, bool is_jvmci) {
+  InstanceKlass* super = klass->superklass();
+  if (super != nullptr) {
+    get_reassigned_fields(super, fields, is_jvmci);
+  }
+  for (AllFieldStream fs(klass); !fs.done(); fs.next()) {
     if (!fs.access_flags().is_static() && (is_jvmci || !fs.field_flags().is_injected())) {
       ReassignedField field;
       field._offset = fs.offset();
@@ -1466,37 +1466,12 @@ static void append_fields(GrowableArray<ReassignedField>* fields, InstanceKlass*
       fields->append(field);
     }
   }
-}
-
-// Gets the fields of `klass` that are eliminated by escape analysis and need to be reassigned
-static GrowableArray<ReassignedField>* get_reassigned_fields(InstanceKlass* klass, bool is_jvmci) {
-  GrowableArray<ReassignedField>* fields = new GrowableArray<ReassignedField>();
-  InstanceKlass* ik = klass;
-  if (is_jvmci) {
-    // JVMCI uses HotSpotResolvedObjectTypeImpl.getInstanceFields
-    GrowableArray<InstanceKlass*>* hierarchy = new GrowableArray<InstanceKlass*>();
-    while (ik != nullptr) {
-      hierarchy->append(ik);
-      ik = ik->superklass();
-    }
-    for (int i = hierarchy->length() - 1; i >= 0; i--) {
-      ik = hierarchy->at(i);
-      append_fields(fields, ik, true);
-    }
-  } else {
-    // C2 uses sort_field_by_offset (see ciInstanceKlass::compute_nonstatic_fields)
-    while (ik != nullptr) {
-      append_fields(fields, ik, false);
-      ik = ik->superklass();
-    }
-    fields->sort(sort_field_by_offset);
-  }
   return fields;
 }
 
 // Restore fields of an eliminated instance object employing the same field order used by the compiler.
 static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap* reg_map, ObjectValue* sv, int svIndex, oop obj, bool is_jvmci) {
-  GrowableArray<ReassignedField>* fields = get_reassigned_fields(klass, is_jvmci);
+  GrowableArray<ReassignedField>* fields = get_reassigned_fields(klass, new GrowableArray<ReassignedField>(), is_jvmci);
   for (int i = 0; i < fields->length(); i++) {
     ScopeValue* scope_field = sv->field_at(svIndex);
     StackValue* value = StackValue::create_stack_value(fr, reg_map, scope_field);
