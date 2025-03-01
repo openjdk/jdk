@@ -28,6 +28,7 @@
 #include "interpreter/bytecode.hpp"
 
 #include "oops/cpCache.inline.hpp"
+#include "prims/methodHandles.hpp"
 
 inline bool Bytecode_invoke::has_appendix() {
   if (invoke_code() == Bytecodes::_invokedynamic) {
@@ -35,6 +36,10 @@ inline bool Bytecode_invoke::has_appendix() {
   } else {
     return resolved_method_entry()->has_appendix();
   }
+}
+
+inline bool Bytecode_invoke::has_member_arg() const {
+  return !is_invokedynamic() && MethodHandles::has_member_arg(klass(), name());
 }
 
 #endif // SHARE_INTERPRETER_BYTECODE_INLINE_HPP
