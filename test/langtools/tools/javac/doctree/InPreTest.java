@@ -201,13 +201,12 @@ DocComment[DOC_COMMENT, pos:1
 */
 
     /**
-     * <pre>{@snippet :
-     *   snippet
-     *   text
+     * <pre>{@index term line1
+     *   line2
      * }</pre>
      */
     @NormalizeTags(false) // see DocCommentTester.PrettyChecker
-    public void snippet_in_pre() { }
+    public void in_pre_with_inline_tag() { }
 /*
 DocComment[DOC_COMMENT, pos:1
   firstSentence: 2
@@ -215,13 +214,45 @@ DocComment[DOC_COMMENT, pos:1
       name:pre
       attributes: empty
     ]
-    Snippet[SNIPPET, pos:6
-      attributes: empty
-      body:
-        Text[TEXT, pos:18, ___snippet|___text|_]
+    Index[INDEX, pos:6
+      term:
+        Text[TEXT, pos:14, term]
+      description: 1
+        Text[TEXT, pos:19, line1|___line2|_]
     ]
   body: 1
-    EndElement[END_ELEMENT, pos:39, pre]
+    EndElement[END_ELEMENT, pos:36, pre]
+  block tags: empty
+]
+*/
+
+    /**
+     * <pre><span title="line1
+     *   line2
+     *   line3"></span></pre>
+     */
+    @NormalizeTags(false) // see DocCommentTester.PrettyChecker
+    public void in_pre_with_html_attr() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 3
+    StartElement[START_ELEMENT, pos:1
+      name:pre
+      attributes: empty
+    ]
+    StartElement[START_ELEMENT, pos:6
+      name:span
+      attributes: 1
+        Attribute[ATTRIBUTE, pos:12
+          name: title
+          vkind: DOUBLE
+          value: 1
+            Text[TEXT, pos:19, line1|___line2|___line3]
+        ]
+    ]
+    EndElement[END_ELEMENT, pos:44, span]
+  body: 1
+    EndElement[END_ELEMENT, pos:51, pre]
   block tags: empty
 ]
 */
