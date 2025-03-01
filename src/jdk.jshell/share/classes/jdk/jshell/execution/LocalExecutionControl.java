@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,15 @@ import java.lang.constant.ConstantDescs;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.Label;
 import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.instruction.LabelTarget;
 
 /**
  * An implementation of {@link jdk.jshell.spi.ExecutionControl} which executes
@@ -90,11 +94,24 @@ public class LocalExecutionControl extends DirectExecutionControl {
     private static byte[] instrument(byte[] classFile) {
         var cc = ClassFile.of();
         return cc.transformClass(cc.parse(classFile),
-                        ClassTransform.transformingMethodBodies((cob, coe) -> {
-                            if (coe instanceof BranchInstruction)
-                                cob.invokestatic(CD_Cancel, "stopCheck", ConstantDescs.MTD_void);
-                            cob.with(coe);
-                        }));
+                        ClassTransform.transformingMethodBodies(
+                            CodeTransform.ofStateful(() -> {
+                                HashSet<Label> prior = new HashSet<>();
+                                return (cob, coe) -> {
+                                    switch (coe) {
+                                    case BranchInstruction branch:
+                                        if (prior.contains(branch.target()))
+                                            cob.invokestatic(CD_Cancel, "stopCheck", ConstantDescs.MTD_void);
+                                        break;
+                                    case LabelTarget target:
+                                        prior.add(target.label());
+                                        break;
+                                    default:
+                                        break;
+                                    }
+                                    cob.with(coe);
+                                };
+                            })));
     }
 
     private static ClassBytecodes genCancelClass() {
