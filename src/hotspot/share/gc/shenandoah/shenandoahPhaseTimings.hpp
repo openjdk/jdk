@@ -57,6 +57,7 @@ class outputStream;
   f(init_swap_rset,                                 "  Swap Remembered Set")           \
   f(init_transfer_satb,                             "  Transfer Old From SATB")        \
   f(init_update_region_states,                      "  Update Region States")          \
+  f(init_propagate_gc_state,                        "  Propagate GC State")            \
                                                                                        \
   f(init_scan_rset,                                 "Concurrent Scan Remembered Set")  \
   SHENANDOAH_PAR_PHASE_DO(init_scan_rset_,          "  RS: ", f)                       \
@@ -70,6 +71,7 @@ class outputStream;
   f(final_mark_gross,                               "Pause Final Mark (G)")            \
   f(final_mark,                                     "Pause Final Mark (N)")            \
   f(finish_mark,                                    "  Finish Mark")                   \
+  f(final_mark_propagate_gc_state,                  "  Propagate GC State")            \
   SHENANDOAH_PAR_PHASE_DO(finish_mark_,             "    FM: ", f)                     \
   f(purge,                                          "  System Purge")                  \
   SHENANDOAH_PAR_PHASE_DO(purge_cu_par_,            "      CU: ", f)                   \
@@ -107,6 +109,7 @@ class outputStream;
   f(promote_in_place,                               "Concurrent Promote Regions")      \
   f(final_roots_gross,                              "Pause Final Roots (G)")           \
   f(final_roots,                                    "Pause Final Roots (N)")           \
+  f(final_roots_propagate_gc_state,                 "  Propagate GC State")            \
                                                                                        \
   f(init_update_refs_gross,                         "Pause Init Update Refs (G)")      \
   f(init_update_refs,                               "Pause Init Update Refs (N)")      \
@@ -121,6 +124,7 @@ class outputStream;
   f(final_update_refs_update_region_states,         "  Update Region States")          \
   f(final_update_refs_trash_cset,                   "  Trash Collection Set")          \
   f(final_update_refs_rebuild_freeset,              "  Rebuild Free Set")              \
+  f(final_update_refs_propagate_gc_state,           "  Propagate GC State")            \
                                                                                        \
   f(conc_cleanup_complete,                          "Concurrent Cleanup")              \
   f(conc_coalesce_and_fill,                         "Concurrent Coalesce and Fill")    \
@@ -157,6 +161,7 @@ class outputStream;
   f(degen_gc_promote_regions,                       "  Degen Promote Regions")         \
   f(degen_gc_coalesce_and_fill,                     "  Degen Coalesce and Fill")       \
   SHENANDOAH_PAR_PHASE_DO(degen_coalesce_,          "    DC&F", f)                     \
+  f(degen_gc_propagate_gc_state,                    "  Propagate GC State")            \
                                                                                        \
   f(full_gc_gross,                                  "Pause Full GC (G)")               \
   f(full_gc,                                        "Pause Full GC (N)")               \
@@ -188,6 +193,7 @@ class outputStream;
   f(full_gc_copy_objects_rebuild,                   "    Rebuild Region Sets")         \
   f(full_gc_reconstruct_remembered_set,             "    Reconstruct Remembered Set")  \
   f(full_gc_heapdump_post,                          "  Post Heap Dump")                \
+  f(full_gc_propagate_gc_state,                     "  Propagate GC State")            \
                                                                                        \
   f(pacing,                                         "Pacing")                          \
                                                                                        \

@@ -36,8 +36,8 @@ public class MethodHandleHelper {
     private MethodHandleHelper() { }
 
     public static final Lookup IMPL_LOOKUP = Lookup.IMPL_LOOKUP;
-    public static final Class<?> MHN_CALL_SITE_CONTEXT_CLASS
-            = MethodHandleNatives.CallSiteContext.class;
+    public static final Class<?> JLI_CALL_SITE_CLASS
+            = java.lang.invoke.CallSite.class;
 
     public static void customize(MethodHandle mh) {
         mh.customize();

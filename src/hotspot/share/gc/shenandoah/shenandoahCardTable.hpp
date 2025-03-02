@@ -30,6 +30,8 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/macros.hpp"
 
+#define ShenandoahMinCardSizeInBytes 128
+
 class ShenandoahCardTable: public CardTable {
   friend class VMStructs;
 

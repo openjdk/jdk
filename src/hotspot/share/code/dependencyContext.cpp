@@ -167,12 +167,6 @@ void DependencyContext::clean_unloading_dependents() {
   }
 }
 
-nmethodBucket* DependencyContext::release_and_get_next_not_unloading(nmethodBucket* b) {
-  nmethodBucket* next = b->next_not_unloading();
-  release(b);
-  return next;
- }
-
 //
 // Invalidate all dependencies in the context
 void DependencyContext::remove_all_dependents() {
@@ -213,18 +207,6 @@ void DependencyContext::remove_all_dependents() {
   set_dependencies(nullptr);
 }
 
-void DependencyContext::remove_and_mark_for_deoptimization_all_dependents(DeoptimizationScope* deopt_scope) {
-  nmethodBucket* b = dependencies_not_unloading();
-  set_dependencies(nullptr);
-  while (b != nullptr) {
-    nmethod* nm = b->get_nmethod();
-    // Also count already (concurrently) marked nmethods to make sure
-    // deoptimization is triggered before execution in this thread continues.
-    deopt_scope->mark(nm);
-    b = release_and_get_next_not_unloading(b);
-  }
-}
-
 #ifndef PRODUCT
 bool DependencyContext::is_empty() {
   return dependencies() == nullptr;
@@ -236,7 +218,7 @@ void DependencyContext::print_dependent_nmethods(bool verbose) {
     nmethod* nm = b->get_nmethod();
     tty->print("[%d] { ", idx++);
     if (!verbose) {
-      nm->print_on(tty, "nmethod");
+      nm->print_on_with_msg(tty, "nmethod");
       tty->print_cr(" } ");
     } else {
       nm->print();

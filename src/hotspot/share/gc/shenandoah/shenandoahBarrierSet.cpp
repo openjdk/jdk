@@ -119,9 +119,9 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
     // The JIT'ed code will use this address (+card entry offset) to mark the card as dirty.
     ShenandoahThreadLocalData::set_card_table(thread, _card_table->write_byte_map_base());
   }
+  ShenandoahThreadLocalData::set_gc_state(thread, _heap->gc_state());
 
   if (thread->is_Java_thread()) {
-    ShenandoahThreadLocalData::set_gc_state(thread, _heap->gc_state());
     ShenandoahThreadLocalData::initialize_gclab(thread);
 
     BarrierSetNMethod* bs_nm = barrier_set_nmethod();
