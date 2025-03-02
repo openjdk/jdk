@@ -710,8 +710,39 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    @FunctionalInterface
+    public interface CannedArgument {
+        public String value(JPackageCommand cmd);
+    }
+
+    public static Object cannedArgument(Function<JPackageCommand, Object> supplier, String label) {
+        Objects.requireNonNull(supplier);
+        Objects.requireNonNull(label);
+        return new CannedArgument() {
+            @Override
+            public String value(JPackageCommand cmd) {
+                return supplier.apply(cmd).toString();
+            }
+
+            @Override
+            public String toString( ) {
+                return label;
+            }
+        };
+    }
+
+    public String getValue(CannedFormattedString str) {
+        return new CannedFormattedString(str.formatter(), str.key(), Stream.of(str.args()).map(arg -> {
+            if (arg instanceof CannedArgument cannedArg) {
+                return cannedArg.value(this);
+            } else {
+                return arg;
+            }
+        }).toArray()).getValue();
+    }
+
     public JPackageCommand validateOutput(CannedFormattedString str) {
-        return JPackageCommand.this.validateOutput(TKit.assertTextStream(str.getValue()));
+        return validateOutput(TKit.assertTextStream(getValue(str)));
     }
 
     public boolean isWithToolProvider() {
