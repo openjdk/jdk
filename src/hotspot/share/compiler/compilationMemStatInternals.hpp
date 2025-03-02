@@ -244,8 +244,6 @@ class ArenaStatCounter : public CHeapObj<mtCompiler> {
 
   int retrieve_live_node_count() const;
 
-  DEBUG_ONLY(void verify() const;)
-
 public:
   ArenaStatCounter(const CompileTask* task, size_t limit);
 

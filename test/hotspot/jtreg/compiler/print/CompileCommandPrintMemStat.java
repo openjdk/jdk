@@ -78,6 +78,9 @@ public class CompileCommandPrintMemStat {
             options.add("-XX:TieredStopAtLevel=1");
         }
         options.add("-XX:CompileCommand=MemStat," + getTestMethod(include) + ",print");
+        options.add("-XX:+UnlockDiagnosticVMOptions");
+        options.add("-XX:+PrintCompilerMemoryStatisticsAtExit");
+
         options.add(getTestClass());
 
         OutputAnalyzer oa = ProcessTools.executeTestJava(options);

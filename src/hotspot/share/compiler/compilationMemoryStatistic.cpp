@@ -416,22 +416,6 @@ void ArenaStatCounter::print_peak_state_on(outputStream* st) const {
   }
 }
 
-#ifdef ASSERT
-void ArenaStatCounter::verify() const {
-  assert(_current <= _peak, "Sanity");
-#ifdef COMPILER2
-  size_t sum = 0;
-  for (int phaseid = 0; phaseid < phase_trc_id_max; phaseid++) {
-    for (int arena_tag = 0; arena_tag < arena_tag_max; arena_tag ++) {
-      sum += _counters_at_global_peak.at(phaseid, arena_tag);
-    }
-  }
-  assert(sum == _peak, "per phase counter mismatch - %zu, expected %zu", sum, _peak);
-#endif
-}
-#endif // ASSERT
-
-
 class MemStatEntry : public CHeapObj<mtCompiler> {
 
   FullMethodName _fmn;
