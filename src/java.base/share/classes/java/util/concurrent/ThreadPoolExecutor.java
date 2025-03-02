@@ -1675,6 +1675,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             throw new IllegalArgumentException("time must be non-negative");
         if (time == 0 && allowsCoreThreadTimeOut())
             throw new IllegalArgumentException("Core threads must have nonzero keep alive times");
+        Objects.requireNonNull(unit, "unit");
         long keepAliveTime = unit.toNanos(time);
         long delta = keepAliveTime - this.keepAliveTime;
         this.keepAliveTime = keepAliveTime;

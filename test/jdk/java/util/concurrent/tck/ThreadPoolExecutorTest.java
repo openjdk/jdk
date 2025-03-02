@@ -41,22 +41,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.*;
 import java.util.concurrent.ThreadPoolExecutor.AbortPolicy;
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.ThreadPoolExecutor.DiscardPolicy;
@@ -1417,6 +1402,25 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                 shouldThrow();
             } catch (IllegalArgumentException success) {
                 Assert.assertEquals("keepAliveTime must be non-negative");
+            }
+        }
+    }
+
+    /**
+     * setKeepAliveTime throws IllegalArgumentException
+     * when given a null unit
+     */
+    public void testKeepAliveTimeIllegalArgumentException() {
+        final ThreadPoolExecutor p =
+            new ThreadPoolExecutor(2, 3,
+                LONG_DELAY_MS, MILLISECONDS,
+                new ArrayBlockingQueue<Runnable>(10));
+        try (PoolCleaner cleaner = cleaner(p)) {
+            try {
+                p.setKeepAliveTime(1, (TimeUnit) null);
+                shouldThrow();
+            } catch (IllegalArgumentException success) {
+                Assert.assertEquals("unit", success.getMessage());
             }
         }
     }
