@@ -36,6 +36,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.HelloApp;
@@ -381,7 +382,10 @@ public final class BasicTest {
         );
 
         if (TestTempType.TEMPDIR_NOT_EMPTY.equals(type)) {
-            pkgTest.setExpectedExitCode(1).addBundleVerifier(cmd -> {
+            pkgTest.setExpectedExitCode(1).addInitializer(cmd -> {
+                cmd.validateOutput(JPackageStringBundle.MAIN.cannedFormattedString(
+                        "ERR_BuildRootInvalid", cmd.getArgumentValue("--temp")));
+            }).addBundleVerifier(cmd -> {
                 // Check jpackage didn't use the supplied directory.
                 Path tempDir = Path.of(cmd.getArgumentValue("--temp"));
                 TKit.assertDirectoryContent(tempDir).match(Path.of("foo.txt"));
