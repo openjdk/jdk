@@ -48,6 +48,8 @@ import static compiler.lib.template_framework.Template.$;
 import compiler.lib.template_library.Library;
 import compiler.lib.template_library.IRTestClass;
 import compiler.lib.template_library.Type;
+import compiler.lib.template_library.PrimitiveType;
+import compiler.lib.template_library.VectorAPIType;
 import compiler.lib.template_library.Expression;
 import compiler.lib.template_library.Value;
 
@@ -141,11 +143,76 @@ public class TestFuzzVectorAPI {
             """
         ));
 
+        // Example 2:
+        // We use the expression to iterate over arrays, loading from a set of input arrays,
+        // and storing to an output array.
+        var template2 = Template.make("type", (VectorAPIType type)-> {
+            int size = 1000;
+            Expression expression = Expression.make(type, Type.ALL_BUILTIN_TYPES, 4);
+            List<Type> types = expression.types();
+            List<TemplateWithArgs> arrayDefinitions = new ArrayList<>();
+            List<Object> args = new ArrayList<>();
+            for (int i = 0; i < types.size(); i++) {
+                String name = $("array") + "_" + i;
+                Type argType = types.get(i);
+                PrimitiveType elementType = null;
+                if (argType instanceof PrimitiveType t) {
+                    elementType = t;
+                    args.add(name + "[0]");
+                } else if (argType instanceof VectorAPIType vt) {
+                    elementType = vt.elementType;
+                    args.add(vt.vectorType + ".fromArray(" + vt.species + ", " + name + ", 0)");
+                }
+                arrayDefinitions.add(defineArray.withArgs(elementType, name, size));
+            }
+            return body(
+                let("size", size),
+                let("elementType", type.elementType),
+                """
+                // --- $test start ---
+                // Using $GOLD
+                // type: #type
+                // elementType: #elementType
+                """,
+                Library.CLASS_HOOK.set(
+                    """
+                    // Input arrays:
+                    """,
+                    arrayDefinitions,
+                    """
+
+                    static final Object $GOLD = $test();
+
+                    @Test
+                    public static Object $test() {
+                        try {
+                            #elementType[] out = new #elementType[#size];
+                    """,
+                    "        ", expression.withArgs(args), ".intoArray(out, 0);\n",
+                    """
+                            return out;
+                        } catch (Exception e) {
+                            return e;
+                        }
+                    }
+
+                    @Check(test = "$test")
+                    public static void $check(Object result) {
+                        Verify.checkEQ(result, $GOLD);
+                    }
+
+                    // --- $test end   ---
+                    """
+                )
+            );
+        });
+
         // Now use the templates and add them into the IRTestClass.
         List<TemplateWithArgs> templates = new ArrayList<>();
         templates.add(Library.arrayFillMethods());
-        for (Type type : Type.VECTOR_API_TYPES) {
-            for (int i = 0; i < 20; i++) { templates.add(template1.withArgs(type)); }
+        for (VectorAPIType type : Type.VECTOR_API_TYPES) {
+            for (int i = 0; i < 10; i++) { templates.add(template1.withArgs(type)); }
+            for (int i = 0; i <  5; i++) { templates.add(template2.withArgs(type)); }
         }
         return IRTestClass.TEMPLATE.withArgs(info, templates).render();
     }
