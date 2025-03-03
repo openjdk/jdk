@@ -25,9 +25,7 @@ import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
 
 /**
- * Tests generation of app image with --mac-app-store and --jlink-options. jpackage should able
- * to generate app image if "--strip-native-commands" is specified for --jlink-options and should
- * fail if it is not specified.
+ * Tests generation of app image with --mac-app-store and --jlink-options.
  */
 
 /*
@@ -49,14 +47,5 @@ public class MacAppStoreJLinkOptionsTest {
                 "--strip-debug --no-man-pages --no-header-files --strip-native-commands");
 
         cmd.executeAndAssertHelloAppImageCreated();
-    }
-
-    @Test
-    public static void testWithoutStripNativeCommands() throws Exception {
-        JPackageCommand cmd = JPackageCommand.helloAppImage();
-        cmd.addArguments("--mac-app-store", "--jlink-options",
-                "--strip-debug --no-man-pages --no-header-files");
-
-        cmd.execute(1);
     }
 }
