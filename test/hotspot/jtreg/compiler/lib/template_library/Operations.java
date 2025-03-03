@@ -314,7 +314,7 @@ final class Operations {
         List<Operation> ops = new ArrayList<Operation>();
 
         for (var type : Type.VECTOR_API_TYPES) {
-            ops.add(new Operation.Unary(type, type.vectorType + ".broadcast(", type.elementType, ")"));
+            ops.add(new Operation.Unary(type, type.vectorType + ".broadcast(" + type.species + ", ", type.elementType, ")"));
         }
 
         // Ensure the list is immutable.
