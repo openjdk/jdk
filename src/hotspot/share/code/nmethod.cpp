@@ -1381,6 +1381,197 @@ nmethod::nmethod(
   }
 }
 
+nmethod::nmethod(nmethod& nm) : CodeBlob(nm.name(), CodeBlobKind::Nmethod, nm.size(), nm.header_size())
+{
+  debug_only(NoSafepointVerifier nsv;)
+  assert_locked_or_safepoint(CodeCache_lock);
+
+  // CodeBlob data
+  if (nm.oop_maps() == nullptr) {
+    _oop_maps                   = nullptr;
+  } else {
+    _oop_maps                   = nm.oop_maps()->clone();
+  }
+  _relocation_size              = nm._relocation_size;
+  _content_offset               = nm._content_offset;
+  _code_offset                  = nm._code_offset;
+  _data_offset                  = nm._data_offset;
+  _frame_size                   = nm._frame_size;
+  _frame_complete_offset        = nm._frame_complete_offset;
+  _caller_must_gc_arguments     = nm._caller_must_gc_arguments;
+
+  // nmethod data
+  _deoptimization_generation    = nm._deoptimization_generation;
+
+  _gc_epoch                     = nm._gc_epoch;
+
+  _osr_link                     = nm._osr_link;
+  _native_receiver_sp_offset    = nm._native_receiver_sp_offset;
+  _native_basic_lock_sp_offset  = nm._native_basic_lock_sp_offset;
+
+  // nmethod's read-only data
+  if (nm.immutable_data_size() > 0) {
+    _immutable_data = (address)os::malloc(nm.immutable_data_size(), mtCode);
+    memcpy(immutable_data_begin(), nm.immutable_data_begin(), nm.immutable_data_size());
+  } else {
+    _immutable_data = data_end();
+  }
+
+  _exception_cache            = nullptr;
+
+  _gc_data                    = nullptr;
+
+  _oops_do_mark_nmethods      = nm._oops_do_mark_nmethods;
+
+  _oops_do_mark_link          = nm._oops_do_mark_link;
+
+  _compiled_ic_data           = nullptr;
+
+  _osr_entry_point            = code_begin() + (nm._osr_entry_point - nm.code_begin());
+  _entry_offset               = nm._entry_offset;
+  _verified_entry_offset      = nm._verified_entry_offset;
+  _entry_bci                  = nm._entry_bci;
+  _immutable_data_size        = nm._immutable_data_size;
+
+  _skipped_instructions_size  = nm._skipped_instructions_size;
+
+  _stub_offset                = nm._stub_offset;
+
+  _exception_offset           = nm._exception_offset;
+
+  _deopt_handler_offset       = nm._deopt_handler_offset;
+  _deopt_mh_handler_offset    = nm._deopt_mh_handler_offset;
+  _unwind_handler_offset      = nm._unwind_handler_offset;
+
+  _num_stack_arg_slots        = nm._num_stack_arg_slots;
+
+  _metadata_offset            = nm._metadata_offset;
+
+#if INCLUDE_JVMCI
+  _jvmci_data_offset          = nm._jvmci_data_offset;
+#endif
+
+  _nul_chk_table_offset       = nm._nul_chk_table_offset;
+  _handler_table_offset       = nm._handler_table_offset;
+  _scopes_pcs_offset          = nm._scopes_pcs_offset;
+  _scopes_data_offset         = nm._scopes_data_offset;
+
+  if (nm._pc_desc_container == nullptr) {
+    _pc_desc_container        = nullptr;
+  } else {
+    _pc_desc_container        = new PcDescContainer(scopes_pcs_begin());
+  }
+
+#if INCLUDE_JVMCI
+  _speculations_offset        = nm._speculations_offset;
+#endif
+
+  _orig_pc_offset             = nm._orig_pc_offset;
+
+  _compile_id                 = nm._compile_id;
+  _comp_level                 = nm._comp_level;
+  _compiler_type              = nm._compiler_type;
+
+  _is_unloading_state         = nm._is_unloading_state;
+
+  _state                      = nm._state;
+
+  _has_unsafe_access          = nm._has_method_handle_invokes;
+  _has_method_handle_invokes  = nm._has_method_handle_invokes;
+  _has_wide_vectors           = nm._has_wide_vectors;
+  _has_monitors               = nm._has_monitors;
+  _has_scoped_access          = nm._has_scoped_access;
+  _has_flushed_dependencies   = nm._has_flushed_dependencies;
+  _is_unlinked                = nm._is_unlinked;
+  _load_reported              = nm._load_reported;
+
+  _deoptimization_status      = nm._deoptimization_status;
+
+  memcpy(relocation_begin(),    nm.relocation_begin(),    nm.relocation_size());
+  memcpy(consts_begin(),        nm.consts_begin(),        nm.consts_size());
+  memcpy(insts_begin(),         nm.insts_begin(),         nm.insts_size());
+  memcpy(stub_begin(),          nm.stub_begin(),          nm.stub_size());
+  memcpy((void*) oops_begin(),  (void*) nm.oops_begin(),  nm.oops_size());
+  memcpy(metadata_begin(),      nm.metadata_begin(),      nm.metadata_size());
+
+  RelocIterator iter(this);
+  CodeBuffer src((CodeBlob *)&nm);
+  CodeBuffer dst(this);
+  while (iter.next()) {
+    iter.reloc()->fix_relocation_after_move(&src, &dst);
+  }
+
+  ICache::invalidate_range(code_begin(), code_size());
+
+  post_init();
+
+  // Update corresponding Java method to point to this nmethod
+  MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
+  _method                     = nm._method;
+  nm._method                  = nullptr;
+  if (_method != nullptr) {
+    methodHandle mh(Thread::current(), _method);
+    _method->clear_code();
+    _method->clear_entry_points();
+    _method->set_code(mh, this);
+  }
+}
+
+nmethod* nmethod::relocate_to(nmethod* nm, CodeBlobType code_blob_type) {
+  if (nm == nullptr || nm->is_marked_for_deoptimization()) {
+    return nullptr;
+  }
+
+  // TODO Add check for already in correct heap
+
+  nmethod* nm_copy = nullptr;
+
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    nm_copy = new (nm->size(), code_blob_type) nmethod(*nm);
+
+    if (nm_copy != nullptr) {
+      // To make dependency checking during class loading fast, record
+      // the nmethod dependencies in the classes it is dependent on.
+      // This allows the dependency checking code to simply walk the
+      // class hierarchy above the loaded class, checking only nmethods
+      // which are dependent on those classes.  The slow way is to
+      // check every nmethod for dependencies which makes it linear in
+      // the number of methods compiled.  For applications with a lot
+      // classes the slow way is too slow.
+      for (Dependencies::DepStream deps(nm_copy); deps.next(); ) {
+        if (deps.type() == Dependencies::call_site_target_value) {
+          // CallSite dependencies are managed on per-CallSite instance basis.
+          oop call_site = deps.argument_oop(0);
+          MethodHandles::add_dependent_nmethod(call_site, nm_copy);
+        } else {
+          InstanceKlass* ik = deps.context_type();
+          if (ik == nullptr) {
+            continue;  // ignore things like evol_method
+          }
+          // record this nmethod as dependent on this klass
+          ik->add_dependent_nmethod(nm_copy);
+        }
+      }
+    }
+  }
+  // Do verification and logging outside CodeCache_lock.
+  if (nm_copy != nullptr) {
+    NOT_PRODUCT(note_java_nmethod(nm_copy));
+    // Safepoints in nmethod::verify aren't allowed because nm_copy hasn't been installed yet.
+    DEBUG_ONLY(nm_copy->verify();)
+    nm_copy->log_new_nmethod();
+  }
+
+  nm->make_not_used();
+
+  return nm_copy;
+}
+
+void* nmethod::operator new(size_t size, int nmethod_size, CodeBlobType code_blob_type) throw () {
+  return CodeCache::allocate(nmethod_size, code_blob_type);
+}
+
 void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) throw () {
   return CodeCache::allocate(nmethod_size, CodeCache::get_code_blob_type(comp_level));
 }
@@ -2238,7 +2429,11 @@ void nmethod::post_compiled_method_load_event(JvmtiThreadState* state) {
 }
 
 void nmethod::post_compiled_method_unload() {
-  assert(_method != nullptr, "just checking");
+  // Don't post if method was relocated
+  if (_method == nullptr) {
+    return;
+  }
+
   DTRACE_METHOD_UNLOAD_PROBE(method());
 
   // If a JVMTI agent has enabled the CompiledMethodUnload event then
