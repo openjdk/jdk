@@ -87,7 +87,6 @@ static address dilithiumAvx512PermsAddr() {
 
 void StubGenerator::generate_dilithium_stubs() {
   // Generate Dilithium intrinsics code
-  fprintf(stderr, "generate_dilithium_stubs() UseDilithiumIntrinsics = %d supports_evex() = %d\n", (int)UseDilithiumIntrinsics, (int)VM_Version::supports_evex());
   if (UseDilithiumIntrinsics) {
       StubRoutines::_dilithiumAlmostNtt = generate_dilithiumAlmostNtt_avx512();
       StubRoutines::_dilithiumAlmostInverseNtt = generate_dilithiumAlmostInverseNtt_avx512();

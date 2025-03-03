@@ -258,7 +258,7 @@ address StubGenerator::generate_sha3_implCompress(StubGenStubId stub_id) {
 
   // Do the cyclical permutation of the 24 moving state elements
   // and the required rotations within each element (the combined
-  // rho and sigma steps).
+  // rho and pi steps).
   __ evpermt2q(xmm4, xmm17, xmm3, Assembler::AVX_512bit);
   __ evpermt2q(xmm3, xmm18, xmm2, Assembler::AVX_512bit);
   __ evpermt2q(xmm2, xmm17, xmm1, Assembler::AVX_512bit);
@@ -280,7 +280,7 @@ address StubGenerator::generate_sha3_implCompress(StubGenStubId stub_id) {
   __ evpermt2q(xmm2, xmm24, xmm4, Assembler::AVX_512bit);
   __ evpermt2q(xmm3, xmm25, xmm4, Assembler::AVX_512bit);
   __ evpermt2q(xmm4, xmm26, xmm5, Assembler::AVX_512bit);
-  // The combined rho and sigma steps are done.
+  // The combined rho and pi steps are done.
 
   // Do the chi step (the same operation on all 5 rows).
   // vpternlogq(x, 180, y, z) does x = x ^ (y & ~z).
@@ -340,6 +340,9 @@ address StubGenerator::generate_sha3_implCompress(StubGenStubId stub_id) {
 // Inputs:
 //   c_rarg0   - long[]  state0
 //   c_rarg1   - long[]  state1
+//
+// Performs two keccak() computations in parallel. The steps of the
+// two computations are executed interleaved.
 address StubGenerator::generate_double_keccak() {
   __ align(CodeEntryAlignment);
   StubGenStubId stub_id = double_keccak_id;
@@ -404,6 +407,12 @@ address StubGenerator::generate_double_keccak() {
   __ evmovdquq(xmm31, Address(permsAndRots, 896), Assembler::AVX_512bit);
 
   // there will be 24 keccak rounds
+  // The same operations as the ones in generate_sha3_implCompress are
+  // performed, but in parallel for two states: one in regs z0-z5, using z6
+  // as the scratch register and the other in z10-z15, using z16 as the
+  // scratch register.
+  // The permutation and rotation constants, that are loaded into z17-z31,
+  // are shared between the two computations.
   __ movl(roundsLeft, 24);
   // load round_constants base
   __ movptr(constant2use, round_consts);
