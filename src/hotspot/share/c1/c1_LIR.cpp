@@ -1302,6 +1302,9 @@ void LIR_List::volatile_store_unsafe_reg(LIR_Opr src, LIR_Opr base, LIR_Opr offs
 }
 
 
+// FIXME: this needs to be a 3-input operation.
+// maybe give it its own handlers
+// FIXME: Maybe dump profile_limit for now
 void LIR_List::inc_profile_ctr(LIR_Opr src, LIR_Address* addr, LIR_Opr res, LIR_Opr tmp, int profile_limit) {
   append(new LIR_Op2(
             lir_inc_profile_ctr,

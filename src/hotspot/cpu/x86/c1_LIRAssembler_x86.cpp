@@ -1693,11 +1693,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
   assert_different_registers(obj, k_RInfo, klass_RInfo);
 
-
-
   __ testptr(obj, obj);
   if (op->should_profile()) {
-
     Label not_null;
     Register mdo  = klass_RInfo;
     __ mov_metadata(mdo, md->constant_encoding());
@@ -1711,7 +1708,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
     Label update_done;
 
-    __ maybe_skip(r14, k_RInfo, update_done);
+    __ maybe_skip_profiling(r14, k_RInfo, update_done);
 
     Register recv = k_RInfo;
     __ load_klass(recv, obj, tmp_load_klass);
@@ -2822,6 +2819,7 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
 
 
 void LIR_Assembler::align_call(LIR_Code code) {
+  // We do this here in order not affect call site alignment.
   if (ProfileCaptureRatio != 1)   __ movl(Address(r15_thread, JavaThread::profile_rng_offset()), r14);
 
   // make sure that the displacement word of the call ends up word aligned
@@ -3517,6 +3515,7 @@ void bar() {
   asm("nop");
 }
 
+// Rename to increment_profile_ctr
 void LIR_Assembler::inc_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op,
                                     int profile_limit) {
   Register temp = temp_op->as_register();
@@ -3526,6 +3525,7 @@ void LIR_Assembler::inc_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LI
 
   int profile_capture_ratio = ProfileCaptureRatio;
 
+  // FIXME: Use a fixed ProfileCaptureRatio for 1st patch
   if (profile_limit) {
     int ratio = sqrt(profile_limit);
     profile_capture_ratio = round_down_power_of_2(ratio);
@@ -3554,10 +3554,10 @@ void LIR_Assembler::inc_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LI
     __ jccb(Assembler::aboveEqual, dont);
 
     // __ call_VM_leaf_base(CAST_FROM_FN_PTR(address, &foo), 0);
-    if (getenv("APH_TRACE")) {
-      __ lea(temp, ExternalAddress((address)&ibar));
-      __ incl(Address(temp));
-    }
+    // if (getenv("APH_TRACE")) {
+    //   __ lea(temp, ExternalAddress((address)&ibar));
+    //   __ incl(Address(temp));
+    // }
 
     __ movl(temp, dest_adr);
     __ sall(inc, ratio_shift);
@@ -3573,10 +3573,10 @@ void LIR_Assembler::inc_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LI
           __ jccb(Assembler::aboveEqual, dont);
 
           // __ call_VM_leaf_base(CAST_FROM_FN_PTR(address, &foo), 0);
-          if (getenv("APH_TRACE")) {
-            __ lea(temp, ExternalAddress((address)&ibar));
-            __ incl(Address(temp));
-          }
+          // if (getenv("APH_TRACE")) {
+          //   __ lea(temp, ExternalAddress((address)&ibar));
+          //   __ incl(Address(temp));
+          // }
 
           __ movl(temp, dest_adr);
           __ addl(temp, inc);
@@ -3749,6 +3749,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   if (ProfileCaptureRatio != 1) {
 
     // Subsampling profile capture
+    // FIXME: Use maybe_skip here?
     int ratio_shift = exact_log2(ProfileCaptureRatio);
     int threshold = (1ull << 32) >> ratio_shift;
     // Can't use tmp here because sometimes obj == tmp!

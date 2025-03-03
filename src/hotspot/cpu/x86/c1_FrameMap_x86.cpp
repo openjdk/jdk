@@ -176,6 +176,9 @@ void FrameMap::initialize() {
   map_register( 7, r9);    r9_opr = LIR_OprFact::single_cpu(7);
   map_register( 8, r11);  r11_opr = LIR_OprFact::single_cpu(8);
   map_register( 9, r13);  r13_opr = LIR_OprFact::single_cpu(9);
+
+  // FIXME: Find a decent name instead of r14
+
   // r14 is allocated conditionally. It is used to hold the random
   // generator for profile counters.
   map_register(10, r14);  r14_opr = LIR_OprFact::single_cpu(10);

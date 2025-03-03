@@ -168,9 +168,6 @@ class JavaThread: public Thread {
   // attached thread cases where this field can have a temporary value.
   int64_t _monitor_owner_id;
 
-  // Random value for randomized profile counters.
-  uint32_t _profile_rng;
-
  public:
   void set_monitor_owner_id(int64_t id) {
     assert(id >= ThreadIdentifier::initial() && id < ThreadIdentifier::current(), "");
@@ -1261,6 +1258,9 @@ public:
 private:
   LockStack _lock_stack;
   OMCache _om_cache;
+
+  // Random value for randomized profile counters.
+  uint32_t _profile_rng;
 
 public:
   LockStack& lock_stack() { return _lock_stack; }

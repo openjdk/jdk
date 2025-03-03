@@ -10876,7 +10876,7 @@ void MacroAssembler::step_random(Register state, Register temp) {
   }
 }
 
-void MacroAssembler::maybe_skip(Register state, Register temp, Label &skip) {
+void MacroAssembler::maybe_skip_profiling(Register state, Register temp, Label &skip) {
   if (ProfileCaptureRatio != 1) {
     step_random(state, temp);
 
