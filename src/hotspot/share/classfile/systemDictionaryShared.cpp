@@ -1223,45 +1223,6 @@ bool SystemDictionaryShared::is_supported_invokedynamic(BootstrapInfo* bsi) {
   return false;
 }
 
-class EstimateSizeForArchive : StackObj {
-  size_t _shared_class_info_size;
-  int _num_builtin_klasses;
-  int _num_unregistered_klasses;
-
-public:
-  EstimateSizeForArchive() {
-    _shared_class_info_size = 0;
-    _num_builtin_klasses = 0;
-    _num_unregistered_klasses = 0;
-  }
-
-  void do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
-    if (!info.is_excluded()) {
-      size_t byte_size = info.runtime_info_bytesize();
-      _shared_class_info_size += align_up(byte_size, SharedSpaceObjectAlignment);
-    }
-  }
-
-  size_t total() {
-    return _shared_class_info_size;
-  }
-};
-
-size_t SystemDictionaryShared::estimate_size_for_archive() {
-  EstimateSizeForArchive est;
-  _dumptime_table->iterate_all_live_classes(&est);
-  size_t total_size = est.total() +
-    CompactHashtableWriter::estimate_size(_dumptime_table->count_of(true)) +
-    CompactHashtableWriter::estimate_size(_dumptime_table->count_of(false));
-
-  size_t bytesize = align_up(sizeof(RunTimeLambdaProxyClassInfo), SharedSpaceObjectAlignment);
-  total_size +=
-      (bytesize * _dumptime_lambda_proxy_class_dictionary->_count) +
-      CompactHashtableWriter::estimate_size(_dumptime_lambda_proxy_class_dictionary->_count);
-
-  return total_size;
-}
-
 unsigned int SystemDictionaryShared::hash_for_shared_dictionary(address ptr) {
   if (ArchiveBuilder::is_active()) {
     uintx offset = ArchiveBuilder::current()->any_to_offset(ptr);

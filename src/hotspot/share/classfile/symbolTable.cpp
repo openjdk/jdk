@@ -705,13 +705,6 @@ void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
   }
 }
 
-size_t SymbolTable::estimate_size_for_archive() {
-  if (_items_count > (size_t)max_jint) {
-    fatal("Too many symbols to be archived: %zu", _items_count);
-  }
-  return CompactHashtableWriter::estimate_size(int(_items_count));
-}
-
 void SymbolTable::write_to_archive(GrowableArray<Symbol*>* symbols) {
   CompactHashtableWriter writer(int(_items_count), ArchiveBuilder::symbol_stats());
   copy_shared_symbol_table(symbols, &writer);
