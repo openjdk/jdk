@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,15 @@ public final class X11GraphicsDevice extends GraphicsDevice
     private boolean shutdownHookRegistered;
     private int scale;
 
+    // Wayland clients are by design not allowed to change the resolution in Wayland.
+    // XRandR in Xwayland is just an emulation, it doesn't actually change the resolution.
+    // This emulation is per window/x11 client, so different clients can have
+    // different emulated resolutions at the same time.
+    // So any request to get the current display mode will always return
+    // the original screen resolution, even if we are in emulated resolution.
+    // To handle this situation, we store the last set display mode in this variable.
+    private volatile DisplayMode xwlCurrentDisplayMode;
+
     public X11GraphicsDevice(int screennum) {
         this.screen = screennum;
         this.scale = initScaleFactor();
@@ -117,6 +126,20 @@ public final class X11GraphicsDevice extends GraphicsDevice
 
     private Rectangle getBoundsImpl() {
         Rectangle rect = pGetBounds(getScreen());
+
+        if (XToolkit.isOnWayland() && xwlCurrentDisplayMode != null) {
+            // XRandR resolution change in Xwayland is an emulation,
+            // and implemented in such a way that multiple display modes
+            // for a device are only available in a single screen scenario,
+            // if we have multiple screens they will each have a single display mode
+            // (no emulated resolution change is available).
+            // So we don't have to worry about x and y for a screen here.
+            rect.setSize(
+                    xwlCurrentDisplayMode.getWidth(),
+                    xwlCurrentDisplayMode.getHeight()
+            );
+        }
+
         if (getScaleFactor() != 1) {
             rect.x = scaleDown(rect.x);
             rect.y = scaleDown(rect.y);
@@ -400,10 +423,19 @@ public final class X11GraphicsDevice extends GraphicsDevice
     @Override
     public synchronized DisplayMode getDisplayMode() {
         if (isFullScreenSupported()) {
+            if (XToolkit.isOnWayland() && xwlCurrentDisplayMode != null) {
+                return xwlCurrentDisplayMode;
+            }
+
             DisplayMode mode = getCurrentDisplayMode(screen);
             if (mode == null) {
                 mode = getDefaultDisplayMode();
             }
+
+            if (XToolkit.isOnWayland()) {
+                xwlCurrentDisplayMode = mode;
+            }
+
             return mode;
         } else {
             if (origDisplayMode == null) {
@@ -473,6 +505,10 @@ public final class X11GraphicsDevice extends GraphicsDevice
         configDisplayMode(screen,
                           dm.getWidth(), dm.getHeight(),
                           dm.getRefreshRate());
+
+        if (XToolkit.isOnWayland()) {
+            xwlCurrentDisplayMode = dm;
+        }
 
         // update bounds of the fullscreen window
         w.setBounds(0, 0, dm.getWidth(), dm.getHeight());
