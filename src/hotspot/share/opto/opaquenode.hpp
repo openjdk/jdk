@@ -119,7 +119,6 @@ public:
   }
 
   void set_useless() {
-    assert(_is_useful, "must still be useful");
     assert(_is_delayed_slow_loop, "must still be delayed");
     _is_useful = false;
   }
