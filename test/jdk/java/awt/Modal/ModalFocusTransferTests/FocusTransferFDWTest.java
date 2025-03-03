@@ -73,7 +73,7 @@ public class FocusTransferFDWTest {
 
     private static final int delay = 1000;
 
-    private final ExtendedRobot robot;
+    private final Robot robot;
 
     private final Dialog.ModalityType modalityType;
 
@@ -81,7 +81,7 @@ public class FocusTransferFDWTest {
 
         modalityType = modType;
 
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeLater(this::createGUI);
     }
 
