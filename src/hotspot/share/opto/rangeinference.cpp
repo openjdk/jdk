@@ -150,15 +150,15 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
 
   a. Firstly, we prove that r <= v:
 
-    a.1. We have lo < v since:
+    a.1. lo < v, since:
       lo[x] == v[x], for 0 <= x < i (according to 2.5)
       lo[i] <  v[i] (according to 2.4 and 2.6, lo[i] == 0 < v[i] == 1)
       bits at x > i have lower significance, and are thus irrelevant
 
-    a.2. We have v satisfies bits, this is because:
+    a.2. v satisfies bits, because:
       v[x] satisfies bits for 0 <= x < i (according to 2.2 and 2.5)
       v[i] satisfies bits:
-        According to 2.3 and 2.6, v[i] == 1 and zeros[i] == 0, v[i] does not violate
+        According to 2.3 and 2.6, zeros[i] == 0 and v[i] == 1, v[i] does not violate
         bits, which means v[i] satisfies bits
       v[x] satisfies bits for x > i:
         Assume bits is not contradictory, we cannot have:
@@ -184,7 +184,7 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
       r[x]  == lo[x], for x < j (according to 2.b.3 and 2.5, lo[x] == v[x] == r[x] with x < j < i)
       bits at x > j have lower significance, and are thus irrelevant
 
-      Which leads to r < lo, which contradicts that r >= lo
+      Which leads to r < lo, which contradicts that lo < r (acording to 2.1)
 
     b.2. If j == i
       Since r > lo (according to 2.1), there must exist a bit index k such that:
