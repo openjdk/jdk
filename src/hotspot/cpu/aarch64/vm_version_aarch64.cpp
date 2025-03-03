@@ -417,6 +417,17 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
+  if (_features & CPU_ASIMD) {
+      if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
+          UseKyberIntrinsics = true;
+      }
+  } else if (UseKyberIntrinsics) {
+      if (!FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
+          warning("Kyber intrinsic requires ASIMD instructions");
+      }
+      FLAG_SET_DEFAULT(UseKyberIntrinsics, false);
+  }
+
   if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
     UseBASE64Intrinsics = true;
   }
@@ -695,6 +706,7 @@ void VM_Version::initialize_cpu_information(void) {
   get_compatible_board(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len);
   desc_len = (int)strlen(_cpu_desc);
   snprintf(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len, " %s", _features_string);
+  fprintf(stderr, "_features_string = \"%s\"", _features_string);
 
   _initialized = true;
 }
