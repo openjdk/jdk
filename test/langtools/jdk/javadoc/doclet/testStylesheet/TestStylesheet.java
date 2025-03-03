@@ -271,7 +271,6 @@ public class TestStylesheet extends JavadocTester {
                 // entries for <body> elements
                 "all-classes-index-page",
                 "all-packages-index-page",
-                "constants-summary-page",
                 "deprecated-list-page",
                 "help-page",
                 "index-redirect-page",

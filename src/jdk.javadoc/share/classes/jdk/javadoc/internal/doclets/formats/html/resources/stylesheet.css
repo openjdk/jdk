@@ -43,12 +43,14 @@
     --navbar-text-color: #ffffff;
     /* Background color for subnavigation and various headers */
     --subnav-background-color: #dee3e9;
+    --subnav-link-color: #47688a;
     --member-heading-background-color: var(--subnav-background-color);
     /* Background and text colors for selected tabs and navigation items */
     --selected-background-color: #f8981d;
     --selected-text-color: #253441;
     --selected-link-color: #4a698a;
     /* Background colors for generated tables */
+    --table-header-color: #ebeff4;
     --even-row-color: #ffffff;
     --odd-row-color: #f0f0f2;
     /* Text color for page title */
@@ -58,7 +60,6 @@
     --link-color-active: #bb7a2a;
     /* Table of contents */
     --toc-background-color: #f8f8f8;
-    --toc-link-color: #4a698a;
     --toc-highlight-color: var(--subnav-background-color);
     --toc-hover-color: #e9ecf0;
     /* Snippet and pre colors */
@@ -119,7 +120,7 @@ a:link, a:visited {
     color:var(--link-color);
 }
 nav a:link, nav a:visited {
-    color: var(--toc-link-color);
+    color: var(--subnav-link-color);
 }
 a[href]:hover, a[href]:active {
     text-decoration:none;
@@ -336,6 +337,9 @@ body.module-declaration-page .block-list h2 {
     margin:15px 0;
     overflow-x:auto;
 }
+body.class-use-page h2 {
+    margin-top: 20px;
+}
 body.class-declaration-page .details h3 {
     background-color:var(--member-heading-background-color);
     border:1px solid var(--border-color);
@@ -372,7 +376,7 @@ h1 > sup {
     min-width: 240px;
 }
 main {
-    padding:10px 22px;
+    padding:10px 25px;
     position:relative;
 }
 /* Compensate for non-collapsing margins between element description and summary tables */
@@ -600,43 +604,50 @@ ul.preview-feature-list {
     border:1px solid var(--border-color);
     border-top:0;
     padding:0;
+    margin-bottom: 14px;
 }
-.caption,
-body.class-declaration-page .inherited-list h3 {
+.caption {
     overflow: auto hidden;
-    padding: 10px 0 0 1px;
-}
-.caption a:link, .caption a:visited {
-    color:var(--selected-background-color);
-}
-.caption a:hover,
-.caption a:active {
-    color:var(--link-color-active);
+    padding: 8px 0 0 1px;
 }
 .caption span,
-body.class-declaration-page .inherited-list h3 {
+.inherited-list h3 {
     font-size: 0.98em;
     font-weight:bold;
     white-space:nowrap;
-    padding:5px 12px 7px 12px;
     border-radius: var(--tab-border-radius);
-    height:16px;
     margin: 0;
 }
 .caption span {
     background-color: var(--navbar-background-color);
+    padding:5px 12px 7px 12px;
+    height:16px;
     color:var(--navbar-text-color);
     display:inline-block;
 }
-body.class-declaration-page .inherited-list h3 {
+.inherited-list h3 {
     background-color: var(--subnav-background-color);
-    border: 1px solid var(--subnav-background-color);
-    overflow: auto hidden;
+    padding:6px 12px 7px 12px;
+    height:17px;
     width: fit-content;
     max-width: 93%;
 }
+/* Background required for captions with links */
+.class-use-page .caption span,
+.package-use-page .caption span,
+.constants-summary-page .caption span,
+.inherited-list.expanded h3 {
+    background-color: var(--subnav-background-color);
+    color: var(--block-text-color);
+}
+.caption a:link,
+.caption a:visited,
+.inherited-list.expanded h3 a:link,
+.inherited-list.expanded h3 a:visited {
+    color:var(--subnav-link-color);
+}
 div.table-tabs {
-    padding: 10px 0 0 1px;
+    padding: 8px 0 0 1px;
     white-space: nowrap;
     overflow-x: auto;
 }
@@ -727,12 +738,14 @@ div.checkboxes > label > input {
     overflow: auto hidden;
 }
 .summary-table > div.table-header, .details-table > div.table-header {
-    font-size: 0.93em;
-    line-height: inherit;
+    font-size: 0.92em;
+    line-height: 1.2;
+    height: 18px;
 }
 .table-header {
-    background:var(--subnav-background-color);
+    background: var(--table-header-color);
     font-weight: bold;
+    border-bottom: 1px solid var(--border-color);
 }
 /* Sortable table columns */
 .table-header[onclick] {
@@ -1131,15 +1144,13 @@ section[class$="-details"] .detail > div {
     padding-left: 8px;
 }
 .inherited-list {
-    margin:20px 0;
-    padding-bottom:4px;
+    margin: 20px 0;
     background-color:var(--detail-background-color);
 }
 .inherited-list > code {
     padding: 8px;
     display: block;
     background-color: var(--code-background-color);
-    border: 1px solid var(--border-color);
     border-radius: 0;
     line-height: var(--code-line-height);
 }
@@ -1514,6 +1525,9 @@ table.striped > tbody > tr > th {
     }
     input#search-input {
         width: 18vw;
+    }
+    .inherited-list h3 {
+        overflow: auto clip;
     }
     .summary section[class$="-summary"], .details section[class$="-details"],
     .class-uses .detail, .serialized-class-details {
