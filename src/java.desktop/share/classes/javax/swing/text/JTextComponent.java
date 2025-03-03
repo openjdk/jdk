@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2632,9 +2632,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         public void insertUpdate(DocumentEvent e) {
             final Integer pos = e.getOffset();
             if (SwingUtilities.isEventDispatchThread()) {
-                if (!(getAccessibleContext().getAccessibleParent() instanceof JSpinner.NumberEditor)) {
-                    firePropertyChange(ACCESSIBLE_TEXT_PROPERTY, null, pos);
-                }
+                firePropertyChange(ACCESSIBLE_TEXT_PROPERTY, null, pos);
             } else {
                 Runnable doFire = new Runnable() {
                     public void run() {
@@ -2656,9 +2654,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         public void removeUpdate(DocumentEvent e) {
             final Integer pos = e.getOffset();
             if (SwingUtilities.isEventDispatchThread()) {
-                if (!(getAccessibleContext().getAccessibleParent() instanceof JSpinner.NumberEditor)) {
-                    firePropertyChange(ACCESSIBLE_TEXT_PROPERTY, null, pos);
-                }
+                firePropertyChange(ACCESSIBLE_TEXT_PROPERTY, null, pos);
             } else {
                 Runnable doFire = new Runnable() {
                     public void run() {

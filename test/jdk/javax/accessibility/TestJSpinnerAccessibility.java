@@ -47,7 +47,7 @@ public class TestJSpinnerAccessibility {
 
                 Follow these steps to test the behaviour:
 
-                1. Start the VoiceOver (Press Commaand + F5) application
+                1. Start the VoiceOver (Press Command + F5) application
                 2. Move focus on test window if it is not focused
                 3. Press Up / Down arrow to increase / decrease Spinner value
                 4. VO should announce correct values in terms of percentage
