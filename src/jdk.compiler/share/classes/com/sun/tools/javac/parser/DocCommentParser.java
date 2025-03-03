@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,6 +126,10 @@ public class DocCommentParser {
     private int lastNonWhite = -1;
     private boolean newline = true;
 
+    /** Used for whitespace normalization in pre/code/literal tags. */
+    private boolean canStripSpace = false;
+    private boolean inPreElement = false;
+
     private final Map<Name, TagParser> tagParsers;
 
     /**
@@ -203,6 +207,7 @@ public class DocCommentParser {
      */
     public DCDocComment parse() {
         String c = comment.getText();
+        canStripSpace = canStripLeadingSpace(c);
         buf = new char[c.length() + 1];
         c.getChars(0, c.length(), buf, 0);
         buf[buf.length - 1] = EOI;
@@ -311,7 +316,7 @@ public class DocCommentParser {
                 case '&' -> {
                     switch (textKind) {
                         case MARKDOWN -> defaultContentCharacter();
-                        case TEXT -> entity(trees);
+                        case TEXT -> entity(trees, phase == Phase.BODY);
                         default -> throw unknownTextKind(textKind);
                     }
                 }
@@ -339,14 +344,14 @@ public class DocCommentParser {
                                     }
                                     case BODY -> {
                                         if (isEndBody()) {
-                                            addPendingText(trees, lastNonWhite);
+                                            addPendingText(trees, lastNonWhite, true);
                                             break loop;
                                         }
                                     }
                                     default -> { }
                                 }
                             }
-                            addPendingText(trees, bp - 1);
+                            addPendingText(trees, bp - 1, phase == Phase.BODY);
                             trees.add(html());
 
                             if (phase == Phase.PREAMBLE || phase == Phase.POSTAMBLE) {
@@ -364,9 +369,9 @@ public class DocCommentParser {
                 case '{' -> {
                     switch (phase) {
                         case PREAMBLE, POSTAMBLE -> defaultContentCharacter();
-                        case BODY -> inlineTag(trees);
+                        case BODY -> inlineTag(trees, true);
                         case INLINE -> {
-                            if (!inlineTag(trees)) {
+                            if (!inlineTag(trees, false)) {
                                 depth++;
                             }
                         }
@@ -377,7 +382,7 @@ public class DocCommentParser {
                     if (phase == Phase.INLINE) {
                         newline = false;
                         if (--depth == 0) {
-                            addPendingText(trees, bp - 1);
+                            addPendingText(trees, bp - 1, false);
                             nextChar();
                             return trees.toList();
                         }
@@ -395,7 +400,7 @@ public class DocCommentParser {
                     if (newline) {
                         char peek = peekChar();
                         if (peek == '@' || peek == '*') {
-                            addPendingText(trees, bp - 1);
+                            addPendingText(trees, bp - 1, phase == Phase.BODY);
                             nextChar();
                             trees.add(m.at(bp - 1).newEscapeTree(ch));
                             newline = false;
@@ -403,11 +408,11 @@ public class DocCommentParser {
                             textStart = bp;
                             break;
                         } else if (phase == Phase.BODY) {
-                            addPendingText(trees, lastNonWhite);
+                            addPendingText(trees, lastNonWhite, true);
                             break loop;
                         }
                     } else if (textStart != -1 && buf[bp - 1] == '*' && peekChar() == '/') {
-                        addPendingText(trees, bp - 1);
+                        addPendingText(trees, bp - 1, phase == Phase.BODY);
                         nextChar();
                         trees.add(m.at(bp - 1).newEscapeTree('/'));
                         newline = false;
@@ -474,7 +479,7 @@ public class DocCommentParser {
         }
 
         if (lastNonWhite != -1)
-            addPendingText(trees, lastNonWhite);
+            addPendingText(trees, lastNonWhite, phase == Phase.BODY);
 
         return (phase == Phase.INLINE)
                 ? List.of(erroneous("dc.unterminated.inline.tag", pos))
@@ -581,9 +586,10 @@ public class DocCommentParser {
      * be read.
      *
      * @param list the list of trees being accumulated
+     * @param inBlockContent whether we are currently parsing block content
      * @return {@code true} if an inline tag was read, and {@code false} otherwise
      */
-    protected boolean inlineTag(ListBuffer<DCTree> list) {
+    protected boolean inlineTag(ListBuffer<DCTree> list, boolean inBlockContent) {
         newline = false;
         nextChar();
         if (ch == '@') {
@@ -593,14 +599,14 @@ public class DocCommentParser {
                 if (textStart == -1) {
                     textStart = bp - 1;
                 }
-                addPendingText(list, bp - 1);
+                addPendingText(list, bp - 1, inBlockContent);
                 nextChar();
                 list.add(m.at(bp - 1).newEscapeTree('@'));
                 nextChar();
                 textStart = -1;
                 lastNonWhite = bp;
             } else {
-                addPendingText(list, bp - 2);
+                addPendingText(list, bp - 2, inBlockContent);
                 list.add(inlineTag());
                 textStart = bp;
                 lastNonWhite = -1;
@@ -692,7 +698,8 @@ public class DocCommentParser {
 
                 case '}' -> {
                     if (--depth == 0) {
-                        return m.at(pos).newTextTree(newString(pos, bp));
+                        return m.at(pos).newTextTree(newString(pos, bp,
+                                whitespacePolicy == WhitespaceRetentionPolicy.REMOVE_FIRST_SPACE));
                     }
                     newline = false;
                     lastNonWhite = bp;
@@ -864,9 +871,9 @@ public class DocCommentParser {
         return content(Phase.INLINE);
     }
 
-    protected void entity(ListBuffer<DCTree> list) {
+    protected void entity(ListBuffer<DCTree> list, boolean inBlockContent) {
         newline = false;
-        addPendingText(list, bp - 1);
+        addPendingText(list, bp - 1, inBlockContent);
         list.add(entity());
         if (textStart == -1) {
             textStart = bp;
@@ -1054,6 +1061,9 @@ public class DocCommentParser {
                 }
                 if (ch == '>') {
                     nextChar();
+                    if ("pre".equalsIgnoreCase(name.toString())) {
+                        inPreElement = true;
+                    }
                     return m.at(p).newStartElementTree(name, attrs, selfClosing).setEndPos(bp);
                 }
             }
@@ -1064,6 +1074,9 @@ public class DocCommentParser {
                 skipWhitespace();
                 if (ch == '>') {
                     nextChar();
+                    if ("pre".equalsIgnoreCase(name.toString())) {
+                        inPreElement = false;
+                    }
                     return m.at(p).newEndElementTree(name).setEndPos(bp);
                 }
             }
@@ -1166,7 +1179,7 @@ public class DocCommentParser {
                     while (bp < buflen && ch != quote) {
                         attrValueChar(v);
                     }
-                    addPendingText(v, bp - 1, DocTree.Kind.TEXT);
+                    addPendingText(v, bp - 1, DocTree.Kind.TEXT, false);
                     nextChar();
                 } else {
                     vkind = ValueKind.UNQUOTED;
@@ -1174,7 +1187,7 @@ public class DocCommentParser {
                     while (bp < buflen && !isUnquotedAttrValueTerminator(ch)) {
                         attrValueChar(v);
                     }
-                    addPendingText(v, bp - 1, DocTree.Kind.TEXT);
+                    addPendingText(v, bp - 1, DocTree.Kind.TEXT, false);
                 }
                 skipWhitespace();
                 value = v.toList();
@@ -1188,26 +1201,27 @@ public class DocCommentParser {
 
     protected void attrValueChar(ListBuffer<DCTree> list) {
         switch (ch) {
-            case '&' -> entity(list);
-            case '{' -> inlineTag(list);
+            case '&' -> entity(list, false);
+            case '{' -> inlineTag(list, false);
             default  -> nextChar();
         }
     }
 
-    protected void addPendingText(ListBuffer<DCTree> list, int textEnd) {
-        addPendingText(list, textEnd, textKind);
+    protected void addPendingText(ListBuffer<DCTree> list, int textEnd, boolean inBlockContent) {
+        addPendingText(list, textEnd, textKind, inBlockContent);
     }
 
-    protected void addPendingText(ListBuffer<DCTree> list, int textEnd, DocTree.Kind kind) {
+    protected void addPendingText(ListBuffer<DCTree> list, int textEnd, DocTree.Kind kind, boolean inBlockContent) {
         if (textStart != -1) {
             if (textStart <= textEnd) {
                 switch (kind) {
                     case TEXT ->
-                            list.add(m.at(textStart).newTextTree(newString(textStart, textEnd + 1)));
+                            list.add(m.at(textStart).newTextTree(newString(textStart, textEnd + 1, inBlockContent)));
                     case MARKDOWN ->
-                            list.add(m.at(textStart).newRawTextTree(DocTree.Kind.MARKDOWN, newString(textStart, textEnd + 1)));
+                            list.add(m.at(textStart).newRawTextTree(DocTree.Kind.MARKDOWN,
+                                    newString(textStart, textEnd + 1)));
                     default ->
-                        throw new IllegalArgumentException(kind.toString());
+                            throw new IllegalArgumentException(kind.toString());
                 }
             }
             textStart = -1;
@@ -1804,6 +1818,52 @@ public class DocCommentParser {
     }
 
     /**
+     * Check if this is a traditional doc comment where every non-emtpy line past
+     * the first newline character has at least one leading space. This suggests
+     * that indentation is incidental and should be removed in preformatted text.
+     */
+    boolean canStripLeadingSpace(String comment) {
+        if (textKind == DocTree.Kind.MARKDOWN || isHtmlFile) {
+            return false;
+        }
+        for (int i = 0; i < comment.length() - 1; i++) {
+            if (comment.charAt(i) == '\n') {
+                char c = comment.charAt(i + 1);
+                if (c != '\n' && c != ' ') {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Variant of newString that optionally skips a leading space in each line.
+     *
+     * @param start position of first character of string
+     * @param end position of character beyond last character to be included
+     * @param stripLeadingSpace whether leading space may be stripped
+     */
+    String newString(int start, int end, boolean stripLeadingSpace) {
+        if (stripLeadingSpace && canStripSpace && inPreElement) {
+            StringBuilder sb = new StringBuilder(end - start);
+            int pos = start;
+            // The parser will never call this with a strippable space at buf[start].
+            for (int i = start; i < end - 1; i++) {
+                if (buf[i] == '\n' && buf[i + 1] == ' ') {
+                    sb.append(buf, pos, ++i - pos);
+                    pos = i + 1;
+                }
+            }
+            if (pos < end) {
+                sb.append(buf, pos, end - pos);
+            }
+            return sb.toString();
+        }
+        return newString(start, end);
+    }
+
+    /**
      * @param start position of first character of string
      * @param end position of character beyond last character to be included
      */
@@ -2110,7 +2170,7 @@ public class DocCommentParser {
                     DCIdentifier name = identifier();
                     skipWhitespace();
                     DCReference type = reference(ReferenceParser.Mode.MEMBER_DISALLOWED);
-                    List<DCTree> description = null;
+                    List<DCTree> description = List.nil();
                     if (isWhitespace(ch)) {
                         skipWhitespace();
                         description = blockContent();
@@ -2203,7 +2263,7 @@ public class DocCommentParser {
                                 while (bp < buflen && ch != quote) {
                                     nextChar();
                                 }
-                                addPendingText(v, bp - 1, DocTree.Kind.TEXT);
+                                addPendingText(v, bp - 1, DocTree.Kind.TEXT, false);
                                 nextChar();
                             } else {
                                 vkind = ValueKind.UNQUOTED;
@@ -2212,7 +2272,7 @@ public class DocCommentParser {
                                 while (bp < buflen && (ch != '}' && ch != ':' && !isUnquotedAttrValueTerminator(ch))) {
                                     nextChar();
                                 }
-                                addPendingText(v, bp - 1, DocTree.Kind.TEXT);
+                                addPendingText(v, bp - 1, DocTree.Kind.TEXT, false);
                             }
                             skipWhitespace();
                             value = v.toList();
