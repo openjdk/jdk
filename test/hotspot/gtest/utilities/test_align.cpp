@@ -29,7 +29,7 @@
 #include <limits>
 
 // A few arbitrarily chosen values to test the align functions on.
-static constexpr uint64_t values[] = {1, 3, 10, 345, 1023, 1024, 1025, 23909034, INT_MAX, uint64_t(-1) / 2, uint64_t(-1) / 2 + 100, uint64_t(-1)};
+static constexpr uint64_t values[] = {1, 3, 10, 345, 1023, 1024, 1025, 23909034, INT_MAX, uint64_t(-1) / 2, uint64_t(-1) / 2 + 100, ~(uint64_t(1) << 62)};
 
 template <typename T>
 static constexpr T max_alignment() {
@@ -194,3 +194,34 @@ TEST(Align, alignments) {
 
   test_alignments<int8_t, int8_t>();
 }
+
+#ifdef ASSERT
+template <typename T, typename A>
+static void test_fail_alignment() {
+  A alignment = max_alignment<A>();
+  T value = align_down(std::numeric_limits<T>::max(), alignment) + 1;
+  // Aligning value to alignment would now overflow.
+  // Assert inside align_up expected.
+  T aligned = align_up(value, alignment);
+}
+
+TEST_VM_ASSERT(Align, fail_alignments_same_size) {
+  test_fail_alignment<uint64_t, uint64_t>();
+}
+
+TEST_VM_ASSERT(Align, fail_alignments_unsigned_signed) {
+  test_fail_alignment<uint32_t, int32_t>();
+}
+
+TEST_VM_ASSERT(Align, fail_alignments_signed_unsigned) {
+  test_fail_alignment<int64_t, uint32_t>();
+}
+
+TEST_VM_ASSERT(Align, fail_alignments_small_large) {
+  test_fail_alignment<uint8_t, uint64_t>();
+}
+
+TEST_VM_ASSERT(Align, fail_alignments_large_small) {
+  test_fail_alignment<uint64_t, uint8_t>();
+}
+#endif // ASSERT
