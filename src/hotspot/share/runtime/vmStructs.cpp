@@ -120,7 +120,6 @@
 
 #include CPU_HEADER(vmStructs)
 #include OS_HEADER(vmStructs)
-#include OS_CPU_HEADER(vmStructs)
 
 // Note: the cross-product of (c1, c2, product, nonproduct, ...),
 // (nonstatic, static), and (unchecked, checked) has not been taken.
@@ -1913,12 +1912,6 @@ VMStructEntry VMStructs::localHotSpotVMStructs[] = {
                  GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                  GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
-  VM_STRUCTS_OS_CPU(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                    GENERATE_STATIC_VM_STRUCT_ENTRY,
-                    GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
-                    GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                    GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
-
   GENERATE_VM_STRUCT_LAST_ENTRY()
 };
 
@@ -1946,12 +1939,6 @@ VMTypeEntry VMStructs::localHotSpotVMTypes[] = {
                GENERATE_INTEGER_VM_TYPE_ENTRY,
                GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY)
 
-  VM_TYPES_OS_CPU(GENERATE_VM_TYPE_ENTRY,
-                  GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
-                  GENERATE_OOP_VM_TYPE_ENTRY,
-                  GENERATE_INTEGER_VM_TYPE_ENTRY,
-                  GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY)
-
   GENERATE_VM_TYPE_LAST_ENTRY()
 };
 
@@ -1971,8 +1958,6 @@ VMIntConstantEntry VMStructs::localHotSpotVMIntConstants[] = {
   VM_INT_CONSTANTS_CPU(GENERATE_VM_INT_CONSTANT_ENTRY,
                        GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 
-  VM_INT_CONSTANTS_OS_CPU(GENERATE_VM_INT_CONSTANT_ENTRY,
-                          GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 #ifdef VM_INT_CPU_FEATURE_CONSTANTS
   VM_INT_CPU_FEATURE_CONSTANTS
 #endif
@@ -1995,8 +1980,6 @@ VMLongConstantEntry VMStructs::localHotSpotVMLongConstants[] = {
   VM_LONG_CONSTANTS_CPU(GENERATE_VM_LONG_CONSTANT_ENTRY,
                         GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
 
-  VM_LONG_CONSTANTS_OS_CPU(GENERATE_VM_LONG_CONSTANT_ENTRY,
-                           GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
 #ifdef VM_LONG_CPU_FEATURE_CONSTANTS
   VM_LONG_CPU_FEATURE_CONSTANTS
 #endif
@@ -2058,12 +2041,6 @@ void VMStructs::init() {
                  CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
                  CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
-  VM_STRUCTS_OS_CPU(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
-                    CHECK_STATIC_VM_STRUCT_ENTRY,
-                    CHECK_NO_OP,
-                    CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
-                    CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
-
   VM_TYPES(CHECK_VM_TYPE_ENTRY,
            CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
            CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
@@ -2076,12 +2053,6 @@ void VMStructs::init() {
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP)
-
-  VM_TYPES_OS_CPU(CHECK_VM_TYPE_ENTRY,
-                  CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-                  CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-                  CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-                  CHECK_SINGLE_ARG_VM_TYPE_NO_OP)
 
   //
   // Split VM_STRUCTS() invocation into two parts to allow MS VC++ 6.0
@@ -2119,12 +2090,6 @@ void VMStructs::init() {
                  CHECK_NO_OP,
                  ENSURE_FIELD_TYPE_PRESENT,
                  ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT)
-
-  VM_STRUCTS_OS_CPU(ENSURE_FIELD_TYPE_PRESENT,
-                    ENSURE_FIELD_TYPE_PRESENT,
-                    CHECK_NO_OP,
-                    ENSURE_FIELD_TYPE_PRESENT,
-                    ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT)
 #endif // !_WINDOWS
 }
 
