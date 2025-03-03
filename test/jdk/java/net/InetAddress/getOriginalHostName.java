@@ -57,7 +57,7 @@ public class getOriginalHostName {
             testInetAddress(ia, ia.getHostName());
         } catch (java.net.UnknownHostException e) {
             e.printStackTrace();
-            throw new jtreg.SkippedException("Network setup issue, skip this test");
+            throw new jtreg.SkippedException("Network setup issue");
         } catch (Exception e) {
             throw new RuntimeException("Unexpected exception:" + e);
         }

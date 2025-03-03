@@ -61,7 +61,7 @@ public class IsReachableViaLoopbackTest {
             }
         } catch (java.net.UnknownHostException e) {
             e.printStackTrace();
-            throw new SkippedException("Network setup issue, skip this test");
+            throw new SkippedException("Network setup issue");
         } catch (IOException e) {
             throw new RuntimeException("Unexpected exception:" + e);
         }
