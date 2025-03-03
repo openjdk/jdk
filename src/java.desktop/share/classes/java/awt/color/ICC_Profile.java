@@ -107,6 +107,14 @@ public sealed class ICC_Profile implements Serializable
      */
     private transient volatile ProfileDeferralInfo deferralInfo;
 
+
+    /**
+     * Set to true for {@code BuiltInProfile}, false otherwise.
+     * This check is used in {@link #setData(int, byte[])} to prevent modifying
+     * built-in profiles.
+     */
+    private final boolean builtIn;
+
     /**
      * The lazy registry of singleton profile objects for specific built-in
      * color spaces defined in the ColorSpace class (e.g. CS_sRGB),
@@ -118,19 +126,19 @@ public sealed class ICC_Profile implements Serializable
          * access privileges is handled at a lower level.
          */
         ICC_Profile SRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
-               "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
+                "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
 
         ICC_Profile LRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
-               "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
+                "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
 
         ICC_Profile XYZ = new ICC_Profile(new ProfileDeferralInfo(
-               "CIEXYZ.pf", ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT));
+                "CIEXYZ.pf", ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT));
 
         ICC_Profile PYCC = new ICC_Profile(new ProfileDeferralInfo(
-               "PYCC.pf", ColorSpace.TYPE_3CLR, 3, CLASS_COLORSPACECONVERSION));
+                "PYCC.pf", ColorSpace.TYPE_3CLR, 3, CLASS_COLORSPACECONVERSION));
 
         ICC_Profile GRAY = new ICC_ProfileGray(new ProfileDeferralInfo(
-               "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY));
+                "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY));
     }
 
     static {
@@ -763,14 +771,21 @@ public sealed class ICC_Profile implements Serializable
      */
     ICC_Profile(Profile p) {
         cmmProfile = p;
+        builtIn = false;
     }
 
     /**
      * Constructs an {@code ICC_Profile} object whose loading will be deferred.
      * The ID will be 0 until the profile is loaded.
+     *
+     * <p>
+     * Note: {@code ProfileDeferralInfo} is used for only built-in profile
+     * creation and all built-in profiles should be constructed using it.
+     * </p>
      */
     ICC_Profile(ProfileDeferralInfo pdi) {
         deferralInfo = pdi;
+        builtIn = true;
     }
 
     /**
@@ -1131,17 +1146,36 @@ public sealed class ICC_Profile implements Serializable
      * This method is useful for advanced applications which need to access
      * profile data directly.
      *
+     * <p>
+     * Note: JDK built-in ICC Profiles cannot be updated using this method
+     * as it will result in {@code IllegalArgumentException}. JDK built-in
+     * profiles are those obtained by {@code ICC_Profile.getInstance(int colorSpaceID)}
+     * where {@code colorSpaceID} is one of the following:
+     * {@link ColorSpace#CS_sRGB}, {@link ColorSpace#CS_LINEAR_RGB},
+     * {@link ColorSpace#CS_PYCC}, {@link ColorSpace#CS_GRAY} or
+     * {@link ColorSpace#CS_CIEXYZ}.
+     * </p>
+     *
      * @param  tagSignature the ICC tag signature for the data element you want
      *         to set
      * @param  tagData the data to set for the specified tag signature
      * @throws IllegalArgumentException if {@code tagSignature} is not a
      *         signature as defined in the ICC specification.
-     * @throws IllegalArgumentException if a content of the {@code tagData}
+     * @throws IllegalArgumentException if the content of the {@code tagData}
      *         array can not be interpreted as valid tag data, corresponding to
      *         the {@code tagSignature}
+     * @throws IllegalArgumentException if this is a built-in profile for one
+     *         of the pre-defined ColorSpaces, i.e. those which can be obtained
+     *         by calling {@code ICC_Profile.getInstance(int colorSpaceID)}
      * @see #getData
+     * @see ColorSpace
      */
     public void setData(int tagSignature, byte[] tagData) {
+        if (builtIn) {
+            throw new IllegalArgumentException("Built-in profile"
+                                               + " cannot be modified");
+        }
+
         if (tagSignature == ICC_Profile.icSigHead) {
             verifyHeader(tagData);
         }
