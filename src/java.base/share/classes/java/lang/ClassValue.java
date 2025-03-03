@@ -50,14 +50,27 @@ import static java.lang.ClassValue.ClassValueMap.probeBackupLocations;
  * static final String INT_NAME = CLASS_NAMES.get(int.class);
  * }
  * <p>
- * If a {@code ClassValue} is read from multiple threads at once, {@linkplain
- * #computeValue computation} may happen concurrently.  However, {@code
- * ClassValue} ensures that exactly one value prevails, which will be returned
- * by all subsequent reads until {@link #remove(Class) remove} is called.
+ * An association from a {@code Class} object to a value in a {@code ClassValue}
+ * has three states: value absent, value under computation, and value computed.
+ * <ul>
+ * <li>Value absent can transition to value under computation upon a call
+ * to {@link #get get}.
+ * <li>Value under computation is when at least one {@link #computeValue(Class)
+ * compueValue} call is ongoing.  It can transition to:
+ * <ul><li>Value absent, if a call to {@code computeValue} finished with
+ * an exception, or upon a call to {@link #remove remove};
+ * <li>Value computed, if a call to {@code computeValue} installs a
+ * value.
+ * </ul>
+ * <li>Value computed can transition to value absent upon a call to {@code
+ * remove}.
+ * </ul>
+ * A transition from one state to another synchronizes-with (JLS {@jls 17.4.4})
+ * a read that observes the transitioned state.
  * <p>
  * A value that a {@code ClassValue} associates with a {@code Class} may be
- * reclaimed by garbage collection as soon as either the {@code Class} or the
- * {@code ClassValue} is reclaimed.
+ * reclaimed by garbage collection as soon as either the {@code Class} object or
+ * the {@code ClassValue} object is reclaimed.
  *
  * @param <T> the type of the derived value
  * @author John Rose, JSR 292 EG
@@ -74,17 +87,20 @@ public abstract class ClassValue<T> {
     /**
      * Computes the value to associate with the given type.
      * <p>
-     * This method will be invoked if a value is not yet computed upon access
-     * via the {@link #get get} method.  It may be invoked by multiple threads,
-     * but only one arbitrary computed value will be associated to the type and
-     * returned by all calling threads.
+     * This method is only invoked when this association has transitioned to
+     * value under computation; it may be invoked upon the initial
+     * transition or subsequently from other threads that did not start the
+     * transition, but observed this value to be under computation.
      * <p>
-     * If {@link #remove remove} is called, the next call to {@code get} will
-     * invoke this method, such that the {@code remove} call happens-before
-     * this invocation, allowing the computation to obtain the up-to-date inputs.
+     * If this method returns normally, the association will attempt to transit
+     * from value under computation to value computed with the return value,
+     * only if the association is still value under computation; the value is
+     * discarded otherwise.  If the association is value absent, the association
+     * transits to value under computation and this method is invoked again.
      * <p>
-     * If this method throws an exception, the corresponding call to {@code get}
-     * will terminate abnormally with that exception, and no class value will be recorded.
+     * If this method throws an exception, the association will transition to
+     * value absent, and the exception is propagated to the {@code get} call
+     * that initiated the computation on the same thread.
      *
      * @param type the type whose class value must be computed
      * @return the newly computed value
@@ -95,18 +111,18 @@ public abstract class ClassValue<T> {
 
     /**
      * {@return the value associated to the given type}
-     * If no value is associated to the type, it is obtained by an invocation of
-     * the {@link #computeValue computeValue} method.  Multiple racing threads
-     * may compute a value for the same type at once.
      * <p>
-     * The actual association of the value to the type is performed atomically.
-     * At that point, if several racing threads have computed values, an
-     * arbitrary one is chosen, associated to the type, and returned to all
-     * racing threads.
+     * If the association has its value computed, then the value is returned;
+     * otherwise, if the association has its value absent, this method first
+     * transits the association to value under computation.  This method invokes
+     * the {@link #computeValue computeValue} method to transit the association
+     * to value computed.  The computed value of the association may not be the
+     * value from the {@code computeValue} invocation on this thread, but the
+     * computation that produced the returned value happens-before (JLS {@jls
+     * 17.4.5}) the successful return of this {@code get} call.
      * <p>
-     * If {@link #remove remove} is called, the next call to {@code get} will
-     * call {@code computeValue}, such that the removal happens-before the
-     * computation, allowing the computation to obtain the up-to-date inputs.
+     * If an exception was thrown by {@code computeValue}, the association
+     * resets to value absent and the exception is thrown by this method.
      *
      * @param type the {@code Class} object whose associated value must be retrieved
      * @return the current value associated with this {@code ClassValue}, for
@@ -136,53 +152,13 @@ public abstract class ClassValue<T> {
 
     /**
      * Removes the associated value for the given class.
-     * If this value is subsequently {@linkplain #get read} for the same class,
-     * its value will be reinitialized by invoking its {@link #computeValue computeValue} method.
-     * This may result in an additional invocation of the
-     * {@code computeValue} method for the given class.
      * <p>
-     * In order to explain the interaction between {@code get} and {@code remove} calls,
-     * we must model the state transitions of a class value to take into account
-     * the alternation between uninitialized and initialized states.
-     * To do this, number these states sequentially from zero, and note that
-     * uninitialized (or removed) states are numbered with even numbers,
-     * while initialized (or re-initialized) states have odd numbers.
+     * If the association has its value computed or under computation, the
+     * association is reset to value absent.  It is a no-op if the association
+     * is value absent.
      * <p>
-     * When a thread {@code T} removes a class value in state {@code 2N},
-     * nothing happens, since the class value is already uninitialized.
-     * Otherwise, the state is advanced atomically to {@code 2N+1}.
-     * <p>
-     * When a thread {@code T} queries a class value in state {@code 2N},
-     * the thread first attempts to initialize the class value to state {@code 2N+1}
-     * by invoking {@code computeValue} and installing the resulting value.
-     * <p>
-     * When {@code T} attempts to install the newly computed value,
-     * if the state is still at {@code 2N}, the class value will be initialized
-     * with the computed value, advancing it to state {@code 2N+1}.
-     * <p>
-     * Otherwise, whether the new state is even or odd,
-     * {@code T} will discard the newly computed value
-     * and retry the {@code get} operation.
-     * <p>
-     * Discarding and retrying is an important proviso,
-     * since otherwise {@code T} could potentially install
-     * a disastrously stale value.  For example:
-     * <ul>
-     * <li>{@code T} calls {@code CV.get(C)} and sees state {@code 2N}
-     * <li>{@code T} quickly computes a time-dependent value {@code V0} and gets ready to install it
-     * <li>{@code T} is hit by an unlucky paging or scheduling event, and goes to sleep for a long time
-     * <li>...meanwhile, {@code T2} also calls {@code CV.get(C)} and sees state {@code 2N}
-     * <li>{@code T2} quickly computes a similar time-dependent value {@code V1} and installs it on {@code CV.get(C)}
-     * <li>{@code T2} (or a third thread) then calls {@code CV.remove(C)}, undoing {@code T2}'s work
-     * <li> the previous actions of {@code T2} are repeated several times
-     * <li> also, the relevant computed values change over time: {@code V1}, {@code V2}, ...
-     * <li>...meanwhile, {@code T} wakes up and attempts to install {@code V0}; <em>this must fail</em>
-     * </ul>
-     * We can assume in the above scenario that {@code CV.computeValue} uses locks to properly
-     * observe the time-dependent states as it computes {@code V1}, etc.
-     * This does not remove the threat of a stale value, since there is a window of time
-     * between the return of {@code computeValue} in {@code T} and the installation
-     * of the new value.  No user synchronization is possible during this time.
+     * The removal happens-before (JLS {@jls 17.4.5}) any subsequent computation
+     * via {@link #computeValue(Class) computeValue}.
      *
      * @param type the type whose class value must be removed
      * @throws NullPointerException if the argument is null
