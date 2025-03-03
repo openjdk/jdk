@@ -336,6 +336,11 @@ final class Operations {
 
             ops.add(new Operation.Unary(type, type.vectorType + ".broadcast(" + type.species + ", ", type.elementType, ")"));
             ops.add(new Operation.Unary(type, type.vectorType + ".broadcast(" + type.species + ", ", Type.longs(), ")"));
+
+            // TODO: non zero parts
+            for (var type2 : Type.VECTOR_API_TYPES) {
+                ops.add(new Operation.Unary(type, "((" + type.vectorType + ")", type2 , ".castShape(" + type.species + ", 0))"));
+            }
         }
 
         // Ensure the list is immutable.
