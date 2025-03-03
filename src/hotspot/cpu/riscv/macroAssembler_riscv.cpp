@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "code/compiledIC.hpp"
@@ -794,7 +793,7 @@ void MacroAssembler::call_VM_leaf_base(address entry_point,
                                        Label *retaddr) {
   int32_t offset = 0;
   push_reg(RegSet::of(t1, xmethod), sp);   // push << t1 & xmethod >> to sp
-  mv(t1, entry_point, offset);
+  movptr(t1, entry_point, offset, t0);
   jalr(t1, offset);
   if (retaddr != nullptr) {
     bind(*retaddr);
@@ -2301,7 +2300,7 @@ static int patch_offset_in_jal(address branch, int64_t offset) {
 
 static int patch_offset_in_conditional_branch(address branch, int64_t offset) {
   assert(Assembler::is_simm13(offset) && ((offset % 2) == 0),
-         "offset is too large to be patched in one beq/bge/bgeu/blt/bltu/bne instruction!\n");
+         "offset (%ld) is too large to be patched in one beq/bge/bgeu/blt/bltu/bne instruction!\n", offset);
   Assembler::patch(branch, 31, 31, (offset >> 12) & 0x1);                       // offset[12]    ==> branch[31]
   Assembler::patch(branch, 30, 25, (offset >> 5)  & 0x3f);                      // offset[10:5]  ==> branch[30:25]
   Assembler::patch(branch, 7,  7,  (offset >> 11) & 0x1);                       // offset[11]    ==> branch[7]
@@ -2592,6 +2591,45 @@ void MacroAssembler::movptr2(Register Rd, uint64_t addr, int32_t &offset, Regist
   add(Rd, Rd, tmp);
 
   offset = lower12;
+}
+
+// floating point imm move
+bool MacroAssembler::can_fp_imm_load(float imm) {
+  jint f_bits = jint_cast(imm);
+  if (f_bits == 0) {
+    return true;
+  }
+  return can_zfa_zli_float(imm);
+}
+
+bool MacroAssembler::can_dp_imm_load(double imm) {
+  julong d_bits = julong_cast(imm);
+  if (d_bits == 0) {
+    return true;
+  }
+  return can_zfa_zli_double(imm);
+}
+
+void MacroAssembler::fli_s(FloatRegister Rd, float imm) {
+  jint f_bits = jint_cast(imm);
+  if (f_bits == 0) {
+    fmv_w_x(Rd, zr);
+    return;
+  }
+  int Rs = zfa_zli_lookup_float(f_bits);
+  assert(Rs != -1, "Must be");
+  _fli_s(Rd, Rs);
+}
+
+void MacroAssembler::fli_d(FloatRegister Rd, double imm) {
+  uint64_t d_bits = (uint64_t)julong_cast(imm);
+  if (d_bits == 0) {
+    fmv_d_x(Rd, zr);
+    return;
+  }
+  int Rs = zfa_zli_lookup_double(d_bits);
+  assert(Rs != -1, "Must be");
+  _fli_d(Rd, Rs);
 }
 
 void MacroAssembler::add(Register Rd, Register Rn, int64_t increment, Register tmp) {
@@ -4269,7 +4307,7 @@ void MacroAssembler::population_count(Register dst, Register src,
     {
       bind(loop);
       addi(dst, dst, 1);
-      addi(tmp2, tmp1, -1);
+      subi(tmp2, tmp1, 1);
       andr(tmp1, tmp1, tmp2);
       bnez(tmp1, loop);
     }
@@ -5446,21 +5484,31 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   const Register jdx = tmp1;
 
   if (AvoidUnalignedAccesses) {
-    // Check if x and y are both 8-byte aligned.
-    orr(t0, xlen, ylen);
-    test_bit(t0, t0, 0);
-    beqz(t0, L_multiply_64_x_64_loop);
+    int base_offset = arrayOopDesc::base_offset_in_bytes(T_INT);
+    assert((base_offset % (UseCompactObjectHeaders ? 4 :
+                           (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
+
+    if ((base_offset % 8) == 0) {
+      // multiply_64_x_64_loop emits 8-byte load/store to access two elements
+      // at a time from int arrays x and y. When base_offset is 8 bytes, these
+      // accesses are naturally aligned if both xlen and ylen are even numbers.
+      orr(t0, xlen, ylen);
+      test_bit(t0, t0, 0);
+      beqz(t0, L_multiply_64_x_64_loop);
+    }
+
+    Label L_second_loop_unaligned, L_third_loop, L_third_loop_exit;
 
     multiply_32_x_32_loop(x, xstart, x_xstart, y, y_idx, z, carry, product, idx, kdx);
     shadd(t0, xstart, z, t0, LogBytesPerInt);
     sw(carry, Address(t0, 0));
 
-    Label L_second_loop_unaligned;
     bind(L_second_loop_unaligned);
     mv(carry, zr);
     mv(jdx, ylen);
     subiw(xstart, xstart, 1);
     bltz(xstart, L_done);
+
     subi(sp, sp, 2 * wordSize);
     sd(z, Address(sp, 0));
     sd(zr, Address(sp, wordSize));
@@ -5468,7 +5516,6 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
     addi(z, t0, 4);
     shadd(t0, xstart, x, t0, LogBytesPerInt);
     lwu(product, Address(t0, 0));
-    Label L_third_loop, L_third_loop_exit;
 
     blez(jdx, L_third_loop_exit);
 
@@ -5887,7 +5934,7 @@ void MacroAssembler::FLOATCVT##_safe(Register dst, FloatRegister src, Register t
   fclass_##FLOATSIG(tmp, src);                                                            \
   mv(dst, zr);                                                                            \
   /* check if src is NaN */                                                               \
-  andi(tmp, tmp, fclass_mask::nan);                                                       \
+  andi(tmp, tmp, FClassBits::nan);                                                        \
   bnez(tmp, done);                                                                        \
   FLOATCVT(dst, src);                                                                     \
   bind(done);                                                                             \

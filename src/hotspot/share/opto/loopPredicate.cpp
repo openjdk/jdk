@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
@@ -97,8 +96,11 @@ void PhaseIdealLoop::register_control(Node* n, IdealLoopTree *loop, Node* pred, 
 //
 // We will create a region to guard the uct call if there is no one there.
 // The continuation projection (if_cont) of the new_iff is returned which
-// is an IfTrue projection. This code is also used to clone predicates to cloned loops.
-IfTrueNode* PhaseIdealLoop::create_new_if_for_predicate(ParsePredicateSuccessProj* parse_predicate_success_proj,
+// is an IfTrue projection. This code is also used to clone predicates to
+// cloned loops. 'rewire_uncommon_proj_phi_inputs' should be set to the
+// non-default value 'true' when called for a false-path loop during
+// Loop Unswitching.
+IfTrueNode* PhaseIdealLoop::create_new_if_for_predicate(const ParsePredicateSuccessProj* parse_predicate_success_proj,
                                                         Node* new_entry, const Deoptimization::DeoptReason reason,
                                                         const int opcode, const bool rewire_uncommon_proj_phi_inputs) {
   assert(parse_predicate_success_proj->is_uncommon_trap_if_pattern(reason), "must be a uct if pattern!");

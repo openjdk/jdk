@@ -1918,7 +1918,7 @@ bool Matcher::match_rule_supported(int opcode) {
 
     case Op_ConvHF2F:
     case Op_ConvF2HF:
-      return UseZfh;
+      return UseZfh || UseZfhmin;
   }
 
   return true; // Per default match rules are supported.
@@ -4920,7 +4920,11 @@ instruct loadConF(fRegF dst, immF con) %{
   %}
 
   ins_encode %{
-    __ flw(as_FloatRegister($dst$$reg), $constantaddress($con));
+      if (MacroAssembler::can_fp_imm_load($con$$constant)) {
+        __ fli_s(as_FloatRegister($dst$$reg), $con$$constant);
+      } else {
+        __ flw(as_FloatRegister($dst$$reg), $constantaddress($con));
+      }
   %}
 
   ins_pipe(fp_load_constant_s);
@@ -4950,7 +4954,11 @@ instruct loadConD(fRegD dst, immD con) %{
   %}
 
   ins_encode %{
-    __ fld(as_FloatRegister($dst$$reg), $constantaddress($con));
+      if (MacroAssembler::can_dp_imm_load($con$$constant)) {
+        __ fli_d(as_FloatRegister($dst$$reg), $con$$constant);
+      } else {
+        __ fld(as_FloatRegister($dst$$reg), $constantaddress($con));
+      }
   %}
 
   ins_pipe(fp_load_constant_d);
@@ -7348,7 +7356,7 @@ instruct isInfiniteF_reg_reg(iRegINoSp dst, fRegF src)
   format %{ "isInfinite $dst, $src" %}
   ins_encode %{
     __ fclass_s(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::inf);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::FClassBits::inf);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 
@@ -7363,7 +7371,7 @@ instruct isInfiniteD_reg_reg(iRegINoSp dst, fRegD src)
   format %{ "isInfinite $dst, $src" %}
   ins_encode %{
     __ fclass_d(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::inf);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::FClassBits::inf);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 
@@ -7378,7 +7386,7 @@ instruct isFiniteF_reg_reg(iRegINoSp dst, fRegF src)
   format %{ "isFinite $dst, $src" %}
   ins_encode %{
     __ fclass_s(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::finite);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::FClassBits::finite);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 
@@ -7393,7 +7401,7 @@ instruct isFiniteD_reg_reg(iRegINoSp dst, fRegD src)
   format %{ "isFinite $dst, $src" %}
   ins_encode %{
     __ fclass_d(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::finite);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::FClassBits::finite);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 

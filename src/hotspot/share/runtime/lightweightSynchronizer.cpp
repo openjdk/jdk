@@ -22,8 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #include "classfile/vmSymbols.hpp"
 #include "jfrfiles/jfrEventClasses.hpp"
 #include "logging/log.hpp"

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2024 SAP SE. All rights reserved.
- * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2023, 2025, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationFailureInfo.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/gcConfig.hpp"
@@ -1001,6 +1001,11 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP_IF("printing pending compilation failure",
           _verbose && _thread != nullptr && _thread->is_Compiler_thread())
     CompilationFailureInfo::print_pending_compilation_failure(st);
+  if (CompilationMemoryStatistic::enabled() && CompilationMemoryStatistic::in_oom_crash()) {
+    st->cr();
+    st->print_cr(">> Please see below for a detailed breakdown of compiler memory usage.");
+    st->cr();
+  }
 #endif
 
   STEP_IF("printing registers", _verbose && _context != nullptr)
@@ -1261,6 +1266,10 @@ void VMError::report(outputStream* st, bool _verbose) {
     MemTracker::error_report(st);
     st->cr();
 
+  STEP_IF("printing compiler memory info, if any", _verbose)
+    CompilationMemoryStatistic::print_error_report(st);
+    st->cr();
+
   STEP_IF("printing periodic trim state", _verbose)
     NativeHeapTrimmer::print_state(st);
     st->cr();
@@ -1437,9 +1446,11 @@ void VMError::print_vm_info(outputStream* st) {
   st->cr();
 
   // STEP("Native Memory Tracking")
-
   MemTracker::error_report(st);
   st->cr();
+
+  // STEP("Compiler Memory Statistic")
+  CompilationMemoryStatistic::print_final_report(st);
 
   // STEP("printing periodic trim state")
   NativeHeapTrimmer::print_state(st);
@@ -1551,6 +1562,12 @@ void VMError::report_and_die(Thread* thread, const void* context, const char* fi
 
 void VMError::report_and_die(Thread* thread, unsigned int sig, address pc, const void* siginfo, const void* context)
 {
+  if (ExecutingUnitTests) {
+    // See TEST_VM_CRASH_SIGNAL gtest macro
+    char tmp[64];
+    fprintf(stderr, "signaled: %s", os::exception_name(sig, tmp, sizeof(tmp)));
+  }
+
   report_and_die(thread, sig, pc, siginfo, context, "%s", "");
 }
 
