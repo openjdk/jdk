@@ -10856,6 +10856,8 @@ void MacroAssembler::setcc(Assembler::Condition comparison, Register dst) {
   }
 }
 
+// Randomized profile capture.
+
 void MacroAssembler::step_random(Register state, Register temp) {
   if (0) {
     /* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
@@ -10885,6 +10887,18 @@ void MacroAssembler::maybe_skip_profiling(Register state, Register temp, Label &
 
     cmpl(state, threshold);
     jcc(Assembler::aboveEqual, skip);
+  }
+}
+
+void MacroAssembler::save_profile_rng() {
+  if (ProfileCaptureRatio != 1) {
+    __ movl(Address(r15_thread, JavaThread::profile_rng_offset()), r14_profile_rng);
+  }
+}
+
+void MacroAssembler::restore_profile_rng() {
+  if (ProfileCaptureRatio != 1) {
+    __ movl(Address(r15_thread, JavaThread::profile_rng_offset()), r14_profile_rng);
   }
 }
 

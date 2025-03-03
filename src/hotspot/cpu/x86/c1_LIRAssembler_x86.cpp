@@ -74,6 +74,7 @@ NEEDS_CLEANUP // remove this definitions ?
 const Register SYNC_header = rax;   // synchronization header
 const Register SHIFT_count = rcx;   // where count for shift operations must be
 
+
 #define __ _masm->
 
 
@@ -1708,7 +1709,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
     Label update_done;
 
-    __ maybe_skip_profiling(r14, k_RInfo, update_done);
+    __ maybe_skip_profiling(r14_profile_rng, k_RInfo, update_done);
 
     Register recv = k_RInfo;
     __ load_klass(recv, obj, tmp_load_klass);
@@ -2820,7 +2821,7 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
 
 void LIR_Assembler::align_call(LIR_Code code) {
   // We do this here in order not affect call site alignment.
-  if (ProfileCaptureRatio != 1)   __ movl(Address(r15_thread, JavaThread::profile_rng_offset()), r14);
+  if (ProfileCaptureRatio != 1)   __ movl(Address(r15_thread, JavaThread::profile_rng_offset()), r14_profile_rng);
 
   // make sure that the displacement word of the call ends up word aligned
   int offset = __ offset();
@@ -2846,7 +2847,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   add_call_info(code_offset(), op->info());
   __ post_call_nop();
 
-  if (ProfileCaptureRatio != 1)   __ movl(r14, Address(r15_thread, JavaThread::profile_rng_offset()));
+  if (ProfileCaptureRatio != 1)   __ movl(r14_profile_rng, Address(r15_thread, JavaThread::profile_rng_offset()));
 }
 
 
@@ -2857,7 +2858,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
          "must be aligned");
   __ post_call_nop();
 
-  if (ProfileCaptureRatio != 1)   __ movl(r14, Address(r15_thread, JavaThread::profile_rng_offset()));
+  if (ProfileCaptureRatio != 1)   __ movl(r14_profile_rng, Address(r15_thread, JavaThread::profile_rng_offset()));
 }
 
 
@@ -3541,7 +3542,7 @@ void LIR_Assembler::maybe_inc_profile_counter(LIR_Opr incr, LIR_Opr addr, LIR_Op
     __ incl(Address(temp));
   }
 
-  __ step_random(r14, temp);
+  __ step_random(r14_profile_rng, temp);
 
   Label dont;
 
@@ -3550,7 +3551,7 @@ void LIR_Assembler::maybe_inc_profile_counter(LIR_Opr incr, LIR_Opr addr, LIR_Op
   if (incr->is_register()) {
     Register inc = incr->as_register();
     __ movl(dest->as_register(), inc);
-    __ cmpl(r14, threshold);
+    __ cmpl(r14_profile_rng, threshold);
     __ jccb(Assembler::aboveEqual, dont);
 
     // __ call_VM_leaf_base(CAST_FROM_FN_PTR(address, &foo), 0);
@@ -3569,7 +3570,7 @@ void LIR_Assembler::maybe_inc_profile_counter(LIR_Opr incr, LIR_Opr addr, LIR_Op
         case T_INT: {
           jint inc = incr->as_constant_ptr()->as_jint_bits() * profile_capture_ratio;
           __ movl(dest->as_register(), inc);
-          __ cmpl(r14, threshold);
+          __ cmpl(r14_profile_rng, threshold);
           __ jccb(Assembler::aboveEqual, dont);
 
           // __ call_VM_leaf_base(CAST_FROM_FN_PTR(address, &foo), 0);
@@ -3588,7 +3589,7 @@ void LIR_Assembler::maybe_inc_profile_counter(LIR_Opr incr, LIR_Opr addr, LIR_Op
         case T_LONG: {
           jint inc = incr->as_constant_ptr()->as_jint_bits() * profile_capture_ratio;
           __ movq(dest->as_register_lo(), (jlong)inc);
-          __ cmpl(r14, threshold);
+          __ cmpl(r14_profile_rng, threshold);
           __ jccb(Assembler::aboveEqual, dont);
 
           // __ call_VM_leaf_base(CAST_FROM_FN_PTR(address, &foo), 0);
@@ -3627,14 +3628,14 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   int threshold = (1ull << 32) / ProfileCaptureRatio;
 
   if (ProfileCaptureRatio != 1) {
-    __ step_random(r14, temp);
+    __ step_random(r14_profile_rng, temp);
 
     if (getenv("APH_TRACE")) {
       __ lea(temp, ExternalAddress((address)&ibaz));
       __ incl(Address(temp));
     }
 
-    __ cmpl(r14, threshold);
+    __ cmpl(r14_profile_rng, threshold);
     __ jcc(Assembler::aboveEqual, dont);
   }
 
@@ -3753,9 +3754,9 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
     int ratio_shift = exact_log2(ProfileCaptureRatio);
     int threshold = (1ull << 32) >> ratio_shift;
     // Can't use tmp here because sometimes obj == tmp!
-    __ step_random(r14, rscratch1);
+    __ step_random(r14_profile_rng, rscratch1);
 
-    __ cmpl(r14, threshold);
+    __ cmpl(r14_profile_rng, threshold);
     __ jcc(Assembler::aboveEqual, next);
   }
 
@@ -4000,14 +4001,14 @@ void LIR_Assembler::leal(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_code, Co
 
 void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* args, LIR_Opr tmp, CodeEmitInfo* info) {
   assert(!tmp->is_valid(), "don't need temporary");
-  if (ProfileCaptureRatio != 1)   __ movl(Address(r15_thread, JavaThread::profile_rng_offset()), r14);
+  if (ProfileCaptureRatio != 1)   __ movl(Address(r15_thread, JavaThread::profile_rng_offset()), r14_profile_rng);
 
   __ call(RuntimeAddress(dest));
   if (info != nullptr) {
     add_call_info_here(info);
   }
   __ post_call_nop();
-  if (ProfileCaptureRatio != 1)   __ movl(r14, Address(r15_thread, JavaThread::profile_rng_offset()));
+  if (ProfileCaptureRatio != 1)   __ movl(r14_profile_rng, Address(r15_thread, JavaThread::profile_rng_offset()));
 }
 
 

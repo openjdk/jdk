@@ -138,6 +138,9 @@ constexpr Register rscratch2 = r11;  // volatile
 constexpr Register r12_heapbase = r12; // callee-saved
 constexpr Register r15_thread   = r15; // callee-saved
 
+// State for randomized profile counters. Used by C1.
+constexpr Register r14_profile_rng = r14;
+
 #else
 // rscratch1 will appear in 32bit code that is dead but of course must compile
 // Using noreg ensures if the dead code is incorrectly live and executed it
