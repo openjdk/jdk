@@ -3481,11 +3481,11 @@ void PhaseOutput::install_stub(const char* stub_name) {
                                                       oop_map_set(),
                                                       false,
                                                       false);
-      assert(rs == nullptr || rs->is_runtime_stub(), "sanity check");
 
       if (rs == nullptr) {
         C->record_failure("CodeCache is full");
       } else {
+        assert(rs->is_runtime_stub(), "sanity check");
         C->set_stub_entry_point(rs->entry_point());
       }
     }
