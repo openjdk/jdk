@@ -135,8 +135,17 @@ change should be done with a "setter" accessor matched to the simple
 
 ### Source Files
 
-* All source files must have a globally unique basename.  The build
+* All source files must have a globally unique basename. The build
 system depends on this uniqueness.
+
+* Keep the include lines within a section alphabetically sorted.
+
+* Put conditional inclusions (`#if ...`) at the end of the section of HotSpot
+include lines. This also applies to macro-expanded includes of platform
+dependent files.
+
+* Put system includes in a section after the HotSpot include lines with a blank
+line separating the two sections.
 
 * Do not put non-trivial function implementations in .hpp files. If
 the implementation depends on other .hpp files, put it in a .cpp or
@@ -146,18 +155,22 @@ a .inline.hpp file.
 files.
 
 * All .inline.hpp files should include their corresponding .hpp file as
-the first include line. Declarations needed by other files should be put
-in the .hpp file, and not in the .inline.hpp file. This rule exists to
-resolve problems with circular dependencies between .inline.hpp files.
+the first include line with a blank line separating it from the rest of the
+include lines. Declarations needed by other files should be put in the .hpp
+file, and not in the .inline.hpp file. This rule exists to resolve problems
+with circular dependencies between .inline.hpp files.
+
+* Do not include a .hpp file if the corresponding .inline.hpp file is included.
+
+* Use include guards for .hpp and .inline.hpp files. The name of the defined
+guard should be derived from the full search path of the file relative to the
+hotspot source directory. The guard should be all upper case with all paths
+separators and periods replaced by underscores.
 
 * Some build configurations use precompiled headers to speed up the
 build times. The precompiled headers are included in the precompiled.hpp
 file. Note that precompiled.hpp is just a build time optimization, so
 don't rely on it to resolve include problems.
-
-* Keep the include lines alphabetically sorted.
-
-* Put conditional inclusions (`#if ...`) at the end of the include list.
 
 ### JTReg Tests
 
