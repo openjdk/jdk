@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,27 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @bug 8351045
  * @summary tests for class-specific values
- * @compile ClassValueTest.java
- * @run testng/othervm test.java.lang.invoke.ClassValueTest
+ * @run junit ClassValueTest
  */
 
-package test.java.lang.invoke;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import org.testng.*;
-import static org.testng.AssertJUnit.*;
-import org.testng.annotations.*;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author jrose
  */
-public class ClassValueTest {
+final class ClassValueTest {
     static String nameForCV1(Class<?> type) {
         return "CV1:" + type.getName();
     }
@@ -143,7 +148,7 @@ public class ClassValueTest {
                 }
             }
         }
-        assertEquals(countForCVN, 0);
+        assertEquals(0, countForCVN);
         System.out.println("[rechecking values]");
         for (int i = 0; i < cvns.length * 10; i++) {
             int n = i % cvns.length;
@@ -151,5 +156,58 @@ public class ClassValueTest {
                 assertEquals(nameForCVN(c, n), cvns[n].get(c));
             }
         }
+    }
+
+    private static final int RUNS = 16;
+    private static final long COMPUTE_TIME_MILLIS = 100;
+
+    @Test
+    void testRemoveOnComputeCases() {
+        try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {
+            var tasks = new ArrayList<Future<?>>(RUNS);
+            for (int i = 0; i < RUNS; i++) {
+                tasks.add(exec.submit(this::testRemoveOnCompute));
+            }
+            for (var task : tasks) {
+                try {
+                    task.get();
+                } catch (InterruptedException | ExecutionException ex) {
+                    var cause = ex.getCause();
+                    if (cause instanceof AssertionError ae)
+                        throw ae;
+                    throw new RuntimeException(ex);
+                }
+            }
+        }
+    }
+
+    void testRemoveOnCompute() {
+        AtomicInteger input = new AtomicInteger(0);
+        ClassValue<Integer> cv = new ClassValue<>() {
+            @Override
+            protected Integer computeValue(Class<?> type) {
+                // must get early to represent using outdated input
+                int v = input.get();
+                try {
+                    Thread.sleep(COMPUTE_TIME_MILLIS);
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
+                return v;
+            }
+        };
+        var innocuous = Thread.startVirtualThread(() -> cv.get(int.class));
+        var refreshInput = Thread.startVirtualThread(() -> {
+            input.incrementAndGet();
+            cv.remove(int.class); // Let's recompute with updated inputs!
+        });
+        try {
+            innocuous.join();
+            refreshInput.join();
+        } catch (InterruptedException ex) {
+            throw new RuntimeException(ex);
+        }
+        assertEquals(1, input.get(), "input not updated");
+        assertEquals(1, cv.get(int.class), "CV not using up-to-date input");
     }
 }
