@@ -60,10 +60,10 @@ public abstract class PrimitiveType extends Type {
         public final String name() { return "byte"; }
 
         @Override
-        public String boxedTypeName() { return "Byte"; }
+        public final String boxedTypeName() { return "Byte"; }
 
         @Override
-        public String vectorAPITypeName() { return "ByteVector"; }
+        public final String vectorAPITypeName() { return "ByteVector"; }
 
         @Override
         public final Object con() {
@@ -71,7 +71,7 @@ public abstract class PrimitiveType extends Type {
         }
 
         @Override
-        public int sizeInBits() { return 8; }
+        public final int sizeInBits() { return 8; }
 
         @Override
         public final boolean isFloating() { return false; }
@@ -84,10 +84,10 @@ public abstract class PrimitiveType extends Type {
         public final String name() { return "char"; }
 
         @Override
-        public String boxedTypeName() { return "Character"; }
+        public final String boxedTypeName() { return "Character"; }
 
         @Override
-        public String vectorAPITypeName() { throw new UnsupportedOperationException("VectorAPI has no char vector type."); }
+        public final String vectorAPITypeName() { throw new UnsupportedOperationException("VectorAPI has no char vector type."); }
 
         @Override
         public final Object con() {
@@ -95,7 +95,7 @@ public abstract class PrimitiveType extends Type {
         }
 
         @Override
-        public int sizeInBits() { return 16; }
+        public final int sizeInBits() { return 16; }
 
         @Override
         public final boolean isFloating() { return false; }
@@ -108,10 +108,10 @@ public abstract class PrimitiveType extends Type {
         public final String name() { return "short"; }
 
         @Override
-        public String boxedTypeName() { return "Short"; }
+        public final String boxedTypeName() { return "Short"; }
 
         @Override
-        public String vectorAPITypeName() { return "ShortVector"; }
+        public final String vectorAPITypeName() { return "ShortVector"; }
 
         @Override
         public final Object con() {
@@ -119,7 +119,7 @@ public abstract class PrimitiveType extends Type {
         }
 
         @Override
-        public int sizeInBits() { return 16; }
+        public final int sizeInBits() { return 16; }
 
         @Override
         public final boolean isFloating() { return false; }
@@ -132,10 +132,10 @@ public abstract class PrimitiveType extends Type {
         public final String name() { return "int"; }
 
         @Override
-        public String boxedTypeName() { return "Integer"; }
+        public final String boxedTypeName() { return "Integer"; }
 
         @Override
-        public String vectorAPITypeName() { return "IntVector"; }
+        public final String vectorAPITypeName() { return "IntVector"; }
 
         @Override
         public final Object con() {
@@ -143,7 +143,7 @@ public abstract class PrimitiveType extends Type {
         }
 
         @Override
-        public int sizeInBits() { return 32; }
+        public final int sizeInBits() { return 32; }
 
         @Override
         public final boolean isFloating() { return false; }
@@ -156,10 +156,10 @@ public abstract class PrimitiveType extends Type {
         public final String name() { return "long"; }
 
         @Override
-        public String boxedTypeName() { return "Long"; }
+        public final String boxedTypeName() { return "Long"; }
 
         @Override
-        public String vectorAPITypeName() { return "LongVector"; }
+        public final String vectorAPITypeName() { return "LongVector"; }
 
         @Override
         public final Object con() {
@@ -167,7 +167,7 @@ public abstract class PrimitiveType extends Type {
         }
 
         @Override
-        public int sizeInBits() { return 64; }
+        public final int sizeInBits() { return 64; }
 
         @Override
         public final boolean isFloating() { return false; }
@@ -180,10 +180,10 @@ public abstract class PrimitiveType extends Type {
         public final String name() { return "float"; }
 
         @Override
-        public String boxedTypeName() { return "Float"; }
+        public final String boxedTypeName() { return "Float"; }
 
         @Override
-        public String vectorAPITypeName() { return "FloatVector"; }
+        public final String vectorAPITypeName() { return "FloatVector"; }
 
         @Override
         public final Object con() {
@@ -191,7 +191,7 @@ public abstract class PrimitiveType extends Type {
         }
 
         @Override
-        public int sizeInBits() { return 32; }
+        public final int sizeInBits() { return 32; }
 
         @Override
         public final boolean isFloating() { return true; }
@@ -204,10 +204,10 @@ public abstract class PrimitiveType extends Type {
         public final String name() { return "double"; }
 
         @Override
-        public String boxedTypeName() { return "Double"; }
+        public final String boxedTypeName() { return "Double"; }
 
         @Override
-        public String vectorAPITypeName() { return "DoubleVector"; }
+        public final String vectorAPITypeName() { return "DoubleVector"; }
 
         @Override
         public final Object con() {
@@ -215,7 +215,7 @@ public abstract class PrimitiveType extends Type {
         }
 
         @Override
-        public int sizeInBits() { return 64; }
+        public final int sizeInBits() { return 64; }
 
         @Override
         public final boolean isFloating() { return true; }
@@ -228,10 +228,10 @@ public abstract class PrimitiveType extends Type {
         public final String name() { return "boolean"; }
 
         @Override
-        public String boxedTypeName() { return "Boolean"; }
+        public final String boxedTypeName() { return "Boolean"; }
 
         @Override
-        public String vectorAPITypeName() { throw new UnsupportedOperationException("VectorAPI has no boolean vector type."); }
+        public final String vectorAPITypeName() { throw new UnsupportedOperationException("VectorAPI has no boolean vector type."); }
 
         @Override
         public final Object con() {
@@ -240,7 +240,7 @@ public abstract class PrimitiveType extends Type {
         }
 
         @Override
-        public int sizeInBits() { throw new UnsupportedOperationException("boolean does not have number of bits"); }
+        public final int sizeInBits() { throw new UnsupportedOperationException("boolean does not have number of bits"); }
 
         @Override
         public final boolean isFloating() { return false; }
