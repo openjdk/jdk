@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -4219,6 +4219,16 @@ public:
 #undef INSN
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
+  }
+
+  // SVE2 programmable table lookup in two vector table
+  void sve2_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn1,
+                FloatRegister Zn2, FloatRegister Zm) {
+    starti;
+    assert(T != Q, "invalid size");
+    assert(Zn1->successor() == Zn2, "invalid order of registers");
+    f(0b00000101, 31, 24), f(T, 23, 22), f(0b1, 21), rf(Zm, 16);
+    f(0b001010, 15, 10), rf(Zn1, 5), rf(Zd, 0);
   }
 
   // Stack overflow checking
