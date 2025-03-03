@@ -267,7 +267,7 @@ bool JfrStackTrace::record_async(JavaThread* jt, const frame& frame) {
       bci = vfs.bci();
     }
 
-    intptr_t* frame_id = vfs.frame_id();
+    intptr_t frame_id = vfs.frame_id();
     vfs.next_vframe();
     if (type == JfrStackFrame::FRAME_JIT && !vfs.at_end() && frame_id == vfs.frame_id()) {
       // This frame and the caller frame are both the same physical
@@ -326,7 +326,7 @@ bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip, int64_t
       bci = vfs.bci();
     }
 
-    intptr_t* frame_id = vfs.frame_id();
+    intptr_t frame_id = vfs.frame_id();
     vfs.next_vframe();
     if (type == JfrStackFrame::FRAME_JIT && !vfs.at_end() && frame_id == vfs.frame_id()) {
       // This frame and the caller frame are both the same physical

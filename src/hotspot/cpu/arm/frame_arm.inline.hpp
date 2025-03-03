@@ -58,7 +58,7 @@ inline void frame::init(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, add
   adjust_unextended_sp();
   DEBUG_ONLY(_frame_index = -1;)
 
-  address original_pc = get_deopt_original_pc();
+  address original_pc = get_deopt_original_pc(nullptr);
   if (original_pc != nullptr) {
     _pc = original_pc;
     assert(_cb->as_nmethod()->insts_contains_inclusive(_pc),
