@@ -119,10 +119,6 @@ static void test_alignments() {
       if (0 < up && up <= (uint64_t)std::numeric_limits<T>::max()) {
         log("Testing align_up:   alignment: " UINT64_FORMAT_X " value: " UINT64_FORMAT_X " expected: " UINT64_FORMAT_X "\n", (uint64_t)alignment, values[i], up);
 
-        // Check against `align_up_or_min`
-        const uint64_t up2 = align_up_or_min(values[i], alignment);
-        ASSERT_EQ(up, up2);
-
         T value = T(values[i]);
 
         // Check against uint64_t version
@@ -205,7 +201,6 @@ static void test_fail_alignment() {
   A alignment = max_alignment<A>();
   T value = align_down(std::numeric_limits<T>::max(), alignment) + 1;
   // Aligning value to alignment would now overflow.
-  ASSERT_EQ(align_up_or_min(value, alignment), std::numeric_limits<T>::min());
   // Assert inside align_up expected.
   T aligned = align_up(value, alignment);
 }
