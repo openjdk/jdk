@@ -51,40 +51,43 @@ public class bug4213634 {
     private static Robot robot;
 
     public static void main(String[] args) throws Exception {
-        robot = new Robot();
-        SwingUtilities.invokeAndWait(() -> {
-            createAndShowGUI();
-        });
+        try {
+            robot = new Robot();
+            SwingUtilities.invokeAndWait(() -> createAndShowGUI());
 
-        robot.waitForIdle();
-        robot.delay(1000);
-        test();
+            robot.waitForIdle();
+            robot.delay(1000);
+            test();
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
     }
 
     public static void createAndShowGUI() {
-        frame = new JFrame("TEST");
+        frame = new JFrame("bug4213634");
         JMenuBar mb = new JMenuBar();
         menu = mb.add(createMenu("1 - First Menu", true));
         mb.add(createMenu("2 - Second Menu", false));
         frame.setJMenuBar(mb);
-        JTextArea ta = new JTextArea("This test dedicated to Nancy and Kathleen, testers and bowlers extraordinaire\n\n\nNo exception means pass.");
-        frame.getContentPane().add("Center", ta);
         JButton button = new JButton("Test");
         frame.getContentPane().add("South", button);
-        frame.setSize(400, 400);
+        frame.setSize(300, 300);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         button.requestFocusInWindow();
     }
 
-    private static void test() throws AWTException, InterruptedException, InvocationTargetException {
+    private static void test() throws Exception {
 
         Util.hitMnemonics(robot, KeyEvent.VK_1);
         robot.waitForIdle();
         robot.delay(100);
 
         SwingUtilities.invokeAndWait(() -> {
-            frame.dispose();
             if (!menu.isSelected()) {
                 throw new RuntimeException(
                     "Failed: Menu didn't remain posted at end of test");
@@ -99,13 +102,10 @@ public class bug4213634 {
         JMenu menu = new JMenu(str);
         menu.setMnemonic(str.charAt(0));
 
-        for(int i = 0; i < 10; i ++) {
+        for (int i = 0; i < 10; i++) {
             menuitem = new JMenuItem("JMenuItem" + i);
-            menuitem.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    throw new RuntimeException(
-                        "Failed: Mnemonic activated");
-                }
+            menuitem.addActionListener(e -> {
+                throw new RuntimeException("Failed: Mnemonic activated");
             });
             if (bFlag) {
                 menuitem.setMnemonic('0' + i);
