@@ -70,7 +70,10 @@ typedef struct CDSFileMapRegion {
   size_t  _ptrmap_offset;     // Bitmap for relocating native pointer fields in archived heap objects.
                               // (The base address is the bottom of the BM region).
   size_t  _ptrmap_size_in_bits;
-  char*   _mapped_base;       // Actually mapped address (null if this region is not mapped).
+  char*   _mapped_base;       // Actually mapped address used for mapping the core regions. At that address the
+                              // zero nklass protection zone is established; following that (at offset
+                              // MetaspaceShared::protection_zone_size()) the lowest core region (rw for the
+                              // static archive) is is mapped.
   bool    _in_reserved_space; // Is this region in a ReservedSpace
 } CDSFileMapRegion;
 
