@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,19 @@
  * questions.
  */
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+
+import jtreg.SkippedException;
 
 /**
  * @test
  * @bug 8135305
  * @key intermittent
+ * @library /test/lib
  * @summary ensure we can't ping external hosts via loopback if
+ * @run main IsReachableViaLoopbackTest
  */
 
 public class IsReachableViaLoopbackTest {
@@ -54,7 +58,9 @@ public class IsReachableViaLoopbackTest {
             } else {
                 System.out.println("inf == null");
             }
-
+        } catch (java.net.UnknownHostException e) {
+            e.printStackTrace();
+            throw new SkippedException("Network setup issue");
         } catch (IOException e) {
             throw new RuntimeException("Unexpected exception:" + e);
         }
