@@ -96,20 +96,15 @@ public class LocalExecutionControl extends DirectExecutionControl {
         return cc.transformClass(cc.parse(classFile),
                         ClassTransform.transformingMethodBodies(
                             CodeTransform.ofStateful(() -> {
-                                HashSet<Label> prior = new HashSet<>();
-                                return (cob, coe) -> {
-                                    switch (coe) {
-                                    case BranchInstruction branch:
-                                        if (prior.contains(branch.target()))
-                                            cob.invokestatic(CD_Cancel, "stopCheck", ConstantDescs.MTD_void);
-                                        break;
-                                    case LabelTarget target:
-                                        prior.add(target.label());
-                                        break;
-                                    default:
-                                        break;
+                                HashSet<Label> priorLabels = new HashSet<>();
+                                return (builder, element) -> {
+                                    switch (element) {
+                                    case LabelTarget target -> priorLabels.add(target.label());
+                                    case BranchInstruction branch when priorLabels.contains(branch.target())
+                                        -> builder.invokestatic(CD_Cancel, "stopCheck", ConstantDescs.MTD_void);
+                                    default -> { }
                                     }
-                                    cob.with(coe);
+                                    builder.with(element);
                                 };
                             })));
     }
