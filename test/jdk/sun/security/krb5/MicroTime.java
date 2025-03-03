@@ -23,12 +23,10 @@
 /*
  * @test
  * @bug 6882687 8011124
- * @library /test/lib
  * @summary KerberosTime too imprecise
  * @modules java.security.jgss/sun.security.krb5.internal
  */
 
-import jtreg.SkippedException;
 import sun.security.krb5.internal.KerberosTime;
 
 public class MicroTime {
@@ -46,10 +44,10 @@ public class MicroTime {
                 count++;
             }
         }
-        // We believe a nice KerberosTime can at least tell the
-        // difference of 100 musec.
-        if (count < 10000) {
-            throw new SkippedException("What? only " + (1000000/count) +
+        // Before this change, KerberosTime was implemented in milliseconds.
+        // Now there should be more.
+        if (count < 1001) {
+            throw new Exception("What? only " + (1000000/count) +
                     " musec precision?");
         }
     }
