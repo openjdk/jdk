@@ -222,7 +222,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
-#if defined(S390) || defined(PPC64) || defined(AARCH64)
+#if defined(S390) || defined(PPC64) || defined(AARCH64) || defined(AMD64)
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
 #endif
