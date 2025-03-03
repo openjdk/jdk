@@ -77,7 +77,6 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       assert(leqA_n->val().out.type() != StateType::Released, "Should not use inplace the tag of a released region");
       MemTag tag = leqA_n->val().out.mem_tag();
       stA.out.set_tag(tag);
-      LEQ_A.state.out.set_tag(tag);
       stB.in.set_tag(tag);
     }
 
