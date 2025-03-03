@@ -151,7 +151,7 @@ static bool shared_base_valid(char* shared_base) {
   // We check user input for SharedBaseAddress at dump time.
 
   // At CDS runtime, "shared_base" will be the (attempted) mapping start. It will also
-  // be the encoding base, since the the headers of archived base objects (and with Lilliput,
+  // be the encoding base, since the headers of archived base objects (and with Lilliput,
   // the prototype mark words) carry pre-computed narrow Klass IDs that refer to the mapping
   // start as base.
   //
