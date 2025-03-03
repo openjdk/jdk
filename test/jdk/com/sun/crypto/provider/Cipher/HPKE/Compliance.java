@@ -248,14 +248,13 @@ public class Compliance {
                         HPKEParameterSpec.of().authKey(kp2.getPrivate())),
                 InvalidAlgorithmParameterException.class);
 
-        // mod_auth, not supported
-        Utils.runAndCheckException(
-                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(),
-                        HPKEParameterSpec.of().authKey(kp2.getPrivate())),
-                UnsupportedOperationException.class);
-        Utils.runAndCheckException(
-                () -> c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(),
-                        HPKEParameterSpec.of().authKey(kp2.getPublic())),
-                UnsupportedOperationException.class);
+        // mod_auth
+        c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(),
+                        HPKEParameterSpec.of().authKey(kp2.getPrivate()));
+        ct = c1.doFinal(new byte[2]);
+        c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(),
+                        HPKEParameterSpec.of().authKey(kp2.getPublic())
+                                .encapsulation(c1.getIV()));
+        Asserts.assertEqualsByteArray(c2.doFinal(ct), new byte[2]);
     }
 }

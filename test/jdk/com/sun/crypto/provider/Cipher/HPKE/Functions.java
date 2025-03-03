@@ -59,6 +59,7 @@ public class Functions {
             System.out.println(param);
             var c = Cipher.getInstance("HPKE");
             var kp = genKeyPair(param.name());
+            var kp2 = genKeyPair(param.name());
 
             c.init(Cipher.ENCRYPT_MODE, kp.getPublic());
             var enc = c.getIV();
@@ -70,11 +71,13 @@ public class Functions {
             Asserts.assertEqualsByteArray(msg, c.doFinal(ct));
 
             c.init(Cipher.ENCRYPT_MODE, kp.getPublic(), HPKEParameterSpec.of()
+                    .authKey(kp2.getPrivate())
                     .info(info)
                     .psk(psk, psk_id));
             ct = c.doFinal(msg);
 
             c.init(Cipher.DECRYPT_MODE, kp.getPrivate(), HPKEParameterSpec.of()
+                    .authKey(kp2.getPublic())
                     .info(info)
                     .psk(psk, psk_id)
                     .encapsulation(c.getIV()));

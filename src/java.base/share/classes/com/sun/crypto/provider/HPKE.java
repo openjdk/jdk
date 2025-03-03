@@ -382,19 +382,18 @@ public class HPKE extends CipherSpi {
                             "Must not provide key encapsulation message on sender side");
                 }
                 checkMatch(pk, params.kem_id());
-                KEM.Encapsulator e;
+                KEM.Encapsulated enc;
                 if (p.authKey() == null) {
-                    e = kem().newEncapsulator(pk, rand);
+                    var e = kem().newEncapsulator(pk, rand);
+                    enc = e.encapsulate();
+                } else if (p.authKey() instanceof PrivateKey skS) {
+                    // AuthEncap not public KEM API but it's internally supported
+                    var e = new DHKEM().engineNewAuthEncapsulator(pk, skS, null, rand);
+                    enc = e.engineEncapsulate(0, e.engineSecretSize(), "Generic");
                 } else {
-                    if (p.authKey() instanceof PrivateKey) {
-                        throw new UnsupportedOperationException(
-                                "auth mode not supported");
-                    } else {
-                        throw new InvalidAlgorithmParameterException(
-                                "Cannot auth with public key");
-                    }
+                    throw new InvalidAlgorithmParameterException(
+                            "Cannot auth with public key");
                 }
-                var enc = e.encapsulate();
                 iv = enc.encapsulation();
                 shared_secret = enc.key();
             } else {
@@ -403,23 +402,23 @@ public class HPKE extends CipherSpi {
                 }
                 checkMatch(sk, params.kem_id());
                 try {
-                    KEM.Decapsulator d;
-                    if (p.authKey() == null) {
-                        d = kem().newDecapsulator(sk);
-                    } else {
-                        if (p.authKey() instanceof PublicKey) {
-                            throw new UnsupportedOperationException(
-                                    "auth mode not supported");
-                        } else {
-                            throw new InvalidAlgorithmParameterException(
-                                    "Cannot auth with private key");
-                        }
-                    }
-                    if (p.encapsulation() == null) {
+                    var encap = p.encapsulation();
+                    if (encap == null) {
                         throw new InvalidAlgorithmParameterException(
                                 "Must provide key encapsulation message on recipient side");
                     }
-                    shared_secret = d.decapsulate(p.encapsulation());
+                    if (p.authKey() == null) {
+                        var d = kem().newDecapsulator(sk);
+                        shared_secret = d.decapsulate(encap);
+                    } else if (p.authKey() instanceof PublicKey pkS) {
+                        // AuthDecap not public KEM API but it's internally supported
+                        var d = new DHKEM().engineNewAuthDecapsulator(sk, pkS, null);
+                        shared_secret = d.engineDecapsulate(
+                                encap, 0, d.engineSecretSize(), "Generic");
+                    } else {
+                        throw new InvalidAlgorithmParameterException(
+                                "Cannot auth with private key");
+                    }
                 } catch (DecapsulateException e) {
                     throw new InvalidAlgorithmParameterException(e);
                 }

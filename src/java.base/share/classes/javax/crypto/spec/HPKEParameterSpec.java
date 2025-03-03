@@ -38,22 +38,21 @@ import java.util.Objects;
  * "{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
  * standard algorithm name</a> for the cipher is "HPKE".
  * <p>
- * In HPKE, the {@code Cipher} object on the sender side is always initialized
- * with the recipient's public key in {@linkplain Cipher#ENCRYPT_MODE encrypt mode},
- * and {@code Cipher} object on the recipient side is always initialized with
- * its own private key in {@linkplain Cipher#DECRYPT_MODE decrypt mode}.
+ * In HPKE, the sender's {@code Cipher} is always initialized with the
+ * recipient's public key in {@linkplain Cipher#ENCRYPT_MODE encrypt mode},
+ * while the recipient's {@code Cipher} object is initialized with its own
+ * private key in {@linkplain Cipher#DECRYPT_MODE decrypt mode}.
  * <p>
  * An {@code HPKEParameterSpec} object can be provided at HPKE
  * {@linkplain Cipher#init(int, Key, AlgorithmParameterSpec) cipher initialization}.
  * <p>
- * An {@code HPKEParameterSpec} object can be created in two ways.
+ * An {@code HPKEParameterSpec} object can be created in two ways:
  * <ul>
- * <li> The {@link #of()} method creates an object whose KEM, KDF, and AEAD
- * algorithms are determined by the type of key provided to the {@code init()}
- * method.
- * <li>
- * The {@link #of(int, int, int)} method creates an object whose KEM, KDF,
- * and AEAD algorithms are determined by the specified numeric identifiers.
+ * <li> {@link #of()} creates an instance with unspecified KEM, KDF, and AEAD
+ * algorithms, which will be determined by the implementation based on the key
+ * provided to {@code init()}.
+ * <li> {@link #of(int, int, int)} creates an instance with explicitly
+ * specified KEM, KDF, and AEAD algorithm identifiers.
  * </ul>
  * The terms "KEM algorithm identifiers", "KDF algorithm identifiers", and
  * "AEAD algorithm identifiers" refer to their respective numeric values
