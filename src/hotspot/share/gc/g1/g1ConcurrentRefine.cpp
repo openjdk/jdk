@@ -346,7 +346,7 @@ bool G1ConcurrentRefineWorkState::complete(bool concurrent, bool print_log) {
 void G1ConcurrentRefineWorkState::snapshot_heap_into(G1CardTableClaimTable* sweep_table) {
   // G1CollectedHeap::heap_region_iterate() below will only visit committed regions. Initialize
   // all entries in the state table here to not require special handling when iterating over it.
-  sweep_table->reset_all_claims_to_claimed();
+  sweep_table->reset_all_to_claimed();
 
   class SnapshotRegionsClosure : public G1HeapRegionClosure {
     G1CardTableClaimTable* _sweep_table;

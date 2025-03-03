@@ -59,8 +59,8 @@ public:
   // Allocates the data structure and initializes the claims to unclaimed.
   void initialize(uint max_reserved_regions);
 
-  void reset_all_claims_to_unclaimed();
-  void reset_all_claims_to_claimed();
+  void reset_all_to_unclaimed();
+  void reset_all_to_claimed();
 
   inline bool has_unclaimed_cards(uint region);
   inline void reset_to_unclaimed(uint region);

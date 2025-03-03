@@ -830,43 +830,41 @@ public:
 
 class G1PostEvacuateCollectionSetCleanupTask2::ResizeTLABsAndSwapCardTableTask : public G1AbstractSubTask {
   G1JavaThreadsListClaimer _claimer;
-  volatile bool _non_java_threads_claim;
 
   // There is not much work per thread so the number of threads per worker is high.
   static const uint ThreadsPerWorker = 250;
 
 public:
   ResizeTLABsAndSwapCardTableTask()
-    : G1AbstractSubTask(G1GCPhaseTimes::ResizeThreadLABs), _claimer(ThreadsPerWorker), _non_java_threads_claim(false)
+    : G1AbstractSubTask(G1GCPhaseTimes::ResizeThreadLABs), _claimer(ThreadsPerWorker)
   {
     G1BarrierSet::g1_barrier_set()->swap_global_card_table();
+
+#ifdef ASSERT
+    class AssertCardTableBaseNull : public ThreadClosure {
+    public:
+
+      void do_thread(Thread* thread) {
+        assert(G1ThreadLocalData::get_byte_map_base(thread) == nullptr, "thread " PTR_FORMAT " (%s) has non-null card table base", p2i(thread), thread->name());
+      }
+    } assert_cl;
+    Threads::non_java_threads_do(&assert_cl);
+#endif
   }
 
   void do_work(uint worker_id) override {
-    class SwapCardTableClosure : public ThreadClosure {
-    public:
-      void do_thread(Thread* thread) {
-        // The global card table references have already been swapped.
-        G1CardTable::CardValue* new_card_table_base = G1CollectedHeap::heap()->card_table_base();
-        G1ThreadLocalData::set_byte_map_base(thread, new_card_table_base);
-      }
-    } swap_cl;
-
-    // We do not expect too many non-Java threads compared to Java threads, so just
-    // let one worker claim that work.
-    if (!_non_java_threads_claim && !Atomic::cmpxchg(&_non_java_threads_claim, false, true, memory_order_relaxed)) {
-      Threads::non_java_threads_do(&swap_cl);
-    }
 
     class ResizeAndSwapCardTableClosure : public ThreadClosure {
-    SwapCardTableClosure _cl;
-
     public:
+
       void do_thread(Thread* thread) {
         if (UseTLAB && ResizeTLAB) {
           static_cast<JavaThread*>(thread)->tlab().resize();
         }
-        _cl.do_thread(thread);
+
+        // The global card table references have already been swapped.
+        G1CardTable::CardValue* new_card_table_base = G1CollectedHeap::heap()->card_table_base();
+        G1ThreadLocalData::set_byte_map_base(thread, new_card_table_base);
       }
     } resize_and_swap_cl;
 

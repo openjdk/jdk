@@ -46,17 +46,17 @@ void G1CardTableClaimTable::initialize(uint max_reserved_regions) {
   assert(_card_claims == nullptr, "Must not be initialized twice");
   _card_claims = NEW_C_HEAP_ARRAY(uint, max_reserved_regions, mtGC);
   _max_reserved_regions = max_reserved_regions;
-  reset_all_claims_to_unclaimed();
+  reset_all_to_unclaimed();
 }
 
-void G1CardTableClaimTable::reset_all_claims_to_unclaimed() {
-  for (size_t i = 0; i < _max_reserved_regions; i++) {
+void G1CardTableClaimTable::reset_all_to_unclaimed() {
+  for (uint i = 0; i < _max_reserved_regions; i++) {
     _card_claims[i] = 0;
   }
 }
 
-void G1CardTableClaimTable::reset_all_claims_to_claimed() {
-  for (size_t i = 0; i < _max_reserved_regions; i++) {
+void G1CardTableClaimTable::reset_all_to_claimed() {
+  for (uint i = 0; i < _max_reserved_regions; i++) {
     _card_claims[i] = (uint)G1HeapRegion::CardsPerRegion;
   }
 }

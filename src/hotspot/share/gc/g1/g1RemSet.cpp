@@ -268,7 +268,7 @@ public:
     // regions.
     //assert(_next_dirty_regions->size() == 0, "next dirty regions must be empty");
 
-    _card_claim_table.reset_all_claims_to_unclaimed();
+    _card_claim_table.reset_all_to_unclaimed();
   }
 
   void complete_evac_phase(bool merge_dirty_regions) {
@@ -829,12 +829,12 @@ class MergeRefinementTableTask : public WorkerTask {
 
         size_t* card_cur_word = (size_t*)card_table->byte_for_index(start_idx);
 
-        size_t* refinement_cur_card = (size_t*)refinement_table->byte_for_index(start_idx);
-        size_t* const refinement_end_card = refinement_cur_card + claim.size() / (sizeof(size_t) / sizeof(G1CardTable::CardValue));
+        size_t* refinement_cur_word = (size_t*)refinement_table->byte_for_index(start_idx);
+        size_t* const refinement_end_word = refinement_cur_word + claim.size() / (sizeof(size_t) / sizeof(G1CardTable::CardValue));
 
-        for (; refinement_cur_card < refinement_end_card; ++refinement_cur_card, ++card_cur_word) {
-          size_t value = *refinement_cur_card;
-          *refinement_cur_card = G1CardTable::WordAllClean;
+        for (; refinement_cur_word < refinement_end_word; ++refinement_cur_word, ++card_cur_word) {
+          size_t value = *refinement_cur_word;
+          *refinement_cur_word = G1CardTable::WordAllClean;
           // Dirty is "0", so we need to logically-and here. This is also safe
           // for all other possible values in the card table; at this point this
           // can be either g1_dirty_card or g1_to_cset_card which will both be

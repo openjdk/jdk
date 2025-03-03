@@ -103,7 +103,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   Label done;
 
   __ testptr(count, count);
-  __ jcc(Assembler::equal, done);
+  __ jcc(Assembler::zero, done);
 
   // Calculate end address in "count".
   Address::ScaleFactor scale = UseCompressedOops ? Address::times_4 : Address::times_8;
@@ -129,8 +129,10 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   __ bind(loop);
 
   Label is_clean_card;
-  __ cmpb(Address(addr, 0), G1CardTable::clean_card_val());
-  __ jcc(Assembler::equal, is_clean_card);
+  if (UseCondCardMark) {
+    __ cmpb(Address(addr, 0), G1CardTable::clean_card_val());
+    __ jcc(Assembler::equal, is_clean_card);
+  }
 
   Label next_card;
   __ bind(next_card);
@@ -320,7 +322,7 @@ static void generate_post_barrier_fast_path(MacroAssembler* masm,
 #ifdef _LP64
   assert(thread == r15_thread, "must be");
 #endif // _LP64
-  assert_different_registers(store_addr, new_val, thread, tmp1 /*, tmp2 unused */, noreg);
+  assert_different_registers(store_addr, new_val, thread, tmp1 /*, tmp2 unused for x86 */, noreg);
 
   // Does store cross heap regions?
   __ movptr(tmp1, store_addr);                                    // tmp1 := store address
