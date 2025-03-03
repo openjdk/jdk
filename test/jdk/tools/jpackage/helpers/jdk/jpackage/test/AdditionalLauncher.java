@@ -186,21 +186,10 @@ public class AdditionalLauncher {
         return Optional.of(shell[0]).get();
     }
 
-    private void initialize(JPackageCommand cmd) {
-        Path propsFile = TKit.workDir().resolve(name + ".properties");
-        if (Files.exists(propsFile)) {
-            // File with the given name exists, pick another name that
-            // will not reference existing file.
-            try {
-                propsFile = TKit.createTempFile(propsFile);
-                TKit.deleteIfExists(propsFile);
-            } catch (IOException ex) {
-                rethrowUnchecked(ex);
-            }
-        }
+    private void initialize(JPackageCommand cmd) throws IOException {
+        final Path propsFile = TKit.createTempFile(name + ".properties");
 
-        cmd.addArguments("--add-launcher", String.format("%s=%s", name,
-                    propsFile));
+        cmd.addArguments("--add-launcher", String.format("%s=%s", name, propsFile));
 
         List<Map.Entry<String, String>> properties = new ArrayList<>();
         if (defaultArguments != null) {

@@ -130,6 +130,11 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
   // Regardless if progress was made, we record that we completed a "successful" full GC.
   heap->global_generation()->heuristics()->record_success_full();
   heap->shenandoah_policy()->record_success_full();
+
+  {
+    ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::full_gc_propagate_gc_state);
+    heap->propagate_gc_state_to_all_threads();
+  }
 }
 
 void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
