@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,7 @@ public class SecurityManagerWarnings {
 
             JarUtils.createJarFile(Path.of("a.jar"),
                     Path.of(testClasses),
-                    Path.of("SecurityManagerWarnings.class"),
-                    Path.of("A.class"));
+                    Path.of(testClasses));
 
             failLateTest(null, "a.jar");
         } else {
@@ -72,8 +71,8 @@ public class SecurityManagerWarnings {
         }
     }
 
-    // When -Djava.security.manager is not set, or set to "allow",
-    // or "disallow", JVM starts but setSecurityManager will fail.
+    // When -Djava.security.manager is not set or set to "disallow",
+    // JVM starts but setSecurityManager will fail.
     static void failLateTest(String prop, String cp) throws Exception {
         run(prop, cp)
                 .shouldNotHaveExitValue(0)
