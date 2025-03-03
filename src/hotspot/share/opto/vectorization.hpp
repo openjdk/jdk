@@ -445,7 +445,7 @@ private:
 // types (byte, char, short). In the C2 IR, their operations are
 // done with full int type with 4 byte precision (e.g. AddI, MulI).
 // Example:  char a,b,c;  a = (char)(b + c);
-// However, if we can prove the the upper bits are only truncated,
+// However, if we can prove the upper bits are only truncated,
 // and the lower bits for the narrower type computed correctly, we
 // can compute the operations in the narrower type directly (e.g we
 // perform the AddI or MulI with 1 or 2 bytes). This allows us to
