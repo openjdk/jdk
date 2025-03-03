@@ -33,32 +33,50 @@ public sealed interface Operation permits Operation.Unary,
      * Check if input types are in the set.
      * Check that return type is subtype of the desired type.
      */
-    public abstract boolean matchesTypes(Type returnType, HashSet<Type> argumentTypes);
+    public abstract boolean matchesReturnType(Type returnType);
+
+    public abstract boolean matchesTypes(HashSet<Type> types);
 
     public static record Unary(Type r, String s0, Type t0, String s1) implements Operation {
         @Override
-        public boolean matchesTypes(Type returnType, HashSet<Type> argumentTypes) {
-            return r.isSubtypeOf(returnType) &&
-                   argumentTypes.contains(t0);
+        public boolean matchesReturnType(Type returnType) {
+            return r.isSubtypeOf(returnType);
+        }
+
+
+        @Override
+        public boolean matchesTypes(HashSet<Type> types) {
+            return types.contains(r) &&
+                   types.contains(t0);
         }
     }
 
     public static record Binary(Type r, String s0, Type t0, String s1, Type t1, String s2) implements Operation {
         @Override
-        public boolean matchesTypes(Type returnType, HashSet<Type> argumentTypes) {
-            return r.isSubtypeOf(returnType) &&
-                   argumentTypes.contains(t0) &&
-                   argumentTypes.contains(t1);
+        public boolean matchesReturnType(Type returnType) {
+            return r.isSubtypeOf(returnType);
+        }
+
+        @Override
+        public boolean matchesTypes(HashSet<Type> types) {
+            return types.contains(r) &&
+                   types.contains(t0) &&
+                   types.contains(t1);
         }
     }
 
     public static record Ternary(Type r, String s0, Type t0, String s1, Type t1, String s2, Type t2, String s3) implements Operation {
         @Override
-        public boolean matchesTypes(Type returnType, HashSet<Type> argumentTypes) {
-            return r.isSubtypeOf(returnType) &&
-                   argumentTypes.contains(t0) &&
-                   argumentTypes.contains(t1) &&
-                   argumentTypes.contains(t2);
+        public boolean matchesReturnType(Type returnType) {
+            return r.isSubtypeOf(returnType);
+        }
+
+        @Override
+        public boolean matchesTypes(HashSet<Type> types) {
+            return types.contains(r) &&
+                   types.contains(t0) &&
+                   types.contains(t1) &&
+                   types.contains(t2);
         }
     }
 }

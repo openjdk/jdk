@@ -24,6 +24,7 @@
 package compiler.lib.template_library;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Random;
 import jdk.test.lib.Utils;
 
@@ -53,6 +54,15 @@ public abstract class Library {
         if (list.isEmpty()) { return null; }
         int i = RANDOM.nextInt(list.size());
         return list.get(i);
+    }
+
+    static final <T> List<T> concat(List<? extends T> a, List<? extends T> b) {
+        List<T> list = new ArrayList<T>();
+        list.addAll(a);
+        list.addAll(b);
+
+        // Ensure the list is immutable.
+        return List.copyOf(list);
     }
 
     public static TemplateWithArgs defineField(Name name, boolean isStatic, Object valueToken) {

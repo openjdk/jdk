@@ -87,9 +87,10 @@ public final class Expression {
 
     public static final <T extends Type> Expression make(Type resultType, List<T> allowedTypes, int maxDepth) {
         HashSet<Type> allowedTypesSet = new HashSet<Type>(allowedTypes);
+        List<Operation> ops = Operations.ALL_BUILTIN_OPERATIONS.stream().filter(o -> o.matchesTypes(allowedTypesSet)).toList();
 
         List<Type> types = new ArrayList<Type>();
-        ExpressionGenerator generator = expressionGenerator(resultType, allowedTypesSet, maxDepth, types);
+        ExpressionGenerator generator = expressionGenerator(resultType, ops, maxDepth, types);
 
         var template = Template.make("args", (List<Object> args) -> body(
             generator.tokens(args)
@@ -97,8 +98,8 @@ public final class Expression {
         return new Expression(template, types);
     }
 
-    private static final ExpressionGenerator expressionGenerator(Type resultType, HashSet<Type> allowedTypes, int maxDepth, List<Type> types) {
-        ExpressionGeneratorStep step = expressionGeneratorStep(resultType, allowedTypes, maxDepth, types);
+    private static final ExpressionGenerator expressionGenerator(Type resultType, List<Operation> ops, int maxDepth, List<Type> types) {
+        ExpressionGeneratorStep step = expressionGeneratorStep(resultType, ops, maxDepth, types);
         return (List<Object> args) -> {
             List<Object> tokens = new ArrayList<Object>();
             step.addTokens(tokens, args);
@@ -106,9 +107,9 @@ public final class Expression {
         };
     }
 
-    private static final ExpressionGeneratorStep expressionGeneratorStep(Type resultType, HashSet<Type> allowedTypes, int maxDepth, List<Type> types) {
-        List<Operation> ops = Operations.PRIMITIVE_OPERATIONS.stream().filter(o -> o.matchesTypes(resultType, allowedTypes)).toList();
-        if (maxDepth <= 0 || ops.isEmpty() || RANDOM.nextInt(2 * maxDepth) == 0) {
+    private static final ExpressionGeneratorStep expressionGeneratorStep(Type resultType, List<Operation> ops, int maxDepth, List<Type> types) {
+        List<Operation> resultTypeOps = ops.stream().filter(o -> o.matchesReturnType(resultType)).toList();
+        if (maxDepth <= 0 || resultTypeOps.isEmpty() || RANDOM.nextInt(2 * maxDepth) == 0) {
             if (RANDOM.nextInt(3) == 0) {
                 // Fill with random constant value.
                 Object c = resultType.con();
@@ -125,9 +126,9 @@ public final class Expression {
                 };
             }
         }
-        switch (Library.choice(ops)) {
+        switch (Library.choice(resultTypeOps)) {
             case Operation.Unary(Type r, String s0, Type t0, String s1) -> {
-                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, allowedTypes, maxDepth-1, types);
+                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, ops, maxDepth-1, types);
                 return (List<Object> tokens, List<Object> args) -> {
                     tokens.add(s0);
                     step0.addTokens(tokens, args);
@@ -135,8 +136,8 @@ public final class Expression {
                 };
             }
             case Operation.Binary(Type r, String s0, Type t0, String s1, Type t1, String s2) -> {
-                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, allowedTypes, maxDepth-1, types);
-                ExpressionGeneratorStep step1 = expressionGeneratorStep(t1, allowedTypes, maxDepth-1, types);
+                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, ops, maxDepth-1, types);
+                ExpressionGeneratorStep step1 = expressionGeneratorStep(t1, ops, maxDepth-1, types);
                 return (List<Object> tokens, List<Object> args) -> {
                     tokens.add(s0);
                     step0.addTokens(tokens, args);
@@ -146,9 +147,9 @@ public final class Expression {
                 };
             }
             case Operation.Ternary(Type r, String s0, Type t0, String s1, Type t1, String s2, Type t2, String s3) -> {
-                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, allowedTypes, maxDepth-1, types);
-                ExpressionGeneratorStep step1 = expressionGeneratorStep(t1, allowedTypes, maxDepth-1, types);
-                ExpressionGeneratorStep step2 = expressionGeneratorStep(t1, allowedTypes, maxDepth-1, types);
+                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, ops, maxDepth-1, types);
+                ExpressionGeneratorStep step1 = expressionGeneratorStep(t1, ops, maxDepth-1, types);
+                ExpressionGeneratorStep step2 = expressionGeneratorStep(t1, ops, maxDepth-1, types);
                 return (List<Object> tokens, List<Object> args) -> {
                     tokens.add(s0);
                     step0.addTokens(tokens, args);

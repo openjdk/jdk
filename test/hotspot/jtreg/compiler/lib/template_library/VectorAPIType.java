@@ -85,8 +85,9 @@ public class VectorAPIType extends Type {
 
     @Override
     public final Object con() {
-        int r = RANDOM.nextInt(32);
+        int r = RANDOM.nextInt(64);
         if (r == 0) { return "null"; }
+        if (r == 1) { return vectorType + ".zero(" + species + ")"; }
         return List.of(vectorType, ".broadcast(", species, ", ", elementType.con(), ")");
     }
 }

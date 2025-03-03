@@ -313,9 +313,18 @@ final class Operations {
     private static final List<Operation> generateVectorAPIOperations() {
         List<Operation> ops = new ArrayList<Operation>();
 
+        for (var type : Type.VECTOR_API_TYPES) {
+            ops.add(new Operation.Unary(type, type.vectorType + ".broadcast(", type.elementType, ")"));
+        }
+
         // Ensure the list is immutable.
         return List.copyOf(ops);
     }
 
     public static final List<Operation> VECTOR_API_OPERATIONS = generateVectorAPIOperations();
+
+    public static final List<Operation> ALL_BUILTIN_OPERATIONS = Library.concat(
+        PRIMITIVE_OPERATIONS,
+        VECTOR_API_OPERATIONS
+    );
 }

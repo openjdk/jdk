@@ -90,7 +90,7 @@ public class TestFuzzVectorAPI {
         // hook are both already set before we call "expression.withRandomArgs", and so that
         // we know we can generate fields and local variables.
         var template1Body = Template.make("type", (Type type)-> {
-            Expression expression = Expression.make(type, Type.VECTOR_API_TYPES, 4);
+            Expression expression = Expression.make(type, Type.ALL_BUILTIN_TYPES, 4);
             return body(
                 """
                     try {

@@ -107,6 +107,11 @@ public abstract class Type implements Name.Type {
         VECTOR_API_DOUBLE_TYPES
     ).flatMap((List<VectorAPIType> l) -> l.stream()).toList();
 
+    public static final List<Type> ALL_BUILTIN_TYPES = Library.concat(
+        PRIMITIVE_TYPES,
+        VECTOR_API_TYPES
+    );
+
     /**
      * Returns name of the type that can be used in Java code.
      *
