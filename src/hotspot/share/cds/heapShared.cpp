@@ -492,7 +492,7 @@ bool HeapShared::is_string_concat_klass(InstanceKlass* ik) {
 }
 
 bool HeapShared::is_archivable_hidden_klass(InstanceKlass* ik) {
-  return CDSConfig::is_dumping_invokedynamic() &&
+  return CDSConfig::is_dumping_method_handles() &&
     (is_lambda_form_klass(ik) || is_lambda_proxy_klass(ik) || is_string_concat_klass(ik));
 }
 
@@ -782,7 +782,7 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
   if (orig_k->is_instance_klass()) {
 #ifdef ASSERT
     InstanceKlass* ik = InstanceKlass::cast(orig_k);
-    if (CDSConfig::is_dumping_invokedynamic()) {
+    if (CDSConfig::is_dumping_method_handles()) {
       assert(ik->class_loader() == nullptr ||
              HeapShared::is_lambda_proxy_klass(ik),
             "we can archive only instances of boot classes or lambda proxy classes");
@@ -835,7 +835,7 @@ void KlassSubGraphInfo::check_allowed_klass(InstanceKlass* ik) {
   }
 
   const char* lambda_msg = "";
-  if (CDSConfig::is_dumping_invokedynamic()) {
+  if (CDSConfig::is_dumping_method_handles()) {
     lambda_msg = ", or a lambda proxy class";
     if (HeapShared::is_lambda_proxy_klass(ik) &&
         (ik->class_loader() == nullptr ||
@@ -1108,7 +1108,7 @@ void HeapShared::resolve_classes_for_subgraph_of(JavaThread* current, Klass* k) 
 }
 
 void HeapShared::initialize_java_lang_invoke(TRAPS) {
-  if (CDSConfig::is_loading_invokedynamic() || CDSConfig::is_dumping_invokedynamic()) {
+  if (CDSConfig::is_using_aot_linked_classes() || CDSConfig::is_dumping_method_handles()) {
     resolve_or_init("java/lang/invoke/Invokers$Holder", true, CHECK);
     resolve_or_init("java/lang/invoke/MethodHandle", true, CHECK);
     resolve_or_init("java/lang/invoke/MethodHandleNatives", true, CHECK);

@@ -106,6 +106,8 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 
   ADD_EXCL("java/lang/System",                           "bootLayer");             // A
 
+  ADD_EXCL("java/util/Collections",                      "EMPTY_LIST");           // E
+
   // A dummy object used by HashSet. The value doesn't matter and it's never
   // tested for equality.
   ADD_EXCL("java/util/HashSet",                          "PRESENT");               // E
@@ -127,7 +129,7 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
   ADD_EXCL("sun/invoke/util/ValueConversions",           "ONE_INT",                // E
                                                          "ZERO_INT");              // E
 
-  if (CDSConfig::is_dumping_invokedynamic()) {
+  if (CDSConfig::is_dumping_method_handles()) {
     ADD_EXCL("java/lang/invoke/InvokerBytecodeGenerator", "MEMBERNAME_FACTORY",    // D
                                                           "CD_Object_array",       // E same as <...>ConstantUtils.CD_Object_array::CD_Object
                                                           "INVOKER_SUPER_DESC");   // E same as java.lang.constant.ConstantDescs::CD_Object
