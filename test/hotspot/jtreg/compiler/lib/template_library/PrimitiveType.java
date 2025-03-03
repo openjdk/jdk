@@ -51,6 +51,7 @@ public abstract class PrimitiveType extends Type {
     public abstract int sizeInBits();
     public abstract String boxedTypeName();
     public abstract String vectorAPITypeName();
+    public abstract boolean isFloating();
 
     static final class ByteType extends PrimitiveType {
         public static final ByteType INSTANCE = new ByteType();
@@ -71,6 +72,9 @@ public abstract class PrimitiveType extends Type {
 
         @Override
         public int sizeInBits() { return 8; }
+
+        @Override
+        public final boolean isFloating() { return false; }
     }
 
     static final class CharType extends PrimitiveType {
@@ -92,6 +96,9 @@ public abstract class PrimitiveType extends Type {
 
         @Override
         public int sizeInBits() { return 16; }
+
+        @Override
+        public final boolean isFloating() { return false; }
     }
 
     static final class ShortType extends PrimitiveType {
@@ -113,6 +120,9 @@ public abstract class PrimitiveType extends Type {
 
         @Override
         public int sizeInBits() { return 16; }
+
+        @Override
+        public final boolean isFloating() { return false; }
     }
 
     static final class IntType extends PrimitiveType {
@@ -134,6 +144,9 @@ public abstract class PrimitiveType extends Type {
 
         @Override
         public int sizeInBits() { return 32; }
+
+        @Override
+        public final boolean isFloating() { return false; }
     }
 
     static final class LongType extends PrimitiveType {
@@ -155,6 +168,9 @@ public abstract class PrimitiveType extends Type {
 
         @Override
         public int sizeInBits() { return 64; }
+
+        @Override
+        public final boolean isFloating() { return false; }
     }
 
     static final class FloatType extends PrimitiveType {
@@ -176,6 +192,9 @@ public abstract class PrimitiveType extends Type {
 
         @Override
         public int sizeInBits() { return 32; }
+
+        @Override
+        public final boolean isFloating() { return true; }
     }
 
     static final class DoubleType extends PrimitiveType {
@@ -197,6 +216,9 @@ public abstract class PrimitiveType extends Type {
 
         @Override
         public int sizeInBits() { return 64; }
+
+        @Override
+        public final boolean isFloating() { return true; }
     }
 
     static final class BooleanType extends PrimitiveType {
@@ -219,5 +241,8 @@ public abstract class PrimitiveType extends Type {
 
         @Override
         public int sizeInBits() { throw new UnsupportedOperationException("boolean does not have number of bits"); }
+
+        @Override
+        public final boolean isFloating() { return false; }
     }
 }

@@ -315,6 +315,21 @@ final class Operations {
 
         for (var type : Type.VECTOR_API_TYPES) {
             ops.add(new Operation.Unary(type, type.vectorType + ".broadcast(" + type.species + ", ", type.elementType, ")"));
+            ops.add(new Operation.Unary(type, "", type, ".abs()"));
+            ops.add(new Operation.Binary(type, "", type, ".add(", type.elementType, ")"));
+            // TODO: add(int e, VectorMask<Integer> m)
+            ops.add(new Operation.Binary(type, "", type, ".add(", type, ")"));
+            // TODO: add(Vector<Integer> v, VectorMask<Integer> m)
+            ops.add(new Operation.Binary(type, "", type, ".addIndex(", Type.ints(), ")"));
+
+            if (!type.elementType.isFloating()) {
+                ops.add(new Operation.Binary(type, "", type, ".and(", type.elementType, ")"));
+                ops.add(new Operation.Binary(type, "", type, ".and(", type, ")"));
+                ops.add(new Operation.Ternary(type, "", type, ".bitwiseBlend(", type.elementType, ", ", type.elementType, ")"));
+                ops.add(new Operation.Ternary(type, "", type, ".bitwiseBlend(", type.elementType, ", ", type,             ")"));
+                ops.add(new Operation.Ternary(type, "", type, ".bitwiseBlend(", type,             ", ", type.elementType, ")"));
+                ops.add(new Operation.Ternary(type, "", type, ".bitwiseBlend(", type,             ", ", type,             ")"));
+            }
         }
 
         // Ensure the list is immutable.
