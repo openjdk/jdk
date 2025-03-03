@@ -77,8 +77,7 @@ public final class MethodFinder extends AbstractFinder<Method> {
         Signature signature = new Signature(type, name, args);
 
         try {
-            Method method = CACHE.get(signature);
-            return (method != null) ? method : CACHE.create(signature);
+            return CACHE.get(signature);
         }
         catch (SignatureException exception) {
             throw exception.toNoSuchMethodException("Method '" + name + "' is not found");
