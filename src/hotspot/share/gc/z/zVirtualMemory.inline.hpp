@@ -65,4 +65,8 @@ inline zoffset ZVirtualMemoryManager::lowest_available_address() const {
   return _manager.peek_low_address();
 }
 
+inline zoffset_end ZVirtualMemoryManager::highest_available_address_end() const {
+  return _manager.peak_high_address_end();
+}
+
 #endif // SHARE_GC_Z_ZVIRTUALMEMORY_INLINE_HPP
