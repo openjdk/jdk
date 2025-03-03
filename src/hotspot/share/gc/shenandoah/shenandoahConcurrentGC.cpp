@@ -1230,11 +1230,9 @@ void ShenandoahConcurrentGC::op_reset_after_collect() {
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (heap->mode()->is_generational()) {
-    // Resetting bitmaps of young gen when bootstrap old GC or there is preempted old GC
-    // causes crash due to remembered set violation, hence condition is added to fix the crash.
-    // Assuming bitmaps of young gen are not used at all after the cycle, the crash should not
-    // have happend, it seems to tickle a bug in remembered set scan. Root causing and fixing of the bug
-    // will be tracked via ticket https://bugs.openjdk.org/browse/JDK-8347371
+    // Valid bitmap of young generation is needed by concurrent weak references phase of old GC cycle,
+    // because it is possible that there is soft reference in old generation with the referent in young generation;
+    // therefore mark bitmap of young generation can't be reset if there will be old GC after the concurrent GC cycle.
     if (!_do_old_gc_bootstrap && !heap->is_concurrent_old_mark_in_progress()) {
       heap->young_generation()->reset_mark_bitmap<false>();
     }
