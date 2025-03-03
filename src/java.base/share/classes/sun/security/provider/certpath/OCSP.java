@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,6 @@ public final class OCSP {
     private static final Debug debug = Debug.getInstance("certpath");
 
     private static final int DEFAULT_CONNECT_TIMEOUT = 15000;
-    private static final int DEFAULT_READ_TIMEOUT = 15000;
 
     /**
      * Integer value indicating the timeout length, in milliseconds, to be
@@ -83,7 +82,7 @@ public final class OCSP {
      * zero is interpreted as an infinite timeout.
      */
     private static final int READ_TIMEOUT = initializeTimeout(
-            "com.sun.security.ocsp.readtimeout", DEFAULT_READ_TIMEOUT);
+            "com.sun.security.ocsp.readtimeout", CONNECT_TIMEOUT);
 
     /**
      * Boolean value indicating whether OCSP client can use GET for OCSP

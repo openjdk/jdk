@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2021 SAP SE. All rights reserved.
+// Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2025 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
     check_color(masm, ref, on_non_strong);
 
     ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
-    __ bne_far(CCR0, *stub->entry(), MacroAssembler::bc_far_optimize_on_relocate);
+    __ bne_far(CR0, *stub->entry(), MacroAssembler::bc_far_optimize_on_relocate);
 
     z_uncolor(masm, ref);
     __ bind(*stub->continuation());
@@ -97,7 +97,7 @@ static void z_compare_and_swap(MacroAssembler* masm, const MachNode* node,
   Register rold_zpointer = tmp1, rnew_zpointer = tmp2;
   z_store_barrier(masm, node, mem, 0, newval, rnew_zpointer, true /* is_atomic */);
   z_color(masm, rold_zpointer, oldval);
-  __ cmpxchgd(CCR0, R0, rold_zpointer, rnew_zpointer, mem,
+  __ cmpxchgd(CR0, R0, rold_zpointer, rnew_zpointer, mem,
               MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(), res, nullptr, true,
               false /* we could support weak, but benefit is questionable */);
 
@@ -119,7 +119,7 @@ static void z_compare_and_exchange(MacroAssembler* masm, const MachNode* node,
   Register rold_zpointer = R0, rnew_zpointer = tmp;
   z_store_barrier(masm, node, mem, 0, newval, rnew_zpointer, true /* is_atomic */);
   z_color(masm, rold_zpointer, oldval);
-  __ cmpxchgd(CCR0, res, rold_zpointer, rnew_zpointer, mem,
+  __ cmpxchgd(CR0, res, rold_zpointer, rnew_zpointer, mem,
               MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(), noreg, nullptr, true,
               false /* we could support weak, but benefit is questionable */);
   z_uncolor(masm, res);

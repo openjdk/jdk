@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciMethodData.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -1091,6 +1090,14 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     if (UseProfiledLoopPredicate) {
       add_parse_predicate(Deoptimization::Reason_profile_predicate, inner_head, outer_ilt, cloned_sfpt);
     }
+
+    // We only want to use the auto-vectorization check as a trap once per bci. And
+    // PhaseIdealLoop::add_parse_predicate only checks trap limits per method, so
+    // we do a custom check here.
+    if (!C->too_many_traps(cloned_sfpt->jvms()->method(), cloned_sfpt->jvms()->bci(), Deoptimization::Reason_auto_vectorization_check)) {
+      add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, inner_head, outer_ilt, cloned_sfpt);
+    }
+
     add_parse_predicate(Deoptimization::Reason_loop_limit_check, inner_head, outer_ilt, cloned_sfpt);
   }
 
@@ -2512,6 +2519,9 @@ void CountedLoopNode::dump_spec(outputStream *st) const {
   if (is_main_loop()) st->print("main of N%d", _idx);
   if (is_post_loop()) st->print("post of N%d", _main_idx);
   if (is_strip_mined()) st->print(" strip mined");
+  if (is_multiversion_fast_loop())         { st->print(" multiversion_fast"); }
+  if (is_multiversion_slow_loop())         { st->print(" multiversion_slow"); }
+  if (is_multiversion_delayed_slow_loop()) { st->print(" multiversion_delayed_slow"); }
 }
 #endif
 
@@ -2552,11 +2562,15 @@ const Type* LoopLimitNode::Value(PhaseGVN* phase) const {
     jlong trip_count = (limit_con - init_con + stride_m)/stride_con;
     jlong final_con  = init_con + stride_con*trip_count;
     int final_int = (int)final_con;
-    // The final value should be in integer range since the loop
-    // is counted and the limit was checked for overflow.
-    // Assert checks for overflow only if all input nodes are ConINodes, as during CCP
-    // there might be a temporary overflow from PhiNodes see JDK-8309266
-    assert((in(Init)->is_ConI() && in(Limit)->is_ConI() && in(Stride)->is_ConI()) ? final_con == (jlong)final_int : true, "final value should be integer");
+    // The final value should be in integer range in almost all cases,
+    // since the loop is counted and the limit was checked for overflow.
+    // There some exceptions, for example:
+    // - During CCP, there might be a temporary overflow from PhiNodes, see JDK-8309266.
+    // - During PhaseIdealLoop::split_thru_phi, the LoopLimitNode floats possibly far above
+    //   the loop and its predicates, and we might get constants on one side of the phi that
+    //   would lead to overflows. Such a code path would never lead us to enter the loop
+    //   because of the loop limit overflow check that happens after the LoopLimitNode
+    //   computation with overflow, but before we enter the loop, see JDK-8335747.
     if (final_con == (jlong)final_int) {
       return TypeInt::make(final_int);
     } else {
@@ -2579,12 +2593,10 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (stride_con == 1)
     return nullptr;  // Identity
 
-  if (in(Init)->is_Con() && in(Limit)->is_Con())
-    return nullptr;  // Value
-
   // Delay following optimizations until all loop optimizations
   // done to keep Ideal graph simple.
   if (!can_reshape || !phase->C->post_loop_opts_phase()) {
+    phase->C->record_for_post_loop_opts_igvn(this);
     return nullptr;
   }
 
@@ -3182,10 +3194,10 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
         if (iloop->get_loop(iloop->get_ctrl(in)) != outer_loop_ilt) {
           continue;
         }
-        assert(!loop->_body.contains(in), "");
-        loop->_body.push(in);
         wq.push(in);
       }
+      assert(!loop->_body.contains(n), "Shouldn't append node to body twice");
+      loop->_body.push(n);
     }
     iloop->set_loop(safepoint, loop);
     loop->_body.push(safepoint);
@@ -4302,6 +4314,9 @@ void IdealLoopTree::dump_head() {
     if (cl->is_post_loop()) tty->print(" post");
     if (cl->is_vectorized_loop()) tty->print(" vector");
     if (range_checks_present()) tty->print(" rc ");
+    if (cl->is_multiversion_fast_loop())         { tty->print(" multiversion_fast"); }
+    if (cl->is_multiversion_slow_loop())         { tty->print(" multiversion_slow"); }
+    if (cl->is_multiversion_delayed_slow_loop()) { tty->print(" multiversion_delayed_slow"); }
   }
   if (_has_call) tty->print(" has_call");
   if (_has_sfpt) tty->print(" has_sfpt");
@@ -4458,7 +4473,7 @@ void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(Ideal
     const PredicateBlock* profiled_loop_predicate_block = predicates.profiled_loop_predicate_block();
     if (profiled_loop_predicate_block->has_parse_predicate()) {
       ParsePredicateSuccessProj* parse_predicate_proj = profiled_loop_predicate_block->parse_predicate_success_proj();
-      get_template_assertion_predicates(parse_predicate_proj, useful_predicates, true);
+      get_opaque_template_assertion_predicate_nodes(parse_predicate_proj, useful_predicates);
     }
   }
 
@@ -4466,7 +4481,7 @@ void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(Ideal
     const PredicateBlock* loop_predicate_block = predicates.loop_predicate_block();
     if (loop_predicate_block->has_parse_predicate()) {
       ParsePredicateSuccessProj* parse_predicate_proj = loop_predicate_block->parse_predicate_success_proj();
-      get_template_assertion_predicates(parse_predicate_proj, useful_predicates, true);
+      get_opaque_template_assertion_predicate_nodes(parse_predicate_proj, useful_predicates);
     }
   }
 }
@@ -4947,18 +4962,6 @@ void PhaseIdealLoop::build_and_optimize() {
     C->set_major_progress();
   }
 
-  // Keep loop predicates and perform optimizations with them
-  // until no more loop optimizations could be done.
-  // After that switch predicates off and do more loop optimizations.
-  if (!C->major_progress() && (C->parse_predicate_count() > 0)) {
-    C->mark_parse_predicate_nodes_useless(_igvn);
-    assert(C->parse_predicate_count() == 0, "should be zero now");
-     if (TraceLoopOpts) {
-       tty->print_cr("PredicatesOff");
-     }
-     C->set_major_progress();
-  }
-
   // Auto-vectorize main-loop
   if (C->do_superword() && C->has_loops() && !C->major_progress()) {
     Compile::TracePhase tp(_t_autoVectorize);
@@ -4990,6 +4993,18 @@ void PhaseIdealLoop::build_and_optimize() {
         move_unordered_reduction_out_of_loop(lpt);
       }
     }
+  }
+
+  // Keep loop predicates and perform optimizations with them
+  // until no more loop optimizations could be done.
+  // After that switch predicates off and do more loop optimizations.
+  if (!C->major_progress() && (C->parse_predicate_count() > 0)) {
+    C->mark_parse_predicate_nodes_useless(_igvn);
+    assert(C->parse_predicate_count() == 0, "should be zero now");
+    if (TraceLoopOpts) {
+      tty->print_cr("PredicatesOff");
+    }
+    C->set_major_progress();
   }
 }
 
@@ -5630,14 +5645,23 @@ int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order) {
       // l is irreducible: we just found a second entry m.
       _has_irreducible_loops = true;
       RegionNode* secondary_entry = m->as_Region();
-      DEBUG_ONLY(secondary_entry->verify_can_be_irreducible_entry();)
+
+      if (!secondary_entry->can_be_irreducible_entry()) {
+        assert(!VerifyNoNewIrreducibleLoops, "A new irreducible loop was created after parsing.");
+        C->record_method_not_compilable("A new irreducible loop was created after parsing.");
+        return pre_order;
+      }
 
       // Walk up the loop-tree, mark all loops that are already post-visited as irreducible
       // Since m is a secondary entry to them all.
       while( is_postvisited(l->_head) ) {
         l->_irreducible = 1; // = true
         RegionNode* head = l->_head->as_Region();
-        DEBUG_ONLY(head->verify_can_be_irreducible_entry();)
+        if (!head->can_be_irreducible_entry()) {
+          assert(!VerifyNoNewIrreducibleLoops, "A new irreducible loop was created after parsing.");
+          C->record_method_not_compilable("A new irreducible loop was created after parsing.");
+          return pre_order;
+        }
         l = l->_parent;
         // Check for bad CFG here to prevent crash, and bailout of compile
         if (l == nullptr) {
@@ -6431,8 +6455,6 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     case Op_DivF:
     case Op_DivD:
     case Op_ModI:
-    case Op_ModF:
-    case Op_ModD:
     case Op_LoadB:              // Same with Loads; they can sink
     case Op_LoadUB:             // during loop optimizations.
     case Op_LoadUS:
@@ -6823,7 +6845,7 @@ void PhaseIdealLoop::get_idoms(Node* n, const uint count, Unique_Node_List& idom
 void PhaseIdealLoop::dump_idoms_in_reverse(const Node* n, const Node_List& idom_list) const {
   Node* next;
   uint padding = 3;
-  uint node_index_padding_width = static_cast<int>(log10(static_cast<double>(C->unique()))) + 1;
+  uint node_index_padding_width = (C->unique() == 0 ? 0 : static_cast<int>(log10(static_cast<double>(C->unique())))) + 1;
   for (int i = idom_list.size() - 1; i >= 0; i--) {
     if (i == 9 || i == 99) {
       padding++;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,9 @@ import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
-import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
+import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySegment.Scope;
@@ -321,9 +321,18 @@ public final class SharedUtils {
         }
     }
 
+    @ForceInline
     public static long unboxSegment(MemorySegment segment) {
         checkNative(segment);
         return segment.address();
+    }
+
+    @ForceInline
+    public static int unboxSegment32(MemorySegment segment) {
+        // This cast to 'int' is safe, because we only call this method on 32-bit
+        // platforms, where we know the address of a segment is truncated to 32-bits.
+        // There's a similar cast for 4-byte addresses in Unsafe.putAddress.
+        return (int) unboxSegment(segment);
     }
 
     public static void checkExceptions(MethodHandle target) {

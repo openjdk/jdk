@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "memory/allocation.inline.hpp"
@@ -437,15 +436,18 @@ bool RegionNode::are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist) 
 
 void RegionNode::set_loop_status(RegionNode::LoopStatus status) {
   assert(loop_status() == RegionNode::LoopStatus::NeverIrreducibleEntry, "why set our status again?");
+  assert(status != RegionNode::LoopStatus::MaybeIrreducibleEntry || !is_Loop(), "LoopNode is never irreducible entry.");
   _loop_status = status;
 }
 
-#ifdef ASSERT
-void RegionNode::verify_can_be_irreducible_entry() const {
-  assert(loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry, "must be marked irreducible");
-  assert(!is_Loop(), "LoopNode cannot be irreducible loop entry");
+// A Region can only be an irreducible entry if:
+// - It is marked as "maybe irreducible entry". Any other loop status would guarantee
+//   that it is never an irreducible loop entry.
+// - And it is not a LoopNode, those are guaranteed to be reducible loop entries.
+bool RegionNode::can_be_irreducible_entry() const {
+  return loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry &&
+         !is_Loop();
 }
-#endif //ASSERT
 
 void RegionNode::try_clean_mem_phis(PhaseIterGVN* igvn) {
   // Incremental inlining + PhaseStringOpts sometimes produce:

@@ -42,7 +42,7 @@ public class VMInfo {
     private final Map<String, String> keyValueMap;
 
     private static final Pattern CPU_SKYLAKE_PATTERN =
-            Pattern.compile("family 6 model 85 stepping (\\d) ");
+            Pattern.compile("family 6 model 85 stepping (\\d+) ");
 
     public VMInfo(Map<String, String> map) {
         this.keyValueMap = map;
