@@ -35,11 +35,30 @@ import static java.lang.ClassValue.ClassValueMap.probeHomeLocation;
 import static java.lang.ClassValue.ClassValueMap.probeBackupLocations;
 
 /**
- * Lazily associate a computed value with (potentially) every type.
- * For example, if a dynamic language needs to construct a message dispatch
- * table for each class encountered at a message send call site,
- * it can use a {@code ClassValue} to cache information needed to
- * perform the message send quickly, for each class encountered.
+ * Lazily associate a computed value with any {@link Class} object.
+ * User can define a {@code ClassValue} by creating a subclass of {@code
+ * ClassValue} that defines the computation behavior, and read the computed
+ * value with {@link #get get}, such as:
+ * {@snippet lang = java:
+ * static final ClassValue<String> CLASS_NAMES = new ClassValue<>() {
+ *     @Override
+ *     protected String computeValue(Class<?> type) {
+ *         return type.getName();
+ *     }
+ * };
+ *
+ * static final String INT_NAME = CLASS_NAMES.get(int.class);
+ * }
+ * <p>
+ * If a {@code ClassValue} is read from multiple threads at once, {@linkplain
+ * #computeValue computation} may happen concurrently.  However, {@code
+ * ClassValue} ensures that exactly one value prevails, which will be returned
+ * by all subsequent reads until {@link #remove(Class) remove} is called.
+ * <p>
+ * A value that a {@code ClassValue} associates with a {@code Class} may be
+ * reclaimed by garbage collection as soon as either the {@code Class} or the
+ * {@code ClassValue} is reclaimed.
+ *
  * @param <T> the type of the derived value
  * @author John Rose, JSR 292 EG
  * @since 1.7
@@ -53,47 +72,45 @@ public abstract class ClassValue<T> {
     }
 
     /**
-     * Computes the given class's derived value for this {@code ClassValue}.
+     * Computes the value to associate with the given type.
      * <p>
-     * This method will be invoked within the first thread that accesses
-     * the value with the {@link #get get} method.
+     * This method will be invoked if a value is not yet computed upon access
+     * via the {@link #get get} method.  It may be invoked by multiple threads,
+     * but only one arbitrary computed value will be associated to the type and
+     * returned by all calling threads.
      * <p>
-     * Normally, this method is invoked at most once per class,
-     * but it may be invoked again if there has been a call to
-     * {@link #remove remove}.
+     * If {@link #remove remove} is called, the next call to {@code get} will
+     * invoke this method, such that the {@code remove} call happens-before
+     * this invocation, allowing the computation to obtain the up-to-date inputs.
      * <p>
      * If this method throws an exception, the corresponding call to {@code get}
      * will terminate abnormally with that exception, and no class value will be recorded.
      *
      * @param type the type whose class value must be computed
-     * @return the newly computed value associated with this {@code ClassValue}, for the given class or interface
+     * @return the newly computed value
      * @see #get
      * @see #remove
      */
     protected abstract T computeValue(Class<?> type);
 
     /**
-     * Returns the value for the given class.
-     * If no value has yet been computed, it is obtained by
-     * an invocation of the {@link #computeValue computeValue} method.
+     * {@return the value associated to the given type}
+     * If no value is associated to the type, it is obtained by an invocation of
+     * the {@link #computeValue computeValue} method.  Multiple racing threads
+     * may compute a value for the same type at once.
      * <p>
-     * The actual installation of the value on the class
-     * is performed atomically.
-     * At that point, if several racing threads have
-     * computed values, one is chosen, and returned to
-     * all the racing threads.
+     * The actual association of the value to the type is performed atomically.
+     * At that point, if several racing threads have computed values, an
+     * arbitrary one is chosen, associated to the type, and returned to all
+     * racing threads.
      * <p>
-     * The {@code type} parameter is typically a class, but it may be any type,
-     * such as an interface, a primitive type (like {@code int.class}), or {@code void.class}.
-     * <p>
-     * In the absence of {@code remove} calls, a class value has a simple
-     * state diagram:  uninitialized and initialized.
-     * When {@code remove} calls are made,
-     * the rules for value observation are more complex.
-     * See the documentation for {@link #remove remove} for more information.
+     * If {@link #remove remove} is called, the next call to {@code get} will
+     * call {@code computeValue}, such that the removal happens-before the
+     * computation, allowing the computation to obtain the up-to-date inputs.
      *
-     * @param type the type whose class value must be computed or retrieved
-     * @return the current value associated with this {@code ClassValue}, for the given class or interface
+     * @param type the {@code Class} object whose associated value must be retrieved
+     * @return the current value associated with this {@code ClassValue}, for
+     *         the given {@code Class} object
      * @throws NullPointerException if the argument is null
      * @see #remove
      * @see #computeValue
@@ -500,15 +517,15 @@ public abstract class ClassValue<T> {
         synchronized
         void removeEntry(ClassValue<?> classValue) {
             Entry<?> e = remove(classValue.identity);
-            if (e == null) {
-                // Uninitialized, and no pending calls to computeValue.  No change.
-            } else if (e.isPromise()) {
-                // State is uninitialized, with a pending call to finishEntry.
-                // Since remove is a no-op in such a state, keep the promise
-                // by putting it back into the map.
-                put(classValue.identity, e);
-            } else {
-                // In an initialized state.  Bump forward, and de-initialize.
+            // e == null: Uninitialized, and no pending calls to computeValue.
+            // remove didn't change anything.  No change.
+            // e.isPromise(): computeValue already used outdated values.
+            // remove discarded the outdated computation promise.
+            // finishEntry will retry when it discovers the promise is gone.
+            // No cache invalidation.  No further action needed.
+            if (e != null && !e.isPromise()) {
+                // Initialized.
+                // Bump forward to invalidate racy-read cached entries.
                 classValue.bumpVersion();
                 // Make all cache elements for this guy go stale.
                 removeStaleEntries(classValue);
