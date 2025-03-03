@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -315,7 +315,13 @@ public abstract class PeerUniStreamDispatcher {
      */
     private void abort(Http3Error error, Throwable throwable) {
         try {
-            debug().log("aborting dispatch: " + throwable, throwable);
+            if (Http3Error.isNoError(stream.rcvErrorCode())) {
+                var debug = debug();
+                if (debug.on()) debug.log("aborting dispatch: " + throwable);
+            } else {
+                var debug = debug();
+                if (debug.on()) debug.log("aborting dispatch: " + throwable, throwable);
+            }
             stream.requestStopSending(error.code());
         } finally {
             disconnect(throwable);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,12 +277,27 @@ public class Http3ServerConnection {
             } catch (Throwable t) {
                 var stream = writer.stream();
                 Http3Streams.debugErrorCode(debug, stream, "Control stream");
-                if (!closeRequested && Http3Streams.hasError(stream)) {
-                    if (debug.on()) debug.log("Failed to write to control stream", t);
+                if (!closeRequested && quicConnection.isOpen()) {
+                    if (!Http3Error.isNoError(stream.sndErrorCode())) {
+                        if (debug.on()) debug.log("Failed to write to control stream", t);
+                    }
                     close(Http3Error.H3_CLOSED_CRITICAL_STREAM, "Failed to write to control stream");
+                    return;
                 }
             }
         }
+    }
+
+    private boolean hasHttp3Error(QuicStream stream) {
+        if (stream instanceof QuicReceiverStream rcvs) {
+            var code = rcvs.rcvErrorCode();
+            if (code > 0 && !Http3Error.isNoError(code)) return true;
+        }
+        if (stream instanceof QuicSenderStream snds) {
+            var code = snds.sndErrorCode();
+            if (code > 0 && !Http3Error.isNoError(code)) return true;
+        }
+        return false;
     }
 
 
@@ -291,13 +306,17 @@ public class Http3ServerConnection {
         // TODO: implement this!
         try {
             Http3Streams.debugErrorCode(debug, stream, "Control stream");
-            if (!closeRequested && Http3Streams.hasError(stream)) {
-                if (debug.on()) {
-                    debug.log("control stream " + stream.mode() + " failed", throwable);
+            if (!closeRequested && quicConnection.isOpen()) {
+                if (hasHttp3Error(stream)) {
+                    if (debug.on()) {
+                        debug.log("control stream " + stream.mode() + " failed", throwable);
+                    }
                 }
+                close(Http3Error.H3_CLOSED_CRITICAL_STREAM,
+                        "Control stream " + stream.mode() + " failed");
             }
         } catch (Throwable t) {
-            if (debug.on()) {
+            if (debug.on() && !closeRequested) {
                 debug.log("onControlStreamError: handling ", throwable);
                 debug.log("onControlStreamError: exception while handling error: ", t);
             }
@@ -519,8 +538,14 @@ public class Http3ServerConnection {
         // close connection here.
         if (!closeRequested) {
             String message = stream != null ? stream.mode() + " failed" : "is null";
-            if (debug.on()) {
-                debug.log("QPack encoder stream " + message, throwable);
+            if (quicConnection().isOpen()) {
+                if (debug.on()) {
+                    debug.log("QPack encoder stream " + message, throwable);
+                }
+            } else {
+                if (debug.on()) {
+                    debug.log("QPack encoder stream " + message + ": " + throwable);
+                }
             }
         }
     }
@@ -536,8 +561,12 @@ public class Http3ServerConnection {
         // close connection here.
         if (!closeRequested) {
             String message = stream != null ? stream.mode() + " failed" : "is null";
-            if (debug.on()) {
-                debug.log("QPack decoder stream " + message, throwable);
+            if (quicConnection().isOpen()) {
+                if (debug.on()) {
+                    debug.log("QPack decoder stream " + message, throwable);
+                }
+            } else {
+                debug.log("QPack decoder stream " + message + ": " + throwable);
             }
         }
     }

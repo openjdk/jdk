@@ -62,47 +62,10 @@ public final class Http3Streams {
         }
     }
 
-    /**
-     * {@return true if the given stream has errors}
-     * @apiNote {@link QuicStream#hasError()} will return true
-     *          if the error code is {@code H3_NO_ERROR}, since
-     *          the Quic layer doesn't know about the semantic of
-     *          HTTP/3 code. This method will return fixes that by
-     *          returning false if the error is {@code H3_NO_ERROR}.
-     * @param stream a stream that may have errors
-     */
-    public static boolean hasError(QuicStream stream) {
-        if (stream == null || !stream.hasError()) return false;
-        long rcvErrorCode = -1;
-        if (stream instanceof QuicReceiverStream rcv) {
-            rcvErrorCode = rcv.rcvErrorCode();
-            if (rcvErrorCode > 0) {
-                return rcvErrorCode != Http3Error.H3_NO_ERROR.code();
-            }
-        }
-        long sndErrorCode = -1;
-        if (stream instanceof QuicSenderStream snd) {
-            sndErrorCode = snd.sndErrorCode();
-            if (sndErrorCode > 0) {
-                return sndErrorCode != Http3Error.H3_NO_ERROR.code();
-            }
-        }
-        assert  sndErrorCode <= 0 && rcvErrorCode <= 0;
-        return false;
-    }
-
     public static boolean hasSndError(QuicSenderStream stream) {
         long sndErrorCode = stream.sndErrorCode();
         if (sndErrorCode > 0) {
-            return sndErrorCode != Http3Error.H3_NO_ERROR.code();
-        }
-        return false;
-    }
-
-    public static boolean hasRcvError(QuicReceiverStream stream) {
-        long rcvErrorCode = stream.rcvErrorCode();
-        if (rcvErrorCode > 0) {
-            return rcvErrorCode != Http3Error.H3_NO_ERROR.code();
+            return !Http3Error.isNoError(sndErrorCode);
         }
         return false;
     }
@@ -136,8 +99,8 @@ public final class Http3Streams {
     }
 
     /**
-     * If the stream {@linkplain #hasError(QuicStream) has errors}, prints a message
-     * recording the {@linkplain #errorCodeAsString(QuicStream) error state} of the
+     * If the stream has errors, prints a message recording the
+     * {@linkplain #errorCodeAsString(QuicStream) error state} of the
      * stream through the given logger. The message is of the form:
      * {@code <name> <stream-id>: <error-state>}.
      * If the given {@code name} is null or empty, {@code "Stream"} is substituted

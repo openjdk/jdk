@@ -1118,7 +1118,7 @@ public final class Http3Connection implements AutoCloseable {
     void controlStreamFailed(final QuicStream stream, final UniStreamPair uniStreamPair,
                              final Throwable throwable) {
         if (stream.state() instanceof QuicReceiverStream.ReceivingStreamState rcvrStrmState) {
-            if (rcvrStrmState.isReset()) {
+            if (rcvrStrmState.isReset() && quicConnection.isOpen()) {
                 // RFC-9114, section 6.2.1:
                 // If either control stream is closed at any point,
                 // this MUST be treated as a connection error of type H3_CLOSED_CRITICAL_STREAM.
@@ -1128,9 +1128,11 @@ public final class Http3Connection implements AutoCloseable {
                 return;
             }
         }
-        if (debug.on()) {
-            debug.log("closing connection since control stream " + stream.mode()
-                    + " failed", throwable);
+        if (isOpen()) {
+            if (debug.on()) {
+                debug.log("closing connection since control stream " + stream.mode()
+                        + " failed", throwable);
+            }
         }
         close(throwable);
     }
@@ -1299,7 +1301,7 @@ public final class Http3Connection implements AutoCloseable {
     private void onEncoderStreamsFailed(final QuicStream stream, final UniStreamPair uniStreamPair,
                                         final Throwable throwable) {
         if (stream.state() instanceof QuicReceiverStream.ReceivingStreamState rcvrStrmState) {
-            if (rcvrStrmState.isReset()) {
+            if (rcvrStrmState.isReset() && quicConnection.isOpen()) {
                 // RFC-9204, section 4.2:
                 // Closure of either unidirectional stream type MUST be treated as a connection
                 // error of type H3_CLOSED_CRITICAL_STREAM.
@@ -1309,9 +1311,11 @@ public final class Http3Connection implements AutoCloseable {
                 return;
             }
         }
-        if (debug.on()) {
-            debug.log("closing connection since QPack encoder stream " + stream.streamId()
-                    + " failed", throwable);
+        if (isOpen()) {
+            if (debug.on()) {
+                debug.log("closing connection since QPack encoder stream " + stream.streamId()
+                        + " failed", throwable);
+            }
         }
         close(throwable);
     }
@@ -1324,7 +1328,7 @@ public final class Http3Connection implements AutoCloseable {
     private void onDecoderStreamsFailed(final QuicStream stream, final UniStreamPair uniStreamPair,
                                         final Throwable throwable) {
         if (stream.state() instanceof QuicReceiverStream.ReceivingStreamState rcvrStrmState) {
-            if (rcvrStrmState.isReset()) {
+            if (rcvrStrmState.isReset() && quicConnection.isOpen()) {
                 // RFC-9204, section 4.2:
                 // Closure of either unidirectional stream type MUST be treated as a connection
                 // error of type H3_CLOSED_CRITICAL_STREAM.
@@ -1334,9 +1338,11 @@ public final class Http3Connection implements AutoCloseable {
                 return;
             }
         }
-        if (debug.on()) {
-            debug.log("closing connection since QPack decoder stream " + stream.streamId()
-                    + " failed", throwable);
+        if (isOpen()) {
+            if (debug.on()) {
+                debug.log("closing connection since QPack decoder stream " + stream.streamId()
+                        + " failed", throwable);
+            }
         }
         close(throwable);
     }
