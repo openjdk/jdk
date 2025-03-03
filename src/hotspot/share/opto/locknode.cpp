@@ -38,16 +38,19 @@ const RegMask &BoxLockNode::out_RegMask() const {
 
 uint BoxLockNode::size_of() const { return sizeof(*this); }
 
-BoxLockNode::BoxLockNode( int slot ) : Node( Compile::current()->root() ),
-                                       _slot(slot), _kind(BoxLockNode::Regular) {
-  init_class_id(Class_BoxLock);
-  init_flags(Flag_rematerialize);
-  OptoReg::Name reg = OptoReg::stack2reg(_slot);
-  if (!RegMask::can_represent(reg, Compile::current()->sync_stack_slots())) {
-    Compile::current()->record_method_not_compilable("must be able to represent all monitor slots in reg mask");
+BoxLockNode::BoxLockNode(int slot)
+    : Node(Compile::current()->root()), _slot(slot),
+      // In debug mode, signal that the register mask is constant.
+      _inmask(OptoReg::stack2reg(_slot),
+              Compile::current()->comp_arena() DEBUG_ONLY(COMMA true)),
+      _kind(BoxLockNode::Regular) {
+  if (_slot > BoxLockNode_slot_limit) {
+    Compile::current()->record_method_not_compilable(
+        "reached BoxLockNode slot limit");
     return;
   }
-  _inmask.Insert(reg);
+  init_class_id(Class_BoxLock);
+  init_flags(Flag_rematerialize);
 }
 
 uint BoxLockNode::hash() const {
