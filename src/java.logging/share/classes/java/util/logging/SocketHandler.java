@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,10 +172,8 @@ public class SocketHandler extends StreamHandler {
      *                 silently ignored and is not published
      */
     @Override
-    public synchronized void publish(LogRecord record) {
-        if (!isLoggable(record)) {
-            return;
-        }
+    public void publish(LogRecord record) {
+        // JDK-8349206: Do NOT synchronize around the parent's publish() method.
         super.publish(record);
         flush();
     }
