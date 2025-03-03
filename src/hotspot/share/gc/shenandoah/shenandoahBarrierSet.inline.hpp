@@ -126,6 +126,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(DecoratorSet decorators,
   if ((decorators & AS_NO_KEEPALIVE) != 0 &&
       _heap->is_evacuation_in_progress() &&
       !_heap->marking_context()->is_marked(obj)) {
+    fatal("Returning doomed from-space object: " PTR_FORMAT, p2i(obj));
     return obj;
   }
 
