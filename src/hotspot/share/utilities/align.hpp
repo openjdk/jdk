@@ -78,16 +78,6 @@ constexpr T align_up(T size, A alignment) {
   return align_down(adjusted, alignment);
 }
 
-template<typename T, typename A, ENABLE_IF(std::is_integral<T>::value)>
-constexpr T align_up_or_min(T size, A alignment) {
-  T mask = checked_cast<T>(alignment_mask(alignment));
-  if (size > std::numeric_limits<T>::max() - mask) {
-    return std::numeric_limits<T>::min();
-  }
-  T adjusted = size + mask;
-  return align_down(adjusted, alignment);
-}
-
 // Align down with a lower bound. If the aligning results in 0, return 'alignment'.
 template <typename T, typename A>
 constexpr T align_down_bounded(T size, A alignment) {
@@ -104,11 +94,12 @@ inline T* align_up(T* ptr, A alignment) {
 
 template <typename T, typename A>
 inline T* align_up_or_null(T* ptr, A alignment) {
-  uintptr_t up = align_up_or_min((uintptr_t)ptr, alignment);
-  if (up < (uintptr_t)ptr) { // we overflowed
+  uintptr_t mask = checked_cast<uintptr_t>(alignment_mask(alignment));
+  if ((uintptr_t)ptr > std::numeric_limits<uintptr_t>::max() - mask) {
     return nullptr;
   }
-  return (T*)up;
+  uintptr_t adjusted = (uintptr_t)ptr + mask;
+  return (T*)align_down(adjusted, alignment);
 }
 
 template <typename T, typename A>
