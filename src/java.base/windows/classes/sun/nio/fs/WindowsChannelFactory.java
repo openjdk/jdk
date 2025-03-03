@@ -75,6 +75,7 @@ class WindowsChannelFactory {
         boolean sync;
         boolean dsync;
         boolean direct;
+        boolean uninterruptible;
 
         // non-standard
         boolean shareRead = true;
@@ -98,6 +99,7 @@ class WindowsChannelFactory {
                         case SPARSE : flags.sparse = true; break;
                         case SYNC : flags.sync = true; break;
                         case DSYNC : flags.dsync = true; break;
+                        case NOT_INTERRUPTIBLE : flags.uninterruptible = true; break;
                         default: throw new UnsupportedOperationException();
                     }
                     continue;
@@ -164,7 +166,7 @@ class WindowsChannelFactory {
 
         FileDescriptor fdObj = open(pathForWindows, flags, pSecurityDescriptor);
         return FileChannelImpl.open(fdObj, pathForWindows, flags.read, flags.write,
-                (flags.sync || flags.dsync), flags.direct, null);
+                (flags.sync || flags.dsync), flags.direct, flags.uninterruptible, null);
     }
 
     /**
