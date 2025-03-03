@@ -243,20 +243,20 @@ public class CgroupSubsystemFactory {
     // # grep cgroup /boot/grub2/grubenv
     // kernelopts=[...] cgroup_disable=cpuset
     private String procCgroupsCgroupsV1CpusetDisabledContent =
-            "#subsys_name	hierarchy	num_cgroups	enabled\n" +
-            "cpuset	0	1	0\n" +
-            "cpu	8	1	1\n" +
-            "cpuacct	8	1	1\n" +
-            "blkio	7	1	1\n" +
-            "memory	9	114	1\n" +
-            "devices	3	67	1\n" +
-            "freezer	2	1	1\n" +
-            "net_cls	6	1	1\n" +
-            "perf_event	4	1	1\n" +
-            "net_prio	6	1	1\n" +
-            "hugetlb	11	1	1\n" +
-            "pids	10	91	1\n" +
-            "rdma	5	1	1\n";
+            "#subsys_name\thierarchy\tnum_cgroups\tenabled\n" +
+            "cpuset\t0\t1\t0\n" +
+            "cpu\t8\t1\t1\n" +
+            "cpuacct\t8\t1\t1\n" +
+            "blkio\t7\t1\t1\n" +
+            "memory\t9\t114\t1\n" +
+            "devices\t3\t67\t1\n" +
+            "freezer\t2\t1\t1\n" +
+            "net_cls\t6\t1\t1\n" +
+            "perf_event\t4\t1\t1\n" +
+            "net_prio\t6\t1\t1\n" +
+            "hugetlb\t11\t1\t1\n" +
+            "pids\t10\t91\t1\n" +
+            "rdma\t5\t1\t1\n";
     private String procSelfCgroupCgroupsV1CpusetDisabledContent =
             "11:hugetlb:/\n" +
             "10:pids:/user.slice/user-0.slice/session-1.scope\n" +
