@@ -31,9 +31,10 @@
 // Allocation site represents a code path that makes a memory
 // allocation
 class AllocationSite {
- private:
+protected:
   const NativeCallStack  _call_stack;
   const MemTag           _mem_tag;
+
  public:
   AllocationSite(const NativeCallStack& stack, MemTag mem_tag) : _call_stack(stack), _mem_tag(mem_tag) { }
 

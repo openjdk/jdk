@@ -25,22 +25,23 @@
 #ifndef SHARE_NMT_MEMBASELINE_HPP
 #define SHARE_NMT_MEMBASELINE_HPP
 
+#include "memory/arena.hpp"
 #include "memory/metaspaceStats.hpp"
 #include "nmt/mallocSiteTable.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutex.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/linkedlist.hpp"
 
-typedef LinkedListIterator<MallocSite>                   MallocSiteIterator;
 typedef LinkedListIterator<VirtualMemoryAllocationSite>  VirtualMemorySiteIterator;
 typedef LinkedListIterator<ReservedMemoryRegion>         VirtualMemoryAllocationIterator;
 
 /*
  * Baseline a memory snapshot
  */
-class MemBaseline {
+class MemBaseline : public CHeapObj<mtNMT> {
  public:
 
   enum BaselineType {
@@ -68,14 +69,16 @@ class MemBaseline {
 
   // Allocation sites information
   // Malloc allocation sites
-  LinkedListImpl<MallocSite>                  _malloc_sites;
+  GrowableArrayCHeap<MallocSite, mtNMT>                  _malloc_sites;
+
 
   // All virtual memory allocations
-  LinkedListImpl<ReservedMemoryRegion>        _virtual_memory_allocations;
+  Arena _arena;
+  LinkedListImpl<ReservedMemoryRegion, AnyObj::ARENA>        _virtual_memory_allocations;
 
   // Virtual memory allocations by allocation sites, always in by_address
   // order
-  LinkedListImpl<VirtualMemoryAllocationSite> _virtual_memory_sites;
+  LinkedListImpl<VirtualMemoryAllocationSite, AnyObj::ARENA> _virtual_memory_sites;
 
   SortingOrder         _malloc_sites_order;
   SortingOrder         _virtual_memory_sites_order;
@@ -86,6 +89,9 @@ class MemBaseline {
   // create a memory baseline
   MemBaseline():
     _instance_class_count(0), _array_class_count(0), _thread_count(0),
+    _arena(mtNMT),
+    _virtual_memory_allocations(&_arena),
+    _virtual_memory_sites(&_arena),
     _baseline_type(Not_baselined) {
   }
 
@@ -105,7 +111,7 @@ class MemBaseline {
     return _metaspace_stats;
   }
 
-  MallocSiteIterator malloc_sites(SortingOrder order);
+  GrowableArrayCHeap<MallocSite, mtNMT>& malloc_sites(SortingOrder order);
   VirtualMemorySiteIterator virtual_memory_sites(SortingOrder order);
 
   // Virtual memory allocation iterator always returns in virtual memory
@@ -183,7 +189,7 @@ class MemBaseline {
     _array_class_count = 0;
     _thread_count = 0;
 
-    _malloc_sites.clear();
+    _malloc_sites.shrink_to_fit();
     _virtual_memory_sites.clear();
     _virtual_memory_allocations.clear();
   }
