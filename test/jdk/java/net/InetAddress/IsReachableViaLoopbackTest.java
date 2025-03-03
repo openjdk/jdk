@@ -32,7 +32,6 @@ import jtreg.SkippedException;
  * @bug 8135305
  * @key intermittent
  * @library /test/lib
- * @build jtreg.SkippedException
  * @summary ensure we can't ping external hosts via loopback if
  * @run main IsReachableViaLoopbackTest
  */

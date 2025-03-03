@@ -27,7 +27,6 @@
  * @summary test functionality of getOriginalHostName(InetAddress)
  * @modules java.base/jdk.internal.access
  * @library /test/lib
- * @build jtreg.SkippedException
  * @run main getOriginalHostName
  */
 
