@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,11 +293,13 @@ inline Klass* java_lang_Class::as_Klass(oop java_class) {
 
 inline bool java_lang_Class::is_primitive(oop java_class) {
   // should assert:
-  //assert(java_lang_Class::is_instance(java_class), "must be a Class object");
+  // assert(java_lang_Class::is_instance(java_class), "must be a Class object");
   bool is_primitive = (java_class->metadata_field(_klass_offset) == nullptr);
 
 #ifdef ASSERT
-  if (is_primitive) {
+  // The heapwalker walks through Classes that have had their Klass pointers removed, so can't assert this.
+  // assert(is_primitive == java_class->bool_field(_is_primitive_offset), "must match what we told Java");
+  if (java_class->bool_field(_is_primitive_offset)) {
     Klass* k = ((Klass*)java_class->metadata_field(_array_klass_offset));
     assert(k == nullptr || is_java_primitive(ArrayKlass::cast(k)->element_type()),
         "Should be either the T_VOID primitive or a java primitive");

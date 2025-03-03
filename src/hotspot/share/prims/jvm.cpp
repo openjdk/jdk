@@ -1187,20 +1187,6 @@ JVM_ENTRY(jobjectArray, JVM_GetClassInterfaces(JNIEnv *env, jclass cls))
 JVM_END
 
 
-JVM_ENTRY(jboolean, JVM_IsInterface(JNIEnv *env, jclass cls))
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  if (java_lang_Class::is_primitive(mirror)) {
-    return JNI_FALSE;
-  }
-  Klass* k = java_lang_Class::as_Klass(mirror);
-  jboolean result = k->is_interface();
-  assert(!result || k->is_instance_klass(),
-         "all interfaces are instance types");
-  // The compiler intrinsic for isInterface tests the
-  // Klass::_access_flags bits in the same way.
-  return result;
-JVM_END
-
 JVM_ENTRY(jboolean, JVM_IsHiddenClass(JNIEnv *env, jclass cls))
   oop mirror = JNIHandles::resolve_non_null(cls);
   if (java_lang_Class::is_primitive(mirror)) {
@@ -1258,18 +1244,6 @@ JVM_ENTRY(jobject, JVM_FindScopedValueBindings(JNIEnv *env, jclass cls))
 
   return nullptr;
 JVM_END
-
-JVM_ENTRY(jboolean, JVM_IsArrayClass(JNIEnv *env, jclass cls))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  return (k != nullptr) && k->is_array_klass() ? true : false;
-JVM_END
-
-
-JVM_ENTRY(jboolean, JVM_IsPrimitiveClass(JNIEnv *env, jclass cls))
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  return (jboolean) java_lang_Class::is_primitive(mirror);
-JVM_END
-
 
 JVM_ENTRY(jobjectArray, JVM_GetDeclaredClasses(JNIEnv *env, jclass ofClass))
   JvmtiVMObjectAllocEventCollector oam;
@@ -2305,7 +2279,23 @@ JVM_END
 // The function returns a Klass* of the _scratch_class if the verifier
 // was invoked in the middle of the class redefinition.
 // Otherwise it returns its argument value which is the _the_class Klass*.
-// Please, refer to the description in the jvmtiThreadSate.hpp.
+// Please, refer to the description in the jvmtiThreadState.hpp.
+
+JVM_ENTRY(jboolean, JVM_IsInterface(JNIEnv *env, jclass cls))
+  oop mirror = JNIHandles::resolve_non_null(cls);
+  if (java_lang_Class::is_primitive(mirror)) {
+    return JNI_FALSE;
+  }
+  Klass* k = java_lang_Class::as_Klass(mirror);
+  // This isn't necessary since answer is the same since redefinition
+  // has already checked this matches for the scratch class.
+  // k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
+  jboolean result = k->is_interface();
+  assert(!result || k->is_instance_klass(),
+         "all interfaces are instance types");
+  return result;
+JVM_END
+
 
 JVM_ENTRY(const char*, JVM_GetClassNameUTF(JNIEnv *env, jclass cls))
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));

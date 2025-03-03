@@ -22,18 +22,21 @@
  */
 package jdk.jpackage.test;
 
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import static java.util.stream.Collectors.toSet;
+
 import java.io.Closeable;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.StandardCopyOption;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
@@ -58,13 +61,13 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
+import jdk.jpackage.internal.util.function.ThrowingUnaryOperator;
 
 public final class TKit {
 
@@ -288,9 +291,17 @@ public final class TKit {
         }
     }
 
-    private static final String TEMP_FILE_PREFIX = null;
+    private static Path createUniquePath(String defaultName) {
+        return createUniquePath(defaultName, workDir());
+    }
 
-    private static Path createUniqueFileName(String defaultName) {
+    private static Path createUniquePath(String defaultName, Path basedir) {
+        Objects.requireNonNull(defaultName);
+        Objects.requireNonNull(basedir);
+        if (defaultName.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+
         final String[] nameComponents;
 
         int separatorIdx = defaultName.lastIndexOf('.');
@@ -304,7 +315,6 @@ public final class TKit {
                 separatorIdx + 1)};
         }
 
-        final Path basedir = workDir();
         int i = 0;
         for (; i < 100; ++i) {
             Path path = basedir.resolve(String.join(".", nameComponents));
@@ -320,32 +330,42 @@ public final class TKit {
                 baseName, i));
     }
 
-    public static Path createTempDirectory(String role) throws IOException {
-        if (role == null) {
-            return Files.createTempDirectory(workDir(), TEMP_FILE_PREFIX);
+    public static Path createTempDirectory(String role) {
+        return createTempDirectory(Path.of(role));
+    }
+
+    public static Path createTempDirectory(Path role) {
+        return createTempPath(role, Files::createDirectory);
+    }
+
+    public static Path createTempFile(String role) {
+        return createTempFile(Path.of(role));
+    }
+
+    public static Path createTempFile(Path role) {
+        return createTempPath(role, Files::createFile);
+    }
+
+    private static Path createTempPath(Path templatePath, ThrowingUnaryOperator<Path> createPath) {
+        if (templatePath.isAbsolute()) {
+            throw new IllegalArgumentException();
         }
-        return Files.createDirectory(createUniqueFileName(role));
-    }
+        final Path basedir;
+        if (templatePath.getNameCount() > 1) {
+            basedir = workDir().resolve(templatePath.getParent());
+        } else {
+            basedir = workDir();
+        }
 
-    public static Path createTempFile(Path templateFile) throws
-            IOException {
-        return Files.createFile(createUniqueFileName(
-                templateFile.getFileName().toString()));
-    }
+        final var path = createUniquePath(templatePath.getFileName().toString(), basedir);
 
-    public static Path withTempFile(Path templateFile,
-            ThrowingConsumer<Path> action) {
-        final Path tempFile = ThrowingSupplier.toSupplier(() -> createTempFile(
-                templateFile)).get();
-        boolean keepIt = true;
         try {
-            ThrowingConsumer.toConsumer(action).accept(tempFile);
-            keepIt = false;
-            return tempFile;
-        } finally {
-            if (tempFile != null && !keepIt) {
-                ThrowingRunnable.toRunnable(() -> Files.deleteIfExists(tempFile)).run();
-            }
+            Files.createDirectories(path.getParent());
+            return createPath.apply(path);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        } catch (Throwable t) {
+            throw ExceptionBox.rethrowUnchecked(t);
         }
     }
 
@@ -509,7 +529,7 @@ public final class TKit {
 
     public static Path createRelativePathCopy(final Path file) {
         Path fileCopy = ThrowingSupplier.toSupplier(() -> {
-            Path localPath = createTempFile(file);
+            Path localPath = createTempFile(file.getFileName());
             Files.copy(file, localPath, StandardCopyOption.REPLACE_EXISTING);
             return localPath;
         }).get().toAbsolutePath().normalize();
@@ -609,6 +629,29 @@ public final class TKit {
                 actual), msg));
     }
 
+    public static void assertEquals(boolean expected, boolean actual, String msg) {
+        currentTest.notifyAssert();
+        if (expected != actual) {
+            error(concatMessages(String.format(
+                    "Expected [%s]. Actual [%s]", expected, actual),
+                    msg));
+        }
+
+        traceAssert(concatMessages(String.format("assertEquals(%s)", expected), msg));
+    }
+
+    public static void assertNotEquals(boolean expected, boolean actual, String msg) {
+        currentTest.notifyAssert();
+        if (expected == actual) {
+            error(concatMessages(String.format("Unexpected [%s] value", actual),
+                    msg));
+        }
+
+        traceAssert(concatMessages(String.format("assertNotEquals(%s, %s)", expected,
+                actual), msg));
+    }
+
+
     public static void assertEquals(String expected, String actual, String msg) {
         currentTest.notifyAssert();
         if ((actual != null && !actual.equals(expected))
@@ -703,7 +746,7 @@ public final class TKit {
         assertDirectoryExists(path, Optional.of(true));
     }
 
-    public static void assertDirectoryExists(Path path, Optional<Boolean> isEmptyCheck) {
+    private static void assertDirectoryExists(Path path, Optional<Boolean> isEmptyCheck) {
         assertPathExists(path, true);
         boolean isDirectory = Files.isDirectory(path);
         if (isEmptyCheck.isEmpty() || !isDirectory) {

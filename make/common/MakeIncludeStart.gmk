@@ -39,11 +39,11 @@ else
 endif
 
 ifeq ($(LOG_FLOW), true)
-  $(info :$(foreach s, top $(HELPER_STACK),    )Enter $(THIS_INCLUDE) [$(THIS_INCLUDE_MSG)])
+  $(info :$(foreach s, top $(INCLUDE_STACK) $(SNIPPET_STACK),    )Enter $(THIS_INCLUDE) [$(THIS_INCLUDE_MSG)])
 endif
 
-ifneq ($(filter $(THIS_INCLUDE), $(HELPER_STACK)), )
-  $(error Internal makefile error: Include loop detected: $(THIS_INCLUDE) $(HELPER_STACK))
+ifneq ($(filter $(THIS_INCLUDE), $(INCLUDE_STACK)), )
+  $(error Internal makefile error: Include loop detected: $(THIS_INCLUDE) $(INCLUDE_STACK))
 endif
 
 ifeq ($(words $(MAKEFILE_LIST)), 2)
@@ -66,7 +66,7 @@ ifneq ($(IS_PREINIT_ENV), true)
 endif
 
 # Push our helper name onto the stack
-HELPER_STACK := $(THIS_INCLUDE) $(HELPER_STACK)
+INCLUDE_STACK := $(THIS_INCLUDE) $(INCLUDE_STACK)
 
 # Setup an automatic include guard
 ifneq ($(INCLUDE_GUARD_$(THIS_INCLUDE)), true)

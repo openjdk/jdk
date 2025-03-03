@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,34 +19,35 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.code;
+#ifndef SHARE_GC_Z_ZMARKSTACKALLOCATOR_HPP
+#define SHARE_GC_Z_ZMARKSTACKALLOCATOR_HPP
 
-import java.util.*;
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.types.*;
-import sun.jvm.hotspot.utilities.Observable;
-import sun.jvm.hotspot.utilities.Observer;
+#include "gc/z/zArray.hpp"
+#include "gc/z/zValue.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "memory/allocation.hpp"
 
-public class DeoptimizationBlob extends SingletonBlob {
-  static {
-    VM.registerVMInitializedObserver(new Observer() {
-        public void update(Observable o, Object data) {
-          initialize(VM.getVM().getTypeDataBase());
-        }
-      });
-  }
+class ZMarkStackListNode;
 
-  private static void initialize(TypeDataBase db) {
-    Type type = db.lookupType("DeoptimizationBlob");
+class ZMarkingSMR: public CHeapObj<mtGC> {
+private:
+  struct ZWorkerState {
+    ZMarkStackListNode* volatile _hazard_ptr;
+    ZArray<ZMarkStackListNode*>  _scanned_hazards;
+    ZArray<ZMarkStackListNode*>  _freeing;
+  };
 
-    // FIXME: add any needed fields
-  }
+  ZPerWorker<ZWorkerState> _worker_states;
+  volatile bool            _expanded_recently;
 
-  public DeoptimizationBlob(Address addr) {
-    super(addr);
-  }
-}
+public:
+  ZMarkingSMR();
+  void free();
+  ZMarkStackListNode* allocate_stack();
+  void free_node(ZMarkStackListNode* stack);
+  ZMarkStackListNode* volatile* hazard_ptr();
+};
+
+#endif // SHARE_GC_Z_ZMARKSTACKALLOCATOR_HPP

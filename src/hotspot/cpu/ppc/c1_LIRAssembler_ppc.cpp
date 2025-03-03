@@ -2839,25 +2839,28 @@ void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp) {
 
 void LIR_Assembler::rt_call(LIR_Opr result, address dest,
                             const LIR_OprList* args, LIR_Opr tmp, CodeEmitInfo* info) {
-  // Stubs: Called via rt_call, but dest is a stub address (no function descriptor).
+  // Stubs: Called via rt_call, but dest is a stub address (no FunctionDescriptor).
   if (dest == Runtime1::entry_for(C1StubId::register_finalizer_id) ||
-      dest == Runtime1::entry_for(C1StubId::new_multi_array_id   )) {
+      dest == Runtime1::entry_for(C1StubId::new_multi_array_id   ) ||
+      dest == Runtime1::entry_for(C1StubId::is_instance_of_id    )) {
+    assert(CodeCache::contains(dest), "simplified call is only for special C1 stubs");
     //__ load_const_optimized(R0, dest);
     __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(dest));
     __ mtctr(R0);
     __ bctrl();
-    assert(info != nullptr, "sanity");
-    add_call_info_here(info);
-    __ post_call_nop();
+    if (info != nullptr) {
+      add_call_info_here(info);
+      __ post_call_nop();
+    }
     return;
   }
 
   __ call_c(dest, relocInfo::runtime_call_type);
+  assert(__ last_calls_return_pc() == __ pc(), "pcn not at return pc");
   if (info != nullptr) {
     add_call_info_here(info);
+    __ post_call_nop();
   }
-  assert(__ last_calls_return_pc() == __ pc(), "pcn not at return pc");
-  __ post_call_nop();
 }
 
 

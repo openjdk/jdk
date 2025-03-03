@@ -1241,11 +1241,6 @@
     <Field type="int" name="compression" label="Compression Level" description="Compression level of the dump, if larger than 0 we use gzip compression with this level" />
   </Event>
 
-  <Event name="GCLocker" category="Java Virtual Machine, GC, Detailed" label="GC Locker" startTime="true" thread="true" stackTrace="true">
-    <Field type="uint" name="lockCount" label="Lock Count" description="The number of Java threads in a critical section when the GC locker is started" />
-    <Field type="uint" name="stallCount" label="Stall Count" description="The number of Java threads stalled by the GC locker" />
-  </Event>
-
   <Event name="FinalizerStatistics" category="Java Application, Statistics" label="Finalizer Statistics" description="Per class statistics about finalizers" thread="false" startTime="false" period="endChunk">
     <Field type="Class" name="finalizableClass" label="Class Overriding Finalize" />
     <Field type="Symbol" name="codeSource" label="Code Source" description="URL from where the class was loaded" />
