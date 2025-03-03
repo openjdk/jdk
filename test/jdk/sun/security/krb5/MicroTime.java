@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 /*
  * @test
  * @bug 6882687 8011124
+ * @library /test/lib
  * @summary KerberosTime too imprecise
  * @modules java.security.jgss/sun.security.krb5.internal
  */
 
+import jtreg.SkippedException;
 import sun.security.krb5.internal.KerberosTime;
 
 public class MicroTime {
@@ -47,7 +49,7 @@ public class MicroTime {
         // We believe a nice KerberosTime can at least tell the
         // difference of 100 musec.
         if (count < 10000) {
-            throw new Exception("What? only " + (1000000/count) +
+            throw new SkippedException("What? only " + (1000000/count) +
                     " musec precision?");
         }
     }
