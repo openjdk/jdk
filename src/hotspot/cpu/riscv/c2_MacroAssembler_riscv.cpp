@@ -2135,9 +2135,6 @@ void C2_MacroAssembler::enc_cmove(int cmpFlag, Register op1, Register op2, Regis
 // Set dst to NaN if any NaN input.
 void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRegister src2,
                                   bool is_double, bool is_min) {
-  assert_different_registers(dst, src1);
-  assert_different_registers(dst, src2);
-
   Label Done, Compare;
 
   is_double ? fclass_d(t0, src1)
