@@ -54,8 +54,8 @@ public class StrLenTest extends CLayouts {
     Arena arena = Arena.ofConfined();
 
     SegmentAllocator segmentAllocator;
-    SegmentAllocator arenaAllocator = new RingAllocator(arena);
-    SlicingPool pool = new SlicingPool();
+    SegmentAllocator arenaAllocator;
+    SlicingPool pool;
 
     @Param({"5", "20", "100"})
     public int size;
@@ -76,6 +76,8 @@ public class StrLenTest extends CLayouts {
     @Setup
     public void setup() {
         str = makeString(size);
+        arenaAllocator = new RingAllocator(arena, size + 1);
+        pool = new SlicingPool(size + 1);
         segmentAllocator = SegmentAllocator.prefixAllocator(arena.allocate(size + 1, 1));
     }
 
@@ -142,6 +144,8 @@ public class StrLenTest extends CLayouts {
                  fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt
                  mollit anim id est laborum.
                 """;
+        while (lorem.length() < size)
+            lorem += lorem;
         return lorem.substring(0, size);
     }
 
@@ -150,8 +154,8 @@ public class StrLenTest extends CLayouts {
         SegmentAllocator current;
         long rem;
 
-        public RingAllocator(Arena session) {
-            this.segment = session.allocate(1024, 1);
+        public RingAllocator(Arena session, int size) {
+            this.segment = session.allocate(size, 1);
             reset();
         }
 
@@ -173,8 +177,12 @@ public class StrLenTest extends CLayouts {
     }
 
     static class SlicingPool {
-        final MemorySegment pool = Arena.ofAuto().allocate(1024);
+        final MemorySegment pool;
         boolean isAcquired = false;
+
+        public SlicingPool(int size) {
+            this.pool = Arena.ofAuto().allocate(size);
+        }
 
         public Arena acquire() {
             if (isAcquired) {

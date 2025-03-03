@@ -58,6 +58,7 @@ public class ToJavaStringTest {
     @Setup
     public void setup() {
         var arena = Arena.ofAuto();
+        while (LOREM.length() < size) LOREM += LOREM;
         strSegment = arena.allocateFrom(LOREM.substring(0, size));
     }
 
