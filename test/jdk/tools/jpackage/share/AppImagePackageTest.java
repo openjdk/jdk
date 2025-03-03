@@ -73,7 +73,7 @@ public class AppImagePackageTest {
     public static void testEmpty(boolean withIcon) throws IOException {
         final String name = "EmptyAppImagePackageTest";
         final String imageName = name + (TKit.isOSX() ? ".app" : "");
-        Path appImageDir = TKit.createTempDirectory(null).resolve(imageName);
+        Path appImageDir = TKit.createTempDirectory("appimage").resolve(imageName);
 
         Files.createDirectories(appImageDir.resolve("bin"));
         Path libDir = Files.createDirectories(appImageDir.resolve("lib"));

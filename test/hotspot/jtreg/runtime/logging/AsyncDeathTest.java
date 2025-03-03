@@ -38,17 +38,24 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class AsyncDeathTest {
     public static void main(String[] args) throws Exception {
-        // For deathtest we expect the VM to reach ShouldNotReachHere() and die
+        // TestingAsyncLoggingDeathTest is set: We expect the VM to reach ShouldNotReachHere() and die.
         ProcessBuilder pb =
-            ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:async", "-Xlog:os,deathtest=debug", "-XX:-CreateCoredumpOnCrash", "--version");
+            ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:async", "-Xlog:os,deathtest=debug", "-XX:-CreateCoredumpOnCrash", "-XX:+TestingAsyncLoggingDeathTest", "--version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotHaveExitValue(0);
         output.shouldNotContain("Induce a recursive log for testing");
-        // For deathtest2 we expect the VM to ignore that recursive logging has been detected and is handled by printing synchronously.
+        // TestingAsyncLoggingDeathTestNoCrash is set: We expect the VM to ignore that recursive logging has been detected and the logging should be handled by printing synchronously.
         ProcessBuilder pb2 =
-            ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:async", "-Xlog:os,deathtest2=debug", "--version");
+            ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:async", "-Xlog:os,deathtest=debug", "-XX:+TestingAsyncLoggingDeathTestNoCrash" , "--version");
         OutputAnalyzer output2 = new OutputAnalyzer(pb2.start());
         output2.shouldHaveExitValue(0);
         output2.shouldContain("Induce a recursive log for testing");
+
+        // For -Xlog:all=debug but without any global set, the test should succeed and not contain the recursive message.
+        ProcessBuilder pb3 =
+            ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:async", "-Xlog:all=debug", "--version");
+        OutputAnalyzer output3 = new OutputAnalyzer(pb3.start());
+        output3.shouldHaveExitValue(0);
+        output3.shouldNotContain("Induce a recursive log for testing");
     }
 }

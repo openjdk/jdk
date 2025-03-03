@@ -4472,7 +4472,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       }
     } else if (n->is_AddP()) {
       if (has_reducible_merge_base(n->as_AddP(), reducible_merges)) {
-        // This AddP will go away when we reduce the the Phi
+        // This AddP will go away when we reduce the Phi
         continue;
       }
       Node* addp_base = get_addp_base(n);

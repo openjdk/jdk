@@ -56,7 +56,7 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(value = 3, jvmArgsAppend = {"--add-opens", "java.base/sun.security.provider=ALL-UNNAMED"})
+@Fork(value = 3, jvmArgs = {"--add-opens", "java.base/sun.security.provider=ALL-UNNAMED"})
 
 public class MLDSA {
         @Param({"ML-DSA-44", "ML-DSA-65", "ML-DSA-87"} )
