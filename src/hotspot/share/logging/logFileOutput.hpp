@@ -80,7 +80,9 @@ class LogFileOutput : public LogFileStreamOutput {
     }
   }
 
- public:
+  void write_file_unique_time_message(const char* message);
+
+public:
   LogFileOutput(const char *name);
   virtual ~LogFileOutput();
   virtual bool initialize(const char* options, outputStream* errstream);
