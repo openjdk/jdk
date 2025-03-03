@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import org.openjdk.jmh.annotations.*;
 @State(Scope.Benchmark)
 @Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
-@Fork(1)
+@Fork(value = 1, jvmArgs = { "--add-exports=java.base/jdk.internal.vm=ALL-UNNAMED" })
 public class Oscillation {
     static final ContinuationScope SCOPE = new ContinuationScope() { };
 
