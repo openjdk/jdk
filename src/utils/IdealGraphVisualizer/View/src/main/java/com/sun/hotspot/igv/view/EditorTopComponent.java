@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package com.sun.hotspot.igv.view;
 import com.sun.hotspot.igv.data.GraphDocument;
 import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.InputGraph;
+import com.sun.hotspot.igv.data.InputLiveRange;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.graph.Figure;
@@ -205,6 +206,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         toolBar.addSeparator();
         toolBar.add(new JToggleButton(new PredSuccAction(diagramViewModel.getShowNodeHull())));
         toolBar.add(new JToggleButton(new ShowEmptyBlocksAction(cfgLayoutAction, diagramViewModel.getShowEmptyBlocks())));
+        toolBar.add(new JToggleButton(new ShowLiveRangesAction(cfgLayoutAction, diagramViewModel.getShowLiveRanges())));
 
         toolBar.addSeparator();
         UndoAction undoAction = UndoAction.get(UndoAction.class);
@@ -353,12 +355,26 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         scene.colorSelectedFigures(color);
     }
 
+    public void addSelectedLiveRanges(Collection<InputLiveRange> liveRanges, boolean showIfHidden) {
+        scene.addSelectedLiveRanges(liveRanges, showIfHidden);
+    }
+
+    public void addSelectedElements(Collection<InputNode> nodes,
+                                    Collection<InputLiveRange> liveRanges,
+                                    boolean showIfHidden) {
+        scene.addSelectedElements(nodes, liveRanges, showIfHidden);
+    }
+
     public void centerSelectedNodes() {
         scene.centerSelectedFigures();
     }
 
-    public void clearSelectedNodes() {
-        scene.clearSelectedNodes();
+    public void centerSelectedLiveRanges() {
+        scene.centerSelectedLiveRanges();
+    }
+
+    public void clearSelectedElements() {
+        scene.clearSelectedElements();
     }
 
     public Rectangle getSceneBounds() {
@@ -450,7 +466,11 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         for (Figure figure : getModel().getSelectedFigures()) {
             selectedNodes.add(figure.getInputNode());
         }
-        etc.addSelectedNodes(selectedNodes, false);
+        Set<InputLiveRange> selectedLiveRanges = new HashSet<>();
+        for (int liveRangeId : getModel().getSelectedLiveRanges()) {
+            selectedLiveRanges.add(getModel().getGraph().getLiveRange(liveRangeId));
+        }
+        etc.addSelectedElements(selectedNodes, selectedLiveRanges, false);
         model.setGlobalSelection(GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected(), false);
         model.setCutEdges(CutEdgesAction.get(CutEdgesAction.class).isSelected(), false);
         etc.resetUndoRedo();
