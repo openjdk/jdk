@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,10 @@ import java.util.Objects;
  * are initialized in the right order (that is, that {@code MemorySegment} is always initialized first).
  * See {@link SegmentFactories#ensureInitialized()}.
  */
-public class SegmentFactories {
+public final class SegmentFactories {
+
+    // Suppresses default constructor, ensuring non-instantiability.
+    private SegmentFactories() {}
 
     // The maximum alignment supported by malloc - typically 16 bytes on
     // 64-bit platforms and 8 bytes on 32-bit platforms.
