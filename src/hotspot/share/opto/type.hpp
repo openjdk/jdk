@@ -79,7 +79,6 @@ class VerifyMeet;
 // different kind of Type exists.  Types are never modified after creation, so
 // all their interesting fields are constant.
 class Type {
-  friend class VMStructs;
 
 public:
   enum TYPES {

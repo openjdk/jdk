@@ -68,9 +68,16 @@ int CDSConfig::get_status() {
 
 void CDSConfig::initialize() {
   if (is_dumping_static_archive() && !is_dumping_final_static_archive()) {
-    if (RequireSharedSpaces) {
-      warning("Cannot dump shared archive while using shared archive");
-    }
+    // Note: -Xshare and -XX:AOTMode flags are mutually exclusive.
+    // - Classic workflow: -Xshare:on and -Xshare:dump cannot take effect at the same time.
+    // - JEP 483 workflow: -XX:AOTMode:record and -XX:AOTMode=on cannot take effect at the same time.
+    // So we can never come to here with RequireSharedSpaces==true.
+    assert(!RequireSharedSpaces, "sanity");
+
+    // If dumping the classic archive, or making an AOT training run (dumping a preimage archive),
+    // for sanity, parse all classes from classfiles.
+    // TODO: in the future, if we want to support re-training on top of an existing AOT cache, this
+    // needs to be changed.
     UseSharedSpaces = false;
   }
 
@@ -89,12 +96,10 @@ void CDSConfig::initialize() {
 
 char* CDSConfig::default_archive_path() {
   if (_default_archive_path == nullptr) {
-    char jvm_path[JVM_MAXPATHLEN];
-    os::jvm_path(jvm_path, sizeof(jvm_path));
-    char *end = strrchr(jvm_path, *os::file_separator());
-    if (end != nullptr) *end = '\0';
     stringStream tmp;
-    tmp.print("%s%sclasses", jvm_path, os::file_separator());
+    const char* subdir = WINDOWS_ONLY("bin") NOT_WINDOWS("lib");
+    tmp.print("%s%s%s%s%s%sclasses", Arguments::get_java_home(), os::file_separator(), subdir,
+              os::file_separator(), Abstract_VM_Version::vm_variant(), os::file_separator());
 #ifdef _LP64
     if (!UseCompressedOops) {
       tmp.print_raw("_nocoops");
