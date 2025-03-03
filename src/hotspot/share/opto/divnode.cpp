@@ -1517,8 +1517,8 @@ Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
   PhaseIterGVN* igvn = phase->is_IterGVN();
 
-  bool result_is_ignored = proj_out_or_null(TypeFunc::Parms) == nullptr;
-  if (result_is_ignored) {
+  bool result_is_unused = proj_out_or_null(TypeFunc::Parms) == nullptr;
+  if (result_is_unused) {
     return replace_with_con(igvn, TypeF::make(0.));
   }
 
@@ -1568,8 +1568,8 @@ Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
   PhaseIterGVN* igvn = phase->is_IterGVN();
 
-  bool result_is_ignored = proj_out_or_null(TypeFunc::Parms) == nullptr;
-  if (result_is_ignored) {
+  bool result_is_unused = proj_out_or_null(TypeFunc::Parms) == nullptr;
+  if (result_is_unused) {
     return replace_with_con(igvn, TypeD::make(0.));
   }
 

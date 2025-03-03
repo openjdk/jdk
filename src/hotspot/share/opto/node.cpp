@@ -2945,11 +2945,11 @@ bool Node::is_pure_function() const {
 
 // `maybe_pure_function` is assumed to be the input of `this`. This is a bit redundant,
 // but we already have and need maybe_pure_function in all the call sites, so
-// it makes obvious that the `maybe_pure_function` is the same node as in the caller,
+// it makes it obvious that the `maybe_pure_function` is the same node as in the caller,
 // while it takes more thinking to realize that a locally computed in(0) must be equal to
 // the local in the caller.
 bool Node::is_data_proj_of_pure_function(const Node* maybe_pure_function) const {
-  return Opcode() == Op_Proj && static_cast<const ProjNode*>(this)->_con == TypeFunc::Parms && maybe_pure_function->is_pure_function();
+  return Opcode() == Op_Proj && as_Proj()->_con == TypeFunc::Parms && maybe_pure_function->is_pure_function();
 }
 
 //=============================================================================
