@@ -260,7 +260,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       JDK_LIBS_windows := java.base:libjava, \
       JDK_LIBS_macosx := libosxapp, \
       LIBS := $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(LIBZ_LIBS) $(PNG_LIBS), \
-      LIBS_unix := $(LIBM) -lpthread, \
+      LIBS_unix := $(LIBM) $(LIBPTHREAD), \
       LIBS_linux := $(LIBDL) $(X_LIBS) -lX11 -lXext, \
       LIBS_macosx := -liconv \
           -framework ApplicationServices \

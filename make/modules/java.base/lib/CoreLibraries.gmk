@@ -187,7 +187,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
         unused-function, \
     DISABLED_WARNINGS_clang_java_md_macosx.m := unused-variable, \
     LIBS_unix := $(LIBZ_LIBS), \
-    LIBS_linux := $(LIBDL) -lpthread, \
+    LIBS_linux := $(LIBDL) $(LIBPTHREAD), \
     LIBS_macosx := \
         -framework ApplicationServices \
         -framework Cocoa \
