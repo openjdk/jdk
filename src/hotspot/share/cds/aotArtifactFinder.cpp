@@ -136,7 +136,7 @@ void AOTArtifactFinder::find_artifacts() {
 
 #if INCLUDE_CDS_JAVA_HEAP
   // Keep scanning until we discover no more class that need to be AOT-initialized.
-  if (CDSConfig::is_dumping_method_handles()) {
+  if (CDSConfig::is_initing_classes_at_dump_time()) {
     while (_pending_aot_inited_classes->length() > 0) {
       InstanceKlass* ik = _pending_aot_inited_classes->pop();
       HeapShared::copy_and_rescan_aot_inited_mirror(ik);
@@ -176,7 +176,7 @@ void AOTArtifactFinder::end_scanning_for_oops() {
 }
 
 void AOTArtifactFinder::add_aot_inited_class(InstanceKlass* ik) {
-  if (CDSConfig::is_dumping_method_handles()) {
+  if (CDSConfig::is_initing_classes_at_dump_time()) {
     assert(ik->is_initialized(), "must be");
     add_cached_instance_class(ik);
 
@@ -208,7 +208,7 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
   if (created) {
     _all_cached_classes->append(ik);
     scan_oops_in_instance_class(ik);
-    if (ik->is_hidden() && CDSConfig::is_dumping_method_handles()) {
+    if (ik->is_hidden() && CDSConfig::is_initing_classes_at_dump_time()) {
       bool succeed = AOTClassLinker::try_add_candidate(ik);
       guarantee(succeed, "All cached hidden classes must be aot-linkable");
       add_aot_inited_class(ik);
