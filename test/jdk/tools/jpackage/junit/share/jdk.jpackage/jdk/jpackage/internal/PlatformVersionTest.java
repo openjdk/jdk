@@ -22,6 +22,7 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.DottedVersion;
 import java.lang.reflect.InvocationTargetException;
 import java.util.function.Function;
 import java.lang.reflect.Method;

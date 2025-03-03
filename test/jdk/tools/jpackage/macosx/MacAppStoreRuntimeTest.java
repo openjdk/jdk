@@ -21,18 +21,18 @@
  * questions.
  */
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.Executor;
-import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.JavaTool;
-import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageStringBundle;
+import jdk.jpackage.test.JavaTool;
+import jdk.jpackage.test.TKit;
 
 
 /**
@@ -88,12 +88,14 @@ public class MacAppStoreRuntimeTest {
     @Parameter("true")
     @Parameter("false")
     public static void test(boolean stripNativeCommands) throws Exception {
-        JPackageCommand cmd = JPackageCommand.helloAppImage();
+        JPackageCommand cmd = JPackageCommand.helloAppImage().ignoreDefaultRuntime(true);
         cmd.addArguments("--mac-app-store", "--runtime-image", getRuntimeImage(stripNativeCommands));
 
         if (stripNativeCommands) {
             cmd.executeAndAssertHelloAppImageCreated();
         } else {
+            cmd.validateOutput(JPackageStringBundle.MAIN.cannedFormattedString(
+                    "ERR_MacAppStoreRuntimeBinExists", Path.of(cmd.getArgumentValue("--runtime-image")).toAbsolutePath().toString()));
             cmd.execute(1);
         }
     }
