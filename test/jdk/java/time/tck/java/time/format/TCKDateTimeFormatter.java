@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,13 +96,17 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.SignStyle;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.UnsupportedTemporalTypeException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -906,4 +911,384 @@ public class TCKDateTimeFormatter {
         BASIC_FORMATTER.toFormat(null);
     }
 
+    @Test
+    public void test_output_twice() {
+        List<LocalDateTime> dateTimes = dateTimes(true);
+
+        int[] powers = new int[] {
+                1000000000,
+                100000000,
+                10000000,
+                1000000,
+                100000,
+                10000,
+                1000,
+                100,
+                10,
+                1,
+        };
+        int patternCount = 10;
+        String[] dateTimePatterns = new String[patternCount];
+        String[] timePatterns = new String[patternCount];
+        for (int i = 0; i < patternCount; i++) {
+            String nano = i == 0 ? "" : "." + "S".repeat(i);
+            String dateTimePattern = "yyyy-MM-dd HH:mm:ss" + nano;
+            dateTimePatterns[i] = dateTimePattern + " " + dateTimePattern;
+
+            String timePattern = "HH:mm:ss" + nano;
+            timePatterns[i] = timePattern + " " + timePattern;
+        }
+        DateTimeFormatter[] dateTimeFormatters = new DateTimeFormatter[patternCount];
+        DateTimeFormatter[] timeFormatters = new DateTimeFormatter[patternCount];
+        for (int i = 0; i < patternCount; i++) {
+            dateTimeFormatters[i] = DateTimeFormatter.ofPattern(dateTimePatterns[i], Locale.US);
+            timeFormatters[i] = DateTimeFormatter.ofPattern(timePatterns[i], Locale.US);
+        }
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd yyyy-MM-dd", Locale.US);
+
+        for (LocalDateTime dateTime : dateTimes) {
+            String dateStr = new StringBuilder()
+                    .append(dateTime.get(ChronoField.YEAR_OF_ERA) < 10000 ? "" : "+")
+                    .append("%04d".formatted(dateTime.get(ChronoField.YEAR_OF_ERA)))
+                    .append(dateTime.getMonthValue() < 10 ? "-0" : "-").append(dateTime.getMonthValue())
+                    .append(dateTime.getDayOfMonth() < 10 ? "-0" : "-").append(dateTime.getDayOfMonth()).toString();
+
+            String dateExpected = dateStr + " " + dateStr;
+            assertEquals(dateExpected, dateFormatter.format(dateTime));
+            assertEquals(dateExpected, dateFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
+            assertEquals(dateExpected, dateFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+
+            for (int i = 0; i < patternCount; i++) {
+                StringBuilder buf = new StringBuilder()
+                        .append(dateTime.getHour() < 10 ? "0" : "").append(dateTime.getHour())
+                        .append(dateTime.getMinute() < 10 ? ":0" : ":").append(dateTime.getMinute())
+                        .append(dateTime.getSecond() < 10 ? ":0" : ":").append(dateTime.getSecond());
+                if (i > 0) {
+                    buf.append('.');
+                    int power = powers[i];
+                    int value = dateTime.getNano() / power;
+                    buf.append(("%0" + i + "d").formatted(value));
+                }
+                String timeStr = buf.toString();
+                String dateTimeExpected = dateStr + " " + timeStr + " " + dateStr + " " + timeStr;
+                DateTimeFormatter dateTimeFormatter = dateTimeFormatters[i];
+                assertEquals(dateTimeExpected, dateTimeFormatter.format(dateTime));
+                assertEquals(dateTimeExpected, dateTimeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
+                assertEquals(dateTimeExpected, dateTimeFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+                assertEquals(dateTimeExpected, dateTimeFormatter.withZone(ZoneOffset.UTC).format(dateTime.toInstant(ZoneOffset.UTC)));
+
+                String timeExpected = timeStr + " " + timeStr;
+                DateTimeFormatter timeFormatter = timeFormatters[i];
+                assertEquals(timeExpected, timeFormatter.format(dateTime));
+                assertEquals(timeExpected, timeFormatter.format(dateTime.toLocalTime()));
+                assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
+                assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC).toOffsetTime()));
+                assertEquals(timeExpected, timeFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+                assertEquals(timeExpected, timeFormatter.withZone(ZoneOffset.UTC).format(dateTime.toInstant(ZoneOffset.UTC)));
+            }
+        }
+    }
+
+    @Test
+    public void test_output() {
+        List<LocalDateTime> dateTimes = dateTimes(false);
+
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("u-M-d'T'H:m:s", Locale.US);
+        DateTimeFormatter dateFormatter     = DateTimeFormatter.ofPattern("u-M-d", Locale.US);
+        DateTimeFormatter timeFormatter     = DateTimeFormatter.ofPattern("H:m:s", Locale.US);
+
+        for (LocalDateTime dateTime : dateTimes) {
+            String dateExpected = new StringBuilder().append(dateTime.getYear())
+                    .append('-').append(dateTime.getMonthValue())
+                    .append('-').append(dateTime.getDayOfMonth())
+                    .toString();
+
+            assertEquals(dateExpected, dateFormatter.format(dateTime));
+            assertEquals(dateExpected, dateFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
+            assertEquals(dateExpected, dateFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+
+            String timeExpected = new StringBuilder().append(dateTime.getHour())
+                    .append(':').append(dateTime.getMinute())
+                    .append(':').append(dateTime.getSecond())
+                    .toString();
+
+            String dateTimeExpected = dateExpected + "T" + timeExpected;
+            assertEquals(dateTimeExpected, dateTimeFormatter.format(dateTime));
+            assertEquals(dateTimeExpected, dateTimeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
+            assertEquals(dateTimeExpected, dateTimeFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+
+            assertEquals(timeExpected, timeFormatter.format(dateTime));
+            assertEquals(timeExpected, timeFormatter.format(dateTime.toLocalTime()));
+            assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
+            assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC).toOffsetTime()));
+            assertEquals(timeExpected, timeFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+        }
+    }
+
+    @Test
+    public void test_output_second_fields() {
+        List<ChronoField> fields = new ArrayList<>();
+        for (ChronoField value : ChronoField.values()) {
+            if (value.getRangeUnit() == ChronoUnit.SECONDS) {
+                fields.add(value);
+            }
+        }
+        DateTimeFormatter[] formatters = new DateTimeFormatter[fields.size()];
+        for (int i = 0; i < fields.size(); i++) {
+            ChronoField chronoField = fields.get(i);
+            formatters[i] = new DateTimeFormatterBuilder().appendValue(chronoField).toFormatter();
+        }
+
+        int[] nanos = {
+                0, 9,
+                10, 99,
+                100, 999,
+                1000, 9999,
+                10000, 99999,
+                100000, 999999,
+                1000000, 9999999,
+                10000000, 99999999,
+                10000000, 999999999
+        };
+        for (int nano : nanos) {
+            Instant instant = Instant.ofEpochSecond(0, nano);
+            for (int i = 0; i < fields.size(); i++) {
+                assertEquals(String.valueOf(instant.getLong(fields.get(i))), formatters[i].format(instant));
+            }
+            LocalTime localTime = LocalTime.of(0, 0, 0, nano);
+            for (int i = 0; i < fields.size(); i++) {
+                assertEquals(String.valueOf(localTime.get(fields.get(i))), formatters[i].format(localTime));
+            }
+        }
+    }
+
+    @Test
+    public void test_output_days_fields() {
+        List<ChronoField> fields = new ArrayList<>();
+        for (ChronoField value : ChronoField.values()) {
+            if (value.getRangeUnit() == ChronoUnit.DAYS) {
+                fields.add(value);
+            }
+        }
+        DateTimeFormatter[] formatters = new DateTimeFormatter[fields.size()];
+        for (int i = 0; i < fields.size(); i++) {
+            ChronoField chronoField = fields.get(i);
+            formatters[i] = new DateTimeFormatterBuilder().appendValue(chronoField)
+                    .toFormatter();
+        }
+
+        List<LocalDateTime> dateTimes = dateTimes(false);
+        for (LocalDateTime dateTime : dateTimes) {
+            for (int i = 0; i < fields.size(); i++) {
+                assertEquals(String.valueOf(dateTime.getLong(fields.get(i))), formatters[i].format(dateTime));
+            }
+        }
+    }
+
+    @Test
+    public void test_output_long_fields() {
+        ChronoField[] fields = {
+                ChronoField.MICRO_OF_DAY,
+                ChronoField.NANO_OF_DAY,
+                ChronoField.MILLI_OF_DAY,
+                ChronoField.EPOCH_DAY
+        };
+        DateTimeFormatter[] formatters = new DateTimeFormatter[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            ChronoField chronoField = fields[i];
+            formatters[i] = new DateTimeFormatterBuilder().appendValue(chronoField)
+                    .toFormatter().withZone(ZoneOffset.UTC);
+        }
+
+        List<LocalDateTime> dateTimes = dateTimes(false);
+        for (LocalDateTime dateTime : dateTimes) {
+            for (int i = 0; i < fields.length; i++) {
+                Instant instant = dateTime.toInstant(ZoneOffset.UTC);
+                assertEquals(String.valueOf(dateTime.getLong(fields[i])), formatters[i].format(instant));
+            }
+        }
+    }
+
+    @Test
+    public void test_output_width_1() {
+        List<LocalDateTime> dateTimes = dateTimes(true);
+        ChronoField[] fields = {ChronoField.DAY_OF_WEEK, ChronoField.AMPM_OF_DAY, ChronoField.ALIGNED_WEEK_OF_MONTH};
+        DateTimeFormatter[] formatters = new DateTimeFormatter[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            formatters[i] = new DateTimeFormatterBuilder()
+                    .appendValue(fields[i], 1, 1, SignStyle.NOT_NEGATIVE)
+                    .toFormatter();
+        }
+        for (LocalDateTime dateTime : dateTimes) {
+            for (int i = 0; i < fields.length; i++) {
+                assertEquals(
+                        String.valueOf(dateTime.get(fields[i])),
+                        formatters[i].format(dateTime));
+            }
+        }
+    }
+
+    @Test
+    public void test_output_width_2() {
+        List<LocalDateTime> dateTimes = dateTimes(true);
+        ChronoField[] fields = {
+                ChronoField.DAY_OF_MONTH,
+                ChronoField.HOUR_OF_DAY,
+                ChronoField.SECOND_OF_MINUTE,
+                ChronoField.CLOCK_HOUR_OF_DAY,
+                ChronoField.ALIGNED_WEEK_OF_YEAR
+        };
+        DateTimeFormatter[] formatters_1_2 = new DateTimeFormatter[fields.length];
+        DateTimeFormatter[] formatters_2_2 = new DateTimeFormatter[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            formatters_1_2[i] = new DateTimeFormatterBuilder()
+                    .appendValue(fields[i], 1, 2, SignStyle.NOT_NEGATIVE)
+                    .toFormatter();
+            formatters_2_2[i] = new DateTimeFormatterBuilder()
+                    .appendValue(fields[i], 2, 2, SignStyle.NOT_NEGATIVE)
+                    .toFormatter();
+        }
+        for (LocalDateTime dateTime : dateTimes) {
+            for (int i = 0; i < fields.length; i++) {
+                assertEquals(
+                        String.valueOf(dateTime.get(fields[i])),
+                        formatters_1_2[i].format(dateTime));
+                assertEquals(
+                        "%02d".formatted(dateTime.get(fields[i])),
+                        formatters_2_2[i].format(dateTime));
+            }
+        }
+    }
+
+    @Test
+    public void test_output_width_3() {
+        List<LocalDateTime> dateTimes = dateTimes(true);
+        ChronoField[] fields = {ChronoField.ALIGNED_WEEK_OF_YEAR, ChronoField.DAY_OF_YEAR, ChronoField.MILLI_OF_SECOND};
+        DateTimeFormatter[] formatters_3_3 = new DateTimeFormatter[fields.length];
+        DateTimeFormatter[] formatters_1_3 = new DateTimeFormatter[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            formatters_3_3[i] = new DateTimeFormatterBuilder()
+                    .appendValue(fields[i], 3, 3, SignStyle.NOT_NEGATIVE)
+                    .toFormatter();
+            formatters_1_3[i] = new DateTimeFormatterBuilder()
+                    .appendValue(fields[i], 1, 3, SignStyle.NOT_NEGATIVE)
+                    .toFormatter();
+        }
+        for (LocalDateTime dateTime : dateTimes) {
+            for (int i = 0; i < fields.length; i++) {
+                assertEquals(
+                        "%03d".formatted(dateTime.get(fields[i])),
+                        formatters_3_3[i].format(dateTime));
+                assertEquals(
+                        Integer.toString(dateTime.get(fields[i])),
+                        formatters_1_3[i].format(dateTime));
+            }
+        }
+    }
+
+    @Test
+    public void test_output_width_4() {
+        ChronoField[] fields = {ChronoField.YEAR, ChronoField.YEAR_OF_ERA};
+        DateTimeFormatter[] formatters_4_4 = new DateTimeFormatter[fields.length];
+        DateTimeFormatter[] formatters_4_EXCEEDS_PAD = new DateTimeFormatter[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            formatters_4_4[i] = new DateTimeFormatterBuilder()
+                    .appendValue(fields[i], 4, 9, SignStyle.NOT_NEGATIVE)
+                    .toFormatter();
+            formatters_4_EXCEEDS_PAD[i] = new DateTimeFormatterBuilder()
+                    .appendValue(fields[i], 4, 9, SignStyle.EXCEEDS_PAD)
+                    .toFormatter();
+        }
+        LocalDate date = LocalDate.of(1972, 1, 1);
+        for (int i = 0; i < fields.length; i++) {
+            assertEquals(
+                    "%04d".formatted(date.get(fields[i])),
+                    formatters_4_4[i].format(date));
+            assertEquals(
+                    "%04d".formatted(date.get(fields[i])),
+                    formatters_4_EXCEEDS_PAD[i].format(date));
+        }
+    }
+
+    @Test
+    public void test_output_nano_second() {
+        DateTimeFormatter[] formatters = new DateTimeFormatter[9];
+        DateTimeFormatter[] formatters_fixed_width = new DateTimeFormatter[9];
+        for (int i = 0; i < 9; i++) {
+            int width = i + 1;
+            formatters[i] = new DateTimeFormatterBuilder()
+                    .appendFraction(ChronoField.NANO_OF_SECOND, 1, width, false)
+                    .toFormatter();
+            formatters_fixed_width[i] = new DateTimeFormatterBuilder()
+                    .appendFraction(ChronoField.NANO_OF_SECOND, width, width, false)
+                    .toFormatter();
+        }
+        int nanoOfSecond = 123456789;
+        String nanoOfSecondStr = Integer.toString(nanoOfSecond);
+        LocalTime date = LocalTime.of(12, 13,14, nanoOfSecond);
+        for (int i = 0; i < formatters.length; i++) {
+            assertEquals(
+                    nanoOfSecondStr.substring(0, i + 1),
+                    formatters[i].format(date));
+            assertEquals(
+                    nanoOfSecondStr.substring(0, i + 1),
+                    formatters_fixed_width[i].format(date));
+        }
+    }
+
+    static List<LocalDateTime> dateTimes(boolean includeNanos) {
+        int[] years = {
+                -1, -10, -100, -1000, -10000, -100000, -1000000, -10000000, -100000000, -999999999,
+                0, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 999999999
+        };
+        int[] months  = {1, 12};
+        int[] days    = {1, 28};
+        int[] hours   = {0, 9, 23};
+        int[] minutes = {0, 9, 59};
+        int[] seconds = {0, 9, 59};
+        int[] nanos = {
+                0, 9,
+                10, 99,
+                100, 999,
+                1000, 9999,
+                10000, 99999,
+                100000, 999999,
+                1000000, 9999999,
+                10000000, 99999999,
+                10000000, 999999999
+        };
+
+        List<LocalDate> localDates = new ArrayList<>();
+        for (int year : years) {
+            for (int month : months) {
+                for (int day : days) {
+                    localDates.add(LocalDate.of(year, month, day));
+                }
+            }
+        }
+
+        List<LocalTime> localTimes = new ArrayList<>();
+        for (int hour : hours) {
+            for (int minute : minutes) {
+                for (int second : seconds) {
+                    if (includeNanos) {
+                        for (int nano : nanos) {
+                            localTimes.add(LocalTime.of(hour, minute, second, nano));
+                        }
+                    } else {
+                        localTimes.add(LocalTime.of(hour, minute, second));
+                    }
+                }
+            }
+        }
+
+        List<LocalDateTime> dateTimes = new ArrayList<>();
+        for (LocalDate localDate : localDates) {
+            for (LocalTime localTime : localTimes) {
+                dateTimes.add(LocalDateTime.of(localDate, localTime));
+            }
+        }
+
+        return dateTimes;
+    }
 }
