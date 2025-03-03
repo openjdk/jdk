@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,20 @@ import java.util.Objects;
 /**
  * Implements an output stream filter for uncompressing data stored in the
  * "deflate" compression format.
+ *
+ * <h2 id="inflater-usage">Inflater Usage</h2>
+ * <p>This class uses an {@link Inflater} for uncompressing the data. Two forms of constructors
+ * are available for constructing an {@code InflaterOutputStream} - one which accepts
+ * an {@code Inflater} and one which doesn't. The constructors that don't accept an
+ * {@code Inflater} will create and use an {@code Inflater} instance of their own.
+ * The {@code Inflater} instance created in those cases will be
+ * {@linkplain Inflater#close() closed} when the {@code InflaterOutputStream} instance itself
+ * is {@linkplain #close() closed}.
+ * On the other hand, if an {@code InflaterOutputStream} was
+ * constructed by passing it an {@code Inflater}, then closing the {@code InflaterOutputStream}
+ * will not close the passed {@code Inflater}. In those cases, it is the responsibility of
+ * the caller to close the {@code Inflater} as and when appropriate, after the
+ * {@code InflaterOutputStream} has been closed.
  *
  * @since       1.6
  * @author      David R Tribble (david@tribble.com)
@@ -83,6 +97,9 @@ public class InflaterOutputStream extends FilterOutputStream {
      * Creates a new output stream with the specified decompressor and a
      * default buffer size.
      *
+     * @apiNote {@linkplain #close() Closing} the {@code InflaterOutputStream}
+     * {@linkplain ##inflater-usage will not close} the given {@code infl}.
+     *
      * @param out output stream to write the uncompressed data to
      * @param infl decompressor ("inflater") for this stream
      * @throws NullPointerException if {@code out} or {@code infl} is null
@@ -94,6 +111,9 @@ public class InflaterOutputStream extends FilterOutputStream {
     /**
      * Creates a new output stream with the specified decompressor and
      * buffer size.
+     *
+     * @apiNote {@linkplain #close() Closing} the {@code InflaterOutputStream}
+     * {@linkplain ##inflater-usage will not close} the given {@code infl}.
      *
      * @param out output stream to write the uncompressed data to
      * @param infl decompressor ("inflater") for this stream
@@ -121,8 +141,13 @@ public class InflaterOutputStream extends FilterOutputStream {
      * Writes any remaining uncompressed data to the output stream and closes
      * the underlying output stream.
      *
+     * @apiNote If this {@code InflaterOutputStream} was constructed by passing
+     * an {@code Inflater}, then this method {@linkplain ##inflater-usage does not close}
+     * that {@code Inflater}.
+     *
      * @throws IOException if an I/O error occurs
      */
+    @Override
     public void close() throws IOException {
         if (!closed) {
             // Complete the uncompressed output
@@ -142,6 +167,7 @@ public class InflaterOutputStream extends FilterOutputStream {
      * @throws IOException if an I/O error occurs or this stream is already
      * closed
      */
+    @Override
     public void flush() throws IOException {
         ensureOpen();
 
@@ -199,6 +225,7 @@ public class InflaterOutputStream extends FilterOutputStream {
      * closed
      * @throws ZipException if a compression (ZIP) format error occurs
      */
+    @Override
     public void write(int b) throws IOException {
         // Write a single byte of data
         wbuf[0] = (byte) b;
@@ -219,6 +246,7 @@ public class InflaterOutputStream extends FilterOutputStream {
      * @throws NullPointerException if {@code b} is null
      * @throws ZipException if a compression (ZIP) format error occurs
      */
+    @Override
     public void write(byte[] b, int off, int len) throws IOException {
         // Sanity checks
         ensureOpen();

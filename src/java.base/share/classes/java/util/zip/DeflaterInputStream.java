@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,19 @@ import java.util.Objects;
 /**
  * Implements an input stream filter for compressing data in the "deflate"
  * compression format.
+ *
+ * <h2 id="deflater-usage">Deflater Usage</h2>
+ * <p>This class uses a {@link Deflater} for compressing the data. Two forms of constructors
+ * are available for constructing a {@code DeflaterInputStream} - one which accepts
+ * a {@code Deflater} and one which doesn't. The constructors that don't accept a {@code Deflater}
+ * will create and use a {@code Deflater} instance of their own. The {@code Deflater} instance
+ * created in those cases will be {@linkplain Deflater#close() closed} when the
+ * {@code DeflaterInputStream} instance itself is {@linkplain #close() closed}.
+ * On the other hand, if a {@code DeflaterInputStream} was
+ * constructed by passing it a {@code Deflater}, then closing the {@code DeflaterInputStream}
+ * will not close the passed {@code Deflater}. In those cases, it is the responsibility of
+ * the caller to close the {@code Deflater} as and when appropriate, after the
+ * {@code DeflaterInputStream} has been closed.
  *
  * @since       1.6
  * @author      David R Tribble (david@tribble.com)
@@ -83,6 +96,9 @@ public class DeflaterInputStream extends FilterInputStream {
      * Creates a new input stream with the specified compressor and a
      * default buffer size.
      *
+     * @apiNote {@linkplain #close() Closing} the {@code DeflaterInputStream}
+     * {@linkplain ##deflater-usage will not close} the given {@code defl}.
+     *
      * @param in input stream to read the uncompressed data to
      * @param defl compressor ("deflater") for this stream
      * @throws NullPointerException if {@code in} or {@code defl} is null
@@ -94,6 +110,9 @@ public class DeflaterInputStream extends FilterInputStream {
     /**
      * Creates a new input stream with the specified compressor and buffer
      * size.
+     *
+     * @apiNote {@linkplain #close() Closing} the {@code DeflaterInputStream}
+     * {@linkplain ##deflater-usage will not close} the given {@code defl}.
      *
      * @param in input stream to read the uncompressed data to
      * @param defl compressor ("deflater") for this stream
@@ -121,8 +140,13 @@ public class DeflaterInputStream extends FilterInputStream {
      * Closes this input stream and its underlying input stream, discarding
      * any pending uncompressed data.
      *
+     * @apiNote If this {@code DeflaterInputStream} was constructed by passing
+     * a {@code Deflater}, then this method {@linkplain ##deflater-usage does not close}
+     * that {@code Deflater}.
+     *
      * @throws IOException if an I/O error occurs
      */
+    @Override
     public void close() throws IOException {
         if (in != null) {
             try {
@@ -147,6 +171,7 @@ public class DeflaterInputStream extends FilterInputStream {
      * @throws IOException if an I/O error occurs or if this stream is
      * already closed
      */
+    @Override
     public int read() throws IOException {
         // Read a single byte of compressed data
         int len = read(rbuf, 0, 1);
@@ -169,6 +194,7 @@ public class DeflaterInputStream extends FilterInputStream {
      * @throws IOException if an I/O error occurs or if this input stream is
      * already closed
      */
+    @Override
     public int read(byte[] b, int off, int len) throws IOException {
         // Sanity checks
         ensureOpen();
@@ -224,6 +250,7 @@ public class DeflaterInputStream extends FilterInputStream {
      *                     already closed
      * @throws IllegalArgumentException if {@code n < 0}
      */
+    @Override
     public long skip(long n) throws IOException {
         if (n < 0) {
             throw new IllegalArgumentException("negative skip length");
@@ -259,6 +286,7 @@ public class DeflaterInputStream extends FilterInputStream {
      * @throws IOException if an I/O error occurs or if this stream is
      * already closed
      */
+    @Override
     public int available() throws IOException {
         ensureOpen();
         if (reachEOF) {
@@ -273,6 +301,7 @@ public class DeflaterInputStream extends FilterInputStream {
      *
      * @return false, always
      */
+    @Override
     public boolean markSupported() {
         return false;
     }
@@ -282,6 +311,7 @@ public class DeflaterInputStream extends FilterInputStream {
      *
      * @param limit maximum bytes that can be read before invalidating the position marker
      */
+    @Override
     public void mark(int limit) {
         // Operation not supported
     }
@@ -291,6 +321,7 @@ public class DeflaterInputStream extends FilterInputStream {
      *
      * @throws IOException always thrown
      */
+    @Override
     public void reset() throws IOException {
         throw new IOException("mark/reset not supported");
     }
