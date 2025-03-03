@@ -46,7 +46,7 @@ class ResolvedIndyEntry {
 
   Method* _method;               // Adapter method for indy call
   u2 _resolved_references_index; // Index of resolved references array that holds the appendix oop
-  u2 _cpool_index;               // Constant pool index
+  u2 _cp_index;                  // Constant pool index
   u2 _number_of_parameters;      // Number of arguments for adapter method
   u1 _return_type;               // Adapter method return type
   u1 _flags;                     // Flags: [0000|00|has_appendix|resolution_failed]
@@ -55,28 +55,29 @@ public:
   ResolvedIndyEntry() :
     _method(nullptr),
     _resolved_references_index(0),
-    _cpool_index(0),
+    _cp_index(0),
     _number_of_parameters(0),
     _return_type(0),
     _flags(0) {}
-  ResolvedIndyEntry(u2 resolved_references_index, u2 cpool_index) :
+  ResolvedIndyEntry(int resolved_references_index, int cpool_index) :
     _method(nullptr),
-    _resolved_references_index(resolved_references_index),
-    _cpool_index(cpool_index),
     _number_of_parameters(0),
     _return_type(0),
-    _flags(0) {}
+    _flags(0) {
+    init(resolved_references_index, cpool_index);
+  }
 
   // Bit shift to get flags
-  // Note: Only two flags exists at the moment but more could be added
+  // Note: Only a few flags exist at the moment but more could be added
   enum {
+      resolution_failed_shift   = 0,
       has_appendix_shift        = 1,
   };
 
   // Getters
   Method* method()               const { return Atomic::load_acquire(&_method); }
   u2 resolved_references_index() const { return _resolved_references_index;     }
-  u2 constant_pool_index()       const { return _cpool_index;                   }
+  u2 constant_pool_index()       const { return _cp_index;   }
   u2 num_parameters()            const { return _number_of_parameters;          }
   u1 return_type()               const { return _return_type;                   }
   bool is_resolved()             const { return method() != nullptr;            }
@@ -90,10 +91,20 @@ public:
   void print_on(outputStream* st) const;
 
   // Initialize with fields available before resolution
-  void init(u2 resolved_references_index, u2 cpool_index) {
-    _resolved_references_index = resolved_references_index;
-    _cpool_index = cpool_index;
+  void init(int resolved_references_index, int cpool_index) {
+    _resolved_references_index = checked_cast<u2>(resolved_references_index);
+    assert(cpool_index != 0, "");
+    _cp_index = checked_cast<u2>(cpool_index);
   }
+
+  // symbolic reference queries
+  // FIXME: maybe duplicate this pattern in resolved method and field records as well
+  u2 name_index(ConstantPool* cp) const;
+  u2 signature_index(ConstantPool* cp) const;
+  u2 bsme_index(ConstantPool* cp) const;
+  Symbol* name(ConstantPool* cp) const            { return cp->symbol_at(name_index(cp)); }
+  Symbol* signature(ConstantPool* cp) const       { return cp->symbol_at(signature_index(cp)); }
+  BSMAttributeEntry* bsme(ConstantPool* cp) const { return cp->bsm_attribute_entry(bsme_index(cp)); }
 
   void set_num_parameters(int value) {
     assert(_number_of_parameters == 0 || _number_of_parameters == value,
@@ -104,21 +115,20 @@ public:
   }
 
   // Populate structure with resolution information
-  void fill_in(Method* m, u2 num_params, u1 return_type, bool has_appendix) {
-    set_num_parameters(num_params);
-    _return_type = return_type;
-    set_flags(has_appendix);
+  void fill_in(Method* m, bool has_appendix) {
+    set_num_parameters(m->size_of_parameters());
+    _return_type = as_TosState(m->result_type());
+    set_has_appendix(has_appendix);
     // Set the method last since it is read lock free.
     // Resolution is indicated by whether or not the method is set.
     Atomic::release_store(&_method, m);
   }
 
-  // has_appendix is currently the only other flag besides resolution_failed
-  void set_flags(bool has_appendix) {
+  void set_has_appendix(bool has_appendix) {
     u1 new_flags = (has_appendix << has_appendix_shift);
-    assert((new_flags & 1) == 0, "New flags should not change resolution flag");
-    // Preserve the resolution_failed bit
-    _flags = (_flags & 1) | new_flags;
+    u1 old_flags = _flags &  ~(1 << has_appendix_shift);
+    // Preserve the unaffected bits
+    _flags = old_flags | new_flags;
   }
 
   void set_resolution_failed() {
