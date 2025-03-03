@@ -1301,14 +1301,6 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 
     if (Metaspace::using_class_space()) {
       prot_zone_size = protection_zone_size();
-#ifdef ASSERT
-      // Before mapping the core regions into the newly established address space, we mark
-      // start and the end of the future protection zone with canaries. That way we easily
-      // catch mapping errors (accidentally mapping data into the future protection zone).
-      os::commit_memory(mapped_base_address, prot_zone_size, false);
-      *(mapped_base_address) = 'P';
-      *(mapped_base_address + prot_zone_size - 1) = 'P';
-#endif
     }
 
 #ifdef ASSERT
@@ -1363,8 +1355,34 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
         MemoryReserver::release(archive_space_rs);
         // Mark as not reserved
         archive_space_rs = {};
+        // The protection zone is part of the archive:
+        // See comment above, the windows way of loading CDS is to mmap the individual
+        // parts of the archive into the adress region we just vacated. The protection
+        // zone will not be mapped (and, in fact, does not exist as physical region in
+        // the archive). Therefore, after removing the archive space above, we must
+        // re-reserve the protection zone part lest something else gets mapped into that
+        // area later.
+        if (prot_zone_size > 0) {
+          char* p = os::attempt_reserve_memory_at(mapped_base_address, prot_zone_size,
+                                                  false, MemTag::mtClassShared);
+          assert(p == mapped_base_address || p == nullptr, "must be");
+          if (p == nullptr) {
+            log_debug(cds)("Failed to re-reserve protection zone");
+            return MAP_ARCHIVE_MMAP_FAILURE;
+          }
+        }
       }
     }
+
+    if (prot_zone_size > 0) {
+      os::commit_memory(mapped_base_address, prot_zone_size, false); // will later be protected
+      // Before mapping the core regions into the newly established address space, we mark
+      // start and the end of the future protection zone with canaries. That way we easily
+      // catch mapping errors (accidentally mapping data into the future protection zone).
+      *(mapped_base_address) = 'P';
+      *(mapped_base_address + prot_zone_size - 1) = 'P';
+    }
+
     MapArchiveResult static_result = map_archive(static_mapinfo, mapped_base_address, archive_space_rs);
     MapArchiveResult dynamic_result = (static_result == MAP_ARCHIVE_SUCCESS) ?
                                      map_archive(dynamic_mapinfo, mapped_base_address, archive_space_rs) : MAP_ARCHIVE_OTHER_FAILURE;
@@ -1409,9 +1427,10 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
     SharedBaseAddress = (size_t)mapped_base_address;
 #ifdef _LP64
     if (Metaspace::using_class_space()) {
-      assert(*(mapped_base_address) == 'P' &&
+      assert(prot_zone_size > 0 &&
+             *(mapped_base_address) == 'P' &&
              *(mapped_base_address + prot_zone_size - 1) == 'P',
-          "Protection zone was overwritten?");
+             "Protection zone was overwritten?");
 
       // Set up ccs in metaspace.
       Metaspace::initialize_class_space(class_space_rs);
