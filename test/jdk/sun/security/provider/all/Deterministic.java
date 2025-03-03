@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,6 +239,8 @@ public class Deterministic {
             return g.generateKey();
         } if (s.equals("RSA")) {
             return generateKeyPair("RSA", 3).getPublic();
+        } if (s.equals("HPKE")) {
+            return generateKeyPair("EC", 3).getPublic();
         } else {
             var g = KeyGenerator.getInstance(s, p);
             g.init(new SeededSecureRandom(SEED + 4));
