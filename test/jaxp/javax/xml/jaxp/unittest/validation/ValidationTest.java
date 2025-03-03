@@ -143,12 +143,15 @@ public class ValidationTest {
     }
 
     /**
-     * Verifies the bug fix for 8349516. The fix adds a guard against empty text
-     * since calling StreamReader.getTextCharacters with textLength=0 will result
-     * in IndexOutOfBoundsException.
+     * Verifies the bug fix for 8349516, which adds a guard against empty text.
+     * Prior to the fix, calling {@link XMLStreamReader#getTextCharacters() XMLStreamReader#getTextCharacters()}
+     * with {@code length = 0} resulted in an {@code IndexOutOfBoundsException}.
      *
-     * @throws Exception if the test fails, in which case the parser throws
-     * IndexOutOfBoundsException.
+     * This test ensures that the fix prevents such an exception.
+     *
+     * @throws Exception if the test fails due to unexpected issues, such as errors
+     * in creating the schema or reader, or validation errors other than the
+     * {@code IndexOutOfBoundsException}.
      */
     @Test
     public void testValidationWithStAX() throws Exception {
