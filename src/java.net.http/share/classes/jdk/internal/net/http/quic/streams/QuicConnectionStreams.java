@@ -733,7 +733,8 @@ public final class QuicConnectionStreams {
         var sender = senderImpl(stream);
         if (sender != null) {
             sender.resetAcknowledged(reset.finalSize());
-            removeStream(streamId, stream);
+            assert !stream.isDone() || !streams.streams.containsKey(streamId)
+                    : "resetAcknowledged() should have removed the stream";
             if (debug.on()) {
                 debug.log("acknowledged reset for stream %d", streamId);
             }
@@ -756,7 +757,8 @@ public final class QuicConnectionStreams {
         var sender = senderImpl(stream);
         if (sender != null) {
             sender.dataAcknowledged(streamFrame.offset() + streamFrame.dataLength());
-            removeStream(streamId, stream);
+            assert !stream.isDone() || !streams.streams.containsKey(streamId)
+                    : "dataAcknowledged() should have removed the stream";
             if (debug.on()) {
                 debug.log("acknowledged data for stream %d", streamId);
             }
