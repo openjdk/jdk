@@ -207,7 +207,7 @@ void OptoRuntime::generate_exception_blob() {
 
   // setup code generation tools
   // Measured 8/7/03 at 256 in 32bit debug build
-  const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
+  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
   CodeBuffer buffer(name, 600, 512);
   MacroAssembler* masm     = new MacroAssembler(&buffer);
 
