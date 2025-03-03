@@ -310,16 +310,23 @@ void CompressedKlassPointers::print_mode(outputStream* st) {
   }
 }
 
+// On AIX, we cannot use mprotect on archive space since it was reserved with SystemV shm.
+static constexpr bool can_mprotect_archive_space = NOT_AIX(true) AIX_ONLY(false);
+
 // Protect a zone a the start of the encoding range
 void CompressedKlassPointers::establish_protection_zone(address addr, size_t size) {
   assert(_protection_zone_size == 0, "just once");
   assert(addr == base(), "Protection zone not at start of encoding range?");
   assert(size > 0 && is_aligned(size, os::vm_page_size()), "Protection zone not page sized");
-  const bool rc = os::protect_memory((char*)addr, size, os::MEM_PROT_NONE, false);
-  assert(rc, "Failed to protect the Class space protection zone");
+  const bool rc = can_mprotect_archive_space ? os::protect_memory((char*)addr, size, os::MEM_PROT_NONE, false) : false;
   log_info(metaspace)("%s Narrow Klass Protection zone " RANGEFMT,
       (rc ? "Established" : "FAILED to establish "),
       RANGEFMTARGS(addr, size));
+  if (!rc) {
+    // Fallback: fill protection zone with a clear pattern that propagates into register values
+    // in case of a crash.
+    memset(addr, 'P', size);
+  }
   _protection_zone_size = size;
 }
 
