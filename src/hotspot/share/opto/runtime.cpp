@@ -30,6 +30,7 @@
 #include "code/pcDesc.hpp"
 #include "code/scopeDesc.hpp"
 #include "code/vtableStubs.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
@@ -267,6 +268,7 @@ address OptoRuntime::generate_stub(ciEnv* env,
 
   // Matching the default directive, we currently have no method to match.
   DirectiveSet* directive = DirectivesStack::getDefaultDirective(CompileBroker::compiler(CompLevel_full_optimization));
+  CompilationMemoryStatisticMark cmsm(directive);
   ResourceMark rm;
   Compile C(env, gen, C_function, name, is_fancy_jump, pass_tls, return_pc, directive);
   DirectivesStack::release(directive);

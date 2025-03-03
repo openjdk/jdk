@@ -1695,7 +1695,7 @@ void PhaseCFG::global_code_motion() {
   // Enabling the scheduler for register pressure plus finding blocks of size to schedule for it
   // is key to enabling this feature.
   PhaseChaitin regalloc(C->unique(), *this, _matcher, true);
-  ResourceArea live_arena(mtCompiler);      // Arena for liveness
+  ResourceArea live_arena(mtCompiler, Arena::Tag::tag_reglive);      // Arena for liveness
   ResourceMark rm_live(&live_arena);
   PhaseLive live(*this, regalloc._lrg_map.names(), &live_arena, true);
   PhaseIFG ifg(&live_arena);
