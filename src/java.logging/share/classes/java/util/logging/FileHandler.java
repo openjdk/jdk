@@ -745,6 +745,8 @@ public class FileHandler extends StreamHandler {
 
     @Override
     void synchronousPostWriteHook() {
+        // no need to synchronize here, this method is called from within a
+        // synchronized block.
         flush();
         if (limit > 0 && (meter.written >= limit || meter.written < 0)) {
             rotate();
