@@ -3516,7 +3516,7 @@ void bar() {
 }
 
 // Rename to increment_profile_ctr
-void LIR_Assembler::inc_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op,
+void LIR_Assembler::maybe_inc_profile_counter(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op,
                                     int profile_limit) {
   Register temp = temp_op->as_register();
   Address dest_adr = as_Address(addr->as_address_ptr());
