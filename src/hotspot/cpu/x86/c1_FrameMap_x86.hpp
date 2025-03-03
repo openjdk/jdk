@@ -147,7 +147,15 @@
   }
 
   static int adjust_reg_range(int range) {
+
     // Reduce the number of available regs (to free r12) in case of compressed oops
+
+    // Reduce the number of available regs (to free r14) for
+    // random-nunmber state used by randomized profile captures.
+
+    // PROFILE-FIXME: Be smarter here
+
+    if (ProfileCaptureRatio > 1) return range - 2;
     if (UseCompressedOops) return range - 1;
     return range;
   }

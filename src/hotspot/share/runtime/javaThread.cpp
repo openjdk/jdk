@@ -523,7 +523,9 @@ JavaThread::JavaThread(MemTag mem_tag) :
 #endif
 
   _lock_stack(this),
-  _om_cache(this) {
+  _om_cache(this),
+
+  _profile_rng(0) {
   set_jni_functions(jni_functions());
 
 #if INCLUDE_JVMCI
@@ -539,6 +541,12 @@ JavaThread::JavaThread(MemTag mem_tag) :
   SafepointMechanism::initialize_header(this);
 
   set_requires_cross_modify_fence(false);
+
+  // Initial state of random-number generator used when profiling
+  // C1-generated code.
+  if (ProfileCaptureRatio > 1) {
+    _profile_rng = os::random();
+  }
 
   pd_initialize();
   assert(deferred_card_mark().is_empty(), "Default MemRegion ctor");

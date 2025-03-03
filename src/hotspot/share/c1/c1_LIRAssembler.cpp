@@ -752,6 +752,11 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
       atomic_op(op->code(), op->in_opr1(), op->in_opr2(), op->result_opr(), op->tmp1_opr());
       break;
 
+    case lir_maybe_inc_profile_counter:
+      maybe_inc_profile_counter(op->in_opr1(), op->in_opr2(), op->result_opr(), op->tmp1_opr(),
+                      op->profile_limit());
+      break;
+
     default:
       Unimplemented();
       break;
@@ -828,7 +833,6 @@ void LIR_Assembler::move_op(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
     ShouldNotReachHere();
   }
 }
-
 
 void LIR_Assembler::verify_oop_map(CodeEmitInfo* info) {
 #ifndef PRODUCT

@@ -338,7 +338,10 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
     empty_FPU_stack();
   }
 #endif // !_LP64 && COMPILER2
+
   decrement(rsp, frame_size_in_bytes); // does not emit code for frame_size == 0
+
+  restore_profile_rng();
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   // C1 code is not hot enough to micro optimize the nmethod entry barrier with an out-of-line stub
@@ -347,6 +350,7 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
 
 
 void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
+  save_profile_rng();
   increment(rsp, frame_size_in_bytes);  // Does not emit code for frame_size == 0
   pop(rbp);
 }
