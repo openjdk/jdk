@@ -260,7 +260,7 @@ public class IndexWriter extends HtmlDocletWriter {
             case SEARCH_ITEM -> "doclet.Search_tag_in";
             case SYSTEM_PROPERTY -> "doclet.System_property_in";
             case SECTION -> "doclet.Section_in";
-            case EXTERNAL_SPEC-> "doclet.External_specification_in";
+            case EXTERNAL_SPEC -> "doclet.External_specification_in";
             default -> throw new Error();
         };
         dt.add(contents.getContent(tagKindKey, item.getHolder()));

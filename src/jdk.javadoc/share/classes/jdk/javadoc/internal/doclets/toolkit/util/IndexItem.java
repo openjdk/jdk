@@ -124,7 +124,7 @@ public class IndexItem {
         /**
          * {@return the kind of index item for a program element}
          */
-        public static Kind ofElement (Element elem, Utils utils) {
+        public static Kind ofElement(Element elem, Utils utils) {
             return switch (elem.getKind()) {
                 case ENUM_CONSTANT -> ENUM_CONSTANT;
                 case FIELD -> utils.isStatic(elem) ? STATIC_FIELD : FIELD;
