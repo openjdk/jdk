@@ -2057,12 +2057,11 @@ bool PhiNode::must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const {
 
 // Check if splitting a bot memory Phi through a parent MergeMem may lead to
 // non-termination. For more details, see comments at the call site in
-// PhiNode::Ideal. This is really a const method, but Node_List currently only
-// permits non-const elements.
-bool PhiNode::is_split_through_mergemem_terminating() {
+// PhiNode::Ideal.
+bool PhiNode::is_split_through_mergemem_terminating() const {
   ResourceMark rm;
   VectorSet visited;
-  Node_List worklist;
+  GrowableArray<const Node*> worklist;
   worklist.push(this);
   visited.set(this->_idx);
   auto maybe_add_to_worklist = [&](Node* input) {
@@ -2074,8 +2073,8 @@ bool PhiNode::is_split_through_mergemem_terminating() {
           "should only visit bottom memory");
     }
   };
-  while (worklist.size() > 0) {
-    Node* n = worklist.pop();
+  while (worklist.length() > 0) {
+    const Node* n = worklist.pop();
     if (n->is_MergeMem()) {
       Node* input = n->as_MergeMem()->base_memory();
       if (input == this) {
