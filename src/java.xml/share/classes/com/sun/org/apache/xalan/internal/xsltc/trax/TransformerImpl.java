@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -100,7 +100,7 @@ import org.xml.sax.ext.LexicalHandler;
  * @author Morten Jorgensen
  * @author G. Todd Miller
  * @author Santiago Pericas-Geertsen
- * @LastModified: Dec 2024
+ * @LastModified: Jan 2025
  */
 public final class TransformerImpl extends Transformer
     implements DOMCache
@@ -1355,7 +1355,6 @@ public final class TransformerImpl extends Transformer
                  * Performs the access check without any interface changes
                  * (e.g. Translet and DOMCache).
                  */
-                @SuppressWarnings("unchecked") //AbstractTranslet is the sole impl.
                 AbstractTranslet t = (AbstractTranslet)translet;
                 String systemId = SystemIDResolver.getAbsoluteURI(href, baseURI);
                 String errMsg = null;
