@@ -175,7 +175,6 @@ class CloneMap {
 
 class Options {
   friend class Compile;
-  friend class VMStructs;
  private:
   const bool _subsume_loads;         // Load can be matched as part of a larger op.
   const bool _do_escape_analysis;    // Do escape analysis.
@@ -222,7 +221,6 @@ class Options {
 // This class defines a top-level Compiler invocation.
 
 class Compile : public Phase {
-  friend class VMStructs;
 
  public:
   // Fixed alias indexes.  (See also MergeMemNode.)
@@ -238,9 +236,9 @@ class Compile : public Phase {
   // (The time collection itself is always conditionalized on CITime.)
   class TracePhase : public TraceTime {
    private:
-    Compile*    _compile;
+    Compile* const _compile;
     CompileLog* _log;
-    bool _dolog;
+    const bool _dolog;
    public:
     TracePhase(PhaseTraceId phaseTraceId);
     TracePhase(const char* name, PhaseTraceId phaseTraceId);

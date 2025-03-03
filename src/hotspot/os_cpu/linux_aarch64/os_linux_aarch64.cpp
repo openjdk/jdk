@@ -354,7 +354,7 @@ void os::print_context(outputStream *st, const void *context) {
 }
 
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {
-  const int register_count = 32 /* r0-r31 */;
+  const int register_count = 31 /* r0-r30 */;
   int n = continuation;
   assert(n >= 0 && n <= register_count, "Invalid continuation value");
   if (context == nullptr || n == register_count) {

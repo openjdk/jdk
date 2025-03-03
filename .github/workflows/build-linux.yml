@@ -61,6 +61,9 @@ on:
       make-arguments:
         required: false
         type: string
+      bundle-suffix:
+        required: false
+        type: string
 
 jobs:
   build-linux:
@@ -71,10 +74,6 @@ jobs:
       fail-fast: false
       matrix:
         debug-level: ${{ fromJSON(inputs.debug-levels) }}
-        include:
-          - debug-level: debug
-            flags: --with-debug-level=fastdebug
-            suffix: -debug
 
     steps:
       - name: 'Checkout the JDK source'
@@ -118,7 +117,7 @@ jobs:
         run: >
           bash configure
           --with-conf-name=${{ inputs.platform }}
-          ${{ matrix.flags }}
+          ${{ matrix.debug-level == 'debug' && '--with-debug-level=fastdebug' || '' }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
           --with-jtreg=${{ steps.jtreg.outputs.path }}
@@ -133,17 +132,14 @@ jobs:
       - name: 'Build'
         id: build
         uses: ./.github/actions/do-build
-        env:
-          # Only build static-libs-bundles for release builds.
-          # For debug builds, building static-libs often exceeds disk space.
-          STATIC_LIBS: ${{ matrix.debug-level == 'release' && 'static-libs-bundles' }}
         with:
-          make-target: '${{ inputs.make-target }} ${STATIC_LIBS} ${{ inputs.make-arguments }}'
+          make-target: '${{ inputs.make-target }} ${{ inputs.make-arguments }}'
           platform: ${{ inputs.platform }}
-          debug-suffix: '${{ matrix.suffix }}'
+          debug-suffix: "${{ matrix.debug-level == 'debug' && '-debug' || '' }}"
 
       - name: 'Upload bundles'
         uses: ./.github/actions/upload-bundles
         with:
           platform: ${{ inputs.platform }}
-          debug-suffix: '${{ matrix.suffix }}'
+          debug-suffix: "${{ matrix.debug-level == 'debug' && '-debug' || '' }}"
+          bundle-suffix: ${{ inputs.bundle-suffix }}
