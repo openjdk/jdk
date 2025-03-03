@@ -10892,13 +10892,13 @@ void MacroAssembler::maybe_skip_profiling(Register state, Register temp, Label &
 
 void MacroAssembler::save_profile_rng() {
   if (ProfileCaptureRatio != 1) {
-    __ movl(Address(r15_thread, JavaThread::profile_rng_offset()), r14_profile_rng);
+    movl(Address(r15_thread, JavaThread::profile_rng_offset()), r14_profile_rng);
   }
 }
 
 void MacroAssembler::restore_profile_rng() {
   if (ProfileCaptureRatio != 1) {
-    __ movl(Address(r15_thread, JavaThread::profile_rng_offset()), r14_profile_rng);
+    movl(r14_profile_rng, Address(r15_thread, JavaThread::profile_rng_offset()));
   }
 }
 

@@ -2821,8 +2821,7 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
 
 void LIR_Assembler::align_call(LIR_Code code) {
   // We do this here in order not affect call site alignment.
-  if (ProfileCaptureRatio != 1)   __ movl(Address(r15_thread, JavaThread::profile_rng_offset()), r14_profile_rng);
-
+  __ save_profile_rng();
   // make sure that the displacement word of the call ends up word aligned
   int offset = __ offset();
   switch (code) {
@@ -2847,7 +2846,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   add_call_info(code_offset(), op->info());
   __ post_call_nop();
 
-  if (ProfileCaptureRatio != 1)   __ movl(r14_profile_rng, Address(r15_thread, JavaThread::profile_rng_offset()));
+  __ restore_profile_rng();
 }
 
 
@@ -2857,8 +2856,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   assert((__ offset() - NativeCall::instruction_size + NativeCall::displacement_offset) % BytesPerWord == 0,
          "must be aligned");
   __ post_call_nop();
-
-  if (ProfileCaptureRatio != 1)   __ movl(r14_profile_rng, Address(r15_thread, JavaThread::profile_rng_offset()));
+  __ restore_profile_rng();
 }
 
 
@@ -4001,14 +3999,13 @@ void LIR_Assembler::leal(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_code, Co
 
 void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* args, LIR_Opr tmp, CodeEmitInfo* info) {
   assert(!tmp->is_valid(), "don't need temporary");
-  if (ProfileCaptureRatio != 1)   __ movl(Address(r15_thread, JavaThread::profile_rng_offset()), r14_profile_rng);
-
+  __ save_profile_rng();
   __ call(RuntimeAddress(dest));
   if (info != nullptr) {
     add_call_info_here(info);
   }
   __ post_call_nop();
-  if (ProfileCaptureRatio != 1)   __ movl(r14_profile_rng, Address(r15_thread, JavaThread::profile_rng_offset()));
+  __ restore_profile_rng();
 }
 
 

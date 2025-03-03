@@ -339,11 +339,9 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   }
 #endif // !_LP64 && COMPILER2
 
-  if (ProfileCaptureRatio != 1) {
-    movl(r14_profile_rng, Address(r15_thread, JavaThread::profile_rng_offset()));
-  }
-
   decrement(rsp, frame_size_in_bytes); // does not emit code for frame_size == 0
+
+  restore_profile_rng();
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   // C1 code is not hot enough to micro optimize the nmethod entry barrier with an out-of-line stub
@@ -352,9 +350,7 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
 
 
 void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
- if (ProfileCaptureRatio != 1) {
-   movl(Address(r15_thread, JavaThread::profile_rng_offset()), r14_profile_rng);
-  }
+  save_profile_rng();
   increment(rsp, frame_size_in_bytes);  // Does not emit code for frame_size == 0
   pop(rbp);
 }
