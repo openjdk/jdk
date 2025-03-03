@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2278,6 +2278,7 @@ public abstract class LongVector extends AbstractVector<Long> {
     final
     <S extends VectorShuffle<Long>>
     LongVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
+        Objects.requireNonNull(shuffle);
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, long.class, length(),
             this, shuffle, null,
@@ -2303,7 +2304,7 @@ public abstract class LongVector extends AbstractVector<Long> {
                                            Class<M> masktype,
                                            S shuffle,
                                            M m) {
-
+        Objects.requireNonNull(shuffle);
         m.check(masktype, this);
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, long.class, length(),
@@ -2898,7 +2899,8 @@ public abstract class LongVector extends AbstractVector<Long> {
             return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        ((AbstractMask<Long>)m)
+            .checkIndexByLane(offset, a.length, vsp.iota(), 1);
         return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
@@ -3126,7 +3128,8 @@ public abstract class LongVector extends AbstractVector<Long> {
             return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_IN_RANGE).maybeSwap(bo);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 8, ms.byteSize());
+        ((AbstractMask<Long>)m)
+            .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 8);
         return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_OUT_OF_RANGE).maybeSwap(bo);
     }
 
@@ -3194,7 +3197,8 @@ public abstract class LongVector extends AbstractVector<Long> {
         } else {
             LongSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                ((AbstractMask<Long>)m)
+                    .checkIndexByLane(offset, a.length, vsp.iota(), 1);
             }
             intoArray0(a, offset, m);
         }
@@ -3352,7 +3356,8 @@ public abstract class LongVector extends AbstractVector<Long> {
             }
             LongSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
-                checkMaskFromIndexSize(offset, vsp, m, 8, ms.byteSize());
+                ((AbstractMask<Long>)m)
+                    .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 8);
             }
             maybeSwap(bo).intoMemorySegment0(ms, offset, m);
         }
@@ -3616,26 +3621,6 @@ public abstract class LongVector extends AbstractVector<Long> {
 
     // End of low-level memory operations.
 
-    private static
-    void checkMaskFromIndexSize(int offset,
-                                LongSpecies vsp,
-                                VectorMask<Long> m,
-                                int scale,
-                                int limit) {
-        ((AbstractMask<Long>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
-
-    private static
-    void checkMaskFromIndexSize(long offset,
-                                LongSpecies vsp,
-                                VectorMask<Long> m,
-                                int scale,
-                                long limit) {
-        ((AbstractMask<Long>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
-
     @ForceInline
     private void conditionalStoreNYI(int offset,
                                      LongSpecies vsp,
@@ -3677,7 +3662,7 @@ public abstract class LongVector extends AbstractVector<Long> {
 
     @ForceInline
     static long byteArrayAddress(byte[] a, int index) {
-        return (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
+        return Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
     }
 
     // ================================================

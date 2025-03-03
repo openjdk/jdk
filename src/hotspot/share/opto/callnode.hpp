@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,7 +198,6 @@ public:
 // This provides a way to map the optimized program back into the interpreter,
 // or to let the GC mark the stack.
 class JVMState : public ResourceObj {
-  friend class VMStructs;
 public:
   typedef enum {
     Reexecute_Undefined = -1, // not defined -- will be translated into false later
@@ -331,7 +330,6 @@ public:
 class SafePointNode : public MultiNode {
   friend JVMState;
   friend class GraphKit;
-  friend class VMStructs;
 
   virtual bool           cmp( const Node &n ) const;
   virtual uint           size_of() const;       // Size is bigger
@@ -672,7 +670,6 @@ class CallGenerator;
 // Call nodes now subsume the function of debug nodes at callsites, so they
 // contain the functionality of a full scope chain of debug nodes.
 class CallNode : public SafePointNode {
-  friend class VMStructs;
 
 protected:
   bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase);
@@ -760,7 +757,6 @@ public:
 // convention.  (The "Java" calling convention is the compiler's calling
 // convention, as opposed to the interpreter's or that of native C.)
 class CallJavaNode : public CallNode {
-  friend class VMStructs;
 protected:
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
@@ -1190,9 +1186,16 @@ public:
 //    2 -   a FastLockNode
 //
 class LockNode : public AbstractLockNode {
+  static const TypeFunc* _lock_type_Type;
 public:
 
-  static const TypeFunc *lock_type() {
+  static inline const TypeFunc* lock_type() {
+    assert(_lock_type_Type != nullptr, "should be initialized");
+    return _lock_type_Type;
+  }
+
+  static void initialize_lock_Type() {
+    assert(_lock_type_Type == nullptr, "should be called once");
     // create input type (domain)
     const Type **fields = TypeTuple::fields(3);
     fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
@@ -1205,7 +1208,7 @@ public:
 
     const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0,fields);
 
-    return TypeFunc::make(domain,range);
+    _lock_type_Type = TypeFunc::make(domain,range);
   }
 
   virtual int Opcode() const;
