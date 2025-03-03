@@ -1284,6 +1284,10 @@ public:
 
   bool is_div_or_mod(BasicType bt) const;
 
+  bool is_pure_function() const;
+
+  bool is_data_proj_of_pure_function(const Node* maybe_pure_function) const;
+
 //----------------- Printing, etc
 #ifndef PRODUCT
  public:
