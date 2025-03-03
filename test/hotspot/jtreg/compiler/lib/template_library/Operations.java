@@ -314,7 +314,6 @@ final class Operations {
         List<Operation> ops = new ArrayList<Operation>();
 
         for (var type : Type.VECTOR_API_TYPES) {
-            ops.add(new Operation.Unary(type, type.vectorType + ".broadcast(" + type.species + ", ", type.elementType, ")"));
             ops.add(new Operation.Unary(type, "", type, ".abs()"));
             ops.add(new Operation.Binary(type, "", type, ".add(", type.elementType, ")"));
             // TODO: add(int e, VectorMask<Integer> m)
@@ -330,6 +329,13 @@ final class Operations {
                 ops.add(new Operation.Ternary(type, "", type, ".bitwiseBlend(", type,             ", ", type.elementType, ")"));
                 ops.add(new Operation.Ternary(type, "", type, ".bitwiseBlend(", type,             ", ", type,             ")"));
             }
+
+            // TODO: blend(int e, VectorMask<Integer> m)
+            // TODO: blend(long e, VectorMask<Integer> m)
+            // TODO: blend(Vector<Integer> v, VectorMask<Integer> m)
+
+            ops.add(new Operation.Unary(type, type.vectorType + ".broadcast(" + type.species + ", ", type.elementType, ")"));
+            ops.add(new Operation.Unary(type, type.vectorType + ".broadcast(" + type.species + ", ", Type.longs(), ")"));
         }
 
         // Ensure the list is immutable.
