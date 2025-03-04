@@ -239,7 +239,10 @@ void montgomeryMultiply(const Register aLimbs, const Register bLimbs, const Regi
   __ evpermq(Acc1, allLimbs, shift1R, Acc1, false, Assembler::AVX_512bit);
   __ vpaddq(Acc1, Acc1, Carry, Assembler::AVX_256bit);
 
-  KRegister limb = limb0;
+  // Do carry propagation while remaining in vector domain. Carry register
+  // contains just the carry for the particular column, everything else is masked
+  // out.
+  // Note: element 'shift' with vpermq is more expensive, vpalignr if possible
   for (int i = 1; i<4; i++) {
     __ evpsraq(Carry, masks[i-1], Acc2, 52, false, Assembler::AVX_256bit);
     if (i == 1 || i == 3) {
@@ -344,14 +347,14 @@ void montgomeryMultiply(const Register aLimbs, const Register bLimbs, const Regi
  *   Carry propagate Acc1
  *   Mask = sign(Acc2)
  *   Result = Mask
- * 
+ *
  * Acc1 can overflow by one modulus (hence Acc2); Either Acc1 or Acc2 contain
  * the correct result. However, they both need carry propagation (i.e. normalize
  * limbs down to 52 bits each).
- * 
+ *
  * Carry propagation would require relatively expensive vector lane operations,
  * so instead dump to memory and read as scalar registers
- * 
+ *
  * Note: the order of reduce-then-propagate vs propagate-then-reduce is different
  * in Java
  */
@@ -386,7 +389,7 @@ void montgomeryMultiplyAVX2(const Register aLimbs, const Register bLimbs, const 
   __ movq(Mask52, mask52);
   __ vpbroadcastq(Mask52, Mask52, Assembler::AVX_256bit);
   __ vmovdqa(MaskLimb5, ExternalAddress(mask_limb5()), Assembler::AVX_256bit, rscratch);
-  __ vpxorq(Zero, Zero, Zero, Assembler::AVX_256bit);
+  __ vpxor(Zero, Zero, Zero, Assembler::AVX_256bit);
 
   // M = load(*modulus_p256)
   __ movq(modulus, mask52);
@@ -397,10 +400,10 @@ void montgomeryMultiplyAVX2(const Register aLimbs, const Register bLimbs, const 
   __ vmovdqu(A, Address(aLimbs, 8)); //Assembler::AVX_256bit
 
   // Acc1 = 0
-  __ vpxorq(Acc1, Acc1, Acc1, Assembler::AVX_256bit);
+  __ vpxor(Acc1, Acc1, Acc1, Assembler::AVX_256bit);
   for (int i = 0; i< 5; i++) {
       // Acc2 = 0
-      __ vpxorq(Acc2, Acc2, Acc2, Assembler::AVX_256bit);
+      __ vpxor(Acc2, Acc2, Acc2, Assembler::AVX_256bit);
 
       // B = replicate(bLimbs[i])
       __ movq(tmp_rax, Address(bLimbs, i*8)); //(b==rax)
@@ -462,7 +465,7 @@ void montgomeryMultiplyAVX2(const Register aLimbs, const Register bLimbs, const 
   __ vpsubq(Acc2, Acc1, Modulus, Assembler::AVX_256bit);
   __ vmovdqa(Address(rsp, 0), Acc2); //Assembler::AVX_256bit
 
-  // Carry propagate the subtraction result Acc2 first (since the last carry is 
+  // Carry propagate the subtraction result Acc2 first (since the last carry is
   // used to select result). Careful, following registers overlap:
   // acc1  = tmp2; acc2  = tmp3; mask52 = tmp5
   // Note that Acc2 limbs are signed (i.e. result of a subtract with modulus)
@@ -509,7 +512,7 @@ void montgomeryMultiplyAVX2(const Register aLimbs, const Register bLimbs, const 
   // Cleanup
   // Zero out ymm0-ymm15.
   __ vzeroall();
-  __ vpxorq(Acc1, Acc1, Acc1, Assembler::AVX_256bit);
+  __ vpxor(Acc1, Acc1, Acc1, Assembler::AVX_256bit);
   __ vmovdqa(Address(rsp, 0), Acc1); //Assembler::AVX_256bit
 }
 
