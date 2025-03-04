@@ -29,7 +29,8 @@
 
 class ZNUMA : public AllStatic {
 private:
-  static bool _enabled;
+  static bool     _enabled;
+  static uint32_t _count;
 
   static void pd_initialize();
 

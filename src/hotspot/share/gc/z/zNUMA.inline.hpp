@@ -30,4 +30,8 @@ inline bool ZNUMA::is_enabled() {
   return _enabled;
 }
 
+inline uint32_t ZNUMA::count() {
+  return _count;
+}
+
 #endif // SHARE_GC_Z_ZNUMA_INLINE_HPP
