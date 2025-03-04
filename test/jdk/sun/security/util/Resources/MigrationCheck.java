@@ -197,6 +197,60 @@ public class MigrationCheck {
                 new sun.security.tools.keytool.resources.keytool_es());
     }
 
+    @Test
+    public void testKeytool_fr() {
+        checkResourcesMigration(new sun.security.tools.keytool.Resources_fr(),
+                new sun.security.tools.keytool.resources.keytool_fr());
+    }
+
+    @Test
+    public void testKeytool_it() {
+        checkResourcesMigration(new sun.security.tools.keytool.Resources_it(),
+                new sun.security.tools.keytool.resources.keytool_it());
+    }
+
+    @Test
+    public void testKeytool_ja() {
+        checkResourcesMigration(new sun.security.tools.keytool.Resources_ja(),
+                new sun.security.tools.keytool.resources.keytool_ja());
+    }
+
+    @Test
+    public void testKeytool_ko() {
+        checkResourcesMigration(new sun.security.tools.keytool.Resources_ko(),
+                new sun.security.tools.keytool.resources.keytool_ko());
+    }
+
+    @Test
+    public void testKeytool_pt_BR() {
+        checkResourcesMigration(new sun.security.tools.keytool.Resources_pt_BR(),
+                new sun.security.tools.keytool.resources.keytool_pt_BR());
+    }
+
+    @Test
+    public void testKeytool_sv() {
+        checkResourcesMigration(new sun.security.tools.keytool.Resources_sv(),
+                new sun.security.tools.keytool.resources.keytool_sv());
+    }
+
+    @Test
+    public void testKeytool_zh_CN() {
+        checkResourcesMigration(new sun.security.tools.keytool.Resources_zh_CN(),
+                new sun.security.tools.keytool.resources.keytool_zh_CN());
+    }
+
+    @Test
+    public void testKeytool_zh_HK() {
+        checkResourcesMigration(new sun.security.tools.keytool.Resources_zh_HK(),
+                new sun.security.tools.keytool.resources.keytool_zh_HK());
+    }
+
+    @Test
+    public void testKeytool_zh_TW() {
+        checkResourcesMigration(new sun.security.tools.keytool.Resources_zh_TW(),
+                new sun.security.tools.keytool.resources.keytool_zh_TW());
+    }
+
     // ResourcesMgr
 
     @Test
