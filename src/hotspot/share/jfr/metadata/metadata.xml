@@ -110,6 +110,12 @@
     <Field type="ulong" contentType="address" name="address" label="Monitor Address" description="Address of object waited on" relation="JavaMonitorAddress" />
   </Event>
 
+  <Event name="JavaMonitorNotify" category="Java Application" label="Java Monitor Notify" description="Notifying a Java monitor" thread="true" stackTrace="true">
+    <Field type="Class" name="monitorClass" label="Monitor Class" description="Class of object waited on" />
+    <Field type="uint" name="notifiedCount" label="Notified Threads" description="Number of actually notified threads" />
+    <Field type="ulong" contentType="address" name="address" label="Monitor Address" description="Address of object waited on" relation="JavaMonitorAddress" />
+  </Event>
+
   <Event name="JavaMonitorInflate" category="Java Application" label="Java Monitor Inflated" thread="true" stackTrace="true">
     <Field type="Class" name="monitorClass" label="Monitor Class" />
     <Field type="ulong" contentType="address" name="address" label="Monitor Address" relation="JavaMonitorAddress" />

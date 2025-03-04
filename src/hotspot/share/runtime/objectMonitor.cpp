@@ -1910,7 +1910,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 // then instead of transferring a thread from the WaitSet to the EntryList
 // we might just dequeue a thread from the WaitSet and directly unpark() it.
 
-void ObjectMonitor::INotify(JavaThread* current) {
+bool ObjectMonitor::INotify(JavaThread* current) {
+  bool did_notify = false;
   Thread::SpinAcquire(&_WaitSetLock, "WaitSet - notify");
   ObjectWaiter* iterator = DequeueWaiter();
   if (iterator != nullptr) {
@@ -1942,6 +1943,7 @@ void ObjectMonitor::INotify(JavaThread* current) {
 
     iterator->_notified = true;
     iterator->_notifier_tid = JFR_THREAD_ID(current);
+    did_notify = true;
 
     ObjectWaiter* list = _EntryList;
     if (list != nullptr) {
@@ -1978,6 +1980,25 @@ void ObjectMonitor::INotify(JavaThread* current) {
     }
   }
   Thread::SpinRelease(&_WaitSetLock);
+  return did_notify;
+}
+
+static void post_monitor_notify_event(EventJavaMonitorNotify* event,
+                                    ObjectMonitor* monitor,
+                                    int notified_count) {
+  assert(event != nullptr, "invariant");
+  assert(monitor != nullptr, "invariant");
+  const Klass* monitor_klass = monitor->object()->klass();
+  if (is_excluded(monitor_klass)) {
+    return;
+  }
+  event->set_monitorClass(monitor_klass);
+  // Set an address that is 'unique enough', such that events close in
+  // time and with the same address are likely (but not guaranteed) to
+  // belong to the same object.
+  event->set_address((uintptr_t)monitor);
+  event->set_notifiedCount(notified_count);
+  event->commit();
 }
 
 // Consider: a not-uncommon synchronization bug is to use notify() when
@@ -1996,9 +2017,15 @@ void ObjectMonitor::notify(TRAPS) {
   if (_WaitSet == nullptr) {
     return;
   }
+
+  EventJavaMonitorNotify event;
   DTRACE_MONITOR_PROBE(notify, this, object(), current);
-  INotify(current);
-  OM_PERFDATA_OP(Notifications, inc(1));
+  int tally = INotify(current) ? 1 : 0;
+  OM_PERFDATA_OP(Notifications, inc(tally));
+
+  if (event.should_commit()) {
+    post_monitor_notify_event(&event, this, /* notified_count = */ tally);
+  }
 }
 
 
@@ -2016,14 +2043,20 @@ void ObjectMonitor::notifyAll(TRAPS) {
     return;
   }
 
+  EventJavaMonitorNotify event;
   DTRACE_MONITOR_PROBE(notifyAll, this, object(), current);
   int tally = 0;
   while (_WaitSet != nullptr) {
-    tally++;
-    INotify(current);
+    if (INotify(current)) {
+      tally++;
+    }
   }
 
   OM_PERFDATA_OP(Notifications, inc(tally));
+
+  if (event.should_commit()) {
+    post_monitor_notify_event(&event, this, /* notified_count = */ tally);
+  }
 }
 
 void ObjectMonitor::VThreadWait(JavaThread* current, jlong millis) {
