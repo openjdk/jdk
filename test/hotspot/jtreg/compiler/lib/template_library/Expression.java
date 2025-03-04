@@ -42,22 +42,22 @@ public final class Expression {
     private static final Random RANDOM = Utils.getRandomInstance();
 
     private final Template.OneArgs<List<Object>> template;
-    private final List<Type> types;
+    private final List<Type> argTypes;
 
-    Expression(final Template.OneArgs<List<Object>> template, final List<Type> types) {
+    Expression(final Template.OneArgs<List<Object>> template, final List<Type> argTypes) {
         this.template = template;
-        this.types = types;
+        this.argTypes = argTypes;
     }
 
-    public final List<Type> types() { return this.types; }
+    public final List<Type> argTypes() { return this.argTypes; }
 
     public final TemplateWithArgs withArgs(List<Object> args) {
-        if (args.size() != types.size()) { throw new RuntimeException("'args' must have the same size as 'types'"); }
+        if (args.size() != argTypes.size()) { throw new RuntimeException("'args' must have the same size as 'argTypes'"); }
         return template.withArgs(args);
     }
 
     public final List<Value> randomArgValues() {
-        return types.stream().map(Value::makeRandom).toList();
+        return argTypes.stream().map(Value::makeRandom).toList();
     }
 
     // We would like to use identical args multiple times, but possible field / variable defs have to happen only once.
@@ -89,17 +89,17 @@ public final class Expression {
         HashSet<Type> allowedTypesSet = new HashSet<Type>(allowedTypes);
         List<Operation> ops = Operations.ALL_BUILTIN_OPERATIONS.stream().filter(o -> o.matchesTypes(allowedTypesSet)).toList();
 
-        List<Type> types = new ArrayList<Type>();
-        ExpressionGenerator generator = expressionGenerator(resultType, ops, maxDepth, types);
+        List<Type> argTypes = new ArrayList<Type>();
+        ExpressionGenerator generator = expressionGenerator(resultType, ops, maxDepth, argTypes);
 
         var template = Template.make("args", (List<Object> args) -> body(
             generator.tokens(args)
         ));
-        return new Expression(template, types);
+        return new Expression(template, argTypes);
     }
 
-    private static final ExpressionGenerator expressionGenerator(Type resultType, List<Operation> ops, int maxDepth, List<Type> types) {
-        ExpressionGeneratorStep step = expressionGeneratorStep(resultType, ops, maxDepth, types);
+    private static final ExpressionGenerator expressionGenerator(Type resultType, List<Operation> ops, int maxDepth, List<Type> argTypes) {
+        ExpressionGeneratorStep step = expressionGeneratorStep(resultType, ops, maxDepth, argTypes);
         return (List<Object> args) -> {
             List<Object> tokens = new ArrayList<Object>();
             step.addTokens(tokens, args);
@@ -107,7 +107,7 @@ public final class Expression {
         };
     }
 
-    private static final ExpressionGeneratorStep expressionGeneratorStep(Type resultType, List<Operation> ops, int maxDepth, List<Type> types) {
+    private static final ExpressionGeneratorStep expressionGeneratorStep(Type resultType, List<Operation> ops, int maxDepth, List<Type> argTypes) {
         List<Operation> resultTypeOps = ops.stream().filter(o -> o.matchesReturnType(resultType)).toList();
         if (maxDepth <= 0 || resultTypeOps.isEmpty() || RANDOM.nextInt(2 * maxDepth) == 0) {
             if (RANDOM.nextInt(3) == 0) {
@@ -118,8 +118,8 @@ public final class Expression {
                 };
             } else {
                 // Remember which type we need to fill the ith argument with.
-                int i = types.size();
-                types.add(resultType);
+                int i = argTypes.size();
+                argTypes.add(resultType);
                 return (List<Object> tokens, List<Object> args) -> {
                     // Extract the ith argument.
                     tokens.add(args.get(i));
@@ -128,7 +128,7 @@ public final class Expression {
         }
         switch (Library.choice(resultTypeOps)) {
             case Operation.Unary(Type r, String s0, Type t0, String s1, List<Class<? extends Exception>> exceptions) -> {
-                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, ops, maxDepth-1, types);
+                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, ops, maxDepth-1, argTypes);
                 return (List<Object> tokens, List<Object> args) -> {
                     tokens.add(s0);
                     step0.addTokens(tokens, args);
@@ -136,8 +136,8 @@ public final class Expression {
                 };
             }
             case Operation.Binary(Type r, String s0, Type t0, String s1, Type t1, String s2, List<Class<? extends Exception>> exceptions) -> {
-                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, ops, maxDepth-1, types);
-                ExpressionGeneratorStep step1 = expressionGeneratorStep(t1, ops, maxDepth-1, types);
+                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, ops, maxDepth-1, argTypes);
+                ExpressionGeneratorStep step1 = expressionGeneratorStep(t1, ops, maxDepth-1, argTypes);
                 return (List<Object> tokens, List<Object> args) -> {
                     tokens.add(s0);
                     step0.addTokens(tokens, args);
@@ -147,9 +147,9 @@ public final class Expression {
                 };
             }
             case Operation.Ternary(Type r, String s0, Type t0, String s1, Type t1, String s2, Type t2, String s3, List<Class<? extends Exception>> exceptions) -> {
-                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, ops, maxDepth-1, types);
-                ExpressionGeneratorStep step1 = expressionGeneratorStep(t1, ops, maxDepth-1, types);
-                ExpressionGeneratorStep step2 = expressionGeneratorStep(t1, ops, maxDepth-1, types);
+                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, ops, maxDepth-1, argTypes);
+                ExpressionGeneratorStep step1 = expressionGeneratorStep(t1, ops, maxDepth-1, argTypes);
+                ExpressionGeneratorStep step2 = expressionGeneratorStep(t1, ops, maxDepth-1, argTypes);
                 return (List<Object> tokens, List<Object> args) -> {
                     tokens.add(s0);
                     step0.addTokens(tokens, args);

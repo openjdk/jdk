@@ -211,7 +211,7 @@ public class TestFuzzExpression {
         var template3 = Template.make("type", (Type type)-> {
             int size = 10_000; // TODO: randomize
             Expression expression = Expression.make(type, Type.PRIMITIVE_TYPES, 4);
-            List<Type> types = expression.types();
+            List<Type> types = expression.argTypes();
             List<TemplateWithArgs> arrayDefinitions = new ArrayList<>();
             List<Object> args = new ArrayList<>();
             for (int i = 0; i < types.size(); i++) {

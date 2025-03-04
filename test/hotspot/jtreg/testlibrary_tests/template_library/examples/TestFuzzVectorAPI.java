@@ -149,7 +149,7 @@ public class TestFuzzVectorAPI {
         var template2 = Template.make("type", (VectorAPIType type)-> {
             int size = 1000;
             Expression expression = Expression.make(type, Type.ALL_BUILTIN_TYPES, 4);
-            List<Type> types = expression.types();
+            List<Type> types = expression.argTypes();
             List<TemplateWithArgs> arrayDefinitions = new ArrayList<>();
             List<Object> args = new ArrayList<>();
             for (int i = 0; i < types.size(); i++) {
