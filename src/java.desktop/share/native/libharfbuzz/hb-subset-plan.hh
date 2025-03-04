@@ -41,6 +41,13 @@ namespace OT {
 struct Feature;
 }
 
+struct os2_info_t {
+  hb_codepoint_t min_cmap_codepoint;
+  hb_codepoint_t max_cmap_codepoint;
+};
+
+typedef struct os2_info_t os2_info_t;
+
 struct head_maxp_info_t
 {
   head_maxp_info_t ()
@@ -78,6 +85,13 @@ struct contour_point_t
           y  = x * matrix[1] + y * matrix[3];
     x  = x_;
   }
+
+  void add_delta (float delta_x, float delta_y)
+  {
+    x += delta_x;
+    y += delta_y;
+  }
+
   HB_ALWAYS_INLINE
   void translate (const contour_point_t &p) { x += p.x; y += p.y; }
 
@@ -98,6 +112,22 @@ struct contour_point_vector_t : hb_vector_t<contour_point_t>
     auto arrayZ = this->arrayZ + old_len;
     unsigned count = a.length;
     hb_memcpy (arrayZ, a.arrayZ, count * sizeof (arrayZ[0]));
+  }
+
+  bool add_deltas (const hb_vector_t<float> deltas_x,
+                   const hb_vector_t<float> deltas_y,
+                   const hb_vector_t<bool> indices)
+  {
+    if (indices.length != deltas_x.length ||
+        indices.length != deltas_y.length)
+      return false;
+
+    for (unsigned i = 0; i < indices.length; i++)
+    {
+      if (!indices.arrayZ[i]) continue;
+      arrayZ[i].add_delta (deltas_x.arrayZ[i], deltas_y.arrayZ[i]);
+    }
+    return true;
   }
 };
 
@@ -147,12 +177,17 @@ struct hb_subset_plan_t
   bool gsub_insert_catch_all_feature_variation_rec;
   bool gpos_insert_catch_all_feature_variation_rec;
 
+  // whether GDEF ItemVariationStore is retained
+  mutable bool has_gdef_varstore;
+
 #define HB_SUBSET_PLAN_MEMBER(Type, Name) Type Name;
 #include "hb-subset-plan-member-list.hh"
 #undef HB_SUBSET_PLAN_MEMBER
 
   //recalculated head/maxp table info after instancing
   mutable head_maxp_info_t head_maxp_info;
+
+  os2_info_t os2_info;
 
   const hb_subset_accelerator_t* accelerator;
   hb_subset_accelerator_t* inprogress_accelerator;

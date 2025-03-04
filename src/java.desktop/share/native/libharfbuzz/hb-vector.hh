@@ -37,6 +37,8 @@ template <typename Type,
           bool sorted=false>
 struct hb_vector_t
 {
+  static constexpr bool realloc_move = true;
+
   typedef Type item_t;
   static constexpr unsigned item_size = hb_static_size (Type);
   using array_t = typename std::conditional<sorted, hb_sorted_array_t<Type>, hb_array_t<Type>>::type;
@@ -60,23 +62,23 @@ struct hb_vector_t
   }
   hb_vector_t (const hb_vector_t &o) : hb_vector_t ()
   {
-    alloc (o.length, true);
+    alloc_exact (o.length);
     if (unlikely (in_error ())) return;
     copy_array (o.as_array ());
   }
   hb_vector_t (array_t o) : hb_vector_t ()
   {
-    alloc (o.length, true);
+    alloc_exact (o.length);
     if (unlikely (in_error ())) return;
     copy_array (o);
   }
   hb_vector_t (c_array_t o) : hb_vector_t ()
   {
-    alloc (o.length, true);
+    alloc_exact (o.length);
     if (unlikely (in_error ())) return;
     copy_array (o);
   }
-  hb_vector_t (hb_vector_t &&o)
+  hb_vector_t (hb_vector_t &&o) noexcept
   {
     allocated = o.allocated;
     length = o.length;
@@ -120,7 +122,7 @@ struct hb_vector_t
     resize (0);
   }
 
-  friend void swap (hb_vector_t& a, hb_vector_t& b)
+  friend void swap (hb_vector_t& a, hb_vector_t& b) noexcept
   {
     hb_swap (a.allocated, b.allocated);
     hb_swap (a.length, b.length);
@@ -130,14 +132,14 @@ struct hb_vector_t
   hb_vector_t& operator = (const hb_vector_t &o)
   {
     reset ();
-    alloc (o.length, true);
+    alloc_exact (o.length);
     if (unlikely (in_error ())) return *this;
 
     copy_array (o.as_array ());
 
     return *this;
   }
-  hb_vector_t& operator = (hb_vector_t &&o)
+  hb_vector_t& operator = (hb_vector_t &&o) noexcept
   {
     hb_swap (*this, o);
     return *this;
@@ -268,10 +270,9 @@ struct hb_vector_t
     }
     return new_array;
   }
-  /* Specialization for hb_vector_t<hb_{vector,array}_t<U>> to speed up. */
+  /* Specialization for types that can be moved using realloc(). */
   template <typename T = Type,
-            hb_enable_if (hb_is_same (T, hb_vector_t<typename T::item_t>) ||
-                          hb_is_same (T, hb_array_t <typename T::item_t>))>
+            hb_enable_if (T::realloc_move)>
   Type *
   realloc_vector (unsigned new_allocated, hb_priority<1>)
   {
@@ -431,6 +432,10 @@ struct hb_vector_t
 
     return true;
   }
+  bool alloc_exact (unsigned int size)
+  {
+    return alloc (size, true);
+  }
 
   bool resize (int size_, bool initialize = true, bool exact = false)
   {
@@ -496,7 +501,7 @@ struct hb_vector_t
     shrink_vector (size);
 
     if (shrink_memory)
-      alloc (size, true); /* To force shrinking memory if needed. */
+      alloc_exact (size); /* To force shrinking memory if needed. */
   }
 
 

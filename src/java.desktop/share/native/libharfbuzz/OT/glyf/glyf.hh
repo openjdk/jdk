@@ -94,7 +94,7 @@ struct glyf
     }
 
     hb_vector_t<unsigned> padded_offsets;
-    if (unlikely (!padded_offsets.alloc (c->plan->new_to_old_gid_list.length, true)))
+    if (unlikely (!padded_offsets.alloc_exact (c->plan->new_to_old_gid_list.length)))
       return_trace (false);
 
     hb_vector_t<glyf_impl::SubsetGlyph> glyphs;
@@ -205,8 +205,12 @@ struct glyf_accelerator_t
 
   protected:
   template<typename T>
-  bool get_points (hb_font_t *font, hb_codepoint_t gid, T consumer) const
+  bool get_points (hb_font_t *font, hb_codepoint_t gid, T consumer,
+                   hb_array_t<const int> coords = hb_array_t<const int> ()) const
   {
+    if (!coords)
+      coords = hb_array (font->coords, font->num_coords);
+
     if (gid >= num_glyphs) return false;
 
     /* Making this allocfree is not that easy
@@ -216,7 +220,7 @@ struct glyf_accelerator_t
     contour_point_vector_t all_points;
 
     bool phantom_only = !consumer.is_consuming_contour_points ();
-    if (unlikely (!glyph_for_gid (gid).get_points (font, *this, all_points, nullptr, nullptr, nullptr, true, true, phantom_only)))
+    if (unlikely (!glyph_for_gid (gid).get_points (font, *this, all_points, nullptr, nullptr, nullptr, true, true, phantom_only, coords)))
       return false;
 
     unsigned count = all_points.length;
@@ -225,8 +229,61 @@ struct glyf_accelerator_t
 
     if (consumer.is_consuming_contour_points ())
     {
-      for (auto &point : all_points.as_array ().sub_array (0, count))
-        consumer.consume_point (point);
+      auto *points = all_points.arrayZ;
+
+      if (false)
+      {
+        /* Our path-builder was designed to work with this simple loop.
+         * But FreeType and CoreText do it differently, so we match those
+         * with the other, more complicated, code branch below. */
+        for (unsigned i = 0; i < count; i++)
+        {
+          consumer.consume_point (points[i]);
+          if (points[i].is_end_point)
+            consumer.contour_end ();
+        }
+      }
+      else
+      {
+        for (unsigned i = 0; i < count; i++)
+        {
+          // Start of a contour.
+          if (points[i].flag & glyf_impl::SimpleGlyph::FLAG_ON_CURVE)
+          {
+            // First point is on-curve. Draw the contour.
+            for (; i < count; i++)
+            {
+              consumer.consume_point (points[i]);
+              if (points[i].is_end_point)
+              {
+                consumer.contour_end ();
+                break;
+              }
+            }
+          }
+          else
+          {
+            unsigned start = i;
+
+            // Find end of the contour.
+            for (; i < count; i++)
+              if (points[i].is_end_point)
+                break;
+
+            unsigned end = i;
+
+            // Enough to start from the end. Our path-builder takes care of the rest.
+            if (likely (end < count)) // Can only fail in case of alloc failure *maybe*.
+              consumer.consume_point (points[end]);
+
+            for (i = start; i < end; i++)
+              consumer.consume_point (points[i]);
+
+            consumer.contour_end ();
+          }
+        }
+      }
+
       consumer.points_end ();
     }
 
@@ -299,6 +356,7 @@ struct glyf_accelerator_t
 
     HB_ALWAYS_INLINE
     void consume_point (const contour_point_t &point) { bounds.add (point); }
+    void contour_end () {}
     void points_end () { bounds.get_extents (font, extents, scaled); }
 
     bool is_consuming_contour_points () { return extents; }
@@ -367,15 +425,6 @@ struct glyf_accelerator_t
     return glyph_for_gid (gid).get_extents_without_var_scaled (font, *this, extents);
   }
 
-  bool paint_glyph (hb_font_t *font, hb_codepoint_t gid, hb_paint_funcs_t *funcs, void *data, hb_color_t foreground) const
-  {
-    funcs->push_clip_glyph (data, gid, font);
-    funcs->color (data, true, foreground);
-    funcs->pop_clip (data);
-
-    return true;
-  }
-
   const glyf_impl::Glyph
   glyph_for_gid (hb_codepoint_t gid, bool needs_padding_removal = false) const
   {
@@ -408,6 +457,11 @@ struct glyf_accelerator_t
   get_path (hb_font_t *font, hb_codepoint_t gid, hb_draw_session_t &draw_session) const
   { return get_points (font, gid, glyf_impl::path_builder_t (font, draw_session)); }
 
+  bool
+  get_path_at (hb_font_t *font, hb_codepoint_t gid, hb_draw_session_t &draw_session,
+               hb_array_t<const int> coords) const
+  { return get_points (font, gid, glyf_impl::path_builder_t (font, draw_session), coords); }
+
 #ifndef HB_NO_VAR
   const gvar_accelerator_t *gvar;
 #endif
@@ -430,7 +484,7 @@ glyf::_populate_subset_glyphs (const hb_subset_plan_t   *plan,
                                hb_vector_t<glyf_impl::SubsetGlyph>& glyphs /* OUT */) const
 {
   OT::glyf_accelerator_t glyf (plan->source);
-  if (!glyphs.alloc (plan->new_to_old_gid_list.length, true)) return false;
+  if (!glyphs.alloc_exact (plan->new_to_old_gid_list.length)) return false;
 
   for (const auto &pair : plan->new_to_old_gid_list)
   {
