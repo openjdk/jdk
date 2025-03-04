@@ -21,18 +21,13 @@
  * questions.
  */
 
-import java.awt.AWTException;
 import java.awt.Robot;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.lang.reflect.InvocationTargetException;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
 /*
@@ -55,7 +50,7 @@ public class bug4213634 {
     public static void main(String[] args) throws Exception {
         try {
             robot = new Robot();
-            SwingUtilities.invokeAndWait(() -> createAndShowGUI());
+            SwingUtilities.invokeAndWait(bug4213634::createAndShowGUI);
 
             robot.waitForIdle();
             robot.delay(1000);
@@ -84,7 +79,6 @@ public class bug4213634 {
     }
 
     private static void test() throws Exception {
-
         Util.hitMnemonics(robot, KeyEvent.VK_1);
         robot.waitForIdle();
         robot.delay(100);
