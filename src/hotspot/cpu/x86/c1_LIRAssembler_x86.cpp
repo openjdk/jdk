@@ -1708,7 +1708,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
     Label update_done;
 
-    __ maybe_skip_profiling(r14_profile_rng, k_RInfo, update_done);
+    __ maybe_skip_profiling(r_profile_rng, k_RInfo, update_done);
 
     Register recv = k_RInfo;
     __ load_klass(recv, obj, tmp_load_klass);
@@ -3503,16 +3503,6 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ load_klass(result, obj, rscratch1);
 }
 
-long ibar, ifoo;
-
-void foo() {
-  asm("nop");
-}
-
-void bar() {
-  asm("nop");
-}
-
 // Rename to increment_profile_ctr
 void LIR_Assembler::maybe_inc_profile_counter(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op) {
   Register temp = temp_op->as_register();
@@ -3526,28 +3516,15 @@ void LIR_Assembler::maybe_inc_profile_counter(LIR_Opr incr, LIR_Opr addr, LIR_Op
 
   assert(threshold > 0, "must be");
 
-  if (getenv("APH_TRACE")) {
-    __ lea(temp, ExternalAddress((address)&ifoo));
-    __ incl(Address(temp));
-  }
-
-  __ step_random(r14_profile_rng, temp);
+  __ step_random(r_profile_rng, temp);
 
   Label dont;
-
-  // __ call_VM_leaf_base(CAST_FROM_FN_PTR(address, &bar), 0);
 
   if (incr->is_register()) {
     Register inc = incr->as_register();
     __ movl(dest->as_register(), inc);
-    __ cmpl(r14_profile_rng, threshold);
+    __ cmpl(r_profile_rng, threshold);
     __ jccb(Assembler::aboveEqual, dont);
-
-    // __ call_VM_leaf_base(CAST_FROM_FN_PTR(address, &foo), 0);
-    // if (getenv("APH_TRACE")) {
-    //   __ lea(temp, ExternalAddress((address)&ibar));
-    //   __ incl(Address(temp));
-    // }
 
     __ movl(temp, dest_adr);
     __ sall(inc, ratio_shift);
@@ -3559,14 +3536,8 @@ void LIR_Assembler::maybe_inc_profile_counter(LIR_Opr incr, LIR_Opr addr, LIR_Op
         case T_INT: {
           jint inc = incr->as_constant_ptr()->as_jint_bits() * profile_capture_ratio;
           __ movl(dest->as_register(), inc);
-          __ cmpl(r14_profile_rng, threshold);
+          __ cmpl(r_profile_rng, threshold);
           __ jccb(Assembler::aboveEqual, dont);
-
-          // __ call_VM_leaf_base(CAST_FROM_FN_PTR(address, &foo), 0);
-          // if (getenv("APH_TRACE")) {
-          //   __ lea(temp, ExternalAddress((address)&ibar));
-          //   __ incl(Address(temp));
-          // }
 
           __ movl(temp, dest_adr);
           __ addl(temp, inc);
@@ -3578,14 +3549,8 @@ void LIR_Assembler::maybe_inc_profile_counter(LIR_Opr incr, LIR_Opr addr, LIR_Op
         case T_LONG: {
           jint inc = incr->as_constant_ptr()->as_jint_bits() * profile_capture_ratio;
           __ movq(dest->as_register_lo(), (jlong)inc);
-          __ cmpl(r14_profile_rng, threshold);
+          __ cmpl(r_profile_rng, threshold);
           __ jccb(Assembler::aboveEqual, dont);
-
-          // __ call_VM_leaf_base(CAST_FROM_FN_PTR(address, &foo), 0);
-          if (getenv("APH_TRACE")) {
-            __ lea(temp, ExternalAddress((address)&ibar));
-            __ incl(Address(temp));
-          }
 
           __ movq(temp, dest_adr);
           __ addq(temp, inc);
@@ -3613,22 +3578,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
 
   Register temp = op->tmp1()->as_register_lo();
 
-  // int ratio_shift = exact_log2(ProfileCaptureRatio);
-  // int threshold = (1ull << 32) / ProfileCaptureRatio;
-
-  // if (ProfileCaptureRatio != 1) {
-  //   __ step_random(r14_profile_rng, temp);
-
-  //   if (getenv("APH_TRACE")) {
-  //     __ lea(temp, ExternalAddress((address)&ibaz));
-  //     __ incl(Address(temp));
-  //   }
-
-  //   __ cmpl(r14_profile_rng, threshold);
-  //   __ jcc(Assembler::aboveEqual, dont);
-  // }
-
-  __ maybe_skip_profiling(r14_profile_rng, temp, dont);
+  __ maybe_skip_profiling(r_profile_rng, temp, dont);
 
   // Update counter for all call types
   ciMethodData* md = method->method_data_or_null();
@@ -3739,7 +3689,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 #endif
 
   // Subsampling profile capture
-  __ maybe_skip_profiling(r14_profile_rng, rscratch1, next);
+  __ maybe_skip_profiling(r_profile_rng, rscratch1, next);
 
   if (do_null) {
     __ testptr(obj, obj);
@@ -3985,8 +3935,6 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
   __ post_call_nop();
   __ restore_profile_rng();
 }
-
-
 
 
 void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {

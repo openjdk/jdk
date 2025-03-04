@@ -2244,13 +2244,6 @@ public:
   void restore_legacy_gprs();
   void setcc(Assembler::Condition comparison, Register dst);
 #endif
-
-  // Randomized profile capture
-  void step_random(Register state, Register temp);
-  void maybe_skip_profiling(Register state, Register temp, Label &skip);
-  void save_profile_rng();
-  void restore_profile_rng();
-
 };
 
 #endif // CPU_X86_MACROASSEMBLER_X86_HPP

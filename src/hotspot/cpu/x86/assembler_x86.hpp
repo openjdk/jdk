@@ -138,9 +138,6 @@ constexpr Register rscratch2 = r11;  // volatile
 constexpr Register r12_heapbase = r12; // callee-saved
 constexpr Register r15_thread   = r15; // callee-saved
 
-// State for randomized profile counters. Used by C1.
-constexpr Register r14_profile_rng = r14;
-
 #else
 // rscratch1 will appear in 32bit code that is dead but of course must compile
 // Using noreg ensures if the dead code is incorrectly live and executed it
@@ -154,6 +151,9 @@ constexpr Register r14_profile_rng = r14;
 // On x86, the SP does not have to be saved when invoking method handle intrinsics
 // or compiled lambda forms. We indicate that by setting rbp_mh_SP_save to noreg.
 constexpr Register rbp_mh_SP_save = noreg;
+
+// State for randomized profile counters. Used by C1.
+extern Register r_profile_rng;
 
 // Address is an abstraction used to represent a memory location
 // using any of the amd64 addressing modes with one object.

@@ -41,6 +41,8 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+Register r_profile_rng;
+
 int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Register tmp, Label& slow_case) {
   const int aligned_mask = BytesPerWord -1;
   const int hdr_offset = oopDesc::mark_offset_in_bytes();
@@ -408,6 +410,52 @@ void C1_MacroAssembler::invalidate_registers(bool inv_rax, bool inv_rbx, bool in
   if (inv_rsi) movptr(rsi, 0xDEAD);
   if (inv_rdi) movptr(rdi, 0xDEAD);
 #endif
+}
+
+// Randomized profile capture.
+
+void C1_MacroAssembler::step_random(Register state, Register temp) {
+  // One of these will be the best for a particular CPU.
+
+  /* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
+  // movl(temp, state);
+  // sall(temp, 13);
+  // xorl(state, temp);
+  // movl(temp, state);
+  // shrl(temp, 7);
+  // xorl(state, temp);
+  // movl(temp, state);
+  // sall(temp, 5);
+  // xorl(state, temp);
+
+  /* LCG from glibc. */
+  movl(temp, 1103515245);
+  imull(state, temp);
+  addl(state, 12345);
+}
+
+void C1_MacroAssembler::maybe_skip_profiling(Register state, Register temp, Label &skip) {
+  if (ProfileCaptureRatio != 1) {
+    step_random(state, temp);
+
+    int ratio_shift = exact_log2(ProfileCaptureRatio);
+    int threshold = (1ull << 32) >> ratio_shift;
+
+    cmpl(state, threshold);
+    jcc(Assembler::aboveEqual, skip);
+  }
+}
+
+void C1_MacroAssembler::save_profile_rng() {
+  if (ProfileCaptureRatio != 1) {
+    movl(Address(r15_thread, JavaThread::profile_rng_offset()), r_profile_rng);
+  }
+}
+
+void C1_MacroAssembler::restore_profile_rng() {
+  if (ProfileCaptureRatio != 1) {
+    movl(r_profile_rng, Address(r15_thread, JavaThread::profile_rng_offset()));
+  }
 }
 
 #endif // ifndef PRODUCT

@@ -545,7 +545,11 @@ JavaThread::JavaThread(MemTag mem_tag) :
   // Initial state of random-number generator used when profiling
   // C1-generated code.
   if (ProfileCaptureRatio > 1) {
-    _profile_rng = os::random();
+    int state;
+    do {
+      state = os::random();
+    } while (state == 0);
+    _profile_rng = state;
   }
 
   pd_initialize();
