@@ -400,7 +400,7 @@
      volatile_static_field(PerfMemory,         _initialized,                                  int)                                   \
                                                                                                                                      \
   /********************/                                                                                                             \
-  /* SystemDictionary */                                                                                                             \
+  /* VM Classes       */                                                                                                             \
   /********************/                                                                                                             \
                                                                                                                                      \
      static_field(vmClasses,                   VM_CLASS_AT(Object_klass),                        InstanceKlass*)                     \
@@ -997,7 +997,7 @@
   declare_type(PerfData, CHeapObj<mtInternal>)                            \
                                                                           \
   /********************/                                                  \
-  /* SystemDictionary */                                                  \
+  /* VM Classes       */                                                  \
   /********************/                                                  \
                                                                           \
   declare_toplevel_type(vmClasses)                                        \
