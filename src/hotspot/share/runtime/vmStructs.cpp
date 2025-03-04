@@ -1148,12 +1148,6 @@
   declare_toplevel_type(BasicLock)                                        \
   declare_toplevel_type(BasicObjectLock)                                  \
                                                                           \
-  /*********************/                                                 \
-  /* Adapter Blob Entries */                                              \
-  /*********************/                                                 \
-  declare_toplevel_type(AdapterHandlerEntry)                              \
-  declare_toplevel_type(AdapterHandlerEntry*)                             \
-                                                                          \
   /********************/                                                  \
   /* -XX flags        */                                                  \
   /********************/                                                  \
