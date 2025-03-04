@@ -178,8 +178,8 @@ public class UdpTest extends Tests {
         });
         t1 = System.nanoTime();
         s1.receive (new DatagramPacket (new byte [128], 128));
-        final long startTimeInNanos = TimeUnit.SECONDS.toNanos(2);
-        checkIfTimeOut(System.nanoTime() - t1, startTimeInNanos);
+        final long startTime = TimeUnit.SECONDS.toMillis(2);
+        checkIfTimeOut(TimeUnit.NANOS.toMillis(System.nanoTime() - t1), startTime);
         s1.close ();
         s2.close ();
         System.out.println ("Test2: OK");
