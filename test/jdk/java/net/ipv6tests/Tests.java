@@ -156,7 +156,7 @@ public class Tests {
     public static void checkIfTimeOut(long got, long expected) {
         dprintln("checkIfTimeOut: got = " + got + " lower bound = " + expected);
 
-        if (got <= expected) {
+        if (got < expected) {
             throw new RuntimeException("checkIfTimeOut failed: got " + got
                     + ", expected at least " + expected );
         }
