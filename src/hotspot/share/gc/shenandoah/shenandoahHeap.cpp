@@ -424,8 +424,6 @@ jint ShenandoahHeap::initialize() {
       _affiliations[i] = ShenandoahAffiliation::FREE;
     }
 
-    // Initialize to complete
-    _marking_context->mark_complete();
     size_t young_cset_regions, old_cset_regions;
 
     // We are initializing free set.  We ignore cset region tallies.
@@ -2836,6 +2834,8 @@ ShenandoahGeneration* ShenandoahHeap::generation_for(ShenandoahAffiliation affil
     return young_generation();
   } else if (affiliation == OLD_GENERATION) {
     return old_generation();
+  } else if (affiliation == FREE) {
+    return global_generation();
   }
 
   ShouldNotReachHere();

@@ -201,7 +201,7 @@ private:
   bool is_bitmap_clear();
 
   // We need to track the status of marking for different generations.
-  bool is_mark_complete();
+  bool is_mark_complete() { return _is_marking_complete.is_set(); }
   virtual void set_mark_complete();
   virtual void set_mark_incomplete();
 

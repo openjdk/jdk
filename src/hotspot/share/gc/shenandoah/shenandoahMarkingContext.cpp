@@ -28,6 +28,8 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
 
+#include "shenandoahGlobalGeneration.hpp"
+
 ShenandoahMarkingContext::ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions) :
   _mark_bit_map(heap_region, bitmap_region),
   _top_bitmaps(NEW_C_HEAP_ARRAY(HeapWord*, num_regions, mtGC)),
@@ -98,13 +100,5 @@ void ShenandoahMarkingContext::clear_bitmap(ShenandoahHeapRegion* r) {
 }
 
 bool ShenandoahMarkingContext::is_complete() {
-  return _is_complete.is_set();
-}
-
-void ShenandoahMarkingContext::mark_complete() {
-  _is_complete.set();
-}
-
-void ShenandoahMarkingContext::mark_incomplete() {
-  _is_complete.unset();
+  return ShenandoahHeap::heap()->global_generation()->is_mark_complete();
 }

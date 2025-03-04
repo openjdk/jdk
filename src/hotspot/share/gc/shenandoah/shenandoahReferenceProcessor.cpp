@@ -328,12 +328,15 @@ bool ShenandoahReferenceProcessor::should_drop(oop reference, ReferenceType type
     return true;
   }
 
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahHeapRegion* referent_region = heap->heap_region_containing(raw_referent);
+
   // Check if the referent is still alive, in which case we should
   // drop the reference.
   if (type == REF_PHANTOM) {
-    return ShenandoahHeap::heap()->complete_marking_context()->is_marked(raw_referent);
+    return heap->complete_marking_context(referent_region)->is_marked(raw_referent);
   } else {
-    return ShenandoahHeap::heap()->complete_marking_context()->is_marked_strong(raw_referent);
+    return heap->complete_marking_context(referent_region)->is_marked_strong(raw_referent);
   }
 }
 
