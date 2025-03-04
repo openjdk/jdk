@@ -2805,6 +2805,14 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
           return JNI_EINVAL;
         }
       }
+    } else if (match_option(option, "-server") ||
+               match_option(option, "-client")) {
+      // On regular JDK, '-server|-client' options are processed and removed
+      // from command-line arguments by CheckJvmType (see
+      // src/java.base/share/native/libjli/java.c). When running on static JDK,
+      // we may encounter the '-server|-client' options here, since CheckJvmType
+      // is not called. Ignore the options and don't report an 'Unrecognized option'
+      // error.
     // Unknown option
     } else if (is_bad_option(option, args->ignoreUnrecognized)) {
       return JNI_ERR;
