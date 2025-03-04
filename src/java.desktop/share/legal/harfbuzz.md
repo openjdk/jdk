@@ -1,8 +1,6 @@
-## Harfbuzz v10.3.0
+## Harfbuzz v10.4.0
 
 ### Harfbuzz License
-
-https://github.com/harfbuzz/harfbuzz/blob/10.3.0/COPYING
 
 <pre>
 
