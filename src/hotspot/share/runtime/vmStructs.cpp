@@ -23,18 +23,9 @@
  */
 
 #include "cds/filemap.hpp"
-#include "ci/ciField.hpp"
-#include "ci/ciInstance.hpp"
-#include "ci/ciMethodData.hpp"
-#include "ci/ciObjArrayKlass.hpp"
-#include "ci/ciSymbol.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
-#include "classfile/stringTable.hpp"
-#include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeBlob.hpp"
@@ -103,10 +94,8 @@
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/serviceThread.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/threadSMR.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vmStructs.hpp"
 #include "runtime/vm_version.hpp"
@@ -635,7 +624,6 @@
   nonstatic_field(JavaThread,                  _monitor_owner_id,                             int64_t)                               \
   volatile_nonstatic_field(JavaThread,         _terminated,                                   JavaThread::TerminatedTypes)           \
   nonstatic_field(Thread,                      _osthread,                                     OSThread*)                             \
-  nonstatic_field(Thread,                      _resource_area,                                ResourceArea*)                         \
                                                                                                                                      \
   /************/                                                                                                                     \
   /* OSThread */                                                                                                                     \
@@ -1012,7 +1000,6 @@
   /* SystemDictionary */                                                  \
   /********************/                                                  \
                                                                           \
-  declare_toplevel_type(SystemDictionary)                                 \
   declare_toplevel_type(vmClasses)                                        \
   declare_toplevel_type(vmSymbols)                                        \
                                                                           \
@@ -1089,8 +1076,6 @@
   /*************************************************************/         \
   /* CodeBlob hierarchy (needed for run-time type information) */         \
   /*************************************************************/         \
-                                                                          \
-  declare_toplevel_type(SharedRuntime)                                    \
                                                                           \
   declare_toplevel_type(CodeBlob)                                         \
   declare_type(RuntimeBlob,              CodeBlob)                        \
