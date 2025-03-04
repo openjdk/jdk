@@ -588,6 +588,26 @@ class methodHandle;
   do_intrinsic(_kyberBarrettReduce, com_sun_crypto_provider_ML_KEM, kyberBarrettReduce_name, SaI_signature, F_S)        \
    do_name(kyberBarrettReduce_name,                        "implKyberBarrettReduce")                                    \
                                                                                                                         \
+  /* support for sun.security.provider.ML_DSA */                                                                        \
+ do_class(sun_security_provider_ML_DSA,      "sun/security/provider/ML_DSA")                                            \
+   do_signature(IaII_signature, "([II)I")                                                                               \
+   do_signature(IaIaI_signature, "([I[I)I")                                                                             \
+   do_signature(IaIaIaI_signature, "([I[I[I)I")                                                                         \
+   do_signature(IaIaIaIII_signature, "([I[I[III)I")                                                                     \
+  do_intrinsic(_dilithiumAlmostNtt, sun_security_provider_ML_DSA, dilithiumAlmostNtt_name, IaIaI_signature, F_S)        \
+   do_name(dilithiumAlmostNtt_name,                            "implDilithiumAlmostNtt")                                \
+  do_intrinsic(_dilithiumAlmostInverseNtt, sun_security_provider_ML_DSA,                                                \
+                dilithiumAlmostInverseNtt_name, IaIaI_signature, F_S)                                                   \
+   do_name(dilithiumAlmostInverseNtt_name,                     "implDilithiumAlmostInverseNtt")                         \
+  do_intrinsic(_dilithiumNttMult, sun_security_provider_ML_DSA, dilithiumNttMult_name, IaIaIaI_signature, F_S)          \
+   do_name(dilithiumNttMult_name,                              "implDilithiumNttMult")                                  \
+  do_intrinsic(_dilithiumMontMulByConstant, sun_security_provider_ML_DSA,                                               \
+                dilithiumMontMulByConstant_name, IaII_signature, F_S)                                                   \
+   do_name(dilithiumMontMulByConstant_name,                    "implDilithiumMontMulByConstant")                        \
+  do_intrinsic(_dilithiumDecomposePoly, sun_security_provider_ML_DSA,                                                   \
+                dilithiumDecomposePoly_name, IaIaIaIII_signature, F_S)                                                  \
+   do_name(dilithiumDecomposePoly_name,                    "implDilithiumDecomposePoly")                                \
+                                                                                                                        \
   /* support for java.util.zip */                                                                                       \
   do_class(java_util_zip_CRC32,           "java/util/zip/CRC32")                                                        \
   do_intrinsic(_updateCRC32,               java_util_zip_CRC32,   update_name, int2_int_signature,               F_SN)  \

@@ -58,6 +58,15 @@ ATTRIBUTE_ALIGNED(64) uint16_t StubRoutines::aarch64::_kyberConsts[] =
     0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00, 0x0F00
 };
 
+ATTRIBUTE_ALIGNED(64) uint32_t StubRoutines::aarch64::_dilithiumConsts[] =
+{
+    58728449, 58728449, 58728449, 58728449, // montQInvModR
+    8380417, 8380417, 8380417, 8380417, // dilithium_q
+    16382, 16382, 16382, 16382, // toMont((dilithium_n)^-1 (mod dilithium_q))
+    2365951, 2365951, 2365951, 2365951, // montRSquareModQ
+    5373807, 5373807, 5373807, 5373807 // addend for modular reduce
+};
+
 /**
  *  crc_table[] from jdk/src/share/native/java/util/zip/zlib-1.2.5/crc32.h
  */

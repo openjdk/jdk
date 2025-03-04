@@ -30,6 +30,7 @@
 #include "code/pcDesc.hpp"
 #include "code/scopeDesc.hpp"
 #include "code/vtableStubs.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
@@ -240,6 +241,7 @@ const TypeFunc* OptoRuntime::_vectorizedMismatch_Type             = nullptr;
 const TypeFunc* OptoRuntime::_ghash_processBlocks_Type            = nullptr;
 const TypeFunc* OptoRuntime::_chacha20Block_Type                  = nullptr;
 
+<<<<<<< HEAD
 const TypeFunc* OptoRuntime::_kyberNtt_Type                             = nullptr;
 const TypeFunc* OptoRuntime::_kyberInverseNtt_Type                      = nullptr;
 const TypeFunc* OptoRuntime::_kyberNttMult_Type                         = nullptr;
@@ -247,6 +249,13 @@ const TypeFunc* OptoRuntime::_kyberAddPoly_2_Type                       = nullpt
 const TypeFunc* OptoRuntime::_kyberAddPoly_3_Type                       = nullptr;
 const TypeFunc* OptoRuntime::_kyber12To16_Type                          = nullptr;
 const TypeFunc* OptoRuntime::_kyberBarrettReduce_Type                   = nullptr;
+=======
+const TypeFunc* OptoRuntime::_dilithiumAlmostNtt_Type             = nullptr;
+const TypeFunc* OptoRuntime::_dilithiumAlmostInverseNtt_Type      = nullptr;
+const TypeFunc* OptoRuntime::_dilithiumNttMult_Type               = nullptr;
+const TypeFunc* OptoRuntime::_dilithiumMontMulByConstant_Type     = nullptr;
+const TypeFunc* OptoRuntime::_dilithiumDecomposePoly_Type         = nullptr;
+>>>>>>> master
 
 const TypeFunc* OptoRuntime::_base64_encodeBlock_Type             = nullptr;
 const TypeFunc* OptoRuntime::_base64_decodeBlock_Type             = nullptr;
@@ -277,6 +286,7 @@ address OptoRuntime::generate_stub(ciEnv* env,
 
   // Matching the default directive, we currently have no method to match.
   DirectiveSet* directive = DirectivesStack::getDefaultDirective(CompileBroker::compiler(CompLevel_full_optimization));
+  CompilationMemoryStatisticMark cmsm(directive);
   ResourceMark rm;
   Compile C(env, gen, C_function, name, is_fancy_jump, pass_tls, return_pc, directive);
   DirectivesStack::release(directive);
@@ -1407,8 +1417,13 @@ static const TypeFunc* make_chacha20Block_Type() {
   return TypeFunc::make(domain, range);
 }
 
+<<<<<<< HEAD
 // Kyber NTT function
 static const TypeFunc* make_kyberNtt_Type() {
+=======
+// Dilithium NTT function except for the final "normalization" to |coeff| < Q
+static const TypeFunc* make_dilithiumAlmostNtt_Type() {
+>>>>>>> master
     int argcnt = 2;
 
     const Type** fields = TypeTuple::fields(argcnt);
@@ -1426,8 +1441,13 @@ static const TypeFunc* make_kyberNtt_Type() {
     return TypeFunc::make(domain, range);
 }
 
+<<<<<<< HEAD
 // Kyber inverse NTT function
 static const TypeFunc* make_kyberInverseNtt_Type() {
+=======
+// Dilithium inverse NTT function except the final mod Q division by 2^256
+static const TypeFunc* make_dilithiumAlmostInverseNtt_Type() {
+>>>>>>> master
     int argcnt = 2;
 
     const Type** fields = TypeTuple::fields(argcnt);
@@ -1445,16 +1465,25 @@ static const TypeFunc* make_kyberInverseNtt_Type() {
     return TypeFunc::make(domain, range);
 }
 
+<<<<<<< HEAD
 // Kyber NTT multiply function
 static const TypeFunc* make_kyberNttMult_Type() {
     int argcnt = 4;
+=======
+// Dilithium NTT multiply function
+static const TypeFunc* make_dilithiumNttMult_Type() {
+    int argcnt = 3;
+>>>>>>> master
 
     const Type** fields = TypeTuple::fields(argcnt);
     int argp = TypeFunc::Parms;
     fields[argp++] = TypePtr::NOTNULL;      // result
     fields[argp++] = TypePtr::NOTNULL;      // ntta
     fields[argp++] = TypePtr::NOTNULL;      // nttb
+<<<<<<< HEAD
     fields[argp++] = TypePtr::NOTNULL;      // NTT multiply zetas
+=======
+>>>>>>> master
 
     assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
     const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
@@ -1466,6 +1495,7 @@ static const TypeFunc* make_kyberNttMult_Type() {
     return TypeFunc::make(domain, range);
 }
 
+<<<<<<< HEAD
 // Kyber add 2 polynomials function
 static const TypeFunc* make_kyberAddPoly_2_Type() {
     int argcnt = 3;
@@ -1534,10 +1564,41 @@ static const TypeFunc* make_kyber12To16_Type() {
 // Kyber Barrett reduce function
 static const TypeFunc* make_kyberBarrettReduce_Type() {
     int argcnt = 1;
+=======
+// Dilithium Montgomery multiply a polynome coefficient array by a constant
+static const TypeFunc* make_dilithiumMontMulByConstant_Type() {
+    int argcnt = 2;
+>>>>>>> master
 
     const Type** fields = TypeTuple::fields(argcnt);
     int argp = TypeFunc::Parms;
     fields[argp++] = TypePtr::NOTNULL;      // coeffs
+<<<<<<< HEAD
+=======
+    fields[argp++] = TypeInt::INT;          // constant multiplier
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+// Dilithium decompose polynomial
+static const TypeFunc* make_dilithiumDecomposePoly_Type() {
+    int argcnt = 5;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // input
+    fields[argp++] = TypePtr::NOTNULL;      // lowPart
+    fields[argp++] = TypePtr::NOTNULL;      // highPart
+    fields[argp++] = TypeInt::INT;          // 2 * gamma2
+    fields[argp++] = TypeInt::INT;          // multiplier
+>>>>>>> master
 
     assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
     const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
@@ -2161,7 +2222,7 @@ void OptoRuntime::initialize_types() {
   _bigIntegerShift_Type               = make_bigIntegerShift_Type();
   _vectorizedMismatch_Type            = make_vectorizedMismatch_Type();
   _ghash_processBlocks_Type           = make_ghash_processBlocks_Type();
-
+  _chacha20Block_Type                 = make_chacha20Block_Type();
   _kyberNtt_Type                      = make_kyberNtt_Type();
   _kyberInverseNtt_Type               = make_kyberInverseNtt_Type();
   _kyberNttMult_Type                  = make_kyberNttMult_Type();
@@ -2169,8 +2230,11 @@ void OptoRuntime::initialize_types() {
   _kyberAddPoly_3_Type                = make_kyberAddPoly_3_Type();
   _kyber12To16_Type                   = make_kyber12To16_Type();
   _kyberBarrettReduce_Type            = make_kyberBarrettReduce_Type();
-
-  _chacha20Block_Type                 = make_chacha20Block_Type();
+  _dilithiumAlmostNtt_Type            = make_dilithiumAlmostNtt_Type();
+  _dilithiumAlmostInverseNtt_Type     = make_dilithiumAlmostInverseNtt_Type();
+  _dilithiumNttMult_Type              = make_dilithiumNttMult_Type();
+  _dilithiumMontMulByConstant_Type    = make_dilithiumMontMulByConstant_Type();
+  _dilithiumDecomposePoly_Type        = make_dilithiumDecomposePoly_Type();
   _base64_encodeBlock_Type            = make_base64_encodeBlock_Type();
   _base64_decodeBlock_Type            = make_base64_decodeBlock_Type();
   _string_IndexOf_Type                = make_string_IndexOf_Type();
