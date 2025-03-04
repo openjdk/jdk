@@ -52,14 +52,15 @@ public class HeadlessMalfunctionTest {
 
         // Run test
         final ProcessBuilder pbJava = ProcessTools.createTestJavaProcessBuilder(
-                "--add-opens",
-                "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
                 "-javaagent:agent.jar",
                 "HeadlessMalfunctionTest$Runner"
         );
         final OutputAnalyzer output = ProcessTools.executeProcess(pbJava);
         // Unpatched JDK logs: "FATAL ERROR in native method: Could not allocate library name"
-        output.shouldContain("FATAL ERROR in native method: GetStaticMethodID isHeadless failed");
+        // Patched should mention that isHeadless is missing, log message differs between OSes;
+        // e.g. LWCToolkit toolkit path on MacOS logs "java.lang.NoSuchMethodError: 'boolean java.awt.GraphicsEnvironment.isHeadless()'"
+        // Linux logs "FATAL ERROR in native method: GetStaticMethodID isHeadless failed"
+        output.shouldContain("isHeadless");
         output.shouldNotHaveExitValue(0);
     }
 
