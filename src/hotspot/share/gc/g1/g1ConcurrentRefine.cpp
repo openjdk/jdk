@@ -200,16 +200,6 @@ bool G1ConcurrentRefineWorkState::swap_global_card_table() {
   return advance_state(State::SwapJavaThreadsCT);
 }
 
-class G1SwapThreadCardTableClosure : public HandshakeClosure {
-public:
-  G1SwapThreadCardTableClosure() : HandshakeClosure("G1 Swap JT card table") { }
-
-  virtual void do_thread(Thread* t) {
-    G1BarrierSet* bs = G1BarrierSet::g1_barrier_set();
-    G1ThreadLocalData::set_byte_map_base(t, bs->card_table()->byte_map_base());
-  }
-};
-
 bool G1ConcurrentRefineWorkState::swap_java_threads_ct() {
   assert_state(State::SwapJavaThreadsCT);
 
@@ -218,7 +208,16 @@ bool G1ConcurrentRefineWorkState::swap_java_threads_ct() {
   {
     SuspendibleThreadSetLeaver sts_leave;
 
-    G1SwapThreadCardTableClosure cl;
+    class G1SwapThreadCardTableClosure : public HandshakeClosure {
+    public:
+      G1SwapThreadCardTableClosure() : HandshakeClosure("G1 Swap JT card table") { }
+
+      virtual void do_thread(Thread* t) {
+        G1BarrierSet* bs = G1BarrierSet::g1_barrier_set();
+        G1ThreadLocalData::set_byte_map_base(t, bs->card_table()->byte_map_base());
+      }
+    } cl;
+
     Handshake::execute(&cl);
   }
 
@@ -247,12 +246,8 @@ bool G1ConcurrentRefineWorkState::swap_gc_threads_ct() {
       }
 
       void doit() {
-        // Light weight "handshake" of the GC threads
+        // Light weight "handshake" of the GC threads for memory synchronization.
         SuspendibleThreadSet::synchronize();
-
-        G1SwapThreadCardTableClosure cl;
-        G1CollectedHeap::heap()->gc_threads_do(&cl);
-
         SuspendibleThreadSet::desynchronize();
       };
     } op;
