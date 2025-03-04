@@ -341,6 +341,27 @@ final class Operations {
             for (var type2 : Type.VECTOR_API_TYPES) {
                 ops.add(new Operation.Unary(type, "((" + type.vectorType + ")", type2 , ".castShape(" + type.species + ", 0))"));
             }
+
+            // Note: check works on class / species, leaving them out.
+
+            // TODO: compare with VectorMask type
+            // TODO: compress with VectorMask type
+
+            // TODO: non zero parts
+            for (var type2 : Type.VECTOR_API_TYPES) {
+                ops.add(new Operation.Unary(type,
+                                            "((" + type.vectorType + ")",
+                                            type2 ,
+                                            ".convert(VectorOperators.Conversion.ofCast("
+                                                + type2.elementType.boxedTypeName() +  ".class, "
+                                                + type.elementType.boxedTypeName() + ".class), 0))"));
+                ops.add(new Operation.Unary(type,
+                                            "((" + type.vectorType + ")",
+                                            type2 ,
+                                            ".convert(VectorOperators.Conversion.ofReinterpret("
+                                                + type2.elementType.boxedTypeName() +  ".class, "
+                                                + type.elementType.boxedTypeName() + ".class), 0))"));
+            }
         }
 
         // Ensure the list is immutable.
