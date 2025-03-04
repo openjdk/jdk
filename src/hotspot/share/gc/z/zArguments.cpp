@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zArguments.hpp"
 #include "gc/z/zCollectedHeap.hpp"
@@ -121,15 +120,6 @@ void ZArguments::select_max_gc_threads() {
 void ZArguments::initialize() {
   GCArguments::initialize();
 
-  // Check mark stack size
-  const size_t mark_stack_space_limit = ZAddressSpaceLimit::mark_stack();
-  if (ZMarkStackSpaceLimit > mark_stack_space_limit) {
-    if (!FLAG_IS_DEFAULT(ZMarkStackSpaceLimit)) {
-      vm_exit_during_initialization("ZMarkStackSpaceLimit too large for limited address space");
-    }
-    FLAG_SET_DEFAULT(ZMarkStackSpaceLimit, mark_stack_space_limit);
-  }
-
   // Enable NUMA by default
   if (FLAG_IS_DEFAULT(UseNUMA)) {
     FLAG_SET_DEFAULT(UseNUMA, true);
@@ -140,10 +130,6 @@ void ZArguments::initialize() {
   // Backwards compatible alias for ZCollectionIntervalMajor
   if (!FLAG_IS_DEFAULT(ZCollectionInterval)) {
     FLAG_SET_ERGO_IF_DEFAULT(ZCollectionIntervalMajor, ZCollectionInterval);
-  }
-
-  if (FLAG_IS_DEFAULT(ZFragmentationLimit)) {
-    FLAG_SET_DEFAULT(ZFragmentationLimit, 5.0);
   }
 
   // Set medium page size here because MaxTenuringThreshold may use it.
@@ -180,7 +166,7 @@ void ZArguments::initialize() {
   // Large page size must match granule size
   if (!FLAG_IS_DEFAULT(LargePageSizeInBytes) && LargePageSizeInBytes != ZGranuleSize) {
     vm_exit_during_initialization(err_msg("Incompatible -XX:LargePageSizeInBytes, only "
-                                          SIZE_FORMAT "M large pages are supported by ZGC",
+                                          "%zuM large pages are supported by ZGC",
                                           ZGranuleSize / M));
   }
 

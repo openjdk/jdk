@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,6 @@ public class NMethod extends CodeBlob {
   }
 
   // Type info
-  public boolean isNMethod()      { return true;                    }
   public boolean isJavaMethod()   { return !getMethod().isNative(); }
   public boolean isNativeMethod() { return getMethod().isNative();  }
   public boolean isOSRMethod()    { return getEntryBCI() != VM.getVM().getInvocationEntryBCI(); }
@@ -488,42 +487,6 @@ public class NMethod extends CodeBlob {
            method.getMethodHolder().getName().asString() + "." +
            method.getName().asString() +
            method.getSignature().asString();
-  }
-
-  public void dumpReplayData(PrintStream out) {
-    HashMap<Metadata, Metadata> h = new HashMap<>();
-    for (int i = 1; i < getMetadataLength(); i++) {
-      Metadata meta = Metadata.instantiateWrapperFor(getMetadataAt(i));
-      System.err.println(meta);
-      if (h.get(meta) != null) continue;
-      h.put(meta, meta);
-      if (meta instanceof InstanceKlass) {
-        meta.dumpReplayData(out);
-      } else if (meta instanceof Method) {
-        meta.dumpReplayData(out);
-        MethodData mdo = ((Method)meta).getMethodData();
-        if (mdo != null) {
-          mdo.dumpReplayData(out);
-        }
-      }
-    }
-    Method method = getMethod();
-    if (h.get(method) == null) {
-      method.dumpReplayData(out);
-      MethodData mdo = method.getMethodData();
-      if (mdo != null) {
-        mdo.dumpReplayData(out);
-      }
-    }
-    if (h.get(method.getMethodHolder()) == null) {
-      method.getMethodHolder().dumpReplayData(out);
-    }
-    Klass holder = method.getMethodHolder();
-    out.println("compile " + holder.getName().asString() + " " +
-                OopUtilities.escapeString(method.getName().asString()) + " " +
-                method.getSignature().asString() + " " +
-                getEntryBCI() + " " + getCompLevel());
-
   }
 
   //--------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@
  * This file contains the implementation of the native ProcessHandleImpl
  * functions which are common to all Unix variants.
  *
- * The currently supported Unix variants are Solaris, Linux, MaxOS X and AIX.
+ * The currently supported Unix variants are Linux, MaxOS X and AIX.
  * The various similarities and differences between these systems make it hard
  * to find a clear boundary between platform specific and shared code.
  *
@@ -78,7 +78,7 @@
  *   ProcessHandleImpl_unix.h which is included into every
  *   ProcessHandleImpl_<os>.c file.
  *
- * Example 1:
+ * Example:
  * ----------
  * The implementation of Java_java_lang_ProcessHandleImpl_initNative()
  * is the same on all platforms except on Linux where it initializes one
@@ -86,17 +86,6 @@
  * Java_java_lang_ProcessHandleImpl_initNative() but add call to
  * os_init() at the end of the function which is empty on all platforms
  * except Linux where it performs the additionally initializations.
- *
- * Example 2:
- * ----------
- * The implementation of Java_java_lang_ProcessHandleImpl_00024Info_info0 is the
- * same on Solaris and AIX but different on Linux and MacOSX. We therefore simply
- * call the helpers os_getParentPidAndTimings() and os_getCmdlineAndUserInfo().
- * The Linux and MaxOS X versions of these functions (in the corresponding files
- * ProcessHandleImpl_linux.c and ProcessHandleImpl_macosx.c) directly contain
- * the platform specific implementations while the Solaris and AIX
- * implementations simply call back to unix_getParentPidAndTimings() and
- * unix_getCmdlineAndUserInfo() which are implemented right in this file.
  *
  * The term "same implementation" is still a question of interpretation. It my
  * be acceptable to have a few ifdef'ed lines if that allows the sharing of a
@@ -465,232 +454,3 @@ void unix_getUserInfo(JNIEnv* env, jobject jinfo, uid_t uid) {
     }
 }
 
-/*
- * The following functions are for Linux
- */
-
-#if defined (__linux__)
-
-/*
- * Return pids of active processes, and optionally parent pids and
- * start times for each process.
- * For a specific non-zero pid, only the direct children are returned.
- * If the pid is zero, all active processes are returned.
- * Reads /proc and accumulates any process following the rules above.
- * The resulting pids are stored into an array of longs named jarray.
- * The number of pids is returned if they all fit.
- * If the parentArray is non-null, store also the parent pid.
- * In this case the parentArray must have the same length as the result pid array.
- * Of course in the case of a given non-zero pid all entries in the parentArray
- * will contain this pid, so this array does only make sense in the case of a given
- * zero pid.
- * If the jstimesArray is non-null, store also the start time of the pid.
- * In this case the jstimesArray must have the same length as the result pid array.
- * If the array(s) (is|are) too short, excess pids are not stored and
- * the desired length is returned.
- */
-jint unix_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
-                      jlongArray jparentArray, jlongArray jstimesArray) {
-    DIR* dir;
-    struct dirent* ptr;
-    pid_t pid = (pid_t) jpid;
-    jlong* pids = NULL;
-    jlong* ppids = NULL;
-    jlong* stimes = NULL;
-    jsize parentArraySize = 0;
-    jsize arraySize = 0;
-    jsize stimesSize = 0;
-    jsize count = 0;
-
-    arraySize = (*env)->GetArrayLength(env, jarray);
-    JNU_CHECK_EXCEPTION_RETURN(env, -1);
-    if (jparentArray != NULL) {
-        parentArraySize = (*env)->GetArrayLength(env, jparentArray);
-        JNU_CHECK_EXCEPTION_RETURN(env, -1);
-
-        if (arraySize != parentArraySize) {
-            JNU_ThrowIllegalArgumentException(env, "array sizes not equal");
-            return 0;
-        }
-    }
-    if (jstimesArray != NULL) {
-        stimesSize = (*env)->GetArrayLength(env, jstimesArray);
-        JNU_CHECK_EXCEPTION_RETURN(env, -1);
-
-        if (arraySize != stimesSize) {
-            JNU_ThrowIllegalArgumentException(env, "array sizes not equal");
-            return 0;
-        }
-    }
-
-    /*
-     * To locate the children we scan /proc looking for files that have a
-     * position integer as a filename.
-     */
-    if ((dir = opendir("/proc")) == NULL) {
-        JNU_ThrowByNameWithMessageAndLastError(env,
-            "java/lang/RuntimeException", "Unable to open /proc");
-        return -1;
-    }
-
-    do { // Block to break out of on Exception
-        pids = (*env)->GetLongArrayElements(env, jarray, NULL);
-        if (pids == NULL) {
-            break;
-        }
-        if (jparentArray != NULL) {
-            ppids  = (*env)->GetLongArrayElements(env, jparentArray, NULL);
-            if (ppids == NULL) {
-                break;
-            }
-        }
-        if (jstimesArray != NULL) {
-            stimes  = (*env)->GetLongArrayElements(env, jstimesArray, NULL);
-            if (stimes == NULL) {
-                break;
-            }
-        }
-
-        while ((ptr = readdir(dir)) != NULL) {
-            pid_t ppid = 0;
-            jlong totalTime = 0L;
-            jlong startTime = 0L;
-
-            /* skip files that aren't numbers */
-            pid_t childpid = (pid_t) atoi(ptr->d_name);
-            if ((int) childpid <= 0) {
-                continue;
-            }
-
-            // Get the parent pid, and start time
-            ppid = os_getParentPidAndTimings(env, childpid, &totalTime, &startTime);
-            if (ppid >= 0 && (pid == 0 || ppid == pid)) {
-                if (count < arraySize) {
-                    // Only store if it fits
-                    pids[count] = (jlong) childpid;
-
-                    if (ppids != NULL) {
-                        // Store the parentPid
-                        ppids[count] = (jlong) ppid;
-                    }
-                    if (stimes != NULL) {
-                        // Store the process start time
-                        stimes[count] = startTime;
-                    }
-                }
-                count++; // Count to tabulate size needed
-            }
-        }
-    } while (0);
-
-    if (pids != NULL) {
-        (*env)->ReleaseLongArrayElements(env, jarray, pids, 0);
-    }
-    if (ppids != NULL) {
-        (*env)->ReleaseLongArrayElements(env, jparentArray, ppids, 0);
-    }
-    if (stimes != NULL) {
-        (*env)->ReleaseLongArrayElements(env, jstimesArray, stimes, 0);
-    }
-
-    closedir(dir);
-    // If more pids than array had size for; count will be greater than array size
-    return count;
-}
-
-#endif // defined (__linux__)
-
-/*
- * The following functions are for AIX.
- */
-
-#if defined(_AIX)
-
-/**
- * Helper function to get the 'psinfo_t' data from "/proc/%d/psinfo".
- * Returns 0 on success and -1 on error.
- */
-static int getPsinfo(pid_t pid, psinfo_t *psinfo) {
-    FILE* fp;
-    char fn[32];
-    size_t ret;
-
-    /*
-     * Try to open /proc/%d/psinfo
-     */
-    snprintf(fn, sizeof fn, "/proc/%d/psinfo", pid);
-    fp = fopen(fn, "r");
-    if (fp == NULL) {
-        return -1;
-    }
-
-    ret = fread(psinfo, 1, sizeof(psinfo_t), fp);
-    fclose(fp);
-    if (ret < sizeof(psinfo_t)) {
-        return -1;
-    }
-    return 0;
-}
-
-/**
- * Read /proc/<pid>/psinfo and return the ppid, total cputime and start time.
- * Return: -1 is fail;  >=  0 is parent pid
- * 'total' will contain the running time of 'pid' in nanoseconds.
- * 'start' will contain the start time of 'pid' in milliseconds since epoch.
- */
-pid_t unix_getParentPidAndTimings(JNIEnv *env, pid_t pid,
-                                  jlong *totalTime, jlong* startTime) {
-    psinfo_t psinfo;
-
-    if (getPsinfo(pid, &psinfo) < 0) {
-        return -1;
-    }
-
-    // Validate the pid before returning the info
-    if (kill(pid, 0) < 0) {
-        return -1;
-    }
-
-    *totalTime = psinfo.pr_time.tv_sec * 1000000000L + psinfo.pr_time.tv_nsec;
-
-    *startTime = psinfo.pr_start.tv_sec * (jlong)1000 +
-                 psinfo.pr_start.tv_nsec / 1000000;
-
-    return (pid_t) psinfo.pr_ppid;
-}
-
-void unix_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
-    psinfo_t psinfo;
-    char prargs[PRARGSZ + 1];
-    jstring cmdexe = NULL;
-
-    /*
-     * Now try to open /proc/%d/psinfo
-     */
-    if (getPsinfo(pid, &psinfo) < 0) {
-        unix_fillArgArray(env, jinfo, 0, NULL, NULL, cmdexe, NULL);
-        return;
-    }
-
-    unix_getUserInfo(env, jinfo, psinfo.pr_uid);
-
-    /*
-     * Now read psinfo.pr_psargs which contains the first PRARGSZ characters of the
-     * argument list (i.e. arg[0] arg[1] ...). Unfortunately, PRARGSZ is usually set
-     * to 80 characters only. Nevertheless it's better than nothing :)
-     */
-    strncpy(prargs, psinfo.pr_psargs, PRARGSZ);
-    prargs[PRARGSZ] = '\0';
-    if (prargs[0] == '\0') {
-        /* If psinfo.pr_psargs didn't contain any strings, use psinfo.pr_fname
-         * (which only contains the last component of exec()ed pathname) as a
-         * last resort. This is true for AIX kernel processes for example.
-         */
-        strncpy(prargs, psinfo.pr_fname, PRARGSZ);
-        prargs[PRARGSZ] = '\0';
-    }
-    unix_fillArgArray(env, jinfo, 0, NULL, NULL, cmdexe,
-                      prargs[0] == '\0' ? NULL : prargs);
-}
-
-#endif // defined(_AIX)

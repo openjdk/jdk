@@ -236,10 +236,17 @@ final class StringConcatHelper {
         if (indexCoder < UTF16) {
             if (value) {
                 index -= 4;
-                StringLatin1.putCharsAt(buf, index, 't', 'r', 'u', 'e');
+                buf[index] = 't';
+                buf[index + 1] = 'r';
+                buf[index + 2] = 'u';
+                buf[index + 3] = 'e';
             } else {
                 index -= 5;
-                StringLatin1.putCharsAt(buf, index, 'f', 'a', 'l', 's', 'e');
+                buf[index] = 'f';
+                buf[index + 1] = 'a';
+                buf[index + 2] = 'l';
+                buf[index + 3] = 's';
+                buf[index + 4] = 'e';
             }
             index -= prefix.length();
             prefix.getBytes(buf, index, String.LATIN1);
@@ -247,10 +254,17 @@ final class StringConcatHelper {
         } else {
             if (value) {
                 index -= 4;
-                StringUTF16.putCharsAt(buf, index, 't', 'r', 'u', 'e');
+                StringUTF16.putChar(buf, index, 't');
+                StringUTF16.putChar(buf, index + 1, 'r');
+                StringUTF16.putChar(buf, index + 2, 'u');
+                StringUTF16.putChar(buf, index + 3, 'e');
             } else {
                 index -= 5;
-                StringUTF16.putCharsAt(buf, index, 'f', 'a', 'l', 's', 'e');
+                StringUTF16.putChar(buf, index, 'f');
+                StringUTF16.putChar(buf, index + 1, 'a');
+                StringUTF16.putChar(buf, index + 2, 'l');
+                StringUTF16.putChar(buf, index + 3, 's');
+                StringUTF16.putChar(buf, index + 4, 'e');
             }
             index -= prefix.length();
             prefix.getBytes(buf, index, String.UTF16);
@@ -298,12 +312,12 @@ final class StringConcatHelper {
     static long prepend(long indexCoder, byte[] buf, int value, String prefix) {
         int index = (int)indexCoder;
         if (indexCoder < UTF16) {
-            index = StringLatin1.getChars(value, index, buf);
+            index = DecimalDigits.getCharsLatin1(value, index, buf);
             index -= prefix.length();
             prefix.getBytes(buf, index, String.LATIN1);
             return index;
         } else {
-            index = StringUTF16.getChars(value, index, buf);
+            index = DecimalDigits.getCharsUTF16(value, index, buf);
             index -= prefix.length();
             prefix.getBytes(buf, index, String.UTF16);
             return index | UTF16;
@@ -324,12 +338,12 @@ final class StringConcatHelper {
     static long prepend(long indexCoder, byte[] buf, long value, String prefix) {
         int index = (int)indexCoder;
         if (indexCoder < UTF16) {
-            index = StringLatin1.getChars(value, index, buf);
+            index = DecimalDigits.getCharsLatin1(value, index, buf);
             index -= prefix.length();
             prefix.getBytes(buf, index, String.LATIN1);
             return index;
         } else {
-            index = StringUTF16.getChars(value, index, buf);
+            index = DecimalDigits.getCharsUTF16(value, index, buf);
             index -= prefix.length();
             prefix.getBytes(buf, index, String.UTF16);
             return index | UTF16;
@@ -624,20 +638,34 @@ final class StringConcatHelper {
         if (coder == String.LATIN1) {
             if (value) {
                 index -= 4;
-                StringLatin1.putCharsAt(buf, index, 't', 'r', 'u', 'e');
+                buf[index] = 't';
+                buf[index + 1] = 'r';
+                buf[index + 2] = 'u';
+                buf[index + 3] = 'e';
             } else {
                 index -= 5;
-                StringLatin1.putCharsAt(buf, index, 'f', 'a', 'l', 's', 'e');
+                buf[index] = 'f';
+                buf[index + 1] = 'a';
+                buf[index + 2] = 'l';
+                buf[index + 3] = 's';
+                buf[index + 4] = 'e';
             }
             index -= prefix.length();
             prefix.getBytes(buf, index, String.LATIN1);
         } else {
             if (value) {
                 index -= 4;
-                StringUTF16.putCharsAt(buf, index, 't', 'r', 'u', 'e');
+                StringUTF16.putChar(buf, index, 't');
+                StringUTF16.putChar(buf, index + 1, 'r');
+                StringUTF16.putChar(buf, index + 2, 'u');
+                StringUTF16.putChar(buf, index + 3, 'e');
             } else {
                 index -= 5;
-                StringUTF16.putCharsAt(buf, index, 'f', 'a', 'l', 's', 'e');
+                StringUTF16.putChar(buf, index, 'f');
+                StringUTF16.putChar(buf, index + 1, 'a');
+                StringUTF16.putChar(buf, index + 2, 'l');
+                StringUTF16.putChar(buf, index + 3, 's');
+                StringUTF16.putChar(buf, index + 4, 'e');
             }
             index -= prefix.length();
             prefix.getBytes(buf, index, String.UTF16);
@@ -682,11 +710,11 @@ final class StringConcatHelper {
      */
     static int prepend(int index, byte coder, byte[] buf, int value, String prefix) {
         if (coder == String.LATIN1) {
-            index = StringLatin1.getChars(value, index, buf);
+            index = DecimalDigits.getCharsLatin1(value, index, buf);
             index -= prefix.length();
             prefix.getBytes(buf, index, String.LATIN1);
         } else {
-            index = StringUTF16.getChars(value, index, buf);
+            index = DecimalDigits.getCharsUTF16(value, index, buf);
             index -= prefix.length();
             prefix.getBytes(buf, index, String.UTF16);
         }
@@ -706,11 +734,11 @@ final class StringConcatHelper {
      */
     static int prepend(int index, byte coder, byte[] buf, long value, String prefix) {
         if (coder == String.LATIN1) {
-            index = StringLatin1.getChars(value, index, buf);
+            index = DecimalDigits.getCharsLatin1(value, index, buf);
             index -= prefix.length();
             prefix.getBytes(buf, index, String.LATIN1);
         } else {
-            index = StringUTF16.getChars(value, index, buf);
+            index = DecimalDigits.getCharsUTF16(value, index, buf);
             index -= prefix.length();
             prefix.getBytes(buf, index, String.UTF16);
         }

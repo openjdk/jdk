@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1039,14 +1039,15 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.AND_VB, "= 0",
-                  IRNode.STORE_VECTOR, "= 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_byte, 4)", "> 0",
+                  IRNode.AND_VB,        IRNode.VECTOR_SIZE + "min(max_byte, 4)", "> 0",
+                  IRNode.STORE_VECTOR,                                           "> 0"},
         applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test12(byte[] a, byte[] b, byte mask) {
         for (int i = 0; i < RANGE/16; i++) {
-            // Currently does not vectorize at all
+            // Non-power-of-2 stride. Vectorization of 4 bytes, then 2-bytes gap.
             b[i*6 + 0 ] = (byte)(a[i*6 + 0 ] & mask);
             b[i*6 + 1 ] = (byte)(a[i*6 + 1 ] & mask);
             b[i*6 + 2 ] = (byte)(a[i*6 + 2 ] & mask);

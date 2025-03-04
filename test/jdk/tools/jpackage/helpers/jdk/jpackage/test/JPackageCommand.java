@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import jdk.jpackage.internal.util.function.ThrowingSupplier;
  * anything. The simplest is to compile test application and pack in a jar for
  * use on jpackage command line.
  */
-public final class JPackageCommand extends CommandArguments<JPackageCommand> {
+public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public JPackageCommand() {
         prerequisiteActions = new Actions();
@@ -252,11 +252,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public JPackageCommand setInputToEmptyDirectory() {
         if (Files.exists(inputDir())) {
-            try {
-                setArgumentValue("--input", TKit.createTempDirectory("input"));
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            setArgumentValue("--input", TKit.createTempDirectory("input"));
         }
         return this;
     }
@@ -593,7 +589,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public boolean isFakeRuntime(String msg) {
-        if (isFakeRuntime()) {
+        if (isFakeRuntime(appRuntimeDirectory())) {
             // Fake runtime
             Path runtimeDir = appRuntimeDirectory();
             TKit.trace(String.format(
@@ -604,7 +600,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return false;
     }
 
-    private boolean isFakeRuntime() {
+    private static boolean isFakeRuntime(Path runtimeDir) {
         final Collection<Path> criticalRuntimeFiles;
         if (TKit.isWindows()) {
             criticalRuntimeFiles = WindowsHelper.CRITICAL_RUNTIME_FILES;
@@ -616,7 +612,6 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             throw TKit.throwUnknownPlatformError();
         }
 
-        Path runtimeDir = appRuntimeDirectory();
         return !criticalRuntimeFiles.stream().map(runtimeDir::resolve).allMatch(
                 Files::exists);
     }
@@ -690,10 +685,8 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand ignoreFakeRuntime() {
-        if (isFakeRuntime()) {
-            ignoreDefaultRuntime(true);
-        }
-        return this;
+        return ignoreDefaultRuntime(Optional.ofNullable(DEFAULT_RUNTIME_IMAGE)
+                .map(JPackageCommand::isFakeRuntime).orElse(false));
     }
 
     public JPackageCommand ignoreDefaultVerbose(boolean v) {
@@ -802,7 +795,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             outputValidator.accept(result.getOutput().stream());
         }
 
-        if (result.exitCode == 0) {
+        if (result.exitCode() == 0) {
             executeVerifyActions();
         }
 
@@ -843,6 +836,11 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             } else {
                 TKit.assertFileExists(cmd.appLauncherCfgPath(null));
             }
+        }),
+        MAIN_JAR_FILE(cmd -> {
+            Optional.ofNullable(cmd.getArgumentValue("--main-jar", () -> null)).ifPresent(mainJar -> {
+                TKit.assertFileExists(cmd.appLayout().appDirectory().resolve(mainJar));
+            });
         }),
         RUNTIME_DIRECTORY(cmd -> {
             TKit.assertDirectoryExists(cmd.appRuntimeDirectory());

@@ -29,18 +29,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.security.BasicPermission;
 import java.util.Objects;
 
 import jdk.test.whitebox.parser.DiagnosticCommand;
 
 public class WhiteBox {
-  @SuppressWarnings("serial")
-  public static class WhiteBoxPermission extends BasicPermission {
-    public WhiteBoxPermission(String s) {
-      super(s);
-    }
-  }
 
   private WhiteBox() {}
   private static final WhiteBox instance = new WhiteBox();
@@ -793,10 +786,6 @@ public class WhiteBox {
 
   public native void waitUnsafe(int time_ms);
 
-  public native void lockCritical();
-
-  public native void unlockCritical();
-
   public native void pinObject(Object o);
 
   public native void unpinObject(Object o);
@@ -805,4 +794,6 @@ public class WhiteBox {
 
   public native void preTouchMemory(long addr, long size);
   public native long rss();
+
+  public native boolean isStatic();
 }

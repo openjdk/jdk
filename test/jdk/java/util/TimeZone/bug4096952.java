@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4096952
+ * @bug 4096952 8347841
  * @summary simple serialization/deserialization test
  */
 
@@ -38,7 +38,7 @@ public class bug4096952 {
 
     public static void main(String[] args) {
         int errors = 0;
-        String[] ZONES = { "GMT", "MET", "IST" };
+        String[] ZONES = { "GMT", "MET", "Asia/Kolkata" };
         for (String id : ZONES) {
             TimeZone zone = TimeZone.getTimeZone(id);
             try {
