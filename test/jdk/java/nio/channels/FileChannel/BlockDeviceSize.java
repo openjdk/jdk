@@ -25,6 +25,8 @@
  * @bug 8054029 8313368
  * @requires (os.family == "linux")
  * @summary FileChannel.size() should be equal to RandomAccessFile.size() and > 0 for block devs on Linux
+ * @comment The test must be launched with sudo or the block devices listed in
+ * the BLK_FNAMES array must be readable by the user running the test.
  * @library /test/lib
  * @run main/manual BlockDeviceSize
  */
