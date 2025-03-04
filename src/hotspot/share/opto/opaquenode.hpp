@@ -101,11 +101,11 @@ public:
 class OpaqueMultiversioningNode : public Opaque1Node {
 private:
   bool _is_delayed_slow_loop;
-  bool _is_useful;
+  bool _useless;
 
 public:
   OpaqueMultiversioningNode(Compile* C, Node* n) :
-      Opaque1Node(C, n), _is_delayed_slow_loop(true), _is_useful(true)
+      Opaque1Node(C, n), _is_delayed_slow_loop(true), _useless(false)
   {
     init_class_id(Class_OpaqueMultiversioning);
   }
@@ -114,16 +114,17 @@ public:
   bool is_delayed_slow_loop() const { return _is_delayed_slow_loop; }
 
   void notify_slow_loop_that_it_can_resume_optimizations() {
-    assert(_is_useful, "must still be useful");
+    assert(!_useless, "must still be useful");
     _is_delayed_slow_loop = false;
   }
 
-  void set_useless() {
+  void mark_useless() {
     assert(_is_delayed_slow_loop, "must still be delayed");
-    _is_useful = false;
+    _useless = true;
   }
 
   virtual Node* Identity(PhaseGVN* phase);
+  NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
 };
 
 // This node is used in the context of intrinsics. We sometimes implicitly know that an object is non-null even though
