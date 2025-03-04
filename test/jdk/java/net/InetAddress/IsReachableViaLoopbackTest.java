@@ -39,8 +39,8 @@ import jtreg.SkippedException;
 public class IsReachableViaLoopbackTest {
     public static void main(String[] args) {
         try {
-            InetAddress addr = InetAddress.getByName("localhost");
-            InetAddress remoteAddr = InetAddress.getByName("bugs.openjdk.org");
+            InetAddress addr = InetAddress.getLoopbackAddress();
+            InetAddress remoteAddr = InetAddress.getByAddress("bugs.openjdk.org".getBytes());
             if (!addr.isReachable(10000))
                 throw new RuntimeException("Localhost should always be reachable");
             NetworkInterface inf = NetworkInterface.getByInetAddress(addr);
