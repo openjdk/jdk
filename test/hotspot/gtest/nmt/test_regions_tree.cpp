@@ -37,6 +37,30 @@ class NMTRegionsTreeTest : public testing::Test {
   NMTRegionsTreeTest() : rt(true) { }
 };
 
+TEST_VM_F(NMTRegionsTreeTest, ReserveCommitTwice) {
+  tty->print_cr("Skipped.");
+  return;
+  NativeCallStack ncs;
+  VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
+  VMATree::RegionData rd2 = rt.make_region_data(ncs, mtGC);
+  VMATree::SummaryDiff diff;
+  diff = rt.reserve_mapping(0, 100, rd);
+  EXPECT_EQ(100, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+  diff = rt.commit_region(0, 50, ncs);
+  diff = rt.reserve_mapping(0, 100, rd);
+  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(-50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  diff = rt.reserve_mapping(0, 100, rd2);
+  EXPECT_EQ(-100, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(100, diff.tag[NMTUtil::tag_to_index(mtGC)].reserve);
+  diff = rt.commit_region(0, 50, ncs);
+  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  diff = rt.commit_region(0, 50, ncs);
+  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+}
+
 TEST_VM_F(NMTRegionsTreeTest, CommitUncommitRegion) {
   tty->print_cr("Skipped.");
   return;
