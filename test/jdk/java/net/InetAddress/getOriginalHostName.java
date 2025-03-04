@@ -43,8 +43,8 @@ public class getOriginalHostName {
         InetAddress ia = null;
         ia = getInetAddress(HOST);
         if (ia != null) testInetAddress(ia, HOST);
-        ia = getInetAddress("255.255.255.0");
-        if (ia != null) testInetAddress(ia, null);
+        ia = InetAddress.getByName("255.255.255.0");
+        testInetAddress(ia, null);
         ia = InetAddress.getByAddress(new byte[]{1,1,1,1});
         testInetAddress(ia, null);
         ia = InetAddress.getLocalHost();
