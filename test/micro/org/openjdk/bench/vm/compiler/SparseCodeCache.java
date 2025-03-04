@@ -45,6 +45,20 @@ import org.openjdk.bench.util.InMemoryJavaCompiler;
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.whitebox.code.NMethod;
 
+/*
+ * This benchmark is used to check performance when the code cache is sparse.
+ *
+ * We use C2 compiler to compile the same Java method multiple times
+ * to produce as many code as needed.
+ * These compiled methods represent the active methods in the code cache.
+ * We split active methods into groups.
+ * We put a group into a fixed size code region.
+ * We make a code region size aligned.
+ * CodeCache becomes sparse when code regions are not fully filled.
+ *
+ * The benchmark parameters are active method count, group count, and code region size.
+ */
+
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
@@ -53,49 +67,19 @@ import jdk.test.whitebox.code.NMethod;
     "-XX:+UnlockExperimentalVMOptions",
     "-XX:+WhiteBoxAPI",
     "-Xbootclasspath/a:lib-test/wb.jar",
-    "-XX:CompileCommand=inline,java.lang.String::*",
     "-XX:CompileCommand=dontinline,A::sum",
     "-XX:-UseCodeCacheFlushing",
     "-XX:-TieredCompilation",
     "-XX:+SegmentedCodeCache",
     "-XX:ReservedCodeCacheSize=320m",
     "-XX:InitialCodeCacheSize=320m",
-    "-XX:+UseParallelGC",
+    "-XX:+UseSerialGC",
     "-XX:+PrintCodeCache"
 })
 public class SparseCodeCache {
 
-    static String num1;
-    static String num2;
-    static byte[] result;
-
-    private static final int C2_LEVEL = 4;
-    private static final String CLASS_NAME = "A";
-    private static final String METHOD_TO_COMPILE = "sum";
-    private static final String JAVA_CODE = """
-        public class A {
-
-            public static void sum(String n1, String n2, byte[] out) {
-                if (n1.length() != n2.length()) {
-                   throw new IllegalArgumentException("n1.length() != n2.length()");
-                }
-                final int digitCount = n1.length();
-                int carry = 0;
-                for (int i = digitCount - 1; i >= 0; --i) {
-                    int d1 = n1.charAt(i) - '0';
-                    int d2 = n2.charAt(i) - '0';
-                    int sum = d1 + d2 + carry;
-                    out[i] = (byte)(sum % 10);
-                    carry = sum / 10;
-                }
-                if (carry != 0) {
-                    for (int i = digitCount; i > 0; --i) {
-                        out[i] = out[i - 1];
-                    }
-                    out[0] = (byte)carry;
-                }
-            }
-        }""";
+    static byte[] num1;
+    static byte[] num2;
 
     @State(Scope.Thread)
     public static class ThreadState {
@@ -103,7 +87,7 @@ public class SparseCodeCache {
 
         @Setup
         public void setup() {
-            result = new byte[num1.length() + 1];
+            result = new byte[num1.length + 1];
         }
     }
 
@@ -112,26 +96,26 @@ public class SparseCodeCache {
     @Param({"128", "256", "512", "768", "1024"})
     public int activeMethodCount;
 
-    @Param({"1", "32", "64", "128"})
-    public int codeRegionCount;
+    @Param({"1", "32", "48", "64", "80", "96", "112"})
+    public int groupCount;
 
     @Param({"2097152"})
     public int codeRegionSize;
 
-    private Method[] methods = {};
+    private TestMethod[] methods = {};
 
-    private static String genNum(Random random, int digitCount) {
+    private static byte[] genNum(Random random, int digitCount) {
+        byte[] num = new byte[digitCount];
         int d;
         do {
             d = random.nextInt(10);
         } while (d == 0);
 
-        StringBuilder numBuilder = new StringBuilder(digitCount);
-        numBuilder.append(d);
+        num[0] = (byte)d;
         for (int i = 1; i < digitCount; ++i) {
-            numBuilder.append(random.nextInt(10));
+            num[i] = (byte)random.nextInt(10);
         }
-        return numBuilder.toString();
+        return num;
     }
 
     private static void initWhiteBox() {
@@ -151,44 +135,104 @@ public class SparseCodeCache {
         return (WhiteBox)WB;
     }
 
-    private static ClassLoader createClassLoaderFor(final byte[] byteCode) {
-        return new ClassLoader() {
-            @Override
-            public Class<?> loadClass(String name) throws ClassNotFoundException {
-                if (!name.equals(CLASS_NAME)) {
-                    return super.loadClass(name);
-                }
+    private static final class TestMethod {
+        private static final int C2_LEVEL = 4;
+        private static final String CLASS_NAME = "A";
+        private static final String METHOD_TO_COMPILE = "sum";
+        private static final String JAVA_CODE = """
+        public class A {
 
-                return defineClass(name, byteCode, 0, byteCode.length);
+            public static void sum(byte[] n1, byte[] n2, byte[] out) {
+                final int digitCount = n1.length;
+                int carry = 0;
+                for (int i = digitCount - 1; i >= 0; --i) {
+                    int sum = n1[i] + n2[i] + carry;
+                    out[i] = (byte)(sum % 10);
+                    carry = sum / 10;
+                }
+                if (carry != 0) {
+                    for (int i = digitCount; i > 0; --i) {
+                        out[i] = out[i - 1];
+                    }
+                    out[0] = (byte)carry;
+                }
             }
-        };
+        }""";
+
+        private static final byte[] BYTE_CODE;
+
+        static {
+            BYTE_CODE = InMemoryJavaCompiler.compile(CLASS_NAME, JAVA_CODE);
+        }
+
+        private final Method method;
+
+        private static ClassLoader createClassLoaderFor() {
+            return new ClassLoader() {
+                @Override
+                public Class<?> loadClass(String name) throws ClassNotFoundException {
+                    if (!name.equals(CLASS_NAME)) {
+                        return super.loadClass(name);
+                    }
+
+                    return defineClass(name, BYTE_CODE, 0, BYTE_CODE.length);
+                }
+            };
+        }
+
+        public TestMethod() throws Exception {
+            var cl = createClassLoaderFor().loadClass(CLASS_NAME);
+            method = cl.getMethod(METHOD_TO_COMPILE, byte[].class, byte[].class, byte[].class);
+        }
+
+        public void profile(byte[] num1, byte[] num2, byte[] result) throws Exception {
+            method.invoke(null, num1, num2, result);
+            getWhiteBox().markMethodProfiled(method);
+        }
+
+        public void invoke(byte[] num1, byte[] num2, byte[] result) throws Exception {
+            method.invoke(null, num1, num2, result);
+        }
+
+        public void compileWithC2() throws Exception {
+            getWhiteBox().enqueueMethodForCompilation(method, C2_LEVEL);
+            while (getWhiteBox().isMethodQueuedForCompilation(method)) {
+                Thread.onSpinWait();
+            }
+            if (getWhiteBox().getMethodCompilationLevel(method) != C2_LEVEL) {
+                throw new IllegalStateException("Method " + method + " is not compiled by C2.");
+            }
+        }
+
+        public NMethod getNMethod() {
+            return NMethod.get(method, false);
+        }
     }
 
-    private static Method compileMethod(byte[] byteCode) throws Exception {
-        var cl = createClassLoaderFor(byteCode).loadClass(CLASS_NAME);
-        var m = cl.getMethod(METHOD_TO_COMPILE, String.class, String.class, byte[].class);
-        m.invoke(null, num1, num2, result);
-        getWhiteBox().markMethodProfiled(m);
-        getWhiteBox().enqueueMethodForCompilation(m, C2_LEVEL);
-        while (getWhiteBox().isMethodQueuedForCompilation(m)) {
-            Thread.onSpinWait();
+    private void generateOneGroupCode() throws Exception {
+        byte[] result = new byte[num1.length + 1];
+
+        methods = new TestMethod[activeMethodCount];
+        for (int i = 0; i < activeMethodCount; ++i) {
+            methods[i] = new TestMethod();
+            methods[i].profile(num1, num2, result);
+            methods[i].compileWithC2();
         }
-        if (getWhiteBox().getMethodCompilationLevel(m) != C2_LEVEL) {
-            throw new IllegalStateException("Method " + m + " is not compiled by C2.");
-        }
-        return m;
     }
 
     private void generateCode() throws Exception {
         initNums();
 
-        result = new byte[num1.length() + 1];
+        if (groupCount == 1) {
+            generateOneGroupCode();
+            return;
+        }
 
-        final int methodsPerRegion = activeMethodCount / codeRegionCount;
-        if (methodsPerRegion == 0) {
+        final int defaultMethodsPerGroup = activeMethodCount / groupCount;
+        if (defaultMethodsPerGroup == 0) {
             throw new IllegalArgumentException("activeMethodCount = " + activeMethodCount
-                + ",  codeRegionCount = " + codeRegionCount
-                + ". 'activeMethodCount' must be greater than or equal to 'codeRegionCount'.");
+                + ",  groupCount = " + groupCount
+                + ". 'activeMethodCount' must be greater than or equal to 'groupCount'.");
         }
 
         if ((codeRegionSize & (codeRegionSize - 1)) != 0) {
@@ -196,47 +240,59 @@ public class SparseCodeCache {
                 + ". 'codeRegionSize' must be a power of 2.");
         }
 
-        int remainingMethods = activeMethodCount % codeRegionCount;
-        final byte[] byteCode = InMemoryJavaCompiler.compile(CLASS_NAME, JAVA_CODE);
-
-        if (codeRegionCount > 1) {
-            final var m = compileMethod(byteCode);
-            final var nmethod = NMethod.get(m, false);
-
-            if (nmethod.size * methodsPerRegion > codeRegionSize) {
-                throw new IllegalArgumentException("activeMethodCount = " + activeMethodCount
-                        + ", codeRegionSize = " + codeRegionSize
-                        + ", methodsPerRegion = " + methodsPerRegion
-                        + ", nmethod size = " + nmethod.size
-                        + ". One code region does not have enough space to hold " + methodsPerRegion + " nmethods.");
-            }
-
-            getWhiteBox().lockCompilation();
-            long codeRegionUsed = nmethod.address + nmethod.size - (nmethod.address & ~(codeRegionSize - 1));
-            if (codeRegionUsed < codeRegionSize) {
-                getWhiteBox().allocateCodeBlob(codeRegionSize - codeRegionUsed, nmethod.code_blob_type.id);
-            }
-            getWhiteBox().unlockCompilation();
+        byte[] result = new byte[num1.length + 1];
+        methods = new TestMethod[activeMethodCount];
+        methods[0] = new TestMethod();
+        methods[0].profile(num1, num2, result);
+        methods[0].compileWithC2();
+        final var nmethod = methods[0].getNMethod();
+        if (nmethod.size * defaultMethodsPerGroup > codeRegionSize) {
+            throw new IllegalArgumentException("codeRegionSize = " + codeRegionSize
+                    + ", methodsPerRegion = " + defaultMethodsPerGroup
+                    + ", nmethod size = " + nmethod.size
+                    + ". One code region does not have enough space to hold " + defaultMethodsPerGroup + " nmethods.");
         }
 
-        methods = new Method[activeMethodCount];
-        for (int i = 0, j = 0; i < codeRegionCount; ++i) {
-            for (int k = 0; k < methodsPerRegion; ++k, ++j) {
-                methods[j] = compileMethod(byteCode);
-            }
-            var firstNmethodInRegion = NMethod.get(methods[j - methodsPerRegion], false);
-            if (remainingMethods > 0) {
-                methods[j++] = compileMethod(byteCode);
-                --remainingMethods;
-            }
+        final var codeHeapSize = nmethod.code_blob_type.getSize();
+        final var neededSpace = groupCount * codeRegionSize;
+        if (neededSpace > codeHeapSize) {
+            throw new IllegalArgumentException(nmethod.code_blob_type.sizeOptionName + " = " + codeHeapSize
+                    + ". Not enough space to hold " + groupCount + " groups "
+                    + "of code region size " + codeRegionSize + ".");
+        }
+
+        int j = 1;
+        for (; j < defaultMethodsPerGroup; ++j) {
+            methods[j] = new TestMethod();
+            methods[j].profile(num1, num2, result);
+            methods[j].compileWithC2();
+        }
+
+        int methodsPerGroup = defaultMethodsPerGroup;
+        int remainingMethods = activeMethodCount % groupCount;
+        for (int i = 1; i < groupCount; ++i) {
             getWhiteBox().lockCompilation();
-            var regionStart = firstNmethodInRegion.address & ~(codeRegionSize - 1);
+            var firstNmethodInPrevGroup = methods[j - methodsPerGroup].getNMethod();
+            var regionStart = firstNmethodInPrevGroup.address & ~(codeRegionSize - 1);
             var regionEnd = regionStart + codeRegionSize;
-            var lastNmethodInRegion = NMethod.get(methods[j - 1], false);
-            if ((lastNmethodInRegion.address + lastNmethodInRegion.size) < regionEnd) {
-                getWhiteBox().allocateCodeBlob(regionEnd - lastNmethodInRegion.address - lastNmethodInRegion.size, lastNmethodInRegion.code_blob_type.id);
+            var lastNmethodInPrevGroup = methods[j - 1].getNMethod();
+            if ((lastNmethodInPrevGroup.address + lastNmethodInPrevGroup.size) < regionEnd) {
+                getWhiteBox().allocateCodeBlob(regionEnd - lastNmethodInPrevGroup.address - lastNmethodInPrevGroup.size,
+                    lastNmethodInPrevGroup.code_blob_type.id);
             }
             getWhiteBox().unlockCompilation();
+
+            methodsPerGroup = defaultMethodsPerGroup;
+            if (remainingMethods > 0) {
+                ++methodsPerGroup;
+                --remainingMethods;
+            }
+
+            for (int k = 0; k < methodsPerGroup; ++k, ++j) {
+                methods[j] = new TestMethod();
+                methods[j].profile(num1, num2, result);
+                methods[j].compileWithC2();
+            }
         }
     }
 
@@ -249,7 +305,7 @@ public class SparseCodeCache {
     @Benchmark
     public void runMethods(ThreadState s) throws Exception {
         for (var m : methods) {
-            m.invoke(null, num1, num2, s.result);
+            m.invoke(num1, num2, s.result);
         }
     }
 }
