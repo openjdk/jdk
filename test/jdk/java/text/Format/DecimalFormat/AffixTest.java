@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8327640
+ * @bug 8351074
  * @summary Test input value check for DecimalFormat affix setter methods
  * @run junit AffixTest
  */
