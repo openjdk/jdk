@@ -60,20 +60,14 @@ public abstract class PeerUniStreamDispatcher {
      */
     protected PeerUniStreamDispatcher(Set<PeerUniStreamDispatcher> dispatchers,
                                       QuicReceiverStream stream) {
-        this(dispatchers, stream, checkStream(stream));
-    }
-
-    private PeerUniStreamDispatcher(Set<PeerUniStreamDispatcher> dispatchers,
-                                    QuicReceiverStream stream,
-                                    Void checked) {
-        this.stream = stream;
+        this.stream = checkStream(stream);
         this.dispatchers = dispatchers;
         dispatchers.add(this);
         this.reader = stream.connectReader(scheduler);
         debug().log("dispatcher created for stream " + stream.streamId());
     }
 
-    private static Void checkStream(QuicReceiverStream stream) {
+    private static QuicReceiverStream checkStream(QuicReceiverStream stream) {
         if (!stream.isRemoteInitiated()) {
             throw new IllegalArgumentException("stream " + stream.streamId() + " is not peer initiated");
         }
