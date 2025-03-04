@@ -40,7 +40,7 @@ public class IsReachableViaLoopbackTest {
     public static void main(String[] args) {
         try {
             InetAddress addr = InetAddress.getLoopbackAddress();
-            InetAddress remoteAddr = InetAddress.getByAddress("bugs.openjdk.org".getBytes());
+            InetAddress remoteAddr = InetAddress.getByName("23.197.138.208");  //real address of bugs.openjdk.org
             if (!addr.isReachable(10000))
                 throw new RuntimeException("Localhost should always be reachable");
             NetworkInterface inf = NetworkInterface.getByInetAddress(addr);
@@ -58,9 +58,6 @@ public class IsReachableViaLoopbackTest {
             } else {
                 System.out.println("inf == null");
             }
-        } catch (java.net.UnknownHostException e) {
-            e.printStackTrace();
-            throw new SkippedException("Network setup issue");
         } catch (IOException e) {
             throw new RuntimeException("Unexpected exception:" + e);
         }
