@@ -330,8 +330,8 @@ bool G1ConcurrentRefineWorkState::complete(bool concurrent, bool print_log) {
                           s->cards_not_parsable(),
                           s->cards_refer_to_cset(),
                           percent_of(s->cards_refer_to_cset(), s->cards_not_clean()),
-                          s->cards_still_refer_to_cset(),
-                          percent_of(s->cards_still_refer_to_cset(), s->cards_not_clean()),
+                          s->cards_already_refer_to_cset(),
+                          percent_of(s->cards_already_refer_to_cset(), s->cards_not_clean()),
                           s->cards_clean_again(),
                           s->cards_pending()
                          );

@@ -51,7 +51,7 @@ inline bool G1CardTable::mark_clean_as_from_remset(CardValue* card) {
 // mask   = 0xFF00FF00
 // result = 0xBBAABBAA
 inline size_t blend(size_t a, size_t b, size_t mask) {
-  return a ^ ((a ^ b) & mask);
+  return (a & ~mask) | (b & mask);
 }
 
 inline size_t G1CardTable::mark_clean_range_as_from_remset(size_t start_card_index, size_t num_cards) {

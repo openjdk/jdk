@@ -34,14 +34,18 @@ void G1CardTable::verify_region(MemRegion mr, CardValue val, bool val_equals) {
   }
   CardValue* start    = byte_for(mr.start());
   CardValue* end      = byte_for(mr.last());
+
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1HeapRegion* r = g1h->heap_region_containing(mr.start());
+
+  assert(r == g1h->heap_region_containing(mr.last()), "MemRegion crosses region");
+
   bool failures = false;
   for (CardValue* curr = start; curr <= end; ++curr) {
     CardValue curr_val = *curr;
     bool failed = (val_equals) ? (curr_val != val) : (curr_val == val);
     if (failed) {
       if (!failures) {
-        G1CollectedHeap* g1h = G1CollectedHeap::heap();
-        G1HeapRegion* r = g1h->heap_region_containing(mr.start());
         log_error(gc, verify)("== CT verification failed: [" PTR_FORMAT "," PTR_FORMAT "] r: %d (%s) %sexpecting value: %d",
                               p2i(start), p2i(end), r->hrm_index(), r->get_short_type_str(),
                               (val_equals) ? "" : "not ", val);

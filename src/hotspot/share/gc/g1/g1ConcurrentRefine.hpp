@@ -34,12 +34,12 @@
 #include "utilities/macros.hpp"
 
 // Forward decl
+class G1CardTableClaimTable;
 class G1CollectedHeap;
 class G1ConcurrentRefine;
 class G1ConcurrentRefineThread;
 class G1HeapRegion;
 class G1Policy;
-class G1CardTableClaimTable;
 class ThreadClosure;
 class WorkerTask;
 class WorkerThreads;

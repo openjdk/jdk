@@ -40,8 +40,8 @@ class G1ConcurrentRefineStats : public CHeapObj<mtGC> {
   size_t _cards_scanned;              // Total number of cards scanned.
   size_t _cards_clean;                // Number of cards found clean.
   size_t _cards_not_parsable;         // Number of cards we could not parse and left unrefined.
-  size_t _cards_still_refer_to_cset;  // Number of cards marked still young.
-  size_t _cards_refer_to_cset;        // Number of dirty cards that contain a to-cset reference.
+  size_t _cards_already_refer_to_cset;// Number of cards marked found to be already young.
+  size_t _cards_refer_to_cset;        // Number of dirty cards that were recently found to contain a to-cset reference.
   size_t _cards_clean_again;          // Dirtied cards that were cleaned.
 
   jlong _refine_duration;             // Time spent during actual refinement.
@@ -62,14 +62,14 @@ public:
   size_t cards_clean() const { return _cards_clean; }
   size_t cards_not_clean() const { return _cards_scanned - _cards_clean; }
   size_t cards_not_parsable() const { return _cards_not_parsable; }
-  size_t cards_still_refer_to_cset() const { return _cards_still_refer_to_cset; }
+  size_t cards_already_refer_to_cset() const { return _cards_already_refer_to_cset; }
   size_t cards_refer_to_cset() const { return _cards_refer_to_cset; }
   size_t cards_clean_again() const { return _cards_clean_again; }
   // Number of cards that were marked dirty and in need of refinement. This includes cards recently
   // found to refer to the collection set as they originally were dirty.
-  size_t cards_pending() const { return cards_not_clean() - _cards_still_refer_to_cset; }
+  size_t cards_pending() const { return cards_not_clean() - _cards_already_refer_to_cset; }
 
-  size_t cards_to_cset() const { return _cards_still_refer_to_cset + _cards_refer_to_cset; }
+  size_t cards_to_cset() const { return _cards_already_refer_to_cset + _cards_refer_to_cset; }
 
   void inc_sweep_time(jlong t) { _sweep_duration += t; }
   void inc_yield_duration(jlong t) { _yield_duration += t; }
@@ -78,7 +78,7 @@ public:
   void inc_cards_scanned(size_t increment = 1) { _cards_scanned += increment; }
   void inc_cards_clean(size_t increment = 1) { _cards_clean += increment; }
   void inc_cards_not_parsable() { _cards_not_parsable++; }
-  void inc_cards_still_refer_to_cset() { _cards_still_refer_to_cset++; }
+  void inc_cards_already_refer_to_cset() { _cards_already_refer_to_cset++; }
   void inc_cards_refer_to_cset() { _cards_refer_to_cset++; }
   void inc_cards_clean_again() { _cards_clean_again++; }
 

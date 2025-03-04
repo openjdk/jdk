@@ -169,7 +169,7 @@ void G1ConcurrentRefineThread::do_refinement() {
   jlong epoch_yield_duration = g1h->yield_duration_in_refinement_epoch();
   jlong next_epoch_start = os::elapsed_counter();
 
-  jlong synchronize_duration_at_sweep_start = g1h->synchronized_duration();
+  jlong synchronize_duration_at_sweep_start = g1h->safepoint_duration();
 
   // 4. Snapshot heap.
   state.snapshot_heap();
@@ -204,7 +204,7 @@ void G1ConcurrentRefineThread::do_refinement() {
   }
 
   if (!interrupted_by_gc) {
-    state.add_yield_duration(G1CollectedHeap::heap()->synchronized_duration() - synchronize_duration_at_sweep_start);
+    state.add_yield_duration(G1CollectedHeap::heap()->safepoint_duration() - synchronize_duration_at_sweep_start);
 
     state.complete(true);
 

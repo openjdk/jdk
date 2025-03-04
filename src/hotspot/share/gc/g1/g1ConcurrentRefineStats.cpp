@@ -32,7 +32,7 @@ G1ConcurrentRefineStats::G1ConcurrentRefineStats() :
   _cards_scanned(0),
   _cards_clean(0),
   _cards_not_parsable(0),
-  _cards_still_refer_to_cset(0),
+  _cards_already_refer_to_cset(0),
   _cards_refer_to_cset(0),
   _cards_clean_again(0),
   _refine_duration(0)
@@ -45,7 +45,7 @@ void G1ConcurrentRefineStats::add_atomic(G1ConcurrentRefineStats* other) {
   Atomic::add(&_cards_scanned, other->_cards_scanned, memory_order_relaxed);
   Atomic::add(&_cards_clean, other->_cards_clean, memory_order_relaxed);
   Atomic::add(&_cards_not_parsable, other->_cards_not_parsable, memory_order_relaxed);
-  Atomic::add(&_cards_still_refer_to_cset, other->_cards_still_refer_to_cset, memory_order_relaxed);
+  Atomic::add(&_cards_already_refer_to_cset, other->_cards_already_refer_to_cset, memory_order_relaxed);
   Atomic::add(&_cards_refer_to_cset, other->_cards_refer_to_cset, memory_order_relaxed);
   Atomic::add(&_cards_clean_again, other->_cards_clean_again, memory_order_relaxed);
 
@@ -60,7 +60,7 @@ G1ConcurrentRefineStats::operator+=(const G1ConcurrentRefineStats& other) {
   _cards_scanned += other._cards_scanned;
   _cards_clean += other._cards_clean;
   _cards_not_parsable += other._cards_not_parsable;
-  _cards_still_refer_to_cset += other._cards_still_refer_to_cset;
+  _cards_already_refer_to_cset += other._cards_already_refer_to_cset;
   _cards_refer_to_cset += other._cards_refer_to_cset;
   _cards_clean_again += other._cards_clean_again;
 
@@ -81,7 +81,7 @@ G1ConcurrentRefineStats::operator-=(const G1ConcurrentRefineStats& other) {
   _cards_scanned = saturated_sub(_cards_scanned, other._cards_scanned);
   _cards_clean = saturated_sub(_cards_clean, other._cards_clean);
   _cards_not_parsable = saturated_sub(_cards_not_parsable, other._cards_not_parsable);
-  _cards_still_refer_to_cset = saturated_sub(_cards_still_refer_to_cset, other._cards_still_refer_to_cset);
+  _cards_already_refer_to_cset = saturated_sub(_cards_already_refer_to_cset, other._cards_already_refer_to_cset);
   _cards_refer_to_cset = saturated_sub(_cards_refer_to_cset, other._cards_refer_to_cset);
   _cards_clean_again = saturated_sub(_cards_clean_again, other._cards_clean_again);
 
