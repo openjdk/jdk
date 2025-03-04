@@ -171,7 +171,7 @@ ShenandoahRegionPartitions::ShenandoahRegionPartitions(size_t max_regions, Shena
 }
 
 inline bool ShenandoahFreeSet::can_allocate_from(ShenandoahHeapRegion *r) const {
-  return r->is_empty() || r->is_trash();
+  return r->is_empty() || (r->is_trash() && !_heap->is_concurrent_weak_root_in_progress());
 }
 
 inline bool ShenandoahFreeSet::can_allocate_from(size_t idx) const {
@@ -997,6 +997,14 @@ HeapWord* ShenandoahFreeSet::allocate_aligned_plab(size_t size, ShenandoahAllocR
 
 HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req, bool& in_new_region) {
   assert (has_alloc_capacity(r), "Performance: should avoid full regions on this path: %zu", r->index());
+  if (_heap->is_concurrent_weak_root_in_progress() && r->is_trash()) {
+    // We cannot use this region for allocation when weak roots are in progress because the collector may need
+    // to reference unmarked oops during concurrent classunloading. The collector also needs accurate marking
+    // information to determine which weak handles need to be null'd out. If the region is recycled before weak
+    // roots processing has finished, weak root processing may fail to null out a handle into a trashed region.
+    // This turns the handle into a dangling pointer and will crash or corrupt the heap.
+    return nullptr;
+  }
   HeapWord* result = nullptr;
   r->try_recycle_under_lock();
   in_new_region = r->is_empty();

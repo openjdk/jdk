@@ -124,11 +124,11 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(DecoratorSet decorators,
   // Allow resurrection of unreachable objects that are visited during
   // concurrent class-unloading. Note, this breaks oop storage counting of
   // dead objects.
-//  if ((decorators & AS_NO_KEEPALIVE) != 0 &&
-//      _heap->is_evacuation_in_progress() &&
-//      !_heap->marking_context()->is_marked(obj)) {
-//    return obj;
-//  }
+  // if ((decorators & AS_NO_KEEPALIVE) != 0 &&
+  //     _heap->is_evacuation_in_progress() &&
+  //     !_heap->marking_context()->is_marked(obj)) {
+  //   return obj;
+  // }
 
   oop fwd = load_reference_barrier(obj);
   if (load_addr != nullptr && fwd != obj) {
