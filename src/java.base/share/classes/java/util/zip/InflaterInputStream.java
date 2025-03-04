@@ -40,18 +40,11 @@ import java.util.Objects;
  * thrown.
  *
  * <h2 id="inflater-usage">Inflater Usage</h2>
- * <p>This class uses an {@link Inflater} for uncompressing the data. Two forms of constructors
- * are available for constructing an {@code InflaterInputStream} - one which accepts
- * an {@code Inflater} and one which doesn't. The constructors that don't accept an
- * {@code Inflater} will create and use an {@code Inflater} instance of their own.
- * The {@code Inflater} instance created in those cases will be
- * {@linkplain Inflater#close() closed} when the {@code InflaterInputStream} instance itself
- * is {@linkplain #close() closed}.
- * On the other hand, if an {@code InflaterInputStream} was
- * constructed by passing it an {@code Inflater}, then closing the {@code InflaterInputStream}
- * will not close the passed {@code Inflater}. In those cases, it is the responsibility of
- * the caller to close the {@code Inflater} as and when appropriate, after the
- * {@code InflaterInputStream} has been closed.
+ * <p>This class uses an {@link Inflater} for uncompressing the data. When constructing an
+ * {@code InflaterInputStream}, if it is passed an {@code Inflater}, then it is the
+ * responsibility of the caller to {@linkplain Inflater#close() close the Inflater}
+ * as and when appropriate, after the
+ * {@linkplain InflaterInputStream#close() InflaterInputStream has been closed}.
  *
  * @see         Inflater
  * @author      David Connelly
