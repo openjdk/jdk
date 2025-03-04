@@ -1358,10 +1358,10 @@ G1RemSet::RefineResult G1RemSet::refine_card_concurrently(CardValue* const card_
 
   G1ConcurrentRefineOopClosure conc_refine_cl(_g1h, worker_id);
   if (r->oops_on_memregion_seq_iterate_careful<false>(dirty_region, &conc_refine_cl) != nullptr) {
-    if (conc_refine_cl.has_to_cset_ref()) {
-      return HasToCSetRef;
-    } else if (conc_refine_cl.has_to_old_ref()) {
-      return HasToOldRef;
+    if (conc_refine_cl.has_ref_to_cset()) {
+      return HasRefToCSet;
+    } else if (conc_refine_cl.has_ref_to_old()) {
+      return HasRefToOld;
     } else {
       return NoInteresting;
     }

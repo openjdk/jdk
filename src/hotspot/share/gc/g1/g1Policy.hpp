@@ -102,7 +102,17 @@ class G1Policy: public CHeapObj<mtGC> {
 
   uint _free_regions_at_end_of_collection;
 
+  // Tracks the number of cards marked as dirty (only) during garbage collection
+  // (evacuation) on the card table.
+  // This is needed to properly account for those cards in the heuristics to start
+  // refinement at the correct time which needs to know how many cards are currently
+  // approximately on the card table.
+  // After the first completed refinement sweep of the refinement table between two
+  // garbage collections this value is reset to zero as that refinement processed all
+  // those cards.
   size_t _pending_cards_from_gc;
+  // Tracks the approximate number of cards found as to-collection-set by either the
+  // garbage collection or the most recent refinement sweep.
   size_t _to_collection_set_cards;
 
   G1ConcurrentStartToMixedTimeTracker _concurrent_start_to_mixed;

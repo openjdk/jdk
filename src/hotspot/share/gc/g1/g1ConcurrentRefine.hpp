@@ -68,6 +68,7 @@ public:
   void assert_current_thread_is_control_refinement_thread() const NOT_DEBUG_RETURN;
 
   uint max_num_threads() const { return _max_num_threads; }
+  bool is_refinement_enabled() const { return _max_num_threads > 0; }
 
   // Activate the control thread.
   void activate();

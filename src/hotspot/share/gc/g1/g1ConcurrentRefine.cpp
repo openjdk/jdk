@@ -75,7 +75,7 @@ jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr) {
   assert(cr != nullptr, "G1ConcurrentRefine must not be null");
   _cr = cr;
 
-  if (max_num_threads() > 0) {
+  if (is_refinement_enabled()) {
     _control_thread = create_refinement_thread();
     if (_control_thread == nullptr) {
       vm_shutdown_during_initialization("Could not allocate refinement control thread");
@@ -105,19 +105,19 @@ void G1ConcurrentRefineThreadControl::run_task(WorkerTask* task, uint num_worker
 }
 
 void G1ConcurrentRefineThreadControl::control_thread_do(ThreadClosure* tc) {
-  if (_control_thread != nullptr) {
+  if (is_refinement_enabled()) {
     tc->do_thread(_control_thread);
   }
 }
 
 void G1ConcurrentRefineThreadControl::worker_threads_do(ThreadClosure* tc) {
-  if (_control_thread != nullptr) {
+  if (is_refinement_enabled()) {
     _workers->threads_do(tc);
   }
 }
 
 void G1ConcurrentRefineThreadControl::stop() {
-  if (_control_thread != nullptr) {
+  if (is_refinement_enabled()) {
     _control_thread->stop();
   }
 }
@@ -338,8 +338,11 @@ bool G1ConcurrentRefineSweepState::complete_work(bool concurrent, bool print_log
 }
 
 void G1ConcurrentRefineSweepState::snapshot_heap_into(G1CardTableClaimTable* sweep_table) {
-  // G1CollectedHeap::heap_region_iterate() below will only visit committed regions. Initialize
-  // all entries in the state table here to not require special handling when iterating over it.
+  // G1CollectedHeap::heap_region_iterate() below will only visit currently committed
+  // regions. Initialize all entries in the state table here and later in this method
+  // selectively enable regions that we are interested. This way regions committed
+  // later will be automatically excluded from iteration.
+  // Their refinement table must be completely empty anyway.
   sweep_table->reset_all_to_claimed();
 
   class SnapshotRegionsClosure : public G1HeapRegionClosure {
@@ -351,7 +354,7 @@ void G1ConcurrentRefineSweepState::snapshot_heap_into(G1CardTableClaimTable* swe
     bool do_heap_region(G1HeapRegion* r) override {
       if (!r->is_free()) {
         // Need to scan all parts of non-free regions, so reset the claim.
-        // No need for synchronization: we are only interested about regions
+        // No need for synchronization: we are only interested in regions
         // that were allocated before the handshake; the handshake makes such
         // regions' metadata visible to all threads, and we do not care about
         // humongous regions that were allocated afterwards.
@@ -395,7 +398,7 @@ jint G1ConcurrentRefine::initialize() {
 }
 
 G1ConcurrentRefineSweepState& G1ConcurrentRefine::sweep_state_for_merge() {
-  bool has_sweep_claims = sweep_state().complete_work(false);
+  bool has_sweep_claims = sweep_state().complete_work(false /* concurrent */);
   if (has_sweep_claims) {
     log_debug(gc, refine)("Continue existing work");
   } else {
@@ -485,7 +488,7 @@ void G1ConcurrentRefine::adjust_after_gc(double logged_cards_time_ms,
   update_pending_cards_target(logged_cards_time_ms,
                               processed_logged_cards,
                               goal_ms);
-  if (_thread_control.max_num_threads() != 0) {
+  if (_thread_control.is_refinement_enabled()) {
     _needs_adjust = true;
     if (is_pending_cards_target_initialized()) {
       _thread_control.activate();

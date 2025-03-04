@@ -128,7 +128,7 @@ inline static void check_obj_during_refinement(T* p, oop const obj) {
 template <class T>
 inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
   // Early out if we already found a to-young reference.
-  if (_has_to_cset_ref) {
+  if (_has_ref_to_cset) {
     return;
   }
 
@@ -152,8 +152,8 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
   }
 
   G1HeapRegion* to_region = _g1h->heap_region_containing(obj);
-  _has_to_cset_ref = to_region->is_young();
-  if (_has_to_cset_ref) {
+  _has_ref_to_cset = to_region->is_young();
+  if (_has_ref_to_cset) {
     return;
   }
   G1HeapRegionRemSet* to_rem_set = to_region->rem_set();
@@ -164,7 +164,7 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
 
     if (from->rem_set()->cset_group() != to_rem_set->cset_group()) {
       to_rem_set->add_reference(p, _worker_id);
-      _has_to_old_ref = true;
+      _has_ref_to_old = true;
     }
   }
 }

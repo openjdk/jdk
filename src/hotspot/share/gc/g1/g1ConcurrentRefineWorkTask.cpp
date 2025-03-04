@@ -61,7 +61,7 @@ class G1RefineRegionClosure : public G1HeapRegionClosure {
     } else if (res == G1RemSet::AlreadyToCSet) {
       *dest_card = G1CardTable::g1_to_cset_card;
       _refine_stats.inc_cards_already_refer_to_cset();
-    } else if (res == G1RemSet::HasToCSetRef) {
+    } else if (res == G1RemSet::HasRefToCSet) {
       *dest_card = G1CardTable::g1_to_cset_card;
       _refine_stats.inc_cards_refer_to_cset();
     } else if (res == G1RemSet::NoInteresting) {

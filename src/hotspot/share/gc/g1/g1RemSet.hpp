@@ -120,9 +120,9 @@ public:
                                           G1GCPhaseTimes::GCParPhases objcopy_phase);
 
   enum RefineResult {
-      HasToCSetRef,          // The (dirty) card has a reference to the collection set.
+      HasRefToCSet,          // The (dirty) card has a reference to the collection set.
       AlreadyToCSet,         // The card is already one marked as having a reference to the collection set.
-      HasToOldRef,           // The dirty cards contains references to other old regions (not the collection set).
+      HasRefToOld,           // The dirty card contains references to other old regions (not the collection set).
       NoInteresting,         // There is no interesting reference in the card.
       CouldNotParse          // The card is unparsable, need to retry later.
   };
