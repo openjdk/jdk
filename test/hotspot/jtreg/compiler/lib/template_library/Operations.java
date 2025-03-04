@@ -361,7 +361,23 @@ final class Operations {
                                             ".convert(VectorOperators.Conversion.ofReinterpret("
                                                 + type2.elementType.boxedTypeName() +  ".class, "
                                                 + type.elementType.boxedTypeName() + ".class), 0))"));
+
+                // TODO: convertShape
             }
+
+            ops.add(new Operation.Binary(type, "", type, ".div(", type.elementType, ")"));
+            // TODO: div(int e, VectorMask<Integer> m)
+            ops.add(new Operation.Binary(type, "", type, ".div(", type, ")"));
+            // TODO: div(Vector<Integer> v, VectorMask<Integer> m)
+
+            // TODO: eq(int e)   -> VectorMask
+            // TODO: eq(Vector<Integer> v) -> VectorMask
+
+            // TODO: expand(VectorMask<Integer> m)
+
+            // TODO: ensure we use all variants of fromArray and fromMemorySegment, plus intoArray and intoMemorySegment.
+
+            ops.add(new Operation.Binary(type.elementType, "", type, ".lane(", Type.ints(), ")"));
         }
 
         // Ensure the list is immutable.
