@@ -120,7 +120,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJIMAGE, \
     DISABLED_WARNINGS_gcc_imageDecompressor.cpp := unused-variable, \
     DISABLED_WARNINGS_gcc_imageFile.cpp := unused-const-variable \
         unused-variable, \
-    DISABLED_WARNINGS_gcc_NativeImageBuffer.cpp := zero-as-null-pointer-constant, \
     DISABLED_WARNINGS_clang_imageDecompressor.cpp := unused-variable, \
     DISABLED_WARNINGS_clang_imageFile.cpp := unused-private-field \
         unused-variable, \
