@@ -33,8 +33,8 @@
 // Forward Decl.
 class G1ConcurrentRefine;
 
-// One or more G1 Concurrent Refinement Threads may be active if concurrent
-// refinement is in progress.
+// Concurrent refinement control thread watching card mark accrual on the card
+// and starting refinement work.
 class G1ConcurrentRefineThread: public ConcurrentGCThread {
   friend class VMStructs;
   friend class G1CollectedHeap;

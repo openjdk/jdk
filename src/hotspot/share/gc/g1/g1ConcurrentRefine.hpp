@@ -113,7 +113,7 @@ class G1ConcurrentRefineSweepState {
     Idle,                        // Refinement is doing nothing.
     SwapGlobalCT,                // Swap global card table.
     SwapJavaThreadsCT,           // Swap java thread's card tables.
-    SwapGCThreadsCT,             // Swap GC thread's card tables.
+    SynchronizeGCThreads,        // Synchronize GC thread's memory view.
     SnapshotHeap,                // Take a snapshot of the region's top() values.
     SweepRT,                     // Sweep the refinement table for pending (dirty) cards.
     CompleteRefineWork,          // Cleanup of refinement work, reset to idle.

@@ -53,29 +53,38 @@ class G1RefineRegionClosure : public G1HeapRegionClosure {
     assert(refinement_i == card_i, "indexes are not same %zu %zu", refinement_i, card_i);
 #endif
     G1RemSet::RefineResult res = _rem_set->refine_card_concurrently(source_card, _worker_id);
-    // Gather statistics.
-    if (res == G1RemSet::CouldNotParse) {
-      // Could not refine - redirty with the original value.
-      *dest_card = *source_card;
-      _refine_stats.inc_cards_not_parsable();
-    } else if (res == G1RemSet::AlreadyToCSet) {
-      *dest_card = G1CardTable::g1_to_cset_card;
-      _refine_stats.inc_cards_already_refer_to_cset();
-    } else if (res == G1RemSet::HasRefToCSet) {
-      *dest_card = G1CardTable::g1_to_cset_card;
-      _refine_stats.inc_cards_refer_to_cset();
-    } else if (res == G1RemSet::NoInteresting) {
-      _refine_stats.inc_cards_clean_again();
+    // Gather statistics based on the result.
+    switch (res) {
+      case G1RemSet::HasRefToCSet: {
+        *dest_card = G1CardTable::g1_to_cset_card;
+        _refine_stats.inc_cards_refer_to_cset();
+        break;
+      }
+      case G1RemSet::AlreadyToCSet: {
+        *dest_card = G1CardTable::g1_to_cset_card;
+        _refine_stats.inc_cards_already_refer_to_cset();
+        break;
+      }
+      case G1RemSet::NoInteresting: {
+        _refine_stats.inc_cards_clean_again();
+        break;
+      }
+      case G1RemSet::CouldNotParse: {
+        // Could not refine - redirty with the original value.
+        *dest_card = *source_card;
+        _refine_stats.inc_cards_not_parsable();
+        break;
+      }
+      case G1RemSet::HasRefToOld : break; // Nothing special to do.
     }
     // Clean card on source card table.
     *source_card = G1CardTable::clean_card_val();
   }
 
-  size_t do_claimed_block(CardValue* dirty_l, CardValue* dirty_r, CardValue* dest_card) {
+  void do_claimed_block(CardValue* dirty_l, CardValue* dirty_r, CardValue* dest_card) {
     for (CardValue* source = dirty_l; source < dirty_r; ++source, ++dest_card) {
       do_dirty_card(source, dest_card);
     }
-    return pointer_delta(dirty_r, dirty_l, sizeof(CardValue));
   }
 
 public:
@@ -125,7 +134,10 @@ public:
       size_t scanned = 0;
       scanner.on_dirty_cards([&] (CardValue* dirty_l, CardValue* dirty_r) {
                                jlong refine_start = os::elapsed_counter();
-                               scanned += do_claimed_block(dirty_l, dirty_r, dest_card + pointer_delta(dirty_l, start_card, sizeof(CardValue)));
+
+                               do_claimed_block(dirty_l, dirty_r, dest_card + pointer_delta(dirty_l, start_card, sizeof(CardValue)));
+                               scanned += pointer_delta(dirty_r, dirty_l, sizeof(CardValue));
+                               
                                _refine_stats.inc_refine_duration(os::elapsed_counter() - refine_start);
                              });
 

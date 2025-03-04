@@ -220,11 +220,11 @@ bool G1ConcurrentRefineSweepState::swap_java_threads_ct() {
     Handshake::execute(&cl);
   }
 
-  return advance_state(State::SwapGCThreadsCT);
+  return advance_state(State::SynchronizeGCThreads);
 }
 
 bool G1ConcurrentRefineSweepState::swap_gc_threads_ct() {
-  assert_state(State::SwapGCThreadsCT);
+  assert_state(State::SynchronizeGCThreads);
 
   set_state_start_time();
 
