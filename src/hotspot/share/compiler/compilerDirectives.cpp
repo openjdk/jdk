@@ -303,7 +303,8 @@ DirectiveSet::DirectiveSet(CompilerDirectives* d) :
   _directive(d),
   _ideal_phase_name_set(PHASE_NUM_TYPES, mtCompiler),
   _trace_auto_vectorization_tags(TRACE_AUTO_VECTORIZATION_TAG_NUM, mtCompiler),
-  _trace_merge_stores_tags(TraceMergeStores::TAG_NUM, mtCompiler)
+  _trace_merge_stores_tags(TraceMergeStores::TAG_NUM, mtCompiler),
+  _trace_merge_loads_tags(TraceMergeStores::TAG_NUM, mtCompiler)
 {
 #define init_defaults_definition(name, type, dvalue, compiler) this->name##Option = dvalue;
   compilerdirectives_common_flags(init_defaults_definition)
@@ -452,6 +453,16 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
         TraceMergeStores::TagValidator validator(option, false);
         if (validator.is_valid()) {
           set.cloned()->set_trace_merge_stores_tags(validator.tags());
+        }
+      }
+    }
+    if (!_modified[TraceMergeLoadsIndex]) {
+      // Parse ccstr and create mask
+      ccstrlist option;
+      if (CompilerOracle::has_option_value(method, CompileCommandEnum::TraceMergeLoads, option)) {
+        TraceMergeLoads::TagValidator validator(option, false);
+        if (validator.is_valid()) {
+          set.cloned()->set_trace_merge_loads_tags(validator.tags());
         }
       }
     }
