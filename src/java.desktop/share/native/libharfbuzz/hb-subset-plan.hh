@@ -95,7 +95,6 @@ struct contour_point_t
   HB_ALWAYS_INLINE
   void translate (const contour_point_t &p) { x += p.x; y += p.y; }
 
-
   float x;
   float y;
   uint8_t flag;
@@ -104,19 +103,9 @@ struct contour_point_t
 
 struct contour_point_vector_t : hb_vector_t<contour_point_t>
 {
-  void extend (const hb_array_t<contour_point_t> &a)
-  {
-    unsigned int old_len = length;
-    if (unlikely (!resize (old_len + a.length, false)))
-      return;
-    auto arrayZ = this->arrayZ + old_len;
-    unsigned count = a.length;
-    hb_memcpy (arrayZ, a.arrayZ, count * sizeof (arrayZ[0]));
-  }
-
-  bool add_deltas (const hb_vector_t<float> deltas_x,
-                   const hb_vector_t<float> deltas_y,
-                   const hb_vector_t<bool> indices)
+  bool add_deltas (hb_array_t<const float> deltas_x,
+                   hb_array_t<const float> deltas_y,
+                   hb_array_t<const bool> indices)
   {
     if (indices.length != deltas_x.length ||
         indices.length != deltas_y.length)

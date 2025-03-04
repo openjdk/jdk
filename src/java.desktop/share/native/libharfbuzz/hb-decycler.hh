@@ -38,11 +38,11 @@
  * For Floyd's tortoise and hare algorithm, see:
  * https://en.wikipedia.org/wiki/Cycle_detection#Floyd's_tortoise_and_hare
  *
- * Like Floyd's algorithm, hb_decycler_t is O(n) in the number of nodes
- * in the graph.  Unlike Floyd's algorithm, hb_decycler_t is designed
- * to be used in a DFS traversal, where the graph is not a simple
- * linked list, but a tree with cycles.  Like Floyd's algorithm, it is
- * constant-memory (just two pointers).
+ * hb_decycler_t is O(n) in the number of nodes in the DFS traversal
+ * if there are no cycles. Unlike Floyd's algorithm, hb_decycler_t
+ * can be used in a DFS traversal, where the graph is not a simple
+ * linked list, but a tree with possible cycles.  Like Floyd's algorithm,
+ * it is constant-memory (~three  pointers).
  *
  * The decycler works by creating an implicit linked-list on the stack,
  * of the path from the root to the current node, and apply Floyd's
@@ -89,7 +89,7 @@ struct hb_decycler_t
   friend struct hb_decycler_node_t;
 
   private:
-  bool tortoise_asleep = true;
+  bool tortoise_awake = false;
   hb_decycler_node_t *tortoise = nullptr;
   hb_decycler_node_t *hare = nullptr;
 };
@@ -100,15 +100,18 @@ struct hb_decycler_node_t
   {
     u.decycler = &decycler;
 
-    decycler.tortoise_asleep = !decycler.tortoise_asleep;
+    decycler.tortoise_awake = !decycler.tortoise_awake;
 
     if (!decycler.tortoise)
     {
       // First node.
+      assert (decycler.tortoise_awake);
+      assert (!decycler.hare);
       decycler.tortoise = decycler.hare = this;
       return;
     }
-    if (!decycler.tortoise_asleep)
+
+    if (decycler.tortoise_awake)
       decycler.tortoise = decycler.tortoise->u.next; // Time to move.
 
     this->prev = decycler.hare;
@@ -128,10 +131,10 @@ struct hb_decycler_node_t
       prev->u.decycler = &decycler;
 
     assert (decycler.tortoise);
-    if (!decycler.tortoise_asleep)
+    if (decycler.tortoise_awake)
       decycler.tortoise = decycler.tortoise->prev;
 
-    decycler.tortoise_asleep = !decycler.tortoise_asleep;
+    decycler.tortoise_awake = !decycler.tortoise_awake;
   }
 
   bool visit (uintptr_t value_)

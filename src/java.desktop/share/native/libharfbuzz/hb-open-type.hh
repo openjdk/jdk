@@ -1733,6 +1733,19 @@ struct TupleValues
       else if ((control & VALUES_SIZE_MASK) ==  VALUES_ARE_WORDS)
       {
         if (unlikely (p + run_count * HBINT16::static_size > end)) return false;
+#ifndef HB_OPTIMIZE_SIZE
+        for (; i + 3 < stop; i += 4)
+        {
+          values.arrayZ[i] = * (const HBINT16 *) p;
+          p += HBINT16::static_size;
+          values.arrayZ[i + 1] = * (const HBINT16 *) p;
+          p += HBINT16::static_size;
+          values.arrayZ[i + 2] = * (const HBINT16 *) p;
+          p += HBINT16::static_size;
+          values.arrayZ[i + 3] = * (const HBINT16 *) p;
+          p += HBINT16::static_size;
+        }
+#endif
         for (; i < stop; i++)
         {
           values.arrayZ[i] = * (const HBINT16 *) p;
@@ -1751,10 +1764,17 @@ struct TupleValues
       else if ((control & VALUES_SIZE_MASK) ==  VALUES_ARE_BYTES)
       {
         if (unlikely (p + run_count > end)) return false;
-        for (; i < stop; i++)
+#ifndef HB_OPTIMIZE_SIZE
+        for (; i + 3 < stop; i += 4)
         {
           values.arrayZ[i] = * (const HBINT8 *) p++;
+          values.arrayZ[i + 1] = * (const HBINT8 *) p++;
+          values.arrayZ[i + 2] = * (const HBINT8 *) p++;
+          values.arrayZ[i + 3] = * (const HBINT8 *) p++;
         }
+#endif
+        for (; i < stop; i++)
+          values.arrayZ[i] = * (const HBINT8 *) p++;
       }
     }
     return true;
@@ -1763,12 +1783,12 @@ struct TupleValues
   struct iter_t : hb_iter_with_fallback_t<iter_t, int>
   {
     iter_t (const unsigned char *p_, unsigned len_)
-            : p (p_), end (p_ + len_)
+            : p (p_), endp (p_ + len_)
     { if (ensure_run ()) read_value (); }
 
     private:
     const unsigned char *p;
-    const unsigned char * const end;
+    const unsigned char * const endp;
     int current_value = 0;
     signed run_count = 0;
     unsigned width = 0;
@@ -1777,7 +1797,7 @@ struct TupleValues
     {
       if (likely (run_count > 0)) return true;
 
-      if (unlikely (p >= end))
+      if (unlikely (p >= endp))
       {
         run_count = 0;
         current_value = 0;
@@ -1796,7 +1816,7 @@ struct TupleValues
         default: assert (false);
       }
 
-      if (unlikely (p + run_count * width > end))
+      if (unlikely (p + run_count * width > endp))
       {
         run_count = 0;
         current_value = 0;
@@ -1823,7 +1843,7 @@ struct TupleValues
     __item_t__ __item__ () const
     { return current_value; }
 
-    bool __more__ () const { return run_count || p < end; }
+    bool __more__ () const { return run_count || p < endp; }
     void __next__ ()
     {
       run_count--;
@@ -1850,8 +1870,144 @@ struct TupleValues
     { return p != o.p || run_count != o.run_count; }
     iter_t __end__ () const
     {
-      iter_t it (end, 0);
+      iter_t it (endp, 0);
       return it;
+    }
+  };
+
+  struct fetcher_t
+  {
+    fetcher_t (const unsigned char *p_, unsigned len_)
+              : p (p_), end (p_ + len_) {}
+
+    private:
+    const unsigned char *p;
+    const unsigned char * const end;
+    signed run_count = 0;
+    unsigned width = 0;
+
+    bool ensure_run ()
+    {
+      if (likely (run_count > 0)) return true;
+
+      if (unlikely (p >= end))
+      {
+        run_count = 0;
+        return false;
+      }
+
+      unsigned control = *p++;
+      run_count = (control & VALUE_RUN_COUNT_MASK) + 1;
+      width = control & VALUES_SIZE_MASK;
+      switch (width)
+      {
+        case VALUES_ARE_ZEROS: width = 0; break;
+        case VALUES_ARE_BYTES: width = HBINT8::static_size;  break;
+        case VALUES_ARE_WORDS: width = HBINT16::static_size; break;
+        case VALUES_ARE_LONGS: width = HBINT32::static_size; break;
+        default: assert (false);
+      }
+
+      if (unlikely (p + run_count * width > end))
+      {
+        run_count = 0;
+        return false;
+      }
+
+      return true;
+    }
+
+    void skip (unsigned n)
+    {
+      while (n)
+      {
+        if (unlikely (!ensure_run ()))
+          return;
+        unsigned i = hb_min (n, (unsigned) run_count);
+        run_count -= i;
+        n -= i;
+        p += i * width;
+      }
+    }
+
+    template <bool scaled>
+    void _add_to (hb_array_t<float> out, float scale = 1.0f)
+    {
+      unsigned n = out.length;
+      float *arrayZ = out.arrayZ;
+
+      for (unsigned i = 0; i < n;)
+      {
+        if (unlikely (!ensure_run ()))
+          break;
+        unsigned count = hb_min (n - i, (unsigned) run_count);
+        switch (width)
+        {
+          case 1:
+          {
+            const auto *pp = (const HBINT8 *) p;
+            unsigned j = 0;
+#ifndef HB_OPTIMIZE_SIZE
+            for (; j + 3 < count; j += 4)
+            {
+              *arrayZ++ += scaled ? *pp++ * scale : *pp++;
+              *arrayZ++ += scaled ? *pp++ * scale : *pp++;
+              *arrayZ++ += scaled ? *pp++ * scale : *pp++;
+              *arrayZ++ += scaled ? *pp++ * scale : *pp++;
+            }
+#endif
+            for (; j < count; j++)
+              *arrayZ++ += scaled ? *pp++ * scale : *pp++;
+          }
+          break;
+          case 2:
+          {
+            const auto *pp = (const HBINT16 *) p;
+            unsigned j = 0;
+#ifndef HB_OPTIMIZE_SIZE
+            for (; j + 3 < count; j += 4)
+            {
+              *arrayZ++ += scaled ? *pp++ * scale : *pp++;
+              *arrayZ++ += scaled ? *pp++ * scale : *pp++;
+              *arrayZ++ += scaled ? *pp++ * scale : *pp++;
+              *arrayZ++ += scaled ? *pp++ * scale : *pp++;
+            }
+#endif
+            for (; j < count; j++)
+              *arrayZ++ += scaled ? *pp++ * scale : *pp++;
+          }
+          break;
+          case 4:
+          {
+            const auto *pp = (const HBINT32 *) p;
+            for (unsigned j = 0; j < count; j++)
+              *arrayZ++ += scaled ? *pp++ * scale : *pp++;
+          }
+          break;
+        }
+        p += count * width;
+        run_count -= count;
+        i += count;
+      }
+    }
+
+    public:
+    void add_to (hb_array_t<float> out, float scale = 1.0f)
+    {
+      unsigned n = out.length;
+
+      if (scale == 0.0f)
+      {
+        skip (n);
+        return;
+      }
+
+#ifndef HB_OPTIMIZE_SIZE
+      if (scale == 1.0f)
+        _add_to<false> (out);
+      else
+#endif
+        _add_to<true> (out, scale);
     }
   };
 };
@@ -1862,6 +2018,12 @@ struct TupleList : CFF2Index
   {
     auto bytes = CFF2Index::operator [] (i);
     return TupleValues::iter_t (bytes.arrayZ, bytes.length);
+  }
+
+  TupleValues::fetcher_t fetcher (unsigned i) const
+  {
+    auto bytes = CFF2Index::operator [] (i);
+    return TupleValues::fetcher_t (bytes.arrayZ, bytes.length);
   }
 };
 
