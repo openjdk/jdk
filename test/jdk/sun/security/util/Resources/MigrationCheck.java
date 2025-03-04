@@ -241,7 +241,8 @@ public class MigrationCheck {
 
     @Test
     public void testKeytool_zh_HK() {
-        checkResourcesMigration(new sun.security.tools.keytool.Resources_zh_HK(),
+        // We copy keytool_zh_TW.java to keytool_zh_HK.java internally after we compile the properties files
+        checkResourcesMigration(new sun.security.tools.keytool.Resources_zh_TW(),
                 new sun.security.tools.keytool.resources.keytool_zh_HK());
     }
 
