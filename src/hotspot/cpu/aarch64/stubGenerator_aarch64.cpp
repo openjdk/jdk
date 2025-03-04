@@ -6393,6 +6393,13 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
     StubGenStubId stub_id = StubGenStubId::dilithiumAlmostNtt_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register coeffs = c_rarg0;
+    const Register zetas = c_rarg1;
+
     const Register tmpAddr = r9;
     const Register dilithiumConsts = r10;
     const Register result = r11;
@@ -11526,6 +11533,7 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_kyberAddPoly_3 = generate_kyberAddPoly_3();
       StubRoutines::_kyber12To16 = generate_kyber12To16();
       StubRoutines::_kyberBarrettReduce = generate_kyberBarrettReduce();
+    }
 
     if (UseDilithiumIntrinsics) {
       StubRoutines::_dilithiumAlmostNtt = generate_dilithiumAlmostNtt();
