@@ -99,8 +99,8 @@ public abstract class HttpRequest {
      * as the value of the {@link HttpRequestOption#H3_DISCOVERY} option
      * to {@link Builder#setOption(HttpRequestOption, Object) Builder.setOption}.
      * <p>
-     * Note that if neither the {@link Builder#version(Version) request preferred
-     * version} nor the {@link HttpClient.Builder#version(Version) HttpClient preferred
+     * Note that if neither the {@linkplain Builder#version(Version) request preferred
+     * version} nor the {@linkplain HttpClient.Builder#version(Version) HttpClient preferred
      * version} is {@linkplain Version#HTTP_3 HTTP/3}, no HTTP/3 exchange will
      * be established and the {@code H3DiscoveryMode} is ignored.
      * @since TBD
@@ -128,7 +128,7 @@ public abstract class HttpRequest {
          * three HTTP protocol versions}, depending on which method succeeded first.
          *
          * @implNote
-         * If the {@link Builder#version(Version) request preferred version} is {@linkplain
+         * If the {@linkplain Builder#version(Version) request preferred version} is {@linkplain
          * Version#HTTP_3 HTTP/3}, the {@code HttpClient} will first attempt to
          * establish an HTTP/3 connection, before attempting a TLS connection over TCP.
          * If, after an implementation specific timeout, no reply is obtained to the first
@@ -138,18 +138,17 @@ public abstract class HttpRequest {
          * use any <a href="https://www.rfc-editor.org/rfc/rfc7838">HTTP Alternative Services</a>
          * information it may have previously obtained from the origin server. If no
          * such information is available, a direct HTTP/3 connection at the authority (host, port)
-         * present in the {@link #uri() request URI} will be attempted.
+         * present in the {@linkplain #uri() request URI} will be attempted.
          */
         HTTP_3_ANY,
         /**
          * This instructs the {@link HttpClient} to only attempt an HTTP/3 connection
          * with the origin server. The connection will only succeed if the origin server
          * is listening for incoming HTTP/3 Quic connection at the same authority (host, port)
-         * as defined in the {@link #uri() request URI}. In this mode,
+         * as defined in the {@linkplain #uri() request URI}. In this mode,
          * <a href="https://www.rfc-editor.org/rfc/rfc7838">HTTP Alternative Services</a>
          * are not used.
          */
-        // TODO: may need to define what happens in case of redirects.
         HTTP_3_ONLY
     }
 
@@ -158,21 +157,21 @@ public abstract class HttpRequest {
      * option hints on how an HTTP request/response exchange should
      * be carried out by the {@link HttpClient} implementation.
      * Request configuration option hints can be provided to an
-     * {@link HttpRequest} with the {@linkplain
+     * {@link HttpRequest} with the {@link
      * Builder#setOption(HttpRequestOption, Object) HttpRequest.Builder
-     * setOption method}.
-     *
-     * <p> The {@link #H3_DISCOVERY} option can be used to help the
-     * {@link HttpClient} decide how to select or establish an
-     * HTTP/3 connection through which to carry out an HTTP/3
-     * request/response exchange.
+     * setOption} method.
      *
      * <p> Concrete instances of this class and its subclasses are immutable.
      *
-     * @implNote
+     * @apiNote
      * In this version, the {@code HttpRequestOption} interface is sealed and
      * only allows the {@link #H3_DISCOVERY} option. However, it could be
-     * extended in the future to support additional options
+     * extended in the future to support additional options.
+     * <p>
+     * The {@link #H3_DISCOVERY} option can be used to help the
+     * {@link HttpClient} decide how to select or establish an
+     * HTTP/3 connection through which to carry out an HTTP/3
+     * request/response exchange.
      *
      * @param <T> The {@linkplain #type() type of the option value}
      *
@@ -180,7 +179,7 @@ public abstract class HttpRequest {
      */
     public sealed interface HttpRequestOption<T> {
         /**
-         * {@return The option name}
+         * {@return the option name}
          * @implSpec  Different options must have different names.
          */
         String name();
@@ -195,17 +194,44 @@ public abstract class HttpRequest {
          * An option that can be used to configure how the {@link HttpClient} will
          * select or establish an HTTP/3 connection through which to carry out
          * the request. If {@link Version#HTTP_3} is not selected either as
-         * the {@linkplain Builder#version(Version) request preferred option}
+         * the {@linkplain Builder#version(Version) request preferred version}
          * or the {@linkplain HttpClient.Builder#version(Version) HttpClient
          * preferred version} setting this option on the request has no effect.
          * <p>
          * The {@linkplain #name() name of this option} is {@code "H3_DISCOVERY"}.
          *
          * @implNote
-         * If a {@linkplain HttpClient.Builder#proxy(ProxySelector) proxy} is {@linkplain
+         * The JDK built-in implementation of the {@link HttpClient} understands the
+         * request option {@link HttpRequestOption#H3_DISCOVERY} hint.
+         * <br>
+         * If no H3_DISCOVERY hint is provided, and {@linkplain  HttpClient.Version#HTTP_3
+         * HTTP/3 version} is selected, either as {@linkplain Builder#version(Version)
+         * request preferred version} or {@linkplain HttpClient.Builder#version(Version)
+         * client preferred version}, the JDK built-in implementation of
+         * the {@link HttpClient} will select one:
+         * <ul>
+         *     <li> If the {@linkplain Builder#version(Version) request preferred version} is
+         *          explicitly set to {@linkplain HttpClient.Version#HTTP_3 HTTP/3},
+         *          the exchange will be established as per {@link
+         *          H3DiscoveryMode#HTTP_3_ANY}.</li>
+         *     <li> Otherwise, if no request preferred version is explicitly provided
+         *          and the {@linkplain HttpClient.Builder#version(Version) HttpClient
+         *          preferred version} is {@linkplain HttpClient.Version#HTTP_3 HTTP/3},
+         *          the exchange will be established as per {@link
+         *          H3DiscoveryMode#HTTP_3_ALT_SVC}.</li>
+         * </ul>
+         * In case of {@linkplain HttpClient.Redirect redirect}, the
+         * {@link HttpRequestOption#H3_DISCOVERY} option is always transferred to
+         * the new request.
+         * <p>
+         * In this implementation, HTTP/3 through proxies is not supported.
+         * Unless {@link  H3DiscoveryMode#HTTP_3_ONLY} is specified, if
+         * a {@linkplain HttpClient.Builder#proxy(ProxySelector) proxy} is {@linkplain
          * java.net.ProxySelector#select(URI) selected} for the {@linkplain HttpRequest#uri()
          * request URI}, the protocol version is downgraded to HTTP/2 or
-         * HTTP/1.1 and the {@link #H3_DISCOVERY} option is ignored.
+         * HTTP/1.1 and the {@link #H3_DISCOVERY} option is ignored. If, on the
+         * other hand, {@link H3DiscoveryMode#HTTP_3_ONLY} is specified,
+         * the request will fail.
          *
          * @see H3DiscoveryMode
          * @see Builder#setOption(HttpRequestOption, Object)
@@ -299,8 +325,12 @@ public abstract class HttpRequest {
          * <p> An {@link HttpClient} implementation may decide to ignore request
          * configuration option hints, or fail the request, if provided with any
          * option hints that it does not understand.
-         * If {@code null} is supplied as value, any value previously provided to
-         * this builder for the corresponding option is discarded.
+         * <p>
+         * If this method is invoked twice for the same {@linkplain HttpRequestOption
+         * request option}, any value previously provided to this builder for the
+         * corresponding option is replaced by the new value.
+         * If {@code null} is supplied as a value, any value previously
+         * provided is discarded.
          *
          * @implSpec
          * The default implementation of this method discards the provided option
@@ -308,26 +338,7 @@ public abstract class HttpRequest {
          *
          * @implNote
          * The JDK built-in implementation of the {@link HttpClient} understands the
-         * request option {@link HttpRequestOption#H3_DISCOVERY} hint.<br>
-         * If no H3_DISCOVERY hint is provided, and {@linkplain  HttpClient.Version#HTTP_3
-         * HTTP/3 version} is selected, either as {@linkplain Builder#version(Version)
-         * request preferred version} or {@linkplain HttpClient.Builder#version(Version)
-         * client preferred version}, the JDK built-in implementation of
-         * the {@link HttpClient} will select one:
-         * <ul>
-         *     <li> If the {@linkplain Builder#version(Version) request preferred version} is
-         *          explicitly set to {@linkplain HttpClient.Version#HTTP_3 HTTP/3},
-         *          the exchange will be established as per {@link
-         *          H3DiscoveryMode#HTTP_3_ANY}.</li>
-         *     <li> Otherwise, if no request preferred version is explicitly provided
-         *          and the {@linkplain HttpClient.Builder#version(Version) HttpClient
-         *          preferred version} is {@linkplain HttpClient.Version#HTTP_3 HTTP/3},
-         *          the exchange will be established as per {@link
-         *          H3DiscoveryMode#HTTP_3_ALT_SVC}.</li>
-         * </ul>
-         * In case of {@linkplain HttpClient.Redirect redirect}, the
-         * {@link HttpRequestOption#H3_DISCOVERY} option is always transferred to
-         * the new request.
+         * request option {@link HttpRequestOption#H3_DISCOVERY} hint.
          *
          * @param option the request configuration option
          * @param value  the request configuration option value (can be null)
