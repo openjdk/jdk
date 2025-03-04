@@ -657,6 +657,14 @@ ObjectMonitor::TryLockResult ObjectMonitor::TryLock(JavaThread* current) {
   return first_own == own ? TryLockResult::HasOwner : TryLockResult::Interference;
 }
 
+static void post_monitor_deflate_event(EventJavaMonitorDeflate* event,
+                                       const oop obj) {
+  assert(event != nullptr, "invariant");
+  event->set_monitorClass(obj->klass());
+  event->set_address((uintptr_t)(void*)obj);
+  event->commit();
+}
+
 // Deflate the specified ObjectMonitor if not in-use. Returns true if it
 // was deflated and false otherwise.
 //
@@ -675,6 +683,8 @@ bool ObjectMonitor::deflate_monitor(Thread* current) {
     // Easy checks are first - the ObjectMonitor is busy so no deflation.
     return false;
   }
+
+  EventJavaMonitorDeflate event;
 
   const oop obj = object_peek();
 
@@ -748,6 +758,10 @@ bool ObjectMonitor::deflate_monitor(Thread* current) {
   } else if (obj != nullptr) {
     // Install the old mark word if nobody else has already done it.
     install_displaced_markword_in_object(obj);
+  }
+
+  if (event.should_commit()) {
+    post_monitor_deflate_event(&event, obj);
   }
 
   // We leave owner == DEFLATER_MARKER and contentions < 0
