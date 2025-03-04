@@ -318,7 +318,7 @@ class Compile : public Phase {
   uintx                 _max_node_limit;        // Max unique node count during a single compilation.
 
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
-  bool                  _merge_stores_phase;    // Phase for merging stores, after post loop opts phase.
+  bool                  _merge_memops_phase;    // Phase for merging stores/loads, after post loop opts phase.
   bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
 
   int                   _major_progress;        // Count of something big happening
@@ -375,7 +375,7 @@ class Compile : public Phase {
   GrowableArray<Node*>  _template_assertion_predicate_opaqs;
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
-  GrowableArray<Node*>  _for_merge_stores_igvn; // List of nodes for IGVN merge stores
+  GrowableArray<Node*>  _for_merge_memops_igvn; // List of nodes for IGVN merge stores and loads
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
@@ -768,11 +768,11 @@ public:
   void remove_useless_unstable_if_traps(Unique_Node_List &useful);
   void process_for_unstable_if_traps(PhaseIterGVN& igvn);
 
-  bool     merge_stores_phase() { return _merge_stores_phase;  }
-  void set_merge_stores_phase() { _merge_stores_phase = true;  }
-  void record_for_merge_stores_igvn(Node* n);
-  void remove_from_merge_stores_igvn(Node* n);
-  void process_for_merge_stores_igvn(PhaseIterGVN& igvn);
+  bool     merge_memops_phase() { return _merge_memops_phase;  }
+  void set_merge_memops_phase() { _merge_memops_phase = true;  }
+  void record_for_merge_memops_igvn(Node* n);
+  void remove_from_merge_memops_igvn(Node* n);
+  void process_for_merge_memops_igvn(PhaseIterGVN& igvn);
 
   void shuffle_macro_nodes();
   void sort_macro_nodes();

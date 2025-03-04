@@ -505,6 +505,8 @@ protected:
 
   // Find out of current node that matches opcode.
   Node* find_out_with(int opcode);
+  // Find out of current node that matches any of opcodes.
+  Node* find_out_with(int opcode1, int opcode2);
   // Return true if the current node has an out that matches opcode.
   bool has_out_with(int opcode);
   // Return true if the current node has an out that matches any of the opcodes.
@@ -830,7 +832,7 @@ public:
     Flag_is_expensive                = 1 << 13,
     Flag_is_predicated_vector        = 1 << 14,
     Flag_for_post_loop_opts_igvn     = 1 << 15,
-    Flag_for_merge_stores_igvn       = 1 << 16,
+    Flag_for_merge_memops_igvn       = 1 << 16,
     Flag_is_removed_by_peephole      = 1 << 17,
     Flag_is_predicated_using_blend   = 1 << 18,
     _last_flag                       = Flag_is_predicated_using_blend
@@ -1076,7 +1078,7 @@ public:
   bool is_scheduled() const { return (_flags & Flag_is_scheduled) != 0; }
 
   bool for_post_loop_opts_igvn() const { return (_flags & Flag_for_post_loop_opts_igvn) != 0; }
-  bool for_merge_stores_igvn() const { return (_flags & Flag_for_merge_stores_igvn) != 0; }
+  bool for_merge_memops_igvn() const { return (_flags & Flag_for_merge_memops_igvn) != 0; }
 
   // Is 'n' possibly a loop entry (i.e. a Parse Predicate projection)?
   static bool may_be_loop_entry(Node* n) {

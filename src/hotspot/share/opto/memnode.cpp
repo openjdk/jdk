@@ -1829,6 +1829,526 @@ AllocateNode* LoadNode::is_new_object_mark_load() const {
   return nullptr;
 }
 
+/* MergeLoads optimization
+ * Optimize multiple loads into a merged load, like below java code:
+ *
+ *      return ((array[offset    ] & 0xff) << 24)
+ *           | ((array[offset + 1] & 0xff) << 16)
+ *           | ((array[offset + 2] & 0xff) <<  8)
+ *           | ((array[offset + 3] & 0xff)      );
+ *
+ * The C2 IR graph example is like:
+ *
+ *       Mem
+ *        |---------+---------+----------+
+ *        |         |         |          |
+ *       Ld1       Ld2       Ld3        Ld4
+ *        |         |         |          |
+ *        |       LShift    LShift     LShift
+ *        |         |         |          |
+ *        +-> Or1 <-+         |          |
+ *             |              |          |
+ *             +---> Or2 <----+          |
+ *                    |                  |
+ *                    +-----> Or3 <------+
+ *
+ * It will be transformed as a merged load and replace the Or3 node
+ *
+ */
+class MergePrimitiveLoads;
+
+/*
+ * LoadNode and OrNode pair which represent an item for merging,
+ * And we can get some properties like shift and uncommon usage from it.
+ *
+ * Node: OrNode may be shared
+ */
+class MergeLoadInfo : ResourceObj {
+  friend MergePrimitiveLoads;
+private:
+  LoadNode*          _load;
+  Node*                _or;
+  int               _shift;
+  bool _has_uncommon_usage;
+  bool            _last_op; // Indicate it's the last item of group, the _or node will be replaced by merged load
+public:
+  MergeLoadInfo(LoadNode* load, Node* orNode, int shift) : _load(load), _or(orNode), _shift(shift),
+                                                           _has_uncommon_usage(false), _last_op(false) {}
+  void set_has_uncommon_usage(bool v) { _has_uncommon_usage = v; }
+  bool has_uncommon_usage()     const { return _has_uncommon_usage; }
+  void set_last_op(bool v)            { _last_op = v; }
+  bool last_op()                const { return _last_op; }
+
+#ifdef ASSERT
+  void dump() {
+    tty->print_cr("MergeLoadInfo: load: %d, or: %d, shift: %d, has_uncommon_usage: %s, last_op: %s",
+                        _load->_idx, _or->_idx, _shift,
+                        _has_uncommon_usage ? "true" : "false",
+                        _last_op ? "true" : "false");
+  }
+#endif
+};
+
+typedef GrowableArray<MergeLoadInfo*> MergeLoadInfoList;
+
+class MergePrimitiveLoads : public StackObj {
+  // The adjacent status of 2 loads
+  enum MemoryAdjacentStatus {
+    Unknown,            // Initial state
+    LowToHigh,          // Adjacent and first load access low address
+    HighToLow,          // Adjacent and first load access high address
+    NotAdjacent         // Not adjacent
+  };
+
+private:
+  PhaseGVN* const      _phase;
+  LoadNode* const       _load;
+  int          _last_op_index;    // Index of the last item in merged_list
+  MemoryAdjacentStatus _order;
+  bool _require_reverse_bytes;    // Do we need add a ReverseBytes for merged load
+
+  NOT_PRODUCT( const CHeapBitMap &_trace_tags; )
+
+public:
+  MergePrimitiveLoads(PhaseGVN* phase, LoadNode* load) :
+    _phase(phase), _load(load), _last_op_index(-1), _order(Unknown), _require_reverse_bytes(false)
+    NOT_PRODUCT( COMMA _trace_tags(Compile::current()->directive()->trace_merge_loads_tags()) )
+    {}
+
+  LoadNode* run();
+
+private:
+  // Detect the embedding _load is a candidate for merging loads
+  bool is_merged_load_candidate( ) const;
+  // Check other_load and _load are compatible
+  bool is_compatible_load(const LoadNode* other_load) const;
+  // From the candidate _load to collect load items for merging
+  void collect_merge_list(MergeLoadInfoList& merge_list);
+  // Construct merge information item from input load
+  MergeLoadInfo* merge_load_info(LoadNode* load) const;
+  // Make the merged load from list
+  LoadNode* make_merged_load(const MergeLoadInfoList& merge_list);
+
+  // Helper methods for merge loads optimization
+  static bool is_supported_opcode(int opcode);
+  MemoryAdjacentStatus get_adjacent_load_status(const LoadNode* first, const LoadNode* second) const;
+  // Go through ConvI2L which is unique output of the load
+  static Node* by_pass_i2l(const LoadNode* load);
+
+#ifndef PRODUCT
+  // Access to TraceMergeLoads tags
+  bool is_trace(TraceMergeLoads::Tag tag) const {
+    return _trace_tags.at(tag);
+  }
+
+  bool is_trace_basic() const {
+    return is_trace(TraceMergeLoads::Tag::BASIC);
+  }
+
+  bool is_trace_pointer_parsing() const {
+    return is_trace(TraceMergeLoads::Tag::POINTER_PARSING);
+  }
+
+  bool is_trace_pointer_aliasing() const {
+    return is_trace(TraceMergeLoads::Tag::POINTER_ALIASING);
+  }
+
+  bool is_trace_pointer_adjacency() const {
+    return is_trace(TraceMergeLoads::Tag::POINTER_ADJACENCY);
+  }
+
+  bool is_trace_success() const {
+    return is_trace(TraceMergeLoads::Tag::SUCCESS);
+  }
+#endif
+};
+
+bool MergePrimitiveLoads::is_supported_opcode(int opc) {
+  // Check for B/S/C/I
+  if (opc != Op_LoadB && opc != Op_LoadUB &&
+      opc != Op_LoadS && opc != Op_LoadUS &&
+      opc != Op_LoadI) {
+    return false;
+  }
+  return true;
+}
+
+// Go through ConvI2L which is unique output of the load
+Node* MergePrimitiveLoads::by_pass_i2l(const LoadNode* l) {
+  if ( l != nullptr && l->outcnt() == 1 && l->unique_out()->Opcode() == Op_ConvI2L) {
+    return l->unique_out();
+  } else {
+    return (Node*)l;
+  }
+};
+
+/*
+ * Check the _load can be a candidate load to trigger merge loads.
+ * The candidate load has the pattern:
+ *
+ * Load -> OrI/OrL
+ *  It has no LShift usage and the And node is optimized out in previous optimization
+ *
+ *  The reference java code snippets are:
+ *              ...
+ *            | (((long) array[offset + 5] & 0xff) << 16)
+ *            | (((long) array[offset + 6] & 0xff) << 8 )
+ *            | (((long) array[offset + 7] & 0xff)      );                     <----- candidate
+ *
+ *              ((UNSAFE.getByte(array, address    ) & 0xff)      )            <----- candidate
+ *            | ((UNSAFE.getByte(array, address + 1) & 0xff) <<  8)
+ *            | ((UNSAFE.getByte(array, address + 2) & 0xff) << 16)
+ *            | ((UNSAFE.getByte(array, address + 3) & 0xff) << 24);
+ */
+bool MergePrimitiveLoads::is_merged_load_candidate() const {
+  if (!is_supported_opcode(_load->Opcode()) ||
+      _load->is_acquire() || !_load->is_unordered()) {
+    return false;
+  }
+  Node* check = by_pass_i2l(_load);
+  switch(check->outcnt()) {
+    case 1: {
+      int opc = check->unique_out()->Opcode();
+      return opc == Op_OrI || opc == Op_OrL;
+    }
+    case 2: {
+      // It can has an optional output to uncommon trap
+      Node *call = check->find_out_with(Op_CallStaticJava);
+      if (call == nullptr || !call->as_CallStaticJava()->is_uncommon_trap()) {
+        return false;
+      }
+      return check->find_out_with(Op_OrI, Op_OrL) != nullptr;
+    }
+    default:
+      return false;
+  }
+}
+
+// Construct merge information item from input load
+MergeLoadInfo* MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
+  Node* check = by_pass_i2l(load);
+  Node* or_oper = nullptr;
+  int shift = -1;
+  bool has_uncommon_trap_usage = false;
+  auto is_or_oper = [&](Node* n) { return n != nullptr && (n->Opcode() == Op_OrI || n->Opcode() == Op_OrL); };
+
+  // Check the Load node has the pattern "(Or (LShift (Load .. ) ConI) ..)" or "(Or (Load ..) ..)"
+  for (DUIterator_Fast imax, iter = check->fast_outs(imax); iter < imax; iter++) {
+    Node *out = check->fast_out(iter);
+    switch (out->Opcode()) {
+      case Op_OrI:
+      case Op_OrL:
+        if (or_oper == nullptr) {
+          or_oper = out;
+          shift = 0;
+        } else {
+          // Too much Or usages
+          return nullptr;
+        }
+        break;
+      case Op_CallStaticJava:
+        if (!out->as_CallStaticJava()->is_uncommon_trap()) {
+          // Only uncommon trap usage is accepted
+          return nullptr;
+        }
+        has_uncommon_trap_usage = true;
+        break;
+      case Op_LShiftI:
+      case Op_LShiftL:
+        {
+          Node* shift_oper = out->isa_LShift();
+          if (shift_oper->outcnt() != 1 ||                    // Expect only one usage to Or node
+              !is_or_oper(shift_oper->unique_out()) ||      // Not used by Or node
+              !shift_oper->in(2)->is_ConI()) {              // Not shift by constant
+            return nullptr;
+          }
+          if (or_oper == nullptr) {
+            or_oper = shift_oper->unique_out();
+          } else {
+            // Too much Or usages
+            return nullptr;
+          }
+          shift = shift_oper->in(2)->as_ConI()->get_int();
+          if (shift % (load->memory_size() * BitsPerByte) != 0) {
+            // Shift value is not aligned with memory size
+            return nullptr;
+          }
+          break;
+        }
+      default:
+        // can not handle other usage
+        return nullptr;
+    }
+  }
+  if (or_oper == nullptr) {
+    return nullptr;
+  }
+  assert(shift != -1, "must be set");
+  // Check if the or_oper is the last operation of merge loads
+  // If its unique output is another Or node, it may be in the middle of merge list
+  // otherwise we reach the end of merge list
+  bool last_op =  or_oper->outcnt() != 1 || !is_or_oper(or_oper->unique_out());
+  MergeLoadInfo* info = new MergeLoadInfo(load, or_oper, shift);
+  info->set_has_uncommon_usage(has_uncommon_trap_usage);
+  info->set_last_op(last_op);
+  return info;
+}
+
+LoadNode* MergePrimitiveLoads::run() {
+  if (!is_merged_load_candidate()) {
+    return nullptr;
+  }
+  NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeLoads] candidate:"); _load->dump(); tty->cr(); })
+
+  ResourceMark rm;
+  MergeLoadInfoList merge_list;
+  collect_merge_list(merge_list);
+
+  LoadNode* merged_load = make_merged_load(merge_list);
+  NOT_PRODUCT( if (is_trace_success()) { tty->print("[TraceMergeLoads] merged load is:"); merged_load->dump(); tty->cr(); })
+
+  return merged_load;
+}
+
+// Check compatibility between _load and other_load.
+bool MergePrimitiveLoads::is_compatible_load(const LoadNode* other_load) const {
+  if (other_load == nullptr ||
+      !is_supported_opcode(other_load->Opcode()) ||
+      _load->memory_size() != other_load->memory_size()) {
+    return false;
+  }
+
+  assert(other_load->in(MemNode::Memory) == _load->in(MemNode::Memory), "sanity");
+
+  // To simplify, assume all loads have same control.
+  if (other_load->in(MemNode::Control) != _load->in(MemNode::Control)) {
+    return false;
+  }
+
+  if (other_load->is_acquire() || !other_load->is_unordered()) {
+    return false;
+  }
+
+  // check alias
+  Compile* C = _phase->C;
+  if (C->get_alias_index(_phase->type(other_load->in(MemNode::Address))->is_ptr()) !=
+      C->get_alias_index(_phase->type(_load->in(MemNode::Address))->is_ptr())) {
+    return false;
+  }
+
+  NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeLoads]: compatible_load:"); other_load->dump(); tty->cr(); })
+  return true;
+}
+
+MergePrimitiveLoads::MemoryAdjacentStatus MergePrimitiveLoads::get_adjacent_load_status(const LoadNode* first, const LoadNode* second) const {
+  ResourceMark rm;
+#ifndef PRODUCT
+  const TraceMemPointer trace(is_trace_pointer_parsing(),
+                              is_trace_pointer_aliasing(),
+                              is_trace_pointer_adjacency(),
+                              true);
+#endif
+  const MemPointer pointer_first(first NOT_PRODUCT(COMMA trace));
+  const MemPointer pointer_second(second NOT_PRODUCT(COMMA trace));
+  if (pointer_first.is_adjacent_to_and_before(pointer_second)) {
+    return MergePrimitiveLoads::LowToHigh;
+  } else if (pointer_second.is_adjacent_to_and_before(pointer_first)) {
+    return MergePrimitiveLoads::HighToLow;
+  } else {
+    return MergePrimitiveLoads::NotAdjacent;
+  }
+}
+
+// From the candidate _load to collect load items for merging
+void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list) {
+  const LoadNode* load = this->_load;
+  const int max_bytes = 8; // The largest load is LoadLong
+  const int max_merged_nodes = max_bytes/load->memory_size();
+
+  MergeLoadInfo* array[8] = {nullptr};
+#ifdef ASSERT
+  for (auto & i : array) {
+    assert(i == nullptr, "must be initialized");
+  }
+#endif
+  // collect load nodes info from the same memory input
+  Node* mem = _load->in(MemNode::Memory);
+  int collected = 0;
+  for (DUIterator_Fast imax, iter = mem->fast_outs(imax); iter < imax; iter++) {
+    LoadNode* out = mem->fast_out(iter)->isa_Load();
+    if (out == nullptr || !is_compatible_load(out)) continue;
+
+    MergeLoadInfo* info = merge_load_info(out);
+    if (info == nullptr) continue;
+    int index = info->_shift / (_load->memory_size() * BitsPerByte);
+    if ( index < max_merged_nodes && array[index] == nullptr ) {
+      array[index] = info;
+      collected ++;
+    } else {
+      NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeLoads]: merge_list:wrong index or duplicate loads at same place: index:%d", index); out->dump(); array[index]->_load->dump(); tty->cr(); });
+    }
+  }
+
+#ifdef ASSERT
+    if (is_trace_basic()) {
+      tty->print_cr("[TraceMergeLoads]: dump draft merge info array, collected: %d", collected);
+      for (auto & info : array) {
+        if (info) {
+          info->dump();
+        }
+      }
+    }
+#endif
+
+  int bytes = collected * _load->memory_size();
+  if (collected < 2 || !is_power_of_2(bytes)) {
+    // too few or not aligned
+    return;
+  }
+  if (_load != array[0]->_load && _load != array[collected]->_load && array[0] == nullptr) {
+    // candidate is not in the list
+    return;
+  }
+  // check loads are adjacent in the same order, and get the index of the last or operator
+  MemoryAdjacentStatus order = Unknown;
+  int last_op_index = array[0]->last_op() ? 0 : -1;
+  for (int i = 1; i < collected; i++) {
+    MergeLoadInfo* info = array[i];
+    if (info == nullptr) {
+      return;
+    }
+    MemoryAdjacentStatus adjacent = get_adjacent_load_status(array[i-1]->_load, info->_load);
+    if (adjacent == NotAdjacent) {
+      return;
+    } else if (order == Unknown) {
+      order = adjacent;
+    } else if (adjacent != order) {
+      // Different adjacent order
+      return;
+    }
+
+    if (info->last_op()) {
+      if (last_op_index >= 0) {
+        // Found multiple ends of list
+        return;
+      } else {
+        last_op_index = i;
+      }
+    }
+    // Check sign bit of load
+    // For shifted value based on memory load, if it does not reach the sign bit of merged load,
+    // the load must be an unsigned load
+    if ((info->_shift + _load->memory_size() * BitsPerByte) != (collected * _load->memory_size() * BitsPerByte)) {
+      if (!info->_load->is_unsigned()) {
+        // no unsigned Load of LoadI, can we merge 2 LoadI?
+        // we may check value, if it's greater than 0, it can be merged
+        return;
+      }
+    }
+  } // end of for-loop
+
+  if (last_op_index < 0) {
+    // Not found last op
+    return;
+  }
+
+  // Check the merged load matches the platform endian and if require a reverse byte node
+  // The list is sorted by shift value, the low bit part is in the beginning
+  assert(order == LowToHigh || order == HighToLow, "Invalid order should return early");
+#ifdef VM_LITTLE_ENDIAN
+  // LowToHigh match the platform order
+  if (order != LowToHigh && _load->memory_size() != 1) {
+    return;
+  }
+  _require_reverse_bytes = (order == HighToLow);
+#else
+  // HighToLow match the platform order
+  if (order != HighToLow && _load->memory_size() != 1) {
+    return;
+  }
+  _require_reverse_bytes = (order == LowToHigh);
+#endif
+  if (_require_reverse_bytes &&
+      (!Matcher::match_rule_supported(Op_ReverseBytesS) ||
+       !Matcher::match_rule_supported(Op_ReverseBytesI) ||
+       !Matcher::match_rule_supported(Op_ReverseBytesL))) {
+    // Reverse Bytes is not supported
+    return;
+  }
+
+  // All checks are passed
+  _last_op_index = last_op_index;
+  _order = order;
+  for (int i=0; i<collected; i++) {
+    merge_list.push(array[i]);
+  }
+  return;
+}
+
+// Make the merged load from list and replace the last Or oper
+LoadNode* MergePrimitiveLoads::make_merged_load(const MergeLoadInfoList& merge_list) {
+  if (merge_list.is_empty()) {
+    return nullptr;
+  }
+
+  assert(merge_list.length() >= 2 && _last_op_index >= 0 && _last_op_index < merge_list.length(), "sanity");
+  LoadNode* load = _order == LowToHigh ? merge_list.at(0)->_load : merge_list.at(merge_list.length()-1)->_load;
+  // Get address of merged load
+  if (_order == LowToHigh) {
+    load = merge_list.at(0)->_load;
+  } else {
+    load = merge_list.at(merge_list.length()-1)->_load;
+  }
+  Node* adr  = load->in(MemNode::Address);
+  Node* ctrl = load->in(MemNode::Control);
+  Node* mem  = load->in(MemNode::Memory);
+  Node* last_op = merge_list.at(_last_op_index)->_or;
+
+  const TypePtr* at = load->adr_type();
+  const Type* rt = nullptr;
+
+  int merge_size = merge_list.length() * _load->memory_size();
+  BasicType bt = T_ILLEGAL;
+  switch (merge_size) {
+    case 2: bt = T_SHORT; rt = TypeInt::SHORT; break;
+    case 4: bt = T_INT;   rt = TypeInt::INT;   break;
+    case 8: bt = T_LONG;  rt = TypeLong::LONG; break;
+    default: {
+      ShouldNotReachHere();
+      break;
+    }
+  }
+
+  LoadNode* merged_load = LoadNode::make(*_phase, ctrl, mem, adr,
+                                         at, rt, bt, MemNode::unordered)->isa_Load();
+
+  if (merged_load == nullptr) {
+    return nullptr;
+  }
+
+  merged_load->set_unaligned_access();
+
+  // TODO: extract value for uncommon path
+  Node* replace = merged_load;
+  if (_require_reverse_bytes) {
+    assert(_load->memory_size() == 1, "only implemented for bytes");
+    if (merge_size == 8) {
+      replace = _phase->transform(new ReverseBytesLNode(merged_load));
+    } else if (merge_size == 4) {
+      replace = _phase->transform(new ReverseBytesINode(merged_load));
+    } else {
+      assert(merge_size == 2, "sanity check");
+      replace = _phase->transform(new ReverseBytesSNode(merged_load));
+    }
+    NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeLoads] new ReverseBytes node:"); replace->dump(); tty->cr(); })
+    _phase->is_IterGVN()->_worklist.push(replace);
+  }
+  assert(last_op != nullptr && (last_op->Opcode() == Op_OrI || last_op->Opcode() == Op_OrL), "sanity");
+  _phase->is_IterGVN()->replace_node(last_op, replace);
+  _phase->is_IterGVN()->_worklist.push(merged_load);
+
+  return merged_load;
+}
 
 //------------------------------Ideal------------------------------------------
 // If the load is from Field memory and the pointer is non-null, it might be possible to
@@ -1962,7 +2482,21 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  return progress ? this : nullptr;
+  if (progress) {
+    return this;
+  }
+
+  if (MergeLoads && UseUnalignedAccesses) {
+    if (phase->C->merge_memops_phase()) {
+      MergePrimitiveLoads merge(phase, this);
+      Node* merged = merge.run();
+      if (merged != nullptr) { return merged; }
+    } else {
+      phase->C->record_for_merge_memops_igvn(this);
+    }
+  }
+
+  return nullptr;
 }
 
 // Helper to recognize certain Klass fields which are invariant across
@@ -3450,7 +3984,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   if (MergeStores && UseUnalignedAccesses) {
-    if (phase->C->merge_stores_phase()) {
+    if (phase->C->merge_memops_phase()) {
       MergePrimitiveStores merge(phase, this);
       Node* progress = merge.run();
       if (progress != nullptr) { return progress; }
@@ -3466,7 +4000,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       //   StoreI            [   StoreL  ]            StoreI
       // But now it would have been better to do this instead:
       //   [         StoreL       ] [       StoreL         ]
-      phase->C->record_for_merge_stores_igvn(this);
+      phase->C->record_for_merge_memops_igvn(this);
     }
   }
 

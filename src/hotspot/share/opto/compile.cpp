@@ -402,8 +402,8 @@ void Compile::remove_useless_node(Node* dead) {
   if (dead->for_post_loop_opts_igvn()) {
     remove_from_post_loop_opts_igvn(dead);
   }
-  if (dead->for_merge_stores_igvn()) {
-    remove_from_merge_stores_igvn(dead);
+  if (dead->for_merge_memops_igvn()) {
+    remove_from_merge_memops_igvn(dead);
   }
   if (dead->is_Call()) {
     remove_useless_late_inlines(                &_late_inlines, dead);
@@ -456,7 +456,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   remove_useless_nodes(_template_assertion_predicate_opaqs, useful); // remove useless Assertion Predicate opaque nodes
   remove_useless_nodes(_expensive_nodes,    useful); // remove useless expensive nodes
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
-  remove_useless_nodes(_for_merge_stores_igvn, useful); // remove useless node recorded for merge stores IGVN pass
+  remove_useless_nodes(_for_merge_memops_igvn, useful); // remove useless node recorded for merge stores/loads IGVN pass
   remove_useless_unstable_if_traps(useful);          // remove useless unstable_if traps
   remove_useless_coarsened_locks(useful);            // remove useless coarsened locks nodes
 #ifdef ASSERT
@@ -631,7 +631,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
-      _merge_stores_phase(false),
+      _merge_memops_phase(false),
       _allow_macro_nodes(true),
       _inlining_progress(false),
       _inlining_incrementally(false),
@@ -656,7 +656,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _template_assertion_predicate_opaqs(comp_arena(), 8, 0, nullptr),
       _expensive_nodes(comp_arena(), 8, 0, nullptr),
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
-      _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
+      _for_merge_memops_igvn(comp_arena(), 8, 0, nullptr),
       _unstable_if_traps(comp_arena(), 8, 0, nullptr),
       _coarsened_locks(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
@@ -911,7 +911,7 @@ Compile::Compile(ciEnv* ci_env,
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
-      _merge_stores_phase(false),
+      _merge_memops_phase(false),
       _allow_macro_nodes(true),
       _inlining_progress(false),
       _inlining_incrementally(false),
@@ -930,7 +930,7 @@ Compile::Compile(ciEnv* ci_env,
       _log(ci_env->log()),
       _first_failure_details(nullptr),
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
-      _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
+      _for_merge_memops_igvn(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
       NOT_PRODUCT(_igv_printer(nullptr) COMMA)
           _unique(0),
@@ -1843,6 +1843,9 @@ void Compile::record_for_post_loop_opts_igvn(Node* n) {
     assert(!_for_post_loop_igvn.contains(n), "duplicate");
     n->add_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
     _for_post_loop_igvn.append(n);
+  } else if (MergeLoads && n->is_Load() && n->outcnt() == 0) {
+    n->add_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
+    _for_post_loop_igvn.append(n);
   }
 }
 
@@ -1855,6 +1858,11 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
   // Verify that all previous optimizations produced a valid graph
   // at least to this point, even if no loop optimizations were done.
   PhaseIdealLoop::verify(igvn);
+  assert(igvn.delay_transform() == false, "sanity");
+  bool trace = !C->directive()->trace_merge_stores_tags().is_empty();
+  if (trace) {
+    print_ideal_ir("before post_loop_opts");
+  }
 
   C->set_post_loop_opts_phase(); // no more loop opts allowed
 
@@ -1878,20 +1886,20 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
   }
 }
 
-void Compile::record_for_merge_stores_igvn(Node* n) {
-  if (!n->for_merge_stores_igvn()) {
-    assert(!_for_merge_stores_igvn.contains(n), "duplicate");
-    n->add_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
-    _for_merge_stores_igvn.append(n);
+void Compile::record_for_merge_memops_igvn(Node* n) {
+  if (!n->for_merge_memops_igvn()) {
+    assert(!_for_merge_memops_igvn.contains(n), "duplicate");
+    n->add_flag(Node::NodeFlags::Flag_for_merge_memops_igvn);
+    _for_merge_memops_igvn.append(n);
   }
 }
 
-void Compile::remove_from_merge_stores_igvn(Node* n) {
-  n->remove_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
-  _for_merge_stores_igvn.remove(n);
+void Compile::remove_from_merge_memops_igvn(Node* n) {
+  n->remove_flag(Node::NodeFlags::Flag_for_merge_memops_igvn);
+  _for_merge_memops_igvn.remove(n);
 }
 
-// We need to wait with merging stores until RangeCheck smearing has removed the RangeChecks during
+// We need to wait with merging stores/loads until RangeCheck smearing has removed the RangeChecks during
 // the post loops IGVN phase. If we do it earlier, then there may still be some RangeChecks between
 // the stores, and we merge the wrong sequence of stores.
 // Example:
@@ -1904,20 +1912,20 @@ void Compile::remove_from_merge_stores_igvn(Node* n) {
 //   [         StoreL       ] [       StoreL         ]
 //
 // Note: we allow stores to merge in this dedicated IGVN round, and any later IGVN round,
-//       since we never unset _merge_stores_phase.
-void Compile::process_for_merge_stores_igvn(PhaseIterGVN& igvn) {
-  C->set_merge_stores_phase();
+//       since we never unset _merge_memops_phase.
+void Compile::process_for_merge_memops_igvn(PhaseIterGVN& igvn) {
+  C->set_merge_memops_phase();
 
-  if (_for_merge_stores_igvn.length() > 0) {
-    while (_for_merge_stores_igvn.length() > 0) {
-      Node* n = _for_merge_stores_igvn.pop();
-      n->remove_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
+  if (_for_merge_memops_igvn.length() > 0) {
+    while (_for_merge_memops_igvn.length() > 0) {
+      Node* n = _for_merge_memops_igvn.pop();
+      n->remove_flag(Node::NodeFlags::Flag_for_merge_memops_igvn);
       igvn._worklist.push(n);
     }
     igvn.optimize();
     if (failing()) return;
-    assert(_for_merge_stores_igvn.length() == 0, "no more delayed nodes allowed");
-    print_method(PHASE_AFTER_MERGE_STORES, 3);
+    assert(_for_merge_memops_igvn.length() == 0, "no more delayed nodes allowed");
+    print_method(PHASE_AFTER_MERGE_MEMOPS, 3);
   }
 }
 
@@ -2480,7 +2488,7 @@ void Compile::Optimize() {
 
   process_for_post_loop_opts_igvn(igvn);
 
-  process_for_merge_stores_igvn(igvn);
+  process_for_merge_memops_igvn(igvn);
 
   if (failing())  return;
 
