@@ -26,8 +26,6 @@
  * @bug 8133196
  * @summary test functionality of getOriginalHostName(InetAddress)
  * @modules java.base/jdk.internal.access
- * @library /test/lib
- * @run main getOriginalHostName
  */
 
 import java.net.InetAddress;
@@ -40,24 +38,19 @@ public class getOriginalHostName {
     private static final JavaNetInetAddressAccess jna =
         SharedSecrets.getJavaNetInetAddressAccess();
 
-    public static void main(String[] args) {
-        try {
-            final String HOST = "dummyserver.java.net";
-            InetAddress ia = null;
-            ia = getInetAddress(HOST);
-            if (ia != null) testInetAddress(ia, HOST);
-            ia = getInetAddress("255.255.255.0");
-            if (ia != null) testInetAddress(ia, null);
-            ia = InetAddress.getByAddress(new byte[]{1,1,1,1});
-            testInetAddress(ia, null);
-            ia = InetAddress.getLocalHost();
-            testInetAddress(ia, ia.getHostName());
-            ia = InetAddress.getLoopbackAddress();
-            testInetAddress(ia, ia.getHostName());
-        } catch (Exception e) {
-            throw new RuntimeException("Unexpected exception:" + e);
-        }
-        System.out.println("getOriginalHostName EXIT");
+    public static void main(String[] args) throws Exception {
+        final String HOST = "dummyserver.java.net";
+        InetAddress ia = null;
+        ia = getInetAddress(HOST);
+        if (ia != null) testInetAddress(ia, HOST);
+        ia = getInetAddress("255.255.255.0");
+        if (ia != null) testInetAddress(ia, null);
+        ia = InetAddress.getByAddress(new byte[]{1,1,1,1});
+        testInetAddress(ia, null);
+        ia = InetAddress.getLocalHost();
+        testInetAddress(ia, ia.getHostName());
+        ia = InetAddress.getLoopbackAddress();
+        testInetAddress(ia, ia.getHostName());
     }
 
     private static InetAddress getInetAddress(String host) {
