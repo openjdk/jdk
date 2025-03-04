@@ -393,8 +393,8 @@ public final class Optional<T> {
      *        exception to be thrown
      * @return the value, if present
      * @throws X if no value is present
-     * @throws NullPointerException if no value is present and the exception
-     *          supplying function is {@code null}
+     * @throws NullPointerException if no value is present and the exception 
+     *         supplying function or its result is {@code null}
      */
     public <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
         if (value != null) {
