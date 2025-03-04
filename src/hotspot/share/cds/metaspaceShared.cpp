@@ -1363,6 +1363,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
         // re-reserve the protection zone part lest something else gets mapped into that
         // area later.
         if (prot_zone_size > 0) {
+          assert(prot_zone_size >= os::vm_allocation_granularity(), "must be"); // not just page size!
           char* p = os::attempt_reserve_memory_at(mapped_base_address, prot_zone_size,
                                                   false, MemTag::mtClassShared);
           assert(p == mapped_base_address || p == nullptr, "must be");
@@ -1431,7 +1432,6 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
              *(mapped_base_address) == 'P' &&
              *(mapped_base_address + prot_zone_size - 1) == 'P',
              "Protection zone was overwritten?");
-
       // Set up ccs in metaspace.
       Metaspace::initialize_class_space(class_space_rs);
 
