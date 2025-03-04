@@ -23,6 +23,8 @@
 
 package compiler.loopopts.superword;
 
+import compiler.lib.ir_framework.*;
+
 /*
  * @test
  * @bug 8350756
@@ -30,12 +32,57 @@ package compiler.loopopts.superword;
  *          constant fold the multiversion_if, to remove the slow_loop.
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMultiversionRemoveUselessSlowLoop
- * @run main/othervm -XX:CompileCommand=compileonly,*Test*::test
- *                   -XX:-TieredCompilation -Xcomp -XX:PerMethodTrapLimit=0
- *                   compiler.loopopts.superword.TestMultiversionRemoveUselessSlowLoop
  */
 
 public class TestMultiversionRemoveUselessSlowLoop {
+
+    public static void main(String[] args) {
+        TestFramework framework = new TestFramework(TestMultiversionRemoveUselessSlowLoop.class);
+        // No traps means we cannot use the predicates version for SuperWord / AutoVectorization,
+        // and instead use multiversioning directly.
+        framework.addFlags("-XX:-TieredCompilation", "-XX:PerMethodTrapLimit=0");
+        framework.setDefaultWarmup(0); // simulates Xcomp
+        framework.start();
+    }
+
+    public static final int SIZE = 20;
+    public static final int[] a = new int[SIZE];
+    public static final int[] b = new int[SIZE];
+    public static final int SIZE2 = 10_000;
+    public static final int[] a2 = new int[SIZE2];
+    public static final int[] b2 = new int[SIZE2];
+
+    @Test
+    @IR(counts = {"multiversion_fast",         "= 6",
+                  "multiversion_delayed_slow", "= 2",
+                  "multiversion",              "= 8"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        phase = CompilePhase.PHASEIDEALLOOP1)
+    @IR(counts = {"multiversion_fast",         "= 6",
+                  "multiversion_delayed_slow", "= 2",
+                  "multiversion",              "= 8"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        phase = CompilePhase.PHASEIDEALLOOP_ITERATIONS)
+    @IR(counts = {"multiversion_fast",  "= 5",  // pre/main/post of the 2 loops, minus main loop of the first loop, it is fully unrolled.
+                  "multiversion",       "= 5"}, // only the 5 multiversion_fast loops
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        phase = CompilePhase.PRINT_IDEAL)
+    public static void testIR() {
+        // This loop is short, and the multiversion_fast main loop eventuall is fully unrolled.
+        for (int i = 0; i < SIZE; i++) {
+            a[i] = b[i];
+        }
+        // We take this second loop with a larger limit so that loop opts keeps going once the loop
+        // above is fully optimized. It also gives us a reference where the main loop of the
+        // multiverion fast_loop does not disappear.
+        for (int i = 0; i < SIZE2; i++) {
+            a2[i] = b2[i];
+        }
+    }
+
     static long instanceCount;
     static int iFld;
     static int iFld1;
@@ -49,7 +96,8 @@ public class TestMultiversionRemoveUselessSlowLoop {
     //
     // If we let the multiversion_if constant fold soon after the main fast loop
     // disappears, then this issue does not occur any more.
-    static void test() {
+    @Test
+    public static void testCrash() {
         boolean b2 = true;
         for (int i = 0; i < 1000; i++) {
             for (int i21 = 82; i21 > 9; --i21) {
@@ -60,9 +108,5 @@ public class TestMultiversionRemoveUselessSlowLoop {
             }
             instanceCount = iFld1;
         }
-    }
-
-    public static void main(String[] args) {
-        test();
     }
 }
