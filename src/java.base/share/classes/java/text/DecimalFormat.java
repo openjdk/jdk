@@ -2812,7 +2812,7 @@ public class DecimalFormat extends NumberFormat {
      * Set the positive prefix.
      * <P>Examples: +123, $123, sFr123
      *
-     * @param newValue the new positive prefix
+     * @param newValue the new positive prefix. Non-null.
      * @throws NullPointerException if {@code newValue} is {@code null}
      */
     public void setPositivePrefix (String newValue) {
@@ -2856,7 +2856,7 @@ public class DecimalFormat extends NumberFormat {
      * Set the negative prefix.
      * <P>Examples: -123, ($123) (with negative suffix), sFr-123
      *
-     * @param newValue the new negative prefix
+     * @param newValue the new negative prefix. Non-null.
      * @throws NullPointerException if {@code newValue} is {@code null}
      */
     public void setNegativePrefix (String newValue) {
@@ -2899,7 +2899,7 @@ public class DecimalFormat extends NumberFormat {
      * Set the positive suffix.
      * <P>Example: 123%
      *
-     * @param newValue the new positive suffix
+     * @param newValue the new positive suffix. Non-null.
      * @throws NullPointerException if {@code newValue} is {@code null}
      */
     public void setPositiveSuffix (String newValue) {
@@ -2942,7 +2942,7 @@ public class DecimalFormat extends NumberFormat {
      * Set the negative suffix.
      * <P>Examples: 123%
      *
-     * @param newValue the new negative suffix
+     * @param newValue the new negative suffix. Non-null.
      * @throws NullPointerException if {@code newValue} is {@code null}
      */
     public void setNegativeSuffix (String newValue) {
