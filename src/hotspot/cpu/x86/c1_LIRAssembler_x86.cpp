@@ -74,7 +74,6 @@ NEEDS_CLEANUP // remove this definitions ?
 const Register SYNC_header = rax;   // synchronization header
 const Register SHIFT_count = rcx;   // where count for shift operations must be
 
-
 #define __ _masm->
 
 
@@ -3515,21 +3514,13 @@ void bar() {
 }
 
 // Rename to increment_profile_ctr
-void LIR_Assembler::maybe_inc_profile_counter(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op,
-                                    int profile_limit) {
+void LIR_Assembler::maybe_inc_profile_counter(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op) {
   Register temp = temp_op->as_register();
   Address dest_adr = as_Address(addr->as_address_ptr());
 
   assert(ProfileCaptureRatio != 1, "ProfileCaptureRatio must be != 1");
 
   int profile_capture_ratio = ProfileCaptureRatio;
-
-  // FIXME: Use a fixed ProfileCaptureRatio for 1st patch
-  if (profile_limit) {
-    int ratio = sqrt(profile_limit);
-    profile_capture_ratio = round_down_power_of_2(ratio);
-  }
-
   int ratio_shift = exact_log2(profile_capture_ratio);
   int threshold = (1ull << 32) >> ratio_shift;
 

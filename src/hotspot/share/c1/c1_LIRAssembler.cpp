@@ -753,8 +753,7 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
       break;
 
     case lir_maybe_inc_profile_counter:
-      maybe_inc_profile_counter(op->in_opr1(), op->in_opr2(), op->result_opr(), op->tmp1_opr(),
-                      op->profile_limit());
+      maybe_inc_profile_counter(op->in_opr1(), op->in_opr2(), op->result_opr(), op->tmp1_opr());
       break;
 
     default:

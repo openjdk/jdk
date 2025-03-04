@@ -3309,11 +3309,7 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
     __ add(result, step, result);
     __ store(result, counter);
   } else {
-    int step_bits = 1;
-    if (step->is_constant()) {
-      step_bits = step->as_constant_ptr()->as_jint_bits();
-    }
-    __ maybe_inc_profile_counter(step, counter, result, tmp, frequency/step_bits);
+    __ maybe_inc_profile_counter(step, counter, result, tmp);
   }
   if (notify && (!backedge || UseOnStackReplacement)) {
     LIR_Opr meth = LIR_OprFact::metadataConst(method->constant_encoding());
