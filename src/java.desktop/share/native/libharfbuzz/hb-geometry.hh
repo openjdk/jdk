@@ -79,15 +79,15 @@ struct hb_transform_t
 {
   hb_transform_t () {}
   hb_transform_t (float xx, float yx,
-		  float xy, float yy,
-		  float x0, float y0) :
+                  float xy, float yy,
+                  float x0, float y0) :
     xx (xx), yx (yx), xy (xy), yy (yy), x0 (x0), y0 (y0) {}
 
   bool is_identity () const
   {
     return xx == 1.f && yx == 0.f &&
-	   xy == 0.f && yy == 1.f &&
-	   x0 == 0.f && y0 == 0.f;
+           xy == 0.f && yy == 1.f &&
+           x0 == 0.f && y0 == 0.f;
   }
 
   void multiply (const hb_transform_t &o)
@@ -193,10 +193,10 @@ struct hb_transform_t
     skewX = skewX * HB_PI;
     skewY = skewY * HB_PI;
     auto other = hb_transform_t{1.f,
-				skewY ? tanf (skewY) : 0.f,
-				skewX ? tanf (skewX) : 0.f,
-				1.f,
-				0.f, 0.f};
+                                skewY ? tanf (skewY) : 0.f,
+                                skewX ? tanf (skewX) : 0.f,
+                                1.f,
+                                0.f, 0.f};
     transform (other);
   }
 
@@ -229,7 +229,7 @@ struct hb_bounds_t
     else if (o.status == BOUNDED)
     {
       if (status == EMPTY)
-	*this = o;
+        *this = o;
       else if (status == BOUNDED)
         extents.union_ (o.extents);
     }
@@ -242,12 +242,12 @@ struct hb_bounds_t
     else if (o.status == BOUNDED)
     {
       if (status == UNBOUNDED)
-	*this = o;
+        *this = o;
       else if (status == BOUNDED)
       {
         extents.intersect (o.extents);
-	if (extents.is_empty ())
-	  status = EMPTY;
+        if (extents.is_empty ())
+          status = EMPTY;
       }
     }
   }
@@ -271,10 +271,10 @@ struct hb_transform_decomposed_t
   operator bool () const
   {
     return translateX || translateY ||
-	   rotation ||
-	   scaleX != 1 || scaleY != 1 ||
-	   skewX || skewY ||
-	   tCenterX || tCenterY;
+           rotation ||
+           scaleX != 1 || scaleY != 1 ||
+           skewX || skewY ||
+           tCenterX || tCenterY;
   }
 
   hb_transform_t to_transform () const
