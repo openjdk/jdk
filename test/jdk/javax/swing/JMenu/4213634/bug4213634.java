@@ -41,6 +41,8 @@ import javax.swing.SwingUtilities;
  * @bug 4213634 8017187
  * @library ../../regtesthelpers
  * @build Util
+ * @summary Verifies if Alt+mnemonic char works when
+ *          menu & menuitem have same mnemonic char
  * @run main bug4213634
  */
 
