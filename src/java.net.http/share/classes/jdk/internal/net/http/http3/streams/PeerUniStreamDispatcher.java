@@ -74,7 +74,7 @@ public abstract class PeerUniStreamDispatcher {
         if (stream.isBidirectional()) {
             throw new IllegalArgumentException("stream " + stream.streamId() + " is not unidirectional");
         }
-        return null;
+        return stream;
     }
 
     /**
