@@ -791,7 +791,7 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     // Ignore Template Assertion Predicates with OpaqueTemplateAssertionPredicate nodes.
     return nullptr;
   }
-  if (bol->Opcode() != Op_Bool) {
+  if (!bol->is_Bool()) {
     assert(false, "Expected Bool, but got %s", NodeClassNames[bol->Opcode()]);
     return nullptr;
   }
