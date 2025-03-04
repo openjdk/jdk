@@ -44,8 +44,9 @@ public class MicroTime {
                 count++;
             }
         }
-        // Before this change, KerberosTime was implemented in milliseconds.
-        // Now there should be more.
+        // Before JDK-6882687, KerberosTime was measured in milliseconds.
+        // Now it's in microseconds. We should be able to record more than
+        // 1000 distinct KerberosTime values within one second.
         if (count < 1001) {
             throw new Exception("What? only " + (1000000/count) +
                     " musec precision?");
