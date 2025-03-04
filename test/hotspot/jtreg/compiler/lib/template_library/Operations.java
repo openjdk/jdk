@@ -310,6 +310,66 @@ final class Operations {
         BOOLEAN_OPERATIONS
     ).flatMap((List<Operation> l) -> l.stream()).toList();
 
+
+    private record VOP(String name, int args, List<PrimitiveType> elementTypes) {}
+
+    private static final List<VOP> VECTOR_API_OPS = List.of(
+        new VOP("ABS",                  1, Type.PRIMITIVE_TYPES),
+        new VOP("ACOS",                 1, Type.FLOATING_TYPES),
+        new VOP("ADD",                  2, Type.PRIMITIVE_TYPES),
+        new VOP("AND",                  2, Type.INTEGRAL_TYPES),
+        new VOP("AND_NOT",              2, Type.INTEGRAL_TYPES),
+        new VOP("ASHR",                 2, Type.INTEGRAL_TYPES),
+        new VOP("ASIN",                 1, Type.FLOATING_TYPES),
+        new VOP("ATAN",                 1, Type.FLOATING_TYPES),
+        new VOP("ATAN2",                2, Type.FLOATING_TYPES),
+        new VOP("BIT_COUNT",            1, Type.INTEGRAL_TYPES),
+        new VOP("BITWISE_BLEND",        3, Type.INTEGRAL_TYPES),
+        new VOP("CBRT",                 1, Type.FLOATING_TYPES),
+        new VOP("COMPRESS_BITS",        2, Type.INT_LONG_TYPES),
+        new VOP("COS",                  1, Type.FLOATING_TYPES),
+        new VOP("COSH",                 1, Type.FLOATING_TYPES),
+        new VOP("DIV",                  2, Type.FLOATING_TYPES),
+        new VOP("EXP",                  1, Type.FLOATING_TYPES),
+        new VOP("EXPAND_BITS",          2, Type.INT_LONG_TYPES),
+        new VOP("EXPM1",                1, Type.FLOATING_TYPES),
+        new VOP("FIRST_NONZERO",        1, Type.PRIMITIVE_TYPES),
+        new VOP("FMA",                  3, Type.FLOATING_TYPES),
+        new VOP("HYPOT",                2, Type.FLOATING_TYPES),
+        new VOP("LEADING_ZEROS_COUNT",  1, Type.PRIMITIVE_TYPES),
+        new VOP("LOG",                  1, Type.FLOATING_TYPES),
+        new VOP("LOG10",                1, Type.FLOATING_TYPES),
+        new VOP("LOG1P",                1, Type.FLOATING_TYPES),
+        new VOP("LSHL",                 2, Type.INTEGRAL_TYPES),
+        new VOP("LSHR",                 2, Type.INTEGRAL_TYPES),
+        new VOP("MIN",                  2, Type.PRIMITIVE_TYPES),
+        new VOP("MAX",                  2, Type.PRIMITIVE_TYPES),
+        new VOP("MUL",                  2, Type.PRIMITIVE_TYPES),
+        new VOP("NEG",                  1, Type.PRIMITIVE_TYPES),
+        new VOP("NOT",                  1, Type.INTEGRAL_TYPES),
+        new VOP("OR",                   2, Type.INTEGRAL_TYPES),
+        new VOP("POW",                  2, Type.FLOATING_TYPES),
+        new VOP("REVERSE",              1, Type.PRIMITIVE_TYPES),
+        new VOP("REVERSE_BYTES",        1, Type.PRIMITIVE_TYPES),
+        new VOP("ROL",                  2, Type.INTEGRAL_TYPES),
+        new VOP("ROR",                  2, Type.INTEGRAL_TYPES),
+        new VOP("SADD",                 2, Type.INTEGRAL_TYPES),
+        new VOP("SIN",                  1, Type.FLOATING_TYPES),
+        new VOP("SINH",                 1, Type.FLOATING_TYPES),
+        new VOP("SQRT",                 1, Type.FLOATING_TYPES),
+        new VOP("SSUB",                 2, Type.INTEGRAL_TYPES),
+        new VOP("SUADD",                2, Type.INTEGRAL_TYPES),
+        new VOP("SUB",                  2, Type.PRIMITIVE_TYPES),
+        new VOP("SUSUB",                2, Type.INTEGRAL_TYPES),
+        new VOP("TAN",                  1, Type.FLOATING_TYPES),
+        new VOP("TANH",                 1, Type.FLOATING_TYPES),
+        new VOP("TRAILING_ZEROS_COUNT", 1, Type.PRIMITIVE_TYPES),
+        new VOP("UMAX",                 2, Type.INTEGRAL_TYPES),
+        new VOP("UMIN",                 2, Type.INTEGRAL_TYPES),
+        new VOP("XOR",                  2, Type.INTEGRAL_TYPES),
+        new VOP("ZOMO",                 1, Type.INTEGRAL_TYPES)
+    );
+
     private static final List<Operation> generateVectorAPIOperations() {
         List<Operation> ops = new ArrayList<Operation>();
 
@@ -378,6 +438,13 @@ final class Operations {
             // TODO: ensure we use all variants of fromArray and fromMemorySegment, plus intoArray and intoMemorySegment.
 
             ops.add(new Operation.Binary(type.elementType, "", type, ".lane(", Type.ints(), ")"));
+
+            for (VOP vop : VECTOR_API_OPS) {
+                if (vop.args() == 2 && vop.elementTypes().contains(type.elementType)) {
+                    ops.add(new Operation.Binary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ")"));
+                    // TODO: lanewise(VectorOperators.Binary op, int e, VectorMask<Integer> m)
+                }
+            }
         }
 
         // Ensure the list is immutable.

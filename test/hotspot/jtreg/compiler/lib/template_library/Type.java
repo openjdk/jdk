@@ -56,6 +56,29 @@ public abstract class Type implements Name.Type {
         booleans()
     );
 
+    public static final List<PrimitiveType> INTEGRAL_TYPES = List.of(
+        bytes(),
+        chars(),
+        shorts(),
+        ints(),
+        longs()
+    );
+    public static final List<PrimitiveType> SUBWORD_TYPES = List.of(
+        bytes(),
+        chars(),
+        shorts()
+    );
+
+    public static final List<PrimitiveType> INT_LONG_TYPES = List.of(
+        ints(),
+        longs()
+    );
+
+    public static final List<PrimitiveType> FLOATING_TYPES = List.of(
+        floats(),
+        doubles()
+    );
+
     public static final List<VectorAPIType> VECTOR_API_BYTE_TYPES = List.of(
         VectorAPIType.BYTE_64,
         VectorAPIType.BYTE_128,
