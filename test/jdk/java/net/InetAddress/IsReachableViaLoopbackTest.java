@@ -25,8 +25,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 
-import jtreg.SkippedException;
-
 /**
  * @test
  * @bug 8135305
@@ -40,7 +38,7 @@ public class IsReachableViaLoopbackTest {
     public static void main(String[] args) {
         try {
             InetAddress addr = InetAddress.getLoopbackAddress();
-            InetAddress remoteAddr = InetAddress.getByName("23.197.138.208");  //real address of bugs.openjdk.org
+            InetAddress remoteAddr = InetAddress.getByName("23.197.138.208");  // use literal address to avoid DNS checks
             if (!addr.isReachable(10000))
                 throw new RuntimeException("Localhost should always be reachable");
             NetworkInterface inf = NetworkInterface.getByInetAddress(addr);
