@@ -189,11 +189,8 @@ bool PSOldGen::expand(size_t bytes) {
   assert_locked_or_safepoint(Heap_lock);
   assert(bytes > 0, "precondition");
 #endif
-  if (virtual_space()->uncommitted_size() == 0) {
-    return false;
-  }
   const size_t alignment = virtual_space()->alignment();
-  size_t aligned_bytes  = align_up(MIN2(bytes, virtual_space()->uncommitted_size()), alignment);
+  size_t aligned_bytes = can_align_up(bytes, alignment) ? align_up(bytes, alignment) : 0;
   size_t aligned_expand_bytes = align_up(MinHeapDeltaBytes, alignment);
 
   if (UseNUMA) {

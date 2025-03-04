@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,17 @@ constexpr T align_down(T size, A alignment) {
 }
 
 template<typename T, typename A, ENABLE_IF(std::is_integral<T>::value)>
+constexpr bool can_align_up(T size, A alignment) {
+  return align_down(std::numeric_limits<T>::max(), alignment) >= size;
+}
+
+template <typename T, typename A>
+inline bool can_align_up(T* ptr, A alignment) {
+  static_assert(sizeof(ptr) == sizeof(uintptr_t), "assumption");
+  return can_align_up((uintptr_t)ptr, alignment);
+}
+
+template<typename T, typename A, ENABLE_IF(std::is_integral<T>::value)>
 constexpr T align_up(T size, A alignment) {
   T mask = checked_cast<T>(alignment_mask(alignment));
   assert(size <= std::numeric_limits<T>::max() - mask, "overflow");
@@ -90,16 +101,6 @@ constexpr T align_down_bounded(T size, A alignment) {
 template <typename T, typename A>
 inline T* align_up(T* ptr, A alignment) {
   return (T*)align_up((uintptr_t)ptr, alignment);
-}
-
-template <typename T, typename A>
-inline T* align_up_or_null(T* ptr, A alignment) {
-  uintptr_t mask = checked_cast<uintptr_t>(alignment_mask(alignment));
-  if ((uintptr_t)ptr > std::numeric_limits<uintptr_t>::max() - mask) {
-    return nullptr;
-  }
-  uintptr_t adjusted = (uintptr_t)ptr + mask;
-  return (T*)align_down(adjusted, alignment);
 }
 
 template <typename T, typename A>
