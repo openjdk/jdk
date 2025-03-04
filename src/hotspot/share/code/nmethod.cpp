@@ -1527,6 +1527,10 @@ nmethod* nmethod::relocate_to(nmethod* nm, CodeBlobType code_blob_type) {
   nmethod* nm_copy = nullptr;
 
   {
+    // Clear inline caches before acquiring any locks
+    VM_ClearNMethodICs clear_nmethod_ics(nm);
+    VMThread::execute(&clear_nmethod_ics);
+
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     nm_copy = new (nm->size(), code_blob_type) nmethod(*nm);
 

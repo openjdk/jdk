@@ -47,5 +47,7 @@ public class ReplaceAllNMethods {
 
     public static void main(String [] args) throws Exception {
         WHITE_BOX.replaceAllNMethods();
+
+        WHITE_BOX.fullGC();
     }
 }

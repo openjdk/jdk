@@ -1656,11 +1656,15 @@ WB_ENTRY(void, WB_ReplaceAllNMethods(JNIEnv* env))
     for (CodeBlob* cb = (CodeBlob*) heap->first(); cb != nullptr; cb = (CodeBlob*) heap->next(cb)) {
       if (cb->is_nmethod()) {
         nmethod* nm = cb->as_nmethod();
-          // TODO Error after relocating MethodHandle functions
-          if (!nm->method()->is_method_handle_intrinsic()) {
-            nmethods.append(nm);
-          }
+        // TODO Error after relocating MethodHandle functions
+        if (!nm->method()->is_method_handle_intrinsic()) {
+          nmethods.append(nm);
+        }
       }
+    }
+
+    if (!SegmentedCodeCache) {
+      break;
     }
   }
 
@@ -1686,6 +1690,10 @@ WB_ENTRY(jlong, WB_GetNumNMethods(JNIEnv* env))
       if (cb->is_nmethod()) {
         num++;
       }
+    }
+
+    if (!SegmentedCodeCache) {
+      break;
     }
   }
 
