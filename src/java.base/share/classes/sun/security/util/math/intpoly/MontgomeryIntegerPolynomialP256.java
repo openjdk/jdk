@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -392,6 +392,7 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
         dd4 += Math.unsignedMultiplyHigh(n, modulus[4]) << shift1 | (n4 >>> shift2);
         d4 += n4 & LIMB_MASK;
 
+        // Final carry propagate
         c5 += d1 + dd0 + (d0 >>> BITS_PER_LIMB);
         c6 += d2 + dd1 + (c5 >>> BITS_PER_LIMB);
         c7 += d3 + dd2 + (c6 >>> BITS_PER_LIMB);
@@ -403,7 +404,10 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
         c7 &= LIMB_MASK;
         c8 &= LIMB_MASK;
 
-        // At this point, the result could overflow by one modulus.
+        // At this point, the result {c5, c6, c7, c8, c9} could overflow by
+        // one modulus. Subtract one modulus (with carry propagation), into
+        // {c0, c1, c2, c3, c4}. Note that in this calculation, limbs are
+        // signed
         c0 = c5 - modulus[0];
         c1 = c6 - modulus[1] + (c0 >> BITS_PER_LIMB);
         c0 &= LIMB_MASK;
@@ -414,8 +418,13 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
         c4 = c9 - modulus[4] + (c3 >> BITS_PER_LIMB);
         c3 &= LIMB_MASK;
 
-        long mask = c4 >> BITS_PER_LIMB; // Signed shift!
-
+        // We now must select a result that is in range of [0,modulus). i.e.
+        // either {c0-4} or {c5-9}. `If statements` are not allowed here, so use
+        // boolean algebra (i.e. a mask). If statement would had been `if {c0-4}
+        // is negative`, which essentially means 'what is the sign bit of c4'
+        // A signed shift is the easiest way to broadcast c4-sign-bit into a
+        // mask
+        long mask = c4 >> BITS_PER_LIMB;
         r[0] = ((c5 & mask) | (c0 & ~mask));
         r[1] = ((c6 & mask) | (c1 & ~mask));
         r[2] = ((c7 & mask) | (c2 & ~mask));

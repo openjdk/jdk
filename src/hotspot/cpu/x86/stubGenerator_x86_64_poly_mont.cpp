@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Intel Corporation. All rights reserved.
+ * Copyright (c) 2024, 2025, Intel Corporation. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -283,6 +283,13 @@ void montgomeryMultiply(const Register aLimbs, const Register bLimbs, const Regi
  * Unrolled Word-by-Word Montgomery Multiplication
  * r = a * b * 2^-260 (mod P)
  *
+ * Use vpmadd52{l,h}uq multiply for upper four limbs and use
+ * scalar mulq for the lowest limb.
+ *
+ * One has to be careful with mulq vs vpmadd52 'crossovers'; mulq high/low
+ * is split as 40:64 bits vs 52:52 in the vector version. Shifts are required
+ * to line up values before addition (see following ascii art)
+ *
  * Pseudocode:
  *
  *                                                     +--+--+--+--+  +--+
@@ -299,40 +306,54 @@ void montgomeryMultiply(const Register aLimbs, const Register bLimbs, const Regi
  *          B = replicate(bLimbs[i])                   |bi|bi|bi|bi|  |bi|
  *                                                     +--+--+--+--+  +--+
  *                                                     +--+--+--+--+  +--+
+ *                                                     |a5|a4|a3|a2|  |a1|
+ *          Acc1 += A *  B                            *|bi|bi|bi|bi|  |bi|
  *                                               Acc1+=|c5|c4|c3|c2|  |c1|
- *                                                    *|a5|a4|a3|a2|  |a1|
- *          Acc1 += A *  B                             |bi|bi|bi|bi|  |bi|
  *                                                     +--+--+--+--+  +--+
- *                                               Acc2+=| 0| 0| 0| 0|  | 0|
- *                                                   *h|a5|a4|a3|a2|  |a1|
- *          Acc2 += A *h B                             |bi|bi|bi|bi|  |bi|
+ *                                                     |a5|a4|a3|a2|  |a1|
+ *          Acc2 += A *h B                           *h|bi|bi|bi|bi|  |bi|
+ *                                               Acc2+=|d5|d4|d3|d2|  |d1|
  *                                                     +--+--+--+--+  +--+
  *          N = replicate(Acc1[0])                     |n0|n0|n0|n0|  |n0|
  *                                                     +--+--+--+--+  +--+
  *                                                     +--+--+--+--+  +--+
- *                                               Acc1+=|c5|c4|c3|c2|  |c1|
- *                                                    *|m5|m4|m3|m2|  |m1|
- *          Acc1 += M *  N                             |n0|n0|n0|n0|  |n0| Note: 52 low bits of acc1== 0 due to Montgomery!
+ *                                                     |m5|m4|m3|m2|  |m1|
+ *          Acc1 += M *  N                            *|n0|n0|n0|n0|  |n0|
+ *                                               Acc1+=|c5|c4|c3|c2|  |c1| Note: 52 low bits of c1 == 0 due to Montgomery!
  *                                                     +--+--+--+--+  +--+
+ *                                                     |m5|m4|m3|m2|  |m1|
+ *          Acc2 += M *h N                           *h|n0|n0|n0|n0|  |n0|
  *                                               Acc2+=|d5|d4|d3|d2|  |d1|
- *                                                   *h|m5|m4|m3|m2|  |m1|
- *          Acc2 += M *h N                             |n0|n0|n0|n0|  |n0|
  *                                                     +--+--+--+--+  +--+
- *          if (i == 4) break;
  *          // Combine high/low partial sums Acc1 + Acc2
- *                                                     +--+--+--+--+  +--+
- *          carry = Acc1[0] >> 52                      | 0| 0| 0| 0|  |c1|
- *                                                     +--+--+--+--+  +--+
- *          Acc2[0] += carry
+ *                                                                    +--+
+ *          carry = Acc1[0] >> 52                                     |c1|
+ *                                                                    +--+
+ *          Acc2[0] += carry                                          |d1|
+ *                                                                    +--+
  *                                                     +--+--+--+--+  +--+
  *          Acc1 = Acc1 shift one q element>>          | 0|c5|c4|c3|  |c2|
+ *                                                    +|d5|d4|d3|d2|  |d1|
+ *          Acc1 = Acc1 + Acc2                   Acc1+=|c5|c4|c3|c2|  |c1|
  *                                                     +--+--+--+--+  +--+
- *          Acc1 = Acc1 + Acc2
  *      ---- done
- *
- * At this point the result in Acc1 can overflow by 1 Modulus and needs carry
- * propagation. Subtract one modulus, carry-propagate both results and select
- * (constant-time) the positive number of the two
+ *                                                     +--+--+--+--+  +--+
+ *   Acc2 = Acc1 - M                                   |d5|d4|d3|d2|  |d1|
+ *                                                     +--+--+--+--+  +--+
+ *   Carry propagate Acc2
+ *   Carry propagate Acc1
+ *   Mask = sign(Acc2)
+ *   Result = Mask
+ * 
+ * Acc1 can overflow by one modulus (hence Acc2); Either Acc1 or Acc2 contain
+ * the correct result. However, they both need carry propagation (i.e. normalize
+ * limbs down to 52 bits each).
+ * 
+ * Carry propagation would require relatively expensive vector lane operations,
+ * so instead dump to memory and read as scalar registers
+ * 
+ * Note: the order of reduce-then-propagate vs propagate-then-reduce is different
+ * in Java
  */
 void montgomeryMultiplyAVX2(const Register aLimbs, const Register bLimbs, const Register rLimbs,
   const Register tmp_rax, const Register tmp_rdx, const Register tmp1, const Register tmp2,
@@ -392,6 +413,7 @@ void montgomeryMultiplyAVX2(const Register aLimbs, const Register bLimbs, const 
         __ movq(acc1, tmp_rax);
         __ movq(acc2, tmp_rdx);
       } else {
+        // Careful with limb size/carries; from mulq, tmp_rax uses full 64 bits
         __ xorq(acc2, acc2);
         __ addq(acc1, tmp_rax);
         __ adcq(acc2, tmp_rdx);
@@ -404,7 +426,7 @@ void montgomeryMultiplyAVX2(const Register aLimbs, const Register bLimbs, const 
         __ movq(tmp_rax, acc1); // (n==rax)
       }
       __ andq(tmp_rax, mask52);
-      __ movq(N, acc1); // masking implicit in evpmadd52
+      __ movq(N, acc1); // masking implicit in vpmadd52
       __ vpbroadcastq(N, N, Assembler::AVX_256bit);
 
       // Acc1 += M *  N
@@ -438,18 +460,18 @@ void montgomeryMultiplyAVX2(const Register aLimbs, const Register bLimbs, const 
   __ movq(acc2, acc1);
   __ subq(acc2, modulus);
   __ vpsubq(Acc2, Acc1, Modulus, Assembler::AVX_256bit);
-  __ vmovdqu(Address(rsp, -32), Acc2); //Assembler::AVX_256bit
+  __ vmovdqa(Address(rsp, 0), Acc2); //Assembler::AVX_256bit
 
-  // Carry propagate the subtraction result first (since the last carry is used
-  // to select result)
-  // acc1  = tmp2;
-  // acc2  = tmp3;
-  // mask52 = tmp5
+  // Carry propagate the subtraction result Acc2 first (since the last carry is 
+  // used to select result). Careful, following registers overlap:
+  // acc1  = tmp2; acc2  = tmp3; mask52 = tmp5
+  // Note that Acc2 limbs are signed (i.e. result of a subtract with modulus)
+  // i.e. using signed shift is needed for correctness
   Register limb[] = {acc2, tmp1, tmp4, tmp_rdx, tmp6};
   Register carry = tmp_rax;
   for (int i = 0; i<5; i++) {
     if (i > 0) {
-      __ movq(limb[i], Address(rsp, -32-8+i*8));
+      __ movq(limb[i], Address(rsp, -8+i*8));
       __ addq(limb[i], carry);
     }
     __ movq(carry, limb[i]);
@@ -464,11 +486,11 @@ void montgomeryMultiplyAVX2(const Register aLimbs, const Register bLimbs, const 
   // Now carry propagate the multiply result and (constant-time) select correct
   // output digit
   Register digit = acc1;
-  __ vmovdqu(Address(rsp, -64), Acc1); //Assembler::AVX_256bit
+  __ vmovdqa(Address(rsp, 0), Acc1); //Assembler::AVX_256bit
 
   for (int i = 0; i<5; i++) {
     if (i>0) {
-      __ movq(digit, Address(rsp, -64-8+i*8));
+      __ movq(digit, Address(rsp, -8+i*8));
       __ addq(digit, carry);
     }
     __ movq(carry, digit);
@@ -488,8 +510,7 @@ void montgomeryMultiplyAVX2(const Register aLimbs, const Register bLimbs, const 
   // Zero out ymm0-ymm15.
   __ vzeroall();
   __ vpxorq(Acc1, Acc1, Acc1, Assembler::AVX_256bit);
-  __ vmovdqu(Address(rsp, -32), Acc1); //Assembler::AVX_256bit
-  __ vmovdqu(Address(rsp, -64), Acc1); //Assembler::AVX_256bit
+  __ vmovdqa(Address(rsp, 0), Acc1); //Assembler::AVX_256bit
 }
 
 address StubGenerator::generate_intpoly_montgomeryMult_P256() {
@@ -506,6 +527,10 @@ address StubGenerator::generate_intpoly_montgomeryMult_P256() {
     __ push(rsi);
     __ push(rdi);
     #endif
+    __ push(rbp);
+    __ movq(rbp, rsp);
+  __ andq(rsp, -32);
+  __ subptr(rsp, 32);
 
     // Register Map
     const Register aLimbs  = c_rarg0; // c_rarg0: rdi | rcx
@@ -527,6 +552,9 @@ address StubGenerator::generate_intpoly_montgomeryMult_P256() {
 
     montgomeryMultiplyAVX2(aLimbs, bLimbs, rLimbs, rax, rdx,
                            tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, _masm);
+
+    __ movq(rsp, rbp);
+    __ pop(rbp);
     #ifdef _WIN64
     __ pop(rdi);
     __ pop(rsi);
@@ -563,6 +591,9 @@ void assign_avx(Register aBase, Register bBase, int offset, XMMRegister select, 
   Address aAddr = Address(aBase, offset);
   Address bAddr = Address(bBase, offset);
 
+  // Original java:
+  // long dummyLimbs = maskValue & (a[i] ^ b[i]);
+  // a[i] = dummyLimbs ^ a[i];
   __ vmovdqu(tmp, aAddr, vector_len);
   __ vmovdqu(aTmp, tmp, vector_len);
   __ vpxor(tmp, tmp, bAddr, vector_len);

@@ -3509,6 +3509,19 @@ void Assembler::vmovdqa(XMMRegister dst, Address src) {
   emit_operand(dst, src, 0);
 }
 
+void Assembler::vmovdqa(Address dst, XMMRegister src) {
+  assert(UseAVX > 0, "");
+  InstructionMark im(this);
+  InstructionAttr attributes(AVX_256bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FVM, /* input_size_in_bits */ EVEX_NObit);
+  attributes.reset_is_clear_context();
+  // swap src<->dst for encoding
+  assert(src != xnoreg, "sanity");
+  vex_prefix(dst, 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int8(0x7F);
+  emit_operand(src, dst, 0);
+}
+
 void Assembler::vpmaskmovd(XMMRegister dst, XMMRegister mask, Address src, int vector_len) {
   assert((VM_Version::supports_avx2() && vector_len == AVX_256bit), "");
   InstructionMark im(this);
