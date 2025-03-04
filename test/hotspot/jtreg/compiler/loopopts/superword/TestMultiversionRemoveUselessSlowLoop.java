@@ -53,20 +53,26 @@ public class TestMultiversionRemoveUselessSlowLoop {
     public static final int[] b2 = new int[SIZE2];
 
     @Test
-    @IR(counts = {"multiversion_fast",         "= 6",
-                  "multiversion_delayed_slow", "= 2",
-                  "multiversion",              "= 8"},
+    @IR(counts = {"pre .* multiversion_fast",  "= 2", // regular pre-main-post for both loops
+                  "main .* multiversion_fast", "= 2",
+                  "post .* multiversion_fast", "= 2",
+                  "multiversion_delayed_slow", "= 2", // both have the delayed slow_loop
+                  "multiversion",              "= 8"}, // nothing unexpected
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         phase = CompilePhase.PHASEIDEALLOOP1)
-    @IR(counts = {"multiversion_fast",         "= 6",
-                  "multiversion_delayed_slow", "= 2",
-                  "multiversion",              "= 8"},
+    @IR(counts = {"pre .* multiversion_fast",  "= 2",
+                  "main .* multiversion_fast", "= 1", // The first main loop is fully unrolled
+                  "post .* multiversion_fast", "= 3", // the second loop is vectorized, and has a vectorized post loop
+                  "multiversion_delayed_slow", "= 1", // As a consequence of the first main loop being removed, we constant fold the multiversion_if
+                  "multiversion",              "= 7"}, // nothing unexpected
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         phase = CompilePhase.PHASEIDEALLOOP_ITERATIONS)
-    @IR(counts = {"multiversion_fast",  "= 5",  // pre/main/post of the 2 loops, minus main loop of the first loop, it is fully unrolled.
-                  "multiversion",       "= 5"}, // only the 5 multiversion_fast loops
+    @IR(counts = {"pre .* multiversion_fast",  "= 1", // the pre-loop of the first loop only has a single iteration
+                  "main .* multiversion_fast", "= 1",
+                  "post .* multiversion_fast", "= 3",
+                  "multiversion",              "= 5"}, // nothing unexpected
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         phase = CompilePhase.PRINT_IDEAL)
