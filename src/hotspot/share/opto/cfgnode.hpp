@@ -428,7 +428,7 @@ public:
   IfNode(Node* control, Node* bol, float p, float fcnt);
   IfNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicateType assertion_predicate_type);
 
-  static IfNode* make_with_same_profile(IfNode* if_node_profile, Node* ctrl, BoolNode* bol);
+  static IfNode* make_with_same_profile(IfNode* if_node_profile, Node* ctrl, Node* bol);
 
   virtual int Opcode() const;
   virtual bool pinned() const { return true; }

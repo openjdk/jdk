@@ -153,6 +153,7 @@ void ArchiveBuilder::SourceObjList::relocate(int i, ArchiveBuilder* builder) {
 ArchiveBuilder::ArchiveBuilder() :
   _current_dump_region(nullptr),
   _buffer_bottom(nullptr),
+  _num_dump_regions_used(0),
   _requested_static_archive_bottom(nullptr),
   _requested_static_archive_top(nullptr),
   _requested_dynamic_archive_bottom(nullptr),
@@ -160,7 +161,6 @@ ArchiveBuilder::ArchiveBuilder() :
   _mapped_static_archive_bottom(nullptr),
   _mapped_static_archive_top(nullptr),
   _buffer_to_requested_delta(0),
-  _pz_region("pz", MAX_SHARED_DELTA), // protection zone -- used only during dumping; does NOT exist in cds archive.
   _rw_region("rw", MAX_SHARED_DELTA),
   _ro_region("ro", MAX_SHARED_DELTA),
   _ptrmap(mtClassShared),
@@ -323,14 +323,9 @@ address ArchiveBuilder::reserve_buffer() {
   _shared_rs = rs;
 
   _buffer_bottom = buffer_bottom;
-
-  if (CDSConfig::is_dumping_static_archive()) {
-    _current_dump_region = &_pz_region;
-    _current_dump_region->init(&_shared_rs, &_shared_vs);
-  } else {
-    _current_dump_region = &_rw_region;
-    _current_dump_region->init(&_shared_rs, &_shared_vs);
-  }
+  _current_dump_region = &_rw_region;
+  _num_dump_regions_used = 1;
+  _current_dump_region->init(&_shared_rs, &_shared_vs);
 
   ArchivePtrMarker::initialize(&_ptrmap, &_shared_vs);
 
@@ -371,8 +366,7 @@ address ArchiveBuilder::reserve_buffer() {
   if (CDSConfig::is_dumping_static_archive()) {
     // We don't want any valid object to be at the very bottom of the archive.
     // See ArchivePtrMarker::mark_pointer().
-    _pz_region.allocate(MetaspaceShared::protection_zone_size());
-    start_dump_region(&_rw_region);
+    rw_region()->allocate(16);
   }
 
   return buffer_bottom;
@@ -550,6 +544,7 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
 void ArchiveBuilder::start_dump_region(DumpRegion* next) {
   current_dump_region()->pack(next);
   _current_dump_region = next;
+  _num_dump_regions_used ++;
 }
 
 char* ArchiveBuilder::ro_strdup(const char* s) {
@@ -791,6 +786,7 @@ void ArchiveBuilder::make_klasses_shareable() {
     const char* aotlinked_msg = "";
     const char* inited_msg = "";
     Klass* k = get_buffered_addr(klasses()->at(i));
+    bool inited = false;
     k->remove_java_mirror();
 #ifdef _LP64
     if (UseCompactObjectHeaders) {
@@ -815,7 +811,7 @@ void ArchiveBuilder::make_klasses_shareable() {
       InstanceKlass* ik = InstanceKlass::cast(k);
       InstanceKlass* src_ik = get_source_addr(ik);
       bool aotlinked = AOTClassLinker::is_candidate(src_ik);
-      bool inited = ik->has_aot_initialized_mirror();
+      inited = ik->has_aot_initialized_mirror();
       ADD_COUNT(num_instance_klasses);
       if (CDSConfig::is_dumping_dynamic_archive()) {
         // For static dump, class loader type are already set.
@@ -838,7 +834,7 @@ void ArchiveBuilder::make_klasses_shareable() {
           type = "bad";
           assert(0, "shouldn't happen");
         }
-        if (CDSConfig::is_dumping_invokedynamic()) {
+        if (CDSConfig::is_dumping_method_handles()) {
           assert(HeapShared::is_archivable_hidden_klass(ik), "sanity");
         } else {
           // Legacy CDS support for lambda proxies
@@ -896,7 +892,11 @@ void ArchiveBuilder::make_klasses_shareable() {
         aotlinked_msg = " aot-linked";
       }
       if (inited) {
-        inited_msg = " inited";
+        if (InstanceKlass::cast(k)->static_field_size() == 0) {
+          inited_msg = " inited (no static fields)";
+        } else {
+          inited_msg = " inited";
+        }
       }
 
       MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);

@@ -241,6 +241,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                 ", allocated: %zu", available, capacity, allocated);
 
   if (_start_gc_is_pending) {
+    log_trigger("GC start is already pending");
     return true;
   }
 
