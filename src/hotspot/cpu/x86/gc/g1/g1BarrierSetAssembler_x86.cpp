@@ -142,7 +142,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   __ jmp(done);
 
   __ bind(is_clean_card);
-  // Card was not clean. Dirty card and go to next..
+  // Card was clean. Dirty card and go to next..
   __ movb(Address(addr, 0), G1CardTable::dirty_card_val());
   __ jmp(next_card);
 
