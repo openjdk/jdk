@@ -1,6 +1,8 @@
-## Harfbuzz v8.2.2
+## Harfbuzz v10.3.0
 
 ### Harfbuzz License
+
+https://github.com/harfbuzz/harfbuzz/blob/10.3.0/COPYING
 
 <pre>
 
@@ -8,25 +10,25 @@ HarfBuzz is licensed under the so-called "Old MIT" license.  Details follow.
 For parts of HarfBuzz that are licensed under different licenses see individual
 files names COPYING in subdirectories where applicable.
 
-Copyright © 2010-2023  Google, Inc.
-Copyright © 2018-2020  Ebrahim Byagowi
-Copyright © 2004-2013  Red Hat, Inc.
-Copyright © 2019  Facebook, Inc.
+Copyright (C) 2010-2024  Google, Inc.
+Copyright (C) 2018-2020  Ebrahim Byagowi
+Copyright (C) 2004-2013  Red Hat, Inc.
+Copyright (C) 2019  Facebook, Inc.
 Copyright (C) 2012 Zilong Tan (eric.zltan@gmail.com)
-Copyright © 2007  Chris Wilson
-Copyright © 2018-2019 Adobe Inc.
-Copyright © 2006-2023 Behdad Esfahbod
-Copyright © 1998-2004  David Turner and Werner Lemberg
-Copyright © 2009  Keith Stribley
-Copyright © 2018  Khaled Hosny
-Copyright © 2016  Elie Roux <elie.roux@telecom-bretagne.eu>
-Copyright © 2016  Igalia S.L.
-Copyright © 2015  Mozilla Foundation.
-Copyright © 1999  David Turner
-Copyright © 2005  Werner Lemberg
-Copyright © 2013-2015  Alexei Podtelezhnikov
-Copyright © 2022 Matthias Clasen
-Copyright © 2011  Codethink Limited
+Copyright (C) 2007  Chris Wilson
+Copyright (C) 2018-2019 Adobe Inc.
+Copyright (C) 2006-2025 Behdad Esfahbod
+Copyright (C) 1998-2004  David Turner and Werner Lemberg
+Copyright (C) 2009  Keith Stribley
+Copyright (C) 2018  Khaled Hosny
+Copyright (C) 2016  Elie Roux <elie.roux@telecom-bretagne.eu>
+Copyright (C) 2016  Igalia S.L.
+Copyright (C) 2015  Mozilla Foundation.
+Copyright (C) 1999  David Turner
+Copyright (C) 2005  Werner Lemberg
+Copyright (C) 2013-2015  Alexei Podtelezhnikov
+Copyright (C) 2022 Matthias Clasen
+Copyright (C) 2011  Codethink Limited
 
 For full copyright notices consult the individual files in the package.
 
@@ -54,7 +56,7 @@ exception is licensed with a slightly different MIT variant:
 The contents of this directory are licensed under the following terms:
 
 ---------------------------------
-The below license applies to the following files:
+The below applies to the following file(s):
 libharfbuzz/hb-ucd.cc
 
 Copyright (C) 2012 Grigori Goronzy <greg@kinoho.net>
@@ -72,13 +74,14 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ---------------------------------
-The below license applies to the following files:
+The below applies to the following file(s):
 libharfbuzz/hb-unicode-emoji-table.hh
 
-© 2023 Unicode®, Inc.
+(C) 2024 Unicode®, Inc.
+
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc.
 in the U.S. and other countries.
-For terms of use, see https://www.unicode.org/terms_of_use.html
+For terms of use and license, see https://www.unicode.org/terms_of_use.html
 
 </pre>
 
