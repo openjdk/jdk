@@ -664,55 +664,51 @@ void Node::destruct(PhaseValues* phase) {
   }
 }
 
-//------------------------------grow-------------------------------------------
-// Grow the input array, making space for more edges
-void Node::grow(uint len) {
+//------------------------------resize_array-------------------------------------------
+ // Resize input or output array to grow it the next larger power-of-2 bigger
+// than len.
+void Node::resize_array( Node**& array, node_idx_t& max_size, uint len, bool is_in) {
   Arena* arena = Compile::current()->node_arena();
-  uint new_max = _max;
+  uint new_max = max_size;
   if( new_max == 0 ) {
-    _max = 4;
-    _in = (Node**)arena->Amalloc(4*sizeof(Node*));
-    Node** to = _in;
-    to[0] = nullptr;
-    to[1] = nullptr;
-    to[2] = nullptr;
-    to[3] = nullptr;
-    return;
+    max_size = 4;
+    array = (Node**)arena->Amalloc(4*sizeof(Node*));
+    if(is_in){
+      array[0] = nullptr;
+      array[1] = nullptr;
+      array[2] = nullptr;
+      array[3] = nullptr;
+    }
+      return;
   }
   new_max = next_power_of_2(len);
   // Trimming to limit allows a uint8 to handle up to 255 edges.
   // Previously I was using only powers-of-2 which peaked at 128 edges.
   //if( new_max >= limit ) new_max = limit-1;
-  _in = (Node**)arena->Arealloc(_in, _max*sizeof(Node*), new_max*sizeof(Node*));
-  Copy::zero_to_bytes(&_in[_max], (new_max-_max)*sizeof(Node*)); // null all new space
-  _max = new_max;               // Record new max length
+  if(!is_in){
+    assert(array != nullptr && array != NO_OUT_ARRAY, "out must have sensible value");
+  }
+  array = (Node**)arena->Arealloc(array, max_size*sizeof(Node*), new_max*sizeof(Node*));
+  if(is_in){
+    Copy::zero_to_bytes(&array[max_size], (new_max-max_size)*sizeof(Node*)); // null all new space
+  }
+  max_size = new_max;               // Record new max length
   // This assertion makes sure that Node::_max is wide enough to
   // represent the numerical value of new_max.
-  assert(_max == new_max && _max > len, "int width of _max is too small");
+  assert(max_size == new_max && max_size > len, "int width of _max is too small");
+}
+
+//------------------------------grow-------------------------------------------
+// Grow the input array, making space for more edges
+void Node::grow(uint len) {
+  resize_array(_in, _max, len, true);
 }
 
 //-----------------------------out_grow----------------------------------------
 // Grow the input array, making space for more edges
 void Node::out_grow( uint len ) {
   assert(!is_top(), "cannot grow a top node's out array");
-  Arena* arena = Compile::current()->node_arena();
-  uint new_max = _outmax;
-  if( new_max == 0 ) {
-    _outmax = 4;
-    _out = (Node **)arena->Amalloc(4*sizeof(Node*));
-    return;
-  }
-  new_max = next_power_of_2(len);
-  // Trimming to limit allows a uint8 to handle up to 255 edges.
-  // Previously I was using only powers-of-2 which peaked at 128 edges.
-  //if( new_max >= limit ) new_max = limit-1;
-  assert(_out != nullptr && _out != NO_OUT_ARRAY, "out must have sensible value");
-  _out = (Node**)arena->Arealloc(_out,_outmax*sizeof(Node*),new_max*sizeof(Node*));
-  //Copy::zero_to_bytes(&_out[_outmax], (new_max-_outmax)*sizeof(Node*)); // null all new space
-  _outmax = new_max;               // Record new max length
-  // This assertion makes sure that Node::_max is wide enough to
-  // represent the numerical value of new_max.
-  assert(_outmax == new_max && _outmax > len, "int width of _outmax is too small");
+  resize_array(_out, _outmax, len, false);
 }
 
 #ifdef ASSERT
