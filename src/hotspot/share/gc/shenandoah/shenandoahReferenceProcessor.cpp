@@ -221,8 +221,7 @@ void ShenandoahRefProcThreadLocal::set_discovered_list_head<oop>(oop head) {
   *discovered_list_addr<oop>() = head;
 }
 
-ShenandoahReferenceProcessor::ShenandoahReferenceProcessor(ShenandoahGeneration* generation, uint max_workers) :
-  _generation(generation),
+ShenandoahReferenceProcessor::ShenandoahReferenceProcessor(uint max_workers) :
   _soft_reference_policy(nullptr),
   _ref_proc_thread_locals(NEW_C_HEAP_ARRAY(ShenandoahRefProcThreadLocal, max_workers, mtGC)),
   _pending_list(nullptr),
@@ -331,18 +330,6 @@ bool ShenandoahReferenceProcessor::should_drop(oop reference, ReferenceType type
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahHeapRegion* referent_region = heap->heap_region_containing(raw_referent);
-
-  // If generation is young and referent is in old, marking context of the old
-  // may or may not be complete, we can safely drop the reference when old gen mark is complete.
-  if (_generation->is_young() && referent_region->is_old()) {
-    ShenandoahGeneration* old_gen = heap->old_generation();
-    ShenandoahMarkingContext* ctx = heap->marking_context();
-    if (type == REF_PHANTOM) {
-      return old_gen->is_mark_complete() && ctx->is_marked(raw_referent);
-    } else {
-      return old_gen->is_mark_complete() && ctx->is_marked_strong(raw_referent);
-    }
-  }
 
   // Check if the referent is still alive, in which case we should
   // drop the reference.
