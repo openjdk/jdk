@@ -54,13 +54,13 @@
     <event name="jdk.ThreadSleep">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="locking-threshold">10 ms</setting>
+      <setting name="threshold" control="locking-threshold">1 ms</setting>
     </event>
 
     <event name="jdk.ThreadPark">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="locking-threshold">10 ms</setting>
+      <setting name="threshold" control="locking-threshold">1 ms</setting>
     </event>
 
     <event name="jdk.VirtualThreadStart">
@@ -86,19 +86,19 @@
     <event name="jdk.JavaMonitorEnter">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="locking-threshold">10 ms</setting>
+      <setting name="threshold" control="locking-threshold">1 ms</setting>
     </event>
 
     <event name="jdk.JavaMonitorWait">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="locking-threshold">10 ms</setting>
+      <setting name="threshold" control="locking-threshold">1 ms</setting>
     </event>
 
     <event name="jdk.JavaMonitorInflate">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="locking-threshold">10 ms</setting>
+      <setting name="threshold">0 ms</setting>
     </event>
 
     <event name="jdk.SyncOnValueBasedClass">
@@ -1133,7 +1133,7 @@
         <test name="memory-leaks" operator="equal" value="gc-roots"/>
       </condition>
 
-      <text name="locking-threshold" label="Locking Threshold" contentType="timespan" minimum="0 s">10 ms</text>
+      <text name="locking-threshold" label="Locking Threshold" contentType="timespan" minimum="0 s">1 ms</text>
 
       <text name="file-threshold" label="File I/O Threshold" contentType="timespan" minimum="0 s">10 ms</text>
 
