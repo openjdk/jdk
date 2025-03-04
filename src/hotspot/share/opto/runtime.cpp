@@ -1569,6 +1569,7 @@ static const TypeFunc* make_kyberNttMult_Type() {
     const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
     return TypeFunc::make(domain, range);
 }
+
 // Kyber add 2 polynomials function
 static const TypeFunc* make_kyberAddPoly_2_Type() {
     int argcnt = 3;
