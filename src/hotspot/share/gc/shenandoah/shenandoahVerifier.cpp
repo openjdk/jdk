@@ -268,12 +268,12 @@ private:
                "Must be marked in incomplete bitmap");
         break;
       case ShenandoahVerifier::_verify_marked_complete:
-        check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked(obj),
+        check(ShenandoahAsserts::_safe_all, obj, _heap->gc_generation()->complete_marking_context()->is_marked(obj),
                "Must be marked in complete bitmap");
         break;
       case ShenandoahVerifier::_verify_marked_complete_except_references:
       case ShenandoahVerifier::_verify_marked_complete_satb_empty:
-        check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked(obj),
+        check(ShenandoahAsserts::_safe_all, obj, _heap->gc_generation()->complete_marking_context()->is_marked(obj),
               "Must be marked in complete bitmap, except j.l.r.Reference referents");
         break;
       default:
@@ -1278,8 +1278,11 @@ public:
 
 ShenandoahMarkingContext* ShenandoahVerifier::get_marking_context_for_old() {
   shenandoah_assert_generations_reconciled();
-  if (_heap->old_generation()->is_mark_complete() || _heap->gc_generation()->is_global()) {
-    return _heap->complete_marking_context();
+  if (_heap->gc_generation()->is_global()) {
+    return _heap->marking_context();
+  }
+  if (_heap->old_generation()->is_mark_complete()) {
+    return _heap->old_generation()->complete_marking_context();
   }
   return nullptr;
 }
