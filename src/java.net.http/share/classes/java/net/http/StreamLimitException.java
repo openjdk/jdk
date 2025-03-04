@@ -31,7 +31,8 @@ import java.util.Objects;
 
 /**
  * An exception thrown when the limit imposed for stream creation on an
- * HTTP connection is reached.
+ * HTTP connection is reached, and the client is unable to create a new
+ * stream.
  * <p>
  * A {@code StreamLimitException} may be raised on any {@linkplain #version()
  * protocol version} that supports multiplexing on a single connection. Both
@@ -41,52 +42,9 @@ import java.util.Objects;
  * is carried over a single stream, as defined by the corresponding
  * protocol.
  * <p>
- * The HTTP/2 and HTTP/3 protocols provide a means for HTTP servers to control
- * how many streams a client is allowed to open on a particular connection. If an
- * application attempts to open too many streams, and the
- * server doesn't allow more streams to be opened, a {@code StreamLimitException}
- * may be raised. See
- * <a href="https://www.rfc-editor.org/rfc/rfc7540.html#section-5.1.2">
- *     RFC 7540: Hypertext Transfer Protocol Version 2 (HTTP/2)</a>
- * and
- * <a href="https://www.rfc-editor.org/info/rfc9114">RFC 9114: HTTP/3</a>
- * for more information on stream limits.
- * For the HTTP/3 protocol, the actual implementation of the limit is
- * delegated to the underlying
- * <a href="https://www.rfc-editor.org/rfc/rfc9000.html#section-4.6">
- *     QUIC Protocol</a>.
- * <p>
- * An {@link HttpClient} implementation may choose to implement different
- * strategies to deal with stream limits. For instance, an implementation may
- * choose to:
- * <ul>
- *     <li>
- *         immediately relay a {@code StreamLimitException} to the code that
- *         initiated the request, when the stream limit is reached, or
- *     </li>
- *     <li>
- *         wait for a {@linkplain HttpRequest.Builder#timeout(Duration) reasonable time} in
- *         the hope that more streams will become available, or
- *     </li>
- *     <li>
- *         retire the connection on which the limit was reached, and attempt
- *         to send the request on a new connection, up to a certain limit, or
- *     </li>
- *     <li>
- *         ...
- *     </li>
- * </ul>
- * <p>
- * As a consequence, whether and when a {@code  StreamLimitException} may be
+ * Whether and when a {@code  StreamLimitException} may be
  * relayed to the code initiating a request/response exchange is entirely
  * implementation and protocol version dependent.
- *
- * @spec https://www.rfc-editor.org/info/rfc7540
- *      RFC 7540: Hypertext Transfer Protocol Version 2 (HTTP/2)
- * @spec https://www.rfc-editor.org/info/rfc9114
- *      RFC 9114: HTTP/3
- * @spec https://www.rfc-editor.org/rfc/rfc9000
- *      RFC 9000: QUIC: A UDP-Based Multiplexed and Secure Transport
  *
  * @since tbd
  */
