@@ -500,7 +500,6 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint already");
 
   Thread * thr_cur = Thread::current();
-  Monitor timer(Mutex::nosafepoint, "VM_ExitTimer_lock");
 
   // Compiler threads need longer wait because they can access VM data directly
   // while in native. If they are active and some structures being used are
@@ -509,12 +508,23 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
   // data, and they will be stopped during state transition. In theory, we
   // don't have to wait for user threads to be quiescent, but it's always
   // better to terminate VM when current thread is the only active thread, so
-  // wait for user threads too. Numbers are in 10 milliseconds.
-  int wait_time_per_attempt = 10;               // in milliseconds
-  int max_wait_attempts_user_thread = UserThreadWaitAttemptsAtExit;
-  int max_wait_attempts_compiler_thread = 1000; // at least 10 seconds
+  // wait for user threads too.
 
-  int attempts = 0;
+  // Time per attempt. It is practical to start waiting with 10us delays
+  // (around scheduling delay / timer slack), and exponentially ramp up
+  // to 10ms if compiler threads are not responding.
+  jlong max_wait_time = millis_to_nanos(10);
+  jlong wait_time = 10000;
+
+  jlong start_time = os::javaTimeNanos();
+
+  // Deadline for user threads in native code.
+  // User-settable flag counts "attempts" in 10ms units, to a maximum of 10s.
+  jlong user_threads_deadline = start_time + (UserThreadWaitAttemptsAtExit * millis_to_nanos(10));
+
+  // Deadline for compiler threads: at least 10 seconds.
+  jlong compiler_threads_deadline = start_time + millis_to_nanos(10000);
+
   JavaThreadIteratorWithHandle jtiwh;
   while (true) {
     int num_active = 0;
@@ -543,19 +553,20 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
       }
     }
 
+    jlong time = os::javaTimeNanos();
+
     if (num_active == 0) {
-       return 0;
-    } else if (attempts >= max_wait_attempts_compiler_thread) {
-       return num_active;
-    } else if (num_active_compiler_thread == 0 &&
-               attempts >= max_wait_attempts_user_thread) {
-       return num_active;
+      return 0;
+    }
+    if (time >= compiler_threads_deadline) {
+      return num_active;
+    }
+    if ((num_active_compiler_thread == 0) && (time >= user_threads_deadline)) {
+      return num_active;
     }
 
-    attempts++;
-
-    MonitorLocker ml(&timer, Mutex::_no_safepoint_check_flag);
-    ml.wait(wait_time_per_attempt);
+    os::naked_short_nanosleep(wait_time);
+    wait_time = MIN2(max_wait_time, wait_time * 2);
   }
 }
 

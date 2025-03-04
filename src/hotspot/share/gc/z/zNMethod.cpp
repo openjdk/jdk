@@ -305,26 +305,32 @@ uintptr_t ZNMethod::color(nmethod* nm) {
   return (uintptr_t)bs_nm->guard_value(nm);
 }
 
-oop ZNMethod::load_oop(oop* p, DecoratorSet decorators) {
-  assert((decorators & ON_WEAK_OOP_REF) == 0,
-         "nmethod oops have phantom strength, not weak");
-  nmethod* const nm = CodeCache::find_nmethod((void*)p);
-  assert(nm != nullptr, "did not find nmethod");
+oop ZNMethod::oop_load_no_keepalive(const nmethod* nm, int index) {
+  return oop_load(nm, index, false /* keep_alive */);
+}
+
+oop ZNMethod::oop_load_phantom(const nmethod* nm, int index) {
+  return oop_load(nm, index, true /* keep_alive */);
+}
+
+oop ZNMethod::oop_load(const nmethod* const_nm, int index, bool keep_alive) {
+  // The rest of the code is not ready to handle const nmethod, so cast it away
+  // until we are more consistent with our const corectness.
+  nmethod* nm = const_cast<nmethod*>(const_nm);
+
   if (!is_armed(nm)) {
     // If the nmethod entry barrier isn't armed, then it has been applied
     // already. The implication is that the contents of the memory location
     // is already a valid oop, and the barrier would have kept it alive if
     // necessary. Therefore, no action is required, and we are allowed to
     // simply read the oop.
-    return *p;
+    return *nm->oop_addr_at(index);
   }
 
-  const bool keep_alive = (decorators & ON_PHANTOM_OOP_REF) != 0 &&
-                          (decorators & AS_NO_KEEPALIVE) == 0;
   ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
 
   // Make a local root
-  zaddress_unsafe obj = *ZUncoloredRoot::cast(p);
+  zaddress_unsafe obj = *ZUncoloredRoot::cast(nm->oop_addr_at(index));
 
   if (keep_alive) {
     ZUncoloredRoot::process(&obj, ZNMethod::color(nm));

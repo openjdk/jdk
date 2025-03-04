@@ -95,8 +95,6 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   void update_parallel_worker_threads_cpu_time();
 
-  void collect_at_safepoint(bool full);
-
   bool must_clear_all_soft_refs();
 
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) override;
@@ -198,7 +196,7 @@ public:
   // Support for System.gc()
   void collect(GCCause::Cause cause) override;
 
-  void try_collect_at_safepoint(bool full);
+  void collect_at_safepoint(bool full);
 
   void ensure_parsability(bool retire_tlabs) override;
   void resize_all_tlabs() override;

@@ -756,14 +756,14 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Returns a new memory segment with the same address and size as this segment, but
-     * with the provided scope. As such, the returned segment cannot be accessed after
-     * the provided arena has been closed. Moreover, the returned segment can be
+     * with the provided arena's scope. As such, the returned segment cannot be accessed
+     * after the provided arena has been closed. Moreover, the returned segment can be
      * accessed compatibly with the confinement restrictions associated with the provided
      * arena: that is, if the provided arena is a {@linkplain Arena#ofConfined() confined arena},
      * the returned segment can only be accessed by the arena's owner thread, regardless
      * of the confinement restrictions associated with this segment. In other words, this
      * method returns a segment that can be used as any other segment allocated using the
-     * provided arena. However, The returned segment is backed by the same memory region
+     * provided arena. However, the returned segment is backed by the same memory region
      * as that of the original segment. As such, the region of memory backing the
      * returned segment is deallocated only when this segment's arena is closed.
      * This might lead to <em>use-after-free</em> issues, as the returned segment can be
@@ -771,15 +771,15 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * segment's arena.
      * <p>
      * Clients can specify an optional cleanup action that should be executed when the
-     * provided scope becomes invalid. This cleanup action receives a fresh memory
+     * provided arena's scope becomes invalid. This cleanup action receives a fresh memory
      * segment that is obtained from this segment as follows:
      * {@snippet lang=java :
      * MemorySegment cleanupSegment = MemorySegment.ofAddress(this.address())
      *                                             .reinterpret(byteSize());
      * }
      * That is, the cleanup action receives a segment that is associated with the global
-     * scope, and is accessible from any thread. The size of the segment accepted by the
-     * cleanup action is {@link #byteSize()}.
+     * arena's scope, and is accessible from any thread. The size of the segment accepted
+     * by the cleanup action is {@link #byteSize()}.
      * <p>
      * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
      * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
@@ -790,8 +790,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @apiNote The cleanup action (if present) should take care not to leak the received
      *          segment to external clients that might access the segment after its
      *          backing region of memory is no longer available. Furthermore, if the
-     *          provided scope is the scope of an {@linkplain Arena#ofAuto() automatic arena},
-     *          the cleanup action must not prevent the scope from becoming
+     *          provided arena is an {@linkplain Arena#ofAuto() automatic arena},
+     *          the cleanup action must not prevent the arena from becoming
      *          {@linkplain java.lang.ref##reachability unreachable}.
      *          A failure to do so will permanently prevent the regions of memory
      *          allocated by the automatic arena from being deallocated.
@@ -812,14 +812,14 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Returns a new segment with the same address as this segment, but with the provided
-     * size and scope. As such, the returned segment cannot be accessed after the
-     * provided arena has been closed. Moreover, if the returned segment can be accessed
-     * compatibly with the confinement restrictions associated with the provided arena:
-     * that is, if the provided arena is a {@linkplain Arena#ofConfined() confined arena},
+     * size and the provided arena's scope. As such, the returned segment cannot be
+     * accessed after the provided arena has been closed. Moreover, if the returned
+     * segment can be accessed compatibly with the confinement restrictions associated
+     * with the provided arena: that is, if the provided arena is a {@linkplain Arena#ofConfined() confined arena},
      * the returned segment can only be accessed by the arena's owner thread, regardless
      * of the confinement restrictions associated with this segment. In other words, this
      * method returns a segment that can be used as any other segment allocated using the
-     * provided arena. However, The returned segment is backed by the same memory region
+     * provided arena. However, the returned segment is backed by the same memory region
      * as that of the original segment. As such, the region of memory backing the
      * returned segment is deallocated only when this segment's arena is closed.
      * This might lead to <em>use-after-free</em> issues, as the returned segment can be
@@ -827,15 +827,15 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * segment's arena.
      * <p>
      * Clients can specify an optional cleanup action that should be executed when the
-     * provided scope becomes invalid. This cleanup action receives a fresh memory
+     * provided arena's scope becomes invalid. This cleanup action receives a fresh memory
      * segment that is obtained from this segment as follows:
      * {@snippet lang=java :
      * MemorySegment cleanupSegment = MemorySegment.ofAddress(this.address())
      *                                             .reinterpret(newSize);
      * }
      * That is, the cleanup action receives a segment that is associated with the global
-     * scope, and is accessible from any thread. The size of the segment accepted by the
-     * cleanup action is {@code newSize}.
+     * arena's scope, and is accessible from any thread. The size of the segment accepted
+     * by the cleanup action is {@code newSize}.
      * <p>
      * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
      * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
@@ -846,8 +846,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @apiNote The cleanup action (if present) should take care not to leak the received
      *          segment to external clients that might access the segment after its
      *          backing region of memory is no longer available. Furthermore, if the
-     *          provided scope is the scope of an {@linkplain Arena#ofAuto() automatic arena},
-     *          the cleanup action must not prevent the scope from becoming
+     *          provided arena is an {@linkplain Arena#ofAuto() automatic arena},
+     *          the cleanup action must not prevent the arena from becoming
      *          {@linkplain java.lang.ref##reachability unreachable}.
      *          A failure to do so will permanently prevent the regions of memory
      *          allocated by the automatic arena from being deallocated.

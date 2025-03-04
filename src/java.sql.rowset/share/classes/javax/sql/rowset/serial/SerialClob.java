@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class SerialClob implements Clob, Serializable, Cloneable {
     private char buf[];
 
     /**
-     * Internal Clob representation if SerialClob is initialized with a
+     * @serial Internal Clob representation if SerialClob is initialized with a
      * Clob. Null if SerialClob is initialized with a char[].
      */
     @SuppressWarnings("serial")  // Not statically typed as Serializable; checked in writeObject

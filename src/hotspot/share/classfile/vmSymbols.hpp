@@ -91,7 +91,8 @@ class SerializeClosure;
   template(java_lang_Long_LongCache,                  "java/lang/Long$LongCache")                 \
   template(java_lang_Void,                            "java/lang/Void")                           \
                                                                                                   \
-  template(jdk_internal_vm_vector_VectorSupport,      "jdk/internal/vm/vector/VectorSupport")               \
+  template(jdk_internal_vm_vector_VectorSupport,      "jdk/internal/vm/vector/VectorSupport")     \
+  template(jdk_internal_vm_vector_Float16Math,        "jdk/internal/vm/vector/Float16Math")       \
   template(jdk_internal_vm_vector_VectorPayload,      "jdk/internal/vm/vector/VectorSupport$VectorPayload") \
   template(jdk_internal_vm_vector_Vector,             "jdk/internal/vm/vector/VectorSupport$Vector")        \
   template(jdk_internal_vm_vector_VectorMask,         "jdk/internal/vm/vector/VectorSupport$VectorMask")    \
@@ -306,6 +307,7 @@ class SerializeClosure;
   template(jdk_internal_vm_annotation_JvmtiMountTransition_signature,  "Ljdk/internal/vm/annotation/JvmtiMountTransition;")  \
                                                                                                   \
   template(java_lang_ref_SoftReference_signature,         "Ljava/lang/ref/SoftReference;")        \
+  template(java_security_ProtectionDomain_signature,      "Ljava/security/ProtectionDomain;")     \
                                                                                                   \
   /* Support for JSR 292 & invokedynamic (JDK 1.7 and above) */                                   \
   template(java_lang_invoke_CallSite,                 "java/lang/invoke/CallSite")                \

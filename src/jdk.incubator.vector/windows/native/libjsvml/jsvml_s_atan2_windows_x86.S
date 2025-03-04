@@ -3240,7 +3240,7 @@ _DATA   SEGMENT      'DATA'
 ione    DD      1065353216
         DD      -1082130432
 _DATA   ENDS
-_RDATA  SEGMENT     READ PAGE   'DATA'
+_RDATA  SEGMENT     READONLY PAGE   'DATA'
         ALIGN  32
         PUBLIC __jsvml_satan2_ha_data_internal
 __jsvml_satan2_ha_data_internal DD      0

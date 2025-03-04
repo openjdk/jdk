@@ -1,0 +1,83 @@
+#
+# Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# MakeIncludeStart.gmk should be included first of all in all include files
+################################################################################
+
+# Get the next to last word (by prepending a padding element)
+THIS_INCLUDE_PATH := $(word $(words ${MAKEFILE_LIST}),padding ${MAKEFILE_LIST})
+THIS_INCLUDE := $(patsubst $(TOPDIR)/make/%,%,$(THIS_INCLUDE_PATH))
+
+# Print an indented message, also counting the top-level makefile as a level
+ifneq ($(INCLUDE_GUARD_$(THIS_INCLUDE)), true)
+  THIS_INCLUDE_MSG := include
+else
+  THIS_INCLUDE_MSG := included already
+endif
+
+ifeq ($(LOG_FLOW), true)
+  $(info :$(foreach s, top $(INCLUDE_STACK) $(SNIPPET_STACK),    )Enter $(THIS_INCLUDE) [$(THIS_INCLUDE_MSG)])
+endif
+
+ifneq ($(filter $(THIS_INCLUDE), $(INCLUDE_STACK)), )
+  $(error Internal makefile error: Include loop detected: $(THIS_INCLUDE) $(INCLUDE_STACK))
+endif
+
+ifeq ($(words $(MAKEFILE_LIST)), 2)
+  $(error $(THIS_INCLUDE_PATH): This file is supposed to be included)
+endif
+
+# In a preinit environment, we do not have any SPEC
+ifneq ($(IS_PREINIT_ENV), true)
+  ifeq ($(SPEC), )
+    $(error $(THIS_INCLUDE_PATH): SPEC is not set)
+  endif
+
+  ifeq ($(wildcard $(SPEC)), )
+    $(error $(THIS_INCLUDE_PATH): spec.gmk file $(SPEC) is missing)
+  endif
+
+  ifneq ($(MAKEBASE_INCLUDED), true)
+    $(error $(THIS_INCLUDE_PATH): MakeBase.gmk is not included)
+  endif
+endif
+
+# Push our helper name onto the stack
+INCLUDE_STACK := $(THIS_INCLUDE) $(INCLUDE_STACK)
+
+# Setup an automatic include guard
+ifneq ($(INCLUDE_GUARD_$(THIS_INCLUDE)), true)
+  INCLUDE_GUARD_$(THIS_INCLUDE) := true
+  INCLUDE := true
+
+  # Hook to include the corresponding custom file, if present.
+  ifneq ($(NO_CUSTOM_EXTENSIONS), true)
+    CUSTOM_PRE_NAME := $(subst .gmk,-pre.gmk, $(THIS_INCLUDE))
+    $(eval $(call IncludeCustomExtension, $(CUSTOM_PRE_NAME)))
+  endif
+else
+  INCLUDE := false
+endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,17 @@ import java.lang.classfile.*;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.instruction.*;
+import java.lang.constant.ClassDesc;
+import java.lang.reflect.Parameter;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.ObjIntConsumer;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static java.lang.classfile.Opcode.*;
@@ -110,17 +114,23 @@ class InstructionValidationTest {
             var fails = r.shouldFail;
             var i = r.slot;
             for (var fac : cbFactories) {
-                //check(fails, () -> execute(cob -> fac.accept(cob, i)));
+                if (fails) {
+                    ensureFailFast(i, cob -> fac.accept(cob, i));
+                }
             }
             for (TypeKind tk : TypeKind.values()) {
                 if (tk == TypeKind.VOID)
                     continue;
-                //check(fails, () -> execute(cob -> cob.loadLocal(tk, i)));
-                //check(fails, () -> execute(cob -> cob.storeLocal(tk, i)));
+                if (fails) {
+                    ensureFailFast(i, cob -> cob.loadLocal(tk, i));
+                    ensureFailFast(i, cob -> cob.storeLocal(tk, i));
+                }
                 check(fails, () -> LoadInstruction.of(tk, i));
                 check(fails, () -> StoreInstruction.of(tk, i));
             }
-            //check(fails, () -> execute(cob -> cob.iinc(i, 1)));
+            if (fails) {
+                ensureFailFast(i, cob -> cob.iinc(i, 1));
+            }
             check(fails, () -> IncrementInstruction.of(i, 1));
             check(fails, () -> DiscontinuedInstruction.RetInstruction.of(i));
             check(fails, () -> DiscontinuedInstruction.RetInstruction.of(RET_W, i));
@@ -150,6 +160,31 @@ class InstructionValidationTest {
         }
     }
 
+    // CodeBuilder can fail with IAE due to other reasons, so we cannot check
+    // "success" but can ensure things fail fast
+    static void ensureFailFast(int value, Consumer<CodeBuilder> action) {
+        // Can fail with AssertionError instead of IAE
+        Consumer<CodeBuilder> checkedAction = cob -> {
+            action.accept(cob);
+            fail("Bad slot access did not fail fast: "  + value);
+        };
+        var cf = ClassFile.of();
+        CodeTransform noopCodeTransform = CodeBuilder::with;
+        // Direct builders
+        assertThrows(IllegalArgumentException.class, () -> cf.build(ClassDesc.of("Test"), clb -> clb
+                .withMethodBody("test", MTD_void, ACC_STATIC, checkedAction)));
+        // Chained builders
+        assertThrows(IllegalArgumentException.class, () -> cf.build(ClassDesc.of("Test"), clb -> clb
+                .withMethodBody("test", MTD_void, ACC_STATIC, cob -> cob
+                        .transforming(CodeTransform.ACCEPT_ALL, checkedAction))));
+        var classTemplate = cf.build(ClassDesc.of("Test"), clb -> clb
+                .withMethodBody("test", MTD_void, ACC_STATIC, CodeBuilder::return_));
+        // Indirect builders
+        assertThrows(IllegalArgumentException.class, () -> cf.transformClass(cf.parse(classTemplate),
+                ClassTransform.transformingMethodBodies(CodeTransform.endHandler(checkedAction)
+                        .andThen(noopCodeTransform))));
+    }
+
     static void check(boolean fails, Executable exec) {
         if (fails) {
             assertThrows(IllegalArgumentException.class, exec);
@@ -163,8 +198,10 @@ class InstructionValidationTest {
         IncrementInstruction.of(0, 2);
         IncrementInstruction.of(0, Short.MAX_VALUE);
         IncrementInstruction.of(0, Short.MIN_VALUE);
-        assertThrows(IllegalArgumentException.class, () -> IncrementInstruction.of(0, Short.MAX_VALUE + 1));
-        assertThrows(IllegalArgumentException.class, () -> IncrementInstruction.of(0, Short.MIN_VALUE - 1));
+        for (int i : new int[] {Short.MIN_VALUE - 1, Short.MAX_VALUE + 1}) {
+            assertThrows(IllegalArgumentException.class, () -> IncrementInstruction.of(0, i));
+            ensureFailFast(i, cob -> cob.iinc(0, i));
+        }
     }
 
     @Test

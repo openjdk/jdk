@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import jdk.jpackage.test.TKit;
  * @summary jpackage application version testing
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile AppVersionTest.java
+ * @compile -Xlint:all -Werror AppVersionTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppVersionTest
  */
@@ -47,7 +47,7 @@ import jdk.jpackage.test.TKit;
 public final class AppVersionTest {
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         List<Object[]> data = new ArrayList<>();
 
         data.addAll(List.of(new Object[][]{

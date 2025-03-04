@@ -65,7 +65,7 @@ static totals_t get_totals() {
   EXPECT_LE(t_real.s, t_expected.s + leeway_s);                               \
   EXPECT_GE(t_real.ovrh, t_expected.ovrh - (leeway_n * sizeof(MallocHeader)));   \
   EXPECT_LE(t_real.ovrh, t_expected.ovrh + (leeway_n * sizeof(MallocHeader)));   \
-  LOG("Deviation: n=" SSIZE_FORMAT ", s=" SSIZE_FORMAT ", ovrh=" SSIZE_FORMAT,   \
+  LOG("Deviation: n=%zd, s=%zd, ovrh=%zd",   \
       (ssize_t)t_real.n - (ssize_t)t_expected.n,                                 \
       (ssize_t)t_real.s - (ssize_t)t_expected.s,                                 \
       (ssize_t)t_real.ovrh - (ssize_t)t_expected.ovrh);                          \

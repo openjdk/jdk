@@ -59,7 +59,7 @@ ifeq ($(filter /%, $(lastword $(MAKEFILE_LIST))),)
 else
   makefile_path := $(lastword $(MAKEFILE_LIST))
 endif
-topdir := $(strip $(patsubst %/, %, $(dir $(makefile_path))))
+TOPDIR := $(strip $(patsubst %/, %, $(dir $(makefile_path))))
 
 # ... and then we can include the real makefile to bootstrap the build
-include $(topdir)/make/PreInit.gmk
+include $(TOPDIR)/make/PreInit.gmk

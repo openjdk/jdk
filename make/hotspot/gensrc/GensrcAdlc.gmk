@@ -23,7 +23,10 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, hotspot/gensrc/GensrcAdlc.gmk))
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
 
 ifeq ($(call check-jvm-feature, compiler2), true)
 
@@ -260,3 +263,8 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   TARGETS += $(ADLC_GENERATED_FILES)
 
 endif
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

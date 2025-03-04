@@ -39,7 +39,10 @@ enum spa_profiler {
                               *      Long : clock duration,
                               *      Long : clock delay,
                               *      Double : clock rate_diff,
-                              *      Long : clock next_nsec)) */
+                              *      Long : clock next_nsec,
+                              *      Int : transport_state,
+                              *      Int : clock cycle,
+                              *      Long : xrun duration)) */
     SPA_PROFILER_driverBlock,            /**< generic driver info block
                               *  (Struct(
                               *      Int : driver_id,
@@ -48,8 +51,9 @@ enum spa_profiler {
                               *      Long : driver signal,
                               *      Long : driver awake,
                               *      Long : driver finish,
-                              *      Int : driver status),
-                              *      Fraction : latency))  */
+                              *      Int : driver status,
+                              *      Fraction : latency,
+                              *      Int : xrun_count))  */
 
     SPA_PROFILER_START_Follower    = 0x20000,    /**< follower related profiler properties */
     SPA_PROFILER_followerBlock,            /**< generic follower info block
@@ -61,8 +65,20 @@ enum spa_profiler {
                               *      Long : awake,
                               *      Long : finish,
                               *      Int : status,
-                              *      Fraction : latency))  */
-
+                              *      Fraction : latency,
+                              *      Int : xrun_count))  */
+    SPA_PROFILER_followerClock,            /**< follower clock information
+                              *  (Struct(
+                              *      Int : clock id,
+                              *      String: clock name,
+                              *      Long : clock nsec,
+                              *      Fraction : clock rate,
+                              *      Long : clock position,
+                              *      Long : clock duration,
+                              *      Long : clock delay,
+                              *      Double : clock rate_diff,
+                              *      Long : clock next_nsec,
+                              *      Long : xrun duration)) */
     SPA_PROFILER_START_CUSTOM    = 0x1000000,
 };
 

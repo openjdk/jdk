@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @summary jpackage with --module-path testing
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile ModulePathTest.java
+ * @compile -Xlint:all -Werror ModulePathTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ModulePathTest
  */
@@ -53,7 +53,7 @@ import jdk.jpackage.test.Annotations.Test;
 public final class ModulePathTest {
 
     @Parameters
-    public static Collection data() {
+    public static Collection<?> data() {
         return List.of(new String[][]{
             {GOOD_PATH, EMPTY_DIR, NON_EXISTING_DIR},
             {EMPTY_DIR, NON_EXISTING_DIR, GOOD_PATH},
@@ -80,7 +80,7 @@ public final class ModulePathTest {
 
         Path goodModulePath = TKit.createTempDirectory("modules");
 
-        Path appBundle = HelloApp.createBundle(appDesc, goodModulePath);
+        HelloApp.createBundle(appDesc, goodModulePath);
 
         JPackageCommand cmd = new JPackageCommand()
                 .setArgumentValue("--dest", TKit.workDir().resolve("output"))

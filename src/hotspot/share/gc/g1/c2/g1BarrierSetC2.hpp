@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,9 @@ public:
 };
 
 class G1BarrierSetC2: public CardTableBarrierSetC2 {
+private:
+  void analyze_dominating_barriers() const;
+
 protected:
   bool g1_can_remove_pre_barrier(GraphKit* kit,
                                  PhaseValues* phase,
@@ -117,6 +120,7 @@ public:
                                   ArrayCopyNode* ac) const;
   virtual void* create_barrier_state(Arena* comp_arena) const;
   virtual void emit_stubs(CodeBuffer& cb) const;
+  virtual void elide_dominated_barrier(MachNode* mach) const;
   virtual void late_barrier_analysis() const;
 
 #ifndef PRODUCT

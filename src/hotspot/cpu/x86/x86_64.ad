@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -2376,6 +2376,16 @@ operand immF0()
 operand immF()
 %{
   match(ConF);
+
+  op_cost(15);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Half Float Immediate
+operand immH()
+%{
+  match(ConH);
 
   op_cost(15);
   format %{ %}
@@ -4840,6 +4850,16 @@ instruct loadConF(regF dst, immF con) %{
   ins_pipe(pipe_slow);
 %}
 
+instruct loadConH(regF dst, immH con) %{
+  match(Set dst con);
+  ins_cost(125);
+  format %{ "movss   $dst, [$constantaddress]\t# load from constant table: halffloat=$con" %}
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct loadConN0(rRegN dst, immN0 src, rFlagsReg cr) %{
   match(Set dst src);
   effect(KILL cr);
@@ -7017,6 +7037,17 @@ instruct castFF(regF dst)
 
   size(0);
   format %{ "# castFF of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(empty);
+%}
+
+instruct castHH(regF dst)
+%{
+  match(Set dst (CastHH dst));
+
+  size(0);
+  format %{ "# castHH of $dst" %}
   ins_encode(/* empty encoding */);
   ins_cost(0);
   ins_pipe(empty);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,9 +88,12 @@ public class TraceLongClasspath {
         // Dump an archive with a specified JAR file in -classpath
         TestCommon.testDump(dumpCP, TestCommon.list("Hello"));
 
-        // Then try to execute the archive with a different classpath and with -Xlog:class+path.
-        // The diagnostic "expecting" app classpath trace should show the entire classpath (excluding any non-existent dump-time paths).
-        String recordedCP = dummyJar + ps + appJar;
+        TestCommon.run(
+            "-Xlog:class+path", "-Xlog:cds",
+            "-cp", dumpCP,
+            "Hello")
+            .assertNormalExit();
+
         TestCommon.run(
             "-Xlog:class+path", "-Xlog:cds",
             "-cp", appJar,
@@ -98,9 +101,6 @@ public class TraceLongClasspath {
             .assertAbnormalExit(output -> {
                 output.shouldContain("Unable to use shared archive");
                 output.shouldContain("shared class paths mismatch");
-                // the "expecting" app classpath from -Xlog:class+path should not
-                // be truncated
-                output.shouldContain(recordedCP);
               });
     }
 }

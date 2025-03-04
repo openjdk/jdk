@@ -366,6 +366,7 @@ class ScanHazardPtrPrintMatchingThreadsClosure : public ThreadClosure {
   }
 };
 
+#ifdef ASSERT
 // Closure to validate hazard ptrs.
 //
 class ValidateHazardPtrsClosure : public ThreadClosure {
@@ -386,6 +387,7 @@ class ValidateHazardPtrsClosure : public ThreadClosure {
            p2i(thread));
   }
 };
+#endif
 
 // Closure to determine if the specified JavaThread is found by
 // threads_do().
@@ -950,8 +952,10 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
     log_debug(thread, smr)("tid=%zu: ThreadsSMRSupport::free_list: threads=" INTPTR_FORMAT " is not freed.", os::current_thread_id(), p2i(threads));
   }
 
+#ifdef ASSERT
   ValidateHazardPtrsClosure validate_cl;
   threads_do(&validate_cl);
+#endif
 
   delete scan_table;
 }

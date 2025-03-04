@@ -654,7 +654,7 @@ _unwind___jsvml_powf8_ha_l9_B6_B10:
         DD      imagerel _unwind___jsvml_powf8_ha_l9_B6_B10
 
 .pdata  ENDS
-_RDATA  SEGMENT     READ PAGE   'DATA'
+_RDATA  SEGMENT     READONLY PAGE   'DATA'
         ALIGN  32
 __VPACK_ODD_ind_2742_0_4        DD      1
         DD      3
@@ -2703,7 +2703,7 @@ _unwind___jsvml_spow_ha_cout_rare_internal_B1_B64:
 _DATA   SEGMENT      'DATA'
 _DATA   ENDS
 
-_RDATA  SEGMENT     READ  'DATA'
+_RDATA  SEGMENT     READONLY  'DATA'
         DD 8 DUP (0H)
         PUBLIC __jsvml_spow_ha_data_internal_avx512
 __jsvml_spow_ha_data_internal_avx512    DD      0

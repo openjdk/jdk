@@ -68,7 +68,7 @@ ZHeap::ZHeap()
   assert(_heap == nullptr, "Already initialized");
   _heap = this;
 
-  if (!_page_allocator.is_initialized() || !_young.is_initialized() || !_old.is_initialized()) {
+  if (!_page_allocator.is_initialized()) {
     return;
   }
 
@@ -271,9 +271,9 @@ void ZHeap::keep_alive(oop obj) {
   ZBarrier::mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong>(addr);
 }
 
-void ZHeap::mark_flush_and_free(Thread* thread) {
-  _young.mark_flush_and_free(thread);
-  _old.mark_flush_and_free(thread);
+void ZHeap::mark_flush(Thread* thread) {
+  _young.mark_flush(thread);
+  _old.mark_flush(thread);
 }
 
 bool ZHeap::is_allocating(zaddress addr) const {

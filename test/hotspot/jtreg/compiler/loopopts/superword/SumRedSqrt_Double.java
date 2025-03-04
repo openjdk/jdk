@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,10 @@ public class SumRedSqrt_Double {
     @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.ADD_REDUCTION_VD, IRNode.SQRT_VD})
     @IR(applyIfCPUFeature = {"avx", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.ADD_REDUCTION_VD, ">= 1", IRNode.SQRT_VD, ">= 1"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.ADD_REDUCTION_VD, ">= 1", IRNode.SQRT_VD, ">= 1"})
     public static double sumReductionWithStoreImplement(

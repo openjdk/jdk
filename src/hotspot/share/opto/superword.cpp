@@ -33,7 +33,7 @@
 SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
   _vloop_analyzer(vloop_analyzer),
   _vloop(vloop_analyzer.vloop()),
-  _arena(mtCompiler),
+  _arena(mtCompiler, Arena::Tag::tag_superword),
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _pairset(&_arena, _vloop_analyzer),
   _packset(&_arena, _vloop_analyzer
@@ -1484,7 +1484,8 @@ const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List* pac
                          pack->size(),
                          pre_end->init_trip(),
                          pre_end->stride_con(),
-                         iv_stride()
+                         iv_stride(),
+                         _vloop.are_speculative_checks_possible()
                          DEBUG_ONLY(COMMA is_trace_align_vector()));
   return solver.solve();
 }
@@ -1896,6 +1897,7 @@ bool SuperWord::schedule_and_apply() const {
   VTransformTrace trace(_vloop.vtrace(),
                         is_trace_superword_rejections(),
                         is_trace_align_vector(),
+                        _vloop.is_trace_speculative_runtime_checks(),
                         is_trace_superword_info());
 #endif
   VTransform vtransform(_vloop_analyzer,
@@ -1938,8 +1940,11 @@ void VTransform::apply() {
   adjust_pre_loop_limit_to_align_main_loop_vectors();
   C->print_method(PHASE_AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, 4, cl());
 
+  apply_speculative_runtime_checks();
+  C->print_method(PHASE_AUTO_VECTORIZATION4_AFTER_SPECULATIVE_RUNTIME_CHECKS, 4, cl());
+
   apply_vectorization();
-  C->print_method(PHASE_AUTO_VECTORIZATION4_AFTER_APPLY, 4, cl());
+  C->print_method(PHASE_AUTO_VECTORIZATION5_AFTER_APPLY, 4, cl());
 }
 
 // We prepare the memory graph for the replacement of scalar memops with vector memops.
@@ -2607,7 +2612,7 @@ const Type* VLoopTypes::container_type(Node* n) const {
     // Float to half float conversion may be succeeded by a conversion from
     // half float to float, in such a case back propagation of narrow type (SHORT)
     // may not be possible.
-    if (n->Opcode() == Op_ConvF2HF) {
+    if (n->Opcode() == Op_ConvF2HF || n->Opcode() == Op_ReinterpretHF2S) {
       return TypeInt::SHORT;
     }
     // A narrow type of arithmetic operations will be determined by

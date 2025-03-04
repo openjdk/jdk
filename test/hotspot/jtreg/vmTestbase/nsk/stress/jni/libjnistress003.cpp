@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,14 +171,14 @@ Java_nsk_stress_jni_JNIter003_jniBodyChangeArray (JNIEnv *env, jobject jobj,
 
   /* Take the elements from Java arrays into native buffers */
   /* Use Get<Type>ArrayElements */
-  boolOrig = env->GetBooleanArrayElements((jbooleanArray) arrayOrig[BOOL], 0); CE
-  byteOrig = env->GetByteArrayElements((jbyteArray) arrayOrig[BYTE], 0); CE
-  charOrig = env->GetCharArrayElements((jcharArray) arrayOrig[CHAR], 0); CE
-  shortOrig = env->GetShortArrayElements((jshortArray) arrayOrig[SHORT], 0); CE
-  intOrig = env->GetIntArrayElements((jintArray) arrayOrig[INT], 0); CE
-  longOrig = env->GetLongArrayElements((jlongArray) arrayOrig[LONG], 0); CE
-  floatOrig = env->GetFloatArrayElements((jfloatArray) arrayOrig[FLOAT], 0); CE
-  doubleOrig = env->GetDoubleArrayElements((jdoubleArray) arrayOrig[DOUBLE], 0); CE
+  boolOrig = env->GetBooleanArrayElements((jbooleanArray) arrayOrig[BOOL], nullptr); CE
+  byteOrig = env->GetByteArrayElements((jbyteArray) arrayOrig[BYTE], nullptr); CE
+  charOrig = env->GetCharArrayElements((jcharArray) arrayOrig[CHAR], nullptr); CE
+  shortOrig = env->GetShortArrayElements((jshortArray) arrayOrig[SHORT], nullptr); CE
+  intOrig = env->GetIntArrayElements((jintArray) arrayOrig[INT], nullptr); CE
+  longOrig = env->GetLongArrayElements((jlongArray) arrayOrig[LONG], nullptr); CE
+  floatOrig = env->GetFloatArrayElements((jfloatArray) arrayOrig[FLOAT], nullptr); CE
+  doubleOrig = env->GetDoubleArrayElements((jdoubleArray) arrayOrig[DOUBLE], nullptr); CE
 
   /* Alloc some memory for cloned arrays buffers */
   boolClone = (jboolean *)c_malloc(env, SIZE(BOOL) * sizeof(jboolean));

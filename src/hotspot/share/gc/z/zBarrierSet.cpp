@@ -101,7 +101,7 @@ void ZBarrierSet::on_thread_attach(Thread* thread) {
 
 void ZBarrierSet::on_thread_detach(Thread* thread) {
   // Flush and free any remaining mark stacks
-  ZHeap::heap()->mark_flush_and_free(thread);
+  ZHeap::heap()->mark_flush(thread);
 }
 
 static void deoptimize_allocation(JavaThread* thread) {

@@ -166,7 +166,6 @@ class CompilerOracle : AllStatic {
 
   // Tells whether there are any methods to (collect|collect+print) memory statistics for
   static bool should_collect_memstat();
-  static bool should_print_final_memstat_report();
 
   // Tags the method as blackhole candidate, if possible.
   static void tag_blackhole_if_possible(const methodHandle& method);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6270015
  * @library /test/lib
- * @build jdk.test.lib.net.SimpleSSLContext
+ * @build jdk.test.lib.Asserts
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.net.SimpleSSLContext
+ *        jdk.test.lib.net.URIBuilder
  * @run main/othervm Test1
  * @run main/othervm -Djava.net.preferIPv6Addresses=true Test1
  * @run main/othervm -Dsun.net.httpserver.maxReqTime=10 Test1
@@ -35,12 +38,19 @@
 
 import com.sun.net.httpserver.*;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.*;
 import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
+
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
+
+import static jdk.test.lib.Asserts.assertEquals;
+import static jdk.test.lib.Asserts.assertFileContentsEqual;
+import static jdk.test.lib.Utils.createTempFileOfSize;
 
 /* basic http/s connectivity test
  * Tests:
@@ -56,14 +66,18 @@ import jdk.test.lib.net.URIBuilder;
 
 public class Test1 extends Test {
 
+    private static final String TEMP_FILE_PREFIX =
+            HttpServer.class.getPackageName() + '-' + Test1.class.getSimpleName() + '-';
+
     static SSLContext ctx;
 
     public static void main (String[] args) throws Exception {
         HttpServer s1 = null;
         HttpsServer s2 = null;
         ExecutorService executor=null;
+        Path smallFilePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 23);
+        Path largeFilePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 2730088);
         try {
-            String root = System.getProperty ("test.src")+ "/docs";
             System.out.print ("Test1: ");
             InetAddress loopback = InetAddress.getLoopbackAddress();
             InetSocketAddress addr = new InetSocketAddress (loopback, 0);
@@ -72,9 +86,11 @@ public class Test1 extends Test {
                 throw new RuntimeException ("should not be httpsserver");
             }
             s2 = HttpsServer.create (addr, 0);
-            HttpHandler h = new FileServerHandler (root);
-            HttpContext c1 = s1.createContext ("/test1", h);
-            HttpContext c2 = s2.createContext ("/test1", h);
+            // Assert that both files share the same parent and can be served from the same `FileServerHandler`
+            assertEquals(smallFilePath.getParent(), largeFilePath.getParent());
+            HttpHandler h = new FileServerHandler (smallFilePath.getParent().toString());
+            HttpContext c1 = s1.createContext ("/", h);
+            HttpContext c2 = s2.createContext ("/", h);
             executor = Executors.newCachedThreadPool();
             s1.setExecutor (executor);
             s2.setExecutor (executor);
@@ -85,14 +101,14 @@ public class Test1 extends Test {
 
             int port = s1.getAddress().getPort();
             int httpsport = s2.getAddress().getPort();
-            test (true, "http", root+"/test1", port, "smallfile.txt", 23);
-            test (true, "http", root+"/test1", port, "largefile.txt", 2730088);
-            test (true, "https", root+"/test1", httpsport, "smallfile.txt", 23);
-            test (true, "https", root+"/test1", httpsport, "largefile.txt", 2730088);
-            test (false, "http", root+"/test1", port, "smallfile.txt", 23);
-            test (false, "http", root+"/test1", port, "largefile.txt", 2730088);
-            test (false, "https", root+"/test1", httpsport, "smallfile.txt", 23);
-            test (false, "https", root+"/test1", httpsport, "largefile.txt", 2730088);
+            test (true, "http", port, smallFilePath);
+            test (true, "http", port, largeFilePath);
+            test (true, "https", httpsport, smallFilePath);
+            test (true, "https", httpsport, largeFilePath);
+            test (false, "http", port, smallFilePath);
+            test (false, "http", port, largeFilePath);
+            test (false, "https", httpsport, smallFilePath);
+            test (false, "https", httpsport, largeFilePath);
             System.out.println ("OK");
         } finally {
             if (s1 != null)
@@ -101,15 +117,17 @@ public class Test1 extends Test {
                 s2.stop(0);
             if (executor != null)
                 executor.shutdown ();
+            Files.delete(smallFilePath);
+            Files.delete(largeFilePath);
         }
     }
 
-    static void test (boolean fixedLen, String protocol, String root, int port, String f, int size) throws Exception {
+    static void test (boolean fixedLen, String protocol, int port, Path filePath) throws Exception {
         URL url = URIBuilder.newBuilder()
                  .scheme(protocol)
                  .loopback()
                  .port(port)
-                 .path("/test1/"+f)
+                 .path("/" + filePath.getFileName())
                  .toURL();
         HttpURLConnection urlc = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
         if (urlc instanceof HttpsURLConnection) {
@@ -138,34 +156,9 @@ public class Test1 extends Test {
         is.close();
         fout.close();
 
-        if (count != size) {
-            throw new RuntimeException ("wrong amount of data returned");
-        }
-        String orig = root + "/" + f;
-        compare (new File(orig), temp);
+        assertEquals(filePath.toFile().length(), (long) count, "wrong amount of data returned");
+        assertFileContentsEqual(filePath, temp.toPath());
         temp.delete();
     }
 
-    /* compare the contents of the two files */
-
-    static void compare (File f1, File f2) throws IOException {
-        InputStream i1 = new BufferedInputStream (new FileInputStream(f1));
-        InputStream i2 = new BufferedInputStream (new FileInputStream(f2));
-
-        int c1,c2;
-        try {
-            while ((c1=i1.read()) != -1) {
-                c2 = i2.read();
-                if (c1 != c2) {
-                    throw new RuntimeException ("file compare failed 1");
-                }
-            }
-            if (i2.read() != -1) {
-                throw new RuntimeException ("file compare failed 2");
-            }
-        } finally {
-            i1.close();
-            i2.close();
-        }
-    }
 }

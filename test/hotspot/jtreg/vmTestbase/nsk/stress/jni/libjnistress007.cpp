@@ -32,7 +32,7 @@ Java_nsk_stress_jni_JNIter007_incCount (JNIEnv *env, jobject jobj, jstring name)
   jclass clazz;
   jfieldID fld;
   jint value;
-  const char *str = env->GetStringUTFChars(name, 0); CE
+  const char *str = env->GetStringUTFChars(name, nullptr); CE
 
   CHECK(env->MonitorEnter(jobj));
   clazz = env->GetObjectClass(jobj); CE

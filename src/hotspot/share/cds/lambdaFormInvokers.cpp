@@ -95,7 +95,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
     return;
   }
 
-  if (CDSConfig::is_dumping_static_archive() && CDSConfig::is_dumping_invokedynamic()) {
+  if (CDSConfig::is_dumping_static_archive() && CDSConfig::is_dumping_method_handles()) {
     // Work around JDK-8310831, as some methods in lambda form holder classes may not get generated.
     log_info(cds)("Archived MethodHandles may refer to lambda form holder classes. Cannot regenerate.");
     return;
@@ -263,4 +263,8 @@ void LambdaFormInvokers::read_static_archive_invokers() {
 
 void LambdaFormInvokers::serialize(SerializeClosure* soc) {
   soc->do_ptr(&_static_archive_invokers);
+  if (soc->reading() && CDSConfig::is_dumping_final_static_archive()) {
+    LambdaFormInvokers::read_static_archive_invokers();
+    _static_archive_invokers = nullptr;
+  }
 }

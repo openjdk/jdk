@@ -51,6 +51,8 @@ class TypeArrayKlass : public ArrayKlass {
   jint max_length()                     { return _max_length; }
   void set_max_length(jint m)           { _max_length = m;    }
 
+  u2 compute_modifier_flags() const;
+
   // testers
   DEBUG_ONLY(bool is_typeArray_klass_slow() const  { return true; })
 
@@ -72,8 +74,6 @@ class TypeArrayKlass : public ArrayKlass {
 
   // Copying
   void  copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS);
-
-  u2 compute_modifier_flags() const;
 
   // Oop iterators. Since there are no oops in TypeArrayKlasses,
   // these functions only return the size of the object.

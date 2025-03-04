@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -585,6 +585,8 @@ class Assembler : public AbstractAssembler  {
     VEX_OPCODE_0F_38 = 0x2,
     VEX_OPCODE_0F_3A = 0x3,
     VEX_OPCODE_0F_3C = 0x4,
+    VEX_OPCODE_MAP5  = 0x5,
+    VEX_OPCODE_MAP6  = 0x6,
     VEX_OPCODE_MASK  = 0x1F
   };
 
@@ -1815,6 +1817,9 @@ private:
   void movsbl(Register dst, Address src);
   void movsbl(Register dst, Register src);
 
+  void vmovw(XMMRegister dst, Register src);
+  void vmovw(Register dst, XMMRegister src);
+
 #ifdef _LP64
   void movsbq(Register dst, Address src);
   void movsbq(Register dst, Register src);
@@ -2690,6 +2695,16 @@ private:
   void vpaddw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpaddd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpaddq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
+  // FP16 instructions
+  void vaddsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vsubsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vmulsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vdivsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vmaxsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vminsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vsqrtsh(XMMRegister dst, XMMRegister src);
+  void vfmadd132sh(XMMRegister dst, XMMRegister src1, XMMRegister src2);
 
   // Saturating packed insturctions.
   void vpaddsb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);

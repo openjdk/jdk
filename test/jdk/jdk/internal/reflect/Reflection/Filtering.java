@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8210496
+ * @bug 8210496 8349145 8346567
  * @modules java.base/jdk.internal.reflect
  * @run testng Filtering
  * @summary Test that security sensitive fields that filtered by core reflection
@@ -55,6 +55,9 @@ public class Filtering {
             { AccessibleObject.class, "override" },
             { Class.class, "classLoader" },
             { Class.class, "classData" },
+            { Class.class, "modifiers" },
+            { Class.class, "protectionDomain" },
+            { Class.class, "primitive" },
             { ClassLoader.class, "parent" },
             { Field.class, "clazz" },
             { Field.class, "modifiers" },

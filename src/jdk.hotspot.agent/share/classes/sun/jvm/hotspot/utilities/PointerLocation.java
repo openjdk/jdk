@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class PointerLocation {
 
   boolean inLocalJNIHandleBlock;
   JNIHandleBlock handleBlock;
-  sun.jvm.hotspot.runtime.Thread handleThread;
+  JavaThread handleThread;
 
   public PointerLocation(Address addr) {
     this.addr = addr;
@@ -200,7 +200,7 @@ public class PointerLocation {
   }
 
   /** Only valid if isInLocalJNIHandleBlock is true */
-  public sun.jvm.hotspot.runtime.Thread getJNIHandleThread() {
+  public JavaThread getJNIHandleThread() {
     assert isInLocalJNIHandleBlock();
     return handleThread;
   }
@@ -356,14 +356,9 @@ public class PointerLocation {
       tty.println("In JNI weak global");
     } else if (isInLocalJNIHandleBlock()) {
       tty.print("In thread-local");
-      tty.print(" JNI handle block (" + handleBlock.top() + " handle slots present)");
-      if (handleThread.isJavaThread()) {
-        tty.print(" for JavaThread ");
-        ((JavaThread) handleThread).printThreadIDOn(tty);
-        tty.println();
-      } else {
-        tty.println(" for a non-Java Thread");
-      }
+      tty.print(" JNI handle block (" + handleBlock.top() + " handle slots present) for JavaThread ");
+      handleThread.printThreadIDOn(tty);
+      tty.println();
     } else {
       // This must be last
       if (Assert.ASSERTS_ENABLED) {

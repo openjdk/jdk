@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED MonitorWaitNotify
  */
 
 /*
@@ -35,7 +35,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ * @run junit/othervm/native -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
  */
 
 /*
@@ -43,7 +43,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ * @run junit/othervm/native -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
  */
 
 /*
@@ -51,7 +51,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm -Xint -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ * @run junit/othervm/native -Xint -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
  */
 
 /*
@@ -59,7 +59,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm -Xint -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ * @run junit/othervm/native -Xint -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
  */
 
 /*
@@ -67,7 +67,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm -Xcomp -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ * @run junit/othervm/native -Xcomp -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
  */
 
 /*
@@ -75,7 +75,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm -Xcomp -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ * @run junit/othervm/native -Xcomp -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
  */
 
 /*
@@ -83,7 +83,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm -Xcomp -XX:TieredStopAtLevel=1 -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ * @run junit/othervm/native -Xcomp -XX:TieredStopAtLevel=1 -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
  */
 
 /*
@@ -91,7 +91,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm -Xcomp -XX:TieredStopAtLevel=1 -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ * @run junit/othervm/native -Xcomp -XX:TieredStopAtLevel=1 -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
  */
 
 /*
@@ -99,7 +99,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm -Xcomp -XX:-TieredCompilation -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ * @run junit/othervm/native -Xcomp -XX:-TieredCompilation -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
  */
 
 /*
@@ -107,7 +107,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm -Xcomp -XX:-TieredCompilation -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
+ * @run junit/othervm/native -Xcomp -XX:-TieredCompilation -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorWaitNotify
  */
 
 import java.util.ArrayList;

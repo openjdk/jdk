@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ import sun.net.NetProperties;
 import sun.net.www.HeaderParser;
 
 import static java.lang.System.out;
+import static java.lang.System.err;
 import static java.lang.String.format;
 
 /**
@@ -304,6 +305,9 @@ public class DigestEchoClient {
         } catch(Throwable t) {
             out.println(DigestEchoServer.now()
                     + ": Unexpected exception: " + t);
+            t.printStackTrace(System.out);
+            err.println(DigestEchoServer.now()
+                    + ": Unexpected exception: " + t);
             t.printStackTrace();
             failed = t;
             throw t;
@@ -393,15 +397,21 @@ public class DigestEchoClient {
         HttpResponse<String> r;
         CompletableFuture<HttpResponse<String>> cf1;
         String auth = null;
+        Throwable failed = null;
+        URI reqURI = null;
 
         try {
-            for (int i=0; i<data.length; i++) {
+            for (int i = 0; i < data.length; i++) {
                 out.println(DigestEchoServer.now() + " ----- iteration " + i + " -----");
-                List<String> lines = List.of(Arrays.copyOfRange(data, 0, i+1));
+                List<String> lines = List.of(Arrays.copyOfRange(data, 0, i + 1));
                 assert lines.size() == i + 1;
                 String body = lines.stream().collect(Collectors.joining("\r\n"));
                 BodyPublisher reqBody = BodyPublishers.ofString(body);
-                HttpRequest.Builder builder = HttpRequest.newBuilder(uri).version(clientVersion)
+                URI baseReq = URI.create(uri + "?iteration=" + i + ",async=" + async
+                        + ",addHeaders=" + addHeaders + ",preemptive=" + preemptive
+                        + ",expectContinue=" + expectContinue + ",version=" + clientVersion);
+                reqURI = URI.create(baseReq + ",basicCount=" + basicCount.get());
+                HttpRequest.Builder builder = HttpRequest.newBuilder(reqURI).version(clientVersion)
                         .POST(reqBody).expectContinue(expectContinue);
                 boolean isTunnel = isProxy(authType) && useSSL;
                 if (addHeaders) {
@@ -433,8 +443,10 @@ public class DigestEchoClient {
                 HttpResponse<Stream<String>> resp;
                 try {
                     if (async) {
+                        out.printf("%s client.sendAsync(%s)%n", DigestEchoServer.now(), request);
                         resp = client.sendAsync(request, BodyHandlers.ofLines()).join();
                     } else {
+                        out.printf("%s client.send(%s)%n", DigestEchoServer.now(), request);
                         resp = client.send(request, BodyHandlers.ofLines());
                     }
                 } catch (Throwable t) {
@@ -443,17 +455,10 @@ public class DigestEchoClient {
                         long n = basicCount.getAndIncrement();
                         basics.set((basics.get() * n + (stop - start)) / (n + 1));
                     }
-                    // unwrap CompletionException
-                    if (t instanceof CompletionException) {
-                        assert t.getCause() != null;
-                        t = t.getCause();
-                    }
-                    out.println(DigestEchoServer.now()
-                            + ": Unexpected exception: " + t);
-                    throw new RuntimeException("Unexpected exception: " + t, t);
+                    throw t;
                 }
 
-                if (addHeaders && !preemptive && (i==0 || isSchemeDisabled())) {
+                if (addHeaders && !preemptive && (i == 0 || isSchemeDisabled())) {
                     assert resp.statusCode() == 401 || resp.statusCode() == 407;
                     Stream<String> respBody = resp.body();
                     if (respBody != null) {
@@ -462,11 +467,15 @@ public class DigestEchoClient {
                     }
                     System.out.println(String.format("%s received: adding header %s: %s",
                             resp.statusCode(), authorizationKey(authType), auth));
-                    request = HttpRequest.newBuilder(uri).version(clientVersion)
+                    reqURI = URI.create(baseReq + ",withAuthorization="
+                            + authType + ",basicCount=" + basicCount.get());
+                    request = HttpRequest.newBuilder(reqURI).version(clientVersion)
                             .POST(reqBody).header(authorizationKey(authType), auth).build();
                     if (async) {
+                        out.printf("%s client.sendAsync(%s)%n", DigestEchoServer.now(), request);
                         resp = client.sendAsync(request, BodyHandlers.ofLines()).join();
                     } else {
+                        out.printf("%s client.send(%s)%n", DigestEchoServer.now(), request);
                         resp = client.send(request, BodyHandlers.ofLines());
                     }
                 }
@@ -500,6 +509,15 @@ public class DigestEchoClient {
                     throw new RuntimeException("Unexpected response: " + respLines);
                 }
             }
+        } catch (Throwable t) {
+            if (reqURI == null) {
+                failed = t;
+                throw t;
+            }
+            String decoration = "%s Unexpected exception %s for %s".formatted(DigestEchoServer.now(), t, reqURI);
+            RuntimeException decorated = new RuntimeException(decoration, t);
+            failed = decorated;
+            throw decorated;
         } finally {
             client = null;
             System.gc();
@@ -508,7 +526,10 @@ public class DigestEchoClient {
                 if (queue.remove(100) == ref) break;
             }
             var error = TRACKER.checkShutdown(900);
-            if (error != null) throw error;
+            if (error != null) {
+                if (failed != null) error.addSuppressed(failed);
+                throw error;
+            }
         }
         System.out.println("OK");
     }
@@ -546,16 +567,22 @@ public class DigestEchoClient {
         byte[] cnonce = new byte[16];
         String cnonceStr = null;
         DigestEchoServer.DigestResponse challenge = null;
-
+        ReferenceQueue<HttpClient> queue = new ReferenceQueue<>();
+        WeakReference<HttpClient> ref = new WeakReference<>(client, queue);
+        URI reqURI = null;
+        Throwable failed = null;
         try {
-            for (int i=0; i<data.length; i++) {
+            for (int i = 0; i < data.length; i++) {
                 out.println(DigestEchoServer.now() + "----- iteration " + i + " -----");
-                List<String> lines = List.of(Arrays.copyOfRange(data, 0, i+1));
+                List<String> lines = List.of(Arrays.copyOfRange(data, 0, i + 1));
                 assert lines.size() == i + 1;
                 String body = lines.stream().collect(Collectors.joining("\r\n"));
                 HttpRequest.BodyPublisher reqBody = HttpRequest.BodyPublishers.ofString(body);
+                URI baseReq = URI.create(uri + "?iteration=" + i + ",async=" + async
+                        + ",expectContinue=" + expectContinue + ",version=" + clientVersion);
+                reqURI = URI.create(baseReq + ",digestCount=" + digestCount.get());
                 HttpRequest.Builder reqBuilder = HttpRequest
-                        .newBuilder(uri).version(clientVersion).POST(reqBody)
+                        .newBuilder(reqURI).version(clientVersion).POST(reqBody)
                         .expectContinue(expectContinue);
 
                 boolean isTunnel = isProxy(authType) && useSSL;
@@ -578,8 +605,10 @@ public class DigestEchoClient {
                 HttpRequest request = reqBuilder.build();
                 HttpResponse<Stream<String>> resp;
                 if (async) {
+                    out.printf("%s client.sendAsync(%s)%n", DigestEchoServer.now(), request);
                     resp = client.sendAsync(request, BodyHandlers.ofLines()).join();
                 } else {
+                    out.printf("%s client.send(%s)%n", DigestEchoServer.now(), request);
                     resp = client.send(request, BodyHandlers.ofLines());
                 }
                 System.out.println(resp);
@@ -609,16 +638,18 @@ public class DigestEchoClient {
                     challenge = DigestEchoServer.DigestResponse
                             .create(authenticate.substring("Digest ".length()));
                     String auth = digestResponse(uri, digestMethod, challenge, cnonceStr);
+                    reqURI = URI.create(baseReq + ",withAuth=" + authType + ",digestCount=" + digestCount.get());
                     try {
-                        request = HttpRequest.newBuilder(uri).version(clientVersion)
-                            .POST(reqBody).header(authorizationKey(authType), auth).build();
+                        request = HttpRequest.newBuilder(reqURI).version(clientVersion)
+                                .POST(reqBody).header(authorizationKey(authType), auth).build();
                     } catch (IllegalArgumentException x) {
                         throw x;
                     }
-
                     if (async) {
+                        out.printf("%s client.sendAsync(%s)%n", DigestEchoServer.now(), request);
                         resp = client.sendAsync(request, BodyHandlers.ofLines()).join();
                     } else {
+                        out.printf("%s client.send(%s)%n", DigestEchoServer.now(), request);
                         resp = client.send(request, BodyHandlers.ofLines());
                     }
                     System.out.println(resp);
@@ -649,7 +680,29 @@ public class DigestEchoClient {
                     throw new RuntimeException("Unexpected response: " + respLines);
                 }
             }
+        } catch (Throwable t) {
+            if (reqURI == null) {
+                failed = t;
+                throw t;
+            }
+            String decoration = "%s Unexpected exception %s for %s".formatted(DigestEchoServer.now(), t, reqURI);
+            RuntimeException decorated = new RuntimeException(decoration, t);
+            failed = decorated;
+            throw decorated;
         } finally {
+            client = null;
+            System.gc();
+            while (!ref.refersTo(null)) {
+                System.gc();
+                if (queue.remove(100) == ref) break;
+            }
+            var error = TRACKER.checkShutdown(900);
+            if (error != null) {
+                if (failed != null) {
+                    error.addSuppressed(failed);
+                }
+                throw error;
+            }
         }
         System.out.println("OK");
     }

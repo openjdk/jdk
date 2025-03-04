@@ -2060,7 +2060,7 @@ _unwind___jsvml_stan_ha_cout_rare_internal_B1_B20:
 _DATA   SEGMENT      'DATA'
 _DATA   ENDS
 
-_RDATA  SEGMENT     READ PAGE   'DATA'
+_RDATA  SEGMENT     READONLY PAGE   'DATA'
         ALIGN  32
         PUBLIC __jsvml_stan_ha_data_internal
 __jsvml_stan_ha_data_internal   DD      1092811139

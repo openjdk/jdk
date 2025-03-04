@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,34 @@
 
 package com.sun.tools.javac.code;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
 
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
-import com.sun.tools.javac.util.ListBuffer;
 
 /**
+ * Holds pending {@link Lint} warnings until the {@lint Lint} instance associated with the containing
+ * module, package, class, method, or variable declaration is known so that {@link @SupressWarnings}
+ * suppressions may be applied.
+ *
+ * <p>
+ * Warnings are regsistered at any time prior to attribution via {@link #report}. The warning will be
+ * associated with the declaration placed in context by the most recent invocation of {@link #push push()}
+ * not yet {@link #pop}'d. Warnings are actually emitted later, during attribution, via {@link #flush}.
+ *
+ * <p>
+ * There is also an "immediate" mode, where warnings are emitted synchronously; see {@link #pushImmediate}.
+ *
+ * <p>
+ * Deferred warnings are grouped by the innermost containing module, package, class, method, or variable
+ * declaration (represented by {@link JCTree} nodes), so that the corresponding {@link Lint} configuration
+ * can be applied when the warning is eventually generated.
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
@@ -43,6 +60,7 @@ import com.sun.tools.javac.util.ListBuffer;
  * deletion without notice.</b>
  */
 public class DeferredLintHandler {
+
     protected static final Context.Key<DeferredLintHandler> deferredLintHandlerKey = new Context.Key<>();
 
     public static DeferredLintHandler instance(Context context) {
@@ -52,99 +70,107 @@ public class DeferredLintHandler {
         return instance;
     }
 
-    /** The Lint to use when {@link #immediate(Lint)} is used,
-     * instead of {@link #setPos(DiagnosticPosition)}. */
-    private Lint immediateLint;
+    /**
+     * Registered {@link LintLogger}s grouped by the innermost containing module, package, class,
+     * method, or variable declaration.
+     */
+    private final HashMap<JCTree, ArrayList<LintLogger>> deferralMap = new HashMap<>();
+
+    /**
+     * The current "reporter" stack, reflecting calls to {@link #push} and {@link #pop}.
+     *
+     * <p>
+     * The top of the stack determines how calls to {@link #report} are handled.
+     */
+    private final ArrayDeque<Consumer<LintLogger>> reporterStack = new ArrayDeque<>();
 
     @SuppressWarnings("this-escape")
     protected DeferredLintHandler(Context context) {
         context.put(deferredLintHandlerKey, this);
-        this.currentPos = IMMEDIATE_POSITION;
-        immediateLint = Lint.instance(context);
+        Lint rootLint = Lint.instance(context);
+        pushImmediate(rootLint);            // default to "immediate" mode
     }
+
+// LintLogger
 
     /**An interface for deferred lint reporting - loggers passed to
      * {@link #report(LintLogger) } will be called when
      * {@link #flush(DiagnosticPosition) } is invoked.
      */
     public interface LintLogger {
+
+        /**
+         * Generate a warning if appropriate.
+         *
+         * @param lint the applicable lint configuration
+         */
         void report(Lint lint);
     }
 
-    private DiagnosticPosition currentPos;
-    private Map<DiagnosticPosition, ListBuffer<LintLogger>> loggersQueue = new HashMap<>();
+// Reporter Stack
 
-    /**Associate the given logger with the current position as set by {@link #setPos(DiagnosticPosition) }.
-     * Will be invoked when {@link #flush(DiagnosticPosition) } will be invoked with the same position.
-     * <br>
-     * Will invoke the logger synchronously if {@link #immediate() } was called
-     * instead of {@link #setPos(DiagnosticPosition) }.
+    /**
+     * Defer {@link #report}ed warnings until the given declaration is flushed.
+     *
+     * @param decl module, package, class, method, or variable declaration
+     * @see #pop
+     */
+    public void push(JCTree decl) {
+        Assert.check(decl.getTag() == Tag.MODULEDEF
+                  || decl.getTag() == Tag.PACKAGEDEF
+                  || decl.getTag() == Tag.CLASSDEF
+                  || decl.getTag() == Tag.METHODDEF
+                  || decl.getTag() == Tag.VARDEF);
+        reporterStack.push(logger -> deferralMap
+                                        .computeIfAbsent(decl, s -> new ArrayList<>())
+                                        .add(logger));
+    }
+
+    /**
+     * Enter "immediate" mode so that {@link #report}ed warnings are emitted synchonously.
+     *
+     * @param lint lint configuration to use for reported warnings
+     */
+    public void pushImmediate(Lint lint) {
+        reporterStack.push(logger -> logger.report(lint));
+    }
+
+    /**
+     * Revert to the previous configuration in effect prior to the most recent invocation
+     * of {@link #push} or {@link #pushImmediate}.
+     *
+     * @see #pop
+     */
+    public void pop() {
+        Assert.check(reporterStack.size() > 1);     // the bottom stack entry should never be popped
+        reporterStack.pop();
+    }
+
+    /**
+     * Report a warning.
+     *
+     * <p>
+     * In immediate mode, the warning is emitted synchronously. Otherwise, the warning is emitted later
+     * when the current declaration is flushed.
      */
     public void report(LintLogger logger) {
-        if (currentPos == IMMEDIATE_POSITION) {
-            logger.report(immediateLint);
-        } else {
-            ListBuffer<LintLogger> loggers = loggersQueue.get(currentPos);
-            if (loggers == null) {
-                loggersQueue.put(currentPos, loggers = new ListBuffer<>());
-            }
-            loggers.append(logger);
-        }
+        Assert.check(!reporterStack.isEmpty());
+        reporterStack.peek().accept(logger);
     }
 
-    /**Invoke all {@link LintLogger}s that were associated with the provided {@code pos}.
+// Warning Flush
+
+    /**
+     * Emit deferred warnings encompassed by the given declaration.
+     *
+     * @param decl module, package, class, method, or variable declaration
+     * @param lint lint configuration corresponding to {@code decl}
      */
-    public void flush(DiagnosticPosition pos, Lint lint) {
-        ListBuffer<LintLogger> loggers = loggersQueue.get(pos);
-        if (loggers != null) {
-            for (LintLogger lintLogger : loggers) {
-                lintLogger.report(lint);
-            }
-            loggersQueue.remove(pos);
-        }
+    public void flush(JCTree decl, Lint lint) {
+        Optional.of(decl)
+          .map(deferralMap::remove)
+          .stream()
+          .flatMap(ArrayList::stream)
+          .forEach(logger -> logger.report(lint));
     }
-
-    /**Sets the current position to the provided {@code currentPos}. {@link LintLogger}s
-     * passed to subsequent invocations of {@link #report(LintLogger) } will be associated
-     * with the given position.
-     */
-    public DiagnosticPosition setPos(DiagnosticPosition currentPos) {
-        DiagnosticPosition prevPosition = this.currentPos;
-        this.currentPos = currentPos;
-        return prevPosition;
-    }
-
-    /**{@link LintLogger}s passed to subsequent invocations of
-     * {@link #report(LintLogger) } will be invoked immediately.
-     */
-    public DiagnosticPosition immediate(Lint lint) {
-        immediateLint = lint;
-        return setPos(IMMEDIATE_POSITION);
-    }
-
-    private static final DiagnosticPosition IMMEDIATE_POSITION = new DiagnosticPosition() {
-        @Override
-        public JCTree getTree() {
-            Assert.error();
-            return null;
-        }
-
-        @Override
-        public int getStartPosition() {
-            Assert.error();
-            return -1;
-        }
-
-        @Override
-        public int getPreferredPosition() {
-            Assert.error();
-            return -1;
-        }
-
-        @Override
-        public int getEndPosition(EndPosTable endPosTable) {
-            Assert.error();
-            return -1;
-        }
-    };
 }

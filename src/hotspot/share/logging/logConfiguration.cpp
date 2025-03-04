@@ -636,10 +636,15 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->cr();
 
   out->print_cr("Asynchronous logging (off by default):");
-  out->print_cr(" -Xlog:async");
+  out->print_cr(" -Xlog:async[:[mode]]");
   out->print_cr("  All log messages are written to an intermediate buffer first and will then be flushed"
                 " to the corresponding log outputs by a standalone thread. Write operations at logsites are"
                 " guaranteed non-blocking.");
+  out->print_cr(" A mode, either 'drop' or 'stall', may be provided. If 'drop' is provided then"
+                " messages will be dropped if there is no room in the intermediate buffer."
+                " If 'stall' is provided then the log operation will wait for room to be made by the output thread, without dropping any messages."
+                " The default mode is 'drop'.");
+
   out->cr();
 
   out->print_cr("Some examples:");
@@ -715,4 +720,20 @@ void LogConfiguration::notify_update_listeners() {
   }
 }
 
-bool LogConfiguration::_async_mode = false;
+LogConfiguration::AsyncMode LogConfiguration::_async_mode = AsyncMode::Off;
+
+bool LogConfiguration::parse_async_argument(const char* async_tail) {
+  bool ret = true;
+  if (*async_tail == '\0') {
+    // Default is to drop.
+    LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Drop);
+  } else if (strcmp(async_tail, ":stall") == 0) {
+    LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Stall);
+  } else if (strcmp(async_tail, ":drop") == 0) {
+    LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Drop);
+  } else {
+    // User provided unknown async option
+    ret = false;
+  }
+  return ret;
+}

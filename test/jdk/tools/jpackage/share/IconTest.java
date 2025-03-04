@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,8 @@ import jdk.jpackage.test.Annotations.Test;
  * @summary jpackage create image and package with custom icons for the main and additional launcher
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile IconTest.java
- * @run main/othervm/timeout=540 -Xmx512m
+ * @compile -Xlint:all -Werror IconTest.java
+ * @run main/othervm/timeout=720 -Xmx512m
  *  jdk.jpackage.test.Main
  *  --jpt-run=IconTest
  */
@@ -113,7 +113,7 @@ public class IconTest {
     }
 
     @Parameters
-    public static Collection data() {
+    public static Collection<?> data() {
         List<Object[]> data = new ArrayList<>();
 
         var withLinuxShortcut = Set.of(IconType.DefaultIcon, IconType.NoIcon);

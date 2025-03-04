@@ -572,23 +572,35 @@ Symbol* SymbolTable::new_permanent_symbol(const char* name) {
   return sym;
 }
 
-struct SizeFunc : StackObj {
-  size_t operator()(Symbol* value) {
+TableStatistics SymbolTable::get_table_statistics() {
+  static TableStatistics ts;
+  auto sz = [&](Symbol* value) {
     assert(value != nullptr, "expected valid value");
     return (value)->size() * HeapWordSize;
   };
+
+  Thread* jt = Thread::current();
+  SymbolTableHash::StatisticsTask sts(_local_table);
+  if (!sts.prepare(jt)) {
+    return ts;  // return old table statistics
+  }
+  {
+    TraceTime timer("GetStatistics", TRACETIME_LOG(Debug, symboltable, perf));
+    while (sts.do_task(jt, sz)) {
+      sts.pause(jt);
+      if (jt->is_Java_thread()) {
+        ThreadBlockInVM tbivm(JavaThread::cast(jt));
+      }
+      sts.cont(jt);
+    }
+  }
+  ts = sts.done(jt);
+  return ts;
 };
 
-TableStatistics SymbolTable::get_table_statistics() {
-  static TableStatistics ts;
-  SizeFunc sz;
-  ts = _local_table->statistics_get(Thread::current(), sz, ts);
-  return ts;
-}
-
 void SymbolTable::print_table_statistics(outputStream* st) {
-  SizeFunc sz;
-  _local_table->statistics_to(Thread::current(), sz, st, "SymbolTable");
+  TableStatistics ts = get_table_statistics();
+  ts.print(st, "SymbolTable");
 
   if (!_shared_table.empty()) {
     _shared_table.print_table_statistics(st, "Shared Symbol Table");
@@ -691,13 +703,6 @@ void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
     sym->set_permanent();
     writer->add(fixed_hash, builder->buffer_to_offset_u4((address)sym));
   }
-}
-
-size_t SymbolTable::estimate_size_for_archive() {
-  if (_items_count > (size_t)max_jint) {
-    fatal("Too many symbols to be archived: %zu", _items_count);
-  }
-  return CompactHashtableWriter::estimate_size(int(_items_count));
 }
 
 void SymbolTable::write_to_archive(GrowableArray<Symbol*>* symbols) {

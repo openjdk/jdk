@@ -161,7 +161,6 @@ private:
   static void copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
                                        CompactHashtableWriter* ch_table);
 public:
-  static size_t estimate_size_for_archive() NOT_CDS_RETURN_(0);
   static void write_to_archive(GrowableArray<Symbol*>* symbols) NOT_CDS_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc,
                                             bool is_static_archive = true) NOT_CDS_RETURN;

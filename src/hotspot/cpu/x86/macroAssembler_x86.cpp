@@ -778,9 +778,17 @@ void MacroAssembler::warn(const char* msg) {
   andq(rsp, -16);     // align stack as required by push_CPU_state and call
   push_CPU_state();   // keeps alignment at 16 bytes
 
+#ifdef _WIN64
+  // Windows always allocates space for its register args
+  subq(rsp,  frame::arg_reg_save_area_bytes);
+#endif
   lea(c_rarg0, ExternalAddress((address) msg));
   call(RuntimeAddress(CAST_FROM_FN_PTR(address, warning)));
 
+#ifdef _WIN64
+  // restore stack pointer
+  addq(rsp, frame::arg_reg_save_area_bytes);
+#endif
   pop_CPU_state();
   mov(rsp, rbp);
   pop(rbp);
@@ -2377,6 +2385,22 @@ void MacroAssembler::jump_cc(Condition cc, AddressLiteral dst, Register rscratch
     Assembler::jmp(rscratch);
     bind(skip);
   }
+}
+
+void MacroAssembler::cmp32_mxcsr_std(Address mxcsr_save, Register tmp, Register rscratch) {
+  ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
+  assert(rscratch != noreg || always_reachable(mxcsr_std), "missing");
+
+  stmxcsr(mxcsr_save);
+  movl(tmp, mxcsr_save);
+  if (EnableX86ECoreOpts) {
+    // The mxcsr_std has status bits set for performance on ECore
+    orl(tmp, 0x003f);
+  } else {
+    // Mask out status bits (only check control and mask bits)
+    andl(tmp, 0xFFC0);
+  }
+  cmp32(tmp, mxcsr_std, rscratch);
 }
 
 void MacroAssembler::ldmxcsr(AddressLiteral src, Register rscratch) {

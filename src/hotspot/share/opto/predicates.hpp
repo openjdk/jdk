@@ -296,7 +296,7 @@ class ParsePredicate : public Predicate {
   }
 
   static ParsePredicateNode* init_parse_predicate(const Node* parse_predicate_proj, Deoptimization::DeoptReason deopt_reason);
-  NOT_PRODUCT(static void trace_cloned_parse_predicate(bool is_true_path_loop,
+  NOT_PRODUCT(static void trace_cloned_parse_predicate(bool is_false_path_loop,
                                                        const ParsePredicateSuccessProj* success_proj);)
 
  public:
@@ -327,7 +327,7 @@ class ParsePredicate : public Predicate {
     return _success_proj;
   }
 
-  ParsePredicate clone_to_unswitched_loop(Node* new_control, bool is_true_path_loop,
+  ParsePredicate clone_to_unswitched_loop(Node* new_control, bool is_false_path_loop,
                                           PhaseIdealLoop* phase) const;
 
   // Kills this Parse Predicate by marking it useless. Will be folded away in the next IGVN round.
@@ -734,6 +734,8 @@ class PredicateIterator : public StackObj {
     Node* current = _start_node;
     PredicateBlockIterator loop_limit_check_predicate_iterator(current, Deoptimization::Reason_loop_limit_check);
     current = loop_limit_check_predicate_iterator.for_each(predicate_visitor);
+    PredicateBlockIterator auto_vectorization_check_iterator(current, Deoptimization::Reason_auto_vectorization_check);
+    current = auto_vectorization_check_iterator.for_each(predicate_visitor);
     if (UseLoopPredicate) {
       if (UseProfiledLoopPredicate) {
         PredicateBlockIterator profiled_loop_predicate_iterator(current, Deoptimization::Reason_profile_predicate);
@@ -906,6 +908,7 @@ class PredicateBlock : public StackObj {
 class Predicates : public StackObj {
   Node* const _tail;
   const PredicateBlock _loop_limit_check_predicate_block;
+  const PredicateBlock _auto_vectorization_check_block;
   const PredicateBlock _profiled_loop_predicate_block;
   const PredicateBlock _loop_predicate_block;
   Node* const _entry;
@@ -914,7 +917,9 @@ class Predicates : public StackObj {
   explicit Predicates(Node* loop_entry)
       : _tail(loop_entry),
         _loop_limit_check_predicate_block(loop_entry, Deoptimization::Reason_loop_limit_check),
-        _profiled_loop_predicate_block(_loop_limit_check_predicate_block.entry(),
+        _auto_vectorization_check_block(_loop_limit_check_predicate_block.entry(),
+                                        Deoptimization::Reason_auto_vectorization_check),
+        _profiled_loop_predicate_block(_auto_vectorization_check_block.entry(),
                                        Deoptimization::Reason_profile_predicate),
         _loop_predicate_block(_profiled_loop_predicate_block.entry(),
                               Deoptimization::Reason_predicate),
@@ -933,6 +938,10 @@ class Predicates : public StackObj {
 
   const PredicateBlock* profiled_loop_predicate_block() const {
     return &_profiled_loop_predicate_block;
+  }
+
+  const PredicateBlock* auto_vectorization_check_block() const {
+    return &_auto_vectorization_check_block;
   }
 
   const PredicateBlock* loop_limit_check_predicate_block() const {
@@ -1106,9 +1115,9 @@ public:
   ClonePredicateToTargetLoop(LoopNode* target_loop_head, const NodeInLoopBody& node_in_loop_body, PhaseIdealLoop* phase);
 
   // Clones the provided Parse Predicate to the head of the current predicate chain at the target loop.
-  void clone_parse_predicate(const ParsePredicate& parse_predicate, bool is_true_path_loop) {
+  void clone_parse_predicate(const ParsePredicate& parse_predicate, bool is_false_path_loop) {
     ParsePredicate cloned_parse_predicate = parse_predicate.clone_to_unswitched_loop(_old_target_loop_entry,
-                                                                                     is_true_path_loop, _phase);
+                                                                                     is_false_path_loop, _phase);
     _target_loop_predicate_chain.insert_predicate(cloned_parse_predicate);
   }
 

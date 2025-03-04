@@ -75,7 +75,7 @@ import jdk.internal.vm.vector.VectorSupport;
  * which might be deemed to expensive; in other words, this approach prioritizes the performance of memory access over
  * that of releasing a shared memory resource.
  */
-public class ScopedMemoryAccess {
+public final class ScopedMemoryAccess {
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 

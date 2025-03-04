@@ -473,11 +473,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 inline oop ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_load_not_in_heap(oop* p) {
   verify_decorators_absent<ON_UNKNOWN_OOP_REF>();
 
-  if (HasDecorator<decorators, IN_NMETHOD>::value) {
-    return ZNMethod::load_oop(p, decorators);
-  } else {
-    return oop_load_not_in_heap((zpointer*)p);
-  }
+  return oop_load_not_in_heap((zpointer*)p);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>

@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotClassLocation.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveHeapWriter.hpp"
@@ -150,13 +151,19 @@ FileMapInfo::~FileMapInfo() {
   }
 }
 
+void FileMapInfo::free_current_info() {
+  assert(CDSConfig::is_dumping_final_static_archive(), "only supported in this mode");
+  assert(_current_info != nullptr, "sanity");
+  delete _current_info;
+  assert(_current_info == nullptr, "sanity"); // Side effect expected from the above "delete" operator.
+}
+
 void FileMapInfo::populate_header(size_t core_region_alignment) {
   assert(_header == nullptr, "Sanity check");
   size_t c_header_size;
   size_t header_size;
   size_t base_archive_name_size = 0;
   size_t base_archive_name_offset = 0;
-  size_t longest_common_prefix_size = 0;
   if (is_static()) {
     c_header_size = sizeof(FileMapHeader);
     header_size = c_header_size;
@@ -173,31 +180,31 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
       base_archive_name_offset = c_header_size;
     }
   }
-  ResourceMark rm;
-  GrowableArray<const char*>* app_cp_array = create_dumptime_app_classpath_array();
-  int len = app_cp_array->length();
-  longest_common_prefix_size = longest_common_app_classpath_prefix_len(len, app_cp_array);
   _header = (FileMapHeader*)os::malloc(header_size, mtInternal);
   memset((void*)_header, 0, header_size);
   _header->populate(this,
                     core_region_alignment,
                     header_size,
                     base_archive_name_size,
-                    base_archive_name_offset,
-                    longest_common_prefix_size);
+                    base_archive_name_offset);
 }
 
 void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
                              size_t header_size, size_t base_archive_name_size,
-                             size_t base_archive_name_offset, size_t common_app_classpath_prefix_size) {
+                             size_t base_archive_name_offset) {
   // 1. We require _generic_header._magic to be at the beginning of the file
   // 2. FileMapHeader also assumes that _generic_header is at the beginning of the file
   assert(offset_of(FileMapHeader, _generic_header) == 0, "must be");
   set_header_size((unsigned int)header_size);
   set_base_archive_name_offset((unsigned int)base_archive_name_offset);
   set_base_archive_name_size((unsigned int)base_archive_name_size);
-  set_common_app_classpath_prefix_size((unsigned int)common_app_classpath_prefix_size);
-  set_magic(CDSConfig::is_dumping_dynamic_archive() ? CDS_DYNAMIC_ARCHIVE_MAGIC : CDS_ARCHIVE_MAGIC);
+  if (CDSConfig::is_dumping_dynamic_archive()) {
+    set_magic(CDS_DYNAMIC_ARCHIVE_MAGIC);
+  } else if (CDSConfig::is_dumping_preimage_static_archive()) {
+    set_magic(CDS_PREIMAGE_ARCHIVE_MAGIC);
+  } else {
+    set_magic(CDS_ARCHIVE_MAGIC);
+  }
   set_version(CURRENT_CDS_ARCHIVE_VERSION);
 
   if (!info->is_static() && base_archive_name_size != 0) {
@@ -227,7 +234,6 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _use_optimized_module_handling = CDSConfig::is_using_optimized_module_handling();
   _has_aot_linked_classes = CDSConfig::is_dumping_aot_linked_classes();
   _has_full_module_graph = CDSConfig::is_dumping_full_module_graph();
-  _has_archived_invokedynamic = CDSConfig::is_dumping_invokedynamic();
 
   // The following fields are for sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
@@ -236,22 +242,12 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   // JVM version string ... changes on each build.
   get_header_version(_jvm_ident);
 
-  _app_class_paths_start_index = ClassLoaderExt::app_class_paths_start_index();
-  _app_module_paths_start_index = ClassLoaderExt::app_module_paths_start_index();
-  _max_used_path_index = ClassLoaderExt::max_used_path_index();
-  _num_module_paths = ClassLoader::num_module_path_entries();
-
   _verify_local = BytecodeVerificationLocal;
   _verify_remote = BytecodeVerificationRemote;
-  _has_platform_or_app_classes = ClassLoaderExt::has_platform_or_app_classes();
-  _has_non_jar_in_classpath = ClassLoaderExt::has_non_jar_in_classpath();
+  _has_platform_or_app_classes = AOTClassLocationConfig::dumptime()->has_platform_or_app_classes();
   _requested_base_address = (char*)SharedBaseAddress;
   _mapped_base_address = (char*)SharedBaseAddress;
   _allow_archiving_with_java_agent = AllowArchivingWithJavaAgent;
-
-  if (!CDSConfig::is_dumping_dynamic_archive()) {
-    set_shared_path_table(info->_shared_path_table);
-  }
 }
 
 void FileMapHeader::copy_base_archive_name(const char* archive) {
@@ -268,7 +264,6 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- crc:                            0x%08x", crc());
   st->print_cr("- version:                        0x%x", version());
   st->print_cr("- header_size:                    " UINT32_FORMAT, header_size());
-  st->print_cr("- common_app_classpath_size:      " UINT32_FORMAT, common_app_classpath_prefix_size());
   st->print_cr("- base_archive_name_offset:       " UINT32_FORMAT, base_archive_name_offset());
   st->print_cr("- base_archive_name_size:         " UINT32_FORMAT, base_archive_name_size());
 
@@ -294,15 +289,10 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- early_serialized_data_offset:   0x%zx", _early_serialized_data_offset);
   st->print_cr("- serialized_data_offset:         0x%zx", _serialized_data_offset);
   st->print_cr("- jvm_ident:                      %s", _jvm_ident);
-  st->print_cr("- shared_path_table_offset:       0x%zx", _shared_path_table_offset);
-  st->print_cr("- app_class_paths_start_index:    %d", _app_class_paths_start_index);
-  st->print_cr("- app_module_paths_start_index:   %d", _app_module_paths_start_index);
-  st->print_cr("- num_module_paths:               %d", _num_module_paths);
-  st->print_cr("- max_used_path_index:            %d", _max_used_path_index);
+  st->print_cr("- class_location_config_offset:   0x%zx", _class_location_config_offset);
   st->print_cr("- verify_local:                   %d", _verify_local);
   st->print_cr("- verify_remote:                  %d", _verify_remote);
   st->print_cr("- has_platform_or_app_classes:    %d", _has_platform_or_app_classes);
-  st->print_cr("- has_non_jar_in_classpath:       %d", _has_non_jar_in_classpath);
   st->print_cr("- requested_base_address:         " INTPTR_FORMAT, p2i(_requested_base_address));
   st->print_cr("- mapped_base_address:            " INTPTR_FORMAT, p2i(_mapped_base_address));
   st->print_cr("- heap_root_segments.roots_count: %d" , _heap_root_segments.roots_count());
@@ -318,679 +308,25 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- use_optimized_module_handling:  %d", _use_optimized_module_handling);
   st->print_cr("- has_full_module_graph           %d", _has_full_module_graph);
   st->print_cr("- has_aot_linked_classes          %d", _has_aot_linked_classes);
-  st->print_cr("- has_archived_invokedynamic      %d", _has_archived_invokedynamic);
 }
 
-void SharedClassPathEntry::init_as_non_existent(const char* path, TRAPS) {
-  _type = non_existent_entry;
-  set_name(path, CHECK);
-}
-
-void SharedClassPathEntry::init(bool is_modules_image,
-                                bool is_module_path,
-                                ClassPathEntry* cpe, TRAPS) {
-  assert(CDSConfig::is_dumping_archive(), "sanity");
-  _timestamp = 0;
-  _filesize  = 0;
-  _from_class_path_attr = false;
-
-  struct stat st;
-  if (os::stat(cpe->name(), &st) == 0) {
-    if ((st.st_mode & S_IFMT) == S_IFDIR) {
-      _type = dir_entry;
-    } else {
-      // The timestamp of the modules_image is not checked at runtime.
-      if (is_modules_image) {
-        _type = modules_image_entry;
-      } else {
-        _type = jar_entry;
-        _timestamp = st.st_mtime;
-        _from_class_path_attr = cpe->from_class_path_attr();
-        _is_multi_release = cpe->is_multi_release_jar();
-      }
-      _filesize = st.st_size;
-      _is_module_path = is_module_path;
-    }
-  } else {
-    // The file/dir must exist, or it would not have been added
-    // into ClassLoader::classpath_entry().
-    //
-    // If we can't access a jar file in the boot path, then we can't
-    // make assumptions about where classes get loaded from.
-    log_error(cds)("Unable to open file %s.", cpe->name());
-    MetaspaceShared::unrecoverable_loading_error();
-  }
-
-  // No need to save the name of the module file, as it will be computed at run time
-  // to allow relocation of the JDK directory.
-  const char* name = is_modules_image  ? "" : cpe->name();
-  set_name(name, CHECK);
-}
-
-void SharedClassPathEntry::set_name(const char* name, TRAPS) {
-  size_t len = strlen(name) + 1;
-  _name = MetadataFactory::new_array<char>(ClassLoaderData::the_null_class_loader_data(), (int)len, CHECK);
-  strcpy(_name->data(), name);
-}
-
-void SharedClassPathEntry::copy_from(SharedClassPathEntry* ent, ClassLoaderData* loader_data, TRAPS) {
-  assert(ent != nullptr, "sanity");
-  _type = ent->_type;
-  _is_module_path = ent->_is_module_path;
-  _timestamp = ent->_timestamp;
-  _filesize = ent->_filesize;
-  _from_class_path_attr = ent->_from_class_path_attr;
-  set_name(ent->name(), CHECK);
-
-  if (ent->is_jar() && ent->manifest() != nullptr) {
-    Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
-                                                    ent->manifest_size(),
-                                                    CHECK);
-    char* p = (char*)(buf->data());
-    memcpy(p, ent->manifest(), ent->manifest_size());
-    set_manifest(buf);
-  }
-}
-
-const char* SharedClassPathEntry::name() const {
-  if (CDSConfig::is_using_archive() && is_modules_image()) {
-    // In order to validate the runtime modules image file size against the archived
-    // size information, we need to obtain the runtime modules image path. The recorded
-    // dump time modules image path in the archive may be different from the runtime path
-    // if the JDK image has beed moved after generating the archive.
-    return ClassLoader::get_jrt_entry()->name();
-  } else {
-    return _name->data();
-  }
-}
-
-bool SharedClassPathEntry::validate(bool is_class_path) const {
+bool FileMapInfo::validate_class_location() {
   assert(CDSConfig::is_using_archive(), "runtime only");
 
-  struct stat st;
-  const char* name = this->name();
-
-  bool ok = true;
-  log_info(class, path)("checking shared classpath entry: %s", name);
-  if (os::stat(name, &st) != 0 && is_class_path) {
-    // If the archived module path entry does not exist at runtime, it is not fatal
-    // (no need to invalid the shared archive) because the shared runtime visibility check
-    // filters out any archived module classes that do not have a matching runtime
-    // module path location.
-    log_warning(cds)("Required classpath entry does not exist: %s", name);
-    ok = false;
-  } else if (is_dir()) {
-    if (!os::dir_is_empty(name)) {
-      log_warning(cds)("directory is not empty: %s", name);
-      ok = false;
-    }
-  } else {
-    bool size_differs = _filesize != st.st_size;
-    bool time_differs = has_timestamp() && _timestamp != st.st_mtime;
-    if (time_differs || size_differs) {
-      ok = false;
-      if (PrintSharedArchiveAndExit) {
-        log_warning(cds)(time_differs ? "Timestamp mismatch" : "File size mismatch");
-      } else {
-        const char* bad_file_msg = "This file is not the one used while building the shared archive file:";
-        log_warning(cds)("%s %s", bad_file_msg, name);
-        if (!log_is_enabled(Info, cds)) {
-          log_warning(cds)("%s %s", bad_file_msg, name);
-        }
-        if (time_differs) {
-          log_warning(cds)("%s timestamp has changed.", name);
-        }
-        if (size_differs) {
-          log_warning(cds)("%s size has changed.", name);
-        }
-      }
-    }
-  }
-
-  if (PrintSharedArchiveAndExit && !ok) {
-    // If PrintSharedArchiveAndExit is enabled, don't report failure to the
-    // caller. Please see above comments for more details.
-    ok = true;
-    MetaspaceShared::set_archive_loading_failed();
-  }
-  return ok;
-}
-
-bool SharedClassPathEntry::check_non_existent() const {
-  assert(_type == non_existent_entry, "must be");
-  log_info(class, path)("should be non-existent: %s", name());
-  struct stat st;
-  if (os::stat(name(), &st) != 0) {
-    log_info(class, path)("ok");
-    return true; // file doesn't exist
-  } else {
-    return false;
-  }
-}
-
-void SharedClassPathEntry::metaspace_pointers_do(MetaspaceClosure* it) {
-  it->push(&_name);
-  it->push(&_manifest);
-}
-
-void SharedPathTable::metaspace_pointers_do(MetaspaceClosure* it) {
-  it->push(&_entries);
-}
-
-void SharedPathTable::dumptime_init(ClassLoaderData* loader_data, TRAPS) {
-  const int num_entries =
-    ClassLoader::num_boot_classpath_entries() +
-    ClassLoader::num_app_classpath_entries() +
-    ClassLoader::num_module_path_entries() +
-    FileMapInfo::num_non_existent_class_paths();
-  _entries = MetadataFactory::new_array<SharedClassPathEntry*>(loader_data, num_entries, CHECK);
-  for (int i = 0; i < num_entries; i++) {
-    SharedClassPathEntry* ent =
-      new (loader_data, SharedClassPathEntry::size(), MetaspaceObj::SharedClassPathEntryType, THREAD) SharedClassPathEntry;
-    _entries->at_put(i, ent);
-  }
-}
-
-void FileMapInfo::allocate_shared_path_table(TRAPS) {
-  assert(CDSConfig::is_dumping_archive(), "sanity");
-
-  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
-  ClassPathEntry* jrt = ClassLoader::get_jrt_entry();
-
-  assert(jrt != nullptr,
-         "No modular java runtime image present when allocating the CDS classpath entry table");
-
-  _shared_path_table.dumptime_init(loader_data, CHECK);
-
-  // 1. boot class path
-  int i = 0;
-  i = add_shared_classpaths(i, "boot",   jrt, CHECK);
-  i = add_shared_classpaths(i, "app",    ClassLoader::app_classpath_entries(), CHECK);
-  i = add_shared_classpaths(i, "module", ClassLoader::module_path_entries(), CHECK);
-
-  for (int x = 0; x < num_non_existent_class_paths(); x++, i++) {
-    const char* path = _non_existent_class_paths->at(x);
-    shared_path(i)->init_as_non_existent(path, CHECK);
-  }
-
-  assert(i == _shared_path_table.size(), "number of shared path entry mismatch");
-}
-
-int FileMapInfo::add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS) {
-  while (cpe != nullptr) {
-    bool is_jrt = (cpe == ClassLoader::get_jrt_entry());
-    bool is_module_path = i >= ClassLoaderExt::app_module_paths_start_index();
-    const char* type = (is_jrt ? "jrt" : (cpe->is_jar_file() ? "jar" : "dir"));
-    log_info(class, path)("add %s shared path (%s) %s", which, type, cpe->name());
-    SharedClassPathEntry* ent = shared_path(i);
-    ent->init(is_jrt, is_module_path, cpe, CHECK_0);
-    if (cpe->is_jar_file()) {
-      update_jar_manifest(cpe, ent, CHECK_0);
-    }
-    if (is_jrt) {
-      cpe = ClassLoader::get_next_boot_classpath_entry(cpe);
+  AOTClassLocationConfig* config = header()->class_location_config();
+  bool has_extra_module_paths = false;
+  if (!config->validate(header()->has_aot_linked_classes(), &has_extra_module_paths)) {
+    if (PrintSharedArchiveAndExit) {
+      MetaspaceShared::set_archive_loading_failed();
+      return true;
     } else {
-      cpe = cpe->next();
-    }
-    i++;
-  }
-
-  return i;
-}
-
-void FileMapInfo::check_nonempty_dir_in_shared_path_table() {
-  assert(CDSConfig::is_dumping_archive(), "sanity");
-
-  bool has_nonempty_dir = false;
-
-  int last = _shared_path_table.size() - 1;
-  if (last > ClassLoaderExt::max_used_path_index()) {
-     // no need to check any path beyond max_used_path_index
-     last = ClassLoaderExt::max_used_path_index();
-  }
-
-  for (int i = 0; i <= last; i++) {
-    SharedClassPathEntry *e = shared_path(i);
-    if (e->is_dir()) {
-      const char* path = e->name();
-      if (!os::dir_is_empty(path)) {
-        log_error(cds)("Error: non-empty directory '%s'", path);
-        has_nonempty_dir = true;
-      }
-    }
-  }
-
-  if (has_nonempty_dir) {
-    ClassLoader::exit_with_path_failure("Cannot have non-empty directory in paths", nullptr);
-  }
-}
-
-void FileMapInfo::record_non_existent_class_path_entry(const char* path) {
-  assert(CDSConfig::is_dumping_archive(), "sanity");
-  log_info(class, path)("non-existent Class-Path entry %s", path);
-  if (_non_existent_class_paths == nullptr) {
-    _non_existent_class_paths = new (mtClass) GrowableArray<const char*>(10, mtClass);
-  }
-  _non_existent_class_paths->append(os::strdup(path));
-}
-
-int FileMapInfo::num_non_existent_class_paths() {
-  assert(CDSConfig::is_dumping_archive(), "sanity");
-  if (_non_existent_class_paths != nullptr) {
-    return _non_existent_class_paths->length();
-  } else {
-    return 0;
-  }
-}
-
-int FileMapInfo::get_module_shared_path_index(Symbol* location) {
-  if (location->starts_with("jrt:", 4) && get_number_of_shared_paths() > 0) {
-    assert(shared_path(0)->is_modules_image(), "first shared_path must be the modules image");
-    return 0;
-  }
-
-  if (ClassLoaderExt::app_module_paths_start_index() >= get_number_of_shared_paths()) {
-    // The archive(s) were created without --module-path option
-    return -1;
-  }
-
-  if (!location->starts_with("file:", 5)) {
-    return -1;
-  }
-
-  // skip_uri_protocol was also called during dump time -- see ClassLoaderExt::process_module_table()
-  ResourceMark rm;
-  const char* file = ClassLoader::uri_to_path(location->as_C_string());
-  for (int i = ClassLoaderExt::app_module_paths_start_index(); i < get_number_of_shared_paths(); i++) {
-    SharedClassPathEntry* ent = shared_path(i);
-    if (!ent->is_non_existent()) {
-      assert(ent->in_named_module(), "must be");
-      bool cond = strcmp(file, ent->name()) == 0;
-      log_debug(class, path)("get_module_shared_path_index (%d) %s : %s = %s", i,
-                             location->as_C_string(), ent->name(), cond ? "same" : "different");
-      if (cond) {
-        return i;
-      }
-    }
-  }
-
-  return -1;
-}
-
-class ManifestStream: public ResourceObj {
-  private:
-  u1*   _buffer_start; // Buffer bottom
-  u1*   _buffer_end;   // Buffer top (one past last element)
-  u1*   _current;      // Current buffer position
-
- public:
-  // Constructor
-  ManifestStream(u1* buffer, int length) : _buffer_start(buffer),
-                                           _current(buffer) {
-    _buffer_end = buffer + length;
-  }
-
-  static bool is_attr(u1* attr, const char* name) {
-    return strncmp((const char*)attr, name, strlen(name)) == 0;
-  }
-
-  static char* copy_attr(u1* value, size_t len) {
-    char* buf = NEW_RESOURCE_ARRAY(char, len + 1);
-    strncpy(buf, (char*)value, len);
-    buf[len] = 0;
-    return buf;
-  }
-};
-
-void FileMapInfo::update_jar_manifest(ClassPathEntry *cpe, SharedClassPathEntry* ent, TRAPS) {
-  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
-  ResourceMark rm(THREAD);
-  jint manifest_size;
-
-  assert(cpe->is_jar_file() && ent->is_jar(), "the shared class path entry is not a JAR file");
-  char* manifest = ClassLoaderExt::read_manifest(THREAD, cpe, &manifest_size);
-  if (manifest != nullptr) {
-    ManifestStream* stream = new ManifestStream((u1*)manifest,
-                                                manifest_size);
-    // Copy the manifest into the shared archive
-    manifest = ClassLoaderExt::read_raw_manifest(THREAD, cpe, &manifest_size);
-    Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
-                                                    manifest_size,
-                                                    CHECK);
-    char* p = (char*)(buf->data());
-    memcpy(p, manifest, manifest_size);
-    ent->set_manifest(buf);
-  }
-}
-
-char* FileMapInfo::skip_first_path_entry(const char* path) {
-  size_t path_sep_len = strlen(os::path_separator());
-  char* p = strstr((char*)path, os::path_separator());
-  if (p != nullptr) {
-    debug_only( {
-      size_t image_name_len = strlen(MODULES_IMAGE_NAME);
-      assert(strncmp(p - image_name_len, MODULES_IMAGE_NAME, image_name_len) == 0,
-             "first entry must be the modules image");
-    } );
-    p += path_sep_len;
-  } else {
-    debug_only( {
-      assert(ClassLoader::string_ends_with(path, MODULES_IMAGE_NAME),
-             "first entry must be the modules image");
-    } );
-  }
-  return p;
-}
-
-int FileMapInfo::num_paths(const char* path) {
-  if (path == nullptr) {
-    return 0;
-  }
-  int npaths = 1;
-  char* p = (char*)path;
-  while (p != nullptr) {
-    char* prev = p;
-    p = strstr((char*)p, os::path_separator());
-    if (p != nullptr) {
-      p++;
-      // don't count empty path
-      if ((p - prev) > 1) {
-       npaths++;
-      }
-    }
-  }
-  return npaths;
-}
-
-// Returns true if a path within the paths exists and has non-zero size.
-bool FileMapInfo::check_paths_existence(const char* paths) {
-  ClasspathStream cp_stream(paths);
-  bool exist = false;
-  struct stat st;
-  while (cp_stream.has_next()) {
-    const char* path = cp_stream.get_next();
-    if (os::stat(path, &st) == 0 && st.st_size > 0) {
-      exist = true;
-      break;
-    }
-  }
-  return exist;
-}
-
-GrowableArray<const char*>* FileMapInfo::create_dumptime_app_classpath_array() {
-  assert(CDSConfig::is_dumping_archive(), "sanity");
-  GrowableArray<const char*>* path_array = new GrowableArray<const char*>(10);
-  ClassPathEntry* cpe = ClassLoader::app_classpath_entries();
-  while (cpe != nullptr) {
-    path_array->append(cpe->name());
-    cpe = cpe->next();
-  }
-  return path_array;
-}
-
-GrowableArray<const char*>* FileMapInfo::create_path_array(const char* paths) {
-  GrowableArray<const char*>* path_array = new GrowableArray<const char*>(10);
-  JavaThread* current = JavaThread::current();
-  ClasspathStream cp_stream(paths);
-  bool non_jar_in_cp = header()->has_non_jar_in_classpath();
-  while (cp_stream.has_next()) {
-    const char* path = cp_stream.get_next();
-    if (!non_jar_in_cp) {
-      struct stat st;
-      if (os::stat(path, &st) == 0) {
-        path_array->append(path);
-      }
-    } else {
-      const char* canonical_path = ClassLoader::get_canonical_path(path, current);
-      if (canonical_path != nullptr) {
-        char* error_msg = nullptr;
-        jzfile* zip = ClassLoader::open_zip_file(canonical_path, &error_msg, current);
-        if (zip != nullptr && error_msg == nullptr) {
-          path_array->append(path);
-        }
-      }
-    }
-  }
-  return path_array;
-}
-
-bool FileMapInfo::classpath_failure(const char* msg, const char* name) {
-  ClassLoader::trace_class_path(msg, name);
-  if (PrintSharedArchiveAndExit) {
-    MetaspaceShared::set_archive_loading_failed();
-  }
-  return false;
-}
-
-unsigned int FileMapInfo::longest_common_app_classpath_prefix_len(int num_paths,
-                                                                  GrowableArray<const char*>* rp_array) {
-  if (num_paths == 0) {
-    return 0;
-  }
-  unsigned int pos;
-  for (pos = 0; ; pos++) {
-    for (int i = 0; i < num_paths; i++) {
-      if (rp_array->at(i)[pos] != '\0' && rp_array->at(i)[pos] == rp_array->at(0)[pos]) {
-        continue;
-      }
-      // search backward for the pos before the file separator char
-      while (pos > 0) {
-        if (rp_array->at(0)[--pos] == *os::file_separator()) {
-          return pos + 1;
-        }
-      }
-      return 0;
-    }
-  }
-  return 0;
-}
-
-bool FileMapInfo::check_paths(int shared_path_start_idx, int num_paths, GrowableArray<const char*>* rp_array,
-                              unsigned int dumptime_prefix_len, unsigned int runtime_prefix_len) {
-  int i = 0;
-  int j = shared_path_start_idx;
-  while (i < num_paths) {
-    while (shared_path(j)->from_class_path_attr()) {
-      // shared_path(j) was expanded from the JAR file attribute "Class-Path:"
-      // during dump time. It's not included in the -classpath VM argument.
-      j++;
-    }
-    assert(strlen(shared_path(j)->name()) > (size_t)dumptime_prefix_len, "sanity");
-    const char* dumptime_path = shared_path(j)->name() + dumptime_prefix_len;
-    assert(strlen(rp_array->at(i)) > (size_t)runtime_prefix_len, "sanity");
-    const char* runtime_path = rp_array->at(i)  + runtime_prefix_len;
-    if (!os::same_files(dumptime_path, runtime_path)) {
       return false;
     }
-    i++;
-    j++;
-  }
-  return true;
-}
-
-bool FileMapInfo::validate_boot_class_paths() {
-  //
-  // - Archive contains boot classes only - relaxed boot path check:
-  //   Extra path elements appended to the boot path at runtime are allowed.
-  //
-  // - Archive contains application or platform classes - strict boot path check:
-  //   Validate the entire runtime boot path, which must be compatible
-  //   with the dump time boot path. Appending boot path at runtime is not
-  //   allowed.
-  //
-
-  // The first entry in boot path is the modules_image (guaranteed by
-  // ClassLoader::setup_boot_search_path()). Skip the first entry. The
-  // path of the runtime modules_image may be different from the dump
-  // time path (e.g. the JDK image is copied to a different location
-  // after generating the shared archive), which is acceptable. For most
-  // common cases, the dump time boot path might contain modules_image only.
-  char* runtime_boot_path = Arguments::get_boot_class_path();
-  char* rp = skip_first_path_entry(runtime_boot_path);
-  assert(shared_path(0)->is_modules_image(), "first shared_path must be the modules image");
-  int dp_len = header()->app_class_paths_start_index() - 1; // ignore the first path to the module image
-  bool match = true;
-
-  bool relaxed_check = !header()->has_platform_or_app_classes();
-  if (dp_len == 0 && rp == nullptr) {
-    return true;   // ok, both runtime and dump time boot paths have modules_images only
-  } else if (dp_len == 0 && rp != nullptr) {
-    if (relaxed_check) {
-      return true;   // ok, relaxed check, runtime has extra boot append path entries
-    } else {
-      ResourceMark rm;
-      if (check_paths_existence(rp)) {
-        // If a path exists in the runtime boot paths, it is considered a mismatch
-        // since there's no boot path specified during dump time.
-        match = false;
-      }
-    }
-  } else if (dp_len > 0 && rp != nullptr) {
-    int num;
-    ResourceMark rm;
-    GrowableArray<const char*>* rp_array = create_path_array(rp);
-    int rp_len = rp_array->length();
-    if (rp_len >= dp_len) {
-      if (relaxed_check) {
-        // only check the leading entries in the runtime boot path, up to
-        // the length of the dump time boot path
-        num = dp_len;
-      } else {
-        // check the full runtime boot path, must match with dump time
-        num = rp_len;
-      }
-      match = check_paths(1, num, rp_array, 0, 0);
-    } else {
-      // create_path_array() ignores non-existing paths. Although the dump time and runtime boot classpath lengths
-      // are the same initially, after the call to create_path_array(), the runtime boot classpath length could become
-      // shorter. We consider boot classpath mismatch in this case.
-      match = false;
-    }
   }
 
-  if (!match) {
-    // The paths are different
-    return classpath_failure("[BOOT classpath mismatch, actual =", runtime_boot_path);
-  }
-  return true;
-}
-
-bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
-  const char *appcp = Arguments::get_appclasspath();
-  assert(appcp != nullptr, "null app classpath");
-  int rp_len = num_paths(appcp);
-  bool match = false;
-  if (rp_len < shared_app_paths_len) {
-    return classpath_failure("Run time APP classpath is shorter than the one at dump time: ", appcp);
-  }
-  if (shared_app_paths_len != 0 && rp_len != 0) {
-    // Prefix is OK: E.g., dump with -cp foo.jar, but run with -cp foo.jar:bar.jar.
-    ResourceMark rm;
-    GrowableArray<const char*>* rp_array = create_path_array(appcp);
-    if (rp_array->length() == 0) {
-      // None of the jar file specified in the runtime -cp exists.
-      return classpath_failure("None of the jar file specified in the runtime -cp exists: -Djava.class.path=", appcp);
-    }
-    if (rp_array->length() < shared_app_paths_len) {
-      // create_path_array() ignores non-existing paths. Although the dump time and runtime app classpath lengths
-      // are the same initially, after the call to create_path_array(), the runtime app classpath length could become
-      // shorter. We consider app classpath mismatch in this case.
-      return classpath_failure("[APP classpath mismatch, actual: -Djava.class.path=", appcp);
-    }
-
-    // Handling of non-existent entries in the classpath: we eliminate all the non-existent
-    // entries from both the dump time classpath (ClassLoader::update_class_path_entry_list)
-    // and the runtime classpath (FileMapInfo::create_path_array), and check the remaining
-    // entries. E.g.:
-    //
-    // dump : -cp a.jar:NE1:NE2:b.jar  -> a.jar:b.jar -> recorded in archive.
-    // run 1: -cp NE3:a.jar:NE4:b.jar  -> a.jar:b.jar -> matched
-    // run 2: -cp x.jar:NE4:b.jar      -> x.jar:b.jar -> mismatched
-
-    int j = header()->app_class_paths_start_index();
-    match = check_paths(j, shared_app_paths_len, rp_array, 0, 0);
-    if (!match) {
-      // To facilitate app deployment, we allow the JAR files to be moved *together* to
-      // a different location, as long as they are still stored under the same directory
-      // structure. E.g., the following is OK.
-      //     java -Xshare:dump -cp /a/Foo.jar:/a/b/Bar.jar  ...
-      //     java -Xshare:auto -cp /x/y/Foo.jar:/x/y/b/Bar.jar  ...
-      unsigned int dumptime_prefix_len = header()->common_app_classpath_prefix_size();
-      unsigned int runtime_prefix_len = longest_common_app_classpath_prefix_len(shared_app_paths_len, rp_array);
-      if (dumptime_prefix_len != 0 || runtime_prefix_len != 0) {
-        log_info(class, path)("LCP length for app classpath (dumptime: %u, runtime: %u)",
-                              dumptime_prefix_len, runtime_prefix_len);
-        match = check_paths(j, shared_app_paths_len, rp_array,
-                               dumptime_prefix_len, runtime_prefix_len);
-      }
-      if (!match) {
-        return classpath_failure("[APP classpath mismatch, actual: -Djava.class.path=", appcp);
-      }
-    }
-  }
-  return true;
-}
-
-void FileMapInfo::log_paths(const char* msg, int start_idx, int end_idx) {
-  LogTarget(Info, class, path) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    ls.print("%s", msg);
-    const char* prefix = "";
-    for (int i = start_idx; i < end_idx; i++) {
-      ls.print("%s%s", prefix, shared_path(i)->name());
-      prefix = os::path_separator();
-    }
-    ls.cr();
-  }
-}
-
-void FileMapInfo::extract_module_paths(const char* runtime_path, GrowableArray<const char*>* module_paths) {
-  GrowableArray<const char*>* path_array = create_path_array(runtime_path);
-  int num_paths = path_array->length();
-  for (int i = 0; i < num_paths; i++) {
-    const char* name = path_array->at(i);
-    ClassLoaderExt::extract_jar_files_from_path(name, module_paths);
-  }
-  // module paths are stored in sorted order in the CDS archive.
-  module_paths->sort(ClassLoaderExt::compare_module_names);
-}
-
-bool FileMapInfo::check_module_paths() {
-  const char* runtime_path = Arguments::get_property("jdk.module.path");
-  int archived_num_module_paths = header()->num_module_paths();
-  if (runtime_path == nullptr && archived_num_module_paths == 0) {
-    return true;
-  }
-  if ((runtime_path == nullptr && archived_num_module_paths > 0) ||
-      (runtime_path != nullptr && archived_num_module_paths == 0)) {
-    return false;
-  }
-  ResourceMark rm;
-  GrowableArray<const char*>* module_paths = new GrowableArray<const char*>(3);
-  extract_module_paths(runtime_path, module_paths);
-  int num_paths = module_paths->length();
-  if (num_paths != archived_num_module_paths) {
-    return false;
-  }
-  return check_paths(header()->app_module_paths_start_index(), num_paths, module_paths, 0, 0);
-}
-
-bool FileMapInfo::validate_shared_path_table() {
-  assert(CDSConfig::is_using_archive(), "runtime only");
-
-  _validating_shared_path_table = true;
-
-  // Load the shared path table info from the archive header
-  _shared_path_table = header()->shared_path_table();
-
-  bool matched_module_paths = true;
-  if (CDSConfig::is_dumping_dynamic_archive() || header()->has_full_module_graph()) {
-    matched_module_paths = check_module_paths();
-  }
-  if (header()->has_full_module_graph() && !matched_module_paths) {
+  if (header()->has_full_module_graph() && has_extra_module_paths) {
     CDSConfig::stop_using_optimized_module_handling();
-    log_info(cds)("optimized module handling: disabled because of mismatched module paths");
+    log_info(cds)("optimized module handling: disabled because extra module path(s) are specified");
   }
 
   if (CDSConfig::is_dumping_dynamic_archive()) {
@@ -998,17 +334,13 @@ bool FileMapInfo::validate_shared_path_table() {
     // or a simple base archive.
     // If the base layer archive contains additional path component besides
     // the runtime image and the -cp, dynamic dumping is disabled.
-    //
-    // When dynamic archiving is enabled, the _shared_path_table is overwritten
-    // to include the application path and stored in the top layer archive.
-    assert(shared_path(0)->is_modules_image(), "first shared_path must be the modules image");
-    if (header()->app_class_paths_start_index() > 1) {
+    if (config->num_boot_classpaths() > 0) {
       CDSConfig::disable_dumping_dynamic_archive();
       log_warning(cds)(
         "Dynamic archiving is disabled because base layer archive has appended boot classpath");
     }
-    if (header()->num_module_paths() > 0) {
-      if (!matched_module_paths) {
+    if (config->num_module_paths() > 0) {
+      if (has_extra_module_paths) {
         CDSConfig::disable_dumping_dynamic_archive();
         log_warning(cds)(
           "Dynamic archiving is disabled because base layer archive has a different module path");
@@ -1016,99 +348,14 @@ bool FileMapInfo::validate_shared_path_table() {
     }
   }
 
-  log_paths("Expecting BOOT path=", 0, header()->app_class_paths_start_index());
-  log_paths("Expecting -Djava.class.path=", header()->app_class_paths_start_index(), header()->app_module_paths_start_index());
-
-  int module_paths_start_index = header()->app_module_paths_start_index();
-  int shared_app_paths_len = 0;
-
-  // validate the path entries up to the _max_used_path_index
-  for (int i=0; i < header()->max_used_path_index() + 1; i++) {
-    if (i < module_paths_start_index) {
-      if (shared_path(i)->validate()) {
-        // Only count the app class paths not from the "Class-path" attribute of a jar manifest.
-        if (!shared_path(i)->from_class_path_attr() && i >= header()->app_class_paths_start_index()) {
-          shared_app_paths_len++;
-        }
-        log_info(class, path)("ok");
-      } else {
-        if (_dynamic_archive_info != nullptr && _dynamic_archive_info->_is_static) {
-          assert(!CDSConfig::is_using_archive(), "UseSharedSpaces should be disabled");
-        }
-        return false;
-      }
-    } else if (i >= module_paths_start_index) {
-      if (shared_path(i)->validate(false /* not a class path entry */)) {
-        log_info(class, path)("ok");
-      } else {
-        if (_dynamic_archive_info != nullptr && _dynamic_archive_info->_is_static) {
-          assert(!CDSConfig::is_using_archive(), "UseSharedSpaces should be disabled");
-        }
-        return false;
-      }
-    }
-  }
-
-  if (header()->max_used_path_index() == 0) {
-    // default archive only contains the module image in the bootclasspath
-    assert(shared_path(0)->is_modules_image(), "first shared_path must be the modules image");
-  } else {
-    if (!validate_boot_class_paths() || !validate_app_class_paths(shared_app_paths_len)) {
-      const char* mismatch_msg = "shared class paths mismatch";
-      const char* hint_msg = log_is_enabled(Info, class, path) ?
-          "" : " (hint: enable -Xlog:class+path=info to diagnose the failure)";
-      if (RequireSharedSpaces) {
-        log_error(cds)("%s%s", mismatch_msg, hint_msg);
-        MetaspaceShared::unrecoverable_loading_error();
-      } else {
-        log_warning(cds)("%s%s", mismatch_msg, hint_msg);
-      }
-      return false;
-    }
-  }
-
-  if (!validate_non_existent_class_paths()) {
-    return false;
-  }
-
-  _validating_shared_path_table = false;
-
 #if INCLUDE_JVMTI
   if (_classpath_entries_for_jvmti != nullptr) {
     os::free(_classpath_entries_for_jvmti);
   }
-  size_t sz = sizeof(ClassPathEntry*) * get_number_of_shared_paths();
+  size_t sz = sizeof(ClassPathEntry*) * AOTClassLocationConfig::runtime()->length();
   _classpath_entries_for_jvmti = (ClassPathEntry**)os::malloc(sz, mtClass);
   memset((void*)_classpath_entries_for_jvmti, 0, sz);
 #endif
-
-  return true;
-}
-
-bool FileMapInfo::validate_non_existent_class_paths() {
-  // All of the recorded non-existent paths came from the Class-Path: attribute from the JAR
-  // files on the app classpath. If any of these are found to exist during runtime,
-  // it will change how classes are loading for the app loader. For safety, disable
-  // loading of archived platform/app classes (currently there's no way to disable just the
-  // app classes).
-
-  assert(CDSConfig::is_using_archive(), "runtime only");
-  for (int i = header()->app_module_paths_start_index() + header()->num_module_paths();
-       i < get_number_of_shared_paths();
-       i++) {
-    SharedClassPathEntry* ent = shared_path(i);
-    if (!ent->check_non_existent()) {
-      if (header()->has_aot_linked_classes()) {
-        log_error(cds)("CDS archive has aot-linked classes. It cannot be used because the "
-                       "file %s exists", ent->name());
-        return false;
-      } else {
-        log_warning(cds)("Archived non-system classes are disabled because the "
-                         "file %s exists", ent->name());
-        header()->set_has_platform_or_app_classes(false);
-      }
-    }
-  }
 
   return true;
 }
@@ -1150,7 +397,7 @@ public:
     assert(_archive_name != nullptr, "Archive name is null");
     _fd = os::open(_archive_name, O_RDONLY | O_BINARY, 0);
     if (_fd < 0) {
-      log_info(cds)("Specified shared archive not found (%s)", _archive_name);
+      log_info(cds)("Specified %s not found (%s)", CDSConfig::type_of_archive_being_loaded(), _archive_name);
       return false;
     }
     return initialize(_fd);
@@ -1161,30 +408,32 @@ public:
     assert(_archive_name != nullptr, "Archive name is null");
     assert(fd != -1, "Archive must be opened already");
     // First read the generic header so we know the exact size of the actual header.
+    const char* file_type = CDSConfig::type_of_archive_being_loaded();
     GenericCDSFileMapHeader gen_header;
     size_t size = sizeof(GenericCDSFileMapHeader);
     os::lseek(fd, 0, SEEK_SET);
     size_t n = ::read(fd, (void*)&gen_header, (unsigned int)size);
     if (n != size) {
-      log_warning(cds)("Unable to read generic CDS file map header from shared archive");
+      log_warning(cds)("Unable to read generic CDS file map header from %s", file_type);
       return false;
     }
 
     if (gen_header._magic != CDS_ARCHIVE_MAGIC &&
-        gen_header._magic != CDS_DYNAMIC_ARCHIVE_MAGIC) {
-      log_warning(cds)("The shared archive file has a bad magic number: %#x", gen_header._magic);
+        gen_header._magic != CDS_DYNAMIC_ARCHIVE_MAGIC &&
+        gen_header._magic != CDS_PREIMAGE_ARCHIVE_MAGIC) {
+      log_warning(cds)("The %s has a bad magic number: %#x", file_type, gen_header._magic);
       return false;
     }
 
     if (gen_header._version < CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION) {
-      log_warning(cds)("Cannot handle shared archive file version 0x%x. Must be at least 0x%x.",
-                                 gen_header._version, CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION);
+      log_warning(cds)("Cannot handle %s version 0x%x. Must be at least 0x%x.",
+                       file_type, gen_header._version, CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION);
       return false;
     }
 
     if (gen_header._version !=  CURRENT_CDS_ARCHIVE_VERSION) {
-      log_warning(cds)("The shared archive file version 0x%x does not match the required version 0x%x.",
-                                 gen_header._version, CURRENT_CDS_ARCHIVE_VERSION);
+      log_warning(cds)("The %s version 0x%x does not match the required version 0x%x.",
+                       file_type, gen_header._version, CURRENT_CDS_ARCHIVE_VERSION);
     }
 
     size_t filelen = os::lseek(fd, 0, SEEK_END);
@@ -1199,7 +448,7 @@ public:
     os::lseek(fd, 0, SEEK_SET);
     n = ::read(fd, (void*)_header, (unsigned int)size);
     if (n != size) {
-      log_warning(cds)("Unable to read actual CDS file map header from shared archive");
+      log_warning(cds)("Unable to read file map header from %s", file_type);
       return false;
     }
 
@@ -1224,6 +473,18 @@ public:
   const char* base_archive_name() {
     assert(_header != nullptr && _is_valid, "must be a valid archive file");
     return _base_archive_name;
+  }
+
+  bool is_static_archive() const {
+    return _header->_magic == CDS_ARCHIVE_MAGIC;
+  }
+
+  bool is_dynamic_archive() const {
+    return _header->_magic == CDS_DYNAMIC_ARCHIVE_MAGIC;
+  }
+
+  bool is_preimage_static_archive() const {
+    return _header->_magic == CDS_PREIMAGE_ARCHIVE_MAGIC;
   }
 
  private:
@@ -1251,7 +512,8 @@ public:
                                  name_offset, name_size);
       return false;
     }
-    if (_header->_magic == CDS_ARCHIVE_MAGIC) {
+
+    if (is_static_archive() || is_preimage_static_archive()) {
       if (name_offset != 0) {
         log_warning(cds)("static shared archive must have zero _base_archive_name_offset");
         return false;
@@ -1261,7 +523,7 @@ public:
         return false;
       }
     } else {
-      assert(_header->_magic == CDS_DYNAMIC_ARCHIVE_MAGIC, "must be");
+      assert(is_dynamic_archive(), "must be");
       if ((name_size == 0 && name_offset != 0) ||
           (name_size != 0 && name_offset == 0)) {
         // If either is zero, both must be zero. This indicates that we are using the default base archive.
@@ -1309,7 +571,12 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
     return false;
   }
   GenericCDSFileMapHeader* header = file_helper.get_generic_file_header();
-  if (header->_magic != CDS_DYNAMIC_ARCHIVE_MAGIC) {
+  switch (header->_magic) {
+  case CDS_PREIMAGE_ARCHIVE_MAGIC:
+    return false; // This is a binary config file, not a proper archive
+  case CDS_DYNAMIC_ARCHIVE_MAGIC:
+    break;
+  default:
     assert(header->_magic == CDS_ARCHIVE_MAGIC, "must be");
     if (AutoCreateSharedArchive) {
      log_warning(cds)("AutoCreateSharedArchive is ignored because %s is a static archive", archive_name);
@@ -1327,6 +594,14 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
   return true;
 }
 
+bool FileMapInfo::is_preimage_static_archive(const char* file) {
+  FileHeaderHelper file_helper(file, false);
+  if (!file_helper.initialize()) {
+    return false;
+  }
+  return file_helper.is_preimage_static_archive();
+}
+
 // Read the FileMapInfo information from the file.
 
 bool FileMapInfo::init_from_file(int fd) {
@@ -1337,9 +612,17 @@ bool FileMapInfo::init_from_file(int fd) {
   }
   GenericCDSFileMapHeader* gen_header = file_helper.get_generic_file_header();
 
+  const char* file_type = CDSConfig::type_of_archive_being_loaded();
   if (_is_static) {
-    if (gen_header->_magic != CDS_ARCHIVE_MAGIC) {
-      log_warning(cds)("Not a base shared archive: %s", _full_path);
+    if ((gen_header->_magic == CDS_ARCHIVE_MAGIC) ||
+        (gen_header->_magic == CDS_PREIMAGE_ARCHIVE_MAGIC && CDSConfig::is_dumping_final_static_archive())) {
+      // Good
+    } else {
+      if (CDSConfig::new_aot_flags_used()) {
+        log_warning(cds)("Not a valid %s %s", file_type, _full_path);
+      } else {
+        log_warning(cds)("Not a base shared archive: %s", _full_path);
+      }
       return false;
     }
   } else {
@@ -1361,14 +644,8 @@ bool FileMapInfo::init_from_file(int fd) {
   if (header()->version() != CURRENT_CDS_ARCHIVE_VERSION) {
     log_info(cds)("_version expected: 0x%x", CURRENT_CDS_ARCHIVE_VERSION);
     log_info(cds)("           actual: 0x%x", header()->version());
-    log_warning(cds)("The shared archive file has the wrong version.");
+    log_warning(cds)("The %s has the wrong version.", file_type);
     return false;
-  }
-
-  int common_path_size = header()->common_app_classpath_prefix_size();
-  if (common_path_size < 0) {
-      log_warning(cds)("common app classpath prefix len < 0");
-      return false;
   }
 
   unsigned int base_offset = header()->base_archive_name_offset();
@@ -1377,10 +654,9 @@ bool FileMapInfo::init_from_file(int fd) {
   if (base_offset != 0 && name_size != 0) {
     if (header_size != base_offset + name_size) {
       log_info(cds)("_header_size: " UINT32_FORMAT, header_size);
-      log_info(cds)("common_app_classpath_size: " UINT32_FORMAT, header()->common_app_classpath_prefix_size());
       log_info(cds)("base_archive_name_size: " UINT32_FORMAT, header()->base_archive_name_size());
       log_info(cds)("base_archive_name_offset: " UINT32_FORMAT, header()->base_archive_name_offset());
-      log_warning(cds)("The shared archive file has an incorrect header size.");
+      log_warning(cds)("The %s has an incorrect header size.", file_type);
       return false;
     }
   }
@@ -1397,8 +673,8 @@ bool FileMapInfo::init_from_file(int fd) {
   if (strncmp(actual_ident, expected_ident, JVM_IDENT_MAX-1) != 0) {
     log_info(cds)("_jvm_ident expected: %s", expected_ident);
     log_info(cds)("             actual: %s", actual_ident);
-    log_warning(cds)("The shared archive file was created by a different"
-                  " version or build of HotSpot");
+    log_warning(cds)("The %s was created by a different"
+                  " version or build of HotSpot", file_type);
     return false;
   }
 
@@ -1409,7 +685,7 @@ bool FileMapInfo::init_from_file(int fd) {
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
     FileMapRegion* r = region_at(i);
     if (r->file_offset() > len || len - r->file_offset() < r->used()) {
-      log_warning(cds)("The shared archive file has been truncated.");
+      log_warning(cds)("The %s has been truncated.", file_type);
       return false;
     }
   }
@@ -1429,18 +705,21 @@ bool FileMapInfo::open_for_read() {
   if (_file_open) {
     return true;
   }
-  log_info(cds)("trying to map %s", _full_path);
+  const char* file_type = CDSConfig::type_of_archive_being_loaded();
+  const char* info = CDSConfig::is_dumping_final_static_archive() ?
+    "AOTConfiguration file " : "";
+  log_info(cds)("trying to map %s%s", info, _full_path);
   int fd = os::open(_full_path, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
     if (errno == ENOENT) {
-      log_info(cds)("Specified shared archive not found (%s)", _full_path);
+      log_info(cds)("Specified %s not found (%s)", file_type, _full_path);
     } else {
-      log_warning(cds)("Failed to open shared archive file (%s)",
+      log_warning(cds)("Failed to open %s (%s)", file_type,
                     os::strerror(errno));
     }
     return false;
   } else {
-    log_info(cds)("Opened archive %s.", _full_path);
+    log_info(cds)("Opened %s %s.", file_type, _full_path);
   }
 
   _fd = fd;
@@ -1453,20 +732,25 @@ bool FileMapInfo::open_for_read() {
 void FileMapInfo::open_for_write() {
   LogMessage(cds) msg;
   if (msg.is_info()) {
-    msg.info("Dumping shared data to file: ");
+    if (CDSConfig::is_dumping_preimage_static_archive()) {
+      msg.info("Writing binary AOTConfiguration file: ");
+    } else {
+      msg.info("Dumping shared data to file: ");
+    }
     msg.info("   %s", _full_path);
   }
 
 #ifdef _WINDOWS  // On Windows, need WRITE permission to remove the file.
-    chmod(_full_path, _S_IREAD | _S_IWRITE);
+  chmod(_full_path, _S_IREAD | _S_IWRITE);
 #endif
 
   // Use remove() to delete the existing file because, on Unix, this will
   // allow processes that have it open continued access to the file.
   remove(_full_path);
-  int fd = os::open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0444);
+  int mode = CDSConfig::is_dumping_preimage_static_archive() ? 0666 : 0444;
+  int fd = os::open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, mode);
   if (fd < 0) {
-    log_error(cds)("Unable to create shared archive file %s: (%s).", _full_path,
+    log_error(cds)("Unable to create %s %s: (%s).", CDSConfig::type_of_archive_being_written(), _full_path,
                    os::strerror(errno));
     MetaspaceShared::writing_error();
     return;
@@ -1722,7 +1006,14 @@ void FileMapInfo::write_bytes(const void* buffer, size_t nbytes) {
     // If the shared archive is corrupted, close it and remove it.
     close();
     remove(_full_path);
-    MetaspaceShared::writing_error("Unable to write to shared archive file.");
+
+    if (CDSConfig::is_dumping_preimage_static_archive()) {
+      MetaspaceShared::writing_error("Unable to write to AOT configuration file.");
+    } else if (CDSConfig::new_aot_flags_used()) {
+      MetaspaceShared::writing_error("Unable to write to AOT cache.");
+    } else {
+      MetaspaceShared::writing_error("Unable to write to shared archive.");
+    }
   }
   _file_offset += nbytes;
 }
@@ -2457,10 +1748,7 @@ void FileMapInfo::assert_mark(bool check) {
 FileMapInfo* FileMapInfo::_current_info = nullptr;
 FileMapInfo* FileMapInfo::_dynamic_archive_info = nullptr;
 bool FileMapInfo::_heap_pointers_need_patching = false;
-SharedPathTable FileMapInfo::_shared_path_table;
-bool FileMapInfo::_validating_shared_path_table = false;
 bool FileMapInfo::_memory_mapping_failed = false;
-GrowableArray<const char*>* FileMapInfo::_non_existent_class_paths = nullptr;
 
 // Open the shared archive file, read and validate the header
 // information (version, boot classpath, etc.). If initialization
@@ -2469,7 +1757,7 @@ GrowableArray<const char*>* FileMapInfo::_non_existent_class_paths = nullptr;
 // Validation of the archive is done in two steps:
 //
 // [1] validate_header() - done here.
-// [2] validate_shared_path_table - this is done later, because the table is in the RW
+// [2] validate_shared_path_table - this is done later, because the table is in the RO
 //     region of the archive, which is not mapped yet.
 bool FileMapInfo::initialize() {
   assert(CDSConfig::is_using_archive(), "UseSharedSpaces expected.");
@@ -2567,15 +1855,16 @@ int FileMapHeader::compute_crc() {
 
 // This function should only be called during run time with UseSharedSpaces enabled.
 bool FileMapHeader::validate() {
+  const char* file_type = CDSConfig::type_of_archive_being_loaded();
   if (_obj_alignment != ObjectAlignmentInBytes) {
-    log_info(cds)("The shared archive file's ObjectAlignmentInBytes of %d"
+    log_info(cds)("The %s's ObjectAlignmentInBytes of %d"
                   " does not equal the current ObjectAlignmentInBytes of %d.",
-                  _obj_alignment, ObjectAlignmentInBytes);
+                  file_type, _obj_alignment, ObjectAlignmentInBytes);
     return false;
   }
   if (_compact_strings != CompactStrings) {
-    log_info(cds)("The shared archive file's CompactStrings setting (%s)"
-                  " does not equal the current CompactStrings setting (%s).",
+    log_info(cds)("The %s's CompactStrings setting (%s)"
+                  " does not equal the current CompactStrings setting (%s).", file_type,
                   _compact_strings ? "enabled" : "disabled",
                   CompactStrings   ? "enabled" : "disabled");
     return false;
@@ -2599,8 +1888,8 @@ bool FileMapHeader::validate() {
 
   if (!_verify_local && BytecodeVerificationLocal) {
     //  we cannot load boot classes, so there's no point of using the CDS archive
-    log_info(cds)("The shared archive file's BytecodeVerificationLocal setting (%s)"
-                               " does not equal the current BytecodeVerificationLocal setting (%s).",
+    log_info(cds)("The %s's BytecodeVerificationLocal setting (%s)"
+                               " does not equal the current BytecodeVerificationLocal setting (%s).", file_type,
                                _verify_local ? "enabled" : "disabled",
                                BytecodeVerificationLocal ? "enabled" : "disabled");
     return false;
@@ -2611,8 +1900,8 @@ bool FileMapHeader::validate() {
   if (_has_platform_or_app_classes
       && !_verify_remote // we didn't verify the archived platform/app classes
       && BytecodeVerificationRemote) { // but we want to verify all loaded platform/app classes
-    log_info(cds)("The shared archive file was created with less restrictive "
-                               "verification setting than the current setting.");
+    log_info(cds)("The %s was created with less restrictive "
+                               "verification setting than the current setting.", file_type);
     // Pretend that we didn't have any archived platform/app classes, so they won't be loaded
     // by SystemDictionaryShared.
     _has_platform_or_app_classes = false;
@@ -2624,32 +1913,32 @@ bool FileMapHeader::validate() {
   // while AllowArchivingWithJavaAgent is set during the current run.
   if (_allow_archiving_with_java_agent && !AllowArchivingWithJavaAgent) {
     log_warning(cds)("The setting of the AllowArchivingWithJavaAgent is different "
-                               "from the setting in the shared archive.");
+                               "from the setting in the %s.", file_type);
     return false;
   }
 
   if (_allow_archiving_with_java_agent) {
-    log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
-            "for testing purposes only and should not be used in a production environment");
+    log_warning(cds)("This %s was created with AllowArchivingWithJavaAgent. It should be used "
+            "for testing purposes only and should not be used in a production environment", file_type);
   }
 
-  log_info(cds)("Archive was created with UseCompressedOops = %d, UseCompressedClassPointers = %d, UseCompactObjectHeaders = %d",
-                          compressed_oops(), compressed_class_pointers(), compact_headers());
+  log_info(cds)("The %s was created with UseCompressedOops = %d, UseCompressedClassPointers = %d, UseCompactObjectHeaders = %d",
+                          file_type, compressed_oops(), compressed_class_pointers(), compact_headers());
   if (compressed_oops() != UseCompressedOops || compressed_class_pointers() != UseCompressedClassPointers) {
-    log_warning(cds)("Unable to use shared archive.\nThe saved state of UseCompressedOops and UseCompressedClassPointers is "
-                               "different from runtime, CDS will be disabled.");
+    log_warning(cds)("Unable to use %s.\nThe saved state of UseCompressedOops and UseCompressedClassPointers is "
+                               "different from runtime, CDS will be disabled.", file_type);
     return false;
   }
 
   if (compact_headers() != UseCompactObjectHeaders) {
-    log_warning(cds)("Unable to use shared archive.\nThe shared archive file's UseCompactObjectHeaders setting (%s)"
-                     " does not equal the current UseCompactObjectHeaders setting (%s).",
+    log_warning(cds)("Unable to use %s.\nThe %s's UseCompactObjectHeaders setting (%s)"
+                     " does not equal the current UseCompactObjectHeaders setting (%s).", file_type, file_type,
                      _compact_headers          ? "enabled" : "disabled",
                      UseCompactObjectHeaders   ? "enabled" : "disabled");
     return false;
   }
 
-  if (!_use_optimized_module_handling) {
+  if (!_use_optimized_module_handling && !CDSConfig::is_dumping_final_static_archive()) {
     CDSConfig::stop_using_optimized_module_handling();
     log_info(cds)("optimized module handling: disabled because archive was created without optimized module handling");
   }
@@ -2658,10 +1947,6 @@ bool FileMapHeader::validate() {
     // Only the static archive can contain the full module graph.
     if (!_has_full_module_graph) {
       CDSConfig::stop_using_full_module_graph("archive was created without full module graph");
-    }
-
-    if (_has_archived_invokedynamic) {
-      CDSConfig::set_has_archived_invokedynamic();
     }
   }
 
@@ -2690,17 +1975,15 @@ ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
   }
   ClassPathEntry* ent = _classpath_entries_for_jvmti[i];
   if (ent == nullptr) {
-    SharedClassPathEntry* scpe = shared_path(i);
-    assert(scpe->is_jar(), "must be"); // other types of scpe will not produce archived classes
-
-    const char* path = scpe->name();
+    const AOTClassLocation* cl = AOTClassLocationConfig::runtime()->class_location_at(i);
+    const char* path = cl->path();
     struct stat st;
     if (os::stat(path, &st) != 0) {
       char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128);
       jio_snprintf(msg, strlen(path) + 127, "error in finding JAR file %s", path);
       THROW_MSG_(vmSymbols::java_io_IOException(), msg, nullptr);
     } else {
-      ent = ClassLoader::create_class_path_entry(THREAD, path, &st, false, false, scpe->is_multi_release());
+      ent = ClassLoader::create_class_path_entry(THREAD, path, &st);
       if (ent == nullptr) {
         char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128);
         jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
@@ -2724,7 +2007,7 @@ ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
 ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, Handle class_loader, TRAPS) {
   int path_index = ik->shared_classpath_index();
   assert(path_index >= 0, "should be called for shared built-in classes only");
-  assert(path_index < (int)get_number_of_shared_paths(), "sanity");
+  assert(path_index < AOTClassLocationConfig::runtime()->length(), "sanity");
 
   ClassPathEntry* cpe = get_classpath_entry_for_jvmti(path_index, CHECK_NULL);
   assert(cpe != nullptr, "must be");
@@ -2734,8 +2017,12 @@ ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, Handle cl
   const char* const file_name = ClassLoader::file_name_for_class_name(class_name,
                                                                       name->utf8_length());
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
+  const AOTClassLocation* cl = AOTClassLocationConfig::runtime()->class_location_at(path_index);
   ClassFileStream* cfs;
-  if (class_loader() != nullptr && !cpe->is_modules_image() && cpe->is_multi_release_jar()) {
+  if (class_loader() != nullptr && cl->is_multi_release_jar()) {
+    // This class was loaded from a multi-release JAR file during dump time. The
+    // process for finding its classfile is complex. Let's defer to the Java code
+    // in java.lang.ClassLoader.
     cfs = get_stream_from_class_loader(class_loader, cpe, file_name, CHECK_NULL);
   } else {
     cfs = cpe->open_stream_for_loader(THREAD, file_name, loader_data);

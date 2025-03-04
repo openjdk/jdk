@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,10 @@
 # questions.
 #
 
-include JavaCompilation.gmk
-include Modules.gmk
-
 ################################################################################
 
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, modules/jdk.javadoc/Gendata.gmk))
+include JavaCompilation.gmk
+include Modules.gmk
 
 # This is needed to properly setup DOCS_MODULES.
 $(eval $(call ReadImportMetaData))
@@ -115,3 +112,5 @@ $(INTERIM_JDK_JAVADOC_DIR)/_element_lists.marker: $(JDK_JAVADOC_DIR)/_element_li
 
 TARGETS += $(JDK_JAVADOC_DIR)/_element_lists.marker \
     $(INTERIM_JDK_JAVADOC_DIR)/_element_lists.marker
+
+################################################################################

@@ -45,7 +45,7 @@ import jdk.jpackage.test.TKit;
  * @build jdk.jpackage.test.*
  * @build jtreg.SkippedException
  * @requires (os.family == "windows")
- * @compile WinLongPathTest.java
+ * @compile -Xlint:all -Werror WinLongPathTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-space-subst=*
  *  --jpt-exclude=WinLongPathTest(false,*--temp)

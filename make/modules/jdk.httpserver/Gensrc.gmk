@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
 # questions.
 #
 
+################################################################################
+
 include GensrcCommon.gmk
 include GensrcProperties.gmk
 include Modules.gmk
-
-################################################################################
 
 # Use wildcard so as to avoid getting non-existing directories back
 SIMPLESERVER_RESOURCES_DIRS := $(wildcard $(addsuffix /sun/net/httpserver/simpleserver/resources, \
@@ -39,3 +39,5 @@ $(eval $(call SetupCompileProperties, SIMPLESERVER_PROPERTIES, \
 ))
 
 TARGETS += $(SIMPLESERVER_PROPERTIES)
+
+################################################################################

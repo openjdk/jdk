@@ -786,10 +786,6 @@ public class WhiteBox {
 
   public native void waitUnsafe(int time_ms);
 
-  public native void lockCritical();
-
-  public native void unlockCritical();
-
   public native void pinObject(Object o);
 
   public native void unpinObject(Object o);
@@ -798,4 +794,6 @@ public class WhiteBox {
 
   public native void preTouchMemory(long addr, long size);
   public native long rss();
+
+  public native boolean isStatic();
 }

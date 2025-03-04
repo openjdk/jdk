@@ -26,6 +26,7 @@ static const struct spa_type_info spa_type_profiler[] = {
     { SPA_PROFILER_clock, SPA_TYPE_Struct, SPA_TYPE_INFO_PROFILER_BASE "clock", NULL, },
     { SPA_PROFILER_driverBlock, SPA_TYPE_Struct, SPA_TYPE_INFO_PROFILER_BASE "driverBlock", NULL, },
     { SPA_PROFILER_followerBlock, SPA_TYPE_Struct, SPA_TYPE_INFO_PROFILER_BASE "followerBlock", NULL, },
+    { SPA_PROFILER_followerClock, SPA_TYPE_Struct, SPA_TYPE_INFO_PROFILER_BASE "followerClock", NULL, },
     { 0, 0, NULL, NULL },
 };
 

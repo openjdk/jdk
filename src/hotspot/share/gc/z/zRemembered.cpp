@@ -550,7 +550,7 @@ public:
     // publish such marking stacks to prevent that generation from getting a mark continue.
     // We also flush in case of a resize where a new worker thread continues the marking
     // work, causing a mark continue for the collected generation.
-    ZHeap::heap()->mark_flush_and_free(Thread::current());
+    ZHeap::heap()->mark_flush(Thread::current());
   }
 
   virtual void resize_workers(uint nworkers) {

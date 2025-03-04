@@ -81,8 +81,8 @@ static const ZStatSubPhase ZSubPhaseConcurrentMarkRootColoredOld("Concurrent Mar
 ZMark::ZMark(ZGeneration* generation, ZPageTable* page_table)
   : _generation(generation),
     _page_table(page_table),
-    _allocator(),
-    _stripes(_allocator.start()),
+    _marking_smr(),
+    _stripes(),
     _terminate(),
     _work_nproactiveflush(0),
     _work_nterminateflush(0),
@@ -91,10 +91,6 @@ ZMark::ZMark(ZGeneration* generation, ZPageTable* page_table)
     _ntrycomplete(0),
     _ncontinue(0),
     _nworkers(0) {}
-
-bool ZMark::is_initialized() const {
-  return _allocator.is_initialized();
-}
 
 size_t ZMark::calculate_nstripes(uint nworkers) const {
   // Calculate the number of stripes from the number of workers we use,
@@ -196,7 +192,7 @@ void ZMark::push_partial_array(zpointer* addr, size_t length, bool finalizable) 
   log_develop_trace(gc, marking)("Array push partial: " PTR_FORMAT " (%zu), stripe: %zu",
                                  p2i(addr), length, _stripes.stripe_id(stripe));
 
-  stacks->push(&_allocator, &_stripes, stripe, &_terminate, entry, false /* publish */);
+  stacks->push(&_stripes, stripe, &_terminate, entry, false /* publish */);
 }
 
 static void mark_barrier_on_oop_array(volatile zpointer* p, size_t length, bool finalizable, bool young) {
@@ -471,21 +467,26 @@ bool ZMark::rebalance_work(ZMarkContext* context) {
   const size_t nstripes = _stripes.nstripes();
 
   if (assumed_nstripes != nstripes) {
+    // The number of stripes has changed; reflect that change locally
     context->set_nstripes(nstripes);
-  } else if (nstripes < calculate_nstripes(_nworkers) && _allocator.clear_and_get_expanded_recently()) {
+  } else if (nstripes < calculate_nstripes(_nworkers) && _stripes.is_crowded()) {
+    // We are running on a reduced number of threads to minimize the amount of work
+    // hidden in local stacks when the stripes are less well balanced. When this situation
+    // starts getting crowded, we bump the number of stripes again.
     const size_t new_nstripes = nstripes << 1;
-    _stripes.set_nstripes(new_nstripes);
-    context->set_nstripes(new_nstripes);
+    if (_stripes.try_set_nstripes(nstripes, new_nstripes)) {
+      context->set_nstripes(new_nstripes);
+    }
   }
 
   ZMarkStripe* stripe = _stripes.stripe_for_worker(_nworkers, WorkerThread::worker_id());
   if (context->stripe() != stripe) {
     // Need to switch stripe
     context->set_stripe(stripe);
-    flush_and_free();
+    flush(Thread::current());
   } else if (!_terminate.saturated()) {
     // Work imbalance detected; striped marking is likely going to be in the way
-    flush_and_free();
+    flush(Thread::current());
   }
 
   SuspendibleThreadSet::yield();
@@ -502,7 +503,7 @@ bool ZMark::drain(ZMarkContext* context) {
   context->set_nstripes(_stripes.nstripes());
 
   // Drain stripe stacks
-  while (stacks->pop(&_allocator, &_stripes, context->stripe(), entry)) {
+  while (stacks->pop(&_marking_smr, &_stripes, context->stripe(), &entry)) {
     mark_and_follow(context, entry);
 
     if ((processed++ & 31) == 0 && rebalance_work(context)) {
@@ -541,7 +542,7 @@ bool ZMark::try_steal_global(ZMarkContext* context) {
   for (ZMarkStripe* victim_stripe = _stripes.stripe_next(stripe);
        victim_stripe != stripe;
        victim_stripe = _stripes.stripe_next(victim_stripe)) {
-    ZMarkStack* const stack = victim_stripe->steal_stack();
+    ZMarkStack* const stack = victim_stripe->steal_stack(&_marking_smr);
     if (stack != nullptr) {
       // Success, install the stolen stack
       stacks->install(&_stripes, stripe, stack);
@@ -557,19 +558,19 @@ bool ZMark::try_steal(ZMarkContext* context) {
   return try_steal_local(context) || try_steal_global(context);
 }
 
-class ZMarkFlushAndFreeStacksClosure : public HandshakeClosure {
+class ZMarkFlushStacksClosure : public HandshakeClosure {
 private:
   ZMark* const _mark;
   bool         _flushed;
 
 public:
-  ZMarkFlushAndFreeStacksClosure(ZMark* mark)
-    : HandshakeClosure("ZMarkFlushAndFreeStacks"),
+  ZMarkFlushStacksClosure(ZMark* mark)
+    : HandshakeClosure("ZMarkFlushStacks"),
       _mark(mark),
       _flushed(false) {}
 
   void do_thread(Thread* thread) {
-    if (_mark->flush_and_free(thread)) {
+    if (_mark->flush(thread)) {
       _flushed = true;
       if (SafepointSynchronize::is_at_safepoint()) {
         log_debug(gc, marking)("Thread broke mark termination %s", thread->name());
@@ -606,7 +607,7 @@ public:
 };
 
 bool ZMark::flush() {
-  ZMarkFlushAndFreeStacksClosure cl(this);
+  ZMarkFlushStacksClosure cl(this);
   VM_ZMarkFlushOperation vm_cl(&cl);
   Handshake::execute(&cl);
   VMThread::execute(&vm_cl);
@@ -623,8 +624,7 @@ bool ZMark::try_terminate_flush() {
     verify_worker_stacks_empty();
   }
 
-  return flush() ||
-         _terminate.resurrected();
+  return flush() || _terminate.resurrected();
 }
 
 bool ZMark::try_proactive_flush() {
@@ -850,7 +850,7 @@ public:
     // the set of workers executing during root scanning
     // can be different from the set of workers executing
     // during mark.
-    ZHeap::heap()->mark_flush_and_free(Thread::current());
+    ZHeap::heap()->mark_flush(Thread::current());
   }
 };
 
@@ -908,7 +908,7 @@ public:
     // the set of workers executing during root scanning
     // can be different from the set of workers executing
     // during mark.
-    ZHeap::heap()->mark_flush_and_free(Thread::current());
+    ZHeap::heap()->mark_flush(Thread::current());
   }
 };
 
@@ -934,7 +934,7 @@ public:
     // publish such marking stacks to prevent that generation from getting a mark continue.
     // We also flush in case of a resize where a new worker thread continues the marking
     // work, causing a mark continue for the collected generation.
-    ZHeap::heap()->mark_flush_and_free(Thread::current());
+    ZHeap::heap()->mark_flush(Thread::current());
   }
 
   virtual void resize_workers(uint nworkers) {
@@ -978,7 +978,7 @@ bool ZMark::try_end() {
   }
 
   // Try end marking
-  ZMarkFlushAndFreeStacksClosure cl(this);
+  ZMarkFlushStacksClosure cl(this);
   Threads::non_java_threads_do(&cl);
 
   // Check if non-java threads have any pending marking
@@ -1012,25 +1012,15 @@ bool ZMark::end() {
 
 void ZMark::free() {
   // Free any unused mark stack space
-  _allocator.free();
-
-  // Update statistics
-  _generation->stat_mark()->at_mark_free(_allocator.size());
+  _marking_smr.free();
 }
 
-void ZMark::flush_and_free() {
-  Thread* const thread = Thread::current();
-  flush_and_free(thread);
-}
-
-bool ZMark::flush_and_free(Thread* thread) {
+bool ZMark::flush(Thread* thread) {
   if (thread->is_Java_thread()) {
     ZThreadLocalData::store_barrier_buffer(thread)->flush();
   }
   ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(thread, _generation->id());
-  const bool flushed = stacks->flush(&_allocator, &_stripes, &_terminate);
-  stacks->free(&_allocator);
-  return flushed;
+  return stacks->flush(&_stripes, &_terminate);
 }
 
 class ZVerifyMarkStacksEmptyClosure : public ThreadClosure {

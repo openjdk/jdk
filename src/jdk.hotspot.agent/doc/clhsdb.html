@@ -38,9 +38,6 @@ Available commands:
   dumpclass { address | name } [ directory ] <font color="red">dump .class file for given Klass* or class name</font>
   dumpcodecache <font color="red">dump codecache contents</font>
   dumpheap [ file ] <font color="red">dump heap in hprof binary format</font>
-  dumpideal -a | id <font color="red">dump ideal graph like debug flag -XX:+PrintIdeal</font>
-  dumpilt -a | id <font color="red">dump inline tree for C2 compilation</font>
-  dumpreplaydata &lt;address&gt; | -a | &lt;thread_id&gt; [&gt;replay.txt] <font color="red">dump replay data into a file</font>
   echo [ true | false ] <font color="red">turn on/off command echo mode</font>
   examine { address[/count] | address,address } <font color="red">show contents of memory range</font>
   field [ type [ name fieldtype isStatic offset address ] ] <font color="red">print info about a field of HotSpot type</font>
@@ -83,12 +80,6 @@ Available commands:
   where { -a | id } <font color="red">print Java stack trace of given Java thread or all Java threads (-a)</font>
 </code>
 </pre>
-
-<h3>Compilation Replay</h3>
-<p>
-When a java process crashes in compiled method, usually a core file is saved.
-The replay function can reproduce the compiling process in the core.
-<a href="cireplay.html">cireplay.html</a>
 
 </body>
 </html>

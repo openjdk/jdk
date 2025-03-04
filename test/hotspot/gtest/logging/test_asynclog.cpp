@@ -25,6 +25,7 @@
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logAsyncWriter.hpp"
+#include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
 #include "logging/logMessage.hpp"
 #include "logTestFixture.hpp"
@@ -173,10 +174,10 @@ TEST_VM_F(AsyncLogTest, logBuffer) {
   const uintptr_t mask = (uintptr_t)(sizeof(void*) - 1);
   bool res;
 
-  res = buffer->push_back(output, Default, "a log line");
+  res = buffer->push_back(output, Default, "a log line", strlen("a log line"));
   EXPECT_TRUE(res) << "first message should succeed.";
   line++;
-  res = buffer->push_back(output, Default, "yet another");
+  res = buffer->push_back(output, Default, "yet another", strlen("yet another"));
   EXPECT_TRUE(res) << "second message should succeed.";
   line++;
 
@@ -201,7 +202,7 @@ TEST_VM_F(AsyncLogTest, logBuffer) {
   written = e->output()->write_blocking(e->decorations(), e->message());
   EXPECT_GT(written, 0);
 
-  while (buffer->push_back(output, Default, "0123456789abcdef")) {
+  while (buffer->push_back(output, Default, "0123456789abcdef", strlen("0123456789abcdef"))) {
     line++;
   }
 
@@ -259,7 +260,8 @@ TEST_VM_F(AsyncLogTest, stdoutOutput) {
     return;
   }
 
-  bool async = AsyncLogWriter::instance() != nullptr;
+  bool async = AsyncLogWriter::instance() != nullptr
+               && LogConfiguration::async_mode() == LogConfiguration::AsyncMode::Drop;
   if (async) {
     test_asynclog_drop_messages();
     AsyncLogWriter::flush();
@@ -288,7 +290,8 @@ TEST_VM_F(AsyncLogTest, stderrOutput) {
     return;
   }
 
-  bool async = AsyncLogWriter::instance() != nullptr;
+  bool async = AsyncLogWriter::instance() != nullptr
+               && LogConfiguration::async_mode() == LogConfiguration::AsyncMode::Drop;
   if (async) {
     test_asynclog_drop_messages();
     AsyncLogWriter::flush();

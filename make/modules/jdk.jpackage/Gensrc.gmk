@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 # questions.
 #
 
+################################################################################
+
 include GensrcCommon.gmk
 
 ################################################################################
@@ -36,5 +38,7 @@ ifeq ($(call isTargetOs, macosx), true)
   $(ENTITLEMENTS_TARGET_FILE): $(ENTITLEMENTS_SRC_FILE)
 	$(call install-file)
 
-  TARGETS := $(ENTITLEMENTS_TARGET_FILE)
+  TARGETS += $(ENTITLEMENTS_TARGET_FILE)
 endif
+
+################################################################################

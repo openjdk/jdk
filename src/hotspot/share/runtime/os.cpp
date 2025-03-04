@@ -2204,7 +2204,7 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
     MemTracker::NmtVirtualMemoryLocker nvml;
     res = pd_uncommit_memory(addr, bytes, executable);
     if (res) {
-      MemTracker::record_virtual_memory_uncommit((address)addr, bytes);
+      MemTracker::record_virtual_memory_uncommit(addr, bytes);
     }
   } else {
     res = pd_uncommit_memory(addr, bytes, executable);
@@ -2226,7 +2226,7 @@ bool os::release_memory(char* addr, size_t bytes) {
     MemTracker::NmtVirtualMemoryLocker nvml;
     res = pd_release_memory(addr, bytes);
     if (res) {
-      MemTracker::record_virtual_memory_release((address)addr, bytes);
+      MemTracker::record_virtual_memory_release(addr, bytes);
     }
   } else {
     res = pd_release_memory(addr, bytes);
@@ -2311,7 +2311,7 @@ bool os::unmap_memory(char *addr, size_t bytes) {
     MemTracker::NmtVirtualMemoryLocker nvml;
     result = pd_unmap_memory(addr, bytes);
     if (result) {
-      MemTracker::record_virtual_memory_release((address)addr, bytes);
+      MemTracker::record_virtual_memory_release(addr, bytes);
     }
   } else {
     result = pd_unmap_memory(addr, bytes);
@@ -2350,7 +2350,7 @@ bool os::release_memory_special(char* addr, size_t bytes) {
     MemTracker::NmtVirtualMemoryLocker nvml;
     res = pd_release_memory_special(addr, bytes);
     if (res) {
-      MemTracker::record_virtual_memory_release((address)addr, bytes);
+      MemTracker::record_virtual_memory_release(addr, bytes);
     }
   } else {
     res = pd_release_memory_special(addr, bytes);

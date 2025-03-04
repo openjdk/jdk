@@ -134,11 +134,12 @@ enum spa_video_format {
  * Extra video flags
  */
 enum spa_video_flags {
-    SPA_VIDEO_FLAG_NONE = 0,            /**< no flags */
-    SPA_VIDEO_FLAG_VARIABLE_FPS = (1 << 0),        /**< a variable fps is selected, fps_n and fps_d
-                             *   denote the maximum fps of the video */
-    SPA_VIDEO_FLAG_PREMULTIPLIED_ALPHA = (1 << 1),  /**< Each color has been scaled by the alpha value. */
-    SPA_VIDEO_FLAG_MODIFIER = (1 << 2),        /**< use the format modifier */
+    SPA_VIDEO_FLAG_NONE = 0,                /**< no flags */
+    SPA_VIDEO_FLAG_VARIABLE_FPS = (1 << 0),            /**< a variable fps is selected, fps_n and fps_d
+                                 *   denote the maximum fps of the video */
+    SPA_VIDEO_FLAG_PREMULTIPLIED_ALPHA = (1 << 1),        /**< Each color has been scaled by the alpha value. */
+    SPA_VIDEO_FLAG_MODIFIER = (1 << 2),            /**< use the format modifier */
+    SPA_VIDEO_FLAG_MODIFIER_FIXATION_REQUIRED = (1 << 3),    /**< format modifier was not fixated yet */
 };
 
 /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import jdk.test.lib.cds.CDSTestUtils;
 public class CommonAppClasspath {
 
     private static final Path USER_DIR = Paths.get(CDSTestUtils.getOutputDir());
-    private static final String failedMessage = "APP classpath mismatch";
+    private static final String failedMessage = "Archived app classpath validation: failed";
     private static final String successMessage1 = "Hello source: shared objects file";
     private static final String successMessage2 = "HelloMore source: shared objects file";
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,6 +233,10 @@ static void declareConstStorage(FILE *fp, FormDict &globals, OperandForm *oper) 
       if (i > 0) fprintf(fp,", ");
       fprintf(fp,"  jfloat         _c%d;\n", i);
     }
+    else if (!strcmp(type, "ConH")) {
+      if (i > 0) fprintf(fp,", ");
+      fprintf(fp,"  jshort        _c%d;\n", i);
+    }
     else if (!strcmp(type, "ConD")) {
       if (i > 0) fprintf(fp,", ");
       fprintf(fp,"  jdouble        _c%d;\n", i);
@@ -267,6 +271,10 @@ static void declareConstStorage(FILE *fp, FormDict &globals, OperandForm *oper) 
       }
       else if (!strcmp(comp->base_type(globals), "ConL")) {
         fprintf(fp,"  jlong            _c%d;\n", i);
+        i++;
+      }
+      else if (!strcmp(comp->base_type(globals), "ConH")) {
+        fprintf(fp,"  jshort            _c%d;\n", i);
         i++;
       }
       else if (!strcmp(comp->base_type(globals), "ConF")) {
@@ -314,6 +322,7 @@ static void defineConstructor(FILE *fp, const char *name, uint num_consts,
     case Form::idealNKlass : { fprintf(fp,"const TypeNarrowKlass *c%d", i); break; }
     case Form::idealP :      { fprintf(fp,"const TypePtr *c%d", i); break; }
     case Form::idealL :      { fprintf(fp,"jlong c%d", i);   break;        }
+    case Form::idealH :      { fprintf(fp,"jshort c%d", i);   break;        }
     case Form::idealF :      { fprintf(fp,"jfloat c%d", i);  break;        }
     case Form::idealD :      { fprintf(fp,"jdouble c%d", i); break;        }
     default:
@@ -399,6 +408,11 @@ static void defineCCodeDump(OperandForm* oper, FILE *fp, int i) {
 // Output code that dumps constant values, increment "i" if type is constant
 static uint dump_spec_constant(FILE *fp, const char *ideal_type, uint i, OperandForm* oper) {
   if (!strcmp(ideal_type, "ConI")) {
+    fprintf(fp,"   st->print(\"#%%d\", _c%d);\n", i);
+    fprintf(fp,"   st->print(\"/0x%%08x\", _c%d);\n", i);
+    ++i;
+  }
+  else if (!strcmp(ideal_type, "ConH")) {
     fprintf(fp,"   st->print(\"#%%d\", _c%d);\n", i);
     fprintf(fp,"   st->print(\"/0x%%08x\", _c%d);\n", i);
     ++i;
@@ -1281,6 +1295,7 @@ void ArchDesc::declareClasses(FILE *fp) {
         case Form::idealF: type = "Type::FLOAT";    break;
         case Form::idealD: type = "Type::DOUBLE";   break;
         case Form::idealL: type = "TypeLong::LONG"; break;
+        case Form::idealH: type = "Type::HALF_FLOAT"; break;
         case Form::none: // fall through
         default:
           assert( false, "No support for this type of stackSlot");
@@ -1423,6 +1438,14 @@ void ArchDesc::declareClasses(FILE *fp) {
           fprintf(fp, " }\n");
           fprintf(fp,"  virtual jlong          constantL() const {");
           fprintf(fp,   " return _c0;");
+          fprintf(fp, " }\n");
+        }
+        else if (!strcmp(oper->ideal_type(_globalNames), "ConH")) {
+          fprintf(fp,"  virtual intptr_t       constant() const {");
+          fprintf(fp,   " ShouldNotReachHere(); return 0; ");
+          fprintf(fp, " }\n");
+          fprintf(fp,"  virtual jshort         constantH() const {");
+          fprintf(fp,   " return (jshort)_c0;");
           fprintf(fp, " }\n");
         }
         else if (!strcmp(oper->ideal_type(_globalNames), "ConF")) {
@@ -1896,6 +1919,9 @@ void ArchDesc::declareClasses(FILE *fp) {
         break;
       case Form::idealD:
         fprintf(fp,"    return  TypeD::make(opnd_array(1)->constantD());\n");
+        break;
+      case Form::idealH:
+        fprintf(fp,"    return  TypeH::make(opnd_array(1)->constantH());\n");
         break;
       case Form::idealF:
         fprintf(fp,"    return  TypeF::make(opnd_array(1)->constantF());\n");

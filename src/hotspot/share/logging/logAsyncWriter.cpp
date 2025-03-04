@@ -26,29 +26,63 @@
 #include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
 #include "logging/logFileStreamOutput.hpp"
-#include "logging/logHandle.hpp"
+#include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/os.inline.hpp"
 
-class AsyncLogWriter::AsyncLogLocker : public StackObj {
- public:
-  AsyncLogLocker() {
-    assert(_instance != nullptr, "AsyncLogWriter::_lock is unavailable");
-    _instance->_lock.lock();
+class AsyncLogWriter::Locker : public StackObj {
+  Thread*& _holder;
+  PlatformMonitor& _lock;
+
+public:
+  Locker(Thread*& holder, PlatformMonitor& lock)
+  : _holder(holder),
+    _lock(lock) {
+    _lock.lock();
+    _holder = Thread::current_or_null();
   }
 
-  ~AsyncLogLocker() {
-    _instance->_lock.unlock();
+  ~Locker() {
+    assert(_holder == Thread::current_or_null(), "must be");
+    _holder = nullptr;
+    _lock.unlock();
+  }
+
+  void notify() {
+    _lock.notify();
+  }
+
+  void wait() {
+    Thread* saved_holder = _holder;
+    _holder = nullptr;
+    _lock.wait(0 /* no timeout */);
+    _holder = saved_holder;
   }
 };
+
+class AsyncLogWriter::ProducerLocker : public Locker {
+  static Thread* _holder;
+public:
+  static Thread* current_holder() { return _holder; }
+  ProducerLocker() : Locker(_holder, _instance->_producer_lock) {}
+};
+
+class AsyncLogWriter::ConsumerLocker : public Locker {
+  static Thread* _holder;
+public:
+  static Thread* current_holder() { return _holder; }
+  ConsumerLocker() : Locker(_holder, _instance->_consumer_lock) {}
+};
+
+Thread* AsyncLogWriter::ProducerLocker::_holder = nullptr;
+Thread* AsyncLogWriter::ConsumerLocker::_holder = nullptr;
 
 // LogDecorator::None applies to 'constant initialization' because of its constexpr constructor.
 const LogDecorations& AsyncLogWriter::None = LogDecorations(LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(),
                                       LogDecorators::None);
 
-bool AsyncLogWriter::Buffer::push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg) {
-  const size_t len = strlen(msg);
+bool AsyncLogWriter::Buffer::push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg, const size_t msg_len) {
+  const size_t len = msg_len;
   const size_t sz = Message::calc_size(len);
   const bool is_token = output == nullptr;
   // Always leave headroom for the flush token. Pushing a token must succeed.
@@ -64,7 +98,7 @@ bool AsyncLogWriter::Buffer::push_back(LogFileStreamOutput* output, const LogDec
 }
 
 void AsyncLogWriter::Buffer::push_flush_token() {
-  bool result = push_back(nullptr, AsyncLogWriter::None, "");
+  bool result = push_back(nullptr, AsyncLogWriter::None, "", 0);
   assert(result, "fail to enqueue the flush token.");
 }
 
@@ -73,36 +107,117 @@ void AsyncLogWriter::enqueue_locked(LogFileStreamOutput* output, const LogDecora
   // client should use "" instead.
   assert(msg != nullptr, "enqueuing a null message!");
 
-  if (!_buffer->push_back(output, decorations, msg)) {
-    bool p_created;
-    uint32_t* counter = _stats.put_if_absent(output, 0, &p_created);
-    *counter = *counter + 1;
-    return;
-  }
+  size_t msg_len = strlen(msg);
+  void* stalled_message = nullptr;
+  {
+    ConsumerLocker clocker;
+    if (_buffer->push_back(output, decorations, msg, msg_len)) {
+      _data_available = true;
+      clocker.notify();
+      return;
+    }
 
-  _data_available = true;
-  _lock.notify();
+    if (LogConfiguration::async_mode() == LogConfiguration::AsyncMode::Stall) {
+      size_t size = Message::calc_size(msg_len);
+      stalled_message = os::malloc(size, mtLogging);
+      if (stalled_message == nullptr) {
+        // Out of memory. We bail without any notice.
+        // Some other part of the system will probably fail later.
+        return;
+      }
+      _stalled_message = new (stalled_message) Message(output, decorations, msg, msg_len);
+      _data_available = true;
+      clocker.notify();
+      // Note: we still hold the producer lock so cannot race against other threads trying to log a message
+      while (_stalled_message != nullptr) {
+        clocker.wait();
+      }
+    } else {
+      bool p_created;
+      uint32_t* counter = _stats.put_if_absent(output, 0, &p_created);
+      *counter = *counter + 1;
+    }
+  } // ConsumerLocker out of scope
+  os::free(stalled_message);
 }
 
-void AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg) {
-  AsyncLogLocker locker;
-  enqueue_locked(&output, decorations, msg);
+// This function checks for cases where continuing with asynchronous logging may lead to stability issues, such as a deadlock.
+// If this returns false then we give up on logging asynchronously and do so synchronously instead.
+bool AsyncLogWriter::is_enqueue_allowed() {
+  AsyncLogWriter* alw = AsyncLogWriter::instance();
+  Thread* holding_thread = AsyncLogWriter::ProducerLocker::current_holder();
+  Thread* this_thread = Thread::current_or_null();
+  if (this_thread == nullptr) {
+    // The current thread is unattached.
+    return false;
+  }
+
+  if (holding_thread == this_thread) {
+    // A thread, while enqueuing a message, has attempted to log something.
+    // Do not log while holding the Async log lock.
+    // Try to catch possible occurrences in debug builds.
+#ifdef ASSERT
+    if (!TestingAsyncLoggingDeathTestNoCrash) {
+      ShouldNotReachHere();
+    }
+#endif // ASSERT
+
+    return false;
+  }
+
+  if (alw == nullptr) {
+    // There is no AsyncLogWriter instance yet.
+    return false;
+  }
+
+  if (this_thread == alw) {
+    // The async log producer is attempting to log, leading to recursive logging.
+    return false;
+  }
+
+  return true;
+}
+
+bool AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg) {
+  if (!is_enqueue_allowed()) {
+    return false;
+  }
+
+  ProducerLocker plocker;
+
+#ifdef ASSERT
+  if (TestingAsyncLoggingDeathTest || TestingAsyncLoggingDeathTestNoCrash) {
+    log_debug(deathtest)("Induce a recursive log for testing");
+  }
+#endif // ASSERT
+
+  AsyncLogWriter::instance()->enqueue_locked(&output, decorations, msg);
+  return true;
 }
 
 // LogMessageBuffer consists of a multiple-part/multiple-line message.
 // The lock here guarantees its integrity.
-void AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator) {
-  AsyncLogLocker locker;
-
-  for (; !msg_iterator.is_at_end(); msg_iterator++) {
-    enqueue_locked(&output, msg_iterator.decorations(), msg_iterator.message());
+bool AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator) {
+  if (!is_enqueue_allowed()) {
+    return false;
   }
+
+  // If we get here we know the AsyncLogWriter is initialized.
+  ProducerLocker plocker;
+  for (; !msg_iterator.is_at_end(); msg_iterator++) {
+    AsyncLogWriter::instance()->enqueue_locked(&output, msg_iterator.decorations(), msg_iterator.message());
+  }
+  return true;
 }
 
 AsyncLogWriter::AsyncLogWriter()
-  : _flush_sem(0), _lock(), _data_available(false),
-    _initialized(false),
-    _stats() {
+: _flush_sem(0),
+  _producer_lock(),
+  _consumer_lock(),
+  _data_available(false),
+  _initialized(false),
+  _stats(),
+  _stalled_message(nullptr) {
 
   size_t size = AsyncLogBufferSize / 2;
   _buffer = new Buffer(size);
@@ -115,7 +230,7 @@ AsyncLogWriter::AsyncLogWriter()
   }
 }
 
-void AsyncLogWriter::write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot) {
+bool AsyncLogWriter::write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot) {
   int req = 0;
   auto it = _buffer_staging->iterator();
   while (it.hasNext()) {
@@ -143,8 +258,9 @@ void AsyncLogWriter::write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot) {
 
   if (req > 0) {
     assert(req == 1, "Only one token is allowed in queue. AsyncLogWriter::flush() is NOT MT-safe!");
-    _flush_sem.signal(req);
+    return true;
   }
+  return false;
 }
 
 void AsyncLogWriter::run() {
@@ -152,11 +268,11 @@ void AsyncLogWriter::run() {
     ResourceMark rm;
     AsyncLogMap<AnyObj::RESOURCE_AREA> snapshot;
     {
-      AsyncLogLocker locker;
-
+      ConsumerLocker clocker;
       while (!_data_available) {
-        _lock.wait(0/* no timeout */);
+        clocker.wait();
       }
+
       // Only doing a swap and statistics under the lock to
       // guarantee that I/O jobs don't block logsites.
       _buffer_staging->reset();
@@ -173,7 +289,23 @@ void AsyncLogWriter::run() {
       });
       _data_available = false;
     }
-    write(snapshot);
+
+    bool saw_flush_token = write(snapshot);
+
+    // Any stalled message must be written *after* the buffer has been written.
+    // This is because we try hard to output messages in program-order.
+    if (_stalled_message != nullptr) {
+      assert(LogConfiguration::async_mode() == LogConfiguration::AsyncMode::Stall, "must be");
+      ConsumerLocker clocker;
+      Message* m = (Message*)_stalled_message;
+      m->output()->write_blocking(m->decorations(), m->message());
+      _stalled_message = nullptr;
+      clocker.notify();
+    }
+
+    if (saw_flush_token) {
+      _flush_sem.signal(1);
+    }
   }
 }
 
@@ -211,11 +343,12 @@ AsyncLogWriter* AsyncLogWriter::instance() {
 void AsyncLogWriter::flush() {
   if (_instance != nullptr) {
     {
-      AsyncLogLocker locker;
+      ProducerLocker plocker;
+      ConsumerLocker clocker;
       // Push directly in-case we are at logical max capacity, as this must not get dropped.
       _instance->_buffer->push_flush_token();
       _instance->_data_available = true;
-      _instance->_lock.notify();
+      clocker.notify();
     }
 
     _instance->_flush_sem.wait();
@@ -223,7 +356,7 @@ void AsyncLogWriter::flush() {
 }
 
 AsyncLogWriter::BufferUpdater::BufferUpdater(size_t newsize) {
-  AsyncLogLocker locker;
+  ConsumerLocker clocker;
   auto p = AsyncLogWriter::_instance;
 
   _buf1 = p->_buffer;
@@ -237,7 +370,7 @@ AsyncLogWriter::BufferUpdater::~BufferUpdater() {
   auto p = AsyncLogWriter::_instance;
 
   {
-    AsyncLogLocker locker;
+    ConsumerLocker clocker;
 
     delete p->_buffer;
     delete p->_buffer_staging;

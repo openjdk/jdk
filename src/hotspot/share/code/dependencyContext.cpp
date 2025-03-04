@@ -218,7 +218,7 @@ void DependencyContext::print_dependent_nmethods(bool verbose) {
     nmethod* nm = b->get_nmethod();
     tty->print("[%d] { ", idx++);
     if (!verbose) {
-      nm->print_on(tty, "nmethod");
+      nm->print_on_with_msg(tty, "nmethod");
       tty->print_cr(" } ");
     } else {
       nm->print();

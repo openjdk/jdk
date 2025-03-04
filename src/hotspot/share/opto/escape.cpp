@@ -4472,7 +4472,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       }
     } else if (n->is_AddP()) {
       if (has_reducible_merge_base(n->as_AddP(), reducible_merges)) {
-        // This AddP will go away when we reduce the the Phi
+        // This AddP will go away when we reduce the Phi
         continue;
       }
       Node* addp_base = get_addp_base(n);
@@ -4611,6 +4611,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
               op == Op_StrEquals || op == Op_VectorizedHashCode ||
               op == Op_StrIndexOf || op == Op_StrIndexOfChar ||
               op == Op_SubTypeCheck ||
+              op == Op_ReinterpretS2HF ||
               BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use))) {
           n->dump();
           use->dump();

@@ -100,9 +100,6 @@ bool TenuredGeneration::expand(size_t bytes, size_t expand_bytes) {
   if (!success) {
     success = grow_to_reserved();
   }
-  if (success && GCLocker::is_active_and_needs_gc()) {
-    log_trace(gc, heap)("Garbage collection disabled, expanded heap instead");
-  }
 
   return success;
 }
@@ -329,7 +326,7 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   const char* gen_name = "old";
   // Generation Counters -- generation 1, 1 subspace
   _gen_counters = new GenerationCounters(gen_name, 1, 1,
-      min_byte_size, max_byte_size, &_virtual_space);
+      min_byte_size, max_byte_size, _virtual_space.committed_size());
 
   _gc_counters = new CollectorCounters("Serial full collection pauses", 1);
 
@@ -371,7 +368,7 @@ void TenuredGeneration::update_promote_stats() {
 void TenuredGeneration::update_counters() {
   if (UsePerfData) {
     _space_counters->update_all();
-    _gen_counters->update_all();
+    _gen_counters->update_all(_virtual_space.committed_size());
   }
 }
 

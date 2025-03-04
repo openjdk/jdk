@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,8 @@
 package org.openjdk.bench.java.net;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.StandardProtocolFamily;
 import java.net.UnixDomainSocketAddress;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.*;
@@ -80,7 +77,6 @@ public class SocketChannelConnectionSetup {
 
 
     private ServerSocketChannel getInetServerSocketChannel() throws IOException {
-        InetAddress iaddr = InetAddress.getLoopbackAddress();
         return ServerSocketChannel.open().bind(null);
     }
 
@@ -97,11 +93,11 @@ public class SocketChannelConnectionSetup {
     }
 
     @TearDown(Level.Trial)
-    public void afterRun() throws IOException, InterruptedException {
+    public void afterRun() throws IOException {
         ssc.close();
         if (family.equals("unix")) {
-            Files.delete(socket);
-            Files.delete(Path.of(tempDir));
+            Files.deleteIfExists(socket);
+            Files.deleteIfExists(Path.of(tempDir));
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@
  * @build vm.mlvm.meth.stress.compiler.i2c_c2i.Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm vm.mlvm.meth.stress.compiler.i2c_c2i.Test
+ * @run main/othervm -XX:CompileCommand=MemLimit,*.*,0 vm.mlvm.meth.stress.compiler.i2c_c2i.Test
  */
 
 package vm.mlvm.meth.stress.compiler.i2c_c2i;

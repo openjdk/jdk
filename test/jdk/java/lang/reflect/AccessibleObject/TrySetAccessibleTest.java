@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.lang.reflect.Method;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.module.ModulePath;
 import jdk.internal.perf.Perf;
+import java.security.ProtectionDomain;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -193,7 +194,7 @@ public class TrySetAccessibleTest {
 
         // non-public constructor
         Constructor<?> ctor
-            = Class.class.getDeclaredConstructor(ClassLoader.class, Class.class);
+            = Class.class.getDeclaredConstructor(ClassLoader.class, Class.class, char.class, ProtectionDomain.class, boolean.class);
         AccessibleObject[] ctors = { ctor };
 
         assertFalse(ctor.trySetAccessible());

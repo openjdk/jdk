@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import java.nio.file.Files;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 import java.nio.file.Path;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
@@ -44,7 +43,7 @@ import jdk.jpackage.test.HelloApp;
  * @summary test '--runtime-image' option of jpackage
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile NoMPathRuntimeTest.java
+ * @compile -Xlint:all -Werror NoMPathRuntimeTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=NoMPathRuntimeTest
  */
@@ -111,7 +110,7 @@ public final class NoMPathRuntimeTest {
     }
 
     @Parameters
-    public static Collection data() {
+    public static Collection<?> data() {
 
         final List<String[]> paths = new ArrayList<>();
         paths.add(new String[] { "", "" });

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ public enum PackageType {
 
     private static boolean isBundlerSupportedImpl(String bundlerClass) {
         try {
-            Class clazz = Class.forName(bundlerClass);
+            Class<?> clazz = Class.forName(bundlerClass);
             Method supported = clazz.getMethod("supported", boolean.class);
             return ((Boolean) supported.invoke(
                     clazz.getConstructor().newInstance(), true));

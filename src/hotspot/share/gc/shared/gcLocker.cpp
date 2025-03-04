@@ -29,14 +29,12 @@
 #include "memory/universe.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/safepoint.hpp"
+#include "utilities/spinYield.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/ticks.hpp"
-
-volatile jint GCLocker::_jni_lock_count = 0;
-volatile bool GCLocker::_needs_gc       = false;
-unsigned int GCLocker::_total_collections = 0;
 
 // GCLockerTimingDebugLogger tracks specific timing information for GC lock waits.
 class GCLockerTimingDebugLogger : public StackObj {
@@ -46,7 +44,9 @@ class GCLockerTimingDebugLogger : public StackObj {
 public:
   GCLockerTimingDebugLogger(const char* log_message) : _log_message(log_message) {
     assert(_log_message != nullptr, "GC locker debug message must be set.");
-    _start = Ticks::now();
+    if (log_is_enabled(Debug, gc, jni)) {
+      _start = Ticks::now();
+    }
   }
 
   ~GCLockerTimingDebugLogger() {
@@ -59,138 +59,89 @@ public:
   }
 };
 
+Monitor* GCLocker::_lock;
+volatile bool GCLocker::_is_gc_request_pending;
+
+DEBUG_ONLY(uint64_t GCLocker::_verify_in_cr_count;)
+
+void GCLocker::initialize() {
+  assert(Heap_lock != nullptr, "inv");
+  _lock = Heap_lock;
+  _is_gc_request_pending = false;
+
+  DEBUG_ONLY(_verify_in_cr_count = 0;)
+}
+
+bool GCLocker::is_active() {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *cur = jtiwh.next(); /* empty */) {
+    if (cur->in_critical_atomic()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void GCLocker::block() {
+  assert(_lock->is_locked(), "precondition");
+  assert(Atomic::load(&_is_gc_request_pending) == false, "precondition");
+
+  GCLockerTimingDebugLogger logger("Thread blocked to start GC.");
+
+  Atomic::store(&_is_gc_request_pending, true);
+
+  // The _is_gc_request_pending and _jni_active_critical (inside
+  // in_critical_atomic()) variables form a Dekker duality. On the GC side, the
+  // _is_gc_request_pending is set and _jni_active_critical is subsequently
+  // loaded. For Java threads, the opposite is true, just like a Dekker lock.
+  // That's why there is a fence to order the accesses involved in the Dekker
+  // synchronization.
+  OrderAccess::fence();
+
+  JavaThread* java_thread = JavaThread::current();
+  ThreadBlockInVM tbivm(java_thread);
+
+  // Wait for threads leaving critical section
+  SpinYield spin_yield;
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *cur = jtiwh.next(); /* empty */) {
+    while (cur->in_critical_atomic()) {
+      spin_yield.wait();
+    }
+  }
+
 #ifdef ASSERT
-volatile jint GCLocker::_debug_jni_lock_count = 0;
+  // Matching the storestore in GCLocker::exit.
+  OrderAccess::loadload();
+  assert(Atomic::load(&_verify_in_cr_count) == 0, "inv");
 #endif
-
-
-#ifdef ASSERT
-void GCLocker::verify_critical_count() {
-  if (SafepointSynchronize::is_at_safepoint()) {
-    assert(!needs_gc() || _debug_jni_lock_count == _jni_lock_count, "must agree");
-    int count = 0;
-    // Count the number of threads with critical operations in progress
-    JavaThreadIteratorWithHandle jtiwh;
-    for (; JavaThread *thr = jtiwh.next(); ) {
-      if (thr->in_critical()) {
-        count++;
-      }
-    }
-    if (_jni_lock_count != count) {
-      log_error(gc, verify)("critical counts don't match: %d != %d", _jni_lock_count, count);
-      jtiwh.rewind();
-      for (; JavaThread *thr = jtiwh.next(); ) {
-        if (thr->in_critical()) {
-          log_error(gc, verify)(PTR_FORMAT " in_critical %d", p2i(thr), thr->in_critical());
-        }
-      }
-    }
-    assert(_jni_lock_count == count, "must be equal");
-  }
 }
 
-// In debug mode track the locking state at all times
-void GCLocker::increment_debug_jni_lock_count() {
-  assert(_debug_jni_lock_count >= 0, "bad value");
-  Atomic::inc(&_debug_jni_lock_count);
+void GCLocker::unblock() {
+  assert(_lock->is_locked(), "precondition");
+  assert(Atomic::load(&_is_gc_request_pending) == true, "precondition");
+
+  Atomic::store(&_is_gc_request_pending, false);
 }
 
-void GCLocker::decrement_debug_jni_lock_count() {
-  assert(_debug_jni_lock_count > 0, "bad value");
-  Atomic::dec(&_debug_jni_lock_count);
-}
-#endif
+void GCLocker::enter_slow(JavaThread* current_thread) {
+  assert(current_thread == JavaThread::current(), "Must be this thread");
 
-void GCLocker::log_debug_jni(const char* msg) {
-  Log(gc, jni) log;
-  if (log.is_debug()) {
-    ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
-    log.debug("%s Thread \"%s\" %d locked.", msg, Thread::current()->name(), _jni_lock_count);
-  }
-}
-
-bool GCLocker::is_at_safepoint() {
-  return SafepointSynchronize::is_at_safepoint();
-}
-
-bool GCLocker::check_active_before_gc() {
-  assert(SafepointSynchronize::is_at_safepoint(), "only read at safepoint");
-  if (is_active() && !_needs_gc) {
-    verify_critical_count();
-    _needs_gc = true;
-    GCLockerTracer::start_gc_locker(_jni_lock_count);
-    log_debug_jni("Setting _needs_gc.");
-  }
-  return is_active();
-}
-
-void GCLocker::stall_until_clear() {
-  assert(!JavaThread::current()->in_critical(), "Would deadlock");
-  MonitorLocker ml(JNICritical_lock);
-
-  if (needs_gc()) {
-    GCLockerTracer::inc_stall_count();
-    log_debug_jni("Allocation failed. Thread stalled by JNI critical section.");
-    GCLockerTimingDebugLogger logger("Thread stalled by JNI critical section.");
-    // Wait for _needs_gc to be cleared
-    while (needs_gc()) {
-      ml.wait();
-    }
-  }
-}
-
-bool GCLocker::should_discard(GCCause::Cause cause, uint total_collections) {
-  return (cause == GCCause::_gc_locker) &&
-         (_total_collections != total_collections);
-}
-
-void GCLocker::jni_lock(JavaThread* thread) {
-  assert(!thread->in_critical(), "shouldn't currently be in a critical region");
-  MonitorLocker ml(JNICritical_lock);
-  // Block entering threads if there's a pending GC request.
-  if (needs_gc()) {
-    log_debug_jni("Blocking thread as there is a pending GC request");
-    GCLockerTimingDebugLogger logger("Thread blocked to enter critical region.");
-    while (needs_gc()) {
-      // There's at least one thread that has not left the critical region (CR)
-      // completely. When that last thread (no new threads can enter CR due to the
-      // blocking) exits CR, it calls `jni_unlock`, which sets `_needs_gc`
-      // to false and wakes up all blocked threads.
-      // We would like to assert #threads in CR to be > 0, `_jni_lock_count > 0`
-      // in the code, but it's too strong; it's possible that the last thread
-      // has called `jni_unlock`, but not yet finished the call, e.g. initiating
-      // a GCCause::_gc_locker GC.
-      ml.wait();
-    }
-  }
-  thread->enter_critical();
-  _jni_lock_count++;
-  increment_debug_jni_lock_count();
-}
-
-void GCLocker::jni_unlock(JavaThread* thread) {
-  assert(thread->in_last_critical(), "should be exiting critical region");
-  MutexLocker mu(JNICritical_lock);
-  _jni_lock_count--;
-  decrement_debug_jni_lock_count();
-  log_debug_jni("Thread exiting critical region.");
-  thread->exit_critical();
-  if (needs_gc() && !is_active_internal()) {
-    // We're the last thread out. Request a GC.
-    // Capture the current total collections, to allow detection of
-    // other collections that make this one unnecessary.  The value of
-    // total_collections() is only changed at a safepoint, so there
-    // must not be a safepoint between the lock becoming inactive and
-    // getting the count, else there may be unnecessary GCLocker GCs.
-    _total_collections = Universe::heap()->total_collections();
-    GCLockerTracer::report_gc_locker();
+  GCLockerTimingDebugLogger logger("Thread blocked to enter critical region.");
+  while (true) {
     {
-      // Must give up the lock while at a safepoint
-      MutexUnlocker munlock(JNICritical_lock);
-      log_debug_jni("Last thread exiting. Performing GC after exiting critical section.");
-      Universe::heap()->collect(GCCause::_gc_locker);
+      // There is a pending gc request and _lock is locked. Wait for the
+      // completion of a gc. It's enough to do an empty locker section.
+      MutexLocker locker(_lock);
     }
-    _needs_gc = false;
-    JNICritical_lock->notify_all();
+
+    current_thread->enter_critical();
+
+    // Same as fast path.
+    OrderAccess::fence();
+
+    if (!Atomic::load(&_is_gc_request_pending)) {
+      return;
+    }
+
+    current_thread->exit_critical();
   }
 }

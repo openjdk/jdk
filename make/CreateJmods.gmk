@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,9 @@
 # questions.
 #
 
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
 
 include CopyFiles.gmk
 include Execute.gmk
@@ -35,8 +34,6 @@ include Modules.gmk
 ifeq ($(MODULE), )
   $(error MODULE must be set when calling CreateJmods.gmk)
 endif
-
-$(eval $(call IncludeCustomExtension, CreateJmods.gmk))
 
 ################################################################################
 
@@ -187,7 +184,15 @@ endif
 ################################################################################
 # Include module specific build settings
 
--include Jmod.gmk
+THIS_SNIPPET := modules/$(MODULE)/Jmod.gmk
+
+ifneq ($(wildcard $(THIS_SNIPPET)), )
+  include MakeSnippetStart.gmk
+
+  include $(THIS_SNIPPET)
+
+  include MakeSnippetEnd.gmk
+endif
 
 # Set main class
 ifneq ($(JMOD_FLAGS_main_class), )
@@ -266,6 +271,4 @@ TARGETS += $(create_$(JMOD_FILE))
 
 ################################################################################
 
-all: $(TARGETS)
-
-################################################################################
+include MakeFileEnd.gmk
