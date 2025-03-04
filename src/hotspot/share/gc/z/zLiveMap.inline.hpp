@@ -88,7 +88,7 @@ inline BitMap::idx_t ZLiveMap::next_live_segment(BitMap::idx_t segment) const {
 }
 
 inline BitMap::idx_t ZLiveMap::segment_size() const {
-  return _bitmap.size() / NumSegments;
+  return _bitmap_size / NumSegments;
 }
 
 inline BitMap::idx_t ZLiveMap::index_to_segment(BitMap::idx_t index) const {

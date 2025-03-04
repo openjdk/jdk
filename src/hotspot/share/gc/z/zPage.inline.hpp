@@ -76,7 +76,7 @@ inline uint32_t ZPage::object_max_count() const {
     return 1;
 
   default:
-    return (uint32_t)(size() >> object_alignment_shift());
+    return checked_cast<uint32_t>(size() >> object_alignment_shift());
   }
 }
 

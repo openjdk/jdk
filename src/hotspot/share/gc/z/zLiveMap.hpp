@@ -42,6 +42,7 @@ private:
   volatile size_t   _live_bytes;
   BitMap::bm_word_t _segment_live_bits;
   BitMap::bm_word_t _segment_claim_bits;
+  size_t            _bitmap_size;
   ZBitMap           _bitmap;
   int               _segment_shift;
 
@@ -64,6 +65,8 @@ private:
   BitMap::idx_t index_to_segment(BitMap::idx_t index) const;
 
   bool claim_segment(BitMap::idx_t segment);
+
+  void allocate_bitmap();
 
   void reset(ZGenerationId id);
   void reset_segment(BitMap::idx_t segment);
