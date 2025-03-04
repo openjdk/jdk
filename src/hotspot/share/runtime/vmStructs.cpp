@@ -1005,8 +1005,6 @@
                                                                           \
   declare_toplevel_type(GrowableArrayBase)                                \
   declare_toplevel_type(GrowableArray<int>)                               \
-  declare_toplevel_type(Arena)                                            \
-    declare_type(ResourceArea, Arena)                                     \
                                                                           \
   /***********************************************************/           \
   /* Thread hierarchy (needed for run-time type information) */           \
