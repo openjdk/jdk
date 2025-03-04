@@ -70,6 +70,7 @@ constexpr T align_down(T size, A alignment) {
   return result;
 }
 
+// Checks whether it is possible to align size to alignment without overflowing.
 template<typename T, typename A, ENABLE_IF(std::is_integral<T>::value)>
 constexpr bool can_align_up(T size, A alignment) {
   return align_down(std::numeric_limits<T>::max(), alignment) >= size;
@@ -81,6 +82,7 @@ inline bool can_align_up(T* ptr, A alignment) {
   return can_align_up((uintptr_t)ptr, alignment);
 }
 
+// Precondition: can_align_up(size, alignment) == true
 template<typename T, typename A, ENABLE_IF(std::is_integral<T>::value)>
 constexpr T align_up(T size, A alignment) {
   T mask = checked_cast<T>(alignment_mask(alignment));
