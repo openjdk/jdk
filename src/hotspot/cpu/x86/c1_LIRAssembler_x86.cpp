@@ -3628,7 +3628,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   //   __ jcc(Assembler::aboveEqual, dont);
   // }
 
-  maybe_skip_profiling(r14_profile_rng, temp, dont);
+  __ maybe_skip_profiling(r14_profile_rng, temp, dont);
 
   // Update counter for all call types
   ciMethodData* md = method->method_data_or_null();
@@ -3739,7 +3739,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 #endif
 
   // Subsampling profile capture
-  maybe_skip_profiling(r14_profile_rng, rscratch1, next);
+  __ maybe_skip_profiling(r14_profile_rng, rscratch1, next);
 
   if (do_null) {
     __ testptr(obj, obj);
