@@ -119,7 +119,7 @@ public:
            " card marking array's _whole_heap = [" PTR_FORMAT "," PTR_FORMAT ")",
            p2i(p), p2i(_whole_heap.start()), p2i(_whole_heap.end()));
     CardValue* result = &_byte_map_base[uintptr_t(p) >> _card_shift];
-    assert(result >= _byte_map && result < (_byte_map + _byte_map_size),
+    assert(result >= _byte_map && result < _byte_map + _byte_map_size,
            "out of bounds accessor for card marking array");
     return result;
   }
@@ -151,7 +151,7 @@ public:
     HeapWord* result = (HeapWord*) (delta << _card_shift);
     assert(_whole_heap.contains(result),
            "Returning result = " PTR_FORMAT " out of bounds of "
-           " card marking array's _whole_heap = [" PTR_FORMAT "," PTR_FORMAT ").",
+           " card marking array's _whole_heap = [" PTR_FORMAT "," PTR_FORMAT ")",
            p2i(result), p2i(_whole_heap.start()), p2i(_whole_heap.end()));
     return result;
   }
