@@ -71,11 +71,13 @@ public class TestMultiversionRemoveUselessSlowLoop {
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         phase = CompilePhase.PHASEIDEALLOOP_ITERATIONS)
-    @IR(counts = {"pre .* multiversion_fast",  "= 1", // the pre-loop of the first loop only has a single iteration
+    @IR(counts = {"pre .* multiversion_fast.*", ">= 1", // In some cases, the pre loop of the first loop also disappears because it only has a single iteration
+                  "pre .* multiversion_fast.*", "<= 2", // but not in other cases the pre loop of the first loop remains.
                   "main .* multiversion_fast", "= 1",
                   "post .* multiversion_fast", "= 3",
                   "multiversion_delayed_slow", "= 0", // The second loop's multiversion_if was also not used, so it is constant folded after loop opts.
-                  "multiversion",              "= 5", // nothing unexpected
+                  "multiversion",              ">= 5", // nothing unexpected
+                  "multiversion",              "<= 6", // nothing unexpected
                   IRNode.OPAQUE_MULTIVERSIONING, "= 0"}, // After loop-opts, we also constant fold the multiversion_if of the second loop, as it is unused.
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
