@@ -1807,6 +1807,8 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
   _last_async_deflation_time_ns = os::javaTimeNanos();
   set_is_async_deflation_requested(false);
 
+  EventJavaMonitorStatistics event;
+
   ObjectMonitorDeflationLogging log;
   ObjectMonitorDeflationSafepointer safepointer(current, &log);
 
@@ -1866,6 +1868,12 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
     _no_progress_skip_increment = false;
   } else {
     _no_progress_cnt++;
+  }
+
+  if (event.should_commit()) {
+    event.set_totalCount(_in_use_list.count());
+    event.set_deflatedCount(deflated_count);
+    event.commit();
   }
 
   return deflated_count;

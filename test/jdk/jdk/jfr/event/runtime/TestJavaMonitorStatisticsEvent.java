@@ -37,18 +37,18 @@ import jdk.test.lib.thread.TestThread;
 import jdk.test.lib.thread.XRun;
 
 /**
- * @test TestJavaMonitorDeflateEvent
+ * @test TestJavaMonitorStatisticsEvent
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm -XX:GuaranteedAsyncDeflationInterval=100 jdk.jfr.event.runtime.TestJavaMonitorDeflateEvent
+ * @run main/othervm -XX:GuaranteedAsyncDeflationInterval=100 jdk.jfr.event.runtime.TestJavaMonitorStatisticsEvent
  */
-public class TestJavaMonitorDeflateEvent {
+public class TestJavaMonitorStatisticsEvent {
 
-    private static final String FIELD_KLASS_NAME = "monitorClass.name";
-    private static final String FIELD_ADDRESS    = "address";
+    private static final String FIELD_TOTAL_COUNT = "totalCount";
+    private static final String FIELD_DEFLATED_COUNT = "deflatedCount";
 
-    private static final String EVENT_NAME = EventNames.JavaMonitorDeflate;
+    private static final String EVENT_NAME = EventNames.JavaMonitorStatistics;
     private static final long WAIT_TIME = 123456;
 
     static class Lock {
@@ -82,23 +82,20 @@ public class TestJavaMonitorDeflateEvent {
             Thread.sleep(3000);
             recording.stop();
         }
-        final String lockClassName = lock.getClass().getName().replace('.', '/');
         boolean isAnyFound = false;
         try {
             // Find at least one event with the correct monitor class and check the other fields
             for (RecordedEvent event : Events.fromRecording(recording)) {
                 assertTrue(EVENT_NAME.equals(event.getEventType().getName()), "mismatched event types?");
-                // Check recorded inflation event is associated with the Lock class used in the test
-                final String recordedMonitorClassName = Events.assertField(event, FIELD_KLASS_NAME).getValue();
-                if (!lockClassName.equals(recordedMonitorClassName)) {
-                    continue;
-                }
-                // Check recorded thread matches one of the threads in the test
-                Events.assertField(event, FIELD_ADDRESS).notEqual(0L);
+                long totalCount = Events.assertField(event, FIELD_TOTAL_COUNT).getValue();
+                long deflatedCount = Events.assertField(event, FIELD_DEFLATED_COUNT).getValue();
+                assertTrue(totalCount >= 0, "Should be positive");
+                assertTrue(deflatedCount >= 0, "Should be positive");
+                assertTrue(totalCount + deflatedCount > 0, "Should be non-zero");
                 isAnyFound = true;
                 break;
             }
-            assertTrue(isAnyFound, "Expected an deflation event from test");
+            assertTrue(isAnyFound, "Expected a statistics event from test");
         } catch (Throwable e) {
             recording.dump(Paths.get("failed.jfr"));
             throw e;

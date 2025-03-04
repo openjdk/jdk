@@ -102,6 +102,11 @@
     </event>
 
     <event name="jdk.JavaMonitorDeflate">
+      <setting name="enabled">false</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.JavaMonitorStatistics">
       <setting name="enabled">true</setting>
     </event>
 

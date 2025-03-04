@@ -121,6 +121,11 @@
     <Field type="ulong" contentType="address" name="address" label="Monitor Address" relation="JavaMonitorAddress" />
   </Event>
 
+  <Event name="JavaMonitorStatistics" category="Java Application" label="Java Monitor Statistics" startTime="false">
+    <Field type="ulong" name="totalCount" label="Monitors In Use" description="Number of in-use monitors"/>
+    <Field type="ulong" name="deflatedCount" label="Deflated Monitors" description="Number of deflated monitors"/>
+  </Event>
+
   <Event name="SyncOnValueBasedClass" category="Java Virtual Machine, Diagnostics" label="Value Based Class Synchronization" thread="true" stackTrace="true" startTime="false" experimental="true">
     <Field type="Class" name="valueBasedClass" label="Value Based Class" />
   </Event>
