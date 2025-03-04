@@ -44,25 +44,30 @@ public class getOriginalHostName {
         try {
             final String HOST = "dummyserver.java.net";
             InetAddress ia = null;
-            ia = InetAddress.getByName(HOST);
-            testInetAddress(ia, HOST);
-            ia = InetAddress.getByName("255.255.255.0");
-            testInetAddress(ia, null);
+            ia = getInetAddress(HOST);
+            if (ia != null) testInetAddress(ia, HOST);
+            ia = getInetAddress("255.255.255.0");
+            if (ia != null) testInetAddress(ia, null);
             ia = InetAddress.getByAddress(new byte[]{1,1,1,1});
             testInetAddress(ia, null);
             ia = InetAddress.getLocalHost();
             testInetAddress(ia, ia.getHostName());
             ia = InetAddress.getLoopbackAddress();
             testInetAddress(ia, ia.getHostName());
-        } catch (java.net.UnknownHostException e) {
-            e.printStackTrace();
-            throw new jtreg.SkippedException("Network setup issue");
         } catch (Exception e) {
             throw new RuntimeException("Unexpected exception:" + e);
         }
         System.out.println("getOriginalHostName EXIT");
     }
 
+    private static InetAddress getInetAddress(String host) {
+        try {
+            return InetAddress.getByName(host);
+        } catch (java.net.UnknownHostException uhe) {
+            System.out.println("Skipping " + host + " due to " + uhe);
+            return null;
+        }
+    }
 
     private static void testInetAddress(InetAddress ia, String expected)
         throws Exception {
