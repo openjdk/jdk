@@ -22,6 +22,7 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.PackagerException;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
