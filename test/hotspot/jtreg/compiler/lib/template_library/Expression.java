@@ -127,7 +127,7 @@ public final class Expression {
             }
         }
         switch (Library.choice(resultTypeOps)) {
-            case Operation.Unary(Type r, String s0, Type t0, String s1) -> {
+            case Operation.Unary(Type r, String s0, Type t0, String s1, List<Class<? extends Exception>> exceptions) -> {
                 ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, ops, maxDepth-1, types);
                 return (List<Object> tokens, List<Object> args) -> {
                     tokens.add(s0);
@@ -135,7 +135,7 @@ public final class Expression {
                     tokens.add(s1);
                 };
             }
-            case Operation.Binary(Type r, String s0, Type t0, String s1, Type t1, String s2) -> {
+            case Operation.Binary(Type r, String s0, Type t0, String s1, Type t1, String s2, List<Class<? extends Exception>> exceptions) -> {
                 ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, ops, maxDepth-1, types);
                 ExpressionGeneratorStep step1 = expressionGeneratorStep(t1, ops, maxDepth-1, types);
                 return (List<Object> tokens, List<Object> args) -> {
@@ -146,7 +146,7 @@ public final class Expression {
                     tokens.add(s2);
                 };
             }
-            case Operation.Ternary(Type r, String s0, Type t0, String s1, Type t1, String s2, Type t2, String s3) -> {
+            case Operation.Ternary(Type r, String s0, Type t0, String s1, Type t1, String s2, Type t2, String s3, List<Class<? extends Exception>> exceptions) -> {
                 ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, ops, maxDepth-1, types);
                 ExpressionGeneratorStep step1 = expressionGeneratorStep(t1, ops, maxDepth-1, types);
                 ExpressionGeneratorStep step2 = expressionGeneratorStep(t1, ops, maxDepth-1, types);

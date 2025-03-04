@@ -23,6 +23,7 @@
 
 package compiler.lib.template_library;
 
+import java.util.List;
 import java.util.HashSet;
 
 public sealed interface Operation permits Operation.Unary,
@@ -37,12 +38,11 @@ public sealed interface Operation permits Operation.Unary,
 
     public abstract boolean matchesTypes(HashSet<Type> types);
 
-    public static record Unary(Type r, String s0, Type t0, String s1) implements Operation {
+    public static record Unary(Type r, String s0, Type t0, String s1, List<Class<? extends Exception>> exceptions) implements Operation {
         @Override
         public boolean matchesReturnType(Type returnType) {
             return r.isSubtypeOf(returnType);
         }
-
 
         @Override
         public boolean matchesTypes(HashSet<Type> types) {
@@ -51,7 +51,7 @@ public sealed interface Operation permits Operation.Unary,
         }
     }
 
-    public static record Binary(Type r, String s0, Type t0, String s1, Type t1, String s2) implements Operation {
+    public static record Binary(Type r, String s0, Type t0, String s1, Type t1, String s2, List<Class<? extends Exception>> exceptions) implements Operation {
         @Override
         public boolean matchesReturnType(Type returnType) {
             return r.isSubtypeOf(returnType);
@@ -65,7 +65,7 @@ public sealed interface Operation permits Operation.Unary,
         }
     }
 
-    public static record Ternary(Type r, String s0, Type t0, String s1, Type t1, String s2, Type t2, String s3) implements Operation {
+    public static record Ternary(Type r, String s0, Type t0, String s1, Type t1, String s2, Type t2, String s3, List<Class<? extends Exception>> exceptions) implements Operation {
         @Override
         public boolean matchesReturnType(Type returnType) {
             return r.isSubtypeOf(returnType);
