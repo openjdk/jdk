@@ -56,6 +56,10 @@ public class MulHFNodeIdealizationTests {
     @IR(counts = {IRNode.ADD_HF, "1"},
         applyIfCPUFeature = {"avx512_fp16", "true"},
         failOn = {IRNode.MUL_HF})
+    @IR(counts = {IRNode.ADD_HF, "1"},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"},
+        failOn = {IRNode.MUL_HF})
+    // Test if x * 2 is optimized to x + x
     public void test1() {
         dst = multiply(src, valueOf(2.0f));
     }
