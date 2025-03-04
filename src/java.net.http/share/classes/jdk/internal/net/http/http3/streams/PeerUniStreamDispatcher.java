@@ -24,6 +24,7 @@
  */
 package jdk.internal.net.http.http3.streams;
 
+import java.io.EOFException;
 import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -96,67 +97,79 @@ public abstract class PeerUniStreamDispatcher {
         try {
             // Bidirectional streams don't have a StreamType
             assert !stream.isBidirectional();
-            ByteBuffer buffer = reader.peek();
-            if (buffer == null) return;
-            if (buffer == QuicStreamReader.EOF) {
-                // not supposed to happen!
-                debug().log("stream %s EOF, cannot dispatch!",
-                        stream.streamId());
-                return;
-            }
-            if (buffer.remaining() == 0) {
-                // not supposed to happen!
-                debug().log("stream %d: buffer has zero bytes? cannot dispatch!",
-                        stream.streamId());
-                // should we poll this buffer?
-                var polled = reader.poll();
-                assert buffer == polled;
-            }
-            // peeking the stream type.
-            ByteBuffer toDecode;
-            if (vlongBuf == null) {
-                // first time around: attempt to read size of the stream type
-                vlongSize = VariableLengthEncoder.peekEncodedValueSize(buffer, buffer.position());
-                assert vlongSize > 0 && vlongSize <= VariableLengthEncoder.MAX_INTEGER_LENGTH
-                        : vlongSize + " is out of bound for a variable integer size (should be in [1..8]";
-                int remaining = buffer.remaining();
-                if (remaining >= vlongSize) {
-                    // we have all necessary bytes - just use the buffer
-                    toDecode = buffer;
-                    if (remaining == vlongSize) {
-                        // we're going to read all the bytes: poll the buffer
+            ByteBuffer buffer;
+            ByteBuffer toDecode = null;
+            while ((buffer = reader.peek()) != null) {
+                if (buffer == QuicStreamReader.EOF) {
+                    // not supposed to happen!
+                    debug().log("stream %s EOF, cannot dispatch!",
+                            stream.streamId());
+                    abort(Http3Error.H3_STREAM_CREATION_ERROR,
+                            new EOFException("EOF: cannot dispatch stream " + stream.streamId()));
+                    return;
+                }
+                if (buffer.remaining() == 0) {
+                    // not supposed to happen!
+                    debug().log("stream %d: buffer has zero bytes? cannot dispatch!",
+                            stream.streamId());
+                    // should we poll this buffer?
+                    var polled = reader.poll();
+                    assert buffer == polled;
+                }
+                // peeking the stream type.
+                if (vlongBuf == null) {
+                    // first time around: attempt to read size of the stream type
+                    vlongSize = VariableLengthEncoder.peekEncodedValueSize(buffer, buffer.position());
+                    assert vlongSize > 0 && vlongSize <= VariableLengthEncoder.MAX_INTEGER_LENGTH
+                            : vlongSize + " is out of bound for a variable integer size (should be in [1..8]";
+                    int remaining = buffer.remaining();
+                    if (remaining >= vlongSize) {
+                        // we have all necessary bytes - just use the buffer
+                        toDecode = buffer;
+                        if (remaining == vlongSize) {
+                            // we're going to read all the bytes: poll the buffer
+                            var polled = reader.poll();
+                            assert polled == buffer;
+                        }
+                        break; // we have everything we need, break out of the loop
+                    } else {
+                        // we don't have enough bytes: start accumulating them
+                        vlongBuf = ByteBuffer.allocate(vlongSize);
+                        vlongBuf.put(buffer);
+                        assert buffer.remaining() == 0;
+                        var polled = reader.poll();
+                        assert polled == buffer;
+                        // continue and wait for more
+                    }
+                } else {
+                    // there wasn't enough bytes the first time around, accumulate
+                    // missing bytes
+                    int missing = vlongSize - vlongBuf.position();
+                    int available = Math.min(missing, buffer.remaining());
+                    for (int i = 0; i < available; i++) {
+                        vlongBuf.put(buffer.get());
+                    }
+                    // if we have exhausted the buffer, poll it.
+                    if (!buffer.hasRemaining()) {
                         var polled = reader.poll();
                         assert polled == buffer;
                     }
-                } else {
-                    // we don't have enough bytes: start accumulating them
-                    vlongBuf = ByteBuffer.allocate(vlongSize);
-                    vlongBuf.put(buffer);
-                    assert buffer.remaining() == 0;
-                    var polled = reader.poll();
-                    assert polled == buffer;
-                    return; // wait for more
+                    // if we have all bytes, we can proceed and decode the stream type
+                    if (vlongBuf.position() == vlongSize) {
+                        toDecode = vlongBuf;
+                        toDecode.flip();
+                        vlongBuf = null;
+                        break;  // we have everything we need, break out of the loop
+                    } // otherwise, wait for more
                 }
-            } else {
-                // there wasn't enough bytes the first time around, accumulate
-                // missing bytes
-                int missing = vlongSize - vlongBuf.position();
-                int available = Math.min(missing, buffer.remaining());
-                for (int i=0 ; i < available; i++) {
-                    vlongBuf.put(buffer.get());
-                }
-                // if we have exhausted the buffer, poll it.
-                if (!buffer.hasRemaining()) {
-                    var polled = reader.poll();
-                    assert polled == buffer;
-                }
-                // if we have all bytes, we can proceed and decode the stream type
-                if (vlongBuf.position() == vlongSize)  {
-                    toDecode = vlongBuf;
-                    toDecode.flip();
-                    vlongBuf = null;
-                } else return; // wait for more
             }
+            if (toDecode == null) {
+                // we reach here if there's no buffer to poll, and
+                // we are waiting for more bytes
+                assert buffer == null;
+                return;
+            }
+
             assert toDecode.remaining() >= vlongSize;
             long vlong = VariableLengthEncoder.decode(toDecode); // consume the bytes
             assert vlongBuf == null;
@@ -203,7 +216,7 @@ public abstract class PeerUniStreamDispatcher {
                 }
             }
         } catch (Throwable throwable) {
-            // We shouldn't come here, so if we do, it's more an
+            // We shouldn't come here, so if we do, it's closer to an
             // internal error than a stream creation error.
             abort(Http3Error.H3_INTERNAL_ERROR, throwable);
         }
@@ -329,7 +342,7 @@ public abstract class PeerUniStreamDispatcher {
     }
 
     /**
-     * Called when an reserved stream type is read off the
+     * Called when a reserved stream type is read off the
      * stream.
      *
      * @implSpec

@@ -311,12 +311,21 @@ public class PeerUniStreamDispatcherTest {
         scheduler.runOrSchedule();
         dispatcher.start();
         if (type == DISPATCHED_STREAM.PUSH) {
-            size = VariableLengthEncoder.getEncodedSize(1234);
+            // we want to encode the pushId in multiple buffers, but call
+            // the scheduler only once to check that the dispatcher
+            // will loop correctly.
+            size = VariableLengthEncoder.getEncodedSize(1L << 62 - 5);
             ByteBuffer buffer2 = ByteBuffer.allocate(size);
             assertEquals(buffer2.remaining(), size);
-            VariableLengthEncoder.encode(buffer2, 1234);
+            VariableLengthEncoder.encode(buffer2, 1L << 62 - 5);
             buffer2.flip();
-            stream.buffers.add(buffer2);
+            stream.buffers.add(ByteBuffer.wrap(new byte[] {buffer2.get()}));
+            scheduler.runOrSchedule(); // call runOrSchedule after supplying the first byte.
+            assertTrue(reader.connected());
+            assert buffer2.remaining() > 1; // should always be true
+            while (buffer2.hasRemaining()) {
+                stream.buffers.add(ByteBuffer.wrap(new byte[] {buffer2.get()}));
+            }
         }
         scheduler.runOrSchedule();
         assertFalse(reader.connected());
@@ -371,7 +380,7 @@ public class PeerUniStreamDispatcherTest {
             if (index == 0) {
                 assertEquals(push.pushId, -1);
             } else {
-                assertEquals(push.pushId, 1234);
+                assertEquals(push.pushId, 1L << 62 - 5);
             }
             assertEquals(push.type(), DISPATCHED_STREAM.PUSH);
         }
