@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ struct Tarjan;
 // Note that the constructor just zeros things, and since I use Arena
 // allocation I do not need a destructor to reclaim storage.
 class Block_Array : public ArenaObj {
-  friend class VMStructs;
   uint _size;                   // allocated size, as opposed to formal limit
   debug_only(uint _limit;)      // limit to formal domain
   Arena *_arena;                // Arena to allocate in
@@ -75,7 +74,6 @@ public:
 
 
 class Block_List : public Block_Array {
-  friend class VMStructs;
 public:
   uint _cnt;
   Block_List() : Block_List(Thread::current()->resource_area()) { }
@@ -93,7 +91,6 @@ public:
 
 
 class CFGElement : public AnyObj {
-  friend class VMStructs;
  public:
   double _freq; // Execution frequency (estimate)
 
@@ -109,7 +106,6 @@ class CFGElement : public AnyObj {
 // Basic blocks are used during the output routines, and are not used during
 // any optimization pass.  They are created late in the game.
 class Block : public CFGElement {
-  friend class VMStructs;
 
 private:
   // Nodes in this block, in order
@@ -372,7 +368,6 @@ public:
 //------------------------------PhaseCFG---------------------------------------
 // Build an array of Basic Block pointers, one per Node.
 class PhaseCFG : public Phase {
-  friend class VMStructs;
  private:
   // Root of whole program
   RootNode* _root;
@@ -703,7 +698,6 @@ public:
 
 //------------------------------CFGLoop-------------------------------------------
 class CFGLoop : public CFGElement {
-  friend class VMStructs;
   int _id;
   int _depth;
   CFGLoop *_parent;      // root of loop tree is the method level "pseudo" loop, it's parent is null
@@ -756,7 +750,6 @@ class CFGLoop : public CFGElement {
 // A edge between two basic blocks that will be embodied by a branch or a
 // fall-through.
 class CFGEdge : public ResourceObj {
-  friend class VMStructs;
  private:
   Block * _from;        // Source basic block
   Block * _to;          // Destination basic block
@@ -892,7 +885,6 @@ class Trace : public ResourceObj {
 //------------------------------PhaseBlockLayout-------------------------------
 // Rearrange blocks into some canonical order, based on edges and their frequencies
 class PhaseBlockLayout : public Phase {
-  friend class VMStructs;
   PhaseCFG &_cfg;               // Control flow graph
 
   GrowableArray<CFGEdge *> *edges;
