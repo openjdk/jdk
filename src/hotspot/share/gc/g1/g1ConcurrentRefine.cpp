@@ -122,41 +122,41 @@ void G1ConcurrentRefineThreadControl::stop() {
   }
 }
 
-G1ConcurrentRefineWorkState::G1ConcurrentRefineWorkState(uint max_reserved_regions) :
+G1ConcurrentRefineSweepState::G1ConcurrentRefineSweepState(uint max_reserved_regions) :
   _state(State::Idle),
-  _refine_work_epoch(0),
+  _sweep_start_epoch(0),
   _sweep_table(new G1CardTableClaimTable(G1CollectedHeap::get_chunks_per_region_for_merge())),
   _stats()
 {
   _sweep_table->initialize(max_reserved_regions);
 }
 
-G1ConcurrentRefineWorkState::~G1ConcurrentRefineWorkState() {
+G1ConcurrentRefineSweepState::~G1ConcurrentRefineSweepState() {
   delete _sweep_table;
 }
 
-void G1ConcurrentRefineWorkState::set_state_start_time() {
+void G1ConcurrentRefineSweepState::set_state_start_time() {
   _state_start[static_cast<uint>(_state)] = Ticks::now();
 }
 
-Tickspan G1ConcurrentRefineWorkState::get_duration(State start, State end) {
+Tickspan G1ConcurrentRefineSweepState::get_duration(State start, State end) {
   return _state_start[static_cast<uint>(end)] - _state_start[static_cast<uint>(start)];
 }
 
-void G1ConcurrentRefineWorkState::reset_stats() {
+void G1ConcurrentRefineSweepState::reset_stats() {
   stats()->reset();
 }
 
-void G1ConcurrentRefineWorkState::add_yield_duration(jlong duration) {
+void G1ConcurrentRefineSweepState::add_yield_duration(jlong duration) {
   stats()->inc_yield_duration(duration);
 }
 
-size_t G1ConcurrentRefineWorkState::refinement_epoch() {
+size_t G1ConcurrentRefineSweepState::refinement_epoch() {
   return G1CollectedHeap::heap()->refinement_epoch();
 }
 
-bool G1ConcurrentRefineWorkState::advance_state(State next_state) {
-  bool result = _refine_work_epoch == refinement_epoch();
+bool G1ConcurrentRefineSweepState::advance_state(State next_state) {
+  bool result = _sweep_start_epoch == refinement_epoch();
   if (result) {
     _state = next_state;
   } else {
@@ -165,23 +165,23 @@ bool G1ConcurrentRefineWorkState::advance_state(State next_state) {
   return result;
 }
 
-void G1ConcurrentRefineWorkState::assert_state(State expected) {
+void G1ConcurrentRefineSweepState::assert_state(State expected) {
   assert(_state == expected, "must be %s but is %s", state_name(expected), state_name(_state));
 }
 
-void G1ConcurrentRefineWorkState::start_refine_work() {
+void G1ConcurrentRefineSweepState::start_work() {
   assert_state(State::Idle);
 
   set_state_start_time();
 
-  _refine_work_epoch = refinement_epoch();
+  _sweep_start_epoch = refinement_epoch();
 
   _stats.reset();
 
   advance_state(State::SwapGlobalCT);
 }
 
-bool G1ConcurrentRefineWorkState::swap_global_card_table() {
+bool G1ConcurrentRefineSweepState::swap_global_card_table() {
   assert_state(State::SwapGlobalCT);
 
   set_state_start_time();
@@ -200,7 +200,7 @@ bool G1ConcurrentRefineWorkState::swap_global_card_table() {
   return advance_state(State::SwapJavaThreadsCT);
 }
 
-bool G1ConcurrentRefineWorkState::swap_java_threads_ct() {
+bool G1ConcurrentRefineSweepState::swap_java_threads_ct() {
   assert_state(State::SwapJavaThreadsCT);
 
   set_state_start_time();
@@ -217,14 +217,13 @@ bool G1ConcurrentRefineWorkState::swap_java_threads_ct() {
         G1ThreadLocalData::set_byte_map_base(t, bs->card_table()->byte_map_base());
       }
     } cl;
-
     Handshake::execute(&cl);
   }
 
   return advance_state(State::SwapGCThreadsCT);
 }
 
-bool G1ConcurrentRefineWorkState::swap_gc_threads_ct() {
+bool G1ConcurrentRefineSweepState::swap_gc_threads_ct() {
   assert_state(State::SwapGCThreadsCT);
 
   set_state_start_time();
@@ -259,7 +258,7 @@ bool G1ConcurrentRefineWorkState::swap_gc_threads_ct() {
   return advance_state(State::SnapshotHeap);
 }
 
-void G1ConcurrentRefineWorkState::snapshot_heap(bool concurrent) {
+void G1ConcurrentRefineSweepState::snapshot_heap(bool concurrent) {
   if (concurrent) {
     assert_state(State::SnapshotHeap);
 
@@ -276,13 +275,13 @@ void G1ConcurrentRefineWorkState::snapshot_heap(bool concurrent) {
   }
 }
 
-void G1ConcurrentRefineWorkState::sweep_rt_start() {
+void G1ConcurrentRefineSweepState::sweep_refinement_table_start() {
   assert_state(State::SweepRT);
 
   set_state_start_time();
 }
 
-bool G1ConcurrentRefineWorkState::sweep_rt_step() {
+bool G1ConcurrentRefineSweepState::sweep_refinement_table_step() {
   assert_state(State::SweepRT);
 
   G1ConcurrentRefine* cr = G1CollectedHeap::heap()->concurrent_refine();
@@ -298,7 +297,7 @@ bool G1ConcurrentRefineWorkState::sweep_rt_step() {
   }
 }
 
-bool G1ConcurrentRefineWorkState::complete(bool concurrent, bool print_log) {
+bool G1ConcurrentRefineSweepState::complete_work(bool concurrent, bool print_log) {
   if (concurrent) {
     assert_state(State::CompleteRefineWork);
   } else {
@@ -338,7 +337,7 @@ bool G1ConcurrentRefineWorkState::complete(bool concurrent, bool print_log) {
   return has_sweep_rt_work;
 }
 
-void G1ConcurrentRefineWorkState::snapshot_heap_into(G1CardTableClaimTable* sweep_table) {
+void G1ConcurrentRefineSweepState::snapshot_heap_into(G1CardTableClaimTable* sweep_table) {
   // G1CollectedHeap::heap_region_iterate() below will only visit committed regions. Initialize
   // all entries in the state table here to not require special handling when iterating over it.
   sweep_table->reset_all_to_claimed();
@@ -364,7 +363,7 @@ void G1ConcurrentRefineWorkState::snapshot_heap_into(G1CardTableClaimTable* swee
   G1CollectedHeap::heap()->heap_region_iterate(&cl);
 }
 
-bool G1ConcurrentRefineWorkState::is_in_progress() const {
+bool G1ConcurrentRefineSweepState::is_in_progress() const {
   return _state != State::Idle;
 }
 
@@ -388,15 +387,15 @@ G1ConcurrentRefine::G1ConcurrentRefine(G1CollectedHeap* g1h) :
   _heap_was_locked(false),
   _threads_needed(g1h->policy(), adjust_threads_period_ms()),
   _thread_control(G1ConcRefinementThreads),
-  _refine_state(g1h->max_reserved_regions())
+  _sweep_state(g1h->max_reserved_regions())
 { }
 
 jint G1ConcurrentRefine::initialize() {
   return _thread_control.initialize(this);
 }
 
-G1ConcurrentRefineWorkState& G1ConcurrentRefine::refine_state_for_merge() {
-  bool has_sweep_claims = refine_state().complete(false);
+G1ConcurrentRefineSweepState& G1ConcurrentRefine::sweep_state_for_merge() {
+  bool has_sweep_claims = sweep_state().complete_work(false);
   if (has_sweep_claims) {
     log_debug(gc, refine)("Continue existing work");
   } else {
@@ -407,9 +406,9 @@ G1ConcurrentRefineWorkState& G1ConcurrentRefine::refine_state_for_merge() {
     // creating the snapshot right now.
     log_debug(gc, refine)("Create work from scratch");
 
-    refine_state().snapshot_heap(false /* concurrent */);
+    sweep_state().snapshot_heap(false /* concurrent */);
   }
-  return refine_state();
+  return sweep_state();
 }
 
 void G1ConcurrentRefine::run_with_refinement_workers(WorkerTask* task) {
@@ -418,8 +417,8 @@ void G1ConcurrentRefine::run_with_refinement_workers(WorkerTask* task) {
 
 void G1ConcurrentRefine::notify_region_reclaimed(G1HeapRegion* r) {
   assert_at_safepoint();
-  if (_refine_state.is_in_progress()) {
-    _refine_state.sweep_table()->claim_all_cards(r->hrm_index());
+  if (_sweep_state.is_in_progress()) {
+    _sweep_state.sweep_table()->claim_all_cards(r->hrm_index());
   }
 }
 

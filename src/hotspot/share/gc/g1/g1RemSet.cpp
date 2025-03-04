@@ -1230,7 +1230,7 @@ public:
 static void merge_refinement_table() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  G1ConcurrentRefineWorkState& state = g1h->concurrent_refine()->refine_state_for_merge();
+  G1ConcurrentRefineSweepState& state = g1h->concurrent_refine()->sweep_state_for_merge();
   WorkerThreads* workers = g1h->workers();
 
   MergeRefinementTableTask cl(state.sweep_table(), workers->active_workers());
@@ -1257,7 +1257,7 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
 
   // 2. (Optionally) Merge the refinement table into the card table (if needed).
 
-  G1ConcurrentRefineWorkState& state = g1h->concurrent_refine()->refine_state();
+  G1ConcurrentRefineSweepState& state = g1h->concurrent_refine()->sweep_state();
   if (initial_evacuation && state.is_in_progress()) {
     Ticks start = Ticks::now();
 

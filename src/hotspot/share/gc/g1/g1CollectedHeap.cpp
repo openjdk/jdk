@@ -798,13 +798,13 @@ void G1CollectedHeap::prepare_for_mutator_after_full_collection() {
 }
 
 void G1CollectedHeap::abort_refinement() {
-  G1ConcurrentRefineWorkState& refine_state = concurrent_refine()->refine_state();
-  if (refine_state.is_in_progress()) {
+  G1ConcurrentRefineSweepState& sweep_state = concurrent_refine()->sweep_state();
+  if (sweep_state.is_in_progress()) {
     // Record any available refinement statistics.
-    policy()->record_refinement_stats(refine_state.stats());
-    refine_state.complete(false /* concurrent */, false /* print_log */);
+    policy()->record_refinement_stats(sweep_state.stats());
+    sweep_state.complete_work(false /* concurrent */, false /* print_log */);
   }
-  refine_state.reset_stats();
+  sweep_state.reset_stats();
 }
 
 void G1CollectedHeap::verify_after_full_collection() {

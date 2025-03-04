@@ -937,7 +937,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
   {
     double mutator_end_time = phase_times()->cur_collection_start_sec() * MILLIUNITS;
-    G1ConcurrentRefineStats* stats = _g1h->concurrent_refine()->refine_state().stats();
+    G1ConcurrentRefineStats* stats = _g1h->concurrent_refine()->sweep_state().stats();
     // Record any available refinement statistics.
     record_refinement_stats(stats);
 

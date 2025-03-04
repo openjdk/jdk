@@ -137,9 +137,9 @@ bool G1ConcurrentRefineThread::wait_for_work() {
 }
 
 void G1ConcurrentRefineThread::do_refinement() {
-  G1ConcurrentRefineWorkState& state = _cr->refine_state();
+  G1ConcurrentRefineSweepState& state = _cr->sweep_state();
 
-  state.start_refine_work();
+  state.start_work();
   log_debug(gc,refine)("Concurrent Refine Work Start (threads wanted: %u)", _cr->num_threads_wanted());
 
   // Swap card tables.
@@ -178,9 +178,9 @@ void G1ConcurrentRefineThread::do_refinement() {
   // 5. Sweep refinement table until done
   bool interrupted_by_gc = false;
 
-  state.sweep_rt_start();
+  state.sweep_refinement_table_start();
   while (true) {
-    bool completed = state.sweep_rt_step();
+    bool completed = state.sweep_refinement_table_step();
 
     if (completed) {
       break;
@@ -206,7 +206,7 @@ void G1ConcurrentRefineThread::do_refinement() {
   if (!interrupted_by_gc) {
     state.add_yield_duration(G1CollectedHeap::heap()->safepoint_duration() - synchronize_duration_at_sweep_start);
 
-    state.complete(true);
+    state.complete_work(true);
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1Policy* policy = g1h->policy();

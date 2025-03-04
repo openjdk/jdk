@@ -79,9 +79,34 @@ public:
   void stop();
 };
 
-// Tracks the current refinement state from idle to completion (and reset back
-// to idle).
-class G1ConcurrentRefineWorkState {
+// Tracks the current state of re-examining the dirty cards from idle to completion
+// (and reset back to idle).
+//
+// The process steps are as follows:
+//
+// 1) Swap global card table pointers
+//
+// 2) Swap Java Thread's card table pointers
+//
+// 3) Synchronize GC Threads
+//      Ensures memory visibility
+//
+// After this point mutator threads should not mark the refinement table.
+//
+// 4) Snapshot the heap
+//      Determines which regions need to be swept.
+//
+// 5) Sweep Refinement table
+//      Examines non-Clean cards on the refinement table.
+//
+// 6) Completion Work
+//      Calculates statistics about the process to be used in various parts of
+//      the garbage collection.
+//
+// All but step 4 are interruptible by safepoints. In case of a garbage collection,
+// the garbage collection will interrupt this process, and go to Idle state.
+//
+class G1ConcurrentRefineSweepState {
 
   enum class State : uint {
     Idle,                        // Refinement is doing nothing.
@@ -97,20 +122,20 @@ class G1ConcurrentRefineWorkState {
   static const char* state_name(State state) {
     static const char* _state_names[] = {
       "Idle",
-      "Swap Global CT",
-      "Swap JavaThread CT",
-      "Swap GC Thread CT",
+      "Swap Global Card Table",
+      "Swap JavaThread Card Table",
+      "Synchronize GC Threads",
       "Snapshot Heap",
-      "Sweep RT",
-      "Complete Refine Work"
+      "Sweep Refinement Table",
+      "Complete Sweep Work"
     };
 
     return _state_names[static_cast<uint>(state)];
   }
 
-  // Current epoch the work has been started; used to determine if there has been
+  // The epoch the sweep has started; used to determine if there has been
   // a forced card table swap due to a garbage collection while doing work.
-  size_t _refine_work_epoch;
+  size_t _sweep_start_epoch;
 
   // Current heap snapshot.
   G1CardTableClaimTable* _sweep_table;
@@ -131,22 +156,22 @@ class G1ConcurrentRefineWorkState {
 
   void assert_state(State expected);
 
-public:
-  G1ConcurrentRefineWorkState(uint max_reserved_regions);
-  ~G1ConcurrentRefineWorkState();
+  static void snapshot_heap_into(G1CardTableClaimTable* sweep_table);
 
-  void start_refine_work();
+public:
+  G1ConcurrentRefineSweepState(uint max_reserved_regions);
+  ~G1ConcurrentRefineSweepState();
+
+  void start_work();
 
   bool swap_global_card_table();
   bool swap_java_threads_ct();
   bool swap_gc_threads_ct();
   void snapshot_heap(bool concurrent = true);
-  void sweep_rt_start();
-  bool sweep_rt_step();
+  void sweep_refinement_table_start();
+  bool sweep_refinement_table_step();
 
-  bool complete(bool concurrent, bool print_log = true);
-
-  static void snapshot_heap_into(G1CardTableClaimTable* sweep_table);
+  bool complete_work(bool concurrent, bool print_log = true);
 
   G1CardTableClaimTable* sweep_table() { return _sweep_table; }
   G1ConcurrentRefineStats* stats() { return &_stats; }
@@ -195,7 +220,7 @@ class G1ConcurrentRefine : public CHeapObj<mtGC> {
   G1ConcurrentRefineThreadsNeeded _threads_needed;
   G1ConcurrentRefineThreadControl _thread_control;
 
-  G1ConcurrentRefineWorkState _refine_state;
+  G1ConcurrentRefineSweepState _sweep_state;
 
   G1ConcurrentRefine(G1CollectedHeap* g1h);
 
@@ -230,9 +255,9 @@ class G1ConcurrentRefine : public CHeapObj<mtGC> {
 public:
   ~G1ConcurrentRefine();
 
-  G1ConcurrentRefineWorkState& refine_state() { return _refine_state; }
+  G1ConcurrentRefineSweepState& sweep_state() { return _sweep_state; }
 
-  G1ConcurrentRefineWorkState& refine_state_for_merge();
+  G1ConcurrentRefineSweepState& sweep_state_for_merge();
 
   void run_with_refinement_workers(WorkerTask* task);
 

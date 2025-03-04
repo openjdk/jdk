@@ -64,8 +64,8 @@ class G1ConcurrentRefineThread: public ConcurrentGCThread {
   // precondition: this is the current thread.
   bool deactivate();
 
-  // Attempt to do some refinement work.
-  // precondition: this is the current thread.
+  // Swap card table and do a complete re-examination/refinement pass over the
+  // refinement table.
   void do_refinement();
 
   // Update concurrent refine threads stats.
