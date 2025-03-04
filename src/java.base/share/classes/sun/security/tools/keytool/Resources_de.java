@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,10 +304,12 @@ public class Resources_de extends java.util.ListResourceBundle {
                 "Das Angeben von -keysize zum Generieren von EC-Schl\u00FCsseln ist veraltet. Verwenden Sie stattdessen \"-groupname %s\"."},
         {"Key.pair.not.generated.alias.alias.already.exists",
                 "Schl\u00FCsselpaar wurde nicht generiert. Alias <{0}> ist bereits vorhanden"},
-        {"Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for",
-                "Generieren von Schl\u00FCsselpaar (Typ {1}, {0} Bit) und selbst signiertem Zertifikat ({2}) mit einer G\u00FCltigkeit von {3} Tagen\n\tf\u00FCr: {4}"},
-        {"Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.validality.days.for",
-                "Generieren von Schl\u00FCsselpaar (Typ {1}, {0} Bit) und Zertifikat ({2}), ausgestellt von <{3}>, mit einer G\u00FCltigkeit von {4} Tagen\n\tf\u00FCr: {5}"},
+        {"size.bit.alg",
+                "%1$d-Bit %2$s"},
+        {"Generating.full.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.days.for",
+                "Schl\u00FCsselpaar {0} und selbstsigniertes Zertifikat ({1}) werden mit einer G\u00FCltigkeit von {2} Tagen generiert\n\tf\u00FCr: {3}"},
+        {"Generating.full.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.days.for",
+                "Schl\u00FCsselpaar {0} und Zertifikat ({1}) werden generiert, das von <{2}> mit einer G\u00FCltigkeit von {3} Tagen ausgestellt wurde\n\tf\u00FCr: {4}"},
         {"Enter.key.password.for.alias.", "Schl\u00FCsselkennwort f\u00FCr <{0}> eingeben"},
         {".RETURN.if.same.as.keystore.password.",
                 "\t(RETURN, wenn identisch mit Keystore-Kennwort):  "},
@@ -472,10 +474,9 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"alias.in.keystore", "Aussteller <%s>"},
         {"with.weak", "%s (schwach)"},
         {"with.disabled", "%s (deaktiviert)"},
-        {"key.bit", "%1$d-Bit-%2$s-Schl\u00FCssel"},
-        {"key.bit.weak", "%1$d-Bit-%2$s-Schl\u00FCssel (schwach)"},
-        {"key.bit.disabled", "%1$d-Bit-%2$s-Schl\u00FCssel (deaktiviert)"},
-        {"unknown.size.1", "%s-Schl\u00FCssel mit unbekannter Gr\u00F6\u00DFe"},
+        {"key.bit", "%s-Schl\u00FCssel"},
+        {"key.bit.weak", "%s Schl\u00FCssel (schwach)"},
+        {"key.bit.disabled", "%s Schl\u00FCssel (deaktiviert)"},
         {".PATTERN.printX509Cert.with.weak",
                 "Eigent\u00FCmer: {0}\nAussteller: {1}\nSeriennummer: {2}\nG\u00FCltig von: {3} bis: {4}\nZertifikatsfingerprints:\n\t SHA1: {5}\n\t SHA256: {6}\nSignaturalgorithmusname: {7}\nPublic-Key-Algorithmus von Subject: {8}\nVersion: {9}"},
         {"PKCS.10.with.weak",
@@ -486,7 +487,7 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"Unable.to.parse.denyAfter.string.in.exception.message", "denyAfter-Datumszeichenfolge in Ausnahmemeldung kann nicht geparst werden"},
         {"whose.sigalg.weak", "%1$s verwendet den Signaturalgorithmus %2$s. Dies gilt als Sicherheitsrisiko."},
         {"whose.key.disabled", "%1$s verwendet %2$s. Dies gilt als Sicherheitsrisiko und ist deaktiviert."},
-        {"whose.key.weak", "%1$s verwendet %2$s. Dies gilt als Sicherheitsrisiko. Diese Schl\u00FCsselgr\u00F6\u00DFe wird in einem zuk\u00FCnftigen Update deaktiviert."},
+        {"whose.key.weak", "%1$s verwendet %2$s. Dies gilt als Sicherheitsrisiko. Wird in einem zuk\u00FCnftigen Update deaktiviert."},
         {"jks.storetype.warning", "Der %1$s-Keystore verwendet ein propriet\u00E4res Format. Es wird empfohlen, auf PKCS12 zu migrieren, das ein Industriestandardformat mit \"keytool -importkeystore -srckeystore %2$s -destkeystore %2$s -deststoretype pkcs12\" ist."},
         {"migrate.keystore.warning", "\"%1$s\" zu %4$s migriert. Der %2$s-Keystore wurde als \"%3$s\" gesichert."},
         {"backup.keystore.warning", "Der urspr\u00FCngliche Keystore \"%1$s\" wird als \"%3$s\" gesichert..."},
