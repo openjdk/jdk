@@ -135,7 +135,7 @@ public class TestSerialGCWithCDS {
                               small2,
                               coops,
                               "-Xlog:cds,cds+heap",
-                              "-XX:ArchiveRelocationMode=0", // don't relocate shared metadata
+                              "-XX:ArchiveRelocationMode=0", // may relocate shared metadata
                               "Hello");
         out.shouldNotContain(errMsg);
 

@@ -61,8 +61,8 @@ public class ArchiveRelocationTest {
 
         String appJar = ClassFileInstaller.getJarPath("hello.jar");
         String mainClass = "Hello";
-        String noRelocation = "-XX:ArchiveRelocationMode=0";
-        String runRelocArg  = run_reloc  ? "-showversion" : noRelocation;
+        String maybeRelocation = "-XX:ArchiveRelocationMode=0";
+        String runRelocArg  = run_reloc  ? "-showversion" : maybeRelocation;
         String logArg = "-Xlog:cds=debug,cds+reloc=debug,cds+heap";
         String unlockArg = "-XX:+UnlockDiagnosticVMOptions";
         String nmtArg = "-XX:NativeMemoryTracking=detail";

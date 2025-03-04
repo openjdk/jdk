@@ -79,9 +79,9 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
 
         String appJar = ClassFileInstaller.getJarPath("hello.jar");
         String mainClass = "Hello";
-        String noRelocation = "-XX:ArchiveRelocationMode=0";
-        String dumpTopRelocArg  = dump_top_reloc  ? "-showversion" : noRelocation;
-        String runRelocArg      = run_reloc       ? "-showversion" : noRelocation;
+        String maybeRelocation = "-XX:ArchiveRelocationMode=0";
+        String dumpTopRelocArg  = dump_top_reloc  ? "-showversion" : maybeRelocation;
+        String runRelocArg      = run_reloc       ? "-showversion" : maybeRelocation;
         String logArg = "-Xlog:cds=debug,cds+reloc=debug";
 
         String baseArchiveName = getNewArchiveName("base");
@@ -89,7 +89,7 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
 
         String runtimeMsg = "Try to map archive(s) at an alternative address";
         String unlockArg = "-XX:+UnlockDiagnosticVMOptions";
-        String noRelocationMsg = "ArchiveRelocationMode = 0";
+        String relocationModeMsg = "ArchiveRelocationMode = 0";
 
         // (1) Dump base archive (static)
 
@@ -107,7 +107,7 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
                     if (dump_top_reloc) {
                         output.shouldContain(runtimeMsg);
                     } else {
-                        output.shouldContain(noRelocationMsg);
+                        output.shouldContain(relocationModeMsg);
                     }
                 });
 
@@ -120,7 +120,7 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
                     if (run_reloc) {
                         output.shouldContain(runtimeMsg);
                     } else {
-                        output.shouldContain(noRelocationMsg);
+                        output.shouldContain(relocationModeMsg);
                     }
                 });
     }
