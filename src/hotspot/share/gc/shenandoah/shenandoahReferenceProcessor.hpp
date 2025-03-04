@@ -127,6 +127,7 @@ public:
 
 class ShenandoahReferenceProcessor : public ReferenceDiscoverer {
 private:
+  ShenandoahGeneration* _generation;
   ReferencePolicy* _soft_reference_policy;
 
   ShenandoahRefProcThreadLocal* _ref_proc_thread_locals;
@@ -170,7 +171,7 @@ private:
   void clean_discovered_list(T* list);
 
 public:
-  ShenandoahReferenceProcessor(uint max_workers);
+  ShenandoahReferenceProcessor(ShenandoahGeneration* generation, uint max_workers);
 
   void reset_thread_locals();
   void set_mark_closure(uint worker_id, ShenandoahMarkRefsSuperClosure* mark_closure);
