@@ -1230,9 +1230,9 @@ void ShenandoahConcurrentGC::op_reset_after_collect() {
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (heap->mode()->is_generational()) {
-    // Valid bitmap of young generation is needed by concurrent weak references phase of old GC cycle,
-    // because it is possible that there is soft reference in old generation with the referent in young generation;
-    // therefore mark bitmap of young generation can't be reset if there will be old GC after the concurrent GC cycle.
+    // If we are in the midst of an old gc bootstrap or an old marking, we want to leave the mark bit map of
+    // the young generation intact. In particular, reference processing in the old generation may potentially
+    // need the reachability of a young generation referent of a Reference object in the old generation.
     if (!_do_old_gc_bootstrap && !heap->is_concurrent_old_mark_in_progress()) {
       heap->young_generation()->reset_mark_bitmap<false>();
     }
