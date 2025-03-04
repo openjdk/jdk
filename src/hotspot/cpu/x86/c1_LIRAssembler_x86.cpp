@@ -3613,20 +3613,22 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
 
   Register temp = op->tmp1()->as_register_lo();
 
-  int ratio_shift = exact_log2(ProfileCaptureRatio);
-  int threshold = (1ull << 32) / ProfileCaptureRatio;
+  // int ratio_shift = exact_log2(ProfileCaptureRatio);
+  // int threshold = (1ull << 32) / ProfileCaptureRatio;
 
-  if (ProfileCaptureRatio != 1) {
-    __ step_random(r14_profile_rng, temp);
+  // if (ProfileCaptureRatio != 1) {
+  //   __ step_random(r14_profile_rng, temp);
 
-    if (getenv("APH_TRACE")) {
-      __ lea(temp, ExternalAddress((address)&ibaz));
-      __ incl(Address(temp));
-    }
+  //   if (getenv("APH_TRACE")) {
+  //     __ lea(temp, ExternalAddress((address)&ibaz));
+  //     __ incl(Address(temp));
+  //   }
 
-    __ cmpl(r14_profile_rng, threshold);
-    __ jcc(Assembler::aboveEqual, dont);
-  }
+  //   __ cmpl(r14_profile_rng, threshold);
+  //   __ jcc(Assembler::aboveEqual, dont);
+  // }
+
+  maybe_skip_profiling(r14_profile_rng, temp, dont);
 
   // Update counter for all call types
   ciMethodData* md = method->method_data_or_null();
@@ -3736,23 +3738,8 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   }
 #endif
 
-  if (ProfileCaptureRatio != 1) {
-
-    // Subsampling profile capture
-    // FIXME: Use maybe_skip here?
-    int ratio_shift = exact_log2(ProfileCaptureRatio);
-    int threshold = (1ull << 32) >> ratio_shift;
-    // Can't use tmp here because sometimes obj == tmp!
-    __ step_random(r14_profile_rng, rscratch1);
-
-    __ cmpl(r14_profile_rng, threshold);
-    __ jcc(Assembler::aboveEqual, next);
-  }
-
-  if (getenv("APH_TRACE2")) {
-    __ lea(tmp, ExternalAddress((address)&kludge));
-    __ incl(Address(tmp));
-  }
+  // Subsampling profile capture
+  maybe_skip_profiling(r14_profile_rng, rscratch1, next);
 
   if (do_null) {
     __ testptr(obj, obj);
