@@ -990,7 +990,7 @@ void SafepointTracing::end() {
      "At safepoint: " JLONG_FORMAT " ns, "
      "Leaving safepoint: " JLONG_FORMAT " ns, "
      "Total: " JLONG_FORMAT " ns, "
-     "Threads: " INT32_FORMAT " runnable, " INT32_FORMAT " total",
+     "Threads: %d runnable, %d total",
       VM_Operation::name(_current_type),
       _last_app_time_ns,
       _last_safepoint_sync_time_ns  - _last_safepoint_begin_time_ns,
