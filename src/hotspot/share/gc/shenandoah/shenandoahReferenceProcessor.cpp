@@ -332,9 +332,9 @@ bool ShenandoahReferenceProcessor::should_drop(oop reference, ReferenceType type
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahHeapRegion* referent_region = heap->heap_region_containing(raw_referent);
 
-  // If GC generation is young and referent is in old, marking context of the old
+  // If generation is young and referent is in old, marking context of the old
   // may or may not be complete, we can safely drop the reference when old gen mark is complete.
-  if (heap->gc_generation()->is_young() && referent_region->is_old()) {
+  if (_generation->is_young() && referent_region->is_old()) {
     ShenandoahGeneration* old_gen = heap->old_generation();
     ShenandoahMarkingContext* ctx = heap->marking_context();
     if (type == REF_PHANTOM) {
