@@ -39,6 +39,11 @@ inline bool Bytecode_invoke::has_appendix() {
 }
 
 inline bool Bytecode_invoke::has_member_arg() const {
+  // NOTE: We could resolve the call and use the resolved adapter method here, but this function
+  // is used by deoptimization, where resolving could lead to problems, so we void that here
+  // by doing things symbolically.
+  //
+  // invokedynamic instructions don't have a class but obviously don't have a MemberName appendix.
   return !is_invokedynamic() && MethodHandles::has_member_arg(klass(), name());
 }
 
