@@ -40,7 +40,7 @@ bool isWithLogging();
 typedef void (*LauncherFunc) ();
 
 int launch(const std::nothrow_t&, LauncherFunc func,
-        LogAppender* lastErrorLogAppender = 0);
+        LogAppender* lastErrorLogAppender = NULL);
 
 std::string lastErrorMsg();
 

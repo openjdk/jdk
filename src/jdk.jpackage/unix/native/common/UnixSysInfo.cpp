@@ -52,7 +52,7 @@ tstring getEnvVariable(const std::nothrow_t&, const tstring& name,
 
 
 bool isEnvVariableSet(const tstring& name) {
-    return ::getenv(name.c_str()) != 0;
+    return ::getenv(name.c_str()) != NULL;
 }
 
 void setEnvVariable(const tstring& name, const tstring& value) {
@@ -64,6 +64,6 @@ void setEnvVariable(const tstring& name, const tstring& value) {
 
 
 int argc = 0;
-char** argv = 0;
+char** argv = NULL;
 
 } // end of namespace SysInfo
