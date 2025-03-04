@@ -60,8 +60,10 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   // True if the control thread has allowed this thread to uncommit regions
   bool is_uncommit_allowed() const;
 
-  // Iterate and uncommit eligible regions. Return the number of regions uncommitted.
-  // This operation may be interrupted if the GC calls `forbid_uncommit`.
+  // Iterate over and uncommit eligible regions until committed heap falls below
+  // `shrink_until` bytes. A region is eligible for uncommit if the timestamp at which
+  // it was last made empty is before `shrink_before` seconds since jvm start.
+  // Returns the number of regions uncommitted. May be interrupted by `forbid_uncommit`.
   size_t do_uncommit_work(double shrink_before, size_t shrink_until) const;
 
 public:
