@@ -262,6 +262,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wsign-compare -Wreorder \
           -Wunused-function -Wundef -Wunused-value -Woverloaded-virtual"
       WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
+      WARNINGS_ENABLE_JVM="-Wzero-as-null-pointer-constant"
 
       # These warnings will never be turned on, since they generate too many
       # false positives.
@@ -609,6 +610,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
 
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     WARNING_CFLAGS="$WARNINGS_ENABLE_ALL"
+    WARNING_CFLAGS_JVM="$WARNINGS_ENABLE_JVM"
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     WARNING_CFLAGS="$WARNINGS_ENABLE_ALL"

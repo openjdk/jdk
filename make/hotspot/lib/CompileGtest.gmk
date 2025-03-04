@@ -61,7 +61,7 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBGTEST, \
     INCLUDE_FILES := gtest-all.cc gmock-all.cc, \
     DISABLED_WARNINGS_gcc := format-nonliteral maybe-uninitialized undef \
         unused-result zero-as-null-pointer-constant, \
-    DISABLED_WARNINGS_clang := format-nonliteral undef unused-result, \
+    DISABLED_WARNINGS_clang := format-nonliteral undef unused-result zero-as-null-pointer-constant, \
     DEFAULT_CFLAGS := false, \
     CFLAGS := $(JVM_CFLAGS) \
         -I$(GTEST_FRAMEWORK_SRC)/googletest \
