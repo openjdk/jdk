@@ -2834,8 +2834,6 @@ ShenandoahGeneration* ShenandoahHeap::generation_for(ShenandoahAffiliation affil
     return young_generation();
   } else if (affiliation == OLD_GENERATION) {
     return old_generation();
-  } else if (affiliation == FREE) {
-    return global_generation();
   }
 
   ShouldNotReachHere();

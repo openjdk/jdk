@@ -701,7 +701,7 @@ public:
   virtual void work_humongous(ShenandoahHeapRegion *r, ShenandoahVerifierStack& stack, ShenandoahVerifyOopClosure& cl) {
     size_t processed = 0;
     HeapWord* obj = r->bottom();
-    if (_heap->complete_marking_context(r)->is_marked(cast_to_oop(obj))) {
+    if (_heap->gc_generation()->complete_marking_context()->is_marked(cast_to_oop(obj))) {
       verify_and_follow(obj, stack, cl, &processed);
     }
     Atomic::add(&_processed, processed, memory_order_relaxed);
@@ -709,7 +709,7 @@ public:
 
   virtual void work_regular(ShenandoahHeapRegion *r, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl) {
     size_t processed = 0;
-    ShenandoahMarkingContext* ctx = _heap->complete_marking_context(r);
+    ShenandoahMarkingContext* ctx = _heap->gc_generation()->complete_marking_context();
     HeapWord* tams = ctx->top_at_mark_start(r);
 
     // Bitmaps, before TAMS
