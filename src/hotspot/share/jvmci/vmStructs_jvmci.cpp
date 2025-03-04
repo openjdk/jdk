@@ -394,7 +394,13 @@
   static_field(StubRoutines,                _sha512_implCompress,                             address)                               \
   static_field(StubRoutines,                _sha512_implCompressMB,                           address)                               \
   static_field(StubRoutines,                _sha3_implCompress,                               address)                               \
+  static_field(StubRoutines,                _double_keccak,                                   address)                               \
   static_field(StubRoutines,                _sha3_implCompressMB,                             address)                               \
+  static_field(StubRoutines,                _dilithiumAlmostNtt,                              address)                               \
+  static_field(StubRoutines,                _dilithiumAlmostInverseNtt,                       address)                               \
+  static_field(StubRoutines,                _dilithiumNttMult,                                address)                               \
+  static_field(StubRoutines,                _dilithiumMontMulByConstant,                      address)                               \
+  static_field(StubRoutines,                _dilithiumDecomposePoly,                          address)                               \
   static_field(StubRoutines,                _updateBytesCRC32,                                address)                               \
   static_field(StubRoutines,                _crc_table_adr,                                   address)                               \
   static_field(StubRoutines,                _crc32c_table_addr,                               address)                               \
