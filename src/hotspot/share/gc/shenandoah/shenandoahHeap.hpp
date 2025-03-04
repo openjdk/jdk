@@ -733,7 +733,6 @@ private:
   ShenandoahLiveData** _liveness_cache;
 
 public:
-  inline ShenandoahMarkingContext* complete_marking_context() const;
   inline ShenandoahMarkingContext* complete_marking_context(ShenandoahHeapRegion* region) const;
   inline ShenandoahMarkingContext* marking_context() const;
 
