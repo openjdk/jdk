@@ -159,7 +159,7 @@ public class UdpTest extends Tests {
             throw new Exception ("expected receive timeout ");
         } catch (SocketTimeoutException e) {
         }
-        checkIfTimeOut(System.nanoTime() - t1, expectedTimeInNanos);
+        checkIfTimeOut(TimeUnit.NANOS.toMillis(System.nanoTime() - t1), expectedTime);
 
         /* check receive works after a delay < timeout */
 
