@@ -88,6 +88,7 @@ import static jdk.internal.net.http.Http3ClientProperties.MAX_STREAM_LIMIT_WAIT_
 import static jdk.internal.net.http.http3.Http3Error.H3_CLOSED_CRITICAL_STREAM;
 import static jdk.internal.net.http.http3.Http3Error.H3_INTERNAL_ERROR;
 import static jdk.internal.net.http.http3.Http3Error.H3_NO_ERROR;
+import static jdk.internal.net.http.http3.Http3Error.H3_STREAM_CREATION_ERROR;
 
 /**
  * An HTTP/3 connection wraps an HttpQuicConnection and implements
@@ -676,6 +677,7 @@ public final class Http3Connection implements AutoCloseable {
         if (debug.on()) {
             debug.log("Closing HTTP/3 connection: %s %s %s", error, logMsg == null ? "" : logMsg,
                     closeCause == null ? "" : closeCause.toString());
+            debug.log("State is: " + describeClosedState(closedState));
         }
         exchanges.values().forEach(e -> e.recordError(closeCause));
         // close the underlying QUIC connection
@@ -1049,6 +1051,19 @@ public final class Http3Connection implements AutoCloseable {
      */
     protected void dispatchingFailed(Throwable reason) {
         debug.log("dispatching failed: " + reason);
+        if (isOpen()) {
+            // if the control stream is not opened yet, assume that
+            // we failed to open/dispatch it, and close the connection.
+            var remoteControlCF = controlStreamPair.futureReceiverStream();
+            if (!remoteControlCF.isDone()) {
+                close(H3_STREAM_CREATION_ERROR, "failed to dispatch remote stream", reason);
+            } else if (remoteControlCF.isCancelled()) {
+                close(H3_STREAM_CREATION_ERROR, "failed to dispatch remote stream", reason);
+            } else if (remoteControlCF.isCompletedExceptionally()) {
+                Throwable cause = remoteControlCF.exceptionNow();
+                close(H3_STREAM_CREATION_ERROR, "failed to create remote control stream", cause);
+            }
+        }
     }
 
 
@@ -1117,6 +1132,7 @@ public final class Http3Connection implements AutoCloseable {
 
     void controlStreamFailed(final QuicStream stream, final UniStreamPair uniStreamPair,
                              final Throwable throwable) {
+        Http3Streams.debugErrorCode(debug, stream, "Control stream failed");
         if (stream.state() instanceof QuicReceiverStream.ReceivingStreamState rcvrStrmState) {
             if (rcvrStrmState.isReset() && quicConnection.isOpen()) {
                 // RFC-9114, section 6.2.1:
@@ -1300,6 +1316,7 @@ public final class Http3Connection implements AutoCloseable {
 
     private void onEncoderStreamsFailed(final QuicStream stream, final UniStreamPair uniStreamPair,
                                         final Throwable throwable) {
+        Http3Streams.debugErrorCode(debug, stream, "Encoder stream failed");
         if (stream.state() instanceof QuicReceiverStream.ReceivingStreamState rcvrStrmState) {
             if (rcvrStrmState.isReset() && quicConnection.isOpen()) {
                 // RFC-9204, section 4.2:
@@ -1327,6 +1344,7 @@ public final class Http3Connection implements AutoCloseable {
 
     private void onDecoderStreamsFailed(final QuicStream stream, final UniStreamPair uniStreamPair,
                                         final Throwable throwable) {
+        Http3Streams.debugErrorCode(debug, stream, "Decoder stream failed");
         if (stream.state() instanceof QuicReceiverStream.ReceivingStreamState rcvrStrmState) {
             if (rcvrStrmState.isReset() && quicConnection.isOpen()) {
                 // RFC-9204, section 4.2:
