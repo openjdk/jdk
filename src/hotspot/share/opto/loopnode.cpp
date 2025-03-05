@@ -4559,11 +4559,19 @@ void PhaseIdealLoop::eliminate_useless_multiversion_if() {
   ResourceMark rm;
   Unique_Node_List useful_multiversioning_opaque_nodes;
 
+  // The OpaqueMultiversioning is only used from the fast main loop in AutoVectorization, to add
+  // speculative runtime-checks to the multiversion_if. Thus, a OpaqueMultiversioning is only
+  // useful if it can be found from a fast main loop. If it can not be found from a fast main loop,
+  // then we cannot ever use that multiversion_if to add more speculative runtime-checks, and hence
+  // it is useless. If it is still in delayed mode, i.e. has not yet had any runtime-checks added,
+  // then we can let it constant fold towards the fast loop.
   for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
     IdealLoopTree* lpt = iter.current();
     if (lpt->_child == nullptr && lpt->is_counted()) {
       CountedLoopNode* head = lpt->_head->as_CountedLoop();
       if (head->is_main_loop() && head->is_multiversion_fast_loop()) {
+        // There are fast_loop pre/main/post loops, but the finding traversal starts at the main
+        // loop, and traverses via the fast pre loop to the multiversion_if.
         IfNode* multiversion_if = head->find_multiversion_if_from_multiversion_fast_main_loop();
         if (multiversion_if != nullptr) {
             useful_multiversioning_opaque_nodes.push(multiversion_if->in(1)->as_OpaqueMultiversioning());
