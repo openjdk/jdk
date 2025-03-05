@@ -63,9 +63,6 @@ public class HotSpotStackFrameReference implements InspectedFrame {
 
     @Override
     public void materializeVirtualObjects(boolean invalidateCode) {
-        if (Thread.currentThread().isVirtual()) {
-            throw new IllegalArgumentException("cannot materialize frames of a virtual thread");
-        }
         compilerToVM.materializeVirtualObjects(this, invalidateCode);
     }
 
