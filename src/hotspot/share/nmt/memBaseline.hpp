@@ -141,7 +141,7 @@ class MemBaseline {
   size_t malloc_tracking_overhead() const {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
     MemBaseline* bl = const_cast<MemBaseline*>(this);
-    return bl->_malloc_memory_snapshot.malloc_overhead();
+    return bl->_malloc_memory_snapshot.nmt_overhead();
   }
 
   MallocMemory* malloc_memory(MemTag mem_tag) {

@@ -34,6 +34,18 @@
 #include "utilities/debug.hpp"
 #include "utilities/nativeCallStack.hpp"
 
+#if defined(LINUX)
+#include "malloc.h"
+  static size_t raw_malloc_size(void* ptr)   { ALLOW_C_FUNCTION(::malloc_usable_size, return ::malloc_usable_size(ptr);) }
+#elif defined(_WIN64)
+  static size_t raw_malloc_size(void* ptr)   { ALLOW_C_FUNCTION(::_msize, return ::_msize(ptr);) }
+#elif defined(__APPLE__)
+#include <malloc/malloc.h>
+  static size_t raw_malloc_size(void* ptr)   { ALLOW_C_FUNCTION(::malloc_size, return ::malloc_size(ptr);) }
+  //static size_t raw_malloc_size(void* ptr)   { size_t allocated = _raw_malloc_size(ptr); fprintf(stderr, "%p:%zu\n", ptr, allocated); return allocated; }
+
+#endif
+
 #define CURRENT_PC ((MemTracker::tracking_level() == NMT_detail) ? \
                     NativeCallStack(0) : FAKE_CALLSTACK)
 #define CALLER_PC  ((MemTracker::tracking_level() == NMT_detail) ?  \
@@ -80,11 +92,12 @@ class MemTracker : AllStatic {
     return enabled() ? MallocTracker::overhead_per_malloc() : 0;
   }
 
-  static inline void* record_malloc(void* mem_base, size_t size, MemTag mem_tag,
+  static inline void* record_malloc(void* mem_base, size_t requested, MemTag mem_tag,
     const NativeCallStack& stack) {
     assert(mem_base != nullptr, "caller should handle null");
     if (enabled()) {
-      return MallocTracker::record_malloc(mem_base, size, mem_tag, stack);
+      //fprintf(stderr, "record_malloc:%p:%zu\n", mem_base, requested);
+      return MallocTracker::record_malloc(mem_base, requested, raw_malloc_size(mem_base), mem_tag, stack);
     }
     return mem_base;
   }
@@ -96,11 +109,12 @@ class MemTracker : AllStatic {
     if (!enabled()) {
       return memblock;
     }
-    return MallocTracker::record_free_block(memblock);
+    return MallocTracker::record_free_block(memblock, raw_malloc_size(MallocHeader::resolve_checked(memblock)));
   }
-  static inline void deaccount(MallocHeader::FreeInfo free_info) {
+
+  static inline void deaccount(MallocHeader::FreeInfo free_info, void* ptr) {
     assert(enabled(), "NMT must be enabled");
-    MallocTracker::deaccount(free_info);
+    MallocTracker::deaccount(free_info, raw_malloc_size(ptr));
   }
 
   // Record creation of an arena
@@ -117,9 +131,9 @@ class MemTracker : AllStatic {
 
   // Record arena size change. Arena size is the size of all arena
   // chunks that are backing up the arena.
-  static inline void record_arena_size_change(ssize_t diff, MemTag mem_tag) {
+  static inline void record_arena_size_change(ssize_t requested, ssize_t allocated, MemTag mem_tag) {
     if (!enabled()) return;
-    MallocTracker::record_arena_size_change(diff, mem_tag);
+    MallocTracker::record_arena_size_change(requested, allocated, mem_tag);
   }
 
   // Note: virtual memory operations should only ever be called after NMT initialization

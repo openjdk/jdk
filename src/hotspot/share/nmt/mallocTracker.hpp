@@ -38,13 +38,14 @@ struct malloclimit;
 
 /*
  * This counter class counts memory allocation and deallocation,
- * records total memory allocation size and number of allocations.
+ * records total memory bytes requested and allocated and number of allocations.
  * The counters are updated atomically.
  */
 class MemoryCounter {
  private:
   volatile size_t   _count;
-  volatile size_t   _size;
+  volatile size_t   _requested; // how much bytes we asked for
+  volatile size_t   _allocated; // how much bytes the os malloc actually allocated (usually it's more)
 
   // Peak size and count. Note: Peak count is the count at the point
   // peak size was reached, not the absolute highest peak count.
@@ -53,41 +54,51 @@ class MemoryCounter {
   void update_peak(size_t size, size_t cnt);
 
  public:
-  MemoryCounter() : _count(0), _size(0), _peak_count(0), _peak_size(0) {}
+  MemoryCounter() : _count(0), _requested(0), _allocated(0), _peak_count(0), _peak_size(0) {}
 
-  inline void set_size_and_count(size_t size, size_t count) {
-    _size = size;
+  inline void set_size_and_count(size_t requested, size_t allocated, size_t count) {
+    _requested = requested;
+    _allocated = allocated;
     _count = count;
-    update_peak(size, count);
+    update_peak(requested, count);
   }
 
-  inline void allocate(size_t sz) {
+  inline void request(size_t requested, size_t allocated) {
     size_t cnt = Atomic::add(&_count, size_t(1), memory_order_relaxed);
-    if (sz > 0) {
-      size_t sum = Atomic::add(&_size, sz, memory_order_relaxed);
+    if (requested > 0) {
+      size_t sum = Atomic::add(&_requested, requested, memory_order_relaxed);
       update_peak(sum, cnt);
     }
-  }
-
-  inline void deallocate(size_t sz) {
-    assert(count() > 0, "Nothing allocated yet");
-    assert(size() >= sz, "deallocation > allocated");
-    Atomic::dec(&_count, memory_order_relaxed);
-    if (sz > 0) {
-      Atomic::sub(&_size, sz, memory_order_relaxed);
+    if (allocated > 0) {
+      Atomic::add(&_allocated, allocated, memory_order_relaxed);
     }
   }
 
-  inline void resize(ssize_t sz) {
-    if (sz != 0) {
-      assert(sz >= 0 || size() >= size_t(-sz), "Must be");
-      size_t sum = Atomic::add(&_size, size_t(sz), memory_order_relaxed);
+  inline void deallocate(size_t requested, size_t allocated) {
+    assert(count() > 0, "Nothing allocated yet");
+    assert(size() >= requested, "deallocation > allocated");
+    Atomic::dec(&_count, memory_order_relaxed);
+    if (requested > 0) {
+      Atomic::sub(&_requested, requested, memory_order_relaxed);
+    }
+    if (allocated > 0) {
+      Atomic::sub(&_allocated, allocated, memory_order_relaxed);
+    }
+  }
+
+  inline void resize(ssize_t requested, ssize_t allocated) {
+    if (requested != 0) {
+      assert(requested >= 0 || size() >= size_t(-requested), "Must be");
+      size_t sum = Atomic::add(&_requested, size_t(requested), memory_order_relaxed);
       update_peak(sum, _count);
+      Atomic::add(&_allocated, size_t(allocated), memory_order_relaxed);
     }
   }
 
   inline size_t count() const { return Atomic::load(&_count); }
-  inline size_t size()  const { return Atomic::load(&_size);  }
+  inline size_t size()  const { return Atomic::load(&_requested);  }
+  inline size_t requested()  const { return Atomic::load(&_requested);  }
+  inline size_t allocated()  const { return Atomic::load(&_allocated);  }
 
   inline size_t peak_count() const {
     return Atomic::load(&_peak_count);
@@ -111,27 +122,28 @@ class MallocMemory {
  public:
   MallocMemory() { }
 
-  inline void record_malloc(size_t sz) {
-    _malloc.allocate(sz);
+  inline void record_malloc(size_t requested, size_t allocated) {
+    _malloc.request(requested, allocated);
   }
 
-  inline void record_free(size_t sz) {
-    _malloc.deallocate(sz);
+  inline void record_free(size_t requested, size_t allocated) {
+    _malloc.deallocate(requested, allocated);
   }
 
   inline void record_new_arena() {
-    _arena.allocate(0);
+    _arena.request(0, 0);
   }
 
   inline void record_arena_free() {
-    _arena.deallocate(0);
+    _arena.deallocate(0, 0);
   }
 
-  inline void record_arena_size_change(ssize_t sz) {
-    _arena.resize(sz);
+  inline void record_arena_size_change(ssize_t requested, size_t allocated) {
+    _arena.resize(requested, allocated);
   }
 
-  inline size_t malloc_size()  const { return _malloc.size(); }
+  inline size_t malloc_requested()  const { return _malloc.requested(); }
+  inline size_t malloc_allocated()  const { return _malloc.allocated(); }
   inline size_t malloc_peak_size()  const { return _malloc.peak_size(); }
   inline size_t malloc_count() const { return _malloc.count();}
   inline size_t arena_size()   const { return _arena.size();  }
@@ -165,8 +177,20 @@ class MallocMemorySnapshot {
     return &_malloc[index];
   }
 
+  inline size_t requested() const {
+    return _all_mallocs.requested();
+  }
+
+  inline size_t allocated() const {
+    return _all_mallocs.allocated();
+  }
+
+  inline size_t nmt_overhead() const {
+    return _all_mallocs.count() * MallocHeader::nmt_overhead();
+  }
+
   inline size_t malloc_overhead() const {
-    return _all_mallocs.count() * MallocHeader::malloc_overhead();
+    return _all_mallocs.allocated() - _all_mallocs.requested();
   }
 
   // Total malloc invocation count
@@ -176,7 +200,7 @@ class MallocMemorySnapshot {
 
   // Total malloc'd memory amount
   size_t total() const {
-    return _all_mallocs.size() + malloc_overhead() + total_arena();
+    return _all_mallocs.size() + nmt_overhead() + total_arena();
   }
 
   // Total peak malloc
@@ -219,14 +243,14 @@ class MallocMemorySummary : AllStatic {
  public:
    static void initialize();
 
-   static inline void record_malloc(size_t size, MemTag mem_tag) {
-     as_snapshot()->by_type(mem_tag)->record_malloc(size);
-     as_snapshot()->_all_mallocs.allocate(size);
+   static inline void record_malloc(size_t requested, size_t allocated, MemTag mem_tag) {
+     as_snapshot()->by_type(mem_tag)->record_malloc(requested, allocated);
+     as_snapshot()->_all_mallocs.request(requested, allocated);
    }
 
-   static inline void record_free(size_t size, MemTag mem_tag) {
-     as_snapshot()->by_type(mem_tag)->record_free(size);
-     as_snapshot()->_all_mallocs.deallocate(size);
+   static inline void record_free(size_t requested, size_t allocated, MemTag mem_tag) {
+     as_snapshot()->by_type(mem_tag)->record_free(requested, allocated);
+     as_snapshot()->_all_mallocs.deallocate(requested, allocated);
    }
 
    static inline void record_new_arena(MemTag mem_tag) {
@@ -237,8 +261,8 @@ class MallocMemorySummary : AllStatic {
      as_snapshot()->by_type(mem_tag)->record_arena_free();
    }
 
-   static inline void record_arena_size_change(ssize_t size, MemTag mem_tag) {
-     as_snapshot()->by_type(mem_tag)->record_arena_size_change(size);
+   static inline void record_arena_size_change(ssize_t requested, size_t allocated, MemTag mem_tag) {
+     as_snapshot()->by_type(mem_tag)->record_arena_size_change(requested, allocated);
    }
 
    static void snapshot(MallocMemorySnapshot* s) {
@@ -248,7 +272,7 @@ class MallocMemorySummary : AllStatic {
 
    // The memory used by malloc tracking headers
    static inline size_t tracking_overhead() {
-     return as_snapshot()->malloc_overhead();
+     return as_snapshot()->nmt_overhead();
    }
 
   static MallocMemorySnapshot* as_snapshot() {
@@ -269,7 +293,7 @@ class MallocTracker : AllStatic {
 
   // The overhead that is incurred by switching on NMT (we need, per malloc allocation,
   // space for header and 16-bit footer)
-  static inline size_t overhead_per_malloc() { return MallocHeader::malloc_overhead(); }
+  static inline size_t overhead_per_malloc() { return MallocHeader::nmt_overhead(); }
 
   // Parameter name convention:
   // memblock :   the beginning address for user data
@@ -280,14 +304,14 @@ class MallocTracker : AllStatic {
   //
 
   // Record  malloc on specified memory block
-  static void* record_malloc(void* malloc_base, size_t size, MemTag mem_tag,
+  static void* record_malloc(void* ptr, size_t requested, size_t allocated, MemTag mem_tag,
     const NativeCallStack& stack);
 
   // Given a block returned by os::malloc() or os::realloc():
   // deaccount block from NMT, mark its header as dead and return pointer to header.
-  static void* record_free_block(void* memblock);
+  static void* record_free_block(void* ptr, size_t allocated);
   // Given the free info from a block, de-account block from NMT.
-  static void deaccount(MallocHeader::FreeInfo free_info);
+  static void deaccount(MallocHeader::FreeInfo free_info, size_t allocated);
 
   static inline void record_new_arena(MemTag mem_tag) {
     MallocMemorySummary::record_new_arena(mem_tag);
@@ -297,8 +321,8 @@ class MallocTracker : AllStatic {
     MallocMemorySummary::record_arena_free(mem_tag);
   }
 
-  static inline void record_arena_size_change(ssize_t size, MemTag mem_tag) {
-    MallocMemorySummary::record_arena_size_change(size, mem_tag);
+  static inline void record_arena_size_change(ssize_t requested, size_t allocated, MemTag mem_tag) {
+    MallocMemorySummary::record_arena_size_change(requested, allocated, mem_tag);
   }
 
   // MallocLimt: Given an allocation size s, check if mallocing this much

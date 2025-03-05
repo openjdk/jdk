@@ -41,8 +41,8 @@ class MallocSite : public AllocationSite {
   MallocSite(const NativeCallStack& stack, MemTag mem_tag) :
     AllocationSite(stack, mem_tag) {}
 
-  void allocate(size_t size)      { _c.allocate(size);   }
-  void deallocate(size_t size)    { _c.deallocate(size); }
+  void request(size_t requested, size_t allocated)      { _c.request(requested, allocated);   }
+  void deallocate(size_t requested, size_t allocated)    { _c.deallocate(requested, allocated); }
 
   // Memory allocated from this code path
   size_t size()  const { return _c.size(); }
@@ -83,8 +83,8 @@ class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
   inline MallocSite* data()             { return &_malloc_site; }
 
   // Allocation/deallocation on this allocation site
-  inline void allocate(size_t size)   { _malloc_site.allocate(size);   }
-  inline void deallocate(size_t size) { _malloc_site.deallocate(size); }
+  inline void request(size_t requested, size_t allocated)   { _malloc_site.request(requested, allocated);   }
+  inline void deallocate(size_t requested, size_t allocated) { _malloc_site.deallocate(requested, allocated); }
   // Memory counters
   inline size_t size() const  { return _malloc_site.size();  }
   inline size_t count() const { return _malloc_site.count(); }
@@ -146,19 +146,19 @@ class MallocSiteTable : AllStatic {
   // Return false only occurs under rare scenarios:
   //  1. out of memory
   //  2. overflow hash bucket
-  static inline bool allocation_at(const NativeCallStack& stack, size_t size,
+  static inline bool allocation_at(const NativeCallStack& stack, size_t requested, size_t allocated,
       uint32_t* marker, MemTag mem_tag) {
     MallocSite* site = lookup_or_add(stack, marker, mem_tag);
-    if (site != nullptr) site->allocate(size);
+    if (site != nullptr) site->request(requested, allocated);
     return site != nullptr;
   }
 
   // Record memory deallocation. marker indicates where the allocation
   // information was recorded.
-  static inline bool deallocation_at(size_t size, uint32_t marker) {
+  static inline bool deallocation_at(size_t requested, size_t allocated, uint32_t marker) {
     MallocSite* site = malloc_site(marker);
     if (site != nullptr) {
-      site->deallocate(size);
+      site->deallocate(requested, allocated);
       return true;
     }
     return false;

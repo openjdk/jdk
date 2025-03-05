@@ -54,11 +54,11 @@ MemReporterBase::MemReporterBase(outputStream* out, size_t scale) :
   _scale(scale), _output(out), _auto_indentor(out) {}
 
 size_t MemReporterBase::reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) {
-  return malloc->malloc_size() + malloc->arena_size() + vm->reserved();
+  return malloc->malloc_requested() + malloc->arena_size() + vm->reserved();
 }
 
 size_t MemReporterBase::committed_total(const MallocMemory* malloc, const VirtualMemory* vm) {
-  return malloc->malloc_size() + malloc->arena_size() + vm->committed();
+  return malloc->malloc_requested() + malloc->arena_size() + vm->committed();
 }
 
 void MemReporterBase::print_total(size_t reserved, size_t committed, size_t peak) const {
@@ -101,6 +101,9 @@ void MemReporterBase::print_malloc(const MemoryCounter* c, MemTag mem_tag) const
     out->print(" (peak=%zu%s #%zu)",
         amount_in_current_scale(pk_amount), scale, pk_count);
   }
+  size_t overhead = c->allocated() - c->requested();
+  double overheadPercentage = 100.0 * (double)overhead / (double)c->requested();
+  out->print(" (overhead=%zu [%.2f%%])", overhead, overheadPercentage);
 }
 
 void MemReporterBase::print_virtual_memory(size_t reserved, size_t committed, size_t peak) const {
@@ -164,12 +167,15 @@ void MemSummaryReporter::report() {
   out->print("Total: ");
   print_total(total_reserved_amount, total_committed_amount);
   out->cr();
+  size_t overhead = _malloc_snapshot->malloc_overhead();
+  double overheadPercentage = 100.0 * _malloc_snapshot->requested() / _malloc_snapshot->allocated();
   INDENT_BY(7,
     out->print_cr("malloc: %zu%s #%zu, peak=%zu%s #%zu",
                   amount_in_current_scale(total_malloced_bytes), current_scale(),
                   _malloc_snapshot->total_count(),
                   amount_in_current_scale(_malloc_snapshot->total_peak()),
                   current_scale(), _malloc_snapshot->total_peak_count());
+     out->print_cr("  overhead=%zu [%.2f%%]", overhead, overheadPercentage);
     out->print("mmap:   ");
     print_total(total_mmap_reserved_bytes, total_mmap_committed_bytes);
   )
@@ -202,8 +208,8 @@ void MemSummaryReporter::report_summary_of_type(MemTag mem_tag,
     committed_amount += thread_stack_usage->committed();
   } else if (mem_tag == mtNMT) {
     // Count malloc headers in "NMT" category
-    reserved_amount  += _malloc_snapshot->malloc_overhead();
-    committed_amount += _malloc_snapshot->malloc_overhead();
+    reserved_amount  += _malloc_snapshot->nmt_overhead();
+    committed_amount += _malloc_snapshot->nmt_overhead();
   }
 
   // Omit printing if the current reserved value as well as all historical peaks (malloc, mmap committed, arena)
@@ -248,7 +254,7 @@ void MemSummaryReporter::report_summary_of_type(MemTag mem_tag,
   }
 
    // report malloc'd memory
-  if (amount_in_current_scale(MAX2(malloc_memory->malloc_size(), pk_malloc)) > 0) {
+  if (amount_in_current_scale(MAX2(malloc_memory->malloc_requested(), pk_malloc)) > 0) {
     print_malloc(malloc_memory->malloc_counter());
     out->cr();
   }
@@ -264,9 +270,9 @@ void MemSummaryReporter::report_summary_of_type(MemTag mem_tag,
   }
 
   if (mem_tag == mtNMT &&
-    amount_in_current_scale(_malloc_snapshot->malloc_overhead()) > 0) {
+    amount_in_current_scale(_malloc_snapshot->nmt_overhead()) > 0) {
     out->print_cr("(tracking overhead=%zu%s)",
-                   amount_in_current_scale(_malloc_snapshot->malloc_overhead()), scale);
+                   amount_in_current_scale(_malloc_snapshot->nmt_overhead()), scale);
   } else if (mem_tag == mtClass) {
     // Metadata information
     report_metadata(Metaspace::NonClassType);
@@ -691,8 +697,8 @@ void MemSummaryDiffReporter::diff_summary_of_type(MemTag mem_tag,
     }
 
     // Report malloc'd memory
-    size_t current_malloc_amount = current_malloc->malloc_size();
-    size_t early_malloc_amount   = early_malloc->malloc_size();
+    size_t current_malloc_amount = current_malloc->malloc_requested();
+    size_t early_malloc_amount   = early_malloc->malloc_requested();
     if (amount_in_current_scale(current_malloc_amount) > 0 ||
         diff_in_current_scale(current_malloc_amount, early_malloc_amount) != 0) {
       out->print("(");

@@ -61,7 +61,7 @@ void NMTUsage::update_malloc_usage() {
   for (int i = 0; i < mt_number_of_tags; i++) {
     MemTag mem_tag = NMTUtil::index_to_tag(i);
     const MallocMemory* mm = ms->by_type(mem_tag);
-    _malloc_by_type[i] = mm->malloc_size() + mm->arena_size();
+    _malloc_by_type[i] = mm->malloc_requested() + mm->arena_size();
     total_arena_size +=  mm->arena_size();
   }
 
@@ -73,7 +73,7 @@ void NMTUsage::update_malloc_usage() {
   _malloc_total -= total_arena_size;
 
   // Adjust mtNMT to include malloc overhead.
-  _malloc_by_type[NMTUtil::tag_to_index(mtNMT)] += ms->malloc_overhead();
+  _malloc_by_type[NMTUtil::tag_to_index(mtNMT)] += ms->nmt_overhead();
 }
 
 void NMTUsage::update_vm_usage() {

@@ -40,8 +40,8 @@ static size_t get_total_malloc_size() {
   return MallocMemorySummary::as_snapshot()->total();
 }
 
-static size_t get_malloc_overhead() {
-  return MallocMemorySummary::as_snapshot()->malloc_overhead();
+static size_t get_nmt_overhead() {
+  return MallocMemorySummary::as_snapshot()->nmt_overhead();
 }
 
 struct totals_t { size_t n; size_t s; size_t ovrh; };
@@ -50,7 +50,7 @@ static totals_t get_totals() {
   totals_t tot;
   tot.n = get_total_malloc_invocs();
   tot.s = get_total_malloc_size();
-  tot.ovrh = get_malloc_overhead();
+  tot.ovrh = get_nmt_overhead();
   return tot;
 }
 
