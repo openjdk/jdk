@@ -75,8 +75,8 @@ static jbyte currentSessionID;
 /* Counter of active callbacks and flag for vm_death */
 static int      active_callbacks   = 0;
 static jboolean vm_death_callback_active = JNI_FALSE;
-static jrawMonitorID callbackLock;
-static jrawMonitorID callbackBlock;
+static DebugRawMonitor* callbackLock;
+static DebugRawMonitor* callbackBlock;
 
 /* Macros to surround callback code (non-VM_DEATH callbacks).
  *   Note that this just keeps a count of the non-VM_DEATH callbacks that
@@ -97,6 +97,23 @@ static jrawMonitorID callbackBlock;
  *            block. This will mess up the active_callbacks count.
  */
 
+static void allowSelfSuspend() {
+#if 0
+  struct timespec req;
+  req.tv_sec = 0;
+  req.tv_nsec = 1;
+
+  nanosleep(&req, NULL);
+
+  jthread current_thread = threadControl_currentThread();
+  JNIEnv *env = getEnv();
+  if (!FUNC_PTR(env,IsSameObject)(env, current_thread, current_thread)) {
+    EXIT_ERROR(-1, "on isSameObject");
+  }
+  JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
+#endif
+}
+
 #define BEGIN_CALLBACK()                                                \
 { /* BEGIN OF CALLBACK */                                               \
     jboolean bypass = JNI_TRUE;                                         \
@@ -110,6 +127,7 @@ static jrawMonitorID callbackBlock;
         } else {                                                        \
             active_callbacks++;                                         \
             bypass = JNI_FALSE;                                         \
+            allowSelfSuspend();                                         \
             debugMonitorExit(callbackLock);                             \
         }                                                               \
     }                                                                   \
@@ -136,6 +154,7 @@ static jrawMonitorID callbackBlock;
                 if (active_callbacks == 0) {                            \
                     debugMonitorNotifyAll(callbackLock);                \
                 }                                                       \
+                allowSelfSuspend();                                     \
                 debugMonitorExit(callbackLock);                         \
             }                                                           \
         }                                                               \
@@ -153,7 +172,7 @@ static jrawMonitorID callbackBlock;
  * can access the chains simultaneously while reading (the
  * normal activity of an event callback).
  */
-static jrawMonitorID handlerLock;
+static DebugRawMonitor* handlerLock;
 
 typedef struct HandlerChain_ {
     HandlerNode *first;
@@ -1355,6 +1374,7 @@ cbDataDump(jvmtiEnv *jvmti_env)
     tty_message("Debug Agent Data Dump");
     tty_message("=== START DUMP ===");
     threadControl_dumpAllThreads();
+    dumpRawMonitors();
     eventHandler_dumpAllHandlers(JNI_TRUE);
     tty_message("=== END DUMP ===");
 }
@@ -1505,10 +1525,9 @@ eventHandler_initialize(jbyte sessionID)
      */
     active_callbacks = 0;
     vm_death_callback_active = JNI_FALSE;
-    callbackLock = debugMonitorCreate("JDWP Callback Lock");
-    callbackBlock = debugMonitorCreate("JDWP Callback Block");
-
-    handlerLock = debugMonitorCreate("JDWP Event Handler Lock");
+    callbackLock = debugMonitorCreate(callbackLock_Rank, "JDWP Callback Lock");
+    callbackBlock = debugMonitorCreate(callbackBlock_Rank, "JDWP Callback Block");
+    handlerLock = debugMonitorCreate(handlerLock_Rank, "JDWP Event Handler Lock");
 
     for (i = EI_min; i <= EI_max; ++i) {
         getHandlerChain(i)->first = NULL;
