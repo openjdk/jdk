@@ -24,6 +24,7 @@
 
 package org.openjdk.bench.java.lang.foreign;
 
+import jdk.internal.misc.Unsafe;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.CompilerControl;
@@ -35,7 +36,6 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
-import jdk.internal.misc.Unsafe;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;

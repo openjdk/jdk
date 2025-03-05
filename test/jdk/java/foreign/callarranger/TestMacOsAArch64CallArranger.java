@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -33,30 +33,29 @@
  * @run testng TestMacOsAArch64CallArranger
  */
 
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.StructLayout;
-import java.lang.foreign.MemorySegment;
 import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.StubLocations;
 import jdk.internal.foreign.abi.VMStorage;
 import jdk.internal.foreign.abi.aarch64.CallArranger;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.StructLayout;
 import java.lang.invoke.MethodType;
 
 import static java.lang.foreign.Linker.Option.firstVariadicArg;
 import static java.lang.foreign.ValueLayout.ADDRESS;
 import static jdk.internal.foreign.abi.Binding.*;
-import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.*;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.Regs.*;
-import static platform.PlatformLayouts.AArch64.*;
+import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.StorageType;
+import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.stackStorage;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static platform.PlatformLayouts.AArch64.*;
 
 public class TestMacOsAArch64CallArranger extends CallArrangerTestBase {
 

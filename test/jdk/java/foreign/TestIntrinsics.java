@@ -30,19 +30,17 @@
  *   TestIntrinsics
  */
 
-import java.lang.foreign.Linker;
-import java.lang.foreign.FunctionDescriptor;
+import org.testng.annotations.*;
 
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.List;
 
-import java.lang.foreign.MemoryLayout;
-import org.testng.annotations.*;
-
 import static java.lang.foreign.Linker.Option.firstVariadicArg;
-import static java.lang.invoke.MethodType.methodType;
 import static java.lang.foreign.ValueLayout.JAVA_CHAR;
 import static org.testng.Assert.assertEquals;
 
