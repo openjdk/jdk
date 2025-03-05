@@ -90,8 +90,8 @@ public final class AudioFileSoundbankReader extends SoundbankReader {
                         "Can not allocate enough memory to read audio data.");
             }
 
-            long maximumHeapSize = Runtime.getRuntime().maxMemory() -
-                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
+            long maximumHeapSize = (long) ((Runtime.getRuntime().maxMemory() -
+                    (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())) * 0.9);
             if (totalSize > maximumHeapSize) {
                 throw new InvalidMidiDataException(
                         "Insufficient heap size to render audio data.");
