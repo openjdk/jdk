@@ -28,6 +28,8 @@
  *          java.base/sun.security.util.resources
  *          java.base/sun.security.tools.keytool
  *          java.base/sun.security.tools.keytool.resources
+ *          jdk.jartool/sun.security.tools.jarsigner
+ *          jdk.jartool/sun.security.tools.jarsigner.resources
  * @summary Check migration correctness of resources files
  * @run testng/othervm MigrationCheck
  */
@@ -243,6 +245,14 @@ public class MigrationCheck {
     public void testKeytool_zh_TW() {
         checkResourcesMigration(new sun.security.tools.keytool.Resources_zh_TW(),
                 new sun.security.tools.keytool.resources.keytool_zh_TW());
+    }
+
+    // Jarsigner
+
+    @Test
+    public void testJarsigner() {
+        checkResourcesMigration(new sun.security.tools.jarsigner.Resources(),
+                new sun.security.tools.jarsigner.resources.jarsigner());
     }
 
     // ResourcesMgr

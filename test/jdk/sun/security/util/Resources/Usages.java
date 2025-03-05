@@ -27,7 +27,7 @@
  * @modules java.base/sun.security.util
  *          java.base/sun.security.util.resources
  *          java.base/sun.security.tools.keytool.resources
- *          jdk.jartool/sun.security.tools.jarsigner
+ *          jdk.jartool/sun.security.tools.jarsigner.resources
  * @summary Check usages of security-related Resources files
  * @run main/othervm Usages
  */
@@ -122,7 +122,7 @@ public class Usages {
                     new Pair("jdk.security.auth/share/classes/com/sun/security/auth/",
                             List.of(GETAUTHSTRING))),
 
-            new sun.security.tools.jarsigner.Resources(),
+            new sun.security.tools.jarsigner.resources.jarsigner(),
             List.of(
                     new Pair("jdk.jartool/share/classes/sun/security/tools/jarsigner/Main.java",
                             List.of(RB_GETSTRING)),
