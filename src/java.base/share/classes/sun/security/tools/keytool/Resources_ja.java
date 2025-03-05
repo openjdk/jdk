@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,10 +304,12 @@ public class Resources_ja extends java.util.ListResourceBundle {
                 "-keysize\u306E\u6307\u5B9A\u306B\u3088\u308BEC\u30AD\u30FC\u306E\u751F\u6210\u306F\u975E\u63A8\u5968\u3067\u3059\u3002\u304B\u308F\u308A\u306B\"-groupname %s\"\u3092\u4F7F\u7528\u3057\u3066\u304F\u3060\u3055\u3044\u3002"},
         {"Key.pair.not.generated.alias.alias.already.exists",
                 "\u30AD\u30FC\u30FB\u30DA\u30A2\u306F\u751F\u6210\u3055\u308C\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u5225\u540D<{0}>\u306F\u3059\u3067\u306B\u5B58\u5728\u3057\u307E\u3059"},
-        {"Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for",
-                "{3}\u65E5\u9593\u6709\u52B9\u306A{0}\u30D3\u30C3\u30C8\u306E{1}\u306E\u30AD\u30FC\u30FB\u30DA\u30A2\u3068\u81EA\u5DF1\u7F72\u540D\u578B\u8A3C\u660E\u66F8({2})\u3092\u751F\u6210\u3057\u3066\u3044\u307E\u3059\n\t\u30C7\u30A3\u30EC\u30AF\u30C8\u30EA\u540D: {4}"},
-        {"Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.validality.days.for",
-                "{4}\u65E5\u9593\u6709\u52B9\u306A{0}\u30D3\u30C3\u30C8\u306E{1}\u30AD\u30FC\u30FB\u30DA\u30A2\u3068<{3}>\u306B\u3088\u3063\u3066\u767A\u884C\u3055\u308C\u308B\u8A3C\u660E\u66F8({2})\u3092\u751F\u6210\u3057\u3066\u3044\u307E\u3059\n\t\u30C7\u30A3\u30EC\u30AF\u30C8\u30EA\u540D: {5}"},
+        {"size.bit.alg",
+                "%1$d\u30D3\u30C3\u30C8%2$s"},
+        {"Generating.full.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.days.for",
+                "{0}\u30AD\u30FC\u30FB\u30DA\u30A2\u304A\u3088\u3073\u81EA\u5DF1\u7F72\u540D\u8A3C\u660E\u66F8({1})\u3092{2}\u65E5\u306E\u6709\u52B9\u6027\u3067\u751F\u6210\u3057\u3066\u3044\u307E\u3059\n\t\u5BFE\u8C61: {3}"},
+        {"Generating.full.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.days.for",
+                "{0}\u30AD\u30FC\u30FB\u30DA\u30A2\u3068\u003C\u007B\u0032\u007D\u003E\u306B\u3088\u3063\u3066\u767A\u884C\u3055\u308C\u305F\u8A3C\u660E\u66F8({1})\u3092{3}\u65E5\u9593\u306E\u6709\u52B9\u6027\u3067\u751F\u6210\u3057\u3066\u3044\u307E\u3059\n\t\u5BFE\u8C61: {4}"},
         {"Enter.key.password.for.alias.", "<{0}>\u306E\u30AD\u30FC\u30FB\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044"},
         {".RETURN.if.same.as.keystore.password.",
                 "\t(\u30AD\u30FC\u30B9\u30C8\u30A2\u306E\u30D1\u30B9\u30EF\u30FC\u30C9\u3068\u540C\u3058\u5834\u5408\u306FRETURN\u3092\u62BC\u3057\u3066\u304F\u3060\u3055\u3044):  "},
@@ -472,10 +474,9 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"alias.in.keystore", "\u767A\u884C\u8005<%s>"},
         {"with.weak", "%s (\u5F31)"},
         {"with.disabled", "%s (\u7121\u52B9)"},
-        {"key.bit", "%1$d\u30D3\u30C3\u30C8%2$s\u30AD\u30FC"},
-        {"key.bit.weak", "%1$d\u30D3\u30C3\u30C8%2$s\u30AD\u30FC(\u5F31)"},
-        {"key.bit.disabled", "%1$d-bit %2$s key (\u7121\u52B9)"},
-        {"unknown.size.1", "\u4E0D\u660E\u306A\u30B5\u30A4\u30BA\u306E%s\u30AD\u30FC"},
+        {"key.bit", "%s\u30AD\u30FC"},
+        {"key.bit.weak", "%s\u30AD\u30FC(\u5F31\u3044)"},
+        {"key.bit.disabled", "%s\u30AD\u30FC(\u7121\u52B9)"},
         {".PATTERN.printX509Cert.with.weak",
                 "\u6240\u6709\u8005: {0}\n\u767A\u884C\u8005: {1}\n\u30B7\u30EA\u30A2\u30EB\u756A\u53F7: {2}\n\u6709\u52B9\u671F\u9593\u306E\u958B\u59CB\u65E5: {3}\u7D42\u4E86\u65E5: {4}\n\u8A3C\u660E\u66F8\u306E\u30D5\u30A3\u30F3\u30AC\u30D7\u30EA\u30F3\u30C8:\n\t SHA1: {5}\n\t SHA256: {6}\n\u7F72\u540D\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0\u540D: {7}\n\u30B5\u30D6\u30B8\u30A7\u30AF\u30C8\u516C\u958B\u30AD\u30FC\u30FB\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0: {8}\n\u30D0\u30FC\u30B8\u30E7\u30F3: {9}"},
         {"PKCS.10.with.weak",
@@ -486,7 +487,7 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"Unable.to.parse.denyAfter.string.in.exception.message", "\u4F8B\u5916\u30E1\u30C3\u30BB\u30FC\u30B8\u306EdenyAfter\u65E5\u4ED8\u6587\u5B57\u5217\u3092\u89E3\u6790\u3067\u304D\u307E\u305B\u3093"},
         {"whose.sigalg.weak", "%1$s\u306F%2$s\u7F72\u540D\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0\u3092\u4F7F\u7528\u3057\u3066\u304A\u308A\u3001\u3053\u308C\u306F\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u307E\u3059\u3002"},
         {"whose.key.disabled", "%1$s\u306F%2$s\u3092\u4F7F\u7528\u3057\u3066\u304A\u308A\u3001\u3053\u308C\u306F\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u3001\u7121\u52B9\u5316\u3055\u308C\u3066\u3044\u307E\u3059\u3002"},
-        {"whose.key.weak", "%1$s\u306F%2$s\u3092\u4F7F\u7528\u3057\u3066\u304A\u308A\u3001\u3053\u308C\u306F\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u307E\u3059\u3002\u3053\u306E\u30AD\u30FC\u30FB\u30B5\u30A4\u30BA\u306F\u5C06\u6765\u306E\u66F4\u65B0\u3067\u7121\u52B9\u5316\u3055\u308C\u307E\u3059\u3002"},
+        {"whose.key.weak", "%1$s\u306F%2$s\u3092\u4F7F\u7528\u3057\u3066\u304A\u308A\u3001\u3053\u308C\u306F\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u307E\u3059\u3002\u4ECA\u5F8C\u306E\u66F4\u65B0\u3067\u306F\u7121\u52B9\u306B\u306A\u308A\u307E\u3059\u3002"},
         {"jks.storetype.warning", "%1$s\u30AD\u30FC\u30B9\u30C8\u30A2\u306F\u72EC\u81EA\u306E\u5F62\u5F0F\u3092\u4F7F\u7528\u3057\u3066\u3044\u307E\u3059\u3002\"keytool -importkeystore -srckeystore %2$s -destkeystore %2$s -deststoretype pkcs12\"\u3092\u4F7F\u7528\u3059\u308B\u696D\u754C\u6A19\u6E96\u306E\u5F62\u5F0F\u3067\u3042\u308BPKCS12\u306B\u79FB\u884C\u3059\u308B\u3053\u3068\u3092\u304A\u85A6\u3081\u3057\u307E\u3059\u3002"},
         {"migrate.keystore.warning", "\"%1$s\"\u304C%4$s\u306B\u79FB\u884C\u3055\u308C\u307E\u3057\u305F\u3002%2$s\u30AD\u30FC\u30B9\u30C8\u30A2\u306F\"%3$s\"\u3068\u3057\u3066\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7\u3055\u308C\u307E\u3059\u3002"},
         {"backup.keystore.warning", "\u5143\u306E\u30AD\u30FC\u30B9\u30C8\u30A2\"%1$s\"\u306F\"%3$s\"\u3068\u3057\u3066\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7\u3055\u308C\u307E\u3059..."},
