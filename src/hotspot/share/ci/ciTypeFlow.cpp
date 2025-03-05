@@ -500,8 +500,8 @@ bool ciTypeFlow::StateVector::meet_exception(ciInstanceKlass* exc,
   bool different = false;
 
   // Meet locals from incoming array.
-  Cell limit = local(_outer->max_locals()-1);
-  for (Cell c = start_cell(); c <= limit; c = next_cell(c)) {
+  Cell limit = local_limit_cell();
+  for (Cell c = start_cell(); c < limit; c = next_cell(c)) {
     ciType* t1 = type_at(c);
     ciType* t2 = incoming->type_at(c);
     if (!t1->equals(t2)) {
