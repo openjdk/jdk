@@ -90,7 +90,7 @@ bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators, Basi
 void ShenandoahBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
 #if COMPILER2_OR_JVMCI
   assert(!ReduceInitialCardMarks || !ShenandoahCardBarrier || ShenandoahGenerationalHeap::heap()->is_in_young(new_obj),
-         "Error: losing card mark on initialzing store to old gen");
+         "Allocating new object outside of young generation: " INTPTR_FORMAT, p2i(new_obj));
 #endif // COMPILER2_OR_JVMCI
   assert(thread->deferred_card_mark().is_empty(), "We don't use this");
 }
