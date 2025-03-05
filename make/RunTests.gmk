@@ -542,8 +542,9 @@ define SetupRunGtestTestBody
 	          if (match($$$$0, /YOU HAVE ([0-9]+) DISABLED TEST/, arr)) { \
 	            print arr[1]; \
 	            found=1; \
-	          } } END \
-	          { if (!found) print 0; }' \
+	          } \
+	       } \
+	       END { if (!found) print 0; }' \
 	      $$($1_RESULT_FILE))) \
 	  $$(eval $1_FAILED := $$(shell $$(AWK) '/\[  FAILED  \] .* tests?, \
 	      listed below/ { print $$$$4 }' $$($1_RESULT_FILE))) \
