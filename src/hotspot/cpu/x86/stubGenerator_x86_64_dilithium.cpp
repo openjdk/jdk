@@ -289,6 +289,7 @@ address StubGenerator::generate_dilithiumAlmostNtt_avx512() {
 
   __ movl(iterations, 2);
 
+  __ align(OptoLoopAlignment);
   __ BIND(L_loop);
 
   __ subl(iterations, 1);
@@ -611,6 +612,7 @@ address StubGenerator::generate_dilithiumAlmostInverseNtt_avx512() {
 
   __ movl(iterations, 2);
 
+  __ align(OptoLoopAlignment);
   __ BIND(L_loop);
 
   __ subl(iterations, 1);
@@ -1009,6 +1011,7 @@ address StubGenerator::generate_dilithiumNttMult_avx512() {
 
   __ movl(len, 4);
 
+  __ align(OptoLoopAlignment);
   __ BIND(L_loop);
 
   for (int i = 0; i < 4; i++) {
@@ -1086,6 +1089,7 @@ address StubGenerator::generate_dilithiumMontMulByConstant_avx512() {
 
   __ movl(len, 2);
 
+  __ align(OptoLoopAlignment);
   __ BIND(L_loop);
 
   for (int i = 0; i < 8; i++) {
@@ -1168,6 +1172,7 @@ address StubGenerator::generate_dilithiumDecomposePoly_avx512() {
 
   __ movl(len, 1024);
 
+  __ align(OptoLoopAlignment);
   __ BIND(L_loop);
 
   __ evmovdqul(xmm0, Address(input, 0), Assembler::AVX_512bit);

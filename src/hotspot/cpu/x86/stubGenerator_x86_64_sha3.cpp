@@ -178,6 +178,7 @@ address StubGenerator::generate_sha3_implCompress(StubGenStubId stub_id) {
   __ evmovdquq(xmm30, Address(permsAndRots, 832), Assembler::AVX_512bit);
   __ evmovdquq(xmm31, Address(permsAndRots, 896), Assembler::AVX_512bit);
 
+  __ align(OptoLoopAlignment);
   __ BIND(sha3_loop);
 
   // there will be 24 keccak rounds
@@ -232,6 +233,7 @@ address StubGenerator::generate_sha3_implCompress(StubGenStubId stub_id) {
   // The implementation closely follows the Java version, with the state
   // array "rows" in the lowest 5 64-bit slots of zmm0 - zmm4, i.e.
   // each row of the SHA3 specification is located in one zmm register.
+  __ align(OptoLoopAlignment);
   __ BIND(rounds24_loop);
   __ subl(roundsLeft, 1);
 
@@ -357,6 +359,7 @@ address StubGenerator::generate_double_keccak() {
   const Register constant2use = r10;
   const Register roundsLeft = r11;
 
+  __ align(OptoLoopAlignment);
   Label rounds24_loop;
 
   __ enter();
@@ -417,6 +420,7 @@ address StubGenerator::generate_double_keccak() {
   // load round_constants base
   __ movptr(constant2use, round_consts);
 
+  __ align(OptoLoopAlignment);
   __ BIND(rounds24_loop);
   __ subl( roundsLeft, 1);
 
