@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2023 Marti Maria Saguer
+//  Copyright (c) 1998-2024 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -1109,7 +1109,7 @@ cmsStage* _cmsStageNormalizeFromLabFloat(cmsContext ContextID)
     return mpe;
 }
 
-// Fom XYZ to floating point PCS
+// From XYZ to floating point PCS
 cmsStage* _cmsStageNormalizeFromXyzFloat(cmsContext ContextID)
 {
 #define n (32768.0/65535.0)
