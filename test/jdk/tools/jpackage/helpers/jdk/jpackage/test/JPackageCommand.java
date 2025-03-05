@@ -218,26 +218,27 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public String name() {
-        String appImage = getArgumentValue("--app-image");
-        if (appImage != null) {
-            String name = AppImageFile.load(Path.of(appImage)).mainLauncherName();
-            // can be null if using foreign app-image
-            return ((name != null) ? name : getArgumentValue("--name"));
-        }
-        return getArgumentValue("--name", () -> getArgumentValue("--main-class"));
+        return nameFromAppImage().or(this::nameFromBasicArgs).or(this::nameFromRuntimeImage).orElseThrow();
     }
 
     public String installerName() {
         verifyIsOfType(PackageType.NATIVE);
-        String installerName = getArgumentValue("--name",
-                () -> getArgumentValue("--main-class", () -> null));
-        if (installerName == null) {
-            String appImage = getArgumentValue("--app-image");
-            if (appImage != null) {
-                installerName = AppImageFile.load(Path.of(appImage)).mainLauncherName();
-            }
-        }
-        return installerName;
+        return nameFromBasicArgs().or(this::nameFromAppImage).or(this::nameFromRuntimeImage).orElseThrow();
+    }
+
+    private Optional<String> nameFromAppImage() {
+        return Optional.ofNullable(getArgumentValue("--app-image"))
+                .map(Path::of).map(AppImageFile::load).map(AppImageFile::mainLauncherName);
+    }
+
+    private Optional<String> nameFromRuntimeImage() {
+        return Optional.ofNullable(getArgumentValue("--runtime-image"))
+                .map(Path::of).map(Path::getFileName).map(Path::toString);
+    }
+
+    private Optional<String> nameFromBasicArgs() {
+        return Optional.ofNullable(getArgumentValue("--name")).or(
+                () -> Optional.ofNullable(getArgumentValue("--main-class")));
     }
 
     public boolean isRuntime() {
@@ -716,8 +717,39 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    @FunctionalInterface
+    public interface CannedArgument {
+        public String value(JPackageCommand cmd);
+    }
+
+    public static Object cannedArgument(Function<JPackageCommand, Object> supplier, String label) {
+        Objects.requireNonNull(supplier);
+        Objects.requireNonNull(label);
+        return new CannedArgument() {
+            @Override
+            public String value(JPackageCommand cmd) {
+                return supplier.apply(cmd).toString();
+            }
+
+            @Override
+            public String toString( ) {
+                return label;
+            }
+        };
+    }
+
+    public String getValue(CannedFormattedString str) {
+        return new CannedFormattedString(str.formatter(), str.key(), Stream.of(str.args()).map(arg -> {
+            if (arg instanceof CannedArgument cannedArg) {
+                return cannedArg.value(this);
+            } else {
+                return arg;
+            }
+        }).toArray()).getValue();
+    }
+
     public JPackageCommand validateOutput(CannedFormattedString str) {
-        return JPackageCommand.this.validateOutput(TKit.assertTextStream(str.getValue()));
+        return validateOutput(TKit.assertTextStream(getValue(str)));
     }
 
     public boolean isWithToolProvider() {
@@ -876,6 +908,9 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             copy.immutable = false;
             copy.removeArgumentWithValue("--runtime-image");
             copy.dmgInstallDir = cmd.appInstallationDirectory();
+            if (!copy.hasArgument("--name")) {
+                copy.addArguments("--name", cmd.nameFromRuntimeImage().orElseThrow());
+            }
             return copy;
         }
 
@@ -1202,7 +1237,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             () -> {
                 Map<String, PackageType> reply = new HashMap<>();
                 for (PackageType type : PackageType.values()) {
-                    reply.put(type.getName(), type);
+                    reply.put(type.getType(), type);
                 }
                 return reply;
             }).get();

@@ -505,7 +505,7 @@ public final class PackageTest extends RunnablePackageTest {
                 case UNPACK -> {
                     cmd.setUnpackedPackageLocation(null);
                     final var unpackRootDir = TKit.createTempDirectory(
-                            String.format("unpacked-%s", type.getName()));
+                            String.format("unpacked-%s", type.getType()));
                     final Path unpackDir = packageHandlers.unpack(cmd, unpackRootDir);
                     if (!unpackDir.startsWith(TKit.workDir())) {
                         state.deleteUnpackDirs.add(unpackDir);

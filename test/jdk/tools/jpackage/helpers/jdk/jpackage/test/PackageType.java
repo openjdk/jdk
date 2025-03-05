@@ -51,16 +51,16 @@ public enum PackageType {
     IMAGE("app-image", null, null);
 
     PackageType(String packageName, String bundleSuffix, String bundlerClass) {
-        name  = packageName;
+        type  = packageName;
         suffix = bundleSuffix;
-        if (bundlerClass != null && !Inner.DISABLED_PACKAGERS.contains(getName())) {
+        if (bundlerClass != null && !Inner.DISABLED_PACKAGERS.contains(getType())) {
             supported = isBundlerSupported(bundlerClass);
         } else {
             supported = false;
         }
 
         if (suffix != null && supported) {
-            TKit.trace(String.format("Bundler %s supported", getName()));
+            TKit.trace(String.format("Bundler %s supported", getType()));
         }
     }
 
@@ -69,7 +69,7 @@ public enum PackageType {
     }
 
     void applyTo(JPackageCommand cmd) {
-        cmd.setArgumentValue("--type", getName());
+        cmd.setArgumentValue("--type", getType());
     }
 
     String getSuffix() {
@@ -80,8 +80,8 @@ public enum PackageType {
         return supported;
     }
 
-    String getName() {
-        return name;
+    public String getType() {
+        return type;
     }
 
     static PackageType fromSuffix(String packageFilename) {
@@ -133,7 +133,7 @@ public enum PackageType {
         return reply.get();
     }
 
-    private final String name;
+    private final String type;
     private final String suffix;
     private final boolean supported;
 
