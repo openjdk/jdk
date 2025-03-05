@@ -59,6 +59,13 @@ void ShenandoahSuperClosure::do_nmethod(nmethod* nm) {
 //
 // ========= Marking
 //
+ShenandoahFlushSATBHandshakeClosure::ShenandoahFlushSATBHandshakeClosure(SATBMarkQueueSet& qset) :
+  HandshakeClosure("Shenandoah Flush SATB"),
+  _qset(qset) {}
+
+void ShenandoahFlushSATBHandshakeClosure::do_thread(Thread* thread) {
+  _qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
+}
 
 ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q,
                                                                ShenandoahReferenceProcessor* rp,
