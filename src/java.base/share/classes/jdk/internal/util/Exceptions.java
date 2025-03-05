@@ -322,7 +322,7 @@ public final class Exceptions {
             return;
         // for compatibility
         var hostCompatFlag = SecurityProperties.includedInExceptions("hostInfo");
-        enhancedSocketExceptionText = SecurityProperties.includedInExceptions("socket") 
+        enhancedSocketExceptionText = SecurityProperties.includedInExceptions("socket")
                                       | hostCompatFlag;
         enhancedNetExceptionText = SecurityProperties.includedInExceptions("net")
                                       | hostCompatFlag;
