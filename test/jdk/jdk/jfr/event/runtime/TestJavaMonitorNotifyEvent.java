@@ -27,9 +27,13 @@ import static jdk.test.lib.Asserts.assertFalse;
 import static jdk.test.lib.Asserts.assertTrue;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import jdk.jfr.Recording;
+import jdk.jfr.consumer.RecordingStream;
+import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
@@ -45,59 +49,62 @@ import jdk.test.lib.thread.XRun;
  */
 public class TestJavaMonitorNotifyEvent {
 
+    private static final String FIELD_KLASS_NAME = "monitorClass.name";
+    private static final String FIELD_ADDRESS    = "address";
+    private static final String FIELD_NOTIFIED_COUNT = "notifiedCount";
+
     private final static String EVENT_NAME = EventNames.JavaMonitorNotify;
     private static final long WAIT_TIME = 123456;
 
     static class Lock {
     }
 
-    static boolean silenceFindBugsNakedNotify;
-
     public static void main(String[] args) throws Throwable {
-        Recording recording = new Recording();
-        recording.enable(EVENT_NAME).withThreshold(Duration.ofMillis(0));
-
         final Lock lock = new Lock();
-        final CountDownLatch latch = new CountDownLatch(1);
+        final String lockClassName = lock.getClass().getName().replace('.', '/');
+        final long mainThreadId = Thread.currentThread().threadId();
 
-        TestThread waitThread = new TestThread(new XRun() {
-            @Override
-            public void xrun() throws Throwable {
-                synchronized (lock) {
-                    latch.countDown();
-                    lock.wait(WAIT_TIME);
-                    silenceFindBugsNakedNotify = false;
+        List<RecordedEvent> events = new CopyOnWriteArrayList<>();
+        try (RecordingStream rs = new RecordingStream()) {
+            rs.enable(EVENT_NAME).withoutThreshold();
+            rs.onEvent(EVENT_NAME, e -> {
+                long threadId = e.getThread().getJavaThreadId();
+                Object clazz = e.getValue(FIELD_KLASS_NAME);
+                if (clazz.equals(lockClassName) && (threadId == mainThreadId)) {
+                    events.add(e);
+                    rs.close();
                 }
-            }
-        });
+            });
+            rs.startAsync();
 
-        try {
-            recording.start();
-            waitThread.start();
-            latch.await();
-            synchronized (lock) {
-                silenceFindBugsNakedNotify = true;
-                lock.notifyAll();
+            final CountDownLatch latch = new CountDownLatch(1);
+            TestThread waitThread = new TestThread(new XRun() {
+                @Override
+                public void xrun() throws Throwable {
+                    synchronized (lock) {
+                        latch.countDown();
+                        lock.wait(WAIT_TIME);
+                    }
+                }
+            });
+            try {
+                waitThread.start();
+                latch.await();
+                synchronized (lock) {
+                    lock.notifyAll();
+                }
+            } finally {
+                waitThread.join();
             }
-        } finally {
-            waitThread.join();
-            recording.stop();
-        }
 
-        boolean isAnyFound = false;
-        for (RecordedEvent event : Events.fromRecording(recording)) {
-            System.out.println("Event:" + event);
-            if (event.getThread().getJavaThreadId() != Thread.currentThread().threadId()) {
-                // Some other notification, skip.
-                continue;
+            rs.awaitTermination();
+
+            System.out.println(events);
+            assertFalse(events.isEmpty());
+            for (RecordedEvent ev : events) {
+                Events.assertField(ev, FIELD_ADDRESS).notEqual(0L);
+                Events.assertField(ev, FIELD_NOTIFIED_COUNT).equal(1);
             }
-            assertFalse(isAnyFound, "Found more than 1 event");
-            isAnyFound = true;
-            final String lockClassName = lock.getClass().getName().replace('.', '/');
-            Events.assertField(event, "monitorClass.name").equal(lockClassName);
-            Events.assertField(event, "address").notEqual(0L);
-            Events.assertField(event, "notifiedCount").equal(1);
         }
-        assertTrue(isAnyFound, "Correct event not found");
     }
 }
