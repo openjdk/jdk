@@ -36,7 +36,7 @@ public class TestJDKIncludeInExceptions {
 
     public static void main(String args[]) throws Exception {
         String incInExc = Security.getProperty("jdk.includeInExceptions");
-        if (incInExc == null || !incInExc.equals("addressLookup,net")) {
+        if (incInExc == null || !incInExc.equals("addressLookup,net,userInfo")) {
             throw new RuntimeException("Test failed: default value of " +
                 "jdk.includeInExceptions security property does not have expected value: " +
                 incInExc);
