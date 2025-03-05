@@ -250,10 +250,6 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest,
   pre_membar(order);
 
   __asm__ __volatile__ (
-    /* simple guard */
-    "lbarx   %[loaded_value], 0, %[dest]        \n"
-    "cmpw    %[compare_value], %[loaded_value]  \n"
-    "bne-    2f                                 \n"
     /* atomic loop */
     "1:                                                   \n"
     "   lbarx   %[old_value], 0, %[dest]               \n"
