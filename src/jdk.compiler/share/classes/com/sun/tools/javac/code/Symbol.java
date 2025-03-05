@@ -1812,12 +1812,16 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         }
 
         public Object getConstValue() {
+            return getConstValue(false);
+        }
+
+        public Object getConstValue(boolean nonFinalOK) {
             // TODO: Consider if getConstValue and getConstantValue can be collapsed
             if (data == ElementKind.EXCEPTION_PARAMETER ||
-                data == ElementKind.RESOURCE_VARIABLE) {
+                    data == ElementKind.RESOURCE_VARIABLE) {
                 return null;
             } else if (data instanceof Callable<?> callableData) {
-                // In this case, this is a final variable, with an as
+                // In this case, this is a variable, with an as
                 // yet unevaluated initializer.
                 data = null; // to make sure we don't evaluate this twice.
                 try {
@@ -1826,7 +1830,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                     throw new AssertionError(ex);
                 }
             }
-            return data;
+            return isFinal() || (nonFinalOK && !isFinal()) ? data : null;
         }
 
         public void setData(Object data) {
