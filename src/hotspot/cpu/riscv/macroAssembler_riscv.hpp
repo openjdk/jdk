@@ -1080,6 +1080,7 @@ public:
     }                                                                                              \
   }
 
+  INSN(flh);
   INSN(flw);
   INSN(fld);
 
