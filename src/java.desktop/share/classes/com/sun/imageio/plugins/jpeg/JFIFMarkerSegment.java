@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -482,7 +482,7 @@ class JFIFMarkerSegment extends MarkerSegment {
             }
             if ((jfxx == null)
                 || (jfxx.code == THUMB_PALETTE)) {
-                writeJFXXSegment(index, thumb, ios, writer, false); // default
+                writeJFXXSegment(index, thumb, ios, writer); // default
             } else {
                 // Expand to RGB
                 BufferedImage thumbRGB =
@@ -495,24 +495,10 @@ class JFIFMarkerSegment extends MarkerSegment {
             }
         } else if (cs.getType() == ColorSpace.TYPE_RGB) {
             if (jfxx == null) {
-                boolean written = false;
-                boolean forceThumbJPEG = false;
                 if (onlyOne) {
-                    int thumbWidth = Math.min(thumb.getWidth(), MAX_THUMB_WIDTH);
-                    int thumbHeight = Math.min(thumb.getHeight(), MAX_THUMB_HEIGHT);
-                    int thumbDataLength = thumb.getSampleModel().getNumBands() * thumbHeight * thumbWidth;
-                    int segmentLengthUsingRGBThumbnail = DATA_SIZE + LENGTH_SIZE + thumbDataLength;
-                    boolean canEncodeAsRGB = segmentLengthUsingRGBThumbnail <= 65535;
-                    if (canEncodeAsRGB) {
-                        written = true;
-                        write(ios, thumb, writer); // As part of the header
-                    } else {
-                        write(ios, null, writer);
-                        forceThumbJPEG = true;
-                    }
-                }
-                if (!written) {
-                    writeJFXXSegment(index, thumb, ios, writer, forceThumbJPEG); // default
+                    write(ios, thumb, writer); // As part of the header
+                } else {
+                    writeJFXXSegment(index, thumb, ios, writer); // default
                 }
             } else {
                 // If this is the only one, write the header first
@@ -520,7 +506,7 @@ class JFIFMarkerSegment extends MarkerSegment {
                     write(ios, writer);
                 }
                 if (jfxx.code == THUMB_PALETTE) {
-                    writeJFXXSegment(index, thumb, ios, writer, false); // default
+                    writeJFXXSegment(index, thumb, ios, writer); // default
                     writer.warningOccurred
                         (JPEGImageWriter.WARNING_NO_RGB_THUMB_AS_INDEXED);
                 } else {
@@ -536,7 +522,7 @@ class JFIFMarkerSegment extends MarkerSegment {
                     BufferedImage thumbRGB = expandGrayThumb(thumb);
                     write(ios, thumbRGB, writer); // As part of the header
                 } else {
-                    writeJFXXSegment(index, thumb, ios, writer, false); // default
+                    writeJFXXSegment(index, thumb, ios, writer); // default
                 }
             } else {
                 // If this is the only one, write the header first
@@ -545,14 +531,14 @@ class JFIFMarkerSegment extends MarkerSegment {
                 }
                 if (jfxx.code == THUMB_RGB) {
                     BufferedImage thumbRGB = expandGrayThumb(thumb);
-                    writeJFXXSegment(index, thumbRGB, ios, writer, false);
+                    writeJFXXSegment(index, thumbRGB, ios, writer);
                 } else if (jfxx.code == THUMB_JPEG) {
                     jfxx.setThumbnail(thumb);
                     writer.thumbnailStarted(index);
                     jfxx.write(ios, writer);  // Handles clipping if needed
                     writer.thumbnailComplete();
                 } else if (jfxx.code == THUMB_PALETTE) {
-                    writeJFXXSegment(index, thumb, ios, writer, false); // default
+                    writeJFXXSegment(index, thumb, ios, writer); // default
                     writer.warningOccurred
                         (JPEGImageWriter.WARNING_NO_GRAY_THUMB_AS_INDEXED);
                 }
@@ -574,11 +560,10 @@ class JFIFMarkerSegment extends MarkerSegment {
     private void writeJFXXSegment(int index,
                                   BufferedImage thumbnail,
                                   ImageOutputStream ios,
-                                  JPEGImageWriter writer,
-                                  boolean forceThumbJPEG) throws IOException {
+                                  JPEGImageWriter writer) throws IOException {
         JFIFExtensionMarkerSegment jfxx = null;
         try {
-             jfxx = new JFIFExtensionMarkerSegment(thumbnail, forceThumbJPEG);
+             jfxx = new JFIFExtensionMarkerSegment(thumbnail);
         } catch (IllegalThumbException e) {
             writer.warningOccurred
                 (JPEGImageWriter.WARNING_ILLEGAL_THUMBNAIL);
@@ -731,7 +716,7 @@ class JFIFMarkerSegment extends MarkerSegment {
             }
         }
 
-        JFIFExtensionMarkerSegment(BufferedImage thumbnail, boolean forceThumbJPEG)
+        JFIFExtensionMarkerSegment(BufferedImage thumbnail)
             throws IllegalThumbException {
 
             super(JPEG.APP0);
@@ -740,15 +725,15 @@ class JFIFMarkerSegment extends MarkerSegment {
             if (cm.hasAlpha()) {
                 throw new IllegalThumbException();
             }
-            if (forceThumbJPEG || csType == ColorSpace.TYPE_GRAY) {
-                code = THUMB_JPEG;
-                thumb = new JFIFMarkerSegment.JFIFThumbJPEG(thumbnail);
-            } else if (cm instanceof IndexColorModel) {
+            if (cm instanceof IndexColorModel) {
                 code = THUMB_PALETTE;
                 thumb = new JFIFThumbPalette(thumbnail);
             } else if (csType == ColorSpace.TYPE_RGB) {
                 code = THUMB_RGB;
                 thumb = new JFIFThumbRGB(thumbnail);
+            } else if (csType == ColorSpace.TYPE_GRAY) {
+                code = THUMB_JPEG;
+                thumb = new JFIFThumbJPEG(thumbnail);
             } else {
                 throw new IllegalThumbException();
             }
