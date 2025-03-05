@@ -46,6 +46,6 @@ CardTable::CardValue* ci_card_table_address() {
   BarrierSet* bs = BarrierSet::barrier_set();
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
-  SHENANDOAHGC_ONLY(assert(!UseShenandoahGC, "Shenandoah byte_map_base is not constant.");)
+  assert(!UseShenandoahGC, "Shenandoah byte_map_base is not constant.");
   return ct->byte_map_base();
 }

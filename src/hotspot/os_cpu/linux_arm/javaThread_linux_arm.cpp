@@ -43,7 +43,7 @@ void JavaThread::cache_global_variables() {
 #if INCLUDE_SHENANDOAHGC
   if (UseShenandoahGC) {
     _card_table_base = nullptr;
-    return ;
+    return;
   }
 #endif
   BarrierSet* bs = BarrierSet::barrier_set();
@@ -52,6 +52,7 @@ void JavaThread::cache_global_variables() {
   } else {
     _card_table_base = nullptr;
   }
+
 }
 
 // For Forte Analyzer AsyncGetCallTrace profiling support - thread is

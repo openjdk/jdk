@@ -652,7 +652,7 @@ void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register o
   }
 
 #ifndef _LP64
-  __ pop(tmp1);
+  __ pop(tmp);
   __ pop(thread);
 #endif
 }

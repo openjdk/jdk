@@ -250,6 +250,7 @@ void ShenandoahGeneration::merge_write_table() {
 }
 
 void ShenandoahGeneration::prepare_gc() {
+
   reset_mark_bitmap();
 
   // Capture Top At Mark Start for this generation (typically young) and reset mark bitmap.

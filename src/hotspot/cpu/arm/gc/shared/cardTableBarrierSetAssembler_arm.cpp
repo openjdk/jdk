@@ -97,6 +97,7 @@ void CardTableBarrierSetAssembler::store_check_part1(MacroAssembler* masm, Regis
   BarrierSet* bs = BarrierSet::barrier_set();
   assert(bs->kind() == BarrierSet::CardTableBarrierSet,
          "Wrong barrier set kind");
+
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
 
