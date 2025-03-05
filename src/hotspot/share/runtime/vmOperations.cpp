@@ -100,6 +100,10 @@ void VM_ClearICs::doit() {
   }
 }
 
+void VM_ClearNMethodICs::doit() {
+  _nm->clear_inline_caches();
+}
+
 void VM_CleanClassLoaderDataMetaspaces::doit() {
   ClassLoaderDataGraph::walk_metadata_and_clean_metaspaces();
 }
