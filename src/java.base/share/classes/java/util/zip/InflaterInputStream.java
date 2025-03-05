@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,14 @@ import java.util.Objects;
  * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
  * or method in this class will cause a {@link NullPointerException} to be
  * thrown.
+ *
+ * <h2 id="inflater-usage">Inflater Usage</h2>
+ * <p>This class uses an {@link Inflater} for uncompressing the data. When constructing an
+ * {@code InflaterInputStream}, if it is passed an {@code Inflater}, then it is the
+ * responsibility of the caller to {@linkplain Inflater#close() close the Inflater}
+ * as and when appropriate, after the
+ * {@linkplain InflaterInputStream#close() InflaterInputStream has been closed}.
+ *
  * @see         Inflater
  * @author      David Connelly
  * @since 1.1
@@ -75,6 +83,10 @@ public class InflaterInputStream extends FilterInputStream {
     /**
      * Creates a new input stream with the specified decompressor and
      * buffer size.
+     *
+     * @apiNote {@linkplain #close() Closing} the {@code InflaterInputStream}
+     * {@linkplain ##inflater-usage will not close} the given {@code inf}.
+     *
      * @param in the input stream
      * @param inf the decompressor ("inflater")
      * @param size the input buffer size
@@ -94,6 +106,10 @@ public class InflaterInputStream extends FilterInputStream {
     /**
      * Creates a new input stream with the specified decompressor and a
      * default buffer size.
+     *
+     * @apiNote {@linkplain #close() Closing} the {@code InflaterInputStream}
+     * {@linkplain ##inflater-usage will not close} the given {@code inf}.
+     *
      * @param in the input stream
      * @param inf the decompressor ("inflater")
      */
@@ -120,6 +136,7 @@ public class InflaterInputStream extends FilterInputStream {
      * @return the byte read, or -1 if end of compressed input is reached
      * @throws    IOException if an I/O error has occurred
      */
+    @Override
     public int read() throws IOException {
         ensureOpen();
         return read(singleByteBuf, 0, 1) == -1 ? -1 : Byte.toUnsignedInt(singleByteBuf[0]);
@@ -151,6 +168,7 @@ public class InflaterInputStream extends FilterInputStream {
      * @throws    ZipException if a ZIP format error has occurred
      * @throws    IOException if an I/O error has occurred
      */
+    @Override
     public int read(byte[] b, int off, int len) throws IOException {
         ensureOpen();
         if (b == null) {
@@ -193,6 +211,7 @@ public class InflaterInputStream extends FilterInputStream {
      * @throws     IOException  if an I/O error occurs.
      *
      */
+    @Override
     public int available() throws IOException {
         ensureOpen();
         if (reachEOF) {
@@ -220,6 +239,7 @@ public class InflaterInputStream extends FilterInputStream {
      *                     already closed
      * @throws    IllegalArgumentException if {@code n < 0}
      */
+    @Override
     public long skip(long n) throws IOException {
         if (n < 0) {
             throw new IllegalArgumentException("negative skip length");
@@ -246,8 +266,14 @@ public class InflaterInputStream extends FilterInputStream {
     /**
      * Closes this input stream and releases any system resources associated
      * with the stream.
+     *
+     * @apiNote If this {@code InflaterInputStream} was constructed by passing
+     * an {@code Inflater}, then this method {@linkplain ##inflater-usage does not close}
+     * that {@code Inflater}.
+     *
      * @throws    IOException if an I/O error has occurred
      */
+    @Override
     public void close() throws IOException {
         if (!closed) {
             if (usesDefaultInflater)
@@ -287,6 +313,7 @@ public class InflaterInputStream extends FilterInputStream {
      * @see     java.io.InputStream#mark(int)
      * @see     java.io.InputStream#reset()
      */
+    @Override
     public boolean markSupported() {
         return false;
     }
