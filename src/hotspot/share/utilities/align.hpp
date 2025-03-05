@@ -76,12 +76,6 @@ constexpr bool can_align_up(T size, A alignment) {
   return align_down(std::numeric_limits<T>::max(), alignment) >= size;
 }
 
-template <typename T, typename A>
-inline bool can_align_up(T* ptr, A alignment) {
-  static_assert(sizeof(ptr) == sizeof(uintptr_t), "assumption");
-  return can_align_up((uintptr_t)ptr, alignment);
-}
-
 // Precondition: can_align_up(size, alignment) == true
 template<typename T, typename A, ENABLE_IF(std::is_integral<T>::value)>
 constexpr T align_up(T size, A alignment) {
@@ -99,6 +93,12 @@ constexpr T align_down_bounded(T size, A alignment) {
 }
 
 // Align pointers and check for alignment.
+
+template <typename A>
+inline bool can_align_up(void* ptr, A alignment) {
+  static_assert(sizeof(ptr) == sizeof(uintptr_t), "assumption");
+  return can_align_up((uintptr_t)ptr, alignment);
+}
 
 template <typename T, typename A>
 inline T* align_up(T* ptr, A alignment) {
