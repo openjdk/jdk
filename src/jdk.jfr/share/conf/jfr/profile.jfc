@@ -98,7 +98,7 @@
     <event name="jdk.JavaMonitorNotify">
       <setting name="enabled">false</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="locking-threshold">10 ms</setting>
+      <setting name="threshold">0 ms</setting>
     </event>
 
     <event name="jdk.JavaMonitorInflate">
