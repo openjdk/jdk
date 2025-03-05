@@ -383,7 +383,7 @@ public class Resources_zh_HK extends java.util.ListResourceBundle {
         {"Certificate.chain.in.reply.does.not.verify.",
                 "\u56DE\u8986\u6642\u7684\u6191\u8B49\u93C8\u672A\u9A57\u8B49: "},
         {"Top.level.certificate.in.reply.",
-                "\u56DE\u8986\u6642\u7684\u6700\u9AD8\u7D1A\u6191\u8B49:\\n"},
+                "\u56DE\u8986\u6642\u7684\u6700\u9AD8\u7D1A\u6191\u8B49:\n"},
         {".is.not.trusted.", "... \u662F\u4E0D\u88AB\u4FE1\u4EFB\u7684\u3002"},
         {"Install.reply.anyway.no.", "\u9084\u662F\u8981\u5B89\u88DD\u56DE\u8986\uFF1F [\u5426]:  "},
         {"NO", "\u5426"},

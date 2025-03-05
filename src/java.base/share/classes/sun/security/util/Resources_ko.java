@@ -64,7 +64,7 @@ public class Resources_ko extends java.util.ListResourceBundle {
         {"invalid.null.action.provided", "\uBD80\uC801\uD569\uD55C \uB110 \uC791\uC5C5\uC774 \uC81C\uACF5\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
         {"invalid.null.Class.provided", "\uBD80\uC801\uD569\uD55C \uB110 \uD074\uB798\uC2A4\uAC00 \uC81C\uACF5\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
         {"Subject.", "\uC81C\uBAA9:\n"},
-        {".Principal.", "\\\uC8FC\uCCB4: "},
+        {".Principal.", "\t\uC8FC\uCCB4: "},
         {".Public.Credential.", "\t\uACF5\uC6A9 \uC778\uC99D\uC11C: "},
         {".Private.Credentials.inaccessible.",
                 "\t\uC804\uC6A9 \uC778\uC99D\uC11C\uC5D0 \uC561\uC138\uC2A4\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.\n"},
