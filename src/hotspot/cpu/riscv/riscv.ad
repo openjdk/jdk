@@ -8231,7 +8231,7 @@ instruct convHF2F_reg_reg(fRegF dst, iRegINoSp src, iRegINoSp tmp) %{
             "fcvt.s.h $dst, $dst\t# convert half to single precision"
   %}
   ins_encode %{
-    __ float16_to_float_c2($dst$$FloatRegister, $src$$Register, $tmp$$Register);
+    __ float16_to_float($dst$$FloatRegister, $src$$Register, $tmp$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -8243,7 +8243,7 @@ instruct convF2HF_reg_reg(iRegINoSp dst, fRegF src, fRegF ftmp, iRegINoSp xtmp) 
             "fmv.x.h $dst, $ftmp\t# move result from $ftmp to $dst"
   %}
   ins_encode %{
-    __ float_to_float16_c2($dst$$Register, $src$$FloatRegister, $ftmp$$FloatRegister, $xtmp$$Register);
+    __ float_to_float16($dst$$Register, $src$$FloatRegister, $ftmp$$FloatRegister, $xtmp$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
