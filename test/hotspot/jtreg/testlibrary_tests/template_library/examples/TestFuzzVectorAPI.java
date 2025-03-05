@@ -191,8 +191,13 @@ public class TestFuzzVectorAPI {
                     "        ", expression.withArgs(args), ".intoArray(out, 0);\n",
                     """
                             return out;
-                        } catch (Exception e) {
-                            return e;
+                    """,
+                    expression.exceptions().stream().map(exception ->
+                        "} catch (" + exception + " e) { return e;\n"
+                    ).toList(),
+                    """
+                        } finally {
+                            // Just javac is happy if there are no exceptions to catch.
                         }
                     }
 

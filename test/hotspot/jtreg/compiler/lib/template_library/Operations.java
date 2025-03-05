@@ -313,33 +313,34 @@ final class Operations {
 
     private record VOP(String name, int args, List<PrimitiveType> elementTypes) {}
 
+    // TODO: consider some floating results as inexact, and handle it accordingly?
     private static final List<VOP> VECTOR_API_OPS = List.of(
         new VOP("ABS",                  1, Type.PRIMITIVE_TYPES),
-        new VOP("ACOS",                 1, Type.FLOATING_TYPES),
+        //new VOP("ACOS",                 1, Type.FLOATING_TYPES),
         new VOP("ADD",                  2, Type.PRIMITIVE_TYPES),
         new VOP("AND",                  2, Type.INTEGRAL_TYPES),
         new VOP("AND_NOT",              2, Type.INTEGRAL_TYPES),
         new VOP("ASHR",                 2, Type.INTEGRAL_TYPES),
-        new VOP("ASIN",                 1, Type.FLOATING_TYPES),
-        new VOP("ATAN",                 1, Type.FLOATING_TYPES),
-        new VOP("ATAN2",                2, Type.FLOATING_TYPES),
+        //new VOP("ASIN",                 1, Type.FLOATING_TYPES),
+        //new VOP("ATAN",                 1, Type.FLOATING_TYPES),
+        //new VOP("ATAN2",                2, Type.FLOATING_TYPES),
         new VOP("BIT_COUNT",            1, Type.INTEGRAL_TYPES),
         new VOP("BITWISE_BLEND",        3, Type.INTEGRAL_TYPES),
-        new VOP("CBRT",                 1, Type.FLOATING_TYPES),
+        //new VOP("CBRT",                 1, Type.FLOATING_TYPES),
         new VOP("COMPRESS_BITS",        2, Type.INT_LONG_TYPES),
-        new VOP("COS",                  1, Type.FLOATING_TYPES),
-        new VOP("COSH",                 1, Type.FLOATING_TYPES),
+        //new VOP("COS",                  1, Type.FLOATING_TYPES),
+        //new VOP("COSH",                 1, Type.FLOATING_TYPES),
         new VOP("DIV",                  2, Type.FLOATING_TYPES),
-        new VOP("EXP",                  1, Type.FLOATING_TYPES),
+        //new VOP("EXP",                  1, Type.FLOATING_TYPES),
         new VOP("EXPAND_BITS",          2, Type.INT_LONG_TYPES),
-        new VOP("EXPM1",                1, Type.FLOATING_TYPES),
+        //new VOP("EXPM1",                1, Type.FLOATING_TYPES),
         new VOP("FIRST_NONZERO",        1, Type.PRIMITIVE_TYPES),
         new VOP("FMA",                  3, Type.FLOATING_TYPES),
-        new VOP("HYPOT",                2, Type.FLOATING_TYPES),
+        //new VOP("HYPOT",                2, Type.FLOATING_TYPES),
         new VOP("LEADING_ZEROS_COUNT",  1, Type.PRIMITIVE_TYPES),
-        new VOP("LOG",                  1, Type.FLOATING_TYPES),
-        new VOP("LOG10",                1, Type.FLOATING_TYPES),
-        new VOP("LOG1P",                1, Type.FLOATING_TYPES),
+        //new VOP("LOG",                  1, Type.FLOATING_TYPES),
+        //new VOP("LOG10",                1, Type.FLOATING_TYPES),
+        //new VOP("LOG1P",                1, Type.FLOATING_TYPES),
         new VOP("LSHL",                 2, Type.INTEGRAL_TYPES),
         new VOP("LSHR",                 2, Type.INTEGRAL_TYPES),
         new VOP("MIN",                  2, Type.PRIMITIVE_TYPES),
@@ -348,21 +349,21 @@ final class Operations {
         new VOP("NEG",                  1, Type.PRIMITIVE_TYPES),
         new VOP("NOT",                  1, Type.INTEGRAL_TYPES),
         new VOP("OR",                   2, Type.INTEGRAL_TYPES),
-        new VOP("POW",                  2, Type.FLOATING_TYPES),
+        //new VOP("POW",                  2, Type.FLOATING_TYPES),
         new VOP("REVERSE",              1, Type.PRIMITIVE_TYPES),
         new VOP("REVERSE_BYTES",        1, Type.PRIMITIVE_TYPES),
         new VOP("ROL",                  2, Type.INTEGRAL_TYPES),
         new VOP("ROR",                  2, Type.INTEGRAL_TYPES),
         new VOP("SADD",                 2, Type.INTEGRAL_TYPES),
-        new VOP("SIN",                  1, Type.FLOATING_TYPES),
-        new VOP("SINH",                 1, Type.FLOATING_TYPES),
-        new VOP("SQRT",                 1, Type.FLOATING_TYPES),
+        //new VOP("SIN",                  1, Type.FLOATING_TYPES),
+        //new VOP("SINH",                 1, Type.FLOATING_TYPES),
+        //new VOP("SQRT",                 1, Type.FLOATING_TYPES),
         new VOP("SSUB",                 2, Type.INTEGRAL_TYPES),
         new VOP("SUADD",                2, Type.INTEGRAL_TYPES),
         new VOP("SUB",                  2, Type.PRIMITIVE_TYPES),
         new VOP("SUSUB",                2, Type.INTEGRAL_TYPES),
-        new VOP("TAN",                  1, Type.FLOATING_TYPES),
-        new VOP("TANH",                 1, Type.FLOATING_TYPES),
+        //new VOP("TAN",                  1, Type.FLOATING_TYPES),
+        //new VOP("TANH",                 1, Type.FLOATING_TYPES),
         new VOP("TRAILING_ZEROS_COUNT", 1, Type.PRIMITIVE_TYPES),
         new VOP("UMAX",                 2, Type.INTEGRAL_TYPES),
         new VOP("UMIN",                 2, Type.INTEGRAL_TYPES),
@@ -379,7 +380,8 @@ final class Operations {
             // TODO: add(int e, VectorMask<Integer> m)
             ops.add(new Operation.Binary(type, "", type, ".add(", type, ")", null));
             // TODO: add(Vector<Integer> v, VectorMask<Integer> m)
-            ops.add(new Operation.Binary(type, "", type, ".addIndex(", Type.ints(), ")", null));
+            // FIXME: addIndex bounds
+            //ops.add(new Operation.Binary(type, "", type, ".addIndex(", Type.ints(), ")", null));
 
             if (!type.elementType.isFloating()) {
                 ops.add(new Operation.Binary(type, "", type, ".and(", type.elementType, ")", null));
@@ -395,7 +397,7 @@ final class Operations {
             // TODO: blend(Vector<Integer> v, VectorMask<Integer> m)
 
             ops.add(new Operation.Unary(type, type.vectorType + ".broadcast(" + type.species + ", ", type.elementType, ")", null));
-            ops.add(new Operation.Unary(type, type.vectorType + ".broadcast(" + type.species + ", ", Type.longs(), ")", null));
+            ops.add(new Operation.Unary(type, type.vectorType + ".broadcast(" + type.species + ", ", Type.longs(), ")", List.of("IllegalArgumentException")));
 
             // TODO: non zero parts
             for (var type2 : Type.VECTOR_API_TYPES) {
@@ -409,27 +411,28 @@ final class Operations {
 
             // TODO: non zero parts
             for (var type2 : Type.VECTOR_API_TYPES) {
-                ops.add(new Operation.Unary(type,
-                                            "((" + type.vectorType + ")",
-                                            type2 ,
-                                            ".convert(VectorOperators.Conversion.ofCast("
-                                                + type2.elementType.boxedTypeName() +  ".class, "
-                                                + type.elementType.boxedTypeName() + ".class), 0))",
-                                            null));
-                ops.add(new Operation.Unary(type,
-                                            "((" + type.vectorType + ")",
-                                            type2 ,
-                                            ".convert(VectorOperators.Conversion.ofReinterpret("
-                                                + type2.elementType.boxedTypeName() +  ".class, "
-                                                + type.elementType.boxedTypeName() + ".class), 0))",
-                                            null));
+                // FIXME: fix shape compatibility
+                // ops.add(new Operation.Unary(type,
+                //                             "((" + type.vectorType + ")",
+                //                             type2 ,
+                //                             ".convert(VectorOperators.Conversion.ofCast("
+                //                                 + type2.elementType.name() +  ".class, "
+                //                                 + type.elementType.name() + ".class), 0))",
+                //                             null));
+                // ops.add(new Operation.Unary(type,
+                //                             "((" + type.vectorType + ")",
+                //                             type2 ,
+                //                             ".convert(VectorOperators.Conversion.ofReinterpret("
+                //                                 + type2.elementType.name() +  ".class, "
+                //                                 + type.elementType.name() + ".class), 0))",
+                //                             null));
 
                 // TODO: convertShape
             }
 
             ops.add(new Operation.Binary(type, "", type, ".div(", type.elementType, ")", null));
             // TODO: div(int e, VectorMask<Integer> m)
-            ops.add(new Operation.Binary(type, "", type, ".div(", type, ")", null));
+            ops.add(new Operation.Binary(type, "", type, ".div(", type, ")", List.of("ArithmeticException")));
             // TODO: div(Vector<Integer> v, VectorMask<Integer> m)
 
             // TODO: eq(int e)   -> VectorMask
@@ -439,7 +442,8 @@ final class Operations {
 
             // TODO: ensure we use all variants of fromArray and fromMemorySegment, plus intoArray and intoMemorySegment.
 
-            ops.add(new Operation.Binary(type.elementType, "", type, ".lane(", Type.ints(), ")", null));
+            // TODO: lane case that is allowed to throw java.lang.IllegalArgumentException for out of bonds.
+            ops.add(new Operation.Binary(type.elementType, "", type, ".lane(", Type.ints(), " & " + (type.length-1) + ")", null));
 
             for (VOP vop : VECTOR_API_OPS) {
                 if (vop.args() == 2 && vop.elementTypes().contains(type.elementType)) {
