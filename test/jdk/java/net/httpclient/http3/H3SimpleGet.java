@@ -114,7 +114,7 @@
 // -Djdk.httpclient.quic.defaultMTU=64000
 // -Djdk.httpclient.quic.defaultMTU=16384
 // -Djdk.httpclient.quic.defaultMTU=4096
-// -Djdk.http3.maxStreamLimitTimeout=1375
+// -Djdk.httpclient.http3.maxStreamLimitTimeout=1375
 // -Xmx16g
 // -Djdk.httpclient.quic.defaultMTU=16384
 // -Djdk.internal.httpclient.debug=err

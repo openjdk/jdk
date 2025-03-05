@@ -758,7 +758,7 @@ public final class Http3ClientImpl implements AutoCloseable {
      * and if the request discovery config is not HTTP_3_ALT_SVC.
      * Note that a URI may be marked has not supporting H3 if it doesn't
      * acknowledge the first initial quic packet in the time defined
-     * by {@systemProperty jdk.http3.maxDirectConnectionTimeout}.
+     * by {@systemProperty jdk.httpclient.http3.maxDirectConnectionTimeout}.
      * @param request the request that may go through h3
      * @return true if there's no h3 endpoint already registered for the given uri.
      */

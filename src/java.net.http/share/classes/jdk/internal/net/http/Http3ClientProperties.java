@@ -32,7 +32,25 @@ import static jdk.internal.net.http.http3.frames.SettingsFrame.DEFAULT_SETTINGS_
 import static jdk.internal.net.http.http3.frames.SettingsFrame.DEFAULT_SETTINGS_QPACK_MAX_TABLE_CAPACITY;
 
 /**
- * A class that groups initial values for HTTP/3 client properties
+ * A class that groups initial values for HTTP/3 client properties.
+ * <p>
+ * Properties starting with {@code jdk.internal.} are not exposed and
+ * typically reserved for testing. They could be removed, and their name,
+ * semantics, or values, could be changed at any time.
+ * <p>
+ * Properties that are exposed are JDK specifics and typically documented
+ * in the {@link java.net.http} module API documentation.
+ * <ol>
+ *   <li><Properties specific to HTTP/3 typically start with {@code jdk.httpclient.http3.}</li>
+ *   <li><Properties specific to Qpack typically start with {@code jdk.httpclient.qpack.}</li>
+ * </ol>
+ *
+ * @apiNote
+ * Not all properties are exposed. Properties that are not included in
+ * the {@link java.net.http} module API documentation are subject to
+ * change, and should be considered internal, though we might also consider
+ * exposing them in the future if needed.
+ *
  */
 public final class Http3ClientProperties {
 
@@ -83,7 +101,7 @@ public final class Http3ClientProperties {
 
     // whether localhost is acceptable as an alternative service origin
     public static final boolean ALTSVC_ALLOW_LOCAL_HOST_ORIGIN = Utils.getBooleanProperty(
-            "jdk.http.altsvc.allowLocalHostOrigin", true);
+            "jdk.httpclient.altsvc.allowLocalHostOrigin", true);
 
     // whether concurrent HTTP/3 requests to the same host should wait for
     // first connection to succeed (or fail) instead of attempting concurrent
@@ -91,7 +109,7 @@ public final class Http3ClientProperties {
     // them will be offered to the connection pool. The others will serve a
     // single request.
     public static final boolean WAIT_FOR_PENDING_CONNECT = Utils.getBooleanProperty(
-            "jdk.http3.waitForPendingConnect", true);
+            "jdk.httpclient.http3.waitForPendingConnect", true);
 
 
     static {
@@ -101,14 +119,16 @@ public final class Http3ClientProperties {
         // first initial packet for a direct connection
         long defaultMaxDirectConnectionTimeout = 1375 << 1; // ms
         long maxDirectConnectionTimeout = Utils.getLongProperty(
-                "jdk.http3.maxDirectConnectionTimeout",
+                "jdk.httpclient.http3.maxDirectConnectionTimeout",
                         defaultMaxDirectConnectionTimeout);
         long maxStreamLimitTimeout = Utils.getLongProperty(
-                "jdk.http3.maxStreamLimitTimeout",
+                "jdk.httpclient.http3.maxStreamLimitTimeout",
                 defaultMaxDirectConnectionTimeout);
-        int defaultMaxHttp3PushStreams = 100;
+        int defaultMaxHttp3PushStreams = Utils.getIntegerProperty(
+                "jdk.httpclient.maxstreams",
+                100);
         int maxHttp3PushStreams = Utils.getIntegerProperty(
-                "jdk.http3.maxConcurrentPushStreams",
+                "jdk.httpclient.http3.maxConcurrentPushStreams",
                 defaultMaxHttp3PushStreams);
         long defaultDecoderMaxCapacity = 0;
         long decoderMaxTableCapacity = Utils.getLongProperty(

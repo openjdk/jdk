@@ -173,11 +173,7 @@
  * A value of zero or a negative value means no limit.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.maxstreams}</b> (default: 100)<br>
- * The maximum number of HTTP/2 push streams that the client will permit servers to open
- * simultaneously.
- * </li>
- * <li><p><b>{@systemProperty jdk.http3.maxConcurrentPushStreams}</b> (default: 100)<br>
- * The maximum number of HTTP/3 push streams that the client will permit servers to open
+ * The maximum number of HTTP/2 or HTTP/3 push streams that the client will permit servers to open
  * simultaneously.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.receiveBufferSize}</b> (default: operating system

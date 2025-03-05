@@ -28,7 +28,7 @@
  * @run testng/othervm
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.HttpClient.log=errors,requests,responses,trace
- *      -Djdk.http3.maxConcurrentPushStreams=5
+ *      -Djdk.httpclient.http3.maxConcurrentPushStreams=5
  *      H3PushCancel
  * @summary This test checks that not accepting one of the push promise
  *       will cancel it. It also verifies that receiving a pushId bigger
@@ -131,7 +131,7 @@ public class H3PushCancel implements HttpServerAdapters {
 
     @Test
     public void testNoCancel() throws Exception {
-        int maxPushes = Utils.getIntegerProperty("jdk.http3.maxConcurrentPushStreams", -1);
+        int maxPushes = Utils.getIntegerProperty("jdk.httpclient.http3.maxConcurrentPushStreams", -1);
         System.out.println("maxPushes: " + maxPushes);
         assertTrue(maxPushes > 0);
         try (HttpClient client = newClientBuilderForH3()
@@ -237,7 +237,7 @@ public class H3PushCancel implements HttpServerAdapters {
 
     @Test
     public void testCancel() throws Exception {
-        int maxPushes = Utils.getIntegerProperty("jdk.http3.maxConcurrentPushStreams", -1);
+        int maxPushes = Utils.getIntegerProperty("jdk.httpclient.http3.maxConcurrentPushStreams", -1);
         System.out.println("maxPushes: " + maxPushes);
         assertTrue(maxPushes > 0);
         try (HttpClient client = newClientBuilderForH3()

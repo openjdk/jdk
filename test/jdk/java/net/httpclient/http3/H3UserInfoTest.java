@@ -59,7 +59,7 @@ import static java.net.http.HttpClient.Version.HTTP_3;
  *        jdk.test.lib.net.SimpleSSLContext
  * @compile ../ReferenceTracker.java
  * @run junit/othervm -Djdk.httpclient.HttpClient.log=quic,errors
- *              -Djdk.http3.maxDirectConnectionTimeout=4000
+ *              -Djdk.httpclient.http3.maxDirectConnectionTimeout=4000
  *              -Djdk.internal.httpclient.debug=true H3UserInfoTest
  */
 

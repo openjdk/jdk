@@ -33,7 +33,7 @@
 // -Djdk.httpclient.HttpClient.log=requests,errors,quic
 // -Djdk.httpclient.quic.defaultMTU=64000
 // -Djdk.httpclient.quic.defaultMTU=16384
-// -Djdk.http3.maxStreamLimitTimeout=1375
+// -Djdk.httpclient.http3.maxStreamLimitTimeout=1375
 
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;

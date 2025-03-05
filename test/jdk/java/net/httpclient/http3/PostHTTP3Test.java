@@ -85,7 +85,7 @@ import static java.lang.System.out;
  *                     PostHTTP3Test
  * @summary Basic HTTP/3 POST test
  */
-//                    -Djdk.http3.maxDirectConnectionTimeout=2500
+//                    -Djdk.httpclient.http3.maxDirectConnectionTimeout=2500
 public class PostHTTP3Test implements HttpServerAdapters {
 
     // The request and response body

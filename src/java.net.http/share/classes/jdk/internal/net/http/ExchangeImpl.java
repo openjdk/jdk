@@ -175,7 +175,7 @@ abstract class ExchangeImpl<T> {
         // specified on the request, we will give priority to HTTP/3 ond
         // only start the HTTP/2 connection if the HTTP/3 connection fails,
         // or doesn't succeed in the imparted timeout. The timeout can be
-        // specified with the property "jdk.http3.maxDirectConnectionTimeout".
+        // specified with the property "jdk.httpclient.http3.maxDirectConnectionTimeout".
         // If unspecified it defaults to 500ms.
         //
         // Because the HTTP/2 connection may start as soon as we create the

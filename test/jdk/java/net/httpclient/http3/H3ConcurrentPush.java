@@ -28,7 +28,7 @@
  * @run testng/othervm
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.HttpClient.log=errors,requests,responses,trace
- *      -Djdk.http3.maxConcurrentPushStreams=45
+ *      -Djdk.httpclient.http3.maxConcurrentPushStreams=45
  *      H3ConcurrentPush
  * @summary This test exercises some of the HTTP/3 specifities for PushPromises.
  *      It sends several concurrent requests, and the server sends a bunch of
@@ -187,7 +187,7 @@ public class H3ConcurrentPush implements HttpServerAdapters {
 
     @Test
     public void testConcurrentPushes() throws Exception {
-        int maxPushes = Utils.getIntegerProperty("jdk.http3.maxConcurrentPushStreams", -1);
+        int maxPushes = Utils.getIntegerProperty("jdk.httpclient.http3.maxConcurrentPushStreams", -1);
         out.println("maxPushes: " + maxPushes);
         assertTrue(maxPushes > 0);
         try (HttpClient client = newClientBuilderForH3()

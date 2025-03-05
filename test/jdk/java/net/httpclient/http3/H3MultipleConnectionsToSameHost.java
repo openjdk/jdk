@@ -36,7 +36,7 @@
  *                     -Djdk.internal.httpclient.quic.useNioSelector=false
  *                     -Djdk.internal.httpclient.quic.poller.usePlatformThreads=false
  *                     -Djdk.httpclient.quic.maxEndpoints=-1
- *                     -Djdk.http3.maxStreamLimitTimeout=0
+ *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
  *                     -Djdk.httpclient.quic.maxBidiStreams=2
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:retransmit
@@ -60,7 +60,7 @@
  *                     -Djdk.internal.httpclient.quic.poller.usePlatformThreads=false
  *                     -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
  *                     -Djdk.httpclient.quic.maxEndpoints=-1
- *                     -Djdk.http3.maxStreamLimitTimeout=0
+ *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
  *                     -Djdk.httpclient.quic.maxBidiStreams=2
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:retransmit
@@ -82,7 +82,7 @@
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
  *                     -Djdk.internal.httpclient.quic.useNioSelector=true
- *                     -Djdk.http3.maxStreamLimitTimeout=0
+ *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
  *                     -Djdk.httpclient.quic.maxEndpoints=1
  *                     -Djdk.httpclient.quic.maxBidiStreams=2
  *                     -Djdk.httpclient.retryOnStreamlimit=50
@@ -104,7 +104,7 @@
 // -Djdk.httpclient.quic.defaultMTU=64000
 // -Djdk.httpclient.quic.defaultMTU=16384
 // -Djdk.httpclient.quic.defaultMTU=4096
-// -Djdk.http3.maxStreamLimitTimeout=1375
+// -Djdk.httpclient.http3.maxStreamLimitTimeout=1375
 // -Xmx16g
 // -Djdk.httpclient.quic.defaultMTU=16384
 // -Djdk.internal.httpclient.debug=err

@@ -35,13 +35,13 @@
  *          -Djdk.httpclient.HttpClient.log=headers
  *          DigestEchoClientSSL SSL SERVER307
  * @run main/othervm/timeout=300
- *          -Djdk.http3.maxDirectConnectionTimeout=100
+ *          -Djdk.httpclient.http3.maxDirectConnectionTimeout=100
  *          -Djdk.httpclient.HttpClient.log=headers
  *          DigestEchoClientSSL SSL SERVER PROXY
  * @run main/othervm/timeout=300
  *          -Djdk.http.auth.proxying.disabledSchemes=
  *          -Djdk.http.auth.tunneling.disabledSchemes=
- *          -Djdk.http3.maxDirectConnectionTimeout=100
+ *          -Djdk.httpclient.http3.maxDirectConnectionTimeout=100
  *          -Djdk.httpclient.HttpClient.log=headers
  *          DigestEchoClientSSL SSL PROXY
  *

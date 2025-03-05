@@ -80,7 +80,7 @@ import static java.lang.System.out;
  *                     GetHTTP3Test
  * @summary Basic HTTP/3 GET test
  */
-//                     -Djdk.http3.maxDirectConnectionTimeout=2500
+//                     -Djdk.httpclient.http3.maxDirectConnectionTimeout=2500
 public class GetHTTP3Test implements HttpServerAdapters {
 
     // The response body
