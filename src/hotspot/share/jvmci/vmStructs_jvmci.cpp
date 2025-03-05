@@ -394,7 +394,13 @@
   static_field(StubRoutines,                _sha512_implCompress,                             address)                               \
   static_field(StubRoutines,                _sha512_implCompressMB,                           address)                               \
   static_field(StubRoutines,                _sha3_implCompress,                               address)                               \
+  static_field(StubRoutines,                _double_keccak,                                   address)                               \
   static_field(StubRoutines,                _sha3_implCompressMB,                             address)                               \
+  static_field(StubRoutines,                _dilithiumAlmostNtt,                              address)                               \
+  static_field(StubRoutines,                _dilithiumAlmostInverseNtt,                       address)                               \
+  static_field(StubRoutines,                _dilithiumNttMult,                                address)                               \
+  static_field(StubRoutines,                _dilithiumMontMulByConstant,                      address)                               \
+  static_field(StubRoutines,                _dilithiumDecomposePoly,                          address)                               \
   static_field(StubRoutines,                _updateBytesCRC32,                                address)                               \
   static_field(StubRoutines,                _crc_table_adr,                                   address)                               \
   static_field(StubRoutines,                _crc32c_table_addr,                               address)                               \
@@ -579,6 +585,10 @@
   declare_constant(CodeInstaller::STACK_SLOT_OOP)                         \
   declare_constant(CodeInstaller::STACK_SLOT_NARROW_OOP)                  \
   declare_constant(CodeInstaller::STACK_SLOT_VECTOR)                      \
+  declare_constant(CodeInstaller::STACK_SLOT4_PRIMITIVE)                  \
+  declare_constant(CodeInstaller::STACK_SLOT4_OOP)                        \
+  declare_constant(CodeInstaller::STACK_SLOT4_NARROW_OOP)                 \
+  declare_constant(CodeInstaller::STACK_SLOT4_VECTOR)                     \
   declare_constant(CodeInstaller::VIRTUAL_OBJECT_ID)                      \
   declare_constant(CodeInstaller::VIRTUAL_OBJECT_ID2)                     \
   declare_constant(CodeInstaller::NULL_CONSTANT)                          \

@@ -33,7 +33,7 @@
 SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
   _vloop_analyzer(vloop_analyzer),
   _vloop(vloop_analyzer.vloop()),
-  _arena(mtCompiler),
+  _arena(mtCompiler, Arena::Tag::tag_superword),
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _pairset(&_arena, _vloop_analyzer),
   _packset(&_arena, _vloop_analyzer

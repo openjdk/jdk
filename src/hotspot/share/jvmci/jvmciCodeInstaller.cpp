@@ -388,6 +388,7 @@ Handle CodeInstaller::read_oop(HotSpotCompiledCodeStream* stream, u1 tag, JVMCI_
 
 ScopeValue* CodeInstaller::get_scope_value(HotSpotCompiledCodeStream* stream, u1 tag, BasicType type, ScopeValue* &second, JVMCI_TRAPS) {
   second = nullptr;
+  bool stack_slot_is_s2 = true;
   switch (tag) {
     case ILLEGAL: {
       if (type != T_ILLEGAL) {
@@ -436,11 +437,17 @@ ScopeValue* CodeInstaller::get_scope_value(HotSpotCompiledCodeStream* stream, u1
         return value;
       }
     }
+    case STACK_SLOT4_PRIMITIVE:
+    case STACK_SLOT4_NARROW_OOP:
+    case STACK_SLOT4_OOP:
+    case STACK_SLOT4_VECTOR:
+      stack_slot_is_s2 = false;
+      // fall through
     case STACK_SLOT_PRIMITIVE:
     case STACK_SLOT_NARROW_OOP:
     case STACK_SLOT_OOP:
     case STACK_SLOT_VECTOR: {
-      jint offset = (jshort) stream->read_s2("offset");
+      jint offset = stack_slot_is_s2 ? (jshort) stream->read_s2("offset") : stream->read_s4("offset4");
       if (stream->read_bool("addRawFrameSize")) {
         offset += _total_frame_size;
       }
@@ -854,7 +861,7 @@ void CodeInstaller::initialize_fields(HotSpotCompiledCodeStream* stream, u1 code
   if (!is_set(code_flags, HCC_HAS_DEOPT_RESCUE_SLOT)) {
     _orig_pc_offset = -1;
   } else {
-    _orig_pc_offset = stream->read_s2("offset");
+    _orig_pc_offset = stream->read_s4("offset");
     if (stream->read_bool("addRawFrameSize")) {
       _orig_pc_offset += _total_frame_size;
     }
