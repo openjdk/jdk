@@ -199,19 +199,19 @@ ParkEvent* ObjectMonitor::_vthread_unparker_ParkEvent = nullptr;
 //      4)  entry_list       ->I->H->G->F<=>E<=>D->null
 //          entry_list_tail  -------------------^
 //
-//   If the thread (F) that removes itself from the end of the list
-//   hasn't got any prev pointer, we just set the tail pointer to
-//   null, see 5) and 6) below.
+//   At some point in time the thread (F) that wants to remove itself
+//   from the end of the list, will not have any prev pointer, see 5)
+//   below.
 //
 //      5)  entry_list       ->I->H->G->F->null
 //          entry_list_tail  -----------^
 //
-//      6)  entry_list       ->I->H->G->null
-//          entry_list_tail  ->null
+//   To resolve this we just start walking from the entry_list head
+//   again, forming a new doubly linked list, before removing the
+//   thread (F), see 6) and 7) below.
 //
-//   Next time we need to find the successor and the tail is null, we
-//   just start walking from the entry_list head again, forming a new
-//   doubly linked list, see 7) below.
+//      6)  entry_list       ->I<=>H<=>G<=>F->null
+//          entry_list_tail  --------------^
 //
 //      7)  entry_list       ->I<=>H<=>G->null
 //          entry_list_tail  ----------^
@@ -1529,8 +1529,8 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
       // then calls exit().  Exit release the lock by setting O._owner to null.
       // Let's say T1 then stalls.  T2 acquires O and calls O.notify().  The
       // notify() operation moves T1 from O's waitset to O's entry_list. T2 then
-      // release the lock "O".  T2 resumes immediately after the ST of null into
-      // _owner, above.  T2 notices that the entry_list is populated, so it
+      // release the lock "O".  T1 resumes immediately after the ST of null into
+      // _owner, above.  T1 notices that the entry_list is populated, so it
       // reacquires the lock and then finds itself on the entry_list.
       // Given all that, we have to tolerate the circumstance where "w" is
       // associated with current.
