@@ -383,8 +383,7 @@ final class Operations {
             // TODO: add(Vector<Integer> v, VectorMask<Integer> m)
 
             // If VLENGTH*scale overflows, then a IllegalArgumentException is thrown.
-            int addIndexBits = type.elementType.sizeInBits() / type.length;
-            ops.add(new Operation.Binary(type, "", type, ".addIndex(", Type.ints(), " & " + (addIndexBits-1) + ")", null));
+            ops.add(new Operation.Unary(type, "", type, ".addIndex(1)", null));
             ops.add(new Operation.Binary(type, "", type, ".addIndex(", Type.ints(), ")", List.of("IllegalArgumentException")));
 
             if (!type.elementType.isFloating()) {
@@ -394,6 +393,9 @@ final class Operations {
                 ops.add(new Operation.Ternary(type, "", type, ".bitwiseBlend(", type.elementType, ", ", type,             ")", null));
                 ops.add(new Operation.Ternary(type, "", type, ".bitwiseBlend(", type,             ", ", type.elementType, ")", null));
                 ops.add(new Operation.Ternary(type, "", type, ".bitwiseBlend(", type,             ", ", type,             ")", null));
+                ops.add(new Operation.Unary(type, "", type, ".not()", null));
+                ops.add(new Operation.Binary(type, "", type, ".or(", type.elementType, ")", null));
+                ops.add(new Operation.Binary(type, "", type, ".or(", type, ")", null));
             }
 
             // TODO: blend(int e, VectorMask<Integer> m)
@@ -475,6 +477,24 @@ final class Operations {
                     // TODO: lanewise(VectorOperators.Ternary op, Vector<Integer> v1, Vector<Integer> v2, VectorMask<Integer> m)
                 }
             }
+
+            // TODO: lt, maskAll -> VectorMask
+
+            ops.add(new Operation.Binary(type, "", type, ".max(", type.elementType, ")", null));
+            ops.add(new Operation.Binary(type, "", type, ".max(", type, ")", null));
+            ops.add(new Operation.Binary(type, "", type, ".min(", type.elementType, ")", null));
+            ops.add(new Operation.Binary(type, "", type, ".min(", type, ")", null));
+
+            ops.add(new Operation.Binary(type, "", type, ".mul(", type.elementType, ")", null));
+            // TODO: mul(int e, VectorMask<Integer> m)
+            ops.add(new Operation.Binary(type, "", type, ".mul(", type, ")", null));
+            // TODO: mul(Vector<Integer> v, VectorMask<Integer> m)
+
+            ops.add(new Operation.Unary(type, "", type, ".neg()", null));
+
+            // TODO: rearrange(VectorShuffle<Integer> shuffle)
+            // TODO: rearrange(VectorShuffle<Integer> s, Vector<Integer> v)
+            // TODO: rearrange(VectorShuffle<Integer> s, VectorMask<Integer> m)
         }
 
         // Ensure the list is immutable.
