@@ -426,22 +426,10 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         systemHeadersBuilder.setHeader(name, value);
     }
 
-    /**
-     * The host and port that have been determined for this {@code HttpRequestImpl}, either
-     * through the request URI or through the authority with which this
-     * {@code HttpRequestImpl} was created.
-     *
-     * @param host the host
-     * @param port the port
-     */
-    static record HostPort(String host, int port) {
-    }
-
-    HostPort getHostPort() {
-        final URI uri = uri();
+    InetSocketAddress getAddress() {
+        URI uri = uri();
         if (uri == null) {
-            final InetSocketAddress socketAddress = authority();
-            return new HostPort(socketAddress.getHostString(), socketAddress.getPort());
+            return authority();
         }
         int p = uri.getPort();
         if (p == -1) {
@@ -451,15 +439,12 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
                 p = 80;
             }
         }
-        return new HostPort(uri.getHost(), p);
-    }
-
-    InetSocketAddress getAddress() {
-        final HostPort hostPort = getHostPort();
+        final String host = uri.getHost();
+        final int port = p;
         if (proxy() == null) {
-            return new InetSocketAddress(hostPort.host, hostPort.port);
+            return new InetSocketAddress(host, port);
         } else {
-            return InetSocketAddress.createUnresolved(hostPort.host, hostPort.port);
+            return InetSocketAddress.createUnresolved(host, port);
         }
     }
 }
