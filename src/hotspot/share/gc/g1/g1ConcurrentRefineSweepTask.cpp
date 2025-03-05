@@ -24,7 +24,7 @@
 
 #include "gc/g1/g1CardTableClaimTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1ConcurrentRefineWorkTask.hpp"
+#include "gc/g1/g1ConcurrentRefineSweepTask.hpp"
 #include "runtime/atomic.hpp"
 
 class G1RefineRegionClosure : public G1HeapRegionClosure {
@@ -137,7 +137,7 @@ public:
 
                                do_claimed_block(dirty_l, dirty_r, dest_card + pointer_delta(dirty_l, start_card, sizeof(CardValue)));
                                scanned += pointer_delta(dirty_r, dirty_l, sizeof(CardValue));
-                               
+
                                _refine_stats.inc_refine_duration(os::elapsed_counter() - refine_start);
                              });
 
@@ -160,7 +160,7 @@ public:
   }
 };
 
-G1ConcurrentRefineWorkTask::G1ConcurrentRefineWorkTask(G1CardTableClaimTable* scan_state,
+G1ConcurrentRefineSweepTask::G1ConcurrentRefineSweepTask(G1CardTableClaimTable* scan_state,
                                                            G1ConcurrentRefineStats* stats,
                                                            uint max_workers) :
   WorkerTask("G1 Refine Task"),
@@ -170,7 +170,7 @@ G1ConcurrentRefineWorkTask::G1ConcurrentRefineWorkTask(G1CardTableClaimTable* sc
   _sweep_completed(true)
 { }
 
-void G1ConcurrentRefineWorkTask::work(uint worker_id) {
+void G1ConcurrentRefineSweepTask::work(uint worker_id) {
   jlong start = os::elapsed_counter();
 
   G1RefineRegionClosure sweep_cl(worker_id, _scan_state);
@@ -184,4 +184,4 @@ void G1ConcurrentRefineWorkTask::work(uint worker_id) {
   _stats->add_atomic(&sweep_cl._refine_stats);
 }
 
-bool G1ConcurrentRefineWorkTask::sweep_completed() const { return _sweep_completed; }
+bool G1ConcurrentRefineSweepTask::sweep_completed() const { return _sweep_completed; }

@@ -26,8 +26,8 @@
 #include "gc/g1/g1CardTableClaimTable.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
+#include "gc/g1/g1ConcurrentRefineSweepTask.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
-#include "gc/g1/g1ConcurrentRefineWorkTask.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
@@ -75,11 +75,11 @@ void G1ConcurrentRefineThread::run_service() {
       if (cr()->adjust_num_threads_periodically()) {
         do_refinement();
       } else {
-        log_debug(gc,refine)("Concurrent Refine Adjust Only (#threads wanted: %u adjustment_needed: %s wait_for_heap_lock: %s) %.2fms",
-                             cr()->num_threads_wanted(),
-                             BOOL_TO_STR(cr()->is_thread_adjustment_needed()),
-                             BOOL_TO_STR(cr()->wait_for_heap_lock()),
-                             (Ticks::now() - adjust_start).seconds() * MILLIUNITS);
+        log_debug(gc, refine)("Concurrent Refine Adjust Only (#threads wanted: %u adjustment_needed: %s wait_for_heap_lock: %s) %.2fms",
+                              cr()->num_threads_wanted(),
+                              BOOL_TO_STR(cr()->is_thread_adjustment_needed()),
+                              BOOL_TO_STR(cr()->wait_for_heap_lock()),
+                              (Ticks::now() - adjust_start).seconds() * MILLIUNITS);
 
         deactivate();
         break;
@@ -140,7 +140,7 @@ void G1ConcurrentRefineThread::do_refinement() {
   G1ConcurrentRefineSweepState& state = _cr->sweep_state();
 
   state.start_work();
-  log_debug(gc,refine)("Concurrent Refine Work Start (threads wanted: %u)", _cr->num_threads_wanted());
+  log_debug(gc, refine)("Concurrent Refine Work Start (threads wanted: %u)", _cr->num_threads_wanted());
 
   // Swap card tables.
 
@@ -156,14 +156,14 @@ void G1ConcurrentRefineThread::do_refinement() {
     log_debug(gc, refine)("GC pause after Java Thread CT swap");
     return;
   }
-  log_debug(gc,refine)("Concurrent Refine Java Thread CT swap");
+  log_debug(gc, refine)("Concurrent Refine Java Thread CT swap");
 
   // 3. GC threads
   if (!state.swap_gc_threads_ct()) {
     log_debug(gc, refine)("GC pause after GC Thread CT swap");
     return;
   }
-  log_debug(gc,refine)("Concurrent Refine GC Thread CT swap");
+  log_debug(gc, refine)("Concurrent Refine GC Thread CT swap");
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   jlong epoch_yield_duration = g1h->yield_duration_in_refinement_epoch();
@@ -173,7 +173,7 @@ void G1ConcurrentRefineThread::do_refinement() {
 
   // 4. Snapshot heap.
   state.snapshot_heap();
-  log_debug(gc,refine)("Concurrent Refine Snapshot Heap");
+  log_debug(gc, refine)("Concurrent Refine Snapshot Heap");
 
   // 5. Sweep refinement table until done
   bool interrupted_by_gc = false;

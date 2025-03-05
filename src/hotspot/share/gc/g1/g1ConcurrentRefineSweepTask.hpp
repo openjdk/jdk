@@ -22,15 +22,15 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1CONCURRENTREFINEWORKTASK_HPP
-#define SHARE_GC_G1_G1CONCURRENTREFINEWORKTASK_HPP
+#ifndef SHARE_GC_G1_G1CONCURRENTREFINESWEEPTASK_HPP
+#define SHARE_GC_G1_G1CONCURRENTREFINESWEEPTASK_HPP
 
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/shared/workerThread.hpp"
 
 class G1CardTableClaimTable;
 
-class G1ConcurrentRefineWorkTask : public WorkerTask {
+class G1ConcurrentRefineSweepTask : public WorkerTask {
   G1CardTableClaimTable* _scan_state;
   G1ConcurrentRefineStats* _stats;
   uint _max_workers;
@@ -38,11 +38,11 @@ class G1ConcurrentRefineWorkTask : public WorkerTask {
 
 public:
 
-  G1ConcurrentRefineWorkTask(G1CardTableClaimTable* scan_state, G1ConcurrentRefineStats* stats, uint max_workers);
+  G1ConcurrentRefineSweepTask(G1CardTableClaimTable* scan_state, G1ConcurrentRefineStats* stats, uint max_workers);
 
   void work(uint worker_id) override;
 
   bool sweep_completed() const;
 };
 
-#endif /* SHARE_GC_G1_G1CONCURRENTREFINEWORKTASK_HPP */
+#endif /* SHARE_GC_G1_G1CONCURRENTREFINESWEEPTASK_HPP */

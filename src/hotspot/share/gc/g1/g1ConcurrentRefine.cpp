@@ -28,8 +28,8 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
+#include "gc/g1/g1ConcurrentRefineSweepTask.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
-#include "gc/g1/g1ConcurrentRefineWorkTask.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -286,7 +286,7 @@ bool G1ConcurrentRefineSweepState::sweep_refinement_table_step() {
 
   G1ConcurrentRefine* cr = G1CollectedHeap::heap()->concurrent_refine();
 
-  G1ConcurrentRefineWorkTask task(_sweep_table, &_stats, cr->num_threads_wanted());
+  G1ConcurrentRefineSweepTask task(_sweep_table, &_stats, cr->num_threads_wanted());
   cr->run_with_refinement_workers(&task);
 
   if (task.sweep_completed()) {
