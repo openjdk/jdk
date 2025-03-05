@@ -539,8 +539,8 @@ define SetupRunGtestTestBody
 	  $$(if $$($1_PASSED), , $$(eval $1_PASSED := 0)) \
 	  $$(eval $1_SKIPPED := $$(shell $$(AWK) \
 	      '/YOU HAVE [0-9]+ DISABLED TEST/ { \
-	          if (match($$$$0, /YOU HAVE ([0-9]+) DISABLED TEST/, arr)) { \
-	            print arr[1]; \
+	          if (match($$$$0, /[0-9]+/, arr)) { \
+	            print arr[0]; \
 	            found=1; \
 	          } \
 	       } \
