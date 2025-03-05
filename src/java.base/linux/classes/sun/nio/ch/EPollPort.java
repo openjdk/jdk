@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.nio.ch;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.channels.spi.AsynchronousChannelProvider;
 import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -54,7 +55,7 @@ final class EPollPort
     private final int epfd;
 
     // address of the poll array passed to epoll_wait
-    private final long address;
+    private final MemorySegment pollArray;
 
     // true if epoll closed
     private boolean closed;
@@ -91,14 +92,14 @@ final class EPollPort
         super(provider, pool);
 
         this.epfd = EPoll.create();
-        this.address = EPoll.allocatePollArray(MAX_EPOLL_EVENTS);
+        this.pollArray = EPoll.allocatePollArray(MAX_EPOLL_EVENTS);
 
         // create socket pair for wakeup mechanism
         try {
             long fds = IOUtil.makePipe(true);
             this.sp = new int[]{(int) (fds >>> 32), (int) fds};
         } catch (IOException ioe) {
-            EPoll.freePollArray(address);
+            EPoll.freePollArray(pollArray);
             FileDispatcherImpl.closeIntFD(epfd);
             throw ioe;
         }
@@ -129,7 +130,7 @@ final class EPollPort
         try { FileDispatcherImpl.closeIntFD(epfd); } catch (IOException ioe) { }
         try { FileDispatcherImpl.closeIntFD(sp[0]); } catch (IOException ioe) { }
         try { FileDispatcherImpl.closeIntFD(sp[1]); } catch (IOException ioe) { }
-        EPoll.freePollArray(address);
+        EPoll.freePollArray(pollArray);
     }
 
     private void wakeup() {
@@ -196,7 +197,7 @@ final class EPollPort
                 for (;;) {
                     int n;
                     do {
-                        n = EPoll.wait(epfd, address, MAX_EPOLL_EVENTS, -1);
+                        n = EPoll.wait(epfd, pollArray, MAX_EPOLL_EVENTS, -1);
                     } while (n == IOStatus.INTERRUPTED);
 
                     /**
@@ -208,8 +209,8 @@ final class EPollPort
                     fdToChannelLock.readLock().lock();
                     try {
                         while (n-- > 0) {
-                            long eventAddress = EPoll.getEvent(address, n);
-                            int fd = EPoll.getDescriptor(eventAddress);
+                            MemorySegment eventMS = EPoll.getEvent(pollArray, n);
+                            int fd = EPoll.getDescriptor(eventMS);
 
                             // wakeup
                             if (fd == sp[0]) {
@@ -234,7 +235,7 @@ final class EPollPort
 
                             PollableChannel channel = fdToChannel.get(fd);
                             if (channel != null) {
-                                int events = EPoll.getEvents(eventAddress);
+                                int events = EPoll.getEvents(eventMS);
                                 Event ev = new Event(channel, events);
 
                                 // n-1 events are queued; This thread handles
