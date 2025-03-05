@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,6 +257,27 @@
       case Op_RoundF: // fall through
       case Op_RoundD: {
         return 30;
+      }
+    }
+  }
+
+  static bool is_vector_cast_supported(BasicType from_bt, BasicType to_bt) {
+    // Vector casts are only supported on AVX1 and higher
+    if (UseAVX == 0) {
+      return false;
+    }
+
+    assert(to_bt != from_bt, "Must call with different from_bt and to_bt");
+
+    // T_CHAR is not supported yet due to the backend not implementing vector casts to and from char.
+    switch (from_bt) {
+      case T_INT:
+      case T_SHORT:
+      case T_BYTE: {
+        return to_bt == T_INT || to_bt == T_SHORT || to_bt == T_BYTE;
+      }
+      default: {
+        return false;
       }
     }
   }
