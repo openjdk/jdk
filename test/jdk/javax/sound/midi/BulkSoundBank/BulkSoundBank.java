@@ -41,14 +41,13 @@ public class BulkSoundBank {
             64, 1, -128, 60, 64, 0, -1, 47, 0};
 
     public static void main(String[] args) throws IOException {
-        ByteArrayInputStream bis = new ByteArrayInputStream(midi);
-        try {
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(midi)) {
             MidiSystem.getSoundbank(bis);
+            throw new RuntimeException("Test should throw InvalidMidiDataException"
+                                       + " but it did not.");
         } catch (InvalidMidiDataException imda) {
             System.out.println("Caught InvalidMidiDataException as expected");
-            return;
         }
-        throw new RuntimeException("Test should throw InvalidMidiDataException but it did not.");
     }
 }
 
