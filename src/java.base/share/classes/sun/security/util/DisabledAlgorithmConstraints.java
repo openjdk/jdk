@@ -251,7 +251,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         if (checkKey) {
             // Check if named curves in the key are disabled.
             for (Key key : cp.getKeys()) {
-                for (String curve : getNamedCurveFromKey(key)) {
+                for (String curve : getNamedParametersFromKey(key)) {
                     if (!cachedCheckAlgorithm(curve)) {
                         throw new CertPathValidatorException(
                             "Algorithm constraints check failed on disabled " +
@@ -264,7 +264,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         algorithmConstraints.permits(algorithm, cp, checkKey);
     }
 
-    private static List<String> getNamedCurveFromKey(Key key) {
+    private static List<String> getNamedParametersFromKey(Key key) {
         return switch (key) {
             case ECKey ecKey -> {
                 NamedCurve nc = CurveDB.lookup(ecKey.getParams());
@@ -303,7 +303,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
 
         // If this is an elliptic curve, check if it is disabled
-        for (String curve : getNamedCurveFromKey(key)) {
+        for (String curve : getNamedParametersFromKey(key)) {
             if (!permits(primitives, curve, null)) {
                 return false;
             }
