@@ -412,21 +412,23 @@ final class Operations {
 
             // TODO: non zero parts
             for (var type2 : Type.VECTOR_API_TYPES) {
-                // FIXME: fix shape compatibility
-                // ops.add(new Operation.Unary(type,
-                //                             "((" + type.vectorType + ")",
-                //                             type2 ,
-                //                             ".convert(VectorOperators.Conversion.ofCast("
-                //                                 + type2.elementType.name() +  ".class, "
-                //                                 + type.elementType.name() + ".class), 0))",
-                //                             null));
-                // ops.add(new Operation.Unary(type,
-                //                             "((" + type.vectorType + ")",
-                //                             type2 ,
-                //                             ".convert(VectorOperators.Conversion.ofReinterpret("
-                //                                 + type2.elementType.name() +  ".class, "
-                //                                 + type.elementType.name() + ".class), 0))",
-                //                             null));
+                // "convert" keeps the same shape, i.e. length of the vector in bits.
+                if (type.sizeInBits() == type2.sizeInBits()) {
+                    ops.add(new Operation.Unary(type,
+                                                "((" + type.vectorType + ")",
+                                                type2 ,
+                                                ".convert(VectorOperators.Conversion.ofCast("
+                                                    + type2.elementType.name() +  ".class, "
+                                                    + type.elementType.name() + ".class), 0))",
+                                                null));
+                    ops.add(new Operation.Unary(type,
+                                                "((" + type.vectorType + ")",
+                                                type2 ,
+                                                ".convert(VectorOperators.Conversion.ofReinterpret("
+                                                    + type2.elementType.name() +  ".class, "
+                                                    + type.elementType.name() + ".class), 0))",
+                                                null));
+                }
 
                 // TODO: convertShape
             }

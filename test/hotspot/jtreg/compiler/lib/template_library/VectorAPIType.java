@@ -89,4 +89,6 @@ public class VectorAPIType extends Type {
         if (r == 0) { return vectorType + ".zero(" + species + ")"; }
         return List.of(vectorType, ".broadcast(", species, ", ", elementType.con(), ")");
     }
+
+    public final int sizeInBits() { return length * elementType.sizeInBits(); }
 }
