@@ -168,7 +168,7 @@ void MemSummaryReporter::report() {
   print_total(total_reserved_amount, total_committed_amount);
   out->cr();
   size_t overhead = _malloc_snapshot->malloc_overhead();
-  double overheadPercentage = 100.0 * _malloc_snapshot->requested() / _malloc_snapshot->allocated();
+  double overheadPercentage = 100.0 * overhead / _malloc_snapshot->requested();
   INDENT_BY(7,
     out->print_cr("malloc: %zu%s #%zu, peak=%zu%s #%zu",
                   amount_in_current_scale(total_malloced_bytes), current_scale(),
