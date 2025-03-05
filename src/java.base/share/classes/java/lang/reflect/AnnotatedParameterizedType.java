@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,44 +28,57 @@ package java.lang.reflect;
 /**
  * {@code AnnotatedParameterizedType} represents the potentially annotated use
  * of a parameterized type, whose type arguments may themselves represent
- * annotated uses of types.
+ * annotated uses of type arguments.
+ * <p>
+ * For example, an annotated use {@code Outer<@TC Long>.@TA Inner<@TB String>}
+ * has an annotation {@code @TA} and represents the parameterized type {@code
+ * Outer<Long>.Inner<String>}, a class.  It has exactly one type argument, which
+ * is the annotated use {@code @TB String}, with an annotation {@code @TB},
+ * representing the {@code String} class.  The use of its immediately enclosing
+ * class is {@code Outer<@TC Long>}, with no annotation, representing the
+ * parameterized type {@code Outer<Long>}.
+ * <p>
+ * Two {@code AnnotatedParameterizedType} objects should be compared using the
+ * {@link Object#equals equals} method.
  *
+ * @see ParameterizedType
  * @jls 4.5 Parameterized Types
  * @since 1.8
  */
 public interface AnnotatedParameterizedType extends AnnotatedType {
 
     /**
-     * Returns the potentially annotated actual type arguments of this parameterized type.
+     * {@return the potentially annotated use, as in the source code, of type
+     * arguments of the parameterized type}
+     * <p>
+     * This method does not return the potentially annotated use of type
+     * arguments of the {@linkplain #getAnnotatedOwnerType() enclosing classes}
+     * of the parameterized type, if the parameterized type is nested.  For
+     * example, if this use is {@code @TB O<@TC T>.@TA I<@TB S>}, this method
+     * returns an array containing exactly the use of {@code @TB S}.  In
+     * particular, if this nested type is a non-generic class in a generic
+     * enclosing class, such as in the use {@code @TB O<@TC T>.@TA I}, this
+     * method returns an empty array.
      *
-     * <p>Note that in some cases, the returned array can be empty. This can occur
-     * if this annotated type represents a non-parameterized type nested within
-     * a parameterized type.
-     *
-     * @return the potentially annotated actual type arguments of this parameterized type
      * @see ParameterizedType#getActualTypeArguments()
      */
     AnnotatedType[] getAnnotatedActualTypeArguments();
 
     /**
-     * Returns the potentially annotated type that this type is a member of, if
-     * this type represents a nested type. For example, if this type is
-     * {@code @TA O<T>.I<S>}, return a representation of {@code @TA O<T>}.
+     * {@inheritDoc}
      *
-     * <p>Returns {@code null} if this {@code AnnotatedType} represents a
-     *     top-level class or interface, or a local or anonymous class, or
-     *     a primitive type, or void.
-     *
-     * @return an {@code AnnotatedType} object representing the potentially
-     *     annotated type that this type is a member of, or {@code null}
-     * @throws TypeNotPresentException if the owner type
-     *     refers to a non-existent class or interface declaration
-     * @throws MalformedParameterizedTypeException if the owner type
-     *     refers to a parameterized type that cannot be instantiated
-     *     for any reason
-     *
+     * @throws TypeNotPresentException {@inheritDoc}
+     * @throws MalformedParameterizedTypeException {@inheritDoc}
+     * @see ParameterizedType#getOwnerType()
      * @since 9
      */
     @Override
     AnnotatedType getAnnotatedOwnerType();
+
+    /**
+     * {@return the parameterized type that this potentially annotated use
+     * represents}  Returns a {@link ParameterizedType}.
+     */
+    @Override
+    Type getType();
 }
