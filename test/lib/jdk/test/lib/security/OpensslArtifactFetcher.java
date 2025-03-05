@@ -23,14 +23,13 @@
 
 package jdk.test.lib.security;
 
-import java.io.File;
+import java.io.IOException;
 
 import java.nio.file.Path;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
-import jdk.test.lib.artifacts.ArtifactResolverException;
 
 public class OpensslArtifactFetcher {
 
@@ -51,7 +50,7 @@ public class OpensslArtifactFetcher {
      *
      * @return openssl binary path of the current version
      */
-    public static String getOpensslPath() {
+    public static String getOpensslPath() throws IOException {
         String path = getOpensslFromSystemProp(OPENSSL_BUNDLE_VERSION);
         if (path != null) {
             return path;
@@ -111,24 +110,10 @@ public class OpensslArtifactFetcher {
         return false;
     }
 
-    private static String fetchOpenssl(Class<?> clazz) {
-        String path = null;
-        try {
-            path = ArtifactResolver.resolve(clazz).entrySet().stream()
-                    .findAny().get().getValue() + File.separator + "openssl"
-                    + File.separator + "bin" + File.separator + "openssl";
-            System.out.println("path: " + path);
-        } catch (ArtifactResolverException e) {
-            Throwable cause = e.getCause();
-            if (cause == null) {
-                System.out.println("Cannot resolve artifact, "
-                        + "please check if JIB jar is present in classpath.");
-            } else {
-                throw new RuntimeException("Fetch artifact failed: " + clazz
-                        + "\nPlease make sure the artifact is available.", e);
-            }
-        }
-        return path;
+    private static String fetchOpenssl(Class<?> clazz) throws IOException {
+        return ArtifactResolver.fetchOne(clazz)
+                .resolve("openssl", "bin", "openssl")
+                .toString();
     }
 
     // retrieve the provider directory path from <OPENSSL_HOME>/bin/openssl

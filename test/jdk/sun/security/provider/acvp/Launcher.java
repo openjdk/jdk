@@ -23,10 +23,10 @@
 
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
-import jdk.test.lib.artifacts.ArtifactResolverException;
 import jdk.test.lib.json.JSONValue;
 import jtreg.SkippedException;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.security.Provider;
@@ -180,15 +180,8 @@ public class Launcher {
 
     private static Path fetchACVPServerTests(Class<?> clazz) {
         try {
-            return ArtifactResolver.resolve(clazz).entrySet().stream()
-                    .findAny().get().getValue();
-        } catch (ArtifactResolverException e) {
-            Throwable cause = e.getCause();
-            if (cause == null) {
-                throw new SkippedException("Cannot resolve artifact, "
-                        + "please check if JIB jar is present in classpath.", e);
-            }
-
+            return ArtifactResolver.fetchOne(clazz);
+        } catch (IOException e) {
             throw new SkippedException("Fetch artifact failed: " + clazz, e);
         }
     }
