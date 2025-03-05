@@ -93,7 +93,7 @@ public:
     typedef std::map<tstring, tstring> Macros;
 
     /**
-     * Returns copy of this instance with the given macros expanded.
+     * Returns copy of this instance with the given macros and environment variables expanded.
      */
     CfgFile expandMacros(const Macros& macros) const;
 

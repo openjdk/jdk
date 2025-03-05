@@ -164,9 +164,9 @@ CfgFile* AppLauncher::createCfgFile() const {
                                 << cfgFilePath << "\"");
 
     CfgFile::Macros macros;
-    macros[_T("$APPDIR")] = appDirPath;
-    macros[_T("$BINDIR")] = FileUtils::dirname(launcherPath);
-    macros[_T("$ROOTDIR")] = imageRoot;
+    macros[_T("APPDIR")] = appDirPath;
+    macros[_T("BINDIR")] = FileUtils::dirname(launcherPath);
+    macros[_T("ROOTDIR")] = imageRoot;
     std::unique_ptr<CfgFile> dummy(new CfgFile());
     CfgFile::load(cfgFilePath).expandMacros(macros).swap(*dummy);
     return dummy.release();
