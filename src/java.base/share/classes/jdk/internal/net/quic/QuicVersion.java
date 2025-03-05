@@ -51,10 +51,11 @@ public enum QuicVersion {
     }
 
     /**
+     * {@return the QuicVersion corresponding to the {@code versionNumber} or
+     * {@link Optional#empty() an empty Optional} if the {@code versionNumber}
+     * doesn't correspond to a Quic version}
+     *
      * @param versionNumber The version number
-     *                      {@return the QuicVersion corresponding to the {@code versionNumber} or
-     *                      {@link Optional#empty() an empty Optional} if the {@code versionNumber}
-     *                      doesn't correspond to a Quic version}
      */
     public static Optional<QuicVersion> of(int versionNumber) {
         for (QuicVersion qv : QuicVersion.values()) {
