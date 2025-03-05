@@ -82,7 +82,6 @@ public class AppLauncherSubstTest {
             private Map<String, String> env = new HashMap<>();
         }
 
-
         public TestSpec {
             Objects.requireNonNull(str);
             Objects.requireNonNull(expectedStr);
@@ -96,6 +95,17 @@ public class AppLauncherSubstTest {
                 final var macro = token.substring(2, token.length() - 2);
                 return Path.of(cmd.macroValue(Macro.valueOf(macro))).toAbsolutePath();
             });
+        }
+
+        @Override
+        public String toString() {
+            final var sb = new StringBuilder();
+            sb.append("str=").append(str);
+            sb.append(", expect=").append(expectedStr);
+            if (!env.isEmpty()) {
+                sb.append(", env=").append(env);
+            }
+            return sb.toString();
         }
 
         private final static TokenReplace MACROS = new TokenReplace(Stream.of(Macro.values()).map(macro -> {
@@ -125,9 +135,7 @@ public class AppLauncherSubstTest {
                 .setExecutable(cmd.appLauncherPath().toAbsolutePath())
                 .addArguments("--print-sys-prop=" + TEST_PROP);
 
-        spec.env().forEach((envVarName, envVarValue) -> {
-            launcherExec.setEnvVar(envVarName, envVarValue);
-        });
+        spec.env().forEach(launcherExec::setEnvVar);
 
         final var resolvedExpectedStr = spec.resolveExpectedStr(cmd);
         final var actualStr = configureAndExecute(0, launcherExec).getFirstLineOfOutput().substring((TEST_PROP + "=").length());
