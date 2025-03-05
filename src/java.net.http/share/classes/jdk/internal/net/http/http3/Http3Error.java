@@ -48,7 +48,7 @@ public enum Http3Error {
      * needs to be closed, but there is no error to signal.
      * }</pre></blockquote>
      */
-    H3_NO_ERROR (0x0100),
+    H3_NO_ERROR (0x0100), // 256
 
     /**
      * General protocol error.
@@ -61,7 +61,7 @@ public enum Http3Error {
      * to use the more specific error code.
      * }</pre></blockquote>
      */
-    H3_GENERAL_PROTOCOL_ERROR (0x0101),
+    H3_GENERAL_PROTOCOL_ERROR (0x0101), // 257
 
     /**
      * Internal error.
@@ -72,7 +72,7 @@ public enum Http3Error {
      * An internal error has occurred in the HTTP stack.
      * }</pre></blockquote>
      */
-    H3_INTERNAL_ERROR (0x0102),
+    H3_INTERNAL_ERROR (0x0102), // 258
 
     /**
      * Stream creation error.
@@ -84,7 +84,7 @@ public enum Http3Error {
      * it will not accept.
      * }</pre></blockquote>
      */
-    H3_STREAM_CREATION_ERROR (0x0103),
+    H3_STREAM_CREATION_ERROR (0x0103), // 259
 
     /**
      * Critical stream closed error.
@@ -95,7 +95,7 @@ public enum Http3Error {
      * A stream required by the HTTP/3 connection was closed or reset.
      * }</pre></blockquote>
      */
-    H3_CLOSED_CRITICAL_STREAM (0x0104),
+    H3_CLOSED_CRITICAL_STREAM (0x0104), // 260
 
     /**
      * Frame unexpected error.
@@ -107,7 +107,7 @@ public enum Http3Error {
      * current state or on the current stream.
      * }</pre></blockquote>
      */
-    H3_FRAME_UNEXPECTED (0x0105),
+    H3_FRAME_UNEXPECTED (0x0105), // 261
 
     /**
      * Frame error.
@@ -119,7 +119,7 @@ public enum Http3Error {
      * an invalid size was received.
      * }</pre></blockquote>
      */
-    H3_FRAME_ERROR (0x0106),
+    H3_FRAME_ERROR (0x0106), // 262
 
     /**
      * Excessive load error.
@@ -131,7 +131,7 @@ public enum Http3Error {
      * that might be generating excessive load.
      * }</pre></blockquote>
      */
-    H3_EXCESSIVE_LOAD (0x0107),
+    H3_EXCESSIVE_LOAD (0x0107), // 263
 
     /**
      * Stream ID or Push ID error.
@@ -143,7 +143,7 @@ public enum Http3Error {
      * a limit, reducing a limit, or being reused.
      * }</pre></blockquote>
      */
-    H3_ID_ERROR (0x0108),
+    H3_ID_ERROR (0x0108), // 264
 
     /**
      * Settings error.
@@ -154,7 +154,7 @@ public enum Http3Error {
      * An endpoint detected an error in the payload of a SETTINGS frame.
      * }</pre></blockquote>
      */
-    H3_SETTINGS_ERROR (0x0109),
+    H3_SETTINGS_ERROR (0x0109), // 265
 
     /**
      * Missing settings error.
@@ -166,7 +166,7 @@ public enum Http3Error {
      * stream.
      * }</pre></blockquote>
      */
-    H3_MISSING_SETTINGS (0x010a),
+    H3_MISSING_SETTINGS (0x010a), // 266
 
     /**
      * Request rejected error.
@@ -178,7 +178,7 @@ public enum Http3Error {
      * processing.
      * }</pre></blockquote>
      */
-    H3_REQUEST_REJECTED (0x010b),
+    H3_REQUEST_REJECTED (0x010b), // 267
 
     /**
      * Request cancelled error.
@@ -190,7 +190,7 @@ public enum Http3Error {
      * cancelled.
      * }</pre></blockquote>
      */
-    H3_REQUEST_CANCELLED (0x010c),
+    H3_REQUEST_CANCELLED (0x010c), // 268
 
     /**
      * Request incomplete error.
@@ -202,7 +202,7 @@ public enum Http3Error {
      * fully-formed request.
      * }</pre></blockquote>
      */
-    H3_REQUEST_INCOMPLETE (0x010d),
+    H3_REQUEST_INCOMPLETE (0x010d), //269
 
     /**
      * Message error.
@@ -213,7 +213,7 @@ public enum Http3Error {
      * An HTTP message was malformed and cannot be processed.
      * }</pre></blockquote>
      */
-    H3_MESSAGE_ERROR (0x010e),
+    H3_MESSAGE_ERROR (0x010e), // 270
 
     /**
      * Connect error.
@@ -225,7 +225,7 @@ public enum Http3Error {
      * request was reset or abnormally closed.
      * }</pre></blockquote>
      */
-    H3_CONNECT_ERROR (0x010f),
+    H3_CONNECT_ERROR (0x010f), // 271
 
     /**
      * Version fallback error
@@ -237,7 +237,7 @@ public enum Http3Error {
      * The peer should retry over HTTP/1.1.
      * }</pre></blockquote>
      */
-    H3_VERSION_FALLBACK (0x0110),
+    H3_VERSION_FALLBACK (0x0110), // 272
 
     /**
      * QPack decompression error
@@ -249,7 +249,7 @@ public enum Http3Error {
      * and is not able to continue decoding that field section.
      * }</pre></blockquote>
      */
-    QPACK_DECOMPRESSION_FAILED (0x0200),
+    QPACK_DECOMPRESSION_FAILED (0x0200), // 512
 
     /**
      * Qpack encoder stream error.
@@ -261,7 +261,7 @@ public enum Http3Error {
      * received on the encoder stream.
      * }</pre></blockquote>
      */
-    QPACK_ENCODER_STREAM_ERROR (0x0201),
+    QPACK_ENCODER_STREAM_ERROR (0x0201), // 513
 
     /**
      * Qpack decoder stream error
@@ -273,7 +273,7 @@ public enum Http3Error {
      * received on the decoder stream.
      * }</pre></blockquote>
      */
-    QPACK_DECODER_STREAM_ERROR (0x0202);
+    QPACK_DECODER_STREAM_ERROR (0x0202); // 514
 
     final long errorCode;
     Http3Error(long errorCode) {
