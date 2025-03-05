@@ -35,7 +35,7 @@ public enum SSLScope {
     // Certificate scope as in signature_algorithms_cert extension.
     CERTIFICATE;
 
-    // Note: the SSLScope is not case-sensitive.
+    // Note: the SSLScope is case-insensitive.
     public static SSLScope nameOf(String name) {
         for (SSLScope scope : SSLScope.values()) {
             if (scope.name().equalsIgnoreCase(name)) {

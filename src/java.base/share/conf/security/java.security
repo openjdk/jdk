@@ -741,7 +741,7 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #   - TLS protocol specific usage constraints are supported by this property:
 #
 #     UsageConstraint:
-#       usage [HANDSHAKE] [CERTIFICATE]
+#       usage [Handshake] [Certificate]
 #
 #     HANDSHAKE restricts algorithm to be used for signing TLS handshake.
 #     CERTIFICATE restricts algorithm to be used for signatures in certificates.
