@@ -39,6 +39,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.inline.hpp"
+#include "memory/memRegion.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -134,6 +135,11 @@ void G1HeapRegion::hr_clear(bool clear_space) {
 
 void G1HeapRegion::clear_cardtable() {
   G1CardTable* ct = G1CollectedHeap::heap()->card_table();
+  ct->clear_MemRegion(MemRegion(bottom(), end()));
+}
+
+void G1HeapRegion::clear_refinement_table() {
+  G1CardTable* ct = G1CollectedHeap::heap()->refinement_table();
   ct->clear_MemRegion(MemRegion(bottom(), end()));
 }
 
@@ -584,8 +590,12 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
 
     G1HeapRegion* _from;
     G1HeapRegion* _to;
-    CardValue _cv_obj;
+
+    CardValue _cv_obj;    // In card table
     CardValue _cv_field;
+
+    CardValue _cv_obj2;   // In refinement card table
+    CardValue _cv_field2;
 
     RemSetChecker(G1VerifyFailureCounter* failures, oop containing_obj, T* p, oop obj)
       : Checker<T>(failures, containing_obj, p, obj) {
@@ -595,17 +605,21 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
       CardTable* ct = this->_g1h->card_table();
       _cv_obj = *ct->byte_for_const(this->_containing_obj);
       _cv_field = *ct->byte_for_const(p);
+
+      ct = this->_g1h->refinement_table();
+      _cv_obj2 = *ct->byte_for_const(this->_containing_obj);
+      _cv_field2 = *ct->byte_for_const(p);
     }
 
     bool failed() const {
       if (_from != _to && !_from->is_young() &&
           _to->rem_set()->is_complete() &&
           _from->rem_set()->cset_group() != _to->rem_set()->cset_group()) {
-        const CardValue dirty = G1CardTable::dirty_card_val();
+        const CardValue clean = G1CardTable::clean_card_val();
         return !(_to->rem_set()->contains_reference(this->_p) ||
                  (this->_containing_obj->is_objArray() ?
-                  _cv_field == dirty :
-                  _cv_obj == dirty || _cv_field == dirty));
+                  (_cv_field != clean || _cv_field2 != clean) :
+                  (_cv_obj != clean || _cv_field != clean || _cv_obj2 != clean || _cv_field2 != clean)));
       }
       return false;
     }
