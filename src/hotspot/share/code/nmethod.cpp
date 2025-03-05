@@ -3579,6 +3579,16 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
           st.print("runtime_call");
           CallRelocation* r = (CallRelocation*)iter.reloc();
           address dest = r->destination();
+          if (StubRoutines::contains(dest)) {
+            StubCodeDesc* desc = StubCodeDesc::desc_for(dest);
+            if (desc == nullptr) {
+              desc = StubCodeDesc::desc_for(dest + frame::pc_return_offset);
+            }
+            if (desc != nullptr) {
+              st.print(" Stub::%s", desc->name());
+              return st.as_string();
+            }
+          }
           CodeBlob* cb = CodeCache::find_blob(dest);
           if (cb != nullptr) {
             st.print(" %s", cb->name());

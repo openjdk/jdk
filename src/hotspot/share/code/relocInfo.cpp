@@ -875,7 +875,33 @@ void RelocIterator::print_current() {
   case relocInfo::runtime_call_w_cp_type:
     {
       CallRelocation* r = (CallRelocation*) reloc();
-      tty->print(" | [destination=" INTPTR_FORMAT "]", p2i(r->destination()));
+      address dest = r->destination();
+      tty->print(" | [destination=" INTPTR_FORMAT "]", p2i(dest));
+      if (StubRoutines::contains(dest)) {
+        StubCodeDesc* desc = StubCodeDesc::desc_for(dest);
+        if (desc == nullptr) {
+          desc = StubCodeDesc::desc_for(dest + frame::pc_return_offset);
+        }
+        if (desc != nullptr) {
+          tty->print(" Stub::%s", desc->name());
+        }
+      } else {
+        CodeBlob* cb = CodeCache::find_blob(dest);
+        if (cb != nullptr) {
+          tty->print(" %s", cb->name());
+        } else {
+          ResourceMark rm;
+          const int buflen = 1024;
+          char* buf = NEW_RESOURCE_ARRAY(char, buflen);
+          int offset;
+          if (os::dll_address_to_function_name(dest, buf, buflen, &offset)) {
+            tty->print(" %s", buf);
+            if (offset != 0) {
+              tty->print("+%d", offset);
+            }
+          }
+        }
+      }
       break;
     }
   case relocInfo::virtual_call_type:
