@@ -865,7 +865,6 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
 
 #ifdef ASSERT
   {
-    // During full gc, heap->complete_marking_context() is not valid, may equal nullptr.
     size_t idx = this->index();
     HeapWord* top_bitmap = ctx->top_bitmap(this);
 
