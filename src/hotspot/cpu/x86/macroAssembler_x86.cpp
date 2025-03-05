@@ -2720,6 +2720,60 @@ void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src, int vector_len
   }
 }
 
+void MacroAssembler::vmovdqu(XMMRegister dst, XMMRegister src, int vector_len) {
+  if (vector_len == AVX_512bit) {
+    evmovdquq(dst, src, AVX_512bit);
+  } else if (vector_len == AVX_256bit) {
+    vmovdqu(dst, src);
+  } else {
+    movdqu(dst, src);
+  }
+}
+
+void MacroAssembler::vmovdqu(Address dst, XMMRegister src, int vector_len) {
+  if (vector_len == AVX_512bit) {
+    evmovdquq(dst, src, AVX_512bit);
+  } else if (vector_len == AVX_256bit) {
+    vmovdqu(dst, src);
+  } else {
+    movdqu(dst, src);
+  }
+}
+
+void MacroAssembler::vmovdqu(XMMRegister dst, Address src, int vector_len) {
+  if (vector_len == AVX_512bit) {
+    evmovdquq(dst, src, AVX_512bit);
+  } else if (vector_len == AVX_256bit) {
+    vmovdqu(dst, src);
+  } else {
+    movdqu(dst, src);
+  }
+}
+
+void MacroAssembler::vmovdqa(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    vmovdqa(dst, as_Address(src));
+  }
+  else {
+    lea(rscratch, src);
+    vmovdqa(dst, Address(rscratch, 0));
+  }
+}
+
+void MacroAssembler::vmovdqa(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (vector_len == AVX_512bit) {
+    evmovdqaq(dst, src, AVX_512bit, rscratch);
+  } else if (vector_len == AVX_256bit) {
+    vmovdqa(dst, src, rscratch);
+  } else {
+    movdqa(dst, src, rscratch);
+  }
+}
+
 void MacroAssembler::kmov(KRegister dst, Address src) {
   if (VM_Version::supports_avx512bw()) {
     kmovql(dst, src);
@@ -2843,6 +2897,29 @@ void MacroAssembler::evmovdquq(XMMRegister dst, AddressLiteral src, int vector_l
     Assembler::evmovdquq(dst, Address(rscratch, 0), vector_len);
   }
 }
+
+void MacroAssembler::evmovdqaq(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    Assembler::evmovdqaq(dst, mask, as_Address(src), merge, vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::evmovdqaq(dst, mask, Address(rscratch, 0), merge, vector_len);
+  }
+}
+
+void MacroAssembler::evmovdqaq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    Assembler::evmovdqaq(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::evmovdqaq(dst, Address(rscratch, 0), vector_len);
+  }
+}
+
 
 void MacroAssembler::movdqa(XMMRegister dst, AddressLiteral src, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src), "missing");
