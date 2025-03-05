@@ -74,7 +74,7 @@
  * <h2>Additional Specification</h2>
  * <ul>
  *   <li><a href="doc-files/security-related-system-properties.html">
- *     Security-Related System Properties</a></li>
+ *     The {@code java.security.debug} System Property</a></li>
  * </ul>
  *
  * @spec security/standard-names.html Java Security Standard Algorithm Names

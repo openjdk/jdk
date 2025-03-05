@@ -52,26 +52,32 @@
 <a id="security.debug"></a>
 <H2>Debug</H2>
 <p><B>{@systemProperty java.security.debug}</B><BR></p>
-<p> To monitor security access, you can set the <code>java.security.debug</code> system property,
-    which determines what trace messages are printed during execution. The value of the property is one or more options separated by a comma.
-    Some options also have additional sub-options. Sub-options are specified by appending a ":" to the option, followed by a list of one more sub-options separated by a comma.
-    For example, to specify the <code>ocsp</code> and <code>verbose</code> options with the <code>certpath</code> option: set the property to "<code>certpath:ocsp,verbose</code>".
+<p> To monitor security access, you can set the <code>java.security.debug</code>
+    system property, which determines what trace messages are printed during
+    execution. The value of the property is one or more options separated by a
+    comma. Some options also have additional sub-options. Sub-options are
+    specified by appending a ":" to the option, followed by a list of one more
+    sub-options separated by a comma. For example, to specify the <code>ocsp</code>
+    and <code>verbose</code> options with the <code>certpath</code> option, set
+    the property to "<code>certpath:ocsp,verbose</code>".
 </p>
 
 <H3>Printing Thread and Timestamp Information</H3>
 <p>
-    You can append the following strings to the value specified in the <code>java.security.debug</code>
-    system property to print additional information:
+    You can append the following strings to any option specified in the
+    <code>java.security.debug</code> system property to print additional
+    information:
 <ul>
-    <li><code>+thread</code>:Print thread and caller information</li>
-    <li><code>+timestamp</code>:Print timestamp information</li>
+    <li><code>+thread</code>: Print thread and caller information</li>
+    <li><code>+timestamp</code>: Print timestamp information</li>
 </ul>
 <p>
-    For example, to add thread, caller, and timestamp information to all debuging output,
-    set the <code>java.security.debug</code> system property on the command line as follows:
+    For example, to add thread, caller, and timestamp information to all
+    debugging output, set the <code>java.security.debug</code> system property
+    on the command line as follows:
     <pre><code>java -Djava.security.debug=all+thread+timestamp MyApp</code></pre>
 
-<p>The following table lists <code>java.security.debug</code> options table:</p>
+<p>The following table lists <code>java.security.debug</code> options:</p>
 
 <table id="debug">
     <caption><b>Security Debug Options</b></caption>
@@ -88,11 +94,13 @@
     </tr>
     <tr>
         <th scope="row"><code>certpath</code></th>
-        <td>Turns on debugging for the PKIX <code>CertPathValidator</code> and <code>CertPathBuilder</code> implementations. Use the <code>ocsp</code> sub-option with the <code>certpath</code> option for OCSP protocol tracing. A hexadecimal dump of the OCSP request and response bytes is displayed.
-            You can use the following sub-options with the <code>certpath</code> option:
+        <td>Turns on debugging for the PKIX <code>CertPathValidator</code> and
+            <code>CertPathBuilder</code> implementations. The following sub-options
+            can be used with the <code>certpath</code> option:
             <ul>
                 <li><code><b>ocsp</b></code>: Dump OCSP protocol exchanges</li>
-                <li><code><b>verbose</b></code>: Print additional debugging information</li>
+                <li><code><b>verbose</b></code>: A hexadecimal dump of the OCSP
+                    request and response bytes is displayed.</li>
             </ul>
         </td>
     </tr>
@@ -146,11 +154,13 @@
     </tr>
     <tr>
         <th scope="row"><code>provider</code></th>
-        <td>Security provider debugging. The following engines can be used with the <code>provider</code> sub-option:
-            <code>engine=(engines)</code> : The output is displayed only for a specified list of JCA engines.
-            The supported values for (engines) are:
+        <td>Security provider debugging. The following sub-option can be used
+            with the <code>provider</code> option: <code>engine=(engines)</code>
+            : The output is displayed only for a specified list of one or more JCA
+            engines, separated by a comma. The supported values for (engines) are:
             <ul>
                 <li><code>Cipher</code></li>
+                <li><code>KDF</code></li>
                 <li><code>KeyAgreement</code></li>
                 <li><code>KeyGenerator</code></li>
                 <li><code>KeyPairGenerator</code></li>
@@ -180,9 +190,11 @@
     </tr>
     <tr>
         <th scope="row"><code>x509</code></th>
-        <td>X.509 certificate debugging. You can use the following sub-option with <code>X.509</code>
+        <td>X.509 certificate debugging. The following sub-option can be used
+            with the <code>X.509</code> option.
             <ul>
-                <li><code><b>ava</b></code>: Embed non-printable/non-escaped characters in AVA components as hex strings</li>
+                <li><code><b>ava</b></code>: Embed non-printable/non-escaped
+                    characters in AVA components as hex strings</li>
             </ul>
         </td>
     </tr>
