@@ -723,7 +723,7 @@ public final class LauncherHelper {
      * 1. Loads the main class from the module or class path
      * 2. Checks for a valid main method.
      * 3. If the main class extends FX Application then call on FXHelper to
-     * perform the launch.
+     * configure the FX launch.
      *
      * @param printToStderr if set, all output will be routed to stderr
      * @param mode LaunchMode as determined by the arguments passed on the
@@ -731,50 +731,49 @@ public final class LauncherHelper {
      * @param what the module name[/class], JAR file, or the main class
      *             depending on the mode
      *
-     * @return the application's main class
+     * @return the application's main entry point
      */
     @SuppressWarnings("fallthrough")
-    public static Class<?> checkAndLoadMain(boolean printToStderr,
+    public static MainEntry locateMainEntry(boolean printToStderr,
                                             int mode,
                                             String what) {
         initOutput(printToStderr);
 
-        Class<?> mainClass = null;
+        final MainEntry.Builder mainEntryBuilder = new MainEntry.Builder();
         switch (mode) {
             case LM_MODULE: case LM_SOURCE:
-                mainClass = loadModuleMainClass(what);
+                loadModuleMainClass(what, mainEntryBuilder);
                 break;
             default:
-                mainClass = loadMainClass(mode, what);
+                loadMainClass(mode, what, mainEntryBuilder);
                 break;
         }
-
+        // at this point, the main class must have been determined and set in the builder
+        assert mainEntryBuilder.mainClass != null : "missing main class";
         // record the real main class for UI purposes
-        // neither method above can return null, they will abort()
-        appClass = mainClass;
+        mainEntryBuilder.appClass = mainEntryBuilder.mainClass;
 
         /*
          * Check if FXHelper can launch it using the FX launcher. In an FX app,
          * the main class may or may not have a main method, so do this before
          * validating the main class.
          */
-        if (JAVAFX_FXHELPER_CLASS_NAME_SUFFIX.equals(mainClass.getName()) ||
-            doesExtendFXApplication(mainClass)) {
+        if (JAVAFX_FXHELPER_CLASS_NAME_SUFFIX.equals(mainEntryBuilder.mainClass.getName()) ||
+            doesExtendFXApplication(mainEntryBuilder.mainClass)) {
             // Will abort() if there are problems with FX runtime
             FXHelper.setFXLaunchParameters(what, mode);
-            mainClass = FXHelper.class;
+            mainEntryBuilder.mainClass = FXHelper.class;
         }
-
-        validateMainMethod(mainClass);
-        return mainClass;
+        return requireValidMainMethod(mainEntryBuilder);
     }
 
     /**
-     * Returns the main class for a module. The query is either a module name
+     * Sets the {@linkplain MainEntry.Builder#mainClass main class} after determining the
+     * main class for a module. The {@code what} is either a module name
      * or module-name/main-class. For the former then the module's main class
      * is obtained from the module descriptor (MainClass attribute).
      */
-    private static Class<?> loadModuleMainClass(String what) {
+    private static void loadModuleMainClass(String what, MainEntry.Builder builder) {
         int i = what.indexOf('/');
         String mainModule;
         String mainClass;
@@ -823,42 +822,42 @@ public final class LauncherHelper {
         }
 
         System.setProperty("jdk.module.main.class", c.getName());
-        return c;
+        builder.mainClass = c;
     }
 
     /**
      * Loads the main class from the class path (LM_CLASS or LM_JAR).
      */
-    private static Class<?> loadMainClass(int mode, String what) {
+    private static void loadMainClass(int mode, String what, MainEntry.Builder builder) {
         // get the class name
         String cn = null;
+        Class<?> mainClass = null;
         // In LM_JAR mode, keep the underlying file open to retain it in
         // the JarFile/ZipFile cache. This will avoid needing to re-parse
         // the central directory when the file is opened on the class path,
         // triggered by Class.forName below.
         JarFile jarFile = null;
-        switch (mode) {
-            case LM_CLASS:
-                cn = what;
-                break;
-            case LM_JAR:
-                try {
-                    jarFile = new JarFile(what);
-                    cn = getMainClassFromJar(jarFile);
-                } catch (IOException ioe) {
-                    abort(ioe, "java.launcher.jar.error1", what);
-                }
-                break;
-            default:
-                // should never happen
-                throw new InternalError("" + mode + ": Unknown launch mode");
-        }
-
-        // load the main class
-        cn = cn.replace('/', '.');
-        Class<?> mainClass = null;
-        ClassLoader scl = ClassLoader.getSystemClassLoader();
         try {
+            switch (mode) {
+                case LM_CLASS:
+                    cn = what;
+                    break;
+                case LM_JAR:
+                    try {
+                        jarFile = new JarFile(what);
+                        cn = getMainClassFromJar(jarFile);
+                    } catch (IOException ioe) {
+                        abort(ioe, "java.launcher.jar.error1", what);
+                    }
+                    break;
+                default:
+                    // should never happen
+                    throw new InternalError("Unknown launch mode: " + mode);
+            }
+            assert cn != null : "missing main class name";
+            // load the main class (but don't initialize it yet)
+            cn = cn.replace('/', '.');
+            ClassLoader scl = ClassLoader.getSystemClassLoader();
             try {
                 mainClass = Class.forName(cn, false, scl);
             } catch (NoClassDefFoundError | ClassNotFoundException cnfe) {
@@ -892,17 +891,8 @@ public final class LauncherHelper {
                 }
             }
         }
-        return mainClass;
-    }
-
-    /*
-     * Accessor method called by the launcher after getting the main class via
-     * checkAndLoadMain(). The "application class" is the class that is finally
-     * executed to start the application and in this case is used to report
-     * the correct application name, typically for UI purposes.
-     */
-    public static Class<?> getApplicationClass() {
-        return appClass;
+        assert mainClass != null : "missing main class";
+        builder.mainClass = mainClass;
     }
 
     /*
@@ -920,58 +910,65 @@ public final class LauncherHelper {
         return false;
     }
 
-    private static boolean isStaticMain = false;
-    private static boolean noArgMain = false;
-
-    // Check the existence and signature of main and abort if incorrect.
-    private static void validateMainMethod(Class<?> mainClass) {
+    // Determine the presence of a valid main method on the MainEntry.Builder.mainClass.
+    // abort() if validation fails.
+    private static MainEntry requireValidMainMethod(MainEntry.Builder builder) {
         Method mainMethod = null;
         try {
-            mainMethod = MethodFinder.findMainMethod(mainClass);
-
+            mainMethod = MethodFinder.findMainMethod(builder.mainClass);
             if (mainMethod == null) {
                 // invalid main or not FX application, abort with an error
-                abort(null, "java.launcher.cls.error2", mainClass.getName(),
+                abort(null, "java.launcher.cls.error2", builder.mainClass.getName(),
                       JAVAFX_APPLICATION_CLASS_NAME);
             }
         } catch (Throwable e) {
-            if (mainClass.getModule().isNamed()) {
+            if (builder.mainClass.getModule().isNamed()) {
                 abort(e, "java.launcher.module.error3",
-                      mainClass.getName(), mainClass.getModule().getName(),
+                      builder.mainClass.getName(), builder.mainClass.getModule().getName(),
                       e.getClass().getName(), e.getLocalizedMessage());
             } else {
-                abort(e, "java.launcher.cls.error5", mainClass.getName(),
+                abort(e, "java.launcher.cls.error5", builder.mainClass.getName(),
                       e.getClass().getName(), e.getLocalizedMessage());
             }
         }
+        // main method must be located by now
+        assert mainMethod != null : "main method wasn't located";
 
         int mods = mainMethod.getModifiers();
-        isStaticMain = Modifier.isStatic(mods);
+        boolean isStaticMain = Modifier.isStatic(mods);
         boolean isPublic = Modifier.isPublic(mods);
-        noArgMain = mainMethod.getParameterCount() == 0;
-
+        boolean noArgMain = mainMethod.getParameterCount() == 0;
         if (!PreviewFeatures.isEnabled()) {
             if (!isStaticMain || !isPublic || noArgMain) {
-                  abort(null, "java.launcher.cls.error2", mainClass.getName(),
-                       JAVAFX_APPLICATION_CLASS_NAME);
-            }
-            return;
-        }
-
-        if (!isStaticMain) {
-            String className = mainMethod.getDeclaringClass().getName();
-            if (mainClass.isMemberClass() && !Modifier.isStatic(mainClass.getModifiers())) {
-                abort(null, "java.launcher.cls.error7", className);
-            }
-            try {
-                Constructor<?> constructor = mainClass.getDeclaredConstructor();
-                if (Modifier.isPrivate(constructor.getModifiers())) {
-                    abort(null, "java.launcher.cls.error6", className);
-                }
-            } catch (Throwable ex) {
-                abort(null, "java.launcher.cls.error6", className);
+                abort(null, "java.launcher.cls.error2", builder.mainClass.getName(),
+                        JAVAFX_APPLICATION_CLASS_NAME);
             }
         }
+        // valid main method, set it on the builder
+        builder.mainMethod = mainMethod;
+        if (Modifier.isStatic(mainMethod.getModifiers())) {
+            // located a valid static main method
+            return builder.build();
+        }
+        // located an instance main method, now validate that the class to which this main method
+        // belongs has the relevant constructor
+        Constructor<?> noArgConstructor = null;
+        final String declaringClsName = mainMethod.getDeclaringClass().getName();
+        if (builder.mainClass.isMemberClass()
+                && !Modifier.isStatic(builder.mainClass.getModifiers())) {
+            abort(null, "java.launcher.cls.error7", declaringClsName);
+        }
+        try {
+            noArgConstructor = builder.mainClass.getDeclaredConstructor();
+            if (Modifier.isPrivate(noArgConstructor.getModifiers())) {
+                abort(null, "java.launcher.cls.error6", declaringClsName);
+            }
+        } catch (Throwable ex) {
+            abort(null, "java.launcher.cls.error6", declaringClsName);
+        }
+        assert noArgConstructor != null : "missing no-arg constructor for main class";
+        builder.noArgConstructor = noArgConstructor;
+        return builder.build();
     }
 
     private static final String encprop = "sun.jnu.encoding";
@@ -1335,4 +1332,57 @@ public final class LauncherHelper {
         return (uri != null && uri.getScheme().equalsIgnoreCase("jrt"));
     }
 
+    /**
+     * Carries details about the main method that has been resolved for an application.
+     * This information will be used by the native code in the launcher.
+     *
+     * @param mainClass        The main class which will be launched for the application.
+     *                         Cannot be null.
+     * @param noArgConstructor The no-arg constructor of the {@code mainClass} if the application's
+     *                         main method is determined to be an instance main method. Can be null,
+     *                         in which case the main method represents a static main method.
+     * @param mainMethod       The main method of the application which will be invoked by the
+     *                         launcher. Cannot be null.
+     * @param isNoArgMain      {@code true}, if the {@code mainMethod} is a no-arg method,
+     *                         {@code false} otherwise.
+     * @param appClass         The class which is the actual main class of the application. In cases
+     *                         like JavaFX, the {@code mainClass} will represent a wrapper class of
+     *                         the JavaFX framework and the application's actual main class will
+     *                         be stored in this {@code appClass}. In all other cases,
+     *                         the {@code appClass} is the same as {@code mainClass}.
+     */
+    public record MainEntry(Class<?> mainClass, Constructor<?> noArgConstructor,
+                            Method mainMethod, boolean isNoArgMain, Class<?> appClass) {
+
+        public MainEntry {
+            assert mainClass != null : "mainClass is null";
+            assert mainMethod != null : "mainMethod is null";
+            assert appClass != null : "appClass is null";
+            if (noArgConstructor == null) {
+                assert Modifier.isStatic(mainMethod.getModifiers())
+                        : "missing no-arg constructor";
+            } else {
+                assert !Modifier.isStatic(mainMethod.getModifiers())
+                        : "unexpected static main method";
+            }
+            if (isNoArgMain) {
+                assert mainMethod.getParameterCount() == 0 : "main method is not a no-arg method";
+            } else {
+                assert mainMethod.getParameterCount() != 0 : "main method is a no-arg method";
+            }
+        }
+
+        private static final class Builder {
+            private Class<?> mainClass;
+            private Class<?> appClass;
+            private Method mainMethod;
+            private Constructor<?> noArgConstructor;
+
+            MainEntry build() {
+                final boolean isNoArgMain = mainMethod.getParameterCount() == 0;
+                return new MainEntry(mainClass, noArgConstructor, mainMethod,
+                        isNoArgMain, appClass);
+            }
+        }
+    }
 }
