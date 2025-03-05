@@ -12,7 +12,7 @@ Copyright © 2010-2024  Google, Inc.
 Copyright © 2018-2020  Ebrahim Byagowi
 Copyright © 2004-2013  Red Hat, Inc.
 Copyright © 2019  Facebook, Inc.
-Copyright © 2012 Zilong Tan (eric.zltan@gmail.com)
+Copyright (C) 2012 Zilong Tan (eric.zltan@gmail.com)
 Copyright © 2007  Chris Wilson
 Copyright © 2018-2019 Adobe Inc.
 Copyright © 2006-2025 Behdad Esfahbod
