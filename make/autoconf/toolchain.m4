@@ -50,7 +50,7 @@ TOOLCHAIN_DESCRIPTION_microsoft="Microsoft Visual Studio"
 
 # Minimum supported versions, empty means unspecified
 TOOLCHAIN_MINIMUM_VERSION_clang="13.0"
-TOOLCHAIN_MINIMUM_VERSION_gcc="10.0"
+TOOLCHAIN_MINIMUM_VERSION_gcc="12.0"
 TOOLCHAIN_MINIMUM_VERSION_microsoft="19.28.0.0" # VS2019 16.8, aka MSVC 14.28
 
 # Minimum supported linker versions, empty means unspecified
