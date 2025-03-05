@@ -3550,7 +3550,10 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
   while (iter.next()) {
     have_one = true;
     switch (iter.type()) {
-        case relocInfo::none:                  return "no_reloc";
+        case relocInfo::none: {
+          // Skip it and check next
+          break;
+        }
         case relocInfo::oop_type: {
           // Get a non-resizable resource-allocated stringStream.
           // Our callees make use of (nested) ResourceMarks.
