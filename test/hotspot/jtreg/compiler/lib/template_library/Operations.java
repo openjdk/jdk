@@ -381,8 +381,10 @@ final class Operations {
             // TODO: add(int e, VectorMask<Integer> m)
             ops.add(new Operation.Binary(type, "", type, ".add(", type, ")", null));
             // TODO: add(Vector<Integer> v, VectorMask<Integer> m)
-            // FIXME: addIndex bounds
-            //ops.add(new Operation.Binary(type, "", type, ".addIndex(", Type.ints(), ")", null));
+
+            // If VLENGTH*scale overflows, then a IllegalArgumentException is thrown.
+            ops.add(new Operation.Binary(type, "", type, ".addIndex(", Type.ints(), " & 0xFFFF)", null));
+            ops.add(new Operation.Binary(type, "", type, ".addIndex(", Type.ints(), ")", List.of("IllegalArgumentException")));
 
             if (!type.elementType.isFloating()) {
                 ops.add(new Operation.Binary(type, "", type, ".and(", type.elementType, ")", null));
