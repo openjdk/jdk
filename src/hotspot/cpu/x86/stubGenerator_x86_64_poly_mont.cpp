@@ -102,24 +102,24 @@ static address mask_limb5() {
  *          B = replicate(bLimbs[i])                   |bi|bi|bi|bi|bi|bi|bi|bi|
  *                                                     +--+--+--+--+--+--+--+--+
  *                                                     +--+--+--+--+--+--+--+--+
+ *                                                     | 0| 0| 0|a5|a4|a3|a2|a1|
+ *          Acc1 += A *  B                            *|bi|bi|bi|bi|bi|bi|bi|bi|
  *                                               Acc1+=| 0| 0| 0|c5|c4|c3|c2|c1|
- *                                                    *| 0| 0| 0|a5|a4|a3|a2|a1|
- *          Acc1 += A *  B                             |bi|bi|bi|bi|bi|bi|bi|bi|
  *                                                     +--+--+--+--+--+--+--+--+
- *                                               Acc2+=| 0| 0| 0| 0| 0| 0| 0| 0|
- *                                                   *h| 0| 0| 0|a5|a4|a3|a2|a1|
- *          Acc2 += A *h B                             |bi|bi|bi|bi|bi|bi|bi|bi|
+ *                                                     | 0| 0| 0|a5|a4|a3|a2|a1|
+ *          Acc2 += A *h B                           *h|bi|bi|bi|bi|bi|bi|bi|bi|
+ *                                               Acc2+=| 0| 0| 0| d5|d4|d3|d2|d1|
  *                                                     +--+--+--+--+--+--+--+--+
  *          N = replicate(Acc1[0])                     |n0|n0|n0|n0|n0|n0|n0|n0|
  *                                                     +--+--+--+--+--+--+--+--+
  *                                                     +--+--+--+--+--+--+--+--+
- *                                               Acc1+=| 0| 0| 0|c5|c4|c3|c2|c1|
- *                                                    *| 0| 0| 0|m5|m4|m3|m2|m1|
- *          Acc1 += M *  N                             |n0|n0|n0|n0|n0|n0|n0|n0| Note: 52 low bits of Acc1[0] == 0 due to Montgomery!
+ *                                                     | 0| 0| 0|m5|m4|m3|m2|m1|
+ *          Acc1 += M *  N                            *|n0|n0|n0|n0|n0|n0|n0|n0|
+ *                                               Acc1+=| 0| 0| 0|c5|c4|c3|c2|c1| Note: 52 low bits of c1 == 0 due to Montgomery!
  *                                                     +--+--+--+--+--+--+--+--+
+ *                                                     | 0| 0| 0|m5|m4|m3|m2|m1|
+ *          Acc2 += M *h N                           *h|n0|n0|n0|n0|n0|n0|n0|n0|
  *                                               Acc2+=| 0| 0| 0|d5|d4|d3|d2|d1|
- *                                                   *h| 0| 0| 0|m5|m4|m3|m2|m1|
- *          Acc2 += M *h N                             |n0|n0|n0|n0|n0|n0|n0|n0|
  *                                                     +--+--+--+--+--+--+--+--+
  *          // Combine high/low partial sums Acc1 + Acc2
  *                                                     +--+--+--+--+--+--+--+--+
@@ -135,6 +135,31 @@ static address mask_limb5() {
  * At this point the result in Acc1 can overflow by 1 Modulus and needs carry
  * propagation. Subtract one modulus, carry-propagate both results and select
  * (constant-time) the positive number of the two
+ *
+ * Carry = Acc1[0] >> 52
+ * Acc1L = Acc1[0] & mask52
+ * Acc1  = Acc1 shift one q element>>
+ * Acc1 += Carry
+ *
+ * Carry = Acc2[0] >> 52
+ * Acc2L = Acc2[0] & mask52
+ * Acc2  = Acc2 shift one q element>>
+ * Acc2 += Carry
+ *
+ * for col:=1 to 4
+ *   Carry = Acc2[col]>>52
+ *   Carry = Carry shift one q element<<
+ *   Acc2 += Carry
+ *
+ *   Carry = Acc1[col]>>52
+ *   Carry = Carry shift one q element<<
+ *   Acc1 += Carry
+ * done
+ *
+ * Acc1 &= mask52
+ * Acc2 &= mask52
+ * Mask = sign(Acc2)
+ * Result = select(Mask ? Acc1 or Acc2)
  */
 void montgomeryMultiply(const Register aLimbs, const Register bLimbs, const Register rLimbs, const Register tmp, MacroAssembler* _masm) {
   Register t0 = tmp;
@@ -219,16 +244,18 @@ void montgomeryMultiply(const Register aLimbs, const Register bLimbs, const Regi
       __ vpaddq(Acc1, Acc1, Acc2, Assembler::AVX_512bit);
   }
 
-  // At this point the result in Acc1 needs carry propagation
-  // It also can overflow by 1 Modulus. Subtract one modulus
-  // then do carry propagation simultaneously on both results
-  // Carry out from the last limb becomes the mask to select the correct result
+  // At this point the result is in Acc1, but needs to be normailized to 52bit
+  // limbs (i.e. needs carry propagation) It can also overflow by 1 modulus.
+  // Subtract one modulus from Acc1 into Acc2 then carry propagate both
+  // simultaneously
 
   XMMRegister Acc1L = A;
   XMMRegister Acc2L = B;
   __ vpsubq(Acc2, Acc1, modulus, Assembler::AVX_512bit);
 
-  // digit 0 (Output to Acc1L & Acc2L)
+  // digit 0 carry out
+  // Also split Acc1 and Acc2 into two 256-bit vectors each {Acc1, Acc1L} and
+  // {Acc2, Acc2L} to use 256bit operations
   __ evpsraq(Carry, limb0, Acc2, 52, false, Assembler::AVX_256bit);
   __ evpandq(Acc2L, limb0, Acc2, Mask52, false, Assembler::AVX_256bit);
   __ evpermq(Acc2, allLimbs, shift1R, Acc2, false, Assembler::AVX_512bit);
@@ -239,10 +266,22 @@ void montgomeryMultiply(const Register aLimbs, const Register bLimbs, const Regi
   __ evpermq(Acc1, allLimbs, shift1R, Acc1, false, Assembler::AVX_512bit);
   __ vpaddq(Acc1, Acc1, Carry, Assembler::AVX_256bit);
 
-  // Do carry propagation while remaining in vector domain. Carry register
-  // contains just the carry for the particular column, everything else is masked
-  // out.
-  // Note: element 'shift' with vpermq is more expensive, vpalignr if possible
+ /* remaining digits carry
+  * Note1: Carry register contains just the carry for the particular
+  * column (zero-mask the rest) and gets progressively shifted left
+  * Note2: 'element shift' with vpermq is more expensive, so using vpalignr when
+  * possible. vpalignr shifts 'right' not left, so place the carry appropiately
+  *                               +--+--+--+--+    +--+--+--+--+         +--+--+
+  * vpalignr(X, X, X, 8):         |x4|x3|x2|x1| >> |x2|x1|x2|x1|         |x1|x2|
+  *                               +--+--+--+--+    +--+--+--+--+ >>      +--+--+
+  *                                     |          +--+--+--+--+   +--+--+
+  *                                     |          |x4|x3|x4|x3|   |x3|x4|
+  *                                     |          +--+--+--+--+   +--+--+
+  *                                     |                                vv
+  *                                     |                          +--+--+--+--+
+  *  (x3 and x1 is effectively shifted  +------------------------> |x3|x4|x1|x2|
+  *   left; zero-mask everything but one column of interest)       +--+--+--+--+
+  */
   for (int i = 1; i<4; i++) {
     __ evpsraq(Carry, masks[i-1], Acc2, 52, false, Assembler::AVX_256bit);
     if (i == 1 || i == 3) {
@@ -261,7 +300,9 @@ void montgomeryMultiply(const Register aLimbs, const Register bLimbs, const Regi
     __ vpaddq(Acc1, Acc1, Carry, Assembler::AVX_256bit);
   }
 
-  // Mask
+  // Iff Acc2 is negative, then Acc1 contains the result.
+  // if Acc2 is negative, upper 12 bits will be set; arithmetic shift by 64 bits
+  // generates a mask from Acc2 sign bit
   __ evpsraq(Carry, Acc2, 64, Assembler::AVX_256bit);
   __ vpermq(Carry, Carry, 0b11111111, Assembler::AVX_256bit); //0b-3-3-3-3
   __ evpandq(Acc1, Acc1, Mask52, Assembler::AVX_256bit);
@@ -346,7 +387,7 @@ void montgomeryMultiply(const Register aLimbs, const Register bLimbs, const Regi
  *   Carry propagate Acc2
  *   Carry propagate Acc1
  *   Mask = sign(Acc2)
- *   Result = Mask
+ *   Result = select(Mask ? Acc1 or Acc2)
  *
  * Acc1 can overflow by one modulus (hence Acc2); Either Acc1 or Acc2 contain
  * the correct result. However, they both need carry propagation (i.e. normalize

@@ -419,12 +419,11 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
         c3 &= LIMB_MASK;
 
         // We now must select a result that is in range of [0,modulus). i.e.
-        // either {c0-4} or {c5-9}. `If statements` are not allowed here, so use
-        // boolean algebra (i.e. a mask). If statement would had been `if {c0-4}
-        // is negative`, which essentially means 'what is the sign bit of c4'
-        // A signed shift is the easiest way to broadcast c4-sign-bit into a
-        // mask
-        long mask = c4 >> BITS_PER_LIMB;
+        // either {c0-4} or {c5-9}. Iff {c0-4} is negative, then {c5-9} contains
+        // the result. (After carry propagation) IF c4 is negative, {c0-4} is
+        // negative. Arithmetic shift by 64 bits generates a mask from c4 that
+        // can be used to select 'constant time' either {c0-4} or {c5-9}.
+        long mask = c4 >> 63;
         r[0] = ((c5 & mask) | (c0 & ~mask));
         r[1] = ((c6 & mask) | (c1 & ~mask));
         r[2] = ((c7 & mask) | (c2 & ~mask));
