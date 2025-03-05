@@ -45,7 +45,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.net.URL;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Locale;
