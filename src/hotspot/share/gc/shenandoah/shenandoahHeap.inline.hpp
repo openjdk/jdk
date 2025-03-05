@@ -252,7 +252,7 @@ inline void ShenandoahHeap::atomic_clear_oop(narrowOop* addr, narrowOop compare)
 }
 
 inline bool ShenandoahHeap::cancelled_gc() const {
-  return _cancelled_gc.get() == CANCELLED;
+  return _cancelled_gc.get() != GCCause::_no_gc;
 }
 
 inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
@@ -264,8 +264,12 @@ inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
   return cancelled_gc();
 }
 
+inline GCCause::Cause ShenandoahHeap::cancelled_cause() const {
+  return _cancelled_gc.get();
+}
+
 inline void ShenandoahHeap::clear_cancelled_gc(bool clear_oom_handler) {
-  _cancelled_gc.set(CANCELLABLE);
+  _cancelled_gc.set(GCCause::_no_gc);
   if (_cancel_requested_time > 0) {
     log_debug(gc)("GC cancellation took %.3fs", (os::elapsedTime() - _cancel_requested_time));
     _cancel_requested_time = 0;
