@@ -31,11 +31,13 @@
  * @requires vm.cds.supports.aot.class.linking
  * @comment work around JDK-8345635
  * @requires !vm.jvmci.enabled
- * @library /test/jdk/lib/testlibrary /test/lib
+ * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build InitiatingLoaderTester BadOldClassA BadOldClassB
- * @build BulkLoaderTest
+ * @build BulkLoaderTest SimpleCusty
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar BulkLoaderTestApp.jar BulkLoaderTestApp MyUtil InitiatingLoaderTester
  *                 BadOldClassA BadOldClassB
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar
+ *                 SimpleCusty
  * @run driver BulkLoaderTest STATIC
  */
 
@@ -44,11 +46,13 @@
  * @requires vm.cds.supports.aot.class.linking
  * @comment work around JDK-8345635
  * @requires !vm.jvmci.enabled
- * @library /test/jdk/lib/testlibrary /test/lib
+ * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build InitiatingLoaderTester BadOldClassA BadOldClassB
- * @build jdk.test.whitebox.WhiteBox BulkLoaderTest
+ * @build jdk.test.whitebox.WhiteBox BulkLoaderTest SimpleCusty
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar BulkLoaderTestApp.jar BulkLoaderTestApp MyUtil InitiatingLoaderTester
  *                 BadOldClassA BadOldClassB
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar
+ *                 SimpleCusty
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. BulkLoaderTest DYNAMIC
  */
@@ -58,16 +62,20 @@
  * @requires vm.cds.supports.aot.class.linking
  * @comment work around JDK-8345635
  * @requires !vm.jvmci.enabled
- * @library /test/jdk/lib/testlibrary /test/lib
+ * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build InitiatingLoaderTester BadOldClassA BadOldClassB
- * @build BulkLoaderTest
+ * @build BulkLoaderTest SimpleCusty
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar BulkLoaderTestApp.jar BulkLoaderTestApp MyUtil InitiatingLoaderTester
  *                 BadOldClassA BadOldClassB
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar
+ *                 SimpleCusty
  * @run driver BulkLoaderTest AOT
  */
 
 import java.io.File;
 import java.lang.StackWalker.StackFrame;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -124,7 +132,7 @@ public class BulkLoaderTest {
         @Override
         public String[] vmArgs(RunMode runMode) {
             return new String[] {
-                "-Xlog:cds,cds+aot+load",
+                "-Xlog:cds,cds+aot+load,cds+class=debug",
                 "-XX:+AOTClassLinking",
             };
         }
@@ -141,6 +149,11 @@ public class BulkLoaderTest {
             if (isAOTWorkflow() && runMode == RunMode.TRAINING) {
                 out.shouldContain("Skipping BadOldClassA: Unlinked class not supported by AOTConfiguration");
             }
+
+            if (isDumping(runMode)) {
+                // Check that we are archiving classes for custom class loaders.
+                out.shouldMatch("cds,class.* SimpleCusty");
+            }
         }
     }
 }
@@ -152,6 +165,7 @@ class BulkLoaderTestApp {
         checkClasses();
         checkInitiatingLoader();
         checkOldClasses();
+        checkCustomLoader();
     }
 
     // Check the ClassLoader/Module/Package/ProtectionDomain/CodeSource of classes that are aot-linked
@@ -274,6 +288,22 @@ class BulkLoaderTestApp {
         } catch (VerifyError e) {
             System.out.println("Caught VerifyError for BadOldClassB: " + e);
         }
+    }
+
+
+    static void checkCustomLoader() throws Exception {
+        Object o = initFromCustomLoader();
+        System.out.println(o);
+    }
+
+    static Object initFromCustomLoader() throws Exception {
+        String path = "cust.jar";
+        URL url = new File(path).toURI().toURL();
+        URL[] urls = new URL[] {url};
+        URLClassLoader urlClassLoader =
+            new URLClassLoader("MyLoader", urls, null);
+        Class c = Class.forName("SimpleCusty", true, urlClassLoader);
+        return c.newInstance();
     }
 }
 

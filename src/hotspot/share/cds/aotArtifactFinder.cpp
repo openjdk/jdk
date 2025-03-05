@@ -148,10 +148,11 @@ void AOTArtifactFinder::find_artifacts() {
   SystemDictionaryShared::dumptime_table()->iterate_all_live_classes([&] (InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded() && _seen_classes->get(k) == nullptr) {
       info.set_excluded();
+      info.set_has_checked_exclusion();
       assert(k->is_hidden(), "must be");
       if (log_is_enabled(Info, cds)) {
         ResourceMark rm;
-        log_info(cds)("Skipping %s: Hidden class", k->name()->as_C_string());
+        log_debug(cds)("Skipping %s: Unreferenced hidden class", k->name()->as_C_string());
       }
     }
   });
@@ -207,6 +208,10 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
   _seen_classes->put_if_absent(ik, &created);
   if (created) {
     _all_cached_classes->append(ik);
+    if (CDSConfig::is_dumping_final_static_archive() && ik->is_shared_unregistered_class()) {
+      // The following are not appliable to unregistered classes
+      return;
+    }
     scan_oops_in_instance_class(ik);
     if (ik->is_hidden() && CDSConfig::is_initing_classes_at_dump_time()) {
       bool succeed = AOTClassLinker::try_add_candidate(ik);
