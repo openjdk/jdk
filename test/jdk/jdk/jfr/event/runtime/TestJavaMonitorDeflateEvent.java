@@ -23,13 +23,16 @@
 
 package jdk.jfr.event.runtime;
 
-import static jdk.test.lib.Asserts.assertTrue;
+import static jdk.test.lib.Asserts.assertFalse;
 
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.concurrent.CountDownLatch;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import jdk.jfr.Recording;
+import jdk.jfr.consumer.RecordingStream;
+import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
@@ -49,61 +52,39 @@ public class TestJavaMonitorDeflateEvent {
     private static final String FIELD_ADDRESS    = "address";
 
     private static final String EVENT_NAME = EventNames.JavaMonitorDeflate;
-    private static final long WAIT_TIME = 123456;
 
     static class Lock {
     }
 
     public static void main(String[] args) throws Exception {
-        Recording recording = new Recording();
-        recording.enable(EVENT_NAME).withThreshold(Duration.ofMillis(0));
         final Lock lock = new Lock();
-        final CountDownLatch latch = new CountDownLatch(1);
-        // create a thread that waits
-        TestThread waitThread = new TestThread(new XRun() {
-            @Override
-            public void xrun() throws Throwable {
-                synchronized (lock) {
-                    latch.countDown();
-                    lock.wait(WAIT_TIME);
-                }
-            }
-        });
-        try {
-            recording.start();
-            waitThread.start();
-            latch.await();
-            synchronized (lock) {
-                lock.notifyAll();
-            }
-        } finally {
-            waitThread.join();
-            // Let deflater thread run.
-            Thread.sleep(3000);
-            recording.stop();
-        }
         final String lockClassName = lock.getClass().getName().replace('.', '/');
-        boolean isAnyFound = false;
-        try {
-            // Find at least one event with the correct monitor class and check the other fields
-            for (RecordedEvent event : Events.fromRecording(recording)) {
-                assertTrue(EVENT_NAME.equals(event.getEventType().getName()), "mismatched event types?");
-                // Check recorded inflation event is associated with the Lock class used in the test
-                final String recordedMonitorClassName = Events.assertField(event, FIELD_KLASS_NAME).getValue();
-                if (!lockClassName.equals(recordedMonitorClassName)) {
-                    continue;
+
+        List<RecordedEvent> events = new CopyOnWriteArrayList<>();
+        try (RecordingStream rs = new RecordingStream()) {
+            rs.enable(EVENT_NAME).withoutThreshold();
+            rs.onEvent(EVENT_NAME, e -> {
+                Object clazz = e.getValue(FIELD_KLASS_NAME);
+                if (clazz.equals(lockClassName)) {
+                    events.add(e);
+                    rs.close();
                 }
-                // Check recorded thread matches one of the threads in the test
-                Events.assertField(event, FIELD_ADDRESS).notEqual(0L);
-                isAnyFound = true;
-                break;
+            });
+            rs.startAsync();
+
+            synchronized (lock) {
+                // Causes lock inflation.
+                lock.wait(1);
             }
-            assertTrue(isAnyFound, "Expected an deflation event from test");
-        } catch (Throwable e) {
-            recording.dump(Paths.get("failed.jfr"));
-            throw e;
-        } finally {
-            recording.close();
+
+            // Wait for deflater thread to act.
+            rs.awaitTermination();
+
+            System.out.println(events);
+            assertFalse(events.isEmpty());
+            for (RecordedEvent ev : events) {
+                Events.assertField(ev, FIELD_ADDRESS).notEqual(0L);
+            }
         }
     }
 }

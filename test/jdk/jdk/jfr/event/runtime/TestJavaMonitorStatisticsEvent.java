@@ -23,13 +23,17 @@
 
 package jdk.jfr.event.runtime;
 
+import static jdk.test.lib.Asserts.assertFalse;
 import static jdk.test.lib.Asserts.assertTrue;
 
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.concurrent.CountDownLatch;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import jdk.jfr.Recording;
+import jdk.jfr.consumer.RecordingStream;
+import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
@@ -41,7 +45,7 @@ import jdk.test.lib.thread.XRun;
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm -XX:GuaranteedAsyncDeflationInterval=100 jdk.jfr.event.runtime.TestJavaMonitorStatisticsEvent
+ * @run main/othervm jdk.jfr.event.runtime.TestJavaMonitorStatisticsEvent
  */
 public class TestJavaMonitorStatisticsEvent {
 
@@ -49,58 +53,56 @@ public class TestJavaMonitorStatisticsEvent {
     private static final String FIELD_MAX_COUNT = "maxCount";
 
     private static final String EVENT_NAME = EventNames.JavaMonitorStatistics;
-    private static final long WAIT_TIME = 123456;
+    private static final int NUM_LOCKS = 512;
 
     static class Lock {
     }
 
-    public static void main(String[] args) throws Exception {
-        Recording recording = new Recording();
-        recording.enable(EVENT_NAME).withThreshold(Duration.ofMillis(0));
-        final Lock lock = new Lock();
-        final CountDownLatch latch = new CountDownLatch(1);
-        // create a thread that waits
-        TestThread waitThread = new TestThread(new XRun() {
-            @Override
-            public void xrun() throws Throwable {
-                synchronized (lock) {
-                    latch.countDown();
-                    lock.wait(WAIT_TIME);
-                }
-            }
-        });
-        try {
-            recording.start();
-            waitThread.start();
-            latch.await();
-            synchronized (lock) {
-                lock.notifyAll();
-            }
-        } finally {
-            waitThread.join();
-            // Let deflater thread run.
-            Thread.sleep(3000);
-            recording.stop();
+    static final Lock[] LOCKS = new Lock[NUM_LOCKS];
+
+    static void lockNext(int idx, Runnable action) throws InterruptedException {
+        if (idx >= NUM_LOCKS) {
+            action.run();
+            return;
         }
-        boolean isAnyFound = false;
-        try {
-            // Find at least one event with the correct monitor class and check the other fields
-            for (RecordedEvent event : Events.fromRecording(recording)) {
-                assertTrue(EVENT_NAME.equals(event.getEventType().getName()), "mismatched event types?");
-                long totalCount = Events.assertField(event, FIELD_COUNT).getValue();
-                long deflatedCount = Events.assertField(event, FIELD_MAX_COUNT).getValue();
-                assertTrue(totalCount >= 0, "Should be positive");
-                assertTrue(deflatedCount >= 0, "Should be positive");
-                assertTrue(totalCount + deflatedCount > 0, "Should be non-zero");
-                isAnyFound = true;
-                break;
+        synchronized (LOCKS[idx]) {
+            LOCKS[idx].wait(1);
+            lockNext(idx + 1, action);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        List<RecordedEvent> events = new CopyOnWriteArrayList<>();
+        try (RecordingStream rs = new RecordingStream()) {
+            rs.enable(EVENT_NAME).with("period", "everyChunk");
+            rs.onEvent(EVENT_NAME, e -> events.add(e));
+            rs.startAsync();
+
+            // Recursively lock all, causing NUM_LOCKS monitors to exist.
+            // Stop the recording when holding all the locks, so that we
+            // get at least one event with NUM_LOCKS max.
+            for (int c = 0; c < NUM_LOCKS; c++) {
+                LOCKS[c] = new Lock();
             }
-            assertTrue(isAnyFound, "Expected a statistics event from test");
-        } catch (Throwable e) {
-            recording.dump(Paths.get("failed.jfr"));
-            throw e;
-        } finally {
-            recording.close();
+            lockNext(0, () -> rs.stop());
+
+            System.out.println(events);
+            assertFalse(events.isEmpty());
+
+            long globalMax = Long.MIN_VALUE;
+            long globalCount = Long.MIN_VALUE;
+            for (RecordedEvent ev : events) {
+                long evMaxCount = Events.assertField(ev, FIELD_MAX_COUNT).getValue();
+                long evCount = Events.assertField(ev, FIELD_COUNT).getValue();
+                assertTrue(evCount <= evMaxCount, "Count should be below max: " + evCount + " <= " + evMaxCount);
+                assertTrue(evMaxCount >= 0, "Max should be non-negative: " + evMaxCount);
+                assertTrue(evCount >= 0, "Count should be non-negative: " + evCount);
+                globalMax = Math.max(globalMax, evMaxCount);
+                globalCount = Math.max(globalCount, evCount);
+            }
+
+            assertTrue(globalMax >= NUM_LOCKS, "Global max should be at least " + NUM_LOCKS + ": " + globalMax);
+            assertTrue(globalCount >= NUM_LOCKS, "Global count should be at least " + NUM_LOCKS + ": " + globalCount);
         }
     }
 }
