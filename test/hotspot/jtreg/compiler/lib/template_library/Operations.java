@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.stream.Stream;
 
+// TODO: find more operations, like in Math.java or ExactMath.java
 final class Operations {
 
     private static final List<Operation> BYTE_OPERATIONS = List.of(
@@ -111,8 +112,8 @@ final class Operations {
         new Operation.Binary(Type.ints(), "(", Type.ints(), " + ",   Type.ints(), ")", null),
         new Operation.Binary(Type.ints(), "(", Type.ints(), " - ",   Type.ints(), ")", null),
         new Operation.Binary(Type.ints(), "(", Type.ints(), " * ",   Type.ints(), ")", null),
-        new Operation.Binary(Type.ints(), "(", Type.ints(), " / ",   Type.ints(), ")", null),
-        new Operation.Binary(Type.ints(), "(", Type.ints(), " % ",   Type.ints(), ")", null),
+        new Operation.Binary(Type.ints(), "(", Type.ints(), " / ",   Type.ints(), ")", List.of("ArithmeticException")),
+        new Operation.Binary(Type.ints(), "(", Type.ints(), " % ",   Type.ints(), ")", List.of("ArithmeticException")),
         new Operation.Binary(Type.ints(), "(", Type.ints(), " & ",   Type.ints(), ")", null),
         new Operation.Binary(Type.ints(), "(", Type.ints(), " | ",   Type.ints(), ")", null),
         new Operation.Binary(Type.ints(), "(", Type.ints(), " ^ ",   Type.ints(), ")", null),
@@ -135,7 +136,7 @@ final class Operations {
         new Operation.Binary(Type.ints(), "Integer.compareUnsigned(", Type.ints(), ", ", Type.ints(), ")", null),
         //new Operation.Binary(Type.ints(), "Integer.compress(", Type.ints(), ", ", Type.ints(), ")", null),
         // TODO: add back after JDK-8350896
-        new Operation.Binary(Type.ints(), "Integer.divideUnsigned(", Type.ints(), ", ", Type.ints(), ")", null),
+        new Operation.Binary(Type.ints(), "Integer.divideUnsigned(", Type.ints(), ", ", Type.ints(), ")", List.of("ArithmeticException")),
         new Operation.Binary(Type.ints(), "Integer.expand(", Type.ints(), ", ", Type.ints(), ")", null),
         new Operation.Unary(Type.ints(), "Integer.highestOneBit(", Type.ints(), ")", null),
         new Operation.Unary(Type.ints(), "Integer.lowestOneBit(", Type.ints(), ")", null),
@@ -143,7 +144,7 @@ final class Operations {
         new Operation.Binary(Type.ints(), "Integer.max(", Type.ints(), ", ", Type.ints(), ")", null),
         new Operation.Unary(Type.ints(), "Integer.numberOfLeadingZeros(", Type.ints(), ")", null),
         new Operation.Unary(Type.ints(), "Integer.numberOfTrailingZeros(", Type.ints(), ")", null),
-        new Operation.Binary(Type.ints(), "Integer.remainderUnsigned(", Type.ints(), ", ", Type.ints(), ")", null),
+        new Operation.Binary(Type.ints(), "Integer.remainderUnsigned(", Type.ints(), ", ", Type.ints(), ")", List.of("ArithmeticException")),
         new Operation.Unary(Type.ints(), "Integer.reverse(", Type.ints(), ")", null),
         new Operation.Unary(Type.ints(), "Integer.reverseBytes(", Type.ints(), ")", null),
         new Operation.Binary(Type.ints(), "Integer.rotateLeft(", Type.ints(), ", ", Type.ints(), ")", null),
@@ -185,8 +186,8 @@ final class Operations {
         new Operation.Binary(Type.longs(), "(", Type.longs(), " + ",   Type.longs(), ")", null),
         new Operation.Binary(Type.longs(), "(", Type.longs(), " - ",   Type.longs(), ")", null),
         new Operation.Binary(Type.longs(), "(", Type.longs(), " * ",   Type.longs(), ")", null),
-        new Operation.Binary(Type.longs(), "(", Type.longs(), " / ",   Type.longs(), ")", null),
-        new Operation.Binary(Type.longs(), "(", Type.longs(), " % ",   Type.longs(), ")", null),
+        new Operation.Binary(Type.longs(), "(", Type.longs(), " / ",   Type.longs(), ")", List.of("ArithmeticException")),
+        new Operation.Binary(Type.longs(), "(", Type.longs(), " % ",   Type.longs(), ")", List.of("ArithmeticException")),
         new Operation.Binary(Type.longs(), "(", Type.longs(), " & ",   Type.longs(), ")", null),
         new Operation.Binary(Type.longs(), "(", Type.longs(), " | ",   Type.longs(), ")", null),
         new Operation.Binary(Type.longs(), "(", Type.longs(), " ^ ",   Type.longs(), ")", null),
@@ -202,13 +203,13 @@ final class Operations {
 
         // new Operation.Binary(Type.longs(), "Long.compress(", Type.longs(), ", ", Type.longs(), ")", null),
         // TODO: add back after JDK-8350896
-        new Operation.Binary(Type.longs(), "Long.divideUnsigned(", Type.longs(), ", ", Type.longs(), ")", null),
+        new Operation.Binary(Type.longs(), "Long.divideUnsigned(", Type.longs(), ", ", Type.longs(), ")", List.of("ArithmeticException")),
         new Operation.Binary(Type.longs(), "Long.expand(", Type.longs(), ", ", Type.longs(), ")", null),
         new Operation.Unary(Type.longs(), "Long.highestOneBit(", Type.longs(), ")", null),
         new Operation.Unary(Type.longs(), "Long.lowestOneBit(", Type.longs(), ")", null),
         new Operation.Binary(Type.longs(), "Long.min(", Type.longs(), ", ", Type.longs(), ")", null),
         new Operation.Binary(Type.longs(), "Long.max(", Type.longs(), ", ", Type.longs(), ")", null),
-        new Operation.Binary(Type.longs(), "Long.remainderUnsigned(", Type.longs(), ", ", Type.longs(), ")", null),
+        new Operation.Binary(Type.longs(), "Long.remainderUnsigned(", Type.longs(), ", ", Type.longs(), ")", List.of("ArithmeticException")),
         new Operation.Unary(Type.longs(), "Long.reverse(", Type.longs(), ")", null),
         new Operation.Unary(Type.longs(), "Long.reverseBytes(", Type.longs(), ")", null),
         new Operation.Binary(Type.longs(), "Long.rotateLeft(", Type.longs(), ", ", Type.ints(), ")", null),
