@@ -217,7 +217,7 @@ public class TestFuzzVectorAPI {
         templates.add(Library.arrayFillMethods());
         for (VectorAPIType type : Type.VECTOR_API_TYPES) {
             for (int i = 0; i < 10; i++) { templates.add(template1.withArgs(type)); }
-            for (int i = 0; i <  5; i++) { templates.add(template2.withArgs(type)); }
+            for (int i = 0; i < 10; i++) { templates.add(template2.withArgs(type)); }
         }
         return IRTestClass.TEMPLATE.withArgs(info, templates).render();
     }

@@ -431,7 +431,7 @@ final class Operations {
                 // TODO: convertShape
             }
 
-            ops.add(new Operation.Binary(type, "", type, ".div(", type.elementType, ")", null));
+            ops.add(new Operation.Binary(type, "", type, ".div(", type.elementType, ")", List.of("ArithmeticException")));
             // TODO: div(int e, VectorMask<Integer> m)
             ops.add(new Operation.Binary(type, "", type, ".div(", type, ")", List.of("ArithmeticException")));
             // TODO: div(Vector<Integer> v, VectorMask<Integer> m)
