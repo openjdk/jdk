@@ -220,8 +220,6 @@ class SynthParser extends DefaultHandler {
                 "You must supply an InputStream, StyleFactory and Class");
         }
 
-        assert(classResourceBase != null);
-
         _factory = factory;
         _classResourceBase = classResourceBase;
         _defaultsMap = defaultsMap;
