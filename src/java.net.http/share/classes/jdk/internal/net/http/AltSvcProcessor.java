@@ -119,8 +119,16 @@ final class AltSvcProcessor {
             }
             return fnResponse;
         }
-
-        Origin origin = Origin.fromRequest(request);
+        final Origin origin;
+        try {
+            origin = Origin.from(request.uri());
+        } catch (IllegalArgumentException iae) {
+            if (debug.on()) {
+                debug.log("ignoring alt-svc header due to: " + iae);
+            }
+            // ignore the alt-svc
+            return fnResponse;
+        }
         String altSvcValue = altSvcHeaderVal.get();
         processValueAndUpdateRegistry(client, origin, altSvcValue);
         return fnResponse;

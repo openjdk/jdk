@@ -398,7 +398,12 @@ abstract class HttpQuicConnection extends HttpConnection {
         final URI originURI = requestURI.resolve("/");
         if (t == null && connection != null) {
             // There is an h3 endpoint at the given origin: update the registry
-            var origin = AltServicesRegistry.Origin.from(originURI);
+            final AltServicesRegistry.Origin origin;
+            try {
+                origin = AltServicesRegistry.Origin.from(originURI);
+            } catch (IllegalArgumentException iae) {
+                return MinimalFuture.completedFuture(connection);
+            }
             assert origin.port() == destAddr.getPort();
             var id = new AltService.Identity(H3, origin.host(), origin.port());
             var altSvc = client.registry().registerUnadvertised(id, origin, connection.connection());

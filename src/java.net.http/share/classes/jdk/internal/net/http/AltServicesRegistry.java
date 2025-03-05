@@ -95,6 +95,15 @@ public final class AltServicesRegistry {
             }
         }
 
+        /**
+         *
+         * {@return true if the Origin's scheme is considered secure, else returns false}
+         */
+        boolean isSecure() {
+            // we consider https to be the only secure scheme
+            return scheme.toLowerCase(Locale.ROOT).equals("https");
+        }
+
         @Override
         public String toString() {
             return scheme + "://" + toAuthority(host, port);
@@ -104,11 +113,19 @@ public final class AltServicesRegistry {
          * {@return Creates and returns an Origin from an URI}
          *
          * @param uri The URI of the origin
+         * @throws IllegalArgumentException if a Origin cannot be constructed from
+         *                                  the given {@code uri}
          */
         public static Origin from(final URI uri) throws IllegalArgumentException {
             Objects.requireNonNull(uri);
             final String scheme = uri.getScheme();
+            if (scheme == null) {
+                throw new IllegalArgumentException("missing scheme in URI");
+            }
             final String host = uri.getHost();
+            if (host == null) {
+                throw new IllegalArgumentException("missing host in URI");
+            }
             int port = uri.getPort();
             if (port == -1 && scheme != null) {
                 port = switch (scheme.toLowerCase(Locale.ROOT)) {
@@ -161,17 +178,20 @@ public final class AltServicesRegistry {
             }
         }
 
-        static Origin of(final String scheme, final InetSocketAddress addr) {
+        /**
+         * {@return Creates and returns an Origin for the given scheme and origin address}
+         *
+         * @param scheme the scheme of the Origin
+         * @param addr the address of the Origin
+         * @throws IllegalArgumentException if a Origin cannot be constructed from
+         *                                  the given {@code scheme} or {@code addr}
+         */
+        static Origin of(final String scheme, final InetSocketAddress addr)
+                throws IllegalArgumentException {
             // we use getHostString(), since the address could be unresolved in the case where
             // proxy is configured
             final String originHost = addr.getHostString();
             return new Origin(scheme, originHost, addr.getPort());
-        }
-
-        static Origin fromRequest(final HttpRequestImpl request) {
-            final String scheme = request.uri().getScheme();
-            final InetSocketAddress requestAddr = request.getAddress();
-            return Origin.of(scheme, requestAddr);
         }
     }
 
@@ -227,6 +247,7 @@ public final class AltServicesRegistry {
                            final boolean advertised) {
             Objects.requireNonNull(id);
             Objects.requireNonNull(origin);
+            assert origin.isSecure() : "origin " + origin + " is not secure";
             deadline = deadline == null ? Deadline.MAX : deadline;
             final String authority = toAuthority(id.host, id.port);
             final String originAuthority = toAuthority(origin.host, origin.port);
@@ -311,6 +332,9 @@ public final class AltServicesRegistry {
                                                   final Deadline deadline, final boolean persist) {
             Objects.requireNonNull(id);
             Objects.requireNonNull(origin);
+            if (!origin.isSecure()) {
+                return Optional.empty();
+            }
             if (DEBUG.on()) {
                 DEBUG.log("Creating AltService for id=%s, origin=%s%n", id, origin);
             }
@@ -326,6 +350,9 @@ public final class AltServicesRegistry {
                                                                final Deadline deadline, final boolean persist) {
             Objects.requireNonNull(id);
             Objects.requireNonNull(origin);
+            if (!origin.isSecure()) {
+                return Optional.empty();
+            }
             final List<SNIServerName> sniServerNames = AltSvcProcessor.getSNIServerNames(conn);
             if (sniServerNames == null || sniServerNames.isEmpty()) {
                 if (DEBUG.on()) {
@@ -547,7 +574,13 @@ public final class AltServicesRegistry {
     }
 
     public Stream<AltService> lookup(final URI uri, final String alpn) {
-        return lookup(Origin.from(uri), alpn);
+        final Origin origin;
+        try {
+            origin = Origin.from(uri);
+        } catch (IllegalArgumentException iae) {
+            return Stream.empty();
+        }
+        return lookup(origin, alpn);
     }
 
     /**
@@ -565,7 +598,13 @@ public final class AltServicesRegistry {
 
     public Stream<AltService> lookup(final URI uri,
                                      final Predicate<? super String> alpnMatcher) {
-        return lookup(Origin.from(uri), alpnMatcher);
+        final Origin origin;
+        try {
+            origin = Origin.from(uri);
+        } catch (IllegalArgumentException iae) {
+            return Stream.empty();
+        }
+        return lookup(origin, alpnMatcher);
     }
 
     private boolean isExpired(AltService service, Deadline now) {
