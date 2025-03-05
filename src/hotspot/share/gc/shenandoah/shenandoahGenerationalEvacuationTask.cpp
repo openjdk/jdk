@@ -169,7 +169,7 @@ void ShenandoahGenerationalEvacuationTask::maybe_promote_region(ShenandoahHeapRe
 // We identify the entirety of the region as DIRTY to force the next remembered set scan to identify the "interesting pointers"
 // contained herein.
 void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion* region) {
-  ShenandoahMarkingContext* const marking_context = _heap->complete_marking_context();
+  ShenandoahMarkingContext* const marking_context = _heap->complete_marking_context(region);
   HeapWord* const tams = marking_context->top_at_mark_start(region);
 
   {
