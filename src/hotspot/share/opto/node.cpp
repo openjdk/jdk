@@ -665,48 +665,48 @@ void Node::destruct(PhaseValues* phase) {
 }
 
 //------------------------------resize_array-------------------------------------------
- // Resize input or output array to grow it the next larger power-of-2 bigger
+// Resize input or output array to grow it to the next larger power-of-2 bigger
 // than len.
-void Node::resize_array( Node**& array, node_idx_t& max_size, uint len, bool is_in) {
-  Arena* arena = Compile::current()->node_arena();
+void Node::resize_array(Node **&array, node_idx_t &max_size, uint len, bool is_in) {
+  Arena *arena = Compile::current()->node_arena();
   uint new_max = max_size;
-  if( new_max == 0 ) {
+  if (new_max == 0) {
     max_size = 4;
-    array = (Node**)arena->Amalloc(4*sizeof(Node*));
-    if(is_in){
+    array = (Node **)arena->Amalloc(4 * sizeof(Node *));
+    if (is_in) {
       array[0] = nullptr;
       array[1] = nullptr;
       array[2] = nullptr;
       array[3] = nullptr;
     }
-      return;
+    return;
   }
   new_max = next_power_of_2(len);
   // Trimming to limit allows a uint8 to handle up to 255 edges.
   // Previously I was using only powers-of-2 which peaked at 128 edges.
-  //if( new_max >= limit ) new_max = limit-1;
-  if(!is_in){
-    assert(array != nullptr && array != NO_OUT_ARRAY, "out must have sensible value");
+  // if( new_max >= limit ) new_max = limit-1;
+  if (!is_in) {
+    assert(array != nullptr && array != NO_OUT_ARRAY,
+           "out must have sensible value");
   }
-  array = (Node**)arena->Arealloc(array, max_size*sizeof(Node*), new_max*sizeof(Node*));
-  if(is_in){
-    Copy::zero_to_bytes(&array[max_size], (new_max-max_size)*sizeof(Node*)); // null all new space
+  array = (Node **)arena->Arealloc(array, max_size * sizeof(Node *), new_max * sizeof(Node *));
+  if (is_in) {
+    Copy::zero_to_bytes(&array[max_size], (new_max - max_size) * sizeof(Node *)); // null all new space
   }
-  max_size = new_max;               // Record new max length
+  max_size = new_max; // Record new max length
   // This assertion makes sure that Node::_max is wide enough to
   // represent the numerical value of new_max.
-  assert(max_size == new_max && max_size > len, "int width of _max is too small");
+  assert(max_size == new_max && max_size > len,
+         "int width of _max is too small");
 }
 
 //------------------------------grow-------------------------------------------
 // Grow the input array, making space for more edges
-void Node::grow(uint len) {
-  resize_array(_in, _max, len, true);
-}
+void Node::grow(uint len) { resize_array(_in, _max, len, true); }
 
 //-----------------------------out_grow----------------------------------------
 // Grow the input array, making space for more edges
-void Node::out_grow( uint len ) {
+void Node::out_grow(uint len) {
   assert(!is_top(), "cannot grow a top node's out array");
   resize_array(_out, _outmax, len, false);
 }
