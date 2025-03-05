@@ -501,10 +501,10 @@ public abstract class ClassValue<T> {
         void removeEntry(ClassValue<?> classValue) {
             Entry<?> e = remove(classValue.identity);
             // e == null: Uninitialized, and no pending calls to computeValue.
-            // remove didn't change anything.  No change.
+            // remove(identity) didn't change anything.  No change.
             // e.isPromise(): computeValue already used outdated values.
-            // remove discarded the outdated computation promise.
-            // finishEntry will retry when it discovers the promise is gone.
+            // remove(identity) discarded the outdated computation promise.
+            // finishEntry will retry when it discovers the promise is removed.
             // No cache invalidation.  No further action needed.
             if (e != null && !e.isPromise()) {
                 // Initialized.
