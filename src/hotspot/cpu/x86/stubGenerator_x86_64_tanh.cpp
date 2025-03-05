@@ -24,6 +24,7 @@
 *
 */
 
+#include "precompiled.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
 
@@ -69,6 +70,7 @@
 // For |x|>=2^32: return +/-1
 //
 // Special cases:
+//  x>=22: return +1
 //  tanh(NaN) = quiet NaN, and raise invalid exception
 //  tanh(INF) = that INF
 //  tanh(+/-0) = +/-0
@@ -302,12 +304,11 @@ ATTRIBUTE_ALIGNED(16) static const juint _T2_neg_f[] =
 #define __ _masm->
 
 address StubGenerator::generate_libmTanh() {
-  StubGenStubId stub_id = StubGenStubId::dtanh_id;
-  StubCodeMark mark(this, stub_id);
+  StubCodeMark mark(this, "StubRoutines", "libmTanh");
   address start = __ pc();
 
   Label L_2TAG_PACKET_0_0_1, L_2TAG_PACKET_1_0_1, L_2TAG_PACKET_2_0_1, L_2TAG_PACKET_3_0_1;
-  Label L_2TAG_PACKET_4_0_1, L_2TAG_PACKET_5_0_1;
+  Label L_2TAG_PACKET_4_0_1, L_2TAG_PACKET_5_0_1, L_2TAG_PACKET_6_0_1;
   Label B1_2, B1_4;
 
   address HALFMASK     = (address)_HALFMASK;
@@ -324,13 +325,19 @@ address StubGenerator::generate_libmTanh() {
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
   __ bind(B1_2);
+  __ pextrw(rax, xmm0, 3);
+  __ shll(rax, 16);
+  __ pextrw(rax, xmm0, 4);
+  __ cmpl(rax, 1077280768);
+  __ jcc(Assembler::aboveEqual, L_2TAG_PACKET_6_0_1);
+
   __ movsd(xmm3, ExternalAddress(HALFMASK), r11 /*rscratch*/);
   __ xorpd(xmm4, xmm4);
   __ movsd(xmm1, ExternalAddress(L2E), r11 /*rscratch*/);
   __ movsd(xmm2, ExternalAddress(L2E + 8), r11 /*rscratch*/);
   __ movl(rax, 32768);
   __ pinsrw(xmm4, rax, 3);
-  __ movsd(xmm6,  ExternalAddress(Shifter), r11 /*rscratch*/);
+  __ movsd(xmm6, ExternalAddress(Shifter), r11 /*rscratch*/);
   __ pextrw(rcx, xmm0, 3);
   __ andpd(xmm3, xmm0);
   __ andnpd(xmm4, xmm0);
@@ -480,6 +487,14 @@ address StubGenerator::generate_libmTanh() {
   __ xorpd(xmm0, xmm0);
   __ orl(rdx, 16368);
   __ pinsrw(xmm0, rdx, 3);
+  __ jmp(B1_4);
+
+  __ bind(L_2TAG_PACKET_6_0_1);
+  __ xorpd(xmm0, xmm0);
+  __ movq(rax, xmm0);
+  __ orl(rax, 1072693248);
+  __ shll(rax, 32);
+  __ movq(xmm0, rax);
   __ jmp(B1_4);
 
   __ bind(L_2TAG_PACKET_4_0_1);
