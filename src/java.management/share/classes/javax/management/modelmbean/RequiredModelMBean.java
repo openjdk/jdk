@@ -91,8 +91,7 @@ import sun.reflect.misc.MethodUtil;
  * from MBeans, connectors/adaptors like other MBeans. Through the
  * Descriptors, values and methods in the managed application can be
  * defined and mapped to attributes and operations of the ModelMBean.
- * This mapping can be defined in an XML formatted file or dynamically and
- * programmatically at runtime.
+ * This mapping can be defined dynamically and programmatically at runtime.
  * <P>
  * Every RequiredModelMBean which is instantiated in the MBeanServer
  * becomes manageable:<br>
@@ -128,7 +127,6 @@ public class RequiredModelMBean
     /* handle, name, or reference for instance on which the actual invoke
      * and operations will be executed */
     private Object managedResource = null;
-
 
     /* records the registering in MBeanServer */
     private boolean registered = false;
@@ -367,7 +365,7 @@ public class RequiredModelMBean
         throw new MBeanException(x, x.getMessage());
     }
 
-        /**
+    /**
      * <p>Captures the current state of this MBean instance and writes
      * it out to the persistent store.  The state stored could include
      * attribute and operation values.</p>
@@ -650,7 +648,6 @@ public class RequiredModelMBean
         retStr.append("\nMBeanInfo for ModelMBean is:");
         retStr.append("\nCLASSNAME: \t").append(info.getClassName());
         retStr.append("\nDESCRIPTION: \t").append(info.getDescription());
-
 
         try {
             retStr.append("\nMBEAN DESCRIPTOR: \t").append(info.getMBeanDescriptor());
