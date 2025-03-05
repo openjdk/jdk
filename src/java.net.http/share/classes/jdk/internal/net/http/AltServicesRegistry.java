@@ -52,8 +52,6 @@ import jdk.internal.net.http.common.Utils;
  */
 public final class AltServicesRegistry {
 
-    static final Logger DEBUG = Utils.getDebugLogger(AltServicesRegistry.class::getSimpleName);
-
     // id and logger for debugging purposes: the id is the same for the HttpClientImpl.
     private final long id;
     private final Logger debug = Utils.getDebugLogger(this::dbgString);
@@ -335,17 +333,11 @@ public final class AltServicesRegistry {
             if (!origin.isSecure()) {
                 return Optional.empty();
             }
-            if (DEBUG.on()) {
-                DEBUG.log("Creating AltService for id=%s, origin=%s%n", id, origin);
-            }
-            var service = new AltService(id, origin, deadline, persist, true);
-            if (Log.altsvc()) {
-                Log.logAltSvc("Creating AltService: {0}", service);
-            }
-            return Optional.of(service);
+            return Optional.of(new AltService(id, origin, deadline, persist, true));
         }
 
-        private static Optional<AltService> createUnadvertised(final Identity id, final Origin origin,
+        private static Optional<AltService> createUnadvertised(final Logger debug,
+                                                               final Identity id, final Origin origin,
                                                                final HttpConnection conn,
                                                                final Deadline deadline, final boolean persist) {
             Objects.requireNonNull(id);
@@ -355,8 +347,8 @@ public final class AltServicesRegistry {
             }
             final List<SNIServerName> sniServerNames = AltSvcProcessor.getSNIServerNames(conn);
             if (sniServerNames == null || sniServerNames.isEmpty()) {
-                if (DEBUG.on()) {
-                    DEBUG.log("Skipping unadvertised altsvc creation of %s because connection %s" +
+                if (debug.on()) {
+                    debug.log("Skipping unadvertised altsvc creation of %s because connection %s" +
                                     " didn't use SNI during connection establishment", id, conn);
                 }
                 return Optional.empty();
@@ -495,8 +487,8 @@ public final class AltServicesRegistry {
             // that same value for unadvertised alt-service(s) for an origin.
             final long defaultMaxAgeInSecs = 3600 * 24;
             final Deadline deadline = TimeSource.now().plusSeconds(defaultMaxAgeInSecs);
-            final Optional<AltService> created = AltService.createUnadvertised(id, origin, conn,
-                    deadline, true);
+            final Optional<AltService> created = AltService.createUnadvertised(debug,
+                    id, origin, conn, deadline, true);
             if (created.isEmpty()) {
                 return Optional.empty();
             }

@@ -28,6 +28,7 @@ package jdk.internal.net.http;
 import jdk.internal.net.http.AltServicesRegistry.AltService;
 import jdk.internal.net.http.AltServicesRegistry.Origin;
 import jdk.internal.net.http.common.Deadline;
+import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.TimeSource;
@@ -299,7 +300,15 @@ final class AltSvcProcessor {
             final AltService.Identity altSvcId = new AltService.Identity(parsed.alpnName(),
                     parsed.host(), parsed.port());
             AltService.create(altSvcId, origin, deadline, persist)
-                    .ifPresent(altServices::add);
+                    .ifPresent((altsvc) -> {
+                        altServices.add(altsvc);
+                        if (Log.altsvc()) {
+                            final var s = altsvc;
+                            Log.logAltSvc("Created AltService: {0}", s);
+                        } else if (debug.on()) {
+                            debug.log("Created AltService for id=%s, origin=%s%n", altSvcId, origin);
+                        }
+                    });
         }
         return altServices;
     }
