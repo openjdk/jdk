@@ -141,8 +141,7 @@ GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = nullptr;
 GrowableArrayCHeap<OopHandle, mtClassShared>* HeapShared::_root_segments;
 int HeapShared::_root_segment_max_size_elems;
 OopHandle HeapShared::_scratch_basic_type_mirrors[T_VOID+1];
-MetaspaceObjToOopHandleTable* HeapShared::_scratch_java_mirror_table = nullptr;
-MetaspaceObjToOopHandleTable* HeapShared::_scratch_references_table = nullptr;
+MetaspaceObjToOopHandleTable* HeapShared::_scratch_objects_table = nullptr;
 
 static bool is_subgraph_root_class_of(ArchivableStaticFieldInfo fields[], InstanceKlass* ik) {
   for (int i = 0; fields[i].valid(); i++) {
@@ -393,20 +392,19 @@ public:
 
 void HeapShared::add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) {
   if (SystemDictionaryShared::is_builtin_loader(src->pool_holder()->class_loader_data())) {
-    _scratch_references_table->set_oop(src, dest);
+    _scratch_objects_table->set_oop(src, dest);
   }
 }
 
 objArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
-  return (objArrayOop)_scratch_references_table->get_oop(src);
+  return (objArrayOop)_scratch_objects_table->get_oop(src);
 }
 
 void HeapShared::init_dumping() {
-  _scratch_java_mirror_table = new (mtClass)MetaspaceObjToOopHandleTable();
-  _scratch_references_table = new (mtClass)MetaspaceObjToOopHandleTable();
+  _scratch_objects_table = new (mtClass)MetaspaceObjToOopHandleTable();
 }
 
-void HeapShared::init_scratch_objects(TRAPS) {
+void HeapShared::init_scratch_objects_for_basic_type_mirrors(TRAPS) {
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
     BasicType bt = (BasicType)i;
     if (!is_reference_type(bt)) {
@@ -448,24 +446,24 @@ oop HeapShared::scratch_java_mirror(BasicType t) {
 }
 
 oop HeapShared::scratch_java_mirror(Klass* k) {
-  return _scratch_java_mirror_table->get_oop(k);
+  return _scratch_objects_table->get_oop(k);
 }
 
 void HeapShared::set_scratch_java_mirror(Klass* k, oop mirror) {
-  _scratch_java_mirror_table->set_oop(k, mirror);
+  _scratch_objects_table->set_oop(k, mirror);
 }
 
 void HeapShared::remove_scratch_objects(Klass* k) {
   // Klass is being deallocated. Java mirror can still be alive, and it should not
   // point to dead klass. We need to break the link from mirror to the Klass.
   // See how InstanceKlass::deallocate_contents does it for normal mirrors.
-  oop mirror = _scratch_java_mirror_table->get_oop(k);
+  oop mirror = _scratch_objects_table->get_oop(k);
   if (mirror != nullptr) {
     java_lang_Class::set_klass(mirror, nullptr);
   }
-  _scratch_java_mirror_table->remove_oop(k);
+  _scratch_objects_table->remove_oop(k);
   if (k->is_instance_klass()) {
-    _scratch_references_table->remove(InstanceKlass::cast(k)->constants());
+    _scratch_objects_table->remove(InstanceKlass::cast(k)->constants());
   }
 }
 

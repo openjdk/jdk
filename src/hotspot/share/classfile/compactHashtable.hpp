@@ -134,8 +134,6 @@ private:
 
 public:
   void dump(SimpleCompactHashtable *cht, const char* table_name);
-
-  static size_t estimate_size(int num_entries);
 };
 #endif // INCLUDE_CDS
 
