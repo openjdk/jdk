@@ -799,7 +799,7 @@ void ShenandoahGeneration::set_mark_incomplete() {
 }
 
 ShenandoahMarkingContext* ShenandoahGeneration::complete_marking_context() {
-  assert(is_mark_complete(), "Marking must be completed.");
+  guarantee(is_mark_complete(), "Marking must be completed.");
   return ShenandoahHeap::heap()->marking_context();
 }
 
