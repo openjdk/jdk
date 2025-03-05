@@ -191,7 +191,14 @@ final class AltSvcProcessor {
             // which we have verified as secure. We thus use "https" as the
             // scheme for the origin
             final String scheme = "https";
-            origin = Origin.of(scheme, conn.address);
+            try {
+                origin = Origin.of(scheme, conn.address);
+            } catch (IllegalArgumentException iae) {
+                debug.log("origin couldn't be parsed: " + iae
+                        + ", ignoring invalid alt-svc frame on stream "
+                        + streamId + " of " + conn);
+                return;
+            }
         }
         processValueAndUpdateRegistry(client, origin, value);
     }
