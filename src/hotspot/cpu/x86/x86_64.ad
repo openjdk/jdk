@@ -5549,7 +5549,7 @@ instruct bytes_reverse_short(rRegI dst, rFlagsReg cr) %{
 //---------- Zeros Count Instructions ------------------------------------------
 
 instruct countLeadingZerosI(rRegI dst, rRegI src, rFlagsReg cr) %{
-  predicate(!UseAPX && UseCountLeadingZerosInstruction);
+  predicate(UseCountLeadingZerosInstruction);
   match(Set dst (CountLeadingZerosI src));
   effect(KILL cr);
 
@@ -5560,36 +5560,14 @@ instruct countLeadingZerosI(rRegI dst, rRegI src, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct countLeadingZerosI_nf(rRegI dst, rRegI src) %{
-  predicate(UseAPX && UseCountLeadingZerosInstruction);
-  match(Set dst (CountLeadingZerosI src));
-
-  format %{ "elzcntl  $dst, $src\t# count leading zeros (int  nf)" %}
-  ins_encode %{
-    __ elzcntl($dst$$Register, $src$$Register, true);
-  %}
-  ins_pipe(ialu_reg);
-%}
-
 instruct countLeadingZerosI_mem(rRegI dst, memory src, rFlagsReg cr) %{
-  predicate(!UseAPX && UseCountLeadingZerosInstruction);
+  predicate(UseCountLeadingZerosInstruction);
   match(Set dst (CountLeadingZerosI (LoadI src)));
   effect(KILL cr);
   ins_cost(175);
   format %{ "lzcntl  $dst, $src\t# count leading zeros (int)" %}
   ins_encode %{
     __ lzcntl($dst$$Register, $src$$Address);
-  %}
-  ins_pipe(ialu_reg_mem);
-%}
-
-instruct countLeadingZerosI_mem_nf(rRegI dst, memory src) %{
-  predicate(UseAPX && UseCountLeadingZerosInstruction);
-  match(Set dst (CountLeadingZerosI (LoadI src)));
-  ins_cost(175);
-  format %{ "elzcntl  $dst, $src\t# count leading zeros (int) nf" %}
-  ins_encode %{
-    __ elzcntl($dst$$Register, $src$$Address, true);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -5620,7 +5598,7 @@ instruct countLeadingZerosI_bsr(rRegI dst, rRegI src, rFlagsReg cr) %{
 %}
 
 instruct countLeadingZerosL(rRegI dst, rRegL src, rFlagsReg cr) %{
-  predicate(!UseAPX && UseCountLeadingZerosInstruction);
+  predicate(UseCountLeadingZerosInstruction);
   match(Set dst (CountLeadingZerosL src));
   effect(KILL cr);
 
@@ -5631,37 +5609,14 @@ instruct countLeadingZerosL(rRegI dst, rRegL src, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct countLeadingZerosL_nf(rRegI dst, rRegL src) %{
-  predicate(UseAPX && UseCountLeadingZerosInstruction);
-  match(Set dst (CountLeadingZerosL src));
-
-  format %{ "elzcntq  $dst, $src\t# count leading zeros (long nf)" %}
-  ins_encode %{
-    __ elzcntq($dst$$Register, $src$$Register, true);
-  %}
-  ins_pipe(ialu_reg);
-%}
-
 instruct countLeadingZerosL_mem(rRegI dst, memory src, rFlagsReg cr) %{
-  predicate(!UseAPX && UseCountLeadingZerosInstruction);
+  predicate(UseCountLeadingZerosInstruction);
   match(Set dst (CountLeadingZerosL (LoadL src)));
   effect(KILL cr);
   ins_cost(175);
   format %{ "lzcntq  $dst, $src\t# count leading zeros (long)" %}
   ins_encode %{
     __ lzcntq($dst$$Register, $src$$Address);
-  %}
-  ins_pipe(ialu_reg_mem);
-%}
-
-instruct countLeadingZerosL_mem_nf(rRegI dst, memory src) %{
-  predicate(UseAPX && UseCountLeadingZerosInstruction);
-  match(Set dst (CountLeadingZerosL (LoadL src)));
-
-  ins_cost(175);
-  format %{ "elzcntq  $dst, $src\t# count leading zeros (long) nf" %}
-  ins_encode %{
-    __ elzcntq($dst$$Register, $src$$Address, true);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -5692,7 +5647,7 @@ instruct countLeadingZerosL_bsr(rRegI dst, rRegL src, rFlagsReg cr) %{
 %}
 
 instruct countTrailingZerosI(rRegI dst, rRegI src, rFlagsReg cr) %{
-  predicate(!UseAPX && UseCountTrailingZerosInstruction);
+  predicate(UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosI src));
   effect(KILL cr);
 
@@ -5703,37 +5658,14 @@ instruct countTrailingZerosI(rRegI dst, rRegI src, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct countTrailingZerosI_nf(rRegI dst, rRegI src) %{
-  predicate(UseAPX && UseCountTrailingZerosInstruction);
-  match(Set dst (CountTrailingZerosI src));
-
-  format %{ "etzcntl    $dst, $src\t# count trailing zeros (int nf)" %}
-  ins_encode %{
-    __ etzcntl($dst$$Register, $src$$Register, true);
-  %}
-  ins_pipe(ialu_reg);
-%}
-
 instruct countTrailingZerosI_mem(rRegI dst, memory src, rFlagsReg cr) %{
-  predicate(!UseAPX && UseCountTrailingZerosInstruction);
+  predicate(UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosI (LoadI src)));
   effect(KILL cr);
   ins_cost(175);
   format %{ "tzcntl    $dst, $src\t# count trailing zeros (int)" %}
   ins_encode %{
     __ tzcntl($dst$$Register, $src$$Address);
-  %}
-  ins_pipe(ialu_reg_mem);
-%}
-
-instruct countTrailingZerosI_mem_nf(rRegI dst, memory src) %{
-  predicate(UseAPX && UseCountTrailingZerosInstruction);
-  match(Set dst (CountTrailingZerosI (LoadI src)));
-
-  ins_cost(175);
-  format %{ "etzcntl    $dst, $src\t# count trailing zeros (int) nf" %}
-  ins_encode %{
-    __ etzcntl($dst$$Register, $src$$Address, true);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -5759,7 +5691,7 @@ instruct countTrailingZerosI_bsf(rRegI dst, rRegI src, rFlagsReg cr) %{
 %}
 
 instruct countTrailingZerosL(rRegI dst, rRegL src, rFlagsReg cr) %{
-  predicate(!UseAPX && UseCountTrailingZerosInstruction);
+  predicate(UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosL src));
   effect(KILL cr);
 
@@ -5770,37 +5702,14 @@ instruct countTrailingZerosL(rRegI dst, rRegL src, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct countTrailingZerosL_nf(rRegI dst, rRegL src) %{
-  predicate(UseAPX && UseCountTrailingZerosInstruction);
-  match(Set dst (CountTrailingZerosL src));
-
-  format %{ "etzcntq    $dst, $src\t# count trailing zeros (long nf)" %}
-  ins_encode %{
-    __ etzcntq($dst$$Register, $src$$Register, true);
-  %}
-  ins_pipe(ialu_reg);
-%}
-
 instruct countTrailingZerosL_mem(rRegI dst, memory src, rFlagsReg cr) %{
-  predicate(!UseAPX && UseCountTrailingZerosInstruction);
+  predicate(UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosL (LoadL src)));
   effect(KILL cr);
   ins_cost(175);
   format %{ "tzcntq    $dst, $src\t# count trailing zeros (long)" %}
   ins_encode %{
     __ tzcntq($dst$$Register, $src$$Address);
-  %}
-  ins_pipe(ialu_reg_mem);
-%}
-
-instruct countTrailingZerosL_mem_nf(rRegI dst, memory src) %{
-  predicate(UseAPX && UseCountTrailingZerosInstruction);
-  match(Set dst (CountTrailingZerosL (LoadL src)));
-
-  ins_cost(175);
-  format %{ "etzcntq    $dst, $src\t# count trailing zeros (long) nf" %}
-  ins_encode %{
-    __ etzcntq($dst$$Register, $src$$Address, true);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -5873,7 +5782,7 @@ instruct bytes_reversebit_long_gfni(rRegL dst, rRegL src, vlRegD xtmp1, vlRegD x
 //---------- Population Count Instructions -------------------------------------
 
 instruct popCountI(rRegI dst, rRegI src, rFlagsReg cr) %{
-  predicate(!UseAPX && UsePopCountInstruction);
+  predicate(UsePopCountInstruction);
   match(Set dst (PopCountI src));
   effect(KILL cr);
 
@@ -5884,19 +5793,9 @@ instruct popCountI(rRegI dst, rRegI src, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct popCountI_nf(rRegI dst, rRegI src) %{
-  predicate(UsePopCountInstruction && UseAPX);
-  match(Set dst (PopCountI src));
-
-  format %{ "epopcntl  $dst, $src\t pop count (int nf)" %}
-  ins_encode %{
-    __ epopcntl($dst$$Register, $src$$Register, true);
-  %}
-  ins_pipe(ialu_reg);
-%}
 
 instruct popCountI_mem(rRegI dst, memory mem, rFlagsReg cr) %{
-  predicate(!UseAPX && UsePopCountInstruction);
+  predicate(UsePopCountInstruction);
   match(Set dst (PopCountI (LoadI mem)));
   effect(KILL cr);
 
@@ -5908,20 +5807,9 @@ instruct popCountI_mem(rRegI dst, memory mem, rFlagsReg cr) %{
 %}
 
 
-instruct popCountI_mem_nf(rRegI dst, memory mem) %{
-  predicate(UseAPX && UsePopCountInstruction);
-  match(Set dst (PopCountI (LoadI mem)));
-
-  format %{ "epopcntl  $dst, $mem\t pop count (int nf)" %}
-  ins_encode %{
-    __ epopcntl($dst$$Register, $mem$$Address, true);
-  %}
-  ins_pipe(ialu_reg);
-%}
-
 // Note: Long.bitCount(long) returns an int.
 instruct popCountL(rRegI dst, rRegL src, rFlagsReg cr) %{
-  predicate(!UseAPX && UsePopCountInstruction);
+  predicate(UsePopCountInstruction);
   match(Set dst (PopCountL src));
   effect(KILL cr);
 
@@ -5932,38 +5820,16 @@ instruct popCountL(rRegI dst, rRegL src, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-// Note: Long.bitCount(long) returns an int.
-instruct popCountL_nf(rRegI dst, rRegL src) %{
-  predicate(UseAPX && UsePopCountInstruction);
-  match(Set dst (PopCountL src));
-
-  format %{ "epopcntq  $dst, $src\t# pop count (long nf)" %}
-  ins_encode %{
-    __ epopcntq($dst$$Register, $src$$Register, true);
-  %}
-  ins_pipe(ialu_reg);
-%}
 
 // Note: Long.bitCount(long) returns an int.
 instruct popCountL_mem(rRegI dst, memory mem, rFlagsReg cr) %{
-  predicate(!UseAPX && UsePopCountInstruction);
+  predicate(UsePopCountInstruction);
   match(Set dst (PopCountL (LoadL mem)));
   effect(KILL cr);
 
   format %{ "popcnt  $dst, $mem" %}
   ins_encode %{
     __ popcntq($dst$$Register, $mem$$Address);
-  %}
-  ins_pipe(ialu_reg);
-%}
-
-instruct popCountL_mem_nf(rRegI dst, memory mem) %{
-  predicate(UseAPX && UsePopCountInstruction);
-  match(Set dst (PopCountL (LoadL mem)));
-
-  format %{ "epopcntq  $dst, $mem\t pop count (long nf)" %}
-  ins_encode %{
-    __ epopcntq($dst$$Register, $mem$$Address, true);
   %}
   ins_pipe(ialu_reg);
 %}
