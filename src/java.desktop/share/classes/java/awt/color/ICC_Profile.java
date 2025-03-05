@@ -1163,7 +1163,7 @@ public sealed class ICC_Profile implements Serializable
      *         array can not be interpreted as valid tag data, corresponding to
      *         the {@code tagSignature}
      * @throws IllegalArgumentException if this is a built-in profile for one
-     *         of the pre-defined color spaces, i.e. those which can be obtained
+     *         of the pre-defined color spaces, that is those which can be obtained
      *         by calling {@code ICC_Profile.getInstance(int colorSpaceID)}
      * @see #getData
      * @see ColorSpace
