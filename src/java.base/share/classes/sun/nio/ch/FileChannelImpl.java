@@ -100,7 +100,7 @@ public class FileChannelImpl
     private final Object positionLock = new Object();
 
     // blocking operations are not interruptible
-    private volatile boolean uninterruptible;
+    private final boolean uninterruptible;
 
     // DirectIO flag
     private final boolean direct;
@@ -130,7 +130,7 @@ public class FileChannelImpl
 
     private FileChannelImpl(FileDescriptor fd, String path, boolean readable,
                             boolean writable, boolean sync, boolean direct,
-                            Closeable parent)
+                            boolean uninterruptible, Closeable parent)
     {
         this.fd = fd;
         this.path = path;
@@ -145,6 +145,7 @@ public class FileChannelImpl
         } else {
             this.alignment = -1;
         }
+        this.uninterruptible = uninterruptible;
 
         // Register a cleaning action if and only if there is no parent
         // as the parent will take care of closing the file descriptor.
@@ -159,18 +160,15 @@ public class FileChannelImpl
     // and RandomAccessFile::getChannel
     public static FileChannel open(FileDescriptor fd, String path,
                                    boolean readable, boolean writable,
-                                   boolean sync, boolean direct, Closeable parent)
+                                   boolean sync, boolean direct,
+                                   boolean uninterruptible, Closeable parent)
     {
-        return new FileChannelImpl(fd, path, readable, writable, sync, direct, parent);
+        return new FileChannelImpl(fd, path, readable, writable, sync, direct, uninterruptible, parent);
     }
 
     private void ensureOpen() throws IOException {
         if (!isOpen())
             throw new ClosedChannelException();
-    }
-
-    public void setUninterruptible() {
-        uninterruptible = true;
     }
 
     private void beginBlocking() {
