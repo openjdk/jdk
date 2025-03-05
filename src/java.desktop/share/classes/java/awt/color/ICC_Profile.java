@@ -109,7 +109,7 @@ public sealed class ICC_Profile implements Serializable
 
 
     /**
-     * Set to true for {@code BuiltInProfile}, false otherwise.
+     * Set to {@code true} for {@code BuiltInProfile}, {@code false} otherwise.
      * This check is used in {@link #setData(int, byte[])} to prevent modifying
      * built-in profiles.
      */
@@ -126,19 +126,19 @@ public sealed class ICC_Profile implements Serializable
          * access privileges is handled at a lower level.
          */
         ICC_Profile SRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
-                "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
+               "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
 
         ICC_Profile LRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
-                "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
+               "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
 
         ICC_Profile XYZ = new ICC_Profile(new ProfileDeferralInfo(
-                "CIEXYZ.pf", ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT));
+               "CIEXYZ.pf", ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT));
 
         ICC_Profile PYCC = new ICC_Profile(new ProfileDeferralInfo(
-                "PYCC.pf", ColorSpace.TYPE_3CLR, 3, CLASS_COLORSPACECONVERSION));
+               "PYCC.pf", ColorSpace.TYPE_3CLR, 3, CLASS_COLORSPACECONVERSION));
 
         ICC_Profile GRAY = new ICC_ProfileGray(new ProfileDeferralInfo(
-                "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY));
+               "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY));
     }
 
     static {
@@ -781,7 +781,6 @@ public sealed class ICC_Profile implements Serializable
      * <p>
      * Note: {@code ProfileDeferralInfo} is used for only built-in profile
      * creation and all built-in profiles should be constructed using it.
-     * </p>
      */
     ICC_Profile(ProfileDeferralInfo pdi) {
         deferralInfo = pdi;
@@ -1154,7 +1153,6 @@ public sealed class ICC_Profile implements Serializable
      * {@link ColorSpace#CS_sRGB}, {@link ColorSpace#CS_LINEAR_RGB},
      * {@link ColorSpace#CS_PYCC}, {@link ColorSpace#CS_GRAY} or
      * {@link ColorSpace#CS_CIEXYZ}.
-     * </p>
      *
      * @param  tagSignature the ICC tag signature for the data element you want
      *         to set
@@ -1165,7 +1163,7 @@ public sealed class ICC_Profile implements Serializable
      *         array can not be interpreted as valid tag data, corresponding to
      *         the {@code tagSignature}
      * @throws IllegalArgumentException if this is a built-in profile for one
-     *         of the pre-defined ColorSpaces, i.e. those which can be obtained
+     *         of the pre-defined color spaces, i.e. those which can be obtained
      *         by calling {@code ICC_Profile.getInstance(int colorSpaceID)}
      * @see #getData
      * @see ColorSpace
