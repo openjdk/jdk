@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,12 +220,12 @@ class MemTracker : AllStatic {
     }
   }
 
-  static inline void record_virtual_memory_tag(void* addr, MemTag mem_tag) {
+  static inline void record_virtual_memory_tag(void* addr, size_t size, MemTag mem_tag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::set_reserved_region_type((address)addr, mem_tag);
+      VirtualMemoryTracker::set_reserved_region_type((address)addr, size, mem_tag);
     }
   }
 

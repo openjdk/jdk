@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -386,7 +386,7 @@ class VirtualMemoryTracker : AllStatic {
   static bool remove_uncommitted_region (address base_addr, size_t size);
   static bool remove_released_region    (address base_addr, size_t size);
   static bool remove_released_region    (ReservedMemoryRegion* rgn);
-  static void set_reserved_region_type  (address addr, MemTag mem_tag);
+  static void set_reserved_region_type  (address addr, size_t size, MemTag mem_tag);
 
   // Given an existing memory mapping registered with NMT, split the mapping in
   //  two. The newly created two mappings will be registered under the call
