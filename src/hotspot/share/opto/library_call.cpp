@@ -1961,7 +1961,7 @@ void LibraryCallKit::inline_math_mathExact(Node* math, Node *test) {
     set_i_o(i_o());
 
     uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_none);
+                  Deoptimization::Action_maybe_recompile);
   }
 
   set_control(fast_path);
@@ -1971,6 +1971,9 @@ void LibraryCallKit::inline_math_mathExact(Node* math, Node *test) {
 template <typename OverflowOp>
 bool LibraryCallKit::inline_math_overflow(Node* arg1, Node* arg2) {
   typedef typename OverflowOp::MathOp MathOp;
+  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
+    return false;
+  }
 
   MathOp* mathOp = new MathOp(arg1, arg2);
   Node* operation = _gvn.transform( mathOp );
