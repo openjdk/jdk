@@ -271,7 +271,7 @@ namespace {
 #define JP_SECTION(name) while (str == _T(#name)) { return &SectionName::name; }
         JP_ALL_SECTIONS
 #undef JP_SECTION
-            return 0;
+            return NULL;
     }
 }
 
@@ -303,7 +303,7 @@ namespace {
 #define JP_PROPERTY(varName, name) while (str == _T(name)) { return &PropertyName::varName; }
         JP_ALL_PROPERTIES
 #undef JP_PROPERTY
-            return 0;
+            return NULL;
     }
 } // namespace
 
