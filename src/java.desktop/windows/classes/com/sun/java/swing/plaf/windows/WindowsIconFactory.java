@@ -855,8 +855,8 @@ public class WindowsIconFactory implements Serializable
                 // Windows 10 doesn't show bullet/checkmark and just highlight
                 // the image icon whereas Windows 11 show bullet/checkmark
                 // beside imageicon so this check is necessary to differentiate
-                boolean isWindows11OrLater = Integer.parseInt(System.getProperty("os.name").
-                                                  replaceAll("[^0-9]", "")) >= 11;
+                boolean isWindows11OrLater = Integer.parseInt(System.getProperty("os.name")
+                                                    .replaceAll("[^0-9]", "")) >= 11;
                 if (type == JCheckBoxMenuItem.class
                       || type == JRadioButtonMenuItem.class) {
                     AbstractButton b = (AbstractButton) c;

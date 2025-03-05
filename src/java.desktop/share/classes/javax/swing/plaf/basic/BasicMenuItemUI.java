@@ -660,8 +660,8 @@ public class BasicMenuItemUI extends MenuItemUI
         paintCheckIcon(g, lh, lr, holdc, foreground);
         paintIcon(g, lh, lr, holdc);
         if (UIManager.getLookAndFeel().getName().equals("Windows")
-            && (Integer.parseInt(System.getProperty("os.name").
-                replaceAll("[^0-9]", "")) >= 11)
+            && (Integer.parseInt(System.getProperty("os.name")
+                .replaceAll("[^0-9]", "")) >= 11)
             && lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
             Rectangle rect = lr.getTextRect();
 

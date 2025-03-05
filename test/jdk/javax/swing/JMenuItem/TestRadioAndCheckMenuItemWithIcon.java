@@ -24,43 +24,45 @@
 /*
  * @test
  * @bug 8348760
- * @summary Verify if RadioButton is shown if JRadioButtonMenuItem
+ * @summary Verify if RadioButtonMenuItem bullet and
+ *          JCheckboxMenuItem checkmark is shown if
+ *          JRadioButtonMenuItem and JCheckboxMenuItem
  *          is rendered with ImageIcon in WindowsLookAndFeel
  * @requires (os.family == "windows")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main/manual TestImageIconWithJRadioButtonMenuItemAndJCheckBoxMenuItem
+ * @run main/manual TestRadioAndCheckMenuItemWithIcon
  */
 
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
+
 import javax.swing.AbstractButton;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.UIManager;
 
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JCheckBoxMenuItem;
-
 
 import java.io.File;
 
-public class TestImageIconWithJRadioButtonMenuItemAndJCheckBoxMenuItem {
+public class TestRadioAndCheckMenuItemWithIcon {
 
     private static final String INSTRUCTIONS = """
         A top level Menu will be shown.
 
         Clicking on the Menu will show a
-        RadioButtonMenuItem group with 3 radiobutton menuitems
-        and a JCheckBoxMenuItem group with 3 checkbox menuitems
+        JRadioButtonMenuItem group with 3 radiobutton menuitems
+        and a JCheckBoxMenuItem group with 3 checkbox menuitems.
 
-        First radio button menuitem is selected with imageicon of a red square.
+        First radiobutton menuitem is selected with imageicon of a red square.
         Second radiobutton menuitem is unselected with imageicon.
         Third radiobutton menuItem is unselected without imageicon.
 
@@ -68,10 +70,10 @@ public class TestImageIconWithJRadioButtonMenuItemAndJCheckBoxMenuItem {
         Second checkbox menuitem is unselected with imageicon.
         Third checkbox menuItem is unselected without imageicon.
 
-        Verify that for first JRadioButtonMenuItem with image icon,
+        Verify that for first JRadioButtonMenuItem with imageicon,
         a bullet is shown alongside the imageicon and
         for first JCheckBoxMenuItem with imageicon
-        a checkmark is shown alongside the image icon.
+        a checkmark is shown alongside the imageicon.
 
         If bullet and checkmark is shown, test passes else fails.""";
 
@@ -81,8 +83,7 @@ public class TestImageIconWithJRadioButtonMenuItemAndJCheckBoxMenuItem {
                 .title("JRadioButtonMenuItem Instructions")
                 .instructions(INSTRUCTIONS)
                 .columns(60)
-                .testUI(
-                 TestImageIconWithJRadioButtonMenuItemAndJCheckBoxMenuItem::doTest)
+                .testUI(TestRadioAndCheckMenuItemWithIcon::doTest)
                 .build()
                 .awaitAndCheck();
     }
@@ -113,7 +114,7 @@ public class TestImageIconWithJRadioButtonMenuItemAndJCheckBoxMenuItem {
         AbstractButton check2 = new JCheckBoxMenuItem("JCheckBoxMenuItem 2", imageIcon1);
         AbstractButton check3 = new JCheckBoxMenuItem("JCheckBoxMenuItem 3");
 
-        JMenu topLevel = new JMenu("Menus");
+        JMenu topLevel = new JMenu("Menu");
 
         topLevel.add(button1);
         topLevel.add(button2);
