@@ -67,8 +67,6 @@ private:
                                     Node* pre_val,
                                     BasicType bt) const;
 
-  Node* byte_map_base_node(GraphKit* kit) const;
-
   void post_barrier(GraphKit* kit,
                     Node* ctl,
                     Node* store,

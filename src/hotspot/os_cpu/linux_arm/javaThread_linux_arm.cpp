@@ -40,8 +40,13 @@ frame JavaThread::pd_last_frame() {
 }
 
 void JavaThread::cache_global_variables() {
+#if INCLUDE_SHENANDOAHGC
+  if (UseShenandoahGC) {
+    _card_table_base = nullptr;
+    return;
+  }
+#endif
   BarrierSet* bs = BarrierSet::barrier_set();
-
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
     _card_table_base = (address) (barrier_set_cast<CardTableBarrierSet>(bs)->card_table()->byte_map_base());
   } else {
