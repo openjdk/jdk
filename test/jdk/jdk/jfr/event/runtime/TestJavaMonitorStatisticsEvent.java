@@ -45,8 +45,8 @@ import jdk.test.lib.thread.XRun;
  */
 public class TestJavaMonitorStatisticsEvent {
 
-    private static final String FIELD_TOTAL_COUNT = "totalCount";
-    private static final String FIELD_DEFLATED_COUNT = "deflatedCount";
+    private static final String FIELD_COUNT = "count";
+    private static final String FIELD_MAX_COUNT = "maxCount";
 
     private static final String EVENT_NAME = EventNames.JavaMonitorStatistics;
     private static final long WAIT_TIME = 123456;
@@ -87,8 +87,8 @@ public class TestJavaMonitorStatisticsEvent {
             // Find at least one event with the correct monitor class and check the other fields
             for (RecordedEvent event : Events.fromRecording(recording)) {
                 assertTrue(EVENT_NAME.equals(event.getEventType().getName()), "mismatched event types?");
-                long totalCount = Events.assertField(event, FIELD_TOTAL_COUNT).getValue();
-                long deflatedCount = Events.assertField(event, FIELD_DEFLATED_COUNT).getValue();
+                long totalCount = Events.assertField(event, FIELD_COUNT).getValue();
+                long deflatedCount = Events.assertField(event, FIELD_MAX_COUNT).getValue();
                 assertTrue(totalCount >= 0, "Should be positive");
                 assertTrue(deflatedCount >= 0, "Should be positive");
                 assertTrue(totalCount + deflatedCount > 0, "Should be non-zero");

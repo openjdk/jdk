@@ -1312,6 +1312,14 @@ static bool monitors_used_above_threshold(MonitorList* list) {
   return false;
 }
 
+size_t ObjectSynchronizer::in_use_list_count() {
+  return _in_use_list.count();
+}
+
+size_t ObjectSynchronizer::in_use_list_max() {
+  return _in_use_list.max();
+}
+
 size_t ObjectSynchronizer::in_use_list_ceiling() {
   return _in_use_list_ceiling;
 }
@@ -1714,8 +1722,8 @@ class ObjectMonitorDeflationLogging: public StackObj {
   elapsedTimer                             _timer;
 
   size_t ceiling() const { return ObjectSynchronizer::in_use_list_ceiling(); }
-  size_t count() const   { return ObjectSynchronizer::_in_use_list.count(); }
-  size_t max() const     { return ObjectSynchronizer::_in_use_list.max(); }
+  size_t count() const   { return ObjectSynchronizer::in_use_list_count(); }
+  size_t max() const     { return ObjectSynchronizer::in_use_list_max(); }
 
 public:
   ObjectMonitorDeflationLogging()
@@ -1811,8 +1819,6 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
   _last_async_deflation_time_ns = os::javaTimeNanos();
   set_is_async_deflation_requested(false);
 
-  EventJavaMonitorStatistics event;
-
   ObjectMonitorDeflationLogging log;
   ObjectMonitorDeflationSafepointer safepointer(current, &log);
 
@@ -1872,12 +1878,6 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
     _no_progress_skip_increment = false;
   } else {
     _no_progress_cnt++;
-  }
-
-  if (event.should_commit()) {
-    event.set_totalCount(_in_use_list.count());
-    event.set_deflatedCount(deflated_count);
-    event.commit();
   }
 
   return deflated_count;

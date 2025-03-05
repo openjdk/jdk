@@ -121,9 +121,9 @@
     <Field type="ulong" contentType="address" name="address" label="Monitor Address" relation="JavaMonitorAddress" />
   </Event>
 
-  <Event name="JavaMonitorStatistics" category="Java Application, Statistics" label="Java Monitor Statistics" startTime="false">
-    <Field type="ulong" name="totalCount" label="Monitors in Use" description="Number of in-use monitors"/>
-    <Field type="ulong" name="deflatedCount" label="Deflated Monitors" description="Number of deflated monitors"/>
+  <Event name="JavaMonitorStatistics" category="Java Application, Statistics" label="Java Monitor Statistics" period="everyChunk">
+    <Field type="ulong" name="count" label="Monitors in Use" description="Current number of in-use monitors"/>
+    <Field type="ulong" name="maxCount" label="Max Monitors in Use" description="Max number of in-use monitors over the entire JVM lifetime"/>
   </Event>
 
   <Event name="SyncOnValueBasedClass" category="Java Virtual Machine, Diagnostics" label="Value Based Class Synchronization" thread="true" stackTrace="true" startTime="false" experimental="true">
