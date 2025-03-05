@@ -34,7 +34,7 @@ public class OnTopDDFTest {
     private volatile Frame hiddenFrame;
 
     private static final int delay = 500;
-    private final ExtendedRobot robot;
+    private final Robot robot;
 
     boolean setModal;
 
@@ -45,7 +45,7 @@ public class OnTopDDFTest {
         modalityType = modType;
         setModal = modal;
 
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeLater(this::createGUI);
     }
 

@@ -33,7 +33,7 @@ public class BlockingFDTest {
     private TestDialog dialog;
 
     private static final int delay = 500;
-    private final ExtendedRobot robot;
+    private final Robot robot;
 
     private final Dialog.ModalityType modalityType;
     private final boolean setModal;
@@ -43,7 +43,7 @@ public class BlockingFDTest {
         modalityType = modType;
         setModal = modal;
 
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeLater(this::createGUI);
     }
 
