@@ -335,10 +335,10 @@ final class Operations {
         //new VOP("EXP",                  1, Type.FLOATING_TYPES),
         new VOP("EXPAND_BITS",          2, Type.INT_LONG_TYPES),
         //new VOP("EXPM1",                1, Type.FLOATING_TYPES),
-        new VOP("FIRST_NONZERO",        1, Type.PRIMITIVE_TYPES),
+        new VOP("FIRST_NONZERO",        2, Type.PRIMITIVE_TYPES),
         new VOP("FMA",                  3, Type.FLOATING_TYPES),
         //new VOP("HYPOT",                2, Type.FLOATING_TYPES),
-        new VOP("LEADING_ZEROS_COUNT",  1, Type.PRIMITIVE_TYPES),
+        new VOP("LEADING_ZEROS_COUNT",  1, Type.INTEGRAL_TYPES),
         //new VOP("LOG",                  1, Type.FLOATING_TYPES),
         //new VOP("LOG10",                1, Type.FLOATING_TYPES),
         //new VOP("LOG1P",                1, Type.FLOATING_TYPES),
@@ -351,8 +351,8 @@ final class Operations {
         new VOP("NOT",                  1, Type.INTEGRAL_TYPES),
         new VOP("OR",                   2, Type.INTEGRAL_TYPES),
         //new VOP("POW",                  2, Type.FLOATING_TYPES),
-        new VOP("REVERSE",              1, Type.PRIMITIVE_TYPES),
-        new VOP("REVERSE_BYTES",        1, Type.PRIMITIVE_TYPES),
+        new VOP("REVERSE",              1, Type.INTEGRAL_TYPES),
+        new VOP("REVERSE_BYTES",        1, Type.INTEGRAL_TYPES),
         new VOP("ROL",                  2, Type.INTEGRAL_TYPES),
         new VOP("ROR",                  2, Type.INTEGRAL_TYPES),
         new VOP("SADD",                 2, Type.INTEGRAL_TYPES),
@@ -365,7 +365,7 @@ final class Operations {
         new VOP("SUSUB",                2, Type.INTEGRAL_TYPES),
         //new VOP("TAN",                  1, Type.FLOATING_TYPES),
         //new VOP("TANH",                 1, Type.FLOATING_TYPES),
-        new VOP("TRAILING_ZEROS_COUNT", 1, Type.PRIMITIVE_TYPES),
+        new VOP("TRAILING_ZEROS_COUNT", 1, Type.INTEGRAL_TYPES),
         new VOP("UMAX",                 2, Type.INTEGRAL_TYPES),
         new VOP("UMIN",                 2, Type.INTEGRAL_TYPES),
         new VOP("XOR",                  2, Type.INTEGRAL_TYPES),
@@ -383,7 +383,8 @@ final class Operations {
             // TODO: add(Vector<Integer> v, VectorMask<Integer> m)
 
             // If VLENGTH*scale overflows, then a IllegalArgumentException is thrown.
-            ops.add(new Operation.Binary(type, "", type, ".addIndex(", Type.ints(), " & 0xFFFF)", null));
+            int addIndexBits = type.elementType.sizeInBits() / type.length;
+            ops.add(new Operation.Binary(type, "", type, ".addIndex(", Type.ints(), " & " + (addIndexBits-1) + ")", null));
             ops.add(new Operation.Binary(type, "", type, ".addIndex(", Type.ints(), ")", List.of("IllegalArgumentException")));
 
             if (!type.elementType.isFloating()) {
@@ -451,9 +452,27 @@ final class Operations {
             ops.add(new Operation.Binary(type.elementType, "", type, ".lane(", Type.ints(), " & " + (type.length-1) + ")", null));
 
             for (VOP vop : VECTOR_API_OPS) {
+                if (vop.args() == 1 && vop.elementTypes().contains(type.elementType)) {
+                    ops.add(new Operation.Unary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ")", null));
+                    // TODO: lanewise(VectorOperators.Unary op, VectorMask<Integer> m)
+                }
                 if (vop.args() == 2 && vop.elementTypes().contains(type.elementType)) {
                     ops.add(new Operation.Binary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ")", null));
                     // TODO: lanewise(VectorOperators.Binary op, int e, VectorMask<Integer> m)
+                    // TODO: lanewise(VectorOperators.Binary op, long e)
+                    // TODO: lanewise(VectorOperators.Binary op, long e, VectorMask<Integer> m)
+                    ops.add(new Operation.Binary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ")", null));
+                    // TODO: lanewise(VectorOperators.Binary op, Vector<Integer> v, VectorMask<Integer> m)
+                }
+                if (vop.args() == 3 && vop.elementTypes().contains(type.elementType)) {
+                    ops.add(new Operation.Ternary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type.elementType, ")", null));
+                    // TODO: lanewise(VectorOperators.Ternary op, int e1, int e2, VectorMask<Integer> m)
+                    ops.add(new Operation.Ternary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type, ")", null));
+                    // TODO: lanewise(VectorOperators.Ternary op, int e1, Vector<Integer> v2, VectorMask<Integer> m)
+                    ops.add(new Operation.Ternary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type.elementType, ")", null));
+                    // TODO: lanewise(VectorOperators.Ternary op, Vector<Integer> v1, int e2, VectorMask<Integer> m)
+                    ops.add(new Operation.Ternary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type, ")", null));
+                    // TODO: lanewise(VectorOperators.Ternary op, Vector<Integer> v1, Vector<Integer> v2, VectorMask<Integer> m)
                 }
             }
         }
