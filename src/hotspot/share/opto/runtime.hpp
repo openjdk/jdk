@@ -180,13 +180,11 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _vectorizedMismatch_Type;
   static const TypeFunc* _ghash_processBlocks_Type;
   static const TypeFunc* _chacha20Block_Type;
-
   static const TypeFunc* _dilithiumAlmostNtt_Type;
   static const TypeFunc* _dilithiumAlmostInverseNtt_Type;
   static const TypeFunc* _dilithiumNttMult_Type;
   static const TypeFunc* _dilithiumMontMulByConstant_Type;
   static const TypeFunc* _dilithiumDecomposePoly_Type;
-
   static const TypeFunc* _base64_encodeBlock_Type;
   static const TypeFunc* _base64_decodeBlock_Type;
   static const TypeFunc* _string_IndexOf_Type;
@@ -586,27 +584,27 @@ private:
     return _chacha20Block_Type;
   }
 
-  static const TypeFunc* dilithiumAlmostNtt_Type() {
+  static inline const TypeFunc* dilithiumAlmostNtt_Type() {
     assert(_dilithiumAlmostNtt_Type != nullptr, "should be initialized");
     return _dilithiumAlmostNtt_Type;
   }
 
-  static const TypeFunc* dilithiumAlmostInverseNtt_Type() {
+  static inline const TypeFunc* dilithiumAlmostInverseNtt_Type() {
     assert(_dilithiumAlmostInverseNtt_Type != nullptr, "should be initialized");
     return _dilithiumAlmostInverseNtt_Type;
   }
 
-  static const TypeFunc* dilithiumNttMult_Type() {
+  static inline const TypeFunc* dilithiumNttMult_Type() {
     assert(_dilithiumNttMult_Type != nullptr, "should be initialized");
     return _dilithiumNttMult_Type;
   }
 
-  static const TypeFunc* dilithiumMontMulByConstant_Type() {
+  static inline const TypeFunc* dilithiumMontMulByConstant_Type() {
     assert(_dilithiumMontMulByConstant_Type != nullptr, "should be initialized");
     return _dilithiumMontMulByConstant_Type;
   }
 
-  static const TypeFunc* dilithiumDecomposePoly_Type() {
+  static inline const TypeFunc* dilithiumDecomposePoly_Type() {
     assert(_dilithiumDecomposePoly_Type != nullptr, "should be initialized");
     return _dilithiumDecomposePoly_Type;
   }

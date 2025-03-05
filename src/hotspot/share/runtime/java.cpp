@@ -353,8 +353,8 @@ void print_statistics() {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 
-  if (CompilerOracle::should_print_final_memstat_report()) {
-    CompilationMemoryStatistic::print_all_by_size(tty, false, 0);
+  if (PrintCompilerMemoryStatisticsAtExit) {
+    CompilationMemoryStatistic::print_final_report(tty);
   }
 
   ThreadsSMRSupport::log_statistics();

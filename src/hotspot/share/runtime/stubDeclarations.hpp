@@ -497,7 +497,7 @@
 // Currently there is no support for a do_arch_array_entry template.
 
 // Include arch-specific stub and entry declarations and make sure the
-// relevant template macros ahve been defined
+// relevant template macros have been defined
 
 #include CPU_HEADER(stubDeclarations)
 
@@ -1060,7 +1060,6 @@
                  DO_ARCH_BLOB_EMPTY2,                                   \
                  DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
 
-
 // client macro to operate only on StubGenerator arch blobs
 
 #define STUBGEN_ARCH_BLOBS_DO(do_arch_blob)                             \
@@ -1082,4 +1081,3 @@
                  do_arch_entry, do_arch_entry_init)                     \
 
 #endif // SHARE_RUNTIME_STUBDECLARATIONS_HPP
-
