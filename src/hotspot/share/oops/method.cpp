@@ -1276,7 +1276,7 @@ bool Method::check_code() const {
 }
 
 // Install compiled code.  Instantly it can execute.
-void Method::set_code(const methodHandle& mh, nmethod *code) {
+void Method::set_code(const methodHandle& mh, nmethod *code, bool isRelocation) {
   assert_lock_strong(NMethodState_lock);
   assert( code, "use clear_code to remove code" );
   assert( mh->check_code(), "" );
@@ -1300,7 +1300,7 @@ void Method::set_code(const methodHandle& mh, nmethod *code) {
   OrderAccess::storestore();
 
   if (mh->is_continuation_native_intrinsic()) {
-    assert(mh->_from_interpreted_entry == nullptr, "initialized incorrectly"); // see link_method
+    assert(mh->_from_interpreted_entry == nullptr || isRelocation, "initialized incorrectly"); // see link_method
 
     if (mh->is_continuation_enter_intrinsic()) {
       // This is the entry used when we're in interpreter-only mode; see InterpreterMacroAssembler::jump_from_interpreted

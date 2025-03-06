@@ -24,7 +24,7 @@
 /*
  * @test ReplaceAllNMethods
  * @bug 8316694
- * @summary TODO
+ * @summary Relocates all nmethods and runs garbage collector to cleanup old versions
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -33,8 +33,7 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch
- * -XX:+TieredCompilation -XX:TieredStopAtLevel=3 compiler.whitebox.ReplaceAllNMethods
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.whitebox.ReplaceAllNMethods
  */
 
 package compiler.whitebox;

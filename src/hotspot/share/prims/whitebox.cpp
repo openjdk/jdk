@@ -1655,11 +1655,7 @@ WB_ENTRY(void, WB_ReplaceAllNMethods(JNIEnv* env))
 
     for (CodeBlob* cb = (CodeBlob*) heap->first(); cb != nullptr; cb = (CodeBlob*) heap->next(cb)) {
       if (cb->is_nmethod()) {
-        nmethod* nm = cb->as_nmethod();
-        // TODO Error after relocating MethodHandle functions
-        if (!nm->method()->is_method_handle_intrinsic()) {
-          nmethods.append(nm);
-        }
+        nmethods.append(cb->as_nmethod());
       }
     }
 

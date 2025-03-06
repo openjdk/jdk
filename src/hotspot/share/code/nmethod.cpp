@@ -1381,7 +1381,7 @@ nmethod::nmethod(
   }
 }
 
-nmethod::nmethod(nmethod& nm) : CodeBlob(nm.name(), CodeBlobKind::Nmethod, nm.size(), nm.header_size())
+nmethod::nmethod(const nmethod& nm) : CodeBlob(nm.name(), CodeBlobKind::Nmethod, nm.size(), nm.header_size())
 {
   debug_only(NoSafepointVerifier nsv;)
   assert_locked_or_safepoint(CodeCache_lock);
@@ -1508,17 +1508,23 @@ nmethod::nmethod(nmethod& nm) : CodeBlob(nm.name(), CodeBlobKind::Nmethod, nm.si
   // Update corresponding Java method to point to this nmethod
   MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
   _method                     = nm._method;
-  nm._method                  = nullptr;
-  if (_method != nullptr) {
+  if (_method != nullptr && _method->code() == &nm) {
     methodHandle mh(Thread::current(), _method);
-    _method->clear_code();
-    _method->clear_entry_points();
-    _method->set_code(mh, this);
+    _method->set_code(mh, this, true);
   }
 }
 
 nmethod* nmethod::relocate_to(nmethod* nm, CodeBlobType code_blob_type) {
-  if (nm == nullptr || nm->is_marked_for_deoptimization()) {
+  if (nm == nullptr) {
+    return nullptr;
+  }
+
+  // Unsupported nmethods
+  if (nm->is_not_entrant()) {
+    return nullptr;
+  }
+
+  if (nm->method() != nullptr && nm->method()->is_method_handle_intrinsic()) {
     return nullptr;
   }
 

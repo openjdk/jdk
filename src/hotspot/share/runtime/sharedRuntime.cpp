@@ -2850,7 +2850,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
         {
           MutexLocker pl(NMethodState_lock, Mutex::_no_safepoint_check_flag);
           if (nm->make_in_use()) {
-            method->set_code(method, nm);
+            method->set_code(method, nm, false);
           }
         }
 
