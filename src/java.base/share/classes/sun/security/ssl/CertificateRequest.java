@@ -639,13 +639,17 @@ final class CertificateRequest {
             if (shc.localSupportedSignAlgs == null) {
                 shc.localSupportedSignAlgs =
                         SignatureScheme.getSupportedAlgorithms(
-                                shc, HANDSHAKE_SCOPE);
+                                shc.sslConfig,
+                                shc.algorithmConstraints, shc.activeProtocols,
+                                HANDSHAKE_SCOPE);
             }
 
             if (shc.localSupportedCertSignAlgs == null) {
                 shc.localSupportedCertSignAlgs =
                         SignatureScheme.getSupportedAlgorithms(
-                                shc, CERTIFICATE_SCOPE);
+                                shc.sslConfig,
+                                shc.algorithmConstraints, shc.activeProtocols,
+                                CERTIFICATE_SCOPE);
             }
 
             // According to TLSv1.2 RFC, CertificateRequest message must
@@ -747,11 +751,17 @@ final class CertificateRequest {
 
             List<SignatureScheme> signAlgs =
                     SignatureScheme.getSupportedAlgorithms(
-                            chc, crm.algorithmIds, HANDSHAKE_SCOPE);
+                            chc.sslConfig,
+                            chc.algorithmConstraints, chc.negotiatedProtocol,
+                            crm.algorithmIds,
+                            HANDSHAKE_SCOPE);
 
             List<SignatureScheme> signCertAlgs =
                     SignatureScheme.getSupportedAlgorithms(
-                            chc, crm.algorithmIds, CERTIFICATE_SCOPE);
+                            chc.sslConfig,
+                            chc.algorithmConstraints, chc.negotiatedProtocol,
+                            crm.algorithmIds,
+                            CERTIFICATE_SCOPE);
 
             if (signAlgs.isEmpty() || signCertAlgs.isEmpty()) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,

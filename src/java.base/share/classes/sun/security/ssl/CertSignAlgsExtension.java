@@ -102,7 +102,9 @@ final class CertSignAlgsExtension {
             if (chc.localSupportedCertSignAlgs == null) {
                 chc.localSupportedCertSignAlgs =
                         SignatureScheme.getSupportedAlgorithms(
-                                chc, CERTIFICATE_SCOPE);
+                                chc.sslConfig,
+                                chc.algorithmConstraints, chc.activeProtocols,
+                                CERTIFICATE_SCOPE);
             }
 
             int vectorLen = SignatureScheme.sizeInRecord() *
@@ -190,7 +192,10 @@ final class CertSignAlgsExtension {
             // update the context
             List<SignatureScheme> schemes =
                     SignatureScheme.getSupportedAlgorithms(
-                            shc, spec.signatureSchemes, CERTIFICATE_SCOPE);
+                            shc.sslConfig,
+                            shc.algorithmConstraints, shc.negotiatedProtocol,
+                            spec.signatureSchemes,
+                            CERTIFICATE_SCOPE);
 
             shc.peerRequestedCertSignSchemes = schemes;
             shc.handshakeSession.setPeerSupportedSignatureAlgorithms(schemes);
@@ -243,7 +248,10 @@ final class CertSignAlgsExtension {
             if (shc.localSupportedCertSignAlgs == null) {
                 shc.localSupportedCertSignAlgs =
                         SignatureScheme.getSupportedAlgorithms(
-                                shc, CERTIFICATE_SCOPE);
+                                shc.sslConfig,
+                                shc.algorithmConstraints,
+                                List.of(shc.negotiatedProtocol),
+                                CERTIFICATE_SCOPE);
             }
 
             int vectorLen = SignatureScheme.sizeInRecord()
@@ -330,7 +338,10 @@ final class CertSignAlgsExtension {
             // update the context
             List<SignatureScheme> schemes =
                     SignatureScheme.getSupportedAlgorithms(
-                            chc, spec.signatureSchemes, CERTIFICATE_SCOPE);
+                            chc.sslConfig,
+                            chc.algorithmConstraints, chc.negotiatedProtocol,
+                            spec.signatureSchemes,
+                            CERTIFICATE_SCOPE);
 
             chc.peerRequestedCertSignSchemes = schemes;
             chc.handshakeSession.setPeerSupportedSignatureAlgorithms(schemes);

@@ -376,17 +376,16 @@ enum SignatureScheme {
     // Get local supported algorithm collection complying to algorithm
     // constraints and SSL scopes.
     static List<SignatureScheme> getSupportedAlgorithms(
-            HandshakeContext hc, Set<SSLScope> scopes) {
+            SSLConfiguration config,
+            SSLAlgorithmConstraints constraints,
+            List<ProtocolVersion> activeProtocols,
+            Set<SSLScope> scopes) {
         List<SignatureScheme> supported = new LinkedList<>();
 
-        List<ProtocolVersion> activeProtocols = hc.negotiatedProtocol != null
-                ? List.of(hc.negotiatedProtocol)
-                : hc.activeProtocols;
-
         List<SignatureScheme> schemesToCheck =
-                hc.sslConfig.signatureSchemes == null ?
+                config.signatureSchemes == null ?
                     Arrays.asList(SignatureScheme.values()) :
-                    namesOfAvailable(hc.sslConfig.signatureSchemes);
+                    namesOfAvailable(config.signatureSchemes);
 
         for (SignatureScheme ss: schemesToCheck) {
             if (!ss.isAvailable) {
@@ -407,7 +406,7 @@ enum SignatureScheme {
             }
 
             if (isMatch) {
-                if (ss.isPermitted(hc.algorithmConstraints, scopes)) {
+                if (ss.isPermitted(constraints, scopes)) {
                     supported.add(ss);
                 } else if (SSLLogger.isOn &&
                         SSLLogger.isOn("ssl,handshake,verbose")) {
@@ -425,7 +424,11 @@ enum SignatureScheme {
     }
 
     static List<SignatureScheme> getSupportedAlgorithms(
-            HandshakeContext hc, int[] algorithmIds, Set<SSLScope> scopes) {
+            SSLConfiguration config,
+            SSLAlgorithmConstraints constraints,
+            ProtocolVersion protocolVersion,
+            int[] algorithmIds,
+            Set<SSLScope> scopes) {
         List<SignatureScheme> supported = new LinkedList<>();
         for (int ssid : algorithmIds) {
             SignatureScheme ss = SignatureScheme.valueOf(ssid);
@@ -435,9 +438,9 @@ enum SignatureScheme {
                             "Unsupported signature scheme: " +
                             SignatureScheme.nameOf(ssid));
                 }
-            } else if ((hc.sslConfig.signatureSchemes == null
-                        || Utilities.contains(hc.sslConfig.signatureSchemes, ss.name))
-                    && ss.isAllowed(hc.algorithmConstraints, hc.negotiatedProtocol, scopes)) {
+            } else if ((config.signatureSchemes == null
+                        || Utilities.contains(config.signatureSchemes, ss.name))
+                    && ss.isAllowed(constraints, protocolVersion, scopes)) {
                 supported.add(ss);
             } else {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
