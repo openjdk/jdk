@@ -6170,6 +6170,8 @@ class StubGenerator: public StubCodeGenerator {
     Register src = x10;
     Label NaN_SLOW;
 
+    assert(VM_Version::supports_float16_to_float(), "must");
+
     // On riscv, NaN needs a special process as fcvt does not work in that case.
     // On riscv, Inf does not need a special process as fcvt can handle it correctly.
     // but we consider to get the slow path to process NaN and Inf at the same time,
@@ -6218,6 +6220,8 @@ class StubGenerator: public StubCodeGenerator {
     Register dst = x10;
     FloatRegister src = f10, ftmp = f11;
     Label NaN_SLOW;
+
+    assert(VM_Version::supports_float16_to_float(), "must");
 
     // On riscv, NaN needs a special process as fcvt does not work in that case.
 
