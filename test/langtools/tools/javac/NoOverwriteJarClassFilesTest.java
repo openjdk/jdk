@@ -106,8 +106,8 @@ public class NoOverwriteJarClassFilesTest {
         tb.writeFile(LIB_SOURCE_NAME, OLD_LIB_SOURCE);
 
         // Compile the old (broken) source and then store the class file in the JAR.
-        // The class file generated he is in the lib/ directory, which we delete
-        // after making the JAR (just to be sure).
+        // The class file is generated in the lib/ directory, which we delete after
+        // making the JAR (just to be sure).
         new JavacTask(tb)
                 .files(LIB_SOURCE_NAME)
                 .run()
