@@ -4501,13 +4501,13 @@ void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(Ideal
   }
 }
 
-void PhaseIdealLoop::eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates) {
+void PhaseIdealLoop::eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates) const {
   for (int i = C->template_assertion_predicate_count(); i > 0; i--) {
     OpaqueTemplateAssertionPredicateNode* opaque_node =
         C->template_assertion_predicate_opaq_node(i - 1)->as_OpaqueTemplateAssertionPredicate();
     if (!useful_predicates.member(opaque_node)) { // not in the useful list
-      ConINode* one = intcon(1);
-      _igvn.replace_node(opaque_node, one);
+      opaque_node->mark_useless();
+      _igvn._worklist.push(opaque_node);
     }
   }
 }
