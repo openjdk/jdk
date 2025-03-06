@@ -733,8 +733,6 @@ private:
   ShenandoahLiveData** _liveness_cache;
 
 public:
-  // Return the marking context if the marking of the affiliated generation is complete.
-  inline ShenandoahMarkingContext* complete_marking_context(ShenandoahHeapRegion* region) const;
   // Return the marking context regardless of the completeness status.
   inline ShenandoahMarkingContext* marking_context() const;
 

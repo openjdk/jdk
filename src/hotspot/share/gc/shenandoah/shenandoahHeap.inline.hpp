@@ -639,10 +639,6 @@ inline ShenandoahHeapRegion* ShenandoahHeap::get_region(size_t region_idx) const
   }
 }
 
-inline ShenandoahMarkingContext* ShenandoahHeap::complete_marking_context(ShenandoahHeapRegion* region) const {
-  return generation_for(region->affiliation())->complete_marking_context();
-}
-
 inline ShenandoahMarkingContext* ShenandoahHeap::marking_context() const {
   return _marking_context;
 }
