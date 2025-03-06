@@ -47,10 +47,6 @@ int BarrierSetNMethod::disarmed_guard_value() const {
 }
 
 bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
-  if (nm->method() == nullptr) {
-    return false;
-  }
-
   if (nm->method()->is_method_handle_intrinsic()) {
     return false;
   }

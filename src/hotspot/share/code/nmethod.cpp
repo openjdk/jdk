@@ -2439,11 +2439,7 @@ void nmethod::post_compiled_method_load_event(JvmtiThreadState* state) {
 }
 
 void nmethod::post_compiled_method_unload() {
-  // Don't post if method was relocated
-  if (_method == nullptr) {
-    return;
-  }
-
+  assert(_method != nullptr, "just checking");
   DTRACE_METHOD_UNLOAD_PROBE(method());
 
   // If a JVMTI agent has enabled the CompiledMethodUnload event then

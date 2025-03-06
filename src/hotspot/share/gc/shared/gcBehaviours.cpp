@@ -28,11 +28,6 @@
 IsUnloadingBehaviour* IsUnloadingBehaviour::_current = nullptr;
 
 bool IsUnloadingBehaviour::is_unloading(nmethod* nm) {
-  // If the nmethod no longer has a corresponding method it should be unloaded
-  if (nm->method() == nullptr) {
-    return true;
-  }
-
   if (nm->method()->can_be_allocated_in_NonNMethod_space()) {
     // When the nmethod is in NonNMethod space, we may reach here without IsUnloadingBehaviour.
     // However, we only allow this for special methods which never get unloaded.

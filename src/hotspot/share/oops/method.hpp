@@ -364,12 +364,10 @@ class Method : public Metadata {
   // Locks NMethodState_lock if not held.
   void unlink_code();
 
-  void clear_entry_points();
-
+private:
   // Either called with NMethodState_lock held or from constructor.
   void clear_code();
 
-private:
   void clear_method_data() {
     _method_data = nullptr;
   }
