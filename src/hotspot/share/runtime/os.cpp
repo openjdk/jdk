@@ -655,6 +655,7 @@ void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
   }
 
   ALLOW_C_FUNCTION(::malloc, void* const outer_ptr = ::malloc(outer_size);)
+  //fprintf(stderr, "os:malloc:%p:%zu\n", outer_ptr, outer_size);
   if (outer_ptr == nullptr) {
     return nullptr;
   }
@@ -721,6 +722,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     header->mark_block_as_dead();
 
     // the real realloc
+    //fprintf(stderr, "os:realloc:%p:%zu\n", header, new_outer_size);
     ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc(header, new_outer_size);)
 
     if (new_outer_ptr == nullptr) {
@@ -729,8 +731,9 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
       header->revive();
       return nullptr;
     }
+
     // realloc(3) succeeded, variable header now points to invalid memory and we need to deaccount the old block.
-    MemTracker::deaccount(free_info);
+    MemTracker::deaccount(free_info, header);
 
     // After a successful realloc(3), we account the resized block with its new size
     // to NMT.
@@ -777,6 +780,7 @@ void  os::free(void *memblock) {
   // When NMT is enabled this checks for heap overwrites, then deaccounts the old block.
   void* const old_outer_ptr = MemTracker::record_free(memblock);
 
+  //fprintf(stderr, "os:free:%p\n", old_outer_ptr);
   ALLOW_C_FUNCTION(::free, ::free(old_outer_ptr);)
 }
 

@@ -66,15 +66,17 @@ void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
   // buffer in make_adjustment().
   ThreadCritical tc;
   s->_all_mallocs = _all_mallocs;
-  size_t total_size = 0;
+  size_t total_requested = 0;
+  size_t total_allocated = 0;
   size_t total_count = 0;
   for (int index = 0; index < mt_number_of_tags; index ++) {
     s->_malloc[index] = _malloc[index];
-    total_size += s->_malloc[index].malloc_size();
+    total_requested += s->_malloc[index].malloc_requested();
+    total_allocated += s->_malloc[index].malloc_allocated();
     total_count += s->_malloc[index].malloc_count();
   }
   // malloc counters may be updated concurrently
-  s->_all_mallocs.set_size_and_count(total_size, total_count);
+  s->_all_mallocs.set_size_and_count(total_requested, total_allocated, total_count);
 }
 
 // Total malloc'd memory used by arenas
@@ -91,8 +93,8 @@ size_t MallocMemorySnapshot::total_arena() const {
 void MallocMemorySnapshot::make_adjustment() {
   size_t arena_size = total_arena();
   int chunk_idx = NMTUtil::tag_to_index(mtChunk);
-  _malloc[chunk_idx].record_free(arena_size);
-  _all_mallocs.deallocate(arena_size);
+  _malloc[chunk_idx].record_free(arena_size, 0);
+  _all_mallocs.deallocate(arena_size, 0);
 }
 
 void MallocMemorySummary::initialize() {
@@ -166,21 +168,21 @@ bool MallocTracker::initialize(NMT_TrackingLevel level) {
 }
 
 // Record a malloc memory allocation
-void* MallocTracker::record_malloc(void* malloc_base, size_t size, MemTag mem_tag,
+void* MallocTracker::record_malloc(void* ptr, size_t requested, size_t allocated, MemTag mem_tag,
   const NativeCallStack& stack)
 {
   assert(MemTracker::enabled(), "precondition");
-  assert(malloc_base != nullptr, "precondition");
+  assert(ptr != nullptr, "precondition");
 
-  MallocMemorySummary::record_malloc(size, mem_tag);
+  MallocMemorySummary::record_malloc(requested, allocated, mem_tag);
   uint32_t mst_marker = 0;
   if (MemTracker::tracking_level() == NMT_detail) {
-    MallocSiteTable::allocation_at(stack, size, &mst_marker, mem_tag);
+    MallocSiteTable::allocation_at(stack, requested, allocated, &mst_marker, mem_tag);
   }
 
   // Uses placement global new operator to initialize malloc header
-  MallocHeader* const header = ::new (malloc_base)MallocHeader(size, mem_tag, mst_marker);
-  void* const memblock = (void*)((char*)malloc_base + sizeof(MallocHeader));
+  MallocHeader* const header = ::new (ptr)MallocHeader(requested, mem_tag, mst_marker);
+  void* const memblock = (void*)((char*)ptr + sizeof(MallocHeader));
 
   // The alignment check: 8 bytes alignment for 32 bit systems.
   //                      16 bytes alignment for 64-bit systems.
@@ -198,23 +200,23 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MemTag mem_ta
   return memblock;
 }
 
-void* MallocTracker::record_free_block(void* memblock) {
+void* MallocTracker::record_free_block(void* ptr, size_t allocated) {
   assert(MemTracker::enabled(), "Sanity");
-  assert(memblock != nullptr, "precondition");
+  assert(ptr != nullptr, "precondition");
 
-  MallocHeader* header = MallocHeader::resolve_checked(memblock);
+  MallocHeader* header = MallocHeader::resolve_checked(ptr);
 
-  deaccount(header->free_info());
+  deaccount(header->free_info(), allocated);
 
   header->mark_block_as_dead();
 
   return (void*)header;
 }
 
-void MallocTracker::deaccount(MallocHeader::FreeInfo free_info) {
-  MallocMemorySummary::record_free(free_info.size, free_info.mem_tag);
+void MallocTracker::deaccount(MallocHeader::FreeInfo free_info, size_t allocated) {
+  MallocMemorySummary::record_free(free_info.size, allocated, free_info.mem_tag);
   if (MemTracker::tracking_level() == NMT_detail) {
-    MallocSiteTable::deallocation_at(free_info.size, free_info.mst_marker);
+    MallocSiteTable::deallocation_at(free_info.size, allocated, free_info.mst_marker);
   }
 }
 
