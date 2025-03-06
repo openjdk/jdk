@@ -221,14 +221,6 @@ function setTopMargin() {
     document.querySelector(":root")
         .style.setProperty("--nav-height", headerHeight + "px");
 }
-function stripWhitespace() {
-    // Remove unintentional leading whitespace from <pre><code> content
-    document.querySelectorAll("pre:has(>code)").forEach((e) => {
-        var content = e.innerHTML;
-        var match = content.match(/^ *<code> *\n/);
-        if (match) e.innerHTML = "<code>" + content.substring(match[0].length);
-    })
-}
 document.addEventListener("readystatechange", (e) => {
     if (document.readyState === "interactive") {
         setTopMargin();
@@ -240,7 +232,6 @@ document.addEventListener("readystatechange", (e) => {
 });
 document.addEventListener("DOMContentLoaded", function(e) {
     setTopMargin();
-    stripWhitespace();
     // Reset animation for type parameter target highlight
     document.querySelectorAll("a").forEach((link) => {
         link.addEventListener("click", (e) => {
