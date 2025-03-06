@@ -25,10 +25,9 @@
 * @test
 * @bug 5094825
 * @summary verify no deadlock if crypto provider in other classloader is used to verify signed jars
-* @modules java.base/java.security
 * @library ./Deadlock.jar
-* @compile -g provider/HashProvider.java
-* @run main/othervm/timeout=30 -Djava.awt.headless=true ClassLoaderDeadlock
+* @compile provider/HashProvider.java
+* @run main/othervm/timeout=30 ClassLoaderDeadlock
 */
 
 import java.net.*;
