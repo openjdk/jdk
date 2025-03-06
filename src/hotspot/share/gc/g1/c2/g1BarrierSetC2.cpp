@@ -294,8 +294,8 @@ uint G1BarrierSetC2::estimated_barrier_size(const Node* node) const {
     // actually inlined into the main code stream.
     // The slow path is laid out separately and does not
     // directly affect performance.
-    // It has a cost of 4 (Cmp, Bool, If, IfProj).
-    nodes += 4;
+    // It has a cost of 6 (AddP, LoadB, Cmp, Bool, If, IfProj).
+    nodes += 6;
   }
   if ((barrier_data & G1C2BarrierPost) != 0) {
     nodes += 60;
