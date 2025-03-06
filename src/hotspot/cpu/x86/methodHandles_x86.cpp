@@ -127,13 +127,24 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, Regist
   __ verify_method_ptr(method);
 #ifdef _LP64
   if (VerifyMethodHandles) {
-    Label L_clinit_success;
+    Label L_ok;
+
     Register method_holder = temp;
     __ load_method_holder(method_holder, method);
-    __ clinit_barrier(method_holder, r15_thread, &L_clinit_success);
+    __ push(method_holder); // keep holder around for diagnostic purposes
+    __ clinit_barrier(method_holder, r15_thread, &L_ok);
+
+    // clinit check failed
+    __ load_unsigned_short(temp, Address(method, Method::access_flags_offset()));
+    __ testl(temp, JVM_ACC_ABSTRACT);
+    __ jcc(Assembler::notZero, L_ok);
+
+    // clinit check failed for a concrete method
     __ STOP("Method holder klass is not initialized");
-    __ BIND(L_clinit_success);
-  }
+
+    __ BIND(L_ok);
+    __ pop(method_holder); // restore stack layout
+}
 #endif // _LP64
   BLOCK_COMMENT("} verify_method");
 }
