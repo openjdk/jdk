@@ -84,7 +84,7 @@ void ShenandoahCardTable::initialize(const ReservedSpace& card_table) {
     vm_exit_during_initialization("Could not reserve enough space for the card marking array");
   }
 
-  MemTracker::record_virtual_memory_tag((address)card_table.base(), card_table.size(), mtGC);
+  MemTracker::record_virtual_memory_tag(card_table, mtGC);
 
   os::trace_page_sizes("Card Table", _byte_map_size, _byte_map_size,
                        card_table.base(), card_table.size(), _page_size);

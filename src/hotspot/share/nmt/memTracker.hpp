@@ -220,6 +220,10 @@ class MemTracker : AllStatic {
     }
   }
 
+  static inline void record_virtual_memory_tag(const ReservedSpace& rs, MemTag mem_tag) {
+    record_virtual_memory_tag(rs.base(), rs.size(), mem_tag);
+  }
+
   static inline void record_virtual_memory_tag(void* addr, size_t size, MemTag mem_tag) {
     assert_post_init();
     if (!enabled()) return;
