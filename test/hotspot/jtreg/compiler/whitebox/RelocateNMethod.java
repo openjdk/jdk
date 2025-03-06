@@ -22,9 +22,9 @@
  */
 
 /*
- * @test ReplaceNMethod
+ * @test RelocateNMethod
  * @bug 8316694
- * @summary test that WB::replaceNMethod() correctly creates a new nmethod
+ * @summary test that WB::relocateNMethodTo() correctly creates a new nmethod
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -33,24 +33,25 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch compiler.whitebox.ReplaceNMethod
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch compiler.whitebox.RelocateNMethod
  */
 
 package compiler.whitebox;
 
 import java.lang.reflect.Method;
+import jdk.test.whitebox.code.BlobType;
 import jdk.test.whitebox.code.NMethod;
 import jdk.test.whitebox.WhiteBox;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
 
-public class ReplaceNMethod extends CompilerWhiteBoxTest {
+public class RelocateNMethod extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {
-        CompilerWhiteBoxTest.main(ReplaceNMethod::new, args);
+        CompilerWhiteBoxTest.main(RelocateNMethod::new, args);
     }
 
-    private ReplaceNMethod(TestCase testCase) {
+    private RelocateNMethod(TestCase testCase) {
         super(testCase);
         // to prevent inlining of #method
         WHITE_BOX.testSetDontInlineMethod(method, true);
@@ -65,7 +66,7 @@ public class ReplaceNMethod extends CompilerWhiteBoxTest {
         checkCompiled();
         NMethod origNmethod = NMethod.get(method, false);
 
-        WHITE_BOX.replaceNMethod(method, false);
+        WHITE_BOX.relocateNMethodTo(method, BlobType.MethodNonProfiled.id);
 
         WHITE_BOX.fullGC();
 

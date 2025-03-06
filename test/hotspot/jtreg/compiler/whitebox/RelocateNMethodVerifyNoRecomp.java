@@ -22,9 +22,9 @@
  */
 
 /*
- * @test ReplaceNMethodVerifyNoRecomp
+ * @test RelocateNMethodVerifyNoRecomp
  * @bug 8316694
- * @summary test that WB::replaceNMethod() correctly creates a new nmethod and can be used without recompiling
+ * @summary test that WB::relocateNMethodTo() correctly creates a new nmethod and can be used without recompiling
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -33,7 +33,7 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm compiler.whitebox.ReplaceNMethodVerifyNoRecomp
+ * @run main/othervm compiler.whitebox.RelocateNMethodVerifyNoRecomp
  */
 
 package compiler.whitebox;
@@ -43,14 +43,15 @@ import java.lang.reflect.Method;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.code.BlobType;
 import jdk.test.whitebox.code.NMethod;
 
-public class ReplaceNMethodVerifyNoRecomp {
+public class RelocateNMethodVerifyNoRecomp {
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-Xbootclasspath/a:.", "-Xbatch", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintCompilation",
-            "-XX:+WhiteBoxAPI", ReplaceNMethodVerifyNoRecomp.ReplaceNMethod.class.getName()
+            "-XX:+WhiteBoxAPI", RelocateNMethodVerifyNoRecomp.RelocateNMethod.class.getName()
         );
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
@@ -60,8 +61,8 @@ public class ReplaceNMethodVerifyNoRecomp {
     }
 
     // Matches output for function being compiled. Does not match to deoptimization outputs for that function
-    // Example: 4       compiler.whitebox.ReplaceNMethodVerifyNoRecomp$ReplaceNMethod::function (20 bytes)
-    private static String methodCompiledRegex = "^4\\s+compiler\\.whitebox\\.ReplaceNMethodVerifyNoRecomp\\$ReplaceNMethod::function\\s+\\(\\d+\\s+bytes\\)\\\n$";
+    // Example: 4       compiler.whitebox.RelocateNMethodVerifyNoRecomp$RelocateNMethod::function (20 bytes)
+    private static String methodCompiledRegex = "^4\\s+compiler\\.whitebox\\.RelocateNMethodVerifyNoRecomp\\$RelocateNMethod::function\\s+\\(\\d+\\s+bytes\\)\\\n$";
 
     public static void verifyOutput(String text) {
         int notCompiled = text.indexOf("Should not be compiled");
@@ -69,7 +70,7 @@ public class ReplaceNMethodVerifyNoRecomp {
             throw new RuntimeException("Output does not include required out");
         }
 
-        int functionCompiled = text.indexOf("4       compiler.whitebox.ReplaceNMethodVerifyNoRecomp$ReplaceNMethod::function");
+        int functionCompiled = text.indexOf("4       compiler.whitebox.RelocateNMethodVerifyNoRecomp$RelocateNMethod::function");
         if (functionCompiled == -1) {
             throw new RuntimeException("Function was never compiled");
         }
@@ -99,13 +100,13 @@ public class ReplaceNMethodVerifyNoRecomp {
         }
     }
 
-    private static class ReplaceNMethod {
+    private static class RelocateNMethod {
         private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
         public static double FUNCTION_RESULT = 0;
 
         public static void main(String [] args) throws Exception {
             // Get method that will be relocated
-            Method method = ReplaceNMethodVerifyNoRecomp.ReplaceNMethod.class.getMethod("function");
+            Method method = RelocateNMethodVerifyNoRecomp.RelocateNMethod.class.getMethod("function");
             WHITE_BOX.testSetDontInlineMethod(method, true);
 
             // Verify not initially compiled
@@ -123,7 +124,7 @@ public class ReplaceNMethodVerifyNoRecomp {
             NMethod origNmethod = NMethod.get(method, false);
 
             // Relocate nmethod and mark old for cleanup
-            WHITE_BOX.replaceNMethod(method, false);
+            WHITE_BOX.relocateNMethodTo(method, BlobType.MethodNonProfiled.id);
 
             // Trigger GC to clean up old nmethod
             WHITE_BOX.fullGC();

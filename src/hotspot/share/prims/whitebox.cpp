@@ -1625,17 +1625,17 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   return result;
 WB_END
 
-WB_ENTRY(void, WB_ReplaceNMethod(JNIEnv* env, jobject o, jobject method, jboolean is_osr, jint comp_level_override))
+WB_ENTRY(void, WB_RelocateNMethodTo(JNIEnv* env, jobject o, jobject method, jint blob_type))
   ResourceMark rm(THREAD);
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION(env);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  nmethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
+  nmethod* code = mh->code();
   if (code == nullptr) {
     return;
   }
 
-  nmethod::relocate_to(code, CodeCache::get_code_heap_containing(code)->code_blob_type());
+  nmethod::relocate_to(code, static_cast<CodeBlobType>(blob_type));
 WB_END
 
 WB_ENTRY(void, WB_ReplaceAllNMethods(JNIEnv* env))
@@ -2922,8 +2922,8 @@ static JNINativeMethod methods[] = {
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
   {CC"getNMethod0",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",
                                                       (void*)&WB_GetNMethod         },
-  {CC"replaceNMethod0",         CC"(Ljava/lang/reflect/Executable;ZI)V",
-                                                      (void*)&WB_ReplaceNMethod     },
+  {CC"relocateNMethodTo0", CC"(Ljava/lang/reflect/Executable;I)V",
+                                                      (void*)&WB_RelocateNMethodTo  },
   {CC"replaceAllNMethods", CC"()V",                   (void*)&WB_ReplaceAllNMethods },
   {CC"allocateCodeBlob",   CC"(II)J",                 (void*)&WB_AllocateCodeBlob   },
   {CC"freeCodeBlob",       CC"(J)V",                  (void*)&WB_FreeCodeBlob       },
