@@ -255,6 +255,24 @@ public class MigrationCheck {
                 new sun.security.tools.jarsigner.resources.jarsigner());
     }
 
+    @Test
+    public void testJarsigner_de() {
+        checkResourcesMigration(new sun.security.tools.jarsigner.Resources_de(),
+                new sun.security.tools.jarsigner.resources.jarsigner_de());
+    }
+
+    @Test
+    public void testJarsigner_ja() {
+        checkResourcesMigration(new sun.security.tools.jarsigner.Resources_ja(),
+                new sun.security.tools.jarsigner.resources.jarsigner_ja());
+    }
+
+    @Test
+    public void testJarsigner_zh_CN() {
+        checkResourcesMigration(new sun.security.tools.jarsigner.Resources_zh_CN(),
+                new sun.security.tools.jarsigner.resources.jarsigner_zh_CN());
+    }
+
     // ResourcesMgr
 
     @Test
