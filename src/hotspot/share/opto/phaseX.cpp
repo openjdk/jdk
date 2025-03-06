@@ -1997,31 +1997,25 @@ void PhaseCCP::push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2*
 // Add the AndI/L nodes back to the worklist to re-apply Value() in case the value is now a constant or shift
 // value changed.
 void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const {
-  const Node* to_push = nullptr;
-
   const TypeInteger* new_type = type(parent)->isa_integer(type(parent)->basic_type());
   uint use_op = use->Opcode();
-  if (new_type != nullptr && new_type->is_con()) {
+  if (
     // Pattern: parent (now constant) -> (ConstraintCast | ConvI2L)* -> And
-    to_push = parent;
-  } else if ((use_op == Op_LShiftI || use_op == Op_LShiftL) && use->in(2) == parent) {
+    (new_type != nullptr && new_type->is_con()) ||
     // Pattern: parent -> LShift (use) -> (ConstraintCast | ConvI2L)* -> And
-    to_push = use;
-  }
-  if (to_push == nullptr) {
-    return;
-  }
+    ((use_op == Op_LShiftI || use_op == Op_LShiftL) && use->in(2) == parent)) {
 
-  auto is_boundary = [](Node* n) {
-    return !(n->is_ConstraintCast() || n->Opcode() == Op_ConvI2L);
-  };
-  auto push_and_uses_to_worklist = [&](Node* n){
-    uint opc = n->Opcode();
-    if (opc == Op_AndI || opc == Op_AndL) {
-      push_if_not_bottom_type(worklist, n);
-    }
-  };
-  to_push->visit_uses(push_and_uses_to_worklist, is_boundary);
+    auto push_and_uses_to_worklist = [&](Node* n) {
+      uint opc = n->Opcode();
+      if (opc == Op_AndI || opc == Op_AndL) {
+        push_if_not_bottom_type(worklist, n);
+      }
+    };
+    auto is_boundary = [](Node* n) {
+      return !(n->is_ConstraintCast() || n->Opcode() == Op_ConvI2L);
+    };
+    use->visit_uses(push_and_uses_to_worklist, is_boundary);
+  }
 }
 
 // CastII::Value() optimizes CmpI/If patterns if the right input of the CmpI has a constant type. If the CastII input is
