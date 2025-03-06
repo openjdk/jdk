@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,7 @@ import javax.xml.crypto.dsig.*;
  * Multiple threads each manipulating a different <code>KeyInfoFactory</code>
  * instance need not synchronize.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Sean Mullan
  * @author JSR 105 Expert Group
  * @since 1.6
@@ -142,6 +143,7 @@ public abstract class KeyInfoFactory {
      *    "{@docRoot}/../specs/security/standard-names.html#xml-signature-xmlsignaturefactorykeyinfofactorytransformservice-mechanisms">
      *    Java Security Standard Algorithm Names Specification</a> for a list
      *    of standard mechanism types.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a new <code>KeyInfoFactory</code>
      * @throws NullPointerException if <code>mechanismType</code> is
      *    <code>null</code>
@@ -189,6 +191,7 @@ public abstract class KeyInfoFactory {
      *    Java Security Standard Algorithm Names Specification</a> for a list
      *    of standard mechanism types.
      * @param provider the <code>Provider</code> object
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a new <code>KeyInfoFactory</code>
      * @throws NullPointerException if <code>mechanismType</code> or
      *    <code>provider</code> are <code>null</code>
@@ -241,6 +244,7 @@ public abstract class KeyInfoFactory {
      *    Java Security Standard Algorithm Names Specification</a> for a list
      *    of standard mechanism types.
      * @param provider the string name of the provider
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a new <code>KeyInfoFactory</code>
      * @throws NoSuchProviderException if the specified provider is not
      *    registered in the security provider list

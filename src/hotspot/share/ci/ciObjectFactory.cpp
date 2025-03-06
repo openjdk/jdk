@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciCallSite.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
@@ -109,7 +108,7 @@ void ciObjectFactory::initialize() {
   // This Arena is long lived and exists in the resource mark of the
   // compiler thread that initializes the initial ciObjectFactory which
   // creates the shared ciObjects that all later ciObjectFactories use.
-  Arena* arena = new (mtCompiler) Arena(mtCompiler);
+  Arena* arena = new (mtCompiler) Arena(mtCompiler, Arena::Tag::tag_cienv);
   ciEnv initial(arena);
   ciEnv* env = ciEnv::current();
   env->_factory->init_shared_objects();
@@ -174,7 +173,7 @@ void ciObjectFactory::init_shared_objects() {
 
   ciEnv::_unloaded_cisymbol = ciObjectFactory::get_symbol(vmSymbols::dummy_symbol());
   // Create dummy InstanceKlass and ObjArrayKlass object and assign them idents
-  ciEnv::_unloaded_ciinstance_klass = new (_arena) ciInstanceKlass(ciEnv::_unloaded_cisymbol, nullptr, nullptr);
+  ciEnv::_unloaded_ciinstance_klass = new (_arena) ciInstanceKlass(ciEnv::_unloaded_cisymbol, nullptr);
   init_ident_of(ciEnv::_unloaded_ciinstance_klass);
   ciEnv::_unloaded_ciobjarrayklass = new (_arena) ciObjArrayKlass(ciEnv::_unloaded_cisymbol, ciEnv::_unloaded_ciinstance_klass, 1);
   init_ident_of(ciEnv::_unloaded_ciobjarrayklass);
@@ -468,13 +467,11 @@ ciKlass* ciObjectFactory::get_unloaded_klass(ciKlass* accessing_klass,
   oop domain = nullptr;
   if (accessing_klass != nullptr) {
     loader = accessing_klass->loader();
-    domain = accessing_klass->protection_domain();
   }
   for (int i = 0; i < _unloaded_klasses.length(); i++) {
     ciKlass* entry = _unloaded_klasses.at(i);
     if (entry->name()->equals(name) &&
-        entry->loader() == loader &&
-        entry->protection_domain() == domain) {
+        entry->loader() == loader) {
       // We've found a match.
       return entry;
     }
@@ -513,12 +510,10 @@ ciKlass* ciObjectFactory::get_unloaded_klass(ciKlass* accessing_klass,
     new_klass = new (arena()) ciObjArrayKlass(name, element_klass, dimension);
   } else {
     jobject loader_handle = nullptr;
-    jobject domain_handle = nullptr;
     if (accessing_klass != nullptr) {
       loader_handle = accessing_klass->loader_handle();
-      domain_handle = accessing_klass->protection_domain_handle();
     }
-    new_klass = new (arena()) ciInstanceKlass(name, loader_handle, domain_handle);
+    new_klass = new (arena()) ciInstanceKlass(name, loader_handle);
   }
   init_ident_of(new_klass);
   _unloaded_klasses.append(new_klass);

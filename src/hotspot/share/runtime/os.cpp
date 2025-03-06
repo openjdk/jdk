@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -77,9 +76,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/fastrand.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #ifdef LINUX
@@ -120,7 +117,7 @@ int os::snprintf_checked(char* buf, size_t len, const char* fmt, ...) {
 }
 
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
-  int result = permit_forbidden_function::vsnprintf(buf, len, fmt, args);
+  ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
   // If an encoding error occurred (result < 0) then it's not clear
   // whether the buffer is NUL terminated, so ensure it is.
   if ((result < 0) && (len > 0)) {
@@ -657,7 +654,7 @@ void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
     return nullptr;
   }
 
-  void* const outer_ptr = permit_forbidden_function::malloc(outer_size);
+  ALLOW_C_FUNCTION(::malloc, void* const outer_ptr = ::malloc(outer_size);)
   if (outer_ptr == nullptr) {
     return nullptr;
   }
@@ -724,7 +721,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     header->mark_block_as_dead();
 
     // the real realloc
-    void* const new_outer_ptr = permit_forbidden_function::realloc(header, new_outer_size);
+    ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc(header, new_outer_size);)
 
     if (new_outer_ptr == nullptr) {
       // realloc(3) failed and the block still exists.
@@ -752,7 +749,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
   } else {
 
     // NMT disabled.
-    rc = permit_forbidden_function::realloc(memblock, size);
+    ALLOW_C_FUNCTION(::realloc, rc = ::realloc(memblock, size);)
     if (rc == nullptr) {
       return nullptr;
     }
@@ -780,7 +777,7 @@ void  os::free(void *memblock) {
   // When NMT is enabled this checks for heap overwrites, then deaccounts the old block.
   void* const old_outer_ptr = MemTracker::record_free(memblock);
 
-  permit_forbidden_function::free(old_outer_ptr);
+  ALLOW_C_FUNCTION(::free, ::free(old_outer_ptr);)
 }
 
 void os::init_random(unsigned int initval) {
@@ -1187,9 +1184,9 @@ void os::print_summary_info(outputStream* st, char* buf, size_t buflen) {
   size_t mem = physical_memory()/G;
   if (mem == 0) {  // for low memory systems
     mem = physical_memory()/M;
-    st->print("%d cores, " SIZE_FORMAT "M, ", processor_count(), mem);
+    st->print("%d cores, %zuM, ", processor_count(), mem);
   } else {
-    st->print("%d cores, " SIZE_FORMAT "G, ", processor_count(), mem);
+    st->print("%d cores, %zuG, ", processor_count(), mem);
   }
   get_summary_os_info(buf, buflen);
   st->print_raw(buf);
@@ -1215,8 +1212,7 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
   if (localtime_pd(&tloc, &tz) != nullptr) {
     wchar_t w_buf[80];
     size_t n = ::wcsftime(w_buf, 80, L"%Z", &tz);
-    if (n > 0) {
-      ::wcstombs(buf, w_buf, buflen);
+    if (n > 0 && ::wcstombs(buf, w_buf, buflen) != (size_t)-1) {
       st->print("Time: %s %s", timestring, buf);
     } else {
       st->print("Time: %s", timestring);
@@ -1824,11 +1820,11 @@ void os::trace_page_sizes(const char* str,
                           const size_t page_size) {
 
   log_info(pagesize)("%s: "
-                     " min=" SIZE_FORMAT "%s"
-                     " max=" SIZE_FORMAT "%s"
+                     " min=%zu%s"
+                     " max=%zu%s"
                      " base=" PTR_FORMAT
-                     " size=" SIZE_FORMAT "%s"
-                     " page_size=" SIZE_FORMAT "%s",
+                     " size=%zu%s"
+                     " page_size=%zu%s",
                      str,
                      trace_page_size_params(region_min_size),
                      trace_page_size_params(region_max_size),
@@ -1845,11 +1841,11 @@ void os::trace_page_sizes_for_requested_size(const char* str,
                                              const size_t page_size) {
 
   log_info(pagesize)("%s:"
-                     " req_size=" SIZE_FORMAT "%s"
-                     " req_page_size=" SIZE_FORMAT "%s"
+                     " req_size=%zu%s"
+                     " req_page_size=%zu%s"
                      " base=" PTR_FORMAT
-                     " size=" SIZE_FORMAT "%s"
-                     " page_size=" SIZE_FORMAT "%s",
+                     " size=%zu%s"
+                     " page_size=%zu%s",
                      str,
                      trace_page_size_params(requested_size),
                      trace_page_size_params(requested_page_size),
@@ -1991,7 +1987,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   // we attempt to minimize fragmentation.
   constexpr unsigned total_shuffle_threshold = 1024;
 
-#define ARGSFMT "range [" PTR_FORMAT "-" PTR_FORMAT "), size " SIZE_FORMAT_X ", alignment " SIZE_FORMAT_X ", randomize: %d"
+#define ARGSFMT "range [" PTR_FORMAT "-" PTR_FORMAT "), size 0x%zx, alignment 0x%zx, randomize: %d"
 #define ARGSFMTARGS p2i(min), p2i(max), bytes, alignment, randomize
 
   log_debug(os, map) ("reserve_between (" ARGSFMT ")", ARGSFMTARGS);
@@ -2021,7 +2017,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   }
 
   char* const hi_end = MIN2(max, absolute_max);
-  if ((uintptr_t)hi_end < bytes) {
+  if ((uintptr_t)hi_end <= bytes) {
     return nullptr; // no need to go on
   }
   char* const hi_att = align_down(hi_end - bytes, alignment_adjusted);
@@ -2205,10 +2201,10 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
-    ThreadCritical tc;
+    MemTracker::NmtVirtualMemoryLocker nvml;
     res = pd_uncommit_memory(addr, bytes, executable);
     if (res) {
-      MemTracker::record_virtual_memory_uncommit((address)addr, bytes);
+      MemTracker::record_virtual_memory_uncommit(addr, bytes);
     }
   } else {
     res = pd_uncommit_memory(addr, bytes, executable);
@@ -2227,10 +2223,10 @@ bool os::release_memory(char* addr, size_t bytes) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
-    ThreadCritical tc;
+    MemTracker::NmtVirtualMemoryLocker nvml;
     res = pd_release_memory(addr, bytes);
     if (res) {
-      MemTracker::record_virtual_memory_release((address)addr, bytes);
+      MemTracker::record_virtual_memory_release(addr, bytes);
     }
   } else {
     res = pd_release_memory(addr, bytes);
@@ -2312,10 +2308,10 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
 bool os::unmap_memory(char *addr, size_t bytes) {
   bool result;
   if (MemTracker::enabled()) {
-    ThreadCritical tc;
+    MemTracker::NmtVirtualMemoryLocker nvml;
     result = pd_unmap_memory(addr, bytes);
     if (result) {
-      MemTracker::record_virtual_memory_release((address)addr, bytes);
+      MemTracker::record_virtual_memory_release(addr, bytes);
     }
   } else {
     result = pd_unmap_memory(addr, bytes);
@@ -2351,10 +2347,10 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
 bool os::release_memory_special(char* addr, size_t bytes) {
   bool res;
   if (MemTracker::enabled()) {
-    ThreadCritical tc;
+    MemTracker::NmtVirtualMemoryLocker nvml;
     res = pd_release_memory_special(addr, bytes);
     if (res) {
-      MemTracker::record_virtual_memory_release((address)addr, bytes);
+      MemTracker::record_virtual_memory_release(addr, bytes);
     }
   } else {
     res = pd_release_memory_special(addr, bytes);
@@ -2378,17 +2374,17 @@ void os::naked_sleep(jlong millis) {
 ////// Implementation of PageSizes
 
 void os::PageSizes::add(size_t page_size) {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: 0x%zx", page_size);
   _v |= page_size;
 }
 
 bool os::PageSizes::contains(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: 0x%zx", page_size);
   return (_v & page_size) != 0;
 }
 
 size_t os::PageSizes::next_smaller(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: 0x%zx", page_size);
   size_t v2 = _v & (page_size - 1);
   if (v2 == 0) {
     return 0;
@@ -2397,7 +2393,7 @@ size_t os::PageSizes::next_smaller(size_t page_size) const {
 }
 
 size_t os::PageSizes::next_larger(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: 0x%zx", page_size);
   if (page_size == max_power_of_2<size_t>()) { // Shift by 32/64 would be UB
     return 0;
   }
@@ -2432,11 +2428,11 @@ void os::PageSizes::print_on(outputStream* st) const {
       st->print_raw(", ");
     }
     if (sz < M) {
-      st->print(SIZE_FORMAT "k", sz / K);
+      st->print("%zuk", sz / K);
     } else if (sz < G) {
-      st->print(SIZE_FORMAT "M", sz / M);
+      st->print("%zuM", sz / M);
     } else {
-      st->print(SIZE_FORMAT "G", sz / G);
+      st->print("%zuG", sz / G);
     }
   }
   if (first) {
@@ -2470,7 +2466,7 @@ jint os::set_minimum_stack_sizes() {
     // ThreadStackSize so we go with "Java thread stack size" instead
     // of "ThreadStackSize" to be more friendly.
     tty->print_cr("\nThe Java thread stack size specified is too small. "
-                  "Specify at least " SIZE_FORMAT "k",
+                  "Specify at least %zuk",
                   _java_thread_min_stack_allowed / K);
     return JNI_ERR;
   }
@@ -2491,7 +2487,7 @@ jint os::set_minimum_stack_sizes() {
   if (stack_size_in_bytes != 0 &&
       stack_size_in_bytes < _compiler_thread_min_stack_allowed) {
     tty->print_cr("\nThe CompilerThreadStackSize specified is too small. "
-                  "Specify at least " SIZE_FORMAT "k",
+                  "Specify at least %zuk",
                   _compiler_thread_min_stack_allowed / K);
     return JNI_ERR;
   }
@@ -2503,7 +2499,7 @@ jint os::set_minimum_stack_sizes() {
   if (stack_size_in_bytes != 0 &&
       stack_size_in_bytes < _vm_internal_thread_min_stack_allowed) {
     tty->print_cr("\nThe VMThreadStackSize specified is too small. "
-                  "Specify at least " SIZE_FORMAT "k",
+                  "Specify at least %zuk",
                   _vm_internal_thread_min_stack_allowed / K);
     return JNI_ERR;
   }

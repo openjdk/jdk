@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -883,14 +883,22 @@ public abstract class NumberFormat extends Format  {
     }
 
     /**
-     * Returns true if grouping is used in this format. For example, in the
-     * English locale, with grouping on, the number 1234567 might be formatted
-     * as "1,234,567". The grouping separator as well as the size of each group
-     * is locale dependent and is determined by sub-classes of NumberFormat.
+     * Returns true if grouping is used in this format. This applies to both
+     * formatting and parsing. The grouping separator as well as the size of each
+     * group is locale dependent and is determined by sub-classes of NumberFormat.
+     * For example, consider a {@code NumberFormat} that expects a "{@code ,}"
+     * grouping separator symbol with a grouping size of 3.
+     * <ul>
+     *   <li> Formatting {@code 1234567} with grouping on returns {@code "1,234,567"}
+     *   <li> Parsing {@code "1,234,567"} with grouping off returns {@code 1}
+     *   <li> Parsing {@code "1,234,567"} with grouping off when {@link #isStrict()}
+     *        returns {@code true} throws {@code ParseException}
+     * </ul>
      *
      * @return {@code true} if grouping is used;
      *         {@code false} otherwise
      * @see #setGroupingUsed
+     * @see ##leniency Leniency Section
      */
     public boolean isGroupingUsed() {
         return groupingUsed;
@@ -898,6 +906,7 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Set whether or not grouping will be used in this format.
+     * This applies to both formatting and parsing.
      *
      * @param newValue {@code true} if grouping is used;
      *                 {@code false} otherwise

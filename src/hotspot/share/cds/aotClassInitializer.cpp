@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotClassInitializer.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
@@ -103,25 +102,17 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     return false;
   }
 
-  if (ik->is_hidden()) {
-    return HeapShared::is_archivable_hidden_klass(ik);
-  }
-
-  if (ik->is_enum_subclass()) {
-    return true;
-  }
-
   // About "static field that may hold a different value" errors:
   //
   // Automatic selection for aot-inited classes
   // ==========================================
   //
-  // When CDSConfig::is_initing_classes_at_dump_time() is enabled,
-  // HeapShared::find_all_aot_initialized_classes() finds the classes of all
+  // When CDSConfig::is_initing_classes_at_dump_time is enabled,
+  // AOTArtifactFinder::find_artifacts() finds the classes of all
   // heap objects that are reachable from HeapShared::_run_time_special_subgraph,
   // and mark these classes as aot-inited. This preserves the initialized
   // mirrors of these classes, and their <clinit> methods are NOT executed
-  // at runtime.
+  // at runtime. See aotArtifactFinder.hpp for more info.
   //
   // For example, with -XX:+AOTInvokeDynamicLinking, _run_time_special_subgraph
   // will contain some DirectMethodHandle objects. As a result, the DirectMethodHandle
@@ -268,16 +259,14 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
       // everybody's favorite super
       {"java/lang/Object"},
 
-      // above we selected all enums; we must include their super as well
-      {"java/lang/Enum"},
-     {nullptr}
+      {nullptr}
     };
     if (is_allowed(specs, ik)) {
       return true;
     }
   }
 
-  if (CDSConfig::is_dumping_invokedynamic()) {
+  if (CDSConfig::is_dumping_method_handles()) {
     // This table was created with the help of CDSHeapVerifier.
     // Also, some $Holder classes are needed. E.g., Invokers.<clinit> explicitly
     // initializes Invokers$Holder. Since Invokers.<clinit> won't be executed
@@ -356,4 +345,3 @@ void AOTClassInitializer::call_runtime_setup(JavaThread* current, InstanceKlass*
     }
   }
 }
-

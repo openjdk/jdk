@@ -1048,7 +1048,6 @@ public class SubmissionPublisher<T> implements Publisher<T>,
      * assignment coding style. Also, all methods and fields have
      * default visibility to simplify usage by callers.
      */
-    @SuppressWarnings("serial")
     @jdk.internal.vm.annotation.Contended
     static final class BufferedSubscription<T>
         implements Subscription, ForkJoinPool.ManagedBlocker {

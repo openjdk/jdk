@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,14 @@ final class WinNTFileSystem extends FileSystem {
         }
 
         return path;
+    }
+
+    private String getPathForWin32Calls(String path) {
+        return (path != null && path.isEmpty()) ? getCWD().getPath() : path;
+    }
+
+    private File getFileForWin32Calls(File file) {
+        return file.getPath().isEmpty() ? getCWD() : file;
     }
 
     WinNTFileSystem() {
@@ -495,31 +503,31 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public int getBooleanAttributes(File f) {
-        return getBooleanAttributes0(f);
+        return getBooleanAttributes0(getFileForWin32Calls(f));
     }
     private native int getBooleanAttributes0(File f);
 
     @Override
     public boolean checkAccess(File f, int access) {
-        return checkAccess0(f, access);
+        return checkAccess0(getFileForWin32Calls(f), access);
     }
     private native boolean checkAccess0(File f, int access);
 
     @Override
     public long getLastModifiedTime(File f) {
-        return getLastModifiedTime0(f);
+        return getLastModifiedTime0(getFileForWin32Calls(f));
     }
     private native long getLastModifiedTime0(File f);
 
     @Override
     public long getLength(File f) {
-        return getLength0(f);
+        return getLength0(getFileForWin32Calls(f));
     }
     private native long getLength0(File f);
 
     @Override
     public boolean setPermission(File f, int access, boolean enable, boolean owneronly) {
-        return setPermission0(f, access, enable, owneronly);
+        return setPermission0(getFileForWin32Calls(f), access, enable, owneronly);
     }
     private native boolean setPermission0(File f, int access, boolean enable, boolean owneronly);
 
@@ -533,7 +541,7 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public String[] list(File f) {
-        return list0(f);
+        return list0(getFileForWin32Calls(f));
     }
     private native String[] list0(File f);
 
@@ -545,7 +553,7 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public boolean setLastModifiedTime(File f, long time) {
-        return setLastModifiedTime0(f, time);
+        return setLastModifiedTime0(getFileForWin32Calls(f), time);
     }
     private native boolean setLastModifiedTime0(File f, long time);
 
@@ -584,7 +592,14 @@ final class WinNTFileSystem extends FileSystem {
     @Override
     public long getSpace(File f, int t) {
         if (f.exists()) {
-            return getSpace0(f, t);
+            // the value for the number of bytes of free space returned by the
+            // native layer is not used here as it represents the number of free
+            // bytes not considering quotas, whereas the value returned for the
+            // number of usable bytes does respect quotas, and it is required
+            // that free space <= total space
+            if (t == SPACE_FREE)
+                t = SPACE_USABLE;
+            return getSpace0(getFileForWin32Calls(f), t);
         }
         return 0;
     }
@@ -611,7 +626,7 @@ final class WinNTFileSystem extends FileSystem {
                 }
             }
         }
-        return getNameMax0(s);
+        return getNameMax0(getPathForWin32Calls(s));
     }
 
     @Override

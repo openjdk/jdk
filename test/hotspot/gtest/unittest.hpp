@@ -24,8 +24,6 @@
 #ifndef UNITTEST_HPP
 #define UNITTEST_HPP
 
-#include "utilities/globalDefinitions.hpp"
-
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -51,10 +49,8 @@
 #undef F2
 
 #include "utilities/vmassert_uninstall.hpp"
-BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-END_ALLOW_FORBIDDEN_FUNCTIONS
 #include "utilities/vmassert_reinstall.hpp"
 
 #ifdef UNDEFINED_Log
@@ -162,5 +158,23 @@ extern void gtest_exit_from_child_vm(int num);
   }                                                                 \
                                                                     \
   void test_ ## category ## _ ## name ## _()
+
+#define TEST_VM_CRASH_SIGNAL(category, name, signame)               \
+  static void test_  ## category ## _ ## name ## _();               \
+                                                                    \
+  static void child_ ## category ## _ ## name ## _() {              \
+    ::testing::GTEST_FLAG(throw_on_failure) = true;                 \
+    test_ ## category ## _ ## name ## _();                          \
+    gtest_exit_from_child_vm(0);                                    \
+  }                                                                 \
+                                                                    \
+  TEST(category, CONCAT(name, _vm_assert)) {                        \
+    ASSERT_EXIT(child_ ## category ## _ ## name ## _(),             \
+                ::testing::ExitedWithCode(1),                       \
+                "signaled: " signame);                              \
+  }                                                                 \
+                                                                    \
+  void test_ ## category ## _ ## name ## _()
+
 
 #endif // UNITTEST_HPP

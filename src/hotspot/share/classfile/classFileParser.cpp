@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
@@ -2127,7 +2126,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   // access_flags, name_index, descriptor_index, attributes_count
   cfs->guarantee_more(8, CHECK_NULL);
 
-  int flags = cfs->get_u2_fast();
+  u2 flags = cfs->get_u2_fast();
   const u2 name_index = cfs->get_u2_fast();
   const int cp_size = cp->length();
   guarantee_property(
@@ -3747,11 +3746,6 @@ void ClassFileParser::apply_parsed_class_metadata(
   this_klass->set_annotations(_combined_annotations);
   this_klass->set_permitted_subclasses(_permitted_subclasses);
   this_klass->set_record_components(_record_components);
-
-  // Initialize cached modifier_flags to support Class.getModifiers().
-  // This must follow setting inner_class attributes.
-  u2 computed_modifiers = this_klass->compute_modifier_flags();
-  this_klass->set_modifier_flags(computed_modifiers);
 
   // Delay the setting of _local_interfaces and _transitive_interfaces until after
   // initialize_supers() in fill_instance_klass(). It is because the _local_interfaces could
@@ -5663,7 +5657,7 @@ void ClassFileParser::mangle_hidden_class_name(InstanceKlass* const ik) {
     static volatile size_t counter = 0;
     Atomic::cmpxchg(&counter, (size_t)0, Arguments::default_SharedBaseAddress()); // initialize it
     size_t new_id = Atomic::add(&counter, (size_t)1);
-    jio_snprintf(addr_buf, 20, SIZE_FORMAT_X, new_id);
+    jio_snprintf(addr_buf, 20, "0x%zx", new_id);
   } else {
     jio_snprintf(addr_buf, 20, INTPTR_FORMAT, p2i(ik));
   }
