@@ -311,14 +311,20 @@ final class Operations {
         BOOLEAN_OPERATIONS
     ).flatMap((List<Operation> l) -> l.stream()).toList();
 
-    private enum VOPType { UNARY, BINARY, ASSOCIATIVE, TERNARY }
+    private enum VOPType {
+        UNARY,
+        BINARY,
+        ASSOCIATIVE, // Binary and associative - safe for reductions of any type
+        INTEGRAL_ASSOCIATIVE, // Binary - but only safe for integral reductions
+        TERNARY
+    }
     private record VOP(String name, VOPType type, List<PrimitiveType> elementTypes) {}
 
     // TODO: consider some floating results as inexact, and handle it accordingly?
     private static final List<VOP> VECTOR_API_OPS = List.of(
         new VOP("ABS",                  VOPType.UNARY, Type.PRIMITIVE_TYPES),
         //new VOP("ACOS",                 VOPType.UNARY, Type.FLOATING_TYPES),
-        new VOP("ADD",                  VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
+        new VOP("ADD",                  VOPType.INTEGRAL_ASSOCIATIVE, Type.PRIMITIVE_TYPES),
         new VOP("AND",                  VOPType.ASSOCIATIVE, Type.INTEGRAL_TYPES),
         new VOP("AND_NOT",              VOPType.BINARY, Type.INTEGRAL_TYPES),
         new VOP("ASHR",                 VOPType.BINARY, Type.INTEGRAL_TYPES),
@@ -346,7 +352,7 @@ final class Operations {
         new VOP("LSHR",                 VOPType.BINARY, Type.INTEGRAL_TYPES),
         new VOP("MIN",                  VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
         new VOP("MAX",                  VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
-        new VOP("MUL",                  VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
+        new VOP("MUL",                  VOPType.INTEGRAL_ASSOCIATIVE, Type.PRIMITIVE_TYPES),
         new VOP("NEG",                  VOPType.UNARY, Type.PRIMITIVE_TYPES),
         new VOP("NOT",                  VOPType.UNARY, Type.INTEGRAL_TYPES),
         new VOP("OR",                   VOPType.ASSOCIATIVE, Type.INTEGRAL_TYPES),
@@ -426,13 +432,16 @@ final class Operations {
                                                     + type2.elementType.name() +  ".class, "
                                                     + type.elementType.name() + ".class), 0))",
                                                 null));
-                    ops.add(new Operation.Unary(type,
-                                                "((" + type.vectorType + ")",
-                                                type2 ,
-                                                ".convert(VectorOperators.Conversion.ofReinterpret("
-                                                    + type2.elementType.name() +  ".class, "
-                                                    + type.elementType.name() + ".class), 0))",
-                                                null));
+                    // Reinterpretation FROM floating is not safe, because of different NaN encodings.
+                    if (!type2.elementType.isFloating()) {
+                        ops.add(new Operation.Unary(type,
+                                                    "((" + type.vectorType + ")",
+                                                    type2 ,
+                                                    ".convert(VectorOperators.Conversion.ofReinterpret("
+                                                        + type2.elementType.name() +  ".class, "
+                                                        + type.elementType.name() + ".class), 0))",
+                                                    null));
+                    }
                 }
 
                 // TODO: convertShape
@@ -461,8 +470,11 @@ final class Operations {
                         // TODO: lanewise(VectorOperators.Unary op, VectorMask<Integer> m)
                         break;
                     case VOPType.ASSOCIATIVE:
-                        ops.add(new Operation.Unary(type.elementType, "", type, ".reduceLanes(VectorOperators." + vop.name() + ")", null));
-                        // TODO: reduceLanes(VectorOperators.Associative op, VectorMask<Integer> m)
+                    case VOPType.INTEGRAL_ASSOCIATIVE:
+                        if (vop.type() == VOPType.ASSOCIATIVE || !type.elementType.isFloating()) {
+                            ops.add(new Operation.Unary(type.elementType, "", type, ".reduceLanes(VectorOperators." + vop.name() + ")", null));
+                            // TODO: reduceLanes(VectorOperators.Associative op, VectorMask<Integer> m)
+                        }
                         // fall-through
                     case VOPType.BINARY:
                         ops.add(new Operation.Binary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ")", null));
@@ -504,6 +516,7 @@ final class Operations {
             // TODO: rearrange(VectorShuffle<Integer> s, Vector<Integer> v)
             // TODO: rearrange(VectorShuffle<Integer> s, VectorMask<Integer> m)
 
+            // FIXME: continue with: reinterpretAsBytes()
         }
 
         // Ensure the list is immutable.
