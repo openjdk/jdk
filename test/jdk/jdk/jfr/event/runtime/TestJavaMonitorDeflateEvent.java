@@ -44,7 +44,7 @@ import jdk.test.lib.thread.XRun;
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm -XX:GuaranteedAsyncDeflationInterval=100 jdk.jfr.event.runtime.TestJavaMonitorDeflateEvent
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:GuaranteedAsyncDeflationInterval=100 jdk.jfr.event.runtime.TestJavaMonitorDeflateEvent
  */
 public class TestJavaMonitorDeflateEvent {
 
