@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, Azul Systems, Inc. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +31,6 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -50,7 +50,7 @@ public class DremFrem {
 
     @Benchmark
     @OperationsPerInvocation(DEFAULT_X_RANGE * DEFAULT_Y_RANGE)
-    public void calcFloatJava(Blackhole bh) {
+    public void calcFloatJava() {
         for (int i = 0; i < DEFAULT_X_RANGE; i++) {
             for (int j = DEFAULT_Y_RANGE; j > 0; j--) {
                 float x = i;
@@ -63,7 +63,7 @@ public class DremFrem {
 
     @Benchmark
     @OperationsPerInvocation(DEFAULT_X_RANGE * DEFAULT_Y_RANGE)
-    public void calcDoubleJava(Blackhole bh) {
+    public void calcDoubleJava() {
         for (int i = 0; i < DEFAULT_X_RANGE; i++) {
             for (int j = DEFAULT_Y_RANGE; j > 0; j--) {
                 double x = i;
