@@ -75,17 +75,13 @@ public class JavaOptionsEqualsTest {
     }
 
     public JavaOptionsEqualsTest(String javaAppDesc, String[] jpackageArgs) {
-        cmd = JPackageCommand.helloAppImage(javaAppDesc);
-        if (jpackageArgs != null) {
-            cmd.addArguments(jpackageArgs);
-        }
+        cmd = JPackageCommand.helloAppImage(javaAppDesc).addArguments(jpackageArgs).ignoreFakeRuntime();
     }
 
     @Test
     public void test() {
         cmd.executeAndAssertHelloAppImageCreated();
         List<String> output = HelloApp.executeLauncher(cmd).getOutput();
-        TKit.assertNotNull(output, "output is null");
         TKit.assertTextStream(WARNING1).apply(output.stream());
         TKit.assertTextStream(WARNING2).apply(output.stream());
     }
