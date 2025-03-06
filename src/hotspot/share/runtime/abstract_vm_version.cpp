@@ -81,6 +81,10 @@ VirtualizationType Abstract_VM_Version::_detected_virtualization = NoDetectedVir
   #error HOTSPOT_BUILD_TIME must be defined
 #endif
 
+#ifndef JVM_VARIANT
+  #error JVM_VARIANT must be defined
+#endif
+
 #define VM_RELEASE HOTSPOT_VERSION_STRING
 
 // HOTSPOT_VERSION_STRING equals the JDK VERSION_STRING (unless overridden
@@ -193,6 +197,10 @@ const char* Abstract_VM_Version::vm_release() {
 
 const char *Abstract_VM_Version::vm_platform_string() {
   return OS "-" CPU;
+}
+
+const char* Abstract_VM_Version::vm_variant() {
+  return JVM_VARIANT;
 }
 
 const char* Abstract_VM_Version::internal_vm_info_string() {

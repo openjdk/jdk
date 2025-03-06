@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,34 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.opto;
+/*
+ * @test
+ * @bug 8351074
+ * @summary Test input value check for DecimalFormat affix setter methods
+ * @run junit AffixTest
+ */
 
-import java.util.*;
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.oops.*;
-import sun.jvm.hotspot.types.*;
-import sun.jvm.hotspot.utilities.Observable;
-import sun.jvm.hotspot.utilities.Observer;
+import org.junit.jupiter.api.Test;
 
-public class CallDynamicJavaNode extends CallJavaNode {
-  static {
-    VM.registerVMInitializedObserver(new Observer() {
-        public void update(Observable o, Object data) {
-          initialize(VM.getVM().getTypeDataBase());
-        }
-      });
-  }
+import java.text.DecimalFormat;
 
-  private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type      = db.lookupType("CallDynamicJavaNode");
-  }
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+public class AffixTest {
 
-  public CallDynamicJavaNode(Address addr) {
-    super(addr);
-  }
+    @Test
+    public void nullPrefixTest() {
+        assertThrows(NullPointerException.class, () -> new DecimalFormat().setPositivePrefix(null));
+        assertThrows(NullPointerException.class, () -> new DecimalFormat().setNegativePrefix(null));
+    }
+
+    @Test
+    public void nullSuffixTest() {
+        assertThrows(NullPointerException.class, () -> new DecimalFormat().setPositiveSuffix(null));
+        assertThrows(NullPointerException.class, () -> new DecimalFormat().setNegativeSuffix(null));
+    }
 }
