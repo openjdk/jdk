@@ -38,17 +38,11 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   // Indicates that an explicit gc has been requested
   ShenandoahSharedFlag _explicit_gc_requested;
 
-  // Indicates that the thread should stop and terminate
-  ShenandoahSharedFlag _stop_requested;
-
   // Indicates whether it is safe to uncommit regions
   ShenandoahSharedFlag _uncommit_allowed;
 
   // Indicates that regions are being actively uncommitted
   ShenandoahSharedFlag _uncommit_in_progress;
-
-  // This lock is used to coordinate stopping and terminating this thread
-  Monitor _stop_lock;
 
   // This lock is used to coordinate allowing or forbidding regions to be uncommitted
   Monitor _uncommit_lock;
@@ -65,6 +59,12 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
 
   // True if the control thread has allowed this thread to uncommit regions
   bool is_uncommit_allowed() const;
+
+  // Iterate over and uncommit eligible regions until committed heap falls below
+  // `shrink_until` bytes. A region is eligible for uncommit if the timestamp at which
+  // it was last made empty is before `shrink_before` seconds since jvm start.
+  // Returns the number of regions uncommitted. May be interrupted by `forbid_uncommit`.
+  size_t do_uncommit_work(double shrink_before, size_t shrink_until) const;
 
 public:
   explicit ShenandoahUncommitThread(ShenandoahHeap* heap);
@@ -85,7 +85,7 @@ public:
   void allow_uncommit();
 
   // True if uncommit is in progress
-  bool is_uncommit_in_progress() {
+  bool is_uncommit_in_progress() const {
     return _uncommit_in_progress.is_set();
   }
 protected:

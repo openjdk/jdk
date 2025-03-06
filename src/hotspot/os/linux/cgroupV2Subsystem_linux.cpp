@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Red Hat Inc.
+ * Copyright (c) 2020, 2025, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,6 +292,10 @@ jlong memory_swap_limit_value(CgroupV2Controller* ctrl) {
 }
 
 void CgroupV2Controller::set_subsystem_path(const char* cgroup_path) {
+  if (_cgroup_path != nullptr) {
+    os::free(_cgroup_path);
+  }
+  _cgroup_path = os::strdup(cgroup_path);
   if (_path != nullptr) {
     os::free(_path);
   }
