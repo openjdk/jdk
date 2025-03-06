@@ -100,7 +100,7 @@ public final class Exceptions {
      * However, if a replacement is set, then when enhance == false
      * the output is the replacement string.
      */
-    public static abstract class SensitiveInfo  {
+    public abstract static class SensitiveInfo {
         String info, suffix, prefix, replacement;
         boolean enhanced;
 
@@ -335,7 +335,7 @@ public final class Exceptions {
         enhancedLookupExceptionText = SecurityProperties.includedInExceptions("addressLookup")
                                       | hostCompatFlag;
         enhancedUserExceptionText = SecurityProperties.includedInExceptions("userInfo");
-        enhancedJarExceptionText =  SecurityProperties.INCLUDE_JAR_NAME_IN_EXCEPTIONS;
+        enhancedJarExceptionText = SecurityProperties.INCLUDE_JAR_NAME_IN_EXCEPTIONS;
         initialized = true;
     }
 

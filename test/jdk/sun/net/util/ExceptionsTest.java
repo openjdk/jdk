@@ -44,12 +44,12 @@ import static jdk.internal.util.Exceptions.enhancedNetExceptions;
 public class ExceptionsTest {
 
     static boolean netEnabled() {
-        System.out.printf("netEnabled = %b\n",  enhancedNetExceptions());
+        System.out.printf("netEnabled = %b\n", enhancedNetExceptions());
         return enhancedNetExceptions();
     }
 
     static boolean dnsEnabled() {
-        System.out.printf("dnsEnabled = %b\n",  enhancedLookupExceptions());
+        System.out.printf("dnsEnabled = %b\n", enhancedLookupExceptions());
         return enhancedLookupExceptions();
     }
 
