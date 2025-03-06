@@ -8260,7 +8260,7 @@ instruct negI_rReg(rRegI dst, immI_0 zero, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct negI_rReg_ndd(rRegI src, rRegI dst, immI_0 zero, rFlagsReg cr)
+instruct negI_rReg_ndd(rRegI dst, rRegI src, immI_0 zero, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (SubI zero src));
@@ -8288,7 +8288,7 @@ instruct negI_rReg_2(rRegI dst, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct negI_rReg_2_ndd(rRegI src, rRegI dst, rFlagsReg cr)
+instruct negI_rReg_2_ndd(rRegI dst, rRegI src, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (NegI src));
@@ -8329,7 +8329,7 @@ instruct negL_rReg(rRegL dst, immL0 zero, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct negL_rReg_ndd(rRegL src, rRegL dst, immL0 zero, rFlagsReg cr)
+instruct negL_rReg_ndd(rRegL dst, rRegL src, immL0 zero, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (SubL zero src));
@@ -8357,7 +8357,7 @@ instruct negL_rReg_2(rRegL dst, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct negL_rReg_2_ndd(rRegL src, rRegL dst, rFlagsReg cr)
+instruct negL_rReg_2_ndd(rRegL dst, rRegL src, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (NegL src));
