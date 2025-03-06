@@ -47,7 +47,6 @@ import java.util.Arrays;
 import javax.swing.UnsupportedLookAndFeelException;
 
 public class bug8033699 {
-
     private static JFrame mainFrame;
     private static Robot robot;
     private static JButton btnStart;
@@ -61,14 +60,11 @@ public class bug8033699 {
     public static void main(String[] args) throws Throwable {
         // Get all installed Look and Feels
         UIManager.LookAndFeelInfo[] lafs = UIManager.getInstalledLookAndFeels();
-
         // Iterate over each LaF
         for (UIManager.LookAndFeelInfo laf : lafs) {
             try {
-
-                SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
-
                 SwingUtilities.invokeAndWait(() -> {
+                    setLookAndFeel(laf);
                     createAndShowGUI();
                 });
 
@@ -115,7 +111,7 @@ public class bug8033699 {
                 SwingUtilities.invokeAndWait(() -> mainFrame.dispose());
             } catch (Exception e) {
                 System.err.println("Error testing LaF: " + laf.getName());
-                e.printStackTrace();
+                throw e;
             }
         }
     }
@@ -126,7 +122,7 @@ public class bug8033699 {
         } catch (ClassNotFoundException | InstantiationException |
                  IllegalAccessException | UnsupportedLookAndFeelException e) {
             System.err.println("Error setting LaF: " + laf.getName());
-            e.printStackTrace();
+            throw new RuntimeException("Failed to set look and feel", e);
         }
     }
 
