@@ -82,6 +82,26 @@ IfNode* OpaqueZeroTripGuardNode::if_node() const {
   return iff->as_If();
 }
 
+Node* OpaqueMultiversioningNode::Identity(PhaseGVN* phase) {
+  // Constant fold the multiversion_if. Since the slow_loop is still delayed,
+  // i.e. we have not yet added any possibly failing condition, we can just
+  // take the true branch in all cases.
+  if (_useless) {
+    assert(_is_delayed_slow_loop, "the slow_loop should still be delayed");
+    return in(1);
+  }
+  return Opaque1Node::Identity(phase);
+}
+
+#ifndef PRODUCT
+void OpaqueMultiversioningNode::dump_spec(outputStream *st) const {
+  Opaque1Node::dump_spec(st);
+  if (_useless) {
+    st->print(" #useless");
+  }
+}
+#endif
+
 const Type* OpaqueNotNullNode::Value(PhaseGVN* phase) const {
   return phase->type(in(1));
 }

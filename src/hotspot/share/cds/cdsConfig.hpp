@@ -41,7 +41,6 @@ class CDSConfig : public AllStatic {
   static bool _is_dumping_full_module_graph;
   static bool _is_using_full_module_graph;
   static bool _has_aot_linked_classes;
-  static bool _has_archived_invokedynamic;
 
   static char* _default_archive_path;
   static char* _static_archive_path;
@@ -160,8 +159,7 @@ public:
   static bool is_initing_classes_at_dump_time()              NOT_CDS_JAVA_HEAP_RETURN_(false);
 
   static bool is_dumping_invokedynamic()                     NOT_CDS_JAVA_HEAP_RETURN_(false);
-  static bool is_loading_invokedynamic()                     NOT_CDS_JAVA_HEAP_RETURN_(false);
-  static void set_has_archived_invokedynamic()               { CDS_JAVA_HEAP_ONLY(_has_archived_invokedynamic = true); }
+  static bool is_dumping_method_handles()                    NOT_CDS_JAVA_HEAP_RETURN_(false);
 
   // full_module_graph (requires optimized_module_handling)
   static bool is_dumping_full_module_graph()                 { return CDS_ONLY(_is_dumping_full_module_graph) NOT_CDS(false); }

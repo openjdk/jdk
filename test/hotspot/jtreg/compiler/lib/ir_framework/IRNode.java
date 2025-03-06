@@ -329,6 +329,11 @@ public class IRNode {
         superWordNodes(ADD_REDUCTION_VL, "AddReductionVL");
     }
 
+    public static final String OPAQUE_MULTIVERSIONING = PREFIX + "OPAQUE_MULTIVERSIONING" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(OPAQUE_MULTIVERSIONING, "OpaqueMultiversioning");
+    }
+
     public static final String ADD_P_OF = COMPOSITE_PREFIX + "ADD_P_OF" + POSTFIX;
     static {
         String regex = START + "addP_" + IS_REPLACED + MID + ".*" + END;

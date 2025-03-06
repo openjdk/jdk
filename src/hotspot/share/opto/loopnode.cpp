@@ -41,6 +41,7 @@
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
@@ -2731,6 +2732,20 @@ Node* CountedLoopNode::match_incr_with_optional_truncation(Node* expr, Node** tr
   return nullptr;
 }
 
+IfNode* CountedLoopNode::find_multiversion_if_from_multiversion_fast_main_loop() {
+  assert(is_main_loop() && is_multiversion_fast_loop(), "must be multiversion fast main loop");
+  CountedLoopEndNode* pre_end = find_pre_loop_end();
+  if (pre_end == nullptr) { return nullptr; }
+  Node* pre_entry = pre_end->loopnode()->in(LoopNode::EntryControl);
+  const Predicates predicates(pre_entry);
+  IfTrueNode* before_predicates = predicates.entry()->isa_IfTrue();
+  if (before_predicates != nullptr &&
+      before_predicates->in(0)->in(1)->is_OpaqueMultiversioning()) {
+    return before_predicates->in(0)->as_If();
+  }
+  return nullptr;
+}
+
 LoopNode* CountedLoopNode::skip_strip_mined(int expect_skeleton) {
   if (is_strip_mined() && in(EntryControl) != nullptr && in(EntryControl)->is_OuterStripMinedLoop()) {
     verify_strip_mined(expect_skeleton);
@@ -4536,6 +4551,49 @@ void PhaseIdealLoop::eliminate_useless_zero_trip_guard() {
   }
 }
 
+void PhaseIdealLoop::eliminate_useless_multiversion_if() {
+  if (_multiversion_opaque_nodes.size() == 0) {
+    return;
+  }
+
+  ResourceMark rm;
+  Unique_Node_List useful_multiversioning_opaque_nodes;
+
+  // The OpaqueMultiversioning is only used from the fast main loop in AutoVectorization, to add
+  // speculative runtime-checks to the multiversion_if. Thus, a OpaqueMultiversioning is only
+  // useful if it can be found from a fast main loop. If it can not be found from a fast main loop,
+  // then we cannot ever use that multiversion_if to add more speculative runtime-checks, and hence
+  // it is useless. If it is still in delayed mode, i.e. has not yet had any runtime-checks added,
+  // then we can let it constant fold towards the fast loop.
+  for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
+    IdealLoopTree* lpt = iter.current();
+    if (lpt->_child == nullptr && lpt->is_counted()) {
+      CountedLoopNode* head = lpt->_head->as_CountedLoop();
+      if (head->is_main_loop() && head->is_multiversion_fast_loop()) {
+        // There are fast_loop pre/main/post loops, but the finding traversal starts at the main
+        // loop, and traverses via the fast pre loop to the multiversion_if.
+        IfNode* multiversion_if = head->find_multiversion_if_from_multiversion_fast_main_loop();
+        if (multiversion_if != nullptr) {
+            useful_multiversioning_opaque_nodes.push(multiversion_if->in(1)->as_OpaqueMultiversioning());
+        }
+      }
+    }
+  }
+
+  for (uint i = 0; i < _multiversion_opaque_nodes.size(); i++) {
+    OpaqueMultiversioningNode* opaque = _multiversion_opaque_nodes.at(i)->as_OpaqueMultiversioning();
+    if (!useful_multiversioning_opaque_nodes.member(opaque)) {
+      if (opaque->is_delayed_slow_loop()) {
+        // We cannot hack the node directly, otherwise the slow_loop will complain that it cannot
+        // find the multiversioning opaque node. Instead, we mark the opaque node as useless, and
+        // it can be constant folded during IGVN.
+        opaque->mark_useless();
+        _igvn._worklist.push(opaque);
+      }
+    }
+  }
+}
+
 //------------------------process_expensive_nodes-----------------------------
 // Expensive nodes have their control input set to prevent the GVN
 // from commoning them and as a result forcing the resulting node to
@@ -4805,6 +4863,7 @@ void PhaseIdealLoop::build_and_optimize() {
   }
 
   eliminate_useless_zero_trip_guard();
+  eliminate_useless_multiversion_if();
 
   if (stop_early) {
     assert(do_expensive_nodes, "why are we here?");
@@ -6596,6 +6655,9 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     _zero_trip_guard_opaque_nodes.push(n);
   }
 
+  if (!_verify_only && n->Opcode() == Op_OpaqueMultiversioning) {
+    _multiversion_opaque_nodes.push(n);
+  }
 }
 
 #ifdef ASSERT

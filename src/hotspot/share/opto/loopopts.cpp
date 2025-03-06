@@ -791,7 +791,10 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     // Ignore Template Assertion Predicates with OpaqueTemplateAssertionPredicate nodes.
     return nullptr;
   }
-  assert(bol->Opcode() == Op_Bool, "Unexpected node");
+  if (!bol->is_Bool()) {
+    assert(false, "Expected Bool, but got %s", NodeClassNames[bol->Opcode()]);
+    return nullptr;
+  }
   int cmp_op = bol->in(1)->Opcode();
   if (cmp_op == Op_SubTypeCheck) { // SubTypeCheck expansion expects an IfNode
     return nullptr;

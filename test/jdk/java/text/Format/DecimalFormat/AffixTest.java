@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,22 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_CPU_LINUX_RISCV_VM_VMSTRUCTS_LINUX_RISCV_HPP
-#define OS_CPU_LINUX_RISCV_VM_VMSTRUCTS_LINUX_RISCV_HPP
+/*
+ * @test
+ * @bug 8351074
+ * @summary Test input value check for DecimalFormat affix setter methods
+ * @run junit AffixTest
+ */
 
-// These are the OS and CPU-specific fields, types and integer
-// constants required by the Serviceability Agent. This file is
-// referenced by vmStructs.cpp.
+import org.junit.jupiter.api.Test;
 
-#define VM_STRUCTS_OS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field)
+import java.text.DecimalFormat;
 
-#define VM_TYPES_OS_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type)
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-#define VM_INT_CONSTANTS_OS_CPU(declare_constant, declare_preprocessor_constant)
+public class AffixTest {
 
-#define VM_LONG_CONSTANTS_OS_CPU(declare_constant, declare_preprocessor_constant)
+    @Test
+    public void nullPrefixTest() {
+        assertThrows(NullPointerException.class, () -> new DecimalFormat().setPositivePrefix(null));
+        assertThrows(NullPointerException.class, () -> new DecimalFormat().setNegativePrefix(null));
+    }
 
-#endif // OS_CPU_LINUX_RISCV_VM_VMSTRUCTS_LINUX_RISCV_HPP
+    @Test
+    public void nullSuffixTest() {
+        assertThrows(NullPointerException.class, () -> new DecimalFormat().setPositiveSuffix(null));
+        assertThrows(NullPointerException.class, () -> new DecimalFormat().setNegativeSuffix(null));
+    }
+}
