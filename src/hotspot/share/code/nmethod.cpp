@@ -195,14 +195,14 @@ struct java_nmethod_stats_struct {
     if (relocation_size != 0) {
       tty->print_cr("   relocation    = %u (%f%%)", relocation_size, (relocation_size * 100.0f)/total_mut_size);
     }
+    if (metadata_size != 0) {
+      tty->print_cr("   metadata      = %u (%f%%)", metadata_size, (metadata_size * 100.0f)/total_mut_size);
+    }
 #if INCLUDE_JVMCI
     if (jvmci_data_size != 0) {
       tty->print_cr("   JVMCI data    = %u (%f%%)", jvmci_data_size, (jvmci_data_size * 100.0f)/total_mut_size);
     }
 #endif
-    if (metadata_size != 0) {
-      tty->print_cr("   metadata      = %u (%f%%)", metadata_size, (metadata_size * 100.0f)/total_mut_size);
-    }
     if (total_immut_size != 0) {
       tty->print_cr(" immutable data  = %u (%f%%)", total_immut_size, (total_immut_size * 100.0f)/total_size);
     }
@@ -1080,8 +1080,8 @@ static void assert_no_oops_or_metadata(nmethod* nm) {
 static int required_mutable_data_size(CodeBuffer* code_buffer,
                                       int jvmci_data_size = 0) {
   return align_up(code_buffer->total_relocation_size(), oopSize) +
-         align_up(jvmci_data_size, oopSize) +
-         align_up(code_buffer->total_metadata_size(), oopSize);
+         align_up(code_buffer->total_metadata_size(), oopSize) +
+         align_up(jvmci_data_size, oopSize);
 }
 
 nmethod* nmethod::new_native_nmethod(const methodHandle& method,
@@ -3096,16 +3096,16 @@ void nmethod::print_on_impl(outputStream* st) const {
                                              p2i(relocation_begin()),
                                              p2i(relocation_end()),
                                              relocation_size());
+  if (metadata_size     () > 0) st->print_cr(" metadata       [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(metadata_begin()),
+                                             p2i(metadata_end()),
+                                             metadata_size());
 #if INCLUDE_JVMCI
   if (jvmci_data_size   () > 0) st->print_cr(" JVMCI data     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                              p2i(jvmci_data_begin()),
                                              p2i(jvmci_data_end()),
                                              jvmci_data_size());
 #endif
-  if (metadata_size     () > 0) st->print_cr(" metadata       [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(metadata_begin()),
-                                             p2i(metadata_end()),
-                                             metadata_size());
   if (immutable_data_size() > 0) st->print_cr(" immutable data [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                              p2i(immutable_data_begin()),
                                              p2i(immutable_data_end()),
