@@ -534,7 +534,9 @@ final class Operations {
             // TODO: rearrange(VectorShuffle<Integer> s, Vector<Integer> v)
             // TODO: rearrange(VectorShuffle<Integer> s, VectorMask<Integer> m)
 
-            // FIXME: continue with: selectFrom
+            ops.add(new Operation.Binary(type, "", type, ".selectFrom(", type, ")", null));
+            ops.add(new Operation.Ternary(type, "", type, ".selectFrom(", type, ", ", type, ")", null));
+            // TODO: selectFrom(Vector<Integer> s, VectorMask<Integer> m)
         }
 
         // Ensure the list is immutable.
