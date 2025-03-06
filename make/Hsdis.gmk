@@ -127,7 +127,7 @@ ifeq ($(HSDIS_BACKEND), binutils)
     HSDIS_LDFLAGS += -L$(MINGW_GCC_LIB_PATH) -L$(MINGW_SYSROOT_LIB_PATH)
     MINGW_DLLCRT := $(MINGW_SYSROOT_LIB_PATH)/dllcrt2.o
     HSDIS_TOOLCHAIN_LIBS := $(MINGW_DLLCRT) -lmingw32 -lgcc -lgcc_eh -lmoldname \
-        -lmingwex -lmsvcrt $(LIBPTHREAD) -ladvapi32 -lshell32 -luser32 -lkernel32
+        -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32
   else
     HSDIS_TOOLCHAIN_LIBS := -ldl
   endif
