@@ -441,10 +441,28 @@ final class Operations {
                                                         + type2.elementType.name() +  ".class, "
                                                         + type.elementType.name() + ".class), 0))",
                                                     null));
+                        if (type.elementType == Type.bytes()) {
+                            ops.add(new Operation.Unary(type, "", type2, ".reinterpretAsBytes()", null));
+                        }
+                        if (type.elementType == Type.shorts()) {
+                            ops.add(new Operation.Unary(type, "", type2, ".reinterpretAsShorts()", null));
+                        }
+                        if (type.elementType == Type.ints()) {
+                            ops.add(new Operation.Unary(type, "", type2, ".reinterpretAsInts()", null));
+                        }
+                        if (type.elementType == Type.longs()) {
+                            ops.add(new Operation.Unary(type, "", type2, ".reinterpretAsLongs()", null));
+                        }
+                        if (type.elementType == Type.floats()) {
+                            ops.add(new Operation.Unary(type, "", type2, ".reinterpretAsFloats()", null));
+                        }
+                        if (type.elementType == Type.doubles()) {
+                            ops.add(new Operation.Unary(type, "", type2, ".reinterpretAsDoubles()", null));
+                        }
                     }
                 }
-
                 // TODO: convertShape
+                // TODO: reinterpretShape
             }
 
             ops.add(new Operation.Binary(type, "", type, ".div(", type.elementType, ")", List.of("ArithmeticException")));
@@ -516,7 +534,7 @@ final class Operations {
             // TODO: rearrange(VectorShuffle<Integer> s, Vector<Integer> v)
             // TODO: rearrange(VectorShuffle<Integer> s, VectorMask<Integer> m)
 
-            // FIXME: continue with: reinterpretAsBytes()
+            // FIXME: continue with: selectFrom
         }
 
         // Ensure the list is immutable.
