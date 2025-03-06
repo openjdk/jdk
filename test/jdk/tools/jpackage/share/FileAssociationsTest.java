@@ -21,13 +21,14 @@
  * questions.
  */
 
+import static jdk.jpackage.test.JPackageStringBundle.MAIN;
+
 import java.nio.file.Path;
 import java.util.Map;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.FileAssociations;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
@@ -120,8 +121,8 @@ public class FileAssociationsTest {
         }).addInitializer(cmd -> {
             cmd.addArguments("--file-associations", propFile);
             cmd.validateOutput(
-                    JPackageStringBundle.MAIN.cannedFormattedString("error.no-content-types-for-file-association", 1),
-                    JPackageStringBundle.MAIN.cannedFormattedString("error.no-content-types-for-file-association.advice", 1));
+                    MAIN.cannedFormattedString("error.no-content-types-for-file-association", 1),
+                    MAIN.cannedFormattedString("error.no-content-types-for-file-association.advice", 1));
         }).run();
     }
 
@@ -138,8 +139,8 @@ public class FileAssociationsTest {
         }).addInitializer(cmd -> {
             cmd.addArguments("--file-associations", propFile);
             cmd.validateOutput(
-                    JPackageStringBundle.MAIN.cannedFormattedString("error.too-many-content-types-for-file-association", 1),
-                    JPackageStringBundle.MAIN.cannedFormattedString("error.too-many-content-types-for-file-association.advice", 1));
+                    MAIN.cannedFormattedString("error.too-many-content-types-for-file-association", 1),
+                    MAIN.cannedFormattedString("error.too-many-content-types-for-file-association.advice", 1));
         }).run();
     }
 
