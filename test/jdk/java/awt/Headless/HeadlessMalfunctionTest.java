@@ -32,7 +32,8 @@ import java.nio.file.Path;
  * @test
  * @bug 8336382
  * @summary Test that in absence of isHeadless method, the JDK throws a meaningful error message.
- * @library /test/lib
+ * @library /test/
+ * @requires os.family == "linux"
  * @build HeadlessMalfunctionAgent
  * @run driver  jdk.test.lib.helpers.ClassFileInstaller
  *              HeadlessMalfunctionAgent
@@ -58,9 +59,10 @@ public class HeadlessMalfunctionTest {
         final OutputAnalyzer output = ProcessTools.executeProcess(pbJava);
         // Unpatched JDK logs: "FATAL ERROR in native method: Could not allocate library name"
         // Patched should mention that isHeadless is missing, log message differs between OSes;
-        // e.g. LWCToolkit toolkit path on MacOS logs "java.lang.NoSuchMethodError: 'boolean java.awt.GraphicsEnvironment.isHeadless()'"
-        // Linux logs "FATAL ERROR in native method: GetStaticMethodID isHeadless failed"
-        output.shouldContain("isHeadless");
+        // e.g. LWCToolkit toolkit path on MacOS and Win32GraphicsEnvironment code path on Windows
+        // logs "java.lang.NoSuchMethodError: 'boolean java.awt.GraphicsEnvironment.isHeadless()'",
+        // whereas Linux logs "FATAL ERROR in native method: GetStaticMethodID isHeadless failed"
+        output.shouldContain("FATAL ERROR in native method: GetStaticMethodID isHeadless failed");
         output.shouldNotHaveExitValue(0);
     }
 
