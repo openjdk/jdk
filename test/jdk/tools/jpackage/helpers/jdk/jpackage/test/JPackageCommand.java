@@ -704,7 +704,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand validateOutput(TKit.TextStreamVerifier validator) {
-        return JPackageCommand.this.validateOutput(validator::apply);
+        return validateOutput(validator::apply);
     }
 
     public JPackageCommand validateOutput(Consumer<Stream<String>> validator) {
@@ -748,8 +748,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }).toArray()).getValue();
     }
 
-    public JPackageCommand validateOutput(CannedFormattedString str) {
-        return validateOutput(TKit.assertTextStream(getValue(str)));
+    public JPackageCommand validateOutput(CannedFormattedString... str) {
+        // Will look up the given errors in the order they are specified.
+        return validateOutput(Stream.of(str)
+                .map(this::getValue)
+                .map(TKit::assertTextStream)
+                .reduce(TKit.TextStreamVerifier::andThen).get());
     }
 
     public boolean isWithToolProvider() {
