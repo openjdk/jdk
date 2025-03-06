@@ -496,7 +496,6 @@ public class WhiteBox {
     replaceNMethod0(method, isOsr, -1);
   }
   public native void     replaceAllNMethods();
-  public native long     getNumNMethods();
   public native long    allocateCodeBlob(int size, int type);
   public        long    allocateCodeBlob(long size, int type) {
       int intSize = (int) size;

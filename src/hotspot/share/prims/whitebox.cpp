@@ -1671,32 +1671,6 @@ WB_ENTRY(void, WB_ReplaceAllNMethods(JNIEnv* env))
 
 WB_END
 
-WB_ENTRY(jlong, WB_GetNumNMethods(JNIEnv* env))
-  ResourceMark rm(THREAD);
-
-  long num = 0;
-  for (int codeBlobTypeIndex = 0; codeBlobTypeIndex < (int) CodeBlobType::NumTypes; codeBlobTypeIndex++) {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    CodeHeap* heap = WhiteBox::get_code_heap(static_cast<CodeBlobType>(codeBlobTypeIndex));
-    if (heap == nullptr) {
-      continue;
-    }
-
-    for (CodeBlob* cb = (CodeBlob*) heap->first(); cb != nullptr; cb = (CodeBlob*) heap->next(cb)) {
-      if (cb->is_nmethod()) {
-        num++;
-      }
-    }
-
-    if (!SegmentedCodeCache) {
-      break;
-    }
-  }
-
-  return num;
-
-WB_END
-
 CodeBlob* WhiteBox::allocate_code_blob(int size, CodeBlobType blob_type) {
   guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to be enabled");
   BufferBlob* blob;
@@ -2950,10 +2924,7 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_GetNMethod         },
   {CC"replaceNMethod0",         CC"(Ljava/lang/reflect/Executable;ZI)V",
                                                       (void*)&WB_ReplaceNMethod     },
-  {CC"replaceAllNMethods",         CC"()V",
-                                                      (void*)&WB_ReplaceAllNMethods },
-  {CC"getNumNMethods",         CC"()J",
-                                                      (void*)&WB_GetNumNMethods },
+  {CC"replaceAllNMethods", CC"()V",                   (void*)&WB_ReplaceAllNMethods },
   {CC"allocateCodeBlob",   CC"(II)J",                 (void*)&WB_AllocateCodeBlob   },
   {CC"freeCodeBlob",       CC"(J)V",                  (void*)&WB_FreeCodeBlob       },
   {CC"getCodeHeapEntries", CC"(I)[Ljava/lang/Object;",(void*)&WB_GetCodeHeapEntries },
