@@ -34,7 +34,6 @@ class CommittedMemoryRegion;
 // RegionsTree extends VMATree to add some more specific API and also defines a helper
 // for processing the tree nodes in a shorter and more meaningful way.
 class RegionsTree : public VMATree {
- private:
   NativeCallStackStorage _ncs_storage;
   bool _with_storage;
 
@@ -53,7 +52,7 @@ class RegionsTree : public VMATree {
       public:
       NodeHelper() : _node(nullptr) { }
       NodeHelper(Node* node) : _node(node) { }
-      inline bool is_valid() { return _node != nullptr; }
+      inline bool is_valid() const { return _node != nullptr; }
       inline void clear_node() { _node = nullptr; }
       inline VMATree::position position() const { return _node->key(); }
       inline bool is_committed_begin() const { return ((uint8_t)out_state() & (uint8_t)VMATree::StateType::Committed) >= 2; }

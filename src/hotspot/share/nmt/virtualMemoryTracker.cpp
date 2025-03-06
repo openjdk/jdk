@@ -57,7 +57,6 @@ bool VirtualMemoryTracker::Instance::initialize(NMT_TrackingLevel level) {
     void* tracker = os::malloc(sizeof(VirtualMemoryTracker), mtNMT);
     if (tracker == nullptr) return false;
     _tracker = new (tracker) VirtualMemoryTracker(level == NMT_detail);
-    return _tracker->tree() != nullptr;
   }
   return true;
 }

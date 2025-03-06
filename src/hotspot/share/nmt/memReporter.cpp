@@ -448,8 +448,9 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
       return true;
     });
 
-    if (reserved_and_committed)
+    if (reserved_and_committed) {
       return;
+    }
   }
 
   auto print_committed_rgn = [&](const CommittedMemoryRegion& crgn) {

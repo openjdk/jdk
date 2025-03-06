@@ -30,7 +30,7 @@
 template<typename F>
 void RegionsTree::visit_committed_regions(const ReservedMemoryRegion& rgn, F func) {
   position start = (position)rgn.base();
-  size_t end = (size_t)rgn.end() + 1;
+  size_t end = reinterpret_cast<size_t>(rgn.end()) + 1;
   size_t comm_size = 0;
 
   NodeHelper prev;
