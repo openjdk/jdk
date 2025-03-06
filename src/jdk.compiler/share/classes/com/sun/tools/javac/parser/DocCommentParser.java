@@ -1914,7 +1914,7 @@ public class DocCommentParser {
         class NormalizationContext {
             int pos = 0;                // current position in doctree list
             int currentPre = -1;        // position of active pre start tag
-            int strippableNewline = -1; // marker for strippable leading space
+            int strippableNewline = -1; // position marker for leading newline to be stripped
 
             // Are we currently inside a <pre> element?
             boolean inPre() {
