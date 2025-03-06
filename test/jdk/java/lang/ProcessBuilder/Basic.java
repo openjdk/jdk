@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@
  * @requires !vm.musl
  * @requires vm.flagless
  * @library /test/lib
- * @run main/othervm/native/timeout=300 Basic
- * @run main/othervm/native/timeout=300 -Djdk.lang.Process.launchMechanism=fork Basic
+ * @run main/othervm/native/timeout=360 Basic
+ * @run main/othervm/native/timeout=360 -Djdk.lang.Process.launchMechanism=fork Basic
  * @author Martin Buchholz
  */
 
@@ -55,7 +55,6 @@ import java.lang.ProcessHandle;
 import static java.lang.ProcessBuilder.Redirect.*;
 
 import java.io.*;
-import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -207,7 +206,7 @@ public class Basic {
 
     private static final Runtime runtime = Runtime.getRuntime();
 
-    private static final String[] winEnvCommand = {"cmd.exe", "/c", "set"};
+    private static final String[] winEnvCommand = {"cmd.exe", "/d", "/c", "set"};
 
     private static String winEnvFilter(String env) {
         return env.replaceAll("\r", "")
@@ -1841,7 +1840,7 @@ public class Basic {
         // Test Runtime.exec(...envp...) with envstrings without any `='
         //----------------------------------------------------------------
         try {
-            String[] cmdp = {"echo"};
+            String[] cmdp = Windows.is() ? new String[]{"cmd", "/c", "echo."} : new String[]{"echo"};
             String[] envp = {"Hello", "World"}; // Yuck!
             Process p = Runtime.getRuntime().exec(cmdp, envp);
             equal(commandOutput(p), "\n");
