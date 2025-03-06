@@ -212,6 +212,9 @@ public class TestFuzzVectorAPI {
             );
         });
 
+        // TODO: add register stress test
+        // TODO: add load/store stress test
+
         // Now use the templates and add them into the IRTestClass.
         List<TemplateWithArgs> templates = new ArrayList<>();
         templates.add(Library.arrayFillMethods());
