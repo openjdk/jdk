@@ -25,7 +25,7 @@
  * @test
  * @bug 8350582
  * @library /test/lib /javax/net/ssl/templates ../../
- * @summary javax.net.debug "ssl" option parsed incorrectly
+ * @summary Verify debug output for different javax.net.debug scenarios
  * @run junit DebugPropertyValuesTest
  */
 
@@ -69,7 +69,7 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                                 "adding as trusted certificates",
                                 "supported_versions"),
                         null),
-                // ssl should print most details expect verbose details
+                // ssl should print most details except verbose details
                 Arguments.of(List.of("-Djavax.net.debug=ssl"),
                         List.of("adding as trusted certificates",
                                 "trigger seeding of SecureRandom",
