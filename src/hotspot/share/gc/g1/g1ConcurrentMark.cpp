@@ -1236,7 +1236,7 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
     void reclaim_empty_region_common(G1HeapRegion* hr) {
       _freed_bytes += hr->used();
       hr->set_containing_set(nullptr);
-      hr->clear_cardtable();
+      hr->clear_card_table();
       hr->clear_refinement_table();
       _g1h->concurrent_mark()->clear_statistics(hr);
       G1HeapRegionPrinter::mark_reclaim(hr);

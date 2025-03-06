@@ -63,8 +63,8 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
   uint _worker_id;
 
-  size_t _num_marked_as_dirty_cards;
-  size_t _num_marked_as_into_cset_cards;
+  size_t _num_cards_marked_dirty;
+  size_t _num_cards_marked_to_cset;
 
   // Upper and lower threshold to start and end work queue draining.
   uint const _stack_trim_upper_threshold;
@@ -102,7 +102,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   EvacuationFailedInfo _evacuation_failed_info;
   G1EvacFailureRegions* _evac_failure_regions;
   // Number of additional cards into evacuation failed regions.
-  size_t _evac_failure_marked_cards;
+  size_t _num_cards_from_evac_failure;
 
   // Mark the card if not already in the set; this is a best-effort attempt on
   // detecting duplicates.
@@ -150,8 +150,8 @@ public:
   size_t lab_waste_words() const;
   size_t lab_undo_waste_words() const;
 
-  size_t num_pending_cards() const;
-  size_t evac_failure_marked_cards() const;
+  size_t num_cards_pending() const;
+  size_t num_cards_from_evac_failure() const;
   size_t num_marked_cards() const;
 
   // Pass locally gathered statistics to global state. Returns the total number of

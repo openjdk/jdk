@@ -113,7 +113,7 @@ template <class T> void G1ParScanThreadState::mark_card_into_evac_fail_region(T*
   assert(_g1h->heap_region_containing(obj)->in_collection_set(), "Only for enqeueing reference into collection set region");
 
   if (mark_if_new(p, false /* into_new_survivor */)) { // The reference is never into survivor regions.
-    _evac_failure_marked_cards++;
+    _num_cards_from_evac_failure++;
   }
 }
 
@@ -163,9 +163,9 @@ template <class T> void G1ParScanThreadState::mark_card_if_tracked(G1HeapRegionA
   bool into_survivor = region_attr.is_new_survivor();
   if (mark_if_new(p, into_survivor)) {
     if (into_survivor) {
-      _num_marked_as_into_cset_cards++;
+      _num_cards_marked_to_cset++;
     } else {
-      _num_marked_as_dirty_cards++;
+      _num_cards_marked_dirty++;
     }
   }
 }

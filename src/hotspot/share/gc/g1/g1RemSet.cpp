@@ -64,7 +64,7 @@
 // Collects information about the overall heap root scan progress during an evacuation.
 //
 // Scanning the remembered sets works by first merging all sources of cards to be
-// scanned (log buffers, remembered sets) into a single data structure to remove
+// scanned (refinement table, remembered sets) into a single data structure to remove
 // duplicates and simplify work distribution.
 //
 // During the following card scanning we not only scan this combined set of cards, but
@@ -222,7 +222,7 @@ class G1ClearCardTableTask : public G1AbstractSubTask {
           //
           // Humongous reclaim candidates are not in the dirty set. This is fine because
           // their card and refinement table should always be clear as they are typeArrays.
-          r->clear_cardtable();
+          r->clear_card_table();
           // There is no need to clear the refinement table here: at the start of the collection
           // we had to clear the refinement card table for collection set regions already, and any
           // old regions use it for old->collection set candidates, so they should not be cleared

@@ -41,7 +41,6 @@
 class BitMap;
 class CardTableBarrierSet;
 class G1AbstractSubTask;
-class G1RemSetScanState;
 class G1CollectedHeap;
 class G1CMBitMap;
 class G1HeapRegionClaimer;

@@ -26,7 +26,6 @@
 
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1RegionPinCache.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/satbMarkQueue.hpp"

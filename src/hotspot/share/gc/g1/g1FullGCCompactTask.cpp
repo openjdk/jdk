@@ -149,7 +149,7 @@ void G1FullGCCompactTask::free_non_overlapping_regions(uint src_start_idx, uint 
     G1HeapRegion* hr = _g1h->region_at(i);
     if (VerifyDuringGC) {
       // Satisfy some asserts in free_..._region
-      hr->clear_cardtable();
+      hr->clear_card_table();
       hr->clear_refinement_table();
     }
     _g1h->free_humongous_region(hr, nullptr);

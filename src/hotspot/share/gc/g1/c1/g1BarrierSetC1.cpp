@@ -29,6 +29,7 @@
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIR.hpp"

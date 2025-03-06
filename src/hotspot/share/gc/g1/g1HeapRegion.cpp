@@ -133,7 +133,7 @@ void G1HeapRegion::hr_clear(bool clear_space) {
   if (clear_space) clear(SpaceDecorator::Mangle);
 }
 
-void G1HeapRegion::clear_cardtable() {
+void G1HeapRegion::clear_card_table() {
   G1CardTable* ct = G1CollectedHeap::heap()->card_table();
   ct->clear_MemRegion(MemRegion(bottom(), end()));
 }

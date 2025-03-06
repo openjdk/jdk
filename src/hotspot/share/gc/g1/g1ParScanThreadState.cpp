@@ -70,8 +70,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _tenuring_threshold(g1h->policy()->tenuring_threshold()),
     _scanner(g1h, this),
     _worker_id(worker_id),
-    _num_marked_as_dirty_cards(0),
-    _num_marked_as_into_cset_cards(0),
+    _num_cards_marked_dirty(0),
+    _num_cards_marked_to_cset(0),
     _stack_trim_upper_threshold(GCDrainStackTargetSize * 2 + 1),
     _stack_trim_lower_threshold(GCDrainStackTargetSize),
     _trim_ticks(),
@@ -87,7 +87,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     ALLOCATION_FAILURE_INJECTOR_ONLY(_allocation_failure_inject_counter(0) COMMA)
     _evacuation_failed_info(),
     _evac_failure_regions(evac_failure_regions),
-    _evac_failure_marked_cards(0)
+    _num_cards_from_evac_failure(0)
 {
   // We allocate number of young gen regions in the collection set plus one
   // entries, since entry 0 keeps track of surviving bytes for non-young regions.
@@ -145,16 +145,16 @@ size_t G1ParScanThreadState::lab_undo_waste_words() const {
   return _plab_allocator->undo_waste();
 }
 
-size_t G1ParScanThreadState::num_pending_cards() const {
-  return _num_marked_as_dirty_cards + _evac_failure_marked_cards;
+size_t G1ParScanThreadState::num_cards_pending() const {
+  return _num_cards_marked_dirty + _num_cards_from_evac_failure;
 }
 
 size_t G1ParScanThreadState::num_marked_cards() const {
-  return num_pending_cards() + _num_marked_as_into_cset_cards;
+  return num_cards_pending() + _num_cards_marked_to_cset;
 }
 
-size_t G1ParScanThreadState::evac_failure_marked_cards() const {
-  return _evac_failure_marked_cards;
+size_t G1ParScanThreadState::num_cards_from_evac_failure() const {
+  return _num_cards_from_evac_failure;
 }
 
 #ifdef ASSERT
@@ -592,9 +592,9 @@ void G1ParScanThreadStateSet::flush_stats() {
     size_t lab_waste_bytes = pss->lab_waste_words() * HeapWordSize;
     size_t lab_undo_waste_bytes = pss->lab_undo_waste_words() * HeapWordSize;
     size_t copied_bytes = pss->flush_stats(_surviving_young_words_total, _num_workers) * HeapWordSize;
-    size_t pending_cards = pss->num_pending_cards();
-    size_t to_young_gen_cards = pss->num_marked_cards() - pss->num_pending_cards();
-    size_t evac_fail_marked_cards = pss->evac_failure_marked_cards();
+    size_t pending_cards = pss->num_cards_pending();
+    size_t to_young_gen_cards = pss->num_marked_cards() - pss->num_cards_pending();
+    size_t evac_failure_cards = pss->num_cards_from_evac_failure();
     size_t marked_cards = pss->num_marked_cards();
 
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, copied_bytes, G1GCPhaseTimes::MergePSSCopiedBytes);
@@ -602,7 +602,7 @@ void G1ParScanThreadStateSet::flush_stats() {
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_undo_waste_bytes, G1GCPhaseTimes::MergePSSLABUndoWasteBytes);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, pending_cards, G1GCPhaseTimes::MergePSSPendingCards);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, to_young_gen_cards, G1GCPhaseTimes::MergePSSToYoungGenCards);
-    p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, evac_fail_marked_cards, G1GCPhaseTimes::MergePSSEvacFail);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, evac_failure_cards, G1GCPhaseTimes::MergePSSEvacFail);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, marked_cards, G1GCPhaseTimes::MergePSSMarked);
 
     delete pss;
