@@ -116,8 +116,7 @@ public:
 // Return from subroutine node
 class ReturnNode : public Node {
 public:
-  ReturnNode(uint edges, Node *cntrl, Node *i_o, Node *memory, Node *frameptr,
-             Node *retadr);
+  ReturnNode(uint edges, Node* cntrl, Node* i_o, Node* memory, Node* frameptr, Node* retadr);
   virtual int Opcode() const;
   virtual bool  is_CFG() const { return true; }
   virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
