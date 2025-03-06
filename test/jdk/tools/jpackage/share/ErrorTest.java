@@ -133,7 +133,7 @@ public final class ErrorTest {
             }
 
             Builder nativeType() {
-                return type(defaultNativeType());
+                return type(NATIVE_TYPE);
             }
 
             Builder appDesc(String v) {
@@ -641,7 +641,7 @@ public final class ErrorTest {
 
     private static PackageType defaultNativeType() {
         if (TKit.isLinux()) {
-            return PackageType.LINUX_RPM;
+            return PackageType.LINUX.stream().filter(PackageType::isSupported).findFirst().orElseThrow();
         } else if (TKit.isOSX()) {
             return PackageType.MAC_DMG;
         } else if (TKit.isWindows()) {
@@ -666,4 +666,6 @@ public final class ErrorTest {
     }
 
     private static final Pattern LINE_SEP_REGEXP = Pattern.compile("\\R");
+
+    private static final PackageType NATIVE_TYPE = defaultNativeType();
 }
