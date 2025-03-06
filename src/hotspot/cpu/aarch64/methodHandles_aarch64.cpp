@@ -97,13 +97,18 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method) {
   BLOCK_COMMENT("verify_method {");
   __ verify_method_ptr(method);
   if (VerifyMethodHandles) {
-    Label L_clinit_success;
+    Label L_ok;
     assert_different_registers(method, rscratch1, rscratch2);
     __ load_method_holder(rscratch1, method);
-    __ clinit_barrier(rscratch1, rscratch2, &L_clinit_success);
-    // clinit check failed!
+    __ clinit_barrier(rscratch1, rscratch2, &L_ok);
+
+    // clinit check failed
+    __ ldrh(rscratch2, Address(method, Method::access_flags_offset())); // keep holder klass in rscratch1 for diagnostic purporse
+    __ tbnz(rscratch2, exact_log2(JVM_ACC_ABSTRACT), L_ok);
+
+    // clinit check failed for a concrete method
     __ stop("Method holder klass is not initialized");
-    __ bind(L_clinit_success);
+    __ bind(L_ok);
   }
   BLOCK_COMMENT("} verify_method");
 }
