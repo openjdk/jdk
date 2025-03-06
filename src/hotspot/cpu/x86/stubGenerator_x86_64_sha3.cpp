@@ -359,7 +359,6 @@ address StubGenerator::generate_double_keccak() {
   const Register constant2use = r10;
   const Register roundsLeft = r11;
 
-  __ align(OptoLoopAlignment);
   Label rounds24_loop;
 
   __ enter();

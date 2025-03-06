@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ void StubGenerator::generate_dilithium_stubs() {
       StubRoutines::_dilithiumNttMult = generate_dilithiumNttMult_avx512();
       StubRoutines::_dilithiumMontMulByConstant = generate_dilithiumMontMulByConstant_avx512();
       StubRoutines::_dilithiumDecomposePoly = generate_dilithiumDecomposePoly_avx512();
-    }
+  }
 }
 
 // We do Montgomery multiplications of two vectors of 16 ints each in 4 steps:
