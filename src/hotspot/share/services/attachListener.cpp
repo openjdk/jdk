@@ -60,10 +60,10 @@
 // The method flushes buffered output and consequent printing goes directly to ReplyWriter.
 class attachStream : public bufferedStream {
   AttachOperation::ReplyWriter* _reply_writer;
-  bool _allow_streaming;
+  const bool _allow_streaming;
+  enum class ResultState { Unset, Set, Written };
+  ResultState _result_state;
   jint _result;
-  bool _result_set;
-  bool _result_written;
   bool _error;
 
   enum : size_t {
@@ -72,7 +72,7 @@ class attachStream : public bufferedStream {
   };
 
   bool is_streaming() const {
-    return _result_set && _allow_streaming;
+    return _result_state != ResultState::Unset && _allow_streaming;
   }
 
   void flush_reply() {
@@ -80,9 +80,9 @@ class attachStream : public bufferedStream {
       return;
     }
 
-    if (!_result_written) {
+    if (_result_state != ResultState::Written) {
       if (_reply_writer->write_reply(_result, this)) {
-        _result_written = true;
+        _result_state = ResultState::Written;
         reset();
       } else {
         _error = true;
@@ -99,16 +99,16 @@ public:
     : bufferedStream(INITIAL_BUFFER_SIZE, MAXIMUM_BUFFER_SIZE),
       _reply_writer(reply_writer),
       _allow_streaming(reply_writer == nullptr ? false : allow_streaming),
-      _result(JNI_OK), _result_set(false), _result_written(false),
+      _result_state(ResultState::Unset), _result(JNI_OK),
       _error(false)
     {}
 
   virtual ~attachStream() {}
 
   void set_result(jint result) {
-    if (!_result_set) {
+    if (_result_state == ResultState::Unset) {
       _result = result;
-      _result_set = true;
+      _result_state = ResultState::Set;
       if (_allow_streaming) {
         // switch to streaming mode
         flush_reply();
@@ -151,7 +151,11 @@ public:
 };
 
 // Attach operation handler.
-typedef void(*AttachOperationFunction)(AttachOperation* op, attachStream* out);
+// Handler can set operation result in 2 ways:
+// - return the result;
+// - call out->set_result();
+//   this turns on streaming output, returned value is ignored.
+typedef jint(*AttachOperationFunction)(AttachOperation* op, attachStream* out);
 
 struct AttachOperationFunctionInfo {
     const char* name;
@@ -210,7 +214,7 @@ static InstanceKlass* load_and_initialize_klass(Symbol* sh, TRAPS) {
   return ik;
 }
 
-static void get_properties(AttachOperation* op, attachStream* out, Symbol* serializePropertiesMethod) {
+static jint get_properties(AttachOperation* op, attachStream* out, Symbol* serializePropertiesMethod) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   HandleMark hm(THREAD);
 
@@ -220,8 +224,7 @@ static void get_properties(AttachOperation* op, attachStream* out, Symbol* seria
   if (HAS_PENDING_EXCEPTION) {
     java_lang_Throwable::print(PENDING_EXCEPTION, out);
     CLEAR_PENDING_EXCEPTION;
-    out->set_result(JNI_ERR);
-    return;
+    return JNI_ERR;
   }
 
   // invoke the serializePropertiesToByteArray method
@@ -239,8 +242,7 @@ static void get_properties(AttachOperation* op, attachStream* out, Symbol* seria
   if (HAS_PENDING_EXCEPTION) {
     java_lang_Throwable::print(PENDING_EXCEPTION, out);
     CLEAR_PENDING_EXCEPTION;
-    out->set_result(JNI_ERR);
-    return;
+    return JNI_ERR;
   }
 
   // The result should be a [B
@@ -254,10 +256,11 @@ static void get_properties(AttachOperation* op, attachStream* out, Symbol* seria
   typeArrayOop ba = typeArrayOop(res);
   jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
   out->print_raw((const char*)addr, ba->length());
+  return JNI_OK;
 }
 
 // Implementation of "load" command.
-static void load_agent(AttachOperation* op, attachStream* out) {
+static jint load_agent(AttachOperation* op, attachStream* out) {
   // get agent name and options
   const char* agent = op->arg(0);
   const char* absParam = op->arg(1);
@@ -277,30 +280,29 @@ static void load_agent(AttachOperation* op, attachStream* out) {
                            h_module_name,
                            THREAD);
     if (HAS_PENDING_EXCEPTION) {
-      out->set_result(JNI_ERR);
       java_lang_Throwable::print(PENDING_EXCEPTION, out);
       CLEAR_PENDING_EXCEPTION;
-      return;
+      return JNI_ERR;
     }
   }
 
-  out->set_result(JNI_OK);
   // The abs parameter should be "true" or "false".
   const bool is_absolute_path = (absParam != nullptr) && (strcmp(absParam, "true") == 0);
   JvmtiAgentList::load_agent(agent, is_absolute_path, options, out);
 
   // Agent_OnAttach result or error message is written to 'out'.
+  return JNI_OK;
 }
 
 // Implementation of "properties" command.
 // See also: PrintSystemPropertiesDCmd class
-static void get_system_properties(AttachOperation* op, attachStream* out) {
+static jint get_system_properties(AttachOperation* op, attachStream* out) {
   return get_properties(op, out, vmSymbols::serializePropertiesToByteArray_name());
 }
 
 // Implementation of "agent_properties" command.
-static void get_agent_properties(AttachOperation* op, attachStream* out) {
-  get_properties(op, out, vmSymbols::serializeAgentPropertiesToByteArray_name());
+static jint get_agent_properties(AttachOperation* op, attachStream* out) {
+  return get_properties(op, out, vmSymbols::serializeAgentPropertiesToByteArray_name());
 }
 
 // Implementation of "datadump" command.
@@ -310,8 +312,8 @@ static void get_agent_properties(AttachOperation* op, attachStream* out) {
 // JVMTI environment that has enabled this event. However it's useful to
 // trigger the SIGBREAK handler.
 
-static void data_dump(AttachOperation* op, attachStream* out) {
-  out->set_result(JNI_OK);
+static jint data_dump(AttachOperation* op, attachStream* out) {
+  out->set_result(JNI_OK); // allow streaming output
   if (!ReduceSignalUsage) {
     AttachListener::pd_data_dump();
   } else {
@@ -319,12 +321,13 @@ static void data_dump(AttachOperation* op, attachStream* out) {
       JvmtiExport::post_data_dump();
     }
   }
+  return JNI_OK;
 }
 
 // Implementation of "threaddump" command - essentially a remote ctrl-break
 // See also: ThreadDumpDCmd class
 //
-static void thread_dump(AttachOperation* op, attachStream* out) {
+static jint thread_dump(AttachOperation* op, attachStream* out) {
   bool print_concurrent_locks = false;
   bool print_extended_info = false;
   if (op->arg(0) != nullptr) {
@@ -338,7 +341,7 @@ static void thread_dump(AttachOperation* op, attachStream* out) {
     }
   }
 
-  out->set_result(JNI_OK);
+  out->set_result(JNI_OK); // allow streaming output
 
   // thread stacks and JNI global handles
   VM_PrintThreads op1(out, print_concurrent_locks, print_extended_info, true /* print JNI handle info */);
@@ -347,11 +350,13 @@ static void thread_dump(AttachOperation* op, attachStream* out) {
   // Deadlock detection
   VM_FindDeadlocks op2(out);
   VMThread::execute(&op2);
+
+  return JNI_OK;
 }
 
 // A jcmd attach operation request was received, which will now
 // dispatch to the diagnostic commands used for serviceability functions.
-static void jcmd(AttachOperation* op, attachStream* out) {
+static jint jcmd(AttachOperation* op, attachStream* out) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
 
   // All the supplied jcmd arguments are stored as a single
@@ -372,7 +377,7 @@ static void jcmd(AttachOperation* op, attachStream* out) {
   class Executor: public DCmd::Executor {
   private:
     attachStream* _attach_stream;
-    bool _allow_streaming_output;
+    const bool _allow_streaming_output;
   public:
     Executor(DCmdSource source, attachStream* out, bool allow_streaming_output)
         : DCmd::Executor(source, out), _attach_stream(out), _allow_streaming_output(allow_streaming_output) {}
@@ -391,11 +396,12 @@ static void jcmd(AttachOperation* op, attachStream* out) {
     // In the case _attach_stream->set_result() is already called and operation result code is send
     // to the client.
     // Repeated out->set_result() is a no-op, just report exception message.
-    out->set_result(JNI_ERR);
     java_lang_Throwable::print(PENDING_EXCEPTION, out);
     out->cr();
     CLEAR_PENDING_EXCEPTION;
+    return JNI_ERR;
   }
+  return JNI_OK;
 }
 
 // Implementation of "dumpheap" command.
@@ -405,45 +411,41 @@ static void jcmd(AttachOperation* op, attachStream* out) {
 //   arg0: Name of the dump file
 //   arg1: "-live" or "-all"
 //   arg2: Compress level
-static void dump_heap(AttachOperation* op, attachStream* out) {
+static jint dump_heap(AttachOperation* op, attachStream* out) {
   const char* path = op->arg(0);
   if (path == nullptr || path[0] == '\0') {
-    out->set_result(JNI_ERR);
     out->print_cr("No dump file specified");
-    return;
-  }
-
-  bool live_objects_only = true;   // default is true to retain the behavior before this change is made
-  const char* arg1 = op->arg(1);
-  if (arg1 != nullptr && (strlen(arg1) > 0)) {
-    if (strcmp(arg1, "-all") != 0 && strcmp(arg1, "-live") != 0) {
-      out->set_result(JNI_ERR);
-      out->print_cr("Invalid argument to dumpheap operation: %s", arg1);
-      return;
+  } else {
+    bool live_objects_only = true;   // default is true to retain the behavior before this change is made
+    const char* arg1 = op->arg(1);
+    if (arg1 != nullptr && (strlen(arg1) > 0)) {
+      if (strcmp(arg1, "-all") != 0 && strcmp(arg1, "-live") != 0) {
+        out->print_cr("Invalid argument to dumpheap operation: %s", arg1);
+        return JNI_ERR;
+      }
+      live_objects_only = strcmp(arg1, "-live") == 0;
     }
-    live_objects_only = strcmp(arg1, "-live") == 0;
-  }
 
-  const char* num_str = op->arg(2);
-  uint level = 0;
-  if (num_str != nullptr && num_str[0] != '\0') {
-    if (!Arguments::parse_uint(num_str, &level, 0)) {
-      out->set_result(JNI_ERR);
-      out->print_cr("Invalid compress level: [%s]", num_str);
-      return;
-    } else if (level < 1 || level > 9) {
-      out->set_result(JNI_ERR);
-      out->print_cr("Compression level out of range (1-9): %u", level);
-      return;
+    const char* num_str = op->arg(2);
+    uint level = 0;
+    if (num_str != nullptr && num_str[0] != '\0') {
+      if (!Arguments::parse_uint(num_str, &level, 0)) {
+        out->print_cr("Invalid compress level: [%s]", num_str);
+        return JNI_ERR;
+      } else if (level < 1 || level > 9) {
+        out->print_cr("Compression level out of range (1-9): %u", level);
+        return JNI_ERR;
+      }
     }
-  }
 
-  out->set_result(JNI_OK);
-  // Request a full GC before heap dump if live_objects_only = true
-  // This helps reduces the amount of unreachable objects in the dump
-  // and makes it easier to browse.
-  HeapDumper dumper(live_objects_only /* request GC */);
-  dumper.dump(path, out, level);
+    out->set_result(JNI_OK); // allow streaming output
+    // Request a full GC before heap dump if live_objects_only = true
+    // This helps reduces the amount of unreachable objects in the dump
+    // and makes it easier to browse.
+    HeapDumper dumper(live_objects_only /* request GC */);
+    dumper.dump(path, out, level);
+  }
+  return JNI_OK;
 }
 
 // Implementation of "inspectheap" command
@@ -453,7 +455,7 @@ static void dump_heap(AttachOperation* op, attachStream* out) {
 //   arg0: "-live" or "-all"
 //   arg1: Name of the dump file or null
 //   arg2: parallel thread number
-static void heap_inspection(AttachOperation* op, attachStream* out) {
+static jint heap_inspection(AttachOperation* op, attachStream* out) {
   bool live_objects_only = true;   // default is true to retain the behavior before this change is made
   outputStream* os = out;   // if path not specified or path is null, use out
   fileStream* fs = nullptr;
@@ -461,9 +463,8 @@ static void heap_inspection(AttachOperation* op, attachStream* out) {
   uint parallel_thread_num = MAX2<uint>(1, (uint)os::initial_active_processor_count() * 3 / 8);
   if (arg0 != nullptr && (strlen(arg0) > 0)) {
     if (strcmp(arg0, "-all") != 0 && strcmp(arg0, "-live") != 0) {
-      out->set_result(JNI_ERR);
       out->print_cr("Invalid argument to inspectheap operation: %s", arg0);
-      return;
+      return JNI_ERR;
     }
     live_objects_only = strcmp(arg0, "-live") == 0;
   }
@@ -482,10 +483,9 @@ static void heap_inspection(AttachOperation* op, attachStream* out) {
   if (num_str != nullptr && num_str[0] != '\0') {
     uint num;
     if (!Arguments::parse_uint(num_str, &num, 0)) {
-      out->set_result(JNI_ERR);
       out->print_cr("Invalid parallel thread number: [%s]", num_str);
       delete fs;
-      return;
+      return JNI_ERR;
     }
     parallel_thread_num = num == 0 ? parallel_thread_num : num;
   }
@@ -498,56 +498,52 @@ static void heap_inspection(AttachOperation* op, attachStream* out) {
     out->print_cr("Heap inspection file created: %s", path);
     delete fs;
   }
+  return JNI_OK;
 }
 
 // Implementation of "setflag" command
-static void set_flag(AttachOperation* op, attachStream* out) {
+static jint set_flag(AttachOperation* op, attachStream* out) {
 
   const char* name = nullptr;
   if ((name = op->arg(0)) == nullptr) {
-    out->set_result(JNI_ERR);
     out->print_cr("flag name is missing");
-    return;
+    return JNI_ERR;
   }
 
   FormatBuffer<80> err_msg("%s", "");
 
   int ret = WriteableFlags::set_flag(op->arg(0), op->arg(1), JVMFlagOrigin::ATTACH_ON_DEMAND, err_msg);
   if (ret != JVMFlag::SUCCESS) {
-    out->set_result(JNI_ERR);
     if (ret == JVMFlag::NON_WRITABLE) {
       out->print_cr("flag '%s' cannot be changed", op->arg(0));
     } else {
       out->print_cr("%s", err_msg.buffer());
     }
-    return;
+    return JNI_ERR;
   }
-  out->set_result(JNI_OK);
+  return JNI_OK;
 }
 
 // Implementation of "printflag" command
 // See also: PrintVMFlagsDCmd class
-static void print_flag(AttachOperation* op, attachStream* out) {
+static jint print_flag(AttachOperation* op, attachStream* out) {
   const char* name = nullptr;
   if ((name = op->arg(0)) == nullptr) {
-    out->set_result(JNI_ERR);
     out->print_cr("flag name is missing");
-    return;
+    return JNI_ERR;
   }
   JVMFlag* f = JVMFlag::find_flag(name);
   if (f) {
-    out->set_result(JNI_OK);
     f->print_as_flag(out);
     out->cr();
   } else {
-    out->set_result(JNI_ERR);
     out->print_cr("no such flag '%s'", name);
   }
+  return JNI_OK;
 }
 
 // Implementation of "getversion" command
-static void get_version(AttachOperation* op, attachStream* out) {
-  out->set_result(JNI_OK);
+static jint get_version(AttachOperation* op, attachStream* out) {
   out->print("%d", (int)AttachListener::get_supported_version());
 
   const char* arg0 = op->arg(0);
@@ -555,6 +551,7 @@ static void get_version(AttachOperation* op, attachStream* out) {
       // print supported options: "option1,option2..."
       out->print(" streaming");
   }
+  return JNI_OK;
 }
 
 // Table to map operation names to functions.
@@ -632,10 +629,9 @@ void AttachListenerThread::thread_entry(JavaThread* thread, TRAPS) {
                          op->streaming_output() ? 1 : 0,
                          op->get_reply_writer() != nullptr ? 1 : 0);
         // dispatch to the function that implements this operation
-        info->func(op, &st);
-        // If the operation handler hasn't set result, set it to JNI_OK now.
+        // If the operation handler hasn't set result by using st.set_result(), set it now.
         // If the result is already set, this is no-op.
-        st.set_result(JNI_OK);
+        st.set_result(info->func(op, &st));
       } else {
         st.set_result(JNI_ERR);
         st.print("Operation %s not recognized!", op->name());

@@ -156,7 +156,7 @@ public:
 public:
   void complete(jint result, bufferedStream* result_stream) override;
 
-  virtual ReplyWriter* get_reply_writer() override {
+  ReplyWriter* get_reply_writer() override {
     return &_pipe;
   }
 };

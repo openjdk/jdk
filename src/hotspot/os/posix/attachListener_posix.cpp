@@ -144,13 +144,12 @@ class PosixAttachOperation: public AttachOperation {
   SocketChannel _socket_channel;
 
  public:
-  PosixAttachOperation(int socket) : AttachOperation(), _socket_channel(socket) {
-  }
+  PosixAttachOperation(int socket) : AttachOperation(), _socket_channel(socket) {}
 
   void complete(jint res, bufferedStream* st) override;
 
-  virtual ReplyWriter* get_reply_writer() override {
-      return &_socket_channel;
+  ReplyWriter* get_reply_writer() override {
+    return &_socket_channel;
   }
 
   bool read_request() {
