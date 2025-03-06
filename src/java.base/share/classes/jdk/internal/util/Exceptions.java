@@ -39,10 +39,8 @@ import sun.security.util.SecurityProperties;
 import jdk.internal.misc.VM;
 
 /**
- * Contains static utility methods which take an Exception
- * and return either the same exception or a new instance
- * of the same exception type with an "enhanced" message
- * description.
+ * Contains static utility methods which can filter exception
+ * message strings for sensitive information.
  *
  * Code using this mechanism should use one of the static throwException
  * methods below to generate and throw the exception in one method.
@@ -50,10 +48,13 @@ import jdk.internal.misc.VM;
  * then be modified before being thrown or used. Lastly, formatMsg()
  * can generate a formatted (enhanced or restricted) string only.
  *
+ * The methods above take variable numbers of SensitiveInfo objects
+ * as parameters which contain the text that may have to be filtered.
+ *
  * The SensitiveInfo objects should be generated with one of the following:
  *     public static SensitiveInfo filterLookupInfo(String host)
- *     public static SensitiveInfo filterSocketInfo(String host)
- *     public static SensitiveInfo filterNetInfo(String host)
+ *     public static SensitiveInfo filterSocketInfo(String s)
+ *     public static SensitiveInfo filterNetInfo(String s)
  *     public static SensitiveInfo filterJarName(String name)
  *     public static SensitiveInfo filterUserName(String name)
  */
@@ -78,7 +79,10 @@ public final class Exceptions {
      * Sub-class for any new category that needs to be independently
      * controlled. Consider using a unique value for the
      * SecurityProperties.includedInExceptions(String value) mechanism
-     * Current values defined are "socket", "jar" and "userInfo"
+     * Current values defined are "socket", "jar", "userInfo"
+     * "net", "addressLookup". The value "hostInfo" exists for
+     * compatibility and is the same as the combination of
+     * "socket,addressLookup,net"
      * New code can also piggy back on existing categories
      *
      * A SensitiveInfo contains the following components
@@ -122,7 +126,9 @@ public final class Exceptions {
         }
 
         /**
-         * Implementation should call output(boolean)
+         * Implementation should call output(boolean flag)
+         * where flag contains the boolean value of whether
+         * the category is enabled or not.
          */
         public abstract String output();
 

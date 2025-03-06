@@ -1295,11 +1295,10 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # The property setting in this file can be overridden by a system property of
 # the same name, with the same syntax and possible values.
 #
-#jdk.includeInExceptions=hostInfo,jar,userInfo
+# If the property is not set or set to an empty string, then this is the most 
+# restricted setting with all categories disabled. The following is the default
+# (out of the box) setting, meaning these categories are not restricted.
 #
-# If the property is set to an empty string, then this is the most restricted
-# setting with all categories disabled. The following is the default
-# (out of the box) ssetting.
 jdk.includeInExceptions=addressLookup,net,userInfo
 #
 # Disabled mechanisms for the Simple Authentication and Security Layer (SASL)
