@@ -636,12 +636,7 @@ public final class ErrorTest {
         // with jpackage arguments in this test.
         cmd.ignoreDefaultRuntime(true);
 
-        // Configure jpackage output verifier to look up the list of provided
-        // errors in the order they are specified.
-        cmd.validateOutput(expectedErrors.stream()
-                .map(cmd::getValue)
-                .map(TKit::assertTextStream)
-                .reduce(TKit.TextStreamVerifier::andThen).get());
+        cmd.validateOutput(expectedErrors.toArray(CannedFormattedString[]::new));
     }
 
     private static PackageType defaultNativeType() {
