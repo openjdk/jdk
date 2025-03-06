@@ -41,8 +41,8 @@ frame JavaThread::pd_last_frame() {
 
 void JavaThread::cache_global_variables() {
   BarrierSet* bs = BarrierSet::barrier_set();
-  if (bs->is_a(BarrierSet::CardTableBarrierSet) &&
-    !bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
+
+  if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
     _card_table_base = (address) (barrier_set_cast<CardTableBarrierSet>(bs)->card_table()->byte_map_base());
   } else {
     _card_table_base = nullptr;
