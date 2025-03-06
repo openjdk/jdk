@@ -2028,7 +2028,7 @@ void ObjectMonitor::notify(TRAPS) {
   int tally = INotify(current) ? 1 : 0;
   OM_PERFDATA_OP(Notifications, inc(tally));
 
-  if (event.should_commit()) {
+  if ((tally > 0) && event.should_commit()) {
     post_monitor_notify_event(&event, this, /* notified_count = */ tally);
   }
 }
@@ -2057,7 +2057,7 @@ void ObjectMonitor::notifyAll(TRAPS) {
 
   OM_PERFDATA_OP(Notifications, inc(tally));
 
-  if (event.should_commit()) {
+  if ((tally > 0) && event.should_commit()) {
     post_monitor_notify_event(&event, this, /* notified_count = */ tally);
   }
 }
