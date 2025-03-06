@@ -749,6 +749,7 @@ public class TestFramework {
             // Property flags (prefix -D), -ea and -esa are whitelisted.
             if (!flag.startsWith("-D") && !flag.startsWith("-e") && JTREG_WHITELIST_FLAGS.stream().noneMatch(flag::contains)) {
                 // Found VM flag that is not whitelisted
+                System.out.println("Non-whitelisted JTreg VM or Javaoptions flag: " + flag);
                 return false;
             }
         }
