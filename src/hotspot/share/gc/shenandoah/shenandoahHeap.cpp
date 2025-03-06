@@ -253,9 +253,9 @@ jint ShenandoahHeap::initialize() {
   // The JIT'ed code will use this address (+card entry offset) to mark card's as dirty.
   //
   // Now that ThreadLocalData's are created we can set byte_map_base on it.
-  if (ShenandoahCardBarrier) {
-    ShenandoahThreadLocalData::set_card_table(Thread::current(), bs->card_table()->write_byte_map_base());
-  }
+  // if (ShenandoahCardBarrier) {
+  //   ShenandoahThreadLocalData::set_card_table(Thread::current(), bs->card_table()->write_byte_map_base());
+  // }
 
   // Now we know the number of regions and heap sizes, initialize the heuristics.
   initialize_heuristics();

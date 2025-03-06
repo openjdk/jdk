@@ -633,19 +633,17 @@ void ShenandoahDirectCardMarkRememberedSet::swap_card_tables() {
 #endif
 
   struct SwapTLSCardTable : public ThreadClosure {
-    CardTable::CardValue* new_ptr;
-    SwapTLSCardTable(CardTable::CardValue* np) {
-      this->new_ptr = np;
-    }
+    CardTable::CardValue* _new_ptr;
+    SwapTLSCardTable(CardTable::CardValue* np) : _new_ptr(np) {}
     virtual void do_thread(Thread* t) {
-      ShenandoahThreadLocalData::set_card_table(t, new_ptr);
+      ShenandoahThreadLocalData::set_card_table(t, _new_ptr);
     }
   } swap_it(new_ptr);
 
   // Iterate on threads and adjust thread local data
   Threads::threads_do(&swap_it);
 
-  log_info(gc, barrier)("Current write_card_table: " PTR_FORMAT, p2i(swap_it.new_ptr));
+  log_info(gc, barrier)("Current write_card_table: " PTR_FORMAT, p2i(swap_it._new_ptr));
 }
 
 ShenandoahScanRememberedTask::ShenandoahScanRememberedTask(ShenandoahObjToScanQueueSet* queue_set,
