@@ -23,6 +23,8 @@
 
 package compiler.c2;
 
+import compiler.lib.generators.Generators;
+import compiler.lib.generators.RestrictableGenerator;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
@@ -32,7 +34,7 @@ import java.util.Random;
 
 /*
  * @test
- * @bug 8325495
+ * @bug 8325495 8347555
  * @summary C2 should optimize for series of Add of unique value. e.g., a + a + ... + a => a*n
  * @library /test/lib /
  * @run driver compiler.c2.TestSerialAdditions
@@ -287,5 +289,48 @@ public class TestSerialAdditions {
 
         // x = 63 (phi), i = 64 (phi + 1)
         return i + (x << i) + i; // Expects 64 + 63 + 64 = 191
+    }
+
+    // --- random tests ---
+    private static final int CON1_I, CON2_I, CON3_I, CON4_I;
+    private static final long CON1_L, CON2_L, CON3_L, CON4_L;
+
+    static {
+        RestrictableGenerator<Integer> genI = Generators.G.powerOfTwoInts(16);
+        CON1_I = genI.next();
+        CON2_I = genI.next();
+        CON3_I = genI.next();
+        CON4_I = genI.next();
+
+        RestrictableGenerator<Long> genL = Generators.G.powerOfTwoLongs(16);
+        CON1_L = genL.next();
+        CON2_L = genL.next();
+        CON3_L = genL.next();
+        CON4_L = genL.next();
+    }
+
+    @Run(test = {
+            "randomPowerOfTwoAddition",
+            "randomPowerOfTwoAdditionL"
+    })
+    private void runRandomPowerOfTwoAddition() {
+        for (int a : new int[] { 0, 1, Integer.MIN_VALUE, Integer.MAX_VALUE, RNG.nextInt() }) {
+            Asserts.assertEQ(a * (CON1_I + CON2_I + CON3_I + CON4_I), randomPowerOfTwoAddition(a));
+        }
+
+        for (long a : new long[] { 0, 1, Long.MIN_VALUE, Long.MAX_VALUE, RNG.nextLong() }) {
+            Asserts.assertEQ(a * (CON1_L + CON2_L + CON3_L + CON4_L), randomPowerOfTwoAdditionL(a));
+        }
+    }
+
+    // We can't do IR verification but only check for correctness for a better confidence.
+    @Test
+    private static int randomPowerOfTwoAddition(int a) {
+        return a * CON1_I + a * CON2_I + a * CON3_I + a * CON4_I;
+    }
+
+    @Test
+    private static long randomPowerOfTwoAdditionL(long a) {
+        return a * CON1_L + a * CON2_L + a * CON3_L + a * CON4_L;
     }
 }

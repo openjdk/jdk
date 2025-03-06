@@ -457,7 +457,7 @@ Node* AddNode::find_simple_lshift_pattern(Node* n, BasicType bt, jlong* multipli
       return nullptr;
     }
 
-    *multiplier = bt == java_shift_left(1, con->get_int(), bt);
+    *multiplier = java_shift_left(1, con->get_int(), bt);
     return n->in(1);
   }
 
