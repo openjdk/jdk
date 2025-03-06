@@ -150,113 +150,115 @@ public final class MacHelper {
     }
 
     static PackageHandlers createDmgPackageHandlers() {
-        PackageHandlers dmg = new PackageHandlers();
+        return new PackageHandlers(MacHelper::installDmg, MacHelper::uninstallDmg, MacHelper::unpackDmg);
+    }
 
-        dmg.installHandler = cmd -> {
-            withExplodedDmg(cmd, dmgImage -> {
-                Executor.of("sudo", "cp", "-r")
-                .addArgument(dmgImage)
-                .addArgument(getInstallationDirectory(cmd).getParent())
-                .execute();
-            });
-        };
-        dmg.unpackHandler = (cmd, destinationDir) -> {
-            Path unpackDir = destinationDir.resolve(
-                    TKit.removeRootFromAbsolutePath(
-                            getInstallationDirectory(cmd)).getParent());
-            try {
-                Files.createDirectories(unpackDir);
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+    private static int installDmg(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.MAC_DMG);
+        withExplodedDmg(cmd, dmgImage -> {
+            Executor.of("sudo", "cp", "-r")
+                    .addArgument(dmgImage)
+                    .addArgument(getInstallationDirectory(cmd).getParent())
+                    .execute(0);
+        });
+        return 0;
+    }
 
-            withExplodedDmg(cmd, dmgImage -> {
-                Executor.of("cp", "-r")
-                .addArgument(dmgImage)
-                .addArgument(unpackDir)
-                .execute();
-            });
-            return destinationDir;
-        };
-        dmg.uninstallHandler = cmd -> {
-            cmd.verifyIsOfType(PackageType.MAC_DMG);
-            Executor.of("sudo", "rm", "-rf")
-            .addArgument(cmd.appInstallationDirectory())
+    private static void uninstallDmg(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.MAC_DMG);
+        Executor.of("sudo", "rm", "-rf")
+        .addArgument(cmd.appInstallationDirectory())
+        .execute();
+    }
+
+    private static Path unpackDmg(JPackageCommand cmd, Path destinationDir) {
+        cmd.verifyIsOfType(PackageType.MAC_DMG);
+        Path unpackDir = destinationDir.resolve(
+                TKit.removeRootFromAbsolutePath(
+                        getInstallationDirectory(cmd)).getParent());
+        try {
+            Files.createDirectories(unpackDir);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        withExplodedDmg(cmd, dmgImage -> {
+            Executor.of("cp", "-r")
+            .addArgument(dmgImage)
+            .addArgument(unpackDir)
             .execute();
-        };
-
-        return dmg;
+        });
+        return destinationDir;
     }
 
     static PackageHandlers createPkgPackageHandlers() {
-        PackageHandlers pkg = new PackageHandlers();
+        return new PackageHandlers(MacHelper::installPkg, MacHelper::uninstallPkg, MacHelper::unpackPkg);
+    }
 
-        pkg.installHandler = cmd -> {
-            cmd.verifyIsOfType(PackageType.MAC_PKG);
-            Executor.of("sudo", "/usr/sbin/installer", "-allowUntrusted", "-pkg")
-                    .addArgument(cmd.outputBundle())
-                    .addArguments("-target", "/")
+    private static int installPkg(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.MAC_PKG);
+        return Executor.of("sudo", "/usr/sbin/installer", "-allowUntrusted", "-pkg")
+                .addArgument(cmd.outputBundle())
+                .addArguments("-target", "/")
+                .execute().getExitCode();
+    }
+
+    private static void uninstallPkg(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.MAC_PKG);
+        if (Files.exists(getUninstallCommand(cmd))) {
+            Executor.of("sudo", "/bin/sh",
+                    getUninstallCommand(cmd).toString()).execute();
+        } else {
+            Executor.of("sudo", "rm", "-rf")
+                    .addArgument(cmd.appInstallationDirectory())
                     .execute();
-        };
-        pkg.unpackHandler = (cmd, destinationDir) -> {
-            cmd.verifyIsOfType(PackageType.MAC_PKG);
+        }
+    }
 
-            var dataDir = destinationDir.resolve("data");
+    private static Path unpackPkg(JPackageCommand cmd, Path destinationDir) {
+        cmd.verifyIsOfType(PackageType.MAC_PKG);
 
-            Executor.of("pkgutil", "--expand")
-                    .addArgument(cmd.outputBundle())
-                    .addArgument(dataDir) // We need non-existing folder
-                    .execute();
+        var dataDir = destinationDir.resolve("data");
 
-            final Path unpackRoot = destinationDir.resolve("unpacked");
+        Executor.of("pkgutil", "--expand")
+                .addArgument(cmd.outputBundle())
+                .addArgument(dataDir) // We need non-existing folder
+                .execute();
 
-            // Unpack all ".pkg" files from $dataDir folder in $unpackDir folder
-            try (var dataListing = Files.list(dataDir)) {
-                dataListing.filter(file -> {
-                    return ".pkg".equals(PathUtils.getSuffix(file.getFileName()));
-                }).forEach(ThrowingConsumer.toConsumer(pkgDir -> {
-                    // Installation root of the package is stored in
-                    // /pkg-info@install-location attribute in $pkgDir/PackageInfo xml file
-                    var doc = createDocumentBuilder().parse(
-                            new ByteArrayInputStream(Files.readAllBytes(
-                                    pkgDir.resolve("PackageInfo"))));
-                    var xPath = XPathFactory.newInstance().newXPath();
+        final Path unpackRoot = destinationDir.resolve("unpacked");
 
-                    final String installRoot = (String) xPath.evaluate(
-                            "/pkg-info/@install-location", doc,
-                            XPathConstants.STRING);
+        // Unpack all ".pkg" files from $dataDir folder in $unpackDir folder
+        try (var dataListing = Files.list(dataDir)) {
+            dataListing.filter(file -> {
+                return ".pkg".equals(PathUtils.getSuffix(file.getFileName()));
+            }).forEach(ThrowingConsumer.toConsumer(pkgDir -> {
+                // Installation root of the package is stored in
+                // /pkg-info@install-location attribute in $pkgDir/PackageInfo xml file
+                var doc = createDocumentBuilder().parse(
+                        new ByteArrayInputStream(Files.readAllBytes(
+                                pkgDir.resolve("PackageInfo"))));
+                var xPath = XPathFactory.newInstance().newXPath();
 
-                    final Path unpackDir = unpackRoot.resolve(
-                            TKit.removeRootFromAbsolutePath(Path.of(installRoot)));
+                final String installRoot = (String) xPath.evaluate(
+                        "/pkg-info/@install-location", doc,
+                        XPathConstants.STRING);
 
-                    Files.createDirectories(unpackDir);
+                final Path unpackDir = unpackRoot.resolve(
+                        TKit.removeRootFromAbsolutePath(Path.of(installRoot)));
 
-                    Executor.of("tar", "-C")
-                            .addArgument(unpackDir)
-                            .addArgument("-xvf")
-                            .addArgument(pkgDir.resolve("Payload"))
-                            .execute();
-                }));
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+                Files.createDirectories(unpackDir);
 
-            return unpackRoot;
-        };
-        pkg.uninstallHandler = cmd -> {
-            cmd.verifyIsOfType(PackageType.MAC_PKG);
-
-            if (Files.exists(getUninstallCommand(cmd))) {
-                Executor.of("sudo", "/bin/sh",
-                        getUninstallCommand(cmd).toString()).execute();
-            } else {
-                Executor.of("sudo", "rm", "-rf")
-                        .addArgument(cmd.appInstallationDirectory())
+                Executor.of("tar", "-C")
+                        .addArgument(unpackDir)
+                        .addArgument("-xvf")
+                        .addArgument(pkgDir.resolve("Payload"))
                         .execute();
-            }
-        };
+            }));
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
 
-        return pkg;
+        return unpackRoot;
     }
 
     static void verifyBundleStructure(JPackageCommand cmd) {

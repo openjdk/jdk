@@ -576,10 +576,8 @@ public final class Executors {
     private static final class PrivilegedCallableUsingCurrentClassLoader<T>
             implements Callable<T> {
         final Callable<T> task;
-        @SuppressWarnings("removal")
         final ClassLoader ccl;
 
-        @SuppressWarnings("removal")
         PrivilegedCallableUsingCurrentClassLoader(Callable<T> task) {
             this.task = task;
             this.ccl = Thread.currentThread().getContextClassLoader();
@@ -637,7 +635,6 @@ public final class Executors {
      * Thread factory capturing the current class loader.
      */
     private static class PrivilegedThreadFactory extends DefaultThreadFactory {
-        @SuppressWarnings("removal")
         final ClassLoader ccl;
 
         PrivilegedThreadFactory() {
@@ -647,7 +644,6 @@ public final class Executors {
 
         public Thread newThread(final Runnable r) {
             return super.newThread(new Runnable() {
-                @SuppressWarnings("removal")
                 public void run() {
                     Thread.currentThread().setContextClassLoader(ccl);
                     r.run();

@@ -129,7 +129,6 @@ private:
 protected:
   friend class HandleMark;
   friend class NoHandleMark;
-  friend class VMStructs;
 
   Chunk* _first;                // First chunk
   Chunk* _chunk;                // current chunk
