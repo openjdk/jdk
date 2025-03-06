@@ -460,8 +460,11 @@ final class Operations {
                         ops.add(new Operation.Unary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ")", null));
                         // TODO: lanewise(VectorOperators.Unary op, VectorMask<Integer> m)
                         break;
-                    case VOPType.BINARY:
                     case VOPType.ASSOCIATIVE:
+                        ops.add(new Operation.Unary(type.elementType, "", type, ".reduceLanes(VectorOperators." + vop.name() + ")", null));
+                        // TODO: reduceLanes(VectorOperators.Associative op, VectorMask<Integer> m)
+                        // fall-through
+                    case VOPType.BINARY:
                         ops.add(new Operation.Binary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ")", null));
                         // TODO: lanewise(VectorOperators.Binary op, int e, VectorMask<Integer> m)
                         // TODO: lanewise(VectorOperators.Binary op, long e)

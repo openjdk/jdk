@@ -212,6 +212,7 @@ public class TestFuzzVectorAPI {
             );
         });
 
+        // TODO: add scalar output case for reductions
         // TODO: add register stress test
         // TODO: add load/store stress test
 

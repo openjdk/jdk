@@ -300,7 +300,7 @@ public final class Verify {
         for (int i = 0; i < a.length; i++) {
             if (Float.floatToIntBits(a[i]) != Float.floatToIntBits(b[i])) {
                 System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + " " + context);
-                throw new VerifyException("Float array value mismatch.");
+                throw new VerifyException("Float array value mismatch " + a[i] + " vs " + b[i]);
             }
         }
     }
@@ -318,7 +318,7 @@ public final class Verify {
         for (int i = 0; i < a.length; i++) {
             if (Double.doubleToLongBits(a[i]) != Double.doubleToLongBits(b[i])) {
                 System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + " " + context);
-                throw new VerifyException("Double array value mismatch.");
+                throw new VerifyException("Double array value mismatch " + a[i] + " vs " + b[i]);
             }
         }
     }
@@ -408,7 +408,7 @@ public final class Verify {
         for (int i = 0; i < a.length(); i++) {
             if (Float.floatToIntBits(a.lane(i)) != Float.floatToIntBits(b.lane(i))) {
                 System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a.lane(i) + " vs " + b.lane(i) + " " + context);
-                throw new VerifyException("FloatVector value mismatch.");
+                throw new VerifyException("FloatVector value mismatch " + a.lane(i) + " vs " + b.lane(i));
             }
         }
     }
@@ -426,7 +426,7 @@ public final class Verify {
         for (int i = 0; i < a.length(); i++) {
             if (Double.doubleToLongBits(a.lane(i)) != Double.doubleToLongBits(b.lane(i))) {
                 System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a.lane(i) + " vs " + b.lane(i) + " " + context);
-                throw new VerifyException("DoubleVector value mismatch.");
+                throw new VerifyException("DoubleVector value mismatch " + a.lane(i) + " vs " + b.lane(i));
             }
         }
     }
