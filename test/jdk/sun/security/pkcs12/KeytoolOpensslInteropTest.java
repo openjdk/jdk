@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id=GenerateOpensslPKCS12
  * @bug 8076190 8242151 8153005 8266182
  * @summary This is java keytool <-> openssl interop test. This test generates
  *          some openssl keystores on the fly, java operates on it and
@@ -35,9 +35,20 @@
  *
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
- * @library /test/lib
- * @library /sun/security/pkcs11/
- * @run main/othervm/timeout=600 KeytoolOpensslInteropTest
+ * @library /test/lib /sun/security/pkcs11/
+ * @run main/othervm KeytoolOpensslInteropTest true
+ */
+
+/*
+ * @test id=UseExistingPKCS12
+ * @bug 8076190 8242151 8153005 8266182
+ * @summary This is java keytool <-> openssl interop test. This test uses
+ *          the existing PKCS12 files located in ./params dir and java operates on it
+ *
+ * @modules java.base/sun.security.pkcs
+ *          java.base/sun.security.util
+ * @library /test/lib /sun/security/pkcs11/
+ * @run main/othervm KeytoolOpensslInteropTest false
  */
 
 import jdk.test.lib.Asserts;
@@ -45,6 +56,7 @@ import jdk.test.lib.SecurityTools;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.security.OpensslArtifactFetcher;
+import jtreg.SkippedException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -67,23 +79,25 @@ import static sun.security.pkcs.ContentInfo.*;
 public class KeytoolOpensslInteropTest {
 
     public static void main(String[] args) throws Throwable {
-        String opensslPath = OpensslArtifactFetcher.getOpensslPath();
-        if (opensslPath != null) {
-            // if the current version of openssl is available, perform all
-            // keytool <-> openssl interop tests
-            generateInitialKeystores(opensslPath);
-            testWithJavaCommands();
-            testWithOpensslCommands(opensslPath);
+        boolean generatePKCS12 = Boolean.parseBoolean(args[0]);
+        if (generatePKCS12) {
+            String opensslPath = OpensslArtifactFetcher.getOpensslPath();
+            if (opensslPath != null) {
+                // if the current version of openssl is available, perform all
+                // keytool <-> openssl interop tests
+                generateInitialKeystores(opensslPath);
+                testWithJavaCommands();
+                testWithOpensslCommands(opensslPath);
+            } else {
+                String exMsg = "Can't find the version: "
+                        + OpensslArtifactFetcher.getTestOpensslBundleVersion()
+                        + " of openssl binary on this machine, please install"
+                        + " and set openssl path with property 'test.openssl.path'";
+                throw new SkippedException(exMsg);
+            }
         } else {
-            // since the current version of openssl is not available, skip all
-            // openssl command dependent tests with a warning
-            System.out.println("\n\u001B[31mWarning: Can't find the version: "
-                    + OpensslArtifactFetcher.getTestOpensslBundleVersion()
-                    + " of openssl binary on this machine, please install"
-                    + " and set openssl path with property "
-                    + "'test.openssl.path'. Now running only half portion of "
-                    + "the test, skipping all tests which depends on openssl "
-                    + "commands.\u001B[0m\n");
+            // since this scenario is using preexisting PKCS12, skip all
+            // openssl command dependent tests
             // De-BASE64 textual files in ./params to `pwd`
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(
                     Path.of(System.getProperty("test.src"), "params"),
