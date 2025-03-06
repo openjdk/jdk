@@ -109,7 +109,7 @@ public final class TokenReplace {
         this.tokens = tokens;
         regexps = new ArrayList<>();
 
-        for(;;) {
+        for (;;) {
             final var tokenCut = TokenCut.createFromOrderedTokens(tokens);
             regexps.add(Pattern.compile(Stream.of(tokenCut.main()).map(Pattern::quote).collect(joining("|", "(", ")"))));
 
