@@ -35,9 +35,8 @@ public final class ListRepaint extends List {
 
     public static void main(final String[] args) {
         for (int i = 0; i < 10; ++i) {
-            Frame frame = null;
+            Frame frame = new Frame();
             try {
-                frame = new Frame();
                 frame.setSize(300, 300);
                 frame.setLocationRelativeTo(null);
                 ListRepaint list = new ListRepaint();
@@ -51,9 +50,7 @@ public final class ListRepaint extends List {
                 sleep();
                 list.test();
             } finally {
-                if (frame != null) {
-                    frame.dispose();
-                }
+                frame.dispose();
             }
         }
     }

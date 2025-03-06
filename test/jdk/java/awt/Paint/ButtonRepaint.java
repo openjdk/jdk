@@ -35,9 +35,8 @@ public final class ButtonRepaint extends Button {
 
     public static void main(final String[] args) {
         for (int i = 0; i < 10; ++i) {
-            Frame frame = null;
+            Frame frame = new Frame();
             try {
-                frame = new Frame();
                 frame.setSize(300, 300);
                 frame.setLocationRelativeTo(null);
                 ButtonRepaint button = new ButtonRepaint();
@@ -46,9 +45,7 @@ public final class ButtonRepaint extends Button {
                 sleep();
                 button.test();
             } finally {
-                if (frame != null) {
-                    frame.dispose();
-                }
+                frame.dispose();
             }
         }
     }

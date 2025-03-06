@@ -35,9 +35,8 @@ public final class CheckboxRepaint extends Checkbox {
 
     public static void main(final String[] args) {
         for (int i = 0; i < 10; ++i) {
-            Frame frame = null;
+            Frame frame = new Frame();
             try {
-                frame = new Frame();
                 frame.setSize(300, 300);
                 frame.setLocationRelativeTo(null);
                 CheckboxRepaint checkbox = new CheckboxRepaint();
@@ -46,9 +45,7 @@ public final class CheckboxRepaint extends Checkbox {
                 sleep();
                 checkbox.test();
             } finally {
-                if (frame != null) {
-                    frame.dispose();
-                }
+                frame.dispose();
             }
         }
     }
