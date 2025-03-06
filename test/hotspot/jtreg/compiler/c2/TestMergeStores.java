@@ -807,7 +807,7 @@ public class TestMergeStores {
                    IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
                    IRNode.REVERSE_BYTES_L, "1"},
         applyIf = {"UseUnalignedAccesses", "true"},
-        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})   // Exclude RISCV64 because ReverseBytes are not supported
+        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})   // Exclude riscv64 where ReverseBytes is only conditionally supported
     @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
         applyIf = {"UseUnalignedAccesses", "true"},
         applyIfPlatform = {"big-endian", "true"})
@@ -840,7 +840,7 @@ public class TestMergeStores {
                    IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
                    IRNode.REVERSE_BYTES_L, "1"},
         applyIf = {"UseUnalignedAccesses", "true"},
-        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})   // Exclude RISCV64 because ReverseBytes are not supported
+        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})   // Exclude riscv64 where ReverseBytes is only conditionally supported
     @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
         applyIf = {"UseUnalignedAccesses", "true"},
         applyIfPlatform = {"big-endian", "true"})
@@ -926,7 +926,7 @@ public class TestMergeStores {
                   IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.REVERSE_BYTES_I, "1"},
         applyIf = {"UseUnalignedAccesses", "true"},
-        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})   // Exclude RISCV64 because ReverseBytes are not supported
+        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})   // Exclude riscv64 where ReverseBytes is only conditionally supported
     @IR(counts = {IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2"},
         applyIf = {"UseUnalignedAccesses", "true"},
         applyIfPlatform = {"big-endian", "true"})
@@ -1030,7 +1030,7 @@ public class TestMergeStores {
                   IRNode.REVERSE_BYTES_I, "1",
                   IRNode.REVERSE_BYTES_S, "2"},
         applyIf = {"UseUnalignedAccesses", "true"},
-        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})   // Exclude RISCV64 because ReverseBytes are not supported
+        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})   // Exclude riscv64 where ReverseBytes is only conditionally supported
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "4", // 3 (+ 1 for uncommon trap)
                   IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3",
                   IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",
@@ -1924,7 +1924,7 @@ public class TestMergeStores {
                   IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1", // expect merged
                   IRNode.REVERSE_BYTES_L, "1"},
         applyIf = {"UseUnalignedAccesses", "true"},
-        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})   // Exclude RISCV64 because ReverseBytes are not supported
+        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})   // Exclude riscv64 where ReverseBytes is only conditionally supported
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1", // for RangeCheck trap
                   IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
@@ -1961,7 +1961,7 @@ public class TestMergeStores {
                   IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.REVERSE_BYTES_S, "1"},
         applyIf = {"UseUnalignedAccesses", "true"},
-        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})   // Exclude RISCV64 because ReverseBytes are not supported
+        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})   // Exclude riscv64 where ReverseBytes is only conditionally supported
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "7",
                   IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
                   IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
@@ -1998,7 +1998,7 @@ public class TestMergeStores {
                   IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.REVERSE_BYTES_S, "1"},
         applyIf = {"UseUnalignedAccesses", "true"},
-        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})   // Exclude RISCV64 because ReverseBytes are not supported
+        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})   // Exclude riscv64 where ReverseBytes is only conditionally supported
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "7",
                   IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
                   IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
@@ -2201,7 +2201,7 @@ public class TestMergeStores {
                   IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.REVERSE_BYTES_I, "1"},
         applyIf = {"UseUnalignedAccesses", "true"},
-        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})   // Exclude RISCV64 because ReverseBytesI/L are not supported
+        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})   // Exclude riscv64 where ReverseBytes is only conditionally supported
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",
                   IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
