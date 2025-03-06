@@ -27,7 +27,7 @@
 /*
  * @test
  * @bug 6223624
- * @library /test/lib
+ * @library /test/lib /javax/net/ssl/templates
  * @summary SSLSocket.setUseClientMode() fails to throw expected
  *        IllegalArgumentException
  * @run main/othervm SetClientMode TLSv1
@@ -56,17 +56,9 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.*;
 import jdk.test.lib.security.SecurityUtils;
 
-public class SetClientMode {
+public class SetClientMode extends SSLContextTemplate {
     private volatile int serverPort = 0;
     private static final CountDownLatch HANDSHAKE_COMPLETE = new CountDownLatch(1);
-
-    /*
-     * Where do we find the keystores?
-     */
-    private final static String pathToStores = "../../../../javax/net/ssl/etc";
-    private final static String keyStoreFile = "keystore";
-    private final static String trustStoreFile = "truststore";
-    private final static String passwd = "passphrase";
 
     public static void main(String[] args) throws Exception {
         String protocol = args[0];
@@ -74,25 +66,13 @@ public class SetClientMode {
         if ("TLSv1".equals(protocol) || "TLSv1.1".equals(protocol)) {
             SecurityUtils.removeFromDisabledTlsAlgs(protocol);
         }
-        String keyFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + keyStoreFile;
-        String trustFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + trustStoreFile;
-
-        System.setProperty("javax.net.ssl.keyStore", keyFilename);
-        System.setProperty("javax.net.ssl.keyStorePassword", passwd);
-        System.setProperty("javax.net.ssl.trustStore", trustFilename);
-        System.setProperty("javax.net.ssl.trustStorePassword", passwd);
 
         new SetClientMode().run(protocol);
     }
 
     public void run(String protocol) throws Exception {
         // Create a server socket
-        SSLServerSocketFactory ssf =
-            (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+        SSLServerSocketFactory ssf = createServerSSLContext().getServerSocketFactory();
 
         try (SSLServerSocket serverSocket =
                 (SSLServerSocket) ssf.createServerSocket(serverPort)) {
@@ -100,7 +80,7 @@ public class SetClientMode {
             serverPort = serverSocket.getLocalPort();
 
             // Create a client socket
-            SSLSocketFactory sf = (SSLSocketFactory) SSLSocketFactory.getDefault();
+            SSLSocketFactory sf = createClientSSLContext().getSocketFactory();
 
             try (SSLSocket clientSocket = (SSLSocket) sf.createSocket(
                     InetAddress.getLocalHost(),
