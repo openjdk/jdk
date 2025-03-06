@@ -50,5 +50,18 @@ public class ContinuationSupport {
         }
     }
 
+    /**
+     * Pins the current continuation if the VM has continuations support.
+     * @return true if pinned or there is no current continuation
+     */
+    public static boolean pinIfSupported() {
+        if (ContinuationSupport.isSupported()) {
+            Continuation.pin();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private static native boolean isSupported0();
 }
