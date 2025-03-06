@@ -33,9 +33,14 @@ import java.util.regex.Pattern;
 
 import com.sun.source.doctree.AttributeTree.ValueKind;
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.ErroneousTree;
+import com.sun.source.doctree.LiteralTree;
+import com.sun.source.doctree.StartElementTree;
+import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.doctree.UnknownInlineTagTree;
+import com.sun.source.util.SimpleDocTreeVisitor;
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.tree.DCTree;
 import com.sun.tools.javac.tree.DCTree.DCAttribute;
@@ -126,9 +131,8 @@ public class DocCommentParser {
     private int lastNonWhite = -1;
     private boolean newline = true;
 
-    /** Used for whitespace normalization in pre/code/literal tags. */
-    private boolean canStripSpace = false;
-    private boolean inPreElement = false;
+    /** Used to skip whitespace normalization for comments that don't need it */
+    private boolean hasPreElement = false;
 
     private final Map<Name, TagParser> tagParsers;
 
@@ -207,7 +211,6 @@ public class DocCommentParser {
      */
     public DCDocComment parse() {
         String c = comment.getText();
-        canStripSpace = canStripLeadingSpace(c);
         buf = new char[c.length() + 1];
         c.getChars(0, c.length(), buf, 0);
         buf[buf.length - 1] = EOI;
@@ -216,7 +219,7 @@ public class DocCommentParser {
         nextChar();
 
         List<DCTree> preamble = isHtmlFile ? content(Phase.PREAMBLE) : List.nil();
-        List<DCTree> body = content(Phase.BODY);
+        List<DCTree> body = normalizeWhitespace(content(Phase.BODY));
         List<DCTree> tags = blockTags();
         List<DCTree> postamble = isHtmlFile ? content(Phase.POSTAMBLE) : List.nil();
 
@@ -262,7 +265,7 @@ public class DocCommentParser {
         while (isHorizontalWhitespace(ch) && bp < buflen) {
             nextChar();
         }
-        return content(Phase.BODY);
+        return normalizeWhitespace(content(Phase.BODY));
     }
 
     /**
@@ -316,7 +319,7 @@ public class DocCommentParser {
                 case '&' -> {
                     switch (textKind) {
                         case MARKDOWN -> defaultContentCharacter();
-                        case TEXT -> entity(trees, phase == Phase.BODY);
+                        case TEXT -> entity(trees);
                         default -> throw unknownTextKind(textKind);
                     }
                 }
@@ -344,14 +347,14 @@ public class DocCommentParser {
                                     }
                                     case BODY -> {
                                         if (isEndBody()) {
-                                            addPendingText(trees, lastNonWhite, true);
+                                            addPendingText(trees, lastNonWhite);
                                             break loop;
                                         }
                                     }
                                     default -> { }
                                 }
                             }
-                            addPendingText(trees, bp - 1, phase == Phase.BODY);
+                            addPendingText(trees, bp - 1);
                             trees.add(html());
 
                             if (phase == Phase.PREAMBLE || phase == Phase.POSTAMBLE) {
@@ -369,9 +372,9 @@ public class DocCommentParser {
                 case '{' -> {
                     switch (phase) {
                         case PREAMBLE, POSTAMBLE -> defaultContentCharacter();
-                        case BODY -> inlineTag(trees, true);
+                        case BODY -> inlineTag(trees);
                         case INLINE -> {
-                            if (!inlineTag(trees, false)) {
+                            if (!inlineTag(trees)) {
                                 depth++;
                             }
                         }
@@ -382,7 +385,7 @@ public class DocCommentParser {
                     if (phase == Phase.INLINE) {
                         newline = false;
                         if (--depth == 0) {
-                            addPendingText(trees, bp - 1, false);
+                            addPendingText(trees, bp - 1);
                             nextChar();
                             return trees.toList();
                         }
@@ -400,7 +403,7 @@ public class DocCommentParser {
                     if (newline) {
                         char peek = peekChar();
                         if (peek == '@' || peek == '*') {
-                            addPendingText(trees, bp - 1, phase == Phase.BODY);
+                            addPendingText(trees, bp - 1);
                             nextChar();
                             trees.add(m.at(bp - 1).newEscapeTree(ch));
                             newline = false;
@@ -408,11 +411,11 @@ public class DocCommentParser {
                             textStart = bp;
                             break;
                         } else if (phase == Phase.BODY) {
-                            addPendingText(trees, lastNonWhite, true);
+                            addPendingText(trees, lastNonWhite);
                             break loop;
                         }
                     } else if (textStart != -1 && buf[bp - 1] == '*' && peekChar() == '/') {
-                        addPendingText(trees, bp - 1, phase == Phase.BODY);
+                        addPendingText(trees, bp - 1);
                         nextChar();
                         trees.add(m.at(bp - 1).newEscapeTree('/'));
                         newline = false;
@@ -479,7 +482,7 @@ public class DocCommentParser {
         }
 
         if (lastNonWhite != -1)
-            addPendingText(trees, lastNonWhite, phase == Phase.BODY);
+            addPendingText(trees, lastNonWhite);
 
         return (phase == Phase.INLINE)
                 ? List.of(erroneous("dc.unterminated.inline.tag", pos))
@@ -586,10 +589,9 @@ public class DocCommentParser {
      * be read.
      *
      * @param list the list of trees being accumulated
-     * @param inBlockContent whether we are currently parsing block content
      * @return {@code true} if an inline tag was read, and {@code false} otherwise
      */
-    protected boolean inlineTag(ListBuffer<DCTree> list, boolean inBlockContent) {
+    protected boolean inlineTag(ListBuffer<DCTree> list) {
         newline = false;
         nextChar();
         if (ch == '@') {
@@ -599,14 +601,14 @@ public class DocCommentParser {
                 if (textStart == -1) {
                     textStart = bp - 1;
                 }
-                addPendingText(list, bp - 1, inBlockContent);
+                addPendingText(list, bp - 1);
                 nextChar();
                 list.add(m.at(bp - 1).newEscapeTree('@'));
                 nextChar();
                 textStart = -1;
                 lastNonWhite = bp;
             } else {
-                addPendingText(list, bp - 2, inBlockContent);
+                addPendingText(list, bp - 2);
                 list.add(inlineTag());
                 textStart = bp;
                 lastNonWhite = -1;
@@ -698,8 +700,7 @@ public class DocCommentParser {
 
                 case '}' -> {
                     if (--depth == 0) {
-                        return m.at(pos).newTextTree(newString(pos, bp,
-                                whitespacePolicy == WhitespaceRetentionPolicy.REMOVE_FIRST_SPACE));
+                        return m.at(pos).newTextTree(newString(pos, bp));
                     }
                     newline = false;
                     lastNonWhite = bp;
@@ -871,9 +872,9 @@ public class DocCommentParser {
         return content(Phase.INLINE);
     }
 
-    protected void entity(ListBuffer<DCTree> list, boolean inBlockContent) {
+    protected void entity(ListBuffer<DCTree> list) {
         newline = false;
-        addPendingText(list, bp - 1, inBlockContent);
+        addPendingText(list, bp - 1);
         list.add(entity());
         if (textStart == -1) {
             textStart = bp;
@@ -1062,7 +1063,7 @@ public class DocCommentParser {
                 if (ch == '>') {
                     nextChar();
                     if ("pre".equalsIgnoreCase(name.toString())) {
-                        inPreElement = true;
+                        hasPreElement = true;
                     }
                     return m.at(p).newStartElementTree(name, attrs, selfClosing).setEndPos(bp);
                 }
@@ -1074,9 +1075,6 @@ public class DocCommentParser {
                 skipWhitespace();
                 if (ch == '>') {
                     nextChar();
-                    if ("pre".equalsIgnoreCase(name.toString())) {
-                        inPreElement = false;
-                    }
                     return m.at(p).newEndElementTree(name).setEndPos(bp);
                 }
             }
@@ -1179,7 +1177,7 @@ public class DocCommentParser {
                     while (bp < buflen && ch != quote) {
                         attrValueChar(v);
                     }
-                    addPendingText(v, bp - 1, DocTree.Kind.TEXT, false);
+                    addPendingText(v, bp - 1, DocTree.Kind.TEXT);
                     nextChar();
                 } else {
                     vkind = ValueKind.UNQUOTED;
@@ -1187,7 +1185,7 @@ public class DocCommentParser {
                     while (bp < buflen && !isUnquotedAttrValueTerminator(ch)) {
                         attrValueChar(v);
                     }
-                    addPendingText(v, bp - 1, DocTree.Kind.TEXT, false);
+                    addPendingText(v, bp - 1, DocTree.Kind.TEXT);
                 }
                 skipWhitespace();
                 value = v.toList();
@@ -1201,27 +1199,26 @@ public class DocCommentParser {
 
     protected void attrValueChar(ListBuffer<DCTree> list) {
         switch (ch) {
-            case '&' -> entity(list, false);
-            case '{' -> inlineTag(list, false);
+            case '&' -> entity(list);
+            case '{' -> inlineTag(list);
             default  -> nextChar();
         }
     }
 
-    protected void addPendingText(ListBuffer<DCTree> list, int textEnd, boolean inBlockContent) {
-        addPendingText(list, textEnd, textKind, inBlockContent);
+    protected void addPendingText(ListBuffer<DCTree> list, int textEnd) {
+        addPendingText(list, textEnd, textKind);
     }
 
-    protected void addPendingText(ListBuffer<DCTree> list, int textEnd, DocTree.Kind kind, boolean inBlockContent) {
+    protected void addPendingText(ListBuffer<DCTree> list, int textEnd, DocTree.Kind kind) {
         if (textStart != -1) {
             if (textStart <= textEnd) {
                 switch (kind) {
                     case TEXT ->
-                            list.add(m.at(textStart).newTextTree(newString(textStart, textEnd + 1, inBlockContent)));
+                            list.add(m.at(textStart).newTextTree(newString(textStart, textEnd + 1)));
                     case MARKDOWN ->
-                            list.add(m.at(textStart).newRawTextTree(DocTree.Kind.MARKDOWN,
-                                    newString(textStart, textEnd + 1)));
+                            list.add(m.at(textStart).newRawTextTree(DocTree.Kind.MARKDOWN, newString(textStart, textEnd + 1)));
                     default ->
-                            throw new IllegalArgumentException(kind.toString());
+                        throw new IllegalArgumentException(kind.toString());
                 }
             }
             textStart = -1;
@@ -1818,52 +1815,6 @@ public class DocCommentParser {
     }
 
     /**
-     * Check if this is a traditional doc comment where every non-emtpy line past
-     * the first newline character has at least one leading space. This suggests
-     * that indentation is incidental and should be removed in preformatted text.
-     */
-    boolean canStripLeadingSpace(String comment) {
-        if (textKind == DocTree.Kind.MARKDOWN || isHtmlFile) {
-            return false;
-        }
-        for (int i = 0; i < comment.length() - 1; i++) {
-            if (comment.charAt(i) == '\n') {
-                char c = comment.charAt(i + 1);
-                if (c != '\n' && c != ' ') {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Variant of newString that optionally skips a leading space in each line.
-     *
-     * @param start position of first character of string
-     * @param end position of character beyond last character to be included
-     * @param stripLeadingSpace whether leading space may be stripped
-     */
-    String newString(int start, int end, boolean stripLeadingSpace) {
-        if (stripLeadingSpace && canStripSpace && inPreElement) {
-            StringBuilder sb = new StringBuilder(end - start);
-            int pos = start;
-            // The parser will never call this with a strippable space at buf[start].
-            for (int i = start; i < end - 1; i++) {
-                if (buf[i] == '\n' && buf[i + 1] == ' ') {
-                    sb.append(buf, pos, ++i - pos);
-                    pos = i + 1;
-                }
-            }
-            if (pos < end) {
-                sb.append(buf, pos, end - pos);
-            }
-            return sb.toString();
-        }
-        return newString(start, end);
-    }
-
-    /**
      * @param start position of first character of string
      * @param end position of character beyond last character to be included
      */
@@ -1912,6 +1863,185 @@ public class DocCommentParser {
         DCTree parse(int pos) throws ParseException {
             throw new UnsupportedOperationException();
         }
+    }
+
+    /*
+     * Check if every newline character in the doc comment is followed by at least
+     * one space character, which suggests that indentation is incidental and should be
+     * removed in preformatted text.
+     */
+    private boolean canStripLeadingSpace() {
+        for (int i = 0; i < buf.length - 2; i++) {
+            if (buf[i] == '\n') {
+                char c = buf[i + 1];
+                if (c != '\n' && c != ' ') {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /*
+     * This method performs whitespace normalization of preformatted text in parsed comments.
+     * Two kinds of normalization are carried out on top-level text and bodies of
+     * {@code}/{@literal} tags inside <pre>...</pre> tags:
+     *
+     *  - Removal of one leading space following each line break. This is commonly
+     *    caused by doc comment formatting conventions and parsing rules, and results
+     *    in unintentional indentation and a trailing blank line in rendered <pre> content.
+     *
+     *  - Removal of a single line break after a <code> or {@code tag at the beginning
+     *    of <pre> content. Browsers ignore a leading line break immediately following
+     *    the <pre> tag, but not after a <code> tag or other whitespace. This causes
+     *    a leading blank line in the rendered <pre> content.
+     *
+     * Normalization is only performed on traditional doc comments since they are uniquely
+     * affected by these problems (Markdown comments already come stripped from leading
+     * whitespace). Leading spaces are only removed if all line breaks in the comment are
+     * followed by a space character. Both steps are performed independently of each other.
+     */
+    private List<DCTree> normalizeWhitespace(List<DCTree> list) {
+
+        // Do nothing if comment is not eligible for whitespace normalization.
+        if (!hasPreElement || textKind == DocTree.Kind.MARKDOWN || isHtmlFile) {
+            return list;
+        }
+
+        final var stripLeadingSpace = canStripLeadingSpace();
+
+        // Context for whitespace normalization visitor
+        class NormalizationContext {
+            int pos = 0;                // current position in doctree list
+            int currentPre = -1;        // position of active pre start tag
+            int strippableNewline = -1; // marker for strippable leading space
+
+            // Are we currently inside a <pre> element?
+            boolean inPre() {
+                return currentPre > -1;
+            }
+            // Is this the first element following a <pre> start tag?
+            boolean firstInPre() {
+                return inPre() && currentPre == pos - 1;
+            }
+            // Does the current doctree have leading newline that should be stripped?
+            boolean stripLeadingNewline() {
+                return strippableNewline == pos;
+            }
+        }
+
+        var normalized = new ListBuffer<DCTree>();
+        var visitor = new SimpleDocTreeVisitor<DCTree, NormalizationContext>() {
+
+            private DCText normalizePreContent(DCText text, NormalizationContext cx) {
+                var body = text.getBody();
+
+                if (stripLeadingSpace && body.contains("\n ")) {
+                    // Remove a single leading space following each newline character.
+                    body = body.replace("\n ", "\n");
+                }
+                if (cx.stripLeadingNewline()) {
+                    // Remove a leading newline if this text has been marked for it.
+                    assert(body.startsWith("\n"));
+                    body = body.substring(1);
+                }
+
+                return body == text.getBody() ? text : m.at(text.pos).newTextTree(body);
+            }
+
+            private DCText normalizeStartOfPreContent(DCText text, NormalizationContext cx) {
+                // Check if <pre> content starts with one or more space characters, followed by
+                // {@code}, {@literal} or <code> with leading newline in its content. If so,
+                // drop the space(s) and mark the newline for removal to avoid a blank leading line.
+                if (cx.pos < list.length() - 1 && text.getBody().matches(" +")) {
+                    var next = list.get(cx.pos + 1);
+                    if (next instanceof LiteralTree literal
+                            && literal.getBody().getBody().startsWith("\n")) {
+                        // <pre> {@code\n
+                        cx.strippableNewline = cx.pos + 1;
+                        return null;
+
+                    } else if (cx.pos < list.length() - 2
+                            && next instanceof StartElementTree elem
+                            && elem.getName().toString().equalsIgnoreCase("code")
+                            && list.get(cx.pos + 2) instanceof DCText code
+                            && code.getBody().startsWith("\n")) {
+                        // <pre> <code>\n
+                        cx.strippableNewline = cx.pos + 2;
+                        return null;
+                    }
+                }
+                // Do normal pre content normalization.
+                return normalizePreContent(text, cx);
+            }
+
+            @Override
+            public DCTree visitText(TextTree text, NormalizationContext cx) {
+                if (cx.inPre()) {
+                    return cx.firstInPre()
+                            ? normalizeStartOfPreContent((DCText) text, cx)
+                            : normalizePreContent((DCText) text, cx);
+                }
+                return (DCTree) text;
+            }
+
+            @Override
+            public DCTree visitLiteral(LiteralTree literal, NormalizationContext cx) {
+                if (cx.inPre()) {
+                    if (cx.firstInPre() && literal.getBody().getBody().startsWith("\n")) {
+                        // <pre>{@code\n
+                        cx.strippableNewline = cx.pos;
+                    }
+                    var normalized = normalizePreContent((DCText) literal.getBody(), cx);
+                    if (normalized != literal.getBody()) {
+                        m.at(((DCTree) literal).pos);
+                        return literal.getKind() == DocTree.Kind.CODE
+                                ? m.newCodeTree(normalized)
+                                : m.newLiteralTree(normalized);
+                    }
+                }
+                return (DCTree) literal;
+            }
+
+            @Override
+            public DCTree visitStartElement(StartElementTree node, NormalizationContext cx) {
+                if (node.getName().toString().equalsIgnoreCase("pre")) {
+                    cx.currentPre = cx.pos;
+                } else if (cx.firstInPre() && node.getName().toString().equalsIgnoreCase("code")) {
+                    if (cx.pos < list.length() - 1
+                            && list.get(cx.pos + 1) instanceof DCText code
+                            && code.getBody().startsWith("\n")) {
+                        // <pre><code>\n
+                        cx.strippableNewline = cx.pos + 1;
+                    }
+                }
+                return (DCTree) node;
+            }
+
+            @Override
+            public DCTree visitEndElement(EndElementTree node, NormalizationContext cx) {
+                if (node.getName().toString().equalsIgnoreCase("pre")) {
+                    cx.currentPre = -1;
+                }
+                return (DCTree) node;
+            }
+
+            @Override
+            protected DCTree defaultAction(DocTree node, NormalizationContext context) {
+                return (DCTree) node;
+            }
+        };
+
+        var cx = new NormalizationContext();
+        for (var tree : list) {
+            var visited = visitor.visit(tree, cx);
+            if (visited != null) {
+                normalized.add(visited);
+            }
+            cx.pos++;
+        }
+
+        return normalized.toList();
     }
 
     /**
@@ -2263,7 +2393,7 @@ public class DocCommentParser {
                                 while (bp < buflen && ch != quote) {
                                     nextChar();
                                 }
-                                addPendingText(v, bp - 1, DocTree.Kind.TEXT, false);
+                                addPendingText(v, bp - 1, DocTree.Kind.TEXT);
                                 nextChar();
                             } else {
                                 vkind = ValueKind.UNQUOTED;
@@ -2272,7 +2402,7 @@ public class DocCommentParser {
                                 while (bp < buflen && (ch != '}' && ch != ':' && !isUnquotedAttrValueTerminator(ch))) {
                                     nextChar();
                                 }
-                                addPendingText(v, bp - 1, DocTree.Kind.TEXT, false);
+                                addPendingText(v, bp - 1, DocTree.Kind.TEXT);
                             }
                             skipWhitespace();
                             value = v.toList();

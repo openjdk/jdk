@@ -1026,12 +1026,6 @@ public class DocCommentTester {
         String normalize(String s, boolean isLineComment, boolean normalizeTags) {
             String s2 = (isLineComment ? s : s.trim())
                     .replaceFirst("\\.\\s*\\n *@(?![@*])", ".\n@"); // Between block tags
-            if (normalizeTags && !isLineComment) {
-                // Whitespace normalization within <pre> tags: remove single space from every new line
-                var p = Pattern.compile("(<pre>)(.*)(</pre>)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-                s2 = p.matcher(s2).replaceAll(
-                        r -> r.group(1) + r.group(2).replaceAll("\\n ", "\n") + r.group(3));
-            }
             StringBuilder sb = new StringBuilder();
             Pattern p = Pattern.compile("(?i)\\{@([a-z][a-z0-9.:-]*)( )?");
             Matcher m = p.matcher(s2);
@@ -1044,9 +1038,25 @@ public class DocCommentTester {
                 }
             }
             sb.append(normalizeFragment(s2.substring(start)));
-            return sb.toString()
+            s2 = sb.toString()
                     .replaceAll("(?i)\\{@([a-z][a-z0-9.:-]*)\\s+}", "{@$1}")
                     .replaceAll("(\\{@value\\s+[^}]+)\\s+(})", "$1$2");
+            return normalizePreContent(s2, isLineComment, normalizeTags);
+        }
+
+        String normalizePreContent(String s, boolean isLineComment, boolean normalizeTags) {
+            String s2 = s;
+            if (!isLineComment) {
+                if (normalizeTags) {
+                    // Whitespace normalization within <pre> tags: remove single space after every newline
+                    var p = Pattern.compile("(<pre>)(.*)(</pre>)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+                    s2 = p.matcher(s2).replaceAll(
+                            r -> r.group(1) + r.group(2).replaceAll("\\n ", "\n") + r.group(3));
+                }
+                // Remove leading newline after {@code at the beginning of <pre> content.
+                s2 = s2.replaceAll("<pre>\\{@code\\n", "<pre>{@code");
+            }
+            return s2;
         }
 
         // See comment in MarkdownTest for explanation of dummy and Override
