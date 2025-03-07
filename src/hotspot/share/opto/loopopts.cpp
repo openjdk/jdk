@@ -837,7 +837,9 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     if (phi == nullptr || _igvn.type(phi) == Type::TOP) {
       break;
     }
-    if (PrintOpto && VerifyLoopOptimizations) { tty->print_cr("CMOV"); }
+    if (TraceLoopOpts) {
+      tty->print_cr("CMOV");
+    }
     // Move speculative ops
     wq.push(phi);
     while (wq.size() > 0) {
@@ -846,7 +848,7 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
         Node* m = n->in(j);
         if (m != nullptr && !is_dominator(get_ctrl(m), cmov_ctrl)) {
 #ifndef PRODUCT
-          if (PrintOpto && VerifyLoopOptimizations) {
+          if (TraceLoopOpts) {
             tty->print("  speculate: ");
             m->dump();
           }
@@ -1482,7 +1484,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 
     // Now split the IF
     C->print_method(PHASE_BEFORE_SPLIT_IF, 4, iff);
-    if ((PrintOpto && VerifyLoopOptimizations) || TraceLoopOpts) {
+    if (TraceLoopOpts) {
       tty->print_cr("Split-If");
     }
     do_split_if(iff);
