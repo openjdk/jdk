@@ -23,6 +23,7 @@
 
 /**
 * @test
+* @key randomness
 * @bug 8350835
 * @summary Test bug fix for JDK-8350835 discovered through Template Framework
 * @requires vm.compiler2.enabled
@@ -33,15 +34,17 @@
 package compiler.vectorization;
 
 import compiler.lib.ir_framework.*;
+import jdk.test.lib.Utils;
 import java.util.Random; 
 
 public class TestFloat16ToFloatConv {
-    public static Random RANDOM = new Random();
-    public static byte[] aB = new byte[1000];
-    public static short[] aS = new short[1000];
-    public static int[] aI = new int[1000];
-    public static long[] aL = new long[1000];
-    public static float[] goldB, goldS, goldI, goldL;
+    private static final Random RANDOM = Utils.getRandomInstance();
+    private static final int SIZE = 1024;
+    private static byte[] aB = new byte[SIZE];
+    private static short[] aS = new short[SIZE];
+    private static int[] aI = new int[SIZE];
+    private static long[] aL = new long[SIZE];
+    private static float[] goldB, goldS, goldI, goldL;
 
     static {
         for (int i = 0; i < aB.length; i++) {
