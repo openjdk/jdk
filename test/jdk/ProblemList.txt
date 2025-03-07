@@ -537,11 +537,9 @@ java/io/IO/IO.java                                              8337935 linux-pp
 
 # jdk_management
 
-com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
-com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
-
-com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8351002 windows-all
-com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8351002 windows-all
+# First bug for AIX, second for Windows
+com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957,8351002 aix-all,windows-all
+com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957,8351002 aix-all,windows-all
 
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
