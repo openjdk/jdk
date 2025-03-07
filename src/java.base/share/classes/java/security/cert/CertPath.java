@@ -111,6 +111,7 @@ import java.util.List;
  * generally not difficult, since the {@code CertPath} and
  * {@code List} objects in question are immutable.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @see CertificateFactory
  * @see CertPathBuilder
  *

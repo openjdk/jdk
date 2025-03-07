@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,11 @@
 /*
  * @test
  * @bug 8087112 8159814
- * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
- *        jdk.httpclient.test.lib.common.TestUtil jdk.httpclient.test.lib.http2.PushHandler
+ * @library /test/jdk/java/net/httpclient/lib
+ *          /test/lib
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer
+ *        jdk.httpclient.test.lib.http2.PushHandler
+ *        jdk.test.lib.Utils
  * @run testng/othervm
  *      -Djdk.httpclient.HttpClient.log=errors,requests,responses
  *      ServerPush
@@ -44,18 +46,20 @@ import java.net.http.HttpResponse.PushPromiseHandler;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
-import jdk.httpclient.test.lib.common.TestUtil;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
-import jdk.httpclient.test.lib.http2.Http2TestExchange;
-import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.httpclient.test.lib.http2.PushHandler;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static jdk.test.lib.Utils.createTempFileOfSize;
 import static org.testng.Assert.*;
 
 public class ServerPush {
+
+    private static final String TEMP_FILE_PREFIX =
+            HttpClient.class.getPackageName() + '-' + ServerPush.class.getSimpleName() + '-';
 
     static final int LOOPS = 13;
     static final int FILE_SIZE = 512 * 1024 + 343;
@@ -67,7 +71,7 @@ public class ServerPush {
 
     @BeforeTest
     public void setup() throws Exception {
-        tempFile = TestUtil.getAFile(FILE_SIZE);
+        tempFile = createTempFileOfSize(TEMP_FILE_PREFIX, null, FILE_SIZE);
         server = new Http2TestServer(false, 0);
         server.addHandler(new PushHandler(tempFile, LOOPS), "/");
         System.out.println("Using temp file:" + tempFile);

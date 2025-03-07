@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.inline.hpp"

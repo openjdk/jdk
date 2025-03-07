@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/parallelInitLogger.hpp"
 #include "gc/shared/genArguments.hpp"
 #include "gc/shared/gcLogPrecious.hpp"

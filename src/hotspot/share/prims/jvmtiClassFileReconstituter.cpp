@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "memory/universe.hpp"

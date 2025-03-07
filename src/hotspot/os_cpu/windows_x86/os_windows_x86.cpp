@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-// no precompiled headers
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/vtableStubs.hpp"
@@ -159,6 +158,43 @@ bool os::win32::register_code_area(char *low, char *high) {
 
   return true;
 }
+
+#if defined(_M_AMD64)
+//-----------------------------------------------------------------------------
+bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
+  // handle exception caused by native method modifying control word
+  DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
+
+  switch (exception_code) {
+  case EXCEPTION_FLT_DENORMAL_OPERAND:
+  case EXCEPTION_FLT_DIVIDE_BY_ZERO:
+  case EXCEPTION_FLT_INEXACT_RESULT:
+  case EXCEPTION_FLT_INVALID_OPERATION:
+  case EXCEPTION_FLT_OVERFLOW:
+  case EXCEPTION_FLT_STACK_CHECK:
+  case EXCEPTION_FLT_UNDERFLOW: {
+    PCONTEXT ctx = exceptionInfo->ContextRecord;
+    // On Windows, the mxcsr control bits are non-volatile across calls
+    // See also CR 6192333
+    //
+    jint MxCsr = INITIAL_MXCSR; // set to 0x1f80` in winnt.h
+    if (EnableX86ECoreOpts) {
+      // On ECore restore with status bits enabled
+      MxCsr |= 0x3F;
+    }
+
+    // we can't use StubRoutines::x86::addr_mxcsr_std()
+    // because in Win64 mxcsr is not saved there
+    if (MxCsr != ctx->MxCsr) {
+      ctx->MxCsr = MxCsr;
+      return true;
+    }
+  }
+  }
+
+  return false;
+}
+#endif
 
 #ifdef HAVE_PLATFORM_PRINT_NATIVE_STACK
 /*

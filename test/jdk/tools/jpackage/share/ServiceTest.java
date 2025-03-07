@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import jdk.jpackage.test.TKit;
  * @build jdk.jpackage.test.*
  * @build jtreg.SkippedException
  * @key jpackagePlatformPackage
- * @compile ServiceTest.java
+ * @compile -Xlint:all -Werror ServiceTest.java
  * @run main/othervm/timeout=360 -Xmx512m
  *  jdk.jpackage.test.Main
  *  --jpt-run=ServiceTest

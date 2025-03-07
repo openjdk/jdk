@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,9 @@ public final class Type1GlyphMapper extends CharToGlyphMapper {
     }
 
     public int charToGlyph(char ch) {
+        if (FontUtilities.isDefaultIgnorable(ch)) {
+            return INVISIBLE_GLYPH_ID;
+        }
         try {
             return scaler.getGlyphCode(ch);
         } catch (FontScalerException e) {
@@ -90,6 +93,9 @@ public final class Type1GlyphMapper extends CharToGlyphMapper {
         if (ch < 0 || ch > 0xffff) {
             return missingGlyph;
         } else {
+            if (FontUtilities.isDefaultIgnorable(ch)) {
+                return INVISIBLE_GLYPH_ID;
+            }
             try {
                 return scaler.getGlyphCode((char)ch);
             } catch (FontScalerException e) {
@@ -115,7 +121,7 @@ public final class Type1GlyphMapper extends CharToGlyphMapper {
                     low <= LO_SURROGATE_END) {
                     code = (code - HI_SURROGATE_START) *
                         0x400 + low - LO_SURROGATE_START + 0x10000;
-                    glyphs[i + 1] = 0xFFFF; // invisible glyph
+                    glyphs[i + 1] = INVISIBLE_GLYPH_ID;
                 }
             }
             glyphs[i] = charToGlyph(code);

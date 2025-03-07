@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,7 @@ public class HtmlIds {
     static final HtmlId FOR_REMOVAL = HtmlId.of("for-removal");
     static final HtmlId HELP_NAVIGATION = HtmlId.of("help-navigation");
     static final HtmlId HELP_PAGES = HtmlId.of("help-pages");
+    static final HtmlId HELP_RELEASES = HtmlId.of("help-releases");
     static final HtmlId METHOD_DETAIL = HtmlId.of("method-detail");
     static final HtmlId METHOD_SUMMARY = HtmlId.of("method-summary");
     static final HtmlId METHOD_SUMMARY_TABLE = HtmlId.of("method-summary-table");

@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahMarkBitMap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "runtime/os.hpp"

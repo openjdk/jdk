@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "unittest.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.inline.hpp"
@@ -49,7 +48,7 @@ TEST_VM_ASSERT_MSG(vmErrorTest, assert1, "assert.str == nullptr. failed: expecte
 
 TEST_VM_ASSERT_MSG(vmErrorTest, assert2, "assert.num == 1023 && .str == 'X'. failed: num=500 str=\"hello\"") {
   vmassert(num == 1023 && *str == 'X',
-           "num=" SIZE_FORMAT " str=\"%s\"", num, str);
+           "num=%zu str=\"%s\"", num, str);
 }
 
 TEST_VM_ASSERT_MSG(vmErrorTest, guarantee1, "guarantee.str == nullptr. failed: expected null") {
@@ -58,7 +57,7 @@ TEST_VM_ASSERT_MSG(vmErrorTest, guarantee1, "guarantee.str == nullptr. failed: e
 
 TEST_VM_ASSERT_MSG(vmErrorTest, guarantee2, "guarantee.num == 1023 && .str == 'X'. failed: num=500 str=\"hello\"") {
   guarantee(num == 1023 && *str == 'X',
-            "num=" SIZE_FORMAT " str=\"%s\"", num, str);
+            "num=%zu str=\"%s\"", num, str);
 }
 
 TEST_VM_ASSERT_MSG(vmErrorTest, fatal1, "fatal error: expected null") {
@@ -66,7 +65,7 @@ TEST_VM_ASSERT_MSG(vmErrorTest, fatal1, "fatal error: expected null") {
 }
 
 TEST_VM_ASSERT_MSG(vmErrorTest, fatal2, "fatal error: num=500 str=\"hello\"") {
-  fatal("num=" SIZE_FORMAT " str=\"%s\"", num, str);
+  fatal("num=%zu str=\"%s\"", num, str);
 }
 
 TEST_VM_ASSERT_MSG(vmErrorTest, fatal3, "fatal error: this message should be truncated during formatting") {

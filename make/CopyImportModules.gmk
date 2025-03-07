@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,12 @@
 # questions.
 #
 
+include MakeFileStart.gmk
+
+################################################################################
 # This makefile is called for every imported module to copy the non class
 # contents into the exploded jdk image.
-
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
 
 include CopyFiles.gmk
 
@@ -103,4 +102,6 @@ ifneq ($(CONF_DIR), )
   TARGETS += $(COPY_CONF)
 endif
 
-all: $(TARGETS)
+################################################################################
+
+include MakeFileEnd.gmk

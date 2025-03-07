@@ -141,6 +141,8 @@ enum spa_format {
     SPA_FORMAT_START_Stream = 0x50000,
     /* Application Format keys */
     SPA_FORMAT_START_Application = 0x60000,
+    SPA_FORMAT_CONTROL_types,        /**< possible control types (flags choice Int,
+                          *  mask of enum spa_control_type) */
 };
 
 #define SPA_KEY_FORMAT_DSP        "format.dsp"        /**< a predefined DSP format,

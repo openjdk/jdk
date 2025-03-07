@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 Google LLC. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/atomic.hpp"
 
@@ -127,5 +126,3 @@ void ThreadTotalCPUTimeClosure::do_thread(Thread* thread) {
   // must ensure the thread exists and has not terminated.
   _total += os::thread_cpu_time(thread);
 }
-
-

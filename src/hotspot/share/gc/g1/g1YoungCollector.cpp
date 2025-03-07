@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -273,7 +272,7 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
 
   collection_set()->finalize_initial_collection_set(target_pause_time_ms, survivor_regions());
   evacuation_info->set_collection_set_regions(collection_set()->region_length() +
-                                              collection_set()->optional_region_length());
+                                              collection_set()->num_optional_regions());
 
   concurrent_mark()->verify_no_collection_set_oops();
 
@@ -516,7 +515,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     Tickspan task_time = run_task_timed(&g1_prep_task);
 
     G1MonotonicArenaMemoryStats sampled_card_set_stats = g1_prep_task.all_card_set_stats();
-    sampled_card_set_stats.add(_g1h->young_regions_card_set_mm()->memory_stats());
+    sampled_card_set_stats.add(_g1h->young_regions_card_set_memory_stats());
     _g1h->set_young_gen_card_set_stats(sampled_card_set_stats);
 
     _g1h->set_humongous_stats(g1_prep_task.humongous_total(), g1_prep_task.humongous_candidates());
@@ -791,7 +790,7 @@ void G1YoungCollector::evacuate_next_optional_regions(G1ParScanThreadStateSet* p
 void G1YoungCollector::evacuate_optional_collection_set(G1ParScanThreadStateSet* per_thread_states) {
   const double collection_start_time_ms = phase_times()->cur_collection_start_sec() * 1000.0;
 
-  while (!evacuation_alloc_failed() && collection_set()->optional_region_length() > 0) {
+  while (!evacuation_alloc_failed() && collection_set()->num_optional_regions() > 0) {
 
     double time_used_ms = os::elapsedTime() * 1000.0 - collection_start_time_ms;
     double time_left_ms = MaxGCPauseMillis - time_used_ms;
@@ -799,7 +798,7 @@ void G1YoungCollector::evacuate_optional_collection_set(G1ParScanThreadStateSet*
     if (time_left_ms < 0 ||
         !collection_set()->finalize_optional_for_evacuation(time_left_ms * policy()->optional_evacuation_fraction())) {
       log_trace(gc, ergo, cset)("Skipping evacuation of %u optional regions, no more regions can be evacuated in %.3fms",
-                                collection_set()->optional_region_length(), time_left_ms);
+                                collection_set()->num_optional_regions(), time_left_ms);
       break;
     }
 
@@ -990,9 +989,9 @@ void G1YoungCollector::enqueue_candidates_as_root_regions() {
   assert(collector_state()->in_concurrent_start_gc(), "must be");
 
   G1CollectionSetCandidates* candidates = collection_set()->candidates();
-  for (G1HeapRegion* r : *candidates) {
+  candidates->iterate_regions([&] (G1HeapRegion* r) {
     _g1h->concurrent_mark()->add_root_region(r);
-  }
+  });
 }
 
 void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
@@ -1112,7 +1111,7 @@ void G1YoungCollector::collect() {
                                               collection_set(),
                                               &_evac_failure_regions);
 
-    bool may_do_optional_evacuation = collection_set()->optional_region_length() != 0;
+    bool may_do_optional_evacuation = collection_set()->num_optional_regions() != 0;
     // Actually do the work...
     evacuate_initial_collection_set(&per_thread_states, may_do_optional_evacuation);
 

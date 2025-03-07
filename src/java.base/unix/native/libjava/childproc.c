@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ readFully(int fd, void *buf, size_t nbyte)
             buf = (void *) (((char *)buf) + n);
         } else if (errno == EINTR) {
             /* Strange signals like SIGJVM1 are possible at any time.
-             * See http://www.dreamsongs.com/WorseIsBetter.html */
+             * See https://dreamsongs.com/WorseIsBetter.html */
         } else {
             return -1;
         }

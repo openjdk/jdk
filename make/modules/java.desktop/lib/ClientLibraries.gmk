@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,15 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
 ################################################################################
 # This file will build all AWT/2D native libraries that does not have "awt" in
 # the name. Note that this does not imply anything about the logical ownership
 # of the code they compile.
 # This split is purely made to keep the size of the Makefiles reasonable.
+################################################################################
 
 ################################################################################
 ## Build libmlib_image
@@ -222,7 +226,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       EXCLUDE_SRC_PATTERNS := $(LIBSPLASHSCREEN_EXCLUDE_SRC_PATTERNS), \
       EXCLUDE_FILES := imageioJPEG.c jpegdecoder.c pngtest.c, \
       EXCLUDES := $(LIBSPLASHSCREEN_EXCLUDES), \
-      OPTIMIZATION := LOW, \
+      OPTIMIZATION := SIZE, \
       CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) \
           $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
       CXXFLAGS := $(LIBSPLASHSCREEN_CFLAGS) \
@@ -360,8 +364,6 @@ else
   LIBFONTMANAGER_JDK_LIBS += libfreetype
 endif
 
-LIBFONTMANAGER_OPTIMIZATION := HIGHEST
-
 ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
   # gcc (and to an extent clang) is particularly bad at optimizing these files,
   # causing a massive spike in compile time. We don't care about these
@@ -372,7 +374,6 @@ endif
 
 ifeq ($(call isTargetOs, windows), true)
   LIBFONTMANAGER_EXCLUDE_FILES += X11FontScaler.c X11TextRenderer.c
-  LIBFONTMANAGER_OPTIMIZATION := HIGHEST
 else ifeq ($(call isTargetOs, macosx), true)
   LIBFONTMANAGER_EXCLUDE_FILES += X11FontScaler.c X11TextRenderer.c \
       fontpath.c lcdglyph.c
@@ -393,7 +394,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
         AccelGlyphCache.c, \
     CFLAGS := $(LIBFONTMANAGER_CFLAGS), \
     CXXFLAGS := $(LIBFONTMANAGER_CFLAGS), \
-    OPTIMIZATION := $(LIBFONTMANAGER_OPTIMIZATION), \
+    OPTIMIZATION := HIGHEST, \
     CFLAGS_windows = -DCC_NOEX, \
     EXTRA_HEADER_DIRS := $(LIBFONTMANAGER_EXTRA_HEADER_DIRS), \
     EXTRA_SRC := $(LIBFONTMANAGER_EXTRA_SRC), \
@@ -406,6 +407,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     LDFLAGS_aix := -Wl$(COMMA)-berok, \
     JDK_LIBS := libawt java.base:libjava $(LIBFONTMANAGER_JDK_LIBS), \
     JDK_LIBS_macosx := libawt_lwawt, \
+    JDK_LIBS_unix := java.base:libjvm, \
     LIBS := $(LIBFONTMANAGER_LIBS), \
     LIBS_unix := $(LIBM), \
     LIBS_macosx := \
@@ -470,3 +472,8 @@ ifeq ($(call isTargetOs, macosx), true)
 
   $(BUILD_LIBOSXUI): $(SHADERS_LIB)
 endif
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

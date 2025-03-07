@@ -33,7 +33,7 @@ import static jdk.test.lib.Asserts.assertFalse;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:-ExplicitGCInvokesConcurrent jdk.jfr.event.gc.detailed.TestGCHeapMemoryPoolUsageEvent

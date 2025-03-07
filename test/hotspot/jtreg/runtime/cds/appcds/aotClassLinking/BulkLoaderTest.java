@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,10 @@
  * @comment work around JDK-8345635
  * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib
- * @build InitiatingLoaderTester
+ * @build InitiatingLoaderTester BadOldClassA BadOldClassB
  * @build BulkLoaderTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar BulkLoaderTestApp.jar BulkLoaderTestApp MyUtil InitiatingLoaderTester
+ *                 BadOldClassA BadOldClassB
  * @run driver BulkLoaderTest STATIC
  */
 
@@ -44,11 +45,25 @@
  * @comment work around JDK-8345635
  * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib
- * @build InitiatingLoaderTester
+ * @build InitiatingLoaderTester BadOldClassA BadOldClassB
  * @build jdk.test.whitebox.WhiteBox BulkLoaderTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar BulkLoaderTestApp.jar BulkLoaderTestApp MyUtil InitiatingLoaderTester
+ *                 BadOldClassA BadOldClassB
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. BulkLoaderTest DYNAMIC
+ */
+
+/*
+ * @test id=aot
+ * @requires vm.cds.supports.aot.class.linking
+ * @comment work around JDK-8345635
+ * @requires !vm.jvmci.enabled
+ * @library /test/jdk/lib/testlibrary /test/lib
+ * @build InitiatingLoaderTester BadOldClassA BadOldClassB
+ * @build BulkLoaderTest
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar BulkLoaderTestApp.jar BulkLoaderTestApp MyUtil InitiatingLoaderTester
+ *                 BadOldClassA BadOldClassB
+ * @run driver BulkLoaderTest AOT
  */
 
 import java.io.File;
@@ -120,6 +135,13 @@ public class BulkLoaderTest {
                 mainClass,
             };
         }
+
+        @Override
+        public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
+            if (isAOTWorkflow() && runMode == RunMode.TRAINING) {
+                out.shouldContain("Skipping BadOldClassA: Unlinked class not supported by AOTConfiguration");
+            }
+        }
     }
 }
 
@@ -129,6 +151,7 @@ class BulkLoaderTestApp {
     public static void main(String args[]) throws Exception {
         checkClasses();
         checkInitiatingLoader();
+        checkOldClasses();
     }
 
     // Check the ClassLoader/Module/Package/ProtectionDomain/CodeSource of classes that are aot-linked
@@ -228,6 +251,29 @@ class BulkLoaderTestApp {
         }
 
         throw new RuntimeException("Should not have succeeded");
+    }
+
+    static void checkOldClasses() throws Exception {
+        // Resolve BadOldClassA from the constant pool without linking it.
+        // implNote: BadOldClassA will be excluded, so any resolved refereces
+        // to BadOldClassA should be removed from the archived constant pool.
+        Class c = BadOldClassA.class;
+        Object n = new Object();
+        if (c.isInstance(n)) { // Note that type-testing BadOldClassA here neither links nor initializes it.
+            throw new RuntimeException("Must not succeed");
+        }
+
+        try {
+            // In dynamic dump, the VM loads BadOldClassB and then attempts to
+            // link it. This will leave BadOldClassB in a "failed verification" state.
+            // All refernces to BadOldClassB from the CP should be purged from the CDS
+            // archive.
+            c = BadOldClassB.class;
+            c.newInstance();
+            throw new RuntimeException("Must not succeed");
+        } catch (VerifyError e) {
+            System.out.println("Caught VerifyError for BadOldClassB: " + e);
+        }
     }
 }
 

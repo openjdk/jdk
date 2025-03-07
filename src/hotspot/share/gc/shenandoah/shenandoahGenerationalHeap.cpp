@@ -23,8 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"

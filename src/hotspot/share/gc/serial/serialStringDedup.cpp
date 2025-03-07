@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/serial/defNewGeneration.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/serialStringDedup.hpp"

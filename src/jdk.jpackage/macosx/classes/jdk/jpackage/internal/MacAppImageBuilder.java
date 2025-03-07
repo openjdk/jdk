@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-import jdk.internal.util.OperatingSystem;
 import jdk.internal.util.OSVersion;
 import static jdk.jpackage.internal.MacAppBundler.BUNDLE_ID_SIGNING_PREFIX;
 import static jdk.jpackage.internal.MacAppBundler.DEVELOPER_ID_APP_SIGNING_KEY;
@@ -419,12 +418,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 signAppBundle(params, root, "-", null, null);
             }
             restoreKeychainList(params);
-        } else if (OperatingSystem.isMacOS()) {
-            signAppBundle(params, root, "-", null, null);
         } else {
-            // Calling signAppBundle() without signingIdentity will result in
-            // unsigning app bundle
-            signAppBundle(params, root, null, null, null);
+            signAppBundle(params, root, "-", null, null);
         }
     }
 

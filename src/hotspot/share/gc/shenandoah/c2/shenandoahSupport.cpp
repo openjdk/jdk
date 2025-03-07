@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "classfile/javaClasses.hpp"
 #include "gc/shenandoah/c2/shenandoahSupport.hpp"

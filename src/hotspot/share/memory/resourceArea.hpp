@@ -54,8 +54,12 @@ public:
   ResourceArea(MemTag mem_tag = mtThread) :
     Arena(mem_tag, Arena::Tag::tag_ra) DEBUG_ONLY(COMMA _nesting(0)) {}
 
-  ResourceArea(size_t init_size, MemTag mem_tag = mtThread) :
-    Arena(mem_tag, Arena::Tag::tag_ra, init_size) DEBUG_ONLY(COMMA _nesting(0)) {
+  ResourceArea(size_t init_size, MemTag mem_tag = mtThread, Arena::Tag arena_tag = Arena::Tag::tag_ra) :
+    Arena(mem_tag, arena_tag, init_size) DEBUG_ONLY(COMMA _nesting(0)) {
+  }
+
+  ResourceArea(MemTag mem_tag, Arena::Tag arena_tag) :
+    Arena(mem_tag, arena_tag) DEBUG_ONLY(COMMA _nesting(0)) {
   }
 
   char* allocate_bytes(size_t size, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);

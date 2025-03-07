@@ -30,7 +30,7 @@ import jdk.jfr.Period;
 /**
  * @test
  * @summary Tests that only user events are emitted
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @build jdk.jfr.api.consumer.log.LogAnalyzer

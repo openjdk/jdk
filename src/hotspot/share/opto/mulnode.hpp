@@ -83,8 +83,8 @@ public:
 
   static MulNode* make(Node* in1, Node* in2, BasicType bt);
 
-  static bool AndIL_shift_and_mask_is_always_zero(PhaseGVN* phase, Node* shift, Node* mask, BasicType bt, bool check_reverse);
-  Node* AndIL_add_shift_and_mask(PhaseGVN* phase, BasicType bt);
+protected:
+  Node* AndIL_sum_and_mask(PhaseGVN* phase, BasicType bt);
 };
 
 //------------------------------MulINode---------------------------------------
@@ -140,6 +140,24 @@ public:
   int max_opcode() const { return Op_MaxF; }
   int min_opcode() const { return Op_MinF; }
   const Type *bottom_type() const { return Type::FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+};
+
+//------------------------------MulHFNode---------------------------------------
+// Multiply 2 half floats
+class MulHFNode : public MulNode {
+public:
+  MulHFNode(Node* in1, Node* in2) : MulNode(in1, in2) {}
+  virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual const Type* mul_ring(const Type*, const Type*) const;
+  const Type* mul_id() const { return TypeH::ONE; }
+  const Type* add_id() const { return TypeH::ZERO; }
+  int add_opcode() const { return Op_AddHF; }
+  int mul_opcode() const { return Op_MulHF; }
+  int max_opcode() const { return Op_MaxHF; }
+  int min_opcode() const { return Op_MinHF; }
+  const Type* bottom_type() const { return Type::HALF_FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
 };
 
@@ -412,6 +430,17 @@ public:
   FmaFNode(Node* in1, Node* in2, Node* in3) : FmaNode(in1, in2, in3) {}
   virtual int Opcode() const;
   const Type* bottom_type() const { return Type::FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+  virtual const Type* Value(PhaseGVN* phase) const;
+};
+
+//------------------------------FmaHFNode-------------------------------------
+// fused-multiply-add half-precision float
+class FmaHFNode : public FmaNode {
+public:
+  FmaHFNode(Node* in1, Node* in2, Node* in3) : FmaNode(in1, in2, in3) {}
+  virtual int Opcode() const;
+  const Type* bottom_type() const { return Type::HALF_FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual const Type* Value(PhaseGVN* phase) const;
 };

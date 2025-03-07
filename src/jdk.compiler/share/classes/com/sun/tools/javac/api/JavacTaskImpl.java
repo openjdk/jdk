@@ -401,12 +401,12 @@ public class JavacTaskImpl extends BasicJavacTask {
         final ListBuffer<Element> results = new ListBuffer<>();
         try {
             if (classes == null) {
-                handleFlowResults(compiler.flow(compiler.attribute(compiler.todo)), results);
+                handleFlowResults(compiler.warn(compiler.flow(compiler.attribute(compiler.todo))), results);
             } else {
                 Filter f = new Filter() {
                     @Override
                     public void process(Env<AttrContext> env) {
-                        handleFlowResults(compiler.flow(compiler.attribute(env)), results);
+                        handleFlowResults(compiler.warn(compiler.flow(compiler.attribute(env))), results);
                     }
                 };
                 f.run(compiler.todo, classes);

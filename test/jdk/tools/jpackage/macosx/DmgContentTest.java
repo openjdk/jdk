@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public class DmgContentTest {
             "non-existant").toString();
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         List<Object[]> data = new ArrayList<>();
         data.addAll(List.of(new Object[][] {
             {"0", PackageType.MAC_DMG, new String[] {TEST_JAVA, TEST_DUKE}},

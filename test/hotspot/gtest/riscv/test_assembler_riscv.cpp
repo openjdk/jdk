@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -21,8 +21,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-#include "precompiled.hpp"
 
 #if (defined(RISCV) || defined(RISCV64)) && !defined(ZERO)
 

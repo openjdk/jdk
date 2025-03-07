@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"

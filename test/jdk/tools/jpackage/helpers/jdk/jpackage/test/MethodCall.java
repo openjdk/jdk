@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.util.stream.Stream;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.TestInstance.TestDesc;
 
-class MethodCall implements ThrowingConsumer {
+class MethodCall implements ThrowingConsumer<Object> {
 
     MethodCall(Object[] instanceCtorArgs, Method method, Object ... args) {
         Objects.requireNonNull(instanceCtorArgs);
@@ -90,7 +90,7 @@ class MethodCall implements ThrowingConsumer {
         }
     }
 
-    private static Constructor findMatchingConstructor(Class type, Object... ctorArgs)
+    private static Constructor<?> findMatchingConstructor(Class<?> type, Object... ctorArgs)
             throws NoSuchMethodException {
 
         var ctors = filterMatchingExecutablesForParameterValues(Stream.of(
@@ -114,6 +114,7 @@ class MethodCall implements ThrowingConsumer {
     private static Object[] mapVarArgs(Executable executable, final Object ... args) {
         if (executable.isVarArgs()) {
             var paramTypes = executable.getParameterTypes();
+            @SuppressWarnings("rawtypes")
             Class varArgParamType = paramTypes[paramTypes.length - 1];
 
             Object[] newArgs;
@@ -124,6 +125,7 @@ class MethodCall implements ThrowingConsumer {
                 newArgs = Arrays.copyOf(args, args.length + 1, Object[].class);
                 newArgs[newArgs.length - 1] = Array.newInstance(varArgParamType.componentType(), 0);
             } else {
+                @SuppressWarnings("unchecked")
                 var varArgs = Arrays.copyOfRange(args, paramTypes.length - 1,
                         args.length, varArgParamType);
 

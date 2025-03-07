@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classPrinter.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
@@ -626,6 +625,7 @@ void help() {
   tty->print_cr("                   pns($sp, $fp, $pc)  on Linux/AArch64 or");
   tty->print_cr("                   pns($sp, 0, $pc)    on Linux/ppc64 or");
   tty->print_cr("                   pns($sp, $s8, $pc)  on Linux/mips or");
+  tty->print_cr("                   pns($sp, $fp, $pc)  on Linux/RISC-V");
   tty->print_cr("                 - in gdb do 'set overload-resolution off' before calling pns()");
   tty->print_cr("                 - in dbx do 'frame 1' before calling pns()");
   tty->print_cr("class metadata.");

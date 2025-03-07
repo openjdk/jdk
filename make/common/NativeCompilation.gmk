@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,14 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
 ################################################################################
 # This is the top-level entry point for our native compilation and linking.
 # It contains the SetupNativeCompilation macro, but is supported by helper
 # macros in the make/common/native directory.
 ################################################################################
-
-ifndef _NATIVE_COMPILATION_GMK
-_NATIVE_COMPILATION_GMK := 1
-
-ifeq ($(_MAKEBASE_GMK), )
-  $(error You must include MakeBase.gmk prior to including NativeCompilation.gmk)
-endif
 
 include MakeIO.gmk
 include native/CompileFile.gmk
@@ -223,6 +219,7 @@ define SetupNativeCompilationBody
   ifeq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
     # Override all targets (this is a hack)
     $1 := $$($1_ALL_OBJS_JSON) $$($1_LDFLAGS_FILE)
+    TARGETS := $(filter $(MAKESUPPORT_OUTPUTDIR)/compile-commands/%, $(TARGETS))
   endif
 endef
 
@@ -409,4 +406,7 @@ define ImportDependencyFile
   endif
 endef
 
-endif # _NATIVE_COMPILATION_GMK
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

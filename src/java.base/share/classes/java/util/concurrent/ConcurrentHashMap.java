@@ -6383,7 +6383,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         = U.objectFieldOffset(ConcurrentHashMap.class, "cellsBusy");
     private static final long CELLVALUE
         = U.objectFieldOffset(CounterCell.class, "value");
-    private static final int ABASE = U.arrayBaseOffset(Node[].class);
+    private static final long ABASE = U.arrayBaseOffset(Node[].class);
     private static final int ASHIFT;
 
     static {

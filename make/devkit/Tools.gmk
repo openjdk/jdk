@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -63,18 +63,14 @@ ifeq ($(BASE_OS), OL)
     LINUX_VERSION := OL6.4
   endif
 else ifeq ($(BASE_OS), Fedora)
+  DEFAULT_OS_VERSION := 41
+  ifeq ($(BASE_OS_VERSION), )
+    BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
+  endif
   ifeq ($(ARCH), riscv64)
-    DEFAULT_OS_VERSION := rawhide/68692
-    ifeq ($(BASE_OS_VERSION), )
-      BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
-    endif
-    BASE_URL := http://fedora.riscv.rocks/repos-dist/$(BASE_OS_VERSION)/$(ARCH)/Packages/
+    BASE_URL := http://fedora.riscv.rocks/repos-dist/f$(BASE_OS_VERSION)/latest/$(ARCH)/Packages/
   else
-    DEFAULT_OS_VERSION := 27
     LATEST_ARCHIVED_OS_VERSION := 35
-    ifeq ($(BASE_OS_VERSION), )
-      BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
-    endif
     ifeq ($(filter x86_64 armhfp, $(ARCH)), )
       FEDORA_TYPE := fedora-secondary
     else
@@ -203,7 +199,7 @@ RPM_LIST := \
     glibc glibc-headers glibc-devel \
     cups-libs cups-devel \
     libX11 libX11-devel \
-    xorg-x11-proto-devel \
+    libxcb xorg-x11-proto-devel \
     alsa-lib alsa-lib-devel \
     libXext libXext-devel \
     libXtst libXtst-devel \
@@ -441,8 +437,9 @@ $(gcc) \
 # wants.
 $(BUILDDIR)/$(binutils_ver)/Makefile : CONFIG += --enable-64-bit-bfd --libdir=$(PREFIX)/$(word 1,$(LIBDIRS))
 
-ifneq ($(ARCH), riscv64)
-  # gold is not available for riscv64 for some reason,
+ifeq ($(filter $(ARCH), s390x riscv64 ppc64le), )
+  # gold compiles but cannot link properly on s390x @ gcc 13.2 and Fedore 41
+  # gold is not available for riscv64 and ppc64le,
   # and subsequent linking will fail if we try to enable it.
   LINKER_CONFIG := --enable-gold=default
 endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zAbort.inline.hpp"
@@ -670,9 +669,9 @@ private:
     // moved them over to the current bitmap.
     //
     // If the young generation runs multiple cycles while the old generation is
-    // relocating, then the first cycle will have consume the the old remset,
+    // relocating, then the first cycle will have consumed the old remset,
     // bits and moved associated objects to a new old page. The old relocation
-    // could find either the the two bitmaps. So, either it will find the original
+    // could find either of the two bitmaps. So, either it will find the original
     // remset bits for the page, or it will find an empty bitmap for the page. It
     // doesn't matter for correctness, because the young generation marking has
     // already taken care of the bits.
@@ -866,7 +865,7 @@ private:
     start_in_place_relocation_prepare_remset(from_page);
 
     if (promotion) {
-      // Register the the promotion
+      // Register the promotion
       ZGeneration::young()->in_place_relocate_promote(from_page, to_page);
       ZGeneration::young()->register_in_place_relocate_promoted(from_page);
     }

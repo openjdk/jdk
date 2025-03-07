@@ -190,10 +190,10 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _updateBytesAdler32_Type;
   static const TypeFunc* _osr_end_Type;
   static const TypeFunc* _register_finalizer_Type;
-#ifdef INCLUDE_JFR
+#if INCLUDE_JFR
   static const TypeFunc* _class_id_load_barrier_Type;
 #endif // INCLUDE_JFR
-#ifdef INCLUDE_JVMTI
+#if INCLUDE_JVMTI
   static const TypeFunc* _notify_jvmti_vthread_Type;
 #endif // INCLUDE_JVMTI
   static const TypeFunc* _dtrace_method_entry_exit_Type;
@@ -645,7 +645,7 @@ private:
     return _register_finalizer_Type;
   }
 
-#ifdef INCLUDE_JFR
+#if INCLUDE_JFR
   static inline const TypeFunc* class_id_load_barrier_Type() {
     assert(_class_id_load_barrier_Type != nullptr, "should be initialized");
     return _class_id_load_barrier_Type;

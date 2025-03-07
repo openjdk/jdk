@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLSession;
 import jdk.internal.net.http.BufferingSubscriber;
+import jdk.internal.net.http.LimitingSubscriber;
 import jdk.internal.net.http.LineSubscriberAdapter;
 import jdk.internal.net.http.ResponseBodyHandlers.FileDownloadBodyHandler;
 import jdk.internal.net.http.ResponseBodyHandlers.PathBodyHandler;
@@ -748,6 +749,33 @@ public interface HttpResponse<T> {
                      .buffering(downstreamHandler.apply(responseInfo),
                                 bufferSize);
          }
+
+        /**
+         * {@return a {@code BodyHandler} that limits the number of body bytes
+         * that are delivered to the given {@code downstreamHandler}}
+         * <p>
+         * If the number of body bytes received exceeds the given
+         * {@code capacity}, {@link BodySubscriber#onError(Throwable) onError}
+         * is called on the downstream {@code BodySubscriber} with an
+         * {@link IOException} indicating that the capacity is exceeded, and
+         * the upstream subscription is cancelled.
+         *
+         * @param downstreamHandler the downstream handler to pass received data to
+         * @param capacity the maximum number of bytes that are allowed
+         * @throws IllegalArgumentException if {@code capacity} is negative
+         * @since 25
+         */
+        public static <T> BodyHandler<T> limiting(BodyHandler<T> downstreamHandler, long capacity) {
+            Objects.requireNonNull(downstreamHandler, "downstreamHandler");
+            if (capacity < 0) {
+                throw new IllegalArgumentException("capacity must not be negative: " + capacity);
+            }
+            return responseInfo -> {
+                BodySubscriber<T> downstreamSubscriber = downstreamHandler.apply(responseInfo);
+                return BodySubscribers.limiting(downstreamSubscriber, capacity);
+            };
+        }
+
     }
 
     /**
@@ -1350,5 +1378,30 @@ public interface HttpResponse<T> {
         {
             return new ResponseSubscribers.MappingSubscriber<>(upstream, mapper);
         }
+
+        /**
+         * {@return a {@code BodySubscriber} that limits the number of body
+         * bytes that are delivered to the given {@code downstreamSubscriber}}
+         * <p>
+         * If the number of body bytes received exceeds the given
+         * {@code capacity}, {@link BodySubscriber#onError(Throwable) onError}
+         * is called on the downstream {@code BodySubscriber} with an
+         * {@link IOException} indicating that the capacity is exceeded, and
+         * the upstream subscription is cancelled.
+         *
+         * @param downstreamSubscriber the downstream subscriber to pass received data to
+         * @param capacity the maximum number of bytes that are allowed
+         * @throws IllegalArgumentException if {@code capacity} is negative
+         * @since 25
+         */
+        public static <T> BodySubscriber<T> limiting(BodySubscriber<T> downstreamSubscriber, long capacity) {
+            Objects.requireNonNull(downstreamSubscriber, "downstreamSubscriber");
+            if (capacity < 0) {
+                throw new IllegalArgumentException("capacity must not be negative: " + capacity);
+            }
+            return new LimitingSubscriber<>(downstreamSubscriber, capacity);
+        }
+
     }
+
 }

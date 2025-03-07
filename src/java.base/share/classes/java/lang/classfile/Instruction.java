@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,15 @@ import jdk.internal.classfile.impl.AbstractInstruction;
 
 /**
  * Models an executable instruction in the {@code code} array of the {@link
- * CodeAttribute Code} attribute of a method.
+ * CodeAttribute Code} attribute of a method.  The order of instructions in
+ * a {@link CodeModel} is significant.
  * <p>
  * The {@link #opcode() opcode} identifies the operation of an instruction.
  * Each {@linkplain Opcode#kind() kind} of opcode has its own modeling interface
  * for instructions.
  *
+ * @see Opcode
+ * @jvms 6.5 Instructions
  * @sealedGraph
  * @since 24
  */

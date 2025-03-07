@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/serial/generation.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/genArguments.hpp"

@@ -22,9 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassInitializer.hpp"
+#include "cds/aotClassLocation.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveHeapWriter.hpp"
@@ -87,7 +87,6 @@ struct ArchivableStaticFieldInfo {
   }
 };
 
-bool HeapShared::_disable_writing = false;
 DumpedInternedStrings *HeapShared::_dumped_interned_strings = nullptr;
 
 size_t HeapShared::_alloc_count[HeapShared::ALLOC_STAT_SLOTS];
@@ -237,9 +236,6 @@ int HeapShared::append_root(oop obj) {
 objArrayOop HeapShared::root_segment(int segment_idx) {
   if (CDSConfig::is_dumping_heap()) {
     assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
-    if (!HeapShared::can_write()) {
-      return nullptr;
-    }
   } else {
     assert(CDSConfig::is_using_archive(), "must be");
   }
@@ -405,6 +401,11 @@ objArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
   return (objArrayOop)_scratch_references_table->get_oop(src);
 }
 
+void HeapShared::init_dumping() {
+  _scratch_java_mirror_table = new (mtClass)MetaspaceObjToOopHandleTable();
+  _scratch_references_table = new (mtClass)MetaspaceObjToOopHandleTable();
+}
+
 void HeapShared::init_scratch_objects(TRAPS) {
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
     BasicType bt = (BasicType)i;
@@ -413,8 +414,6 @@ void HeapShared::init_scratch_objects(TRAPS) {
       _scratch_basic_type_mirrors[i] = OopHandle(Universe::vm_global(), m);
     }
   }
-  _scratch_java_mirror_table = new (mtClass)MetaspaceObjToOopHandleTable();
-  _scratch_references_table = new (mtClass)MetaspaceObjToOopHandleTable();
 }
 
 // Given java_mirror that represents a (primitive or reference) type T,
@@ -715,7 +714,7 @@ void HeapShared::scan_java_class(Klass* orig_k) {
 }
 
 void HeapShared::archive_subgraphs() {
-  assert(HeapShared::can_write(), "must be");
+  assert(CDSConfig::is_dumping_heap(), "must be");
 
   archive_object_subgraphs(archive_subgraph_entry_fields,
                            false /* is_full_module_graph */);
@@ -1176,11 +1175,12 @@ void HeapShared::initialize_from_archived_subgraph(JavaThread* current, Klass* k
   if (k->name()->equals("jdk/internal/module/ArchivedModuleGraph") &&
       !CDSConfig::is_using_optimized_module_handling() &&
       // archive was created with --module-path
-      ClassLoaderExt::num_module_paths() > 0) {
+      AOTClassLocationConfig::runtime()->num_module_paths() > 0) {
     // ArchivedModuleGraph was created with a --module-path that's different than the runtime --module-path.
     // Thus, it might contain references to modules that do not exist at runtime. We cannot use it.
     log_info(cds, heap)("Skip initializing ArchivedModuleGraph subgraph: is_using_optimized_module_handling=%s num_module_paths=%d",
-                        BOOL_TO_STR(CDSConfig::is_using_optimized_module_handling()), ClassLoaderExt::num_module_paths());
+                        BOOL_TO_STR(CDSConfig::is_using_optimized_module_handling()),
+                        AOTClassLocationConfig::runtime()->num_module_paths());
     return;
   }
 
@@ -1875,7 +1875,7 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
 }
 
 void HeapShared::init_subgraph_entry_fields(TRAPS) {
-  assert(HeapShared::can_write(), "must be");
+  assert(CDSConfig::is_dumping_heap(), "must be");
   _dump_time_subgraph_info_table = new (mtClass)DumpTimeKlassSubGraphInfoTable();
   init_subgraph_entry_fields(archive_subgraph_entry_fields, CHECK);
   if (CDSConfig::is_dumping_full_module_graph()) {
@@ -1964,7 +1964,7 @@ void HeapShared::initialize_test_class_from_archive(JavaThread* current) {
 #endif
 
 void HeapShared::init_for_dumping(TRAPS) {
-  if (HeapShared::can_write()) {
+  if (CDSConfig::is_dumping_heap()) {
     setup_test_class(ArchiveHeapTestClass);
     _dumped_interned_strings = new (mtClass)DumpedInternedStrings(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE);
     init_subgraph_entry_fields(CHECK);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,16 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/virtualspace.hpp"
 #include "runtime/perfData.hpp"
 
-void GenerationCounters::initialize(const char* name, int ordinal, int spaces,
-                                    size_t min_capacity, size_t max_capacity,
-                                    size_t curr_capacity) {
+GenerationCounters::GenerationCounters(const char* name,
+                                       int ordinal, int spaces,
+                                       size_t min_capacity, size_t max_capacity,
+                                       size_t curr_capacity) {
   if (UsePerfData) {
     EXCEPTION_MARK;
     ResourceMark rm;
@@ -63,29 +63,11 @@ void GenerationCounters::initialize(const char* name, int ordinal, int spaces,
   }
 }
 
-GenerationCounters::GenerationCounters(const char* name,
-                                       int ordinal, int spaces,
-                                       size_t min_capacity, size_t max_capacity,
-                                       VirtualSpace* v)
-  : _virtual_space(v) {
-  assert(v != nullptr, "don't call this constructor if v == nullptr");
-  initialize(name, ordinal, spaces,
-             min_capacity, max_capacity, v->committed_size());
-}
-
-GenerationCounters::GenerationCounters(const char* name,
-                                       int ordinal, int spaces,
-                                       size_t min_capacity, size_t max_capacity,
-                                       size_t curr_capacity)
-  : _virtual_space(nullptr) {
-  initialize(name, ordinal, spaces, min_capacity, max_capacity, curr_capacity);
-}
-
 GenerationCounters::~GenerationCounters() {
   FREE_C_HEAP_ARRAY(char, _name_space);
 }
 
-void GenerationCounters::update_all() {
-  assert(_virtual_space != nullptr, "otherwise, override this method");
-  _current_size->set_value(_virtual_space->committed_size());
+void GenerationCounters::update_all(size_t curr_capacity) {
+  _current_size->set_value(curr_capacity);
 }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,21 +26,19 @@
 
 #define STACK_SIZE 0x100000
 
+static JavaVM *vm;
+
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void* reserved) {
+    vm = jvm;
+    return JNI_VERSION_1_8;
+}
+
 /**
  * Attach the current thread with JNI AttachCurrentThread, call a method, and detach.
  */
 void* thread_main(void* arg) {
-    JavaVM *vm;
     JNIEnv *env;
-    JavaVMInitArgs vm_args;
-    jsize count;
     jint res;
-
-    res = JNI_GetCreatedJavaVMs(&vm, 1, &count);
-    if (res != JNI_OK) {
-        fprintf(stderr, "JNI_GetCreatedJavaVMs failed: %d\n", res);
-        return NULL;
-    }
 
     res = (*vm)->AttachCurrentThread(vm, (void **) &env, NULL);
     if (res != JNI_OK) {

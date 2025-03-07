@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,9 @@
 # questions.
 #
 
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
 
 # When FIXPATH is set, let it process the file to make sure all paths are usable
 # by system native tools. The FIXPATH tool assumes arguments preceded by an @
@@ -50,6 +49,6 @@ $(OUTPUTDIR)/compile_commands.json: $(wildcard $(MAKESUPPORT_OUTPUTDIR)/compile-
 
 TARGETS += $(OUTPUTDIR)/compile_commands.json
 
-all: $(TARGETS)
+################################################################################
 
-.PHONY: all
+include MakeFileEnd.gmk

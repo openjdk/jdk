@@ -266,6 +266,7 @@ private:
 
   ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
 
+  bool _needs_bitmap_reset;
   bool _has_evacuation_failures;
 
 public:
@@ -487,6 +488,17 @@ public:
     return _has_evacuation_failures;
   }
 
+  inline bool need_bitmap_reset() const {
+    return _needs_bitmap_reset;
+  }
+
+  inline void set_needs_bitmap_reset() {
+    _needs_bitmap_reset = true;
+  }
+
+  inline void unset_needs_bitmap_reset() {
+    _needs_bitmap_reset = false;
+  }
 private:
   void decrement_humongous_waste() const;
   void do_commit();

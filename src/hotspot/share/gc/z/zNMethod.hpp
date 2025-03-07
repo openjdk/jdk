@@ -42,6 +42,8 @@ private:
   static void log_unregister(const nmethod* nm);
   static void log_purge(const nmethod* nm);
 
+  static oop oop_load(const nmethod* nm, int index, bool keep_alive);
+
 public:
   static void register_nmethod(nmethod* nm);
   static void unregister_nmethod(nmethod* nm);
@@ -69,7 +71,9 @@ public:
   static void purge();
 
   static uintptr_t color(nmethod* nm);
-  static oop load_oop(oop* p, DecoratorSet decorators);
+
+  static oop oop_load_no_keepalive(const nmethod* nm, int index);
+  static oop oop_load_phantom(const nmethod* nm, int index);
 };
 
 #endif // SHARE_GC_Z_ZNMETHOD_HPP

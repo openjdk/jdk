@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,8 +87,13 @@ public class AdditionalLauncher {
     }
 
     public final AdditionalLauncher addRawProperties(
-            Map.Entry<String, String>... v) {
+            Map.Entry<String, String> v) {
         return addRawProperties(List.of(v));
+    }
+
+    public final AdditionalLauncher addRawProperties(
+            Map.Entry<String, String> v, Map.Entry<String, String> v2) {
+        return addRawProperties(List.of(v, v2));
     }
 
     public final AdditionalLauncher addRawProperties(
@@ -181,21 +186,10 @@ public class AdditionalLauncher {
         return Optional.of(shell[0]).get();
     }
 
-    private void initialize(JPackageCommand cmd) {
-        Path propsFile = TKit.workDir().resolve(name + ".properties");
-        if (Files.exists(propsFile)) {
-            // File with the given name exists, pick another name that
-            // will not reference existing file.
-            try {
-                propsFile = TKit.createTempFile(propsFile);
-                TKit.deleteIfExists(propsFile);
-            } catch (IOException ex) {
-                rethrowUnchecked(ex);
-            }
-        }
+    private void initialize(JPackageCommand cmd) throws IOException {
+        final Path propsFile = TKit.createTempFile(name + ".properties");
 
-        cmd.addArguments("--add-launcher", String.format("%s=%s", name,
-                    propsFile));
+        cmd.addArguments("--add-launcher", String.format("%s=%s", name, propsFile));
 
         List<Map.Entry<String, String>> properties = new ArrayList<>();
         if (defaultArguments != null) {

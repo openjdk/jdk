@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/memoryReserver.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"

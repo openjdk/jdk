@@ -31,7 +31,7 @@ import jdk.test.lib.jfr.EventNames;
 * @test
 * @bug 8257424
 * @summary Tests recording name for RecordingStrream
-* @key jfr
+* @requires vm.flagless
 * @requires vm.hasJFR
 * @library /test/lib
 * @run main/othervm jdk.jfr.api.consumer.recordingstream.TestRecordingName

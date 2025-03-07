@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549 8072461 8154261 8162363 8160196 8151743 8177417
  *           8175218 8176452 8181215 8182263 8183511 8169819 8183037 8185369 8182765 8196201 8184205 8223378 8241544
- *           8253117 8263528 8289334 8292594
+ *           8253117 8263528 8289334 8292594 8347058
  * @summary  Run tests on doclet stylesheet.
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -186,7 +186,7 @@ public class TestStylesheet extends JavadocTester {
                 // Test whether a link to the stylesheet file is inserted properly
                 // in the class documentation.
                 """
-                    <link rel="stylesheet" type="text/css" href="../resource-files/stylesheet.css" title="Style">""",
+                    <link rel="stylesheet" type="text/css" href="../resource-files/stylesheet.css">""",
                 """
                     <div class="block">Test comment for a class which has an <a name="named_anchor">anchor_with_name</a> and
                      an <a id="named_anchor1">anchor_with_id</a>.</div>""");
@@ -200,7 +200,7 @@ public class TestStylesheet extends JavadocTester {
 
         checkOutput("index.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="resource-files/stylesheet.css" title="Style">""");
+                    <link rel="stylesheet" type="text/css" href="resource-files/stylesheet.css">""");
 
         checkOutput("resource-files/stylesheet.css", false,
                 """

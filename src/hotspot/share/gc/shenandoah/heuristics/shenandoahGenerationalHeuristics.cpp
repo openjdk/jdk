@@ -23,8 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -239,7 +237,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
     evacInfo.set_regular_promoted_free(regular_regions_promoted_free);
     evacInfo.set_regions_immediate(immediate_regions);
     evacInfo.set_immediate_size(immediate_garbage);
-    evacInfo.set_regions_freed(free_regions);
+    evacInfo.set_free_regions(free_regions);
 
     ShenandoahTracer().report_evacuation_info(&evacInfo);
   }

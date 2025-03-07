@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classPrinter.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/bytecodeHistogram.hpp"

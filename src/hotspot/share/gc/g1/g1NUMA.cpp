@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "logging/logStream.hpp"

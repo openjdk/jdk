@@ -157,7 +157,7 @@ public class SystemMapTestBase {
 
         static final String macow = "cow";
         static final String macprivate = "pvt";
-        static final String macprivate_or_shared = "(pvt|tsh)";
+        static final String macprivate_or_shared = "(pvt|tsh|cow|p/a)";
         static final String macprivatealiased = "p/a";
 
         static final String macOSbase = range + space + someSize + space + macprot + space;

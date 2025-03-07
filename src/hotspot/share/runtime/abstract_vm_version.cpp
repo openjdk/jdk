@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "jvm_io.h"
@@ -80,6 +79,10 @@ VirtualizationType Abstract_VM_Version::_detected_virtualization = NoDetectedVir
 
 #ifndef HOTSPOT_BUILD_TIME
   #error HOTSPOT_BUILD_TIME must be defined
+#endif
+
+#ifndef JVM_VARIANT
+  #error JVM_VARIANT must be defined
 #endif
 
 #define VM_RELEASE HOTSPOT_VERSION_STRING
@@ -194,6 +197,10 @@ const char* Abstract_VM_Version::vm_release() {
 
 const char *Abstract_VM_Version::vm_platform_string() {
   return OS "-" CPU;
+}
+
+const char* Abstract_VM_Version::vm_variant() {
+  return JVM_VARIANT;
 }
 
 const char* Abstract_VM_Version::internal_vm_info_string() {

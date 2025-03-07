@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_CodeStubs.hpp"
@@ -426,6 +425,8 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
   assert(dest->is_register(), "should not call otherwise");
   LIR_Const* c = src->as_constant_ptr();
   address const_addr = nullptr;
+  jfloat fconst;
+  jdouble dconst;
 
   switch (c->type()) {
     case T_INT:
@@ -461,15 +462,25 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
       break;
 
     case T_FLOAT:
-      const_addr = float_constant(c->as_jfloat());
-      assert(const_addr != nullptr, "must create float constant in the constant table");
-      __ flw(dest->as_float_reg(), InternalAddress(const_addr));
+      fconst = c->as_jfloat();
+      if (MacroAssembler::can_fp_imm_load(fconst)) {
+        __ fli_s(dest->as_float_reg(), fconst);
+      } else {
+        const_addr = float_constant(fconst);
+        assert(const_addr != nullptr, "must create float constant in the constant table");
+        __ flw(dest->as_float_reg(), InternalAddress(const_addr));
+      }
       break;
 
     case T_DOUBLE:
-      const_addr = double_constant(c->as_jdouble());
-      assert(const_addr != nullptr, "must create double constant in the constant table");
-      __ fld(dest->as_double_reg(), InternalAddress(const_addr));
+      dconst = c->as_jdouble();
+      if (MacroAssembler::can_dp_imm_load(dconst)) {
+        __ fli_d(dest->as_double_reg(), dconst);
+      } else {
+        const_addr = double_constant(c->as_jdouble());
+        assert(const_addr != nullptr, "must create double constant in the constant table");
+        __ fld(dest->as_double_reg(), InternalAddress(const_addr));
+      }
       break;
 
     default:

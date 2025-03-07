@@ -22,6 +22,7 @@
  */
 
 /*
+   @test
    @bug 6346419
    @summary Check correctness of the UTF-32 and its variant charsets
  */

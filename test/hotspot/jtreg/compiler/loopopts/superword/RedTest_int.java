@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,6 +135,10 @@ public class RedTest_int {
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.ADD_REDUCTION_VI, ">= 1", IRNode.ADD_REDUCTION_VI, "<= 2"}) // one for main-loop, one for vector-post-loop
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.ADD_REDUCTION_VI, ">= 1", IRNode.ADD_REDUCTION_VI, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static int sumReductionImplement(
             int[] a,
             int[] b,
@@ -150,6 +154,10 @@ public class RedTest_int {
     @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.OR_REDUCTION_V})
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.OR_REDUCTION_V, ">= 1", IRNode.OR_REDUCTION_V, "<= 2"}) // one for main-loop, one for vector-post-loop
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.OR_REDUCTION_V, ">= 1", IRNode.OR_REDUCTION_V, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static int orReductionImplement(
@@ -169,6 +177,10 @@ public class RedTest_int {
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.AND_REDUCTION_V, ">= 1", IRNode.AND_REDUCTION_V, "<= 2"}) // one for main-loop, one for vector-post-loop
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.AND_REDUCTION_V, ">= 1", IRNode.AND_REDUCTION_V, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static int andReductionImplement(
             int[] a,
             int[] b,
@@ -186,6 +198,10 @@ public class RedTest_int {
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.XOR_REDUCTION_V, ">= 1", IRNode.XOR_REDUCTION_V, "<= 2"}) // one for main-loop, one for vector-post-loop
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.XOR_REDUCTION_V, ">= 1", IRNode.XOR_REDUCTION_V, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static int xorReductionImplement(
             int[] a,
             int[] b,
@@ -201,6 +217,10 @@ public class RedTest_int {
     @IR(applyIf = {"SuperWordReductions", "false"},
         failOn = {IRNode.MUL_REDUCTION_VI})
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.MUL_REDUCTION_VI, ">= 1", IRNode.MUL_REDUCTION_VI, "<= 2"}) // one for main-loop, one for vector-post-loop
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.MUL_REDUCTION_VI, ">= 1", IRNode.MUL_REDUCTION_VI, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static int mulReductionImplement(

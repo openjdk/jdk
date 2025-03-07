@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/workerDataArray.inline.hpp"
 #include "utilities/ostream.hpp"
 

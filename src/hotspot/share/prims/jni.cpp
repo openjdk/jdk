@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciReplay.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
@@ -41,7 +40,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jni.h"
@@ -3790,8 +3788,8 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   // be set in order for the Safepoint code to deal with it correctly.
   thread->set_thread_state(_thread_in_vm);
   thread->record_stack_base_and_size();
-  thread->register_thread_stack_with_NMT();
   thread->initialize_thread_current();
+  thread->register_thread_stack_with_NMT();
   MACOS_AARCH64_ONLY(thread->init_wx());
 
   if (!os::create_attached_thread(thread)) {

@@ -38,10 +38,15 @@ import static jdk.jpackage.test.TestBuilder.CMDLINE_ARG_PREFIX;
 
 
 public final class Main {
+
     public static void main(String args[]) throws Throwable {
+        main(TestBuilder.build(), args);
+    }
+
+    public static void main(TestBuilder.Builder builder, String args[]) throws Throwable {
         boolean listTests = false;
         List<TestInstance> tests = new ArrayList<>();
-        try (TestBuilder testBuilder = new TestBuilder(tests::add)) {
+        try (TestBuilder testBuilder = builder.testConsumer(tests::add).create()) {
             Deque<String> argsAsList = new ArrayDeque<>(List.of(args));
             while (!argsAsList.isEmpty()) {
                 var arg = argsAsList.pop();

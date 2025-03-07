@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
@@ -114,8 +113,10 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
   assert(queue.buffer() == nullptr, "SATB queue should not have a buffer");
   assert(queue.index() == 0, "SATB queue index should be zero");
   queue.set_active(_satb_mark_queue_set.is_active());
+
+  ShenandoahThreadLocalData::set_gc_state(thread, _heap->gc_state());
+
   if (thread->is_Java_thread()) {
-    ShenandoahThreadLocalData::set_gc_state(thread, _heap->gc_state());
     ShenandoahThreadLocalData::initialize_gclab(thread);
 
     BarrierSetNMethod* bs_nm = barrier_set_nmethod();

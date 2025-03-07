@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,17 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/serializeClosure.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/modules.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "logging/log.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/safepoint.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
 
@@ -142,6 +143,21 @@ static ClassLoaderData* java_platform_loader_data_or_null() {
 
 static ClassLoaderData* java_system_loader_data_or_null() {
   return ClassLoaderData::class_loader_data_or_null(SystemDictionary::java_system_loader());
+}
+
+// ModuleEntryTables (even if empty) are required for iterate_symbols() to scan the
+// platform/system loaders inside the CDS safepoint, but the tables can be created only
+// when outside of safepoints. Let's do that now.
+void ClassLoaderDataShared::ensure_module_entry_tables_exist() {
+  assert(!SafepointSynchronize::is_at_safepoint(), "sanity");
+  ensure_module_entry_table_exists(SystemDictionary::java_platform_loader());
+  ensure_module_entry_table_exists(SystemDictionary::java_system_loader());
+}
+
+void ClassLoaderDataShared::ensure_module_entry_table_exists(oop class_loader) {
+  Handle h_loader(JavaThread::current(), class_loader);
+  ModuleEntryTable* met = Modules::get_module_entry_table(h_loader);
+  assert(met != nullptr, "sanity");
 }
 
 void ClassLoaderDataShared::iterate_symbols(MetaspaceClosure* closure) {

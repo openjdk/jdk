@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,30 @@
 #ifndef SHARE_CDS_UNREGISTEREDCLASSES_HPP
 #define SHARE_CDS_UNREGISTEREDCLASSES_HPP
 
+#include "memory/allStatic.hpp"
 #include "runtime/handles.hpp"
+
+class InstanceKlass;
+class Symbol;
 
 class UnregisteredClasses: AllStatic {
 public:
-  static InstanceKlass* load_class(Symbol* h_name, const char* path, TRAPS);
+  static InstanceKlass* load_class(Symbol* h_name, const char* path,
+                                   Handle super_class, objArrayHandle interfaces,
+                                   TRAPS);
+  static void initialize(TRAPS);
+  static InstanceKlass* UnregisteredClassLoader_klass() {
+    return _UnregisteredClassLoader_klass;
+  }
+
+  class ClassLoaderTable;
 
 private:
-  static Handle create_url_classloader(Symbol* path, TRAPS);
-  static Handle get_url_classloader(Symbol* path, TRAPS);
+  // Don't put this in vmClasses as it's used only with CDS dumping.
+  static InstanceKlass* _UnregisteredClassLoader_klass;
+
+  static Handle create_classloader(Symbol* path, TRAPS);
+  static Handle get_classloader(Symbol* path, TRAPS);
 };
 
 #endif // SHARE_CDS_UNREGISTEREDCLASSES_HPP

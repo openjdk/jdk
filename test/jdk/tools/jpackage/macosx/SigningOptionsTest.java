@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public final class SigningOptionsTest {
             "apps/dukeplug.png").toString();
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         return List.of(new Object[][]{
             // --mac-signing-key-user-name and --mac-app-image-sign-identity
             {"Hello",

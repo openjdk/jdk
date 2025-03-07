@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class WinInstallerIconTest {
         // Create another installer with custom icon.
         var size3 = createInstaller(customIcon, null);
 
-        if (Stream.of(size1, size2, size3).allMatch(Optional::<Long>isEmpty)) {
+        if (Stream.of(size1, size2, size3).allMatch(Optional::isEmpty)) {
             TKit.trace(
                     "Not verifying sizes of installers because they were not created");
             return;

@@ -23,8 +23,6 @@
 *
 */
 
-#include "precompiled.hpp"
-#include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "macroAssembler_x86.hpp"
@@ -84,7 +82,8 @@ void StubGenerator::generate_ghash_stubs() {
 address StubGenerator::generate_ghash_processBlocks() {
   __ align(CodeEntryAlignment);
   Label L_ghash_loop, L_exit;
-  StubCodeMark mark(this, "StubRoutines", "ghash_processBlocks");
+  StubGenStubId stub_id = StubGenStubId::ghash_processBlocks_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   const Register state        = c_rarg0;
@@ -220,7 +219,8 @@ address StubGenerator::generate_ghash_processBlocks() {
 address StubGenerator::generate_avx_ghash_processBlocks() {
   __ align(CodeEntryAlignment);
 
-  StubCodeMark mark(this, "StubRoutines", "ghash_processBlocks");
+  StubGenStubId stub_id = StubGenStubId::ghash_processBlocks_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   // arguments

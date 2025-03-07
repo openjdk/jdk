@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcUtil.hpp"

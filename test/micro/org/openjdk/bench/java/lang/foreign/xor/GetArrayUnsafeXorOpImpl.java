@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import static org.openjdk.bench.java.lang.foreign.CLayouts.*;
 public class GetArrayUnsafeXorOpImpl implements XorOp {
 
     static final Unsafe UNSAFE = Utils.unsafe;
-    static final int BYTE_ARR_OFFSET = Utils.unsafe.arrayBaseOffset(byte[].class);
+    static final long BYTE_ARR_OFFSET = Utils.unsafe.arrayBaseOffset(byte[].class);
 
     static {
         System.loadLibrary("jnitest");

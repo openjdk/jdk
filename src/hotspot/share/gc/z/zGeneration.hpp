@@ -99,8 +99,6 @@ protected:
   void log_phase_switch(Phase from, Phase to);
 
 public:
-  bool is_initialized() const;
-
   // GC phases
   void set_phase(Phase new_phase);
   bool is_phase_relocate() const;
@@ -161,7 +159,7 @@ public:
   void mark_object(zaddress addr);
   template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
   void mark_object_if_active(zaddress addr);
-  void mark_flush_and_free(Thread* thread);
+  void mark_flush(Thread* thread);
 
   // Relocation
   void synchronize_relocation();

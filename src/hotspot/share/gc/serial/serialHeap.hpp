@@ -95,21 +95,28 @@ private:
   GCMemoryManager* _young_manager;
   GCMemoryManager* _old_manager;
 
+  // Indicate whether heap is almost or approaching full.
+  // Usually, there is some memory headroom for application/gc to run properly.
+  // However, in extreme cases, e.g. young-gen is non-empty after a full gc, we
+  // will attempt some uncommon measures, e.g. alllocating small objs in
+  // old-gen.
+  bool _is_heap_almost_full;
+
   // Helper functions for allocation
   HeapWord* attempt_allocation(size_t size,
                                bool   is_tlab,
                                bool   first_only);
 
   void do_full_collection(bool clear_all_soft_refs) override;
-  void do_full_collection_no_gc_locker(bool clear_all_soft_refs);
-
-  void collect_at_safepoint(bool full);
 
   // Does the "cause" of GC indicate that
   // we absolutely __must__ clear soft refs?
   bool must_clear_all_soft_refs();
 
   bool is_young_gc_safe() const;
+
+  void gc_prologue();
+  void gc_epilogue(bool full);
 
 public:
   // Returns JNI_OK on success
@@ -137,7 +144,7 @@ public:
   HeapWord* satisfy_failed_allocation(size_t size, bool is_tlab);
 
   // Callback from VM_SerialGCCollect.
-  void try_collect_at_safepoint(bool full);
+  void collect_at_safepoint(bool full);
 
   // Perform a full collection of the heap; intended for use in implementing
   // "System.gc". This implies as full a collection as the CollectedHeap
@@ -226,10 +233,6 @@ public:
     SO_ScavengeCodeCache   = 0x10
   };
 
- protected:
-  virtual void gc_prologue(bool full);
-  virtual void gc_epilogue(bool full);
-
  public:
   // Apply closures on various roots in Young GC or marking/adjust phases of Full GC.
   void process_roots(ScanningOption so,
@@ -251,8 +254,7 @@ private:
   // Try to allocate space by expanding the heap.
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
-  HeapWord* mem_allocate_work(size_t size,
-                              bool is_tlab);
+  HeapWord* mem_allocate_work(size_t size, bool is_tlab);
 
   MemoryPool* _eden_pool;
   MemoryPool* _survivor_pool;

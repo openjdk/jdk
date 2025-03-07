@@ -28,8 +28,7 @@
  * @test
  * @bug 8145854 8153829
  * @summary SSLContextImpl.statusResponseManager should be generated if required
- * @library ../../../../java/security/testlibrary
- * @build CertificateBuilder SimpleOCSPServer
+ * @library /test/lib
  * @run main/othervm StapleEnableProps
  */
 
@@ -49,8 +48,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import sun.security.testlibrary.SimpleOCSPServer;
-import sun.security.testlibrary.CertificateBuilder;
+import jdk.test.lib.security.SimpleOCSPServer;
+import jdk.test.lib.security.CertificateBuilder;
 
 public class StapleEnableProps {
 

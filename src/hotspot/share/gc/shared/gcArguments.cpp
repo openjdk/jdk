@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "logging/log.hpp"

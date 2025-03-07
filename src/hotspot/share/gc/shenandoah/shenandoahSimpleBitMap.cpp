@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.inline.hpp"
 
 ShenandoahSimpleBitMap::ShenandoahSimpleBitMap(size_t num_bits) :

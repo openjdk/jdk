@@ -1135,6 +1135,7 @@ public:
   void fmul_s(AddressLiteral src) { Assembler::fmul_s(as_Address(src)); }
 #endif // !_LP64
 
+  void cmp32_mxcsr_std(Address mxcsr_save, Register tmp, Register rscratch = noreg);
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }
   void ldmxcsr(AddressLiteral src, Register rscratch = noreg);
 

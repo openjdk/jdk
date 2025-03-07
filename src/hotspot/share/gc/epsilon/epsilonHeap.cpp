@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/epsilon/epsilonHeap.hpp"
 #include "gc/epsilon/epsilonInitLogger.hpp"
 #include "gc/epsilon/epsilonMemoryPool.hpp"

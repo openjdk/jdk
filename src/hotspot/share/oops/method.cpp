@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -1435,7 +1434,7 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   cp->set_is_for_method_handle_intrinsic();
 
   // decide on access bits:  public or not?
-  int flags_bits = (JVM_ACC_NATIVE | JVM_ACC_SYNTHETIC | JVM_ACC_FINAL);
+  u2 flags_bits = (JVM_ACC_NATIVE | JVM_ACC_SYNTHETIC | JVM_ACC_FINAL);
   bool must_be_static = MethodHandles::is_signature_polymorphic_static(iid);
   if (must_be_static)  flags_bits |= JVM_ACC_STATIC;
   assert((flags_bits & JVM_ACC_PUBLIC) == 0, "do not expose these methods");
@@ -1919,39 +1918,6 @@ void Method::clear_all_breakpoints() {
 }
 
 #endif // INCLUDE_JVMTI
-
-int Method::invocation_count() const {
-  MethodCounters* mcs = method_counters();
-  MethodData* mdo = method_data();
-  if (((mcs != nullptr) ? mcs->invocation_counter()->carry() : false) ||
-      ((mdo != nullptr) ? mdo->invocation_counter()->carry() : false)) {
-    return InvocationCounter::count_limit;
-  } else {
-    return ((mcs != nullptr) ? mcs->invocation_counter()->count() : 0) +
-           ((mdo != nullptr) ? mdo->invocation_counter()->count() : 0);
-  }
-}
-
-int Method::backedge_count() const {
-  MethodCounters* mcs = method_counters();
-  MethodData* mdo = method_data();
-  if (((mcs != nullptr) ? mcs->backedge_counter()->carry() : false) ||
-      ((mdo != nullptr) ? mdo->backedge_counter()->carry() : false)) {
-    return InvocationCounter::count_limit;
-  } else {
-    return ((mcs != nullptr) ? mcs->backedge_counter()->count() : 0) +
-           ((mdo != nullptr) ? mdo->backedge_counter()->count() : 0);
-  }
-}
-
-int Method::highest_comp_level() const {
-  const MethodCounters* mcs = method_counters();
-  if (mcs != nullptr) {
-    return mcs->highest_comp_level();
-  } else {
-    return CompLevel_none;
-  }
-}
 
 int Method::highest_osr_comp_level() const {
   const MethodCounters* mcs = method_counters();

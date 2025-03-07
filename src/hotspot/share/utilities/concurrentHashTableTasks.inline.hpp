@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,6 +226,50 @@ class ConcurrentHashTable<CONFIG, MT>::GrowTask :
     this->thread_owns_resize_lock(thread);
     BucketsOperation::_cht->internal_grow_epilog(thread);
     this->thread_do_not_own_resize_lock(thread);
+  }
+};
+
+template <typename CONFIG, MemTag MT>
+class ConcurrentHashTable<CONFIG, MT>::StatisticsTask :
+  public BucketsOperation
+{
+  NumberSeq _summary;
+  size_t    _literal_bytes;
+ public:
+  StatisticsTask(ConcurrentHashTable<CONFIG, MT>* cht) : BucketsOperation(cht), _literal_bytes(0) { }
+
+  // Before start prepare must be called.
+  bool prepare(Thread* thread) {
+    bool lock = BucketsOperation::_cht->try_resize_lock(thread);
+    if (!lock) {
+      return false;
+    }
+
+    this->setup(thread);
+    return true;
+  }
+
+  // Scans part of the table adding to statistics.
+  template <typename VALUE_SIZE_FUNC>
+  bool do_task(Thread* thread, VALUE_SIZE_FUNC& sz) {
+    size_t start, stop;
+    assert(BucketsOperation::_cht->_resize_lock_owner != nullptr,
+           "Should be locked");
+    if (!this->claim(&start, &stop)) {
+      return false;
+    }
+    BucketsOperation::_cht->internal_statistics_range(thread, start, stop, sz, _summary, _literal_bytes);
+    assert(BucketsOperation::_cht->_resize_lock_owner != nullptr,
+           "Should be locked");
+    return true;
+  }
+
+  // Must be called after do_task returns false.
+  TableStatistics done(Thread* thread) {
+    this->thread_owns_resize_lock(thread);
+    TableStatistics ts = BucketsOperation::_cht->internal_statistics_epilog(thread, _summary, _literal_bytes);
+    this->thread_do_not_own_resize_lock(thread);
+    return ts;
   }
 };
 

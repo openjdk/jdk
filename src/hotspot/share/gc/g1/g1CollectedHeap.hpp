@@ -781,15 +781,15 @@ private:
   G1MonotonicArenaFreePool _card_set_freelist_pool;
 
   // Group cardsets
-  G1CardSetMemoryManager _young_regions_cardset_mm;
-  G1CardSet _young_regions_cardset;
+  G1CSetCandidateGroup _young_regions_cset_group;
 
 public:
   G1CardSetConfiguration* card_set_config() { return &_card_set_config; }
 
-  G1CardSet* young_regions_cardset() { return &_young_regions_cardset; };
+  G1CSetCandidateGroup* young_regions_cset_group() { return &_young_regions_cset_group; }
+  G1CardSet* young_regions_cardset() { return _young_regions_cset_group.card_set(); };
 
-  G1CardSetMemoryManager* young_regions_card_set_mm() { return &_young_regions_cardset_mm; }
+  G1MonotonicArenaMemoryStats young_regions_card_set_memory_stats() { return _young_regions_cset_group.card_set_memory_stats(); }
 
   void prepare_group_cardsets_for_scan();
 

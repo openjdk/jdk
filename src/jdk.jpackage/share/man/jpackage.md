@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -661,6 +661,12 @@ jpackage will lookup files by specific names in the resource directory.
 
 :   WiX project file for installer UI
 
+`os-condition.wxf`
+
+:   WiX project file with the condition to block installation on older versions of Windows
+
+    Default resource is *os-condition.wxf*
+
 `wix-conv.xsl`
 
 :   WiX source code converter. Used for converting WiX sources from WiX v3 to v4 schema when WiX v4 or newer is used
@@ -679,6 +685,12 @@ jpackage will lookup files by specific names in the resource directory.
 `<package-name>-post-msi.wsf`
 
 :   A Windows Script File (WSF) to run after building embedded MSI installer for EXE installer
+
+`installer.exe`
+
+:   Executable wrapper for MSI installer
+
+    Default resource is *msiwrapper.exe*
 
 
 ### Resource directory files considered only when running on macOS:

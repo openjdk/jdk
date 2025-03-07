@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 public final class LinuxHelper {
     private static String getReleaseSuffix(JPackageCommand cmd) {
-        String value = null;
+        final String value;
         final PackageType packageType = cmd.packageType();
         switch (packageType) {
             case LINUX_DEB:
@@ -60,6 +60,9 @@ public final class LinuxHelper {
                 value = "-" + cmd.getArgumentValue("--linux-app-release",
                         () -> "1");
                 break;
+
+            default:
+                value = null;
         }
         return value;
     }
@@ -95,7 +98,7 @@ public final class LinuxHelper {
         cmd.verifyIsOfType(PackageType.LINUX);
 
         final PackageType packageType = cmd.packageType();
-        String format = null;
+        final String format;
         switch (packageType) {
             case LINUX_DEB:
                 format = "%s_%s%s_%s";
@@ -104,6 +107,9 @@ public final class LinuxHelper {
             case LINUX_RPM:
                 format = "%s-%s%s.%s";
                 break;
+
+            default:
+                throw new UnsupportedOperationException();
         }
 
         final String releaseSuffix = getReleaseSuffix(cmd);
@@ -119,7 +125,7 @@ public final class LinuxHelper {
         final PackageType packageType = cmd.packageType();
         final Path packageFile = cmd.outputBundle();
 
-        Executor exec = null;
+        final Executor exec;
         switch (packageType) {
             case LINUX_DEB:
                 exec = Executor.of("dpkg", "--contents").addArgument(packageFile);
@@ -128,6 +134,9 @@ public final class LinuxHelper {
             case LINUX_RPM:
                 exec = Executor.of("rpm", "-qpl").addArgument(packageFile);
                 break;
+
+            default:
+                throw new UnsupportedOperationException();
         }
 
         Stream<String> lines = exec.executeAndGetOutput().stream();
@@ -154,9 +163,10 @@ public final class LinuxHelper {
                 return Executor.of("rpm", "-qp", "-R")
                 .addArgument(cmd.outputBundle())
                 .executeAndGetOutput();
+
+            default:
+                throw new UnsupportedOperationException();
         }
-        // Unreachable
-        return null;
     }
 
     public static String getBundleProperty(JPackageCommand cmd,
@@ -178,9 +188,10 @@ public final class LinuxHelper {
             case LINUX_RPM:
                 return getRpmBundleProperty(cmd.outputBundle(), propertyName.get(
                         packageType));
+
+            default:
+                throw new UnsupportedOperationException();
         }
-        // Unrechable
-        return null;
     }
 
     static PackageHandlers createDebPackageHandlers() {
@@ -275,9 +286,9 @@ public final class LinuxHelper {
                 String size = getRpmBundleProperty(packageFile, "Size");
                 return (Long.parseLong(size) + 1023L) >> 10; // in KB rounded up
 
+            default:
+                throw new UnsupportedOperationException();
         }
-
-        return 0;
     }
 
     static String getDebBundleProperty(Path bundle, String fieldName) {
@@ -425,7 +436,7 @@ public final class LinuxHelper {
             return null;
         }));
 
-        final Set<String> mandatoryKeys = new HashSet(Set.of("Name", "Comment",
+        final Set<String> mandatoryKeys = new HashSet<>(Set.of("Name", "Comment",
                 "Exec", "Icon", "Terminal", "Type", "Categories"));
         mandatoryKeys.removeAll(data.keySet());
         TKit.assertTrue(mandatoryKeys.isEmpty(), String.format(
@@ -626,10 +637,10 @@ public final class LinuxHelper {
 
             case LINUX_RPM:
                 return getRpmScriptlets(cmd, scriptletSet);
-        }
 
-        // Unreachable
-        return null;
+            default:
+                throw new UnsupportedOperationException();
+        }
     }
 
     private static Map<Scriptlet, List<String>> getDebScriptlets(
@@ -703,7 +714,7 @@ public final class LinuxHelper {
 
         String arch = archs.get(type);
         if (arch == null) {
-            Executor exec = null;
+            final Executor exec;
             switch (type) {
                 case LINUX_DEB:
                     exec = Executor.of("dpkg", "--print-architecture");
@@ -712,6 +723,9 @@ public final class LinuxHelper {
                 case LINUX_RPM:
                     exec = Executor.of("rpmbuild", "--eval=%{_target_cpu}");
                     break;
+
+                default:
+                    throw new UnsupportedOperationException();
             }
             arch = exec.executeAndGetFirstLineOfOutput();
             archs.put(type, arch);

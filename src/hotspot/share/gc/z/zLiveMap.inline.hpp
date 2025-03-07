@@ -222,7 +222,7 @@ inline BitMap::idx_t ZLiveMap::find_base_bit_in_segment(BitMap::idx_t start, Bit
   }
 
   // The bitmaps contain pairs of bits to deal with strongly marked vs only
-  // finalizable marked. Align down to get the the first bit position.
+  // finalizable marked. Align down to get the first bit position.
   return bit & ~BitMap::idx_t(1);
 }
 

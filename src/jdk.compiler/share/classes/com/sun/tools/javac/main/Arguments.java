@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,6 +166,11 @@ public class Arguments {
         }
 
         @Override
+        public void initialize() {
+            options.initialize();
+        }
+
+        @Override
         public void addFile(Path p) {
             files.add(p);
         }
@@ -219,6 +224,11 @@ public class Arguments {
         @Override
         public Log getLog() {
             return Arguments.this.log;
+        }
+
+        @Override
+        public void initialize() {
+            options.initialize();
         }
     };
 

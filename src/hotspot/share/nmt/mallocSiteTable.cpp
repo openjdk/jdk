@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 
 #include "memory/allocation.inline.hpp"
 #include "nmt/mallocSiteTable.hpp"
@@ -180,7 +179,11 @@ MallocSite* MallocSiteTable::malloc_site(uint32_t marker) {
 MallocSiteHashtableEntry* MallocSiteTable::new_entry(const NativeCallStack& key, MemTag mem_tag) {
   void* p = AllocateHeap(sizeof(MallocSiteHashtableEntry), mtNMT,
     *hash_entry_allocation_stack(), AllocFailStrategy::RETURN_NULL);
-  return ::new (p) MallocSiteHashtableEntry(key, mem_tag);
+  if (p == nullptr) {
+    return nullptr;
+  } else {
+    return ::new (p) MallocSiteHashtableEntry(key, mem_tag);
+  }
 }
 
 bool MallocSiteTable::walk_malloc_site(MallocSiteWalker* walker) {

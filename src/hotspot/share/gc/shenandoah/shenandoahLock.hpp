@@ -42,6 +42,8 @@ private:
 
   template<bool ALLOW_BLOCK>
   void contended_lock_internal(JavaThread* java_thread);
+  static void yield_or_sleep(int &yields);
+
 public:
   ShenandoahLock() : _state(unlocked), _owner(nullptr) {};
 

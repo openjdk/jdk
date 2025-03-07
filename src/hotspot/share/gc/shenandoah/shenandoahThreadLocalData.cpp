@@ -23,8 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"

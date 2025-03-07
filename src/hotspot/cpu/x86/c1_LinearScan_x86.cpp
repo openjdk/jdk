@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_Instruction.hpp"
 #include "c1/c1_LinearScan.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -649,7 +648,6 @@ void FpuStackAllocator::handle_op1(LIR_Op1* op1) {
       new_in = to_fpu_stack_top(res);
       new_res = new_in;
 
-      op1->set_fpu_stack_size(sim()->stack_size());
       break;
     }
 

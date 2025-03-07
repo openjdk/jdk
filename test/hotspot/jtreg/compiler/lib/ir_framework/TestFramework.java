@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,6 +148,7 @@ public class TestFramework {
     );
 
     public static final boolean VERBOSE = Boolean.getBoolean("Verbose");
+    public static final boolean PRINT_RULE_MATCHING_TIME = Boolean.getBoolean("PrintRuleMatchingTime");
     public static final boolean TESTLIST = !System.getProperty("Test", "").isEmpty();
     public static final boolean EXCLUDELIST = !System.getProperty("Exclude", "").isEmpty();
     private static final boolean REPORT_STDOUT = Boolean.getBoolean("ReportStdout");

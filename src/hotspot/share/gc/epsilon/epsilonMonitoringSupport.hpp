@@ -27,13 +27,13 @@
 
 #include "memory/allocation.hpp"
 
-class GenerationCounters;
+class EpsilonGenerationCounters;
 class EpsilonSpaceCounters;
 class EpsilonHeap;
 
 class EpsilonMonitoringSupport : public CHeapObj<mtGC> {
 private:
-  GenerationCounters*   _heap_counters;
+  EpsilonGenerationCounters* _heap_counters;
   EpsilonSpaceCounters* _space_counters;
 
 public:

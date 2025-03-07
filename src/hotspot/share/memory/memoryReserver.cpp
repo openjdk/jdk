@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/memoryReserver.hpp"
@@ -425,19 +424,17 @@ ReservedSpace HeapReserver::Instance::try_reserve_range(char *highest_start,
                                                         size_t size,
                                                         size_t alignment,
                                                         size_t page_size) {
-  const size_t attach_range = highest_start - lowest_start;
-  // Cap num_attempts at possible number.
-  // At least one is possible even for 0 sized attach range.
-  const uint64_t num_attempts_possible = (attach_range / attach_point_alignment) + 1;
-  const uint64_t num_attempts_to_try   = MIN2((uint64_t)HeapSearchSteps, num_attempts_possible);
+  assert(is_aligned(highest_start, attach_point_alignment), "precondition");
+  assert(is_aligned(lowest_start, attach_point_alignment), "precondition");
 
-  const size_t stepsize = (attach_range == 0) ? // Only one try.
-    (size_t) highest_start : align_up(attach_range / num_attempts_to_try, attach_point_alignment);
+  const size_t attach_range = pointer_delta(highest_start, lowest_start, sizeof(char));
+  const size_t num_attempts_possible = (attach_range / attach_point_alignment) + 1;
+  const size_t num_attempts_to_try   = MIN2((size_t)HeapSearchSteps, num_attempts_possible);
+  const size_t num_intervals = num_attempts_to_try - 1;
+  const size_t stepsize = num_intervals == 0 ? 0 : align_down(attach_range / num_intervals, attach_point_alignment);
 
-  // Try attach points from top to bottom.
-  for (char* attach_point = highest_start;
-       attach_point >= lowest_start && attach_point <= highest_start;  // Avoid wrap around.
-       attach_point -= stepsize) {
+  for (size_t i = 0; i < num_attempts_to_try; ++i) {
+    char* const attach_point = highest_start - stepsize * i;
     ReservedSpace reserved = try_reserve_memory(size, alignment, page_size, attach_point);
 
     if (reserved.is_reserved()) {

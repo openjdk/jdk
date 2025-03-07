@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "compiler/oopMap.hpp"
@@ -718,7 +717,9 @@ void CallNode::dump_spec(outputStream *st) const {
 
 const Type *CallNode::bottom_type() const { return tf()->range(); }
 const Type* CallNode::Value(PhaseGVN* phase) const {
-  if (phase->type(in(0)) == Type::TOP)  return Type::TOP;
+  if (in(0) == nullptr || phase->type(in(0)) == Type::TOP) {
+    return Type::TOP;
+  }
   return tf()->range();
 }
 

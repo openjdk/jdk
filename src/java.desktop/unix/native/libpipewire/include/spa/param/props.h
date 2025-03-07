@@ -59,24 +59,31 @@ enum spa_prop {
     SPA_PROP_START_Audio    = 0x10000,    /**< audio related properties */
     SPA_PROP_waveType,
     SPA_PROP_frequency,
-    SPA_PROP_volume,                /**< a volume (Float), 0.0 silence, 1.0 normal */
+    SPA_PROP_volume,            /**< a volume (Float), 0.0 silence, 1.0 no attenutation */
     SPA_PROP_mute,                /**< mute (Bool) */
     SPA_PROP_patternType,
     SPA_PROP_ditherType,
     SPA_PROP_truncate,
-    SPA_PROP_channelVolumes,        /**< a volume array, one volume per
-                          *  channel (Array of Float) */
+    SPA_PROP_channelVolumes,        /**< a volume array, one (linear) volume per channel
+                          * (Array of Float). 0.0 is silence, 1.0 is
+                          *  without attenuation. This is the effective
+                          *  volume that is applied. It can result
+                          *  in a hardware volume and software volume
+                          *  (see softVolumes) */
     SPA_PROP_volumeBase,            /**< a volume base (Float) */
     SPA_PROP_volumeStep,            /**< a volume step (Float) */
     SPA_PROP_channelMap,            /**< a channelmap array
                           * (Array (Id enum spa_audio_channel)) */
     SPA_PROP_monitorMute,            /**< mute (Bool) */
-    SPA_PROP_monitorVolumes,        /**< a volume array, one volume per
+    SPA_PROP_monitorVolumes,        /**< a volume array, one (linear) volume per
                           *  channel (Array of Float) */
     SPA_PROP_latencyOffsetNsec,        /**< delay adjustment */
-    SPA_PROP_softMute,            /**< mute (Bool) */
-    SPA_PROP_softVolumes,            /**< a volume array, one volume per
-                          *  channel (Array of Float) */
+    SPA_PROP_softMute,            /**< mute (Bool) applied in software */
+    SPA_PROP_softVolumes,            /**< a volume array, one (linear) volume per channel
+                          * (Array of Float). 0.0 is silence, 1.0 is without
+                          * attenuation. This is the volume applied in
+                          * software, there might be a part applied in
+                          * hardware. */
 
     SPA_PROP_iec958Codecs,            /**< enabled IEC958 (S/PDIF) codecs,
                           *  (Array (Id enum spa_audio_iec958_codec) */

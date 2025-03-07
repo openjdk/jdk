@@ -43,6 +43,12 @@
 #define VERBOSE_AWT_DEBUG
 #endif
 
+#define CHECK_EXCEPTION_FATAL(env, message) \
+    if ((*env)->ExceptionCheck(env)) { \
+        (*env)->ExceptionDescribe(env); \
+        (*env)->FatalError(env, message); \
+    }
+
 static void *awtHandle = NULL;
 
 typedef jint JNICALL JNI_OnLoad_type(JavaVM *vm, void *reserved);
@@ -61,16 +67,13 @@ JNIEXPORT jboolean JNICALL AWTIsHeadless() {
         env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
         graphicsEnvClass = (*env)->FindClass(env,
                                              "java/awt/GraphicsEnvironment");
-        if (graphicsEnvClass == NULL) {
-            return JNI_TRUE;
-        }
+        CHECK_EXCEPTION_FATAL(env, "FindClass java/awt/GraphicsEnvironment failed");
         headlessFn = (*env)->GetStaticMethodID(env,
                                                graphicsEnvClass, "isHeadless", "()Z");
-        if (headlessFn == NULL) {
-            return JNI_TRUE;
-        }
+        CHECK_EXCEPTION_FATAL(env, "GetStaticMethodID isHeadless failed");
         isHeadless = (*env)->CallStaticBooleanMethod(env, graphicsEnvClass,
                                                      headlessFn);
+        // If an exception occurred, we assume headless mode and carry on.
         if ((*env)->ExceptionCheck(env)) {
             (*env)->ExceptionClear(env);
             return JNI_TRUE;
@@ -78,12 +81,6 @@ JNIEXPORT jboolean JNICALL AWTIsHeadless() {
     }
     return isHeadless;
 }
-
-#define CHECK_EXCEPTION_FATAL(env, message) \
-    if ((*env)->ExceptionCheck(env)) { \
-        (*env)->ExceptionClear(env); \
-        (*env)->FatalError(env, message); \
-    }
 
 /*
  * Pathnames to the various awt toolkits

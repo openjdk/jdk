@@ -44,7 +44,7 @@ import jdk.jfr.consumer.RecordingFile;
 /**
  * @test
  * @summary Tests that methods on all SettingControls have expected behavior.
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.api.settings.TestSettingControl

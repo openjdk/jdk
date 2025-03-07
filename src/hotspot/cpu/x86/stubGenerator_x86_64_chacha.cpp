@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "macroAssembler_x86.hpp"
@@ -114,7 +112,8 @@ void StubGenerator::generate_chacha_stubs() {
 /* The 2-block AVX/AVX2-enabled ChaCha20 block function implementation */
 address StubGenerator::generate_chacha20Block_avx() {
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "chacha20Block");
+  StubGenStubId stub_id = StubGenStubId::chacha20Block_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   Label L_twoRounds;
@@ -302,7 +301,8 @@ address StubGenerator::generate_chacha20Block_avx() {
 /* The 4-block AVX512-enabled ChaCha20 block function implementation */
 address StubGenerator::generate_chacha20Block_avx512() {
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "chacha20Block");
+  StubGenStubId stub_id = StubGenStubId::chacha20Block_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   Label L_twoRounds;

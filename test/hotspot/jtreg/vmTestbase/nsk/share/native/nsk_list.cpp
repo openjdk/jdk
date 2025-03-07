@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,7 @@ int nsk_list_remove(const void *plist, int ind) {
             list_info->arr[i - 1] = list_info->arr[i];
         }
     }
-    list_info->arr[--list_info->elements_count] = 0;
+    list_info->arr[--list_info->elements_count] = nullptr;
 
     return NSK_TRUE;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_Defs.hpp"
@@ -247,6 +246,7 @@ void Runtime1::generate_blob_for(BufferBlob* buffer_blob, C1StubId id) {
   case C1StubId::fpu2long_stub_id:
   case C1StubId::unwind_exception_id:
   case C1StubId::counter_overflow_id:
+  case C1StubId::is_instance_of_id:
     expect_oop_map = false;
     break;
   default:

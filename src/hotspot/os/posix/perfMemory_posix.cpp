@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
@@ -1086,10 +1085,10 @@ static char* mmap_create_shared(size_t size) {
 static void unmap_shared(char* addr, size_t bytes) {
   int res;
   if (MemTracker::enabled()) {
-    ThreadCritical tc;
+    MemTracker::NmtVirtualMemoryLocker nvml;
     res = ::munmap(addr, bytes);
     if (res == 0) {
-      MemTracker::record_virtual_memory_release((address)addr, bytes);
+      MemTracker::record_virtual_memory_release(addr, bytes);
     }
   } else {
     res = ::munmap(addr, bytes);

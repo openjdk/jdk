@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciMetadata.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciReplay.hpp"

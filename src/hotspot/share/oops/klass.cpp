@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
@@ -327,6 +326,12 @@ jint Klass::array_layout_helper(BasicType etype) {
   assert(1 << layout_helper_log2_element_size(lh) == esize, "correct decode");
 
   return lh;
+}
+
+int Klass::modifier_flags() const {
+  int mods = java_lang_Class::modifiers(java_mirror());
+  assert(mods == compute_modifier_flags(), "should be same");
+  return mods;
 }
 
 bool Klass::can_be_primary_super_slow() const {

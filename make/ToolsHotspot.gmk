@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
 # questions.
 #
 
-ifndef _TOOLS_HOTSPOT_GMK
-_TOOLS_HOTSPOT_GMK := 1
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
 
 include JavaCompilation.gmk
 
@@ -44,4 +46,5 @@ TOOL_JFR_GEN := $(JAVA_SMALL) -cp $(HOTSPOT_TOOLS_OUTPUTDIR) \
 
 ################################################################################
 
-endif # _TOOLS_HOTSPOT_GMK
+endif # include guard
+include MakeIncludeEnd.gmk

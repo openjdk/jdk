@@ -150,10 +150,10 @@ the first include line. Declarations needed by other files should be put
 in the .hpp file, and not in the .inline.hpp file. This rule exists to
 resolve problems with circular dependencies between .inline.hpp files.
 
-* All .cpp files include precompiled.hpp as the first include line.
-
-* precompiled.hpp is just a build time optimization, so don't rely on
-it to resolve include problems.
+* Some build configurations use precompiled headers to speed up the
+build times. The precompiled headers are included in the precompiled.hpp
+file. Note that precompiled.hpp is just a build time optimization, so
+don't rely on it to resolve include problems.
 
 * Keep the include lines alphabetically sorted.
 

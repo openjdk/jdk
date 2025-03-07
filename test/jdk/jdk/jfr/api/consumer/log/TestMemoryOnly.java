@@ -27,7 +27,7 @@ import jdk.jfr.Recording;
 /**
  * @test
  * @summary Tests that a stream is not started if disk=false
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @build jdk.jfr.api.consumer.log.LogAnalyzer

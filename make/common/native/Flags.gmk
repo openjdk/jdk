@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,14 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
 ################################################################################
 # This file contains functionality related to setting up compiler and linker
 # flags, based on various more abstract sources of compilation description,
 # like optimization level.
+################################################################################
 
 ################################################################################
 # $1 is the prefix of the file to be compiled
@@ -223,3 +227,8 @@ define SetupLinkerFlags
   $1_EXTRA_LIBS += $$($1_LIBS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LIBS_$(OPENJDK_TARGET_OS)) \
       $$($1_LIBS_$(TOOLCHAIN_TYPE)) $$($1_LIBS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS))
 endef
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

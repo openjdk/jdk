@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
@@ -205,7 +204,7 @@ class ParallelScavengeRefProcProxyTask : public RefProcProxyTask {
 public:
   ParallelScavengeRefProcProxyTask(uint max_workers)
     : RefProcProxyTask("ParallelScavengeRefProcProxyTask", max_workers),
-      _terminator(max_workers, ParCompactionManager::oop_task_queues()) {}
+      _terminator(max_workers, ParCompactionManager::marking_stacks()) {}
 
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");

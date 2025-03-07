@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,11 +60,18 @@ final class WixToolset {
     }
 
     Path getToolPath(WixTool tool) {
-        return tools.get(tool).path;
+        return tools.get(tool).path();
     }
 
     DottedVersion getVersion() {
-        return tools.values().iterator().next().version;
+        return tools.values().iterator().next().version();
+    }
+
+    boolean needFipsParameter() {
+        return tools.values().stream()
+                .filter(WixTool.CandleInfo.class::isInstance)
+                .map(WixTool.CandleInfo.class::cast)
+                .anyMatch(WixTool.CandleInfo::fips);
     }
 
     static WixToolset create(Set<WixTool> requiredTools, Map<WixTool, WixTool.ToolInfo> allTools) {

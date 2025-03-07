@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace/internalStats.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"

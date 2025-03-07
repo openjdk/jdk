@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/reservedSpace.hpp"
 #include "memory/virtualspace.hpp"
@@ -58,7 +57,7 @@ bool VirtualSpace::initialize(ReservedSpace rs, size_t committed_size) {
 }
 
 bool VirtualSpace::initialize_with_granularity(ReservedSpace rs, size_t committed_size, size_t max_commit_granularity) {
-  if(!rs.is_reserved()) return false;  // allocation failed.
+  assert(rs.is_reserved(), "ReservedSpace should have been initialized");
   assert(_low_boundary == nullptr, "VirtualSpace already initialized");
   assert(max_commit_granularity > 0, "Granularity must be non-zero.");
 

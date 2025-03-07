@@ -1,4 +1,4 @@
-# Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,7 @@
 # questions.
 #
 
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
-
-include CopyFiles.gmk
-include Execute.gmk
-include Modules.gmk
-include ModuleTools.gmk
-include ProcessMarkdown.gmk
-include ToolsJdk.gmk
-include ZipArchive.gmk
-include TextFileProcessing.gmk
-
-# This is needed to properly setup DOCS_MODULES.
-$(eval $(call ReadImportMetaData))
-
-################################################################################
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, Docs.gmk))
+include MakeFileStart.gmk
 
 ################################################################################
 # This file generates all documentation for OpenJDK.
@@ -54,7 +35,19 @@ $(eval $(call IncludeCustomExtension, Docs.gmk))
 #
 # We will also generate separate, free-standing specifications from either
 # markdown or existing html files.
-#
+################################################################################
+
+include CopyFiles.gmk
+include Execute.gmk
+include Modules.gmk
+include ProcessMarkdown.gmk
+include TextFileProcessing.gmk
+include ZipArchive.gmk
+include $(TOPDIR)/make/ModuleTools.gmk
+include $(TOPDIR)/make/ToolsJdk.gmk
+
+# This is needed to properly setup DOCS_MODULES.
+$(eval $(call ReadImportMetaData))
 
 ################################################################################
 # Javadoc settings
@@ -105,14 +98,14 @@ JAVA_WARNINGS_ARE_ERRORS ?= -Werror
 
 # The initial set of options for javadoc
 JAVADOC_OPTIONS := -use -keywords -notimestamp \
-    -encoding ISO-8859-1 -docencoding UTF-8 -breakiterator \
+    -serialwarn -encoding ISO-8859-1 -docencoding UTF-8 -breakiterator \
     -splitIndex --system none -javafx --expand-requires transitive \
     --override-methods=summary
 
 # The reference options must stay stable to allow for comparisons across the
 # development cycle.
 REFERENCE_OPTIONS := -XDignore.symbol.file=true -use -keywords -notimestamp \
-    -encoding ISO-8859-1 -breakiterator -splitIndex --system none \
+    -serialwarn -encoding ISO-8859-1 -breakiterator -splitIndex --system none \
     -html5 -javafx --expand-requires transitive
 
 # Should we add DRAFT stamps to the generated javadoc?
@@ -680,7 +673,7 @@ ifeq ($(ENABLE_PANDOC), true)
 
   $(foreach m, $(ALL_MODULES), \
     $(eval MAN_$m := $(call ApplySpecFilter, $(filter %.md, $(call FindFiles, \
-          $(call FindModuleManDirs, $m))))) \
+          $(call FindModuleManDirsForDocs, $m))))) \
     $(if $(MAN_$m), \
       $(eval $(call SetupProcessMarkdown, MAN_TO_HTML_$m, \
         FILES := $(MAN_$m), \
@@ -762,10 +755,6 @@ $(eval $(call SetupZipArchive, BUILD_JAVADOC_ZIP, \
 ZIP_TARGETS += $(BUILD_JAVADOC_ZIP)
 
 ################################################################################
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, Docs-post.gmk))
-
-################################################################################
 # Bundles all generated specs into a zip archive, skipping javadocs.
 
 SPECS_ZIP_NAME := jdk-$(VERSION_STRING)-specs.zip
@@ -806,7 +795,11 @@ all: docs-jdk-api-javadoc docs-jdk-api-graphs docs-javase-api-javadoc \
     docs-reference-api-graphs docs-jdk-specs docs-jdk-index docs-zip \
     docs-specs-zip
 
-.PHONY: default all docs-jdk-api-javadoc docs-jdk-api-graphs \
+.PHONY: docs-jdk-api-javadoc docs-jdk-api-graphs \
     docs-javase-api-javadoc docs-javase-api-graphs \
     docs-reference-api-javadoc docs-reference-api-graphs docs-jdk-specs \
     docs-jdk-index docs-zip docs-specs-zip
+
+################################################################################
+
+include MakeFileEnd.gmk

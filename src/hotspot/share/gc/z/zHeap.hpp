@@ -99,7 +99,7 @@ public:
   bool is_object_live(zaddress addr) const;
   bool is_object_strongly_live(zaddress addr) const;
   void keep_alive(oop obj);
-  void mark_flush_and_free(Thread* thread);
+  void mark_flush(Thread* thread);
 
   // Page allocation
   ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age);

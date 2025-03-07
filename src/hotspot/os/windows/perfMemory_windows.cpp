@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -1803,9 +1802,9 @@ void PerfMemory::detach(char* addr, size_t bytes) {
 
   if (MemTracker::enabled()) {
     // it does not go through os api, the operation has to record from here
-    ThreadCritical tc;
+    MemTracker::NmtVirtualMemoryLocker nvml;
     remove_file_mapping(addr);
-    MemTracker::record_virtual_memory_release((address)addr, bytes);
+    MemTracker::record_virtual_memory_release(addr, bytes);
   } else {
     remove_file_mapping(addr);
   }

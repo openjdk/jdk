@@ -48,7 +48,7 @@ import jdk.test.lib.thread.XRun;
  * @test
  * @bug 8310978
  * @summary test socket read/write events on socket adaptors
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.event.io.TestSocketAdapterEvents

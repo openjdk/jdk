@@ -27,7 +27,6 @@
 
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/objectStartArray.hpp"
-#include "gc/parallel/psGenerationCounters.hpp"
 #include "gc/parallel/psVirtualspace.hpp"
 #include "gc/parallel/spaceCounters.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -43,7 +42,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   MutableSpace*            _object_space;      // Where all the objects live
 
   // Performance Counters
-  PSGenerationCounters*    _gen_counters;
+  GenerationCounters*      _gen_counters;
   SpaceCounters*           _space_counters;
 
   // Sizing information, in bytes, set in constructor

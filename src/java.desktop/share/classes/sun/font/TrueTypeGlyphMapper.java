@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,9 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
     }
 
     private char getGlyphFromCMAP(int charCode) {
+        if (FontUtilities.isDefaultIgnorable(charCode)) {
+            return INVISIBLE_GLYPH_ID;
+        }
         try {
             char glyphCode = cmap.getGlyph(charCode);
             if (glyphCode < numGlyphs ||
@@ -80,6 +83,9 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
     private char getGlyphFromCMAP(int charCode, int variationSelector) {
         if (variationSelector == 0) {
             return getGlyphFromCMAP(charCode);
+        }
+        if (FontUtilities.isDefaultIgnorable(charCode)) {
+            return INVISIBLE_GLYPH_ID;
         }
         try {
             char glyphCode = cmap.getVariationGlyph(charCode,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1043,8 +1043,11 @@ public final class Unsafe {
      * This constant differs from all results that will ever be returned from
      * {@link #staticFieldOffset}, {@link #objectFieldOffset},
      * or {@link #arrayBaseOffset}.
+     * <p>
+     * The static type is @code long} to emphasize that long arithmetic should
+     * always be used for offset calculations to avoid overflows.
      */
-    public static final int INVALID_FIELD_OFFSET = -1;
+    public static final long INVALID_FIELD_OFFSET = -1;
 
     /**
      * Reports the location of a given field in the storage allocation of its
@@ -1172,11 +1175,15 @@ public final class Unsafe {
      * for the same class, you may use that scale factor, together with this
      * base offset, to form new offsets to access elements of arrays of the
      * given class.
+     * <p>
+     * The return value is in the range of a {@code int}.  The return type is
+     * {@code long} to emphasize that long arithmetic should always be used
+     * for offset calculations to avoid overflows.
      *
      * @see #getInt(Object, long)
      * @see #putInt(Object, long, int)
      */
-    public int arrayBaseOffset(Class<?> arrayClass) {
+    public long arrayBaseOffset(Class<?> arrayClass) {
         if (arrayClass == null) {
             throw new NullPointerException();
         }
@@ -1186,39 +1193,39 @@ public final class Unsafe {
 
 
     /** The value of {@code arrayBaseOffset(boolean[].class)} */
-    public static final int ARRAY_BOOLEAN_BASE_OFFSET
+    public static final long ARRAY_BOOLEAN_BASE_OFFSET
             = theUnsafe.arrayBaseOffset(boolean[].class);
 
     /** The value of {@code arrayBaseOffset(byte[].class)} */
-    public static final int ARRAY_BYTE_BASE_OFFSET
+    public static final long ARRAY_BYTE_BASE_OFFSET
             = theUnsafe.arrayBaseOffset(byte[].class);
 
     /** The value of {@code arrayBaseOffset(short[].class)} */
-    public static final int ARRAY_SHORT_BASE_OFFSET
+    public static final long ARRAY_SHORT_BASE_OFFSET
             = theUnsafe.arrayBaseOffset(short[].class);
 
     /** The value of {@code arrayBaseOffset(char[].class)} */
-    public static final int ARRAY_CHAR_BASE_OFFSET
+    public static final long ARRAY_CHAR_BASE_OFFSET
             = theUnsafe.arrayBaseOffset(char[].class);
 
     /** The value of {@code arrayBaseOffset(int[].class)} */
-    public static final int ARRAY_INT_BASE_OFFSET
+    public static final long ARRAY_INT_BASE_OFFSET
             = theUnsafe.arrayBaseOffset(int[].class);
 
     /** The value of {@code arrayBaseOffset(long[].class)} */
-    public static final int ARRAY_LONG_BASE_OFFSET
+    public static final long ARRAY_LONG_BASE_OFFSET
             = theUnsafe.arrayBaseOffset(long[].class);
 
     /** The value of {@code arrayBaseOffset(float[].class)} */
-    public static final int ARRAY_FLOAT_BASE_OFFSET
+    public static final long ARRAY_FLOAT_BASE_OFFSET
             = theUnsafe.arrayBaseOffset(float[].class);
 
     /** The value of {@code arrayBaseOffset(double[].class)} */
-    public static final int ARRAY_DOUBLE_BASE_OFFSET
+    public static final long ARRAY_DOUBLE_BASE_OFFSET
             = theUnsafe.arrayBaseOffset(double[].class);
 
     /** The value of {@code arrayBaseOffset(Object[].class)} */
-    public static final int ARRAY_OBJECT_BASE_OFFSET
+    public static final long ARRAY_OBJECT_BASE_OFFSET
             = theUnsafe.arrayBaseOffset(Object[].class);
 
     /**
@@ -1227,6 +1234,9 @@ public final class Unsafe {
      * will generally not work properly with accessors like {@link
      * #getByte(Object, long)}, so the scale factor for such classes is reported
      * as zero.
+     * <p>
+     * The computation of the actual memory offset should always use {@code
+     * long} arithmetic to avoid overflows.
      *
      * @see #arrayBaseOffset
      * @see #getInt(Object, long)
@@ -3840,7 +3850,7 @@ public final class Unsafe {
     private native Object staticFieldBase0(Field f);
     private native boolean shouldBeInitialized0(Class<?> c);
     private native void ensureClassInitialized0(Class<?> c);
-    private native int arrayBaseOffset0(Class<?> arrayClass);
+    private native int arrayBaseOffset0(Class<?> arrayClass); // public version returns long to promote correct arithmetic
     private native int arrayIndexScale0(Class<?> arrayClass);
     private native int getLoadAverage0(double[] loadavg, int nelems);
 

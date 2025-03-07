@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,15 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "prims/jvmtiAgent.hpp"
-
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "jni.h"
 #include "jvm_io.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "prims/jvmtiAgent.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "prims/jvmtiAgentList.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

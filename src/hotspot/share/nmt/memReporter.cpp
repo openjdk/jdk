@@ -21,13 +21,13 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "cds/filemap.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/memReporter.hpp"
+#include "nmt/memTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
@@ -465,7 +465,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
 void MemDetailReporter::report_memory_file_allocations() {
   stringStream st;
   {
-    MemoryFileTracker::Instance::Locker lock;
+    MemTracker::NmtVirtualMemoryLocker nvml;
     MemoryFileTracker::Instance::print_all_reports_on(&st, scale());
   }
   output()->print_raw(st.freeze());

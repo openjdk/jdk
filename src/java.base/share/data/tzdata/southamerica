@@ -1710,7 +1710,7 @@ Rule	Para	2005	2009	-	Mar	Sun>=8	0:00	0	-
 # and that on the first Sunday of the month of October, it is to be set
 # forward 60 minutes, in all the territory of the Paraguayan Republic.
 # ...
-Rule	Para	2010	max	-	Oct	Sun>=1	0:00	1:00	-
+Rule	Para	2010	2024	-	Oct	Sun>=1	0:00	1:00	-
 Rule	Para	2010	2012	-	Apr	Sun>=8	0:00	0	-
 #
 # From Steffen Thorsen (2013-03-07):
@@ -1729,14 +1729,35 @@ Rule	Para	2010	2012	-	Apr	Sun>=8	0:00	0	-
 # https://www.abc.com.py/politica/2023/07/12/promulgacion-el-cambio-de-hora-sera-por-ley/
 # From Carlos Raúl Perasso (2023-07-27):
 # http://silpy.congreso.gov.py/descarga/ley-144138
-Rule	Para	2013	max	-	Mar	Sun>=22	0:00	0	-
+Rule	Para	2013	2024	-	Mar	Sun>=22	0:00	0	-
+#
+# From Heitor David Pinto (2024-09-24):
+# Today the Congress of Paraguay passed a bill to observe UTC-3 permanently....
+# The text of the bill says that it would enter into force on the first
+# Sunday in October 2024, the same date currently scheduled to start DST....
+# https://silpy.congreso.gov.py/web/expediente/132531
+# (2024-10-14):
+# The president approved the law on 11 October 2024,
+# and it was officially published on 14 October 2024.
+# https://www.gacetaoficial.gov.py/index/detalle_publicacion/89723
+# The text of the law says that it enters into force on the first
+# Sunday in October 2024 (6 October 2024).  But the constitution
+# prohibits retroactive effect, and the civil code says that laws
+# enter into force on the day after their publication or on the day
+# that they specify, and it also says that they don't have retroactive
+# effect.  So I think that the time change on 6 October 2024 should
+# still be considered as DST according to the previous law, and
+# permanently UTC-3 from 15 October 2024 according to the new law....
+# https://www.constituteproject.org/constitution/Paraguay_2011
+# https://www.oas.org/dil/esp/codigo_civil_paraguay.pdf
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Asuncion	-3:50:40 -	LMT	1890
 			-3:50:40 -	AMT	1931 Oct 10 # Asunción Mean Time
 			-4:00	-	%z	1972 Oct
 			-3:00	-	%z	1974 Apr
-			-4:00	Para	%z
+			-4:00	Para	%z	2024 Oct 15
+			-3:00	-	%z
 
 # Peru
 #

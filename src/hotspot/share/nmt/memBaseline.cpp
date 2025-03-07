@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "memory/allocation.hpp"
@@ -141,7 +140,7 @@ void MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
   VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
   {
-    MemoryFileTracker::Instance::Locker lock;
+    MemTracker::NmtVirtualMemoryLocker nvml;
     MemoryFileTracker::Instance::summary_snapshot(&_virtual_memory_snapshot);
   }
 

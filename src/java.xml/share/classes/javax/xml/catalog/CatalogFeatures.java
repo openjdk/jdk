@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,10 +137,9 @@ import jdk.xml.internal.SecuritySupport;
  * <b>[2]</b> The value shall be exactly as listed in this table, case-sensitive.
  * Any unspecified value will result in {@link IllegalArgumentException}.
  * <p>
- * <b>[3]</b> The Catalog specification defined complex rules on
- * <a href="https://www.oasis-open.org/committees/download.php/14809/xml-catalogs.html#attrib.prefer">
- * the prefer attribute</a>. Although the prefer can be public or system, the
- * specification actually made system the preferred option, that is, no matter
+ * <b>[3]</b> The <a href="https://groups.oasis-open.org/higherlogic/ws/public/download/14810/xml-catalogs.pdf">Catalog specification</a>
+ * defined complex rules on the prefer attribute. Although it can be public or system,
+ * the specification made {@code system} the preferred option, that is, no matter
  * the option, a system entry is always used if found. Public entries are only
  * considered if the prefer is public and system entries are not found. It is
  * therefore recommended that the prefer attribute be set as public

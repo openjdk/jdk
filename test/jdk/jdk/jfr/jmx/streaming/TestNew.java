@@ -38,7 +38,7 @@ import jdk.management.jfr.RemoteRecordingStream;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @summary Test constructors of RemoteRecordingStream
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk

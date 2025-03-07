@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import jdk.jpackage.test.TKit;
  * @summary jpackage application version testing
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile NonExistentTest.java
+ * @compile -Xlint:all -Werror NonExistentTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=NonExistentTest
  */
@@ -45,7 +45,7 @@ public final class NonExistentTest {
     private final JPackageCommand cmd;
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         return List.of(new Object[][]{
             // non-existent icon
             {"Hello",

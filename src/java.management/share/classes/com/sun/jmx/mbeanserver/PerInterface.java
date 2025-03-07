@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,8 +108,7 @@ final class PerInterface<M> {
         final List<MethodAndSig> list = ops.get(operation);
         if (list == null) {
             final String msg = "No such operation: " + operation;
-            return noSuchMethod(msg, resource, operation, params, signature,
-                                cookie);
+            throw new ReflectionException(new NoSuchMethodException(operation + sigString(signature)), msg);
         }
         if (signature == null)
             signature = new String[0];
@@ -131,81 +130,9 @@ final class PerInterface<M> {
                 msg = "Operation " + operation + " exists but not with " +
                         "this signature: " + badSig;
             }
-            return noSuchMethod(msg, resource, operation, params, signature,
-                                cookie);
+            throw new ReflectionException(new NoSuchMethodException(operation + badSig), msg);
         }
         return introspector.invokeM(found.method, resource, params, cookie);
-    }
-
-    /*
-     * This method is called when invoke doesn't find the named method.
-     * Before throwing an exception, we check to see whether the
-     * jmx.invoke.getters property is set, and if so whether the method
-     * being invoked might be a getter or a setter.  If so we invoke it
-     * and return the result.  This is for compatibility
-     * with code based on JMX RI 1.0 or 1.1 which allowed invoking getters
-     * and setters.  It is *not* recommended that new code use this feature.
-     *
-     * Since this method is either going to throw an exception or use
-     * functionality that is strongly discouraged, we consider that its
-     * performance is not very important.
-     *
-     * A simpler way to implement the functionality would be to add the getters
-     * and setters to the operations map when jmx.invoke.getters is set.
-     * However, that means that the property is consulted when an MBean
-     * interface is being introspected and not thereafter.  Previously,
-     * the property was consulted on every invocation.  So this simpler
-     * implementation could potentially break code that sets and unsets
-     * the property at different times.
-     */
-    @SuppressWarnings("removal")
-    private Object noSuchMethod(String msg, Object resource, String operation,
-                                Object[] params, String[] signature,
-                                Object cookie)
-            throws MBeanException, ReflectionException {
-
-        // Construct the exception that we will probably throw
-        final NoSuchMethodException nsme =
-            new NoSuchMethodException(operation + sigString(signature));
-        final ReflectionException exception =
-            new ReflectionException(nsme, msg);
-
-        if (introspector.isMXBean())
-            throw exception; // No compatibility requirement here
-
-        // Is the compatibility property set?
-        String invokeGettersS = System.getProperty("jmx.invoke.getters");
-        if (invokeGettersS == null)
-            throw exception;
-
-        int rest = 0;
-        Map<String, M> methods = null;
-        if (signature == null || signature.length == 0) {
-            if (operation.startsWith("get"))
-                rest = 3;
-            else if (operation.startsWith("is"))
-                rest = 2;
-            if (rest != 0)
-                methods = getters;
-        } else if (signature.length == 1 &&
-                   operation.startsWith("set")) {
-            rest = 3;
-            methods = setters;
-        }
-
-        if (rest != 0) {
-            String attrName = operation.substring(rest);
-            M method = methods.get(attrName);
-            if (method != null && introspector.getName(method).equals(operation)) {
-                String[] msig = introspector.getSignature(method);
-                if ((signature == null && msig.length == 0) ||
-                        Arrays.equals(signature, msig)) {
-                    return introspector.invokeM(method, resource, params, cookie);
-                }
-            }
-        }
-
-        throw exception;
     }
 
     private String sigString(String[] signature) {

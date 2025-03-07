@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciMethod.hpp"
 #include "classfile/vmSymbols.hpp"

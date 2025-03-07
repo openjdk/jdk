@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
@@ -79,7 +78,7 @@ static FillersTable* _fillers;
 static int _num_native_ptrs = 0;
 
 void ArchiveHeapWriter::init() {
-  if (HeapShared::can_write()) {
+  if (CDSConfig::is_dumping_heap()) {
     Universe::heap()->collect(GCCause::_java_lang_system_gc);
 
     _buffer_offset_to_source_obj_table = new BufferOffsetToSourceObjectTable(/*size (prime)*/36137, /*max size*/1 * M);
@@ -100,7 +99,7 @@ void ArchiveHeapWriter::add_source_obj(oop src_obj) {
 
 void ArchiveHeapWriter::write(GrowableArrayCHeap<oop, mtClassShared>* roots,
                               ArchiveHeapInfo* heap_info) {
-  assert(HeapShared::can_write(), "sanity");
+  assert(CDSConfig::is_dumping_heap(), "sanity");
   allocate_buffer();
   copy_source_objs_to_buffer(roots);
   set_requested_address(heap_info);

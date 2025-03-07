@@ -22,20 +22,17 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/vmatree.hpp"
-#include "runtime/mutex.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
 MemoryFileTracker* MemoryFileTracker::Instance::_tracker = nullptr;
-PlatformMutex* MemoryFileTracker::Instance::_mutex = nullptr;
 
 MemoryFileTracker::MemoryFileTracker(bool is_detailed_mode)
   : _stack_storage(is_detailed_mode), _files() {}
@@ -132,7 +129,6 @@ bool MemoryFileTracker::Instance::initialize(NMT_TrackingLevel tracking_level) {
   _tracker = static_cast<MemoryFileTracker*>(os::malloc(sizeof(MemoryFileTracker), mtNMT));
   if (_tracker == nullptr) return false;
   new (_tracker) MemoryFileTracker(tracking_level == NMT_TrackingLevel::NMT_detail);
-  _mutex = new PlatformMutex();
   return true;
 }
 
@@ -188,12 +184,4 @@ void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const 
 
 void MemoryFileTracker::Instance::summary_snapshot(VirtualMemorySnapshot* snapshot) {
   _tracker->summary_snapshot(snapshot);
-}
-
-MemoryFileTracker::Instance::Locker::Locker() {
-  MemoryFileTracker::Instance::_mutex->lock();
-}
-
-MemoryFileTracker::Instance::Locker::~Locker() {
-  MemoryFileTracker::Instance::_mutex->unlock();
 }

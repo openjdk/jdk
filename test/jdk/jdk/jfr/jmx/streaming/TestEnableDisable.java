@@ -35,7 +35,7 @@ import jdk.management.jfr.RemoteRecordingStream;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @summary Tests that event settings for a RemoteRecordingStream can be changed
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk

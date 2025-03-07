@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,11 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
+
 SCOPED_MEMORY_ACCESS_GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/misc
 SCOPED_MEMORY_ACCESS_SRC_DIR := $(MODULE_SRC)/share/classes/jdk/internal/misc
 SCOPED_MEMORY_ACCESS_TEMPLATE := $(SCOPED_MEMORY_ACCESS_SRC_DIR)/X-ScopedMemoryAccess.java.template
@@ -37,6 +42,17 @@ define GenerateScopedOp
 
   $1_Type := $2
 
+  ifeq ($$($1_Type), Boolean)
+    $1_type := boolean
+    $1_BoxType := $$($1_Type)
+
+    $1_rawType := $$($1_type)
+    $1_RawType := $$($1_Type)
+    $1_RawBoxType := $$($1_BoxType)
+
+    $1_ARGS += -KCAS
+  endif
+
   ifeq ($$($1_Type), Byte)
     $1_type := byte
     $1_BoxType := $$($1_Type)
@@ -45,6 +61,7 @@ define GenerateScopedOp
     $1_RawType := $$($1_Type)
     $1_RawBoxType := $$($1_BoxType)
 
+    $1_ARGS += -KCAS
     $1_ARGS += -Kbyte
   endif
 
@@ -55,6 +72,8 @@ define GenerateScopedOp
     $1_rawType := $$($1_type)
     $1_RawType := $$($1_Type)
     $1_RawBoxType := $$($1_BoxType)
+
+    $1_ARGS += -KCAS
     $1_ARGS += -KUnaligned
   endif
 
@@ -65,6 +84,8 @@ define GenerateScopedOp
     $1_rawType := $$($1_type)
     $1_RawType := $$($1_Type)
     $1_RawBoxType := $$($1_BoxType)
+
+    $1_ARGS += -KCAS
     $1_ARGS += -KUnaligned
   endif
 
@@ -77,8 +98,6 @@ define GenerateScopedOp
     $1_RawBoxType := $$($1_BoxType)
 
     $1_ARGS += -KCAS
-    $1_ARGS += -KAtomicAdd
-    $1_ARGS += -KBitwise
     $1_ARGS += -KUnaligned
   endif
 
@@ -91,8 +110,6 @@ define GenerateScopedOp
     $1_RawBoxType := $$($1_BoxType)
 
     $1_ARGS += -KCAS
-    $1_ARGS += -KAtomicAdd
-    $1_ARGS += -KBitwise
     $1_ARGS += -KUnaligned
   endif
 
@@ -128,7 +145,7 @@ define GenerateScopedOp
     $1_ARGS += -KBitwise
   endif
 
-  ifneq ($$(findstring $$($1_Type), Byte Short Char), )
+  ifneq ($$(findstring $$($1_Type), Boolean Byte Short Char), )
     $1_ARGS += -KShorterThanInt
   endif
 endef
@@ -136,7 +153,7 @@ endef
 ################################################################################
 # Setup a rule for generating the ScopedMemoryAccess java class
 
-SCOPE_MEMORY_ACCESS_TYPES := Byte Short Char Int Long Float Double
+SCOPE_MEMORY_ACCESS_TYPES := Boolean Byte Short Char Int Long Float Double
 $(foreach t, $(SCOPE_MEMORY_ACCESS_TYPES), \
   $(eval $(call GenerateScopedOp,BIN_$t,$t)))
 
@@ -149,3 +166,8 @@ $(SCOPED_MEMORY_ACCESS_DEST): $(BUILD_TOOLS_JDK) $(SCOPED_MEMORY_ACCESS_TEMPLATE
 	$(PRINTF) "}\n" >> $(SCOPED_MEMORY_ACCESS_DEST)
 
 TARGETS += $(SCOPED_MEMORY_ACCESS_DEST)
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

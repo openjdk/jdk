@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,99 +34,13 @@ class ClassListParser;
 class ClassLoaderExt: public ClassLoader { // AllStatic
 public:
 #if INCLUDE_CDS
-private:
-  enum SomeConstants {
-    max_classpath_index = 0x7fff
-  };
-
-  static char* get_class_path_attr(const char* jar_path, char* manifest, jint manifest_size);
-  static void setup_app_search_path(JavaThread* current); // Only when -Xshare:dump
-  static void process_module_table(JavaThread* current, ModuleEntryTable* met);
-  // index of first app JAR in shared classpath entry table
-  static jshort _app_class_paths_start_index;
-  // index of first modular JAR in shared modulepath entry table
-  static jshort _app_module_paths_start_index;
-  // the largest path index being used during CDS dump time
-  static jshort _max_used_path_index;
-  // number of module paths
-  static int _num_module_paths;
-
-  static bool _has_app_classes;
-  static bool _has_platform_classes;
-  static bool _has_non_jar_in_classpath;
-
-  static char* read_manifest(JavaThread* current, ClassPathEntry* entry, jint *manifest_size, bool clean_text);
-  static bool has_jar_suffix(const char* filename);
-
 public:
-  static void process_jar_manifest(JavaThread* current, ClassPathEntry* entry);
-
   // Called by JVMTI code to add boot classpath
+
   static void append_boot_classpath(ClassPathEntry* new_entry);
 
-  static void setup_search_paths(JavaThread* current);
-  static void setup_module_paths(JavaThread* current);
-  static void extract_jar_files_from_path(const char* path, GrowableArray<const char*>* module_paths);
   static int compare_module_names(const char** p1, const char** p2);
-
-  static char* read_manifest(JavaThread* current, ClassPathEntry* entry, jint *manifest_size) {
-    // Remove all the new-line continuations (which wrap long lines at 72 characters, see
-    // http://docs.oracle.com/javase/6/docs/technotes/guides/jar/jar.html#JAR%20Manifest), so
-    // that the manifest is easier to parse.
-    return read_manifest(current, entry, manifest_size, true);
-  }
-  static char* read_raw_manifest(JavaThread* current, ClassPathEntry* entry, jint *manifest_size) {
-    // Do not remove new-line continuations, so we can easily pass it as an argument to
-    // java.util.jar.Manifest.getManifest() at run-time.
-    return read_manifest(current, entry, manifest_size, false);
-  }
-
-  static jshort app_class_paths_start_index() { return _app_class_paths_start_index; }
-
-  static jshort app_module_paths_start_index() { return _app_module_paths_start_index; }
-
-  static jshort max_used_path_index() { return _max_used_path_index; }
-
-  static int num_module_paths() { return _num_module_paths; }
-
-  static void set_max_used_path_index(jshort used_index) {
-    _max_used_path_index = used_index;
-  }
-
-  static void init_paths_start_index(jshort app_start) {
-    _app_class_paths_start_index = app_start;
-  }
-
-  static void init_app_module_paths_start_index(jshort module_start) {
-    _app_module_paths_start_index = module_start;
-  }
-
-  static void init_num_module_paths(int num_module_paths) {
-    _num_module_paths = num_module_paths;
-  }
-
-  static bool is_boot_classpath(int classpath_index) {
-    return classpath_index < _app_class_paths_start_index;
-  }
-
-  static bool has_platform_or_app_classes() {
-    return _has_app_classes || _has_platform_classes;
-  }
-
-  static bool has_non_jar_in_classpath() {
-    return _has_non_jar_in_classpath;
-  }
-
   static void record_result(const s2 classpath_index, InstanceKlass* result, bool redefined);
-  static void set_has_app_classes() {
-    _has_app_classes = true;
-  }
-  static void set_has_platform_classes() {
-    _has_platform_classes = true;
-  }
-  static void set_has_non_jar_in_classpath() {
-    _has_non_jar_in_classpath = true;
-  }
 #endif // INCLUDE_CDS
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4057701 6286712 6364377 8181919
+ * @bug 4057701 6286712 6364377 8181919 8349092
  * @requires (os.family == "linux" | os.family == "mac" |
  *            os.family == "windows")
  * @summary Basic functionality of File.get-X-Space methods.
@@ -175,6 +175,12 @@ public class GetXSpace {
         long ts = f.getTotalSpace();
         long fs = f.getFreeSpace();
         long us = f.getUsableSpace();
+
+        // Verify inequalities us <= fs <= ts (JDK-8349092)
+        if (fs > ts)
+            throw new RuntimeException(f + " free space " + fs + " > total space " + ts);
+        if (us > fs)
+            throw new RuntimeException(f + " usable space " + fs + " > free space " + ts);
 
         out.format("%s (%d):%n", s.name(), s.size());
         String fmt = "  %-4s total = %12d free = %12d usable = %12d%n";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8202764
+ * @bug 8202764 8347841
  * @modules jdk.localedata
  * @summary Checks time zone names are consistent with aliased ids,
  *      between DateFormatSymbols.getZoneStrings() and getDisplayName()
@@ -49,6 +49,7 @@ public class Bug8202764 {
     public void testAliasedTZs() {
         Set<String> zoneIds = ZoneId.getAvailableZoneIds();
         Arrays.stream(DateFormatSymbols.getInstance(Locale.US).getZoneStrings())
+            .filter(zone -> !ZoneId.SHORT_IDS.containsKey(zone[0]))
             .forEach(zone -> {
                 System.out.println(zone[0]);
                 TimeZone tz = TimeZone.getTimeZone(zone[0]);

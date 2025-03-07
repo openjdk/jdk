@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import jdk.jpackage.test.TKit;
  * @summary test '--runtime-image' option of jpackage
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile CookedRuntimeTest.java
+ * @compile -Xlint:all -Werror CookedRuntimeTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=CookedRuntimeTest
  */
@@ -112,7 +112,7 @@ public final class CookedRuntimeTest {
     }
 
     @Parameters
-    public static Collection data() {
+    public static Collection<?> data() {
         final List<String> javaAppDescs = List.of("Hello",
                 "com.foo/com.foo.main.Aloha");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2110,20 +2110,49 @@ done:
 void AwtWindow::SetIconData(JNIEnv* env, jintArray iconRaster, jint w, jint h,
                              jintArray smallIconRaster, jint smw, jint smh)
 {
+    HICON hNewIcon = NULL;
+    HICON hNewIconSm = NULL;
+
+    try {
+        hNewIcon = CreateIconFromRaster(env, iconRaster, w, h);
+        if (env->ExceptionCheck()) {
+            if (hNewIcon != NULL) {
+                DestroyIcon(hNewIcon);
+            }
+            return;
+        }
+
+        hNewIconSm = CreateIconFromRaster(env, smallIconRaster, smw, smh);
+        if (env->ExceptionCheck()) {
+            if (hNewIcon != NULL) {
+                DestroyIcon(hNewIcon);
+            }
+            if (hNewIconSm != NULL) {
+                DestroyIcon(hNewIconSm);
+            }
+            return;
+        }
+    } catch (...) {
+        if (hNewIcon != NULL) {
+            DestroyIcon(hNewIcon);
+        }
+        if (hNewIconSm != NULL) {
+            DestroyIcon(hNewIconSm);
+        }
+        return;
+    }
+
     HICON hOldIcon = NULL;
     HICON hOldIconSm = NULL;
-    //Destroy previous icon if it isn't inherited
     if ((m_hIcon != NULL) && !m_iconInherited) {
         hOldIcon = m_hIcon;
     }
-    m_hIcon = NULL;
     if ((m_hIconSm != NULL) && !m_iconInherited) {
         hOldIconSm = m_hIconSm;
     }
-    m_hIconSm = NULL;
-    m_hIcon = CreateIconFromRaster(env, iconRaster, w, h);
-    JNU_CHECK_EXCEPTION(env);
-    m_hIconSm = CreateIconFromRaster(env, smallIconRaster, smw, smh);
+
+    m_hIcon = hNewIcon;
+    m_hIconSm = hNewIconSm;
 
     m_iconInherited = (m_hIcon == NULL);
     if (m_iconInherited) {
@@ -2136,8 +2165,11 @@ void AwtWindow::SetIconData(JNIEnv* env, jintArray iconRaster, jint w, jint h,
             m_iconInherited = FALSE;
         }
     }
+
     DoUpdateIcon();
     EnumThreadWindows(AwtToolkit::MainThread(), UpdateOwnedIconCallback, (LPARAM)this);
+
+    // Destroy previous icons if they were not inherited
     if (hOldIcon != NULL) {
         DestroyIcon(hOldIcon);
     }

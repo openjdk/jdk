@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -758,22 +758,22 @@ public class JMXServiceURL implements Serializable {
     }
 
     /**
-     * The value returned by {@link #getProtocol()}.
+     * @serial The value returned by {@link #getProtocol()}.
      */
     private String protocol;
 
     /**
-     * The value returned by {@link #getHost()}.
+     * @serial The value returned by {@link #getHost()}.
      */
     private String host;
 
     /**
-     * The value returned by {@link #getPort()}.
+     * @serial The value returned by {@link #getPort()}.
      */
     private int port;
 
     /**
-     * The value returned by {@link #getURLPath()}.
+     * @serial The value returned by {@link #getURLPath()}.
      */
     private String urlPath;
 

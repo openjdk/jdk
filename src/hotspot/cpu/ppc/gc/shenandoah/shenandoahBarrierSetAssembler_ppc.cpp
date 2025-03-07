@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2024, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2025, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -103,8 +102,8 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler *masm, Dec
   Label skip_prologue;
 
   // Fast path: Array is of length zero.
-  __ cmpdi(CCR0, count, 0);
-  __ beq(CCR0, skip_prologue);
+  __ cmpdi(CR0, count, 0);
+  __ beq(CR0, skip_prologue);
 
   /* ==== Check whether barrier is required (gc state) ==== */
   __ lbz(R11_tmp, in_bytes(ShenandoahThreadLocalData::gc_state_offset()),
@@ -119,7 +118,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler *masm, Dec
                               : ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::MARKING;
 
   __ andi_(R11_tmp, R11_tmp, required_states);
-  __ beq(CCR0, skip_prologue);
+  __ beq(CR0, skip_prologue);
 
   /* ==== Invoke runtime ==== */
   // Save to-be-preserved registers.
@@ -217,7 +216,7 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_impl(MacroAssembler *masm
   __ lbz(tmp1, in_bytes(ShenandoahThreadLocalData::gc_state_offset()), R16_thread);
 
   __ andi_(tmp1, tmp1, ShenandoahHeap::MARKING);
-  __ beq(CCR0, skip_barrier);
+  __ beq(CR0, skip_barrier);
 
   /* ==== Determine the reference's previous value ==== */
   bool preloaded_mode = base == noreg;
@@ -236,12 +235,12 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_impl(MacroAssembler *masm
 
     if ((decorators & IS_NOT_NULL) != 0) {
 #ifdef ASSERT
-      __ cmpdi(CCR0, pre_val, 0);
+      __ cmpdi(CR0, pre_val, 0);
       __ asm_assert_ne("null oop is not allowed");
 #endif // ASSERT
     } else {
-      __ cmpdi(CCR0, pre_val, 0);
-      __ beq(CCR0, skip_barrier);
+      __ cmpdi(CR0, pre_val, 0);
+      __ beq(CR0, skip_barrier);
     }
   } else {
     // Load from the reference address to determine the reference's current value (before the store is being performed).
@@ -255,8 +254,8 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_impl(MacroAssembler *masm
       __ ld(pre_val, ind_or_offs, base);
     }
 
-    __ cmpdi(CCR0, pre_val, 0);
-    __ beq(CCR0, skip_barrier);
+    __ cmpdi(CR0, pre_val, 0);
+    __ beq(CR0, skip_barrier);
 
     if (UseCompressedOops) {
       __ decode_heap_oop_not_null(pre_val);
@@ -272,8 +271,8 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_impl(MacroAssembler *masm
     // If not, jump to the runtime to commit the buffer and to allocate a new one.
     // (The buffer's index corresponds to the amount of remaining free space.)
     __ ld(Rindex, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset()), R16_thread);
-    __ cmpdi(CCR0, Rindex, 0);
-    __ beq(CCR0, runtime); // If index == 0 (buffer is full), goto runtime.
+    __ cmpdi(CR0, Rindex, 0);
+    __ beq(CR0, runtime); // If index == 0 (buffer is full), goto runtime.
 
     // Capacity suffices.  Decrement the queue's size by the size of one oop.
     // (The buffer is filled contrary to the heap's growing direction, i.e., it is filled downwards.)
@@ -363,9 +362,9 @@ void ShenandoahBarrierSetAssembler::resolve_forward_pointer_not_null(MacroAssemb
          "marked value must equal the value obtained when all lock bits are being set");
   if (VM_Version::has_isel()) {
     __ xori(tmp1, tmp1, markWord::lock_mask_in_place);
-    __ isel(dst, CCR0, Assembler::equal, false, tmp1);
+    __ isel(dst, CR0, Assembler::equal, false, tmp1);
   } else {
-    __ bne(CCR0, done);
+    __ bne(CR0, done);
     __ xori(dst, tmp1, markWord::lock_mask_in_place);
   }
 
@@ -403,7 +402,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_impl(
   if (is_strong) {
     // For strong references, the heap is considered stable if "has forwarded" is not active.
     __ andi_(tmp1, tmp2, ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::EVACUATION);
-    __ beq(CCR0, skip_barrier);
+    __ beq(CR0, skip_barrier);
 #ifdef ASSERT
     // "evacuation" -> (implies) "has forwarded".  If we reach this code, "has forwarded" must thus be set.
     __ andi_(tmp1, tmp1, ShenandoahHeap::HAS_FORWARDED);
@@ -415,10 +414,10 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_impl(
     // The additional phase conditions are in place to avoid the resurrection of weak references (see JDK-8266440).
     Label skip_fastpath;
     __ andi_(tmp1, tmp2, ShenandoahHeap::WEAK_ROOTS);
-    __ bne(CCR0, skip_fastpath);
+    __ bne(CR0, skip_fastpath);
 
     __ andi_(tmp1, tmp2, ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::EVACUATION);
-    __ beq(CCR0, skip_barrier);
+    __ beq(CR0, skip_barrier);
 #ifdef ASSERT
     // "evacuation" -> (implies) "has forwarded".  If we reach this code, "has forwarded" must thus be set.
     __ andi_(tmp1, tmp1, ShenandoahHeap::HAS_FORWARDED);
@@ -454,7 +453,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_impl(
     __ srdi(tmp1, dst, ShenandoahHeapRegion::region_size_bytes_shift_jint());
     __ lbzx(tmp2, tmp1, tmp2);
     __ andi_(tmp2, tmp2, 1);
-    __ beq(CCR0, skip_barrier);
+    __ beq(CR0, skip_barrier);
   }
 
   /* ==== Invoke runtime ==== */
@@ -640,8 +639,8 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
   Label done;
 
   // Fast path: Reference is null (JNI tags are zero for null pointers).
-  __ cmpdi(CCR0, obj, 0);
-  __ beq(CCR0, done);
+  __ cmpdi(CR0, obj, 0);
+  __ beq(CR0, done);
 
   // Resolve jobject using standard implementation.
   BarrierSetAssembler::try_resolve_jobject_in_native(masm, dst, jni_env, obj, tmp, slowpath);
@@ -652,7 +651,7 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
          jni_env);
 
   __ andi_(tmp, tmp, ShenandoahHeap::EVACUATION | ShenandoahHeap::HAS_FORWARDED);
-  __ bne(CCR0, slowpath);
+  __ bne(CR0, slowpath);
 
   __ bind(done);
   __ block_comment("} try_resolve_jobject_in_native (shenandoahgc)");
@@ -702,23 +701,23 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler *masm, Register b
   // Given that 'expected' must refer to the to-space object of an evacuated object (strong to-space invariant),
   // no special processing is required.
   if (UseCompressedOops) {
-    __ cmpxchgw(CCR0, current_value, expected, new_val, base_addr, MacroAssembler::MemBarNone,
+    __ cmpxchgw(CR0, current_value, expected, new_val, base_addr, MacroAssembler::MemBarNone,
                 false, success_flag, nullptr, true);
   } else {
-    __ cmpxchgd(CCR0, current_value, expected, new_val, base_addr, MacroAssembler::MemBarNone,
+    __ cmpxchgd(CR0, current_value, expected, new_val, base_addr, MacroAssembler::MemBarNone,
                 false, success_flag, nullptr, true);
   }
 
   // Skip the rest of the barrier if the CAS operation succeeds immediately.
   // If it does not, the value stored at the address is either the from-space pointer of the
   // referenced object (success criteria s2)) or simply another object.
-  __ beq(CCR0, done);
+  __ beq(CR0, done);
 
   /* ==== Step 2 (Null check) ==== */
   // The success criteria s2) cannot be matched with a null pointer
   // (null pointers cannot be subject to concurrent evacuation).  The failure of the CAS operation is thus legitimate.
-  __ cmpdi(CCR0, current_value, 0);
-  __ beq(CCR0, done);
+  __ cmpdi(CR0, current_value, 0);
+  __ beq(CR0, done);
 
   /* ==== Step 3 (reference pointer refers to from-space version; success criteria s2)) ==== */
   // To check whether the reference pointer refers to the from-space version, the forward
@@ -738,15 +737,15 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler *masm, Register b
     // Load zero into register for the potential failure case.
     __ li(success_flag, 0);
   }
-  __ cmpd(CCR0, current_value, expected);
-  __ bne(CCR0, done);
+  __ cmpd(CR0, current_value, expected);
+  __ bne(CR0, done);
 
   // Discard fetched value as it might be a reference to the from-space version of an object.
   if (UseCompressedOops) {
-    __ cmpxchgw(CCR0, R0, initial_value, new_val, base_addr, MacroAssembler::MemBarNone,
+    __ cmpxchgw(CR0, R0, initial_value, new_val, base_addr, MacroAssembler::MemBarNone,
                 false, success_flag);
   } else {
-    __ cmpxchgd(CCR0, R0, initial_value, new_val, base_addr, MacroAssembler::MemBarNone,
+    __ cmpxchgd(CR0, R0, initial_value, new_val, base_addr, MacroAssembler::MemBarNone,
                 false, success_flag);
   }
 
@@ -771,7 +770,7 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler *masm, Register b
   //           guaranteed to be the case.
   //           In case of a concurrent update, the CAS would be retried again. This is legitimate
   //           in terms of program correctness (even though it is not desired).
-  __ bne(CCR0, step_four);
+  __ bne(CR0, step_four);
 
   __ bind(done);
   __ block_comment("} cmpxchg_oop (shenandoahgc)");
@@ -790,7 +789,7 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
   __ sldi_(count, count, LogBytesPerHeapOop);
 
   // Zero length? Skip.
-  __ beq(CCR0, L_skip_loop);
+  __ beq(CR0, L_skip_loop);
 
   __ addi(count, count, -BytesPerHeapOop);
   __ add(count, addr, count);
@@ -836,8 +835,8 @@ void ShenandoahBarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler *ce, Shen
   }
 
   // Fast path: Reference is null.
-  __ cmpdi(CCR0, pre_val, 0);
-  __ bc_far_optimized(Assembler::bcondCRbiIs1_bhintNoHint, __ bi0(CCR0, Assembler::equal), *stub->continuation());
+  __ cmpdi(CR0, pre_val, 0);
+  __ bc_far_optimized(Assembler::bcondCRbiIs1_bhintNoHint, __ bi0(CR0, Assembler::equal), *stub->continuation());
 
   // Argument passing via the stack.
   __ std(pre_val, -8, R1_SP);
@@ -867,7 +866,7 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
   // Ensure that 'res' is 'R3_ARG1' and contains the same value as 'obj' to reduce the number of required
   // copy instructions.
   assert(R3_RET == res, "res must be r3");
-  __ cmpd(CCR0, res, obj);
+  __ cmpd(CR0, res, obj);
   __ asm_assert_eq("result register must contain the reference stored in obj");
 #endif
 
@@ -889,7 +888,7 @@ void ShenandoahBarrierSetAssembler::gen_load_reference_barrier_stub(LIR_Assemble
     __ lbzx(tmp2, tmp1, tmp2);
 
     __ andi_(tmp2, tmp2, 1);
-    __ bc_far_optimized(Assembler::bcondCRbiIs1_bhintNoHint, __ bi0(CCR0, Assembler::equal), *stub->continuation());
+    __ bc_far_optimized(Assembler::bcondCRbiIs1_bhintNoHint, __ bi0(CR0, Assembler::equal), *stub->continuation());
   }
 
   address blob_addr = nullptr;
@@ -947,13 +946,13 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
   __ lbz(R12_tmp2, in_bytes(ShenandoahThreadLocalData::gc_state_offset()), R16_thread);
 
   __ andi_(R12_tmp2, R12_tmp2, ShenandoahHeap::MARKING);
-  __ beq(CCR0, skip_barrier);
+  __ beq(CR0, skip_barrier);
 
   /* ==== Add previous value directly to thread-local SATB mark queue ==== */
   // Check queue's capacity.  Jump to runtime if no free slot is available.
   __ ld(R12_tmp2, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset()), R16_thread);
-  __ cmpdi(CCR0, R12_tmp2, 0);
-  __ beq(CCR0, runtime);
+  __ cmpdi(CR0, R12_tmp2, 0);
+  __ beq(CR0, runtime);
 
   // Capacity suffices.  Decrement the queue's size by one slot (size of one oop).
   __ addi(R12_tmp2, R12_tmp2, -wordSize);

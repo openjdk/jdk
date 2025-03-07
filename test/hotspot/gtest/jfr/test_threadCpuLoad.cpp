@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 // This test performs mocking of certain JVM functionality. This works by
 // including the source file under test inside an anonymous namespace (which
@@ -92,12 +91,6 @@ namespace {
     MockJavaThread* next() { return nullptr; }
     bool has_next() const { return false; }
   };
-
-// Reincluding source files in the anonymous namespace unfortunately seems to
-// behave strangely with precompiled headers (only when using gcc though)
-#ifndef DONT_USE_PRECOMPILED_HEADER
-#define DONT_USE_PRECOMPILED_HEADER
-#endif
 
 #define os MockOs
 #define EventThreadCPULoad MockEventThreadCPULoad

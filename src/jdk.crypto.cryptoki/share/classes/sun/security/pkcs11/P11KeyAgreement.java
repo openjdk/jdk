@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,20 +268,19 @@ final class P11KeyAgreement extends KeyAgreementSpi {
             throw new NoSuchAlgorithmException("Algorithm must not be null");
         }
 
-        if (algorithm.equals("TlsPremasterSecret")) {
+        if (KeyUtil.isSupportedKeyAgreementOutputAlgorithm(algorithm)) {
             // For now, only perform native derivation for TlsPremasterSecret
-            // as that is required for FIPS compliance.
+            // and Generic algorithms. TlsPremasterSecret is required for
+            // FIPS compliance and Generic is required for input to KDF.
             // For other algorithms, there are unresolved issues regarding
             // how this should work in JCE plus a Solaris truncation bug.
             // (bug not yet filed).
             return nativeGenerateSecret(algorithm);
         }
 
-        if (!algorithm.equalsIgnoreCase("TlsPremasterSecret") &&
-            !AllowKDF.VALUE) {
-
-            throw new NoSuchAlgorithmException("Unsupported secret key "
-                                               + "algorithm: " + algorithm);
+        if (!AllowKDF.VALUE) {
+            throw new NoSuchAlgorithmException(
+                    "Unsupported secret key algorithm: " + algorithm);
         }
 
         byte[] secret = engineGenerateSecret();
@@ -295,8 +294,6 @@ final class P11KeyAgreement extends KeyAgreementSpi {
             keyLen = 24;
         } else if (algorithm.equalsIgnoreCase("Blowfish")) {
             keyLen = Math.min(56, secret.length);
-        } else if (algorithm.equalsIgnoreCase("TlsPremasterSecret")) {
-            keyLen = secret.length;
         } else {
             throw new NoSuchAlgorithmException
                 ("Unknown algorithm " + algorithm);
@@ -340,7 +337,8 @@ final class P11KeyAgreement extends KeyAgreementSpi {
             int keyLen = (int)lenAttributes[0].getLong();
             SecretKey key = P11Key.secretKey
                         (session, keyID, algorithm, keyLen << 3, attributes);
-            if ("RAW".equals(key.getFormat())) {
+            if ("RAW".equals(key.getFormat())
+                    && algorithm.equalsIgnoreCase("TlsPremasterSecret")) {
                 // Workaround for Solaris bug 6318543.
                 // Strip leading zeroes ourselves if possible (key not sensitive).
                 // This should be removed once the Solaris fix is available

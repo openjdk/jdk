@@ -106,6 +106,10 @@ class LibraryCallKit : public GraphKit {
   void push_result() {
     // Push the result onto the stack.
     if (!stopped() && result() != nullptr) {
+      if (result()->is_top()) {
+        assert(false, "Can't determine return value.");
+        C->record_method_not_compilable("Can't determine return value.");
+      }
       BasicType bt = result()->bottom_type()->basic_type();
       push_node(bt, result());
     }
@@ -291,6 +295,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_onspinwait();
   bool inline_fp_conversions(vmIntrinsics::ID id);
   bool inline_fp_range_check(vmIntrinsics::ID id);
+  bool inline_fp16_operations(vmIntrinsics::ID id, int num_args);
+  Node* unbox_fp16_value(const TypeInstPtr* box_class, ciField* field, Node* box);
+  Node* box_fp16_value(const TypeInstPtr* box_class, ciField* field, Node* value);
   bool inline_number_methods(vmIntrinsics::ID id);
   bool inline_bitshuffle_methods(vmIntrinsics::ID id);
   bool inline_compare_unsigned(vmIntrinsics::ID id);

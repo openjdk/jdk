@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,8 +209,11 @@ public class FixedResponseHttpClient extends DelegatingHttpClient {
         if (obp.isPresent()) {
             ConsumingSubscriber subscriber = new ConsumingSubscriber();
             obp.get().subscribe(subscriber);
+            // wait for our subscriber to be completed and get the
+            // list of ByteBuffers it received.
+            var buffers = subscriber.getBuffers().join();
             if (responseBodyBytes == ECHO_SENTINAL) {
-                responseBody = subscriber.buffers;
+                responseBody = buffers;
             }
         }
 
@@ -246,6 +249,13 @@ public class FixedResponseHttpClient extends DelegatingHttpClient {
      */
     private static class ConsumingSubscriber implements Flow.Subscriber<ByteBuffer> {
         final List<ByteBuffer> buffers = Collections.synchronizedList(new ArrayList<>());
+        // A CompletableFuture that will be completed with a list of ByteBuffers that the
+        // ConsumingSubscriber has consumed.
+        final CompletableFuture<List<ByteBuffer>> consumed = new CompletableFuture<>();
+
+        public final CompletableFuture<List<ByteBuffer>> getBuffers() {
+            return consumed;
+        }
 
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
@@ -256,9 +266,9 @@ public class FixedResponseHttpClient extends DelegatingHttpClient {
             buffers.add(item.duplicate());
         }
 
-        @Override public void onError(Throwable throwable) { assert false : "Unexpected"; }
+        @Override public void onError(Throwable throwable) { consumed.completeExceptionally(throwable); }
 
-        @Override public void onComplete() { /* do nothing */ }
+        @Override public void onComplete() { consumed.complete(buffers.stream().toList()); }
     }
 
     @Override

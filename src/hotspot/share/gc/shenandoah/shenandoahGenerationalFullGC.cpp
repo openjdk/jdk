@@ -23,9 +23,6 @@
  *
  */
 
-
-#include "precompiled.hpp"
-
 #include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shenandoah/shenandoahGenerationalFullGC.hpp"

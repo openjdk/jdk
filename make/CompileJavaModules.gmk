@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,12 @@
 # questions.
 #
 
-# This must be the first rule
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
-include Modules.gmk
+################################################################################
+
 include JavaCompilation.gmk
+include Modules.gmk
 
 ################################################################################
 # If this is an imported module that has prebuilt classes, only compile
@@ -86,7 +85,15 @@ CreateHkTargets = \
 ################################################################################
 # Include module specific build settings
 
--include Java.gmk
+THIS_SNIPPET := modules/$(MODULE)/Java.gmk
+
+ifneq ($(wildcard $(THIS_SNIPPET)), )
+  include MakeSnippetStart.gmk
+
+  include $(THIS_SNIPPET)
+
+  include MakeSnippetEnd.gmk
+endif
 
 ################################################################################
 # Setup the main compilation
@@ -148,6 +155,4 @@ endif
 
 ################################################################################
 
-all: $(TARGETS)
-
-.PHONY: all
+include MakeFileEnd.gmk

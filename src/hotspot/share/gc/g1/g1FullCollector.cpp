@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
@@ -247,7 +246,7 @@ void G1FullCollector::complete_collection() {
 
   _heap->resize_all_tlabs();
 
-  _heap->young_regions_cardset()->clear();
+  _heap->young_regions_cset_group()->clear();
 
   _heap->policy()->record_full_collection_end();
   _heap->gc_epilogue(true);

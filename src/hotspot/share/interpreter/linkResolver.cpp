@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveUtils.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/defaultMethods.hpp"

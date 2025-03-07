@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -1696,7 +1695,7 @@ void PhaseCFG::global_code_motion() {
   // Enabling the scheduler for register pressure plus finding blocks of size to schedule for it
   // is key to enabling this feature.
   PhaseChaitin regalloc(C->unique(), *this, _matcher, true);
-  ResourceArea live_arena(mtCompiler);      // Arena for liveness
+  ResourceArea live_arena(mtCompiler, Arena::Tag::tag_reglive);      // Arena for liveness
   ResourceMark rm_live(&live_arena);
   PhaseLive live(*this, regalloc._lrg_map.names(), &live_arena, true);
   PhaseIFG ifg(&live_arena);
