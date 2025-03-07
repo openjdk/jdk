@@ -77,6 +77,9 @@ public class TestMinMaxInlining {
     // So they are still transformed into CmpL + CMoveL nodes after macro expansion.
     // This is the reason for the different before/after macro expansion assertions below.
 
+    // MinL is not implemented in the backed, so at macro expansion it gets transformed into a CMoveL.
+    // The IR asserts verify that before macro expansion MinL exists,
+    // but after macro expansion the node disappears.
     @Test
     @Arguments(values = { Argument.NUMBER_MINUS_42, Argument.NUMBER_42 })
     @IR(phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, counts = { IRNode.MIN_L, "1" })
@@ -92,6 +95,9 @@ public class TestMinMaxInlining {
         }
     }
 
+    // MaxL is not implemented in the backed, so at macro expansion it gets transformed into a CMoveL.
+    // The IR asserts verify that before macro expansion MinL exists,
+    // but after macro expansion the node disappears.
     @Test
     @Arguments(values = { Argument.NUMBER_MINUS_42, Argument.NUMBER_42 })
     @IR(phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, counts = { IRNode.MAX_L, "1" })
