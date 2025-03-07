@@ -196,7 +196,11 @@ class OpaqueInitializedAssertionPredicateNode : public Node {
   // and then clean this node up in the next IGVN phase by checking this flag in Value().
   bool _useless;
 
-  virtual bool cmp(const Node& n) const;
+  // OpaqueInitializedAssertionPredicateNode are unique to an Initialized Assertion Predicate expression and should never
+  // common up. Thus, we return NO_HASH here.
+  virtual uint hash() const {
+    return NO_HASH;
+  }
 
  public:
   OpaqueInitializedAssertionPredicateNode(BoolNode* bol, Compile* C) : Node(nullptr, bol),

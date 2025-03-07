@@ -136,11 +136,6 @@ void OpaqueTemplateAssertionPredicateNode::dump_spec(outputStream* st) const {
 }
 #endif // NOT PRODUCT
 
-// Avoid that a useless OpaqueInitializedAssertionPredicateNode is commoned up with a useful one.
-bool OpaqueInitializedAssertionPredicateNode::cmp(const Node &n) const {
-  return _useless == n.as_OpaqueInitializedAssertionPredicate()->is_useless();
-}
-
 const Type* OpaqueInitializedAssertionPredicateNode::Value(PhaseGVN* phase) const {
   if (_useless) {
     return TypeInt::ONE;
