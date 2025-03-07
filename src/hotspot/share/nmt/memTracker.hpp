@@ -25,6 +25,7 @@
 #ifndef SHARE_NMT_MEMTRACKER_HPP
 #define SHARE_NMT_MEMTRACKER_HPP
 
+#include "memory/reservedSpace.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/memoryFileTracker.hpp"
