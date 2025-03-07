@@ -1075,7 +1075,7 @@ public interface HttpResponse<T> {
      *  the resources associated with the request and the client to be {@linkplain
      *  HttpClient##closing eventually reclaimed}.
      *  Some other implementations are {@linkplain Publisher publishers} which need to be
-     *  {@link BodySubscribers#ofPublisher() subscribed} in order for their associated
+     *  {@linkplain BodySubscribers#ofPublisher() subscribed} in order for their associated
      *  resources to be released and for the associated request to {@linkplain
      *  HttpClient##closing run to completion}.
      *
