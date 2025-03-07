@@ -23,11 +23,11 @@
  * questions.
  */
 
+package sun.security.ssl;
+
 /*
  * Scopes defining different parts of TLS protocol.
  */
-
-package sun.security.ssl;
 
 public enum SSLScope {
     // Handshake scope as in signature_algorithms extension.
