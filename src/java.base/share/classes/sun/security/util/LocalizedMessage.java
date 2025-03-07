@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class LocalizedMessage {
     /**
      * Return a non-localized string corresponding to the key stored in this
      * object, formatted with the provided arguments. All strings are obtained
-     * from sun.security.util.Resources, and the formatting only supports
+     * from sun.security.util.resources, and the formatting only supports
      * simple positional argument replacement (e.g. {1}).
      *
      * @param arguments The arguments that should be placed in the message
@@ -92,7 +92,7 @@ public class LocalizedMessage {
      * sun.security.util.resources, and the formatting only supports
      * simple positional argument replacement (e.g. {1}).
      *
-     * @param key The key of the desired string in Resources
+     * @param key The key of the desired string in resources
      * @param arguments The arguments that should be placed in the message
      * @return A formatted message string
      */
