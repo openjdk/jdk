@@ -631,6 +631,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
+      _merge_stores_phase(false),
       _allow_macro_nodes(true),
       _inlining_progress(false),
       _inlining_incrementally(false),
@@ -910,6 +911,7 @@ Compile::Compile(ciEnv* ci_env,
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
+      _merge_stores_phase(false),
       _allow_macro_nodes(true),
       _inlining_progress(false),
       _inlining_incrementally(false),
@@ -1889,6 +1891,17 @@ void Compile::remove_from_merge_stores_igvn(Node* n) {
   _for_merge_stores_igvn.remove(n);
 }
 
+// We need to wait with merging stores until RangeCheck smearing has removed the RangeChecks during
+// the post loops IGVN phase. If we do it earlier, then there may still be some RangeChecks between
+// the stores, and we merge the wrong sequence of stores.
+// Example:
+//   StoreI RangeCheck StoreI StoreI RangeCheck StoreI
+// Apply MergeStores:
+//   StoreI RangeCheck [   StoreL  ] RangeCheck StoreI
+// Remove more RangeChecks:
+//   StoreI            [   StoreL  ]            StoreI
+// But now it would have been better to do this instead:
+//   [         StoreL       ] [       StoreL         ]
 void Compile::process_for_merge_stores_igvn(PhaseIterGVN& igvn) {
   C->set_merge_stores_phase();
 
@@ -1897,7 +1910,6 @@ void Compile::process_for_merge_stores_igvn(PhaseIterGVN& igvn) {
       Node* n = _for_merge_stores_igvn.pop();
       n->remove_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
       igvn._worklist.push(n);
-      n->dump();
     }
     if (failing()) return;
     assert(_for_merge_stores_igvn.length() == 0, "no more delayed nodes allowed");
