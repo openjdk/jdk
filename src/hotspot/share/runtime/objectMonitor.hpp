@@ -435,29 +435,29 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
  private:
   void      add_to_entry_list(JavaThread* current, ObjectWaiter* node);
-  void      AddWaiter(ObjectWaiter* waiter);
-  void      INotify(JavaThread* current);
-  ObjectWaiter* DequeueWaiter();
-  void      DequeueSpecificWaiter(ObjectWaiter* waiter);
-  void      EnterI(JavaThread* current);
-  void      ReenterI(JavaThread* current, ObjectWaiter* current_node);
-  void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
+  void      add_waiter(ObjectWaiter* waiter);
+  void      notify_internal(JavaThread* current);
+  ObjectWaiter* dequeue_waiter();
+  void      dequeue_specific_waiter(ObjectWaiter* waiter);
+  void      enter_internal(JavaThread* current);
+  void      reenter_internal(JavaThread* current, ObjectWaiter* current_node);
+  void      unlink_after_acquire(JavaThread* current, ObjectWaiter* current_node);
   ObjectWaiter* entry_list_tail(JavaThread* current);
 
-  bool      VThreadMonitorEnter(JavaThread* current, ObjectWaiter* node = nullptr);
-  void      VThreadWait(JavaThread* current, jlong millis);
-  bool      VThreadWaitReenter(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont);
-  void      VThreadEpilog(JavaThread* current, ObjectWaiter* node);
+  bool      vthread_monitor_enter(JavaThread* current, ObjectWaiter* node = nullptr);
+  void      vthread_wait(JavaThread* current, jlong millis);
+  bool      vthread_waitReenter(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont);
+  void      vthread_epilog(JavaThread* current, ObjectWaiter* node);
 
   enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
 
   bool           TryLockWithContentionMark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
   bool           try_lock_or_add_to_entry_list(JavaThread* current, ObjectWaiter* node);
-  TryLockResult  TryLock(JavaThread* current);
+  TryLockResult  try_lock(JavaThread* current);
 
-  bool      TrySpin(JavaThread* current);
+  bool      try_spin(JavaThread* current);
   bool      short_fixed_spin(JavaThread* current, int spin_count, bool adapt);
-  void      ExitEpilog(JavaThread* current, ObjectWaiter* Wakee);
+  void      exit_epilog(JavaThread* current, ObjectWaiter* Wakee);
 
   // Deflation support
   bool      deflate_monitor(Thread* current);
