@@ -3371,12 +3371,12 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   if (MergeStores && UseUnalignedAccesses) {
-    if (phase->C->post_loop_opts_phase()) {
+    if (phase->C->merge_stores_phase()) {
       MergePrimitiveStores merge(phase, this);
       Node* progress = merge.run();
       if (progress != nullptr) { return progress; }
     } else {
-      phase->C->record_for_post_loop_opts_igvn(this);
+      phase->C->record_for_merge_stores_igvn(this);
     }
   }
 

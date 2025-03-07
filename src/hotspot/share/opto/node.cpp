@@ -615,6 +615,9 @@ void Node::destruct(PhaseValues* phase) {
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);
   }
+  if (for_merge_stores_igvn()) {
+    compile->remove_from_merge_stores_igvn(this);
+  }
 
   if (is_SafePoint()) {
     as_SafePoint()->delete_replaced_nodes();

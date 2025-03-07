@@ -49,6 +49,15 @@ import java.util.Random;
  * @run main compiler.c2.TestMergeStores unaligned
  */
 
+/*
+ * @test
+ * @bug 8318446 8331054 8331311 8335392 8348959 8351414
+ * @summary Test merging of consecutive stores
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib /
+ * @run main compiler.c2.TestMergeStores StressIGVN
+ */
+
 public class TestMergeStores {
     static int RANGE = 1000;
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
@@ -99,6 +108,19 @@ public class TestMergeStores {
         switch (args[0]) {
             case "aligned"     -> { framework.addFlags("-XX:-UseUnalignedAccesses"); }
             case "unaligned"   -> { framework.addFlags("-XX:+UseUnalignedAccesses"); }
+            // StressIGVN can mix up the order of RangeCheck smearing and MergeStores optimization,
+            // if they run in the same IGVN round. When we did not yet have a dedicated IGVN round
+            // after post loop opts for MergeStrores, it could happen that we would only remove
+            // RangeChecks after already merging some stores, and now they would have to be split
+            // up again and re-merged with different stores. Example:
+            //   StoreI RangeCheck StoreI StoreI RangeCheck StoreI
+            // Apply MergeStores:
+            //   StoreI RangeCheck [   StoreL  ] RangeCheck StoreI
+            // Remove more RangeChecks:
+            //   StoreI            [   StoreL  ]            StoreI
+            // But now it would have been better to do this instead:
+            //   [         StoreL       ] [       StoreL         ]
+            case "StressIGVN"  -> { framework.addFlags("-XX:+StressIGVN"); }
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         }
         framework.start();
