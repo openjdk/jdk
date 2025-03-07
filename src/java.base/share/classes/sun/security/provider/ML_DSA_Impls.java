@@ -33,6 +33,7 @@ import sun.security.util.ObjectIdentifier;
 import java.security.*;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.SignatureParameterSpec;
 import java.util.Arrays;
 
 public class ML_DSA_Impls {
@@ -126,7 +127,8 @@ public class ML_DSA_Impls {
         }
     }
 
-    public sealed static class SIG extends NamedSignature permits SIG2, SIG3, SIG5 {
+    public sealed static class SIG extends NamedSignature
+            permits SIG2, SIG3, SIG5, HSIG {
 
         private boolean isInternal = false;
         private boolean isDeterministic = false;
@@ -225,6 +227,47 @@ public class ML_DSA_Impls {
 
             ML_DSA mlDsa = new ML_DSA(name2int(name));
             return mlDsa.checkPrivateKey(sk);
+        }
+    }
+
+    public sealed static class HSIG extends SIG permits HSIG2, HSIG3, HSIG5 {
+        public HSIG(String name) {
+            super(name);
+            try {
+                super.engineSetParameter(new SignatureParameterSpec("SHA-512", null));
+            } catch (InvalidAlgorithmParameterException e) {
+                throw new ProviderException(e);
+            }
+        }
+
+        @Override
+        protected void engineSetParameter(AlgorithmParameterSpec params)
+                throws InvalidAlgorithmParameterException {
+            if (params instanceof SignatureParameterSpec sps) {
+                if (!"SHA-512".equalsIgnoreCase(sps.preHash())) {
+                    throw new InvalidAlgorithmParameterException(
+                            "Cannot change preHash algorithm");
+                }
+            }
+            super.engineSetParameter(params);
+        }
+    }
+
+    public final static class HSIG2 extends HSIG {
+        public HSIG2() {
+            super("ML-DSA-44");
+        }
+    }
+
+    public final static class HSIG3 extends HSIG {
+        public HSIG3() {
+            super("ML-DSA-65");
+        }
+    }
+
+    public final static class HSIG5 extends HSIG {
+        public HSIG5() {
+            super("ML-DSA-86");
         }
     }
 
