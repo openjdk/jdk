@@ -261,7 +261,7 @@ class MemTracker : AllStatic {
 
   // Stored baseline
   static inline MemBaseline& get_baseline() {
-    return _baseline;
+    return *_baseline;
   }
 
   static void tuning_statistics(outputStream* out);
@@ -314,7 +314,7 @@ class MemTracker : AllStatic {
   // Tracking level
   static NMT_TrackingLevel   _tracking_level;
   // Stored baseline
-  static MemBaseline      _baseline;
+  static MemBaseline* _baseline;
 };
 
 #endif // SHARE_NMT_MEMTRACKER_HPP
