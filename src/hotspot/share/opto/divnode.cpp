@@ -805,6 +805,115 @@ Node *DivFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // return multiplication by the reciprocal
   return (new MulFNode(in(1), phase->makecon(TypeF::make(reciprocal))));
 }
+//=============================================================================
+//------------------------------Value------------------------------------------
+// An DivHFNode divides its inputs.  The third input is a Control input, used to
+// prevent hoisting the divide above an unsafe test.
+const Type* DivHFNode::Value(PhaseGVN* phase) const {
+  // Either input is TOP ==> the result is TOP
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+  if(t1 == Type::TOP) { return Type::TOP; }
+  if(t2 == Type::TOP) { return Type::TOP; }
+
+  // Either input is BOTTOM ==> the result is the local BOTTOM
+  const Type* bot = bottom_type();
+  if((t1 == bot) || (t2 == bot) ||
+     (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM)) {
+    return bot;
+  }
+
+  // x/x == 1, we ignore 0/0.
+  // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)
+  // Does not work for variables because of NaN's
+  if (in(1) == in(2) && t1->base() == Type::HalfFloatCon &&
+      !g_isnan(t1->getf()) && g_isfinite(t1->getf()) && t1->getf() != 0.0) { // could be negative ZERO or NaN
+    return TypeH::ONE;
+  }
+
+  if (t2 == TypeH::ONE) {
+    return t1;
+  }
+
+  // If divisor is a constant and not zero, divide the numbers
+  if (t1->base() == Type::HalfFloatCon &&
+      t2->base() == Type::HalfFloatCon &&
+      t2->getf() != 0.0)  {
+    // could be negative zero
+    return TypeH::make(t1->getf() / t2->getf());
+  }
+
+  // If the dividend is a constant zero
+  // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)
+  // Test TypeHF::ZERO is not sufficient as it could be negative zero
+
+  if (t1 == TypeH::ZERO && !g_isnan(t2->getf()) && t2->getf() != 0.0) {
+    return TypeH::ZERO;
+  }
+
+  // If divisor or dividend is nan then result is nan.
+  if (g_isnan(t1->getf()) || g_isnan(t2->getf())) {
+    return TypeH::make(NAN);
+  }
+
+  // Otherwise we give up all hope
+  return Type::HALF_FLOAT;
+}
+
+//-----------------------------------------------------------------------------
+// Dividing by self is 1.
+// IF the divisor is 1, we are an identity on the dividend.
+Node* DivHFNode::Identity(PhaseGVN* phase) {
+  return (phase->type( in(2) ) == TypeH::ONE) ? in(1) : this;
+}
+
+
+//------------------------------Idealize---------------------------------------
+Node* DivHFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (in(0) != nullptr && remove_dead_region(phase, can_reshape))  return this;
+  // Don't bother trying to transform a dead node
+  if (in(0) != nullptr && in(0)->is_top())  { return nullptr; }
+
+  const Type* t2 = phase->type(in(2));
+  if (t2 == TypeH::ONE) {      // Identity?
+    return nullptr;            // Skip it
+  }
+  const TypeH* tf = t2->isa_half_float_constant();
+  if(tf == nullptr) { return nullptr; }
+  if(tf->base() != Type::HalfFloatCon) { return nullptr; }
+
+  // Check for out of range values
+  if(tf->is_nan() || !tf->is_finite()) { return nullptr; }
+
+  // Get the value
+  float f = tf->getf();
+  int exp;
+
+  // Consider the following geometric progression series of POT(power of two) numbers.
+  // 0.5 x 2^0 = 0.5, 0.5 x 2^1 = 1.0, 0.5 x 2^2 = 2.0, 0.5 x 2^3 = 4.0 ... 0.5 x 2^n,
+  // In all the above cases, normalized mantissa returned by frexp routine will
+  // be exactly equal to 0.5 while exponent will be 0,1,2,3...n
+  // Perform division to multiplication transform only if divisor is a POT value.
+  if(frexp((double)f, &exp) != 0.5) { return nullptr; }
+
+  // Limit the range of acceptable exponents
+  if(exp < -14 || exp > 15) { return nullptr; }
+
+  // Since divisor is a POT number, hence its reciprocal will never
+  // overflow 11 bits precision range of Float16
+  // value if exponent returned by frexp routine strictly lie
+  // within the exponent range of normal min(0x1.0P-14) and
+  // normal max(0x1.ffcP+15) values.
+  // Thus we can safely compute the reciprocal of divisor without
+  // any concerns about the precision loss and transform the division
+  // into a multiplication operation.
+  float reciprocal = ((float)1.0) / f;
+
+  assert(frexp((double)reciprocal, &exp) == 0.5, "reciprocal should be power of 2");
+
+  // return multiplication by the reciprocal
+  return (new MulHFNode(in(1), phase->makecon(TypeH::make(reciprocal))));
+}
 
 //=============================================================================
 //------------------------------Value------------------------------------------
@@ -1406,6 +1515,12 @@ Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!can_reshape) {
     return nullptr;
   }
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+
+  bool result_is_unused = proj_out_or_null(TypeFunc::Parms) == nullptr;
+  if (result_is_unused) {
+    return replace_with_con(igvn, TypeF::make(0.));
+  }
 
   // Either input is TOP ==> the result is TOP
   const Type* t1 = phase->type(dividend());
@@ -1426,10 +1541,10 @@ Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   // If either is a NaN, return an input NaN
   if (g_isnan(f1)) {
-    return replace_with_con(phase, t1);
+    return replace_with_con(igvn, t1);
   }
   if (g_isnan(f2)) {
-    return replace_with_con(phase, t2);
+    return replace_with_con(igvn, t2);
   }
 
   // If an operand is infinity or the divisor is +/- zero, punt.
@@ -1444,12 +1559,18 @@ Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     xr ^= min_jint;
   }
 
-  return replace_with_con(phase, TypeF::make(jfloat_cast(xr)));
+  return replace_with_con(igvn, TypeF::make(jfloat_cast(xr)));
 }
 
 Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!can_reshape) {
     return nullptr;
+  }
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+
+  bool result_is_unused = proj_out_or_null(TypeFunc::Parms) == nullptr;
+  if (result_is_unused) {
+    return replace_with_con(igvn, TypeD::make(0.));
   }
 
   // Either input is TOP ==> the result is TOP
@@ -1471,10 +1592,10 @@ Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   // If either is a NaN, return an input NaN
   if (g_isnan(f1)) {
-    return replace_with_con(phase, t1);
+    return replace_with_con(igvn, t1);
   }
   if (g_isnan(f2)) {
-    return replace_with_con(phase, t2);
+    return replace_with_con(igvn, t2);
   }
 
   // If an operand is infinity or the divisor is +/- zero, punt.
@@ -1489,33 +1610,33 @@ Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     xr ^= min_jlong;
   }
 
-  return replace_with_con(phase, TypeD::make(jdouble_cast(xr)));
+  return replace_with_con(igvn, TypeD::make(jdouble_cast(xr)));
 }
 
-Node* ModFloatingNode::replace_with_con(PhaseGVN* phase, const Type* con) {
+Node* ModFloatingNode::replace_with_con(PhaseIterGVN* phase, const Type* con) {
   Compile* C = phase->C;
   Node* con_node = phase->makecon(con);
   CallProjections projs;
   extract_projections(&projs, false, false);
-  C->gvn_replace_by(projs.fallthrough_proj, in(TypeFunc::Control));
+  phase->replace_node(projs.fallthrough_proj, in(TypeFunc::Control));
   if (projs.fallthrough_catchproj != nullptr) {
-    C->gvn_replace_by(projs.fallthrough_catchproj, in(TypeFunc::Control));
+    phase->replace_node(projs.fallthrough_catchproj, in(TypeFunc::Control));
   }
   if (projs.fallthrough_memproj != nullptr) {
-    C->gvn_replace_by(projs.fallthrough_memproj, in(TypeFunc::Memory));
+    phase->replace_node(projs.fallthrough_memproj, in(TypeFunc::Memory));
   }
   if (projs.catchall_memproj != nullptr) {
-    C->gvn_replace_by(projs.catchall_memproj, C->top());
+    phase->replace_node(projs.catchall_memproj, C->top());
   }
   if (projs.fallthrough_ioproj != nullptr) {
-    C->gvn_replace_by(projs.fallthrough_ioproj, in(TypeFunc::I_O));
+    phase->replace_node(projs.fallthrough_ioproj, in(TypeFunc::I_O));
   }
   assert(projs.catchall_ioproj == nullptr, "no exceptions from floating mod");
   assert(projs.catchall_catchproj == nullptr, "no exceptions from floating mod");
   if (projs.resproj != nullptr) {
-    C->gvn_replace_by(projs.resproj, con_node);
+    phase->replace_node(projs.resproj, con_node);
   }
-  C->gvn_replace_by(this, C->top());
+  phase->replace_node(this, C->top());
   C->remove_macro_node(this);
   disconnect_inputs(C);
   return nullptr;

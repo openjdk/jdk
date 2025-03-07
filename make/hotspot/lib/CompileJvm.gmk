@@ -23,6 +23,11 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
+
 include CopyFiles.gmk
 
 # Include support files that will setup compiler flags due to the selected
@@ -84,6 +89,7 @@ CFLAGS_VM_VERSION := \
     -DHOTSPOT_VM_DISTRO='"$(HOTSPOT_VM_DISTRO)"' \
     -DCPU='"$(OPENJDK_TARGET_CPU_VM_VERSION)"' \
     -DHOTSPOT_BUILD_TIME='"$(HOTSPOT_BUILD_TIME)"' \
+    -DJVM_VARIANT='"$(JVM_VARIANT)"' \
     #
 
 ################################################################################
@@ -359,3 +365,8 @@ ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
     $(foreach o, $(BUILD_LIBJVM_ALL_OBJS), $(eval $(call SetupOperatorNewDeleteCheck,$o)))
   endif
 endif
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

@@ -134,20 +134,28 @@ public class Log extends AbstractLog {
     public static class DeferredDiagnosticHandler extends DiagnosticHandler {
         private Queue<JCDiagnostic> deferred = new ListBuffer<>();
         private final Predicate<JCDiagnostic> filter;
+        private final boolean passOnNonDeferrable;
 
         public DeferredDiagnosticHandler(Log log) {
             this(log, null);
         }
 
-        @SuppressWarnings("this-escape")
         public DeferredDiagnosticHandler(Log log, Predicate<JCDiagnostic> filter) {
+            this(log, filter, true);
+        }
+
+        @SuppressWarnings("this-escape")
+        public DeferredDiagnosticHandler(Log log, Predicate<JCDiagnostic> filter, boolean passOnNonDeferrable) {
             this.filter = filter;
+            this.passOnNonDeferrable = passOnNonDeferrable;
             install(log);
         }
 
         @Override
         public void report(JCDiagnostic diag) {
-            if (!diag.isFlagSet(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE) &&
+            boolean deferrable = !passOnNonDeferrable ||
+                                 !diag.isFlagSet(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE);
+            if (deferrable &&
                 (filter == null || filter.test(diag))) {
                 deferred.add(diag);
             } else {

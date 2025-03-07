@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2552,6 +2552,11 @@ template<typename R, typename... Rx>
     ldst_sstr(T, index, a, op1, op2, Vt, Vt2, Vt3, Vt4);                \
   }
 
+  INSN1(ld1, 0b001101010, 0b0000);
+  INSN2(ld2, 0b001101011, 0b0000);
+  INSN3(ld3, 0b001101010, 0b0010);
+  INSN4(ld4, 0b001101011, 0b0010);
+
   INSN1(st1, 0b001101000, 0b0000);
   INSN2(st2, 0b001101001, 0b0000);
   INSN3(st3, 0b001101000, 0b0010);
@@ -2586,6 +2591,7 @@ template<typename R, typename... Rx>
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
     guarantee(T != T1Q && T != T1D, "incorrect arrangement");                           \
     if (!acceptT2D) guarantee(T != T2D, "incorrect arrangement");                       \
+    if (opc2 ==  0b101101) guarantee(T != T8B && T != T16B, "incorrect arrangement");   \
     starti;                                                                             \
     f(0, 31), f((int)T & 1, 30), f(opc, 29), f(0b01110, 28, 24);                        \
     f((int)T >> 1, 23, 22), f(1, 21), rf(Vm, 16), f(opc2, 15, 10);                      \
@@ -2609,6 +2615,8 @@ template<typename R, typename... Rx>
   INSN(minv,   0, 0b011011, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(smaxp,  0, 0b101001, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(sminp,  0, 0b101011, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
+  INSN(sqdmulh,0, 0b101101, false); // accepted arrangements: T4H, T8H, T2S, T4S
+  INSN(shsubv, 0, 0b001001, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
 
 #undef INSN
 

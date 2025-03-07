@@ -23,6 +23,8 @@
 # questions.
 #
 
+################################################################################
+
 include LibCommon.gmk
 
 ################################################################################
@@ -51,6 +53,7 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, riscv64)+$(INCLUDE_COMPILER2
       DISABLED_WARNINGS_gcc := unused-function sign-compare tautological-compare ignored-qualifiers, \
       DISABLED_WARNINGS_clang := unused-function sign-compare tautological-compare ignored-qualifiers, \
       CFLAGS := -march=rv64gcv, \
+      CFLAGS_FILTER_OUT := -ftrivial-auto-var-init=pattern, \
   ))
 
   TARGETS += $(BUILD_LIBSLEEF)
@@ -65,7 +68,10 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, aarch64)+$(INCLUDE_COMPILER2
       DISABLED_WARNINGS_gcc := unused-function sign-compare tautological-compare ignored-qualifiers, \
       DISABLED_WARNINGS_clang := unused-function sign-compare tautological-compare ignored-qualifiers, \
       vector_math_sve.c_CFLAGS := $(SVE_CFLAGS), \
+      CFLAGS_FILTER_OUT := -ftrivial-auto-var-init=pattern, \
   ))
 
   TARGETS += $(BUILD_LIBSLEEF)
 endif
+
+################################################################################

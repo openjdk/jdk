@@ -2265,26 +2265,27 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
 // generic (count must be >0)
 // iff found: CR0 eq, scratch == 0
 void MacroAssembler::repne_scan(Register addr, Register value, Register count, Register scratch) {
-  Label Lloop, Lexit;
+  Label Lloop, Lafter_loop, Lexit;
 
-#ifdef ASSERT
-  {
-    Label ok;
-    cmpdi(CR0, count, 0);
-    bgt(CR0, ok);
-    stop("count must be positive");
-    bind(ok);
-  }
-#endif
+  srdi_(scratch, count, 1);
+  beq(CR0, Lafter_loop);
+  mtctr(scratch);
 
-  mtctr(count);
-
-  bind(Lloop);
-  ld(scratch, 0 , addr);
+  bind(Lloop); // 2x unrolled
+  ld(scratch, 0, addr);
   xor_(scratch, scratch, value);
   beq(CR0, Lexit);
-  addi(addr, addr, wordSize);
+  ld(scratch, 8, addr);
+  xor_(scratch, scratch, value);
+  beq(CR0, Lexit);
+  addi(addr, addr, 2 * wordSize);
   bdnz(Lloop);
+
+  bind(Lafter_loop);
+  andi_(scratch, count, 1);
+  beq(CR0, Lexit); // if taken: CR0 eq and scratch == 0
+  ld(scratch, 0, addr);
+  xor_(scratch, scratch, value);
 
   bind(Lexit);
 }
@@ -2957,10 +2958,8 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   // StoreLoad achieves this.
   membar(StoreLoad);
 
-  // Check if the entry lists are empty (EntryList first - by convention).
-  ld(temp,             in_bytes(ObjectMonitor::EntryList_offset()), current_header);
-  ld(displaced_header, in_bytes(ObjectMonitor::cxq_offset()), current_header);
-  orr(temp, temp, displaced_header); // Will be 0 if both are 0.
+  // Check if the entry_list is empty.
+  ld(temp, in_bytes(ObjectMonitor::entry_list_offset()), current_header);
   cmpdi(flag, temp, 0);
   beq(flag, success);  // If so we are done.
 
@@ -3298,8 +3297,6 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
 
     bind(not_recursive);
 
-    const Register t2 = tmp2;
-
     // Set owner to null.
     // Release to satisfy the JMM
     release();
@@ -3309,10 +3306,8 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     // StoreLoad achieves this.
     membar(StoreLoad);
 
-    // Check if the entry lists are empty (EntryList first - by convention).
-    ld(t, in_bytes(ObjectMonitor::EntryList_offset()), monitor);
-    ld(t2, in_bytes(ObjectMonitor::cxq_offset()), monitor);
-    orr(t, t, t2);
+    // Check if the entry_list is empty.
+    ld(t, in_bytes(ObjectMonitor::entry_list_offset()), monitor);
     cmpdi(CR0, t, 0);
     beq(CR0, unlocked); // If so we are done.
 

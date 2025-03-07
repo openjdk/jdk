@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,16 +89,21 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
     }
 
     public synchronized int charToGlyph(char unicode) {
-        final int glyph = cache.get(unicode);
+        int glyph = cache.get(unicode);
         if (glyph != 0) return glyph;
 
-        final char[] unicodeArray = new char[] { unicode };
-        final int[] glyphArray = new int[1];
+        if (FontUtilities.isDefaultIgnorable(unicode)) {
+            glyph = INVISIBLE_GLYPH_ID;
+        } else {
+            final char[] unicodeArray = new char[] { unicode };
+            final int[] glyphArray = new int[1];
+            nativeCharsToGlyphs(fFont.getNativeFontPtr(), 1, unicodeArray, glyphArray);
+            glyph = glyphArray[0];
+        }
 
-        nativeCharsToGlyphs(fFont.getNativeFontPtr(), 1, unicodeArray, glyphArray);
-        cache.put(unicode, glyphArray[0]);
+        cache.put(unicode, glyph);
 
-        return glyphArray[0];
+        return glyph;
     }
 
     public synchronized int charToGlyph(int unicode) {
@@ -248,6 +253,9 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
                         values[i+1] = INVISIBLE_GLYPH_ID;
                         i++;
                     }
+                } else if (FontUtilities.isDefaultIgnorable(code)) {
+                    values[i] = INVISIBLE_GLYPH_ID;
+                    put(code, INVISIBLE_GLYPH_ID);
                 } else {
                     values[i] = 0;
                     put(code, -1);

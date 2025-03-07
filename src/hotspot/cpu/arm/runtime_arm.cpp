@@ -47,11 +47,12 @@ void OptoRuntime::generate_uncommon_trap_blob() {
   ResourceMark rm;
 
   // setup code generation tools
+  const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
 #ifdef _LP64
-  CodeBuffer buffer("uncommon_trap_blob", 2700, 512);
+  CodeBuffer buffer(name, 2700, 512);
 #else
   // Measured 8/7/03 at 660 in 32bit debug build
-  CodeBuffer buffer("uncommon_trap_blob", 2000, 512);
+  CodeBuffer buffer(name, 2000, 512);
 #endif
   // bypassed when code generation useless
   MacroAssembler* masm               = new MacroAssembler(&buffer);
@@ -206,7 +207,8 @@ void OptoRuntime::generate_exception_blob() {
 
   // setup code generation tools
   // Measured 8/7/03 at 256 in 32bit debug build
-  CodeBuffer buffer("exception_blob", 600, 512);
+  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
+  CodeBuffer buffer(name, 600, 512);
   MacroAssembler* masm     = new MacroAssembler(&buffer);
 
   int framesize_in_words = 2; // FP + LR

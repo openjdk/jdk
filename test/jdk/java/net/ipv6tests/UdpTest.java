@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.PortUnreachableException;
 import java.net.SocketTimeoutException;
+import java.util.concurrent.TimeUnit;
 
 public class UdpTest extends Tests {
     static DatagramSocket c3, s1, s2, s3;
@@ -138,26 +139,27 @@ public class UdpTest extends Tests {
         s1 = new DatagramSocket ();
         s2 = new DatagramSocket ();
         s1.setSoTimeout (4000);
-        long t1 = System.currentTimeMillis();
+        long t1 = System.nanoTime();
         try {
             s1.receive (new DatagramPacket (new byte [128], 128));
             throw new Exception ("expected receive timeout ");
         } catch (SocketTimeoutException e) {
         }
-        checkTime (System.currentTimeMillis() - t1, 4000);
+        final long expectedTime = TimeUnit.SECONDS.toMillis(4);
+        checkIfTimeOut(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t1), expectedTime);
 
         /* check data can be exchanged now */
 
         simpleDataExchange (s1, ia6addr, s2, ia4addr);
 
         /* double check timeout still works */
-        t1 = System.currentTimeMillis();
+        t1 = System.nanoTime();
         try {
             s1.receive (new DatagramPacket (new byte [128], 128));
             throw new Exception ("expected receive timeout ");
         } catch (SocketTimeoutException e) {
         }
-        checkTime (System.currentTimeMillis() - t1, 4000);
+        checkIfTimeOut(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t1), expectedTime);
 
         /* check receive works after a delay < timeout */
 
@@ -174,9 +176,10 @@ public class UdpTest extends Tests {
                 } catch (Exception e) {}
             }
         });
-        t1 = System.currentTimeMillis();
+        t1 = System.nanoTime();
         s1.receive (new DatagramPacket (new byte [128], 128));
-        checkTime (System.currentTimeMillis() - t1, 2000, 10000);
+        final long startTime = TimeUnit.SECONDS.toMillis(2);
+        checkIfTimeOut(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t1), startTime);
         s1.close ();
         s2.close ();
         System.out.println ("Test2: OK");

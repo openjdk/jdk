@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,6 @@ extern jboolean VerifyFixClassname(char *utf_name);
 #define FLD "Ljava/lang/reflect/Field;"
 #define MHD "Ljava/lang/reflect/Method;"
 #define CTR "Ljava/lang/reflect/Constructor;"
-#define PD  "Ljava/security/ProtectionDomain;"
 #define BA  "[B"
 #define RC  "Ljava/lang/reflect/RecordComponent;"
 
@@ -57,15 +56,10 @@ static JNINativeMethod methods[] = {
     {"initClassName",    "()" STR,          (void *)&JVM_InitClassName},
     {"getSuperclass",    "()" CLS,          NULL},
     {"getInterfaces0",   "()[" CLS,         (void *)&JVM_GetClassInterfaces},
-    {"isInterface",      "()Z",             (void *)&JVM_IsInterface},
-    {"isArray",          "()Z",             (void *)&JVM_IsArrayClass},
     {"isHidden",         "()Z",             (void *)&JVM_IsHiddenClass},
-    {"isPrimitive",      "()Z",             (void *)&JVM_IsPrimitiveClass},
-    {"getModifiers",     "()I",             (void *)&JVM_GetClassModifiers},
     {"getDeclaredFields0","(Z)[" FLD,       (void *)&JVM_GetClassDeclaredFields},
     {"getDeclaredMethods0","(Z)[" MHD,      (void *)&JVM_GetClassDeclaredMethods},
     {"getDeclaredConstructors0","(Z)[" CTR, (void *)&JVM_GetClassDeclaredConstructors},
-    {"getProtectionDomain0", "()" PD,       (void *)&JVM_GetProtectionDomain},
     {"getDeclaredClasses0",  "()[" CLS,     (void *)&JVM_GetDeclaredClasses},
     {"getDeclaringClass0",   "()" CLS,      (void *)&JVM_GetDeclaringClass},
     {"getSimpleBinaryName0", "()" STR,      (void *)&JVM_GetSimpleBinaryName},

@@ -3747,11 +3747,6 @@ void ClassFileParser::apply_parsed_class_metadata(
   this_klass->set_permitted_subclasses(_permitted_subclasses);
   this_klass->set_record_components(_record_components);
 
-  // Initialize cached modifier_flags to support Class.getModifiers().
-  // This must follow setting inner_class attributes.
-  u2 computed_modifiers = this_klass->compute_modifier_flags();
-  this_klass->set_modifier_flags(computed_modifiers);
-
   // Delay the setting of _local_interfaces and _transitive_interfaces until after
   // initialize_supers() in fill_instance_klass(). It is because the _local_interfaces could
   // be shared with _transitive_interfaces and _transitive_interfaces may be shared with
