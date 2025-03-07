@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,6 @@ abstract class VersionPropsPlugin extends AbstractPlugin {
 
     private boolean redefined = false;
 
-    @SuppressWarnings("deprecation")
     private byte[] redefine(String path, byte[] classFile) {
         return ClassFile.of().transformClass(newClassReader(path, classFile),
             ClassTransform.transformingMethodBodies(

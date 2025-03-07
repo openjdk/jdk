@@ -40,7 +40,6 @@ class SerializeClosure;
 class StringTableConfig;
 
 class StringTable : AllStatic {
-  friend class VMStructs;
   friend class StringTableConfig;
 
   static volatile bool _has_work;

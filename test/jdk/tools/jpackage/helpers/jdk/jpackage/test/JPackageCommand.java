@@ -25,6 +25,7 @@ package jdk.jpackage.test;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
@@ -56,7 +57,7 @@ import jdk.jpackage.internal.util.function.ThrowingSupplier;
  * anything. The simplest is to compile test application and pack in a jar for
  * use on jpackage command line.
  */
-public final class JPackageCommand extends CommandArguments<JPackageCommand> {
+public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public JPackageCommand() {
         prerequisiteActions = new Actions();
@@ -71,11 +72,13 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         ignoreDefaultRuntime = cmd.ignoreDefaultRuntime;
         ignoreDefaultVerbose = cmd.ignoreDefaultVerbose;
         immutable = cmd.immutable;
+        dmgInstallDir = cmd.dmgInstallDir;
         prerequisiteActions = new Actions(cmd.prerequisiteActions);
         verifyActions = new Actions(cmd.verifyActions);
         appLayoutAsserts = cmd.appLayoutAsserts;
         outputValidator = cmd.outputValidator;
         executeInDirectory = cmd.executeInDirectory;
+        winMsiLogFile = cmd.winMsiLogFile;
     }
 
     JPackageCommand createImmutableCopy() {
@@ -252,11 +255,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public JPackageCommand setInputToEmptyDirectory() {
         if (Files.exists(inputDir())) {
-            try {
-                setArgumentValue("--input", TKit.createTempDirectory("input"));
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            setArgumentValue("--input", TKit.createTempDirectory("input"));
         }
         return this;
     }
@@ -501,7 +500,11 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
 
         if (TKit.isOSX()) {
-            return MacHelper.getInstallationDirectory(this);
+            if (packageType() == PackageType.MAC_DMG && dmgInstallDir != null) {
+                return dmgInstallDir;
+            } else {
+                return MacHelper.getInstallationDirectory(this);
+            }
         }
 
         throw TKit.throwUnknownPlatformError();
@@ -799,7 +802,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             outputValidator.accept(result.getOutput().stream());
         }
 
-        if (result.exitCode == 0) {
+        if (result.exitCode() == 0) {
             executeVerifyActions();
         }
 
@@ -841,6 +844,11 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                 TKit.assertFileExists(cmd.appLauncherCfgPath(null));
             }
         }),
+        MAIN_JAR_FILE(cmd -> {
+            Optional.ofNullable(cmd.getArgumentValue("--main-jar", () -> null)).ifPresent(mainJar -> {
+                TKit.assertFileExists(cmd.appLayout().appDirectory().resolve(mainJar));
+            });
+        }),
         RUNTIME_DIRECTORY(cmd -> {
             TKit.assertDirectoryExists(cmd.appRuntimeDirectory());
             if (TKit.isOSX()) {
@@ -867,6 +875,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             var copy = new JPackageCommand(cmd);
             copy.immutable = false;
             copy.removeArgumentWithValue("--runtime-image");
+            copy.dmgInstallDir = cmd.appInstallationDirectory();
             return copy;
         }
 
@@ -989,6 +998,22 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             removeArgumentWithValue(UNPACKED_PATH_ARGNAME);
         }
         return this;
+    }
+
+    JPackageCommand winMsiLogFile(Path v) {
+        this.winMsiLogFile = v;
+        return this;
+    }
+
+    public Optional<Path> winMsiLogFile() {
+        return Optional.ofNullable(winMsiLogFile);
+    }
+
+    public Optional<Stream<String>> winMsiLogFileContents() {
+        return winMsiLogFile().map(ThrowingFunction.toFunction(msiLog -> {
+            // MSI log files are UTF16LE-encoded
+            return Files.lines(msiLog, StandardCharsets.UTF_16LE);
+        }));
     }
 
     private JPackageCommand adjustArgumentsBeforeExecution() {
@@ -1164,9 +1189,11 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     private boolean ignoreDefaultRuntime;
     private boolean ignoreDefaultVerbose;
     private boolean immutable;
+    private Path dmgInstallDir;
     private final Actions prerequisiteActions;
     private final Actions verifyActions;
     private Path executeInDirectory;
+    private Path winMsiLogFile;
     private Set<AppLayoutAssert> appLayoutAsserts = Set.of(AppLayoutAssert.values());
     private Consumer<Stream<String>> outputValidator;
     private static boolean defaultWithToolProvider;

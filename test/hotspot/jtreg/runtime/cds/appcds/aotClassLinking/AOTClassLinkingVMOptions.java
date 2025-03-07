@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,15 @@ public class AOTClassLinkingVMOptions {
         TestCommon.run("-cp", appJar, "-Xlog:cds", "-Djava.security.manager=default")
             .assertAbnormalExit("CDS archive has aot-linked classes." +
                                 " It cannot be used with -Djava.security.manager=default.");
+
+        // Dumping with AOTInvokeDynamicLinking disabled
+        TestCommon.testDump(appJar, TestCommon.list("Hello"),
+                            "-XX:+UnlockDiagnosticVMOptions", "-XX:+AOTClassLinking", "-XX:-AOTInvokeDynamicLinking");
+
+        testCase("Archived full module graph must be enabled at runtime (with -XX:-AOTInvokeDynamicLinking)");
+        TestCommon.run("-cp", appJar, "-Djdk.module.validation=1", "Hello")
+            .assertAbnormalExit("CDS archive has aot-linked classes." +
+                                " It cannot be used when archived full module graph is not used");
 
         // NOTE: tests for ClassFileLoadHook + AOTClassLinking is in
         // ../jvmti/ClassFileLoadHookTest.java

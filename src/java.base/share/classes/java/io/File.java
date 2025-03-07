@@ -56,7 +56,8 @@ import jdk.internal.util.StaticProperty;
  * case of Microsoft Windows UNC pathnames, a hostname.  Each subsequent name
  * in an abstract pathname denotes a directory; the last name may denote
  * either a directory or a file.  The <em>empty</em> abstract pathname has no
- * prefix and an empty name sequence.
+ * prefix and an empty name sequence.  Accessing a file with the empty abstract
+ * pathname is equivalent to accessing the current user directory.
  *
  * <p> The conversion of a pathname string to or from an abstract pathname is
  * inherently system-dependent.  When an abstract pathname is converted into a
@@ -680,7 +681,6 @@ public class File
         if (isInvalid()) {
             throw new MalformedURLException("Invalid file path");
         }
-        @SuppressWarnings("deprecation")
         var result = new URL("file", "", slashify(getAbsolutePath(), isDirectory()));
         return result;
     }
