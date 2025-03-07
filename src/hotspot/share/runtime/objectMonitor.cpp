@@ -116,7 +116,7 @@ DEBUG_ONLY(static volatile bool InitDone = false;)
 
 OopStorage* ObjectMonitor::_oop_storage = nullptr;
 
-OopHandle ObjectMonitor::_vthread_cxq_head;
+OopHandle ObjectMonitor::_vthread_list_head;
 ParkEvent* ObjectMonitor::_vthread_unparker_ParkEvent = nullptr;
 
 // -----------------------------------------------------------------------------
@@ -127,103 +127,139 @@ ParkEvent* ObjectMonitor::_vthread_unparker_ParkEvent = nullptr;
 //   its owner_id (return value from owner_id_from()).
 //
 // * Invariant: A thread appears on at most one monitor list --
-//   cxq, EntryList or WaitSet -- at any one time.
+//   entry_list or WaitSet -- at any one time.
 //
-// * Contending threads "push" themselves onto the cxq with CAS
+// * Contending threads "push" themselves onto the entry_list with CAS
 //   and then spin/park.
 //   If the thread is a virtual thread it will first attempt to
 //   unmount itself. The virtual thread will first try to freeze
 //   all frames in the heap. If the operation fails it will just
 //   follow the regular path for platform threads. If the operation
-//   succeeds, it will push itself onto the cxq with CAS and then
+//   succeeds, it will push itself onto the entry_list with CAS and then
 //   return back to Java to continue the unmount logic.
 //
 // * After a contending thread eventually acquires the lock it must
-//   dequeue itself from either the EntryList or the cxq.
+//   dequeue itself from the entry_list.
 //
 // * The exiting thread identifies and unparks an "heir presumptive"
-//   tentative successor thread on the EntryList. In case the successor
+//   tentative successor thread on the entry_list. In case the successor
 //   is an unmounted virtual thread, the exiting thread will first try
 //   to add it to the list of vthreads waiting to be unblocked, and on
 //   success it will unpark the special unblocker thread instead, which
 //   will be in charge of submitting the vthread back to the scheduler
 //   queue. Critically, the exiting thread doesn't unlink the successor
-//   thread from the EntryList. After having been unparked/re-scheduled,
+//   thread from the entry_list. After having been unparked/re-scheduled,
 //   the wakee will recontend for ownership of the monitor. The successor
 //   (wakee) will either acquire the lock or re-park/unmount itself.
 //
 //   Succession is provided for by a policy of competitive handoff.
 //   The exiting thread does _not_ grant or pass ownership to the
-//   successor thread.  (This is also referred to as "handoff" succession").
+//   successor thread.  (This is also referred to as "handoff succession").
 //   Instead the exiting thread releases ownership and possibly wakes
 //   a successor, so the successor can (re)compete for ownership of the lock.
-//   If the EntryList is empty but the cxq is populated the exiting
-//   thread will drain the cxq into the EntryList.  It does so by
-//   by detaching the cxq (installing null with CAS) and folding
-//   the threads from the cxq into the EntryList.  The EntryList is
-//   doubly linked, while the cxq is singly linked because of the
-//   CAS-based "push" used to enqueue recently arrived threads (RATs).
 //
-// * Concurrency invariants:
+// * The entry_list forms a queue of threads stalled trying to acquire
+//   the lock. Within the entry_list the next pointers always form a
+//   consistent singly linked list. At unlock-time when the unlocking
+//   thread notices that the tail of the entry_list is not known, we
+//   convert the singly linked entry_list into a doubly linked list by
+//   assigning the prev pointers and the entry_list_tail pointer.
 //
-//   -- only the monitor owner may access or mutate the EntryList.
-//      The mutex property of the monitor itself protects the EntryList
-//      from concurrent interference.
-//   -- Only the monitor owner may detach the cxq.
+//   Example:
+//
+//   The first contending thread that "pushed" itself onto entry_list,
+//   will be the last thread in the list. Each newly pushed thread in
+//   entry_list will be linked through its next pointer, and have its
+//   prev pointer set to null. Thus pushing six threads A-F (in that
+//   order) onto entry_list, will form a singly linked list, see 1)
+//   below.
+//
+//      1)  entry_list       ->F->E->D->C->B->A->null
+//          entry_list_tail  ->null
+//
+//   Since the successor is chosen in FIFO order, the exiting thread
+//   needs to find the tail of the entry_list. This is done by walking
+//   from the entry_list head. While walking the list we also assign
+//   the prev pointers of each thread, essentially forming a doubly
+//   linked list, see 2) below.
+//
+//      2)  entry_list       ->F<=>E<=>D<=>C<=>B<=>A->null
+//          entry_list_tail  ----------------------^
+//
+//   Once we have formed a doubly linked list it's easy to find the
+//   successor (A), wake it up, have it remove itself, and update the
+//   tail pointer, as seen in and 3) below.
+//
+//      3)  entry_list       ->F<=>E<=>D<=>C<=>B->null
+//          entry_list_tail  ------------------^
+//
+//   At any time new threads can add themselves to the entry_list, see
+//   4) below.
+//
+//      4)  entry_list       ->I->H->G->F<=>E<=>D->null
+//          entry_list_tail  -------------------^
+//
+//   At some point in time the thread (F) that wants to remove itself
+//   from the end of the list, will not have any prev pointer, see 5)
+//   below.
+//
+//      5)  entry_list       ->I->H->G->F->null
+//          entry_list_tail  -----------^
+//
+//   To resolve this we just start walking from the entry_list head
+//   again, forming a new doubly linked list, before removing the
+//   thread (F), see 6) and 7) below.
+//
+//      6)  entry_list       ->I<=>H<=>G<=>F->null
+//          entry_list_tail  --------------^
+//
+//      7)  entry_list       ->I<=>H<=>G->null
+//          entry_list_tail  ----------^
+//
+// * The monitor itself protects all of the operations on the
+//   entry_list except for the CAS of a new arrival to the head. Only
+//   the monitor owner can read or write the prev links (e.g. to
+//   remove itself) or update the tail.
 //
 // * The monitor entry list operations avoid locks, but strictly speaking
 //   they're not lock-free.  Enter is lock-free, exit is not.
 //   For a description of 'Methods and apparatus providing non-blocking access
 //   to a resource,' see U.S. Pat. No. 7844973.
 //
-// * The cxq can have multiple concurrent "pushers" but only one concurrent
-//   detaching thread.  This mechanism is immune from the ABA corruption.
-//   More precisely, the CAS-based "push" onto cxq is ABA-oblivious.
+// * The entry_list can have multiple concurrent "pushers" but only
+//   one concurrent detaching thread. There is no ABA-problem with
+//   this usage of CAS.
 //
-// * Taken together, the cxq and the EntryList constitute or form a
-//   single logical queue of threads stalled trying to acquire the lock.
-//   We use two distinct lists to improve the odds of a constant-time
-//   dequeue operation after acquisition (in the ::enter() epilogue) and
-//   to reduce heat on the list ends.  (c.f. Michael Scott's "2Q" algorithm).
-//   A key desideratum is to minimize queue & monitor metadata manipulation
-//   that occurs while holding the monitor lock -- that is, we want to
-//   minimize monitor lock holds times.  Note that even a small amount of
-//   fixed spinning will greatly reduce the # of enqueue-dequeue operations
-//   on EntryList|cxq.  That is, spinning relieves contention on the "inner"
-//   locks and monitor metadata.
+// * As long as the entry_list_tail is known the odds are good that we
+//   should be able to dequeue after acquisition (in the ::enter()
+//   epilogue) in constant-time. This is good since a key desideratum
+//   is to minimize queue & monitor metadata manipulation that occurs
+//   while holding the monitor lock -- that is, we want to minimize
+//   monitor lock holds times. Note that even a small amount of fixed
+//   spinning will greatly reduce the # of enqueue-dequeue operations
+//   on entry_list. That is, spinning relieves contention on the
+//   "inner" locks and monitor metadata.
 //
-//   Cxq points to the set of Recently Arrived Threads attempting entry.
-//   Because we push threads onto _cxq with CAS, the RATs must take the form of
-//   a singly-linked LIFO.  We drain _cxq into EntryList at unlock-time when
-//   the unlocking thread notices that EntryList is null but _cxq is != null.
-//
-//   The EntryList is ordered by the prevailing queue discipline and
-//   can be organized in any convenient fashion, such as a doubly-linked list or
-//   a circular doubly-linked list.  Critically, we want insert and delete operations
-//   to operate in constant-time.  If we need a priority queue then something akin
-//   to Solaris' sleepq would work nicely.  Viz.,
-//   http://agg.eng/ws/on10_nightly/source/usr/src/uts/common/os/sleepq.c.
-//   Queue discipline is enforced at ::exit() time, when the unlocking thread
-//   drains the cxq into the EntryList, and orders or reorders the threads on the
-//   EntryList accordingly.
-//
-//   Barring "lock barging", this mechanism provides fair cyclic ordering,
-//   somewhat similar to an elevator-scan.
+//   Insert and delete operations may not operate in constant-time if
+//   we have interference because some other thread is adding or
+//   removing the head element of entry_list or if we need to convert
+//   the singly linked entry_list into a doubly linked list to find the
+//   tail.
 //
 // * The monitor synchronization subsystem avoids the use of native
 //   synchronization primitives except for the narrow platform-specific
-//   park-unpark abstraction.  See the comments in os_posix.cpp regarding
-//   the semantics of park-unpark.  Put another way, this monitor implementation
+//   park-unpark abstraction. See the comments in os_posix.cpp regarding
+//   the semantics of park-unpark. Put another way, this monitor implementation
 //   depends only on atomic operations and park-unpark.
 //
 // * Waiting threads reside on the WaitSet list -- wait() puts
 //   the caller onto the WaitSet.
 //
-// * notify() or notifyAll() simply transfers threads from the WaitSet to
-//   either the EntryList or cxq.  Subsequent exit() operations will
-//   unpark/re-schedule the notifyee. Unparking/re-scheduling a notifyee in
-//   notify() is inefficient - it's likely the notifyee would simply impale
-//   itself on the lock held by the notifier.
+// * notify() or notifyAll() simply transfers threads from the WaitSet
+//   to the entry_list. Subsequent exit() operations will
+//   unpark/re-schedule the notifyee. Unparking/re-scheduling a
+//   notifyee in notify() is inefficient - it's likely the notifyee
+//   would simply impale itself on the lock held by the notifier.
 
 // Check that object() and set_object() are called from the right context:
 static void check_object_context() {
@@ -255,8 +291,8 @@ ObjectMonitor::ObjectMonitor(oop object) :
   _previous_owner_tid(0),
   _next_om(nullptr),
   _recursions(0),
-  _EntryList(nullptr),
-  _cxq(nullptr),
+  _entry_list(nullptr),
+  _entry_list_tail(nullptr),
   _succ(NO_OWNER),
   _SpinDuration(ObjectMonitor::Knob_SpinLimit),
   _contentions(0),
@@ -473,7 +509,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
   return true;
 }
 
-void ObjectMonitor::notify_contended_enter(JavaThread *current) {
+void ObjectMonitor::notify_contended_enter(JavaThread* current) {
   current->set_current_pending_monitor(this);
 
   DTRACE_MONITOR_PROBE(contended__enter, this, object(), current);
@@ -488,7 +524,7 @@ void ObjectMonitor::notify_contended_enter(JavaThread *current) {
   }
 }
 
-void ObjectMonitor::enter_with_contention_mark(JavaThread *current, ObjectMonitorContentionMark &cm) {
+void ObjectMonitor::enter_with_contention_mark(JavaThread* current, ObjectMonitorContentionMark &cm) {
   assert(current == JavaThread::current(), "must be");
   assert(!has_owner(current), "must be");
   assert(cm._monitor == this, "must be");
@@ -518,7 +554,7 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread *current, ObjectMonito
       bool acquired = VThreadMonitorEnter(current);
       if (acquired) {
         // We actually acquired the monitor while trying to add the vthread to the
-        // _cxq so cancel preemption. We will still go through the preempt stub
+        // _entry_list so cancel preemption. We will still go through the preempt stub
         // but instead of unmounting we will call thaw to continue execution.
         current->set_preemption_cancelled(true);
         if (JvmtiExport::should_post_monitor_contended_entered()) {
@@ -657,6 +693,47 @@ ObjectMonitor::TryLockResult ObjectMonitor::TryLock(JavaThread* current) {
   return first_own == own ? TryLockResult::HasOwner : TryLockResult::Interference;
 }
 
+// Push "current" onto the head of the _entry_list. Once on _entry_list,
+// current stays on-queue until it acquires the lock.
+void ObjectMonitor::add_to_entry_list(JavaThread* current, ObjectWaiter* node) {
+  node->_prev   = nullptr;
+  node->TState  = ObjectWaiter::TS_ENTER;
+
+  for (;;) {
+    ObjectWaiter* head = Atomic::load(&_entry_list);
+    node->_next = head;
+    if (Atomic::cmpxchg(&_entry_list, head, node) == head) {
+      return;
+    }
+  }
+}
+
+// Push "current" onto the head of the entry_list.
+// If the _entry_list was changed during our push operation, we try to
+// lock the monitor. Returns true if we locked the monitor, and false
+// if we added current to _entry_list. Once on _entry_list, current
+// stays on-queue until it acquires the lock.
+bool ObjectMonitor::try_lock_or_add_to_entry_list(JavaThread* current, ObjectWaiter* node) {
+  node->_prev   = nullptr;
+  node->TState  = ObjectWaiter::TS_ENTER;
+
+  for (;;) {
+    ObjectWaiter* head = Atomic::load(&_entry_list);
+    node->_next = head;
+    if (Atomic::cmpxchg(&_entry_list, head, node) == head) {
+      return false;
+    }
+
+    // Interference - the CAS failed because _entry_list changed.  Before
+    // retrying the CAS retry taking the lock as it may now be free.
+    if (TryLock(current) == TryLockResult::Success) {
+      assert(!has_successor(current), "invariant");
+      assert(has_owner(current), "invariant");
+      return true;
+    }
+  }
+}
+
 // Deflate the specified ObjectMonitor if not in-use. Returns true if it
 // was deflated and false otherwise.
 //
@@ -727,11 +804,10 @@ bool ObjectMonitor::deflate_monitor(Thread* current) {
   guarantee(contentions() < 0, "must be negative: contentions=%d",
             contentions());
   guarantee(_waiters == 0, "must be 0: waiters=%d", _waiters);
-  guarantee(_cxq == nullptr, "must be no contending threads: cxq="
-            INTPTR_FORMAT, p2i(_cxq));
-  guarantee(_EntryList == nullptr,
-            "must be no entering threads: EntryList=" INTPTR_FORMAT,
-            p2i(_EntryList));
+  ObjectWaiter* w = Atomic::load(&_entry_list);
+  guarantee(w == nullptr,
+            "must be no entering threads: entry_list=" INTPTR_FORMAT,
+            p2i(w));
 
   if (obj != nullptr) {
     if (log_is_enabled(Trace, monitorinflation)) {
@@ -816,8 +892,7 @@ const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
   ss->print("is_busy: waiters=%d"
             ", contentions=%d"
             ", owner=" INT64_FORMAT
-            ", cxq=" PTR_FORMAT
-            ", EntryList=" PTR_FORMAT,
+            ", entry_list=" PTR_FORMAT,
             _waiters,
             (contentions() > 0 ? contentions() : 0),
             owner_is_DEFLATER_MARKER()
@@ -825,8 +900,7 @@ const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
                 // ignores DEFLATER_MARKER values.
                 ? NO_OWNER
                 : owner_raw(),
-            p2i(_cxq),
-            p2i(_EntryList));
+            p2i(_entry_list));
   return ss->base();
 }
 
@@ -859,7 +933,7 @@ void ObjectMonitor::EnterI(JavaThread* current) {
   assert(!has_successor(current), "invariant");
   assert(!has_owner(current), "invariant");
 
-  // Enqueue "current" on ObjectMonitor's _cxq.
+  // Enqueue "current" on ObjectMonitor's _entry_list.
   //
   // Node acts as a proxy for current.
   // As an aside, if were to ever rewrite the synchronization code mostly
@@ -870,31 +944,16 @@ void ObjectMonitor::EnterI(JavaThread* current) {
 
   ObjectWaiter node(current);
   current->_ParkEvent->reset();
-  node._prev   = (ObjectWaiter*) 0xBAD;
-  node.TState  = ObjectWaiter::TS_CXQ;
 
-  // Push "current" onto the front of the _cxq.
-  // Once on cxq/EntryList, current stays on-queue until it acquires the lock.
-  // Note that spinning tends to reduce the rate at which threads
-  // enqueue and dequeue on EntryList|cxq.
-  ObjectWaiter* nxt;
-  for (;;) {
-    node._next = nxt = _cxq;
-    if (Atomic::cmpxchg(&_cxq, nxt, &node) == nxt) break;
-
-    // Interference - the CAS failed because _cxq changed.  Just retry.
-    // As an optional optimization we retry the lock.
-    if (TryLock(current) == TryLockResult::Success) {
-      assert(!has_successor(current), "invariant");
-      assert(has_owner(current), "invariant");
-      return;
-    }
+  if (try_lock_or_add_to_entry_list(current, &node)) {
+    return; // We got the lock.
   }
+  // This thread is now added to the _entry_list.
 
   // The lock might have been released while this thread was occupied queueing
-  // itself onto _cxq.  To close the race and avoid "stranding" and
+  // itself onto _entry_list.  To close the race and avoid "stranding" and
   // progress-liveness failure we must resample-retry _owner before parking.
-  // Note the Dekker/Lamport duality: ST cxq; MEMBAR; LD Owner.
+  // Note the Dekker/Lamport duality: ST _entry_list; MEMBAR; LD Owner.
   // In this case the ST-MEMBAR is accomplished with CAS().
   //
   // TODO: Defer all thread state transitions until park-time.
@@ -970,15 +1029,7 @@ void ObjectMonitor::EnterI(JavaThread* current) {
   }
 
   // Egress :
-  // current has acquired the lock -- Unlink current from the cxq or EntryList.
-  // Normally we'll find current on the EntryList .
-  // From the perspective of the lock owner (this thread), the
-  // EntryList is stable and cxq is prepend-only.
-  // The head of cxq is volatile but the interior is stable.
-  // In addition, current.TState is stable.
-
-  assert(has_owner(current), "invariant");
-
+  // Current has acquired the lock -- Unlink current from the _entry_list.
   UnlinkAfterAcquire(current, &node);
   if (has_successor(current)) {
     clear_successor();
@@ -988,9 +1039,9 @@ void ObjectMonitor::EnterI(JavaThread* current) {
 
   // We've acquired ownership with CAS().
   // CAS is serializing -- it has MEMBAR/FENCE-equivalent semantics.
-  // But since the CAS() this thread may have also stored into _succ,
-  // EntryList or cxq.  These meta-data updates must be
-  // visible __before this thread subsequently drops the lock.
+  // But since the CAS() this thread may have also stored into _succ
+  // or entry_list.  These meta-data updates must be visible __before
+  // this thread subsequently drops the lock.
   // Consider what could occur if we didn't enforce this constraint --
   // STs to monitor meta-data and user-data could reorder with (become
   // visible after) the ST in exit that drops ownership of the lock.
@@ -1004,7 +1055,7 @@ void ObjectMonitor::EnterI(JavaThread* current) {
   // therefore before some other thread (CPU) has a chance to acquire the lock.
   // See also: http://gee.cs.oswego.edu/dl/jmm/cookbook.html.
   //
-  // Critically, any prior STs to _succ or EntryList must be visible before
+  // Critically, any prior STs to _succ or entry_list must be visible before
   // the ST of null into _owner in the *subsequent* (following) corresponding
   // monitorexit.
 
@@ -1027,7 +1078,7 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
 
   for (;;) {
     ObjectWaiter::TStates v = currentNode->TState;
-    guarantee(v == ObjectWaiter::TS_ENTER || v == ObjectWaiter::TS_CXQ, "invariant");
+    guarantee(v == ObjectWaiter::TS_ENTER, "invariant");
     assert(!has_owner(current), "invariant");
 
     // This thread has been notified so try to reacquire the lock.
@@ -1077,14 +1128,7 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
     OM_PERFDATA_OP(FutileWakeups, inc());
   }
 
-  // current has acquired the lock -- Unlink current from the cxq or EntryList .
-  // Normally we'll find current on the EntryList.
-  // Unlinking from the EntryList is constant-time and atomic-free.
-  // From the perspective of the lock owner (this thread), the
-  // EntryList is stable and cxq is prepend-only.
-  // The head of cxq is volatile but the interior is stable.
-  // In addition, current.TState is stable.
-
+  // Current has acquired the lock -- Unlink current from the _entry_list.
   assert(has_owner(current), "invariant");
   assert_mark_word_consistency();
   UnlinkAfterAcquire(current, currentNode);
@@ -1109,27 +1153,15 @@ bool ObjectMonitor::VThreadMonitorEnter(JavaThread* current, ObjectWaiter* waite
 
   oop vthread = current->vthread();
   ObjectWaiter* node = waiter != nullptr ? waiter : new ObjectWaiter(vthread, this);
-  node->_prev   = (ObjectWaiter*) 0xBAD;
-  node->TState  = ObjectWaiter::TS_CXQ;
-
-  // Push node associated with vthread onto the front of the _cxq.
-  ObjectWaiter* nxt;
-  for (;;) {
-    node->_next = nxt = _cxq;
-    if (Atomic::cmpxchg(&_cxq, nxt, node) == nxt) break;
-
-    // Interference - the CAS failed because _cxq changed.  Just retry.
-    // As an optional optimization we retry the lock.
-    if (TryLock(current) == TryLockResult::Success) {
-      assert(has_owner(current), "invariant");
-      assert(!has_successor(current), "invariant");
-      if (waiter == nullptr) delete node;  // for Object.wait() don't delete yet
-      return true;
-    }
+  if (try_lock_or_add_to_entry_list(current, node)) {
+    // We got the lock.
+    if (waiter == nullptr) delete node;  // for Object.wait() don't delete yet
+    return true;
   }
+  // This thread is now added to the entry_list.
 
   // We have to try once more since owner could have exited monitor and checked
-  // _cxq before we added the node to the queue.
+  // _entry_list before we added the node to the queue.
   if (TryLock(current) == TryLockResult::Success) {
     assert(has_owner(current), "invariant");
     UnlinkAfterAcquire(current, node);
@@ -1163,7 +1195,7 @@ bool ObjectMonitor::resume_operation(JavaThread* current, ObjectWaiter* node, Co
   // Retry acquiring monitor...
 
   int state = node->TState;
-  guarantee(state == ObjectWaiter::TS_ENTER || state == ObjectWaiter::TS_CXQ, "invariant");
+  guarantee(state == ObjectWaiter::TS_ENTER, "invariant");
 
   if (TryLock(current) == TryLockResult::Success) {
     VThreadEpilog(current, node);
@@ -1218,71 +1250,131 @@ void ObjectMonitor::VThreadEpilog(JavaThread* current, ObjectWaiter* node) {
   }
 }
 
-// By convention we unlink a contending thread from EntryList|cxq immediately
-// after the thread acquires the lock in ::enter().  Equally, we could defer
-// unlinking the thread until ::exit()-time.
+// Return the tail of the _entry_list. If the tail is currently not
+// known, find it by walking from the head of _entry_list, and while
+// doing so assign the _prev pointers to create a doubly linked list.
+ObjectWaiter* ObjectMonitor::entry_list_tail(JavaThread* current) {
+  assert(has_owner(current), "invariant");
+  ObjectWaiter* w = _entry_list_tail;
+  if (w != nullptr) {
+    return w;
+  }
+  // Need acquire here to match the implicit release of the cmpxchg
+  // that updated _entry_list, so we can access w->_next.
+  w = Atomic::load_acquire(&_entry_list);
+  assert(w != nullptr, "invariant");
+  if (w->next() == nullptr) {
+    _entry_list_tail = w;
+    return w;
+  }
+  ObjectWaiter* prev = nullptr;
+  while (w != nullptr) {
+    assert(w->TState == ObjectWaiter::TS_ENTER, "invariant");
+    w->_prev = prev;
+    prev = w;
+    w = w->next();
+  }
+  _entry_list_tail = prev;
+  return prev;
+}
+
+// By convention we unlink a contending thread from _entry_list
+// immediately after the thread acquires the lock in ::enter().
+// The head of _entry_list is volatile but the interior is stable.
+// In addition, current.TState is stable.
 
 void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* currentNode) {
   assert(has_owner(current), "invariant");
   assert((!currentNode->is_vthread() && currentNode->thread() == current) ||
          (currentNode->is_vthread() && currentNode->vthread() == current->vthread()), "invariant");
 
-  if (currentNode->TState == ObjectWaiter::TS_ENTER) {
-    // Normal case: remove current from the DLL EntryList .
-    // This is a constant-time operation.
-    ObjectWaiter* nxt = currentNode->_next;
-    ObjectWaiter* prv = currentNode->_prev;
-    if (nxt != nullptr) nxt->_prev = prv;
-    if (prv != nullptr) prv->_next = nxt;
-    if (currentNode == _EntryList) _EntryList = nxt;
-    assert(nxt == nullptr || nxt->TState == ObjectWaiter::TS_ENTER, "invariant");
-    assert(prv == nullptr || prv->TState == ObjectWaiter::TS_ENTER, "invariant");
-  } else {
-    assert(currentNode->TState == ObjectWaiter::TS_CXQ, "invariant");
-    // Inopportune interleaving -- current is still on the cxq.
-    // This usually means the enqueue of self raced an exiting thread.
-    // Normally we'll find current near the front of the cxq, so
-    // dequeueing is typically fast.  If needbe we can accelerate
-    // this with some MCS/CHL-like bidirectional list hints and advisory
-    // back-links so dequeueing from the interior will normally operate
-    // in constant-time.
-    // Dequeue current from either the head (with CAS) or from the interior
-    // with a linear-time scan and normal non-atomic memory operations.
-    // CONSIDER: if current is on the cxq then simply drain cxq into EntryList
-    // and then unlink current from EntryList.  We have to drain eventually,
-    // so it might as well be now.
+  // Check if we are unlinking the last element in the _entry_list.
+  // This is by far the most common case.
+  if (currentNode->next() == nullptr) {
+    assert(_entry_list_tail == nullptr || _entry_list_tail == currentNode, "invariant");
 
-    ObjectWaiter* v = _cxq;
-    assert(v != nullptr, "invariant");
-    if (v != currentNode || Atomic::cmpxchg(&_cxq, v, currentNode->_next) != v) {
-      // The CAS above can fail from interference IFF a "RAT" arrived.
-      // In that case current must be in the interior and can no longer be
-      // at the head of cxq.
-      if (v == currentNode) {
-        assert(_cxq != v, "invariant");
-        v = _cxq;          // CAS above failed - start scan at head of list
+    ObjectWaiter* w = Atomic::load(&_entry_list);
+    if (w == currentNode) {
+      // The currentNode is the only element in _entry_list.
+      if (Atomic::cmpxchg(&_entry_list, w, (ObjectWaiter*)nullptr) == w) {
+        _entry_list_tail = nullptr;
+        currentNode->set_bad_pointers();
+        return;
       }
-      ObjectWaiter* p;
-      ObjectWaiter* q = nullptr;
-      for (p = v; p != nullptr && p != currentNode; p = p->_next) {
-        q = p;
-        assert(p->TState == ObjectWaiter::TS_CXQ, "invariant");
-      }
-      assert(v != currentNode, "invariant");
-      assert(p == currentNode, "Node not found on cxq");
-      assert(p != _cxq, "invariant");
-      assert(q != nullptr, "invariant");
-      assert(q->_next == p, "invariant");
-      q->_next = p->_next;
+      // The CAS above can fail from interference IFF a contending
+      // thread "pushed" itself onto entry_list. So fall-through to
+      // building the doubly linked list.
+      assert(currentNode->prev() == nullptr, "invariant");
     }
+    if (currentNode->prev() == nullptr) {
+      // Build the doubly linked list to get hold of
+      // currentNode->prev().
+      _entry_list_tail = nullptr;
+      entry_list_tail(current);
+      assert(currentNode->prev() != nullptr, "must be");
+    }
+    // The currentNode is the last element in _entry_list and we know
+    // which element is the previous one.
+    assert(_entry_list != currentNode, "invariant");
+    _entry_list_tail = currentNode->prev();
+    _entry_list_tail->_next = nullptr;
+    currentNode->set_bad_pointers();
+    return;
   }
 
-#ifdef ASSERT
-  // Diagnostic hygiene ...
-  currentNode->_prev  = (ObjectWaiter*) 0xBAD;
-  currentNode->_next  = (ObjectWaiter*) 0xBAD;
-  currentNode->TState = ObjectWaiter::TS_RUN;
-#endif
+  // If we get here it means the current thread enqueued itself on the
+  // _entry_list but was then able to "steal" the lock before the
+  // chosen successor was able to. Consequently currentNode must be an
+  // interior node in the _entry_list, or the head.
+  assert(currentNode->next() != nullptr, "invariant");
+  assert(currentNode != _entry_list_tail, "invariant");
+
+  // Check if we are in the singly linked portion of the
+  // _entry_list. If we are the head then we try to remove ourselves,
+  // else we convert to the doubly linked list.
+  if (currentNode->prev() == nullptr) {
+    ObjectWaiter* w = Atomic::load(&_entry_list);
+
+    assert(w != nullptr, "invariant");
+    if (w == currentNode) {
+      ObjectWaiter* next = currentNode->next();
+      // currentNode is at the head of _entry_list.
+      if (Atomic::cmpxchg(&_entry_list, w, next) == w) {
+        // The CAS above sucsessfully unlinked currentNode from the
+        // head of the _entry_list.
+        assert(_entry_list != w, "invariant");
+        next->_prev = nullptr;
+        currentNode->set_bad_pointers();
+        return;
+      } else {
+        // The CAS above can fail from interference IFF a contending
+        // thread "pushed" itself onto _entry_list, in which case
+        // currentNode must now be in the interior of the
+        // list. Fall-through to building the doubly linked list.
+        assert(_entry_list != currentNode, "invariant");
+      }
+    }
+    // Build the doubly linked list to get hold of currentNode->prev().
+    _entry_list_tail = nullptr;
+    entry_list_tail(current);
+    assert(currentNode->prev() != nullptr, "must be");
+  }
+
+  // We now know we are unlinking currentNode from the interior of a
+  // doubly linked list.
+  assert(currentNode->next() != nullptr, "");
+  assert(currentNode->prev() != nullptr, "");
+  assert(currentNode != _entry_list, "");
+  assert(currentNode != _entry_list_tail, "");
+
+  ObjectWaiter* nxt = currentNode->next();
+  ObjectWaiter* prv = currentNode->prev();
+  assert(nxt->TState == ObjectWaiter::TS_ENTER, "invariant");
+  assert(prv->TState == ObjectWaiter::TS_ENTER, "invariant");
+
+  nxt->_prev = prv;
+  prv->_next = nxt;
+  currentNode->set_bad_pointers();
 }
 
 // -----------------------------------------------------------------------------
@@ -1306,33 +1398,25 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
 // C2_MacroAssembler::fast_unlock()
 //
 //   1. A release barrier ensures that changes to monitor meta-data
-//      (_succ, _EntryList, _cxq) and data protected by the lock will be
+//      (_succ, _entry_list) and data protected by the lock will be
 //      visible before we release the lock.
 //   2. Release the lock by clearing the owner.
 //   3. A storeload MEMBAR is needed between releasing the owner and
 //      subsequently reading meta-data to safely determine if the lock is
 //      contended (step 4) without an elected successor (step 5).
-//   4. If both _EntryList and _cxq are null, we are done, since there is no
+//   4. If _entry_list is null, we are done, since there is no
 //      other thread waiting on the lock to wake up. I.e. there is no
 //      contention.
 //   5. If there is a successor (_succ is non-null), we are done. The
 //      responsibility for guaranteeing progress-liveness has now implicitly
 //      been moved from the exiting thread to the successor.
-//   6. There are waiters in the entry list (_EntryList and/or cxq are
-//      non-null), but there is no successor (_succ is null), so we need to
+//   6. There are waiters in the entry list (_entry_list is non-null),
+//      but there is no successor (_succ is null), so we need to
 //      wake up (unpark) a waiting thread to avoid stranding.
 //
-// Note that since only the current lock owner can manipulate the _EntryList
-// or drain _cxq, we need to reacquire the lock before we can wake up
-// (unpark) a waiting thread.
-//
-// Note that we read the EntryList and then the cxq after dropping the
-// lock, so the values need not form a stable snapshot. In particular,
-// after reading the (empty) EntryList, another thread could acquire
-// and release the lock, moving any entries in the cxq to the
-// EntryList, causing the current thread to see an empty cxq and
-// conclude there are no waiters. But this is okay as the thread that
-// moved the cxq is responsible for waking the successor.
+// Note that since only the current lock owner can manipulate the
+// _entry_list (except for pushing new threads to the head), we need to
+// reacquire the lock before we can wake up (unpark) a waiting thread.
 //
 // The CAS() in enter provides for safety and exclusion, while the
 // MEMBAR in exit provides for progress and avoids stranding.
@@ -1390,11 +1474,6 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
     release_clear_owner(current);
     OrderAccess::storeload();
 
-    if ((intptr_t(_EntryList)|intptr_t(_cxq)) == 0 || has_successor()) {
-      return;
-    }
-    // Other threads are blocked trying to acquire the lock.
-
     // Normally the exiting thread is responsible for ensuring succession,
     // but if this thread observes other successors are ready or other
     // entering threads are spinning after it has stored null into _owner
@@ -1420,11 +1499,16 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
     // the lock.  Note that the dropped lock needs to become visible to the
     // spinner.
 
-    // It appears that an heir-presumptive (successor) must be made ready.
-    // Only the current lock owner can manipulate the EntryList or
-    // drain _cxq, so we need to reacquire the lock.  If we fail
-    // to reacquire the lock the responsibility for ensuring succession
-    // falls to the new owner.
+    if (_entry_list == nullptr || has_successor()) {
+      return;
+    }
+
+    // Other threads are blocked trying to acquire the lock and there
+    // is no successor, so it appears that an heir-presumptive
+    // (successor) must be made ready. Only the current lock owner can
+    // detach threads from the entry_list, therefore we need to
+    // reacquire the lock. If we fail to reacquire the lock the
+    // responsibility for ensuring succession falls to the new owner.
 
     if (TryLock(current) != TryLockResult::Success) {
       // Some other thread acquired the lock (or the monitor was
@@ -1436,72 +1520,21 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
 
     ObjectWaiter* w = nullptr;
 
-    w = _EntryList;
+    w = Atomic::load(&_entry_list);
     if (w != nullptr) {
+      w = entry_list_tail(current);
       // I'd like to write: guarantee (w->_thread != current).
-      // But in practice an exiting thread may find itself on the EntryList.
+      // But in practice an exiting thread may find itself on the entry_list.
       // Let's say thread T1 calls O.wait().  Wait() enqueues T1 on O's waitset and
       // then calls exit().  Exit release the lock by setting O._owner to null.
       // Let's say T1 then stalls.  T2 acquires O and calls O.notify().  The
-      // notify() operation moves T1 from O's waitset to O's EntryList. T2 then
-      // release the lock "O".  T2 resumes immediately after the ST of null into
-      // _owner, above.  T2 notices that the EntryList is populated, so it
-      // reacquires the lock and then finds itself on the EntryList.
+      // notify() operation moves T1 from O's waitset to O's entry_list. T2 then
+      // release the lock "O".  T1 resumes immediately after the ST of null into
+      // _owner, above.  T1 notices that the entry_list is populated, so it
+      // reacquires the lock and then finds itself on the entry_list.
       // Given all that, we have to tolerate the circumstance where "w" is
       // associated with current.
       assert(w->TState == ObjectWaiter::TS_ENTER, "invariant");
-      ExitEpilog(current, w);
-      return;
-    }
-
-    // If we find that both _cxq and EntryList are null then just
-    // re-run the exit protocol from the top.
-    w = _cxq;
-    if (w == nullptr) continue;
-
-    // Drain _cxq into EntryList - bulk transfer.
-    // First, detach _cxq.
-    // The following loop is tantamount to: w = swap(&cxq, nullptr)
-    for (;;) {
-      assert(w != nullptr, "Invariant");
-      ObjectWaiter* u = Atomic::cmpxchg(&_cxq, w, (ObjectWaiter*)nullptr);
-      if (u == w) break;
-      w = u;
-    }
-
-    assert(w != nullptr, "invariant");
-    assert(_EntryList == nullptr, "invariant");
-
-    // Convert the LIFO SLL anchored by _cxq into a DLL.
-    // The list reorganization step operates in O(LENGTH(w)) time.
-    // It's critical that this step operate quickly as
-    // "current" still holds the outer-lock, restricting parallelism
-    // and effectively lengthening the critical section.
-    // Invariant: s chases t chases u.
-    // TODO-FIXME: consider changing EntryList from a DLL to a CDLL so
-    // we have faster access to the tail.
-
-    _EntryList = w;
-    ObjectWaiter* q = nullptr;
-    ObjectWaiter* p;
-    for (p = w; p != nullptr; p = p->_next) {
-      guarantee(p->TState == ObjectWaiter::TS_CXQ, "Invariant");
-      p->TState = ObjectWaiter::TS_ENTER;
-      p->_prev = q;
-      q = p;
-    }
-
-    // We need to: ST EntryList; MEMBAR #storestore; ST _owner = nullptr
-    // The MEMBAR is satisfied by the release_store() operation in ExitEpilog().
-
-    // See if we can abdicate to a spinner instead of waking a thread.
-    // A primary goal of the implementation is to reduce the
-    // context-switch rate.
-    if (has_successor()) continue;
-
-    w = _EntryList;
-    if (w != nullptr) {
-      guarantee(w->TState == ObjectWaiter::TS_ENTER, "invariant");
       ExitEpilog(current, w);
       return;
     }
@@ -1546,7 +1579,7 @@ void ObjectMonitor::ExitEpilog(JavaThread* current, ObjectWaiter* Wakee) {
   if (vthread == nullptr) {
     // Platform thread case.
     Trigger->unpark();
-  } else if (java_lang_VirtualThread::set_onWaitingList(vthread, vthread_cxq_head())) {
+  } else if (java_lang_VirtualThread::set_onWaitingList(vthread, vthread_list_head())) {
     // Virtual thread case.
     Trigger->unpark();
   }
@@ -1623,7 +1656,7 @@ static void post_monitor_wait_event(EventJavaMonitorWait* event,
   event->commit();
 }
 
-static void vthread_monitor_waited_event(JavaThread *current, ObjectWaiter* node, ContinuationWrapper& cont, EventJavaMonitorWait* event, jboolean timed_out) {
+static void vthread_monitor_waited_event(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont, EventJavaMonitorWait* event, jboolean timed_out) {
   // Since we might safepoint set the anchor so that the stack can we walked.
   assert(current->last_continuation() != nullptr, "");
   JavaFrameAnchor* anchor = current->frame_anchor();
@@ -1780,8 +1813,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       }
     }
 
-    // Node may be on the WaitSet, the EntryList (or cxq), or in transition
-    // from the WaitSet to the EntryList.
+    // Node may be on the WaitSet, or on the entry_list, or in transition
+    // from the WaitSet to the entry_list.
     // See if we need to remove Node from the WaitSet.
     // We use double-checked locking to avoid grabbing _WaitSetLock
     // if the thread is not on the wait queue.
@@ -1806,7 +1839,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     }
 
     // The thread is now either on off-list (TS_RUN),
-    // on the EntryList (TS_ENTER), or on the cxq (TS_CXQ).
+    // or on the entry_list (TS_ENTER).
     // The Node's TState variable is stable from the perspective of this thread.
     // No other threads will asynchronously modify TState.
     guarantee(node.TState != ObjectWaiter::TS_WAIT, "invariant");
@@ -1860,7 +1893,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       NoPreemptMark npm(current);
       enter(current);
     } else {
-      guarantee(v == ObjectWaiter::TS_ENTER || v == ObjectWaiter::TS_CXQ, "invariant");
+      guarantee(v == ObjectWaiter::TS_ENTER, "invariant");
       ReenterI(current, &node);
       node.wait_reenter_end(this);
     }
@@ -1906,8 +1939,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 }
 
 // Consider:
-// If the lock is cool (cxq == null && succ == null) and we're on an MP system
-// then instead of transferring a thread from the WaitSet to the EntryList
+// If the lock is cool (entry_list == null && succ == null) and we're on an MP system
+// then instead of transferring a thread from the WaitSet to the entry_list
 // we might just dequeue a thread from the WaitSet and directly unpark() it.
 
 void ObjectMonitor::INotify(JavaThread* current) {
@@ -1916,11 +1949,6 @@ void ObjectMonitor::INotify(JavaThread* current) {
   if (iterator != nullptr) {
     guarantee(iterator->TState == ObjectWaiter::TS_WAIT, "invariant");
     guarantee(!iterator->_notified, "invariant");
-    // Disposition - what might we do with iterator ?
-    // a.  add it directly to the EntryList - either tail (policy == 1)
-    //     or head (policy == 0).
-    // b.  push it onto the front of the _cxq (policy == 2).
-    // For now we use (b).
 
     if (iterator->is_vthread()) {
       oop vthread = iterator->vthread();
@@ -1938,35 +1966,12 @@ void ObjectMonitor::INotify(JavaThread* current) {
       }
     }
 
-    iterator->TState = ObjectWaiter::TS_ENTER;
-
     iterator->_notified = true;
     iterator->_notifier_tid = JFR_THREAD_ID(current);
+    add_to_entry_list(current, iterator);
 
-    ObjectWaiter* list = _EntryList;
-    if (list != nullptr) {
-      assert(list->_prev == nullptr, "invariant");
-      assert(list->TState == ObjectWaiter::TS_ENTER, "invariant");
-      assert(list != iterator, "invariant");
-    }
-
-    // prepend to cxq
-    if (list == nullptr) {
-      iterator->_next = iterator->_prev = nullptr;
-      _EntryList = iterator;
-    } else {
-      iterator->TState = ObjectWaiter::TS_CXQ;
-      for (;;) {
-        ObjectWaiter* front = _cxq;
-        iterator->_next = front;
-        if (Atomic::cmpxchg(&_cxq, front, iterator) == front) {
-          break;
-        }
-      }
-    }
-
-    // _WaitSetLock protects the wait queue, not the EntryList.  We could
-    // move the add-to-EntryList operation, above, outside the critical section
+    // _WaitSetLock protects the wait queue, not the entry_list.  We could
+    // move the add-to-entry_list operation, above, outside the critical section
     // protected by _WaitSetLock.  In practice that's not useful.  With the
     // exception of  wait() timeouts and interrupts the monitor owner
     // is the only thread that grabs _WaitSetLock.  There's almost no contention
@@ -2001,13 +2006,11 @@ void ObjectMonitor::notify(TRAPS) {
   OM_PERFDATA_OP(Notifications, inc(1));
 }
 
-
-// The current implementation of notifyAll() transfers the waiters one-at-a-time
-// from the waitset to the EntryList. This could be done more efficiently with a
-// single bulk transfer but in practice it's not time-critical. Beware too,
-// that in prepend-mode we invert the order of the waiters. Let's say that the
-// waitset is "ABCD" and the EntryList is "XYZ". After a notifyAll() in prepend
-// mode the waitset will be empty and the EntryList will be "DCBAXYZ".
+// notifyAll() transfers the waiters one-at-a-time from the waitset to
+// the entry_list. If the waitset is "ABCD" (where A was added first
+// and D last) and the entry_list is ->X->Y->Z. After a notifyAll()
+// the waitset will be empty and the entry_list will be
+// ->D->C->B->A->X->Y->Z, and the next choosen successor will be Z.
 
 void ObjectMonitor::notifyAll(TRAPS) {
   JavaThread* current = THREAD;
@@ -2075,7 +2078,7 @@ bool ObjectMonitor::VThreadWaitReenter(JavaThread* current, ObjectWaiter* node, 
   // If this was an interrupted case, set the _interrupted boolean so that
   // once we re-acquire the monitor we know if we need to throw IE or not.
   ObjectWaiter::TStates state = node->TState;
-  bool was_notified = state == ObjectWaiter::TS_ENTER || state == ObjectWaiter::TS_CXQ;
+  bool was_notified = state == ObjectWaiter::TS_ENTER;
   assert(was_notified || state == ObjectWaiter::TS_RUN, "");
   node->_interrupted = !was_notified && current->is_interrupted(false);
 
@@ -2106,7 +2109,7 @@ bool ObjectMonitor::VThreadWaitReenter(JavaThread* current, ObjectWaiter* node, 
       return true;
     }
   } else {
-    // Already moved to _cxq or _EntryList by notifier, so just add to contentions.
+    // Already moved to _entry_list by notifier, so just add to contentions.
     add_to_contentions(1);
   }
   return false;
@@ -2118,13 +2121,7 @@ bool ObjectMonitor::VThreadWaitReenter(JavaThread* current, ObjectWaiter* node, 
 // Adaptive spin-then-block - rational spinning
 //
 // Note that we spin "globally" on _owner with a classic SMP-polite TATAS
-// algorithm.  On high order SMP systems it would be better to start with
-// a brief global spin and then revert to spinning locally.  In the spirit of MCS/CLH,
-// a contending thread could enqueue itself on the cxq and then spin locally
-// on a thread-specific variable such as its ParkEvent._Event flag.
-// That's left as an exercise for the reader.  Note that global spinning is
-// not problematic on Niagara, as the L2 cache serves the interconnect and
-// has both low latency and massive bandwidth.
+// algorithm.
 //
 // Broadly, we can fix the spin frequency -- that is, the % of contended lock
 // acquisition attempts where we opt to spin --  at 100% and vary the spin count
@@ -2519,7 +2516,7 @@ void ObjectMonitor::Initialize() {
 
 // We can't call this during Initialize() because BarrierSet needs to be set.
 void ObjectMonitor::Initialize2() {
-  _vthread_cxq_head = OopHandle(JavaThread::thread_oop_storage(), nullptr);
+  _vthread_list_head = OopHandle(JavaThread::thread_oop_storage(), nullptr);
   _vthread_unparker_ParkEvent = ParkEvent::Allocate(nullptr);
 }
 
@@ -2552,8 +2549,8 @@ void ObjectMonitor::print() const { print_on(tty); }
 //   }
 //   _next_om = 0x0000000000000000
 //   _recursions = 0
-//   _EntryList = 0x0000000000000000
-//   _cxq = 0x0000000000000000
+//   _entry_list = 0x0000000000000000
+//   _entry_list_tail = 0x0000000000000000
 //   _succ = 0x0000000000000000
 //   _SpinDuration = 5000
 //   _contentions = 0
@@ -2580,8 +2577,8 @@ void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("  }");
   st->print_cr("  _next_om = " INTPTR_FORMAT, p2i(next_om()));
   st->print_cr("  _recursions = %zd", _recursions);
-  st->print_cr("  _EntryList = " INTPTR_FORMAT, p2i(_EntryList));
-  st->print_cr("  _cxq = " INTPTR_FORMAT, p2i(_cxq));
+  st->print_cr("  _entry_list = " INTPTR_FORMAT, p2i(_entry_list));
+  st->print_cr("  _entry_list_tail = " INTPTR_FORMAT, p2i(_entry_list_tail));
   st->print_cr("  _succ = " INT64_FORMAT, successor());
   st->print_cr("  _SpinDuration = %d", _SpinDuration);
   st->print_cr("  _contentions = %d", contentions());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,12 +173,9 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"with.algparams.weak", "%1$s mit %2$s (schwach)"},
         {"with.disabled", "%s (deaktiviert)"},
         {"with.algparams.disabled", "%1$s mit %2$s (deaktiviert)"},
-        {"key.bit", "%d-Bit-Schl\u00FCssel"},
-        {"key.bit.weak", "%d-Bit-Schl\u00FCssel (schwach)"},
-        {"key.bit.eccurve.weak", "%1$d-Bit-%2$s-Schl\u00FCssel (schwach)"},
-        {"key.bit.disabled", "%d-Bit-Schl\u00FCssel (deaktiviert)"},
-        {"key.bit.eccurve.disabled", "%1$d-Bit-%2$s-Schl\u00FCssel (deaktiviert)"},
-        {"unknown.size", "unbekannte Gr\u00F6\u00DFe"},
+        {"key.bit", "%s-Schl\u00FCssel"},
+        {"key.bit.weak", "%s Schl\u00FCssel (schwach)"},
+        {"key.bit.disabled", "%s Schl\u00FCssel (deaktiviert)"},
         {"nonexistent.entries.found", "Diese JAR-Datei enth\u00E4lt signierte Eintr\u00E4ge f\u00FCr Dateien, die nicht vorhanden sind. Weitere Details finden Sie in der Verbose-Ausgabe (-verbose)."},
         {"external.file.attributes.detected", "POSIX-Dateiberechtigung und/oder Symlink-Attribute erkannt. Diese Attribute werden bei der Signatur ignoriert und sind nicht durch die Signatur gesch\u00FCtzt."},
 
@@ -295,10 +292,12 @@ public class Resources_de extends java.util.ListResourceBundle {
                 "Der %1$s-Digestalgorithmus gilt als Sicherheitsrisiko. Dieser Algorithmus wird in einem zuk\u00FCnftigen Update deaktiviert."},
         {"The.signature.algorithm.1.is.considered.a.security.risk..This.algorithm.will.be.disabled.in.a.future.update.",
                 "Der %1$s-Signaturalgorithmus gilt als Sicherheitsrisiko. Dieser Algorithmus wird in einem zuk\u00FCnftigen Update deaktiviert."},
-        {"The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk..This.key.size.will.be.disabled.in.a.future.update.",
-                "Der %1$s-Signaturschl\u00FCssel hat eine Schl\u00FCsselgr\u00F6\u00DFe von %2$d. Das gilt als Sicherheitsrisiko. Diese Schl\u00FCsselgr\u00F6\u00DFe wird in einem zuk\u00FCnftigen Update deaktiviert."},
-        {"The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk.and.is.disabled.",
-                "Der %1$s-Signaturschl\u00FCssel hat eine Schl\u00FCsselgr\u00F6\u00DFe von %2$d. Das gilt als Sicherheitsrisiko und ist deaktiviert."},
+        {"size.bit.alg",
+                "%1$d-Bit %2$s"},
+        {"The.full.keyAlgName.signing.key.is.considered.a.security.risk..It.will.be.disabled.in.a.future.update.",
+                "Der %s Signaturschl\u00FCssel wird als Sicherheitsrisiko betrachtet. Wird in einem zuk\u00FCnftigen Update deaktiviert."},
+        {"The.full.keyAlgName.signing.key.is.considered.a.security.risk.and.is.disabled.",
+                "Der %s Signaturschl\u00FCssel wird als Sicherheitsrisiko betrachtet und ist deaktiviert."},
         {"This.jar.contains.entries.whose.certificate.chain.is.invalid.reason.1",
                  "Diese JAR-Datei enth\u00E4lt Eintr\u00E4ge, deren Zertifikatskette ung\u00FCltig ist. Grund: %s"},
         {"This.jar.contains.entries.whose.tsa.certificate.chain.is.invalid.reason.1",

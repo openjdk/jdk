@@ -989,13 +989,16 @@ void SafepointTracing::end() {
      "Reaching safepoint: " JLONG_FORMAT " ns, "
      "At safepoint: " JLONG_FORMAT " ns, "
      "Leaving safepoint: " JLONG_FORMAT " ns, "
-     "Total: " JLONG_FORMAT " ns",
+     "Total: " JLONG_FORMAT " ns, "
+     "Threads: %d runnable, %d total",
       VM_Operation::name(_current_type),
       _last_app_time_ns,
       _last_safepoint_sync_time_ns  - _last_safepoint_begin_time_ns,
       _last_safepoint_leave_time_ns - _last_safepoint_sync_time_ns,
       _last_safepoint_end_time_ns   - _last_safepoint_leave_time_ns,
-      _last_safepoint_end_time_ns   - _last_safepoint_begin_time_ns
+      _last_safepoint_end_time_ns   - _last_safepoint_begin_time_ns,
+      _nof_running,
+      _nof_threads
      );
 
   RuntimeService::record_safepoint_end(_last_safepoint_end_time_ns - _last_safepoint_sync_time_ns);

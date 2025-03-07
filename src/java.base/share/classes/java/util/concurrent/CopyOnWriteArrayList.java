@@ -1727,7 +1727,6 @@ public class CopyOnWriteArrayList<E>
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public void forEachRemaining(Consumer<? super E> action) {
             Objects.requireNonNull(action);
             while (hasNext()) {
