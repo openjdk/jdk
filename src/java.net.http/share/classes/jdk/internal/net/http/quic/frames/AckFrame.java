@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -909,8 +909,8 @@ public final class AckFrame extends QuicFrame {
             if (first > largest) return false;
             if (last > largest) return false;
             smallest = largest - ackRange.range;
-            if (last >= smallest) return true;
-            if (first <= smallest) return false;
+            if (last < smallest) continue;
+            if (first >= smallest) return true;
         }
         return false;
     }

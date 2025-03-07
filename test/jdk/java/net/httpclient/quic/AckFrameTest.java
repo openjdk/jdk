@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,6 +257,9 @@ public class AckFrameTest {
                 .max().getAsLong();
         assertEquals(frame.largestAcknowledged(), largest);
         checkAcknowledging(frame::isAcknowledging, testCase, packets);
+        for (var ack : testCase.acks) {
+            checkRangeAcknowledged(frame, ack.first, ack.last);
+        }
         assertEquals(frame, reference);
         int size = frame.size();
         ByteBuffer buffer = ByteBuffer.allocate(size + 10);
@@ -273,6 +276,41 @@ public class AckFrameTest {
             assertEquals(decoded, reference);
         } catch (Exception e) {
             throw new AssertionError("Can't encode or decode frame: " + frame, e);
+        }
+    }
+
+    private void checkRangeAcknowledged(AckFrame frame, long first, long last) {
+        assertTrue(frame.isRangeAcknowledged(first, last),
+                "range [%s, %s] should be acked".formatted(first, last));
+        if (first > 0) {
+            if (!frame.isAcknowledging(first - 1)) {
+                assertFalse(frame.isRangeAcknowledged(first -1, last),
+                    "range [%s, %s] should not be acked".formatted(first -1, last));
+            } else {
+                assertTrue(frame.isRangeAcknowledged(first - 1, last),
+                        "range [%s, %s] should be acked".formatted(first - 1, last));
+                if (frame.isAcknowledging(last + 1)) {
+                    assertTrue(frame.isRangeAcknowledged(first -1, last + 1),
+                            "range [%s, %s] should be acked".formatted(first -1, last+1));
+                }
+            }
+        }
+        if (!frame.isAcknowledging(last + 1)) {
+            assertFalse(frame.isRangeAcknowledged(first, last + 1),
+                    "range [%s, %s] should not be acked".formatted(first, last + 1));
+        } else {
+            assertTrue(frame.isRangeAcknowledged(first, last+1),
+                    "range [%s, %s] should be acked".formatted(first, last + 1));
+        }
+        if (last - 1 >= first) {
+            assertTrue(frame.isRangeAcknowledged(first + 1, last),
+                    "range [%s, %s] should be acked".formatted(first + 1, last));
+            assertTrue(frame.isRangeAcknowledged(first, last - 1),
+                    "range [%s, %s] should be acked".formatted(first, last - 1));
+        }
+        if (last - 2 >= first) {
+            assertTrue(frame.isRangeAcknowledged(first + 1, last - 1),
+                    "range [%s, %s] should be acked".formatted(first + 1, last - 1));
         }
     }
 
@@ -303,19 +341,47 @@ public class AckFrameTest {
     @Test
     public void simpleTest() {
         AckFrame frame = new AckFrame(1, 0, List.of(new AckRange(0,0)));
+        System.out.println("simpleTest: " + frame);
         assertTrue(frame.isAcknowledging(1), "1 should be acked");
         assertFalse(frame.isAcknowledging(0), "0 should not be acked");
         assertFalse(frame.isAcknowledging(2), "2 should not be acked");
         assertEquals(frame.smallestAcknowledged(), 1);
         assertEquals(frame.largestAcknowledged(), 1);
         assertEquals(frame.acknowledged().toArray(), new long[] {1L});
+        assertTrue(frame.isRangeAcknowledged(1,1), "[1,1] should be acked");
+        assertFalse(frame.isRangeAcknowledged(0, 1), "[0,1] should not be acked");
+        assertFalse(frame.isRangeAcknowledged(1, 2), "[1,2] should not be acked");
+        assertFalse(frame.isRangeAcknowledged(0, 2), "[0,2] should not be acked");
 
         frame = new AckFrame(1, 0, List.of(new AckRange(0,1)));
+        System.out.println("simpleTest: " + frame);
         assertTrue(frame.isAcknowledging(1), "1 should be acked");
         assertTrue(frame.isAcknowledging(0), "0 should be acked");
         assertFalse(frame.isAcknowledging(2), "2 should not be acked");
         assertEquals(frame.smallestAcknowledged(), 0);
         assertEquals(frame.largestAcknowledged(), 1);
         assertEquals(frame.acknowledged().toArray(), new long[] {1L, 0L});
+        assertTrue(frame.isRangeAcknowledged(0,0), "[0,0] should be acked");
+        assertTrue(frame.isRangeAcknowledged(1,1), "[1,1] should be acked");
+        assertTrue(frame.isRangeAcknowledged(0, 1), "[0,1] should be acked");
+        assertFalse(frame.isRangeAcknowledged(1, 2), "[1,2] should not be acked");
+        assertFalse(frame.isRangeAcknowledged(0, 2), "[0,2] should not be acked");
+
+        frame = new AckFrame(10, 0, List.of(new AckRange(0,3), new AckRange(2, 3)));
+        System.out.println("simpleTest: " + frame);
+        assertTrue(frame.isAcknowledging(10), "10 should be acked");
+        assertTrue(frame.isAcknowledging(0), "0 should be acked");
+        assertTrue(frame.isRangeAcknowledged(0, 3), "[0,3] should be acked");
+        assertTrue(frame.isRangeAcknowledged(7, 10), "[7,10] should be acked");
+        assertTrue(frame.isRangeAcknowledged(7, 10), "[0,2] should be acked");
+        assertTrue(frame.isRangeAcknowledged(7, 10), "[1,3] should be acked");
+        assertTrue(frame.isRangeAcknowledged(7, 10), "[1,2] should be acked");
+        assertTrue(frame.isRangeAcknowledged(7, 10), "[7,9] should be acked");
+        assertTrue(frame.isRangeAcknowledged(7, 10), "[8,10] should be acked");
+        assertTrue(frame.isRangeAcknowledged(7, 10), "[8,9] should be acked");
+        assertFalse(frame.isRangeAcknowledged(0, 10), "[0,10] should not be acked");
+        assertFalse(frame.isRangeAcknowledged(4, 6), "[4,6] should not be acked");
+        assertFalse(frame.isRangeAcknowledged(4, 6), "[3,7] should not be acked");
+        assertFalse(frame.isRangeAcknowledged(4, 6), "[2,8] should not be acked");
     }
  }
