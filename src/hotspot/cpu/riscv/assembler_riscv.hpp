@@ -330,14 +330,6 @@ class InternalAddress: public Address {
 };
 
 class Assembler : public AbstractAssembler {
-public:
-
-  enum class FLOAT_TYPE {
-    half_precision,
-    single_precision,
-    double_precision
-  };
-
 protected:
 
   static int zfa_zli_lookup_double(uint64_t value) {

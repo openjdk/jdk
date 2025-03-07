@@ -8251,10 +8251,9 @@ instruct convF2HF_reg_reg(iRegINoSp dst, fRegF src, fRegF ftmp, iRegINoSp xtmp) 
 
 // half precision operations
 
-instruct reinterpretS2HF(fRegF dst, iRegINoSp src)
+instruct reinterpretS2HF(fRegF dst, iRegI src)
 %{
   match(Set dst (ReinterpretS2HF src));
-  effect(TEMP_DEF dst);
   format %{ "fmv.h.x $dst, $src" %}
   ins_encode %{
     __ fmv_h_x($dst$$FloatRegister, $src$$Register);
@@ -8265,7 +8264,6 @@ instruct reinterpretS2HF(fRegF dst, iRegINoSp src)
 instruct convF2HFAndS2HF(fRegF dst, fRegF src)
 %{
   match(Set dst (ReinterpretS2HF (ConvF2HF src)));
-  effect(TEMP_DEF dst);
   format %{ "convF2HFAndS2HF $dst, $src" %}
   ins_encode %{
     __ fcvt_h_s($dst$$FloatRegister, $src$$FloatRegister);
@@ -8276,7 +8274,6 @@ instruct convF2HFAndS2HF(fRegF dst, fRegF src)
 instruct reinterpretHF2S(iRegINoSp dst, fRegF src)
 %{
   match(Set dst (ReinterpretHF2S src));
-  effect(TEMP_DEF dst);
   format %{ "fmv.x.h $dst, $src" %}
   ins_encode %{
     __ fmv_x_h($dst$$Register, $src$$FloatRegister);
@@ -8287,7 +8284,6 @@ instruct reinterpretHF2S(iRegINoSp dst, fRegF src)
 instruct convHF2SAndHF2F(fRegF dst, fRegF src)
 %{
   match(Set dst (ConvHF2F (ReinterpretHF2S src)));
-  effect(TEMP_DEF dst);
   format %{ "convHF2SAndHF2F $dst, $src" %}
   ins_encode %{
     __ fcvt_s_h($dst$$FloatRegister, $src$$FloatRegister);
@@ -8298,7 +8294,6 @@ instruct convHF2SAndHF2F(fRegF dst, fRegF src)
 instruct sqrt_HF_reg(fRegF dst, fRegF src)
 %{
   match(Set dst (SqrtHF src));
-  effect(TEMP_DEF dst);
   format %{ "fsqrt.h $dst, $src" %}
   ins_encode %{
     __ fsqrt_h($dst$$FloatRegister, $src$$FloatRegister);
@@ -8312,7 +8307,6 @@ instruct binOps_HF_reg(fRegF dst, fRegF src1, fRegF src2)
   match(Set dst (SubHF src1 src2));
   match(Set dst (MulHF src1 src2));
   match(Set dst (DivHF src1 src2));
-  effect(TEMP_DEF dst);
   format %{ "binop_hf $dst, $src1, $src2" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
@@ -8331,7 +8325,6 @@ instruct min_max_HF_reg(fRegF dst, fRegF src1, fRegF src2)
 %{
   match(Set dst (MinHF src1 src2));
   match(Set dst (MaxHF src1 src2));
-  effect(TEMP_DEF dst);
   format %{ "min_max_hf $dst, $src1, $src2" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
@@ -8351,7 +8344,6 @@ instruct min_max_HF_reg(fRegF dst, fRegF src1, fRegF src2)
 instruct fma_HF_reg(fRegF dst, fRegF src1, fRegF src2)
 %{
   match(Set dst (FmaHF src2 (Binary dst src1)));
-  effect(TEMP_DEF dst);
   format %{ "fmadd.h $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
   ins_encode %{
     __ fmadd_h($dst$$FloatRegister, $dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
