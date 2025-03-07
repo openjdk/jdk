@@ -55,7 +55,7 @@ public final class Http3Streams {
         public final int code() {
             return code;
         }
-        public static Optional<StreamType> ofCode(int code) {
+        public static Optional<StreamType> ofCode(long code) {
             return EnumSet.allOf(StreamType.class).stream()
                     .filter(s -> s.code() == code)
                     .findFirst();

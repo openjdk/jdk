@@ -840,6 +840,12 @@ public final class Http3Connection implements AutoCloseable {
         protected Logger debug() { return debug; }
 
         @Override
+        protected void onStreamAbandoned(QuicReceiverStream stream) {
+            if (debug.on()) debug.log("Stream " + stream.streamId() + " abandoned!");
+            qpackDecoder.cancelStream(stream.streamId());
+        }
+
+        @Override
         protected void onControlStreamCreated(String description, QuicReceiverStream stream) {
             complete(description, stream, controlStreamPair.futureReceiverStream());
         }
@@ -1017,7 +1023,7 @@ public final class Http3Connection implements AutoCloseable {
         if (!isOpen()) return false;
         debug.log("dispatching unidirectional remote stream: " + uni.streamId());
         Http3StreamDispatcher.dispatch(this, uni).whenComplete((r, t)-> {
-            if (t!=null) this.dispatchingFailed(t);
+            if (t!=null) this.dispatchingFailed(uni, t);
         });
         return true;
     }
@@ -1049,21 +1055,9 @@ public final class Http3Connection implements AutoCloseable {
      * Called if the dispatch failed.
      * @param reason the reason of the failure
      */
-    protected void dispatchingFailed(Throwable reason) {
-        debug.log("dispatching failed: " + reason);
-        if (isOpen()) {
-            // if the control stream is not opened yet, assume that
-            // we failed to open/dispatch it, and close the connection.
-            var remoteControlCF = controlStreamPair.futureReceiverStream();
-            if (!remoteControlCF.isDone()) {
-                close(H3_STREAM_CREATION_ERROR, "failed to dispatch remote stream", reason);
-            } else if (remoteControlCF.isCancelled()) {
-                close(H3_STREAM_CREATION_ERROR, "failed to dispatch remote stream", reason);
-            } else if (remoteControlCF.isCompletedExceptionally()) {
-                Throwable cause = remoteControlCF.exceptionNow();
-                close(H3_STREAM_CREATION_ERROR, "failed to create remote control stream", cause);
-            }
-        }
+    protected void dispatchingFailed(QuicReceiverStream uni, Throwable reason) {
+        debug.log("dispatching failed for streamId=%s: %s", uni.streamId(), reason);
+        close(H3_STREAM_CREATION_ERROR, "failed to dispatch remote stream " + uni.streamId(), reason);
     }
 
 

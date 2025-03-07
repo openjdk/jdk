@@ -125,6 +125,12 @@ public class Http3ServerConnection {
         }
 
         @Override
+        protected void onStreamAbandoned(QuicReceiverStream stream) {
+            if (debug.on()) debug.log("Stream " + stream.streamId() + " abandoned!");
+            qpackDecoder.cancelStream(stream.streamId());
+        }
+
+        @Override
         protected void onControlStreamCreated(String description, QuicReceiverStream stream) {
             if (debug.on()) {
                 debug.log("peerControlStream %s dispatched", stream.streamId());

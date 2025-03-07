@@ -24,7 +24,6 @@
  */
 package jdk.internal.net.http.http3.streams;
 
-import java.io.EOFException;
 import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -51,7 +50,8 @@ public abstract class PeerUniStreamDispatcher {
     private int vlongSize = 0;
     private ByteBuffer vlongBuf = null; // accumulate bytes until stream type can be decoded
     int longCount;
-    private int streamType;
+    private int streamType = -1;
+    private long firstLong = -1;
     private long nextLong = -1;
 
     /**
@@ -95,11 +95,12 @@ public abstract class PeerUniStreamDispatcher {
             ByteBuffer toDecode = null;
             while ((buffer = reader.peek()) != null) {
                 if (buffer == QuicStreamReader.EOF) {
-                    // not supposed to happen!
                     debug().log("stream %s EOF, cannot dispatch!",
                             stream.streamId());
-                    abort(Http3Error.H3_STREAM_CREATION_ERROR,
-                            new EOFException("EOF: cannot dispatch stream " + stream.streamId()));
+                    // RFC 9114: https://www.rfc-editor.org/rfc/rfc9114.html#section-6.2-10
+                    // > A receiver MUST tolerate unidirectional streams being closed or reset
+                    // > prior to the reception of the unidirectional stream header
+                    abandon();
                     return;
                 }
                 if (buffer.remaining() == 0) {
@@ -169,6 +170,7 @@ public abstract class PeerUniStreamDispatcher {
             assert vlongBuf == null;
 
             if (longCount == 0) {
+                firstLong = vlong;
                 if (Http3Streams.isReserved(vlong)) {
                     // reserved stream type, 0x1f * N + 0x21
                     reservedStreamType(vlong, stream);
@@ -256,15 +258,12 @@ public abstract class PeerUniStreamDispatcher {
     // dispatches a stream whose stream type was recognized as a reserved stream type
     private void reservedStreamType(long code, QuicReceiverStream stream) {
         onReservedStreamType(code, stream);
-        // if an exception is thrown above, abort will be called.
-        disconnect();
     }
 
     // dispatches a stream whose stream type was not recognized
     private void unknownStreamType(long code, QuicReceiverStream stream) {
         onUnknownStreamType(code, stream);
         // if an exception is thrown above, abort will be called.
-        disconnect();
     }
 
     /**
@@ -281,7 +280,6 @@ public abstract class PeerUniStreamDispatcher {
     protected void start() {
         reader.start();
     }
-
 
     /**
      * This method disconnects the temporary reader used
@@ -310,6 +308,28 @@ public abstract class PeerUniStreamDispatcher {
     }
 
     /**
+     * This method disconnects the reader, stops the dispatch, and unless
+     * the stream type could be decoded and was a {@linkplain  Http3Streams#isReserved(long)
+     * reserved type}, calls {@link #onStreamAbandoned(QuicReceiverStream)}
+     */
+    protected void abandon() {
+        Throwable failed = null;
+        try {
+            try {
+                stream.disconnectReader(reader);
+            } finally {
+                stop();
+            }
+            cf.complete(stream);
+            if (firstLong > 0 && !Http3Streams.isReserved(firstLong)) {
+                onStreamAbandoned(stream);
+            }
+        } catch (Throwable throwable) {
+            cf.completeExceptionally(failed);
+        }
+    }
+
+    /**
      * Aborts the dispatch - for instance, if the stream type
      * can't be read, or isn't recognized.
      *
@@ -329,9 +349,16 @@ public abstract class PeerUniStreamDispatcher {
                 var debug = debug();
                 if (debug.on()) debug.log("aborting dispatch: " + throwable, throwable);
             }
-            stream.requestStopSending(error.code());
+            if (!stream.receivingState().isReset() && !stream.isStopSendingRequested()) {
+                stream.requestStopSending(error.code());
+            }
         } finally {
-            disconnect(throwable);
+            // error getting/parsing pushId => just abandon the stream
+            if (streamType == Http3Streams.PUSH_STREAM_CODE) {
+                abandon();
+            } else {
+                disconnect(throwable);
+            }
         }
     }
 
@@ -342,7 +369,8 @@ public abstract class PeerUniStreamDispatcher {
      * @implSpec
      * The default implementation of this method calls
      * {@snippet :
-     *   stream.requestStopSending(Http3Error.H3_STREAM_CREATION_ERROR.code())
+     *   stream.requestStopSending(Http3Error.H3_STREAM_CREATION_ERROR.code());
+     *   abandon();
      * }
      *
      * @param code    the unrecognized stream type
@@ -351,6 +379,7 @@ public abstract class PeerUniStreamDispatcher {
     protected void onReservedStreamType(long code, QuicReceiverStream stream) {
         debug().log("Ignoring reserved stream type %s", code);
         stream.requestStopSending(Http3Error.H3_STREAM_CREATION_ERROR.code());
+        abandon();
     }
 
     /**
@@ -360,7 +389,8 @@ public abstract class PeerUniStreamDispatcher {
      * @implSpec
      * The default implementation of this method calls
      * {@snippet :
-     *   stream.requestStopSending(Http3Error.H3_STREAM_CREATION_ERROR.code())
+     *   stream.requestStopSending(Http3Error.H3_STREAM_CREATION_ERROR.code());
+     *   abandon();
      * }
      *
      * @param code    the unrecognized stream type
@@ -369,7 +399,21 @@ public abstract class PeerUniStreamDispatcher {
     protected void onUnknownStreamType(long code, QuicReceiverStream stream) {
         debug().log("Ignoring unknown stream type %s", code);
         stream.requestStopSending(Http3Error.H3_STREAM_CREATION_ERROR.code());
+        abandon();
     }
+
+    /**
+     * Called after {@linkplain QuicReceiverStream#disconnectReader(QuicStreamReader)}
+     * to abandon a peer initiated push stream.
+     * @param stream a peer initiated stream which was abandoned due to having an
+     *               unknown or reserved type, or which was abandoned due to being reset
+     *               before being dispatched.
+     * @apiNote
+     * A subclass may want to override this method in order to, e.g, emit a
+     * QPack Stream Cancellation instruction;
+     * See https://www.rfc-editor.org/rfc/rfc9204.html#name-abandonment-of-a-stream
+     */
+    protected void onStreamAbandoned(QuicReceiverStream stream) {}
 
     /**
      * Called after {@linkplain #disconnect()} to handle the peer control stream.
