@@ -41,7 +41,7 @@ class G1RefineRegionClosure : public G1HeapRegionClosure {
     return _scan_state->has_unclaimed_cards(r->hrm_index());
   }
 
-  void do_dirty_card(CardValue* source_card, CardValue* dest_card) {
+  void verify_card_pair_refers_to_same_card(CardValue* source_card, CardValue* dest_card) {
 #ifdef ASSERT
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1HeapRegion* refinement_r = g1h->heap_region_containing(g1h->refinement_table()->addr_for(source_card));
@@ -52,6 +52,11 @@ class G1RefineRegionClosure : public G1HeapRegionClosure {
     assert(refinement_r == card_r, "not same region source %u (%zu) dest %u (%zu) ", refinement_r->hrm_index(), refinement_i, card_r->hrm_index(), card_i);
     assert(refinement_i == card_i, "indexes are not same %zu %zu", refinement_i, card_i);
 #endif
+  }
+
+  void do_dirty_card(CardValue* source_card, CardValue* dest_card) {
+    verify_card_pair_refers_to_same_card(source_card, dest_card);
+
     G1RemSet::RefineResult res = _rem_set->refine_card_concurrently(source_card, _worker_id);
     // Gather statistics based on the result.
     switch (res) {

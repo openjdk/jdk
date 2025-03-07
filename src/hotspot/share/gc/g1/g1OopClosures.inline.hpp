@@ -152,8 +152,8 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
   }
 
   G1HeapRegion* to_region = _g1h->heap_region_containing(obj);
-  _has_ref_to_cset = to_region->is_young();
-  if (_has_ref_to_cset) {
+  if (to_region->is_young()) {
+    _has_ref_to_cset = true;
     return;
   }
   G1HeapRegionRemSet* to_rem_set = to_region->rem_set();
