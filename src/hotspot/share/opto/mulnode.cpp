@@ -970,14 +970,17 @@ static int maskShiftAmount(PhaseGVN* phase, Node* shiftNode, int nBits) {
   return 0;
 }
 
-// (X << con1) << con0 with con0 < nbits && con1 < nbits ==>
+// Called with
+//    outer_shift = (_ << con0)
+// We are looking for the pattern:
+//   outer_shift = ((X << con1) << con0)
+//   we denote inner_shift the nested expression (X << con1)
+//
+// con0 and con1 are both in [0..nbits), as they are computed by maskShiftAmount.
+//
+// There are 2 cases:
 // if con0 + con1 >= nbits => 0
 // if con0 + con1 < nbits => X << (con1 + con0)
-//
-// outer_shift is, with the notation above, the (...) << con0
-// con0 is the rhs of outer_shift (since it's already computed in the callers)
-// con0 is assumed to be masked already (as computed by maskShiftAmount) and non-zero
-// bt must be T_LONG or T_INT.
 static Node* collapse_nested_shift_left(PhaseGVN* phase, Node* outer_shift, int con0, BasicType bt) {
   assert(bt == T_LONG || bt == T_INT, "Unexpected type");
   int nbits = bt == T_LONG ? BitsPerJavaLong : BitsPerJavaInteger;
