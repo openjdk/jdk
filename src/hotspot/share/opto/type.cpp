@@ -4019,8 +4019,6 @@ intptr_t TypeOopPtr::get_con() const {
 const Type *TypeOopPtr::filter_helper(const Type *kills, bool include_speculative) const {
 
   const Type* ft = join_helper(kills, include_speculative);
-  const TypeInstPtr* ftip = ft->isa_instptr();
-  const TypeInstPtr* ktip = kills->isa_instptr();
 
   if (ft->empty()) {
     return Type::TOP;           // Canonical empty value
@@ -5853,8 +5851,6 @@ const Type *TypeKlassPtr::filter_helper(const Type *kills, bool include_speculat
   // logic here mirrors the one from TypeOopPtr::filter. See comments
   // there.
   const Type* ft = join_helper(kills, include_speculative);
-  const TypeKlassPtr* ftkp = ft->isa_instklassptr();
-  const TypeKlassPtr* ktkp = kills->isa_instklassptr();
 
   if (ft->empty()) {
     return Type::TOP;           // Canonical empty value

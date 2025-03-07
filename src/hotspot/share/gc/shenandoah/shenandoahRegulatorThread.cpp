@@ -65,6 +65,7 @@ void ShenandoahRegulatorThread::regulate_young_and_old_cycles() {
         if (request_concurrent_gc(GLOBAL)) {
           // Some of vmTestbase/metaspace tests depend on following line to count GC cycles
           _global_heuristics->log_trigger("%s", GCCause::to_string(GCCause::_metadata_GC_threshold));
+          _global_heuristics->cancel_trigger_request();
         }
       } else {
         if (_young_heuristics->should_start_gc()) {
@@ -72,14 +73,17 @@ void ShenandoahRegulatorThread::regulate_young_and_old_cycles() {
           // begins with a 'bootstrap' cycle that will also collect young.
           if (start_old_cycle()) {
             log_debug(gc)("Heuristics request for old collection accepted");
+            _young_heuristics->cancel_trigger_request();
           } else if (request_concurrent_gc(YOUNG)) {
             log_debug(gc)("Heuristics request for young collection accepted");
+            _young_heuristics->cancel_trigger_request();
           }
         }
       }
     } else if (mode == ShenandoahGenerationalControlThread::servicing_old) {
       if (start_young_cycle()) {
         log_debug(gc)("Heuristics request to interrupt old for young collection accepted");
+        _young_heuristics->cancel_trigger_request();
       }
     }
 
@@ -93,8 +97,10 @@ void ShenandoahRegulatorThread::regulate_young_and_global_cycles() {
     if (_control_thread->gc_mode() == ShenandoahGenerationalControlThread::none) {
       if (start_global_cycle()) {
         log_debug(gc)("Heuristics request for global collection accepted.");
+        _global_heuristics->cancel_trigger_request();
       } else if (start_young_cycle()) {
         log_debug(gc)("Heuristics request for young collection accepted.");
+        _young_heuristics->cancel_trigger_request();
       }
     }
 

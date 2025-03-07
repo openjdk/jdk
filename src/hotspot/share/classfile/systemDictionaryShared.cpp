@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotClassLocation.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveUtils.hpp"
@@ -193,23 +194,20 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
 // k must not be a shared class.
 DumpTimeClassInfo* SystemDictionaryShared::get_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  assert(!k->is_shared(), "sanity");
   return get_info_locked(k);
 }
 
 DumpTimeClassInfo* SystemDictionaryShared::get_info_locked(InstanceKlass* k) {
   assert_lock_strong(DumpTimeTable_lock);
-  assert(!k->is_shared(), "sanity");
   DumpTimeClassInfo* info = _dumptime_table->get_info(k);
   assert(info != nullptr, "must be");
   return info;
 }
 
 bool SystemDictionaryShared::check_for_exclusion(InstanceKlass* k, DumpTimeClassInfo* info) {
-  if (MetaspaceShared::is_in_shared_metaspace(k)) {
+  if (CDSConfig::is_dumping_dynamic_archive() && MetaspaceShared::is_in_shared_metaspace(k)) {
     // We have reached a super type that's already in the base archive. Treat it
     // as "not excluded".
-    assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
     return false;
   }
 
@@ -277,6 +275,11 @@ bool SystemDictionaryShared::is_hidden_lambda_proxy(InstanceKlass* ik) {
 }
 
 bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
+  if (CDSConfig::is_dumping_final_static_archive() && k->is_shared_unregistered_class()
+      && k->is_shared()) {
+    return false; // Do not exclude: unregistered classes are passed from preimage to final image.
+  }
+
   if (k->is_in_error_state()) {
     return warn_excluded(k, "In error state");
   }
@@ -329,6 +332,10 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
       // class may fail to verify in AOTLinkedClassBulkLoader::init_required_classes_for_loader(),
       // causing the JVM to fail at bootstrap.
       return warn_excluded(k, "Unlinked class not supported by AOTClassLinking");
+    } else if (CDSConfig::is_dumping_preimage_static_archive()) {
+      // When dumping the final static archive, we will unconditionally load and link all
+      // classes from tje preimage. We don't want to get a VerifyError when linking this class.
+      return warn_excluded(k, "Unlinked class not supported by AOTConfiguration");
     }
   } else {
     if (!k->can_be_verified_at_dumptime()) {
@@ -497,6 +504,9 @@ void SystemDictionaryShared::initialize() {
     _dumptime_table = new (mtClass) DumpTimeSharedClassTable;
     _dumptime_lambda_proxy_class_dictionary =
                       new (mtClass) DumpTimeLambdaProxyClassDictionary;
+    if (CDSConfig::is_dumping_heap()) {
+      HeapShared::init_dumping();
+    }
   }
 }
 
@@ -534,6 +544,18 @@ void SystemDictionaryShared::handle_class_unloading(InstanceKlass* klass) {
   if (ClassListWriter::is_enabled()) {
     ClassListWriter cw;
     cw.handle_class_unloading((const InstanceKlass*)klass);
+  }
+}
+
+void SystemDictionaryShared::init_dumptime_info_from_preimage(InstanceKlass* k) {
+  init_dumptime_info(k);
+  copy_verification_constraints_from_preimage(k);
+  copy_linking_constraints_from_preimage(k);
+
+  if (SystemDictionary::is_platform_class_loader(k->class_loader())) {
+    AOTClassLocationConfig::dumptime_set_has_platform_classes();
+  } else if (SystemDictionary::is_system_class_loader(k->class_loader())) {
+    AOTClassLocationConfig::dumptime_set_has_app_classes();
   }
 }
 
@@ -723,7 +745,10 @@ void SystemDictionaryShared::dumptime_classes_do(class MetaspaceClosure* it) {
   assert_lock_strong(DumpTimeTable_lock);
 
   auto do_klass = [&] (InstanceKlass* k, DumpTimeClassInfo& info) {
-    if (k->is_loader_alive() && !info.is_excluded()) {
+    if (CDSConfig::is_dumping_final_static_archive() && !k->is_loaded()) {
+      assert(k->is_shared_unregistered_class(), "must be");
+      info.metaspace_pointers_do(it);
+    } else if (k->is_loader_alive() && !info.is_excluded()) {
       info.metaspace_pointers_do(it);
     }
   };
@@ -795,6 +820,10 @@ void SystemDictionaryShared::add_lambda_proxy_class(InstanceKlass* caller_ik,
     // There's no need to remember them in a separate table.
     return;
   }
+  if (CDSConfig::is_dumping_preimage_static_archive()) {
+    // Information about lambda proxies are recorded in FinalImageRecipes.
+    return;
+  }
 
   assert(caller_ik->class_loader() == lambda_ik->class_loader(), "mismatched class loader");
   assert(caller_ik->class_loader_data() == lambda_ik->class_loader_data(), "mismatched class loader data");
@@ -832,6 +861,10 @@ InstanceKlass* SystemDictionaryShared::get_shared_lambda_proxy_class(InstanceKla
                                                                      Symbol* method_type,
                                                                      Method* member_method,
                                                                      Symbol* instantiated_method_type) {
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    return nullptr;
+  }
+
   assert(caller_ik != nullptr, "sanity");
   assert(invoked_name != nullptr, "sanity");
   assert(invoked_type != nullptr, "sanity");
@@ -956,7 +989,7 @@ InstanceKlass* SystemDictionaryShared::prepare_shared_lambda_proxy_class(Instanc
 
 void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass,
                                                             TRAPS) {
-  assert(!CDSConfig::is_dumping_static_archive() && CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
+  assert(CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   RunTimeClassInfo* record = RunTimeClassInfo::get_for(klass);
 
   int length = record->num_verifier_constraints();
@@ -965,21 +998,16 @@ void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass
       RunTimeClassInfo::RTVerifierConstraint* vc = record->verifier_constraint_at(i);
       Symbol* name      = vc->name();
       Symbol* from_name = vc->from_name();
-      char c            = record->verifier_constraint_flag(i);
 
       if (log_is_enabled(Trace, cds, verification)) {
         ResourceMark rm(THREAD);
         log_trace(cds, verification)("check_verification_constraint: %s: %s must be subclass of %s [0x%x]",
                                      klass->external_name(), from_name->as_klass_external_name(),
-                                     name->as_klass_external_name(), c);
+                                     name->as_klass_external_name(), record->verifier_constraint_flag(i));
       }
 
-      bool from_field_is_protected = (c & SystemDictionaryShared::FROM_FIELD_IS_PROTECTED) ? true : false;
-      bool from_is_array           = (c & SystemDictionaryShared::FROM_IS_ARRAY)           ? true : false;
-      bool from_is_object          = (c & SystemDictionaryShared::FROM_IS_OBJECT)          ? true : false;
-
-      bool ok = VerificationType::resolve_and_check_assignability(klass, name,
-         from_name, from_field_is_protected, from_is_array, from_is_object, CHECK);
+      bool ok = VerificationType::resolve_and_check_assignability(klass, name, from_name,
+         record->from_field_is_protected(i), record->from_is_array(i), record->from_is_object(i), CHECK);
       if (!ok) {
         ResourceMark rm(THREAD);
         stringStream ss;
@@ -991,6 +1019,24 @@ void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass
                     from_name->as_quoted_ascii(), name->as_quoted_ascii());
         THROW_MSG(vmSymbols::java_lang_VerifyError(), ss.as_string());
       }
+    }
+  }
+}
+
+void SystemDictionaryShared::copy_verification_constraints_from_preimage(InstanceKlass* klass) {
+  assert(CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
+  DumpTimeClassInfo* dt_info = get_info(klass);
+  RunTimeClassInfo* rt_info = RunTimeClassInfo::get_for(klass); // from preimage
+
+  int length = rt_info->num_verifier_constraints();
+  if (length > 0) {
+    for (int i = 0; i < length; i++) {
+      RunTimeClassInfo::RTVerifierConstraint* vc = rt_info->verifier_constraint_at(i);
+      Symbol* name      = vc->name();
+      Symbol* from_name = vc->from_name();
+
+      dt_info->add_verification_constraint(klass, name, from_name,
+         rt_info->from_field_is_protected(i), rt_info->from_is_array(i), rt_info->from_is_object(i));
     }
   }
 }
@@ -1066,7 +1112,7 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
 // returns true IFF there's no need to re-initialize the i/v-tables for klass for
 // the purpose of checking class loader constraints.
 bool SystemDictionaryShared::check_linking_constraints(Thread* current, InstanceKlass* klass) {
-  assert(!CDSConfig::is_dumping_static_archive() && CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
+  assert(CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   LogTarget(Info, class, loader, constraints) log;
   if (klass->is_shared_boot_class()) {
     // No class loader constraint check performed for boot classes.
@@ -1110,6 +1156,24 @@ bool SystemDictionaryShared::check_linking_constraints(Thread* current, Instance
     log.print("[CDS has not recorded loader constraint for class %s]", klass->external_name());
   }
   return false;
+}
+
+void SystemDictionaryShared::copy_linking_constraints_from_preimage(InstanceKlass* klass) {
+  assert(CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
+  JavaThread* current = JavaThread::current();
+  if (klass->is_shared_platform_class() || klass->is_shared_app_class()) {
+    RunTimeClassInfo* rt_info = RunTimeClassInfo::get_for(klass); // from preimage
+
+    if (rt_info->num_loader_constraints() > 0) {
+      for (int i = 0; i < rt_info->num_loader_constraints(); i++) {
+        RunTimeClassInfo::RTLoaderConstraint* lc = rt_info->loader_constraint_at(i);
+        Symbol* name = lc->constraint_name();
+        Handle loader1(current, get_class_loader_by(lc->_loader_type1));
+        Handle loader2(current, get_class_loader_by(lc->_loader_type2));
+        record_linking_constraint(name, klass, loader1, loader2);
+      }
+    }
+  }
 }
 
 bool SystemDictionaryShared::is_supported_invokedynamic(BootstrapInfo* bsi) {

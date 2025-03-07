@@ -703,6 +703,9 @@ define SetJtregValue
   endif
 endef
 
+################################################################################
+# Helper function for creating a customized AOT cache for running tests
+################################################################################
 
 # Parameter 1 is the name of the rule.
 #
@@ -713,47 +716,46 @@ endef
 #   $1_AOT_TARGETS   List of all targets that the test rule will need to depend on
 #   $1_AOT_JDK_CACHE The AOT cache file to be used to run the test with
 #
-SetupAot = $(NamedParamsMacroTemplate)
-define SetupAotBody
-  $1_AOT_JDK_CONF  := $$($1_TEST_SUPPORT_DIR)/aot/jdk.aotconf
+SetupAOT = $(NamedParamsMacroTemplate)
+define SetupAOTBody
+  $1_AOT_JDK_CONF := $$($1_TEST_SUPPORT_DIR)/aot/jdk.aotconf
   $1_AOT_JDK_CACHE := $$($1_TEST_SUPPORT_DIR)/aot/jdk.aotcache
+  $1_AOT_JDK_LOG := $$($1_TEST_SUPPORT_DIR)/aot/TestSetupAOT.log
 
-  $1_JAVA_TOOL_OPTS := $$(addprefix -J, $$($1_VM_OPTIONS))
+  # We execute the training run with $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.class
+  # to touch a fair number of classes inside the JDK. Note that we can't specify a classpath,
+  # or else the AOT cache cannot be used with jtreg test cases that use a different value
+  # for their classpaths. Instead, we run in the $(TEST_IMAGE_DIR)/setup_aot/ directory.
+  # The "java" launcher will have an implicit classpath of ".", so it can pick up the TestSetupAOT
+  # class from the JVM's current directory.
+  #
+  # The TestSetupAOT class (or any other classes that are loaded from ".") will be excluded
+  # from the the AOT cache as "." is an unsupported location. As a result, the AOT cache will contain
+  # only classes from the JDK.
 
   $$($1_AOT_JDK_CACHE): $$(JDK_IMAGE_DIR)/release
 	$$(call MakeDir, $$($1_TEST_SUPPORT_DIR)/aot)
 
-	$(foreach jtool, javac javap jlink jar, \
-	    $(info AOT: Create cache configuration for $(jtool)) \
-	    $$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot.$(jtool), ( \
-	        $$(FIXPATH) $(JDK_UNDER_TEST)/bin/$(jtool) $$($1_JAVA_TOOL_OPTS) \
-	                    -J-XX:AOTMode=record -J-XX:AOTConfiguration=$$($1_AOT_JDK_CONF).$(jtool) --help \
-	    ))
-	)
-
-	$$(info AOT: Copy $(JDK_UNDER_TEST)/lib/classlist to $$($1_AOT_JDK_CONF).jdk )
+	$$(call LogWarn, AOT: Create cache configuration) \
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot, ( \
-		$$(FIXPATH) $(CP) $(JDK_UNDER_TEST)/lib/classlist $$($1_AOT_JDK_CONF).jdk \
+	    $(CD) $(TEST_IMAGE_DIR)/setup_aot; \
+	    $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java $$($1_VM_OPTIONS) \
+	        -Xlog:cds,cds+class=debug:file=$$($1_AOT_JDK_CONF).log  -Xlog:cds*=error \
+	        -XX:AOTMode=record -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) \
+	        TestSetupAOT > $$($1_AOT_JDK_LOG) \
 	))
 
-	$$(FIXPATH) $$(CAT) $$($1_AOT_JDK_CONF).* > $$($1_AOT_JDK_CONF).temp
-	$$(FIXPATH) $$(CAT) $$($1_AOT_JDK_CONF).temp | $(GREP) -v '#' | $(GREP) -v '@' | $(SORT) | \
-	        $(SED) -e 's/id:.*//g' | uniq \
-		> $$($1_AOT_JDK_CONF)
-	$$(FIXPATH) $$(CAT) $$($1_AOT_JDK_CONF).temp | $(GREP) '@cp' | $(SORT) \
-	        >> $$($1_AOT_JDK_CONF)
-
-	$$(info AOT: Generate AOT cache $$($1_AOT_JDK_CACHE) with flags: $$($1_VM_OPTIONS))
+	$$(call LogWarn, AOT: Generate AOT cache $$($1_AOT_JDK_CACHE) with flags: $$($1_VM_OPTIONS))
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot, ( \
-		$$(FIXPATH) $(JDK_UNDER_TEST)/bin/java \
-	        $$($1_VM_OPTIONS) -Xlog:cds,cds+class=debug:file=$$($1_AOT_JDK_CACHE).log \
-		-XX:AOTMode=create -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) -XX:AOTCache=$$($1_AOT_JDK_CACHE) \
+	    $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java \
+	        $$($1_VM_OPTIONS) -Xlog:cds,cds+class=debug:file=$$($1_AOT_JDK_CACHE).log -Xlog:cds*=error \
+	        -XX:ExtraSharedClassListFile=$(JDK_UNDER_TEST)/lib/classlist \
+	        -XX:AOTMode=create -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) -XX:AOTCache=$$($1_AOT_JDK_CACHE) \
 	))
 
   $1_AOT_TARGETS += $$($1_AOT_JDK_CACHE)
 
 endef
-
 
 SetupRunJtregTest = $(NamedParamsMacroTemplate)
 define SetupRunJtregTestBody
@@ -946,11 +948,10 @@ define SetupRunJtregTestBody
   endif
 
   ifeq ($$(JTREG_AOT_JDK), true)
-    $$(info Add AOT target for $1)
-    $$(eval $$(call SetupAot, $1, VM_OPTIONS := $$(JTREG_ALL_OPTIONS) ))
+    $$(call LogWarn, Add AOT target for $1)
+    $$(eval $$(call SetupAOT, $1, VM_OPTIONS := $$(JTREG_ALL_OPTIONS) ))
 
-    $$(info AOT_TARGETS=$$($1_AOT_TARGETS))
-    $$(info AOT_JDK_CACHE=$$($1_AOT_JDK_CACHE))
+    $$(call LogWarn, AOT_JDK_CACHE=$$($1_AOT_JDK_CACHE))
 
     $1_JTREG_BASIC_OPTIONS += -vmoption:-XX:AOTCache="$$($1_AOT_JDK_CACHE)"
   endif

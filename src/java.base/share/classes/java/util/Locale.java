@@ -3266,9 +3266,7 @@ public final class Locale implements Cloneable, Serializable {
          * or greater than {@code MAX_WEIGHT}
          */
         public LanguageRange(String range, double weight) {
-            if (range == null) {
-                throw new NullPointerException();
-            }
+            Objects.requireNonNull(range);
             if (weight < MIN_WEIGHT || weight > MAX_WEIGHT) {
                 throw new IllegalArgumentException("weight=" + weight);
             }
@@ -3278,8 +3276,8 @@ public final class Locale implements Cloneable, Serializable {
             // Do syntax check.
             boolean isIllFormed = false;
             String[] subtags = range.split("-");
-            if (isSubtagIllFormed(subtags[0], true)
-                || range.endsWith("-")) {
+            if (range.endsWith("-") ||
+                    isSubtagIllFormed(subtags[0], true)) {
                 isIllFormed = true;
             } else {
                 for (int i = 1; i < subtags.length; i++) {

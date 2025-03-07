@@ -673,7 +673,7 @@ ifeq ($(ENABLE_PANDOC), true)
 
   $(foreach m, $(ALL_MODULES), \
     $(eval MAN_$m := $(call ApplySpecFilter, $(filter %.md, $(call FindFiles, \
-          $(call FindModuleManDirs, $m))))) \
+          $(call FindModuleManDirsForDocs, $m))))) \
     $(if $(MAN_$m), \
       $(eval $(call SetupProcessMarkdown, MAN_TO_HTML_$m, \
         FILES := $(MAN_$m), \

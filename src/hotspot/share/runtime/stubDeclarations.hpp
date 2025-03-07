@@ -552,6 +552,8 @@
            catch_exception_entry)                                       \
   do_stub(initial, fence)                                               \
   do_entry(initial, fence, fence_entry, fence_entry)                    \
+  do_stub(initial, atomic_add)                                          \
+  do_entry(initial, atomic_add, atomic_add_entry, atomic_add_entry)     \
   do_stub(initial, atomic_xchg)                                         \
   do_entry(initial, atomic_xchg, atomic_xchg_entry, atomic_xchg_entry)  \
   do_stub(initial, atomic_cmpxchg)                                      \
@@ -638,8 +640,6 @@
                                   do_arch_blob,                         \
                                   do_arch_entry, do_arch_entry_init)    \
   do_blob(compiler)                                                     \
-  do_stub(compiler, atomic_add)                                         \
-  do_entry(compiler, atomic_add, atomic_add_entry, atomic_add_entry)    \
   do_stub(compiler, array_sort)                                         \
   do_entry(compiler, array_sort, array_sort, select_arraysort_function) \
   do_stub(compiler, array_partition)                                    \

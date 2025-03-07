@@ -166,9 +166,9 @@ class Klass : public Metadata {
   uint8_t  _hash_slot;
 
 private:
-  // This is an index into FileMapHeader::_shared_path_table[], to
-  // associate this class with the JAR file where it's loaded from during
-  // dump time. If a class is not loaded from the shared archive, this field is
+  // This is an index into AOTClassLocationConfig::class_locations(), to
+  // indicate the AOTClassLocation where this class is loaded from during
+  // dump time. If a class is not loaded from the AOT cache, this field is
   // -1.
   s2 _shared_class_path_index;
 
