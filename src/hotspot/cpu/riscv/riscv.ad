@@ -1918,7 +1918,7 @@ bool Matcher::match_rule_supported(int opcode) {
 
     case Op_ConvHF2F:
     case Op_ConvF2HF:
-      return VM_Version::supports_float16_to_float();
+      return VM_Version::supports_float16_float_conversion();
     case Op_ReinterpretS2HF:
     case Op_ReinterpretHF2S:
       return UseZfh || UseZfhmin;

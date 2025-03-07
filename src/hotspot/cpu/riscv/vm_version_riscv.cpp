@@ -471,7 +471,7 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
   switch (id) {
   case vmIntrinsics::_floatToFloat16:
   case vmIntrinsics::_float16ToFloat:
-    if (!supports_float16_to_float()) {
+    if (!supports_float16_float_conversion()) {
       return false;
     }
     break;

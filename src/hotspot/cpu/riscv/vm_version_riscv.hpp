@@ -298,7 +298,7 @@ class VM_Version : public Abstract_VM_Version {
   static bool supports_fast_class_init_checks() { return true; }
   static bool supports_fencei_barrier() { return ext_Zifencei.enabled(); }
 
-  static bool supports_float16_to_float() {
+  static bool supports_float16_float_conversion() {
     return UseZfh || UseZfhmin;
   }
 

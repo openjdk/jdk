@@ -6170,7 +6170,7 @@ class StubGenerator: public StubCodeGenerator {
     Register src = x10;
     Label NaN_SLOW;
 
-    assert(VM_Version::supports_float16_to_float(), "must");
+    assert(VM_Version::supports_float16_float_conversion(), "must");
 
     // On riscv, NaN needs a special process as fcvt does not work in that case.
     // On riscv, Inf does not need a special process as fcvt can handle it correctly.
@@ -6221,7 +6221,7 @@ class StubGenerator: public StubCodeGenerator {
     FloatRegister src = f10, ftmp = f11;
     Label NaN_SLOW;
 
-    assert(VM_Version::supports_float16_to_float(), "must");
+    assert(VM_Version::supports_float16_float_conversion(), "must");
 
     // On riscv, NaN needs a special process as fcvt does not work in that case.
 
