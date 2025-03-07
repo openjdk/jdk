@@ -459,6 +459,12 @@ final class Operations {
                         if (type.elementType == Type.doubles()) {
                             ops.add(new Operation.Unary(type, "", type2, ".reinterpretAsDoubles()", null));
                         }
+                        if (type.elementType.isFloating() && type.elementType.sizeInBits() == type2.elementType.sizeInBits()) {
+                            ops.add(new Operation.Unary(type, "", type2, ".viewAsFloatingLanes()", null));
+                        }
+                        if (!type.elementType.isFloating() && type.elementType.sizeInBits() == type2.elementType.sizeInBits()) {
+                            ops.add(new Operation.Unary(type, "", type2, ".viewAsIntegralLanes()", null));
+                        }
                     }
                 }
                 // TODO: convertShape
@@ -475,7 +481,7 @@ final class Operations {
 
             // TODO: expand(VectorMask<Integer> m)
 
-            // TODO: ensure we use all variants of fromArray and fromMemorySegment, plus intoArray and intoMemorySegment.
+            // TODO: ensure we use all variants of fromArray and fromMemorySegment, plus intoArray and intoMemorySegment. Also: toArray and type variants.
 
             // TODO: lane case that is allowed to throw java.lang.IllegalArgumentException for out of bonds.
             ops.add(new Operation.Binary(type.elementType, "", type, ".lane(", Type.ints(), " & " + (type.length-1) + ")", null));
@@ -542,6 +548,19 @@ final class Operations {
             ops.add(new Operation.Ternary(type, "", type, ".slice(", Type.ints(), ", ", type, ")", List.of("IndexOutOfBoundsException")));
             // TODO: slice(int origin, Vector<Integer> w, VectorMask<Integer> m)
 
+            ops.add(new Operation.Binary(type, "", type, ".sub(", type.elementType, ")", null));
+            // TODO: sub(int e, VectorMask<Integer> m)
+            ops.add(new Operation.Binary(type, "", type, ".sub(", type, ")", null));
+            // TODO: sub(Vector<Integer> v, VectorMask<Integer> m)
+
+            // TODO: test(VectorOperators.Test op)
+            // TODO: test(VectorOperators.Test op, VectorMask<Integer> m)
+
+            ops.add(new Operation.Binary(type, "", type, ".unslice(", Type.ints(), ")", List.of("IndexOutOfBoundsException")));
+            // TODO: unslice(int origin, Vector<Integer> w, int part)
+            // TODO: unslice(int origin, Vector<Integer> w, int part, VectorMask<Integer> m)
+
+            // FIXME: withLane
         }
 
         // Ensure the list is immutable.
