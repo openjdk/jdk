@@ -130,6 +130,10 @@ pre {
     font-family:var(--code-font-family);
     font-size:var(--code-font-size);
     line-height: var(--code-line-height);
+    background-color: var(--pre-background-color);
+    color: var(--pre-text-color);
+    padding: 8px;
+    overflow-x:auto;
 }
 h1 {
     font-size:1.425em;
@@ -162,6 +166,9 @@ tt {
 code {
     font-family:var(--code-font-family);
     font-size:var(--code-font-size);
+    background-color: var(--code-background-color);
+    padding: 1px 2px;
+    border-radius: 3px;
 }
 button {
     font-family: var(--body-font-family);
@@ -823,11 +830,6 @@ div.block {
 :is(h1, h2, h3, h4, h5, h6, sup, sub, small, big) code,
 [style*=font-size] code {
     font-size: inherit;
-}
-code {
-    background-color: var(--code-background-color);
-    padding: 1px 2px;
-    border-radius: 3px;
 }
 :is(pre, table, sup, sub) code,
 section[id$=-description] > dl.notes code,
@@ -1534,12 +1536,6 @@ table.striped > tbody > tr > th {
         padding: 0;
     }
 }
-pre {
-    background-color: var(--pre-background-color);
-    color: var(--pre-text-color);
-    padding: 8px;
-    overflow-x:auto;
-}
 pre.snippet {
     background-color: var(--snippet-background-color);
     color: var(--snippet-text-color);
@@ -1557,14 +1553,6 @@ div.snippet-container {
         right: 4px;
     }
 }
-/*
- * Hide navigation links and search box in print layout
- */
-@media print {
-    ul.nav-list, div.sub-nav, .main-grid nav.toc, button.copy {
-        display:none;
-    }
-}
 pre.snippet .italic {
     font-style: italic;
 }
@@ -1574,4 +1562,12 @@ pre.snippet .bold {
 pre.snippet .highlighted {
     background-color: var(--snippet-highlight-color);
     border-radius: 10%;
+}
+/*
+ * Hide navigation links and search box in print layout
+ */
+@media print {
+    ul.nav-list, div.sub-nav, .main-grid nav.toc, button.copy {
+        display:none;
+    }
 }
