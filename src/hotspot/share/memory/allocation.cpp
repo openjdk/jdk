@@ -26,6 +26,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/resourceArea.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
