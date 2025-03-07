@@ -537,6 +537,11 @@ final class Operations {
             ops.add(new Operation.Binary(type, "", type, ".selectFrom(", type, ")", null));
             ops.add(new Operation.Ternary(type, "", type, ".selectFrom(", type, ", ", type, ")", null));
             // TODO: selectFrom(Vector<Integer> s, VectorMask<Integer> m)
+
+            ops.add(new Operation.Binary(type, "", type, ".slice(", Type.ints(), ")", List.of("IndexOutOfBoundsException")));
+            ops.add(new Operation.Ternary(type, "", type, ".slice(", Type.ints(), ", ", type, ")", List.of("IndexOutOfBoundsException")));
+            // TODO: slice(int origin, Vector<Integer> w, VectorMask<Integer> m)
+
         }
 
         // Ensure the list is immutable.

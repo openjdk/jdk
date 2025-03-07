@@ -98,9 +98,12 @@ public class TestFuzzVectorAPI {
                     try {
                 """,
                 "        return ", expression.withRandomArgs(), ";\n",
+                expression.exceptions().stream().map(exception ->
+                    "} catch (" + exception + " e) { return e;\n"
+                ).toList(),
                 """
-                    } catch (Exception e) {
-                        return e;
+                    } finally {
+                        // Just javac is happy if there are no exceptions to catch.
                     }
                 """
             );
@@ -162,6 +165,8 @@ public class TestFuzzVectorAPI {
                 } else if (argType instanceof VectorAPIType vt) {
                     elementType = vt.elementType;
                     args.add(vt.vectorType + ".fromArray(" + vt.species + ", " + name + ", 0)");
+                } else {
+                    throw new RuntimeException("Not handled: " + argType);
                 }
                 arrayDefinitions.add(defineArray.withArgs(elementType, name, size));
             }
