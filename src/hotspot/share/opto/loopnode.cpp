@@ -4506,8 +4506,7 @@ void PhaseIdealLoop::eliminate_useless_template_assertion_predicates(Unique_Node
     OpaqueTemplateAssertionPredicateNode* opaque_node =
         C->template_assertion_predicate_opaq_node(i - 1)->as_OpaqueTemplateAssertionPredicate();
     if (!useful_predicates.member(opaque_node)) { // not in the useful list
-      opaque_node->mark_useless();
-      _igvn._worklist.push(opaque_node);
+      opaque_node->mark_useless(_igvn);
     }
   }
 }

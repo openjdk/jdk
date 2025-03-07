@@ -179,10 +179,7 @@ class OpaqueTemplateAssertionPredicateNode : public Node {
     return _useless;
   }
 
-  void mark_useless() {
-    _useless = true;
-  }
-
+  void mark_useless(PhaseIterGVN& igvn);
   NOT_PRODUCT(void dump_spec(outputStream* st) const);
 };
 

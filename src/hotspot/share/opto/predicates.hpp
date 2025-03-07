@@ -414,7 +414,7 @@ class TemplateAssertionPredicate : public Predicate {
   InitializedAssertionPredicate initialize(PhaseIdealLoop* phase) const;
   void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
                                      const PhaseIdealLoop* phase) const;
-  void kill(const PhaseIterGVN& igvn) const;
+  void kill(PhaseIterGVN& igvn) const;
   static bool is_predicate(const Node* maybe_success_proj);
 
 #ifdef ASSERT

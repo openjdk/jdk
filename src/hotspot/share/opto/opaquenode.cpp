@@ -128,6 +128,11 @@ const Type* OpaqueTemplateAssertionPredicateNode::Value(PhaseGVN* phase) const {
   return phase->type(in(1));
 }
 
+void OpaqueTemplateAssertionPredicateNode::mark_useless(PhaseIterGVN& igvn) {
+  _useless = true;
+  igvn._worklist.push(this);
+}
+
 #ifndef PRODUCT
 void OpaqueTemplateAssertionPredicateNode::dump_spec(outputStream* st) const {
   if (_useless) {

@@ -222,10 +222,8 @@ InitializedAssertionPredicate TemplateAssertionPredicate::initialize(PhaseIdealL
 
 // Kills this Template Assertion Predicate by marking the associated OpaqueTemplateAssertionPredicate node useless.
 // It will then be folded away in the next IGVN round.
-void TemplateAssertionPredicate::kill(const PhaseIterGVN& igvn) const {
-  OpaqueTemplateAssertionPredicateNode* opaque_node = this->opaque_node();
-  opaque_node->mark_useless();
-  igvn._worklist.push(opaque_node);
+void TemplateAssertionPredicate::kill(PhaseIterGVN& igvn) const {
+  opaque_node()->mark_useless(igvn);
 }
 
 #ifdef ASSERT
