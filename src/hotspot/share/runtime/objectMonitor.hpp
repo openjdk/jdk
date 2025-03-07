@@ -144,7 +144,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // ParkEvent of unblocker thread.
   static ParkEvent* _vthread_unparker_ParkEvent;
 
-  // Because of frequent access, the the metadata field is at offset zero (0).
+  // Because of frequent access, the metadata field is at offset zero (0).
   // Enforced by the assert() in metadata_addr().
   // * LM_LIGHTWEIGHT with UseObjectMonitorTable:
   // Contains the _object's hashCode.

@@ -346,7 +346,7 @@ class BufferBlob: public RuntimeBlob {
     }
   };
 
-  static const Vptr _vptr;
+  static const Vptr _vpntr;
 };
 
 
@@ -434,7 +434,7 @@ class RuntimeStub: public RuntimeBlob {
     }
   };
 
-  static const Vptr _vptr;
+  static const Vptr _vpntr;
 };
 
 
@@ -474,7 +474,7 @@ class SingletonBlob: public RuntimeBlob {
     }
   };
 
-  static const Vptr _vptr;
+  static const Vptr _vpntr;
 };
 
 
@@ -557,7 +557,7 @@ class DeoptimizationBlob: public SingletonBlob {
     }
   };
 
-  static const Vptr _vptr;
+  static const Vptr _vpntr;
 };
 
 
@@ -685,7 +685,7 @@ class UpcallStub: public RuntimeBlob {
     }
   };
 
-  static const Vptr _vptr;
+  static const Vptr _vpntr;
 };
 
 #endif // SHARE_CODE_CODEBLOB_HPP
