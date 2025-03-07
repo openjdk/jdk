@@ -571,6 +571,8 @@ final class Operations {
                 // ops.add(new Operation.Binary(type, "", type, ".pow(", type, ")", null));
                 // ops.add(new Operation.Unary(type, "", type, ".sqrt(", type, ")", null));
             }
+
+            // TODO: toShuffle - VectorShuffle
         }
 
         // Ensure the list is immutable.
