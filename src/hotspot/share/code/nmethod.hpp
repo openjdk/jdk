@@ -519,6 +519,8 @@ public:
   bool is_java_method  () const { return _method != nullptr && !_method->is_native(); }
   bool is_osr_method   () const { return _entry_bci != InvocationEntryBci; }
 
+  bool is_relocatable() const;
+
   // Compiler task identification.  Note that all OSR methods
   // are numbered in an independent sequence if CICountOSR is true,
   // and native method wrappers are also numbered independently if

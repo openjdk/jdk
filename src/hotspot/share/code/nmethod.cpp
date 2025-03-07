@@ -1515,16 +1515,7 @@ nmethod::nmethod(const nmethod& nm) : CodeBlob(nm.name(), CodeBlobKind::Nmethod,
 }
 
 nmethod* nmethod::relocate_to(nmethod* nm, CodeBlobType code_blob_type) {
-  if (nm == nullptr) {
-    return nullptr;
-  }
-
-  // Unsupported nmethods
-  if (nm->is_not_entrant()) {
-    return nullptr;
-  }
-
-  if (nm->method() != nullptr && nm->method()->is_method_handle_intrinsic()) {
+  if (nm == nullptr || !nm->is_relocatable()) {
     return nullptr;
   }
 
@@ -1576,6 +1567,22 @@ nmethod* nmethod::relocate_to(nmethod* nm, CodeBlobType code_blob_type) {
   nm->make_not_used();
 
   return nm_copy;
+}
+
+bool nmethod::is_relocatable() const {
+  if (is_not_entrant()) {
+    return false;
+  }
+
+  if (method()->is_method_handle_intrinsic()) {
+    return false;
+  }
+
+  if (method()->is_continuation_native_intrinsic()) {
+    return false;
+  }
+
+  return true;
 }
 
 void* nmethod::operator new(size_t size, int nmethod_size, CodeBlobType code_blob_type) throw () {
