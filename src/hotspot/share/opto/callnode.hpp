@@ -794,6 +794,7 @@ public:
   void  set_arg_escape(bool f)             { _arg_escape = f; }
   bool  arg_escape() const                 { return _arg_escape; }
   void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode *sfpt);
+  void prepend_and_reset_generator(PhaseGVN* phase, CallGenerator* cg);
 
   DEBUG_ONLY( bool validate_symbolic_info() const; )
 
