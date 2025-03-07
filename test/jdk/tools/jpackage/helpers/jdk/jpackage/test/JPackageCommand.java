@@ -1058,7 +1058,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             // to allow the jlink process to print exception stacktraces on any failure
             addArgument("-J-Djlink.debug=true");
         }
-        if (!hasArgument("--runtime-image") && !hasArgument("--app-image") && DEFAULT_RUNTIME_IMAGE != null && !ignoreDefaultRuntime) {
+        if (!hasArgument("--runtime-image") && !hasArgument("--jlink-options") && !hasArgument("--app-image") && DEFAULT_RUNTIME_IMAGE != null && !ignoreDefaultRuntime) {
             addArguments("--runtime-image", DEFAULT_RUNTIME_IMAGE);
         }
 
