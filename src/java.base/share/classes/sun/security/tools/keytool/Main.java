@@ -388,7 +388,7 @@ public final class Main {
     // for i18n
     private static final java.util.ResourceBundle rb =
         java.util.ResourceBundle.getBundle(
-            "sun.security.tools.keytool.Resources");
+            "sun.security.tools.keytool.resources.keytool");
     private static final Collator collator = Collator.getInstance();
     static {
         // this is for case-insensitive string comparisons
