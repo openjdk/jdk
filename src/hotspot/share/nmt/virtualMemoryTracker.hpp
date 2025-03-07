@@ -32,13 +32,13 @@
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
-// VirtualMemoryTracker (VMT) is the internal class of NMT that only the MemTracker class uses it for performing the NMT operations.
+// VirtualMemoryTracker (VMT) is an internal class of the MemTracker.
 // All the Hotspot code use only the MemTracker interface to register the memory operations in NMT.
 // Memory regions can be reserved/committed/uncommitted/released by calling MemTracker API which in turn call the corresponding functions in VMT.
 // VMT uses RegionsTree to hold and manage the memory regions. Each region has two nodes that each one has address of the region (start/end) and
 // state (reserved/released/committed) and MemTag of the regions before and after it.
 //
-// The memory operations of Reserve/Commit/Uncommit/Release (RCUR) are tracked by updating/inserting/deleting the nodes in the tree. When an operation
+// The memory operations of Reserve/Commit/Uncommit/Release are tracked by updating/inserting/deleting the nodes in the tree. When an operation
 // changes nodes in the tree, the summary of the changes is returned back in a SummaryDiff struct. This struct shows that how much reserve/commit amount
 // of any specific MemTag is changed. The summary of every operation is accumulated in VirtualMemorySummary class.
 //
@@ -119,15 +119,6 @@ class VirtualMemorySnapshot : public ResourceObj {
   inline const VirtualMemory* by_type(MemTag mem_tag) const {
     int index = NMTUtil::tag_to_index(mem_tag);
     return &_virtual_memory[index];
-  }
-
-  inline void clean() {
-
-    for (int index = 0; index < mt_number_of_tags; index ++) {
-      if (index != NMTUtil::tag_to_index(mtThreadStack)) {
-        _virtual_memory[index] = VirtualMemory();
-      }
-    }
   }
 
   inline size_t total_reserved() const {

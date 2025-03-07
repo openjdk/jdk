@@ -192,7 +192,6 @@ bool VirtualMemoryTracker::Instance::print_containing_region(const void* p, outp
 
 bool VirtualMemoryTracker::print_containing_region(const void* p, outputStream* st) {
   ReservedMemoryRegion rmr = tree()->find_reserved_region((address)p);
-  log_debug(nmt)("containing rgn: base=" INTPTR_FORMAT, p2i(rmr.base()));
   if (!rmr.contain_address((address)p)) {
     return false;
   }
@@ -213,8 +212,6 @@ bool VirtualMemoryTracker::Instance::walk_virtual_memory(VirtualMemoryWalker* wa
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   MemTracker::NmtVirtualMemoryLocker nvml;
   tree()->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
-    log_info(nmt)("region in walker vmem, base: " INTPTR_FORMAT " size: %zu , %s, committed: %zu",
-                  p2i(rgn.base()), rgn.size(), rgn.tag_name(), rgn.committed_size());
     if (!walker->do_allocation_site(&rgn)) {
       return false;
     }
