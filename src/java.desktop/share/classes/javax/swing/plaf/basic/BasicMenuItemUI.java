@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -659,22 +659,6 @@ public class BasicMenuItemUI extends MenuItemUI
         paintBackground(g, mi, background);
         paintCheckIcon(g, lh, lr, holdc, foreground);
         paintIcon(g, lh, lr, holdc);
-        if (UIManager.getLookAndFeel().getName().equals("Windows")
-            && (Integer.parseInt(System.getProperty("os.name")
-                .replaceAll("[^0-9]", "")) >= 11)
-            && lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
-            Rectangle rect = lr.getTextRect();
-
-            // If ImageIcon is present, place menuItem text slightly ahead
-            // else place text slightly before so that text appears
-            // to be at the same line as ImageIcon if it was present
-            if (menuItem.getIcon() != null) {
-                rect.x = rect.x + checkIcon.getIconWidth() / 2;
-            } else {
-                rect.x = rect.x - checkIcon.getIconWidth() / 2;
-            }
-            lr.setTextRect(rect);
-        }
         paintText(g, lh, lr);
         paintAccText(g, lh, lr);
         paintArrowIcon(g, lh, lr, foreground);

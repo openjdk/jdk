@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,16 @@
 package com.sun.java.swing.plaf.windows;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Insets;
 import java.awt.Rectangle;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import javax.swing.ButtonModel;
+import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -59,6 +62,9 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
      * The instance of {@code PropertyChangeListener}.
      */
     private PropertyChangeListener changeListener;
+    private static Color disabledForeground;
+    private static Color acceleratorSelectionForeground;
+    private static Color acceleratorForeground;
 
     final WindowsMenuItemUIAccessor accessor =
         new  WindowsMenuItemUIAccessor() {
@@ -121,6 +127,27 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
         menuItem.addPropertyChangeListener(changeListener);
     }
 
+    protected void installDefaults() {
+        super.installDefaults();
+        String prefix = getPropertyPrefix();
+
+        if (acceleratorSelectionForeground == null ||
+                acceleratorSelectionForeground instanceof UIResource) {
+            acceleratorSelectionForeground =
+                    UIManager.getColor(prefix + ".acceleratorSelectionForeground");
+        }
+        if (acceleratorForeground == null ||
+                acceleratorForeground instanceof UIResource) {
+            acceleratorForeground =
+                    UIManager.getColor(prefix + ".acceleratorForeground");
+        }
+        if (disabledForeground == null ||
+                disabledForeground instanceof UIResource) {
+            disabledForeground =
+                    UIManager.getColor(prefix + ".disabledForeground");
+        }
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -131,6 +158,197 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
             menuItem.removePropertyChangeListener(changeListener);
         }
         changeListener = null;
+    }
+
+    private static void applyInsets(Rectangle rect, Insets insets) {
+        if(insets != null) {
+            rect.x += insets.left;
+            rect.y += insets.top;
+            rect.width -= (insets.right + rect.x);
+            rect.height -= (insets.bottom + rect.y);
+        }
+    }
+
+    private static void paintCheckIcon(Graphics g, MenuItemLayoutHelper lh,
+                                MenuItemLayoutHelper.LayoutResult lr,
+                                Color holdc, Color foreground) {
+        if (lh.getCheckIcon() != null) {
+            ButtonModel model = lh.getMenuItem().getModel();
+            if (model.isArmed() || (lh.getMenuItem() instanceof JMenu
+                    && model.isSelected())) {
+                g.setColor(foreground);
+            } else {
+                g.setColor(holdc);
+            }
+            if (lh.useCheckAndArrow()) {
+                lh.getCheckIcon().paintIcon(lh.getMenuItem(), g,
+                        lr.getCheckRect().x, lr.getCheckRect().y);
+            }
+            g.setColor(holdc);
+        }
+    }
+
+    private static void paintIcon(Graphics g, MenuItemLayoutHelper lh,
+                           MenuItemLayoutHelper.LayoutResult lr, Color holdc) {
+        if (lh.getIcon() != null) {
+            Icon icon;
+            ButtonModel model = lh.getMenuItem().getModel();
+            if (!model.isEnabled()) {
+                icon = lh.getMenuItem().getDisabledIcon();
+            } else if (model.isPressed() && model.isArmed()) {
+                icon = lh.getMenuItem().getPressedIcon();
+                if (icon == null) {
+                    // Use default icon
+                    icon = lh.getMenuItem().getIcon();
+                }
+            } else {
+                icon = lh.getMenuItem().getIcon();
+            }
+
+            if (icon != null) {
+                icon.paintIcon(lh.getMenuItem(), g, lr.getIconRect().x,
+                        lr.getIconRect().y);
+                g.setColor(holdc);
+            }
+        }
+    }
+
+    private static void paintAccText(Graphics g, MenuItemLayoutHelper lh,
+                              MenuItemLayoutHelper.LayoutResult lr) {
+        if (!lh.getAccText().isEmpty()) {
+            ButtonModel model = lh.getMenuItem().getModel();
+            g.setFont(lh.getAccFontMetrics().getFont());
+            if (!model.isEnabled()) {
+
+                // *** paint the accText disabled
+                if (disabledForeground != null) {
+                    g.setColor(disabledForeground);
+                    SwingUtilities2.drawString(lh.getMenuItem(), g,
+                            lh.getAccText(), lr.getAccRect().x,
+                            lr.getAccRect().y + lh.getAccFontMetrics().getAscent());
+                } else {
+                    g.setColor(lh.getMenuItem().getBackground().brighter());
+                    SwingUtilities2.drawString(lh.getMenuItem(), g,
+                            lh.getAccText(), lr.getAccRect().x,
+                            lr.getAccRect().y + lh.getAccFontMetrics().getAscent());
+                    g.setColor(lh.getMenuItem().getBackground().darker());
+                    SwingUtilities2.drawString(lh.getMenuItem(), g,
+                            lh.getAccText(), lr.getAccRect().x - 1,
+                            lr.getAccRect().y + lh.getFontMetrics().getAscent() - 1);
+                }
+            } else {
+
+                // *** paint the accText normally
+                if (model.isArmed()
+                        || (lh.getMenuItem() instanceof JMenu
+                        && model.isSelected())) {
+                    g.setColor(acceleratorSelectionForeground);
+                } else {
+                    g.setColor(acceleratorForeground);
+                }
+                SwingUtilities2.drawString(lh.getMenuItem(), g, lh.getAccText(),
+                        lr.getAccRect().x, lr.getAccRect().y +
+                                lh.getAccFontMetrics().getAscent());
+            }
+        }
+    }
+
+    private static void paintArrowIcon(Graphics g, MenuItemLayoutHelper lh,
+                                MenuItemLayoutHelper.LayoutResult lr,
+                                Color foreground) {
+        if (lh.getArrowIcon() != null) {
+            ButtonModel model = lh.getMenuItem().getModel();
+            if (model.isArmed() || (lh.getMenuItem() instanceof JMenu
+                    && model.isSelected())) {
+                g.setColor(foreground);
+            }
+            if (lh.useCheckAndArrow()) {
+                lh.getArrowIcon().paintIcon(lh.getMenuItem(), g,
+                        lr.getArrowRect().x, lr.getArrowRect().y);
+            }
+        }
+    }
+
+    protected void paintMenuItem(Graphics g, JComponent c,
+                                 Icon checkIcon, Icon arrowIcon,
+                                 Color background, Color foreground,
+                                 int defaultTextIconGap) {
+        if (WindowsMenuItemUI.isVistaPainting()) {
+            WindowsMenuItemUI.paintMenuItem(accessor, g, c, checkIcon,
+                                            arrowIcon, background, foreground,
+                                            defaultTextIconGap, menuItem,
+                                            getPropertyPrefix());
+            return;
+        }
+        super.paintMenuItem(g, c, checkIcon, arrowIcon, background,
+                foreground, defaultTextIconGap);
+        return;
+    }
+
+    static void paintMenuItem(WindowsMenuItemUIAccessor accessor, Graphics g,
+                              JComponent c, Icon checkIcon, Icon arrowIcon,
+                              Color background, Color foreground,
+                              int defaultTextIconGap, JMenuItem menuItem, String prefix) {
+        // Save original graphics font and color
+        Font holdf = g.getFont();
+        Color holdc = g.getColor();
+
+        JMenuItem mi = (JMenuItem) c;
+        g.setFont(mi.getFont());
+
+        Rectangle viewRect = new Rectangle(0, 0, mi.getWidth(), mi.getHeight());
+        applyInsets(viewRect, mi.getInsets());
+
+        String acceleratorDelimiter =
+                UIManager.getString("MenuItem.acceleratorDelimiter");
+        if (acceleratorDelimiter == null) { acceleratorDelimiter = "+"; }
+        Font acceleratorFont = UIManager.getFont("MenuItem.acceleratorFont");
+        if (acceleratorFont == null) {
+            acceleratorFont = UIManager.getFont("MenuItem.font");
+        }
+        MenuItemLayoutHelper lh = new MenuItemLayoutHelper(mi, checkIcon,
+                arrowIcon, viewRect, defaultTextIconGap, acceleratorDelimiter,
+                mi.getComponentOrientation().isLeftToRight(), mi.getFont(),
+                acceleratorFont, MenuItemLayoutHelper.useCheckAndArrow(menuItem),
+                prefix);
+        MenuItemLayoutHelper.LayoutResult lr = lh.layoutMenuItem();
+
+        paintBackground(accessor, g, mi, background);
+        paintCheckIcon(g, lh, lr, holdc, foreground);
+        paintIcon(g, lh, lr, holdc);
+
+        if ((Integer.parseInt(System.getProperty("os.name")
+                .replaceAll("[^0-9]", "")) >= 11)
+                && lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
+            Rectangle rect = lr.getTextRect();
+
+            // If ImageIcon is present, place menuItem text slightly ahead
+            // else place text slightly before so that text appears
+            // to be at the same line as ImageIcon if it was present
+            if (menuItem.getIcon() != null) {
+                rect.x = rect.x + checkIcon.getIconWidth() / 2;
+            } else {
+                rect.x = rect.x - checkIcon.getIconWidth() / 2;
+            }
+            lr.setTextRect(rect);
+        }
+        if (!lh.getText().isEmpty()) {
+            if (lh.getHtmlView() != null) {
+                // Text is HTML
+                lh.getHtmlView().paint(g, lr.getTextRect());
+            } else {
+                // Text isn't HTML
+                paintText(accessor, g, lh.getMenuItem(),
+                          lr.getTextRect(), lh.getText());
+            }
+        }
+        paintAccText(g, lh, lr);
+        paintArrowIcon(g, lh, lr, foreground);
+
+        // Restore original graphics font and color
+        g.setColor(holdc);
+        g.setFont(holdf);
+        return;
     }
 
     /**
