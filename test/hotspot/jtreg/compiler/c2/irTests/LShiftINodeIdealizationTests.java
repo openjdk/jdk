@@ -175,8 +175,8 @@ public class LShiftINodeIdealizationTests {
         Asserts.assertEQ(0, testDoubleShift9(a));
 
         short[] arr = new short[1];
-        arr[0] = (short)1;
-        Asserts.assertEQ((short)(1 << 3), testDoubleShiftSliceAndStore(arr)[0]);
+        arr[0] = (short)a;
+        Asserts.assertEQ((short)(a << 3), testDoubleShiftSliceAndStore(arr)[0]);
     }
 
     @Test
