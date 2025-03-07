@@ -931,7 +931,9 @@ HeapWord* ShenandoahFreeSet::try_allocate_from_mutator(ShenandoahAllocRequest& r
     ShenandoahHeapRegion* r = _heap->get_region(idx);
     if (can_allocate_from(r)) {
       if (req.is_old()) {
-        flip_to_old_gc(r);
+        if (!flip_to_old_gc(r)) {
+          continue;
+        }
       } else {
         flip_to_gc(r);
       }
