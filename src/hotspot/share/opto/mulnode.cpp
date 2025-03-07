@@ -1133,7 +1133,7 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new LShiftINode( add1->in(1), in(2) );
 
   // Performs:
-  // (X << con1) << con2 ==> X << (con1 + con2) (see implementation for subtleties)
+  // (X << con1) << con2 ==> X << (con1 + con2)
   Node* doubleShift = collapse_nested_shift_left(phase, this, con, T_INT);
   if (doubleShift != nullptr) {
     return doubleShift;
@@ -1319,7 +1319,7 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new LShiftLNode( add1->in(1), in(2) );
 
   // Performs:
-  // (X << con1) << con2 ==> X << (con1 + con2) (see implementation for subtleties)
+  // (X << con1) << con2 ==> X << (con1 + con2)
   Node* doubleShift = collapse_nested_shift_left(phase, this, con, T_LONG);
   if (doubleShift != nullptr) {
     return doubleShift;

@@ -3520,17 +3520,35 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // If (conIL == conIR && conIR <= num_bits)  this simplifies to
 // (StoreB ... (valIn) )
 // If (conIL > conIR) we are inventing 0 lower bits, and throwing
-// away upper bits, but we are not introducing garbage bits by above.
+// away upper bits, but we are not introducing garbage bits from the upper bits
+// (the right in the notation below).
 // We can simplify into
 // (StoreB ... (LShiftI _ valIn (conIL - conIR)) )
-// This case happens when the store source was itself a left shift, that gets merged
-// into the inner left shift of the sign-extension.
+// This case happens when the right-hand side of the store was itself a left shift, that gets merged
+// into the inner left shift of the sign-extension. For instance, if we have
+// array_of_shorts[0] = (short)(X << 2)
+// We get a structure such as:
+// (StoreB ... (RShiftI _ (LShiftI _ (LShiftI _ X 2) 16) 16))
+// that is simplified into
+// (StoreB ... (RShiftI _ (LShiftI _ X 18) 16)).
+// It is thus useful to handle the case where conIL > conIR.
+//
 // Let's assume we have the following 32 bits integer that we want to stuff in 8 bits char:
 // +------------------------+---------+
 // |        v[8..31]        | v[0..7] |
 // +------------------------+---------+
 //  31                     8 7        0
-// v[0..7] is meaningful, but v[8..31] is not. In this case, num_rejected_bits == 24
+// v[0..7] is meaningful, but v[8..31] is not. In this case, num_rejected_bits == 24.
+// Let's study what happens in different cases to see that the simplification into
+// (StoreB ... (LShiftI _ valIn (conIL - conIR)) )
+// is valid if:
+// - conIL >= conIR
+// - conIR <= num_rejected_bits
+// Let's also remember that conIL < 32 since (x << 33) is simplified into (x << 1)
+// and (x << 31) << 2 is simplified into 0. This means that in any case, after the
+// left shift, we always have at least one bit of the original v.
+//
+// ### Case 1 : conIL == conIR
 // If we do the shift left then right by 24 bits, we get:
 // after << 24
 // +---------+------------------------+
@@ -3542,8 +3560,10 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // |        sign bit        | v[0..7] |
 // +------------------------+---------+
 //  31                     8 7        0
-// so, indeed, simplifying is fine. If we shift by more than 24 (e.g. 26),
-// but then, shift right by 24:
+// The non-rejected bits are the same before and after, so, indeed, simplifying is fine.
+//
+// ### Case 2: conIL > conIR == num_rejected_bits
+// We take conIL == 26 for this example.
 // after << 26
 // +---------+------------------------+
 // | v[0..5] |           0            |
@@ -3554,7 +3574,12 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // |     sign bit     | v[0..5] |  0  |
 // +------------------+---------+-----+
 //  31               8 7       2 1   0
-// Now, if we shift right by less than the number of rejected bits:
+// The non-rejected bits are the 8 lower one of (v << conIL - conIR).
+// The bits 6 and 7 of v have been thrown away after the shift left.
+// The simplification is still fine.
+//
+// ### Case 3: conIL > conIR < num_rejected_bits.
+// Let's say conIL == 26 and conIR == 22.
 // after << 26
 // +---------+------------------------+
 // | v[0..5] |           0            |
@@ -3565,17 +3590,47 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // |     sign bit     | v[0..5] |  0  |
 // +------------------+---------+-----+
 //  31              10 9       4 3   0
+// The non-rejected bits are the 8 lower one of (v << conIL - conIR).
+// The bits 6 and 7 of v have been thrown away after the shift left.
+// The bits 4 and 5 of v are still present, but outside of the kept bits (the 8 lower ones).
+// The simplification is still fine.
 //
-// Basically, we decompose
-// StoreB ... (RShiftI _ (LShiftI _ valIn conIL ) conIR)
-// into
-// StoreB ... (RShiftI _ (LShiftI _ (LShiftI _ valIn (conIL - conIR)) conIR ) conIR)
+// ### But! Case 4: conIL > conIR > num_rejected_bits.
+// Let's see that this case is not as easy to simplify.
+// Let's say conIL == 28 and conIR == 26.
+// after << 28
+// +---------+------------------------+
+// | v[0..3] |           0            |
+// +---------+------------------------+
+//  31     28 27                      0
+// after >> 26
+// +------------------+---------+-----+
+// |     sign bit     | v[0..3] |  0  |
+// +------------------+---------+-----+
+//  31               6 5       2 1   0
+// The non-rejected bits are made of
+// - 0-1 => 0
+// - 2-5 => the bits 0 to 3 of v
+// - 6-7 => the sign bit of v[0..3] (that is v[3])
+// Simplifying this as (X << 2) is not correct.
+// The condition conIR <= num_rejected_bits is indeed necessary.
+//
+// ### Conclusion:
+// Valid if conIL >= conIR <= num_rejected_bits
+//
+// We do not treat the case conIR > conIL here since the point of this function is
+// to skip sign-extensions (that is conIL == conIR == num_rejected_bits). The need
+// of treating conIL > conIR comes from the cases where the sign-extended value is
+// also left-shift expression. Computing the sign-extension of a right-shift expression
+// doesn't yield a situation such as
+// (StoreB ... (RShiftI _ (LShiftI _ valIn conIL ) conIR) )
+// where conIL < conIR.
 Node* StoreNode::Ideal_sign_extended_input(PhaseGVN* phase, int num_rejected_bits) {
-  Node* val = in(MemNode::ValueIn);
-  if (val->Opcode() == Op_RShiftI) {
-    const TypeInt* conIR = phase->type(val->in(2))->isa_int();
-    if (conIR != nullptr && conIR->is_con() && (conIR->get_con() <= num_rejected_bits)) {
-      Node* shl = val->in(1);
+  Node* shr = in(MemNode::ValueIn);
+  if (shr->Opcode() == Op_RShiftI) {
+    const TypeInt* conIR = phase->type(shr->in(2))->isa_int();
+    if (conIR != nullptr && conIR->is_con() && conIR->get_con() <= num_rejected_bits) {
+      Node* shl = shr->in(1);
       if (shl->Opcode() == Op_LShiftI) {
         const TypeInt* conIL = phase->type(shl->in(2))->isa_int();
         if (conIL != nullptr && conIL->is_con()) {
