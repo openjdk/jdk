@@ -429,7 +429,7 @@ public interface HttpResponse<T> {
          * BodySubscribers#fromLineSubscriber(Subscriber, Function, Charset, String)
          * BodySubscribers.fromLineSubscriber(subscriber, finisher, charset, lineSeparator)},
          * with the given {@code subscriber}, {@code finisher} function, and line separator.
-         * The {@linkplain  Charset charset} used to decode the response body bytes is
+         * The {@linkplain Charset charset} used to decode the response body bytes is
          * obtained from the HTTP response headers as specified by {@link #ofString()}.
          *
          * <p> The given {@code finisher} function is applied after the given
