@@ -96,13 +96,6 @@ public class CodeCache {
   // addr    - address inside of a code blob
   public CodeBlob createCodeBlobWrapper(Address cbStart, Address addr) {
     Class<?> cbClass = CodeBlob.getClassFor(cbStart);
-    if (cbClass == null) {
-      String message = "Couldn't deduce type of CodeBlob ";
-      message = message + "@" + cbStart + " ";
-      message = message + "for PC=" + addr;
-
-      throw new RuntimeException(message);
-    }
     CodeBlob result = (CodeBlob) VMObjectFactory.newObject(cbClass, cbStart);
     if (Assert.ASSERTS_ENABLED) {
       // The pointer to the HeapBlock that contains this blob is outside of the blob,

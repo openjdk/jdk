@@ -2300,7 +2300,7 @@ static int patch_offset_in_jal(address branch, int64_t offset) {
 
 static int patch_offset_in_conditional_branch(address branch, int64_t offset) {
   assert(Assembler::is_simm13(offset) && ((offset % 2) == 0),
-         "offset is too large to be patched in one beq/bge/bgeu/blt/bltu/bne instruction!\n");
+         "offset (%ld) is too large to be patched in one beq/bge/bgeu/blt/bltu/bne instruction!\n", offset);
   Assembler::patch(branch, 31, 31, (offset >> 12) & 0x1);                       // offset[12]    ==> branch[31]
   Assembler::patch(branch, 30, 25, (offset >> 5)  & 0x3f);                      // offset[10:5]  ==> branch[30:25]
   Assembler::patch(branch, 7,  7,  (offset >> 11) & 0x1);                       // offset[11]    ==> branch[7]
@@ -2892,7 +2892,6 @@ void MacroAssembler::revb(Register Rd, Register Rs, Register tmp1, Register tmp2
     slli(tmp1, tmp1, 8);
   }
   srli(Rd, Rs, 56);
-  zext(Rd, Rd, 8);
   orr(Rd, tmp1, Rd);
 }
 
