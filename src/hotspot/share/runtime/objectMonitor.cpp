@@ -357,7 +357,7 @@ bool ObjectMonitor::enter_is_async_deflating() {
   return false;
 }
 
-bool ObjectMonitor::TryLockWithContentionMark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark) {
+bool ObjectMonitor::try_lock_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark) {
   assert(contention_mark._monitor == this, "must be");
   assert(!is_being_async_deflated(), "must be");
 
@@ -404,7 +404,7 @@ void ObjectMonitor::enter_for_with_contention_mark(JavaThread* locking_thread, O
   // The monitor is private to or already owned by locking_thread which must be suspended.
   // So this code may only contend with deflation.
   assert(locking_thread == Thread::current() || locking_thread->is_obj_deopt_suspend(), "must be");
-  bool success = TryLockWithContentionMark(locking_thread, contention_mark);
+  bool success = try_lock_with_contention_mark(locking_thread, contention_mark);
 
   assert(success, "Failed to enter_for: locking_thread=" INTPTR_FORMAT
          ", this=" INTPTR_FORMAT "{owner=" INT64_FORMAT "}",
@@ -425,7 +425,7 @@ bool ObjectMonitor::enter_for(JavaThread* locking_thread) {
     return false;
   }
 
-  bool success = TryLockWithContentionMark(locking_thread, contention_mark);
+  bool success = try_lock_with_contention_mark(locking_thread, contention_mark);
 
   assert(success, "Failed to enter_for: locking_thread=" INTPTR_FORMAT
          ", this=" INTPTR_FORMAT "{owner=" INT64_FORMAT "}",
@@ -669,7 +669,7 @@ ObjectMonitor::TryLockResult ObjectMonitor::try_lock(JavaThread* current) {
         // Treat deflation as interference.
         return TryLockResult::Interference;
       }
-      if (TryLockWithContentionMark(current, contention_mark)) {
+      if (try_lock_with_contention_mark(current, contention_mark)) {
         assert(_recursions == 0, "invariant");
         return TryLockResult::Success;
       } else {
