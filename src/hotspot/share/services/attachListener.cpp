@@ -369,7 +369,7 @@ static jint jcmd(AttachOperation* op, attachStream* out) {
   // Special case for ManagementAgent.start and ManagementAgent.start_local commands
   // used by HotSpotVirtualMachine.startManagementAgent and startLocalManagementAgent.
   // The commands report error if the agent failed to load, so we need to disable streaming output.
-  const char jmx_prefix[] = "ManagementAgent.";
+  const char* jmx_prefix = "ManagementAgent.";
   if (strncmp(op->arg(0), jmx_prefix, strlen(jmx_prefix)) == 0) {
     allow_streaming_output = false;
   }
@@ -393,8 +393,8 @@ static jint jcmd(AttachOperation* op, attachStream* out) {
   executor.parse_and_execute(op->arg(0), ' ', THREAD);
   if (HAS_PENDING_EXCEPTION) {
     // We can get an exception during command execution.
-    // In the case _attach_stream->set_result() is already called and operation result code is send
-    // to the client.
+    // In the case _attach_stream->set_result() is already called and the operation result code
+    // is sent to the client.
     // Repeated out->set_result() is a no-op, just report exception message.
     java_lang_Throwable::print(PENDING_EXCEPTION, out);
     out->cr();
