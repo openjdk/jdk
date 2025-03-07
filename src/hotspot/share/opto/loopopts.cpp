@@ -791,6 +791,11 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     // Ignore Template Assertion Predicates with OpaqueTemplateAssertionPredicate nodes.
     return nullptr;
   }
+  if (bol->is_OpaqueMultiversioning() && bol->as_OpaqueMultiversioning()->is_useless()) {
+    // Ignore multiversion_if that just lost its loops. The OpaqueMultiversioning is marked useless,
+    // and will make the multiversion_if constant fold in the next IGVN round.
+    return nullptr;
+  }
   if (!bol->is_Bool()) {
     assert(false, "Expected Bool, but got %s", NodeClassNames[bol->Opcode()]);
     return nullptr;
