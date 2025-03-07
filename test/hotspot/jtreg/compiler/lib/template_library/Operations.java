@@ -560,7 +560,7 @@ final class Operations {
             // TODO: unslice(int origin, Vector<Integer> w, int part)
             // TODO: unslice(int origin, Vector<Integer> w, int part, VectorMask<Integer> m)
 
-            // FIXME: withLane
+            ops.add(new Operation.Ternary(type, "", type, ".withLane(", Type.ints(), ", ", type.elementType, ")", List.of("IllegalArgumentException")));
         }
 
         // Ensure the list is immutable.
