@@ -791,7 +791,8 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     // Ignore Template Assertion Predicates with OpaqueTemplateAssertionPredicate nodes.
     return nullptr;
   }
-  if (bol->is_OpaqueMultiversioning() && bol->as_OpaqueMultiversioning()->is_useless()) {
+  if (bol->is_OpaqueMultiversioning()) {
+    assert(bol->as_OpaqueMultiversioning()->is_useless(), "Must be useless, i.e. fast main loop has already disappeared.");
     // Ignore multiversion_if that just lost its loops. The OpaqueMultiversioning is marked useless,
     // and will make the multiversion_if constant fold in the next IGVN round.
     return nullptr;
