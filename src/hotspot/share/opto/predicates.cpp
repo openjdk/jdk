@@ -120,6 +120,7 @@ bool RuntimePredicate::has_valid_uncommon_trap(const Node* success_proj) {
   assert(RegularPredicate::may_be_predicate_if(success_proj), "must have been checked before");
   const Deoptimization::DeoptReason deopt_reason = uncommon_trap_reason(success_proj->as_IfProj());
   return (deopt_reason == Deoptimization::Reason_loop_limit_check ||
+          deopt_reason == Deoptimization::Reason_auto_vectorization_check ||
           deopt_reason == Deoptimization::Reason_predicate ||
           deopt_reason == Deoptimization::Reason_profile_predicate);
 }
@@ -893,6 +894,8 @@ void Predicates::dump() const {
     tty->print_cr("%d %s:", loop_head->_idx, loop_head->Name());
     tty->print_cr("- Loop Limit Check Predicate Block:");
     _loop_limit_check_predicate_block.dump("  ");
+    tty->print_cr("- Auto Vectorization Check Block:");
+    _auto_vectorization_check_block.dump("  ");
     tty->print_cr("- Profiled Loop Predicate Block:");
     _profiled_loop_predicate_block.dump("  ");
     tty->print_cr("- Loop Predicate Block:");

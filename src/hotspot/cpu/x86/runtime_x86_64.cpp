@@ -59,7 +59,8 @@ void OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  CodeBuffer buffer("uncommon_trap_blob", 2048, 1024);
+  const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
+  CodeBuffer buffer(name, 2048, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   assert(SimpleRuntimeFrame::framesize % 4 == 0, "sp not 16-byte aligned");
@@ -264,7 +265,8 @@ void OptoRuntime::generate_exception_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  CodeBuffer buffer("exception_blob", 2048, 1024);
+  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
+  CodeBuffer buffer(name, 2048, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
 

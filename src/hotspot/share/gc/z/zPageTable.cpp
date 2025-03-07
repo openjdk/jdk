@@ -23,13 +23,22 @@
 
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
+#include "gc/z/zIndexDistributor.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 
+static size_t get_max_offset_for_map() {
+  // The page table has (ZAddressOffsetMax >> ZGranuleSizeShift) slots
+  const size_t max_count = ZAddressOffsetMax >> ZGranuleSizeShift;
+  const size_t required_count = ZIndexDistributor::get_count(max_count);
+
+  return required_count << ZGranuleSizeShift;
+}
+
 ZPageTable::ZPageTable()
-  : _map(ZAddressOffsetMax) {}
+  : _map(get_max_offset_for_map()) {}
 
 void ZPageTable::insert(ZPage* page) {
   const zoffset offset = page->start();

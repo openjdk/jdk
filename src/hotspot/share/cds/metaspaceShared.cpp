@@ -147,15 +147,11 @@ size_t MetaspaceShared::core_region_alignment() {
   return os::cds_core_region_alignment();
 }
 
-size_t MetaspaceShared::protection_zone_size() {
-  return os::cds_core_region_alignment();
-}
-
 static bool shared_base_valid(char* shared_base) {
   // We check user input for SharedBaseAddress at dump time.
 
   // At CDS runtime, "shared_base" will be the (attempted) mapping start. It will also
-  // be the encoding base, since the the headers of archived base objects (and with Lilliput,
+  // be the encoding base, since the headers of archived base objects (and with Lilliput,
   // the prototype mark words) carry pre-computed narrow Klass IDs that refer to the mapping
   // start as base.
   //
@@ -640,7 +636,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
 
   _pending_method_handle_intrinsics = new (mtClassShared) GrowableArray<Method*>(256, mtClassShared);
-  if (CDSConfig::is_dumping_aot_linked_classes()) {
+  if (CDSConfig::is_dumping_method_handles()) {
     // When dumping AOT-linked classes, some classes may have direct references to a method handle
     // intrinsic. The easiest thing is to save all of them into the AOT cache.
     SystemDictionary::get_all_method_handle_intrinsics(_pending_method_handle_intrinsics);
@@ -989,7 +985,7 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
       HeapShared::reset_archived_object_states(CHECK);
     }
 
-    if (CDSConfig::is_dumping_invokedynamic()) {
+    if (CDSConfig::is_dumping_method_handles()) {
       // This assert means that the MethodType and MethodTypeForm tables won't be
       // updated concurrently when we are saving their contents into a side table.
       assert(CDSConfig::allow_only_single_java_thread(), "Required");
@@ -999,12 +995,15 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
                              vmSymbols::createArchivedObjects(),
                              vmSymbols::void_method_signature(),
                              CHECK);
+    }
 
+    if (CDSConfig::is_initing_classes_at_dump_time()) {
       // java.lang.Class::reflectionFactory cannot be archived yet. We set this field
       // to null, and it will be initialized again at runtime.
       log_debug(cds)("Resetting Class::reflectionFactory");
       TempNewSymbol method_name = SymbolTable::new_symbol("resetArchivedStates");
       Symbol* method_sig = vmSymbols::void_method_signature();
+      JavaValue result(T_VOID);
       JavaCalls::call_static(&result, vmClasses::Class_klass(),
                              method_name, method_sig, CHECK);
 
@@ -1284,7 +1283,6 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 
   ReservedSpace total_space_rs, archive_space_rs, class_space_rs;
   MapArchiveResult result = MAP_ARCHIVE_OTHER_FAILURE;
-  size_t prot_zone_size = 0;
   char* mapped_base_address = reserve_address_space_for_archives(static_mapinfo,
                                                                  dynamic_mapinfo,
                                                                  use_requested_addr,
@@ -1296,29 +1294,14 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
     log_debug(cds)("Failed to reserve spaces (use_requested_addr=%u)", (unsigned)use_requested_addr);
   } else {
 
-    if (Metaspace::using_class_space()) {
-      prot_zone_size = protection_zone_size();
-#ifdef ASSERT
-      // Before mapping the core regions into the newly established address space, we mark
-      // start and the end of the future protection zone with canaries. That way we easily
-      // catch mapping errors (accidentally mapping data into the future protection zone).
-      os::commit_memory(mapped_base_address, prot_zone_size, false);
-      *(mapped_base_address) = 'P';
-      *(mapped_base_address + prot_zone_size - 1) = 'P';
-#endif
-    }
-
 #ifdef ASSERT
     // Some sanity checks after reserving address spaces for archives
     //  and class space.
     assert(archive_space_rs.is_reserved(), "Sanity");
     if (Metaspace::using_class_space()) {
-      assert(archive_space_rs.base() == mapped_base_address &&
-          archive_space_rs.size() > protection_zone_size(),
-          "Archive space must lead and include the protection zone");
       // Class space must closely follow the archive space. Both spaces
       //  must be aligned correctly.
-      assert(class_space_rs.is_reserved() && class_space_rs.size() > 0,
+      assert(class_space_rs.is_reserved(),
              "A class space should have been reserved");
       assert(class_space_rs.base() >= archive_space_rs.end(),
              "class space should follow the cds archive space");
@@ -1331,9 +1314,8 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
     }
 #endif // ASSERT
 
-    log_info(cds)("Reserved archive_space_rs [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (%zu) bytes%s",
-                   p2i(archive_space_rs.base()), p2i(archive_space_rs.end()), archive_space_rs.size(),
-                   (prot_zone_size > 0 ? " (includes protection zone)" : ""));
+    log_info(cds)("Reserved archive_space_rs [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (%zu) bytes",
+                   p2i(archive_space_rs.base()), p2i(archive_space_rs.end()), archive_space_rs.size());
     log_info(cds)("Reserved class_space_rs   [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (%zu) bytes",
                    p2i(class_space_rs.base()), p2i(class_space_rs.end()), class_space_rs.size());
 
@@ -1405,40 +1387,38 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
   if (result == MAP_ARCHIVE_SUCCESS) {
     SharedBaseAddress = (size_t)mapped_base_address;
 #ifdef _LP64
-    if (Metaspace::using_class_space()) {
-      assert(*(mapped_base_address) == 'P' &&
-             *(mapped_base_address + prot_zone_size - 1) == 'P',
-          "Protection zone was overwritten?");
+        if (Metaspace::using_class_space()) {
+          // Set up ccs in metaspace.
+          Metaspace::initialize_class_space(class_space_rs);
 
-      // Set up ccs in metaspace.
-      Metaspace::initialize_class_space(class_space_rs);
-
-      // Set up compressed Klass pointer encoding: the encoding range must
-      //  cover both archive and class space.
-      const address encoding_base = (address)mapped_base_address;
-      const address klass_range_start = encoding_base + prot_zone_size;
-      const size_t klass_range_size = (address)class_space_rs.end() - klass_range_start;
-      if (INCLUDE_CDS_JAVA_HEAP || UseCompactObjectHeaders) {
-        // The CDS archive may contain narrow Klass IDs that were precomputed at archive generation time:
-        // - every archived java object header (only if INCLUDE_CDS_JAVA_HEAP)
-        // - every archived Klass' prototype   (only if +UseCompactObjectHeaders)
-        //
-        // In order for those IDs to still be valid, we need to dictate base and shift: base should be the
-        // mapping start (including protection zone), shift should be the shift used at archive generation time.
-        CompressedKlassPointers::initialize_for_given_encoding(
-          klass_range_start, klass_range_size,
-          encoding_base, ArchiveBuilder::precomputed_narrow_klass_shift() // precomputed encoding, see ArchiveBuilder
-        );
-      } else {
-        // Let JVM freely chose encoding base and shift
-        CompressedKlassPointers::initialize(klass_range_start, klass_range_size);
-      }
-      CompressedKlassPointers::establish_protection_zone(encoding_base, prot_zone_size);
-
-      // map_or_load_heap_region() compares the current narrow oop and klass encodings
-      // with the archived ones, so it must be done after all encodings are determined.
-      static_mapinfo->map_or_load_heap_region();
-    }
+          // Set up compressed Klass pointer encoding: the encoding range must
+          //  cover both archive and class space.
+          address cds_base = (address)static_mapinfo->mapped_base();
+          address ccs_end = (address)class_space_rs.end();
+          assert(ccs_end > cds_base, "Sanity check");
+          if (INCLUDE_CDS_JAVA_HEAP || UseCompactObjectHeaders) {
+            // The CDS archive may contain narrow Klass IDs that were precomputed at archive generation time:
+            // - every archived java object header (only if INCLUDE_CDS_JAVA_HEAP)
+            // - every archived Klass' prototype   (only if +UseCompactObjectHeaders)
+            //
+            // In order for those IDs to still be valid, we need to dictate base and shift: base should be the
+            // mapping start, shift the shift used at archive generation time.
+            address precomputed_narrow_klass_base = cds_base;
+            const int precomputed_narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
+            CompressedKlassPointers::initialize_for_given_encoding(
+              cds_base, ccs_end - cds_base, // Klass range
+              precomputed_narrow_klass_base, precomputed_narrow_klass_shift // precomputed encoding, see ArchiveBuilder
+            );
+          } else {
+            // Let JVM freely chose encoding base and shift
+            CompressedKlassPointers::initialize (
+              cds_base, ccs_end - cds_base // Klass range
+              );
+          }
+          // map_or_load_heap_region() compares the current narrow oop and klass encodings
+          // with the archived ones, so it must be done after all encodings are determined.
+          static_mapinfo->map_or_load_heap_region();
+        }
 #endif // _LP64
     log_info(cds)("initial optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
     log_info(cds)("initial full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
@@ -1520,6 +1500,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   const size_t archive_space_alignment = core_region_alignment();
 
   // Size and requested location of the archive_space_rs (for both static and dynamic archives)
+  assert(static_mapinfo->mapping_base_offset() == 0, "Must be");
   size_t archive_end_offset  = (dynamic_mapinfo == nullptr) ? static_mapinfo->mapping_end_offset() : dynamic_mapinfo->mapping_end_offset();
   size_t archive_space_size = align_up(archive_end_offset, archive_space_alignment);
 
