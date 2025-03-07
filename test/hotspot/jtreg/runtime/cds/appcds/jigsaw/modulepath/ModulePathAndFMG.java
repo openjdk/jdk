@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,29 +226,30 @@ public class ModulePathAndFMG {
                                         "-m", MAIN_MODULE);
         TestCommon.checkDump(output);
 
-        tty("5. run with CDS on, without the extra module specified in dump time, should pass");
+        tty("5. run with CDS on, without the extra module specified in dump time, should fail");
         TestCommon.runWithModules(prefix,
                                  null,               // --upgrade-module-path
                                  libsDir.toString(), // --module-path
                                  MAIN_MODULE)        // -m
             .assertNormalExit(out -> {
-                out.shouldNotContain(OPTIMIZE_DISABLED)
-                   .shouldContain(OPTIMIZE_ENABLED)
-                   .shouldNotContain(FMG_DISABLED)
-                   .shouldContain(FMG_ENABLED)
+                out.shouldContain(OPTIMIZE_DISABLED)
+                   .shouldNotContain(OPTIMIZE_ENABLED)
+                   .shouldContain(FMG_DISABLED)
+                   .shouldNotContain(FMG_ENABLED)
                    .shouldMatch(MAIN_FROM_CDS)       // archived Main class is for module only
                    .shouldContain(CLASS_FOUND_MESSAGE);
             });
+
         tty("6. run with CDS on, with the extra module specified in dump time");
         TestCommon.runWithModules(prefix,
                                  null,               // --upgrade-module-path
                                  extraModulePath,    // --module-path
                                  MAIN_MODULE)        // -m
             .assertNormalExit(out -> {
-                out.shouldNotContain(OPTIMIZE_ENABLED)
-                   .shouldContain(OPTIMIZE_DISABLED)
-                   .shouldNotContain(FMG_ENABLED)
-                   .shouldContain(FMG_DISABLED)
+                out.shouldContain(OPTIMIZE_ENABLED)
+                   .shouldNotContain(OPTIMIZE_DISABLED)
+                   .shouldContain(FMG_ENABLED)
+                   .shouldNotContain(FMG_DISABLED)
                    .shouldMatch(MAIN_FROM_CDS)       // archived Main class is for module only
                    .shouldContain(CLASS_FOUND_MESSAGE);
             });
@@ -262,16 +263,16 @@ public class ModulePathAndFMG {
                                         extraJarPath,
                                         "-m", MAIN_MODULE);
         TestCommon.checkDump(output);
-        tty("7. run with CDS on, without the extra module specified in dump time, should pass");
+        tty("7. run with CDS on, without the extra module specified in dump time, should fail");
         TestCommon.runWithModules(prefix,
                                  null,               // --upgrade-module-path
                                  modularJarPath,     // --module-path
                                  MAIN_MODULE)        // -m
             .assertNormalExit(out -> {
-                out.shouldNotContain(OPTIMIZE_DISABLED)
-                   .shouldContain(OPTIMIZE_ENABLED)
-                   .shouldNotContain(FMG_DISABLED)
-                   .shouldContain(FMG_ENABLED)
+                out.shouldContain(OPTIMIZE_DISABLED)
+                   .shouldNotContain(OPTIMIZE_ENABLED)
+                   .shouldContain(FMG_DISABLED)
+                   .shouldNotContain(FMG_ENABLED)
                    .shouldMatch(MAIN_FROM_CDS)       // archived Main class is for module only
                    .shouldContain(CLASS_FOUND_MESSAGE);
             });
@@ -282,10 +283,10 @@ public class ModulePathAndFMG {
                                  extraJarPath,       // --module-path
                                  MAIN_MODULE)        // -m
             .assertNormalExit(out -> {
-                out.shouldNotContain(OPTIMIZE_ENABLED)
-                   .shouldContain(OPTIMIZE_DISABLED)
-                   .shouldNotContain(FMG_ENABLED)
-                   .shouldContain(FMG_DISABLED)
+                out.shouldContain(OPTIMIZE_ENABLED)
+                   .shouldNotContain(OPTIMIZE_DISABLED)
+                   .shouldContain(FMG_ENABLED)
+                   .shouldNotContain(FMG_DISABLED)
                    .shouldMatch(MAIN_FROM_CDS)       // archived Main class is for module only
                    .shouldContain(CLASS_FOUND_MESSAGE);
             });
@@ -295,10 +296,10 @@ public class ModulePathAndFMG {
                                  extraModulePath,    // --module-path
                                  MAIN_MODULE)        // -m
             .assertNormalExit(out -> {
-                out.shouldNotContain(OPTIMIZE_ENABLED)
-                   .shouldContain(OPTIMIZE_DISABLED)
-                   .shouldNotContain(FMG_ENABLED)
-                   .shouldContain(FMG_DISABLED)
+                out.shouldContain(OPTIMIZE_ENABLED)
+                   .shouldNotContain(OPTIMIZE_DISABLED)
+                   .shouldContain(FMG_ENABLED)
+                   .shouldNotContain(FMG_DISABLED)
                    .shouldMatch(MAIN_FROM_CDS)       // archived Main class is for module only
                    .shouldContain(CLASS_FOUND_MESSAGE);
             });

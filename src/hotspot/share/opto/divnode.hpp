@@ -158,7 +158,7 @@ public:
 // Base class for float and double modulus
 class ModFloatingNode : public CallLeafNode {
 protected:
-  Node* replace_with_con(PhaseGVN* phase, const Type* con);
+  Node* replace_with_con(PhaseIterGVN* phase, const Type* con);
 
 public:
   ModFloatingNode(Compile* C, const TypeFunc* tf, const char *name);
