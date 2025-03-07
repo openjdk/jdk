@@ -35,7 +35,7 @@ function addLivenessInfo(lrg, idx, liveout, uses, joins, kills) {
   return elements.join(", ");
 }
 
-editProperty(matches("name", ".*"),
+editProperty(or([hasProperty("liveout"), hasProperty("uses"), hasProperty("joins"), hasProperty("kills")]),
              ["lrg", "idx", "liveout", "uses", "joins", "kills"],
              "extra_label",
              function(propertyValues) {return addLivenessInfo(propertyValues[0], propertyValues[1], propertyValues[2], propertyValues[3], propertyValues[4], propertyValues[5]);});
