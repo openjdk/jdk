@@ -21,6 +21,7 @@
  * questions.
  */
 
+import jdk.test.lib.Container;
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.containers.docker.DockerRunOptions;
@@ -55,6 +56,14 @@ public class TestMemoryWithSubgroups {
         if (!DockerTestUtils.canTestDocker()) {
             System.out.println("Unable to run docker tests.");
             return;
+        }
+        if (DockerTestUtils.execute(Container.ENGINE_COMMAND,
+                                    "info",
+                                    "-f", "{{println .SecurityOptions}}")
+                .shouldHaveExitValue(0)
+                .getStdout()
+                .contains("name=rootless")) {
+            throw new SkippedException("Test skipped in rootless mode");
         }
         Common.prepareWhiteBox();
         DockerTestUtils.buildJdkContainerImage(imageName);
