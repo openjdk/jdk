@@ -618,7 +618,7 @@ public final class PackageTest extends RunnablePackageTest {
             return processed(Action.UNPACK) && packageHandlers.unpackHandler().isEmpty();
         }
 
-        private final static class State {
+        private static final class State {
             private final Set<Action> packageActions = new HashSet<>();
             private final List<Path> deleteUnpackDirs = new ArrayList<>();
         }

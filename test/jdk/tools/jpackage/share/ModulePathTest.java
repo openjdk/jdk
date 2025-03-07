@@ -138,7 +138,7 @@ public final class ModulePathTest {
 
     private final List<String> modulePathArgs;
 
-    private final static String GOOD_PATH = "@GoodPath@";
-    private final static String EMPTY_DIR = "@EmptyDir@";
-    private final static String NON_EXISTING_DIR = "@NonExistingDir@";
+    private static final String GOOD_PATH = "@GoodPath@";
+    private static final String EMPTY_DIR = "@EmptyDir@";
+    private static final String NON_EXISTING_DIR = "@NonExistingDir@";
 }

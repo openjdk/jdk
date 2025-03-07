@@ -181,7 +181,7 @@ public class TokenReplaceTest {
         ).map(TestSpec.Builder::create);
     }
 
-    private final static class CountingSupplier implements Supplier<Object> {
+    private static final class CountingSupplier implements Supplier<Object> {
 
         CountingSupplier(Object value, int expectedCount) {
             this.value = value;

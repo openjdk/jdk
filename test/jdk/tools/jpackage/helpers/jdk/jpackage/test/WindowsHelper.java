@@ -662,7 +662,7 @@ public class WindowsHelper {
         private final RegValuePath reg;
         private final Optional<SpecialFolderDotNet> alt;
 
-        private final static Map<SpecialFolder, Path> CACHE = new ConcurrentHashMap<>();
+        private static final Map<SpecialFolder, Path> CACHE = new ConcurrentHashMap<>();
     }
 
     private static final class ShortPathUtils {

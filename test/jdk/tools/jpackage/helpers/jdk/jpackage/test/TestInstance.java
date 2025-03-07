@@ -137,7 +137,7 @@ final class TestInstance implements ThrowingRunnable {
             private List<Object> methodArgs;
             private Method method;
 
-            private final static HexFormat ARGS_CHAR_FORMATTER = HexFormat.of().withUpperCase();
+            private static final HexFormat ARGS_CHAR_FORMATTER = HexFormat.of().withUpperCase();
         }
 
         static TestDesc create(Method m, Object... args) {

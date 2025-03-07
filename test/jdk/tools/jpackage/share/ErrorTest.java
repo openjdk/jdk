@@ -289,7 +289,7 @@ public final class ErrorTest {
             return sb.toString();
         }
 
-        private final static String DEFAULT_APP_DESC = "Hello";
+        private static final String DEFAULT_APP_DESC = "Hello";
     }
 
     private static TestSpec.Builder testSpec() {

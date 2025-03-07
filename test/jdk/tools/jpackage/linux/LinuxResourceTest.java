@@ -130,7 +130,7 @@ public class LinuxResourceTest {
         .run(Action.CREATE);
     }
 
-    private final static class PropertyValidator {
+    private static final class PropertyValidator {
 
         PropertyValidator name(String v) {
             name = v;

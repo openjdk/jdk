@@ -54,13 +54,13 @@ import jdk.jpackage.test.TKit;
 
 public class JavaOptionsEqualsTest {
 
-    private final static String OPTION1 =
+    private static final String OPTION1 =
         "--add-exports=java.base/sun.util=me.mymodule.foo,ALL-UNNAMED";
-    private final static String OPTION2 =
+    private static final String OPTION2 =
         "--add-exports=java.base/sun.security.util=other.mod.bar,ALL-UNNAMED";
-    private final static String WARNING1 =
+    private static final String WARNING1 =
         "WARNING: Unknown module: me.mymodule.foo";
-    private final static String WARNING2 =
+    private static final String WARNING2 =
         "WARNING: Unknown module: other.mod.bar";
 
     private final JPackageCommand cmd;
