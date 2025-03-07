@@ -82,6 +82,12 @@ IfNode* OpaqueZeroTripGuardNode::if_node() const {
   return iff->as_If();
 }
 
+void OpaqueMultiversioningNode::mark_useless(PhaseIterGVN& igvn) {
+  assert(_is_delayed_slow_loop, "must still be delayed");
+  _useless = true;
+  igvn._worklist.push(this);
+}
+
 Node* OpaqueMultiversioningNode::Identity(PhaseGVN* phase) {
   // Constant fold the multiversion_if. Since the slow_loop is still delayed,
   // i.e. we have not yet added any possibly failing condition, we can just

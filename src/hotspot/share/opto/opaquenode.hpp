@@ -110,6 +110,7 @@ public:
     init_class_id(Class_OpaqueMultiversioning);
   }
   virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
   bool is_delayed_slow_loop() const { return _is_delayed_slow_loop; }
 
@@ -118,12 +119,7 @@ public:
     _is_delayed_slow_loop = false;
   }
 
-  void mark_useless() {
-    assert(_is_delayed_slow_loop, "must still be delayed");
-    _useless = true;
-  }
-
-  virtual Node* Identity(PhaseGVN* phase);
+  void mark_useless(PhaseIterGVN& igvn);
   NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
 };
 

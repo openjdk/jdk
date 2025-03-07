@@ -4586,8 +4586,7 @@ void PhaseIdealLoop::eliminate_useless_multiversion_if() {
         // We cannot hack the node directly, otherwise the slow_loop will complain that it cannot
         // find the multiversioning opaque node. Instead, we mark the opaque node as useless, and
         // it can be constant folded during IGVN.
-        opaque->mark_useless();
-        _igvn._worklist.push(opaque);
+        opaque->mark_useless(_igvn);
       }
     }
   }
