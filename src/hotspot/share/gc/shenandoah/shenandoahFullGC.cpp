@@ -348,8 +348,8 @@ public:
 
   void do_object(oop p) {
     assert(_from_region != nullptr, "must set before work");
-    assert(_heap->global_generation()->complete_marking_context()->is_marked(p), "must be marked");
-    assert(!_heap->global_generation()->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
+    assert(_heap->active_generation()->complete_marking_context()->is_marked(p), "must be marked");
+    assert(!_heap->active_generation()->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
 
     size_t obj_size = p->size();
     if (_compact_point + obj_size > _to_region->end()) {
@@ -793,7 +793,7 @@ public:
     _heap(ShenandoahHeap::heap()) {
   }
   void do_object(oop p) {
-    assert(_heap->global_generation()->complete_marking_context()->is_marked(p), "must be marked");
+    assert(_heap->active_generation()->complete_marking_context()->is_marked(p), "must be marked");
     p->oop_iterate(&_cl);
   }
 };
@@ -877,7 +877,7 @@ public:
     _heap(ShenandoahHeap::heap()), _worker_id(worker_id) {}
 
   void do_object(oop p) {
-    assert(_heap->global_generation()->complete_marking_context()->is_marked(p), "must be marked");
+    assert(_heap->active_generation()->complete_marking_context()->is_marked(p), "must be marked");
     size_t size = p->size();
     if (FullGCForwarding::is_forwarded(p)) {
       HeapWord* compact_from = cast_from_oop<HeapWord*>(p);
@@ -950,7 +950,7 @@ public:
     // NOTE: See blurb at ShenandoahMCResetCompleteBitmapTask on why we need to skip
     // pinned regions.
     if (!r->is_pinned()) {
-      _heap->global_generation()->complete_marking_context()->reset_top_at_mark_start(r);
+      _heap->active_generation()->complete_marking_context()->reset_top_at_mark_start(r);
     }
 
     size_t live = r->used();
