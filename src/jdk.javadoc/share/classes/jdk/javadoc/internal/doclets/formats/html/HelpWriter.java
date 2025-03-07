@@ -187,8 +187,11 @@ public class HelpWriter extends HtmlDocletWriter {
                 HtmlTree.KBD(Text.of(".")))));
         keyboardList.add(HtmlTree.LI(contents.getContent("doclet.help.keyboard_navigation.escape",
                 HtmlTree.KBD(Text.of("Esc")))));
-        keyboardList.add(HtmlTree.LI(contents.getContent("doclet.help.keyboard_navigation.arrows",
-                HtmlTree.KBD(Entity.of("uparrow")), HtmlTree.KBD(Entity.of("downarrow")))));
+        keyboardList.add(HtmlTree.LI(contents.getContent("doclet.help.keyboard_navigation.search",
+                HtmlTree.KBD(Text.of("Tab")), HtmlTree.KBD(Entity.of("uparrow")),
+                HtmlTree.KBD(Entity.of("downarrow")))));
+        keyboardList.add(HtmlTree.LI(contents.getContent("doclet.help.keyboard_navigation.tabs",
+                HtmlTree.KBD(Entity.of("leftarrow")), HtmlTree.KBD(Entity.of("rightarrow")))));
         navSection.add(section.add(keyboardPara.add(keyboardList)));
 
         tableOfContents.popNestedList();
