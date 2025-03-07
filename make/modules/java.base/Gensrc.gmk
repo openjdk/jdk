@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,20 @@
 # questions.
 #
 
+################################################################################
+
 include GensrcCommon.gmk
 
-include gensrc/GensrcCharacterData.gmk
-include gensrc/GensrcMisc.gmk
-include gensrc/GensrcCharsetMapping.gmk
-include gensrc/GensrcCharsetCoder.gmk
 include gensrc/GensrcBuffer.gmk
+include gensrc/GensrcCharacterData.gmk
+include gensrc/GensrcCharsetCoder.gmk
+include gensrc/GensrcCharsetMapping.gmk
 include gensrc/GensrcExceptions.gmk
-include gensrc/GensrcVarHandles.gmk
+include gensrc/GensrcMisc.gmk
 include gensrc/GensrcModuleLoaderMap.gmk
-include gensrc/GensrcScopedMemoryAccess.gmk
 include gensrc/GensrcRegex.gmk
+include gensrc/GensrcScopedMemoryAccess.gmk
+include gensrc/GensrcVarHandles.gmk
 
 ################################################################################
 
@@ -113,3 +115,5 @@ $(INTPOLY_GEN_DONE): $(INTPLOY_HEADER) $(BUILD_TOOLS_JDK)
 	$(TOUCH) $@
 
 TARGETS += $(INTPOLY_GEN_DONE)
+
+################################################################################

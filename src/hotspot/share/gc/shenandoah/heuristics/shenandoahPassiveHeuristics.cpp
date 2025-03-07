@@ -36,6 +36,7 @@ ShenandoahPassiveHeuristics::ShenandoahPassiveHeuristics(ShenandoahSpaceInfo* sp
 
 bool ShenandoahPassiveHeuristics::should_start_gc() {
   // Never do concurrent GCs.
+  decline_trigger();
   return false;
 }
 

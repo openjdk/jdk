@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -354,6 +354,16 @@ void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
                      free(((CK_TLS_PRF_PARAMS*)tmp)->pLabel);
                      free(((CK_TLS_PRF_PARAMS*)tmp)->pulOutputLen);
                      free(((CK_TLS_PRF_PARAMS*)tmp)->pOutput);
+                     break;
+                 case CKM_HKDF_DERIVE:
+                     TRACE0("[ CK_HKDF_PARAMS ]\n");
+                     free(((CK_HKDF_PARAMS*)tmp)->pSalt);
+                     free(((CK_HKDF_PARAMS*)tmp)->pInfo);
+                     break;
+                 case CKM_CONCATENATE_BASE_AND_DATA:
+                 case CKM_CONCATENATE_DATA_AND_BASE:
+                     TRACE0("[ CK_KEY_DERIVATION_STRING_DATA ]\n");
+                     free(((CK_KEY_DERIVATION_STRING_DATA*)tmp)->pData);
                      break;
                  case CKM_SSL3_MASTER_KEY_DERIVE:
                  case CKM_TLS_MASTER_KEY_DERIVE:

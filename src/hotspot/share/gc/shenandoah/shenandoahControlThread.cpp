@@ -131,6 +131,8 @@ void ShenandoahControlThread::run_service() {
       // GC is starting, bump the internal ID
       update_gc_id();
 
+      heuristics->cancel_trigger_request();
+
       heap->reset_bytes_allocated_since_gc_start();
 
       MetaspaceCombinedStats meta_sizes = MetaspaceUtils::get_combined_statistics();

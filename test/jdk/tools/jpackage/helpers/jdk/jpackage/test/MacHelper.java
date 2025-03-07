@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -367,7 +367,7 @@ public final class MacHelper {
             }
 
             NodeList childList = list.item(0).getChildNodes();
-            List<String> values = new ArrayList(childList.getLength());
+            List<String> values = new ArrayList<>(childList.getLength());
             for (int i = 0; i < childList.getLength(); i++) {
                 if (childList.item(i).getNodeName().equals("string")) {
                     values.add(childList.item(i).getTextContent());

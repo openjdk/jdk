@@ -155,6 +155,7 @@ public class TestStringIntrinsics {
                 char cL = latin1.charAt(indexL);
                 char cU = utf16.charAt(indexU);
                 invokeAndCheck(m, cL - cU, latin1, latin1.replace(cL, cU));
+                invokeAndCheck(m, cU - cL, latin1.replace(cL, cU), latin1);
                 invokeAndCheck(m, cU - cL, utf16, utf16.replace(cU, cL));
 
                 // Different lengths

@@ -121,12 +121,12 @@ print-configurations:
 	@true
 
 test-prebuilt:
-	@( cd $(topdir) && \
+	@( cd $(TOPDIR) && \
 	    $(MAKE) --no-print-directory -r -R -I make/common/ -f make/RunTestsPrebuilt.gmk \
 	    test-prebuilt CUSTOM_MAKE_DIR=$(CUSTOM_MAKE_DIR) TEST="$(TEST)" )
 
 test-prebuilt-with-exit-code:
-	@( cd $(topdir) && \
+	@( cd $(TOPDIR) && \
 	    $(MAKE) --no-print-directory -r -R -I make/common/ -f make/RunTestsPrebuilt.gmk \
 	    test-prebuilt-with-exit-code CUSTOM_MAKE_DIR=$(CUSTOM_MAKE_DIR) TEST="$(TEST)" )
 

@@ -36,7 +36,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * referenced by this might be referenced by {@link ResolvedJavaType} which is kept alive by a
  * {@link WeakReference} so we need equivalent reference strength.
  */
-abstract class Cleaner extends WeakReference<Object> {
+public abstract class Cleaner extends WeakReference<Object> {
 
     /**
      * Head of linked list of cleaners.
@@ -107,7 +107,7 @@ abstract class Cleaner extends WeakReference<Object> {
     /**
      * Remove the cleaners whose referents have become weakly reachable.
      */
-    static void clean() {
+    public static void clean() {
         Cleaner c = (Cleaner) queue.poll();
         boolean oopHandleCleared = false;
         while (c != null) {

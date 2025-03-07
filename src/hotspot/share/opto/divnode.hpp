@@ -78,6 +78,20 @@ public:
   virtual uint ideal_reg() const { return Op_RegF; }
 };
 
+
+//------------------------------DivHFNode--------------------------------------
+// Half float division
+class DivHFNode : public Node {
+public:
+  DivHFNode(Node* c, Node* dividend, Node* divisor) : Node(c, dividend, divisor) {}
+  virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type* bottom_type() const { return Type::HALF_FLOAT; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+};
+
 //------------------------------DivDNode---------------------------------------
 // Double division
 class DivDNode : public Node {
@@ -144,7 +158,7 @@ public:
 // Base class for float and double modulus
 class ModFloatingNode : public CallLeafNode {
 protected:
-  Node* replace_with_con(PhaseGVN* phase, const Type* con);
+  Node* replace_with_con(PhaseIterGVN* phase, const Type* con);
 
 public:
   ModFloatingNode(Compile* C, const TypeFunc* tf, const char *name);
