@@ -32,7 +32,7 @@ import java.nio.file.Path;
  * @test
  * @bug 8336382
  * @summary Test that in absence of isHeadless method, the JDK throws a meaningful error message.
- * @library /test/
+ * @library /test/lib
  * @requires os.family == "linux"
  * @build HeadlessMalfunctionAgent
  * @run driver  jdk.test.lib.helpers.ClassFileInstaller
