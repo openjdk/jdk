@@ -1519,7 +1519,10 @@ nmethod* nmethod::relocate_to(nmethod* nm, CodeBlobType code_blob_type) {
     return nullptr;
   }
 
-  // TODO Add check for already in correct heap
+  // No need to relocate if already in correct code heap
+  if (nm->lookup_code_blob_type() == code_blob_type) {
+    return nm;
+  }
 
   nmethod* nm_copy = nullptr;
 
@@ -1583,6 +1586,10 @@ bool nmethod::is_relocatable() const {
   }
 
   return true;
+}
+
+CodeBlobType nmethod::lookup_code_blob_type() {
+  return CodeCache::get_code_heap_containing(this)->code_blob_type();
 }
 
 void* nmethod::operator new(size_t size, int nmethod_size, CodeBlobType code_blob_type) throw () {

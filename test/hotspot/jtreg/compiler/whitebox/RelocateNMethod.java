@@ -33,7 +33,7 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch compiler.whitebox.RelocateNMethod
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache compiler.whitebox.RelocateNMethod
  */
 
 package compiler.whitebox;
@@ -66,7 +66,7 @@ public class RelocateNMethod extends CompilerWhiteBoxTest {
         checkCompiled();
         NMethod origNmethod = NMethod.get(method, false);
 
-        WHITE_BOX.relocateNMethodTo(method, BlobType.MethodNonProfiled.id);
+        WHITE_BOX.relocateNMethodTo(method, BlobType.MethodProfiled.id);
 
         WHITE_BOX.fullGC();
 

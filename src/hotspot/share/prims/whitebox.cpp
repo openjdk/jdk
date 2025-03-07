@@ -1666,7 +1666,9 @@ WB_ENTRY(void, WB_ReplaceAllNMethods(JNIEnv* env))
 
   // Replace all
   for (GrowableArrayIterator<nmethod*> it = nmethods.begin(); it != nmethods.end(); ++it) {
-    nmethod::relocate_to(*it, CodeCache::get_code_heap_containing(*it)->code_blob_type());
+    // Destination should be different than current location
+    CodeBlobType code_cache_dest = (*it)->lookup_code_blob_type() == CodeBlobType::MethodNonProfiled ? CodeBlobType::MethodProfiled : CodeBlobType::MethodNonProfiled;
+    nmethod::relocate_to(*it, code_cache_dest);
   }
 
 WB_END

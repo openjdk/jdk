@@ -521,6 +521,8 @@ public:
 
   bool is_relocatable() const;
 
+  CodeBlobType lookup_code_blob_type();
+
   // Compiler task identification.  Note that all OSR methods
   // are numbered in an independent sequence if CICountOSR is true,
   // and native method wrappers are also numbered independently if

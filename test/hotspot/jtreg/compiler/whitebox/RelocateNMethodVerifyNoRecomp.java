@@ -51,7 +51,7 @@ public class RelocateNMethodVerifyNoRecomp {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-Xbootclasspath/a:.", "-Xbatch", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintCompilation",
-            "-XX:+WhiteBoxAPI", RelocateNMethodVerifyNoRecomp.RelocateNMethod.class.getName()
+            "-XX:+WhiteBoxAPI", "-XX:+SegmentedCodeCache", RelocateNMethodVerifyNoRecomp.RelocateNMethod.class.getName()
         );
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
@@ -124,7 +124,7 @@ public class RelocateNMethodVerifyNoRecomp {
             NMethod origNmethod = NMethod.get(method, false);
 
             // Relocate nmethod and mark old for cleanup
-            WHITE_BOX.relocateNMethodTo(method, BlobType.MethodNonProfiled.id);
+            WHITE_BOX.relocateNMethodTo(method, BlobType.MethodProfiled.id);
 
             // Trigger GC to clean up old nmethod
             WHITE_BOX.fullGC();
