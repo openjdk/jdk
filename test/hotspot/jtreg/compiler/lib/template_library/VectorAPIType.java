@@ -29,7 +29,7 @@ import jdk.test.lib.Utils;
 
 import compiler.lib.template_framework.Name;
 
-public class VectorAPIType extends Type {
+public final class VectorAPIType extends Type {
     private static final Random RANDOM = Utils.getRandomInstance();
 
     public static final VectorAPIType BYTE_64  = new VectorAPIType(Type.bytes(), 8);
@@ -67,11 +67,14 @@ public class VectorAPIType extends Type {
     public final String vectorType;
     public final String species;
 
+    public final MaskType maskType;
+
     private VectorAPIType(PrimitiveType elementType, int length) {
         this.elementType = elementType;
         this.length = length;
         this.vectorType = elementType.vectorAPITypeName();
         this.species = vectorType + ".SPECIES_" + (elementType.sizeInBits() * length);
+        this.maskType = new MaskType(this);
     }
 
     @Override
@@ -91,4 +94,31 @@ public class VectorAPIType extends Type {
     }
 
     public final int sizeInBits() { return length * elementType.sizeInBits(); }
+
+    public final class MaskType extends Type {
+        public final VectorAPIType vectorType;
+        public final String vectorMaskTypeName;
+
+        MaskType(VectorAPIType vectorType) {
+            this.vectorType = vectorType;
+            this.vectorMaskTypeName = "VectorMask<" + vectorType.elementType.boxedTypeName() + ">";
+        }
+
+        @Override
+        public boolean isSubtypeOf(Name.Type other) {
+            // TODO: re-evaluate
+            return this == other;
+        }
+
+        @Override
+        public final String name() { return vectorMaskTypeName; }
+
+        @Override
+        public final Object con() {
+            // TODO:
+            return vectorMaskTypeName + ".allTrue()";
+        }
+
+        public final int sizeInBits() { return vectorType.sizeInBits(); }
+    }
 }

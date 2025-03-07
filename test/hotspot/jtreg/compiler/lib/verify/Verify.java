@@ -25,7 +25,8 @@ package compiler.lib.verify;
 
 import java.util.Optional;
 import java.lang.foreign.*;
-import jdk.incubator.vector.*;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * The {@link Verify} class provides a single {@link Verify#checkEQ} static method, which recursively
@@ -98,14 +99,29 @@ public final class Verify {
             case double[]  x -> checkEQimpl(x, (double[])b,                context);
             case boolean[] x -> checkEQimpl(x, (boolean[])b,               context);
             case MemorySegment x -> checkEQimpl(x, (MemorySegment) b,      context);
-            case ByteVector x -> checkEQimpl(x, (ByteVector) b,            context);
-            case ShortVector x -> checkEQimpl(x, (ShortVector) b,          context);
-            case IntVector x -> checkEQimpl(x, (IntVector) b,              context);
-            case LongVector x -> checkEQimpl(x, (LongVector) b,            context);
-            case FloatVector x -> checkEQimpl(x, (FloatVector) b,          context);
-            case DoubleVector x -> checkEQimpl(x, (DoubleVector) b,        context);
             case Exception x -> checkEQimpl(x, (Exception) b,              context);
             default -> {
+                if (ca.getName().startsWith("jdk.incubator.vector") && ca.getName().contains("Vector")) {
+                    // We do not want to import jdk.incubator.vector explicitly, because it would mean we would also have
+                    // to add "--add-modules=jdk.incubator.vector" to the command-line of every test that uses the Verify
+                    // class. So we hack this via reflection.
+                    Object va = null;
+                    Object vb = null;
+                    try {
+                        Method m = ca.getMethod("toArray");
+                        va = m.invoke(a);
+                        vb = m.invoke(b);
+                    } catch (NoSuchMethodException e) {
+                        throw new RuntimeException("Could not invoke toArray on " + ca.getName(), e);
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException("Could not invoke toArray on " + ca.getName(), e);
+                    } catch (InvocationTargetException e) {
+                        throw new RuntimeException("Could not invoke toArray on " + ca.getName(), e);
+                    }
+                    checkEQ(va, vb, context);
+                    return;
+                }
+
                 System.err.println("ERROR: Verify.checkEQ failed: type not supported: " + ca.getName());
                 print(a, "a " + context);
                 print(b, "b " + context);
@@ -336,114 +352,6 @@ public final class Verify {
             if (a[i] != b[i]) {
                 System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + " " + context);
                 throw new VerifyException("Boolean array value mismatch.");
-            }
-        }
-    }
-
-    /**
-     * Verify that the content of two ShortVector is identical.
-     */
-    private static void checkEQimpl(ShortVector a, ShortVector b, String context) {
-        if (a.length() != b.length()) {
-            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length() + " vs " + b.length() + " " + context);
-            throw new VerifyException("ShortVector length mismatch.");
-        }
-
-        for (int i = 0; i < a.length(); i++) {
-            if (a.lane(i) != b.lane(i)) {
-                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a.lane(i) + " vs " + b.lane(i) + " " + context);
-                throw new VerifyException("ShortVector value mismatch.");
-            }
-        }
-    }
-
-    /**
-     * Verify that the content of two IntVector is identical.
-     */
-    private static void checkEQimpl(IntVector a, IntVector b, String context) {
-        if (a.length() != b.length()) {
-            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length() + " vs " + b.length() + " " + context);
-            throw new VerifyException("IntVector length mismatch.");
-        }
-
-        for (int i = 0; i < a.length(); i++) {
-            if (a.lane(i) != b.lane(i)) {
-                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a.lane(i) + " vs " + b.lane(i) + " " + context);
-                throw new VerifyException("IntVector value mismatch.");
-            }
-        }
-    }
-
-    /**
-     * Verify that the content of two ByteVector is identical.
-     */
-    private static void checkEQimpl(LongVector a, LongVector b, String context) {
-        if (a.length() != b.length()) {
-            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length() + " vs " + b.length() + " " + context);
-            throw new VerifyException("LongVector length mismatch.");
-        }
-
-        for (int i = 0; i < a.length(); i++) {
-            if (a.lane(i) != b.lane(i)) {
-                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a.lane(i) + " vs " + b.lane(i) + " " + context);
-                throw new VerifyException("LongVector value mismatch.");
-            }
-        }
-    }
-
-    /**
-     * Verify that the content of two ByteVector is identical.
-     * Ideally, we would want to assert that the Float.floatToRawIntBits are identical.
-     * But the Java spec allows us to return different bits for a NaN, which allows swapping the inputs
-     * of an add or mul (NaN1 * NaN2 does not have same bits as NaN2 * NaN1, because the multiplication
-     * of two NaN values should always return the first of the two). So we verify that we have the same bit
-     * pattern in all cases, except for NaN we project to the canonical NaN, using Float.floatToIntBits.
-     */
-    private static void checkEQimpl(FloatVector a, FloatVector b, String context) {
-        if (a.length() != b.length()) {
-            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length() + " vs " + b.length() + " " + context);
-            throw new VerifyException("FloatVector length mismatch.");
-        }
-
-        for (int i = 0; i < a.length(); i++) {
-            if (Float.floatToIntBits(a.lane(i)) != Float.floatToIntBits(b.lane(i))) {
-                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a.lane(i) + " vs " + b.lane(i) + " " + context);
-                throw new VerifyException("FloatVector value mismatch " + a.lane(i) + " vs " + b.lane(i));
-            }
-        }
-    }
-
-    /**
-     * Verify that the content of two ByteVector is identical.
-     * Same issue with NaN as above for floats.
-     */
-    private static void checkEQimpl(DoubleVector a, DoubleVector b, String context) {
-        if (a.length() != b.length()) {
-            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length() + " vs " + b.length() + " " + context);
-            throw new VerifyException("DoubleVector length mismatch.");
-        }
-
-        for (int i = 0; i < a.length(); i++) {
-            if (Double.doubleToLongBits(a.lane(i)) != Double.doubleToLongBits(b.lane(i))) {
-                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a.lane(i) + " vs " + b.lane(i) + " " + context);
-                throw new VerifyException("DoubleVector value mismatch " + a.lane(i) + " vs " + b.lane(i));
-            }
-        }
-    }
-
-    /**
-     * Verify that the content of two ByteVector is identical.
-     */
-    private static void checkEQimpl(ByteVector a, ByteVector b, String context) {
-        if (a.length() != b.length()) {
-            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length() + " vs " + b.length() + " " + context);
-            throw new VerifyException("ByteVector length mismatch.");
-        }
-
-        for (int i = 0; i < a.length(); i++) {
-            if (a.lane(i) != b.lane(i)) {
-                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a.lane(i) + " vs " + b.lane(i) + " " + context);
-                throw new VerifyException("ByteVector value mismatch.");
             }
         }
     }
