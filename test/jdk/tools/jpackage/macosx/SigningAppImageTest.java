@@ -62,17 +62,15 @@ public class SigningAppImageTest {
     @Test
     // ({"sign or not", "signing-key or sign-identity", "certificate index"})
     // Sign, signing-key and ASCII certificate
-    @Parameter({"true", "true", SigningBase.ASCII_INDEX})
+    @Parameter({"true", "true", "ASCII_INDEX"})
     // Sign, signing-key and UNICODE certificate
-    @Parameter({"true", "true", SigningBase.UNICODE_INDEX})
+    @Parameter({"true", "true", "UNICODE_INDEX"})
     // Sign, signing-indentity and UNICODE certificate
-    @Parameter({"true", "false", SigningBase.UNICODE_INDEX})
+    @Parameter({"true", "false", "UNICODE_INDEX"})
     // Unsigned
-    @Parameter({"false", "true", "-1"})
-    public void test(String... testArgs) throws Exception {
-        boolean doSign = Boolean.parseBoolean(testArgs[0]);
-        boolean signingKey = Boolean.parseBoolean(testArgs[1]);
-        int certIndex = Integer.parseInt(testArgs[2]);
+    @Parameter({"false", "true", "INVALID_INDEX"})
+    public void test(boolean doSign, boolean signingKey, SigningBase.CertIndex certEnum) throws Exception {
+        final var certIndex = certEnum.value();
 
         SigningCheck.checkCertificates(certIndex);
 

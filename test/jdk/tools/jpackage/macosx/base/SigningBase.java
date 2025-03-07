@@ -32,9 +32,23 @@ import jdk.jpackage.test.Executor.Result;
 
 public class SigningBase {
 
+    enum CertIndex {
+        ASCII_INDEX(0),
+        UNICODE_INDEX(0),
+        INVALID_INDEX(-1);
+
+        CertIndex(int value) {
+            this.value = value;
+        }
+
+        int value() {
+            return value;
+        }
+
+        private final int value;
+    }
+
     public static int DEFAULT_INDEX = 0;
-    public static final String ASCII_INDEX = "0";
-    public static final String UNICODE_INDEX = "0";
     private static String [] DEV_NAMES = {
         "jpackage.openjdk.java.net",
         "jpackage.openjdk.java.net (ö)",
