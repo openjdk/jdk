@@ -25,6 +25,8 @@ package compiler.c2.irTests;
 import jdk.test.lib.Asserts;
 import compiler.lib.ir_framework.*;
 
+import static compiler.lib.generators.Generators.G;
+
 /*
  * @test
  * @bug 8297384 8303238
@@ -33,6 +35,9 @@ import compiler.lib.ir_framework.*;
  * @run driver compiler.c2.irTests.LShiftINodeIdealizationTests
  */
 public class LShiftINodeIdealizationTests {
+    private static final int CON0 = G.ints().next();
+    private static final int CON1 = G.ints().next();
+
     public static void main(String[] args) {
         TestFramework.run();
     }
@@ -48,6 +53,7 @@ public class LShiftINodeIdealizationTests {
             "testDoubleShift8",
             "testDoubleShift9",
             "testDoubleShiftSliceAndStore",
+            "testRandom",
     })
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
@@ -177,6 +183,8 @@ public class LShiftINodeIdealizationTests {
         short[] arr = new short[1];
         arr[0] = (short)a;
         Asserts.assertEQ((short)(a << 3), testDoubleShiftSliceAndStore(arr)[0]);
+
+        Asserts.assertEQ((a << CON0) << CON1, testRandom(a));
     }
 
     @Test
@@ -252,5 +260,11 @@ public class LShiftINodeIdealizationTests {
         short[] res = new short[1];
         res[0] = (short) (a[0] << 3);
         return res;
+    }
+
+    @Test
+    @IR(counts = {IRNode.LSHIFT, "<= 1"})
+    public int testRandom(int x) {
+        return (x << CON0) << CON1;
     }
 }
