@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 20025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 /**
  * @test
  * @bug     8351110
- * @summary Test verifies that writing JPEG segments over 65535 bytes
- *          fails.
+ * @summary Test verifies that when a JFIF thumbnail may exceed 65535 bytes
+ *          we still write a valid JPEG file.
  * @run     main WriteJPEGThumbnailTest
  */
 
@@ -35,24 +35,22 @@ import javax.imageio.ImageReader;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
-import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.io.*;
-import java.util.Arrays;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Iterator;
+import java.util.List;
 
 public class WriteJPEGThumbnailTest {
 
     private static void assertEquals(int expected, int observed) {
         if (expected != observed) {
             throw new Error("expected " + expected + ", but observed " + observed);
-        }
-    }
-
-    private static void assertTrue(boolean b, String msg) {
-        if (!b) {
-            throw new Error(msg);
         }
     }
 
@@ -115,7 +113,7 @@ public class WriteJPEGThumbnailTest {
             writer.setOutput(outputStream);
 
             // Write the main image
-            IIOImage img = new javax.imageio.IIOImage(bi, Arrays.asList(thumbnail), null);
+            IIOImage img = new javax.imageio.IIOImage(bi, List.of(thumbnail), null);
             writer.write(null, img, null);
         } finally {
             writer.dispose();
