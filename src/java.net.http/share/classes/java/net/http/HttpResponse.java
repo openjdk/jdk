@@ -812,7 +812,7 @@ public interface HttpResponse<T> {
      * received. The delivery of a push promise response, however, is not
      * coordinated with the delivery of the response to the initiating
      * client-sent request. These are delivered with the
-     * {@link #applyPushPromise(HttpRequest, HttpRequest, Function)} method
+     * {@link #applyPushPromise(HttpRequest, HttpRequest, Function)} method.
      * <p>
      * For HTTP/3, push promises are handled in a similar way, except that promises
      * of the same resource (request URI, request headers and response body) can be
