@@ -561,6 +561,16 @@ final class Operations {
             // TODO: unslice(int origin, Vector<Integer> w, int part, VectorMask<Integer> m)
 
             ops.add(new Operation.Ternary(type, "", type, ".withLane(", Type.ints(), ", ", type.elementType, ")", List.of("IllegalArgumentException")));
+
+            if (type.elementType.isFloating()) {
+                ops.add(new Operation.Ternary(type, "", type, ".fma(", type.elementType, ", ", type.elementType, ")", null));
+                ops.add(new Operation.Ternary(type, "", type, ".fma(", type, ", ", type, ")", null));
+
+                // TODO: precision?
+                // ops.add(new Operation.Binary(type, "", type, ".pow(", type.elementType, ")", null));
+                // ops.add(new Operation.Binary(type, "", type, ".pow(", type, ")", null));
+                // ops.add(new Operation.Unary(type, "", type, ".sqrt(", type, ")", null));
+            }
         }
 
         // Ensure the list is immutable.
