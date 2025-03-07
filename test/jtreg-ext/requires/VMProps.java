@@ -50,6 +50,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import jdk.internal.foreign.CABI;
+import jdk.internal.misc.PreviewFeatures;
 import jdk.test.whitebox.code.Compiler;
 import jdk.test.whitebox.cpuinfo.CPUInfo;
 import jdk.test.whitebox.gc.GC;
@@ -129,6 +130,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.graal.enabled", this::isGraalEnabled);
         // jdk.hasLibgraal is true if the libgraal shared library file is present
         map.put("jdk.hasLibgraal", this::hasLibgraal);
+        map.put("java.enablePreview", this::isPreviewEnabled);
         map.put("vm.libgraal.jit", this::isLibgraalJIT);
         map.put("vm.compiler1.enabled", this::isCompiler1Enabled);
         map.put("vm.compiler2.enabled", this::isCompiler2Enabled);
@@ -586,6 +588,9 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + Compiler.isC2Enabled();
     }
 
+    protected String isPreviewEnabled() {
+        return "" + PreviewFeatures.isEnabled();
+    }
     /**
      * A simple check for container support
      *

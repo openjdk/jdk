@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,12 +173,9 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"with.algparams.weak", "%2$s\u3092\u4F7F\u7528\u3057\u305F%1$s (\u5F31)"},
         {"with.disabled", "%s (\u7121\u52B9)"},
         {"with.algparams.disabled", "%2$s\u3092\u4F7F\u7528\u3057\u305F%1$s (\u7121\u52B9)"},
-        {"key.bit", "%d\u30D3\u30C3\u30C8\u30FB\u30AD\u30FC"},
-        {"key.bit.weak", "%d\u30D3\u30C3\u30C8\u30FB\u30AD\u30FC(\u5F31)"},
-        {"key.bit.eccurve.weak", "%1$d\u30D3\u30C3\u30C8%2$s\u30AD\u30FC(\u5F31)"},
-        {"key.bit.disabled", "%d\u30D3\u30C3\u30C8\u30FB\u30AD\u30FC (\u7121\u52B9)"},
-        {"key.bit.eccurve.disabled", "%1$d\u30D3\u30C3\u30C8%2$s\u30AD\u30FC(\u7121\u52B9)"},
-        {"unknown.size", "\u4E0D\u660E\u30B5\u30A4\u30BA"},
+        {"key.bit", "%s\u30AD\u30FC"},
+        {"key.bit.weak", "%s\u30AD\u30FC(\u5F31\u3044)"},
+        {"key.bit.disabled", "%s\u30AD\u30FC(\u7121\u52B9)"},
         {"nonexistent.entries.found", "\u3053\u306Ejar\u306B\u306F\u3001\u5B58\u5728\u3057\u306A\u3044\u30D5\u30A1\u30A4\u30EB\u306E\u7F72\u540D\u6E08\u30A8\u30F3\u30C8\u30EA\u304C\u542B\u307E\u308C\u307E\u3059\u3002\u8A73\u7D30\u306F\u3001-verbose\u51FA\u529B\u3092\u53C2\u7167\u3057\u3066\u304F\u3060\u3055\u3044\u3002"},
         {"external.file.attributes.detected", "POSIX\u30D5\u30A1\u30A4\u30EB\u6A29\u9650\u307E\u305F\u306Fsymlink(\u3042\u308B\u3044\u306F\u305D\u306E\u4E21\u65B9)\u306E\u5C5E\u6027\u304C\u691C\u51FA\u3055\u308C\u307E\u3057\u305F\u3002\u7F72\u540D\u4E2D\u306F\u3053\u308C\u3089\u306E\u5C5E\u6027\u306F\u7121\u8996\u3055\u308C\u3001\u7F72\u540D\u306B\u3088\u3063\u3066\u4FDD\u8B77\u3055\u308C\u307E\u305B\u3093\u3002"},
 
@@ -295,10 +292,12 @@ public class Resources_ja extends java.util.ListResourceBundle {
                 "%1$s\u30C0\u30A4\u30B8\u30A7\u30B9\u30C8\u30FB\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0\u306F\u3001\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u307E\u3059\u3002\u3053\u306E\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0\u306F\u5C06\u6765\u306E\u66F4\u65B0\u3067\u7121\u52B9\u5316\u3055\u308C\u307E\u3059\u3002"},
         {"The.signature.algorithm.1.is.considered.a.security.risk..This.algorithm.will.be.disabled.in.a.future.update.",
                 "%1$s\u7F72\u540D\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0\u306F\u3001\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u307E\u3059\u3002\u3053\u306E\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0\u306F\u5C06\u6765\u306E\u66F4\u65B0\u3067\u7121\u52B9\u5316\u3055\u308C\u307E\u3059\u3002"},
-        {"The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk..This.key.size.will.be.disabled.in.a.future.update.",
-                "%1$s\u7F72\u540D\u30AD\u30FC\u306B\u306F%2$d\u306E\u30AD\u30FC\u30FB\u30B5\u30A4\u30BA\u304C\u3042\u308A\u3001\u3053\u308C\u306F\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u307E\u3059\u3002\u3053\u306E\u30AD\u30FC\u30FB\u30B5\u30A4\u30BA\u306F\u5C06\u6765\u306E\u66F4\u65B0\u3067\u7121\u52B9\u5316\u3055\u308C\u307E\u3059\u3002"},
-        {"The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk.and.is.disabled.",
-                "%1$s\u7F72\u540D\u30AD\u30FC\u306B\u306F%2$d\u306E\u30AD\u30FC\u30FB\u30B5\u30A4\u30BA\u304C\u3042\u308A\u3001\u3053\u308C\u306F\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u307E\u3059\u3002"},
+        {"size.bit.alg",
+                "%1$d\u30D3\u30C3\u30C8%2$s"},
+        {"The.full.keyAlgName.signing.key.is.considered.a.security.risk..It.will.be.disabled.in.a.future.update.",
+                "%s\u7F72\u540D\u30AD\u30FC\u306F\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u307E\u3059\u3002\u4ECA\u5F8C\u306E\u66F4\u65B0\u3067\u306F\u7121\u52B9\u306B\u306A\u308A\u307E\u3059\u3002"},
+        {"The.full.keyAlgName.signing.key.is.considered.a.security.risk.and.is.disabled.",
+                "%s\u7F72\u540D\u30AD\u30FC\u306F\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30FB\u30EA\u30B9\u30AF\u3068\u307F\u306A\u3055\u308C\u3001\u7121\u52B9\u306B\u306A\u3063\u3066\u3044\u307E\u3059\u3002"},
         {"This.jar.contains.entries.whose.certificate.chain.is.invalid.reason.1",
                  "\u3053\u306Ejar\u306B\u306F\u3001\u8A3C\u660E\u66F8\u30C1\u30A7\u30FC\u30F3\u304C\u7121\u52B9\u306A\u30A8\u30F3\u30C8\u30EA\u304C\u542B\u307E\u308C\u3066\u3044\u307E\u3059\u3002\u7406\u7531: %s"},
         {"This.jar.contains.entries.whose.tsa.certificate.chain.is.invalid.reason.1",

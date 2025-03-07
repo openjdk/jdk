@@ -47,7 +47,6 @@ class GCCause : public AllStatic {
     _scavenge_alot,
     _allocation_profiler,
     _jvmti_force_gc,
-    _gc_locker,
     _heap_inspection,
     _heap_dump,
     _wb_young_gc,
@@ -75,6 +74,7 @@ class GCCause : public AllStatic {
 
     _shenandoah_stop_vm,
     _shenandoah_allocation_failure_evac,
+    _shenandoah_humongous_allocation_failure,
     _shenandoah_concurrent_gc,
     _shenandoah_upgrade_to_full_gc,
 

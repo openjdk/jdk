@@ -45,7 +45,8 @@ void OptoRuntime::generate_uncommon_trap_blob() {
   // allocate space for the code
   ResourceMark rm;
   // setup code generation tools
-  CodeBuffer   buffer("uncommon_trap_blob", 512, 512);
+  const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
+  CodeBuffer   buffer(name, 512, 512);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   enum frame_layout {
@@ -255,7 +256,8 @@ void OptoRuntime::generate_exception_blob() {
   // allocate space for the code
   ResourceMark rm;
   // setup code generation tools
-  CodeBuffer   buffer("exception_blob", 512, 512);
+  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
+  CodeBuffer   buffer(name, 512, 512);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   OopMapSet *oop_maps = new OopMapSet();

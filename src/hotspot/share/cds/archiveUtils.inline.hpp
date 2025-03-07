@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
 #include "cds/archiveUtils.hpp"
 
 #include "cds/archiveBuilder.hpp"
+#include "cds/cdsConfig.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "oops/array.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/growableArray.hpp"
@@ -52,13 +54,40 @@ inline bool SharedDataRelocator::do_bit(size_t offset) {
 
 // Returns the address of an Array<T> that's allocated in the ArchiveBuilder "buffer" space.
 template <typename T>
-Array<T>* ArchiveUtils::archive_array(GrowableArray<T>* tmp_array) {
+Array<T>* ArchiveUtils::archive_non_ptr_array(GrowableArray<T>* tmp_array) {
+  ArchiveBuilder* builder = ArchiveBuilder::current();
+
   Array<T>* archived_array = ArchiveBuilder::new_ro_array<T>(tmp_array->length());
   for (int i = 0; i < tmp_array->length(); i++) {
     archived_array->at_put(i, tmp_array->at(i));
-    if (std::is_pointer<T>::value) {
+  }
+
+  return archived_array;
+}
+
+// Returns the address of an Array<T> that's allocated in the ArchiveBuilder "buffer" space.
+// All pointers in tmp_array must point to:
+//    - a buffered object; or
+//    - a source object that has been archived; or
+//    - (only when dumping dynamic archive) an object in the static archive.
+template <typename T>
+Array<T>* ArchiveUtils::archive_ptr_array(GrowableArray<T>* tmp_array) {
+  ArchiveBuilder* builder = ArchiveBuilder::current();
+  const bool is_dynamic_dump = CDSConfig::is_dumping_dynamic_archive();
+
+  Array<T>* archived_array = ArchiveBuilder::new_ro_array<T>(tmp_array->length());
+  for (int i = 0; i < tmp_array->length(); i++) {
+      T ptr = tmp_array->at(i);
+      if (!builder->is_in_buffer_space(ptr)) {
+        if (is_dynamic_dump && MetaspaceShared::is_in_shared_metaspace(ptr)) {
+          // We have a pointer that lives in the dynamic archive but points into
+          // the static archive.
+        } else {
+          ptr = builder->get_buffered_addr(ptr);
+        }
+      }
+      archived_array->at_put(i, ptr);
       ArchivePtrMarker::mark_pointer(archived_array->adr_at(i));
-    }
   }
 
   return archived_array;

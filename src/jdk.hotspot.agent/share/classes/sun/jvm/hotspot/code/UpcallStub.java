@@ -31,7 +31,7 @@ import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
-public class UpcallStub extends RuntimeBlob {
+public class UpcallStub extends CodeBlob {
 
   private static CIntegerField frameDataOffsetField;
   private static AddressField lastJavaFPField;
