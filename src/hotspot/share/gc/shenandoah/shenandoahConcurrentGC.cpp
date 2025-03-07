@@ -150,15 +150,22 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     return false;
   }
 
+  assert(heap->is_concurrent_weak_root_in_progress(), "Must be doing weak roots now");
+
   // Concurrent stack processing
   if (heap->is_evacuation_in_progress()) {
     entry_thread_roots();
   }
 
-  // Process weak roots that might still point to regions that would be broken by cleanup
-  if (heap->is_concurrent_weak_root_in_progress()) {
-    entry_weak_refs();
-    entry_weak_roots();
+  // Process weak roots that might still point to regions that would be broken by cleanup.
+  // We cannot recycle regions because weak roots need to know what is marked in trashed regions.
+  entry_weak_refs();
+  entry_weak_roots();
+
+  // Perform concurrent class unloading before any regions get recycled. Class unloading may
+  // need to inspect unmarked objects in trashed regions.
+  if (heap->unload_classes()) {
+    entry_class_unloading();
   }
 
   // Final mark might have reclaimed some immediate garbage, kick cleanup to reclaim
@@ -167,12 +174,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   entry_cleanup_early();
 
   heap->free_set()->log_status_under_lock();
-
-  // Perform concurrent class unloading
-  if (heap->unload_classes() &&
-      heap->is_concurrent_weak_root_in_progress()) {
-    entry_class_unloading();
-  }
 
   // Processing strong roots
   // This may be skipped if there is nothing to update/evacuate.
