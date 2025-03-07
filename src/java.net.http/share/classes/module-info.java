@@ -179,6 +179,7 @@
  * <li><p><b>{@systemProperty jdk.httpclient.receiveBufferSize}</b> (default: operating system
  * default)<br>The HTTP client {@linkplain java.nio.channels.SocketChannel socket}
  * {@linkplain java.net.StandardSocketOptions#SO_RCVBUF receive buffer size} in bytes.
+ * Values less than or equal to zero are ignored.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.redirects.retrylimit}</b> (default: 5)<br>
  * The maximum number of attempts to send a HTTP request when redirected or any failure occurs
