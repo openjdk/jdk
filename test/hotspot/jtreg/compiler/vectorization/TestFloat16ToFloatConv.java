@@ -35,7 +35,7 @@ package compiler.vectorization;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Utils;
-import java.util.Random; 
+import java.util.Random;
 
 public class TestFloat16ToFloatConv {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -58,7 +58,7 @@ public class TestFloat16ToFloatConv {
         goldI = testIntKernel(aI);
         goldL = testLongKernel(aL);
     }
-    
+
     @Test
     public static float[] testByteKernel(byte[] barr) {
         float[] res = new float[barr.length];
