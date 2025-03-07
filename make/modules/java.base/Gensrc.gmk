@@ -92,15 +92,6 @@ $(eval $(call SetupCompileProperties, KEYTOOL_RESOURCES, \
 
 TARGETS += $(LIST_RESOURCE_BUNDLE) $(SUN_UTIL) $(SECURITY_RESOURCES) $(KEYTOOL_RESOURCES)
 
-# Some resources bundles are already present as java files but still need to be
-# copied to zh_HK locale.
-$(eval $(call SetupCopy-zh_HK,COPY_ZH_HK, \
-    $(addprefix $(TOPDIR)/src/java.base/share/classes/, \
-        sun/security/util/AuthResources_zh_TW.java \
-        sun/security/util/Resources_zh_TW.java)))
-
-TARGETS += $(COPY_ZH_HK)
-
 ################################################################################
 
 GENSRC_LSREQUIVMAPS := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/LocaleEquivalentMaps.java
