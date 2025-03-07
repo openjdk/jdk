@@ -130,7 +130,7 @@ public class TestMultiversionRemoveUselessSlowLoop {
     // The outer loop is eventually Multiversioned, then PreMainPost and Unroll.
     // Then the loops disappear during IGVN, and in the next loop-opts phase, the
     // OpaqueMultiversioning is marked useless, but then we already run
-    // PhaseIdealLoop::conditional_move before the next IGVN round,  and find a
+    // PhaseIdealLoop::conditional_move before the next IGVN round, and find a
     // useless OpaqueMultiversioning instead of a BoolNode.
     @Test
     @Arguments(values = { Argument.NUMBER_42 })
