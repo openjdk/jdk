@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,18 @@
 
 import org.testng.annotations.*;
 
-import java.lang.foreign.*;
+
+import java.lang.foreign.AddressLayout;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.PaddingLayout;
+import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.StructLayout;
+import java.lang.foreign.UnionLayout;
+import java.lang.foreign.ValueLayout;
 
 import static java.lang.foreign.ValueLayout.*;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
 
 public class MemoryLayoutPrincipalTotalityTest {
 
