@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,7 +185,11 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
     jvmti->RawMonitorExit(syncLock);
 
     NSK_DISPLAY0("Let debuggee to finish\n");
-    if (!nsk_jvmti_resumeSync())
+    if (!NSK_JVMTI_VERIFY(jvmti->DestroyRawMonitor(syncLock))) {
+        nsk_jvmti_setFailStatus();
+    }
+
+   if (!nsk_jvmti_resumeSync())
         return;
 
 }
@@ -253,12 +257,9 @@ Agent_OnUnload(JavaVM *jvm)
 {
 
     if (!NSK_VERIFY(nsk_list_destroy(plist))) {
-        nsk_jvmti_setFailStatus();
+        exit(97);
     }
 
-    if (!NSK_JVMTI_VERIFY(jvmti->DestroyRawMonitor(syncLock))) {
-        nsk_jvmti_setFailStatus();
-    }
 }
 
 }
