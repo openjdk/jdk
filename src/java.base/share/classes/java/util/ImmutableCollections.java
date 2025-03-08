@@ -39,6 +39,7 @@ import java.util.function.UnaryOperator;
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.CDS;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -585,6 +586,7 @@ class ImmutableCollections {
 
         @Override
         @SuppressWarnings("unchecked")
+        @ForceInline
         public E get(int index) {
             if (index == 0) {
                 return e0;
@@ -685,6 +687,7 @@ class ImmutableCollections {
         }
 
         @Override
+        @ForceInline
         public E get(int index) {
             return elements[index];
         }
