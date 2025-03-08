@@ -232,21 +232,30 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
     _promo_failure_drain_in_progress(false),
     _string_dedup_requests()
 {
-  MemRegion cmr((HeapWord*)_virtual_space.low(),
-                (HeapWord*)_virtual_space.high());
   SerialHeap* gch = SerialHeap::heap();
 
-  gch->rem_set()->resize_covered_region(cmr);
+  uintx size;
+  if (SharedSerialGCVirtualSpace) {
+    _committed = gch->shared_virtual_space()->young_region();
+    size = gch->shared_virtual_space()->max_new_size();
+    _gen_boundary = _committed.start();
+  } else {
+    HeapWord* committed_low = (HeapWord*)_virtual_space.low();
+    HeapWord* committed_high = (HeapWord*)_virtual_space.high();
+    _committed = MemRegion(committed_low, committed_high);
+    size = _virtual_space.reserved_size();
+   _gen_boundary = SwapSerialGCGenerations ? _reserved.start() : _reserved.end();
+  }
+
+  gch->rem_set()->resize_covered_region(_committed);
 
   _eden_space = new ContiguousSpace();
   _from_space = new ContiguousSpace();
   _to_space   = new ContiguousSpace();
-  _gen_boundary = SwapSerialGCGenerations ? _reserved.start() : _reserved.end();
 
   // Compute the maximum eden and survivor space sizes. These sizes
   // are computed assuming the entire reserved space is committed.
   // These values are exported as performance counters.
-  uintx size = _virtual_space.reserved_size();
   _max_survivor_size = compute_survivor_size(size, SpaceAlignment);
   _max_eden_size = size - (2*_max_survivor_size);
 
@@ -254,7 +263,7 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
 
   // Generation counters -- generation 0, 3 subspaces
   _gen_counters = new GenerationCounters("new", 0, 3,
-      min_size, max_size, _virtual_space.committed_size());
+      min_size, max_size, _committed.byte_size());
   _gc_counters = new CollectorCounters(policy, 0);
 
   _eden_counters = new CSpaceCounters("eden", 0, _max_eden_size, _eden_space,
@@ -264,7 +273,7 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   _to_counters = new CSpaceCounters("s1", 2, _max_survivor_size, _to_space,
                                     _gen_counters);
 
-  compute_space_boundaries(0, SpaceDecorator::Clear, SpaceDecorator::Mangle);
+  compute_space_boundaries(0, SpaceDecorator::Clear, SpaceDecorator::Mangle, (char*)_committed.start());
   update_counters();
   _old_gen = nullptr;
   _tenuring_threshold = MaxTenuringThreshold;
@@ -279,7 +288,8 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
 
 void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
                                                 bool clear_space,
-                                                bool mangle_space) {
+                                                bool mangle_space,
+                                                char* eden_start) {
   // If the spaces are being cleared (only done at heap initialization
   // currently), the survivor spaces need not be empty.
   // Otherwise, no care is taken for used areas in the survivor spaces
@@ -288,7 +298,7 @@ void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
     "Initialization of the survivor spaces assumes these are empty");
 
   // Compute sizes
-  uintx size = _virtual_space.committed_size();
+  uintx size = committed_size();
   uintx survivor_size = compute_survivor_size(size, SpaceAlignment);
   uintx eden_size = size - (2*survivor_size);
   if (eden_size > max_eden_size()) {
@@ -313,12 +323,14 @@ void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
     assert(eden_size >= minimum_eden_size, "just checking");
   }
 
-  char *eden_start = _virtual_space.low();
   char *from_start = eden_start + eden_size;
   char *to_start   = from_start + survivor_size;
   char *to_end     = to_start   + survivor_size;
 
-  assert(to_end == _virtual_space.high(), "just checking");
+  if (!SharedSerialGCVirtualSpace) {
+    assert(to_end == _virtual_space.high(), "just checking");
+  }
+
   assert(is_aligned(eden_start, SpaceAlignment), "checking alignment");
   assert(is_aligned(from_start, SpaceAlignment), "checking alignment");
   assert(is_aligned(to_start, SpaceAlignment),   "checking alignment");
@@ -406,21 +418,38 @@ size_t DefNewGeneration::adjust_for_thread_increase(size_t new_size_candidate,
   return desired_new_size;
 }
 
-void DefNewGeneration::compute_new_size() {
+size_t DefNewGeneration::committed_size() const {
+  if (!SharedSerialGCVirtualSpace) {
+    return _virtual_space.committed_size();
+  } else {
+    MemRegion young_region = SerialHeap::heap()->shared_virtual_space()->young_region();
+    return young_region.byte_size();
+  }
+}
+
+size_t DefNewGeneration::compute_new_size(size_t* thread_incr_size, int* thread_count) {
+  size_t new_size_before = committed_size();
+
   // This is called after a GC that includes the old generation, so from-space
   // will normally be empty.
   // Note that we check both spaces, since if scavenge failed they revert roles.
   // If not we bail out (otherwise we would have to relocate the objects).
   if (!from()->is_empty() || !to()->is_empty()) {
-    return;
+    return new_size_before;
   }
 
   SerialHeap* gch = SerialHeap::heap();
 
   size_t old_size = gch->old_gen()->capacity();
-  size_t new_size_before = _virtual_space.committed_size();
   size_t min_new_size = NewSize;
-  size_t max_new_size = reserved().byte_size();
+
+  size_t max_new_size;
+  if (SharedSerialGCVirtualSpace) {
+    max_new_size = gch->shared_virtual_space()->max_new_size();
+  } else {
+    max_new_size = reserved().byte_size();
+  }
+  assert(max_new_size != 0, "max_new_size must not be 0");
   assert(min_new_size <= new_size_before &&
          new_size_before <= max_new_size,
          "just checking");
@@ -440,6 +469,25 @@ void DefNewGeneration::compute_new_size() {
   desired_new_size = clamp(desired_new_size, min_new_size, max_new_size);
   assert(desired_new_size <= max_new_size, "just checking");
 
+  if (thread_incr_size != nullptr) {
+    *thread_incr_size = thread_increase_size;
+  }
+
+  if (thread_count != nullptr) {
+    *thread_count = threads_count;
+  }
+
+  return desired_new_size;
+}
+
+void DefNewGeneration::resize() {
+  assert(!SharedSerialGCVirtualSpace, "must not be called when SharedSerialGCVirtualSpace is enabled");
+  size_t thread_increase_size = 0;
+  int threads_count = 0;
+
+  size_t new_size_before = committed_size();
+  size_t desired_new_size = compute_new_size(&thread_increase_size, &threads_count);
+  size_t alignment = Generation::GenGrain;
   bool changed = false;
   if (desired_new_size > new_size_before) {
     size_t change = desired_new_size - new_size_before;
@@ -465,10 +513,11 @@ void DefNewGeneration::compute_new_size() {
     // Mangling was done when the heap was being expanded.
     compute_space_boundaries(eden()->used(),
                              SpaceDecorator::Clear,
-                             SpaceDecorator::DontMangle);
+                             SpaceDecorator::DontMangle,
+                             _virtual_space.low());
     MemRegion cmr((HeapWord*)_virtual_space.low(),
                   (HeapWord*)_virtual_space.high());
-    gch->rem_set()->resize_covered_region(cmr);
+    SerialHeap::heap()->rem_set()->resize_covered_region(cmr);
 
     log_debug(gc, ergo, heap)(
         "New generation size %zuK->%zuK [eden=%zuK,survivor=%zuK]",
@@ -477,14 +526,43 @@ void DefNewGeneration::compute_new_size() {
     log_trace(gc, ergo, heap)(
         "  [allowed %zuK extra for %d threads]",
           thread_increase_size/K, threads_count);
-      }
+  }
 }
 
 void DefNewGeneration::ref_processor_init() {
   assert(_ref_processor == nullptr, "a reference processor already exists");
-  assert(!_reserved.is_empty(), "empty generation?");
-  _span_based_discoverer.set_span(_reserved);
+
+  if (SharedSerialGCVirtualSpace) {
+    update_span_based_discoverer_to_committed_range();
+  } else {
+    assert(!_reserved.is_empty(), "empty generation?");
+    _span_based_discoverer.set_span(_reserved);
+  }
+
   _ref_processor = new ReferenceProcessor(&_span_based_discoverer);    // a vanilla reference processor
+}
+
+void DefNewGeneration::update_span_based_discoverer_to_committed_range() {
+  assert(SharedSerialGCVirtualSpace, "must only be called when SharedSerialGCVirtualSpace is enabled");
+  assert(_reserved.is_empty(), "_reserved must be empty in young generation");
+  _span_based_discoverer.set_span(_committed);
+}
+
+void DefNewGeneration::post_shared_virtual_space_resize(size_t young_gen_size_before) {
+  assert(SharedSerialGCVirtualSpace, "must only be called when SharedSerialGCVirtualSpace is enabled");
+  _committed = SerialHeap::heap()->shared_virtual_space()->young_region();
+  _gen_boundary = _committed.start();
+  update_span_based_discoverer_to_committed_range();
+
+  compute_space_boundaries(eden()->used(),
+                           SpaceDecorator::Clear,
+                           SpaceDecorator::DontMangle,
+                           (char*)_committed.start());
+
+  log_debug(gc, ergo, heap)(
+      "New generation size %zuK->%zuK [eden=%zuK,survivor=%zuK]",
+      young_gen_size_before/K, _committed.byte_size()/K,
+      eden()->capacity()/K, from()->capacity()/K);
 }
 
 size_t DefNewGeneration::capacity() const {
@@ -582,6 +660,7 @@ bool DefNewGeneration::collect(bool clear_all_soft_refs) {
   SerialHeap* heap = SerialHeap::heap();
 
   assert(to()->is_empty(), "Else not collection_attempt_is_safe");
+  assert(!SharedSerialGCVirtualSpace || _gen_boundary != nullptr, "_gen_boundary must not be null when SharedSerialGCVirtualSpace is enabled");
   _gc_timer->register_gc_start();
   _gc_tracer->report_gc_start(heap->gc_cause(), _gc_timer->gc_start());
   _ref_processor->start_discovery(clear_all_soft_refs);
@@ -818,7 +897,7 @@ void DefNewGeneration::update_counters() {
     _eden_counters->update_all();
     _from_counters->update_all();
     _to_counters->update_all();
-    _gen_counters->update_all(_virtual_space.committed_size());
+    _gen_counters->update_all(committed_size());
   }
 }
 
@@ -833,10 +912,26 @@ void DefNewGeneration::print_on(outputStream* st) const {
 
   st->print(" total %zuK, used %zuK",
             capacity()/K, used()/K);
+
+  char* low_boundary;
+  char* high;
+  char* high_boundary;
+
+  if (!SharedSerialGCVirtualSpace) {
+    low_boundary = _virtual_space.low_boundary();
+    high = _virtual_space.high();
+    high_boundary = _virtual_space.high_boundary();
+  } else {
+    MemRegion young_region = SerialHeap::heap()->shared_virtual_space()->young_region();
+    low_boundary = (char*)young_region.start();
+    high_boundary = (char*)young_region.end();
+    high = high_boundary;
+  }
+
   st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-               p2i(_virtual_space.low_boundary()),
-               p2i(_virtual_space.high()),
-               p2i(_virtual_space.high_boundary()));
+               p2i(low_boundary),
+               p2i(high),
+               p2i(high_boundary));
 
   st->print("  eden");
   eden()->print_on(st);

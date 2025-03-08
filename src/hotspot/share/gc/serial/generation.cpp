@@ -40,18 +40,20 @@
 
 Generation::Generation(ReservedSpace rs, size_t initial_size) :
   _gc_manager(nullptr) {
-  if (!_virtual_space.initialize(rs, initial_size)) {
-    vm_exit_during_initialization("Could not reserve enough space for "
-                    "object heap");
+  if (!SharedSerialGCVirtualSpace) {
+    if (!_virtual_space.initialize(rs, initial_size)) {
+      vm_exit_during_initialization("Could not reserve enough space for "
+                      "object heap");
+    }
+    // Mangle all of the initial generation.
+    if (ZapUnusedHeapArea) {
+      MemRegion mangle_region((HeapWord*)_virtual_space.low(),
+        (HeapWord*)_virtual_space.high());
+      SpaceMangler::mangle_region(mangle_region);
+    }
+    _reserved = MemRegion((HeapWord*)_virtual_space.low_boundary(),
+            (HeapWord*)_virtual_space.high_boundary());
   }
-  // Mangle all of the initial generation.
-  if (ZapUnusedHeapArea) {
-    MemRegion mangle_region((HeapWord*)_virtual_space.low(),
-      (HeapWord*)_virtual_space.high());
-    SpaceMangler::mangle_region(mangle_region);
-  }
-  _reserved = MemRegion((HeapWord*)_virtual_space.low_boundary(),
-          (HeapWord*)_virtual_space.high_boundary());
 }
 
 size_t Generation::max_capacity() const {

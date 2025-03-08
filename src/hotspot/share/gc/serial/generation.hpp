@@ -26,6 +26,7 @@
 #define SHARE_GC_SERIAL_GENERATION_HPP
 
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/space.hpp"
 #include "logging/log.hpp"
@@ -68,6 +69,9 @@ class Generation: public CHeapObj<mtGC> {
   // other generations.
   MemRegion _reserved;
 
+  // addresses for committed memory for this generation
+  MemRegion _committed;
+
   // Memory area reserved for generation
   VirtualSpace _virtual_space;
 
@@ -101,7 +105,7 @@ class Generation: public CHeapObj<mtGC> {
 
   /* Returns "TRUE" iff "p" points into the reserved area of the generation. */
   bool is_in_reserved(const void* p) const {
-    return _reserved.contains(p);
+    return !SharedSerialGCVirtualSpace ? _reserved.contains(p) : _committed.contains(p);
   }
 
   virtual void verify() = 0;

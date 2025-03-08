@@ -42,6 +42,7 @@
 #include "utilities/macros.hpp"
 
 bool TenuredGeneration::grow_by(size_t bytes) {
+  assert(!SharedSerialGCVirtualSpace, "unexpected invocation of grow_by");
   assert_correct_size_change_locking();
   bool result = _virtual_space.expand_by(bytes);
   if (result) {
@@ -75,6 +76,7 @@ bool TenuredGeneration::grow_by(size_t bytes) {
 }
 
 bool TenuredGeneration::expand(size_t bytes, size_t expand_bytes) {
+  assert(!SharedSerialGCVirtualSpace, "unexpected invocation of expand");
   assert_locked_or_safepoint(Heap_lock);
   if (bytes == 0) {
     return true;  // That's what grow_by(0) would return
@@ -105,6 +107,7 @@ bool TenuredGeneration::expand(size_t bytes, size_t expand_bytes) {
 }
 
 bool TenuredGeneration::grow_to_reserved() {
+  assert(!SharedSerialGCVirtualSpace, "unexpected invocation of grow_to_reserved");
   assert_correct_size_change_locking();
   bool success = true;
   const size_t remaining_bytes = _virtual_space.uncommitted_size();
@@ -116,6 +119,7 @@ bool TenuredGeneration::grow_to_reserved() {
 }
 
 void TenuredGeneration::shrink(size_t bytes) {
+  assert(!SharedSerialGCVirtualSpace, "unexpected invocation of shrink");
   assert_correct_size_change_locking();
 
   size_t size = os::align_down_vm_page_size(bytes);
@@ -140,7 +144,7 @@ void TenuredGeneration::shrink(size_t bytes) {
                       name(), old_mem_size/K, new_mem_size/K);
 }
 
-void TenuredGeneration::compute_new_size_inner() {
+size_t TenuredGeneration::compute_new_size() {
   assert(_shrink_factor <= 100, "invalid shrink factor");
   size_t current_shrink_factor = _shrink_factor;
   if (ShrinkHeapInSteps) {
@@ -178,17 +182,7 @@ void TenuredGeneration::compute_new_size_inner() {
     log_trace(gc, heap)("     free_percentage: %6.2f", free_percentage);
 
   if (capacity_after_gc < minimum_desired_capacity) {
-    // If we have less free space than we want then expand
-    size_t expand_bytes = minimum_desired_capacity - capacity_after_gc;
-    // Don't expand unless it's significant
-    if (expand_bytes >= _min_heap_delta_bytes) {
-      expand(expand_bytes, 0); // safe if expansion fails
-    }
-    log_trace(gc, heap)("    expanding:  minimum_desired_capacity: %6.1fK  expand_bytes: %6.1fK  _min_heap_delta_bytes: %6.1fK",
-                  minimum_desired_capacity / (double) K,
-                  expand_bytes / (double) K,
-                  _min_heap_delta_bytes / (double) K);
-    return;
+    return minimum_desired_capacity;
   }
 
   // No expansion, now see if we want to shrink
@@ -256,9 +250,11 @@ void TenuredGeneration::compute_new_size_inner() {
                         shrink_bytes / (double) K);
   }
   // Don't shrink unless it's significant
-  if (shrink_bytes >= _min_heap_delta_bytes) {
-    shrink(shrink_bytes);
+  if (shrink_bytes < _min_heap_delta_bytes) {
+    shrink_bytes = 0;
   }
+
+  return capacity_after_gc - shrink_bytes;
 }
 
 HeapWord* TenuredGeneration::block_start(const void* addr) const {
@@ -311,10 +307,17 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   _min_heap_delta_bytes = MinHeapDeltaBytes;
   _capacity_at_prologue = initial_byte_size;
   _used_at_prologue = 0;
-  HeapWord* bottom = (HeapWord*) _virtual_space.low();
-  HeapWord* end    = (HeapWord*) _virtual_space.high();
   _the_space  = new ContiguousSpace();
-  _the_space->initialize(MemRegion(bottom, end), SpaceDecorator::Clear, SpaceDecorator::Mangle);
+
+  if (SharedSerialGCVirtualSpace) {
+    SerialHeap* gch = SerialHeap::heap();
+    _the_space->initialize(gch->shared_virtual_space()->tenured_region(), SpaceDecorator::Clear, SpaceDecorator::Mangle);
+  } else {
+    HeapWord* bottom = (HeapWord*) _virtual_space.low();
+    HeapWord* end    = (HeapWord*) _virtual_space.high();
+    _the_space->initialize(MemRegion(bottom, end), SpaceDecorator::Clear, SpaceDecorator::Mangle);
+  }
+
   // If we don't shrink the heap in steps, '_shrink_factor' is always 100%.
   _shrink_factor = ShrinkHeapInSteps ? 0 : 100;
   _capacity_at_prologue = 0;
@@ -340,14 +343,31 @@ void TenuredGeneration::gc_prologue() {
   _used_at_prologue = used();
 }
 
-void TenuredGeneration::compute_new_size() {
+void TenuredGeneration::resize() {
+  assert(!SharedSerialGCVirtualSpace, "unexpected invocation of resize");
   assert_locked_or_safepoint(Heap_lock);
 
   // Compute some numbers about the state of the heap.
   const size_t used_after_gc = used();
   const size_t capacity_after_gc = capacity();
 
-  compute_new_size_inner();
+  size_t new_size = compute_new_size();
+
+  if (capacity_after_gc < new_size) {
+      // If we have less free space than we want then expand
+    size_t expand_bytes = new_size - capacity_after_gc;
+    // Don't expand unless it's significant
+    if (expand_bytes >= _min_heap_delta_bytes) {
+      expand(expand_bytes, 0); // safe if expansion fails
+    }
+    log_trace(gc, heap)("    expanding:  minimum_desired_capacity: %6.1fK  expand_bytes: %6.1fK  _min_heap_delta_bytes: %6.1fK",
+                  new_size / (double) K,
+                  expand_bytes / (double) K,
+                  _min_heap_delta_bytes / (double) K);
+  } else if (capacity_after_gc > new_size) {
+    size_t shrink_bytes = capacity_after_gc - new_size;
+    shrink(shrink_bytes);
+  }
 
   assert(used() == used_after_gc && used_after_gc <= capacity(),
          "used: %zu used_after_gc: %zu"
@@ -443,10 +463,26 @@ void TenuredGeneration::print_on(outputStream* st)  const {
 
   st->print(" total %zuK, used %zuK",
             capacity()/K, used()/K);
+
+  char* low_boundary;
+  char* high;
+  char* high_boundary;
+
+  if (!SharedSerialGCVirtualSpace) {
+    low_boundary = _virtual_space.low_boundary();
+    high = _virtual_space.high();
+    high_boundary = _virtual_space.high_boundary();
+  } else {
+    MemRegion tenured_region = SerialHeap::heap()->shared_virtual_space()->tenured_region();
+    low_boundary = (char*)tenured_region.start();
+    high_boundary = (char*)tenured_region.end();
+    high = high_boundary;
+  }
+
   st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-               p2i(_virtual_space.low_boundary()),
-               p2i(_virtual_space.high()),
-               p2i(_virtual_space.high_boundary()));
+               p2i(low_boundary),
+               p2i(high),
+               p2i(high_boundary));
 
   st->print("   the");
   _the_space->print_on(st);

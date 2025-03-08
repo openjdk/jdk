@@ -188,6 +188,11 @@ jint SerialHeap::initialize() {
 
   initialize_reserved_region(heap_rs);
 
+  if (SharedSerialGCVirtualSpace) {
+    _shared_virtual_space = new SerialGCVirtualSpace();
+    _shared_virtual_space->initialize(heap_rs, OldSize, NewSize);
+  }
+
   _rem_set = new CardTableRS(_reserved);
 
   if (SwapSerialGCGenerations) {
@@ -195,7 +200,17 @@ jint SerialHeap::initialize() {
     ReservedSpace young_rs = heap_rs.last_part(MaxOldSize, GenAlignment);
     _gen_boundary = young_rs.base();
 
-    _rem_set->initialize(old_rs.base(), young_rs.base());
+    if (SharedSerialGCVirtualSpace) {
+      MemRegion tenured_region = _shared_virtual_space->tenured_region();
+      MemRegion young_region = _shared_virtual_space->young_region();
+      assert(young_region.start() == tenured_region.end(),
+             "region1 must start at the end of region0");
+
+      _rem_set->initialize((void*)tenured_region.start(), (void*)young_region.start());
+    } else {
+      _rem_set->initialize(old_rs.base(), young_rs.base());
+    }
+
     _young_gen = new DefNewGeneration(young_rs, NewSize, MinNewSize, MaxNewSize);
     _old_gen = new TenuredGeneration(old_rs, OldSize, MinOldSize, MaxOldSize, rem_set());
   } else {
@@ -303,7 +318,8 @@ bool SerialHeap::should_try_older_generation_allocation(size_t word_size) const 
 
 HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
   HeapWord* result = nullptr;
-  if (_old_gen->should_allocate(size, is_tlab)) {
+  // Old gen cannot be expanded independently when SharedSerialGCVirtualSpace is enabled
+  if (!SharedSerialGCVirtualSpace && _old_gen->should_allocate(size, is_tlab)) {
     result = _old_gen->expand_and_allocate(size);
   }
   if (result == nullptr) {
@@ -442,7 +458,22 @@ bool SerialHeap::do_young_collection(bool clear_soft_refs) {
     Universe::verify("After GC");
   }
 
-  _young_gen->compute_new_size();
+  if (SharedSerialGCVirtualSpace) {
+    size_t young_gen_size_before = _young_gen->committed_size();
+    size_t young_gen_size = _young_gen->compute_new_size();
+
+    if (young_gen_size != young_gen_size_before) {
+      // execution will continue with the existing heap generation sizes if resizing the VirtualSpace fails
+      bool success = _shared_virtual_space->resize(young_gen_size);
+      if (success) {
+        _young_gen->post_shared_virtual_space_resize(young_gen_size_before);
+        rem_set()->resize_covered_region_in_shared_virtual_space(_shared_virtual_space->tenured_region(),
+                                                                 _shared_virtual_space->young_region());
+      }
+    }
+  } else {
+    _young_gen->resize();
+  }
 
   print_heap_change(pre_gc_values);
 
@@ -683,8 +714,26 @@ void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::update_pointers());
 
   // Adjust generation sizes.
-  _old_gen->compute_new_size();
-  _young_gen->compute_new_size();
+  if (SharedSerialGCVirtualSpace) {
+    size_t young_gen_size_before = _shared_virtual_space->young_region().byte_size();
+    size_t tenured_gen_size = _old_gen->compute_new_size();
+    size_t young_gen_size = _young_gen->compute_new_size();
+
+    // execution will continue with the existing heap generation sizes if resizing the VirtualSpace fails
+    bool success = _shared_virtual_space->resize(tenured_gen_size, young_gen_size);
+    if (success) {
+      _young_gen->post_shared_virtual_space_resize(young_gen_size_before);
+      MemRegion young_region = _shared_virtual_space->young_region();
+      _gen_boundary = (char*)young_region.start();
+      log_debug(gc, alloc)("Shared virtual space generation boundary set: " PTR_FORMAT, p2i(_gen_boundary));
+
+      rem_set()->resize_covered_region_in_shared_virtual_space(_shared_virtual_space->tenured_region(),
+                                                               young_region);
+    }
+  } else {
+    _old_gen->resize();
+    _young_gen->resize();
+  }
 
   // Delete metaspaces for unloaded class loaders and clean up loader_data graph
   ClassLoaderDataGraph::purge(/*at_safepoint*/true);

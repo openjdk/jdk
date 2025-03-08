@@ -27,6 +27,7 @@
 
 #include "gc/serial/defNewGeneration.hpp"
 #include "gc/serial/generation.hpp"
+#include "gc/serial/serialGCVirtualSpace.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorageParState.hpp"
@@ -262,6 +263,7 @@ private:
   MemoryPool* _eden_pool;
   MemoryPool* _survivor_pool;
   MemoryPool* _old_pool;
+  SerialGCVirtualSpace* _shared_virtual_space;
 
   void initialize_serviceability() override;
 
@@ -302,6 +304,8 @@ public:
 
   void pin_object(JavaThread* thread, oop obj) override;
   void unpin_object(JavaThread* thread, oop obj) override;
+
+  SerialGCVirtualSpace* shared_virtual_space() { return _shared_virtual_space; }
 };
 
 #endif // SHARE_GC_SERIAL_SERIALHEAP_HPP
