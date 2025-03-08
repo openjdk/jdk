@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,6 +181,8 @@ class PhiNode : public TypeNode {
   static Node* merge_through_phi(Node* root_phi, PhaseIterGVN* igvn);
 
   bool must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const;
+
+  bool is_split_through_mergemem_terminating() const;
 
 public:
   // Node layout (parallels RegionNode):
