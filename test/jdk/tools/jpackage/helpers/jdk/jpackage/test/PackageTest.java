@@ -71,7 +71,7 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
 public final class PackageTest extends RunnablePackageTest {
 
     public PackageTest() {
-        isPackageTypeSupported = PackageType::isSupported;
+        isPackageTypeEnabled = PackageType::isEnabled;
         jpackageFactory = JPackageCommand::new;
         packageHandlers = new HashMap<>();
         disabledInstallers = new HashSet<>();
@@ -102,7 +102,7 @@ public final class PackageTest extends RunnablePackageTest {
             newTypes = Stream.of(types).collect(Collectors.toSet());
         }
         currentTypes = newTypes.stream()
-                .filter(isPackageTypeSupported)
+                .filter(isPackageTypeEnabled)
                 .filter(Predicate.not(excludeTypes::contains))
                 .collect(Collectors.toUnmodifiableSet());
         return this;
@@ -394,9 +394,9 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
-    PackageTest isPackageTypeSupported(Predicate<PackageType> v) {
+    PackageTest isPackageTypeEnabled(Predicate<PackageType> v) {
         Objects.requireNonNull(v);
-        isPackageTypeSupported = v;
+        isPackageTypeEnabled = v;
         return this;
     }
 
@@ -505,7 +505,7 @@ public final class PackageTest extends RunnablePackageTest {
                 case UNPACK -> {
                     cmd.setUnpackedPackageLocation(null);
                     final var unpackRootDir = TKit.createTempDirectory(
-                            String.format("unpacked-%s", type.getName()));
+                            String.format("unpacked-%s", type.getType()));
                     final Path unpackDir = packageHandlers.unpack(cmd, unpackRootDir);
                     if (!unpackDir.startsWith(TKit.workDir())) {
                         state.deleteUnpackDirs.add(unpackDir);
@@ -618,7 +618,7 @@ public final class PackageTest extends RunnablePackageTest {
             return processed(Action.UNPACK) && packageHandlers.unpackHandler().isEmpty();
         }
 
-        private final static class State {
+        private static final class State {
             private final Set<Action> packageActions = new HashSet<>();
             private final List<Path> deleteUnpackDirs = new ArrayList<>();
         }
@@ -918,7 +918,7 @@ public final class PackageTest extends RunnablePackageTest {
     private final Map<PackageType, PackageHandlers> packageHandlers;
     private final Set<PackageType> disabledInstallers;
     private final Set<PackageType> disabledUninstallers;
-    private Predicate<PackageType> isPackageTypeSupported;
+    private Predicate<PackageType> isPackageTypeEnabled;
     private Supplier<JPackageCommand> jpackageFactory;
     private boolean ignoreBundleOutputDir;
     private boolean createMsiLog;
