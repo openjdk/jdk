@@ -56,7 +56,6 @@ abstract public class CDSAppTester {
             throw new SkippedException("Tests based on CDSAppTester should be excluded when -Dtest.dynamic.cds.archive is specified");
         }
 
-        // Old workflow
         this.name = name;
         classListFile = name() + ".classlist";
         classListFileLog = classListFile + ".log";
@@ -89,7 +88,7 @@ abstract public class CDSAppTester {
         TRAINING,       // -XX:DumpLoadedClassList OR {-XX:AOTMode=create -XX:AOTConfiguration}
         DUMP_STATIC,    // -Xshare:dump
         DUMP_DYNAMIC,   // -XX:ArchiveClassesArExit
-        ASSEMBLY,       // JEP 483
+        ASSEMBLY,       // JEP 483 (assembly phase, app logic not executed)
         PRODUCTION;     // Running with the CDS archive produced from the above steps
 
         public boolean isStaticDump() {
@@ -97,6 +96,24 @@ abstract public class CDSAppTester {
         }
         public boolean isProductionRun() {
             return this == PRODUCTION;
+        }
+
+        // When <code>CDSAppTester::checkExecution(out, runMode)</code> is called, has the application been
+        // executed? If so, <code>out</code> should contain logs printed by the application's own logic.
+        public boolean isApplicationExecuted() {
+            return (this != ASSEMBLY) && (this != DUMP_STATIC);
+        }
+    }
+
+    public boolean isDumping(RunMode runMode) {
+        if (isStaticWorkflow()) {
+            return runMode == RunMode.DUMP_STATIC;
+        } else if (isDynamicWorkflow()) {
+            return runMode == RunMode.DUMP_DYNAMIC;
+        } else if (isAOTWorkflow()) {
+            return runMode == RunMode.TRAINING || runMode == RunMode.ASSEMBLY;
+        } else {
+            return false;
         }
     }
 
@@ -184,7 +201,9 @@ abstract public class CDSAppTester {
                                                    "-XX:AOTConfiguration=" + aotConfigurationFile,
                                                    "-cp", classpath(runMode),
                                                    logToFile(aotConfigurationFileLog,
-                                                             "class+load=debug"));
+                                                             "class+load=debug",
+                                                             "cds=debug",
+                                                             "cds+class=debug"));
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         return executeAndCheck(cmdLine, runMode, aotConfigurationFile, aotConfigurationFileLog);
     }
