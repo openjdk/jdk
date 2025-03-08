@@ -1053,7 +1053,7 @@ public class TestAlignVector {
             b[i*6 + 2 ] = (byte)(a[i*6 + 2 ] & mask);
             b[i*6 + 3 ] = (byte)(a[i*6 + 3 ] & mask);
         }
-        return new Object[]{ a, b };
+        return new Object[] { a, b };
     }
 
     @Test
