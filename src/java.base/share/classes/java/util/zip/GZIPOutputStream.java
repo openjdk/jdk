@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,38 @@ public class GZIPOutputStream extends DeflaterOutputStream {
 
     // Represents the default "unknown" value for OS header, per RFC-1952
     private static final byte OS_UNKNOWN = (byte) 255;
+
+    /**
+     * Creates a new output stream with the specified compressor,
+     * buffer size and flush mode.
+     *
+     * <p>
+     * The given {@link Deflater} will not be closed by this instance. To release
+     * the resources used by {@code def}, an application must explicitly close it
+     * by invoking its {@link Deflater#end end()} or {@link Deflater#close close()}
+     * method.
+     *
+     * @param out the output stream
+     * @param def the compressor ("deflater")
+     * @param size the output buffer size
+     * @param syncFlush
+     *        if {@code true} invocation of the inherited
+     *        {@link DeflaterOutputStream#flush() flush()} method of
+     *        this instance flushes the compressor with flush mode
+     *        {@link Deflater#SYNC_FLUSH} before flushing the output
+     *        stream, otherwise only flushes the output stream
+     * @throws    IOException If an I/O error has occurred.
+     * @throws    IllegalArgumentException if {@code size <= 0}
+     *
+     * @since 25
+     */
+    public GZIPOutputStream(OutputStream out, Deflater def, int size, boolean syncFlush)
+        throws IOException
+    {
+        super(out, def, size, syncFlush);
+        writeHeader();
+        crc.reset();
+    }
 
     /**
      * Creates a new output stream with the specified buffer size.
