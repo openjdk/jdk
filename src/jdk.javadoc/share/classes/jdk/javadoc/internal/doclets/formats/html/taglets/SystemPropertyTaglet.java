@@ -62,7 +62,6 @@ public class SystemPropertyTaglet extends BaseTaglet {
      */
     private Content systemPropertyTagOutput(Element element, SystemPropertyTree tag) {
         String tagText = tag.getPropertyName().toString();
-        return HtmlTree.CODE(tagletWriter.createAnchorAndSearchIndex(element, tagText,
-                resources.getText("doclet.System_Property"), tag));
+        return HtmlTree.CODE(tagletWriter.createAnchorAndSearchIndex(element, tagText, "", tag));
     }
 }
