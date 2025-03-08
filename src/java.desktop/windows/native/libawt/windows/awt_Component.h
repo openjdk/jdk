@@ -43,7 +43,7 @@
 
 extern LPCTSTR szAwtComponentClassName;
 
-static LPCTSTR DrawingStateProp = TEXT("SunAwtDrawingStateProp");
+// static LPCTSTR DrawingStateProp = TEXT("SunAwtDrawingStateProp");
 
 const UINT IGNORE_KEY = (UINT)-1;
 const UINT MAX_ACP_STR_LEN = 7; // ANSI CP identifiers are no longer than this
@@ -310,7 +310,7 @@ public:
         DASSERT(GetHWnd());
         // SetWindowLong() error handling as recommended by Win32 API doc.
         ::SetLastError(0);
-        DWORD ret = ::SetWindowLong(GetHWnd(), GWL_STYLE, style);
+        [[maybe_unused]] DWORD ret = ::SetWindowLong(GetHWnd(), GWL_STYLE, style);
         DASSERT(ret != 0 || ::GetLastError() == 0);
     }
     INLINE virtual LONG GetStyleEx() {
@@ -321,7 +321,7 @@ public:
         DASSERT(GetHWnd());
         // SetWindowLong() error handling as recommended by Win32 API doc.
         ::SetLastError(0);
-        DWORD ret = ::SetWindowLong(GetHWnd(), GWL_EXSTYLE, style);
+        [[maybe_unused]] DWORD ret = ::SetWindowLong(GetHWnd(), GWL_EXSTYLE, style);
         DASSERT(ret != 0 || ::GetLastError() == 0);
     }
 
