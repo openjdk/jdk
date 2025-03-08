@@ -25,11 +25,15 @@ package compiler.lib.verify;
 
 import java.util.Optional;
 import java.lang.foreign.*;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * The {@link Verify} class provides a single {@link Verify#checkEQ} static method, which recursively
  * compares the two {@link Object}s by value. It deconstructs {@link Object[]}, compares boxed primitive
- * types, and compares the content of arrays and {@link MemorySegment}s.
+ * types, compares the content of arrays and {@link MemorySegment}s, and checks that the messages of two
+ * {@link Exception}s are equal. We also check for equivalent content in {@link Vector}s from the Vector
+ * API.
  *
  * When a comparison fail, then methods print helpful messages, before throwing a {@link VerifyException}.
  */
@@ -85,6 +89,7 @@ public final class Verify {
             case Long      x -> checkEQimpl(x, ((Long)b).longValue(),      context);
             case Float     x -> checkEQimpl(x, ((Float)b).floatValue(),    context);
             case Double    x -> checkEQimpl(x, ((Double)b).doubleValue(),  context);
+            case Boolean   x -> checkEQimpl(x, ((Boolean)b).booleanValue(),context);
             case byte[]    x -> checkEQimpl(x, (byte[])b,                  context);
             case char[]    x -> checkEQimpl(x, (char[])b,                  context);
             case short[]   x -> checkEQimpl(x, (short[])b,                 context);
@@ -92,12 +97,35 @@ public final class Verify {
             case long[]    x -> checkEQimpl(x, (long[])b,                  context);
             case float[]   x -> checkEQimpl(x, (float[])b,                 context);
             case double[]  x -> checkEQimpl(x, (double[])b,                context);
+            case boolean[] x -> checkEQimpl(x, (boolean[])b,               context);
             case MemorySegment x -> checkEQimpl(x, (MemorySegment) b,      context);
+            case Exception x -> checkEQimpl(x, (Exception) b,              context);
             default -> {
+                if (ca.getName().startsWith("jdk.incubator.vector") && ca.getName().contains("Vector")) {
+                    // We do not want to import jdk.incubator.vector explicitly, because it would mean we would also have
+                    // to add "--add-modules=jdk.incubator.vector" to the command-line of every test that uses the Verify
+                    // class. So we hack this via reflection.
+                    Object va = null;
+                    Object vb = null;
+                    try {
+                        Method m = ca.getMethod("toArray");
+                        va = m.invoke(a);
+                        vb = m.invoke(b);
+                    } catch (NoSuchMethodException e) {
+                        throw new RuntimeException("Could not invoke toArray on " + ca.getName(), e);
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException("Could not invoke toArray on " + ca.getName(), e);
+                    } catch (InvocationTargetException e) {
+                        throw new RuntimeException("Could not invoke toArray on " + ca.getName(), e);
+                    }
+                    checkEQ(va, vb, context);
+                    return;
+                }
+
                 System.err.println("ERROR: Verify.checkEQ failed: type not supported: " + ca.getName());
                 print(a, "a " + context);
                 print(b, "b " + context);
-                throw new VerifyException("Object array type not supported: " + ca.getName());
+                throw new VerifyException("Object type not supported: " + ca.getName());
             }
         }
     }
@@ -153,10 +181,14 @@ public final class Verify {
     }
 
     /**
-     * Verify that two floats have identical bits.
+     * Ideally, we would want to assert that the Float.floatToRawIntBits are identical.
+     * But the Java spec allows us to return different bits for a NaN, which allows swapping the inputs
+     * of an add or mul (NaN1 * NaN2 does not have same bits as NaN2 * NaN1, because the multiplication
+     * of two NaN values should always return the first of the two). So we verify that we have the same bit
+     * pattern in all cases, except for NaN we project to the canonical NaN, using Float.floatToIntBits.
      */
     private static void checkEQimpl(float a, float b, String context) {
-        if (Float.floatToRawIntBits(a) != Float.floatToRawIntBits(b)) {
+        if (Float.floatToIntBits(a) != Float.floatToIntBits(b)) {
             System.err.println("ERROR: Verify.checkEQ failed: value mismatch for " + context);
             System.err.println("       Values: " + a + " vs " + b);
             System.err.println("       Values: " + Float.floatToRawIntBits(a) + " vs " + Float.floatToRawIntBits(b));
@@ -165,13 +197,23 @@ public final class Verify {
     }
 
     /**
-     * Verify that two doubles have identical bits.
+     * Same as Float case, see above.
      */
     private static void checkEQimpl(double a, double b, String context) {
-        if (Double.doubleToRawLongBits(a) != Double.doubleToRawLongBits(b)) {
+        if (Double.doubleToLongBits(a) != Double.doubleToLongBits(b)) {
             System.err.println("ERROR: Verify.checkEQ failed: value mismatch for " + context);
             System.err.println("       Values: " + a + " vs " + b);
             System.err.println("       Values: " + Double.doubleToRawLongBits(a) + " vs " + Double.doubleToRawLongBits(b));
+            throw new VerifyException("Value mismatch: " + a + " vs " + b);
+        }
+    }
+
+    /**
+     * Verify that two booleans are identical.
+     */
+    private static void checkEQimpl(boolean a, boolean b, String context) {
+        if (a != b) {
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b + " for " + context);
             throw new VerifyException("Value mismatch: " + a + " vs " + b);
         }
     }
@@ -200,6 +242,26 @@ public final class Verify {
         printMemorySegmentValue(a, offset, 16);
         printMemorySegmentValue(b, offset, 16);
         throw new VerifyException("MemorySegment value mismatch.");
+    }
+
+    /**
+     * Verify that the content of two MemorySegments is identical. Note: we do not check the
+     * backing type, only the size and content.
+     */
+    private static void checkEQimpl(Exception a, Exception b, String context) {
+        String am = a.getMessage();
+        String bm = b.getMessage();
+
+        // Missing messages is expected, but if they both have one, they must agree.
+        if (am == null || bm == null) { return; }
+        if (am.equals(bm)) { return; }
+
+        System.err.println("ERROR: Verify.checkEQ failed for: " + context);
+        System.out.println("a: " + a.getMessage());
+        System.out.println("b: " + b.getMessage());
+        System.out.println(a);
+        System.out.println(b);
+        throw new VerifyException("Exception message mismatch: " + a + " vs " + b);
     }
 
     /**
@@ -239,16 +301,59 @@ public final class Verify {
 
     /**
      * Verify that the content of two float arrays is identical.
+     * Ideally, we would want to assert that the Float.floatToRawIntBits are identical.
+     * But the Java spec allows us to return different bits for a NaN, which allows swapping the inputs
+     * of an add or mul (NaN1 * NaN2 does not have same bits as NaN2 * NaN1, because the multiplication
+     * of two NaN values should always return the first of the two). So we verify that we have the same bit
+     * pattern in all cases, except for NaN we project to the canonical NaN, using Float.floatToIntBits.
      */
     private static void checkEQimpl(float[] a, float[] b, String context) {
-        checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b), context);
+        if (a.length != b.length) {
+            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length + " " + context);
+            throw new VerifyException("Float array length mismatch.");
+        }
+
+        for (int i = 0; i < a.length; i++) {
+            if (Float.floatToIntBits(a[i]) != Float.floatToIntBits(b[i])) {
+                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + " " + context);
+                throw new VerifyException("Float array value mismatch " + a[i] + " vs " + b[i]);
+            }
+        }
     }
 
     /**
      * Verify that the content of two double arrays is identical.
+     * Same issue with NaN as above for floats.
      */
     private static void checkEQimpl(double[] a, double[] b, String context) {
-        checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b), context);
+        if (a.length != b.length) {
+            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length + " " + context);
+            throw new VerifyException("Double array length mismatch.");
+        }
+
+        for (int i = 0; i < a.length; i++) {
+            if (Double.doubleToLongBits(a[i]) != Double.doubleToLongBits(b[i])) {
+                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + " " + context);
+                throw new VerifyException("Double array value mismatch " + a[i] + " vs " + b[i]);
+            }
+        }
+    }
+
+    /**
+     * Verify that the content of two boolean arrays is identical.
+     */
+    private static void checkEQimpl(boolean[] a, boolean[] b, String context) {
+        if (a.length != b.length) {
+            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length + " " + context);
+            throw new VerifyException("Boolean array length mismatch.");
+        }
+
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + " " + context);
+                throw new VerifyException("Boolean array value mismatch.");
+            }
+        }
     }
 
     /**
