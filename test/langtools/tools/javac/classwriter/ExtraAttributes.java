@@ -78,7 +78,7 @@ public class ExtraAttributes implements Plugin {
         Path src = Path.of("src");
             tb.writeJavaFiles(src,
                     "public class HelloWorld {\n"
-                    + "    public static String message = \"Hello World!\";\n"
+                    + "    public static Object message = \"Hello World!\";\n"
                     + "    public static void main(String... args) {\n"
                     + "        System.out.println(message);\n"
                     + "    }\n"
