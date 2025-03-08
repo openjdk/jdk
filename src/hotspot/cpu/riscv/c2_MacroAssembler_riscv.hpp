@@ -172,9 +172,15 @@
     }
   }
 
+  enum class FLOAT_TYPE {
+    half_precision,
+    single_precision,
+    double_precision
+  };
+
   void minmax_fp(FloatRegister dst,
                  FloatRegister src1, FloatRegister src2,
-                 bool is_double, bool is_min);
+                 FLOAT_TYPE ft, bool is_min);
 
   void round_double_mode(FloatRegister dst, FloatRegister src, int round_mode,
                          Register tmp1, Register tmp2, Register tmp3);

@@ -54,7 +54,7 @@ public class MulHFNodeIdealizationTests {
 
     @Test
     @IR(counts = {IRNode.ADD_HF, "1"},
-        applyIfCPUFeature = {"avx512_fp16", "true"},
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"},
         failOn = {IRNode.MUL_HF})
     public void test1() {
         dst = multiply(src, valueOf(2.0f));
