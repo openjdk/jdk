@@ -89,7 +89,7 @@ public class Main {
     // for i18n
     private static final java.util.ResourceBundle rb =
         java.util.ResourceBundle.getBundle
-        ("sun.security.tools.jarsigner.Resources");
+        ("sun.security.tools.jarsigner.resources.jarsigner");
     private static final Collator collator = Collator.getInstance();
     static {
         // this is for case insensitive string comparisions
