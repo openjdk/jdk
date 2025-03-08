@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -777,6 +777,10 @@ public interface Elements {
      *                           elementForObjecttoString,
      *                           elements.getTypeElement("I"));
      * }
+     *
+     * @apiNote It may not implement the additional compile-time checks on exception types,
+     * return types, and method modifiers specified in JLS {@jls 8.4.8.1} and {@jls 8.4.8.3},
+     * although implementations of this method are allowed to implement these additional checks.
      *
      * @param overrider  the first method, possible overrider
      * @param overridden  the second method, possibly being overridden
