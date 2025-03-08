@@ -579,7 +579,9 @@ readCEN(jzfile *zip, jint knownTotal)
     jlong offset;
 #endif
     unsigned char endbuf[ENDHDR];
+#ifdef USE_MMAP
     jint endhdrlen = ENDHDR;
+#endif
     jzcell *entries;
     jint *table;
 
@@ -604,7 +606,9 @@ readCEN(jzfile *zip, jint knownTotal)
             cenoff = ZIP64_ENDOFF(end64buf);
             total = (jint)ZIP64_ENDTOT(end64buf);
             endpos = end64pos;
+#ifdef USE_MMAP
             endhdrlen = ZIP64_ENDHDR;
+#endif
         }
     }
 
