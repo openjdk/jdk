@@ -976,11 +976,10 @@ _TEXT   ENDS
 
         ALIGN 004H
 _unwind___jsvml_atan2f16_ha_z0_B1_B10:
-        DD      670721
+        DD      539649
         DD      11326524
         DD      5392436
         DD      5134377
-        DD      11430679
         DD      11469067
 
 .xdata  ENDS
@@ -997,7 +996,7 @@ _unwind___jsvml_atan2f16_ha_z0_B1_B10:
 
         ALIGN 004H
 _unwind___jsvml_atan2f16_ha_z0_B12_B16:
-        DD      2809377
+        DD      2416161
         DD      8017118
         DD      7828691
         DD      7890121
@@ -1016,9 +1015,6 @@ _unwind___jsvml_atan2f16_ha_z0_B12_B16:
         DD      3049534
         DD      3307571
         DD      3565608
-        DD      7633693
-        DD      7691028
-        DD      7752459
         DD      imagerel _B3_1
         DD      imagerel _B3_12
         DD      imagerel _unwind___jsvml_atan2f16_ha_z0_B1_B10
