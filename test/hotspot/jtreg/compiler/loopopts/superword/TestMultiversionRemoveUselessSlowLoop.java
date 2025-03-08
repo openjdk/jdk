@@ -121,4 +121,30 @@ public class TestMultiversionRemoveUselessSlowLoop {
             instanceCount = iFld1;
         }
     }
+
+    class Unloaded {
+        static void unloaded() {}
+    }
+    static int f;
+
+    // The outer loop is eventually Multiversioned, then PreMainPost and Unroll.
+    // Then the loops disappear during IGVN, and in the next loop-opts phase, the
+    // OpaqueMultiversioning is marked useless, but then we already run
+    // PhaseIdealLoop::conditional_move before the next IGVN round, and find a
+    // useless OpaqueMultiversioning instead of a BoolNode.
+    @Test
+    @Arguments(values = { Argument.NUMBER_42 })
+    static void testCrash2(int y) {
+        int x = 53446;
+        for (int i = 12; i < 376; i++) {
+            if (x != 0) {
+                // Uncommon trap because the class is not yet loaded.
+                Unloaded.unloaded();
+            }
+            for (int k = 1; k < 4; k++) {
+                y += 1;
+            }
+            x += f;
+        }
+    }
 }
