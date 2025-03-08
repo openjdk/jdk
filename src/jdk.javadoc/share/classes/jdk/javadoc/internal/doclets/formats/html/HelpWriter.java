@@ -35,6 +35,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
@@ -172,6 +173,27 @@ public class HelpWriter extends HtmlDocletWriter {
                     .add(searchRefer);
             navSection.add(section);
         }
+
+        // Keyboard Navigation
+        section = newHelpSection(contents.getContent("doclet.help.keyboard_navigation.title"),
+                HtmlIds.HELP_KEYBOARD_NAVIGATION);
+        var  keyboardPara = HtmlTree.P(contents.getContent("doclet.help.keyboard_navigation.intro"));
+        var keyboardList = HtmlTree.UL();
+        if (options.createIndex()) {
+            keyboardList.add(HtmlTree.LI(contents.getContent("doclet.help.keyboard_navigation.index",
+                    HtmlTree.KBD(Text.of("/")))));
+        }
+        keyboardList.add(HtmlTree.LI(contents.getContent("doclet.help.keyboard_navigation.filter",
+                HtmlTree.KBD(Text.of(".")))));
+        keyboardList.add(HtmlTree.LI(contents.getContent("doclet.help.keyboard_navigation.escape",
+                HtmlTree.KBD(Text.of("Esc")))));
+        keyboardList.add(HtmlTree.LI(contents.getContent("doclet.help.keyboard_navigation.search",
+                HtmlTree.KBD(Text.of("Tab")), HtmlTree.KBD(Entity.of("downarrow")),
+                HtmlTree.KBD(Entity.of("uparrow")))));
+        keyboardList.add(HtmlTree.LI(contents.getContent("doclet.help.keyboard_navigation.tabs",
+                HtmlTree.KBD(Entity.of("leftarrow")), HtmlTree.KBD(Entity.of("rightarrow")))));
+        navSection.add(section.add(keyboardPara.add(keyboardList)));
+
         tableOfContents.popNestedList();
 
         return content;
