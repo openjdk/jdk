@@ -295,6 +295,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
 
     if (copy == nullptr) {
       // If we failed to allocate in LAB, we'll try a shared allocation.
+#ifdef KELVIN_ORIGINAL
       if (!is_promotion || !has_plab || (size > PLAB::min_size())) {
         ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, target_gen, is_promotion);
         copy = allocate_memory(req);
@@ -304,6 +305,30 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       // We choose not to promote objects smaller than PLAB::min_size() by way of shared allocations, as this is too
       // costly.  Instead, we'll simply "evacuate" to young-gen memory (using a GCLAB) and will promote in a future
       // evacuation pass.  This condition is denoted by: is_promotion && has_plab && (size <= PLAB::min_size())
+#else
+      // The value of this "improvement" has not yet been measured or quantified.  There is a suspicion that too much
+      // promotion by shared allocation is resulting in degraded latency at all percentiles.  The only evidence observed
+      // is that an 8G heap size with share-allocation reserves has higher latency in 75% OldEvacRatio than tip, even though
+      // this PR branch has fewer concurret GC cycles, fewer mixed cycles, equal number of old GC cycles, and improvement
+      // in every metric except pause-init-mark, which increased by 79%.  The dominant cost of pause-init-mark is known to
+      // be copying of remembered set.  That this takes almost twice as long with 5% fewer GC cycles seems to suggest that
+      // our branch typically has a much larger remembered set size (i.e. a larger old-gen size).  It seems plausible that
+      // the branch is more successful with promoting by shared allocations.  We need to study this further.  May revert
+      // this change depending on results of further analysis.
+      
+
+      // Reduce, but do not totally eliminate promotion by shared allocation
+      static size_t size_threshhold = MIN2(PLAB::max_size(), PLAB::min_size() * 6);
+      if (!is_promotion || !has_plab || (size > size_threshhold)) {
+        ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, target_gen, is_promotion);
+        copy = allocate_memory(req);
+        alloc_from_lab = false;
+      }
+      // else, we leave copy equal to nullptr, signaling a promotion failure below if appropriate.
+      // We choose not to promote objects smaller than size_threshold by way of shared allocations as this is too
+      // costly.  Instead, we'll simply "evacuate" to young-gen memory (using a GCLAB) and will promote in a future
+      // evacuation pass.  This condition is denoted by: is_promotion && has_plab && (size <= size_threshhold).
+#endif
     }
 #ifdef ASSERT
   }
