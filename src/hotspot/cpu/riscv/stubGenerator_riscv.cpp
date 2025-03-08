@@ -1634,6 +1634,53 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   //
+  //  Generate 'unsafe' set memory stub
+  //  Though just as safe as the other stubs, it takes an unscaled
+  //  size_t (# bytes) argument instead of an element count.
+  //
+  //  Input:
+  //    c_rarg0   - destination array address
+  //    c_rarg1   - byte count (size_t)
+  //    c_rarg2   - byte value
+  //
+  address generate_unsafe_setmemory(address unsafe_byte_fill) {
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::unsafe_setmemory_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();   // required for proper stackwalking of RuntimeStub frame
+
+    assert(unsafe_byte_fill != nullptr, "Invalid call");
+
+    // bump this on entry, not on exit:
+    inc_counter_np(SharedRuntime::_unsafe_set_memory_ctr);
+
+    {
+      Label L_exit;
+
+      const Register dest = c_rarg0;
+      const Register size = c_rarg1;
+      const Register byteVal = c_rarg2;
+
+      __ beqz(size, L_exit);
+
+      // exchange value of c_rarg1 and c_rarg2 with xorr
+      __ xorr(c_rarg1, c_rarg1, c_rarg2);
+      __ xorr(c_rarg2, c_rarg1, c_rarg2);
+      __ xorr(c_rarg1, c_rarg1, c_rarg2);
+
+      __ leave();    // Clear effect of enter()
+      __ j(RuntimeAddress(unsafe_byte_fill));
+
+      __ BIND(L_exit);
+      __ leave();
+      __ ret();
+    }
+
+    return start;
+  }
+
+  //
   //  Generate 'unsafe' array copy stub
   //  Though just as safe as the other stubs, it takes an unscaled
   //  size_t argument instead of an element count.
@@ -2259,6 +2306,8 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_jbyte_fill = generate_fill(StubGenStubId::arrayof_jbyte_fill_id);
     StubRoutines::_arrayof_jshort_fill = generate_fill(StubGenStubId::arrayof_jshort_fill_id);
     StubRoutines::_arrayof_jint_fill = generate_fill(StubGenStubId::arrayof_jint_fill_id);
+
+    StubRoutines::_unsafe_setmemory    = generate_unsafe_setmemory(StubRoutines::_jbyte_fill);
   }
 
   void generate_aes_loadkeys(const Register &key, VectorRegister *working_vregs, int rounds) {
