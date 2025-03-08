@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -795,6 +795,7 @@ final class P11KeyWrapCipher extends CipherSpi {
             return (switch(wrappedKeyType) {
                 case Cipher.PRIVATE_KEY -> P11Key.privateKey
                     (session, unwrappedKeyID, wrappedKeyAlgo, -1, attributes);
+                    // in this case, there is no way to get the associated public key
                 case Cipher.SECRET_KEY ->  P11Key.secretKey
                     (session, unwrappedKeyID, wrappedKeyAlgo, -1, attributes);
                 default -> null;

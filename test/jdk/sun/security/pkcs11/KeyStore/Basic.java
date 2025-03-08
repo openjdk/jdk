@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4938185
+ * @bug 4938185 8350134
  * @summary KeyStore support for NSS cert/key databases
  * To run manually:
  *    set environment variable:
@@ -33,6 +33,10 @@
  *    . 'list' lists the token aliases
  *    . 'basic' does not run with activcard,
  * @library /test/lib ..
+ * @modules jdk.crypto.cryptoki
+ *          java.base/sun.security.tools.keytool
+ *          java.base/sun.security.util
+ *          java.base/sun.security.x509
  * @run testng/othervm Basic
  */
 
@@ -62,6 +66,9 @@ import jtreg.SkippedException;
 import org.testng.SkipException;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import sun.security.tools.keytool.CertAndKeyGen;
+import sun.security.util.InternalPrivateKey;
+import sun.security.x509.X500Name;
 
 
 public class Basic extends PKCS11Test {
@@ -239,6 +246,7 @@ public class Basic extends PKCS11Test {
                 testnum = Basic.pkey(testnum);
                 testnum = Basic.sign(testnum);
                 testnum = Basic.copy(testnum);
+                testnum = Basic.calculatePublicKey(testnum);
             } else if ("solaris".equals(token)) {
                 testnum = Basic.setAttribute(testnum);
                 testnum = Basic.pkey(testnum);
@@ -909,6 +917,28 @@ public class Basic extends PKCS11Test {
         } else {
             throw new SecurityException("expected size 1");
         }
+
+        return testnum;
+    }
+
+    private static int calculatePublicKey(int testnum) throws Exception {
+        System.out.println("check calculatePublicKey in keystore");
+        var kag = new CertAndKeyGen("EC", "SHA256withECDSA");
+        kag.generate(-1);
+
+        ks.setKeyEntry("a2", kag.getPrivateKey(), null,
+                new Certificate[] {kag.getSelfCertificate(new X500Name("CN=Me"), 1000)});
+        var sk = ks.getKey("a2", null);
+        if (sk instanceof InternalPrivateKey ipk) {
+            var pk = ipk.calculatePublicKey();
+            var cert = ks.getCertificate("a2");
+            if (!cert.getPublicKey().equals(pk)) {
+                throw new SecurityException("Associated public key is not correct");
+            }
+        } else {
+            throw new SecurityException("Not an InternalPrivateKey");
+        }
+        System.out.println("test " + testnum++ + " passed");
 
         return testnum;
     }
