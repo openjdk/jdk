@@ -34,6 +34,10 @@
  #include "nio_util.h"
  #include "sun_nio_ch_SocketDispatcher.h"
 
+// MAX_SKIP_BUFFER_SIZE is used to determine the maximum buffer size to
+// use when skipping.
+static const ssize_t MAX_SKIP_BUFFER_SIZE = 4096;
+
  JNIEXPORT jint JNICALL
  Java_sun_nio_ch_SocketDispatcher_read0(JNIEnv *env, jclass clazz,
                                         jobject fdo, jlong address, jint len)
@@ -81,4 +85,38 @@ Java_sun_nio_ch_SocketDispatcher_writev0(JNIEnv *env, jclass clazz,
     jint fd = fdval(env, fdo);
     struct iovec *iov = (struct iovec *)jlong_to_ptr(address);
     return convertLongReturnVal(env, writev(fd, iov, len), JNI_FALSE);
+}
+
+JNIEXPORT jlong JNICALL
+Java_sun_nio_ch_SocketDispatcher_skip0(JNIEnv *env, jclass cl, jobject fdo, jlong n)
+{
+    if (n < 1)
+        return 0;
+
+    const jint fd = fdval(env, fdo);
+
+    const long bs = n < MAX_SKIP_BUFFER_SIZE ? (long) n : MAX_SKIP_BUFFER_SIZE;
+    char buf[bs];
+    jlong tn = 0;
+
+    for (;;) {
+        const jlong remaining = n - tn;
+        const ssize_t count = remaining < bs ? (ssize_t) remaining : bs;
+        const ssize_t nr = read(fd, buf, count);
+        if (nr < 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                return tn;
+            } else if (errno == EINTR) {
+                return IOS_INTERRUPTED;
+            } else {
+                JNU_ThrowIOExceptionWithLastError(env, "read");
+                return IOS_THROWN;
+            }
+        }
+        if (nr > 0)
+            tn += nr;
+        if (nr == bs)
+            continue;
+        return tn;
+    }
 }
