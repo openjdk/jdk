@@ -25,6 +25,9 @@
 
 package sun.security.ssl;
 
+import static sun.security.ssl.SignatureScheme.CERTIFICATE_SCOPE;
+import static sun.security.ssl.SignatureScheme.HANDSHAKE_SCOPE;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
@@ -272,8 +275,13 @@ final class ServerHello {
                 if (shc.localSupportedSignAlgs == null) {
                     shc.localSupportedSignAlgs =
                         SignatureScheme.getSupportedAlgorithms(
-                                shc.sslConfig,
-                                shc.algorithmConstraints, shc.activeProtocols);
+                                shc, HANDSHAKE_SCOPE);
+                }
+
+                if (shc.localSupportedCertSignAlgs == null) {
+                    shc.localSupportedCertSignAlgs =
+                            SignatureScheme.getSupportedAlgorithms(
+                                    shc, CERTIFICATE_SCOPE);
                 }
 
                 SSLSessionImpl session =
@@ -513,8 +521,13 @@ final class ServerHello {
                 if (shc.localSupportedSignAlgs == null) {
                     shc.localSupportedSignAlgs =
                         SignatureScheme.getSupportedAlgorithms(
-                                shc.sslConfig,
-                                shc.algorithmConstraints, shc.activeProtocols);
+                                shc, HANDSHAKE_SCOPE);
+                }
+
+                if (shc.localSupportedCertSignAlgs == null) {
+                    shc.localSupportedCertSignAlgs =
+                            SignatureScheme.getSupportedAlgorithms(
+                                    shc, CERTIFICATE_SCOPE);
                 }
 
                 SSLSessionImpl session =
