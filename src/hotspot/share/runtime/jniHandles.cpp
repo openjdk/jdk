@@ -155,7 +155,7 @@ void JNIHandles::destroy_global(jobject handle) {
 void JNIHandles::destroy_weak_global(jweak handle) {
   if (handle != nullptr) {
     oop* oop_ptr = weak_global_ptr(handle);
-    NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(oop_ptr, (oop)nullptr);
+    NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_store(oop_ptr, (oop)nullptr);
     weak_global_handles()->release(oop_ptr);
   }
 }
