@@ -77,6 +77,7 @@ typedef struct RefNode {
  */
 
 typedef jint FrameNumber;
+typedef struct DebugRawMonitor DebugRawMonitor;
 
 typedef struct {
     jvmtiEnv *jvmti;
@@ -90,6 +91,7 @@ typedef struct {
     jboolean doerrorexit;
     jboolean modifiedUtf8;
     jboolean quiet;
+    jboolean rankedMonitors;
     jboolean jvmti_data_dump; /* If true, then support JVMTI DATA_DUMP_REQUEST events. */
 
     /* Debug flags (bit mask) */
@@ -130,7 +132,7 @@ typedef struct {
     unsigned log_flags;
 
     /* Common References static data */
-    jrawMonitorID refLock;
+    DebugRawMonitor* refLock;
     jlong         nextSeqNum;
     unsigned      pinAllCount;
     RefNode     **objectsByID;
@@ -351,13 +353,72 @@ jint jvmtiMinorVersion(void);
 jint jvmtiMicroVersion(void);
 jvmtiError getSourceDebugExtension(jclass clazz, char **extensionPtr);
 
-jrawMonitorID debugMonitorCreate(char *name);
-void debugMonitorEnter(jrawMonitorID theLock);
-void debugMonitorExit(jrawMonitorID theLock);
-void debugMonitorWait(jrawMonitorID theLock);
-void debugMonitorNotify(jrawMonitorID theLock);
-void debugMonitorNotifyAll(jrawMonitorID theLock);
-void debugMonitorDestroy(jrawMonitorID theLock);
+/*
+ * The following enum represents the rank of each lock (JVMTI RawMonitor) that
+ * the debug agent uses. Locks must be aquired in rank order (highest numbered
+ * rank first). The list is in order from lowest rank to highest rank.
+ */
+typedef enum {
+    // These first few are leaf monitors so their order doesn't matter. They just
+    // need to be ranked lower than the non-leaf monitors.
+    sendLock_Rank = 0, // transport lock
+    cmdQueueLock_Rank, // debug loop lock
+    blockCommandLoopLock_Rank, // event helper lock
+    initMonitor_Rank, // debug init lock
+
+    // Must rank higher than initMonitor
+    listenerLock_Rank, // transport lock
+
+    // This part of the list is determined by the order that locks are acquired in
+    // the threadControl getLocks() function.
+    refLock_Rank, // common ref lock
+    threadLock_Rank, // thread control lock
+    commandCompleteLock_Rank, // event helper lock
+    commandQueueLock_Rank, // event helper lock
+    invokerLock_Rank,
+    stepLock_Rank,
+    handlerLock_Rank, // event handler lock
+    callbackLock_Rank, // event handler lock
+
+    // cbVMDeath() enters callbackBlock before callbackLock, so its rank must
+    // be higher than callbacklock.
+    callbackBlock_Rank, // event handler lock
+
+    // popFrameEventLock and popFrameProceedLock have special handling in
+    // verifyMonitorRank(). See comment there. They must be ranked higher than
+    // threadLock. popFrameEventLock must be ranked lower than vmDeathLock.
+    popFrameEventLock_Rank, // thread control lock
+    popFrameProceedLock_Rank, // thread control lock
+
+    // This lock is grabbed in commandLoop(), which eventually leads to
+    // threadControl getLocks() grabbing the group of 8 locks
+    // above, so it must be ranked higher than callbackLock.
+    vmDeathLock_Rank, // event helper lock
+
+    // This lock is held by debugLoop_run() while replying to commands, so it needs
+    // to be ranked higher than sendLock. Also it needs to rank higher than handlerLock
+    // since handlers are installed while holding this lock. Lastly it needs
+    // to be ranked higher than callbackBlock because of the rare case where
+    // debugLoop_run() is holding this lock (as it always does) but ends up
+    // triggering a JVMTI event, which will cause callbackBlock to be entered.
+    vmDeathLockForDebugLoop_Rank, // debug loop lock
+
+    NUM_DEBUG_RAW_MONITORS
+} DebugRawMonitorRank;
+
+void dbgRawMonitor_lock();
+
+void dbgRawMonitor_unlock();
+
+void dumpRawMonitors();
+
+DebugRawMonitor* debugMonitorCreate(DebugRawMonitorRank dbg_monitor, char *name);
+void debugMonitorEnter(DebugRawMonitor* dbg_monitor);
+void debugMonitorExit(DebugRawMonitor* dbg_monitor);
+void debugMonitorWait(DebugRawMonitor* dbg_monitor);
+void debugMonitorNotify(DebugRawMonitor* dbg_monitor);
+void debugMonitorNotifyAll(DebugRawMonitor* dbg_monitor);
+void debugMonitorDestroy(DebugRawMonitor* dbg_monitor);
 
 jthread *allThreads(jint *count);
 
