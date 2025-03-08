@@ -734,6 +734,18 @@ bool ObjectMonitor::try_lock_or_add_to_entry_list(JavaThread* current, ObjectWai
   }
 }
 
+static void post_monitor_deflate_event(EventJavaMonitorDeflate* event,
+                                       const oop obj) {
+  assert(event != nullptr, "invariant");
+  const Klass* monitor_klass = obj->klass();
+  if (ObjectMonitor::is_jfr_excluded(monitor_klass)) {
+    return;
+  }
+  event->set_monitorClass(monitor_klass);
+  event->set_address((uintptr_t)(void*)obj);
+  event->commit();
+}
+
 // Deflate the specified ObjectMonitor if not in-use. Returns true if it
 // was deflated and false otherwise.
 //
@@ -752,6 +764,8 @@ bool ObjectMonitor::deflate_monitor(Thread* current) {
     // Easy checks are first - the ObjectMonitor is busy so no deflation.
     return false;
   }
+
+  EventJavaMonitorDeflate event;
 
   const oop obj = object_peek();
 
@@ -824,6 +838,10 @@ bool ObjectMonitor::deflate_monitor(Thread* current) {
   } else if (obj != nullptr) {
     // Install the old mark word if nobody else has already done it.
     install_displaced_markword_in_object(obj);
+  }
+
+  if (event.should_commit()) {
+    post_monitor_deflate_event(&event, obj);
   }
 
   // We leave owner == DEFLATER_MARKER and contentions < 0
@@ -1628,12 +1646,6 @@ bool ObjectMonitor::check_owner(TRAPS) {
              "current thread is not owner", false);
 }
 
-static inline bool is_excluded(const Klass* monitor_klass) {
-  assert(monitor_klass != nullptr, "invariant");
-  NOT_JFR_RETURN_(false);
-  JFR_ONLY(return vmSymbols::jdk_jfr_internal_management_HiddenWait() == monitor_klass->name();)
-}
-
 static void post_monitor_wait_event(EventJavaMonitorWait* event,
                                     ObjectMonitor* monitor,
                                     uint64_t notifier_tid,
@@ -1642,7 +1654,7 @@ static void post_monitor_wait_event(EventJavaMonitorWait* event,
   assert(event != nullptr, "invariant");
   assert(monitor != nullptr, "invariant");
   const Klass* monitor_klass = monitor->object()->klass();
-  if (is_excluded(monitor_klass)) {
+  if (ObjectMonitor::is_jfr_excluded(monitor_klass)) {
     return;
   }
   event->set_monitorClass(monitor_klass);
