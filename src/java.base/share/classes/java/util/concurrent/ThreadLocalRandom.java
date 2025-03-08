@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaUtilConcurrentTLRAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.random.RandomSupport;
@@ -158,11 +159,19 @@ public final class ThreadLocalRandom extends Random {
      * rely on (static) atomic generators to initialize the values.
      */
     static final void localInit() {
-        int p = probeGenerator.addAndGet(PROBE_INCREMENT);
-        int probe = (p == 0) ? 1 : p; // skip 0
         long seed = RandomSupport.mixMurmur64(seeder.getAndAdd(SEEDER_INCREMENT));
-        Thread t = Thread.currentThread();
+        Thread t = Thread.currentThread(), carrier;
         U.putLong(t, SEED, seed);
+        int probe = 0; // if virtual, share probe with carrier
+        if ((carrier = JLA.currentCarrierThread()) != t &&
+            (probe = U.getInt(carrier, PROBE)) == 0) {
+            seed = RandomSupport.mixMurmur64(seeder.getAndAdd(SEEDER_INCREMENT));
+            U.putLong(carrier, SEED, seed);
+        }
+        if (probe == 0 && (probe = probeGenerator.addAndGet(PROBE_INCREMENT)) == 0)
+            probe = 1; // skip 0
+        if (carrier != t)
+            U.putInt(carrier, PROBE, probe);
         U.putInt(t, PROBE, probe);
     }
 
@@ -251,7 +260,7 @@ public final class ThreadLocalRandom extends Random {
      * can be used to force initialization on zero return.
      */
     static final int getProbe() {
-        return U.getInt(Thread.currentThread(), PROBE);
+        return U.getInt(JLA.currentCarrierThread(), PROBE);
     }
 
     /**
@@ -262,7 +271,7 @@ public final class ThreadLocalRandom extends Random {
         probe ^= probe << 13;   // xorshift
         probe ^= probe >>> 17;
         probe ^= probe << 5;
-        U.putInt(Thread.currentThread(), PROBE, probe);
+        U.putInt(JLA.currentCarrierThread(), PROBE, probe);
         return probe;
     }
 
@@ -377,6 +386,8 @@ public final class ThreadLocalRandom extends Random {
     private static final AtomicLong seeder
         = new AtomicLong(RandomSupport.mixMurmur64(System.currentTimeMillis()) ^
                          RandomSupport.mixMurmur64(System.nanoTime()));
+
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     // used by ScopedValue
     private static class Access {

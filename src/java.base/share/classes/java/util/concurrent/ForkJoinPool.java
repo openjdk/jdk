@@ -919,21 +919,21 @@ public class ForkJoinPool extends AbstractExecutorService
      *
      * This class supports ScheduledExecutorService methods by
      * creating and starting a DelayScheduler on first use of these
-     * methods (via startDelayScheduler, with callback
-     * onDelaySchedulerStart). The scheduler operates independently in
-     * its own thread, relaying tasks to the pool to execute when
-     * their delays elapse (see method executeEnabledScheduledTask).
-     * The only other interactions with the delayScheduler are to
-     * control shutdown and maintain shutdown-related policies in
-     * methods quiescent() and tryTerminate(). In particular,
-     * processing must deal with cases in which tasks are submitted
-     * before shutdown, but not enabled until afterwards, in which
-     * case they must bypass some screening to be allowed to
-     * run. Conversely, the DelayScheduler checks runState status and
-     * when enabled, completes termination, using only methods
-     * shutdownStatus and tryStopIfShutdown. All of these methods are
-     * final and have signatures referencing DelaySchedulers, so
-     * cannot conflict with those of any existing FJP subclasses.
+     * methods (via startDelayScheduler). The scheduler operates
+     * independently in its own thread, relaying tasks to the pool to
+     * execute when their delays elapse (see method
+     * executeEnabledScheduledTask).  The only other interactions with
+     * the delayScheduler are to control shutdown and maintain
+     * shutdown-related policies in methods quiescent() and
+     * tryTerminate(). In particular, processing must deal with cases
+     * in which tasks are submitted before shutdown, but not enabled
+     * until afterwards, in which case they must bypass some screening
+     * to be allowed to run. Conversely, the DelayScheduler checks
+     * runState status and when enabled, completes termination, using
+     * only methods shutdownStatus and tryStopIfShutdown. All of these
+     * methods are final and have signatures referencing
+     * DelaySchedulers, so cannot conflict with those of any existing
+     * FJP subclasses.
      *
      * Memory placement
      * ================
@@ -1102,7 +1102,7 @@ public class ForkJoinPool extends AbstractExecutorService
     static final int DROPPED          = 1 << 16;  // removed from ctl counts
     static final int UNCOMPENSATE     = 1 << 16;  // tryCompensate return
     static final int IDLE             = 1 << 16;  // phase seqlock/version count
-    static final int MIN_QUEUES_SIZE  = 4;        // ensure > 1 external slot
+    static final int MIN_QUEUES_SIZE  = 1 << 4;   // ensure external slots
 
     /*
      * Bits and masks for ctl and bounds are packed with 4 16 bit subfields:
@@ -2580,34 +2580,40 @@ public class ForkJoinPool extends AbstractExecutorService
      *        should be thrown when shutdown (else only if terminating)
      */
     private WorkQueue submissionQueue(int r, boolean rejectOnShutdown) {
-        if (r == 0) {
+        int reuse;                                   // nonzero if prefer create
+        if ((reuse = r) == 0) {
             ThreadLocalRandom.localInit();           // initialize caller's probe
             r = ThreadLocalRandom.getProbe();
         }
-        for (;;) {
-            int n, i, id; WorkQueue[] qs; WorkQueue q, w = null;
+        for (int probes = 0; ; ++probes) {
+            int n, i, id; WorkQueue[] qs; WorkQueue q;
             if ((qs = queues) == null)
                 break;
             if ((n = qs.length) <= 0)
                 break;
             if ((q = qs[i = (id = r & EXTERNAL_ID_MASK) & (n - 1)]) == null) {
-                if (w == null)
-                    w = new WorkQueue(null, id, 0, false);
+                WorkQueue w = new WorkQueue(null, id, 0, false);
                 w.phase = id;
                 boolean reject = ((lockRunState() & SHUTDOWN) != 0 &&
                                   rejectOnShutdown);
-                if (!reject && queues == qs && qs[i] == null) {
-                    q = qs[i] = w;                   // else retry
-                    w = null;
-                }
+                if (!reject && queues == qs && qs[i] == null)
+                    q = qs[i] = w;                   // else lost race to install
                 unlockRunState();
                 if (q != null)
                     return q;
                 if (reject)
                     break;
+                reuse = 0;
             }
-            else if (!q.tryLockPhase())              // move index
+            if (reuse == 0 || !q.tryLockPhase()) {   // move index
+                if (reuse == 0) {
+                    if (probes >= n >> 1)
+                        reuse = r;                   // stop prefering free slot
+                }
+                else if (q != null)
+                    reuse = 0;                       // probe on collision
                 r = ThreadLocalRandom.advanceProbe(r);
+            }
             else if (rejectOnShutdown && (runState & SHUTDOWN) != 0L) {
                 q.unlockPhase();                     // check while q lock held
                 break;
@@ -3481,33 +3487,11 @@ public class ForkJoinPool extends AbstractExecutorService
     }
 
     /**
-     * Callback upon starting DelayScheduler
-     */
-    final void onDelaySchedulerStart(DelayScheduler ds) {
-        WorkQueue q;           // set up default submission queue
-        if ((q = submissionQueue(0, false)) != null)
-            q.unlockPhase();
-    }
-
-    /**
      * Arranges execution of a ScheduledForkJoinTask whose delay has
-     * elapsed, or cancels it on error
+     * elapsed
      */
     final void executeEnabledScheduledTask(ScheduledForkJoinTask<?> task) {
-        if (task != null) {
-            WorkQueue q;
-            boolean cancel = false;
-            try {
-                if ((q = externalSubmissionQueue(false)) == null)
-                    cancel = true; // terminating
-                else
-                    q.push(task, this, false);
-            } catch(Error | RuntimeException ex) {
-                cancel = true;     // OOME or VM error
-            }
-            if (cancel)
-                task.trySetCancelled();
-        }
+        externalSubmissionQueue(false).push(task, this, false);
     }
 
     /**
@@ -3691,13 +3675,13 @@ public class ForkJoinPool extends AbstractExecutorService
     static final class TimeoutAction<V> implements Runnable {
         // set after construction, nulled after use
         ForkJoinTask.CallableWithTimeout<V> task;
-        Consumer<ForkJoinTask<V>> action;
-        TimeoutAction(Consumer<ForkJoinTask<V>> action) {
+        Consumer<? super ForkJoinTask<V>> action;
+        TimeoutAction(Consumer<? super ForkJoinTask<V>> action) {
             this.action = action;
         }
         public void run() {
             ForkJoinTask.CallableWithTimeout<V> t = task;
-            Consumer<ForkJoinTask<V>> a = action;
+            Consumer<? super ForkJoinTask<V>> a = action;
             task = null;
             action = null;
             if (t != null && t.status >= 0) {
@@ -3738,7 +3722,7 @@ public class ForkJoinPool extends AbstractExecutorService
      */
     public <V> ForkJoinTask<V> submitWithTimeout(Callable<V> callable,
                                                  long timeout, TimeUnit unit,
-                                                 Consumer<ForkJoinTask<V>> timeoutAction) {
+                                                 Consumer<? super ForkJoinTask<V>> timeoutAction) {
         ForkJoinTask.CallableWithTimeout<V> task; TimeoutAction<V> onTimeout;
         Objects.requireNonNull(callable);
         ScheduledForkJoinTask<Void> timeoutTask =
