@@ -1,0 +1,17 @@
+root = true
+
+[*]
+trim_trailing_whitespace = true
+# Open curly brace is on the same line.
+indent_brace_style = K&R
+
+[Makefile]
+indent_style = tab
+
+[*.{cpp,hpp,c,h}]
+indent_style = space
+indent_size = 2
+
+[*.java]
+indent_style = space
+indent_size = 4
