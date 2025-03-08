@@ -23,7 +23,7 @@
 
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zList.inline.hpp"
-#include "gc/z/zNUMA.hpp"
+#include "gc/z/zNUMA.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageCache.hpp"
 #include "gc/z/zStat.hpp"
