@@ -151,6 +151,8 @@ class G1ConcurrentRefineSweepState {
 
   static size_t refinement_epoch();
 
+  bool in_sweep_epoch() const;
+
   // Advances the state to next_state if not interrupted by a changed epoch. Returns
   // to Idle otherwise.
   bool advance_state(State next_state);

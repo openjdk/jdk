@@ -155,8 +155,12 @@ size_t G1ConcurrentRefineSweepState::refinement_epoch() {
   return G1CollectedHeap::heap()->refinement_epoch();
 }
 
+bool G1ConcurrentRefineSweepState::in_sweep_epoch() const {
+  return _sweep_start_epoch == refinement_epoch();
+}
+
 bool G1ConcurrentRefineSweepState::advance_state(State next_state) {
-  bool result = _sweep_start_epoch == refinement_epoch();
+  bool result = in_sweep_epoch();
   if (result) {
     _state = next_state;
   } else {
@@ -194,7 +198,11 @@ bool G1ConcurrentRefineSweepState::swap_global_card_table() {
     SuspendibleThreadSetLeaver sts_leave;
 
     MutexLocker mu(Threads_lock);
-    G1BarrierSet::g1_barrier_set()->swap_global_card_table();
+    // A GC that advanced the epoch might have happened, which already switched
+    // The global card table. Do nothing.
+    if (in_sweep_epoch()) {
+      G1BarrierSet::g1_barrier_set()->swap_global_card_table();
+    }
   }
 
   return advance_state(State::SwapJavaThreadsCT);
