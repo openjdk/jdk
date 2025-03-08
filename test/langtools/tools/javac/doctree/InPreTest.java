@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8078320 8273244 8284908
+ * @bug 8078320 8273244 8284908 8346118
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -136,7 +136,7 @@ DocComment[DOC_COMMENT, pos:1
       attributes: empty
     ]
     Text[TEXT, pos:6, _abc]
-    Literal[CODE, pos:10, |_def__]
+    Literal[CODE, pos:10, |def__]
     Text[TEXT, pos:24, ghi]
   body: 1
     EndElement[END_ELEMENT, pos:27, pre]
@@ -164,6 +164,99 @@ DocComment[DOC_COMMENT, pos:1
   block tags: empty
 ]
 */
+
+    /**
+     * {@literal before pre
+     * }
+     * <pre>
+     * in pre{@code
+     *   in @code
+     *   }
+     *   pre again
+     *   {@literal
+     *     in literal}
+     * </pre>{@code after pre
+     * }
+     */
+    public void in_pre_multi_line() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 2
+    Literal[LITERAL, pos:1, before_pre|_]
+    Text[TEXT, pos:24]
+  body: 8
+    StartElement[START_ELEMENT, pos:26
+      name:pre
+      attributes: empty
+    ]
+    Text[TEXT, pos:31, |in_pre]
+    Literal[CODE, pos:39, |__in_@code|__]
+    Text[TEXT, pos:62, |__pre_again|__]
+    Literal[LITERAL, pos:79, |____in_literal]
+    Text[TEXT, pos:105, |]
+    EndElement[END_ELEMENT, pos:107, pre]
+    Literal[CODE, pos:113, after_pre|_]
+  block tags: empty
+]
+*/
+
+    /**
+     * <pre>{@index term line1
+     *   line2
+     * }</pre>
+     */
+    @NormalizeTags(false) // see DocCommentTester.PrettyChecker
+    public void in_pre_with_inline_tag() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:1
+      name:pre
+      attributes: empty
+    ]
+    Index[INDEX, pos:6
+      term:
+        Text[TEXT, pos:14, term]
+      description: 1
+        Text[TEXT, pos:19, line1|___line2|_]
+    ]
+  body: 1
+    EndElement[END_ELEMENT, pos:36, pre]
+  block tags: empty
+]
+*/
+
+    /**
+     * <pre><span title="line1
+     *   line2
+     *   line3"></span></pre>
+     */
+    @NormalizeTags(false) // see DocCommentTester.PrettyChecker
+    public void in_pre_with_html_attr() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 3
+    StartElement[START_ELEMENT, pos:1
+      name:pre
+      attributes: empty
+    ]
+    StartElement[START_ELEMENT, pos:6
+      name:span
+      attributes: 1
+        Attribute[ATTRIBUTE, pos:12
+          name: title
+          vkind: DOUBLE
+          value: 1
+            Text[TEXT, pos:19, line1|___line2|___line3]
+        ]
+    ]
+    EndElement[END_ELEMENT, pos:44, span]
+  body: 1
+    EndElement[END_ELEMENT, pos:51, pre]
+  block tags: empty
+]
+*/
+
     /**
      * abc {@code
      */

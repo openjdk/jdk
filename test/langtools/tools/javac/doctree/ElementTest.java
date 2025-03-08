@@ -70,6 +70,31 @@ DocComment[DOC_COMMENT, pos:1
 */
 
     /**
+     * abc
+     * <pre>
+     *    def
+     * gh
+     * </pre>
+     * ijk
+     */
+    void pre_whitespace_normalization() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 1
+    Text[TEXT, pos:1, abc]
+  body: 4
+    StartElement[START_ELEMENT, pos:6
+      name:pre
+      attributes: empty
+    ]
+    Text[TEXT, pos:11, |___def|gh|]
+    EndElement[END_ELEMENT, pos:25, pre]
+    Text[TEXT, pos:31, |_ijk]
+  block tags: empty
+]
+*/
+
+    /**
      * abc < def
      */
     void bad_lt() { }
