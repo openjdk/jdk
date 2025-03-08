@@ -29,6 +29,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @requires vm.flagless
+ * @requires vm.flavor == "server" & !vm.emulatedClient
  *
  * @run driver compiler.inlining.InlineBimorphicVirtualCallAfterMorphismChanged
  */
@@ -93,7 +94,7 @@ public class InlineBimorphicVirtualCallAfterMorphismChanged {
 
     private static void test(String option) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-server", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
+            "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
             "-XX:CompileCommand=compileonly,*::callSiteHolder", option,
             AbstractBase.class.getName()
         );
