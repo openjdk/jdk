@@ -149,9 +149,9 @@ bool RegularPredicate::may_be_predicate_if(const Node* node) {
 
 // Rewire any non-CFG nodes dependent on this Template Assertion Predicate (i.e. with a control input to this
 // Template Assertion Predicate) to the 'target_predicate' based on the 'data_in_loop_body' check.
-void TemplateAssertionPredicate::rewire_loop_data_dependencies(IfTrueNode* target_predicate,
-                                                               const NodeInLoopBody& data_in_loop_body,
-                                                               const PhaseIdealLoop* phase) const {
+void CommonAssertionPredicate::rewire_loop_data_dependencies(IfTrueNode* target_predicate,
+                                                             const NodeInLoopBody& data_in_loop_body,
+                                                             PhaseIdealLoop* phase) const {
   for (DUIterator i = _success_proj->outs(); _success_proj->has_out(i); i++) {
     Node* output = _success_proj->out(i);
     if (!output->is_CFG() && data_in_loop_body.check_node_in_loop_body(output)) {
@@ -173,12 +173,13 @@ bool TemplateAssertionPredicate::is_predicate(const Node* node) {
 // Clone this Template Assertion Predicate without modifying any OpaqueLoop*Node inputs.
 TemplateAssertionPredicate TemplateAssertionPredicate::clone(Node* new_control, PhaseIdealLoop* phase) const {
   DEBUG_ONLY(verify();)
+  IfNode* if_node = head();
   TemplateAssertionExpression template_assertion_expression(opaque_node());
   OpaqueTemplateAssertionPredicateNode* new_opaque_node = template_assertion_expression.clone(new_control, phase);
   AssertionPredicateIfCreator assertion_predicate_if_creator(phase);
-  IfTrueNode* success_proj = assertion_predicate_if_creator.create_for_template(new_control, _if_node->Opcode(),
+  IfTrueNode* success_proj = assertion_predicate_if_creator.create_for_template(new_control, if_node->Opcode(),
                                                                                 new_opaque_node,
-                                                                                _if_node->assertion_predicate_type());
+                                                                                if_node->assertion_predicate_type());
   TemplateAssertionPredicate cloned_template_assertion_predicate(success_proj);
   DEBUG_ONLY(cloned_template_assertion_predicate.verify();)
   return cloned_template_assertion_predicate;
@@ -191,13 +192,14 @@ TemplateAssertionPredicate TemplateAssertionPredicate::clone_and_replace_opaque_
   DEBUG_ONLY(verify();)
   OpaqueLoopInitNode* new_opaque_init = new OpaqueLoopInitNode(phase->C, new_opaque_input);
   phase->register_new_node(new_opaque_init, new_control);
+  IfNode* if_node = head();
   TemplateAssertionExpression template_assertion_expression(opaque_node());
   OpaqueTemplateAssertionPredicateNode* new_opaque_node =
       template_assertion_expression.clone_and_replace_init(new_control, new_opaque_init, phase);
   AssertionPredicateIfCreator assertion_predicate_if_creator(phase);
-  IfTrueNode* success_proj = assertion_predicate_if_creator.create_for_template(new_control, _if_node->Opcode(),
+  IfTrueNode* success_proj = assertion_predicate_if_creator.create_for_template(new_control, if_node->Opcode(),
                                                                                 new_opaque_node,
-                                                                                _if_node->assertion_predicate_type());
+                                                                                if_node->assertion_predicate_type());
   TemplateAssertionPredicate cloned_template_assertion_predicate(success_proj);
   DEBUG_ONLY(cloned_template_assertion_predicate.verify();)
   return cloned_template_assertion_predicate;
@@ -223,7 +225,7 @@ InitializedAssertionPredicate TemplateAssertionPredicate::initialize(PhaseIdealL
 // Kills the Template Assertion Predicate by setting the condition to true. Will be folded away in the next IGVN round.
 void TemplateAssertionPredicate::kill(PhaseIdealLoop* phase) const {
   ConINode* true_con = phase->intcon(1);
-  phase->igvn().replace_input_of(_if_node, 1, true_con);
+  phase->igvn().replace_input_of(head(), 1, true_con);
 }
 
 #ifdef ASSERT
@@ -305,7 +307,7 @@ bool InitializedAssertionPredicate::is_predicate(const Node* node) {
 
 void InitializedAssertionPredicate::kill(PhaseIdealLoop* phase) const {
   Node* true_con = phase->intcon(1);
-  phase->igvn().replace_input_of(_if_node, 1, true_con);
+  phase->igvn().replace_input_of(head(), 1, true_con);
 }
 
 #ifdef ASSERT
@@ -920,7 +922,8 @@ void Predicates::dump_for_loop(LoopNode* loop_node) {
 CreateAssertionPredicatesVisitor::CreateAssertionPredicatesVisitor(CountedLoopNode* target_loop_head,
                                                                    PhaseIdealLoop* phase,
                                                                    const NodeInLoopBody& node_in_loop_body,
-                                                                   const bool clone_template)
+                                                                   const bool clone_template,
+                                                                   const bool insert_vectorized_drain)
     : _init(target_loop_head->init_trip()),
       _stride(target_loop_head->stride()),
       _old_target_loop_entry(target_loop_head->skip_strip_mined()->in(LoopNode::EntryControl)),
@@ -928,7 +931,8 @@ CreateAssertionPredicatesVisitor::CreateAssertionPredicatesVisitor(CountedLoopNo
       _phase(phase),
       _has_hoisted_check_parse_predicates(false),
       _node_in_loop_body(node_in_loop_body),
-      _clone_template(clone_template) {}
+      _clone_template(clone_template),
+      _insert_vectorized_drain(insert_vectorized_drain) {}
 
 // Keep track of whether we are in the correct Predicate Block where Template Assertion Predicates can be found.
 // The PredicateIterator will always start at the loop entry and first visits the Loop Limit Check Predicate Block.
@@ -941,7 +945,7 @@ void CreateAssertionPredicatesVisitor::visit(const ParsePredicate& parse_predica
 }
 
 void CreateAssertionPredicatesVisitor::visit(const TemplateAssertionPredicate& template_assertion_predicate) {
-  if (!_has_hoisted_check_parse_predicates) {
+  if (!_has_hoisted_check_parse_predicates && !_insert_vectorized_drain) {
     // Only process if we are in the correct Predicate Block.
     return;
   }
@@ -955,6 +959,14 @@ void CreateAssertionPredicatesVisitor::visit(const TemplateAssertionPredicate& t
         initialize_from_template(template_assertion_predicate, _old_target_loop_entry);
     _current_predicate_chain_head = initialized_assertion_predicate.head();
   }
+}
+
+void CreateAssertionPredicatesVisitor::visit(const InitializedAssertionPredicate& initialized_assertion_predicate) {
+  if (!_insert_vectorized_drain) {
+    // Only process if we are in the correct Predicate Block.
+    return;
+  }
+  initialized_assertion_predicate.rewire_loop_data_dependencies(_old_target_loop_entry->as_IfTrue(), _node_in_loop_body, _phase);
 }
 
 // Create an Initialized Assertion Predicate from the provided Template Assertion Predicate.
