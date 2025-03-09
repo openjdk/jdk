@@ -65,7 +65,8 @@
 // The actual size of each block heavily depends on the CPU capabilities and,
 // of course, on the logic implemented in each block.
 #ifdef ASSERT
-  #define BTB_MINSIZE 256
+// With introduced assert in get_monitor() & set_monitor(), required block size is now 322.
+  #define BTB_MINSIZE 512
 #else
   #define BTB_MINSIZE  64
 #endif
@@ -91,7 +92,8 @@
     if (len > alignment) {                                                     \
       tty->print_cr("%4d of %4d @ " INTPTR_FORMAT ": Block len for %s",        \
                     len, alignment, e_addr-len, name);                         \
-      guarantee(len <= alignment, "block too large");                          \
+      guarantee(len <= alignment, "block too large, len = %d, alignment = %d", \
+                      len, alignment);                                         \
     }                                                                          \
     guarantee(len == e_addr-b_addr, "block len mismatch");                     \
   }
@@ -112,7 +114,8 @@
     if (len > alignment) {                                                     \
       tty->print_cr("%4d of %4d @ " INTPTR_FORMAT ": Block len for %s",        \
                     len, alignment, e_addr-len, name);                         \
-      guarantee(len <= alignment, "block too large");                          \
+      guarantee(len <= alignment, "block too large, len = %d, alignment = %d", \
+                      len, alignment);                                         \
     }                                                                          \
     guarantee(len == e_addr-b_addr, "block len mismatch");                     \
   }
