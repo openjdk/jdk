@@ -38,6 +38,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -126,9 +127,14 @@ import javax.swing.text.View;
  * </ul>
  * <p><b>Note: for the time being we do not fully support relative units,
  * unless noted, so that
- * p { margin-top: 10% } will be treated as if no margin-top was specified.</b>
+ * p { margin-top: 10% } will be treated as if no margin-top was specified.
+ * Additionally, the named, hexadecimal and rgb or rgba color notations from
+ * CSS 4 are supported.</b>
  *
  * @spec https://www.w3.org/TR/REC-CSS1 Cascading Style Sheets, level 1
+ * @spec https://www.w3.org/TR/css-color-4/#rgb-functions The RGB functions
+ * @spec https://www.w3.org/TR/css-color-4/#hex-notation The RGB Hexadecimal Notations
+ * @spec https://www.w3.org/TR/css-color-4/#named-colors Named Colors
  * @author  Timothy Prinzing
  * @author  Scott Violet
  * @see StyleSheet
@@ -745,9 +751,9 @@ public class CSS implements Serializable {
     }
 
     /**
-     * Sets the base font size. <code>sz</code> is a CSS value, and is
+     * Sets the base font size. {@code sz} is a CSS value, and is
      * not necessarily the point size. Use getPointSize to determine the
-     * point size corresponding to <code>sz</code>.
+     * point size corresponding to {@code sz}.
      */
     void setBaseFontSize(int sz) {
         if (sz < 1)
@@ -785,8 +791,8 @@ public class CSS implements Serializable {
     }
 
     /**
-     * Parses the CSS property <code>key</code> with value
-     * <code>value</code> placing the result in <code>att</code>.
+     * Parses the CSS property {@code key} with value
+     * {@code value} placing the result in {@code attr}.
      */
     void addInternalCSSValue(MutableAttributeSet attr,
                              CSS.Attribute key, String value) {
@@ -833,9 +839,9 @@ public class CSS implements Serializable {
     }
 
     /**
-     * Gets the internal CSS representation of <code>value</code> which is
-     * a CSS value of the CSS attribute named <code>key</code>. The receiver
-     * should not modify <code>value</code>, and the first <code>count</code>
+     * Gets the internal CSS representation of {@code value} which is
+     * a CSS value of the CSS attribute named {@code key}. The receiver
+     * should not modify {@code value}, and the first {@code count}
      * strings are valid.
      */
     Object getInternalCSSValue(CSS.Attribute key, String value) {
@@ -882,7 +888,7 @@ public class CSS implements Serializable {
 
     /**
      * Converts the passed in CSS value to a StyleConstants value.
-     * <code>key</code> identifies the CSS attribute being mapped.
+     * {@code key} identifies the CSS attribute being mapped.
      */
     Object cssValueToStyleConstantsValue(StyleConstants key, Object value) {
         if (value instanceof CssValue) {
@@ -894,7 +900,7 @@ public class CSS implements Serializable {
     /**
      * Returns the font for the values in the passed in AttributeSet.
      * It is assumed the keys will be CSS.Attribute keys.
-     * <code>sc</code> is the StyleContext that will be messaged to get
+     * {@code sc} is the StyleContext that will be messaged to get
      * the font once the size, name and style have been determined.
      */
     Font getFont(StyleContext sc, AttributeSet a, int defaultSize, StyleSheet ss) {
@@ -956,7 +962,7 @@ public class CSS implements Serializable {
      * Takes a set of attributes and turn it into a color
      * specification.  This might be used to specify things
      * like brighter, more hue, etc.
-     * This will return null if there is no value for <code>key</code>.
+     * This will return null if there is no value for {@code key}.
      *
      * @param key CSS.Attribute identifying where color is stored.
      * @param a the set of attributes
@@ -994,8 +1000,8 @@ public class CSS implements Serializable {
     }
 
     /**
-     * Returns the length of the attribute in <code>a</code> with
-     * key <code>key</code>.
+     * Returns the length of the attribute in {@code a} with
+     * key {@code key}.
      */
     float getLength(AttributeSet a, CSS.Attribute key, StyleSheet ss) {
         ss = getStyleSheet(ss);
@@ -1267,14 +1273,14 @@ public class CSS implements Serializable {
     }
 
     /**
-     * Translates a string to a <code>CSS.Attribute</code> object.
-     * This will return <code>null</code> if there is no attribute
+     * Translates a string to a {@code CSS.Attribute} object.
+     * This will return {@code null} if there is no attribute
      * by the given name.
      *
      * @param name the name of the CSS attribute to fetch the
      *  typesafe enumeration for
-     * @return the <code>CSS.Attribute</code> object,
-     *  or <code>null</code> if the string
+     * @return the {@code CSS.Attribute} object,
+     *  or {@code null} if the string
      *  doesn't represent a valid attribute key
      */
     public static final Attribute getAttribute(String name) {
@@ -1282,14 +1288,14 @@ public class CSS implements Serializable {
     }
 
     /**
-     * Translates a string to a <code>CSS.Value</code> object.
-     * This will return <code>null</code> if there is no value
+     * Translates a string to a {@code CSS.Value} object.
+     * This will return {@code null} if there is no value
      * by the given name.
      *
      * @param name the name of the CSS value to fetch the
      *  typesafe enumeration for
-     * @return the <code>CSS.Value</code> object,
-     *  or <code>null</code> if the string
+     * @return the {@code CSS.Value} object,
+     *  or {@code null} if the string
      *  doesn't represent a valid CSS value name; this does
      *  not mean that it doesn't represent a valid CSS value
      */
@@ -1304,7 +1310,7 @@ public class CSS implements Serializable {
 
     /**
      * Returns a URL for the given CSS url string. If relative,
-     * <code>base</code> is used as the parent. If a valid URL can not
+     * {@code base} is used as the parent. If a valid URL can not
      * be found, this will not throw a MalformedURLException, instead
      * null will be returned.
      */
@@ -1377,180 +1383,550 @@ public class CSS implements Serializable {
       return colorstr;
     }
 
-     /**
-      * Convert a "#FFFFFF" hex string to a Color.
-      * If the color specification is bad, an attempt
-      * will be made to fix it up.
-      */
-    static final Color hexToColor(String value) {
-        String digits;
-        int n = value.length();
-        if (value.startsWith("#")) {
-            digits = value.substring(1, Math.min(value.length(), 7));
-        } else {
-            digits = value;
+    /**
+     * Convert a "#FFF", "#FFFF", "#FFFFFF" or "#FFFFFFFF" hex string to a Color.
+     * If the color specification is bad, an attempt will be made to fix it up.
+     */
+    static final Color hexToColor(String digits) {
+        // CSS Color level 4 allows webpage passes 3, 4, 6 or 8 digit color codes.
+        //   - 3 digits #[R][G][B] ........ represents #[RR][GG][BB]FF
+        //   - 4 digits #[R][G][B][A] ..... represents #[RR][GG][BB][AA]
+        //   - 6 digits #[RR][GG][BB] ..... represents #[RR][GG][BB]FF
+        //   - 8 digits #[RR][GG][BB][AA] . represents #[RR][GG][BB][AA]
+        final byte[] iseq = digits.startsWith("#") ?
+                                 iseqmap.get(Integer.valueOf(digits.length())):
+                                 iseqmap.get(Integer.valueOf(-digits.length()));
+        if (iseq == null) {
+            // Rejects string argument with a wrong number length.
+            return null;
         }
-        // Some webpage passes 3 digit color code as in #fff which is
-        // decoded as #000FFF resulting in blue background.
-        // As per https://www.w3.org/TR/CSS1/#color-units,
-        // The three-digit RGB notation (#rgb) is converted into six-digit form
-        // (#rrggbb) by replicating digits, not by adding zeros.
-        // This makes sure that white (#ffffff) can be specified with the short notation
-        // (#fff) and removes any dependencies on the color depth of the display.
-        if (digits.length() == 3) {
-            final String r = digits.substring(0, 1);
-            final String g = digits.substring(1, 2);
-            final String b = digits.substring(2, 3);
-            digits = String.format("%s%s%s%s%s%s", r, r, g, g, b, b);
+        // Only 3, 4, 6 and 8 digits notations.
+        // Parses the string argument and build color value.
+        int dv;
+        int value = 0;
+        for (byte i : iseq) {
+            dv = i == -15 ? 15 : Character.digit(digits.charAt(i), 16);
+            if (dv < 0) {
+                // Rejects string argument with at least a non digit Character.
+                return null;
+            }
+            value = dv | value << 4;
         }
-        String hstr = "0x" + digits;
-        Color c;
-        try {
-            c = Color.decode(hstr);
-        } catch (NumberFormatException nfe) {
-            c = null;
-        }
-         return c;
-     }
+        return new Color(value, true);
+    }
+
+    // Map of Index Sequences. Index -15 means, use the default value 15.
+    private static final Map<Integer, byte[]> iseqmap =
+        Map.ofEntries(
+            // Positive key, for # prefixed string, is associated with index from 1 to 8.
+            // Negative key, for not # prefixed string, is associated with index from 0 to 7.
+            Map.entry(Integer.valueOf(4), new byte[]{-15, -15, 1, 1, 2, 2, 3, 3}),
+            Map.entry(Integer.valueOf(5), new byte[]{4, 4, 1, 1, 2, 2, 3, 3}),
+            Map.entry(Integer.valueOf(7), new byte[]{-15, -15, 1, 2, 3, 4, 5, 6}),
+            Map.entry(Integer.valueOf(9), new byte[]{7, 8, 1, 2, 3, 4, 5, 6}),
+            Map.entry(Integer.valueOf(-3), new byte[]{-15, -15, 0, 0, 1, 1, 2, 2}),
+            Map.entry(Integer.valueOf(-4), new byte[]{3, 3, 0, 0, 1, 1, 2, 2}),
+            Map.entry(Integer.valueOf(-6), new byte[]{-15, -15, 0, 1, 2, 3, 4, 5}),
+            Map.entry(Integer.valueOf(-8), new byte[]{6, 7, 0, 1, 2, 3, 4, 5})
+        );
+
+    private static Map<String, Color> colorNames;
 
     /**
      * Convert a color string such as "RED" or "#NNNNNN" or "rgb(r, g, b)"
      * or "rgba(r, g, b, a)" to a Color.
      */
     static Color stringToColor(String str) {
-      Color color;
+        if (str == null) {
+            return null;
+        } else if (str.isEmpty()) {
+            return Color.black;
+        }
+        String strlc = str.toLowerCase(Locale.ROOT);
+        if (strlc.startsWith("rgb(")) {
+            return parseRGB(str, (byte)3);
+        } else if (strlc.startsWith("rgba(")) {
+            return parseRGB(str, (byte)4);
+        } else if (strlc.charAt(0) == '#') {
+            return hexToColor(str);
+        } else {
+            if (colorNames == null) {
+                colorNames = initColorNames();
+            }
+            Color color = colorNames.get(strlc);
+            if (color != null) {
+                return color;
+            }
+            // sometimes get specified without leading #
+            return hexToColor(str);
+        }
+    }
 
-      if (str == null) {
-          return null;
-      }
-      if (str.length() == 0)
-        color = Color.black;
-      else if (str.startsWith("rgb(")) {
-          color = parseRGB(str);
-      } else if (str.startsWith("rgba(")) {
-          color = parseRGBA(str);
-      }
-      else if (str.charAt(0) == '#')
-        color = hexToColor(str);
-      else if (str.equalsIgnoreCase("Black"))
-        color = hexToColor("#000000");
-      else if(str.equalsIgnoreCase("Silver"))
-        color = hexToColor("#C0C0C0");
-      else if(str.equalsIgnoreCase("Gray"))
-        color = hexToColor("#808080");
-      else if(str.equalsIgnoreCase("White"))
-        color = hexToColor("#FFFFFF");
-      else if(str.equalsIgnoreCase("Maroon"))
-        color = hexToColor("#800000");
-      else if(str.equalsIgnoreCase("Red"))
-        color = hexToColor("#FF0000");
-      else if(str.equalsIgnoreCase("Purple"))
-        color = hexToColor("#800080");
-      else if(str.equalsIgnoreCase("Fuchsia"))
-        color = hexToColor("#FF00FF");
-      else if(str.equalsIgnoreCase("Green"))
-        color = hexToColor("#008000");
-      else if(str.equalsIgnoreCase("Lime"))
-        color = hexToColor("#00FF00");
-      else if(str.equalsIgnoreCase("Olive"))
-        color = hexToColor("#808000");
-      else if(str.equalsIgnoreCase("Yellow"))
-        color = hexToColor("#FFFF00");
-      else if(str.equalsIgnoreCase("Navy"))
-        color = hexToColor("#000080");
-      else if(str.equalsIgnoreCase("Blue"))
-        color = hexToColor("#0000FF");
-      else if(str.equalsIgnoreCase("Teal"))
-        color = hexToColor("#008080");
-      else if(str.equalsIgnoreCase("Aqua"))
-        color = hexToColor("#00FFFF");
-      else if(str.equalsIgnoreCase("Orange"))
-        color = hexToColor("#FF8000");
-      else
-          color = hexToColor(str); // sometimes get specified without leading #
-      return color;
+    private static Map<String, Color> initColorNames() {
+        return Map.ofEntries(
+            Map.entry("aliceblue", new Color(240, 248, 255)),
+            Map.entry("antiquewhite", new Color(250, 235, 215)),
+            Map.entry("aqua", new Color(0, 255, 255)),
+            Map.entry("aquamarine", new Color(127, 255, 212)),
+            Map.entry("azure", new Color(240, 255, 255)),
+            Map.entry("beige", new Color(245, 245, 220)),
+            Map.entry("bisque", new Color(255, 228, 196)),
+            Map.entry("black", new Color(0, 0, 0)),
+            Map.entry("blanchedalmond", new Color(255, 235, 205)),
+            Map.entry("blue", new Color(0, 0, 255)),
+            Map.entry("blueviolet", new Color(138, 43, 226)),
+            Map.entry("brown", new Color(165, 42, 42)),
+            Map.entry("burlywood", new Color(222, 184, 135)),
+            Map.entry("cadetblue", new Color(95, 158, 160)),
+            Map.entry("chartreuse", new Color(127, 255, 0)),
+            Map.entry("chocolate", new Color(210, 105, 30)),
+            Map.entry("coral", new Color(255, 127, 80)),
+            Map.entry("cornflowerblue", new Color(100, 149, 237)),
+            Map.entry("cornsilk", new Color(255, 248, 220)),
+            Map.entry("crimson", new Color(220, 20, 60)),
+            Map.entry("cyan", new Color(0, 255, 255)),
+            Map.entry("darkblue", new Color(0, 0, 139)),
+            Map.entry("darkcyan", new Color(0, 139, 139)),
+            Map.entry("darkgoldenrod", new Color(184, 134, 11)),
+            Map.entry("darkgray", new Color(169, 169, 169)),
+            Map.entry("darkgreen", new Color(0, 100, 0)),
+            Map.entry("darkgrey", new Color(169, 169, 169)),
+            Map.entry("darkkhaki", new Color(189, 183, 107)),
+            Map.entry("darkmagenta", new Color(139, 0, 139)),
+            Map.entry("darkolivegreen", new Color(85, 107, 47)),
+            Map.entry("darkorange", new Color(255, 140, 0)),
+            Map.entry("darkorchid", new Color(153, 50, 204)),
+            Map.entry("darkred", new Color(139, 0, 0)),
+            Map.entry("darksalmon", new Color(233, 150, 122)),
+            Map.entry("darkseagreen", new Color(143, 188, 143)),
+            Map.entry("darkslateblue", new Color(72, 61, 139)),
+            Map.entry("darkslategray", new Color(47, 79, 79)),
+            Map.entry("darkslategrey", new Color(47, 79, 79)),
+            Map.entry("darkturquoise", new Color(0, 206, 209)),
+            Map.entry("darkviolet", new Color(148, 0, 211)),
+            Map.entry("deeppink", new Color(255, 20, 147)),
+            Map.entry("deepskyblue", new Color(0, 191, 255)),
+            Map.entry("dimgray", new Color(105, 105, 105)),
+            Map.entry("dimgrey", new Color(105, 105, 105)),
+            Map.entry("dodgerblue", new Color(30, 144, 255)),
+            Map.entry("firebrick", new Color(178, 34, 34)),
+            Map.entry("floralwhite", new Color(255, 250, 240)),
+            Map.entry("forestgreen", new Color(34, 139, 34)),
+            Map.entry("fuchsia", new Color(255, 0, 255)),
+            Map.entry("gainsboro", new Color(220, 220, 220)),
+            Map.entry("ghostwhite", new Color(248, 248, 255)),
+            Map.entry("gold", new Color(255, 215, 0)),
+            Map.entry("goldenrod", new Color(218, 165, 32)),
+            Map.entry("gray", new Color(128, 128, 128)),
+            Map.entry("green", new Color(0, 128, 0)),
+            Map.entry("greenyellow", new Color(173, 255, 47)),
+            Map.entry("grey", new Color(128, 128, 128)),
+            Map.entry("honeydew", new Color(240, 255, 240)),
+            Map.entry("hotpink", new Color(255, 105, 180)),
+            Map.entry("indianred", new Color(205, 92, 92)),
+            Map.entry("indigo", new Color(75, 0, 130)),
+            Map.entry("ivory", new Color(255, 255, 240)),
+            Map.entry("khaki", new Color(240, 230, 140)),
+            Map.entry("lavender", new Color(230, 230, 250)),
+            Map.entry("lavenderblush", new Color(255, 240, 245)),
+            Map.entry("lawngreen", new Color(124, 252, 0)),
+            Map.entry("lemonchiffon", new Color(255, 250, 205)),
+            Map.entry("lightblue", new Color(173, 216, 230)),
+            Map.entry("lightcoral", new Color(240, 128, 128)),
+            Map.entry("lightcyan", new Color(224, 255, 255)),
+            Map.entry("lightgoldenrodyellow", new Color(250, 250, 210)),
+            Map.entry("lightgray", new Color(211, 211, 211)),
+            Map.entry("lightgreen", new Color(144, 238, 144)),
+            Map.entry("lightgrey", new Color(211, 211, 211)),
+            Map.entry("lightpink", new Color(255, 182, 193)),
+            Map.entry("lightsalmon", new Color(255, 160, 122)),
+            Map.entry("lightseagreen", new Color(32, 178, 170)),
+            Map.entry("lightskyblue", new Color(135, 206, 250)),
+            Map.entry("lightslategray", new Color(119, 136, 153)),
+            Map.entry("lightslategrey", new Color(119, 136, 153)),
+            Map.entry("lightsteelblue", new Color(176, 196, 222)),
+            Map.entry("lightyellow", new Color(255, 255, 224)),
+            Map.entry("lime", new Color(0, 255, 0)),
+            Map.entry("limegreen", new Color(50, 205, 50)),
+            Map.entry("linen", new Color(250, 240, 230)),
+            Map.entry("magenta", new Color(255, 0, 255)),
+            Map.entry("maroon", new Color(128, 0, 0)),
+            Map.entry("mediumaquamarine", new Color(102, 205, 170)),
+            Map.entry("mediumblue", new Color(0, 0, 205)),
+            Map.entry("mediumorchid", new Color(186, 85, 211)),
+            Map.entry("mediumpurple", new Color(147, 112, 219)),
+            Map.entry("mediumseagreen", new Color(60, 179, 113)),
+            Map.entry("mediumslateblue", new Color(123, 104, 238)),
+            Map.entry("mediumspringgreen", new Color(0, 250, 154)),
+            Map.entry("mediumturquoise", new Color(72, 209, 204)),
+            Map.entry("mediumvioletred", new Color(199, 21, 133)),
+            Map.entry("midnightblue", new Color(25, 25, 112)),
+            Map.entry("mintcream", new Color(245, 255, 250)),
+            Map.entry("mistyrose", new Color(255, 228, 225)),
+            Map.entry("moccasin", new Color(255, 228, 181)),
+            Map.entry("navajowhite", new Color(255, 222, 173)),
+            Map.entry("navy", new Color(0, 0, 128)),
+            Map.entry("oldlace", new Color(253, 245, 230)),
+            Map.entry("olive", new Color(128, 128, 0)),
+            Map.entry("olivedrab", new Color(107, 142, 35)),
+            Map.entry("orange", new Color(255, 165, 0)),
+            Map.entry("orangered", new Color(255, 69, 0)),
+            Map.entry("orchid", new Color(218, 112, 214)),
+            Map.entry("palegoldenrod", new Color(238, 232, 170)),
+            Map.entry("palegreen", new Color(152, 251, 152)),
+            Map.entry("paleturquoise", new Color(175, 238, 238)),
+            Map.entry("palevioletred", new Color(219, 112, 147)),
+            Map.entry("papayawhip", new Color(255, 239, 213)),
+            Map.entry("peachpuff", new Color(255, 218, 185)),
+            Map.entry("peru", new Color(205, 133, 63)),
+            Map.entry("pink", new Color(255, 192, 203)),
+            Map.entry("plum", new Color(221, 160, 221)),
+            Map.entry("powderblue", new Color(176, 224, 230)),
+            Map.entry("purple", new Color(128, 0, 128)),
+            Map.entry("rebeccapurple", new Color(102, 51, 153)),
+            Map.entry("red", new Color(255, 0, 0)),
+            Map.entry("rosybrown", new Color(188, 143, 143)),
+            Map.entry("royalblue", new Color(65, 105, 225)),
+            Map.entry("saddlebrown", new Color(139, 69, 19)),
+            Map.entry("salmon", new Color(250, 128, 114)),
+            Map.entry("sandybrown", new Color(244, 164, 96)),
+            Map.entry("seagreen", new Color(46, 139, 87)),
+            Map.entry("seashell", new Color(255, 245, 238)),
+            Map.entry("sienna", new Color(160, 82, 45)),
+            Map.entry("silver", new Color(192, 192, 192)),
+            Map.entry("skyblue", new Color(135, 206, 235)),
+            Map.entry("slateblue", new Color(106, 90, 205)),
+            Map.entry("slategray", new Color(112, 128, 144)),
+            Map.entry("slategrey", new Color(112, 128, 144)),
+            Map.entry("snow", new Color(255, 250, 250)),
+            Map.entry("springgreen", new Color(0, 255, 127)),
+            Map.entry("steelblue", new Color(70, 130, 180)),
+            Map.entry("tan", new Color(210, 180, 140)),
+            Map.entry("teal", new Color(0, 128, 128)),
+            Map.entry("thistle", new Color(216, 191, 216)),
+            Map.entry("tomato", new Color(255, 99, 71)),
+            Map.entry("transparent", new Color(0, 0, 0, 0)),
+            Map.entry("turquoise", new Color(64, 224, 208)),
+            Map.entry("violet", new Color(238, 130, 238)),
+            Map.entry("wheat", new Color(245, 222, 179)),
+            Map.entry("white", new Color(255, 255, 255)),
+            Map.entry("whitesmoke", new Color(245, 245, 245)),
+            Map.entry("yellow", new Color(255, 255, 0)),
+            Map.entry("yellowgreen", new Color(154, 205, 50))
+            );
     }
 
     /**
-     * Parses a String in the format <code>rgb(r, g, b)</code> where
-     * each of the Color components is either an integer, or a floating number
-     * with a % after indicating a percentage value of 255. Values are
-     * constrained to fit with 0-255. The resulting Color is returned.
+     * Parses a String using the grammar described in the
+     * <a href="https://www.w3.org/TR/css-color-4/#rgb-functions">
+     *     CSS-COLOR-4 5.1.The RGB functions
+     * </a> specifications.
+     * By example {@code rgb(rc gc bc)}, {@code rgb(rc,gc,bc)},
+     * {@code rgb(rc gc bc / ac)}, {@code rgb(rc,gc,bc,ac)} including
+     * {@code rgba} notations are valid. Each of the rc, gc, bc color
+     * components is a number in [[0,255]] or a percentage (number with a % after),
+     * indicating a percentage value of the color channel maximal value.
+     * These values are constrained to repectively fit with 0-255 or 0%-100%.
+     * The ac Color component is a single number or a percentage (number with
+     * a %) in [0,1].
+     * This value is constrained to fit with 0-1 or 0%-100%.
+     * See
+     * <a href="https://www.w3.org/TR/css-values-4/#number-value">
+     *     number
+     * </a> and
+     * <a href="https://www.w3.org/TR/css-values-4/#percentage-value">
+     *     percentage
+     * </a> in the
+     * <a href="https://www.w3.org/TR/css-values-4">
+     *    CSS-VALUE-4
+     * </a> specifications.
+     * The resulting Color is returned.
      */
-    private static Color parseRGB(String string) {
+    private static Color parseRGB(String string, byte start) {
+
+        // The array index argument :
+        // - first element : start parsing index.
+        // - second element : the color channel,
+        //   -
+        //   - red   : 1.
+        //   - green : 2.
+        //   - blue  : 3.
+        //   - alpha : 4.
+        // - third element : type value.
+        //   - indeterminated : -1.
+        //   - conflict       : 0. return black color.
+        //   - a number       : 1. rc, gc and bc are numbers.
+        //         Use Color(int r, int g, int b) or
+        //         Color(int r, int g, int b, int a). Linear transform alpha value from [0,1] to [0,255].
+        //   - a percentage   : 2. rc, gc and bc are percentages.
+        //         Use Color(float r, float g, float b) or
+        //         Color(float r, float g, float b, float a).
+        byte[] index = new byte[3];
+
         // Find the next numeric char
-        int[] index = new int[1];
-
-        index[0] = 4;
-        int red = (int)getColorComponent(string, index);
-        int green = (int)getColorComponent(string, index);
-        int blue = (int)getColorComponent(string, index);
-
-        return new Color(red, green, blue);
+        index[0] = start;
+        index[1] = 1;
+        index[2] = -1;
+        // A negative compoment means color is not well formed and
+        float red = getColorComponent(string, index);
+        if (red < 0) return new Color(0f, 0f, 0f);
+        float green = getColorComponent(string, index);
+        if (green < 0) return new Color(0f, 0f, 0f);
+        float blue = getColorComponent(string, index);
+        if (blue < 0) return new Color(0f, 0f, 0f);
+        float alpha = getColorComponent(string, index);
+        if (alpha == -1) return new Color(0f, 0f, 0f);
+        if (alpha < 0) {
+            return new Color(red, green, blue);
+        } else {
+            return new Color(red, green, blue, alpha);
+        }
     }
 
+    /*
     private static Color parseRGBA(String string) {
         // Find the next numeric char
-        int[] index = new int[1];
+        byte[] index = new byte[2];
 
         index[0] = 4;
-        float red = getColorComponent(string, index)/255f;
-        float green = getColorComponent(string, index)/255f;
-        float blue = getColorComponent(string, index)/255f;
+        index[1] = 1;
+        float red = getColorComponent(string, index);
+        if (red < 0) return new Color(0, 0, 0);
+        float green = getColorComponent(string, index);
+        if (green < 0) return new Color(0, 0, 0);
+        float blue = getColorComponent(string, index);
+        if (blue < 0) return new Color(0, 0, 0);
         float alpha = getColorComponent(string, index);
-
-        return new Color(red, green, blue, alpha);
+        if (alpha == -1) return new Color(0, 0, 0);
+        if (alpha < 0) {
+            return new Color(red, green, blue);
+        } else {
+            return new Color(red, green, blue, alpha);
+        }
     }
+    */
 
+    private static int SIGNIFICAND_MAX = 655350000;
     /**
-     * Returns the next integer value from <code>string</code> starting
-     * at <code>index[0]</code>. The value can either can an integer, or
-     * a percentage (floating number ending with %), in which case it is
-     * multiplied by 255.
+     * Returns the next float value from {@code string} starting
+     * at {@code index[0]}. The value can either can a number, or
+     * a percentage (number ending with %), in which case it is
+     * multiplied by 255 except for the alpha Color component.
      */
-    private static float getColorComponent(String string, int[] index) {
+    private static float getColorComponent(String string, byte[] index) {
         int length = string.length();
-        char aChar;
+        char aChar = '?';
+        boolean sep = false;
+        // Only one separator
+        boolean oosep = false;
 
-        // Skip non-decimal chars
-        while(index[0] < length && (aChar = string.charAt(index[0])) != '-' &&
-              !Character.isDigit(aChar) && aChar != '.') {
+        // Principles
+        // - the attribute value is supposed to be well-formed i.e. as provided by the CSSParser.java :
+        //   - Does not contain white space(s) at the beginning of the string and the end of the string.
+        //   - Match the sequence directly following the name of the rgb or rgba functions.
+        //     White-space(s) between rgb or rgba and ( is (are) removed.
+        //   - Multiple spaces between '(', value, ',' or ')' are replaced by only one space.
+        //   - contains well formed blocks (), this is ensured by the parser CSSParser.java but through an Exception.
+        //   - Components are well-formed and must be a none keyword, a number or a percentage.
+        //   - The sequence of characters is predictable.
+        // - Any deviation from the expected, generates the rejection of the component.
+
+        // Must return :
+        // - a positive float if succeed to parse a decimal value or percent value.
+        // - the value -1 if the argument format is wrong.
+        // - the value -2 if failed to parse expected separator.
+        // - the value -3 if conflict between number and percentage.
+        //
+        // The index argument
+        // - Update the index of
+        //   - start parsing index value,
+        //   - component,
+        //   -
+        // - the value -3 rc, gc and bc are numbers. Use Color(int r, int g, int b) or Color(int r, int g, int b, int a).
+        // - the value -4 rc, gc and bc are percentages. Use Color(float r, float g, float b) or Color(float r, float g, float b, float a).
+
+        // Alphabet :
+        // - "( ,.-+0123456789/%)noe"
+
+        // Keyword :
+        // - Only one : none
+
+        // Grammar
+        // - argument :== ("rgb" | "rgba") "(" {<decimal-number> "%"? (" "* | ",")}3 ["/" <decimal-number> "%"?] ")"
+        // - decimal-number :== ["+" | "-"] digit* ["." digit*]  ["e" ["+" | "-"] digit*]
+        // - digit :== "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+        // - rgbc :: 'rgb'
+        // - delimitors :: = ( none
+        //
+        // Skip unauthorized characters :
+        // - Starting number alphabet
+        //   - non-number sign,
+        //   - non-decimal digit,
+        // - Separator signs
+        //   - non-whitespace,
+        //   - non-comma,
+        //   - non-slash,
+        // And store last word of 6 characters, may contain keyword "none"
+
+        // Try to detect the rigth separator and reach the first character different from ' '.
+        String seplist = index[1] == 1 ? "( " :
+                         index[1] > 3 ? " ,/" : " ,";
+
+        // Can continue to scan
+        boolean notReachEnd = true;
+        while (notReachEnd = (index[0] < length
+              && ((aChar = string.charAt(index[0])) != ')'))) {
+            if (seplist.indexOf(aChar) > -1/* || Character.isSpaceChar(aChar)*/) {
+                sep = true;
+                if (oosep && aChar != ' ') {
+                    // Two consecutive non space separators.
+                    // - Never happens with a parsed string because of CSSParser
+                    // - But useful for StyleSheet.stringToColor
+                    return -1;
+                } else {
+                    if (aChar != ' ') oosep = true;
+                }
+            } else {
+                break;
+            }
             index[0]++;
         }
+        // End of string or no separator detected, terminate.
+        if (!notReachEnd || !sep) return -2;
 
+        // From here
+        // - current char is in +-0123456789n
+        // - start build value
+        //   - value could be 0 if none detected
+        //   - a number or a percentage
+
+        // Try to detect 'none' keyword
+        if (aChar == 'n') {
+            String snkw = string.substring(index[0], Math.min(index[0] + 4, length));
+            if (snkw.equals("none")) {
+                index[1]++;
+                index[0] += 4;
+                return 0;
+            } else {
+                return -1;
+            }
+        }
+
+        // From here, next expected char is only +-0123456789
         int start = index[0];
-
-        if (start < length && string.charAt(index[0]) == '-') {
+        boolean negative = false;
+        if (aChar == '+' || (negative = aChar == '-')) {
             index[0]++;
         }
-        while(index[0] < length &&
-                         Character.isDigit(string.charAt(index[0]))) {
+
+        // From here next expected chars are only 0123456789
+        int significand = 0;
+        int tenpower = 0;
+        float fvalueIntergerPart = 0;
+        float fvalueFractionalPart = 0;
+
+        while (notReachEnd = (index[0] < length
+               && ((aChar = string.charAt(index[0])) != ')')
+               && Character.isDigit(aChar))) {
             index[0]++;
+            if (significand < SIGNIFICAND_MAX) {
+                significand = significand * 10 + (aChar - '0')/* * 10000*/;
+            } else if (tenpower < Integer.MAX_VALUE) {
+                tenpower++;
+            } else {
+                // Treatement over capacity Treat as 0, not sure ! May as infinite.
+                return 0;
+            }
         }
         if (index[0] < length && string.charAt(index[0]) == '.') {
-            // Decimal value
+            // Fractional part
             index[0]++;
-            while(index[0] < length &&
-                  Character.isDigit(string.charAt(index[0]))) {
+            // From here next expected chars are only 0123456789.
+            // Only next four digits are take in count.
+            while (index[0] < length
+                  && ((aChar = string.charAt(index[0])) != ')')
+                  && Character.isDigit(aChar)) {
+                index[0]++;
+                if (significand < SIGNIFICAND_MAX) {
+                   if (tenpower > Integer.MIN_VALUE) {
+                       significand = significand * 10 + (aChar - '0');
+                       tenpower--;
+                   }
+                }
+            }
+        }
+        if (index[0] < length && (string.charAt(index[0]) == 'e' || string.charAt(index[0]) == 'E')) {
+            boolean negativeExpSign = false;
+            index[0]++;
+            if (index[0] < length && ((aChar = string.charAt(index[0])) == '+' || (negativeExpSign = (aChar == '-')))) {
                 index[0]++;
             }
-        }
-        if (start != index[0]) {
-            try {
-                float value = Float.parseFloat(string.substring
-                                               (start, index[0]));
-
-                if (index[0] < length && string.charAt(index[0]) == '%') {
-                    index[0]++;
-                    value = value * 255f / 100f;
-                }
-                return Math.min(255f, Math.max(0, value));
-            } catch (NumberFormatException nfe) {
-                // Treat as 0
+            // Exponent value
+            int exponent = 0;
+            // From here next expected chars are only 0123456789
+            while (index[0] < length
+                  && ((aChar = string.charAt(index[0])) != ')')
+                  && Character.isDigit(aChar)) {
+                index[0]++;
+                exponent = exponent * 10 + aChar - '0';
             }
+            tenpower = negativeExpSign ? tenpower - exponent : tenpower + exponent;
         }
-        return 0;
+
+        // From here next expected char is "% ,/)"
+        if (index[0] < length
+            && "% ,/)".indexOf(aChar) < 0) return -1;
+        if (tenpower < -10) return 0;
+        // Not sure : over capacity should return infinite.
+        if (tenpower > 10) return 0;
+        if (start != index[0]) {
+            float value = significand;
+            if (index[0] < length && string.charAt(index[0]) == '%') {
+                index[0]++;
+                /* Should replace the previous line in the next version
+                if (index[2] == 2) {
+                    index[0]++;
+                } else {
+                    index[2] = 0;
+                    return 0;
+                }
+                */
+                if (tenpower > Integer.MIN_VALUE + 2) {
+                    tenpower -= 2;
+                } else return 0;
+            } else if (index[1] < 4) {
+                value = value / 255f;
+                /* Should replace the previous line in the next version
+                if (index[2] == 1) {
+                    value = value / 255f;
+                } else {
+                    index[2] = 0;
+                    return 0;
+                }
+                */
+            }
+            // Reject negative value;
+            // Clamp value in [[0,255]] or [0,1]
+            // By example -12 ou -12% must return 0 !
+            // Not return before to be sure the value is valid.
+            // That's why, I set it here.
+            if (negative) return 0;
+            if (tenpower < 0) {
+                value = value / FLOAT_10_POW[-tenpower];
+            } else {
+                value = value * FLOAT_10_POW[tenpower];
+            }
+            index[1]++;
+            return Math.min(1, value);
+        }
+        return -1;
     }
+
+    private static final float[] FLOAT_10_POW = {
+        1.0e0f,
+        1.0e1f, 1.0e2f, 1.0e3f, 1.0e4f, 1.0e5f,
+        1.0e6f, 1.0e7f, 1.0e8f, 1.0e9f, 1.0e10f
+    };
 
     static int getIndexOfSize(float pt, int[] sizeMap) {
         for (int i = 0; i < sizeMap.length; i ++ )
@@ -1567,7 +1943,7 @@ public class CSS implements Serializable {
 
 
     /**
-     * @return an array of all the strings in <code>value</code>
+     * @return an array of all the strings in {@code value}
      *         that are separated by whitespace.
      */
     static String[] parseStrings(String value) {
@@ -1851,15 +2227,15 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a <code>StyleConstants</code> attribute value to
+         * Converts a {@code StyleConstants} attribute value to
          * a CSS attribute value.  If there is no conversion,
-         * returns <code>null</code>.  By default, there is no conversion.
+         * returns {@code null}.  By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @param value the value of a <code>StyleConstants</code>
+         * @param key the {@code StyleConstants} attribute
+         * @param value the value of a {@code StyleConstants}
          *   attribute to be converted
          * @return the CSS value that represents the
-         *   <code>StyleConstants</code> value
+         *   {@code StyleConstants} value
          */
         Object fromStyleConstants(StyleConstants key, Object value) {
             return null;
@@ -1867,14 +2243,14 @@ public class CSS implements Serializable {
 
         /**
          * Converts a CSS attribute value to a
-         * <code>StyleConstants</code>
+         * {@code StyleConstants}
          * value.  If there is no conversion, returns
-         * <code>null</code>.
+         * {@code null}.
          * By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @param v the view containing <code>AttributeSet</code>
-         * @return the <code>StyleConstants</code> attribute value that
+         * @param key the {@code StyleConstants} attribute
+         * @param v the view containing {@code AttributeSet}
+         * @return the {@code StyleConstants} attribute value that
          *   represents the CSS attribute value
          */
         Object toStyleConstants(StyleConstants key, View v) {
@@ -1919,15 +2295,15 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a <code>StyleConstants</code> attribute value to
+         * Converts a {@code StyleConstants} attribute value to
          * a CSS attribute value.  If there is no conversion
-         * returns <code>null</code>.
+         * returns {@code null}.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @param value the value of a <code>StyleConstants</code>
+         * @param key the {@code StyleConstants} attribute
+         * @param value the value of a {@code StyleConstants}
          *   attribute to be converted
          * @return the CSS value that represents the
-         *   <code>StyleConstants</code> value
+         *   {@code StyleConstants} value
          */
         Object fromStyleConstants(StyleConstants key, Object value) {
             if (key == StyleConstants.Italic) {
@@ -1981,12 +2357,12 @@ public class CSS implements Serializable {
 
         /**
          * Converts a CSS attribute value to a
-         * <code>StyleConstants</code> value.
-         * If there is no conversion, returns <code>null</code>.
+         * {@code StyleConstants} value.
+         * If there is no conversion, returns {@code null}.
          * By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @return the <code>StyleConstants</code> attribute value that
+         * @param key the {@code StyleConstants} attribute
+         * @return the {@code StyleConstants} attribute value that
          *   represents the CSS attribute value
          */
         Object toStyleConstants(StyleConstants key, View v) {
@@ -2199,15 +2575,15 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a <code>StyleConstants</code> attribute value to
+         * Converts a {@code StyleConstants} attribute value to
          * a CSS attribute value.  If there is no conversion
-         * returns <code>null</code>.  By default, there is no conversion.
+         * returns {@code null}.  By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @param value the value of a <code>StyleConstants</code>
+         * @param key the {@code StyleConstants} attribute
+         * @param value the value of a {@code StyleConstants}
          *   attribute to be converted
          * @return the CSS value that represents the
-         *   <code>StyleConstants</code> value
+         *   {@code StyleConstants} value
          */
         Object fromStyleConstants(StyleConstants key, Object value) {
             if (value instanceof Number) {
@@ -2222,12 +2598,12 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a CSS attribute value to a <code>StyleConstants</code>
-         * value.  If there is no conversion, returns <code>null</code>.
+         * Converts a CSS attribute value to a {@code StyleConstants}
+         * value.  If there is no conversion, returns {@code null}.
          * By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @return the <code>StyleConstants</code> attribute value that
+         * @param key the {@code StyleConstants} attribute
+         * @return the {@code StyleConstants} attribute value that
          *   represents the CSS attribute value
          */
         Object toStyleConstants(StyleConstants key, View v) {
@@ -2325,27 +2701,27 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a <code>StyleConstants</code> attribute value to
+         * Converts a {@code StyleConstants} attribute value to
          * a CSS attribute value.  If there is no conversion
-         * returns <code>null</code>.  By default, there is no conversion.
+         * returns {@code null}.  By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @param value the value of a <code>StyleConstants</code>
+         * @param key the {@code StyleConstants} attribute
+         * @param value the value of a {@code StyleConstants}
          *   attribute to be converted
          * @return the CSS value that represents the
-         *   <code>StyleConstants</code> value
+         *   {@code StyleConstants} value
          */
         Object fromStyleConstants(StyleConstants key, Object value) {
             return parseCssValue(value.toString());
         }
 
         /**
-         * Converts a CSS attribute value to a <code>StyleConstants</code>
-         * value.  If there is no conversion, returns <code>null</code>.
+         * Converts a CSS attribute value to a {@code StyleConstants}
+         * value.  If there is no conversion, returns {@code null}.
          * By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @return the <code>StyleConstants</code> attribute value that
+         * @param key the {@code StyleConstants} attribute
+         * @return the {@code StyleConstants} attribute value that
          *   represents the CSS attribute value
          */
         Object toStyleConstants(StyleConstants key, View v) {
@@ -2392,15 +2768,15 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a <code>StyleConstants</code> attribute value to
+         * Converts a {@code StyleConstants} attribute value to
          * a CSS attribute value.  If there is no conversion
-         * returns <code>null</code>.  By default, there is no conversion.
+         * returns {@code null}.  By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @param value the value of a <code>StyleConstants</code>
+         * @param key the {@code StyleConstants} attribute
+         * @param value the value of a {@code StyleConstants}
          *   attribute to be converted
          * @return the CSS value that represents the
-         *   <code>StyleConstants</code> value
+         *   {@code StyleConstants} value
          */
         Object fromStyleConstants(StyleConstants key, Object value) {
             if (value.equals(Boolean.TRUE)) {
@@ -2410,12 +2786,12 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a CSS attribute value to a <code>StyleConstants</code>
-         * value.  If there is no conversion, returns <code>null</code>.
+         * Converts a CSS attribute value to a {@code StyleConstants}
+         * value.  If there is no conversion, returns {@code null}.
          * By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @return the <code>StyleConstants</code> attribute value that
+         * @param key the {@code StyleConstants} attribute
+         * @return the {@code StyleConstants} attribute value that
          *   represents the CSS attribute value
          */
         Object toStyleConstants(StyleConstants key, View v) {
@@ -2467,15 +2843,15 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a <code>StyleConstants</code> attribute value to
+         * Converts a {@code StyleConstants} attribute value to
          * a CSS attribute value.  If there is no conversion
-         * returns <code>null</code>.  By default, there is no conversion.
+         * returns {@code null}.  By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @param value the value of a <code>StyleConstants</code>
+         * @param key the {@code StyleConstants} attribute
+         * @param value the value of a {@code StyleConstants}
          *   attribute to be converted
          * @return the CSS value that represents the
-         *   <code>StyleConstants</code> value
+         *   {@code StyleConstants} value
          */
         Object fromStyleConstants(StyleConstants key, Object value) {
             ColorValue colorValue = new ColorValue();
@@ -2485,12 +2861,12 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a CSS attribute value to a <code>StyleConstants</code>
-         * value.  If there is no conversion, returns <code>null</code>.
+         * Converts a CSS attribute value to a {@code StyleConstants}
+         * value.  If there is no conversion, returns {@code null}.
          * By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @return the <code>StyleConstants</code> attribute value that
+         * @param key the {@code StyleConstants} attribute
+         * @return the {@code StyleConstants} attribute value that
          *   represents the CSS attribute value
          */
         Object toStyleConstants(StyleConstants key, View v) {
@@ -2604,7 +2980,7 @@ public class CSS implements Serializable {
 
         /**
          * Returns the length (span) to use. If the value represents
-         * a percentage, it is scaled based on <code>currentValue</code>.
+         * a percentage, it is scaled based on {@code currentValue}.
          */
         float getValue(float currentValue) {
             return getValue(currentValue, false);
@@ -2668,15 +3044,15 @@ public class CSS implements Serializable {
             return parseCssValue(value);
         }
         /**
-         * Converts a <code>StyleConstants</code> attribute value to
+         * Converts a {@code StyleConstants} attribute value to
          * a CSS attribute value.  If there is no conversion,
-         * returns <code>null</code>.  By default, there is no conversion.
+         * returns {@code null}.  By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @param value the value of a <code>StyleConstants</code>
+         * @param key the {@code StyleConstants} attribute
+         * @param value the value of a {@code StyleConstants}
          *   attribute to be converted
          * @return the CSS value that represents the
-         *   <code>StyleConstants</code> value
+         *   {@code StyleConstants} value
          */
         Object fromStyleConstants(StyleConstants key, Object value) {
             LengthValue v = new LengthValue();
@@ -2686,12 +3062,12 @@ public class CSS implements Serializable {
         }
 
         /**
-         * Converts a CSS attribute value to a <code>StyleConstants</code>
-         * value.  If there is no conversion, returns <code>null</code>.
+         * Converts a CSS attribute value to a {@code StyleConstants}
+         * value.  If there is no conversion, returns {@code null}.
          * By default, there is no conversion.
          *
-         * @param key the <code>StyleConstants</code> attribute
-         * @return the <code>StyleConstants</code> attribute value that
+         * @param key the {@code StyleConstants} attribute
+         * @return the {@code StyleConstants} attribute value that
          *   represents the CSS attribute value
          */
         Object toStyleConstants(StyleConstants key, View v) {
@@ -3141,8 +3517,8 @@ public class CSS implements Serializable {
      */
     static class ShorthandFontParser {
         /**
-         * Parses the shorthand font string <code>value</code>, placing the
-         * result in <code>attr</code>.
+         * Parses the shorthand font string {@code value}, placing the
+         * result in {@code attr}.
          */
         static void parseShorthandFont(CSS css, String value,
                                        MutableAttributeSet attr) {
@@ -3283,8 +3659,8 @@ public class CSS implements Serializable {
      */
     static class ShorthandBackgroundParser {
         /**
-         * Parses the shorthand font string <code>value</code>, placing the
-         * result in <code>attr</code>.
+         * Parses the shorthand font string {@code value}, placing the
+         * result in {@code attr}.
          */
         static void parseShorthandBackground(CSS css, String value,
                                              MutableAttributeSet attr) {
@@ -3389,8 +3765,8 @@ public class CSS implements Serializable {
     static class ShorthandMarginParser {
         /**
          * Parses the shorthand margin/padding/border string
-         * <code>value</code>, placing the result in <code>attr</code>.
-         * <code>names</code> give the 4 intrinsic property names.
+         * {@code value}, placing the result in {@code attr}.
+         * {@code names} give the 4 intrinsic property names.
          */
         static void parseShorthandMargin(CSS css, String value,
                                          MutableAttributeSet attr,
