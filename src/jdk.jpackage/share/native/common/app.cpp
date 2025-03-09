@@ -33,7 +33,7 @@
 
 
 namespace {
-const std::string* theLastErrorMsg = 0;
+const std::string* theLastErrorMsg = NULL;
 
 char nopLogAppenderMemory[sizeof(NopLogAppender)] = {};
 
@@ -63,7 +63,7 @@ public:
     ResetLastErrorMsgAtEndOfScope() {
     }
     ~ResetLastErrorMsgAtEndOfScope() {
-        JP_NO_THROW(theLastErrorMsg = 0);
+        JP_NO_THROW(theLastErrorMsg = NULL);
     }
 };
 

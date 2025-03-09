@@ -34,7 +34,7 @@
 // See threadCritical.hpp for details of this class.
 //
 
-static pthread_t             tc_owner = 0;
+static pthread_t             tc_owner = nullptr;
 
 PRAGMA_DIAG_PUSH
 PRAGMA_ZERO_AS_NULL_POINTER_CONSTANT_IGNORED
@@ -60,7 +60,7 @@ ThreadCritical::~ThreadCritical() {
 
   tc_count--;
   if (tc_count == 0) {
-    tc_owner = 0;
+    tc_owner = nullptr;
     int ret = pthread_mutex_unlock(&tc_mutex);
     guarantee(ret == 0, "fatal error with pthread_mutex_unlock()");
   }
