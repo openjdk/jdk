@@ -50,6 +50,8 @@ import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.LongFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
@@ -195,17 +197,55 @@ public final class Collectors {
      * @param <R> the type of the result
      */
     record CollectorImpl<T, A, R>(Supplier<A> supplier,
+                                  LongFunction<A> sizedSupplier,
                                   BiConsumer<A, T> accumulator,
                                   BinaryOperator<A> combiner,
                                   Function<A, R> finisher,
                                   Set<Characteristics> characteristics
             ) implements Collector<T, A, R> {
 
-        CollectorImpl(Supplier<A> supplier,
-                      BiConsumer<A, T> accumulator,
-                      BinaryOperator<A> combiner,
-                      Set<Characteristics> characteristics) {
-            this(supplier, accumulator, combiner, castingIdentity(), characteristics);
+        static <T, A, R> CollectorImpl<T, A, R> ofUnsized(Supplier<A> supplier,
+                                                          BiConsumer<A, T> accumulator,
+                                                          BinaryOperator<A> combiner,
+                                                          Function<A, R> finisher,
+                                                          Set<Characteristics> characteristics) {
+            return new CollectorImpl<>(supplier,
+                                  _ -> supplier.get(),
+                                       accumulator,
+                                       combiner,
+                                       finisher,
+                                       characteristics);
+        }
+
+        static <T, A, R> CollectorImpl<T, A, R> ofUnsized(Supplier<A> supplier,
+                                                          BiConsumer<A, T> accumulator,
+                                                          BinaryOperator<A> combiner,
+                                                          Set<Characteristics> characteristics) {
+            return ofUnsized(supplier, accumulator, combiner, castingIdentity(), characteristics);
+        }
+
+        static <T, A, R> CollectorImpl<T, A, R> of(Supplier<A> supplier,
+                                                   IntFunction<A> sizedSupplier,
+                                                   BiConsumer<A, T> accumulator,
+                                                   BinaryOperator<A> combiner,
+                                                   Function<A, R> finisher,
+                                                   Set<Characteristics> characteristics) {
+            return new CollectorImpl<>(supplier,
+                                  exactSizeIfKnown -> exactSizeIfKnown != -1
+                                       ? sizedSupplier.apply((int) Math.min(exactSizeIfKnown, Integer.MAX_VALUE))
+                                       : supplier.get(),
+                                       accumulator,
+                                       combiner,
+                                       finisher,
+                                       characteristics);
+        }
+
+        static <T, A, R> CollectorImpl<T, A, R> of(Supplier<A> supplier,
+                                                   IntFunction<A> sizedSupplier,
+                                                   BiConsumer<A, T> accumulator,
+                                                   BinaryOperator<A> combiner,
+                                                   Set<Characteristics> characteristics) {
+            return of(supplier, sizedSupplier, accumulator, combiner, castingIdentity(), characteristics);
         }
     }
 
@@ -223,9 +263,9 @@ public final class Collectors {
      */
     public static <T, C extends Collection<T>>
     Collector<T, ?, C> toCollection(Supplier<C> collectionFactory) {
-        return new CollectorImpl<>(collectionFactory, Collection::add,
-                                   (r1, r2) -> { r1.addAll(r2); return r1; },
-                                   CH_ID);
+        return CollectorImpl.ofUnsized(collectionFactory, Collection::add,
+                                       (r1, r2) -> { r1.addAll(r2); return r1; },
+                                       CH_ID);
     }
 
     /**
@@ -240,9 +280,9 @@ public final class Collectors {
      */
     public static <T>
     Collector<T, ?, List<T>> toList() {
-        return new CollectorImpl<>(ArrayList::new, List::add,
-                                   (left, right) -> { left.addAll(right); return left; },
-                                   CH_ID);
+        return CollectorImpl.of(ArrayList::new, ArrayList::new, List::add,
+                                (left, right) -> { left.addAll(right); return left; },
+                                CH_ID);
     }
 
     /**
@@ -258,17 +298,17 @@ public final class Collectors {
      */
     public static <T>
     Collector<T, ?, List<T>> toUnmodifiableList() {
-        return new CollectorImpl<>(ArrayList::new, List::add,
-                                   (left, right) -> { left.addAll(right); return left; },
-                                   list -> {
-                                       if (list.getClass() == ArrayList.class) { // ensure it's trusted
-                                           return SharedSecrets.getJavaUtilCollectionAccess()
-                                                               .listFromTrustedArray(list.toArray());
-                                       } else {
-                                           throw new IllegalArgumentException();
-                                       }
-                                   },
-                                   CH_NOID);
+        return CollectorImpl.of(ArrayList::new, ArrayList::new, List::add,
+                                (left, right) -> { left.addAll(right); return left; },
+                list -> {
+                                    if (list.getClass() == ArrayList.class) { // ensure it's trusted
+                                        return SharedSecrets.getJavaUtilCollectionAccess()
+                                                            .listFromTrustedArray(list.toArray());
+                                    } else {
+                                        throw new IllegalArgumentException();
+                                    }
+                                },
+                                CH_NOID);
     }
 
     /**
@@ -287,15 +327,15 @@ public final class Collectors {
      */
     public static <T>
     Collector<T, ?, Set<T>> toSet() {
-        return new CollectorImpl<>(HashSet::new, Set::add,
-                                   (left, right) -> {
-                                       if (left.size() < right.size()) {
-                                           right.addAll(left); return right;
-                                       } else {
-                                           left.addAll(right); return left;
-                                       }
-                                   },
-                                   CH_UNORDERED_ID);
+        return CollectorImpl.ofUnsized(HashSet::new, Set::add,
+                                       (left, right) -> {
+                                           if (left.size() < right.size()) {
+                                               right.addAll(left); return right;
+                                           } else {
+                                               left.addAll(right); return left;
+                                           }
+                                       },
+                                       CH_UNORDERED_ID);
     }
 
     /**
@@ -316,16 +356,16 @@ public final class Collectors {
     @SuppressWarnings("unchecked")
     public static <T>
     Collector<T, ?, Set<T>> toUnmodifiableSet() {
-        return new CollectorImpl<>(HashSet::new, Set::add,
-                                   (left, right) -> {
-                                       if (left.size() < right.size()) {
-                                           right.addAll(left); return right;
-                                       } else {
-                                           left.addAll(right); return left;
-                                       }
-                                   },
-                                   set -> (Set<T>)Set.of(set.toArray()),
-                                   CH_UNORDERED_NOID);
+        return CollectorImpl.ofUnsized(HashSet::new, Set::add,
+                                       (left, right) -> {
+                                           if (left.size() < right.size()) {
+                                               right.addAll(left); return right;
+                                           } else {
+                                               left.addAll(right); return left;
+                                           }
+                                       },
+                                       set -> (Set<T>) Set.of(set.toArray()),
+                                       CH_UNORDERED_NOID);
     }
 
     /**
@@ -336,7 +376,7 @@ public final class Collectors {
      * {@code String}, in encounter order
      */
     public static Collector<CharSequence, ?, String> joining() {
-        return new CollectorImpl<>(
+        return CollectorImpl.ofUnsized(
                 StringBuilder::new, StringBuilder::append,
                 (r1, r2) -> {
                     r1.append(r2);
@@ -373,8 +413,9 @@ public final class Collectors {
     public static Collector<CharSequence, ?, String> joining(CharSequence delimiter,
                                                              CharSequence prefix,
                                                              CharSequence suffix) {
-        return new CollectorImpl<>(
+        return CollectorImpl.of(
                 () -> new StringJoiner(delimiter, prefix, suffix),
+                exactSize -> new StringJoiner(delimiter, prefix, suffix, exactSize),
                 StringJoiner::add, StringJoiner::merge,
                 StringJoiner::toString, CH_NOID);
     }
@@ -431,7 +472,7 @@ public final class Collectors {
     Collector<T, ?, R> mapping(Function<? super T, ? extends U> mapper,
                                Collector<? super U, A, R> downstream) {
         BiConsumer<A, ? super U> downstreamAccumulator = downstream.accumulator();
-        return new CollectorImpl<>(downstream.supplier(),
+        return new CollectorImpl<>(downstream.supplier(), downstream.sizedSupplier(),
                                    (r, t) -> downstreamAccumulator.accept(r, mapper.apply(t)),
                                    downstream.combiner(), downstream.finisher(),
                                    downstream.characteristics());
@@ -476,7 +517,7 @@ public final class Collectors {
     Collector<T, ?, R> flatMapping(Function<? super T, ? extends Stream<? extends U>> mapper,
                                    Collector<? super U, A, R> downstream) {
         BiConsumer<A, ? super U> downstreamAccumulator = downstream.accumulator();
-        return new CollectorImpl<>(downstream.supplier(),
+        return CollectorImpl.ofUnsized(downstream.supplier(),
                             (r, t) -> {
                                 try (Stream<? extends U> result = mapper.apply(t)) {
                                     if (result != null)
@@ -526,7 +567,7 @@ public final class Collectors {
     Collector<T, ?, R> filtering(Predicate<? super T> predicate,
                                  Collector<? super T, A, R> downstream) {
         BiConsumer<A, ? super T> downstreamAccumulator = downstream.accumulator();
-        return new CollectorImpl<>(downstream.supplier(),
+        return CollectorImpl.ofUnsized(downstream.supplier(),
                                    (r, t) -> {
                                        if (predicate.test(t)) {
                                            downstreamAccumulator.accept(r, t);
@@ -567,7 +608,7 @@ public final class Collectors {
                 characteristics = Collections.unmodifiableSet(characteristics);
             }
         }
-        return new CollectorImpl<>(downstream.supplier(),
+        return new CollectorImpl<>(downstream.supplier(), downstream.sizedSupplier(),
                                    downstream.accumulator(),
                                    downstream.combiner(),
                                    downstream.finisher().andThen(finisher),
@@ -642,7 +683,7 @@ public final class Collectors {
      */
     public static <T> Collector<T, ?, Integer>
     summingInt(ToIntFunction<? super T> mapper) {
-        return new CollectorImpl<>(
+        return CollectorImpl.ofUnsized(
                 () -> new int[1],
                 (a, t) -> { a[0] += mapper.applyAsInt(t); },
                 (a, b) -> { a[0] += b[0]; return a; },
@@ -660,7 +701,7 @@ public final class Collectors {
      */
     public static <T> Collector<T, ?, Long>
     summingLong(ToLongFunction<? super T> mapper) {
-        return new CollectorImpl<>(
+        return CollectorImpl.ofUnsized(
                 () -> new long[1],
                 (a, t) -> { a[0] += mapper.applyAsLong(t); },
                 (a, b) -> { a[0] += b[0]; return a; },
@@ -693,7 +734,7 @@ public final class Collectors {
          * the proper result if the stream contains infinite values of
          * the same sign.
          */
-        return new CollectorImpl<>(
+        return CollectorImpl.ofUnsized(
                 () -> new double[3],
                 (a, t) -> { double val = mapper.applyAsDouble(t);
                             sumWithCompensation(a, val);
@@ -702,7 +743,7 @@ public final class Collectors {
                             a[2] += b[2];
                             // Subtract compensation bits
                             return sumWithCompensation(a, -b[1]); },
-                a -> computeFinalSum(a),
+                Collectors::computeFinalSum,
                 CH_NOID);
     }
 
@@ -753,7 +794,7 @@ public final class Collectors {
      */
     public static <T> Collector<T, ?, Double>
     averagingInt(ToIntFunction<? super T> mapper) {
-        return new CollectorImpl<>(
+        return CollectorImpl.ofUnsized(
                 () -> new long[2],
                 (a, t) -> { a[0] += mapper.applyAsInt(t); a[1]++; },
                 (a, b) -> { a[0] += b[0]; a[1] += b[1]; return a; },
@@ -772,7 +813,7 @@ public final class Collectors {
      */
     public static <T> Collector<T, ?, Double>
     averagingLong(ToLongFunction<? super T> mapper) {
-        return new CollectorImpl<>(
+        return CollectorImpl.ofUnsized(
                 () -> new long[2],
                 (a, t) -> { a[0] += mapper.applyAsLong(t); a[1]++; },
                 (a, b) -> { a[0] += b[0]; a[1] += b[1]; return a; },
@@ -810,7 +851,7 @@ public final class Collectors {
          * the negated low-order bits of the sum computed via compensated
          * summation, and index 2 holds the number of values seen.
          */
-        return new CollectorImpl<>(
+        return CollectorImpl.ofUnsized(
                 () -> new double[4],
                 (a, t) -> { double val = mapper.applyAsDouble(t); sumWithCompensation(a, val); a[2]++; a[3]+= val;},
                 (a, b) -> {
@@ -846,7 +887,7 @@ public final class Collectors {
      */
     public static <T> Collector<T, ?, T>
     reducing(T identity, BinaryOperator<T> op) {
-        return new CollectorImpl<>(
+        return CollectorImpl.ofUnsized(
                 boxSupplier(identity),
                 (a, t) -> { a[0] = op.apply(a[0], t); },
                 (a, b) -> { a[0] = op.apply(a[0], b[0]); return a; },
@@ -905,7 +946,7 @@ public final class Collectors {
             }
         }
 
-        return new CollectorImpl<>(
+        return CollectorImpl.ofUnsized(
                 OptionalBox::new, OptionalBox::accept,
                 (a, b) -> {
                     if (b.present) a.accept(b.value);
@@ -955,7 +996,7 @@ public final class Collectors {
     Collector<T, ?, U> reducing(U identity,
                                 Function<? super T, ? extends U> mapper,
                                 BinaryOperator<U> op) {
-        return new CollectorImpl<>(
+        return CollectorImpl.ofUnsized(
                 boxSupplier(identity),
                 (a, t) -> { a[0] = op.apply(a[0], mapper.apply(t)); },
                 (a, b) -> { a[0] = op.apply(a[0], b[0]); return a; },
@@ -1117,7 +1158,7 @@ public final class Collectors {
         Supplier<Map<K, A>> mangledFactory = (Supplier<Map<K, A>>) mapFactory;
 
         if (downstream.characteristics().contains(Collector.Characteristics.IDENTITY_FINISH)) {
-            return new CollectorImpl<>(mangledFactory, accumulator, merger, CH_ID);
+            return CollectorImpl.ofUnsized(mangledFactory, accumulator, merger, CH_ID);
         }
         else {
             @SuppressWarnings("unchecked")
@@ -1128,7 +1169,7 @@ public final class Collectors {
                 M castResult = (M) intermediate;
                 return castResult;
             };
-            return new CollectorImpl<>(mangledFactory, accumulator, merger, finisher, CH_NOID);
+            return CollectorImpl.ofUnsized(mangledFactory, accumulator, merger, finisher, CH_NOID);
         }
     }
 
@@ -1287,7 +1328,7 @@ public final class Collectors {
         }
 
         if (downstream.characteristics().contains(Collector.Characteristics.IDENTITY_FINISH)) {
-            return new CollectorImpl<>(mangledFactory, accumulator, merger, CH_CONCURRENT_ID);
+            return CollectorImpl.ofUnsized(mangledFactory, accumulator, merger, CH_CONCURRENT_ID);
         }
         else {
             @SuppressWarnings("unchecked")
@@ -1298,7 +1339,7 @@ public final class Collectors {
                 M castResult = (M) intermediate;
                 return castResult;
             };
-            return new CollectorImpl<>(mangledFactory, accumulator, merger, finisher, CH_CONCURRENT_NOID);
+            return CollectorImpl.ofUnsized(mangledFactory, accumulator, merger, finisher, CH_CONCURRENT_NOID);
         }
     }
 
@@ -1371,13 +1412,13 @@ public final class Collectors {
                 new Partition<>(downstream.supplier().get(),
                                 downstream.supplier().get());
         if (downstream.characteristics().contains(Collector.Characteristics.IDENTITY_FINISH)) {
-            return new CollectorImpl<>(supplier, accumulator, merger, CH_ID);
+            return CollectorImpl.ofUnsized(supplier, accumulator, merger, CH_ID);
         }
         else {
             Function<Partition<A>, Map<Boolean, D>> finisher = par ->
                     new Partition<>(downstream.finisher().apply(par.forTrue),
                                     downstream.finisher().apply(par.forFalse));
-            return new CollectorImpl<>(supplier, accumulator, merger, finisher, CH_NOID);
+            return CollectorImpl.ofUnsized(supplier, accumulator, merger, finisher, CH_NOID);
         }
     }
 
@@ -1440,10 +1481,13 @@ public final class Collectors {
     public static <T, K, U>
     Collector<T, ?, Map<K,U>> toMap(Function<? super T, ? extends K> keyMapper,
                                     Function<? super T, ? extends U> valueMapper) {
-        return new CollectorImpl<>(HashMap::new,
-                                   uniqKeysMapAccumulator(keyMapper, valueMapper),
-                                   uniqKeysMapMerger(),
-                                   CH_ID);
+        // uniqKeysMapMerger() throws if duplicate keys are encountered, so
+        // presizing is generally beneficial.
+        return CollectorImpl.of(HashMap::new,
+                                HashMap::newHashMap,
+                                uniqKeysMapAccumulator(keyMapper, valueMapper),
+                                uniqKeysMapMerger(),
+                                CH_ID);
     }
 
     /**
@@ -1641,7 +1685,7 @@ public final class Collectors {
         BiConsumer<M, T> accumulator
                 = (map, element) -> map.merge(keyMapper.apply(element),
                                               valueMapper.apply(element), mergeFunction);
-        return new CollectorImpl<>(mapFactory, accumulator, mapMerger(mergeFunction), CH_ID);
+        return CollectorImpl.ofUnsized(mapFactory, accumulator, mapMerger(mergeFunction), CH_ID);
     }
 
     /**
@@ -1699,10 +1743,13 @@ public final class Collectors {
     public static <T, K, U>
     Collector<T, ?, ConcurrentMap<K,U>> toConcurrentMap(Function<? super T, ? extends K> keyMapper,
                                                         Function<? super T, ? extends U> valueMapper) {
-        return new CollectorImpl<>(ConcurrentHashMap::new,
-                                   uniqKeysMapAccumulator(keyMapper, valueMapper),
-                                   uniqKeysMapMerger(),
-                                   CH_CONCURRENT_ID);
+        // uniqKeysMapMerger() throws if duplicate keys are encountered, so
+        // presizing is generally beneficial.
+        return CollectorImpl.of(ConcurrentHashMap::new,
+            ConcurrentHashMap::new,
+            uniqKeysMapAccumulator(keyMapper, valueMapper),
+            uniqKeysMapMerger(),
+            CH_CONCURRENT_ID);
     }
 
     /**
@@ -1805,7 +1852,7 @@ public final class Collectors {
         BiConsumer<M, T> accumulator
                 = (map, element) -> map.merge(keyMapper.apply(element),
                                               valueMapper.apply(element), mergeFunction);
-        return new CollectorImpl<>(mapFactory, accumulator, mapMerger(mergeFunction), CH_CONCURRENT_ID);
+        return CollectorImpl.ofUnsized(mapFactory, accumulator, mapMerger(mergeFunction), CH_CONCURRENT_ID);
     }
 
     /**
@@ -1822,7 +1869,7 @@ public final class Collectors {
      */
     public static <T>
     Collector<T, ?, IntSummaryStatistics> summarizingInt(ToIntFunction<? super T> mapper) {
-        return new CollectorImpl<>(
+        return CollectorImpl.ofUnsized(
                 IntSummaryStatistics::new,
                 (r, t) -> r.accept(mapper.applyAsInt(t)),
                 (l, r) -> {
@@ -1845,7 +1892,7 @@ public final class Collectors {
      */
     public static <T>
     Collector<T, ?, LongSummaryStatistics> summarizingLong(ToLongFunction<? super T> mapper) {
-        return new CollectorImpl<>(
+        return CollectorImpl.ofUnsized(
                 LongSummaryStatistics::new,
                 (r, t) -> r.accept(mapper.applyAsLong(t)),
                 (l, r) -> {
@@ -1868,7 +1915,7 @@ public final class Collectors {
      */
     public static <T>
     Collector<T, ?, DoubleSummaryStatistics> summarizingDouble(ToDoubleFunction<? super T> mapper) {
-        return new CollectorImpl<>(
+        return CollectorImpl.ofUnsized(
                 DoubleSummaryStatistics::new,
                 (r, t) -> r.accept(mapper.applyAsDouble(t)),
                 (l, r) -> {
@@ -1926,6 +1973,8 @@ public final class Collectors {
 
         Supplier<A1> c1Supplier = Objects.requireNonNull(downstream1.supplier(), "downstream1 supplier");
         Supplier<A2> c2Supplier = Objects.requireNonNull(downstream2.supplier(), "downstream2 supplier");
+        LongFunction<A1> c1SizedSupplier = Objects.requireNonNull(downstream1.sizedSupplier(), "downstream1 sizedSupplier");
+        LongFunction<A2> c2SizedSupplier = Objects.requireNonNull(downstream2.sizedSupplier(), "downstream2 sizedSupplier");
         BiConsumer<A1, ? super T> c1Accumulator =
                 Objects.requireNonNull(downstream1.accumulator(), "downstream1 accumulator");
         BiConsumer<A2, ? super T> c2Accumulator =
@@ -1949,8 +1998,18 @@ public final class Collectors {
         }
 
         class PairBox {
-            A1 left = c1Supplier.get();
-            A2 right = c2Supplier.get();
+            A1 left;
+            A2 right;
+
+            PairBox() {
+                left = c1Supplier.get();
+                right = c2Supplier.get();
+            }
+
+            PairBox(long exactSizeIfKnown) {
+                left = c1SizedSupplier.apply(exactSizeIfKnown);
+                right = c2SizedSupplier.apply(exactSizeIfKnown);
+            }
 
             void add(T t) {
                 c1Accumulator.accept(left, t);
@@ -1970,7 +2029,7 @@ public final class Collectors {
             }
         }
 
-        return new CollectorImpl<>(PairBox::new, PairBox::add, PairBox::combine, PairBox::get, characteristics);
+        return new CollectorImpl<>(PairBox::new, PairBox::new, PairBox::add, PairBox::combine, PairBox::get, characteristics);
     }
 
     /**
