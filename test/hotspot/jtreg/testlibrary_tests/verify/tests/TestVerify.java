@@ -50,6 +50,7 @@ public class TestVerify {
         testArrayFloat();
         testArrayDouble();
         testNativeMemorySegment();
+        testException();
 
         // Test recursive data: Object array of values, etc.
         testRecursive();
@@ -288,6 +289,29 @@ public class TestVerify {
 
         // Value mismatch
         checkNE(a, c);
+    }
+
+    public static void testException() {
+        Exception e1 = new ArithmeticException("abc");
+        Exception e2 = new ArithmeticException("abc");
+        Exception e3 = new ArithmeticException();
+        Exception e4 = new ArithmeticException("xyz");
+        Exception e5 = new RuntimeException("abc");
+
+        Verify.checkEQ(e1, e1);
+        Verify.checkEQ(e1, e2);
+        Verify.checkEQ(e3, e3);
+        Verify.checkEQ(e1, e3); // one has no message
+
+        checkNE(e1, e4);
+        checkNE(e2, e4);
+        Verify.checkEQ(e3, e4);
+
+        Verify.checkEQ(e5, e5);
+        checkNE(e1, e5);
+        checkNE(e2, e5);
+        checkNE(e3, e5);
+        checkNE(e4, e5);
     }
 
     public static void testRecursive() {
