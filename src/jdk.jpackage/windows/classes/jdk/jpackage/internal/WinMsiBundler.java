@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -349,12 +350,8 @@ public class WinMsiBundler  extends AbstractBundler {
     private void prepareProto(Map<String, ? super Object> params)
                 throws PackagerException, IOException {
         Path appImage = StandardBundlerParam.getPredefinedAppImage(params);
-        String appName = APP_NAME.fetchFrom(params);
+        String appName = Objects.requireNonNull(APP_NAME.fetchFrom(params));
         Path appDir;
-        if (appName == null) {
-            // Can happen when no name is given, and using a foreign app-image
-            throw new PackagerException("error.no.name");
-        }
 
         // we either have an application image or need to build one
         if (appImage != null) {
