@@ -595,8 +595,8 @@ private:
   // Methods related to Reduce Allocation Merges
   bool has_non_reducible_merge(FieldNode* field, Unique_Node_List& reducible_merges);
   PhiNode* create_selector(PhiNode* ophi) const;
-  void updates_after_load_split(Node* data_phi, Node* previous_load, GrowableArray<Node *>  &alloc_worklist);
-  Node* split_castpp_load_through_phi(Node* curr_addp, Node* curr_load, Node* region, GrowableArray<Node*>* bases_for_loads, GrowableArray<Node *>  &alloc_worklist);
+  void updates_after_load_split(Node* data_phi, Node* previous_load, GrowableArray<Node *>  &alloc_worklist, Unique_Node_List &reducible_merges);
+  Node* split_castpp_load_through_phi(Node* curr_addp, Node* curr_load, Node* region, GrowableArray<Node*>* bases_for_loads, GrowableArray<Node *>  &alloc_worklist, Unique_Node_List &reducible_merges);
   void reset_scalar_replaceable_entries(PhiNode* ophi);
   bool has_reducible_merge_base(AddPNode* n, Unique_Node_List &reducible_merges);
   Node* specialize_cmp(Node* base, Node* curr_ctrl);
@@ -605,15 +605,15 @@ private:
   bool can_reduce_cmp(Node* n, Node* cmp) const;
   bool has_been_reduced(PhiNode* n, SafePointNode* sfpt) const;
   bool can_reduce_phi(PhiNode* ophi) const;
-  bool can_reduce_check_users(Node* n, uint nesting) const;
+  bool can_reduce_check_users(Node* n, uint phi_nest_level) const;
   bool can_reduce_phi_check_inputs(PhiNode* ophi) const;
 
-  void reduce_phi_on_field_access(Node* previous_addp, GrowableArray<Node *>  &alloc_worklist);
-  void reduce_phi_on_castpp_field_load(Node* castpp, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist);
+  void reduce_phi_on_field_access(Node* previous_addp, GrowableArray<Node *>  &alloc_worklist, Unique_Node_List &reducible_merges);
+  void reduce_phi_on_castpp_field_load(Node* castpp, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist, Unique_Node_List &reducible_merges);
   void reduce_phi_on_cmp(Node* cmp);
   bool reduce_phi_on_safepoints(PhiNode* ophi);
   bool reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, Node* selector, Unique_Node_List& safepoints);
-  void reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist);
+  void reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist, Unique_Node_List &reducible_merges);
 
   void set_not_scalar_replaceable(PointsToNode* ptn NOT_PRODUCT(COMMA const char* reason)) const {
 #ifndef PRODUCT
