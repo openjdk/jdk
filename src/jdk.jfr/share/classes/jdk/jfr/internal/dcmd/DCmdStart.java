@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -51,6 +52,8 @@ import jdk.jfr.internal.jfc.JFC;
 import jdk.jfr.internal.jfc.model.JFCModel;
 import jdk.jfr.internal.jfc.model.JFCModelException;
 import jdk.jfr.internal.jfc.model.XmlInput;
+import jdk.jfr.internal.query.Report;
+
 import jdk.jfr.internal.util.Utils;
 
 /**
@@ -156,6 +159,7 @@ final class DCmdStart extends AbstractDCmd {
         if (duration != null && path == null) {
             path = resolvePath(recording, null).toString();
         }
+        PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
 
         if (path != null) {
             try {
@@ -168,7 +172,6 @@ final class DCmdStart extends AbstractDCmd {
                     // Decide destination filename at dump time
                     // Purposely avoid generating filename in Recording#setDestination due to
                     // security concerns
-                    PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
                     pr.setDumpDirectory(p);
                 } else {
                     dumpPath = resolvePath(recording, path);
@@ -185,8 +188,7 @@ final class DCmdStart extends AbstractDCmd {
         }
 
         if (flush != null) {
-            PlatformRecording p = PrivateAccess.getInstance().getPlatformRecording(recording);
-            p.setFlushInterval(Duration.ofNanos(flush));
+            pr.setFlushInterval(Duration.ofNanos(flush));
         }
 
         if (maxSize != null) {
@@ -199,6 +201,11 @@ final class DCmdStart extends AbstractDCmd {
 
         if (dumpOnExit != null) {
             recording.setDumpOnExit(dumpOnExit);
+        }
+
+        List<String> reports = parser.getOption("report-on-exit");
+        if (reports != null) {
+            addReports(pr, reports);
         }
 
         if (delay != null) {
@@ -246,6 +253,24 @@ final class DCmdStart extends AbstractDCmd {
             }
         }
         return s;
+    }
+
+    private void addReports(PlatformRecording recording, List<String> reportNames) throws DCmdException {
+        if (!recording.isToDisk()) {
+            throw new DCmdException("Option report-on-exit can only be used when recording to disk.");
+        }
+        Map<String, Report> reportLookup = new HashMap<>();
+        for (Report report : Report.getReports()) {
+            reportLookup.put(report.name(), report);
+        }
+        for (String name : reportNames) {
+            Report report = reportLookup.get(name);
+            if (report != null) {
+                recording.addReport(report);
+            } else {
+                throw new DCmdException("Unknown view '" + name + "' specified for report-on-exit. Use 'jfr help view' to see a list of available views.");
+            }
+        }
     }
 
     private LinkedHashMap<String, String> configureExtended(String[] settings, ArgumentParser parser) throws DCmdException {
@@ -405,6 +430,11 @@ final class DCmdStart extends AbstractDCmd {
                                   trace from where the potential leaking object was allocated.
                                   (BOOLEAN, false)
 
+                 report-on-exit   Specifies the name of the view to display when the Java Virtual
+                                  Machine (JVM) shuts down. This option is not available if disk
+                                  the disk option is set to false. For a list of available views,
+                                  see 'jfr help view'. By default, no report is generated.
+
                  settings         (Optional) Name of the settings file that identifies which events
                                   to record. To specify more than one file, use the settings
                                   parameter repeatedly. Include the path if the file is not in
@@ -512,7 +542,11 @@ final class DCmdStart extends AbstractDCmd {
                 "BOOLEAN", false, true, "false", false),
             new Argument("path-to-gc-roots",
                 "Collect path to GC roots",
-                "BOOLEAN", false, true, "false", false)
+                "BOOLEAN", false, true, "false", false),
+            new Argument("report-on-exit",
+                "Display views on exit. See 'jfr help view' for available views to report.",
+                "STRING SET", false, true, null, true)
+
         };
     }
 }
