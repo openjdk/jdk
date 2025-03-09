@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package sun.nio.ch;
 
-import jdk.internal.ref.Cleaner;
+import java.lang.ref.Cleaner.Cleanable;
 
 
 public interface DirectBuffer {
@@ -41,6 +41,6 @@ public interface DirectBuffer {
 
     public Object attachment();
 
-    public Cleaner cleaner();
+    public Cleanable cleanable();
 
 }
