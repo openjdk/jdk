@@ -387,18 +387,18 @@ public class ForkJoinPool extends AbstractExecutorService
      * WorkQueues are also used in a similar way for tasks submitted
      * to the pool. We cannot mix these tasks in the same queues used
      * by workers. Instead, we randomly associate submission queues
-     * with submitting threads, using a form of hashing.  The
-     * ThreadLocalRandom probe value serves as a hash code for
-     * choosing existing queues, and may be randomly repositioned upon
-     * contention with other submitters.  In essence, submitters act
-     * like workers except that they are restricted to executing local
-     * tasks that they submitted (or when known, subtasks thereof).
-     * Insertion of tasks in shared mode requires a lock. We use only
-     * a simple spinlock (as one role of field "phase") because
-     * submitters encountering a busy queue move to a different
-     * position to use or create other queues.  They (spin) block when
-     * registering new queues, or indirectly elsewhere, by revisiting
-     * later.
+     * with submitting threads (or carriers when using VirtualThreads)
+     * using a form of hashing.  The ThreadLocalRandom probe value
+     * serves as a hash code for choosing existing queues, and may be
+     * randomly repositioned upon contention with other submitters.
+     * In essence, submitters act like workers except that they are
+     * restricted to executing local tasks that they submitted (or
+     * when known, subtasks thereof).  Insertion of tasks in shared
+     * mode requires a lock. We use only a simple spinlock (as one
+     * role of field "phase") because submitters encountering a busy
+     * queue move to a different position to use or create other
+     * queues.  They (spin) block when registering new queues, or
+     * indirectly elsewhere, by revisiting later.
      *
      * Management
      * ==========
@@ -885,7 +885,8 @@ public class ForkJoinPool extends AbstractExecutorService
      * To comply with ExecutorService specs, we use subclasses of
      * abstract class InterruptibleTask for tasks that require
      * stronger interruption and cancellation guarantees.  External
-     * submitters never run these tasks, even if in the common pool.
+     * submitters never run these tasks, even if in the common pool
+     * (as indicated by ForkJoinTask.noUserHelp status bit).
      * InterruptibleTasks include a "runner" field (implemented
      * similarly to FutureTask) to support cancel(true).  Upon pool
      * shutdown, runners are interrupted so they can cancel. Since
@@ -1295,10 +1296,9 @@ public class ForkJoinPool extends AbstractExecutorService
                     unlockPhase();
                 if (room < 0)
                     throw new RejectedExecutionException("Queue capacity exceeded");
-                if ((room == 0 ||        // pad for InterruptibleTasks
+                if ((room == 0 ||        // pad if no caller-run
                      a[m & (s - ((internal || task == null ||
-                                  task.getClass().getSuperclass() !=
-                                  interruptibleTaskClass) ? 1 : 2))] == null) &&
+                                  task.noUserHelp() == 0) ? 1 : 2))] == null) &&
                     pool != null)
                     pool.signalWork();   // may have appeared empty
             }
@@ -1636,11 +1636,6 @@ public class ForkJoinPool extends AbstractExecutorService
      * kill threads. Lazily constructed.
      */
     static volatile RuntimePermission modifyThreadPermission;
-
-    /**
-     * Cached for faster type tests.
-     */
-    static final Class<?> interruptibleTaskClass;
 
     /**
      * For VirtualThread intrinsics
@@ -2023,12 +2018,11 @@ public class ForkJoinPool extends AbstractExecutorService
                                 boolean propagate;
                                 int nb = q.base = b + 1;
                                 w.nsteals = ++nsteals;
+                                int ts = t.status;
                                 w.source = j;             // volatile
                                 rescan = true;
                                 if (propagate =
-                                    ((src != (src = j) ||
-                                      t.getClass().getSuperclass() ==
-                                      interruptibleTaskClass) &&
+                                    ((src != (src = j) || t.noUserHelp() != 0) &&
                                      a[nb & m] != null))
                                     signalWork();
                                 w.topLevelExec(t, fifo);
@@ -4406,7 +4400,6 @@ public class ForkJoinPool extends AbstractExecutorService
         if ((scale & (scale - 1)) != 0)
             throw new Error("array index scale not a power of two");
 
-        interruptibleTaskClass = ForkJoinTask.InterruptibleTask.class;
         Class<?> dep = LockSupport.class; // ensure loaded
         // allow access to non-public methods
         JLA = SharedSecrets.getJavaLangAccess();

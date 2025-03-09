@@ -273,6 +273,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     static final int ABNORMAL       = 1 << 16;
     static final int THROWN         = 1 << 17;
     static final int HAVE_EXCEPTION = DONE | ABNORMAL | THROWN;
+    static final int NO_USER_HELP   = 1 << 24; // no external caller-run helping
     static final int MARKER         = 1 << 30; // utility marker
     static final int SMASK          = 0xffff;  // short bits for tags
     static final int UNCOMPENSATE   = 1 << 16; // helpJoin sentinel
@@ -291,6 +292,12 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
     private boolean casStatus(int c, int v) {
         return U.compareAndSetInt(this, STATUS, c, v);
+    }
+    final int noUserHelp() {    // nonvolatile read
+        return U.getInt(this, STATUS) & NO_USER_HELP;
+    }
+    final void setNoUserHelp() { // for use in constructors only
+        U.putInt(this, STATUS, NO_USER_HELP);
     }
 
     // Support for waiting and signalling
@@ -476,7 +483,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      */
     private int awaitDone(boolean interruptible, long deadline) {
         ForkJoinWorkerThread wt; ForkJoinPool p; ForkJoinPool.WorkQueue q;
-        Thread t; boolean internal; int s;
+        Thread t; boolean internal; int s, ss;
         if (internal =
             (t = Thread.currentThread()) instanceof ForkJoinWorkerThread) {
             p = (wt = (ForkJoinWorkerThread)t).pool;
@@ -487,7 +494,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         return (((s = (p == null) ? 0 :
                   ((this instanceof CountedCompleter) ?
                    p.helpComplete(this, q, internal) :
-                   (this instanceof InterruptibleTask) && !internal ? status :
+                   !internal && ((ss = status) & NO_USER_HELP) != 0 ? ss :
                    p.helpJoin(this, q, internal))) < 0)) ? s :
             awaitDone(internal ? p : null, s, interruptible, deadline);
     }
@@ -1155,7 +1162,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      */
     public void reinitialize() {
         aux = null;
-        status = 0;
+        status &= NO_USER_HELP;
     }
 
     /**
@@ -1634,6 +1641,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     abstract static class InterruptibleTask<T> extends ForkJoinTask<T>
         implements RunnableFuture<T> {
         transient volatile Thread runner;
+        InterruptibleTask() {
+            setNoUserHelp();
+        }
         abstract T compute() throws Exception;
         public final boolean exec() {
             Thread.interrupted();
