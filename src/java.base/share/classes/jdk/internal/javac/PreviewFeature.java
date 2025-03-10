@@ -81,7 +81,7 @@ public @interface PreviewFeature {
         @JEP(number=478, title="Key Derivation Function API", status="Preview")
         KEY_DERIVATION,
         LANGUAGE_MODEL,
-        @JEP(number = 8330465, title = "Stable Values", status = "Preview")
+        @JEP(number = 502, title = "Stable Values", status = "Preview")
         STABLE_VALUES,
         /**
          * A key for testing.
