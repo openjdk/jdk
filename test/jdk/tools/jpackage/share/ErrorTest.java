@@ -330,7 +330,7 @@ public final class ErrorTest {
             // invalid type
             testSpec().addArgs("--type", "invalid-type")
                     .error("ERR_InvalidInstallerType", "invalid-type"),
-            // no --input for non-mular app
+            // no --input for non-mudular app
             testSpec().removeArgs("--input").error("error.no-input-parameter"),
             // no --module-path
             testSpec().appDesc("com.other/com.other.Hello").removeArgs("--module-path")
