@@ -383,13 +383,13 @@ public final class Executor extends CommandArguments<Executor> {
             final var defaultEnv = builder.environment();
             final var envComm = Comm.compare(defaultEnv.keySet(), setEnvVars.keySet());
             envComm.unique2().forEach(envVar -> {
-                TKit.trace(String.format("Adding %s=[%s] to environment", envVar, setEnvVars.get(envVar)));
+                trace(String.format("Adding %s=[%s] to environment", envVar, setEnvVars.get(envVar)));
             });
             envComm.common().forEach(envVar -> {
                 final var curValue = defaultEnv.get(envVar);
                 final var newValue = setEnvVars.get(envVar);
                 if (!curValue.equals(newValue)) {
-                    TKit.trace(String.format("Setting %s=[%s] in environment", envVar, setEnvVars.get(envVar)));
+                    trace(String.format("Setting %s=[%s] in environment", envVar, setEnvVars.get(envVar)));
                 }
             });
             defaultEnv.putAll(setEnvVars);
@@ -399,7 +399,7 @@ public final class Executor extends CommandArguments<Executor> {
             final var envComm = Comm.compare(defaultEnv, removeEnvVars);
             defaultEnv.removeAll(envComm.common());
             envComm.common().forEach(envVar -> {
-                TKit.trace(String.format("Clearing %s in environment", envVar));
+                trace(String.format("Clearing %s in environment", envVar));
             });
         }
 
