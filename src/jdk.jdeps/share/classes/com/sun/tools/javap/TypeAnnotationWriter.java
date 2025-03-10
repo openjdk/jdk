@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,10 +76,10 @@ public class TypeAnnotationWriter extends InstructionDetailWriter {
         pcMap = new HashMap<>();
         codeAttribute = attr;
         check(NoteKind.VISIBLE,
-                m.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS)
+                m.findAttribute(Attributes.runtimeVisibleTypeAnnotations())
                         .map(a -> a.annotations()));
         check(NoteKind.INVISIBLE,
-                m.findAttribute(Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS)
+                m.findAttribute(Attributes.runtimeInvisibleTypeAnnotations())
                         .map(a -> a.annotations()));
     }
 

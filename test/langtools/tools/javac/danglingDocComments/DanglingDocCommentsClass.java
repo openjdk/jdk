@@ -5,6 +5,8 @@
  * @compile/ref=DanglingDocCommentsClass.enabled.out -XDrawDiagnostics -Xlint:dangling-doc-comments DanglingDocCommentsClass.java
  */
 
+// This is a test of duplicate and misplaced doc comments in a class, using traditional comments
+
 /** Bad/Extra Class Comment. */
 /** Good Class Comment. */
 @Deprecated

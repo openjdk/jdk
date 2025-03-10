@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,7 @@ public interface MessageType {
         TOKEN("token", "TokenKind", "com.sun.tools.javac.parser.Tokens"),
         TREE_TAG("tree tag", "Tag", "com.sun.tools.javac.tree.JCTree"),
         TYPE("type", "Type", "com.sun.tools.javac.code"),
+        ANNOTATED_TYPE("annotated-type", "AnnotatedType", "com.sun.tools.javac.util.JCDiagnostic"),
         URL("url", "URL", "java.net"),
         SET("set", "Set", "java.util"),
         LIST("list", "List", "java.util"),

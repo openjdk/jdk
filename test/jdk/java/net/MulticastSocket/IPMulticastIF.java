@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,9 +63,25 @@ public class IPMulticastIF {
                                           InetAddress.getLoopbackAddress());
         List<Object[]> list = new ArrayList<>();
         NetworkConfiguration nc = NetworkConfiguration.probe();
+        // retains only network interface whose bound addresses match
         addrs.stream().forEach(a -> nc.multicastInterfaces(true)
-                                      .map(nif -> new Object[] { new InetSocketAddress(a, 0), nif })
-                                      .forEach(list::add) );
+                .filter(nif -> nif.inetAddresses().toList().contains(a))
+                .map(nif -> new Object[] { new InetSocketAddress(a, 0), nif })
+                .forEach(list::add) );
+        // any network interface should work with the wildcard address
+        nc.multicastInterfaces(true)
+                .map(nif -> new Object[] {new InetSocketAddress(0), nif})
+                .forEach(list::add);
+        return list.stream().toArray(Object[][]::new);
+    }
+
+    @DataProvider(name = "interfaces")
+    public Object[][] interfaces() throws Exception {
+        List<Object[]> list = new ArrayList<>();
+        NetworkConfiguration nc = NetworkConfiguration.probe();
+        nc.multicastInterfaces(true)
+                .map(nif -> new Object[] {nif})
+                .forEach(list::add);
 
         return list.stream().toArray(Object[][]::new);
     }
@@ -82,8 +98,8 @@ public class IPMulticastIF {
         }
     }
 
-    @Test(dataProvider = "scenarios")
-    public void testSetGetInterfaceUnbound(InetSocketAddress ignore, NetworkInterface nif)
+    @Test(dataProvider = "interfaces")
+    public void testSetGetInterfaceUnbound(NetworkInterface nif)
         throws Exception
     {
         out.println(format("\n\n--- testSetGetInterfaceUnbound nif=[%s]", nif));
@@ -106,8 +122,8 @@ public class IPMulticastIF {
         }
     }
 
-    @Test(dataProvider = "scenarios")
-    public void testSetGetOptionUnbound(InetSocketAddress ignore, NetworkInterface nif)
+    @Test(dataProvider = "interfaces")
+    public void testSetGetOptionUnbound(NetworkInterface nif)
         throws Exception
     {
         out.println(format("\n\n--- testSetGetOptionUnbound nif=[%s]", nif));
@@ -139,8 +155,8 @@ public class IPMulticastIF {
     }
 
     @Test
-    public void testGettInterfaceUnbound() throws Exception {
-        out.println("\n\n--- testGettInterfaceUnbound ");
+    public void testGetInterfaceUnbound() throws Exception {
+        out.println("\n\n--- testGetInterfaceUnbound ");
         try (MulticastSocket ms = new MulticastSocket()) {
             assertPlaceHolder(ms.getNetworkInterface());
         }

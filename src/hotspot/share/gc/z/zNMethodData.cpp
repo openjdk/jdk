@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,23 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zNMethodData.hpp"
 #include "utilities/debug.hpp"
 
 ZNMethodData::ZNMethodData()
   : _lock(),
+    _ic_lock(),
     _barriers(),
     _immediate_oops(),
     _has_non_immediate_oops(false) {}
 
 ZReentrantLock* ZNMethodData::lock() {
   return &_lock;
+}
+
+ZReentrantLock* ZNMethodData::ic_lock() {
+  return &_ic_lock;
 }
 
 const ZArray<ZNMethodDataBarrier>* ZNMethodData::barriers() const {

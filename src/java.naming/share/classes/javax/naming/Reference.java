@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,10 +164,10 @@ public class Reference implements Cloneable, java.io.Serializable {
       *
       * @param className The non-null class name of the object to
       *         which this reference refers.
+      * @param addr     The non-null address of the object.
       * @param factory  The possibly null class name of the object's factory.
       * @param factoryLocation  The possibly null location from which
       *                         to load the factory (e.g. URL)
-      * @param addr     The non-null address of the object.
       * @see javax.naming.spi.ObjectFactory
       * @see javax.naming.spi.NamingManager#getObjectInstance
       */

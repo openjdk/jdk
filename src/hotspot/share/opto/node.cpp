@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "libadt/vectset.hpp"
@@ -547,10 +547,6 @@ Node *Node::clone() const {
     if (cg != nullptr) {
       CallGenerator* cloned_cg = cg->with_call_node(n->as_Call());
       n->as_Call()->set_generator(cloned_cg);
-
-      C->print_inlining_assert_ready();
-      C->print_inlining_move_to(cg);
-      C->print_inlining_update(cloned_cg);
     }
   }
   if (n->is_SafePoint()) {
@@ -610,7 +606,7 @@ void Node::destruct(PhaseValues* phase) {
   if (is_expensive()) {
     compile->remove_expensive_node(this);
   }
-  if (Opcode() == Op_Opaque4) {
+  if (is_OpaqueTemplateAssertionPredicate()) {
     compile->remove_template_assertion_predicate_opaq(this);
   }
   if (is_ParsePredicate()) {
@@ -1101,7 +1097,7 @@ uint Node::size(PhaseRegAlloc *ra_) const { return 0; }
 //------------------------------CFG Construction-------------------------------
 // Nodes that end basic blocks, e.g. IfTrue/IfFalse, JumpProjNode, Root,
 // Goto and Return.
-const Node *Node::is_block_proj() const { return 0; }
+const Node *Node::is_block_proj() const { return nullptr; }
 
 // Minimum guaranteed type
 const Type *Node::bottom_type() const { return Type::BOTTOM; }
@@ -1249,7 +1245,7 @@ Node* Node::find_exact_control(Node* ctrl) {
 // We already know that if any path back to Root or Start reaches 'this',
 // then all paths so, so this is a simple search for one example,
 // not an exhaustive search for a counterexample.
-bool Node::dominates(Node* sub, Node_List &nlist) {
+Node::DomResult Node::dominates(Node* sub, Node_List &nlist) {
   assert(this->is_CFG(), "expecting control");
   assert(sub != nullptr && sub->is_CFG(), "expecting control");
 
@@ -1269,12 +1265,15 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
   // will either exit through the loop head, or give up.
   // (If we get confused, break out and return a conservative 'false'.)
   while (sub != nullptr) {
-    if (sub->is_top())  break; // Conservative answer for dead code.
+    if (sub->is_top()) {
+      // Conservative answer for dead code.
+      return DomResult::EncounteredDeadCode;
+    }
     if (sub == dom) {
       if (nlist.size() == 0) {
         // No Region nodes except loops were visited before and the EntryControl
         // path was taken for loops: it did not walk in a cycle.
-        return true;
+        return DomResult::Dominate;
       } else if (met_dom) {
         break;          // already met before: walk in a cycle
       } else {
@@ -1288,7 +1287,7 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
       // Success if we met 'dom' along a path to Start or Root.
       // We assume there are no alternative paths that avoid 'dom'.
       // (This assumption is up to the caller to ensure!)
-      return met_dom;
+      return met_dom ? DomResult::Dominate : DomResult::NotDominate;
     }
     Node* up = sub->in(0);
     // Normalize simple pass-through regions and projections:
@@ -1319,7 +1318,7 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
         if (visited == sub) {
           if (visited_twice_already) {
             // Visited 2 paths, but still stuck in loop body.  Give up.
-            return false;
+            return DomResult::NotDominate;
           }
           // The Region node was visited before only once.
           // (We will repush with the low bit set, below.)
@@ -1362,8 +1361,7 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
   }
 
   // Did not meet Root or Start node in pred. chain.
-  // Conservative answer for dead code.
-  return false;
+  return DomResult::NotDominate;
 }
 
 //------------------------------remove_dead_region-----------------------------
@@ -1454,6 +1452,8 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
             // The restriction (outcnt() <= 2) is the same as in set_req_X()
             // and remove_globally_dead_node().
             igvn->add_users_to_worklist( n );
+          } else if (dead->is_data_proj_of_pure_function(n)) {
+            igvn->_worklist.push(n);
           } else {
             BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(igvn, n);
           }
@@ -1591,6 +1591,13 @@ jdouble Node::getd() const {
 jfloat Node::getf() const {
   assert( Opcode() == Op_ConF, "" );
   return ((ConFNode*)this)->type()->is_float_constant()->getf();
+}
+
+// Get a half float constant from a ConstNode.
+// Returns the constant if it is a float ConstNode
+jshort Node::geth() const {
+  assert( Opcode() == Op_ConH, "" );
+  return ((ConHNode*)this)->type()->is_half_float_constant()->geth();
 }
 
 #ifndef PRODUCT
@@ -1827,6 +1834,8 @@ private:
   bool _print_blocks = false;
   bool _print_old = false;
   bool _dump_only = false;
+  bool _print_igv = false;
+
   void print_options_help(bool print_examples);
   bool parse_options();
 
@@ -2044,6 +2053,11 @@ void PrintBFS::print() {
       const Node* n = _print_list.at(i);
       print_node(n);
     }
+    if (_print_igv) {
+      Compile* C = Compile::current();
+      C->init_igv();
+      C->igv_print_graph_to_network("PrintBFS", (Node*) C->root(), _print_list);
+    }
   } else {
     _output->print_cr("No nodes to print.");
   }
@@ -2086,6 +2100,7 @@ void PrintBFS::print_options_help(bool print_examples) {
   _output->print_cr("      @: print old nodes - before matching (if available)");
   _output->print_cr("      B: print scheduling blocks (if available)");
   _output->print_cr("      $: dump only, no header, no other columns");
+  _output->print_cr("      !: show nodes on IGV (sent over network stream)");
   _output->print_cr("");
   _output->print_cr("recursively follow edges to nodes with permitted visit types,");
   _output->print_cr("on the boundary additionally display nodes allowed in boundary types");
@@ -2198,6 +2213,9 @@ bool PrintBFS::parse_options() {
         break;
       case '$':
         _dump_only = true;
+        break;
+      case '!':
+        _print_igv = true;
         break;
       case 'h':
         print_options_help(false);
@@ -2409,9 +2427,9 @@ void Node::dump_idx(bool align, outputStream* st, DumpConfig* dc) const {
   bool is_new = C->node_arena()->contains(this);
   if (align) { // print prefix empty spaces$
     // +1 for leading digit, +1 for "o"
-    uint max_width = static_cast<uint>(log10(static_cast<double>(C->unique()))) + 2;
+    uint max_width = (C->unique() == 0 ? 0 : static_cast<uint>(log10(static_cast<double>(C->unique())))) + 2;
     // +1 for leading digit, maybe +1 for "o"
-    uint width = static_cast<uint>(log10(static_cast<double>(_idx))) + 1 + (is_new ? 0 : 1);
+    uint width = (_idx == 0 ? 0 : static_cast<uint>(log10(static_cast<double>(_idx)))) + 1 + (is_new ? 0 : 1);
     while (max_width > width) {
       st->print(" ");
       width++;
@@ -2766,6 +2784,8 @@ const RegMask &Node::in_RegMask(uint) const {
 }
 
 void Node_Array::grow(uint i) {
+  _nesting.check(_a); // Check if a potential reallocation in the arena is safe
+  assert(i >= _max, "Should have been checked before, use maybe_grow?");
   assert(_max > 0, "invariant");
   uint old = _max;
   _max = next_power_of_2(i);
@@ -2878,6 +2898,15 @@ void Node::ensure_control_or_add_prec(Node* c) {
   }
 }
 
+void Node::add_prec_from(Node* n) {
+  for (uint i = n->req(); i < n->len(); i++) {
+    Node* prec = n->in(i);
+    if (prec != nullptr) {
+      add_prec(prec);
+    }
+  }
+}
+
 bool Node::is_dead_loop_safe() const {
   if (is_Phi()) {
     return true;
@@ -2899,6 +2928,28 @@ bool Node::is_dead_loop_safe() const {
     return true;
   }
   return false;
+}
+
+bool Node::is_div_or_mod(BasicType bt) const { return Opcode() == Op_Div(bt) || Opcode() == Op_Mod(bt) ||
+                                                      Opcode() == Op_UDiv(bt) || Opcode() == Op_UMod(bt); }
+
+bool Node::is_pure_function() const {
+  switch (Opcode()) {
+  case Op_ModD:
+  case Op_ModF:
+    return true;
+  default:
+    return false;
+  }
+}
+
+// `maybe_pure_function` is assumed to be the input of `this`. This is a bit redundant,
+// but we already have and need maybe_pure_function in all the call sites, so
+// it makes it obvious that the `maybe_pure_function` is the same node as in the caller,
+// while it takes more thinking to realize that a locally computed in(0) must be equal to
+// the local in the caller.
+bool Node::is_data_proj_of_pure_function(const Node* maybe_pure_function) const {
+  return Opcode() == Op_Proj && as_Proj()->_con == TypeFunc::Parms && maybe_pure_function->is_pure_function();
 }
 
 //=============================================================================
@@ -2973,6 +3024,10 @@ void Unique_Node_List::remove_useless_nodes(VectorSet &useful) {
 
 //=============================================================================
 void Node_Stack::grow() {
+  _nesting.check(_a); // Check if a potential reallocation in the arena is safe
+  if (_inode_top < _inode_max) {
+    return; // No need to grow
+  }
   size_t old_top = pointer_delta(_inode_top,_inodes,sizeof(INode)); // save _top
   size_t old_max = pointer_delta(_inode_max,_inodes,sizeof(INode));
   size_t max = old_max << 1;             // max * 2

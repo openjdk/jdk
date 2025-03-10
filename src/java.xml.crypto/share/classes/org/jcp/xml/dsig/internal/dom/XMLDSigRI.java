@@ -142,7 +142,7 @@ public final class XMLDSigRI extends Provider {
     @SuppressWarnings("removal")
     public XMLDSigRI() {
         // This is the JDK XMLDSig provider, synced from
-        // Apache Santuario XML Security for Java, version 3.0.3
+        // Apache Santuario XML Security for Java, version 3.0.5
         super("XMLDSig", VER, INFO);
 
         final Provider p = this;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
@@ -2306,10 +2305,11 @@ bool StackRefCollector::report_native_stack_refs(jmethodID method) {
   _blk->set_context(_thread_tag, _tid, _depth, method);
   if (_is_top_frame) {
     // JNI locals for the top frame.
-    assert(_java_thread != nullptr, "sanity");
-    _java_thread->active_handles()->oops_do(_blk);
-    if (_blk->stopped()) {
-      return false;
+    if (_java_thread != nullptr) {
+      _java_thread->active_handles()->oops_do(_blk);
+      if (_blk->stopped()) {
+        return false;
+      }
     }
   } else {
     if (_last_entry_frame != nullptr) {

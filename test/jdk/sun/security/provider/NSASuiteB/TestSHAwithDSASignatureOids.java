@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 import java.util.Arrays;
 import java.util.List;
+import jdk.test.lib.security.SecurityUtils;
 
 /*
  * @test
  * @bug 8075286
+ * @library /test/lib
  * @summary Test the SHAwithDSA signature algorithm OIDs in JDK.
  *          OID and algorithm transformation string should match.
  *          Both could be able to be used to generate the algorithm instance.
@@ -40,8 +42,10 @@ public class TestSHAwithDSASignatureOids {
             new OidAlgorithmPair("2.16.840.1.101.3.4.3.2", "SHA256withDSA"));
 
     public static void main(String[] args) throws Exception {
-        TestSignatureOidHelper helper = new TestSignatureOidHelper("DSA",
-                "SUN", 1024, DATA);
+        String kpgAlgorithm = "DSA";
+        TestSignatureOidHelper helper = new TestSignatureOidHelper(kpgAlgorithm,
+                System.getProperty("test.provider.name", "SUN"),
+                SecurityUtils.getTestKeySize(kpgAlgorithm), DATA);
         helper.execute();
     }
 }

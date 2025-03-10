@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.lang.constant.MethodTypeDesc;
 
 /**
  * The {@code ClassFileVisitor} reads a class file using the
- * {@code jdk.internal.classfile} library. It iterates over the methods
+ * {@code java.lang.classfile} library. It iterates over the methods
  * in a class, and checks MethodParameters attributes against JLS
  * requirements, as well as assumptions about the javac implementations.
  * <p>
@@ -95,7 +95,7 @@ class ClassFileVisitor extends MethodParametersTester.Visitor {
         isStatic = false;
         isAnon = false;
 
-        classFile.findAttribute(Attributes.INNER_CLASSES).ifPresent(this::visitInnerClasses);
+        classFile.findAttribute(Attributes.innerClasses()).ifPresent(this::visitInnerClasses);
         isAnon = isInner & isAnon;
 
         sb.append(isStatic ? "static " : "")

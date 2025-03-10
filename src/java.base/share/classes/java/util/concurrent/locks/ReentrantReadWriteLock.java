@@ -141,6 +141,7 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  *
  *   void processCachedData() {
  *     rwl.readLock().lock();
+ *     // Code between the lock() above, and the unlock() below must not throw
  *     if (!cacheValid) {
  *       // Must release read lock before acquiring write lock
  *       rwl.readLock().unlock();
@@ -158,7 +159,7 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  *         rwl.writeLock().unlock(); // Unlock write, still hold read
  *       }
  *     }
- *
+ *     // Make sure that code that could throw is executed inside the try block
  *     try {
  *       use(data);
  *     } finally {
@@ -216,11 +217,11 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
 public class ReentrantReadWriteLock
         implements ReadWriteLock, java.io.Serializable {
     private static final long serialVersionUID = -6992448646407690164L;
-    /** Inner class providing readlock */
+    /** @serial Inner class providing readlock */
     private final ReentrantReadWriteLock.ReadLock readerLock;
-    /** Inner class providing writelock */
+    /** @serial Inner class providing writelock */
     private final ReentrantReadWriteLock.WriteLock writerLock;
-    /** Performs all synchronization mechanics */
+    /** @serial Performs all synchronization mechanics */
     final Sync sync;
 
     /**
@@ -712,6 +713,7 @@ public class ReentrantReadWriteLock
      */
     public static class ReadLock implements Lock, java.io.Serializable {
         private static final long serialVersionUID = -5992448646407690164L;
+        /** @serial */
         private final Sync sync;
 
         /**
@@ -926,6 +928,7 @@ public class ReentrantReadWriteLock
      */
     public static class WriteLock implements Lock, java.io.Serializable {
         private static final long serialVersionUID = -4992448646407690164L;
+        /** @serial */
         private final Sync sync;
 
         /**

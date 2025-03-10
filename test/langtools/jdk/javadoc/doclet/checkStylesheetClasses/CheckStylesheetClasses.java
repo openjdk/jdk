@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @test
  * @bug 8267574
  * @summary check stylesheet names against HtmlStyle
- * @modules jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.markup
+ * @modules jdk.javadoc/jdk.javadoc.internal.html
+ *          jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.markup
  *          jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.resources:open
  */
 
@@ -44,10 +45,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 
 /**
- * This test compares the set of CSS class names defined in HtmlStyle
+ * This test compares the set of CSS class names defined in HtmlStyles
  * and other files (such as search.js) against the set of CSS class names
  * defined in the main stylesheet.css provided by the doclet.
  *
@@ -116,13 +118,13 @@ public class CheckStylesheetClasses {
         htmlStyleNames.removeIf(s -> s.endsWith("-summary") && !styleSheetNames.contains(s));
 
         // signature classes
-        removeAll(htmlStyleNames, "annotations", "element-name", "extends-implements",
+        removeAll(htmlStyleNames, "element-name", "extends-implements",
                 "modifiers", "permits", "return-type");
 
         // misc: these are defined in HtmlStyle, and used by the doclet
-        removeAll(htmlStyleNames, "col-plain", "external-link", "header",
-                "hierarchy", "index", "package-uses", "packages", "permits-note",
-                "serialized-package-container", "source-container");
+        removeAll(htmlStyleNames, "col-plain", "external-link", "header", "index",
+                "package-uses", "packages", "permits-note", "serialized-package-container",
+                "source-container");
 
         // Remove names from styleSheetNames if they are false positives,
         // or used by other code (i.e. not HtmlStyle),
@@ -185,7 +187,7 @@ public class CheckStylesheetClasses {
     }
 
     Set<String> getHtmlStyleNames() {
-        return Arrays.stream(HtmlStyle.values())
+        return Arrays.stream(HtmlStyles.values())
                 .map(HtmlStyle::cssName)
                 .collect(Collectors.toCollection(TreeSet::new));
     }
@@ -193,7 +195,7 @@ public class CheckStylesheetClasses {
     Set<String> getStylesheetNames() throws IOException {
         Set<String> names = new TreeSet<>();
         String stylesheet = "/jdk/javadoc/internal/doclets/formats/html/resources/stylesheet.css";
-        URL url = HtmlStyle.class.getResource(stylesheet);
+        URL url = HtmlStyles.class.getResource(stylesheet);
         readStylesheet(url, names);
         return names;
     }

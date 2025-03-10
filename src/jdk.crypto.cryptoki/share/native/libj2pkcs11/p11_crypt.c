@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -72,7 +72,6 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptInit
 {
     CK_SESSION_HANDLE ckSessionHandle;
     CK_MECHANISM_PTR ckpMechanism = NULL;
-    CK_MECHANISM_PTR ckpTemp;
     CK_OBJECT_HANDLE ckKeyHandle;
     CK_RV rv;
 
@@ -90,20 +89,60 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptInit
     rv = (*ckpFunctions->C_EncryptInit)(ckSessionHandle, ckpMechanism,
                                         ckKeyHandle);
 
-    if (ckpMechanism->mechanism == CKM_AES_GCM) {
-        if (rv == CKR_ARGUMENTS_BAD || rv == CKR_MECHANISM_PARAM_INVALID) {
-            // retry with CKM_GCM_PARAMS structure in pkcs11t.h
-            TRACE0("DEBUG C_EncryptInit: retry with CK_GCM_PARAMS\n");
-            ckpTemp = updateGCMParams(env, ckpMechanism);
-            if (ckpTemp != NULL) { // only re-call if conversion succeeds
-                ckpMechanism = ckpTemp;
-                rv = (*ckpFunctions->C_EncryptInit)(ckSessionHandle, ckpMechanism,
-                        ckKeyHandle);
-            }
+    TRACE1("DEBUG C_EncryptInit: freed pMech = %p\n", ckpMechanism);
+    freeCKMechanismPtr(ckpMechanism);
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+
+    TRACE0("FINISHED\n");
+}
+
+/*
+ * Class:     sun_security_pkcs11_wrapper_PKCS11
+ * Method:    C_GCMEncryptInitWithRetry
+ * Signature: (JLsun/security/pkcs11/wrapper/CK_MECHANISM;JZ)V
+ * Parametermapping:                    *PKCS11*
+ * @param   jlong jSessionHandle        CK_SESSION_HANDLE hSession
+ * @param   jobject jMechanism          CK_MECHANISM_PTR pMechanism
+ * @param   jlong jKeyHandle            CK_OBJECT_HANDLE hKey
+ * @param   jboolean useNormVerFirst    CK_BBOOL retry (only retry if the first
+ *                                      init uses the non-normative version)
+ */
+JNIEXPORT void JNICALL
+Java_sun_security_pkcs11_wrapper_PKCS11_C_1GCMEncryptInitWithRetry
+(JNIEnv *env, jobject obj, jlong jSessionHandle,
+ jobject jMechanism, jlong jKeyHandle, jboolean useNormVerFirst)
+{
+    CK_SESSION_HANDLE ckSessionHandle;
+    CK_MECHANISM_PTR ckpMechanism = NULL;
+    CK_OBJECT_HANDLE ckKeyHandle;
+    CK_BBOOL retry = FALSE;
+    CK_RV rv = 1;
+
+    CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
+    if (ckpFunctions == NULL) { return; }
+
+    ckSessionHandle = jLongToCKULong(jSessionHandle);
+    ckKeyHandle = jLongToCKULong(jKeyHandle);
+    ckpMechanism = jMechanismToCKMechanismPtr(env, jMechanism);
+
+    if ((*env)->ExceptionCheck(env)) { return; }
+
+    // if !useNormVerFirst, then update 'ckpMechanism' in place w/
+    // non-normative GCM params.
+    retry = (!useNormVerFirst && updateGCMParams(env, ckpMechanism) != NULL);
+
+    rv = (*ckpFunctions->C_EncryptInit)(ckSessionHandle, ckpMechanism, ckKeyHandle);
+
+    if (rv == CKR_ARGUMENTS_BAD || rv == CKR_MECHANISM_PARAM_INVALID) {
+        // retry and update 'ckpMechanism' in place w/ normative GCM params.
+        if (retry && updateGCMParams(env, ckpMechanism) != NULL) {
+            TRACE0("DEBUG retry C_EncryptInit\n");
+            rv = (*ckpFunctions->C_EncryptInit)(ckSessionHandle,
+                ckpMechanism, ckKeyHandle);
         }
     }
 
-    TRACE1("DEBUG C_EncryptInit: freed pMech = %p\n", ckpMechanism);
+    TRACE1("DEBUG C_GCMEncryptInitWithRetry: freed pMech = %p\n", ckpMechanism);
     freeCKMechanismPtr(ckpMechanism);
     if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
 
@@ -312,7 +351,6 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptInit
 {
     CK_SESSION_HANDLE ckSessionHandle;
     CK_MECHANISM_PTR ckpMechanism = NULL;
-    CK_MECHANISM_PTR ckpTemp;
     CK_OBJECT_HANDLE ckKeyHandle;
     CK_RV rv;
 
@@ -330,20 +368,61 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptInit
     rv = (*ckpFunctions->C_DecryptInit)(ckSessionHandle, ckpMechanism,
                                         ckKeyHandle);
 
-    if (ckpMechanism->mechanism == CKM_AES_GCM) {
-        if (rv == CKR_ARGUMENTS_BAD || rv == CKR_MECHANISM_PARAM_INVALID) {
-            // retry with CKM_GCM_PARAMS structure in pkcs11t.h
-            TRACE0("DEBUG C_DecryptInit: retry with CK_GCM_PARAMS\n");
-            ckpTemp = updateGCMParams(env, ckpMechanism);
-            if (ckpTemp != NULL) { // only re-call if conversion succeeds
-                ckpMechanism = ckpTemp;
-                rv = (*ckpFunctions->C_DecryptInit)(ckSessionHandle, ckpMechanism,
-                        ckKeyHandle);
-            }
+    TRACE1("DEBUG C_DecryptInit: freed pMech = %p\n", ckpMechanism);
+    freeCKMechanismPtr(ckpMechanism);
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+
+    TRACE0("FINISHED\n");
+}
+
+/*
+ * Class:     sun_security_pkcs11_wrapper_PKCS11
+ * Method:    C_GCMDecryptInitWithRetry
+ * Signature: (JLsun/security/pkcs11/wrapper/CK_MECHANISM;JZ)V
+ * Parametermapping:                    *PKCS11*
+ * @param   jlong jSessionHandle        CK_SESSION_HANDLE hSession
+ * @param   jobject jMechanism          CK_MECHANISM_PTR pMechanism
+ * @param   jlong jKeyHandle            CK_OBJECT_HANDLE hKey
+ * @param   jboolean useNormVerFirst    CK_BBOOL retry (only retry if the first
+ *                                      init uses the non-normative version)
+ */
+JNIEXPORT void JNICALL
+Java_sun_security_pkcs11_wrapper_PKCS11_C_1GCMDecryptInitWithRetry
+(JNIEnv *env, jobject obj, jlong jSessionHandle,
+ jobject jMechanism, jlong jKeyHandle, jboolean useNormVerFirst)
+{
+    CK_SESSION_HANDLE ckSessionHandle;
+    CK_MECHANISM_PTR ckpMechanism = NULL;
+    CK_OBJECT_HANDLE ckKeyHandle;
+    CK_BBOOL retry = FALSE;
+    CK_RV rv = 1;
+
+    CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
+    if (ckpFunctions == NULL) { return; }
+
+    ckSessionHandle = jLongToCKULong(jSessionHandle);
+    ckKeyHandle = jLongToCKULong(jKeyHandle);
+    ckpMechanism = jMechanismToCKMechanismPtr(env, jMechanism);
+
+    if ((*env)->ExceptionCheck(env)) { return; }
+
+    // if !useNormVerFirst, then update 'ckpMechanism' in place w/
+    // non-normative GCM params.
+    retry = (!useNormVerFirst && updateGCMParams(env, ckpMechanism) != NULL);
+
+    rv = (*ckpFunctions->C_DecryptInit)(ckSessionHandle, ckpMechanism,
+        ckKeyHandle);
+
+    if (rv == CKR_ARGUMENTS_BAD || rv == CKR_MECHANISM_PARAM_INVALID) {
+        // retry and update 'ckpMechanism' in place w/ normative GCM params.
+        if (retry && updateGCMParams(env, ckpMechanism) != NULL) {
+            TRACE0("DEBUG retry C_DecryptInit with normative CK_GCM_PARAMS\n");
+            rv = (*ckpFunctions->C_DecryptInit)(ckSessionHandle, ckpMechanism,
+                ckKeyHandle);
         }
     }
 
-    TRACE1("DEBUG C_DecryptInit: freed pMech = %p\n", ckpMechanism);
+    TRACE1("DEBUG C_GCMDecryptInitWithRetry: freed pMech = %p\n", ckpMechanism);
     freeCKMechanismPtr(ckpMechanism);
     if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
 

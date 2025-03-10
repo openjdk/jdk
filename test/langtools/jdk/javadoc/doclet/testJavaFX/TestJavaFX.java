@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,7 +240,7 @@ public class TestJavaFX extends JavadocTester {
         checkOutput("pkg1/D.html", true,
                 """
                     <h3 id="properties-inherited-from-class-pkg1.C">Properties inherited from class&\
-                    nbsp;pkg1.<a href="C.html" title="class in pkg1">C</a></h3>
+                    nbsp;<a href="C.html#property-summary" title="class in pkg1">C</a></h3>
                     <code><a href="C.html#pausedProperty">paused</a>, <a href="C.html#rateProperty">rate</a></code></div>""");
 
         checkOutput("pkg1/D.html", false, "shouldNotAppear");

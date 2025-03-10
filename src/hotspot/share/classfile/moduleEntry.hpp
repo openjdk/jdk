@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,11 @@ private:
                                        // for shared classes from this module
   Symbol*          _name;              // name of this module
   ClassLoaderData* _loader_data;
-  GrowableArray<ModuleEntry*>* _reads; // list of modules that are readable by this module
+
+  union {
+    GrowableArray<ModuleEntry*>* _reads;  // list of modules that are readable by this module
+    Array<ModuleEntry*>* _archived_reads; // List of readable modules stored in the CDS archive
+  };
   Symbol* _version;                    // module version number
   Symbol* _location;                   // module location
   CDS_ONLY(int _shared_path_index;)    // >=0 if classes in this module are in CDS archive
@@ -77,6 +81,7 @@ private:
   bool _must_walk_reads;               // walk module's reads list at GC safepoints to purge out dead modules
   bool _is_open;                       // whether the packages in the module are all unqualifiedly exported
   bool _is_patched;                    // whether the module is patched via --patch-module
+  DEBUG_ONLY(bool _reads_is_archived);
   CDS_JAVA_HEAP_ONLY(int _archived_module_index;)
 
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
@@ -115,6 +120,22 @@ public:
 
   bool             can_read(ModuleEntry* m) const;
   bool             has_reads_list() const;
+  GrowableArray<ModuleEntry*>* reads() const {
+    assert(!_reads_is_archived, "sanity");
+    return _reads;
+  }
+  void set_reads(GrowableArray<ModuleEntry*>* r) {
+    _reads = r;
+    DEBUG_ONLY(_reads_is_archived = false);
+  }
+  Array<ModuleEntry*>* archived_reads() const {
+    assert(_reads_is_archived, "sanity");
+    return _archived_reads;
+  }
+  void set_archived_reads(Array<ModuleEntry*>* r) {
+    _archived_reads = r;
+    DEBUG_ONLY(_reads_is_archived = true);
+  }
   void             add_read(ModuleEntry* m);
   void             set_read_walk_required(ClassLoaderData* m_loader_data);
 
@@ -164,6 +185,10 @@ public:
   static ModuleEntry* create_boot_unnamed_module(ClassLoaderData* cld);
   static ModuleEntry* new_unnamed_module_entry(Handle module_handle, ClassLoaderData* cld);
 
+  // Note caller requires ResourceMark
+  const char* name_as_C_string() {
+    return is_named() ? name()->as_C_string() : UNNAMED_MODULE;
+  }
   void print(outputStream* st = tty);
   void verify();
 
@@ -182,7 +207,6 @@ public:
   void load_from_archive(ClassLoaderData* loader_data);
   void restore_archived_oops(ClassLoaderData* loader_data);
   void clear_archived_oops();
-  void update_oops_in_archived_module(int root_oop_index);
   static void verify_archived_module_entries() PRODUCT_RETURN;
 #endif
 };

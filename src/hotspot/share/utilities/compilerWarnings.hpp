@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,10 @@
 
 #ifndef PRAGMA_NONNULL_IGNORED
 #define PRAGMA_NONNULL_IGNORED
+#endif
+
+#ifndef PRAGMA_ZERO_AS_NULL_POINTER_CONSTANT_IGNORED
+#define PRAGMA_ZERO_AS_NULL_POINTER_CONSTANT_IGNORED
 #endif
 
 // Support warnings for use of certain C functions, except where explicitly

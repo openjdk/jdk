@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
  * @key headful
  * @bug 8081019
  * @summary Check peer to null in CPlatformWindow.checkZoom() method
- * @author Alexandr Scherbatiy
  */
 public class bug8081019 {
 
@@ -57,8 +56,7 @@ public class bug8081019 {
         }
     }
 
-    private static void runTest() throws Exception {
-        System.setSecurityManager(new SecurityManager());
+    private static void runTest() {
         Frame f = new Frame("Test frame");
         f.setVisible(true);
         f.setVisible(false);
@@ -68,7 +66,7 @@ public class bug8081019 {
     private static void runProcess() throws Exception {
         String javaPath = System.getProperty("java.home", "");
         String command = javaPath + File.separator + "bin" + File.separator + "java"
-                + " -Djava.security.manager=allow " + bug8081019.class.getName() + " " + RUN_TEST;
+                + " " + bug8081019.class.getName() + " " + RUN_TEST;
 
         Process process = Runtime.getRuntime().exec(command);
         boolean processExit = process.waitFor(20, TimeUnit.SECONDS);
@@ -93,8 +91,8 @@ public class bug8081019 {
             in.read(b);
             tempString = new String(b);
             if (!exception) {
-                exception = tempString.indexOf("Exception") != -1
-                        || tempString.indexOf("Error") != -1;
+                exception = tempString.contains("Exception")
+                            || tempString.contains("Error");
             }
             System.out.println(tempString);
             count = in.available();

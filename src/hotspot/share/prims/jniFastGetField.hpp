@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,17 +71,6 @@ class JNI_FastGetField : AllStatic {
 #endif // AARCH64
 
  public:
-#if defined(_WINDOWS) && !defined(_WIN64)
-  static GetBooleanField_t jni_fast_GetBooleanField_fp;
-  static GetByteField_t    jni_fast_GetByteField_fp;
-  static GetCharField_t    jni_fast_GetCharField_fp;
-  static GetShortField_t   jni_fast_GetShortField_fp;
-  static GetIntField_t     jni_fast_GetIntField_fp;
-  static GetLongField_t    jni_fast_GetLongField_fp;
-  static GetFloatField_t   jni_fast_GetFloatField_fp;
-  static GetDoubleField_t  jni_fast_GetDoubleField_fp;
-#endif
-
   static address generate_fast_get_boolean_field();
   static address generate_fast_get_byte_field();
   static address generate_fast_get_char_field();

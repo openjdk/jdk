@@ -1035,7 +1035,7 @@ static bool search_file_in_LIBPATH(const char* path, struct stat64x* stat) {
 // specific AIX versions for ::dlopen() and ::dlclose(), which handles the struct g_handletable
 // This way we mimic dl handle equality for a library
 // opened a second time, as it is implemented on other platforms.
-void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
+void* Aix_dlopen(const char* filename, int Flags, int *eno, const char** error_report) {
   assert(error_report != nullptr, "error_report is nullptr");
   void* result;
   struct stat64x libstat;
@@ -1047,6 +1047,7 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
     assert(result == nullptr, "dll_load: Could not stat() file %s, but dlopen() worked; Have to improve stat()", filename);
   #endif
     *error_report = "Could not load module .\nSystem error: No such file or directory";
+    *eno = ENOENT;
     return nullptr;
   }
   else {
@@ -1090,6 +1091,7 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
         p_handletable = new_tab;
       }
       // Library not yet loaded; load it, then store its handle in handle table
+      errno = 0;
       result = ::dlopen(filename, Flags);
       if (result != nullptr) {
         g_handletable_used++;
@@ -1101,6 +1103,7 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
       }
       else {
         // error analysis when dlopen fails
+        *eno = errno;
         *error_report = ::dlerror();
         if (*error_report == nullptr) {
           *error_report = "dlerror returned no error description";

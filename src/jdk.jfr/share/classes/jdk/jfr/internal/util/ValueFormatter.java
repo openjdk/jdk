@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,23 +40,6 @@ import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedMethod;
 
 public final class ValueFormatter {
-    private static enum TimespanUnit {
-        NANOSECONDS("ns", 1000),
-        MICROSECONDS("us", 1000),
-        MILLISECONDS("ms", 1000),
-        SECONDS("s", 60), MINUTES("m", 60),
-        HOURS("h", 24),
-        DAYS("d", 7);
-
-        private final String text;
-        private final long amount;
-
-        TimespanUnit(String unit, long amount) {
-            this.text = unit;
-            this.amount = amount;
-        }
-    }
-
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final Duration MICRO_SECOND = Duration.ofNanos(1_000);
     private static final Duration SECOND = Duration.ofSeconds(1);
@@ -82,7 +65,7 @@ public final class ValueFormatter {
         TimespanUnit result = TimespanUnit.NANOSECONDS;
         for (TimespanUnit unit : TimespanUnit.values()) {
             result = unit;
-            long amount = unit.amount;
+            long amount = unit.size;
             if (result == TimespanUnit.DAYS || value < amount || value % amount != 0) {
                 break;
             }

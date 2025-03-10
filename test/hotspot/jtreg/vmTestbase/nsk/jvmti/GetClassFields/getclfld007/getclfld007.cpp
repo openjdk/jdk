@@ -86,7 +86,7 @@ Java_nsk_jvmti_GetClassFields_getclfld007_check(JNIEnv *env, jclass cls, jclass 
 
     if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
-        fflush(0);
+        fflush(nullptr);
         result = STATUS_FAILED;
         return;
     }
@@ -98,7 +98,7 @@ Java_nsk_jvmti_GetClassFields_getclfld007_check(JNIEnv *env, jclass cls, jclass 
     if (err != JVMTI_ERROR_NONE) {
         printf("GetClassFields unexpected error: %s (%d)\n",
                TranslateError(err), err);
-        fflush(0);
+        fflush(nullptr);
         result = STATUS_FAILED;
         return;
     }
@@ -132,7 +132,7 @@ Java_nsk_jvmti_GetClassFields_getclfld007_check(JNIEnv *env, jclass cls, jclass 
         jvmti->Deallocate((unsigned char *)name);
         jvmti->Deallocate((unsigned char *)sig);
     }
-    fflush(0);
+    fflush(nullptr);
 }
 
 JNIEXPORT int JNICALL

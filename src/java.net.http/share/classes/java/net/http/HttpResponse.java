@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLSession;
 import jdk.internal.net.http.BufferingSubscriber;
+import jdk.internal.net.http.LimitingSubscriber;
 import jdk.internal.net.http.LineSubscriberAdapter;
 import jdk.internal.net.http.ResponseBodyHandlers.FileDownloadBodyHandler;
 import jdk.internal.net.http.ResponseBodyHandlers.PathBodyHandler;
@@ -525,24 +526,11 @@ public interface HttpResponse<T> {
          * been completely written to the file, and {@link #body()} returns a
          * reference to its {@link Path}.
          *
-         * <p> In the case of the default file system provider, security manager
-         * permission checks are performed in this factory method, when the
-         * {@code BodyHandler} is created. Otherwise,
-         * {@linkplain FileChannel#open(Path, OpenOption...) permission checks}
-         * may be performed asynchronously against the caller's context
-         * at file access time.
-         * Care must be taken that the {@code BodyHandler} is not shared with
-         * untrusted code.
-         *
          * @param  file the file to store the body in
          * @param  openOptions any options to use when opening/creating the file
          * @return a response body handler
          * @throws IllegalArgumentException if an invalid set of open options
          *         are specified
-         * @throws SecurityException in the case of the default file system
-         *         provider, and a security manager is installed,
-         *         {@link SecurityManager#checkWrite(String) checkWrite}
-         *         is invoked to check write access to the given file
          */
         public static BodyHandler<Path> ofFile(Path file, OpenOption... openOptions) {
             Objects.requireNonNull(file);
@@ -560,21 +548,8 @@ public interface HttpResponse<T> {
          *
          * <p> Equivalent to: {@code ofFile(file, CREATE, WRITE)}
          *
-         * <p> In the case of the default file system provider, security manager
-         * permission checks are performed in this factory method, when the
-         * {@code BodyHandler} is created. Otherwise,
-         * {@linkplain FileChannel#open(Path, OpenOption...) permission checks}
-         * may be performed asynchronously against the caller's context
-         * at file access time.
-         * Care must be taken that the {@code BodyHandler} is not shared with
-         * untrusted code.
-         *
          * @param  file the file to store the body in
          * @return a response body handler
-         * @throws SecurityException in the case of the default file system
-         *         provider, and a security manager is installed,
-         *         {@link SecurityManager#checkWrite(String) checkWrite}
-         *         is invoked to check write access to the given file
          */
         public static BodyHandler<Path> ofFile(Path file) {
             return BodyHandlers.ofFile(file, CREATE, WRITE);
@@ -597,10 +572,6 @@ public interface HttpResponse<T> {
          * by the server. If the destination directory does not exist or cannot
          * be written to, then the response will fail with an {@link IOException}.
          *
-         * <p> Security manager permission checks are performed in this factory
-         * method, when the {@code BodyHandler} is created. Care must be taken
-         * that the {@code BodyHandler} is not shared with untrusted code.
-         *
          * @param  directory the directory to store the file in
          * @param  openOptions open options used when opening the file
          * @return a response body handler
@@ -608,15 +579,6 @@ public interface HttpResponse<T> {
          *         is not of the default file system, is not a directory,
          *         is not writable, or if an invalid set of open options
          *         are specified
-         * @throws SecurityException in the case of the default file system
-         *         provider and a security manager has been installed,
-         *         and it denies
-         *         {@linkplain SecurityManager#checkRead(String) read access}
-         *         to the directory, or it denies
-         *         {@linkplain SecurityManager#checkWrite(String) write access}
-         *         to the directory, or it denies
-         *         {@linkplain SecurityManager#checkWrite(String) write access}
-         *         to the files within the directory.
          */
         public static BodyHandler<Path> ofFileDownload(Path directory,
                                                        OpenOption... openOptions) {
@@ -787,6 +749,33 @@ public interface HttpResponse<T> {
                      .buffering(downstreamHandler.apply(responseInfo),
                                 bufferSize);
          }
+
+        /**
+         * {@return a {@code BodyHandler} that limits the number of body bytes
+         * that are delivered to the given {@code downstreamHandler}}
+         * <p>
+         * If the number of body bytes received exceeds the given
+         * {@code capacity}, {@link BodySubscriber#onError(Throwable) onError}
+         * is called on the downstream {@code BodySubscriber} with an
+         * {@link IOException} indicating that the capacity is exceeded, and
+         * the upstream subscription is cancelled.
+         *
+         * @param downstreamHandler the downstream handler to pass received data to
+         * @param capacity the maximum number of bytes that are allowed
+         * @throws IllegalArgumentException if {@code capacity} is negative
+         * @since 25
+         */
+        public static <T> BodyHandler<T> limiting(BodyHandler<T> downstreamHandler, long capacity) {
+            Objects.requireNonNull(downstreamHandler, "downstreamHandler");
+            if (capacity < 0) {
+                throw new IllegalArgumentException("capacity must not be negative: " + capacity);
+            }
+            return responseInfo -> {
+                BodySubscriber<T> downstreamSubscriber = downstreamHandler.apply(responseInfo);
+                return BodySubscribers.limiting(downstreamSubscriber, capacity);
+            };
+        }
+
     }
 
     /**
@@ -1137,24 +1126,11 @@ public interface HttpResponse<T> {
          * <p> The {@link HttpResponse} using this subscriber is available after
          * the entire response has been read.
          *
-         * <p> In the case of the default file system provider, security manager
-         * permission checks are performed in this factory method, when the
-         * {@code BodySubscriber} is created. Otherwise,
-         * {@linkplain FileChannel#open(Path, OpenOption...) permission checks}
-         * may be performed asynchronously against the caller's context
-         * at file access time.
-         * Care must be taken that the {@code BodySubscriber} is not shared with
-         * untrusted code.
-         *
          * @param  file the file to store the body in
          * @param  openOptions the list of options to open the file with
          * @return a body subscriber
          * @throws IllegalArgumentException if an invalid set of open options
          *         are specified
-         * @throws SecurityException in the case of the default file system
-         *         provider, and a security manager is installed,
-         *         {@link SecurityManager#checkWrite(String) checkWrite}
-         *         is invoked to check write access to the given file
          */
         public static BodySubscriber<Path> ofFile(Path file, OpenOption... openOptions) {
             Objects.requireNonNull(file);
@@ -1172,21 +1148,8 @@ public interface HttpResponse<T> {
          *
          * <p> Equivalent to: {@code ofFile(file, CREATE, WRITE)}
          *
-         * <p> In the case of the default file system provider, security manager
-         * permission checks are performed in this factory method, when the
-         * {@code BodySubscriber} is created. Otherwise,
-         * {@linkplain FileChannel#open(Path, OpenOption...) permission checks}
-         * may be performed asynchronously against the caller's context
-         * at file access time.
-         * Care must be taken that the {@code BodySubscriber} is not shared with
-         * untrusted code.
-         *
          * @param  file the file to store the body in
          * @return a body subscriber
-         * @throws SecurityException in the case of the default file system
-         *         provider, and a security manager is installed,
-         *         {@link SecurityManager#checkWrite(String) checkWrite}
-         *         is invoked to check write access to the given file
          */
         public static BodySubscriber<Path> ofFile(Path file) {
             return ofFile(file, CREATE, WRITE);
@@ -1415,5 +1378,30 @@ public interface HttpResponse<T> {
         {
             return new ResponseSubscribers.MappingSubscriber<>(upstream, mapper);
         }
+
+        /**
+         * {@return a {@code BodySubscriber} that limits the number of body
+         * bytes that are delivered to the given {@code downstreamSubscriber}}
+         * <p>
+         * If the number of body bytes received exceeds the given
+         * {@code capacity}, {@link BodySubscriber#onError(Throwable) onError}
+         * is called on the downstream {@code BodySubscriber} with an
+         * {@link IOException} indicating that the capacity is exceeded, and
+         * the upstream subscription is cancelled.
+         *
+         * @param downstreamSubscriber the downstream subscriber to pass received data to
+         * @param capacity the maximum number of bytes that are allowed
+         * @throws IllegalArgumentException if {@code capacity} is negative
+         * @since 25
+         */
+        public static <T> BodySubscriber<T> limiting(BodySubscriber<T> downstreamSubscriber, long capacity) {
+            Objects.requireNonNull(downstreamSubscriber, "downstreamSubscriber");
+            if (capacity < 0) {
+                throw new IllegalArgumentException("capacity must not be negative: " + capacity);
+            }
+            return new LimitingSubscriber<>(downstreamSubscriber, capacity);
+        }
+
     }
+
 }

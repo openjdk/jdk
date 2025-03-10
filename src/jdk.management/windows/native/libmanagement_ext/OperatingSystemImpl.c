@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,7 +291,7 @@ static const DWORD PDH_PROCESSOR_TIME_IDX = 6;
 static const DWORD PDH_PROCESS_IDX = 230;
 static const DWORD PDH_ID_PROCESS_IDX = 784;
 
-/* useful pdh fmt's */
+/* PDH format patterns, and lengths of their constant component. */
 static const char* const OBJECT_COUNTER_FMT = "\\%s\\%s";
 static const size_t OBJECT_COUNTER_FMT_LEN = 2;
 static const char* const OBJECT_WITH_INSTANCES_COUNTER_FMT = "\\%s(%s)\\%s";
@@ -405,8 +405,8 @@ makeFullCounterPath(const char* const objectName,
     assert(objectName);
     assert(counterName);
 
-    fullCounterPathLen = strlen(objectName);
-    fullCounterPathLen += strlen(counterName);
+    // Always include space for null terminator:
+    fullCounterPathLen = strlen(objectName) + strlen(counterName) + 1;
 
     if (imageName) {
         /*
@@ -429,20 +429,19 @@ makeFullCounterPath(const char* const objectName,
         assert(instance);
 
         fullCounterPathLen += strlen(instance);
-
-        fullCounterPath = malloc(fullCounterPathLen + 1);
+        fullCounterPath = malloc(fullCounterPathLen);
 
         if (!fullCounterPath) {
             return NULL;
         }
 
-        _snprintf(fullCounterPath,
-                  fullCounterPathLen,
-                  PROCESS_OBJECT_INSTANCE_COUNTER_FMT,
-                  objectName,
-                  imageName,
-                  instance,
-                  counterName);
+        snprintf(fullCounterPath,
+                 fullCounterPathLen,
+                 PROCESS_OBJECT_INSTANCE_COUNTER_FMT,
+                 objectName,
+                 imageName,
+                 instance,
+                 counterName);
     } else {
         if (instance) {
             /*
@@ -465,29 +464,27 @@ makeFullCounterPath(const char* const objectName,
             fullCounterPathLen += OBJECT_COUNTER_FMT_LEN;
         }
 
-        fullCounterPath = malloc(fullCounterPathLen + 1);
+        fullCounterPath = malloc(fullCounterPathLen);
 
         if (!fullCounterPath) {
             return NULL;
         }
 
         if (instance) {
-            _snprintf(fullCounterPath,
-                      fullCounterPathLen,
-                      OBJECT_WITH_INSTANCES_COUNTER_FMT,
-                      objectName,
-                      instance,
-                      counterName);
+            snprintf(fullCounterPath,
+                     fullCounterPathLen,
+                     OBJECT_WITH_INSTANCES_COUNTER_FMT,
+                     objectName,
+                     instance,
+                     counterName);
         } else {
-            _snprintf(fullCounterPath,
-                      fullCounterPathLen,
-                      OBJECT_COUNTER_FMT,
-                      objectName,
-                      counterName);
+            snprintf(fullCounterPath,
+                     fullCounterPathLen,
+                     OBJECT_COUNTER_FMT,
+                     objectName,
+                     counterName);
         }
     }
-
-    fullCounterPath[fullCounterPathLen] = '\0';
 
     return fullCounterPath;
 }
@@ -719,10 +716,10 @@ currentQueryIndexForProcess(void) {
             PDH_FMT_COUNTERVALUE counterValue;
             PDH_STATUS res;
 
-            _snprintf(fullIDProcessCounterPath,
-                      MAX_PATH,
-                      pdhIDProcessCounterFmt,
-                      index);
+            snprintf(fullIDProcessCounterPath,
+                     MAX_PATH,
+                     pdhIDProcessCounterFmt,
+                     index);
 
             if (addCounter(tmpQuery, fullIDProcessCounterPath, &handleCounter) != 0) {
                 break;
@@ -1050,24 +1047,22 @@ allocateAndInitializePdhConstants() {
     pdhIDProcessCounterFmtLen += strlen(pdhLocalizedProcessObject);
     pdhIDProcessCounterFmtLen += strlen(pdhLocalizedIDProcessCounter);
     pdhIDProcessCounterFmtLen += PROCESS_OBJECT_INSTANCE_COUNTER_FMT_LEN;
-    pdhIDProcessCounterFmtLen += 2; // "%d"
+    pdhIDProcessCounterFmtLen += 3; // "%d" and '\0'
 
     assert(pdhIDProcessCounterFmtLen < MAX_PATH);
-    pdhIDProcessCounterFmt = malloc(pdhIDProcessCounterFmtLen + 1);
+    pdhIDProcessCounterFmt = malloc(pdhIDProcessCounterFmtLen);
     if (!pdhIDProcessCounterFmt) {
         goto end;
     }
 
     /* "\Process(java#%d)\ID Process" */
-    _snprintf(pdhIDProcessCounterFmt,
-              pdhIDProcessCounterFmtLen,
-              PROCESS_OBJECT_INSTANCE_COUNTER_FMT,
-              pdhLocalizedProcessObject,
-              pdhProcessImageName,
-              "%d",
-              pdhLocalizedIDProcessCounter);
-
-    pdhIDProcessCounterFmt[pdhIDProcessCounterFmtLen] = '\0';
+    snprintf(pdhIDProcessCounterFmt,
+             pdhIDProcessCounterFmtLen,
+             PROCESS_OBJECT_INSTANCE_COUNTER_FMT,
+             pdhLocalizedProcessObject,
+             pdhProcessImageName,
+             "%d",
+             pdhLocalizedIDProcessCounter);
 
     assert(0 == numberOfJavaProcessesAtInitialization);
     currentQueryIndex = currentQueryIndexForProcess();

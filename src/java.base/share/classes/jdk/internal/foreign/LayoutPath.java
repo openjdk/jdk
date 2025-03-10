@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.internal.foreign;
 
 import jdk.internal.vm.annotation.ForceInline;
+
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
@@ -38,7 +39,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
@@ -59,13 +59,14 @@ public class LayoutPath {
     private static final long[] EMPTY_STRIDES = new long[0];
     private static final long[] EMPTY_BOUNDS = new long[0];
     private static final MethodHandle[] EMPTY_DEREF_HANDLES = new MethodHandle[0];
+    public static final MemoryLayout.PathElement[] EMPTY_PATH_ELEMENTS = new MemoryLayout.PathElement[0];
 
     private static final MethodHandle MH_ADD_SCALED_OFFSET;
     private static final MethodHandle MH_SLICE;
     private static final MethodHandle MH_SLICE_LAYOUT;
-    private static final MethodHandle MH_CHECK_ALIGN;
+    private static final MethodHandle MH_CHECK_ENCL_LAYOUT;
     private static final MethodHandle MH_SEGMENT_RESIZE;
-    private static final MethodHandle MH_ADD;
+    private static final MethodHandle MH_ADD_EXACT;
 
     static {
         try {
@@ -76,11 +77,11 @@ public class LayoutPath {
                     MethodType.methodType(MemorySegment.class, long.class, long.class));
             MH_SLICE_LAYOUT = lookup.findVirtual(MemorySegment.class, "asSlice",
                     MethodType.methodType(MemorySegment.class, long.class, MemoryLayout.class));
-            MH_CHECK_ALIGN = lookup.findStatic(LayoutPath.class, "checkAlign",
+            MH_CHECK_ENCL_LAYOUT = lookup.findStatic(LayoutPath.class, "checkEnclosingLayout",
                     MethodType.methodType(void.class, MemorySegment.class, long.class, MemoryLayout.class));
             MH_SEGMENT_RESIZE = lookup.findStatic(LayoutPath.class, "resizeSegment",
-                    MethodType.methodType(MemorySegment.class, MemorySegment.class, MemoryLayout.class));
-            MH_ADD = lookup.findStatic(Long.class, "sum",
+                    MethodType.methodType(MemorySegment.class, MemorySegment.class));
+            MH_ADD_EXACT = lookup.findStatic(Math.class, "addExact",
                     MethodType.methodType(long.class, long.class, long.class));
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
@@ -179,13 +180,14 @@ public class LayoutPath {
         }
         MemoryLayout derefLayout = addressLayout.targetLayout().get();
         MethodHandle handle = dereferenceHandle(false).toMethodHandle(VarHandle.AccessMode.GET);
-        handle = MethodHandles.filterReturnValue(handle,
-                MethodHandles.insertArguments(MH_SEGMENT_RESIZE, 1, derefLayout));
+        handle = MethodHandles.filterReturnValue(handle, MH_SEGMENT_RESIZE);
         return derefPath(derefLayout, handle, this);
     }
 
-    private static MemorySegment resizeSegment(MemorySegment segment, MemoryLayout layout) {
-        return Utils.longToAddress(segment.address(), layout.byteSize(), layout.byteAlignment());
+    private static MemorySegment resizeSegment(MemorySegment segment) {
+        // Avoid adapting for specific target layout. The check for the root layout
+        // size and alignment will be inserted by LayoutPath::dereferenceHandle anyway.
+        return Utils.longToAddress(segment.address(), Long.MAX_VALUE, 1);
     }
 
     // Layout path projections
@@ -204,22 +206,13 @@ public class LayoutPath {
                     String.format("Path does not select a value layout: %s", breadcrumbs()));
         }
 
-        // If we have an enclosing layout, drop the alignment check for the accessed element,
-        // we check the root layout instead
-        ValueLayout accessedLayout = enclosing != null ? valueLayout.withByteAlignment(1) : valueLayout;
-        VarHandle handle = accessedLayout.varHandle();
-        handle = MethodHandles.collectCoordinates(handle, 1, offsetHandle());
-
-        // we only have to check the alignment of the root layout for the first dereference we do,
-        // as each dereference checks the alignment of the target address when constructing its segment
-        // (see Utils::longToAddress)
-        if (derefAdapters.length == 0 && enclosing != null) {
-            // insert align check for the root layout on the initial MS + offset
-            List<Class<?>> coordinateTypes = handle.coordinateTypes();
-            MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ALIGN, 2, rootLayout());
-            handle = MethodHandles.collectCoordinates(handle, 0, alignCheck);
-            int[] reorder = IntStream.concat(IntStream.of(0, 1), IntStream.range(0, coordinateTypes.size())).toArray();
-            handle = MethodHandles.permuteCoordinates(handle, coordinateTypes, reorder);
+        boolean constantOffset = strides.length == 0;
+        // (MS, long, long) if variable offset, (MS, long) if constant offset
+        VarHandle handle = Utils.makeRawSegmentViewVarHandle(rootLayout(), valueLayout, constantOffset, offset);
+        if (!constantOffset) {
+            MethodHandle offsetAdapter = offsetHandle();  // Adapter performs the bound checks
+            offsetAdapter = MethodHandles.insertArguments(offsetAdapter, 0, 0L);
+            handle = MethodHandles.collectCoordinates(handle, 2, offsetAdapter);    // (MS, long)
         }
 
         if (adapt) {
@@ -243,19 +236,24 @@ public class LayoutPath {
     @ForceInline
     private static long addScaledOffset(long base, long index, long stride, long bound) {
         Objects.checkIndex(index, bound);
+        // note: the below can overflow, depending on 'base'. When constructing var handles
+        // through the layout API, this is never the case, as the injected 'base' is always 0.
         return base + (stride * index);
     }
 
     public MethodHandle offsetHandle() {
-        MethodHandle mh = MethodHandles.insertArguments(MH_ADD, 0, offset);
+        MethodHandle mh = MH_ADD_EXACT;
         for (int i = strides.length - 1; i >= 0; i--) {
             MethodHandle collector = MethodHandles.insertArguments(MH_ADD_SCALED_OFFSET, 2, strides[i], bounds[i]);
-            // (J, ...) -> J to (J, J, ...) -> J
-            // i.e. new coord is prefixed. Last coord will correspond to innermost layout
-            mh = MethodHandles.collectArguments(mh, 0, collector);
+            // (J, J, ...) -> J to (J, J, J, ...) -> J
+            // 1. the leading argument is the base offset (externally provided).
+            // 2. index arguments are added. The last index correspond to the innermost layout.
+            // 3. overflow can only occur at the outermost layer, due to the final addition with the base offset.
+            // This is because the layout API ensures (by construction) that all offsets generated from layout paths
+            // are always < Long.MAX_VALUE.
+            mh = MethodHandles.collectArguments(mh, 1, collector);
         }
-
-        return mh;
+        return MethodHandles.insertArguments(mh, 1, offset);
     }
 
     private MemoryLayout rootLayout() {
@@ -277,7 +275,7 @@ public class LayoutPath {
         if (enclosing != null) {
             // insert align check for the root layout on the initial MS + offset
             MethodType oldType = sliceHandle.type();
-            MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ALIGN, 2, rootLayout());
+            MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ENCL_LAYOUT, 2, rootLayout());
             sliceHandle = MethodHandles.collectArguments(sliceHandle, 0, alignCheck); // (MS, long, MS, long) -> MS
             int[] reorder = IntStream.concat(IntStream.of(0, 1), IntStream.range(0, oldType.parameterCount())).toArray();
             sliceHandle = MethodHandles.permuteArguments(sliceHandle, oldType, reorder); // (MS, long, ...) -> MS
@@ -286,12 +284,8 @@ public class LayoutPath {
         return sliceHandle;
     }
 
-    private static void checkAlign(MemorySegment segment, long offset, MemoryLayout constraint) {
-        if (!((AbstractMemorySegmentImpl) segment).isAlignedForElement(offset, constraint)) {
-            throw new IllegalArgumentException(String.format(
-                    "Target offset %d is incompatible with alignment constraint %d (of %s) for segment %s"
-                    , offset, constraint.byteAlignment(), constraint, segment));
-        }
+    private static void checkEnclosingLayout(MemorySegment segment, long offset, MemoryLayout enclosing) {
+        ((AbstractMemorySegmentImpl)segment).checkEnclosingLayout(offset, enclosing, true);
     }
 
     public MemoryLayout layout() {

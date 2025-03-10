@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.lang.classfile.ClassTransform;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.lang.classfile.components.ClassPrinter;
+import jdk.internal.classfile.components.ClassPrinter;
 
 public class AnnotationsExamples {
 
@@ -47,15 +47,16 @@ public class AnnotationsExamples {
     public byte[] addAnno(ClassModel m) {
         // @@@ Not correct
         List<Annotation> annos = List.of(Annotation.of(ClassDesc.of("java.lang.FunctionalInterface")));
-        return ClassFile.of().transform(m, ClassTransform.endHandler(cb -> cb.with(RuntimeVisibleAnnotationsAttribute.of(annos))));
+        return ClassFile.of().transformClass(m, ClassTransform.endHandler(cb -> cb.with(RuntimeVisibleAnnotationsAttribute.of(annos))));
     }
 
     /**
      * Find classes with annotations of a certain type
      */
     public void findAnnotation(ClassModel m) {
-        if (m.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).isPresent()) {
-            RuntimeVisibleAnnotationsAttribute a = m.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).get();
+        var rvaa = m.findAttribute(Attributes.runtimeVisibleAnnotations());
+        if (rvaa.isPresent()) {
+            RuntimeVisibleAnnotationsAttribute a = rvaa.get();
             for (Annotation ann : a.annotations()) {
                 if (ann.className().stringValue().equals("Ljava/lang/FunctionalInterface;"))
                     System.out.println(m.thisClass().asInternalName());
@@ -68,19 +69,19 @@ public class AnnotationsExamples {
      */
     public void swapAnnotation(ClassModel m) {
         ClassModel m2 = m;
-
-        if (m.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).isPresent()) {
-            RuntimeVisibleAnnotationsAttribute a = m.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).get();
+        var rvaa = m.findAttribute(Attributes.runtimeVisibleAnnotations());
+        if (rvaa.isPresent()) {
+            RuntimeVisibleAnnotationsAttribute a = rvaa.get();
             var cc = ClassFile.of();
             for (Annotation ann : a.annotations()) {
                 if (ann.className().stringValue().equals("Ljava/lang/annotation/Documented;")) {
-                    m2 = cc.parse(cc.transform(m, SWAP_ANNO_TRANSFORM));
+                    m2 = cc.parse(cc.transformClass(m, SWAP_ANNO_TRANSFORM));
                 }
             }
         }
-
-        if (m2.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).isPresent()) {
-            RuntimeVisibleAnnotationsAttribute a = m2.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).get();
+        rvaa = m2.findAttribute(Attributes.runtimeVisibleAnnotations());
+        if (rvaa.isPresent()) {
+            RuntimeVisibleAnnotationsAttribute a = rvaa.get();
             for (Annotation ann : a.annotations()) {
                 if (ann.className().stringValue().equals("Ljava/lang/annotation/Documented;"))
                     throw new RuntimeException();
@@ -112,13 +113,13 @@ public class AnnotationsExamples {
      */
     public void addAnnotation(ClassModel m) {
         ClassModel m2 = m;
-
-        if (m.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).isPresent()) {
-            RuntimeVisibleAnnotationsAttribute a = m.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).get();
+        var rvaa = m.findAttribute(Attributes.runtimeVisibleAnnotations());
+        if (rvaa.isPresent()) {
+            RuntimeVisibleAnnotationsAttribute a = rvaa.get();
             var cc = ClassFile.of();
             for (Annotation ann : a.annotations()) {
                 if (ann.className().stringValue().equals("Ljava/lang/FunctionalInterface;")) {
-                    m2 = cc.parse(cc.transform(m, (cb, ce) -> {
+                    m2 = cc.parse(cc.transformClass(m, (cb, ce) -> {
                         if (ce instanceof RuntimeVisibleAnnotationsAttribute ra) {
                             var oldAnnos = ra.annotations();
                             List<Annotation> newAnnos = new ArrayList<>(oldAnnos.size() + 1);
@@ -135,7 +136,7 @@ public class AnnotationsExamples {
             }
         }
 
-        int size = m2.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).orElseThrow().annotations().size();
+        int size = m2.findAttribute(Attributes.runtimeVisibleAnnotations()).orElseThrow().annotations().size();
         if (size !=2) {
             StringBuilder sb = new StringBuilder();
             ClassPrinter.toJson(m2, ClassPrinter.Verbosity.TRACE_ALL, sb::append);
@@ -144,7 +145,7 @@ public class AnnotationsExamples {
     }
 
     public byte[] viaEndHandlerClassBuilderEdition(ClassModel m) {
-        return ClassFile.of().transform(m, ClassTransform.ofStateful(() -> new ClassTransform() {
+        return ClassFile.of().transformClass(m, ClassTransform.ofStateful(() -> new ClassTransform() {
             boolean found = false;
 
             @Override
@@ -171,7 +172,7 @@ public class AnnotationsExamples {
     }
 
     public byte[] viaEndHandlerClassTransformEdition(ClassModel m) {
-        return ClassFile.of().transform(m, ClassTransform.ofStateful(() -> new ClassTransform() {
+        return ClassFile.of().transformClass(m, ClassTransform.ofStateful(() -> new ClassTransform() {
             boolean found = false;
 
             @Override

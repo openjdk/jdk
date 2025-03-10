@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ ${COMPILEJAVA}${FILESEP}bin${FILESEP}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
         ${TESTSRC}${FILESEP}provider${FILESEP}HashProvider.java
 
 # run the test
-${TESTJAVA}${FILESEP}bin${FILESEP}java ${TESTVMOPTS} \
+${TESTJAVA}${FILESEP}bin${FILESEP}java ${TESTVMOPTS} ${TESTJAVAOPTS} \
         -classpath "${TESTCLASSES}${PATHSEP}${TESTSRC}${FILESEP}Deadlock.jar" \
 	-Djava.awt.headless=true \
         ClassLoaderDeadlock

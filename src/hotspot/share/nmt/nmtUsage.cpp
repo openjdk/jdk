@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "nmt/mallocTracker.hpp"
+#include "nmt/memoryFileTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtUsage.hpp"
 #include "nmt/threadStackTracker.hpp"
@@ -43,13 +44,11 @@ NMTUsage::NMTUsage(NMTUsageOptions options) :
     _usage_options(options) { }
 
 void NMTUsage::walk_thread_stacks() {
-  // If backed by virtual memory, snapping the thread stacks involves walking
-  // them to to figure out how much memory is committed if they are backed by
-  // virtual memory. This needs ot happen before we take the snapshot of the
-  // virtual memory since it will update this information.
-  if (ThreadStackTracker::track_as_vm()) {
-    VirtualMemoryTracker::snapshot_thread_stacks();
-  }
+  // Snapping the thread stacks involves walking the areas to figure out how
+  // much memory had been committed if they are backed by virtual memory. This
+  // needs to happen before we take the snapshot of the virtual memory since it
+  // will update this information.
+  VirtualMemoryTracker::snapshot_thread_stacks();
 }
 
 void NMTUsage::update_malloc_usage() {
@@ -59,9 +58,9 @@ void NMTUsage::update_malloc_usage() {
   const MallocMemorySnapshot* ms = MallocMemorySummary::as_snapshot();
 
   size_t total_arena_size = 0;
-  for (int i = 0; i < mt_number_of_types; i++) {
-    MEMFLAGS flag = NMTUtil::index_to_flag(i);
-    const MallocMemory* mm = ms->by_type(flag);
+  for (int i = 0; i < mt_number_of_tags; i++) {
+    MemTag mem_tag = NMTUtil::index_to_tag(i);
+    const MallocMemory* mm = ms->by_tag(mem_tag);
     _malloc_by_type[i] = mm->malloc_size() + mm->arena_size();
     total_arena_size +=  mm->arena_size();
   }
@@ -70,11 +69,11 @@ void NMTUsage::update_malloc_usage() {
   _malloc_total = ms->total();
 
   // Adjustment due to mtChunk double counting.
-  _malloc_by_type[NMTUtil::flag_to_index(mtChunk)] -= total_arena_size;
+  _malloc_by_type[NMTUtil::tag_to_index(mtChunk)] -= total_arena_size;
   _malloc_total -= total_arena_size;
 
   // Adjust mtNMT to include malloc overhead.
-  _malloc_by_type[NMTUtil::flag_to_index(mtNMT)] += ms->malloc_overhead();
+  _malloc_by_type[NMTUtil::tag_to_index(mtNMT)] += ms->malloc_overhead();
 }
 
 void NMTUsage::update_vm_usage() {
@@ -83,14 +82,24 @@ void NMTUsage::update_vm_usage() {
   // Reset total to allow recalculation.
   _vm_total.committed = 0;
   _vm_total.reserved = 0;
-  for (int i = 0; i < mt_number_of_types; i++) {
-    MEMFLAGS flag = NMTUtil::index_to_flag(i);
-    const VirtualMemory* vm = vms->by_type(flag);
+  for (int i = 0; i < mt_number_of_tags; i++) {
+    MemTag mem_tag = NMTUtil::index_to_tag(i);
+    const VirtualMemory* vm = vms->by_tag(mem_tag);
 
     _vm_by_type[i].reserved = vm->reserved();
     _vm_by_type[i].committed = vm->committed();
     _vm_total.reserved += vm->reserved();
     _vm_total.committed += vm->committed();
+  }
+
+  { // MemoryFileTracker addition
+    using MFT = MemoryFileTracker::Instance;
+    MemTracker::NmtVirtualMemoryLocker nvml;
+    MFT::iterate_summary([&](MemTag tag, const VirtualMemory* vm) {
+      int i = NMTUtil::tag_to_index(tag);
+      _vm_by_type[i].committed += vm->committed();
+      _vm_total.committed += vm->committed();
+    });
   }
 }
 
@@ -118,12 +127,12 @@ size_t NMTUsage::total_committed() const {
   return _malloc_total + _vm_total.committed;
 }
 
-size_t NMTUsage::reserved(MEMFLAGS flag) const {
-  int index = NMTUtil::flag_to_index(flag);
+size_t NMTUsage::reserved(MemTag mem_tag) const {
+  int index = NMTUtil::tag_to_index(mem_tag);
   return _malloc_by_type[index] + _vm_by_type[index].reserved;
 }
 
-size_t NMTUsage::committed(MEMFLAGS flag) const {
-  int index = NMTUtil::flag_to_index(flag);
+size_t NMTUsage::committed(MemTag mem_tag) const {
+  int index = NMTUtil::tag_to_index(mem_tag);
   return _malloc_by_type[index] + _vm_by_type[index].committed;
 }

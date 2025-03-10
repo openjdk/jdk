@@ -126,17 +126,16 @@ Zone	Africa/Algiers	0:12:12 -	LMT	1891 Mar 16
 
 # Cape Verde / Cabo Verde
 #
-# From Paul Eggert (2018-02-16):
-# Shanks gives 1907 for the transition to +02.
-# For now, ignore that and follow the 1911-05-26 Portuguese decree
-# (see Europe/Lisbon).
+# From Tim Parenti (2024-07-01), per Paul Eggert (2018-02-16):
+# For timestamps before independence, see commentary for Europe/Lisbon.
+# Shanks gives 1907 instead for the transition to -02.
 #
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Atlantic/Cape_Verde -1:34:04 -	LMT	1912 Jan 01  2:00u # Praia
-			-2:00	-	-02	1942 Sep
-			-2:00	1:00	-01	1945 Oct 15
-			-2:00	-	-02	1975 Nov 25  2:00
-			-1:00	-	-01
+			-2:00	-	%z	1942 Sep
+			-2:00	1:00	%z	1945 Oct 15
+			-2:00	-	%z	1975 Nov 25  2:00
+			-1:00	-	%z
 
 # Chad
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -368,14 +367,12 @@ Zone	Africa/Cairo	2:05:09 -	LMT	1900 Oct
 
 # Guinea-Bissau
 #
-# From Paul Eggert (2018-02-16):
-# Shanks gives 1911-05-26 for the transition to WAT,
-# evidently confusing the date of the Portuguese decree
-# (see Europe/Lisbon) with the date that it took effect.
+# From Tim Parenti (2024-07-01), per Paul Eggert (2018-02-16):
+# For timestamps before independence, see commentary for Europe/Lisbon.
 #
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Bissau	-1:02:20 -	LMT	1912 Jan  1  1:00u
-			-1:00	-	-01	1975
+			-1:00	-	%z	1975
 			 0:00	-	GMT
 
 # Comoros
@@ -440,10 +437,10 @@ Zone	Africa/Bissau	-1:02:20 -	LMT	1912 Jan  1  1:00u
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Nairobi	2:27:16	-	LMT	1908 May
-			2:30	-	+0230	1928 Jun 30 24:00
+			2:30	-	%z	1928 Jun 30 24:00
 			3:00	-	EAT	1930 Jan  4 24:00
-			2:30	-	+0230	1936 Dec 31 24:00
-			2:45	-	+0245	1942 Jul 31 24:00
+			2:30	-	%z	1936 Dec 31 24:00
+			2:45	-	%z	1942 Jul 31 24:00
 			3:00	-	EAT
 
 # Liberia
@@ -614,7 +611,7 @@ Rule Mauritius	2008	only	-	Oct	lastSun	2:00	1:00	-
 Rule Mauritius	2009	only	-	Mar	lastSun	2:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
-			4:00 Mauritius	+04/+05
+			4:00 Mauritius	%z
 # Agalega Is, Rodriguez
 # no information; probably like Indian/Mauritius
 
@@ -1094,10 +1091,10 @@ Rule	Morocco	2087	only	-	May	11	 2:00	0	-
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Africa/Casablanca	-0:30:20 -	LMT	1913 Oct 26
-			 0:00	Morocco	+00/+01	1984 Mar 16
-			 1:00	-	+01	1986
-			 0:00	Morocco	+00/+01	2018 Oct 28  3:00
-			 1:00	Morocco	+01/+00
+			 0:00	Morocco	%z	1984 Mar 16
+			 1:00	-	%z	1986
+			 0:00	Morocco	%z	2018 Oct 28  3:00
+			 1:00	Morocco	%z
 
 # Western Sahara
 #
@@ -1111,9 +1108,9 @@ Zone Africa/Casablanca	-0:30:20 -	LMT	1913 Oct 26
 # since most of it was then controlled by Morocco.
 
 Zone Africa/El_Aaiun	-0:52:48 -	LMT	1934 Jan # El Aaiún
-			-1:00	-	-01	1976 Apr 14
-			 0:00	Morocco	+00/+01	2018 Oct 28  3:00
-			 1:00	Morocco	+01/+00
+			-1:00	-	%z	1976 Apr 14
+			 0:00	Morocco	%z	2018 Oct 28  3:00
+			 1:00	Morocco	%z
 
 # Botswana
 # Burundi
@@ -1124,13 +1121,27 @@ Zone Africa/El_Aaiun	-0:52:48 -	LMT	1934 Jan # El Aaiún
 # Zambia
 # Zimbabwe
 #
-# Shanks gives 1903-03-01 for the transition to CAT.
-# Perhaps the 1911-05-26 Portuguese decree
-# https://dre.pt/pdf1sdip/1911/05/12500/23132313.pdf
-# merely made it official?
+# From Tim Parenti (2024-07-01):
+# For timestamps before Mozambique's independence, see commentary for
+# Europe/Lisbon.
+#
+# From Paul Eggert (2024-05-24):
+# The London Gazette, 1903-04-03, page 2245, says that
+# as of 1903-03-03 a time ball at the port of Lourenço Marques
+# (as Maputo was then called) was dropped daily at 13:00:00 LMT,
+# corresponding to 22:49:41.7 GMT, so local time was +02:10:18.3.
+# Conversely, the newspaper South Africa, 1909-02-09, page 321,
+# says the port had just installed an apparatus that communicated
+# "from the controlling clock in the new Observatory at Reuben Point ...
+# exact mean South African time, i.e., 30 deg., or 2 hours East of Greenwich".
+# Although Shanks gives 1903-03-01 for the transition to CAT,
+# evidently the port transitioned to CAT after 1903-03-03 but before
+# the Portuguese legal transition of 1912-01-01 (see Europe/Lisbon commentary).
+# For lack of better info, list 1909 as the transition date.
 #
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Africa/Maputo	2:10:20 -	LMT	1903 Mar
+		#STDOFF	2:10:18.3
+Zone	Africa/Maputo	2:10:18 -	LMT	1909
 			2:00	-	CAT
 
 # Namibia
@@ -1195,7 +1206,7 @@ Rule	Namibia	1995	2017	-	Apr	Sun>=1	2:00	-1:00	WAT
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Windhoek	1:08:24 -	LMT	1892 Feb 8
-			1:30	-	+0130	1903 Mar
+			1:30	-	%z	1903 Mar
 			2:00	-	SAST	1942 Sep 20  2:00
 			2:00	1:00	SAST	1943 Mar 21  2:00
 			2:00	-	SAST	1990 Mar 21 # independence
@@ -1283,7 +1294,7 @@ Zone	Africa/Windhoek	1:08:24 -	LMT	1892 Feb 8
 Zone	Africa/Lagos	0:13:35 -	LMT	1905 Jul  1
 			0:00	-	GMT	1908 Jul  1
 			0:13:35	-	LMT	1914 Jan  1
-			0:30	-	+0030	1919 Sep  1
+			0:30	-	%z	1919 Sep  1
 			1:00	-	WAT
 
 # São Tomé and Príncipe

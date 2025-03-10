@@ -57,14 +57,6 @@
     range,                    \
     constraint)               \
                               \
-  CDS_FLAGS(                  \
-    develop,                  \
-    develop_pd,               \
-    product,                  \
-    product_pd,               \
-    range,                    \
-    constraint)               \
-                              \
   JVMCI_ONLY(JVMCI_FLAGS(     \
     develop,                  \
     develop_pd,               \
@@ -90,6 +82,14 @@
     constraint))              \
                               \
   COMPILER_FLAGS(             \
+    develop,                  \
+    develop_pd,               \
+    product,                  \
+    product_pd,               \
+    range,                    \
+    constraint)               \
+                              \
+  CDS_FLAGS(                  \
     develop,                  \
     develop_pd,               \
     product,                  \

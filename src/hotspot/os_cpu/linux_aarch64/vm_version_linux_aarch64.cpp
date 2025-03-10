@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
@@ -185,7 +184,14 @@ static bool read_fully(const char *fname, char *buf, size_t buflen) {
   assert(buflen >= 1, "invalid argument");
   int fd = os::open(fname, O_RDONLY, 0);
   if (fd != -1) {
+    PRAGMA_DIAG_PUSH
+    PRAGMA_NONNULL_IGNORED
+    // Suppress false positive gcc warning, which may be an example of
+    // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=87489
+    // The warning also hasn't been seen with vanilla gcc release, so may also
+    // involve some distro-specific gcc patch.
     ssize_t read_sz = ::read(fd, buf, buflen);
+    PRAGMA_DIAG_POP
     ::close(fd);
 
     // Skip if the contents is just "\n" because some machine only sets

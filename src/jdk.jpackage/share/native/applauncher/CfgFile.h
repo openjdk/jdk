@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,11 @@ public:
     CfgFile& setPropertyValue(const SectionName& sectionName,
         const PropertyName& name, const tstring_array& value);
 
+    void swap(CfgFile& other) {
+        std::swap(data, other.data);
+        std::swap(empty, other.empty);
+    }
+
     typedef std::map<tstring, tstring> Macros;
 
     /**
@@ -95,6 +100,8 @@ public:
     static CfgFile load(const tstring& path);
 
     static tstring asString(Properties::const_reference property);
+
+    static bool asBoolean(Properties::const_reference property);
 
     static tstring asPathList(Properties::const_reference property);
 
@@ -126,6 +133,7 @@ namespace PropertyName {
     extern const CfgFile::PropertyName memory;
     extern const CfgFile::PropertyName arguments;
     extern const CfgFile::PropertyName javaOptions;
+    extern const CfgFile::PropertyName winNorestart;
 } // namespace AppPropertyName
 
 #endif // CfgFile_h

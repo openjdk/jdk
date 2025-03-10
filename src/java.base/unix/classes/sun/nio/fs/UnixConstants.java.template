@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,11 +139,13 @@ class UnixConstants {
 #endif
 
     // flags used with openat/unlinkat/etc.
-#if defined(AT_SYMLINK_NOFOLLOW) && defined(AT_REMOVEDIR)
+#if defined(AT_FDCWD) && defined(AT_SYMLINK_NOFOLLOW) && defined(AT_REMOVEDIR)
+    static final int PREFIX_AT_FDCWD = AT_FDCWD;
     static final int PREFIX_AT_SYMLINK_NOFOLLOW = AT_SYMLINK_NOFOLLOW;
     static final int PREFIX_AT_REMOVEDIR = AT_REMOVEDIR;
 #else
     // not supported (dummy values will not be used at runtime).
+    static final int PREFIX_AT_FDCWD = 00;
     static final int PREFIX_AT_SYMLINK_NOFOLLOW = 00;
     static final int PREFIX_AT_REMOVEDIR = 00;
 #endif

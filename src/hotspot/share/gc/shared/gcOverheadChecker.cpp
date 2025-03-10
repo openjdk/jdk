@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gcOverheadChecker.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "logging/log.hpp"
@@ -40,7 +39,11 @@ void GCOverheadChecker::check_gc_overhead_limit(GCOverheadTester* time_overhead,
                                                 bool is_full_gc,
                                                 GCCause::Cause gc_cause,
                                                 SoftRefPolicy* soft_ref_policy) {
-
+  if (is_full_gc) {
+    // Explicit Full GC would do the clearing of soft-refs as well
+    // So reset in the beginning
+    soft_ref_policy->set_should_clear_all_soft_refs(false);
+  }
   // Ignore explicit GC's.  Exiting here does not set the flag and
   // does not reset the count.
   if (GCCause::is_user_requested_gc(gc_cause) ||

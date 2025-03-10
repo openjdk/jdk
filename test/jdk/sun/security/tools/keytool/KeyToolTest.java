@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @library /test/lib
  * @bug 6251120 8231950 8242151
  * @summary Testing keytool
  *
@@ -67,8 +68,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.security.cert.X509Certificate;
 import jdk.test.lib.util.FileUtils;
+import jdk.test.lib.security.HumanInputStream;
+import jdk.test.lib.security.SecurityUtils;
 import sun.security.util.ObjectIdentifier;
-
 
 public class KeyToolTest {
 
@@ -102,6 +104,8 @@ public class KeyToolTest {
             "-srcproviderName SunPKCS11-nzz " +
             "-addprovider SunPKCS11 " +
             "-providerArg p11-nzz.txt ";
+    private static final int KEY_LENGTH_DSA = SecurityUtils.getTestKeySize("DSA");
+    private static final int KEY_LENGTH_RSA = SecurityUtils.getTestKeySize("RSA");
 
     String p11Arg, srcP11Arg;
 
@@ -191,7 +195,7 @@ public class KeyToolTest {
             // SunPKCS11-NSS does not support SHA256withDSA yet.
             if (cmd.contains("p11-nss.txt") && cmd.contains("-genkey")
                     && cmd.contains("DSA")) {
-                cmd += " -sigalg SHA1withDSA -keysize 1024";
+                cmd += " -sigalg SHA256withDSA -keysize " + KEY_LENGTH_DSA;
             }
             test(input, cmd);
         } catch(Exception e) {
@@ -954,6 +958,9 @@ public class KeyToolTest {
         // sig not compatible
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -selfcert -sigalg MD5withRSA");
+        // sig not compatible
+        testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
+                "-keypass changeit -selfcert -sigalg SHA256withRSA");
         // bad pass
         testFail("", "-keystore x.jks -storetype JKS -storepass wrong " +
                 "-keypass changeit -selfcert");
@@ -1061,10 +1068,10 @@ public class KeyToolTest {
                 "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize 999 " +
                 "-alias n5");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize 512 " +
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize 2048 " +
                 "-alias n6");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize 1024 " +
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize 3072 " +
                 "-alias n7");
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala " +
@@ -1075,6 +1082,9 @@ public class KeyToolTest {
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -genkeypair -dname CN=olala -keyalg RSA " +
                 "-sigalg MD5withRSA -alias n10");
+        testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
+                "-keypass changeit -genkeypair -dname CN=olala -keyalg RSA " +
+                "-sigalg SHA256withRSA -alias n10-1");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -genkeypair -dname CN=olala -keyalg RSA " +
                 "-sigalg SHA1withRSA -alias n11");
@@ -1151,16 +1161,20 @@ public class KeyToolTest {
         remove("csr1");
         // PrivateKeyEntry can do certreq
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize 1024");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize " +
+                KEY_LENGTH_DSA);
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-certreq -file csr1 -alias mykey");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-certreq -file csr1");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-certreq -file csr1 -sigalg SHA1withDSA");
-        // unmatched sigalg
+                "-certreq -file csr1 -sigalg SHA256withDSA");
+        // unmatched md5
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-certreq -file csr1 -sigalg MD5withRSA");
+        // unmatched sha
+        testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
+                "-certreq -file csr1 -sigalg SHA256withRSA");
         // misc test
         // bad storepass
         testFail("", "-keystore x.jks -storetype JKS -storepass badstorepass " +
@@ -1191,9 +1205,9 @@ public class KeyToolTest {
                 "-certreq -file csr1");
         // unmatched sigalg
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-certreq -file csr1 -sigalg SHA1withDSA");
+                "-certreq -file csr1 -sigalg SHA256withDSA");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-certreq -file csr1 -sigalg MD5withRSA");
+                "-certreq -file csr1 -sigalg SHA256withRSA");
         // TrustedCertificateEntry cannot do certreq
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-exportcert -file x.jks.p1.cert");
@@ -1221,6 +1235,9 @@ public class KeyToolTest {
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -genkeypair -dname CN=weak -keyalg rsa " +
                 "-keysize 512 -sigalg MD5withRSA -alias myweakkey");
+        testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
+                "-keypass changeit -genkeypair -dname CN=weak -keyalg rsa -keysize " +
+                KEY_LENGTH_RSA + " -sigalg SHA256withRSA -alias myweakkey-sha");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-export -file myweakkey.cert -alias myweakkey");
         testFail("", "-printcert -file badkeystore");
@@ -1672,31 +1689,32 @@ public class KeyToolTest {
         remove("x.jks");
         testOK("", "-help");
 
-        //   2. keytool -genkey -keyalg DSA -v -keysize 512 Enter "a" for the keystore
+        //   2. keytool -genkey -keyalg DSA -v -keysize <strongKeySize> Enter "a" for the keystore
         // password. Check error (password too short). Enter "password" for
         // the keystore password. Hit 'return' for "first and last name",
         // "organizational unit", "City", "State", and "Country Code".
         // Type "yes" when they ask you if everything is correct.
         // Type 'return' for new key password.
         testOK("a\npassword\npassword\nMe\nHere\nNow\nPlace\nPlace\nUS\nyes\n\n",
-                "-genkey -keyalg DSA -v -keysize 512 -keystore x.jks -storetype JKS");
+                "-genkey -keyalg DSA -v -keysize " + KEY_LENGTH_DSA + " -keystore x.jks " +
+                        "-storetype JKS");
         //   3. keytool -list -v -storepass password
         testOK("", "-list -v -storepass password -keystore x.jks -storetype JKS");
         //   4. keytool -list -v Type "a" for the keystore password.
         // Check error (wrong keystore password).
         testFail("a\n", "-list -v -keystore x.jks -storetype JKS");
         assertTrue(ex.indexOf("password was incorrect") != -1);
-        //   5. keytool - -keyalg DSA -v -keysize 512 Enter "password" as the password.
+        //   5. keytool - -keyalg DSA -v -keysize <strongKeySize> Enter "password" as the password.
         // Check error (alias 'mykey' already exists).
-        testFail("password\n", "-genkey -keyalg DSA -v -keysize 512" +
+        testFail("password\n", "-genkey -keyalg DSA -v -keysize " + KEY_LENGTH_DSA +
                 " -keystore x.jks -storetype JKS");
         assertTrue(ex.indexOf("alias <mykey> already exists") != -1);
-        //   6. keytool -genkey -keyalg DSA -v -keysize 512 -alias mykey2 -storepass password
+        //   6. keytool -genkey -keyalg DSA -v -keysize <strongKeySize> -alias mykey2 -storepass password
         // Hit 'return' for "first and last name", "organizational unit", "City",
         // "State", and "Country Code". Type "yes" when they ask you if
         // everything is correct. Type 'return' for new key password.
-        testOK("\n\n\n\n\n\nyes\n\n", "-genkey -keyalg DSA -v -keysize 512 -alias mykey2" +
-                " -storepass password -keystore x.jks -storetype JKS");
+        testOK("\n\n\n\n\n\nyes\n\n", "-genkey -keyalg DSA -v -keysize " + KEY_LENGTH_DSA +
+                " -alias mykey2 -storepass password -keystore x.jks -storetype JKS");
         //   7. keytool -list -v Type 'password' for the store password.
         testOK("password\n", "-list -v -keystore x.jks -storetype JKS");
         //   8. keytool -keypasswd -v -alias mykey2 -storepass password
@@ -1776,7 +1794,7 @@ public class KeyToolTest {
         //   1. sccs edit cert8.db key3.db
         //Runtime.getRuntime().exec("/usr/bin/sccs edit cert8.db key3.db");
         testOK("", p11Arg + ("-storepass test12 -genkey -alias genkey" +
-                " -dname cn=genkey -keysize 512 -keyalg rsa"));
+                " -dname cn=genkey -keysize " + KEY_LENGTH_RSA  + " -keyalg rsa"));
         testOK("", p11Arg + "-storepass test12 -list");
         testOK("", p11Arg + "-storepass test12 -list -alias genkey");
         testOK("", p11Arg +
@@ -1864,173 +1882,5 @@ public class KeyToolTest {
 class TestException extends Exception {
     public TestException(String e) {
         super(e);
-    }
-}
-
-/**
- * HumanInputStream tries to act like a human sitting in front of a computer
- * terminal typing on the keyboard while the keytool program is running.
- *
- * keytool has called InputStream.read() and BufferedReader.readLine() in
- * various places. a call to B.readLine() will try to buffer as much input as
- * possible. Thus, a trivial InputStream will find it impossible to feed
- * anything to I.read() after a B.readLine() call.
- *
- * This is why i create HumanInputStream, which will only send a single line
- * to B.readLine(), no more, no less, and the next I.read() can have a chance
- * to read the exact character right after "\n".
- *
- * I don't know why HumanInputStream works.
- */
-class HumanInputStream extends InputStream {
-    byte[] src;
-    int pos;
-    int length;
-    boolean inLine;
-    int stopIt;
-
-    public HumanInputStream(String input) {
-        src = input.getBytes();
-        pos = 0;
-        length = src.length;
-        stopIt = 0;
-        inLine = false;
-    }
-
-    // the trick: when called through read(byte[], int, int),
-    // return -1 twice after "\n"
-
-    @Override public int read() throws IOException {
-        int re;
-        if(pos < length) {
-            re = src[pos];
-            if(inLine) {
-                if(stopIt > 0) {
-                    stopIt--;
-                    re = -1;
-                } else {
-                    if(re == '\n') {
-                        stopIt = 2;
-                    }
-                    pos++;
-                }
-            } else {
-                pos++;
-            }
-        } else {
-            re = -1;//throw new IOException("NO MORE TO READ");
-        }
-        //if (re < 32) System.err.printf("[%02d]", re);
-        //else System.err.printf("[%c]", (char)re);
-        return re;
-    }
-    @Override public int read(byte[] buffer, int offset, int len) {
-        inLine = true;
-        try {
-            int re = super.read(buffer, offset, len);
-            return re;
-        } catch(Exception e) {
-            throw new RuntimeException("HumanInputStream error");
-        } finally {
-            inLine = false;
-        }
-    }
-    @Override public int available() {
-        if(pos < length) return 1;
-        return 0;
-    }
-
-    // test part
-    static void assertTrue(boolean bool) {
-        if(!bool)
-            throw new RuntimeException();
-    }
-
-    public static void test() throws Exception {
-
-        class Tester {
-            HumanInputStream is;
-            BufferedReader reader;
-            Tester(String s) {
-                is = new HumanInputStream(s);
-                reader = new BufferedReader(new InputStreamReader(is));
-            }
-
-            // three kinds of test method
-            // 1. read byte by byte from InputStream
-            void testStreamReadOnce(int expection) throws Exception {
-                assertTrue(is.read() == expection);
-            }
-            void testStreamReadMany(String expection) throws Exception {
-                char[] keys = expection.toCharArray();
-                for(int i=0; i<keys.length; i++) {
-                    assertTrue(is.read() == keys[i]);
-                }
-            }
-            // 2. read a line with a newly created Reader
-            void testReaderReadline(String expection) throws Exception {
-                String s = new BufferedReader(new InputStreamReader(is)).readLine();
-                if(s == null) assertTrue(expection == null);
-                else assertTrue(s.equals(expection));
-            }
-            // 3. read a line with the old Reader
-            void testReaderReadline2(String expection) throws Exception  {
-                String s = reader.readLine();
-                if(s == null) assertTrue(expection == null);
-                else assertTrue(s.equals(expection));
-            }
-        }
-
-        Tester test;
-
-        test = new Tester("111\n222\n\n444\n\n");
-        test.testReaderReadline("111");
-        test.testReaderReadline("222");
-        test.testReaderReadline("");
-        test.testReaderReadline("444");
-        test.testReaderReadline("");
-        test.testReaderReadline(null);
-
-        test = new Tester("111\n222\n\n444\n\n");
-        test.testReaderReadline2("111");
-        test.testReaderReadline2("222");
-        test.testReaderReadline2("");
-        test.testReaderReadline2("444");
-        test.testReaderReadline2("");
-        test.testReaderReadline2(null);
-
-        test = new Tester("111\n222\n\n444\n\n");
-        test.testReaderReadline2("111");
-        test.testReaderReadline("222");
-        test.testReaderReadline2("");
-        test.testReaderReadline2("444");
-        test.testReaderReadline("");
-        test.testReaderReadline2(null);
-
-        test = new Tester("1\n2");
-        test.testStreamReadMany("1\n2");
-        test.testStreamReadOnce(-1);
-
-        test = new Tester("12\n234");
-        test.testStreamReadOnce('1');
-        test.testReaderReadline("2");
-        test.testStreamReadOnce('2');
-        test.testReaderReadline2("34");
-        test.testReaderReadline2(null);
-
-        test = new Tester("changeit\n");
-        test.testStreamReadMany("changeit\n");
-        test.testReaderReadline(null);
-
-        test = new Tester("changeit\nName\nCountry\nYes\n");
-        test.testStreamReadMany("changeit\n");
-        test.testReaderReadline("Name");
-        test.testReaderReadline("Country");
-        test.testReaderReadline("Yes");
-        test.testReaderReadline(null);
-
-        test = new Tester("Me\nHere\n");
-        test.testReaderReadline2("Me");
-        test.testReaderReadline2("Here");
     }
 }

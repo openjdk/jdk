@@ -25,9 +25,14 @@
 
 package jdk.javadoc.internal.doclets.formats.html.markup;
 
-import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Factory for HTML A elements: links (with a {@code href} attribute).
@@ -197,7 +202,7 @@ public class Links {
         }
         if (isExternal) {
             // Use addStyle as external links might have an explicit style set above as well.
-            l.addStyle(HtmlStyle.externalLink);
+            l.addStyle(HtmlStyles.externalLink);
         }
         return l;
     }
@@ -211,6 +216,6 @@ public class Links {
      */
     public HtmlTree createExternalLink(DocLink link, Content label) {
         return HtmlTree.A(link.relativizeAgainst(file).toString(), label)
-            .setStyle(HtmlStyle.externalLink);
+            .setStyle(HtmlStyles.externalLink);
     }
 }

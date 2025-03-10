@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.share.jdb;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 
 import java.util.*;
 import java.io.*;
@@ -36,7 +35,7 @@ import java.util.regex.*;
  * This class provides abilities to launch it, to send command,
  * to read reply on the command, to set breakpoint on entry in debugggee's method.
  */
-public class Jdb extends LocalProcess implements Finalizable {
+public class Jdb extends LocalProcess {
     /** File to log <i>stdout</i> stream */
     static final String JDB_STDOUT_FILE = "jdb.stdout";
     /** File to log <i>stderr</i> stream */
@@ -95,11 +94,8 @@ public class Jdb extends LocalProcess implements Finalizable {
         return launcher;
     }
 
-    public void finalizeAtExit() throws Throwable {
-        finalize();
-    }
 
-    public void finalize() throws Throwable {
+    public void close() {
         if (fout != null) {
 //            fout.flush();
             fout.close();
@@ -116,7 +112,6 @@ public class Jdb extends LocalProcess implements Finalizable {
         if (jdbStderrReader != null) {
             jdbStderrReader.close();
         }
-        super.finalize();
     }
 
     /** Create <i>Jdb</i> object. */
@@ -961,10 +956,10 @@ public class Jdb extends LocalProcess implements Finalizable {
 
                     System.out.println("Unsuccessful launch of attaching jdb. Next try...");
                     try {
-                        jdb.finalize();
+                        jdb.close();
                     } catch (Throwable t) {
                         t.printStackTrace(getLauncher().getLog().getOutStream());
-                        throw new Failure("Caught unexpected error while finalizing jdb: " + t);
+                        throw new Failure("Caught unexpected error while closing jdb streams: " + t);
                     }
                     break;
 

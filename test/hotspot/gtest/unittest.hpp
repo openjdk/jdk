@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,5 +158,23 @@ extern void gtest_exit_from_child_vm(int num);
   }                                                                 \
                                                                     \
   void test_ ## category ## _ ## name ## _()
+
+#define TEST_VM_CRASH_SIGNAL(category, name, signame)               \
+  static void test_  ## category ## _ ## name ## _();               \
+                                                                    \
+  static void child_ ## category ## _ ## name ## _() {              \
+    ::testing::GTEST_FLAG(throw_on_failure) = true;                 \
+    test_ ## category ## _ ## name ## _();                          \
+    gtest_exit_from_child_vm(0);                                    \
+  }                                                                 \
+                                                                    \
+  TEST(category, CONCAT(name, _vm_assert)) {                        \
+    ASSERT_EXIT(child_ ## category ## _ ## name ## _(),             \
+                ::testing::ExitedWithCode(1),                       \
+                "signaled: " signame);                              \
+  }                                                                 \
+                                                                    \
+  void test_ ## category ## _ ## name ## _()
+
 
 #endif // UNITTEST_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package jdk.jpackage.internal;
 
-import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Optional;
@@ -148,20 +147,6 @@ public class MacAppBundler extends AppImageBundler {
 
             // No need to validate --mac-app-image-sign-identity, since it is
             // pass through option.
-
-            // Signing will not work without Xcode with command line developer tools
-            try {
-                ProcessBuilder pb = new ProcessBuilder("/usr/bin/xcrun", "--help");
-                Process p = pb.start();
-                int code = p.waitFor();
-                if (code != 0) {
-                    throw new ConfigException(
-                        I18N.getString("error.no.xcode.signing"),
-                        I18N.getString("error.no.xcode.signing.advice"));
-                }
-            } catch (IOException | InterruptedException ex) {
-                throw new ConfigException(ex);
-            }
         }
     }
 }

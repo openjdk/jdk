@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package java.io;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
-import jdk.internal.misc.InternalLock;
 import sun.nio.cs.StreamEncoder;
 
 /**
@@ -76,20 +75,6 @@ public class OutputStreamWriter extends Writer {
     private final StreamEncoder se;
 
     /**
-     * Return the lock object for the given writer's stream encoder.
-     * If the writer type is trusted then an internal lock can be used. If the
-     * writer type is not trusted then the writer object is the lock.
-     */
-    private static Object lockFor(OutputStreamWriter writer) {
-        Class<?> clazz = writer.getClass();
-        if (clazz == OutputStreamWriter.class || clazz == FileWriter.class) {
-            return InternalLock.newLockOr(writer);
-        } else {
-            return writer;
-        }
-    }
-
-    /**
      * Creates an OutputStreamWriter that uses the named charset.
      *
      * @param  out
@@ -108,7 +93,7 @@ public class OutputStreamWriter extends Writer {
         super(out);
         if (charsetName == null)
             throw new NullPointerException("charsetName");
-        se = StreamEncoder.forOutputStreamWriter(out, lockFor(this), charsetName);
+        se = StreamEncoder.forOutputStreamWriter(out, this, charsetName);
     }
 
     /**
@@ -122,7 +107,7 @@ public class OutputStreamWriter extends Writer {
     @SuppressWarnings("this-escape")
     public OutputStreamWriter(OutputStream out) {
         super(out);
-        se = StreamEncoder.forOutputStreamWriter(out, lockFor(this),
+        se = StreamEncoder.forOutputStreamWriter(out, this,
                 out instanceof PrintStream ps ? ps.charset() : Charset.defaultCharset());
     }
 
@@ -142,7 +127,7 @@ public class OutputStreamWriter extends Writer {
         super(out);
         if (cs == null)
             throw new NullPointerException("charset");
-        se = StreamEncoder.forOutputStreamWriter(out, lockFor(this), cs);
+        se = StreamEncoder.forOutputStreamWriter(out, this, cs);
     }
 
     /**
@@ -161,7 +146,7 @@ public class OutputStreamWriter extends Writer {
         super(out);
         if (enc == null)
             throw new NullPointerException("charset encoder");
-        se = StreamEncoder.forOutputStreamWriter(out, lockFor(this), enc);
+        se = StreamEncoder.forOutputStreamWriter(out, this, enc);
     }
 
     /**

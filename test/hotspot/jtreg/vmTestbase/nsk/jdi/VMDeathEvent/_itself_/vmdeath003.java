@@ -280,7 +280,12 @@ public class vmdeath003 extends JDIBase {
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         }
         log1("    TESTING ENDS");
-        return;
+        int code = debuggee.waitFor();
+        if (code != Consts.JCK_STATUS_BASE) {
+            log2("Debugee FAILED with exit code: " + code);
+            testExitCode = Consts.TEST_FAILED;
+        }
+
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ protected:
                             bool& should_delay);
   bool        should_inline(ciMethod* callee_method,
                             ciMethod* caller_method,
-                            int caller_bci,
+                            JVMState* caller_jvms,
                             bool& should_delay,
                             ciCallProfile& profile);
   bool        should_not_inline(ciMethod* callee_method,
@@ -87,8 +87,7 @@ protected:
                              ciMethod* caller_method,
                              int caller_bci,
                              ciCallProfile& profile);
-  void        print_inlining(ciMethod* callee_method, int caller_bci,
-                             ciMethod* caller_method, bool success) const;
+  void print_inlining(ciMethod* callee_method, JVMState* jvm, bool success) const;
 
   InlineTree* caller_tree()       const { return _caller_tree;  }
   InlineTree* callee_at(int bci, ciMethod* m) const;
@@ -358,7 +357,7 @@ class Parse : public GraphKit {
   bool          _wrote_volatile;     // Did we write a volatile field?
   bool          _wrote_stable;       // Did we write a @Stable field?
   bool          _wrote_fields;       // Did we write any field?
-  Node*         _alloc_with_final;   // An allocation node with final field
+  Node*         _alloc_with_final_or_stable; // An allocation node with final or @Stable field
 
   // Variables which track Java semantics during bytecode parsing:
 
@@ -403,10 +402,10 @@ class Parse : public GraphKit {
   void      set_wrote_stable(bool z)  { _wrote_stable = z; }
   bool         wrote_fields() const   { return _wrote_fields; }
   void     set_wrote_fields(bool z)   { _wrote_fields = z; }
-  Node*    alloc_with_final() const   { return _alloc_with_final; }
-  void set_alloc_with_final(Node* n)  {
-    assert((_alloc_with_final == nullptr) || (_alloc_with_final == n), "different init objects?");
-    _alloc_with_final = n;
+  Node*    alloc_with_final_or_stable() const   { return _alloc_with_final_or_stable; }
+  void set_alloc_with_final_or_stable(Node* n)  {
+    assert((_alloc_with_final_or_stable == nullptr) || (_alloc_with_final_or_stable == n), "different init objects?");
+    _alloc_with_final_or_stable = n;
   }
 
   Block*             block()    const { return _block; }
@@ -426,7 +425,7 @@ class Parse : public GraphKit {
   void set_parse_bci(int bci);
 
   // Must this parse be aborted?
-  bool failing()                { return C->failing(); }
+  bool failing() const { return C->failing_internal(); } // might have cascading effects, not stressing bailouts for now.
 
   Block* rpo_at(int rpo) {
     assert(0 <= rpo && rpo < _block_count, "oob");
@@ -501,8 +500,6 @@ class Parse : public GraphKit {
 
   void clinit_deopt();
 
-  void rtm_deopt();
-
   // Pass current map to exits
   void return_current(Node* value);
 
@@ -532,8 +529,7 @@ class Parse : public GraphKit {
   void  do_instanceof();
 
   // Helper functions for shifting & arithmetic
-  void modf();
-  void modd();
+  Node* floating_point_mod(Node* a, Node* b, BasicType type);
   void l2f();
 
   // implementation of _get* and _put* bytecodes
@@ -613,6 +609,11 @@ class Parse : public GraphKit {
 
   // Use speculative type to optimize CmpP node
   Node* optimize_cmp_with_klass(Node* c);
+
+  // Stress unstable if traps
+  void stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store);
+  // Increment counter used by StressUnstableIfTraps
+  void increment_trap_stress_counter(Node*& counter, Node*& incr_store);
 
  public:
 #ifndef PRODUCT

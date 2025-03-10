@@ -60,6 +60,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bi">Bioslaimis</language>
 			<language type="bin">Binis</language>
 			<language type="bla">Sicsicis</language>
+			<language type="blo">Anii</language>
 			<language type="bm">Bambairis</language>
 			<language type="bn">Beangáilis</language>
 			<language type="bo">Tibéidis</language>
@@ -257,6 +258,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">Coimis</language>
 			<language type="kw">Coirnis</language>
 			<language type="kwk">Kwakʼwala</language>
+			<language type="kxv">Kuvi</language>
 			<language type="ky">Cirgisis</language>
 			<language type="la">Laidin</language>
 			<language type="lad">Laidínis</language>
@@ -483,6 +485,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="vec">Veinéisis</language>
 			<language type="vi">Vítneaimis</language>
 			<language type="vls">Pléimeannais Iartharach</language>
+			<language type="vmw">Macuais</language>
 			<language type="vo">Volapük</language>
 			<language type="vun">Vunjo</language>
 			<language type="wa">Vallúnais</language>
@@ -493,6 +496,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">Sínis Wu</language>
 			<language type="xal">Cailmícis</language>
 			<language type="xh">Cóisis</language>
+			<language type="xnr">Kangri</language>
 			<language type="xog">Soga</language>
 			<language type="yav">Yangben</language>
 			<language type="ybb">Yemba</language>
@@ -518,34 +522,42 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<scripts>
 			<script type="Adlm">Adlam</script>
 			<script type="Aghb">Albánach Cugasach</script>
-			<script type="Ahom">Ahom</script>
 			<script type="Arab">Arabach</script>
 			<script type="Aran">Nastaliq</script>
 			<script type="Armi">Aramach Impiriúil</script>
 			<script type="Armn">Airméanach</script>
 			<script type="Avst">Aivéisteach</script>
 			<script type="Bali">Bailíoch</script>
+			<script type="Bamu">Bamum</script>
+			<script type="Bass">Bassa Vah</script>
 			<script type="Batk">Batacach</script>
 			<script type="Beng">Beangálach</script>
+			<script type="Bhks">Bhaiksuki</script>
 			<script type="Bopo">Bopomofo</script>
+			<script type="Brah">Brámais</script>
 			<script type="Brai">Braille</script>
 			<script type="Bugi">Buigineach</script>
 			<script type="Buhd">Buthaideach</script>
 			<script type="Cakm">Seácmais</script>
 			<script type="Cans">Siollach Bundúchasach Ceanadach Aontaithe</script>
+			<script type="Cari">Cló Cairiach</script>
 			<script type="Cher">Seiricíoch</script>
 			<script type="Copt">Coptach</script>
 			<script type="Cprt">Cipireach</script>
 			<script type="Cyrl">Coireallach</script>
 			<script type="Deva">Déiveanágrach</script>
+			<script type="Dsrt">Deseret</script>
 			<script type="Dupl">Gearrscríobh Duployan</script>
 			<script type="Egyd">Éigipteach coiteann</script>
 			<script type="Egyh">Éigipteach cliarúil</script>
 			<script type="Egyp">Iairiglifí Éigipteacha</script>
+			<script type="Elba">Elbasan</script>
 			<script type="Ethi">Aetóipic</script>
 			<script type="Geor">Seoirseach</script>
 			<script type="Glag">Glagalach</script>
+			<script type="Gonm">Masaram Gondi</script>
 			<script type="Goth">Gotach</script>
+			<script type="Gran">Grantha</script>
 			<script type="Grek">Gréagach</script>
 			<script type="Gujr">Gúisearátach</script>
 			<script type="Guru">Gurmúcach</script>
@@ -557,22 +569,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Hans" alt="stand-alone">Han Simplithe</script>
 			<script type="Hant">Traidisiúnta</script>
 			<script type="Hant" alt="stand-alone">Han Traidisiúnta</script>
+			<script type="Hatr">Hatran</script>
 			<script type="Hebr">Eabhrach</script>
 			<script type="Hira">Hireagánach</script>
 			<script type="Hluw">Iairiglifí Anatólacha</script>
+			<script type="Hmng">Pahawh Hmong</script>
 			<script type="Hrkt">Siollabraí Seapánacha</script>
 			<script type="Hung">Sean-Ungárach</script>
 			<script type="Ital">Sean-Iodáilic</script>
 			<script type="Jamo">Seamó</script>
 			<script type="Java">Iávach</script>
 			<script type="Jpan">Seapánach</script>
+			<script type="Kali">Kayah Li</script>
 			<script type="Kana">Catacánach</script>
+			<script type="Khar">Kharoshthi</script>
 			<script type="Khmr">Ciméarach</script>
+			<script type="Khoj">Khojki</script>
 			<script type="Knda">Cannadach</script>
 			<script type="Kore">Cóiréach</script>
+			<script type="Kthi">Kaithi</script>
+			<script type="Lana">Lanna</script>
 			<script type="Laoo">Laosach</script>
 			<script type="Latg">Cló Gaelach</script>
 			<script type="Latn">Laidineach</script>
+			<script type="Lepc">Lepcha</script>
 			<script type="Limb">Liombúch</script>
 			<script type="Lina">Líneach A</script>
 			<script type="Linb">Líneach B</script>
@@ -580,48 +600,76 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Lyci">Liciach</script>
 			<script type="Lydi">Lidiach</script>
 			<script type="Mahj">Mahasánach</script>
+			<script type="Mand">Mandaean</script>
 			<script type="Mani">Mainicéasach</script>
+			<script type="Marc">Marchen</script>
 			<script type="Maya">Iairiglifí Máigheacha</script>
 			<script type="Mend">Meindeach</script>
+			<script type="Merc">Meroitic Cursive</script>
+			<script type="Mero">Meroitic</script>
 			<script type="Mlym">Mailéalamach</script>
 			<script type="Mong">Mongólach</script>
+			<script type="Mroo">Mro</script>
 			<script type="Mtei">Meitei Mayek</script>
 			<script type="Mult">Multani</script>
 			<script type="Mymr">Maenmarach</script>
 			<script type="Narb">Sean-Arabach Thuaidh</script>
-			<script type="Newa">Newa</script>
+			<script type="Nbat">Nabataean</script>
 			<script type="Nkoo">N-cóis</script>
+			<script type="Nshu">Nüshu</script>
 			<script type="Ogam">Ogham</script>
 			<script type="Olck">Ol Chiki</script>
+			<script type="Orkh">Orkhon</script>
 			<script type="Orya">Oiríseach</script>
 			<script type="Osge">Ósáis</script>
+			<script type="Osma">Osmanya</script>
+			<script type="Palm">Palmyrene</script>
+			<script type="Pauc">Pau Cin Hau</script>
 			<script type="Perm">Sean-Pheirmeach</script>
+			<script type="Phag">Phags-pa</script>
+			<script type="Phli">Pachlavais Inscríbhinne</script>
+			<script type="Phlp">Pachlavais Saltrach</script>
 			<script type="Phnx">Féiníceach</script>
 			<script type="Plrd">Pollard Foghrach</script>
 			<script type="Prti">Pairtiach Inscríbhinniúil</script>
+			<script type="Rjng">Rejang</script>
 			<script type="Rohg">Hanifi</script>
 			<script type="Runr">Rúnach</script>
 			<script type="Samr">Samárach</script>
 			<script type="Sarb">Sean-Arabach Theas</script>
+			<script type="Saur">Saurashtra</script>
 			<script type="Sgnw">Litritheoireacht Comharthaí</script>
 			<script type="Shaw">Shawach</script>
+			<script type="Shrd">Sharada</script>
+			<script type="Sidd">Siddham</script>
+			<script type="Sind">Khudawadi</script>
 			<script type="Sinh">Siolónach</script>
+			<script type="Sora">Sora Sompeng</script>
+			<script type="Soyo">Soyombo</script>
 			<script type="Sund">Sundainéis</script>
+			<script type="Sylo">Syloti Nagri</script>
 			<script type="Syrc">Siriceach</script>
+			<script type="Tagb">Tagbanwa</script>
+			<script type="Takr">Takri</script>
 			<script type="Tale">Deiheoingis</script>
 			<script type="Talu">Tai Lue Nua</script>
 			<script type="Taml">Tamalach</script>
+			<script type="Tang">Tangut</script>
+			<script type="Tavt">Tai Viet</script>
 			<script type="Telu">Teileagúch</script>
 			<script type="Tfng">Tifinagh</script>
 			<script type="Tglg">Tagálagach</script>
 			<script type="Thaa">Tánach</script>
 			<script type="Thai">Téalannach</script>
 			<script type="Tibt">Tibéadach</script>
+			<script type="Tirh">Tirhuta</script>
 			<script type="Ugar">Úgairíteach</script>
 			<script type="Vaii">Vadhais</script>
+			<script type="Wara">Varang Kshiti</script>
 			<script type="Xpeo">Sean-Pheirseach</script>
 			<script type="Xsux">Dingchruthach Suiméar-Acádach</script>
 			<script type="Yiii">Ís</script>
+			<script type="Zanb">Zanabazar Square</script>
 			<script type="Zinh">Oidhreacht</script>
 			<script type="Zmth">Nodaireacht Mhatamaiticiúil</script>
 			<script type="Zsye">Emoji</script>
@@ -2479,6 +2527,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<timeZoneNames>
 			<gmtFormat>MAG{0}</gmtFormat>
 			<gmtZeroFormat>MAG</gmtZeroFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Am Uilíoch Lárnach</standard>
@@ -2835,9 +2886,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Lisbon">
 				<exemplarCity>Liospóin</exemplarCity>
 			</zone>
-			<zone type="America/Asuncion">
-				<exemplarCity>Asunción</exemplarCity>
-			</zone>
 			<zone type="Asia/Qatar">
 				<exemplarCity>Catar</exemplarCity>
 			</zone>
@@ -2886,9 +2934,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Mogadishu">
 				<exemplarCity>Mogaidisiú</exemplarCity>
 			</zone>
-			<zone type="Africa/Sao_Tome">
-				<exemplarCity>São Tomé</exemplarCity>
-			</zone>
 			<zone type="America/El_Salvador">
 				<exemplarCity>an tSalvadóir</exemplarCity>
 			</zone>
@@ -2912,9 +2957,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Midway">
 				<exemplarCity>Oileáin Midway</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="America/New_York">
 				<exemplarCity>Nua-Eabhrac</exemplarCity>
@@ -3194,13 +3236,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Am Samhraidh na Síne</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Am Choibalsan</generic>
-					<standard>Am Caighdeánach Choibalsan</standard>
-					<daylight>Am Samhraidh Choibalsan</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Am Oileán na Nollag</standard>
@@ -3467,6 +3502,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Am Phetropavlovsk-Kamchatski</generic>
 					<standard>Am Caighdeánach Phetropavlovsk-Kamchatski</standard>
 					<daylight>Am Samhraidh Phetropavlovsk-Kamchatski</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Am na Casacstáine</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -4138,11 +4178,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="two">{0} {1}</unitPattern>
-			<unitPattern count="few">{0} {1}</unitPattern>
-			<unitPattern count="many">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -4223,6 +4258,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ARA">
 				<displayName>Austral Airgintíneach</displayName>
+			</currency>
+			<currency type="ARL">
+				<displayName>Peso Ley na hAirgintíne (1970–1983)</displayName>
 			</currency>
 			<currency type="ARM">
 				<displayName>Peso na hAirgintíne (1881–1970)</displayName>
@@ -4341,6 +4379,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">lev chrua na Bulgáire</displayName>
 				<displayName count="many">lev chrua na Bulgáire</displayName>
 				<displayName count="other">lev crua na Bulgáire</displayName>
+			</currency>
+			<currency type="BGM">
+				<displayName count="one">lev sóisialach na Bulgáire</displayName>
+				<displayName count="two">lev sóisialach na Bulgáire</displayName>
+				<displayName count="few">lev sóisialach na Bulgáire</displayName>
+				<displayName count="many">lev sóisialach na Bulgáire</displayName>
+				<displayName count="other">lev sóisialach na Bulgáire</displayName>
 			</currency>
 			<currency type="BGN">
 				<displayName>Lev na Bulgáire</displayName>
@@ -4550,6 +4595,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="many">bhfranc an Chongó</displayName>
 				<displayName count="other">franc an Chongó</displayName>
 			</currency>
+			<currency type="CHE">
+				<displayName>Euro WIR</displayName>
+				<displayName count="one">WIR euro</displayName>
+				<displayName count="two">euro WIR</displayName>
+				<displayName count="few">euro WIR</displayName>
+				<displayName count="many">euro WIR</displayName>
+				<displayName count="other">euro WIR</displayName>
+			</currency>
 			<currency type="CHF">
 				<displayName>Franc na hEilvéise</displayName>
 				<displayName count="one">fhranc na hEilvéise</displayName>
@@ -4557,6 +4610,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">fhranc na hEilvéise</displayName>
 				<displayName count="many">bhfranc na hEilvéise</displayName>
 				<displayName count="other">franc na hEilvéise</displayName>
+			</currency>
+			<currency type="CHW">
+				<displayName>Franc WIR</displayName>
+				<displayName count="one">fhranc WIR amháin</displayName>
+				<displayName count="two">fhranc WIR</displayName>
+				<displayName count="few">fhranc WIR</displayName>
+				<displayName count="many">bhfranc WIR</displayName>
+				<displayName count="other">franc WIR</displayName>
 			</currency>
 			<currency type="CLE">
 				<displayName>Escudo na Sile</displayName>
@@ -5529,7 +5590,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">rúbal na Rúise (1991–1998)</displayName>
 				<displayName count="many">rúbal na Rúise (1991–1998)</displayName>
 				<displayName count="other">rúbal na Rúise (1991–1998)</displayName>
-				<symbol alt="narrow" draft="contributed">р.</symbol>
+				<symbol alt="narrow">р.</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>Franc Ruanda</displayName>
@@ -6063,6 +6124,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="many">Dínear Inathraithe Iúgslavach</displayName>
 				<displayName count="other">Dínear Inathraithe Iúgslavach</displayName>
 			</currency>
+			<currency type="YUR">
+				<displayName>Dinar Leasaithe na hIúgsláive (1992–1993)</displayName>
+				<displayName count="one">Dinar Leasaithe na hIúgsláive (1992–1993)</displayName>
+				<displayName count="two">Dinar Leasaithe na hIúgsláive (1992–1993)</displayName>
+				<displayName count="few">Dinar Leasaithe na hIúgsláive (1992–1993)</displayName>
+				<displayName count="many">Dinar Leasaithe na hIúgsláive (1992–1993)</displayName>
+				<displayName count="other">Dinars Leasaithe na hIúgsláive (1992–1993)</displayName>
+			</currency>
 			<currency type="ZAL">
 				<displayName>Rand na hAfraice Theas (airgeadúil)</displayName>
 			</currency>
@@ -6093,6 +6162,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZWD">
 				<displayName>Dollar Siombábach (1980–2008)</displayName>
+			</currency>
+			<currency type="ZWL">
+				<displayName>Dollar na Siombáibe (2009)</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -6492,8 +6564,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>giotáin</displayName>
 			</unit>
 			<unit type="duration-century">
-				<displayName>céadta bliain</displayName>
-				<unitPattern count="one">{0} chéad bliain</unitPattern>
+				<displayName>na céadta bliain</displayName>
+				<unitPattern count="one">céad bliain</unitPattern>
 				<unitPattern count="two">{0} chéad bliain</unitPattern>
 				<unitPattern count="few">{0} chéad bliain</unitPattern>
 				<unitPattern count="many">{0} gcéad bliain</unitPattern>
@@ -7397,6 +7469,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ndram leachtacha</unitPattern>
 				<unitPattern count="other">{0} dram leachtach</unitPattern>
 			</unit>
+			<unit type="duration-night">
+				<displayName>oícheanta</displayName>
+				<unitPattern count="one">{0} oíche amháin</unitPattern>
+				<unitPattern count="two">{0} oíche</unitPattern>
+				<unitPattern count="few">{0} oíche</unitPattern>
+				<unitPattern count="many">{0} n-oíche</unitPattern>
+				<unitPattern count="other">{0} oíche</unitPattern>
+				<perUnitPattern>{0} san oíche</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>príomhaird</displayName>
 				<coordinateUnitPattern type="east">{0} oirthear</coordinateUnitPattern>
@@ -7559,6 +7640,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} ghiotán</unitPattern>
 				<unitPattern count="many">{0} ngiotán</unitPattern>
 				<unitPattern count="other">{0} giotán</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>céadta bl</displayName>
 			</unit>
 			<unit type="duration-year">
 				<displayName>blianta</displayName>
@@ -8110,6 +8194,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} chárt impiriúla</unitPattern>
 				<unitPattern count="many">{0} gcárt impiriúla</unitPattern>
 				<unitPattern count="other">{0} cárt impiriúil</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>oícheanta</displayName>
+				<unitPattern count="one">{0} oíche</unitPattern>
+				<unitPattern count="two">{0} oíche</unitPattern>
+				<unitPattern count="few">{0} oíche</unitPattern>
+				<unitPattern count="many">{0} n-oíche</unitPattern>
+				<unitPattern count="other">{0} oíche</unitPattern>
+				<perUnitPattern>{0}/oíche</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>treo</displayName>
@@ -8731,6 +8824,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} unsa l.</unitPattern>
 				<unitPattern count="other">{0} unsa l.</unitPattern>
 			</unit>
+			<unit type="duration-night">
+				<displayName>oí</displayName>
+				<unitPattern count="one">{0}oí</unitPattern>
+				<unitPattern count="two">{0}oí</unitPattern>
+				<unitPattern count="few">{0}oí</unitPattern>
+				<unitPattern count="many">{0}oí</unitPattern>
+				<unitPattern count="other">{0}oí</unitPattern>
+				<perUnitPattern>{0}/oíche</perUnitPattern>
+			</unit>
 		</unitLength>
 	</units>
 	<listPatterns>
@@ -8942,29 +9044,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<personNames>
 		<nameOrderLocales order="givenFirst">und ga</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
-		<personName order="givenFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{given} {given2} {surname} {credentials}</namePattern>
-		</personName>
-		<personName order="givenFirst" length="long" usage="referring" formality="informal">
-			<namePattern>{given-informal} {surname}</namePattern>
-		</personName>
-		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{title} {surname}</namePattern>
-		</personName>
-		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
-			<namePattern>{given-informal}</namePattern>
-		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
 			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
-		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{given} {given2-initial} {surname} {credentials}</namePattern>
-		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
-		</personName>
-		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -9040,9 +9124,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
-		</personName>
-		<personName order="sorting" length="long" usage="referring" formality="formal">
-			<namePattern>{surname-prefix} {surname-core}, {given} {given2}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
 			<namePattern>{surname}, {given-informal}</namePattern>

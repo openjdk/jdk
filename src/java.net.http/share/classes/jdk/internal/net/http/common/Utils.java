@@ -39,8 +39,6 @@ import java.lang.System.Logger.Level;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.net.URLPermission;
-import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpTimeoutException;
 import java.nio.ByteBuffer;
@@ -51,8 +49,6 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.text.Normalizer;
 import java.util.Arrays;
 import java.util.Collection;
@@ -61,6 +57,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -82,6 +79,8 @@ import sun.net.www.HeaderParser;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.stream.Collectors.joining;
+import static java.net.Authenticator.RequestorType.PROXY;
+import static java.net.Authenticator.RequestorType.SERVER;
 
 /**
  * Miscellaneous utilities
@@ -98,10 +97,7 @@ public final class Utils {
 
 //    public static final boolean TESTING;
 //    static {
-//        if (ASSERTIONSENABLED) {
-//            PrivilegedAction<String> action = () -> System.getProperty("test.src");
-//            TESTING = AccessController.doPrivileged(action) != null;
-//        } else TESTING = false;
+//        TESTING = ASSERTIONSENABLED ? System.getProperty("test.src") != null : false;
 //    }
     public static final LoggerConfig DEBUG_CONFIG =
             getLoggerConfig(DebugLogger.HTTP_NAME, LoggerConfig.OFF);
@@ -118,9 +114,7 @@ public final class Utils {
             hostnameVerificationDisabledValue();
 
     private static LoggerConfig getLoggerConfig(String loggerName, LoggerConfig def) {
-        PrivilegedAction<String> action = () -> System.getProperty(loggerName);
-        @SuppressWarnings("removal")
-        var prop = AccessController.doPrivileged(action);
+        var prop = System.getProperty(loggerName);
         if (prop == null) return def;
         var config = LoggerConfig.OFF;
         for (var s : prop.split(",")) {
@@ -210,24 +204,10 @@ public final class Utils {
                 return true;
             };
 
-    // Headers that are not generally restricted, and can therefore be set by users,
-    // but can in some contexts be overridden by the implementation.
-    // Currently, only contains "Authorization" which will
-    // be overridden, when an Authenticator is set on the HttpClient.
-    // Needs to be BiPred<String,String> to fit with general form of predicates
-    // used by caller.
-
-    public static final BiPredicate<String, String> CONTEXT_RESTRICTED(HttpClient client) {
-        return (k, v) -> client.authenticator().isEmpty() ||
-                (!k.equalsIgnoreCase("Authorization")
-                        && !k.equalsIgnoreCase("Proxy-Authorization"));
-    }
-
     public record ProxyHeaders(HttpHeaders userHeaders, HttpHeaders systemHeaders) {}
 
-    private static final BiPredicate<String, String> HOST_RESTRICTED = (k,v) -> !"host".equalsIgnoreCase(k);
-    public static final BiPredicate<String, String> PROXY_TUNNEL_RESTRICTED(HttpClient client)  {
-        return CONTEXT_RESTRICTED(client).and(HOST_RESTRICTED);
+    public static final BiPredicate<String, String> PROXY_TUNNEL_RESTRICTED()  {
+        return (k,v) -> !"host".equalsIgnoreCase(k);
     }
 
     private static final Predicate<String> IS_HOST = "host"::equalsIgnoreCase;
@@ -310,6 +290,19 @@ public final class Utils {
     public static final BiPredicate<String, String> NO_PROXY_HEADERS_FILTER =
             (n,v) -> Utils.NO_PROXY_HEADER.test(n);
 
+    /**
+     * Check the user headers to see if the Authorization or ProxyAuthorization
+     * were set. We need to set special flags in the request if so. Otherwise
+     * we can't distinguish user set from Authenticator set headers
+     */
+    public static void setUserAuthFlags(HttpRequestImpl request, HttpHeaders userHeaders) {
+        if (userHeaders.firstValue("Authorization").isPresent()) {
+            request.setUserSetAuthFlag(SERVER, true);
+        }
+        if (userHeaders.firstValue("Proxy-Authorization").isPresent()) {
+            request.setUserSetAuthFlag(PROXY, true);
+        }
+    }
 
     public static boolean proxyHasDisabledSchemes(boolean tunnel) {
         return tunnel ? ! PROXY_AUTH_TUNNEL_DISABLED_SCHEMES.isEmpty()
@@ -448,41 +441,6 @@ public final class Utils {
 
     private Utils() { }
 
-    /**
-     * Returns the security permissions required to connect to the proxy, or
-     * {@code null} if none is required or applicable.
-     */
-    public static URLPermission permissionForProxy(InetSocketAddress proxyAddress) {
-        if (proxyAddress == null)
-            return null;
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("socket://")
-          .append(proxyAddress.getHostString()).append(":")
-          .append(proxyAddress.getPort());
-        String urlString = sb.toString();
-        return new URLPermission(urlString, "CONNECT");
-    }
-
-    /**
-     * Returns the security permission required for the given details.
-     */
-    public static URLPermission permissionForServer(URI uri,
-                                                    String method,
-                                                    Stream<String> headers) {
-        String urlString = new StringBuilder()
-                .append(uri.getScheme()).append("://")
-                .append(uri.getRawAuthority())
-                .append(uri.getRawPath()).toString();
-
-        StringBuilder actionStringBuilder = new StringBuilder(method);
-        String collected = headers.collect(joining(","));
-        if (!collected.isEmpty()) {
-            actionStringBuilder.append(":").append(collected);
-        }
-        return new URLPermission(urlString, actionStringBuilder.toString());
-    }
-
     private static final boolean[] LOWER_CASE_CHARS = new boolean[128];
 
     // ABNF primitives defined in RFC 7230
@@ -586,34 +544,37 @@ public final class Utils {
         return true;
     }
 
-    @SuppressWarnings("removal")
     public static int getIntegerNetProperty(String name, int defaultValue) {
-        return AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
-                NetProperties.getInteger(name, defaultValue));
+        return NetProperties.getInteger(name, defaultValue);
     }
 
-    @SuppressWarnings("removal")
     public static String getNetProperty(String name) {
-        return AccessController.doPrivileged((PrivilegedAction<String>) () ->
-                NetProperties.get(name));
+        return NetProperties.get(name);
     }
 
-    @SuppressWarnings("removal")
     public static boolean getBooleanProperty(String name, boolean def) {
-        return AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
-                Boolean.parseBoolean(System.getProperty(name, String.valueOf(def))));
+        return Boolean.parseBoolean(System.getProperty(name, String.valueOf(def)));
     }
 
-    @SuppressWarnings("removal")
     public static String getProperty(String name) {
-        return AccessController.doPrivileged((PrivilegedAction<String>) () ->
-                System.getProperty(name));
+        return System.getProperty(name);
     }
 
-    @SuppressWarnings("removal")
     public static int getIntegerProperty(String name, int defaultValue) {
-        return AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
-                Integer.parseInt(System.getProperty(name, String.valueOf(defaultValue))));
+        return Integer.parseInt(System.getProperty(name, String.valueOf(defaultValue)));
+    }
+
+    public static int getIntegerNetProperty(String property, int min, int max, int defaultValue, boolean log) {
+        int value =  Utils.getIntegerNetProperty(property, defaultValue);
+        // use default value if misconfigured
+        if (value < min || value > max) {
+            if (log && Log.errors()) {
+                Log.logError("Property value for {0}={1} not in [{2}..{3}]: " +
+                        "using default={4}", property, value, min, max, defaultValue);
+            }
+            value = defaultValue;
+        }
+        return value;
     }
 
     public static SSLParameters copySSLParameters(SSLParameters p) {
@@ -746,6 +707,7 @@ public final class Utils {
     }
 
     public static long remaining(ByteBuffer[] bufs) {
+        if (bufs == null) return 0;
         long remain = 0;
         for (ByteBuffer buf : bufs) {
             remain += buf.remaining();
@@ -754,6 +716,7 @@ public final class Utils {
     }
 
     public static boolean hasRemaining(List<ByteBuffer> bufs) {
+        if (bufs == null) return false;
         for (ByteBuffer buf : bufs) {
             if (buf.hasRemaining())
                 return true;
@@ -762,6 +725,7 @@ public final class Utils {
     }
 
     public static boolean hasRemaining(ByteBuffer[] bufs) {
+        if (bufs == null) return false;
         for (ByteBuffer buf : bufs) {
             if (buf.hasRemaining())
                 return true;
@@ -770,6 +734,7 @@ public final class Utils {
     }
 
     public static long remaining(List<ByteBuffer> bufs) {
+        if (bufs == null) return 0L;
         long remain = 0;
         for (ByteBuffer buf : bufs) {
             remain += buf.remaining();
@@ -778,12 +743,14 @@ public final class Utils {
     }
 
     public static long synchronizedRemaining(List<ByteBuffer> bufs) {
+        if (bufs == null) return 0L;
         synchronized (bufs) {
             return remaining(bufs);
         }
     }
 
-    public static int remaining(List<ByteBuffer> bufs, int max) {
+    public static long remaining(List<ByteBuffer> bufs, long max) {
+        if (bufs == null) return 0;
         long remain = 0;
         for (ByteBuffer buf : bufs) {
             remain += buf.remaining();
@@ -794,7 +761,13 @@ public final class Utils {
         return (int) remain;
     }
 
-    public static int remaining(ByteBuffer[] refs, int max) {
+    public static int remaining(List<ByteBuffer> bufs, int max) {
+        // safe cast since max is an int
+        return (int) remaining(bufs, (long) max);
+    }
+
+    public static long remaining(ByteBuffer[] refs, long max) {
+        if (refs == null) return 0;
         long remain = 0;
         for (ByteBuffer b : refs) {
             remain += b.remaining();
@@ -803,6 +776,11 @@ public final class Utils {
             }
         }
         return (int) remain;
+    }
+
+    public static int remaining(ByteBuffer[] refs, int max) {
+        // safe cast since max is an int
+        return (int) remaining(refs, (long) max);
     }
 
     public static void close(Closeable... closeables) {
@@ -1155,5 +1133,32 @@ public final class Utils {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * {@return the exception the given {@code cf} was completed with,
+     * or a {@link CancellationException} if the given {@code cf} was
+     * cancelled}
+     *
+     * @param cf a {@code CompletableFuture} exceptionally completed
+     * @throws IllegalArgumentException if the given cf was not
+     *    {@linkplain CompletableFuture#isCompletedExceptionally()
+     *    completed exceptionally}
+     */
+    public static Throwable exceptionNow(CompletableFuture<?> cf) {
+        if (cf.isCompletedExceptionally()) {
+            if (cf.isCancelled()) {
+                try {
+                    cf.join();
+                } catch (CancellationException x) {
+                    return x;
+                } catch (CompletionException x) {
+                    return x.getCause();
+                }
+            } else {
+                return cf.exceptionNow();
+            }
+        }
+        throw new IllegalArgumentException("cf is not completed exceptionally");
     }
 }

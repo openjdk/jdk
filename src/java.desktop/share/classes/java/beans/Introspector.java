@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ import com.sun.beans.introspect.EventSetInfo;
 import com.sun.beans.introspect.PropertyInfo;
 import jdk.internal.access.JavaBeansAccess;
 import jdk.internal.access.SharedSecrets;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * The Introspector class provides a standard way for tools to learn about
@@ -186,9 +185,6 @@ public class Introspector {
     public static BeanInfo getBeanInfo(Class<?> beanClass)
         throws IntrospectionException
     {
-        if (!ReflectUtil.isPackageAccessible(beanClass)) {
-            return (new Introspector(beanClass, null, USE_ALL_BEANINFO)).getBeanInfo();
-        }
         ThreadGroupContext context = ThreadGroupContext.getContext();
         BeanInfo beanInfo = context.getBeanInfo(beanClass);
         if (beanInfo == null) {
@@ -335,22 +331,10 @@ public class Introspector {
      *          this method is undefined if parameter path
      *          is null.
      *
-     * <p>First, if there is a security manager, its {@code checkPropertiesAccess}
-     * method is called. This could result in a SecurityException.
-     *
      * @param path  Array of package names.
-     * @throws  SecurityException  if a security manager exists and its
-     *             {@code checkPropertiesAccess} method doesn't allow setting
-     *              of system properties.
-     * @see SecurityManager#checkPropertiesAccess
      */
 
     public static void setBeanInfoSearchPath(String[] path) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertiesAccess();
-        }
         ThreadGroupContext.getContext().getBeanInfoFinder().setPackages(path);
     }
 

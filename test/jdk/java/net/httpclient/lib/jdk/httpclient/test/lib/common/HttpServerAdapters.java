@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpHeaders;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 import java.util.ListIterator;
@@ -58,12 +59,16 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.net.ssl.SSLContext;
+
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 
 /**
  * Defines an adaptation layers so that a test server handlers and filters
@@ -234,11 +239,13 @@ public interface HttpServerAdapters {
         public abstract OutputStream  getResponseBody();
         public abstract HttpTestRequestHeaders getRequestHeaders();
         public abstract HttpTestResponseHeaders getResponseHeaders();
-        public abstract void sendResponseHeaders(int code, int contentLength) throws IOException;
+        public abstract void sendResponseHeaders(int code, long contentLength) throws IOException;
         public abstract URI getRequestURI();
         public abstract String getRequestMethod();
         public abstract void close();
         public abstract InetSocketAddress getRemoteAddress();
+        public abstract String getConnectionKey();
+        public abstract InetSocketAddress getLocalAddress();
         public void serverPush(URI uri, HttpHeaders headers, byte[] body) {
             ByteArrayInputStream bais = new ByteArrayInputStream(body);
             serverPush(uri, headers, bais);
@@ -253,7 +260,7 @@ public interface HttpServerAdapters {
             return new Http1TestExchange(exchange);
         }
         public static HttpTestExchange of(Http2TestExchange exchange) {
-            return new Http2TestExchangeImpl(exchange);
+            return new H2ExchangeImpl(exchange);
         }
 
         abstract void doFilter(Filter.Chain chain) throws IOException;
@@ -265,9 +272,9 @@ public interface HttpServerAdapters {
                 this.exchange = exch;
             }
             @Override
-            public Version getServerVersion() { return Version.HTTP_1_1; }
+            public Version getServerVersion() { return HTTP_1_1; }
             @Override
-            public Version getExchangeVersion() { return Version.HTTP_1_1; }
+            public Version getExchangeVersion() { return HTTP_1_1; }
             @Override
             public InputStream getRequestBody() {
                 return exchange.getRequestBody();
@@ -285,7 +292,7 @@ public interface HttpServerAdapters {
                 return HttpTestResponseHeaders.of(exchange.getResponseHeaders());
             }
             @Override
-            public void sendResponseHeaders(int code, int contentLength) throws IOException {
+            public void sendResponseHeaders(int code, long contentLength) throws IOException {
                 if (contentLength == 0) contentLength = -1;
                 else if (contentLength < 0) contentLength = 0;
                 exchange.sendResponseHeaders(code, contentLength);
@@ -301,26 +308,35 @@ public interface HttpServerAdapters {
             public InetSocketAddress getRemoteAddress() {
                 return exchange.getRemoteAddress();
             }
-
+            @Override
+            public InetSocketAddress getLocalAddress() {
+                return exchange.getLocalAddress();
+            }
             @Override
             public URI getRequestURI() { return exchange.getRequestURI(); }
             @Override
             public String getRequestMethod() { return exchange.getRequestMethod(); }
+
+            @Override
+            public String getConnectionKey() {
+                return exchange.getLocalAddress() + "->" + exchange.getRemoteAddress();
+            }
+
             @Override
             public String toString() {
                 return this.getClass().getSimpleName() + ": " + exchange.toString();
             }
         }
 
-        private static final class Http2TestExchangeImpl extends HttpTestExchange {
+        private static final class H2ExchangeImpl extends HttpTestExchange {
             private final Http2TestExchange exchange;
-            Http2TestExchangeImpl(Http2TestExchange exch) {
+            H2ExchangeImpl(Http2TestExchange exch) {
                 this.exchange = exch;
             }
             @Override
-            public Version getServerVersion() { return Version.HTTP_2; }
+            public Version getServerVersion() { return HTTP_2; }
             @Override
-            public Version getExchangeVersion() { return Version.HTTP_2; }
+            public Version getExchangeVersion() { return HTTP_2; }
             @Override
             public InputStream getRequestBody() {
                 return exchange.getRequestBody();
@@ -339,7 +355,7 @@ public interface HttpServerAdapters {
                 return HttpTestResponseHeaders.of(exchange.getResponseHeaders());
             }
             @Override
-            public void sendResponseHeaders(int code, int contentLength) throws IOException {
+            public void sendResponseHeaders(int code, long contentLength) throws IOException {
                 if (contentLength == 0) contentLength = -1;
                 else if (contentLength < 0) contentLength = 0;
                 exchange.sendResponseHeaders(code, contentLength);
@@ -361,6 +377,15 @@ public interface HttpServerAdapters {
             @Override
             public InetSocketAddress getRemoteAddress() {
                 return exchange.getRemoteAddress();
+            }
+            @Override
+            public InetSocketAddress getLocalAddress() {
+                return exchange.getLocalAddress();
+            }
+
+            @Override
+            public String getConnectionKey() {
+                return exchange.getConnectionKey();
             }
 
             @Override
@@ -396,6 +421,53 @@ public interface HttpServerAdapters {
                 System.err.println("WARNING: exception caught in HttpTestHandler::handle " + x);
                 if (PRINTSTACK && !expectException(t)) x.printStackTrace(System.out);
                 throw x;
+            }
+        }
+    }
+
+    /**
+     * An {@link HttpTestHandler} that handles only HEAD and GET
+     * requests. If another method is used 405 is returned with
+     * an empty body.
+     * The response is always returned with fixed length.
+     */
+    public static class HttpHeadOrGetHandler implements HttpTestHandler {
+        final String responseBody;
+        public HttpHeadOrGetHandler() {
+            this("pâté de tête persillé");
+        }
+        public HttpHeadOrGetHandler(String responseBody) {
+            this.responseBody = Objects.requireNonNull(responseBody);
+        }
+
+        @Override
+        public void handle(HttpTestExchange t) throws IOException {
+            try (var exchg = t) {
+                exchg.getRequestBody().readAllBytes();
+                String method = exchg.getRequestMethod();
+                switch (method) {
+                    case "HEAD" -> {
+                        byte[] resp = responseBody.getBytes(StandardCharsets.UTF_8);
+                        if (exchg.getExchangeVersion() != HTTP_1_1) {
+                            // with HTTP/2 or HTTP/3 the server will not send content-length
+                            exchg.getResponseHeaders()
+                                    .addHeader("Content-Length", String.valueOf(resp.length));
+                        }
+                        exchg.sendResponseHeaders(200, resp.length);
+                        exchg.getResponseBody().close();
+                    }
+                    case "GET" -> {
+                        byte[] resp = responseBody.getBytes(StandardCharsets.UTF_8);
+                        exchg.sendResponseHeaders(200, resp.length);
+                        try (var os = exchg.getResponseBody()) {
+                            os.write(resp);
+                        }
+                    }
+                    default -> {
+                        exchg.sendResponseHeaders(405, 0);
+                        exchg.getResponseBody().close();
+                    }
+                }
             }
         }
     }
@@ -708,6 +780,7 @@ public interface HttpServerAdapters {
         public abstract HttpTestContext addHandler(HttpTestHandler handler, String root);
         public abstract InetSocketAddress getAddress();
         public abstract Version getVersion();
+        public abstract void setRequestApprover(final Predicate<String> approver);
 
         public String serverAuthority() {
             InetSocketAddress address = getAddress();
@@ -855,7 +928,12 @@ public interface HttpServerAdapters {
                 return new InetSocketAddress(InetAddress.getLoopbackAddress(),
                         impl.getAddress().getPort());
             }
-            public Version getVersion() { return Version.HTTP_1_1; }
+            public Version getVersion() { return HTTP_1_1; }
+
+            @Override
+            public void setRequestApprover(final Predicate<String> approver) {
+                throw new UnsupportedOperationException("not supported");
+            }
         }
 
         private static class Http1TestContext extends HttpTestContext {
@@ -875,7 +953,7 @@ public interface HttpServerAdapters {
             public void setAuthenticator(com.sun.net.httpserver.Authenticator authenticator) {
                 context.setAuthenticator(authenticator);
             }
-            @Override public Version getVersion() { return Version.HTTP_1_1; }
+            @Override public Version getVersion() { return HTTP_1_1; }
         }
 
         private static class Http2TestServerImpl extends  HttpTestServer {
@@ -906,7 +984,12 @@ public interface HttpServerAdapters {
                 return new InetSocketAddress(InetAddress.getLoopbackAddress(),
                         impl.getAddress().getPort());
             }
-            public Version getVersion() { return Version.HTTP_2; }
+            public Version getVersion() { return HTTP_2; }
+
+            @Override
+            public void setRequestApprover(final Predicate<String> approver) {
+                this.impl.setRequestApprover(approver);
+            }
         }
 
         private static class Http2TestContext
@@ -939,7 +1022,7 @@ public interface HttpServerAdapters {
                             "only BasicAuthenticator is supported on HTTP/2 context");
                 }
             }
-            @Override public Version getVersion() { return Version.HTTP_2; }
+            @Override public Version getVersion() { return HTTP_2; }
         }
     }
 

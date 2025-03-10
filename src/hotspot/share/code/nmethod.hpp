@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,6 +218,8 @@ class nmethod : public CodeBlob {
 
   // _consts_offset == _content_offset because SECT_CONSTS is first in code buffer
 
+  int _skipped_instructions_size;
+
   int _stub_offset;
 
   // Offsets for different stubs section parts
@@ -232,7 +234,6 @@ class nmethod : public CodeBlob {
   int16_t  _unwind_handler_offset;
   // Number of arguments passed on the stack
   uint16_t _num_stack_arg_slots;
-  uint16_t _skipped_instructions_size;
 
   // Offsets in mutable data section
   // _oops_offset == _data_offset,  offset where embedded oop table begins (inside data)
@@ -259,12 +260,6 @@ class nmethod : public CodeBlob {
   CompLevel    _comp_level;            // compilation level (s1)
   CompilerType _compiler_type;         // which compiler made this nmethod (u1)
 
-#if INCLUDE_RTM_OPT
-  // RTM state at compile time. Used during deoptimization to decide
-  // whether to restart collecting RTM locking abort statistic again.
-  RTMState _rtm_state;
-#endif
-
   // Local state used to keep track of whether unloading is happening or not
   volatile uint8_t _is_unloading_state;
 
@@ -276,6 +271,7 @@ class nmethod : public CodeBlob {
           _has_method_handle_invokes:1,// Has this method MethodHandle invokes?
           _has_wide_vectors:1,         // Preserve wide vectors at safepoints
           _has_monitors:1,             // Fastpath monitor detection for continuations
+          _has_scoped_access:1,        // used by for shared scope closure (scopedMemoryAccess.cpp)
           _has_flushed_dependencies:1, // Used for maintenance of dependencies (under CodeCache_lock)
           _is_unlinked:1,              // mark during class unloading
           _load_reported:1;            // used by jvmti to track if an event has been posted for this nmethod
@@ -628,12 +624,6 @@ public:
   bool is_unloading();
   void do_unloading(bool unloading_occurred);
 
-#if INCLUDE_RTM_OPT
-  // rtm state accessing and manipulating
-  RTMState  rtm_state() const          { return _rtm_state; }
-  void set_rtm_state(RTMState state)   { _rtm_state = state; }
-#endif
-
   bool make_in_use() {
     return try_transition(in_use);
   }
@@ -674,6 +664,9 @@ public:
 
   bool  has_monitors() const                      { return _has_monitors; }
   void  set_has_monitors(bool z)                  { _has_monitors = z; }
+
+  bool  has_scoped_access() const                 { return _has_scoped_access; }
+  void  set_has_scoped_access(bool z)             { _has_scoped_access = z; }
 
   bool  has_method_handle_invokes() const         { return _has_method_handle_invokes; }
   void  set_has_method_handle_invokes(bool z)     { _has_method_handle_invokes = z; }
@@ -716,6 +709,7 @@ public:
 
   void copy_values(GrowableArray<jobject>* oops);
   void copy_values(GrowableArray<Metadata*>* metadata);
+  void copy_values(GrowableArray<address>* metadata) {} // Nothing to do
 
   // Relocation support
 private:
@@ -906,7 +900,7 @@ public:
   void post_compiled_method_load_event(JvmtiThreadState* state = nullptr);
 
   // verify operations
-  void verify() override;
+  void verify();
   void verify_scopes();
   void verify_interrupt_point(address interrupt_point, bool is_inline_cache);
 
@@ -918,9 +912,9 @@ public:
   void decode(outputStream* st) const { decode2(st); } // just delegate here.
 
   // printing support
-  void print()                 const override;
-  void print(outputStream* st) const;
+  void print_on_impl(outputStream* st) const;
   void print_code();
+  void print_value_on_impl(outputStream* st) const;
 
 #if defined(SUPPORT_DATA_STRUCTS)
   // print output in opt build for disassembler library
@@ -928,7 +922,6 @@ public:
   void print_pcs_on(outputStream* st);
   void print_scopes() { print_scopes_on(tty); }
   void print_scopes_on(outputStream* st)          PRODUCT_RETURN;
-  void print_value_on(outputStream* st) const override;
   void print_handler_table();
   void print_nul_chk_table();
   void print_recorded_oop(int log_n, int index);
@@ -947,9 +940,7 @@ public:
   void maybe_print_nmethod(const DirectiveSet* directive);
   void print_nmethod(bool print_code);
 
-  // need to re-define this from CodeBlob else the overload hides it
-  void print_on(outputStream* st) const override { CodeBlob::print_on(st); }
-  void print_on(outputStream* st, const char* msg) const;
+  void print_on_with_msg(outputStream* st, const char* msg) const;
 
   // Logging
   void log_identity(xmlStream* log) const;
@@ -957,13 +948,6 @@ public:
   void log_state_change() const;
 
   // Prints block-level comments, including nmethod specific block labels:
-  void print_block_comment(outputStream* stream, address block_begin) const override {
-#if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
-    print_nmethod_labels(stream, block_begin);
-    CodeBlob::print_block_comment(stream, block_begin);
-#endif
-  }
-
   void print_nmethod_labels(outputStream* stream, address block_begin, bool print_section_labels=true) const;
   const char* nmethod_section_label(address pos) const;
 
@@ -1001,6 +985,18 @@ public:
 
   void make_deoptimized();
   void finalize_relocations();
+
+  class Vptr : public CodeBlob::Vptr {
+    void print_on(const CodeBlob* instance, outputStream* st) const override {
+      ttyLocker ttyl;
+      instance->as_nmethod()->print_on_impl(st);
+    }
+    void print_value_on(const CodeBlob* instance, outputStream* st) const override {
+      instance->as_nmethod()->print_value_on_impl(st);
+    }
+  };
+
+  static const Vptr _vpntr;
 };
 
 #endif // SHARE_CODE_NMETHOD_HPP

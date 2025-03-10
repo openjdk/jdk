@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 #define SHARE_COMPILER_COMPILERDEFINITIONS_INLINE_HPP
 
 #include "compiler/compilerDefinitions.hpp"
-
 #include "compiler/compiler_globals.hpp"
-#include "compiler/compilerDefinitions.hpp"
 #include "runtime/arguments.hpp"
 
 inline bool CompilerConfig::is_interpreter_only() {

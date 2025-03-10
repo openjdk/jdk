@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,6 @@ inline const char* ZPage::type_to_string() const {
 
   default:
     fatal("Unexpected page type");
-    return 0;
   }
 }
 
@@ -84,13 +83,13 @@ inline uint32_t ZPage::object_max_count() const {
 inline size_t ZPage::object_alignment_shift() const {
   switch (type()) {
   case ZPageType::small:
-    return ZObjectAlignmentSmallShift;
+    return (size_t)ZObjectAlignmentSmallShift;
 
   case ZPageType::medium:
-    return ZObjectAlignmentMediumShift;
+    return (size_t)ZObjectAlignmentMediumShift;
 
   case ZPageType::large:
-    return ZObjectAlignmentLargeShift;
+    return (size_t)ZObjectAlignmentLargeShift;
 
   default:
     fatal("Unexpected page type");
@@ -101,13 +100,13 @@ inline size_t ZPage::object_alignment_shift() const {
 inline size_t ZPage::object_alignment() const {
   switch (type()) {
   case ZPageType::small:
-    return ZObjectAlignmentSmall;
+    return (size_t)ZObjectAlignmentSmall;
 
   case ZPageType::medium:
-    return ZObjectAlignmentMedium;
+    return (size_t)ZObjectAlignmentMedium;
 
   case ZPageType::large:
-    return ZObjectAlignmentLarge;
+    return (size_t)ZObjectAlignmentLarge;
 
   default:
     fatal("Unexpected page type");
@@ -312,7 +311,7 @@ inline bool ZPage::mark_object(zaddress addr, bool finalizable, bool& inc_live) 
   assert(is_in(addr), "Invalid address");
 
   // Verify oop
-  (void)to_oop(addr);
+  assert_is_oop(addr);
 
   // Set mark bit
   const BitMap::idx_t index = bit_index(addr);

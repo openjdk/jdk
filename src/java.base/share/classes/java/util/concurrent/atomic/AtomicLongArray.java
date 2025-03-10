@@ -51,6 +51,7 @@ public class AtomicLongArray implements java.io.Serializable {
     private static final long serialVersionUID = -2308431214976778248L;
     private static final VarHandle AA
         = MethodHandles.arrayElementVarHandle(long[].class);
+    /** @serial */
     private final long[] array;
 
     /**
@@ -366,8 +367,7 @@ public class AtomicLongArray implements java.io.Serializable {
     }
 
     /**
-     * Returns the String representation of the current values of array.
-     * @return the String representation of the current values of array
+     * {@return the String representation of the current values of array}
      */
     public String toString() {
         int iMax = array.length - 1;

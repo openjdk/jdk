@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -45,10 +47,10 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.SimpleTypeVisitor9;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.HtmlId;
 
 /**
  * Centralized constants and factory methods for HTML ids.
@@ -91,6 +93,7 @@ public class HtmlIds {
     static final HtmlId FOR_REMOVAL = HtmlId.of("for-removal");
     static final HtmlId HELP_NAVIGATION = HtmlId.of("help-navigation");
     static final HtmlId HELP_PAGES = HtmlId.of("help-pages");
+    static final HtmlId HELP_RELEASES = HtmlId.of("help-releases");
     static final HtmlId METHOD_DETAIL = HtmlId.of("method-detail");
     static final HtmlId METHOD_SUMMARY = HtmlId.of("method-summary");
     static final HtmlId METHOD_SUMMARY_TABLE = HtmlId.of("method-summary-table");
@@ -461,6 +464,22 @@ public class HtmlIds {
     }
 
     /**
+     * Returns an id for text documenting a type parameter of a class or method.
+     *
+     * @param paramName the name of the type parameter
+     * @param owner the enclosing element
+     *
+     * @return the id
+     */
+    public HtmlId forTypeParam(String paramName, Element owner) {
+        if (utils.isExecutableElement(owner)) {
+            return HtmlId.of(forMember((ExecutableElement) owner).getFirst().name()
+                    + "-type-param-" + paramName);
+        }
+        return HtmlId.of("type-param-" + paramName);
+    }
+
+    /**
      * Returns an id for one of the kinds of section in the pages for item group summaries.
      *
      * <p>Note: while the use of simple names (that are not keywords)
@@ -594,5 +613,36 @@ public class HtmlIds {
             idValue = idValue + counter;
         }
         return HtmlId.of(idValue);
+    }
+
+    /**
+     * Returns an id for a snippet.
+     *
+     * @param e the element in whose documentation the snippet appears
+     * @param snippetIds the set of snippet ids already generated
+     * @return a unique id for the snippet
+     */
+    public HtmlId forSnippet(Element e, Set<String> snippetIds) {
+        String id = "snippet-";
+        ElementKind kind = e.getKind();
+        if (kind == ElementKind.PACKAGE) {
+            id += forPackage((PackageElement) e).name();
+        } else if (kind.isDeclaredType()) {
+            id += forClass((TypeElement) e).name();
+        } else if (kind.isExecutable()) {
+            id += forMember((ExecutableElement) e).getFirst().name();
+        } else if (kind.isField()) {
+            id += forMember((VariableElement) e).name();
+        } else if (kind == ElementKind.MODULE) {
+            id += ((ModuleElement) e).getQualifiedName();
+        } else {
+            // while utterly unexpected, we shouldn't fail
+            id += "unknown-element";
+        }
+        int counter = 1;
+        while (!snippetIds.add(id + counter)) {
+            counter++;
+        }
+        return HtmlId.of(id + counter);
     }
 }

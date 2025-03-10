@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,9 @@
  * @library /test/lib
  * @comment The test is run with -XX:LoopUnrollLimit=32 to prevent unrolling
  *          from fully replacing vectorization.
- * @run main/othervm -Xbatch -XX:LoopUnrollLimit=32
- *      compiler.loopopts.superword.TestPeeledReductionNode
+ * @run main/othervm -Xbatch
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=32
+ *                   compiler.loopopts.superword.TestPeeledReductionNode
  */
 package compiler.loopopts.superword;
 

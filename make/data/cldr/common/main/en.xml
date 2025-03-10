@@ -239,7 +239,6 @@ annotations.
 			<language type="gmh">Middle High German</language>
 			<language type="gn">Guarani</language>
 			<language type="goh">Old High German</language>
-			<language type="gom">Goan Konkani</language>
 			<language type="gon">Gondi</language>
 			<language type="gor">Gorontalo</language>
 			<language type="got">Gothic</language>
@@ -427,6 +426,7 @@ annotations.
 			<language type="mua">Mundang</language>
 			<language type="mul">Multiple languages</language>
 			<language type="mus">Muscogee</language>
+			<language type="mus" alt="official">Mvskoke</language>
 			<language type="mwl">Mirandese</language>
 			<language type="mwr">Marwari</language>
 			<language type="mwv">Mentawai</language>
@@ -755,6 +755,7 @@ annotations.
 			<script type="Elba">Elbasan</script>
 			<script type="Elym">Elymaic</script>
 			<script type="Ethi">Ethiopic</script>
+			<script type="Gara">Garay</script>
 			<script type="Geok">Georgian Khutsuri</script>
 			<script type="Geor">Georgian</script>
 			<script type="Glag">Glagolitic</script>
@@ -764,6 +765,7 @@ annotations.
 			<script type="Gran">Grantha</script>
 			<script type="Grek">Greek</script>
 			<script type="Gujr">Gujarati</script>
+			<script type="Gukh">Gurung Khema</script>
 			<script type="Guru">Gurmukhi</script>
 			<script type="Hanb">Han with Bopomofo</script>
 			<script type="Hang">Hangul</script>
@@ -797,6 +799,7 @@ annotations.
 			<script type="Knda">Kannada</script>
 			<script type="Kore">Korean</script>
 			<script type="Kpel">Kpelle</script>
+			<script type="Krai">Kirat Rai</script>
 			<script type="Kthi">Kaithi</script>
 			<script type="Lana">Lanna</script>
 			<script type="Laoo">Lao</script>
@@ -839,6 +842,7 @@ annotations.
 			<script type="Nshu">Nüshu</script>
 			<script type="Ogam">Ogham</script>
 			<script type="Olck">Ol Chiki</script>
+			<script type="Onao">Ol Onal</script>
 			<script type="Orkh">Orkhon</script>
 			<script type="Orya">Odia</script>
 			<script type="Osge">Osage</script>
@@ -875,6 +879,7 @@ annotations.
 			<script type="Sora">Sora Sompeng</script>
 			<script type="Soyo">Soyombo</script>
 			<script type="Sund">Sundanese</script>
+			<script type="Sunu">Sunuwar</script>
 			<script type="Sylo">Syloti Nagri</script>
 			<script type="Syrc">Syriac</script>
 			<script type="Syre">Estrangelo Syriac</script>
@@ -896,7 +901,9 @@ annotations.
 			<script type="Tibt">Tibetan</script>
 			<script type="Tirh">Tirhuta</script>
 			<script type="Tnsa">Tangsa</script>
+			<script type="Todr">Todhri</script>
 			<script type="Toto">Toto</script>
+			<script type="Tutg">Tulu-Tigalari</script>
 			<script type="Ugar">Ugaritic</script>
 			<script type="Vaii">Vai</script>
 			<script type="Visp">Visible Speech</script>
@@ -1535,12 +1542,14 @@ annotations.
 			<type key="numbers" type="ethi">Ethiopic Numerals</type>
 			<type key="numbers" type="finance">Financial Numerals</type>
 			<type key="numbers" type="fullwide">Full-Width Digits</type>
+			<type key="numbers" type="gara">Garay Digits</type>
 			<type key="numbers" type="geor">Georgian Numerals</type>
 			<type key="numbers" type="gong">Gunjala Gondi digits</type>
 			<type key="numbers" type="gonm">Masaram Gondi digits</type>
 			<type key="numbers" type="grek">Greek Numerals</type>
 			<type key="numbers" type="greklow">Greek Lowercase Numerals</type>
 			<type key="numbers" type="gujr">Gujarati Digits</type>
+			<type key="numbers" type="gukh">Gurung Khema Digits</type>
 			<type key="numbers" type="guru">Gurmukhi Digits</type>
 			<type key="numbers" type="hanidays">Chinese Calendar Day-of-Month Numerals</type>
 			<type key="numbers" type="hanidec">Chinese Decimal Numerals</type>
@@ -1559,6 +1568,7 @@ annotations.
 			<type key="numbers" type="kawi">Kawi Digits</type>
 			<type key="numbers" type="khmr">Khmer Digits</type>
 			<type key="numbers" type="knda">Kannada Digits</type>
+			<type key="numbers" type="krai">Kirat Rai Digits</type>
 			<type key="numbers" type="lana">Tai Tham Hora Digits</type>
 			<type key="numbers" type="lanatham">Tai Tham Tham Digits</type>
 			<type key="numbers" type="laoo">Lao Digits</type>
@@ -1576,6 +1586,8 @@ annotations.
 			<type key="numbers" type="mroo">Mro Digits</type>
 			<type key="numbers" type="mtei">Meetei Mayek Digits</type>
 			<type key="numbers" type="mymr">Myanmar Digits</type>
+			<type key="numbers" type="mymrepka">Myanmar Eastern Pwo Karen Digits</type>
+			<type key="numbers" type="mymrpao">Myanmar Pao Digits</type>
 			<type key="numbers" type="mymrshan">Myanmar Shan Digits</type>
 			<type key="numbers" type="mymrtlng">Myanmar Tai Laing Digits</type>
 			<type key="numbers" type="nagm">Nag Mundari Digits</type>
@@ -1583,8 +1595,10 @@ annotations.
 			<type key="numbers" type="newa">Newa Digits</type>
 			<type key="numbers" type="nkoo">N’Ko Digits</type>
 			<type key="numbers" type="olck">Ol Chiki Digits</type>
+			<type key="numbers" type="onao">Ol Onal Digits</type>
 			<type key="numbers" type="orya">Odia Digits</type>
 			<type key="numbers" type="osma">Osmanya Digits</type>
+			<type key="numbers" type="outlined">Outlined Digits</type>
 			<type key="numbers" type="rohg">Hanifi Rohingya digits</type>
 			<type key="numbers" type="roman">Roman Numerals</type>
 			<type key="numbers" type="romanlow">Roman Lowercase Numerals</type>
@@ -1595,6 +1609,7 @@ annotations.
 			<type key="numbers" type="sinh">Sinhala Lith Digits</type>
 			<type key="numbers" type="sora">Sora Sompeng Digits</type>
 			<type key="numbers" type="sund">Sundanese Digits</type>
+			<type key="numbers" type="sunu">Sunuwar Digits</type>
 			<type key="numbers" type="takr">Takri Digits</type>
 			<type key="numbers" type="talu">New Tai Lue Digits</type>
 			<type key="numbers" type="taml">Traditional Tamil Numerals</type>
@@ -3897,6 +3912,13 @@ annotations.
 			<regionFormat type="daylight">{0} Daylight Time</regionFormat>
 			<regionFormat type="standard">{0} Standard Time</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="Pacific/Honolulu">
+				<short>
+					<generic>HST</generic>
+					<standard>HST</standard>
+					<daylight>HDT</daylight>
+				</short>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Coordinated Universal Time</standard>
@@ -3917,13 +3939,6 @@ annotations.
 			</zone>
 			<zone type="Asia/Qostanay">
 				<exemplarCity>Kostanay</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>HST</generic>
-					<standard>HST</standard>
-					<daylight>HDT</daylight>
-				</short>
 			</zone>
 			<zone type="Asia/Saigon">
 				<exemplarCity>Ho Chi Minh City</exemplarCity>
@@ -4213,13 +4228,6 @@ annotations.
 					<daylight>China Daylight Time</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Choibalsan Time</generic>
-					<standard>Choibalsan Standard Time</standard>
-					<daylight>Choibalsan Summer Time</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Christmas Island Time</standard>
@@ -4483,6 +4491,11 @@ annotations.
 					<generic>Petropavlovsk-Kamchatski Time</generic>
 					<standard>Petropavlovsk-Kamchatski Standard Time</standard>
 					<daylight>Petropavlovsk-Kamchatski Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Kazakhstan Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -6614,10 +6627,15 @@ annotations.
 				<displayName count="one">Zimbabwean dollar (1980–2008)</displayName>
 				<displayName count="other">Zimbabwean dollars (1980–2008)</displayName>
 			</currency>
+			<currency type="ZWG">
+				<displayName>Zimbabwean Gold</displayName>
+				<displayName count="one">Zimbabwean gold</displayName>
+				<displayName count="other">Zimbabwean gold</displayName>
+			</currency>
 			<currency type="ZWL">
-				<displayName>Zimbabwean Dollar (2009)</displayName>
-				<displayName count="one">Zimbabwean dollar (2009)</displayName>
-				<displayName count="other">Zimbabwean dollars (2009)</displayName>
+				<displayName>Zimbabwean Dollar (2009–2024)</displayName>
+				<displayName count="one">Zimbabwean dollar (2009–2024)</displayName>
+				<displayName count="other">Zimbabwean dollars (2009–2024)</displayName>
 			</currency>
 			<currency type="ZWR">
 				<displayName>Zimbabwean Dollar (2008)</displayName>
@@ -7703,6 +7721,22 @@ annotations.
 				<unitPattern count="one">{0} of gasoline equivalent</unitPattern>
 				<unitPattern count="other">{0} of gasoline equivalent</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>light</displayName>
+				<unitPattern count="one">{0} light</unitPattern>
+				<unitPattern count="other">{0} light</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>parts per billion</displayName>
+				<unitPattern count="one">{0} part per billion</unitPattern>
+				<unitPattern count="other">{0} parts per billion</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>nights</displayName>
+				<unitPattern count="one">{0} night</unitPattern>
+				<unitPattern count="other">{0} nights</unitPattern>
+				<perUnitPattern>{0} per night</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>cardinal direction</displayName>
 				<coordinateUnitPattern type="east">{0} east</coordinateUnitPattern>
@@ -8775,6 +8809,22 @@ annotations.
 				<unitPattern count="one">{0} gas-equiv</unitPattern>
 				<unitPattern count="other">{0} gas-equiv</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>light</displayName>
+				<unitPattern count="one">{0} light</unitPattern>
+				<unitPattern count="other">{0} light</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>parts/billion</displayName>
+				<unitPattern count="one">{0} ppb</unitPattern>
+				<unitPattern count="other">{0} ppb</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>nights</displayName>
+				<unitPattern count="one">{0} night</unitPattern>
+				<unitPattern count="other">{0} nights</unitPattern>
+				<perUnitPattern>{0}/night</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>direction</displayName>
 				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
@@ -9845,6 +9895,22 @@ annotations.
 				<displayName>gas-equiv</displayName>
 				<unitPattern count="one">{0}gas-equiv</unitPattern>
 				<unitPattern count="other">{0}gas-equiv</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>light</displayName>
+				<unitPattern count="one">{0}light</unitPattern>
+				<unitPattern count="other">{0}light</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>ppb</displayName>
+				<unitPattern count="one">{0}ppb</unitPattern>
+				<unitPattern count="other">{0}ppb</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>nights</displayName>
+				<unitPattern count="one">{0}night</unitPattern>
+				<unitPattern count="other">{0}nights</unitPattern>
+				<perUnitPattern>{0}/night</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>direction</displayName>

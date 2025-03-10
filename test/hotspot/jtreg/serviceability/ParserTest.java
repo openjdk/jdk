@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 
 import java.math.BigInteger;
 
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.parser.DiagnosticCommand;
 import jdk.test.whitebox.parser.DiagnosticCommand.DiagnosticArgumentType;
 import jdk.test.whitebox.WhiteBox;
@@ -49,6 +50,7 @@ public class ParserTest {
         testQuotes();
         testMemorySize();
         testSingleLetterArg();
+        testFileName();
     }
 
     public static void main(String... args) throws Exception  {
@@ -157,6 +159,33 @@ public class ParserTest {
         };
         parse("flag", "flag", "flag v", ' ', args);
         parse("value", "v", "flag v", ' ', args);
+    }
+
+    public void testFileName() throws Exception {
+        // --- Testing options
+        long pid = ProcessTools.getProcessId();
+
+        // Test pid gets injected into %p
+        String name = "name";
+        DiagnosticCommand arg = new DiagnosticCommand(name,
+                "desc", DiagnosticArgumentType.FILE,
+                false, null);
+        DiagnosticCommand[] args = {arg};
+        parse(name, "file%d.txt".formatted(pid), name + "=file%p.txt", args);
+
+        // Test custom file name with no %p
+        parse(name, "myFile.txt", name + "=myFile.txt", args);
+
+        // --- Testing arguments
+
+        // Test pid gets injected into %p
+        arg = new DiagnosticCommand(name, "desc", DiagnosticArgumentType.FILE, true,
+                false, null);
+        args = new DiagnosticCommand[]{arg};
+        parse(name, "file%d.txt".formatted(pid), "file%p.txt", args);
+
+        // Test custom file name with no %p
+        parse(name, "myFile.txt", "myFile.txt", args);
     }
 
     public void testMemorySize() throws Exception {

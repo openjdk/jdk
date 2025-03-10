@@ -21,33 +21,20 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-    .globl SafeFetch32_impl
-    .globl SafeFetchN_impl
-    .globl _SafeFetch32_fault
-    .globl _SafeFetchN_fault
-    .globl _SafeFetch32_continuation
-    .globl _SafeFetchN_continuation
 
-    .hidden SafeFetch32_impl
-    .hidden SafeFetchN_impl
-    .hidden _SafeFetch32_fault
-    .hidden _SafeFetchN_fault
-    .hidden _SafeFetch32_continuation
-    .hidden _SafeFetchN_continuation
+#include "defs.S.inc"
 
     .text
-
 
     # Support for int SafeFetch32(int* address, int defaultval);
     #
     #  %rdi : address
     #  %esi : defaultval
-    .type    SafeFetch32_impl,@function
-SafeFetch32_impl:
-_SafeFetch32_fault:
+DECLARE_FUNC(SafeFetch32_impl):
+DECLARE_FUNC(_SafeFetch32_fault):
     movl (%rdi), %eax       # load target value, may fault
     ret
-_SafeFetch32_continuation:
+DECLARE_FUNC(_SafeFetch32_continuation):
     movl %esi, %eax         # return default
     ret
 
@@ -55,11 +42,10 @@ _SafeFetch32_continuation:
     #
     #  %rdi : address
     #  %rsi : defaultval
-    .type    SafeFetchN_impl,@function
-SafeFetchN_impl:
-_SafeFetchN_fault:
+DECLARE_FUNC(SafeFetchN_impl):
+DECLARE_FUNC(_SafeFetchN_fault):
     movq (%rdi), %rax       # load target value, may fault
     ret
-_SafeFetchN_continuation:
+DECLARE_FUNC(_SafeFetchN_continuation):
     movq %rsi, %rax         # return default
     ret

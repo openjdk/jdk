@@ -239,7 +239,7 @@ print_method(jvmtiEnv *jvmti, JNIEnv* jni, jmethodID method, jint depth) {
   check_jvmti_status(jni, err, "print_method: error in JVMTI GetMethodName");
 
   LOG("%2d: %s: %s%s\n", depth, cname, mname, msign);
-  fflush(0);
+  fflush(nullptr);
   deallocate(jvmti, jni, (void*)cname);
   deallocate(jvmti, jni, (void*)mname);
   deallocate(jvmti, jni, (void*)msign);
@@ -283,7 +283,7 @@ get_thread_info(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
 
 static jint
 get_thread_state(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
-  jint thread_state;
+  jint thread_state = 0;
   jvmtiError err = jvmti->GetThreadState(thread, &thread_state);
   check_jvmti_status(jni, err, "get_thread_state: error in JVMTI GetThreadState call");
   return thread_state;

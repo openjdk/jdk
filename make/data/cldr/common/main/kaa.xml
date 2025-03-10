@@ -1,0 +1,712 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="kaa"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="de">немецше</language>
+			<language type="de_AT">немецше (Австрия)</language>
+			<language type="de_CH">немецше (Швейцария)</language>
+			<language type="en" draft="unconfirmed">Англичанша</language>
+			<language type="fr">французша</language>
+			<language type="fr_CA">французша (Канада)</language>
+			<language type="fr_CH">французша (Швейцария)</language>
+			<language type="hi_Latn">ҳиндше (латын)</language>
+			<language type="hi_Latn" alt="variant">ҳинглиш (латын)</language>
+			<language type="it">итальянша</language>
+			<language type="ja">японша</language>
+			<language type="kaa">қарақалпақша</language>
+			<language type="ko">корейсше</language>
+			<language type="tr" draft="unconfirmed">түрк тили</language>
+			<language type="und" draft="unconfirmed">белгисиз тил</language>
+			<language type="zh">қытайша</language>
+			<language type="zh_Hans" draft="unconfirmed">қытайша (аңсатластырылған)</language>
+		</languages>
+		<scripts>
+			<script type="Arab">араб жазыўы</script>
+			<script type="Cyrl">кирилл жазыўы</script>
+			<script type="Hans">аңсатластырылған</script>
+			<script type="Hans" alt="stand-alone">аңсатластырылған қытай жазыўы</script>
+			<script type="Hant">дәстүрли</script>
+			<script type="Hant" alt="stand-alone">дәстүрли қытай жазыўы</script>
+			<script type="Jpan">япон жазыўы</script>
+			<script type="Kore">корейс жазыўы</script>
+			<script type="Latn">латын жазыўы</script>
+			<script type="Zxxx">жазыўы жоқ</script>
+			<script type="Zzzz">белгисиз жазыў</script>
+		</scripts>
+		<territories>
+			<territory type="001">дүнья</territory>
+			<territory type="002">Африка</territory>
+			<territory type="003">Арқа Америка</territory>
+			<territory type="005">Қубла Америка</territory>
+			<territory type="009">Океания</territory>
+			<territory type="011">Батыс Африка</territory>
+			<territory type="013">Орайлық Америка</territory>
+			<territory type="014">Шығыс Африка</territory>
+			<territory type="015">Арқа Африка</territory>
+			<territory type="017">Орайлық Африка</territory>
+			<territory type="018">Қубла Африка</territory>
+			<territory type="019">Америка</territory>
+			<territory type="021">Арқа Америка – AҚШ ҳәм Канада</territory>
+			<territory type="029">Кариб бассейни</territory>
+			<territory type="030">Шығыс Азия</territory>
+			<territory type="034">Қубла Азия</territory>
+			<territory type="035">Қубла-шығыс Азия</territory>
+			<territory type="039">Қубла Европа</territory>
+			<territory type="053">Австралазия</territory>
+			<territory type="054">Меланезия</territory>
+			<territory type="057">Микронезия</territory>
+			<territory type="061">Полинезия</territory>
+			<territory type="142">Азия</territory>
+			<territory type="143">Орайлық Азия</territory>
+			<territory type="145">Батыс Азия</territory>
+			<territory type="150">Европа</territory>
+			<territory type="151">Шығыс Европа</territory>
+			<territory type="154">Арқа Европа</territory>
+			<territory type="155">Батыс Европа</territory>
+			<territory type="202">Тропикалық Африка</territory>
+			<territory type="419">Латын Америкасы</territory>
+			<territory type="AD">Андорра</territory>
+			<territory type="AE">Бирлескен Араб Әмирликлери</territory>
+			<territory type="AF">Аўғанстан</territory>
+			<territory type="AG">Антигуа ҳәм Барбуда</territory>
+			<territory type="AI">Ангилья</territory>
+			<territory type="AL">Албания</territory>
+			<territory type="AM">Армения</territory>
+			<territory type="AO">Ангола</territory>
+			<territory type="AR">Аргентина</territory>
+			<territory type="AT">Австрия</territory>
+			<territory type="AU">Австралия</territory>
+			<territory type="AW">Аруба</territory>
+			<territory type="AX">Аланд атаўлары</territory>
+			<territory type="AZ">Әзербайжан</territory>
+			<territory type="BA">Босния ҳәм Герцеговина</territory>
+			<territory type="BB">Барбадос</territory>
+			<territory type="BD">Бангладеш</territory>
+			<territory type="BE">Бельгия</territory>
+			<territory type="BF">Буркина-Фасо</territory>
+			<territory type="BG">Болгария</territory>
+			<territory type="BH">Бахрейн</territory>
+			<territory type="BI">Бурунди</territory>
+			<territory type="BJ">Бенин</territory>
+			<territory type="BL">Сен-Бартелеми</territory>
+			<territory type="BM">Бермуд атаўлары</territory>
+			<territory type="BN">Бруней</territory>
+			<territory type="BO">Боливия</territory>
+			<territory type="BQ">Бонэйр, Синт-Эстатиус ҳәм Саба</territory>
+			<territory type="BR">Бразилия</territory>
+			<territory type="BS">Багама атаўлары</territory>
+			<territory type="BT">Бутан</territory>
+			<territory type="BV">Буве атаўы</territory>
+			<territory type="BW">Ботсвана</territory>
+			<territory type="BY">Беларусь</territory>
+			<territory type="BZ">Белиз</territory>
+			<territory type="CA">Канада</territory>
+			<territory type="CC">Кокос атаўлары</territory>
+			<territory type="CD">Конго - Киншаса</territory>
+			<territory type="CD" alt="variant">Конго (КДР)</territory>
+			<territory type="CF">Орайлық Африка Республикасы</territory>
+			<territory type="CG">Конго - Браззавиль</territory>
+			<territory type="CG" alt="variant">Конго Республикасы</territory>
+			<territory type="CH">Швейцария</territory>
+			<territory type="CI">Кот-дИвуар</territory>
+			<territory type="CI" alt="variant">Кот-д’Ивуар</territory>
+			<territory type="CK">Кук атаўлары</territory>
+			<territory type="CL">Чили</territory>
+			<territory type="CM">Камерун</territory>
+			<territory type="CN">Қытай</territory>
+			<territory type="CO">Колумбия</territory>
+			<territory type="CR">Коста-Рика</territory>
+			<territory type="CU">Куба</territory>
+			<territory type="CV">Кабо-Верде</territory>
+			<territory type="CW">Кюрасао</territory>
+			<territory type="CY">Кипр</territory>
+			<territory type="CZ">Чехия</territory>
+			<territory type="CZ" alt="variant">Чехия Республикасы</territory>
+			<territory type="DE">Германия</territory>
+			<territory type="DJ">Джибути</territory>
+			<territory type="DK">Дания</territory>
+			<territory type="DM">Доминика</territory>
+			<territory type="DO">Доминикана Республикасы</territory>
+			<territory type="DZ">Алжир</territory>
+			<territory type="EA">Сеута ҳәм Мелилья</territory>
+			<territory type="EC">Эквадор</territory>
+			<territory type="EE">Эстония</territory>
+			<territory type="EG">Мысыр</territory>
+			<territory type="EH">Батыс Сахара</territory>
+			<territory type="ER">Эритрея</territory>
+			<territory type="ES">Испания</territory>
+			<territory type="ET">Эфиопия</territory>
+			<territory type="EU">Европа Аўқамы</territory>
+			<territory type="EZ">Еврозона</territory>
+			<territory type="FI">Финляндия</territory>
+			<territory type="FJ">Фиджи</territory>
+			<territory type="FK">Фолкленд атаўлары</territory>
+			<territory type="FK" alt="variant">Фолкленд (Мальвин) атаўлары</territory>
+			<territory type="FM">Микронезия Федеративлик Штатлары</territory>
+			<territory type="FO">Фарер атаўлары</territory>
+			<territory type="FR">Франция</territory>
+			<territory type="GA">Габон</territory>
+			<territory type="GB">Уллы Британия</territory>
+			<territory type="GB" alt="short">Британия</territory>
+			<territory type="GD">Гренада</territory>
+			<territory type="GE">Грузия</territory>
+			<territory type="GF">Француз Гвианасы</territory>
+			<territory type="GG">Гернси</territory>
+			<territory type="GH">Гана</territory>
+			<territory type="GI">Гибралтар</territory>
+			<territory type="GL">Гренландия</territory>
+			<territory type="GM">Гамбия</territory>
+			<territory type="GN">Гвинея</territory>
+			<territory type="GP">Гваделупа</territory>
+			<territory type="GQ">Экваториальлық Гвинея</territory>
+			<territory type="GR">Греция</territory>
+			<territory type="GS">Қубла Георгия ҳәм Қубла Сэндвич атаўлары</territory>
+			<territory type="GT">Гватемала</territory>
+			<territory type="GU">Гуам</territory>
+			<territory type="GW">Гвинея-Бисау</territory>
+			<territory type="GY">Гайана</territory>
+			<territory type="HK">Гонконг ААР</territory>
+			<territory type="HK" alt="short">Гонконг</territory>
+			<territory type="HN">Гондурас</territory>
+			<territory type="HR">Хорватия</territory>
+			<territory type="HT">Гаити</territory>
+			<territory type="HU">Венгрия</territory>
+			<territory type="IC">Канар атаўлары</territory>
+			<territory type="ID">Индонезия</territory>
+			<territory type="IE">Ирландия</territory>
+			<territory type="IL">Израиль</territory>
+			<territory type="IM">Мэн атаўы</territory>
+			<territory type="IN">Ҳиндстан</territory>
+			<territory type="IO">Британияныӊ Ҳинд океанындағы территориясы</territory>
+			<territory type="IO" alt="chagos">Чагос архипелагы</territory>
+			<territory type="IQ">Ирак</territory>
+			<territory type="IR">Иран</territory>
+			<territory type="IS">Исландия</territory>
+			<territory type="IT">Италия</territory>
+			<territory type="JE">Джерси</territory>
+			<territory type="JM">Ямайка</territory>
+			<territory type="JO">Иордания</territory>
+			<territory type="JP">Япония</territory>
+			<territory type="KE">Кения</territory>
+			<territory type="KG">Қырғызстан</territory>
+			<territory type="KH">Камбоджа</territory>
+			<territory type="KI">Кирибати</territory>
+			<territory type="KM">Комор атаўлары</territory>
+			<territory type="KN">Сент-Китс ҳәм Невис</territory>
+			<territory type="KP">Арқа Корея</territory>
+			<territory type="KR">Қубла Корея</territory>
+			<territory type="KW">Кувейт</territory>
+			<territory type="KY">Кайман атаўлары</territory>
+			<territory type="KZ">Қазақстан</territory>
+			<territory type="LA">Лаос</territory>
+			<territory type="LB">Ливан</territory>
+			<territory type="LC">Сент-Люсия</territory>
+			<territory type="LI">Лихтенштейн</territory>
+			<territory type="LK">Шри-Ланка</territory>
+			<territory type="LR">Либерия</territory>
+			<territory type="LS">Лесото</territory>
+			<territory type="LT">Литва</territory>
+			<territory type="LU">Люксембург</territory>
+			<territory type="LV">Латвия</territory>
+			<territory type="LY">Ливия</territory>
+			<territory type="MA">Марокко</territory>
+			<territory type="MC">Монако</territory>
+			<territory type="MD">Молдова</territory>
+			<territory type="ME">Черногория</territory>
+			<territory type="MF">Сен-Мартен</territory>
+			<territory type="MG">Мадагаскар</territory>
+			<territory type="MH">Маршалл атаўлары</territory>
+			<territory type="MK">Арқа Македония</territory>
+			<territory type="ML">Мали</territory>
+			<territory type="MM">Мьянма (Бирма)</territory>
+			<territory type="MN">Монголия</territory>
+			<territory type="MO">Макао ААР</territory>
+			<territory type="MO" alt="short">Макао</territory>
+			<territory type="MQ">Мартиника</territory>
+			<territory type="MR">Мавритания</territory>
+			<territory type="MS">Монтсеррат</territory>
+			<territory type="MT">Мальта</territory>
+			<territory type="MU">Маврикий</territory>
+			<territory type="MV">Мальдив</territory>
+			<territory type="MW">Малави</territory>
+			<territory type="MX">Мексика</territory>
+			<territory type="MY">Малайзия</territory>
+			<territory type="MZ">Мозамбик</territory>
+			<territory type="NA">Намибия</territory>
+			<territory type="NC">Жаӊа Каледония</territory>
+			<territory type="NE">Нигер</territory>
+			<territory type="NG">Нигерия</territory>
+			<territory type="NI">Никарагуа</territory>
+			<territory type="NL">Нидерландия</territory>
+			<territory type="NO">Норвегия</territory>
+			<territory type="NP">Непал</territory>
+			<territory type="NR">Науру</territory>
+			<territory type="NZ">Жаӊа Зеландия</territory>
+			<territory type="OM">Оман</territory>
+			<territory type="PA">Панама</territory>
+			<territory type="PE">Перу</territory>
+			<territory type="PG">Папуа — Жаӊа Гвинея</territory>
+			<territory type="PH">Филиппин</territory>
+			<territory type="PK">Пакистан</territory>
+			<territory type="PL">Польша</territory>
+			<territory type="PM">Сен-Пьер ҳәм Микелон</territory>
+			<territory type="PN">Питкэрн атаўлары</territory>
+			<territory type="PR">Пуэрто-Рико</territory>
+			<territory type="PS">Палестина территориялары</territory>
+			<territory type="PS" alt="short">Палестина</territory>
+			<territory type="PT">Португалия</territory>
+			<territory type="PW">Палау</territory>
+			<territory type="PY">Парагвай</territory>
+			<territory type="QA">Қатар</territory>
+			<territory type="QO">Сыртқы Океания</territory>
+			<territory type="RE">Реюньон</territory>
+			<territory type="RO">Румыния</territory>
+			<territory type="RS">Сербия</territory>
+			<territory type="RU">Россия</territory>
+			<territory type="RW">Руанда</territory>
+			<territory type="SA">Саудия Арабстаны</territory>
+			<territory type="SB">Соломон атаўлары</territory>
+			<territory type="SC">Сейшель атаўлары</territory>
+			<territory type="SD">Судан</territory>
+			<territory type="SE">Швеция</territory>
+			<territory type="SG">Сингапур</territory>
+			<territory type="SI">Словения</territory>
+			<territory type="SJ">Шпицберген ҳәм Ян-Майен</territory>
+			<territory type="SK">Словакия</territory>
+			<territory type="SL">Сьерра-Леоне</territory>
+			<territory type="SM">Сан-Марино</territory>
+			<territory type="SN">Сенегал</territory>
+			<territory type="SO">Сомали</territory>
+			<territory type="SR">Суринам</territory>
+			<territory type="SS">Қубла Судан</territory>
+			<territory type="ST">Сан-Томе ҳәм Принсипи</territory>
+			<territory type="SV">Сальвадор</territory>
+			<territory type="SX">Синт-Мартен</territory>
+			<territory type="SY">Сирия</territory>
+			<territory type="SZ">Эсватини</territory>
+			<territory type="SZ" alt="variant">Свазиленд</territory>
+			<territory type="TC">Тёркс ҳәм Кайкос атаўлары</territory>
+			<territory type="TD">Чад</territory>
+			<territory type="TF">Француз Қубла территориялары</territory>
+			<territory type="TG">Того</territory>
+			<territory type="TH">Таиланд</territory>
+			<territory type="TJ">Тәжикстан</territory>
+			<territory type="TK">Токелау</territory>
+			<territory type="TL">Шығыс Тимор</territory>
+			<territory type="TL" alt="variant">Тимор-Лесте</territory>
+			<territory type="TM">Түркменстан</territory>
+			<territory type="TN">Тунис</territory>
+			<territory type="TO">Тонга</territory>
+			<territory type="TR">Түркия</territory>
+			<territory type="TT">Тринидад ҳәм Тобаго</territory>
+			<territory type="TV">Тувалу</territory>
+			<territory type="TW">Тайвань</territory>
+			<territory type="TZ">Танзания</territory>
+			<territory type="UA">Украина</territory>
+			<territory type="UG">Уганда</territory>
+			<territory type="UN">Бирлескен Миллетлер Шөлкеми</territory>
+			<territory type="US">Америка Қурама Штатлары</territory>
+			<territory type="US" alt="short">АҚШ</territory>
+			<territory type="UY">Уругвай</territory>
+			<territory type="UZ">Өзбекстан</territory>
+			<territory type="VA">Ватикан</territory>
+			<territory type="VC">Сент-Винсент ҳәм Гренадин атаўлары</territory>
+			<territory type="VE">Венесуэла</territory>
+			<territory type="VG">Британия Виргин атаўлары</territory>
+			<territory type="VI">Америка Виргин атаўлары</territory>
+			<territory type="VN">Вьетнам</territory>
+			<territory type="VU">Вануату</territory>
+			<territory type="WS">Самоа</territory>
+			<territory type="XA">қалпеки пәт</territory>
+			<territory type="XB">қалпеки Bidi</territory>
+			<territory type="XK">Косово</territory>
+			<territory type="YE">Йемен</territory>
+			<territory type="YT">Майотта</territory>
+			<territory type="ZA">Қубла Африка Республикасы</territory>
+			<territory type="ZM">Замбия</territory>
+			<territory type="ZW">Зимбабве</territory>
+			<territory type="ZZ">белгисиз аймақ</territory>
+		</territories>
+		<types>
+			<type key="calendar" type="gregorian">григориан календарь</type>
+			<type key="calendar" type="islamic-civil">кестели ҳижрий календарь</type>
+			<type key="calendar" type="islamic-tbla">кестели ҳижрий календарь (астрономиялық дәўир)</type>
+			<type key="calendar" type="iso8601">ISO-8601 календары</type>
+			<type key="collation" type="standard">стандарт саралаў</type>
+		</types>
+		<codePatterns>
+			<codePattern type="language">Тил: {0}</codePattern>
+			<codePattern type="script">Жазыў: {0}</codePattern>
+			<codePattern type="territory">Аймақ: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[а ә б в г ғ д её ж з и й к қ л м н ң о ө п р с т уў ү ф х ҳ ц ч ш щ ъ ы ь э ю я]</exemplarCharacters>
+		<exemplarCharacters type="index">[А Ә Б В Г Ғ Д ЕЁ Ж З И Й К Қ Л М Н Ң О Ө П Р С Т УЎ Ү Ф Х Ҳ Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">янв</month>
+							<month type="2">фев</month>
+							<month type="3">мар</month>
+							<month type="4">апр</month>
+							<month type="5">май</month>
+							<month type="6">июн</month>
+							<month type="7">июл</month>
+							<month type="8">авг</month>
+							<month type="9">сен</month>
+							<month type="10">окт</month>
+							<month type="11">ноя</month>
+							<month type="12">дек</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">Я</month>
+							<month type="2">Ф</month>
+							<month type="3">М</month>
+							<month type="4">А</month>
+							<month type="5">М</month>
+							<month type="6">И</month>
+							<month type="7">И</month>
+							<month type="8">А</month>
+							<month type="9">С</month>
+							<month type="10">О</month>
+							<month type="11">Н</month>
+							<month type="12">Д</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">январь</month>
+							<month type="2">февраль</month>
+							<month type="3">март</month>
+							<month type="4">апрель</month>
+							<month type="5">май</month>
+							<month type="6">июнь</month>
+							<month type="7">июль</month>
+							<month type="8">август</month>
+							<month type="9">сентябрь</month>
+							<month type="10">октябрь</month>
+							<month type="11">ноябрь</month>
+							<month type="12">декабрь</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">Янв</month>
+							<month type="2">Фев</month>
+							<month type="3">Мар</month>
+							<month type="4">Апр</month>
+							<month type="5">Май</month>
+							<month type="6">Июн</month>
+							<month type="7">Июл</month>
+							<month type="8">Авг</month>
+							<month type="9">Сен</month>
+							<month type="10">Окт</month>
+							<month type="11">Ноя</month>
+							<month type="12">Дек</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">Я</month>
+							<month type="2">Ф</month>
+							<month type="3">М</month>
+							<month type="4">А</month>
+							<month type="5">М</month>
+							<month type="6">И</month>
+							<month type="7">И</month>
+							<month type="8">А</month>
+							<month type="9">С</month>
+							<month type="10">О</month>
+							<month type="11">Н</month>
+							<month type="12">Д</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Январь</month>
+							<month type="2">Февраль</month>
+							<month type="3">Март</month>
+							<month type="4">Апрель</month>
+							<month type="5">Май</month>
+							<month type="6">Июнь</month>
+							<month type="7">Июль</month>
+							<month type="8">Август</month>
+							<month type="9">Сентябрь</month>
+							<month type="10">Октябрь</month>
+							<month type="11">Ноябрь</month>
+							<month type="12">Декабрь</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">Екш</day>
+							<day type="mon">Дүй</day>
+							<day type="tue">Сий</day>
+							<day type="wed">Сәр</day>
+							<day type="thu">Пий</day>
+							<day type="fri">Жум</day>
+							<day type="sat">Шем</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">Е</day>
+							<day type="mon">Д</day>
+							<day type="tue">С</day>
+							<day type="wed">С</day>
+							<day type="thu">П</day>
+							<day type="fri">Ж</day>
+							<day type="sat">Ш</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">Ек</day>
+							<day type="mon">Дү</day>
+							<day type="tue">Си</day>
+							<day type="wed">Сә</day>
+							<day type="thu">Пи</day>
+							<day type="fri">Жу</day>
+							<day type="sat">Ше</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">екшемби</day>
+							<day type="mon">дүйшемби</day>
+							<day type="tue">сийшемби</day>
+							<day type="wed">сәршемби</day>
+							<day type="thu">пийшемби</day>
+							<day type="fri">жума</day>
+							<day type="sat">шемби</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">Екш</day>
+							<day type="mon">Дүй</day>
+							<day type="tue">Сий</day>
+							<day type="wed">Сәр</day>
+							<day type="thu">Пий</day>
+							<day type="fri">Жум</day>
+							<day type="sat">Шем</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">Е</day>
+							<day type="mon">Д</day>
+							<day type="tue">С</day>
+							<day type="wed">С</day>
+							<day type="thu">П</day>
+							<day type="fri">Ж</day>
+							<day type="sat">Ш</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">Ек</day>
+							<day type="mon">Дү</day>
+							<day type="tue">Си</day>
+							<day type="wed">Сә</day>
+							<day type="thu">Пи</day>
+							<day type="fri">Жу</day>
+							<day type="sat">Ше</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">екшемби</day>
+							<day type="mon">дүйшемби</day>
+							<day type="tue">сийшемби</day>
+							<day type="wed">сәршемби</day>
+							<day type="thu">пийшемби</day>
+							<day type="fri">жума</day>
+							<day type="sat">шемби</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">I ш.</quarter>
+							<quarter type="2">II ш.</quarter>
+							<quarter type="3">III ш.</quarter>
+							<quarter type="4">IV ш.</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1">I</quarter>
+							<quarter type="2">II</quarter>
+							<quarter type="3">III</quarter>
+							<quarter type="4">IV</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">I шерек</quarter>
+							<quarter type="2">II шерек</quarter>
+							<quarter type="3">III шерек</quarter>
+							<quarter type="4">IV шерек</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">I ш.</quarter>
+							<quarter type="2">II ш.</quarter>
+							<quarter type="3">III ш.</quarter>
+							<quarter type="4">IV ш.</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1">I</quarter>
+							<quarter type="2">II</quarter>
+							<quarter type="3">III</quarter>
+							<quarter type="4">IV</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">I шерек</quarter>
+							<quarter type="2">II шерек</quarter>
+							<quarter type="3">III шерек</quarter>
+							<quarter type="4">IV шерек</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<eras>
+					<eraNames>
+						<era type="0">бизиӊ эрамызға шекемги</era>
+						<era type="0" alt="variant">бизиӊ эрамызға шекемги</era>
+						<era type="1">бизиӊ эрамыздыӊ</era>
+						<era type="1" alt="variant">бизиӊ эрамыздыӊ</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">б. э. ш.</era>
+						<era type="1">б. э.</era>
+					</eraAbbr>
+				</eras>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="era">
+				<displayName>эра</displayName>
+			</field>
+			<field type="year">
+				<displayName>жыл</displayName>
+				<relative type="-1">өткен жыл</relative>
+				<relative type="0">усы жыл</relative>
+				<relative type="1">кейинги жыл</relative>
+			</field>
+			<field type="year-short">
+				<displayName>ж.</displayName>
+				<relative type="-1">өткен ж.</relative>
+				<relative type="0">усы ж.</relative>
+				<relative type="1">кейинги ж.</relative>
+			</field>
+			<field type="year-narrow">
+				<displayName>ж</displayName>
+				<relative type="-1">өтк. ж.</relative>
+				<relative type="0">усы ж.</relative>
+				<relative type="1">кей. ж.</relative>
+			</field>
+			<field type="quarter">
+				<displayName>шерек</displayName>
+			</field>
+			<field type="quarter-short">
+				<displayName>шер.</displayName>
+			</field>
+			<field type="quarter-narrow">
+				<displayName>шер</displayName>
+			</field>
+			<field type="month">
+				<displayName>ай</displayName>
+				<relative type="-1">өткен ай</relative>
+				<relative type="0">усы ай</relative>
+				<relative type="1">кейинги ай</relative>
+			</field>
+			<field type="month-short">
+				<displayName>ай</displayName>
+				<relative type="-1">өткен ай</relative>
+				<relative type="0">усы ай</relative>
+				<relative type="1">кейинги ай</relative>
+			</field>
+			<field type="month-narrow">
+				<displayName>ай</displayName>
+				<relative type="-1">өтк. ай</relative>
+				<relative type="0">усы ай</relative>
+				<relative type="1">кей. ай</relative>
+			</field>
+			<field type="week">
+				<displayName>ҳәпте</displayName>
+				<relative type="-1">өткен ҳәпте</relative>
+				<relative type="0">усы ҳәпте</relative>
+				<relative type="1">кейинги ҳәпте</relative>
+				<relativePeriod>{0}-ҳәпте</relativePeriod>
+			</field>
+			<field type="week-short">
+				<displayName>ҳәп.</displayName>
+				<relative type="-1">өткен ҳәп.</relative>
+				<relative type="0">усы ҳәп.</relative>
+				<relative type="1">кейинги ҳәп.</relative>
+				<relativePeriod>{0}-ҳәпте</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<displayName>ҳәп</displayName>
+				<relative type="-1">өтк. ҳәп.</relative>
+				<relative type="0">усы ҳәп.</relative>
+				<relative type="1">кей. ҳәп.</relative>
+				<relativePeriod>{0}-ҳәпте</relativePeriod>
+			</field>
+			<field type="day">
+				<displayName>күн</displayName>
+				<relative type="-1">кеше</relative>
+				<relative type="0">бүгин</relative>
+				<relative type="1">ертең</relative>
+			</field>
+			<field type="day-short">
+				<displayName>күн</displayName>
+				<relative type="-1">кеше</relative>
+				<relative type="0">бүгин</relative>
+				<relative type="1">ертең</relative>
+			</field>
+			<field type="day-narrow">
+				<displayName>күн</displayName>
+				<relative type="-1">кеше</relative>
+				<relative type="0">бүгин</relative>
+				<relative type="1">ертең</relative>
+			</field>
+			<field type="weekday">
+				<displayName>ҳәпте күни</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName>AM/PM</displayName>
+			</field>
+			<field type="hour">
+				<displayName>саат</displayName>
+			</field>
+			<field type="hour-short">
+				<displayName>ст.</displayName>
+			</field>
+			<field type="hour-narrow">
+				<displayName>ст</displayName>
+			</field>
+			<field type="minute">
+				<displayName>минут</displayName>
+			</field>
+			<field type="minute-short">
+				<displayName>мин.</displayName>
+			</field>
+			<field type="minute-narrow">
+				<displayName>мин</displayName>
+			</field>
+			<field type="second">
+				<displayName>секунд</displayName>
+			</field>
+			<field type="second-short">
+				<displayName>сек.</displayName>
+			</field>
+			<field type="second-narrow">
+				<displayName>сек</displayName>
+			</field>
+			<field type="zone">
+				<displayName>ўақыт зонасы</displayName>
+			</field>
+		</fields>
+	</dates>
+</ldml>

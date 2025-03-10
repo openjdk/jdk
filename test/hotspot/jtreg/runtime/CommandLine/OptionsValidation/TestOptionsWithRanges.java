@@ -240,7 +240,6 @@ public class TestOptionsWithRanges {
         excludeTestMaxRange("MaxHeapSize");
         excludeTestMaxRange("MaxRAM");
         excludeTestMaxRange("NewSize");
-        excludeTestMaxRange("OldSize");
         excludeTestMaxRange("ParallelGCThreads");
         excludeTestMaxRange("TLABSize");
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 JAVABIN=$(JAVA_BASE)/bin
 JAVAC=$(JAVABIN)/javac
 JAVA=$(JAVABIN)/java
-JAR=$(JAVABIN)/jar 
+JAR=$(JAVABIN)/jar
 JARSIGNER=$(JAVABIN)/jarsigner
 
 # Compile-time flags and paths

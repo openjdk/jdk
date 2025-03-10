@@ -28,7 +28,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 /**
  * @test
  * @summary The test verifies JFR.configure command can only set certain options before JFR is started.
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jcmd.TestJcmdConfigureReadOnly

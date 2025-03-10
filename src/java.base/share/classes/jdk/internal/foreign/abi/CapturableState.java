@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.internal.foreign.abi;
 
-import jdk.internal.foreign.Utils;
+import jdk.internal.util.OperatingSystem;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.StructLayout;
@@ -35,8 +36,8 @@ import java.util.stream.Stream;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 public enum CapturableState {
-    GET_LAST_ERROR    ("GetLastError",    JAVA_INT, 1 << 0, Utils.IS_WINDOWS),
-    WSA_GET_LAST_ERROR("WSAGetLastError", JAVA_INT, 1 << 1, Utils.IS_WINDOWS),
+    GET_LAST_ERROR    ("GetLastError",    JAVA_INT, 1 << 0, OperatingSystem.isWindows()),
+    WSA_GET_LAST_ERROR("WSAGetLastError", JAVA_INT, 1 << 1, OperatingSystem.isWindows()),
     ERRNO             ("errno",           JAVA_INT, 1 << 2, true);
 
     public static final StructLayout LAYOUT = MemoryLayout.structLayout(

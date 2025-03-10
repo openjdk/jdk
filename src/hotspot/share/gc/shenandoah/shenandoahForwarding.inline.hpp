@@ -32,7 +32,7 @@
 #include "runtime/javaThread.hpp"
 
 inline oop ShenandoahForwarding::get_forwardee_raw(oop obj) {
-  shenandoah_assert_in_heap(nullptr, obj);
+  shenandoah_assert_in_heap_bounds(nullptr, obj);
   return get_forwardee_raw_unchecked(obj);
 }
 
@@ -88,6 +88,23 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   } else {
     return cast_to_oop(prev_mark.clear_lock_bits().to_pointer());
   }
+}
+
+inline Klass* ShenandoahForwarding::klass(oop obj) {
+  if (UseCompactObjectHeaders) {
+    markWord mark = obj->mark();
+    if (mark.is_marked()) {
+      oop fwd = cast_to_oop(mark.clear_lock_bits().to_pointer());
+      mark = fwd->mark();
+    }
+    return mark.klass();
+  } else {
+    return obj->klass();
+  }
+}
+
+inline size_t ShenandoahForwarding::size(oop obj) {
+  return obj->size_given_klass(klass(obj));
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_INLINE_HPP

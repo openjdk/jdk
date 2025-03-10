@@ -278,6 +278,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     static final int UNCOMPENSATE   = 1 << 16; // helpJoin sentinel
 
     // Fields
+    /** @serial */
     volatile int status;                // accessed directly by pool and workers
     private transient volatile Aux aux; // either waiters or thrown Exception
 
@@ -786,7 +787,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             invokeAll(tasks.toArray(new ForkJoinTask<?>[0]));
             return tasks;
         }
-        @SuppressWarnings("unchecked")
         List<? extends ForkJoinTask<?>> ts =
             (List<? extends ForkJoinTask<?>>) tasks;
         Throwable ex = null;
@@ -887,6 +887,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         return (status & (DONE | ABNORMAL)) == DONE;
     }
 
+    /**
+     * @since 19
+     */
     @Override
     public State state() {
         int s = status;
@@ -896,6 +899,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             State.CANCELLED;
     }
 
+    /**
+     * @since 19
+     */
     @Override
     public V resultNow() {
         int s = status;
@@ -910,6 +916,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         return getRawResult();
     }
 
+    /**
+     * @since 19
+     */
     @Override
     public Throwable exceptionNow() {
         Throwable ex;
@@ -1063,7 +1072,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
 
     /**
      * Tries to join this task, returning true if it completed
-     * (possibly exceptionally) before the given timeout and
+     * (possibly exceptionally) before the given timeout elapsed and
      * the current thread has not been interrupted.
      *
      * @param timeout the maximum time to wait
@@ -1088,7 +1097,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
 
     /**
      * Tries to join this task, returning true if it completed
-     * (possibly exceptionally) before the given timeout.
+     * (possibly exceptionally) before the given timeout elapsed.
      *
      * @param timeout the maximum time to wait
      * @param unit the time unit of the timeout argument

@@ -231,7 +231,6 @@ class PollSelectorImpl extends SelectorImpl {
 
     @Override
     public void setEventOps(SelectionKeyImpl ski) {
-        ensureOpen();
         synchronized (updateLock) {
             updateKeys.addLast(ski);
         }

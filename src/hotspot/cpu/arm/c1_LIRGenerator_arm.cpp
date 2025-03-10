@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -328,15 +327,19 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
   assert(left != result, "should be different registers");
-  if (is_power_of_2(c + 1)) {
-    LIR_Address::Scale scale = (LIR_Address::Scale) log2i_exact(c + 1);
+  juint u_value = (juint)c;
+  if (is_power_of_2(u_value + 1)) {
+    LIR_Address::Scale scale = (LIR_Address::Scale) log2i_exact(u_value + 1);
     LIR_Address* addr = new LIR_Address(left, left, scale, 0, T_INT);
     __ sub(LIR_OprFact::address(addr), left, result); // rsb with shifted register
     return true;
-  } else if (is_power_of_2(c - 1)) {
-    LIR_Address::Scale scale = (LIR_Address::Scale) log2i_exact(c - 1);
+  } else if (is_power_of_2(u_value - 1)) {
+    LIR_Address::Scale scale = (LIR_Address::Scale) log2i_exact(u_value - 1);
     LIR_Address* addr = new LIR_Address(left, left, scale, 0, T_INT);
     __ add(left, LIR_OprFact::address(addr), result); // add with shifted register
+    return true;
+  } else if (c == -1) {
+    __ negate(left, result);
     return true;
   }
   return false;
@@ -1054,7 +1057,7 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
   args->append(rank);
   args->append(varargs);
   LIR_Opr reg = result_register_for(x->type());
-  __ call_runtime(Runtime1::entry_for(Runtime1::new_multi_array_id),
+  __ call_runtime(Runtime1::entry_for(C1StubId::new_multi_array_id),
                   LIR_OprFact::illegalOpr, reg, args, info);
 
   LIR_Opr result = rlock_result(x);
@@ -1083,7 +1086,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   CodeStub* stub;
   if (x->is_incompatible_class_change_check()) {
     assert(patching_info == nullptr, "can't patch this");
-    stub = new SimpleExceptionStub(Runtime1::throw_incompatible_class_change_error_id,
+    stub = new SimpleExceptionStub(C1StubId::throw_incompatible_class_change_error_id,
                                    LIR_OprFact::illegalOpr, info_for_exception);
   } else if (x->is_invokespecial_receiver_check()) {
     assert(patching_info == nullptr, "can't patch this");
@@ -1091,7 +1094,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
                               Deoptimization::Reason_class_check,
                               Deoptimization::Action_none);
   } else {
-    stub = new SimpleExceptionStub(Runtime1::throw_class_cast_exception_id,
+    stub = new SimpleExceptionStub(C1StubId::throw_class_cast_exception_id,
                                    LIR_OprFact::illegalOpr, info_for_exception);
   }
 
@@ -1120,6 +1123,11 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
 
   __ instanceof(out_reg, obj.result(), x->klass(), tmp1, tmp2, tmp3,
                 x->direct_compare(), patching_info, x->profiled_method(), x->profiled_bci());
+}
+
+// Intrinsic for Class::isInstance
+address LIRGenerator::isInstance_entry() {
+  return CAST_FROM_FN_PTR(address, Runtime1::is_instance_of);
 }
 
 

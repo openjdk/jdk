@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerOracle.hpp"
@@ -36,11 +35,30 @@
 #include "oops/symbol.hpp"
 #include "opto/phasetype.hpp"
 #include "opto/traceAutoVectorizationTag.hpp"
+#include "opto/traceMergeStoresTag.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
+#include "utilities/istream.hpp"
 #include "utilities/parseInteger.hpp"
+
+// Default compile commands, if defined, are parsed before any of the
+// explicitly defined compile commands. Thus, explicitly defined compile
+// commands take precedence over default compile commands. The effect is
+// as if the default compile commands had been specified at the start of
+// the command line.
+static const char* const default_compile_commands[] = {
+#ifdef ASSERT
+    // In debug builds, impose a (generous) per-compilation memory limit
+    // to catch pathological compilations during testing. The suboption
+    // "crash" will cause the JVM to assert.
+    //
+    // Note: to disable the default limit at the command line,
+    // set a limit of 0 (e.g. -XX:CompileCommand=MemLimit,*.*,0).
+    "MemLimit,*.*,1G~crash",
+#endif
+    nullptr };
 
 static const char* optiontype_names[] = {
 #define enum_of_types(type, name) name,
@@ -103,7 +121,6 @@ class TypedMethodOptionMatcher;
 
 static TypedMethodOptionMatcher* option_list = nullptr;
 static bool any_set = false;
-static bool print_final_memstat_report = false;
 
 // A filter for quick lookup if an option is set
 static bool option_filter[static_cast<int>(CompileCommandEnum::Unknown) + 1] = { 0 };
@@ -217,10 +234,10 @@ void TypedMethodOptionMatcher::print() {
   enum OptionType type = option2type(_option);
   switch (type) {
     case OptionType::Intx:
-    tty->print_cr(" intx %s = " INTX_FORMAT, name, value<intx>());
+    tty->print_cr(" intx %s = %zd", name, value<intx>());
     break;
     case OptionType::Uintx:
-    tty->print_cr(" uintx %s = " UINTX_FORMAT, name, value<uintx>());
+    tty->print_cr(" uintx %s = %zu", name, value<uintx>());
     break;
     case OptionType::Bool:
     tty->print_cr(" bool %s = %s", name, value<bool>() ? "true" : "false");
@@ -464,10 +481,6 @@ bool CompilerOracle::should_collect_memstat() {
   return has_command(CompileCommandEnum::MemStat) || has_command(CompileCommandEnum::MemLimit);
 }
 
-bool CompilerOracle::should_print_final_memstat_report() {
-  return print_final_memstat_report;
-}
-
 bool CompilerOracle::should_log(const methodHandle& method) {
   if (!LogCompilation) return false;
   if (!has_command(CompileCommandEnum::Log)) {
@@ -619,6 +632,10 @@ static void usage() {
   tty->print_cr("and 'compileonly'. There is no priority of commands. Applying (a subset of) these");
   tty->print_cr("commands to the same method results in undefined behavior.");
   tty->cr();
+  tty->print_cr("The 'exclude' command excludes methods from top-level compilations as well as");
+  tty->print_cr("from inlining, whereas the 'compileonly' command only excludes methods from");
+  tty->print_cr("top-level compilations (i.e. they can still be inlined into other compilation units).");
+  tty->cr();
 };
 
 static int skip_whitespace(char* &line) {
@@ -689,7 +706,6 @@ static bool parseMemStat(const char* line, uintx& value, int& bytes_read, char* 
   });
   IF_ENUM_STRING("print", {
     value = (uintx)MemStatAction::print;
-    print_final_memstat_report = true;
   });
 #undef IF_ENUM_STRING
 
@@ -713,7 +729,7 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
       success = parseMemLimit(line, value, bytes_read, errorbuf, buf_size);
     } else {
       // Is it a raw number?
-      success = sscanf(line, "" INTX_FORMAT "%n", &value, &bytes_read) == 1;
+      success = sscanf(line, "%zd%n", &value, &bytes_read) == 1;
     }
     if (success) {
       total_bytes_read += bytes_read;
@@ -731,7 +747,7 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
       success = parseMemStat(line, value, bytes_read, errorbuf, buf_size);
     } else {
       // parse as raw number
-      success = sscanf(line, "" UINTX_FORMAT "%n", &value, &bytes_read) == 1;
+      success = sscanf(line, "%zu%n", &value, &bytes_read) == 1;
     }
     if (success) {
       total_bytes_read += bytes_read;
@@ -779,6 +795,12 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
 #if !defined(PRODUCT) && defined(COMPILER2)
       else if (option == CompileCommandEnum::TraceAutoVectorization) {
         TraceAutoVectorizationTagValidator validator(value, true);
+
+        if (!validator.is_valid()) {
+          jio_snprintf(errorbuf, buf_size, "Unrecognized tag name in %s: %s", option2name(option), validator.what());
+        }
+      } else if (option == CompileCommandEnum::TraceMergeStores) {
+        TraceMergeStores::TagValidator validator(value, true);
 
         if (!validator.is_valid()) {
           jio_snprintf(errorbuf, buf_size, "Unrecognized tag name in %s: %s", option2name(option), validator.what());
@@ -904,6 +926,14 @@ public:
       return (char*)_copy;
     }
 };
+
+bool CompilerOracle::parse_from_line_quietly(char* line) {
+  const bool quiet0 = _quiet;
+  _quiet = true;
+  const bool result = parse_from_line(line);
+  _quiet = quiet0;
+  return result;
+}
 
 bool CompilerOracle::parse_from_line(char* line) {
   if ((line[0] == '\0') || (line[0] == '#')) {
@@ -1056,57 +1086,39 @@ bool CompilerOracle::parse_from_file() {
     return true;
   }
 
-  char token[1024];
-  int  pos = 0;
-  int  c = getc(stream);
+  FileInput input(stream, /*need_close=*/ true);
+  return parse_from_input(&input, parse_from_line);
+}
+
+bool CompilerOracle::parse_from_input(inputStream::Input* input,
+                                      CompilerOracle::
+                                      parse_from_line_fn_t* parse_from_line) {
   bool success = true;
-  while(c != EOF && pos < (int)(sizeof(token)-1)) {
-    if (c == '\n') {
-      token[pos++] = '\0';
-      if (!parse_from_line(token)) {
-        success = false;
-      }
-      pos = 0;
-    } else {
-      token[pos++] = c;
+  for (inputStream in(input); !in.done(); in.next()) {
+    if (!parse_from_line(in.current_line())) {
+      success = false;
     }
-    c = getc(stream);
   }
-  token[pos++] = '\0';
-  if (!parse_from_line(token)) {
-    success = false;
-  }
-  fclose(stream);
   return success;
 }
 
-bool CompilerOracle::parse_from_string(const char* str, bool (*parse_line)(char*)) {
-  char token[1024];
-  int  pos = 0;
-  const char* sp = str;
-  int  c = *sp++;
-  bool success = true;
-  while (c != '\0' && pos < (int)(sizeof(token)-1)) {
-    if (c == '\n') {
-      token[pos++] = '\0';
-      if (!parse_line(token)) {
-        success = false;
-      }
-      pos = 0;
-    } else {
-      token[pos++] = c;
-    }
-    c = *sp++;
-  }
-  token[pos++] = '\0';
-  if (!parse_line(token)) {
-    success = false;
-  }
-  return success;
+bool CompilerOracle::parse_from_string(const char* str,
+                                       CompilerOracle::
+                                       parse_from_line_fn_t* parse_from_line) {
+  MemoryInput input(str, strlen(str));
+  return parse_from_input(&input, parse_from_line);
 }
 
 bool compilerOracle_init() {
   bool success = true;
+  // Register default compile commands first - any commands specified via CompileCommand will
+  // supersede these default commands.
+  for (int i = 0; default_compile_commands[i] != nullptr; i ++) {
+    char* s = os::strdup(default_compile_commands[i]);
+    success = CompilerOracle::parse_from_line_quietly(s);
+    os::free(s);
+    assert(success, "default compile command \"%s\" failed to parse", default_compile_commands[i]);
+  }
   if (!CompilerOracle::parse_from_string(CompileCommand, CompilerOracle::parse_from_line)) {
     success = false;
   }

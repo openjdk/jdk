@@ -66,6 +66,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bik">ಬಿಕೊಲ್</language>
 			<language type="bin">ಬಿನಿ</language>
 			<language type="bla">ಸಿಕ್ಸಿಕಾ</language>
+			<language type="blo">ಅನೀ</language>
 			<language type="bm">ಬಂಬಾರಾ</language>
 			<language type="bn">ಬಾಂಗ್ಲಾ</language>
 			<language type="bo">ಟಿಬೇಟಿಯನ್</language>
@@ -227,7 +228,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="iba">ಇಬಾನ್</language>
 			<language type="ibb">ಇಬಿಬಿಯೋ</language>
 			<language type="id">ಇಂಡೋನೇಶಿಯನ್</language>
-			<language type="ie">ಇಂಟರ್ಲಿಂಗ್</language>
+			<language type="ie">ಇಂಟರ್‌ಲಿಂಗ್</language>
 			<language type="ig">ಇಗ್ಬೊ</language>
 			<language type="ii">ಸಿಚುಅನ್ ಯಿ</language>
 			<language type="ik">ಇನುಪಿಯಾಕ್</language>
@@ -290,6 +291,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">ಕೋಮಿ</language>
 			<language type="kw">ಕಾರ್ನಿಷ್</language>
 			<language type="kwk">ಕ್ವಾಕ್‌ವಾಲಾ</language>
+			<language type="kxv">ಕುವಿ</language>
 			<language type="ky">ಕಿರ್ಗಿಜ್</language>
 			<language type="la">ಲ್ಯಾಟಿನ್</language>
 			<language type="lad">ಲ್ಯಾಡಿನೋ</language>
@@ -300,8 +302,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">ಲೆಜ್ಘಿಯನ್</language>
 			<language type="lg">ಗಾಂಡಾ</language>
 			<language type="li">ಲಿಂಬರ್ಗಿಶ್</language>
+			<language type="lij">ಲಿಗುರಿಯನ್</language>
 			<language type="lil">ಲಿಲ್ಲೂವೆಟ್</language>
 			<language type="lkt">ಲಕೊಟ</language>
+			<language type="lmo">ಲೋಂಬರ್ಡ್</language>
 			<language type="ln">ಲಿಂಗಾಲ</language>
 			<language type="lo">ಲಾವೋ</language>
 			<language type="lol">ಮೊಂಗೋ</language>
@@ -492,6 +496,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">ಕೊಮೊರಿಯನ್</language>
 			<language type="syc">ಶಾಸ್ತ್ರೀಯ ಸಿರಿಯಕ್</language>
 			<language type="syr">ಸಿರಿಯಾಕ್</language>
+			<language type="szl">ಸಿಲೆಸಿಯನ್</language>
 			<language type="ta">ತಮಿಳು</language>
 			<language type="tce">ದಕ್ಷಿಣ ಟಚ್‌ವನ್</language>
 			<language type="te">ತೆಲುಗು</language>
@@ -541,7 +546,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="uz">ಉಜ್ಬೇಕ್</language>
 			<language type="vai">ವಾಯಿ</language>
 			<language type="ve">ವೆಂಡಾ</language>
+			<language type="vec">ವೆನಿಶಿಯನ್</language>
 			<language type="vi">ವಿಯೆಟ್ನಾಮೀಸ್</language>
+			<language type="vmw">ಮಖುವಾ</language>
 			<language type="vo">ವೋಲಾಪುಕ್</language>
 			<language type="vot">ವೋಟಿಕ್</language>
 			<language type="vun">ವುಂಜೊ</language>
@@ -555,6 +562,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">ವು ಚೈನೀಸ್</language>
 			<language type="xal">ಕಲ್ಮೈಕ್</language>
 			<language type="xh">ಕ್ಸೋಸ</language>
+			<language type="xnr">ಕಂಗ್ರಿ</language>
 			<language type="xog">ಸೊಗ</language>
 			<language type="yao">ಯಾವೊ</language>
 			<language type="yap">ಯಪೀಸೆ</language>
@@ -1001,7 +1009,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TN">ಟುನೀಶಿಯ</territory>
 			<territory type="TO">ಟೊಂಗಾ</territory>
 			<territory type="TR">ತುರ್ಕಿಯೆ</territory>
-			<territory type="TR" alt="variant">ಟರ್ಕಿ</territory>
 			<territory type="TT">ಟ್ರಿನಿಡಾಡ್ ಮತ್ತು ಟೊಬಾಗೊ</territory>
 			<territory type="TV">ಟುವಾಲು</territory>
 			<territory type="TW">ತೈವಾನ್</territory>
@@ -1075,7 +1082,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="indian">ಭಾರತೀಯ ರಾಷ್ಟ್ರೀಯ ಕ್ಯಾಲೆಂಡರ್</type>
 			<type key="calendar" type="islamic">ಇಸ್ಲಾಮಿಕ್ ಕ್ಯಾಲೆಂಡರ್</type>
 			<type key="calendar" type="islamic-civil">ಇಸ್ಲಾಮಿಕ್-ಸಿವಿಲ್ ಕ್ಯಾಲೆಂಡರ್</type>
-			<type key="calendar" type="islamic-rgsa" draft="provisional">ಇಸ್ಲಾಮಿಕ್‌ ಕ್ಯಾಲೆಂಡರ್‌ (ಸೌದಿ ಅರೇಬಿಯಾ, ಸೈಟಿಂಗ್‌)bia, sighting)</type>
+			<type key="calendar" type="islamic-rgsa" draft="contributed">ಇಸ್ಲಾಮಿಕ್‌ ಕ್ಯಾಲೆಂಡರ್‌ (ಸೌದಿ ಅರೇಬಿಯಾ, ಸೈಟಿಂಗ್‌)bia, sighting)</type>
 			<type key="calendar" type="islamic-umalqura">ಇಸ್ಲಾಮಿಕ್ ಕ್ಯಾಲೆಂಡರ್ (ಉಮ್ ಅಲ್-ಖುರಾ)</type>
 			<type key="calendar" type="iso8601">ISO-8601 ಕ್ಯಾಲೆಂಡರ್</type>
 			<type key="calendar" type="japanese">ಜಪಾನೀಸ್ ಕ್ಯಾಲೆಂಡರ್</type>
@@ -1188,16 +1195,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[಼ ೦ ೧ ೨ ೩ ೪ ೫ ೬ ೭ ೮ ೯ ಅ ಆ ಇ ಈ ಉ ಊ ಋ ೠ ಌ ೡ ಎ ಏ ಐ ಒ ಓ ಔ ಂ ಃ ಕ ಖ ಗ ಘ ಙ ಚ ಛ ಜ ಝ ಞ ಟ ಠ ಡ ಢ ಣ ತ ಥ ದ ಧ ನ ಪ ಫ ಬ ಭ ಮ ಯ ರ ಱ ಲ ವ ಶ ಷ ಸ ಹ ಳ ಽ ಾ ಿ ೀ ು ೂ ೃ ೄ ೆ ೇ ೈ ೊ ೋ ೌ ್ ೕ ೖ]</exemplarCharacters>
+		<exemplarCharacters>[಼ ಅ ಆ ಇ ಈ ಉ ಊ ಋ ೠ ಌ ೡ ಎ ಏ ಐ ಒ ಓ ಔ ಂ ಃ ಕ ಖ ಗ ಘ ಙ ಚ ಛ ಜ ಝ ಞ ಟ ಠ ಡ ಢ ಣ ತ ಥ ದ ಧ ನ ಪ ಫ ಬ ಭ ಮ ಯ ರ ಱ ಲ ವ ಶ ಷ ಸ ಹ ಳ ಽ ಾ ಿ ೀ ು ೂ ೃ ೄ ೆ ೇ ೈ ೊ ೋ ೌ ್ ೕ ೖ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200C\u200D ೞ]</exemplarCharacters>
 		<exemplarCharacters type="index">[ಅ ಆ ಇ ಈ ಉ ಊ ಋ ೠ ಌ ೡ ಎ ಏ ಐ ಒ ಓ ಔ ಕ ಖ ಗ ಘ ಙ ಚ ಛ ಜ ಝ ಞ ಟ ಠ ಡ ಢ ಣ ತ ಥ ದ ಧ ನ ಪ ಫ ಬ ಭ ಮ ಯ ರ ಱ ಲ ವ ಶ ಷ ಸ ಹ ಳ ೞ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0೦ 1೧ 2೨ 3೩ 4೪ 5೫ 6೬ 7೭ 8೮ 9೯]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] @ * / \&amp; # ′ ″]</exemplarCharacters>
-		<parseLenients scope="date" level="lenient">
-			<parseLenient sample=":">[\: ∶]</parseLenient>
-		</parseLenients>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ {ರೂ}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -1361,14 +1365,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1">ಜನವರಿ</month>
-							<month type="2">ಫೆಬ್ರವರಿ</month>
+							<month type="1">ಜನ</month>
+							<month type="2">ಫೆಬ್ರ</month>
 							<month type="3">ಮಾರ್ಚ್</month>
 							<month type="4">ಏಪ್ರಿ</month>
 							<month type="5">ಮೇ</month>
 							<month type="6">ಜೂನ್</month>
 							<month type="7">ಜುಲೈ</month>
-							<month type="8">ಆಗಸ್ಟ್</month>
+							<month type="8">ಆಗ</month>
 							<month type="9">ಸೆಪ್ಟೆಂ</month>
 							<month type="10">ಅಕ್ಟೋ</month>
 							<month type="11">ನವೆಂ</month>
@@ -1473,8 +1477,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">ಮಧ್ಯ ರಾತ್ರಿ</dayPeriod>
-							<dayPeriod type="am">ಪೂರ್ವಾಹ್ನ</dayPeriod>
-							<dayPeriod type="pm">ಅಪರಾಹ್ನ</dayPeriod>
 							<dayPeriod type="morning1">ಬೆಳಗ್ಗೆ</dayPeriod>
 							<dayPeriod type="afternoon1">ಮಧ್ಯಾಹ್ನ</dayPeriod>
 							<dayPeriod type="evening1">ಸಂಜೆ</dayPeriod>
@@ -1482,17 +1484,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight">ಮಧ್ಯರಾತ್ರಿ</dayPeriod>
-							<dayPeriod type="am">ಪೂ</dayPeriod>
-							<dayPeriod type="pm">ಅ</dayPeriod>
+							<dayPeriod type="am">a</dayPeriod>
+							<dayPeriod type="pm">p</dayPeriod>
 							<dayPeriod type="morning1">ಬೆಳಗ್ಗೆ</dayPeriod>
 							<dayPeriod type="afternoon1">ಮಧ್ಯಾಹ್ನ</dayPeriod>
 							<dayPeriod type="evening1">ಸಂಜೆ</dayPeriod>
 							<dayPeriod type="night1">ರಾತ್ರಿ</dayPeriod>
 						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">ಮಧ್ಯರಾತ್ರಿ</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -1595,6 +1611,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">d/M, E</dateFormatItem>
 						<dateFormatItem id="MMdd">dd-MM</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
@@ -1862,12 +1879,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="month-short">
+				<displayName>ತಿಂ.</displayName>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} ತಿಂಗಳು ಹಿಂದೆ</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ತಿಂಗಳುಗಳ ಹಿಂದೆ</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month-narrow">
+				<displayName>ತಿಂ</displayName>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} ತಿಂಗಳ ಹಿಂದೆ</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ತಿಂಗಳುಗಳ ಹಿಂದೆ</relativeTimePattern>
@@ -1994,12 +2013,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">{0} ಶುಕ್ರವಾರಗಳ ಹಿಂದೆ</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="fri-short">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} ಶುಕ್ರವಾರಗಳ ಹಿಂದೆ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ಶುಕ್ರವಾರಗಳ ಹಿಂದೆ</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="fri-narrow">
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} ಶುಕ್ರವಾರದ ಹಿಂದೆ</relativeTimePattern>
@@ -2018,9 +2031,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="one">{0} ಶನಿವಾರದ ಹಿಂದೆ</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ಶನಿವಾರಗಳ ಹಿಂದೆ</relativeTimePattern>
 				</relativeTime>
-			</field>
-			<field type="dayperiod-short">
-				<displayName>ಪೂರ್ವಾಹ್ನ/ಅಪರಾಹ್ನ</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>AM/PM</displayName>
@@ -2075,6 +2085,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} ಸಮಯ</regionFormat>
 			<regionFormat type="daylight">{0} ದಿನದ ಸಮಯ</regionFormat>
 			<regionFormat type="standard">{0} ಪ್ರಮಾಣಿತ ಸಮಯ</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>ಹೊನಲುಲು</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>ಸಂಘಟಿತ ಸಾರ್ವತ್ರಿಕ ಸಮಯ</standard>
@@ -2812,9 +2825,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>ಉಲಾನ್ ಬತೊರ್</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>ಚೊಯ್‍ಬಾಲ್ಸನ್</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>ಮಕಾವು</exemplarCity>
 			</zone>
@@ -3214,9 +3224,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Nome">
 				<exemplarCity>ನೋಮ್</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>ಹೊನಲುಲು</exemplarCity>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>ಆಂಕರೋಜ್</exemplarCity>
 			</zone>
@@ -3596,13 +3603,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ಚೀನಾ ಹಗಲು ಸಮಯ</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>ಚೊಯ್‌ಬಲ್ಸಾನ್ ಸಮಯ</generic>
-					<standard>ಚೊಯ್‌‌ಬಲ್ಸಾನ್‌ ಪ್ರಮಾಣಿತ ಸಮಯ</standard>
-					<daylight>ಚೊಯ್‌ಬಲ್ಸಾನ್ ಬೇಸಿಗೆ ಸಮಯ</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>ಕ್ರಿಸ್ಮಸ್ ದ್ವೀಪ ಸಮಯ</standard>
@@ -3856,14 +3856,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ಪೆತ್ರೋಪಾವ್ಲೋಸ್ಕ್‌‌-ಕಮ್ಚತ್ಸ್‌ಕೀ ಬೇಸಿಗೆ ಸಮಯ</daylight>
 				</long>
 			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>ಕಝಾಖ್‌ಸ್ತಾನ್ ಸಮಯ</standard>
+				</long>
+			</metazone>
 			<metazone type="Kazakhstan_Eastern">
 				<long>
-					<standard>ಪೂರ್ವ ಕಜಕಿಸ್ತಾನ್ ಸಮಯ</standard>
+					<standard>ಪೂರ್ವ ಕಝಾಖ್‌ಸ್ತಾನ್ ಸಮಯ</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Western">
 				<long>
-					<standard>ಪಶ್ಚಿಮ ಕಜಕಿಸ್ತಾನ್ ಸಮಯ</standard>
+					<standard>ಪಶ್ಚಿಮ ಕಝಾಖ್‌ಸ್ತಾನ್ ಸಮಯ</standard>
 				</long>
 			</metazone>
 			<metazone type="Korea">
@@ -4429,8 +4434,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000ಟ್ರಿ</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -4667,9 +4670,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">ಫಾಕ್‌ಲ್ಯಾಂಡ್ ದ್ವೀಪಗಳ ಪೌಂಡ್‍ಗಳು</displayName>
 			</currency>
 			<currency type="GBP">
-				<displayName>ಬ್ರಿಟೀಷ್ ಪೌಂಡ್</displayName>
+				<displayName>ಬ್ರಿಟಿಷ್ ಪೌಂಡ್</displayName>
 				<displayName count="one">ಬ್ರಿಟಿಷ್ ಪೌಂಡ್</displayName>
-				<displayName count="other">ಬ್ರಿಟೀಷ್ ಪೌಂಡ್‍ಗಳು</displayName>
+				<displayName count="other">ಬ್ರಿಟಿಷ್ ಪೌಂಡ್‍ಗಳು</displayName>
 			</currency>
 			<currency type="GEL">
 				<displayName>ಜಾರ್ಜಿಯಾದ ಲಾರಿ</displayName>
@@ -5040,7 +5043,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SEK">
 				<displayName>ಸ್ವೀಡಿಷ್ ಕ್ರೋನಾ</displayName>
 				<displayName count="one">ಸ್ವೀಡಿಷ್ ಕ್ರೋನಾ</displayName>
-				<displayName count="other">ಸ್ವೀಡಿಶ್ ಕ್ರೋನರ್</displayName>
+				<displayName count="other">ಸ್ವೀಡಿಷ್ ಕ್ರೋನರ್</displayName>
 			</currency>
 			<currency type="SGD">
 				<displayName>ಸಿಂಗಾಪುರ್ ಡಾಲರ್‌</displayName>
@@ -5567,9 +5570,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} ಕಾರಟ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<gender>neuter</gender>
 				<displayName>ಪ್ರತಿ ಡೆಸಿಲೀಟರ್‌ಗೆ ಮಿಲಿಗ್ರಾಂಗಳು</displayName>
 				<unitPattern count="one">{0} ಪ್ರತಿ ಡೆಸಿಲೀಟರ್‌ಗೆ ಮಿಲಿಗ್ರಾಂ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಪ್ರತಿ ಡೆಸಿಲೀಟರ್‌ಗೆ ಮಿಲಿಗ್ರಾಂ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಪ್ರತಿ ಡೆಸಿಲೀಟರ್‌ಗೆ ಮಿಲಿಗ್ರಾಂ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಪ್ರತಿ ಡೆಸಿಲೀಟರ್‌ಗೆ ಮಿಲಿಗ್ರಾಂ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಪ್ರತಿ ಡೆಸಿಲೀಟರ್‌ಗೆ ಮಿಲಿಗ್ರಾಂ</unitPattern>
 				<unitPattern count="other">{0} ಪ್ರತಿ ಡೆಸಿಲೀಟರ್‌ಗೆ ಮಿಲಿಗ್ರಾಂಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಪ್ರತಿ ಡೆಸಿಲೀಟರ್‌ಗೆ ಮಿಲಿಗ್ರಾಂಗಳು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಪ್ರತಿ ಡೆಸಿಲೀಟರ್‌ಗೆ ಮಿಲಿಗ್ರಾಂಗಳು</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಪ್ರತಿ ಡೆಸಿಲೀಟರ್‌ಗೆ ಮಿಲಿಗ್ರಾಂಗಳು</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಪ್ರತಿ ಡೆಸಿಲೀಟರ್‌ಗೆ ಮಿಲಿಗ್ರಾಂಗಳು</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<gender>neuter</gender>
@@ -6100,9 +6112,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} ವೋಲ್ಟ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
+				<gender>neuter</gender>
 				<displayName>ಕಿಲೋಕ್ಯಾಲೋರಿಗಳು</displayName>
 				<unitPattern count="one">{0} ಕಿಲೋಕ್ಯಾಲೋರಿ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಕಿಲೋಕ್ಯಾಲೋರಿ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಕಿಲೋಕ್ಯಾಲೋರಿ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಕಿಲೋಕ್ಯಾಲೋರಿ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಕಿಲೋಕ್ಯಾಲೋರಿ</unitPattern>
 				<unitPattern count="other">{0} ಕಿಲೋಕ್ಯಾಲೋರಿಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಕಿಲೋಕ್ಯಾಲೋರಿಗಳು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಕಿಲೋಕ್ಯಾಲೋರಿಗಳು</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಕಿಲೋಕ್ಯಾಲೋರಿಗಳು</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಕಿಲೋಕ್ಯಾಲೋರಿಗಳು</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
 				<gender>neuter</gender>
@@ -6196,10 +6217,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<gender>neuter</gender>
 				<displayName>ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆಗಳು ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ</displayName>
-				<unitPattern count="one">{0} ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗೆ ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆಯನ್ನು</unitPattern>
+				<unitPattern count="one">{0} ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆ ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆ ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆ ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗೆ ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆ ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆ ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆಗಳು ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆಗಳು ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳನ್ನು</unitPattern>
@@ -6516,9 +6537,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲುಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="length-point">
-				<displayName>ಪಾಯಿಂಟ್ಸ್</displayName>
+				<gender>neuter</gender>
 				<unitPattern count="one">{0} ಪಾಯಿಂಟ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಪಾಯಿಂಟ್</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಪಾಯಿಂಟ್‌‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಪಾಯಿಂಟ್‌‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಪಾಯಿಂಟ್‌‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಪಾಯಿಂಟ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಪಾಯಿಂಟ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಪಾಯಿಂಟ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಪಾಯಿಂಟ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಪಾಯಿಂಟ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<unitPattern count="one">{0} ಸೋಲಾರ್‌ ರೇಡಿಯಸ್‌</unitPattern>
@@ -6773,9 +6802,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ಹಾರ್ಸ್‌ಪವರ್</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
+				<gender>neuter</gender>
 				<displayName>ಮರ್ಕ್ಯುರಿ ಮಿಲಿಮೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮರ್ಕ್ಯುರಿ ಮಿಲಿಮೀಟರ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮರ್ಕ್ಯುರಿ ಮಿಲಿಮೀಟರ್‌</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮರ್ಕ್ಯುರಿ ಮಿಲಿಮೀಟರ್‌</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮರ್ಕ್ಯುರಿ ಮಿಲಿಮೀಟರ್‌</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮರ್ಕ್ಯುರಿ ಮಿಲಿಮೀಟರ್‌</unitPattern>
 				<unitPattern count="other">{0} ಮರ್ಕ್ಯುರಿ ಮಿಲಿಮೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮರ್ಕ್ಯುರಿ ಮಿಲಿಮೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮರ್ಕ್ಯುರಿ ಮಿಲಿಮೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮರ್ಕ್ಯುರಿ ಮಿಲಿಮೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮರ್ಕ್ಯುರಿ ಮಿಲಿಮೀಟರ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>ಪೌಂಡ್ಸ್-ಫೋರ್ಸ್ ಪ್ರತಿ ಚದರ ಇಂಚಿಗೆ</displayName>
@@ -7254,6 +7292,49 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ಇಂಪಿರಿಯಲ್ ಕ್ವಾರ್ಟ್</unitPattern>
 				<unitPattern count="other">{0} ಇಂಪಿರಿಯಲ್ ಕ್ವಾರ್ಟ್</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<gender>neuter</gender>
+				<displayName>ಲೈಟ್</displayName>
+				<unitPattern count="one">{0} ಲೈಟ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಲೈಟ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಲೈಟ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಲೈಟ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಲೈಟ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="other">{0} ಲೈಟ್</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಲೈಟ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಲೈಟ್‌ಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಲೈಟ್‌‌ನ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಲೈಟ್‌ನಲ್ಲಿ</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<gender>neuter</gender>
+				<displayName>ಪಾರ್ಟ್ಸ್ ಪರ್ ಬಿಲಿಯನ್</displayName>
+				<unitPattern count="one">{0} ಪಾರ್ಟ್ಸ್ ಪರ್ ಬಿಲಿಯನ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಪಾರ್ಟ್ಸ್ ಪರ್ ಬಿಲಿಯನ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಪಾರ್ಟ್ಸ್ ಪರ್ ಬಿಲಿಯನ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಪಾರ್ಟ್ಸ್ ಪರ್ ಬಿಲಿಯನ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಪಾರ್ಟ್ಸ್ ಪರ್ ಬಿಲಿಯನ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="other">{0} ಪಾರ್ಟ್ಸ್ ಪರ್ ಬಿಲಿಯನ್</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಪಾರ್ಟ್ಸ್ ಪರ್ ಬಿಲಿಯನ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಪಾರ್ಟ್ಸ್ ಪರ್ ಬಿಲಿಯನ್‌ಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಪಾರ್ಟ್ಸ್ ಪರ್ ಬಿಲಿಯನ್‌ನ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಪಾರ್ಟ್ಸ್ ಪರ್ ಬಿಲಿಯನ್‌ನಲ್ಲಿ</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<gender>neuter</gender>
+				<displayName>ರಾತ್ರಿಗಳು</displayName>
+				<unitPattern count="one">{0} ರಾತ್ರಿ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ರಾತ್ರಿಯನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ರಾತ್ರಿಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ರಾತ್ರಿಯ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ರಾತ್ರಿಯಲ್ಲಿ</unitPattern>
+				<unitPattern count="other">{0} ರಾತ್ರಿಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ರಾತ್ರಿಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ರಾತ್ರಿಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ರಾತ್ರಿಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ರಾತ್ರಿಗಳಲ್ಲಿ</unitPattern>
+				<perUnitPattern>{0} ಪ್ರತಿ ರಾತ್ರಿಗೆ</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>ಕಾರ್ಡಿನಲ್ ನಿರ್ದೇಶನ</displayName>
 				<coordinateUnitPattern type="east">{0} ಪೂರ್ವ</coordinateUnitPattern>
@@ -7370,7 +7451,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="angle-arc-second">
 				<displayName>ಆರ್ಕ್‌ಸೆಕೆಂ</displayName>
-				<unitPattern count="one">{0} ಆರ್ಕ್ಸ್‌ ಸೆಂ</unitPattern>
+				<unitPattern count="one">{0} ಆರ್ಕ್‌ಸೆಕೆಂ</unitPattern>
 				<unitPattern count="other">{0} ಆರ್ಕ್‌ಸೆಕೆಂ</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
@@ -7693,8 +7774,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>ಗಿ.ಹ</displayName>
-				<unitPattern count="one">{0} ಗಿ.ಹ</unitPattern>
-				<unitPattern count="other">{0} GHz</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
 				<displayName>ಮೆ.ಹ</displayName>
@@ -7731,6 +7810,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ಡಾಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಡಾಟ್</unitPattern>
 				<unitPattern count="other">{0} ಡಾಟ್‌ಗಳು</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>ಭೂಮಿಯ ತ್ರಿಜ್ಯ</displayName>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>ಕಿಲೋಮೀಟರ್‌ಗಳು</displayName>
@@ -7825,8 +7907,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-mile-scandinavian">
 				<displayName>ಸ್ಕ್ಯಾಂ.ಮೈ</displayName>
-				<unitPattern count="one">{0} ಸ್ಕ್ಯಾಂ.ಮೈ</unitPattern>
-				<unitPattern count="other">{0} ಸ್ಕ್ಯಾಂ.ಮೈ</unitPattern>
+				<unitPattern count="one">{0} smi</unitPattern>
+				<unitPattern count="other">{0} smi</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>ಪಾಯಿಂಟ್‌ಗಳು</displayName>
@@ -7916,7 +7998,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="mass-dalton">
 				<displayName>ಡಿಎ</displayName>
 				<unitPattern count="one">{0} ಡಿಎ</unitPattern>
-				<unitPattern count="other">{0} Da</unitPattern>
+				<unitPattern count="other">{0} ಡಿಎ</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName>ಭೂಮಿಯ ದೃವ್ಯರಾಶಿ</displayName>
@@ -8233,6 +8315,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ಕ್ವಾ.ಇಂಪ್</displayName>
 				<unitPattern count="one">{0} ಕ್ವಾ.ಇಂಪ್</unitPattern>
 				<unitPattern count="other">{0} ಕ್ವಾ.ಇಂಪ್</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>ಲೈಟ್</displayName>
+				<unitPattern count="one">{0} ಲೈಟ್</unitPattern>
+				<unitPattern count="other">{0} ಲೈಟ್</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>ಪಾರ್ಟ್ಸ್/ಬಿಲಿಯನ್</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>ರಾತ್ರಿ</displayName>
+				<unitPattern count="one">{0} ರಾತ್ರಿಯು</unitPattern>
+				<unitPattern count="other">{0} ರಾತ್ರಿಗಳು</unitPattern>
+				<perUnitPattern>{0}/ರಾತ್ರಿಗೆ</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ದಿಕ್ಕು</displayName>
@@ -8570,8 +8666,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ಎವೋ</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
-				<unitPattern count="one">{0}ಬ್ರಿಉಯು</unitPattern>
-				<unitPattern count="other">{0}ಬ್ರಿಉಯು</unitPattern>
+				<unitPattern count="one">{0}Btu</unitPattern>
+				<unitPattern count="other">{0}Btu</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
 				<unitPattern count="one">{0}ಯುಎಸ್ ಥರ್ಮ್ಸ್</unitPattern>
@@ -8587,7 +8683,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
-				<unitPattern count="one">{0}ಗಿ.ಹ</unitPattern>
+				<unitPattern count="one">{0}GHz</unitPattern>
 				<unitPattern count="other">{0}GHz</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
@@ -8776,7 +8872,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-dalton">
 				<unitPattern count="one">{0}ಡಿಎ</unitPattern>
-				<unitPattern count="other">{0} Da</unitPattern>
+				<unitPattern count="other">{0} ಡಿಎ</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName>M⊕</displayName>
@@ -8993,6 +9089,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}qt-Imp.</unitPattern>
 				<unitPattern count="other">{0}qt-Imp.</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>ಲೈಟ್</displayName>
+				<unitPattern count="one">{0} ಲೈಟ್</unitPattern>
+				<unitPattern count="other">{0} ಲೈಟ್</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>ರಾತ್ರಿಗಳು</displayName>
+				<unitPattern count="one">{0} ರಾತ್ರಿಯು</unitPattern>
+				<unitPattern count="other">{0} ರಾತ್ರಿಗಳು</unitPattern>
+				<perUnitPattern>{0}/ರಾತ್ರಿಗೆ</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0}ಪೂ</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0}ಉ</coordinateUnitPattern>
@@ -9202,7 +9309,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und kn</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
 		<parameterDefault parameter="formality">informal</parameterDefault>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{title} {given} {given2} {surname} {generation}, {credentials}</namePattern>

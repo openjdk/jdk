@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,8 @@ class ArrayKlass: public Klass {
   // initialization, the other is a dummy
   ArrayKlass(Symbol* name, KlassKind kind);
   ArrayKlass();
+
+  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw();
 
  public:
   // Testing operation
@@ -115,10 +117,6 @@ class ArrayKlass: public Klass {
 
   // Return a handle.
   static void     complete_create_array_klass(ArrayKlass* k, Klass* super_klass, ModuleEntry* module, TRAPS);
-
-
-  // jvm support
-  jint compute_modifier_flags() const;
 
   // JVMTI support
   jint jvmti_class_status() const;

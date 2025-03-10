@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logTestUtils.inline.hpp"
 #include "logging/logFileOutput.hpp"
@@ -90,7 +89,7 @@ TEST_VM(LogFileOutput, parse_invalid) {
 // Test for overflows with filesize
 TEST_VM(LogFileOutput, filesize_overflow) {
   char buf[256];
-  int ret = jio_snprintf(buf, sizeof(buf), "filesize=" SIZE_FORMAT "K", SIZE_MAX);
+  int ret = jio_snprintf(buf, sizeof(buf), "filesize=%zuK", SIZE_MAX);
   ASSERT_GT(ret, 0) << "Buffer too small";
 
   ResourceMark rm;
@@ -108,7 +107,7 @@ TEST_VM(LogFileOutput, startup_rotation) {
   for (size_t i = 0; i < rotations; i++) {
     size_t len = strlen(filename) + 3;
     rotated_file[i] = NEW_RESOURCE_ARRAY(char, len);
-    int ret = jio_snprintf(rotated_file[i], len, "%s." SIZE_FORMAT, filename, i);
+    int ret = jio_snprintf(rotated_file[i], len, "%s.%zu", filename, i);
     ASSERT_NE(-1, ret);
     delete_file(rotated_file[i]);
   }

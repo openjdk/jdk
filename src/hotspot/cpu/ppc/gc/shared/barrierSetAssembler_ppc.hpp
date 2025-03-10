@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -98,7 +98,6 @@ public:
 class SaveLiveRegisters {
   MacroAssembler* _masm;
   RegMask _reg_mask;
-  Register _result_reg;
   int _frame_size;
 
  public:

@@ -32,7 +32,6 @@ import java.util.Random;
 /*
  * @test
  * @bug 8300256
- * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestVectorizationNotRun
@@ -42,7 +41,19 @@ public class TestVectorizationNotRun {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
+        // Cross-product: +-AlignVector and +-UseCompactObjectHeaders
+        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                                   "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders",
+                                   "-XX:-AlignVector");
+        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                                   "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders",
+                                   "-XX:+AlignVector");
+        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                                   "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders",
+                                   "-XX:-AlignVector");
+        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                                   "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders",
+                                   "-XX:+AlignVector");
     }
 
     static int size = 1024;
@@ -51,13 +62,20 @@ public class TestVectorizationNotRun {
     static long[] longArray = new long[size];
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false" },
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     public static void test(byte[] dest, long[] src) {
         for (int i = 0; i < src.length; i++) {
             if ((i < 0) || (8 > sizeBytes - i)) {
                 throw new IndexOutOfBoundsException();
             }
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + i * 8, src[i]);
+            // For UseCompactObjectHeaders and AlignVector, we must 8-byte align all vector loads/stores.
+            // But the long-stores to the byte-array are never aligned:
+            // adr = base + UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8*iter
+            //              = 16 (or 12 if UseCompactObjectHeaders=true)
         }
     }
 
@@ -65,5 +83,4 @@ public class TestVectorizationNotRun {
     public static void test_runner() {
         test(byteArray, longArray);
     }
-
 }

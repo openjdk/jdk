@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@
  * @test
  * @bug 7003595
  * @summary IncompatibleClassChangeError with unreferenced local class with subclass
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
- *          jdk.compiler/com.sun.tools.javac.api
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  */
 
@@ -163,7 +161,7 @@ public class T7003595 {
                     throw new Error("Classfile not found: " + filename);
                 }
 
-                InnerClassesAttribute innerClasses = cf.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+                InnerClassesAttribute innerClasses = cf.findAttribute(Attributes.innerClasses()).orElse(null);
 
                 ArrayList<String> foundInnerSig = new ArrayList<>();
                 if (innerClasses != null) {

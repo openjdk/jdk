@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -330,6 +330,13 @@
  *   <tr>
  *     <th scope="row"><a href="Sides.html">Sides</a>
  *     <td>X
+ *     <td>X
+ *     <td>X
+ *     <td>&nbsp;
+ *     <td>&nbsp;
+ *   <tr>
+ *     <th scope="row"><a href="OutputBin.html">OutputBin</a>
+ *     <td>&nbsp;
  *     <td>X
  *     <td>X
  *     <td>&nbsp;

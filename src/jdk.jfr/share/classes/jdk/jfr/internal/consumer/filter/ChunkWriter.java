@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.function.Predicate;
 
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.LongMap;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.consumer.ChunkHeader;
-import jdk.jfr.internal.consumer.FileAccess;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
@@ -56,6 +57,7 @@ public final class ChunkWriter implements Closeable {
     private final RecordingInput input;
     private final RecordingOutput output;
     private final Predicate<RecordedEvent> filter;
+    private final Map<String, Long> waste = new HashMap<>();
 
     private long chunkStartPosition;
     private boolean chunkComplete;
@@ -64,7 +66,7 @@ public final class ChunkWriter implements Closeable {
     public ChunkWriter(Path source, Path destination, Predicate<RecordedEvent> filter) throws IOException {
         this.destination = destination;
         this.output = new RecordingOutput(destination.toFile());
-        this.input = new RecordingInput(source.toFile(), FileAccess.UNPRIVILEGED);
+        this.input = new RecordingInput(source.toFile());
         this.filter = filter;
     }
 
@@ -178,6 +180,16 @@ public final class ChunkWriter implements Closeable {
         pools = new LongMap<>();
         chunkComplete = true;
         lastCheckpoint = 0;
+        if (Logger.shouldLog(LogTag.JFR_SYSTEM_PARSER, LogLevel.DEBUG)) {
+            // Log largest waste first
+            waste.entrySet().stream()
+                 .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+                 .forEach(entry -> {
+                     String msg = "Total chunk waste by " + entry.getKey() + ": " + entry.getValue() + " bytes.";
+                     Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.DEBUG, msg);
+                 });
+        }
+        waste.clear();
     }
 
     private void writeMetadataEvent(ChunkHeader header) throws IOException {
@@ -212,6 +224,20 @@ public final class ChunkWriter implements Closeable {
                 for (PoolEntry pe : pool.getEntries()) {
                     if (pe.isTouched()) {
                         write(pe.getStartPosition(), pe.getEndPosition()); // key + value
+                    }
+                }
+            }
+        }
+        if (Logger.shouldLog(LogTag.JFR_SYSTEM_PARSER, LogLevel.DEBUG)) {
+            for (CheckpointPool pool : event.getPools()) {
+                for (PoolEntry pe : pool.getEntries()) {
+                    if (!pe.isTouched()) {
+                        String name = pe.getType().getName();
+                        long amount = pe.getEndPosition() - pe.getStartPosition();
+                        waste.merge(pe.getType().getName(), amount, Long::sum);
+                        String msg = "Unreferenced constant ID " + pe.getId() +
+                                     " of type "+ name + " using " + amount + " bytes.";
+                        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE, msg);
                     }
                 }
             }

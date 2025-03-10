@@ -514,7 +514,13 @@ public class ChoiceFormat extends NumberFormat {
     @Override
     public StringBuffer format(long number, StringBuffer toAppendTo,
                                FieldPosition status) {
-        return format((double)number, toAppendTo, status);
+        return format((double) number, StringBufFactory.of(toAppendTo), status).asStringBuffer();
+    }
+
+    @Override
+    StringBuf format(long number, StringBuf toAppendTo,
+                     FieldPosition status) {
+        return format((double) number, toAppendTo, status);
     }
 
     /**
@@ -531,6 +537,12 @@ public class ChoiceFormat extends NumberFormat {
     @Override
     public StringBuffer format(double number, StringBuffer toAppendTo,
                                FieldPosition status) {
+        return format(number, StringBufFactory.of(toAppendTo), status).asStringBuffer();
+    }
+
+    @Override
+    StringBuf format(double number, StringBuf toAppendTo,
+                         FieldPosition status) {
         // find the number
         int i;
         for (i = 0; i < choiceLimits.length; ++i) {
@@ -586,12 +598,18 @@ public class ChoiceFormat extends NumberFormat {
         return Double.valueOf(bestNumber);
     }
 
+    /**
+     * @since 23
+     */
     @Override
     public boolean isStrict() {
         throw new UnsupportedOperationException(
                 "ChoiceFormat does not utilize leniency when parsing");
     }
 
+    /**
+     * @since 23
+     */
     @Override
     public void setStrict(boolean strict) {
         throw new UnsupportedOperationException(

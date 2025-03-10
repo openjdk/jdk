@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,9 @@ class Dependencies: public ResourceObj {
   // type now includes N, that is, all super types of N.
   //
   enum DepType {
+    // _type is initially set to -1, to prevent "already at end" assert
+    undefined_dependency = -1,
+
     end_marker = 0,
 
     // An 'evol' dependency simply notes that the contents of the

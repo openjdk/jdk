@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-// no precompiled headers
 #include "asm/assembler.inline.hpp"
 #include "atomic_linux_zero.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -374,21 +373,6 @@ void os::current_stack_base_and_size(address* base, size_t* size) {
 
 void os::print_context(outputStream* st, const void* ucVoid) {
   st->print_cr("No context information.");
-}
-
-void os::print_tos_pc(outputStream *st, const void* ucVoid) {
-  const ucontext_t* uc = (const ucontext_t*)ucVoid;
-
-  address sp = (address)os::Linux::ucontext_get_sp(uc);
-  print_tos(st, sp);
-  st->cr();
-
-  // Note: it may be unsafe to inspect memory near pc. For example, pc may
-  // point to garbage if entry point in an nmethod is corrupted. Leave
-  // this at the end, and hope for the best.
-  address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc);
-  st->cr();
 }
 
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {

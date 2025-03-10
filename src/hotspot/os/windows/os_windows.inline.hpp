@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,29 +49,22 @@ inline void os::map_stack_shadow_pages(address sp) {
   // If we decrement stack pointer more than one page
   // the OS may not map an intervening page into our space
   // and may fault on a memory access to interior of our frame.
+  address original_sp = sp;
   const size_t page_size = os::vm_page_size();
   const size_t n_pages = StackOverflow::stack_shadow_zone_size() / page_size;
   for (size_t pages = 1; pages <= n_pages; pages++) {
     sp -= page_size;
     *sp = 0;
   }
+  StackOverflow* state = JavaThread::current()->stack_overflow_state();
+  assert(original_sp > state->shadow_zone_safe_limit(), "original_sp=" INTPTR_FORMAT ", "
+         "shadow_zone_safe_limit=" INTPTR_FORMAT, p2i(original_sp), p2i(state->shadow_zone_safe_limit()));
+  state->set_shadow_zone_growth_watermark(original_sp);
 }
 
 inline bool os::numa_has_group_homing()     { return false;  }
 
 // Platform Mutex/Monitor implementation
-
-inline PlatformMutex::PlatformMutex() {
-  InitializeCriticalSection(&_mutex);
-}
-
-inline PlatformMonitor::PlatformMonitor() {
-  InitializeConditionVariable(&_cond);
-}
-
-inline PlatformMonitor::~PlatformMonitor() {
-  // There is no DeleteConditionVariable API
-}
 
 inline void PlatformMutex::lock() {
   EnterCriticalSection(&_mutex);

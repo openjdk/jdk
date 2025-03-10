@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,7 @@
 #ifndef SHARE_NMT_MALLOCHEADER_HPP
 #define SHARE_NMT_MALLOCHEADER_HPP
 
-#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
@@ -36,7 +36,7 @@ class outputStream;
 /*
  * Malloc tracking header.
  *
- * If NMT is active (state >= minimal), we need to track allocations. A simple and cheap way to
+ * If NMT is active (state >= summary), we need to track allocations. A simple and cheap way to
  * do this is by using malloc headers.
  *
  * The user allocation is preceded by a header and is immediately followed by a (possibly unaligned)
@@ -92,7 +92,7 @@ class MallocHeader {
   NOT_LP64(uint32_t _alt_canary);
   const size_t _size;
   const uint32_t _mst_marker;
-  const MEMFLAGS _flags;
+  const MemTag _mem_tag;
   const uint8_t _unused;
   uint16_t _canary;
 
@@ -121,20 +121,20 @@ public:
   // Contains all of the necessary data to to deaccount block with NMT.
   struct FreeInfo {
     const size_t size;
-    const MEMFLAGS flags;
+    const MemTag mem_tag;
     const uint32_t mst_marker;
   };
 
-  inline MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker);
+  inline MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_marker);
 
-  inline size_t   size()  const { return _size; }
-  inline MEMFLAGS flags() const { return _flags; }
+  inline static size_t malloc_overhead() { return sizeof(MallocHeader) + sizeof(uint16_t); }
+  inline size_t size()  const { return _size; }
+  inline MemTag mem_tag() const { return _mem_tag; }
   inline uint32_t mst_marker() const { return _mst_marker; }
-  bool get_stack(NativeCallStack& stack) const;
 
   // Return the necessary data to deaccount the block with NMT.
   FreeInfo free_info() {
-    return FreeInfo{this->size(), this->flags(), this->mst_marker()};
+    return FreeInfo{this->size(), this->mem_tag(), this->mst_marker()};
   }
   inline void mark_block_as_dead();
   inline void revive();

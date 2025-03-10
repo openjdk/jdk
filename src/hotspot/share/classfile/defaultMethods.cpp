@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/bytecodeAssembler.hpp"
 #include "classfile/defaultMethods.hpp"
@@ -870,7 +869,7 @@ static Method* new_method(
     Symbol* sig, AccessFlags flags, int max_stack, int params,
     ConstMethod::MethodType mt, TRAPS) {
 
-  address code_start = 0;
+  address code_start = nullptr;
   int code_length = 0;
   InlineTableSizes sizes;
 

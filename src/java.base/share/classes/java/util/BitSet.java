@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1184,7 +1184,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
     public String toString() {
         checkInvariants();
 
-        final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
+        final int MAX_INITIAL_CAPACITY = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
         int numBits = (wordsInUse > 128) ?
             cardinality() : wordsInUse * BITS_PER_WORD;
         // Avoid overflow in the case of a humongous numBits

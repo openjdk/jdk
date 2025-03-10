@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package com.sun.media.sound;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.StringTokenizer;
 
 /**
@@ -74,15 +72,12 @@ final class Platform {
     /**
      * Load the native library or libraries.
      */
-    @SuppressWarnings("removal")
+    @SuppressWarnings("restricted")
     private static void loadLibraries() {
         // load the native library
         isNativeLibLoaded = true;
         try {
-            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                System.loadLibrary(libName);
-                return null;
-            });
+            System.loadLibrary(libName);
         } catch (Throwable t) {
             if (Printer.err) Printer.err("Couldn't load library "+libName+": "+t.toString());
             isNativeLibLoaded = false;

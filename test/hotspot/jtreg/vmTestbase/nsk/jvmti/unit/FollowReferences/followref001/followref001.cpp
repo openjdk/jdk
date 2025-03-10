@@ -137,14 +137,14 @@ static bool initObjectDescList(jvmtiEnv*    jvmti,
     *objectsCount = 1 + 2 * chainLength;
 
     printf("Allocate memory for objects list: %d objects\n", *objectsCount);
-    fflush(0);
+    fflush(nullptr);
     if (!NSK_JVMTI_VERIFY(jvmti->Allocate((*objectsCount * sizeof(ObjectDesc)),
                                           (unsigned char**) objectDescList))) {
         nsk_jvmti_setFailStatus();
         return false;
     }
     printf("  ... allocated array: 0x%p\n", (void*)objectDescList);
-    fflush(0);
+    fflush(nullptr);
 
     {
         int k;
@@ -179,7 +179,7 @@ static bool getAndTagClasses(jvmtiEnv*    jvmti,
     }
     printf("\nFound debugee class: 0x%p\n  %s\n",
            (void*) *debugeeClass, DEBUGEE_CLASS_NAME);
-    fflush(0);
+    fflush(nullptr);
 
     if (!NSK_JNI_VERIFY(jni, (*rootObjectClass =
             jni->FindClass(ROOT_OBJECT_CLASS_NAME)) != nullptr)) {
@@ -194,7 +194,7 @@ static bool getAndTagClasses(jvmtiEnv*    jvmti,
     printf("\nFound root object class: 0x%p, tag=%ld\n  %s\n",
            (void*) *rootObjectClass,(long) ROOT_CLASS_TAG,
            ROOT_OBJECT_CLASS_NAME);
-    fflush(0);
+    fflush(nullptr);
 
 
     if (!NSK_JNI_VERIFY(jni, (*chainObjectClass =
@@ -209,7 +209,7 @@ static bool getAndTagClasses(jvmtiEnv*    jvmti,
     printf("\nFound chain object class: 0x%p, tag=%ld\n  %s\n",
            (void*) *chainObjectClass, (long) CHAIN_CLASS_TAG,
            CHAIN_OBJECT_CLASS_NAME);
-    fflush(0);
+    fflush(nullptr);
 
      return true;
 } /* getAndTagClasses */
@@ -234,7 +234,7 @@ static bool getFieldsAndObjects(jvmtiEnv*  jvmti,
     }
     printf("\nFound fieldID: 0x%p - \'%s\' static field in debugee class\n",
            (void*) rootObjectField, OBJECT_FIELD_NAME);
-    fflush(0);
+    fflush(nullptr);
 
     if (!NSK_JNI_VERIFY(jni, (*reachableChainField =
             jni->GetFieldID(rootObjectClass, REACHABLE_CHAIN_FIELD_NAME, CHAIN_OBJECT_CLASS_SIG)) != nullptr)) {
@@ -243,7 +243,7 @@ static bool getFieldsAndObjects(jvmtiEnv*  jvmti,
     }
     printf("\nFound fieldID: 0x%p - \'%s\' field in root object class\n",
            (void*) reachableChainField, REACHABLE_CHAIN_FIELD_NAME);
-    fflush(0);
+    fflush(nullptr);
 
     if (!NSK_JNI_VERIFY(jni, (*unreachableChainField =
             jni->GetFieldID(rootObjectClass, UNREACHABLE_CHAIN_FIELD_NAME, CHAIN_OBJECT_CLASS_SIG)) != nullptr)) {
@@ -253,7 +253,7 @@ static bool getFieldsAndObjects(jvmtiEnv*  jvmti,
 
     printf("\nFound fieldID: 0x%p - \'%s\' field in root object class\n",
            (void*) unreachableChainField, UNREACHABLE_CHAIN_FIELD_NAME);
-    fflush(0);
+    fflush(nullptr);
 
     if (!NSK_JNI_VERIFY(jni, (*nextField =
             jni->GetFieldID(chainObjectClass, NEXT_FIELD_NAME, CHAIN_OBJECT_CLASS_SIG)) != nullptr)) {
@@ -262,7 +262,7 @@ static bool getFieldsAndObjects(jvmtiEnv*  jvmti,
     }
     printf("\nFound fieldID: 0x%p - \'%s\' field in chain object class\n",
            (void*) nextField, NEXT_FIELD_NAME);
-    fflush(0);
+    fflush(nullptr);
 
     if (!NSK_JNI_VERIFY(jni, (*rootObjectPtr =
             jni->GetStaticObjectField(debugeeClass, rootObjectField)) != nullptr)) {
@@ -270,14 +270,14 @@ static bool getFieldsAndObjects(jvmtiEnv*  jvmti,
         return false;
     }
     printf("\nFound root object: 0x%p\n", (void*) *rootObjectPtr);
-    fflush(0);
+    fflush(nullptr);
 
     if (!NSK_JNI_VERIFY(jni, (*rootObjectPtr = jni->NewGlobalRef(*rootObjectPtr)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return false;
     }
     printf("Created root object global ref: 0x%p\n", (void*)*rootObjectPtr);
-    fflush(0);
+    fflush(nullptr);
 
      return true;
 } /* getFieldsAndObjects */
@@ -318,7 +318,7 @@ static bool getAndTagChainObjects(
         nsk_jvmti_setFailStatus();
     }
     printf("        tag=%-5ld object=0x%p\n", (long)objTag, (void*)nextObj);
-    fflush(0);
+    fflush(nullptr);
 
     /* To continue traversing objects in the chain */
     if (!getAndTagChainObjects(jvmti,
@@ -394,7 +394,7 @@ static int getAndTagTestedObjects(
            (long) ROOT_OBJECT_TAG, (void*) *rootObjectPtr);
 
     printf("    reachable objects chain: %d objects\n", chainLength);
-    fflush(0);
+    fflush(nullptr);
 
     if (!getAndTagChainObjects(jvmti,
                                jni,
@@ -453,7 +453,7 @@ static bool checkTestedObjects(jvmtiEnv*  jvmti,
     }
 
     printf("\nReachable objects:\n");
-    fflush(0);
+    fflush(nullptr);
     for (i = 0; i < chainLength; i++) {
         idx = i + 1;
         printf("Reachable object:\n"
@@ -488,7 +488,7 @@ static bool checkTestedObjects(jvmtiEnv*  jvmti,
             NSK_COMPLAIN0("Unreachable object was iterated\n");
             nsk_jvmti_setFailStatus();
         }
-        fflush(0);
+        fflush(nullptr);
     }
 
     return true;
@@ -514,7 +514,7 @@ static void releaseTestedObjects(jvmtiEnv*   jvmti,
         }
     }
 
-    fflush(0);
+    fflush(nullptr);
 } /* releaseTestedObjects */
 
 
@@ -542,7 +542,7 @@ jint JNICALL heapReferenceCallback(
                           /* ss45998: class_tag=>referrence_class_tag */
     printf("   size: %" LL "d, tag_ptr: 0x%p, referrer_tag_ptr: 0x%p, length: %-d\n",
                size,         tag_ptr,       referrer_tag_ptr,       length);
-    fflush(0);
+    fflush(nullptr);
 
     if (((uintptr_t) tag_ptr & FULL_32_BIT_MASK) == FULL_32_BIT_MASK) {
         NSK_COMPLAIN1("wrong tag_ptr passed to "
@@ -567,7 +567,7 @@ jint JNICALL heapReferenceCallback(
     printf("   class_tag=%" LL "d, tag=%" LL "d, size=%" LL "d,"
            " ref_tag=%" LL "d, referrer_index=%d\n\n",
                class_tag, tag, size, ref_tag, referrer_index);
-    fflush(0);
+    fflush(nullptr);
 
     if (length != -1) {
         NSK_COMPLAIN1("wrong length passed to heapReferenceCallback: "
@@ -647,7 +647,7 @@ jint JNICALL heapReferenceCallback(
         case JVMTI_HEAP_REFERENCE_OTHER: {
             NSK_COMPLAIN1("This reference kind was not expected: %s\n",
                            ref_kind_str[reference_kind]);
-            fflush(0);
+            fflush(nullptr);
             nsk_jvmti_setFailStatus();
             return 0;
         }
@@ -674,7 +674,7 @@ jint JNICALL primitiveFieldCallback(
                (long) class_tag,
                (long) DEREF(tag_ptr),
                (int) value_type);
-    fflush(0);
+    fflush(nullptr);
     return 0;
 } /* primitiveFieldCallback */
 
@@ -694,7 +694,7 @@ jint JNICALL arrayPrimitiveValueCallback(
            (long) DEREF(tag_ptr),
            (int) element_count,
            (int) element_type);
-    fflush(0);
+    fflush(nullptr);
     return 0;
 } /* arrayPrimitiveValueCallback */
 
@@ -711,7 +711,7 @@ jint JNICALL stringPrimitiveValueCallback(
            (long) class_tag,
            (long) DEREF(tag_ptr),
            (int) value_length);
-    fflush(0);
+    fflush(nullptr);
     return 0;
 } /* stringPrimitiveValueCallback */
 
@@ -725,14 +725,14 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     jobject rootObject = nullptr;
 
     printf("Wait for tested objects created\n");
-    fflush(0);
+    fflush(nullptr);
     if (!NSK_VERIFY(nsk_jvmti_waitForSync(timeout))) {
         return;
     }
 
 
     printf(">>> Obtain and tag tested objects from debugee class\n");
-    fflush(0);
+    fflush(nullptr);
 
     if (!NSK_VERIFY(getAndTagTestedObjects(jvmti,
                                            jni,
@@ -745,7 +745,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     }
 
     printf(">>> Let debugee to clean links to unreachable objects\n");
-    fflush(0);
+    fflush(nullptr);
 
     if (!NSK_VERIFY(nsk_jvmti_resumeSync())) {
         return;
@@ -755,7 +755,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     }
 
     printf(">>> Start iteration from root tested object: 0x%p\n\n", rootObject);
-    fflush(0);
+    fflush(nullptr);
 
     if (!NSK_JVMTI_VERIFY(jvmti->FollowReferences((jint)   0,    /* heap_filter    */
                                                   (jclass) nullptr, /* class          */
@@ -767,19 +767,19 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     }
 
     printf(">>> Check if reachable objects were iterated:\n");
-    fflush(0);
+    fflush(nullptr);
 
     if (!checkTestedObjects(jvmti, jni, chainLength, objectDescList)) {
         nsk_jvmti_setFailStatus();
     }
 
     printf(">>> Clean used data\n");
-    fflush(0);
+    fflush(nullptr);
 
     releaseTestedObjects(jvmti, jni, chainLength, objectDescList, rootObject);
 
     printf(">>> Let debugee to finish\n");
-    fflush(0);
+    fflush(nullptr);
     if (!NSK_VERIFY(nsk_jvmti_resumeSync())) {
         return;
     }

@@ -28,8 +28,8 @@
 #include "utilities/bitMap.hpp"
 
 class G1AbstractSubTask;
-class HeapRegionClosure;
-class HeapRegionClaimer;
+class G1HeapRegionClaimer;
+class G1HeapRegionClosure;
 
 // This class records for every region on the heap whether it had experienced an
 // evacuation failure.
@@ -70,8 +70,8 @@ public:
   void post_collection();
 
   bool contains(uint region_idx) const;
-  void par_iterate(HeapRegionClosure* closure,
-                   HeapRegionClaimer* hrclaimer,
+  void par_iterate(G1HeapRegionClosure* closure,
+                   G1HeapRegionClaimer* hrclaimer,
                    uint worker_id) const;
 
   // Return a G1AbstractSubTask which does necessary preparation for evacuation failed regions

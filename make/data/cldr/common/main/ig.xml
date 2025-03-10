@@ -12,6 +12,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
+			<language type="aa">Afar</language>
 			<language type="ab">Abkaziani</language>
 			<language type="ace">Achinisi</language>
 			<language type="ada">Adangme</language>
@@ -20,12 +21,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="agq">Aghem</language>
 			<language type="ain">Ainu</language>
 			<language type="ak">Akan</language>
-			<language type="ale">Alụt</language>
-			<language type="alt">Sọutarn Altai</language>
+			<language type="ale">Aleut</language>
+			<language type="alt">Southern Altai</language>
 			<language type="am">Amariikị</language>
 			<language type="an">Aragonisị</language>
-			<language type="ann">Obolọ</language>
+			<language type="ann">Obolo</language>
 			<language type="anp">Angika</language>
+			<language type="apc">apcc</language>
 			<language type="ar">Arabiikị</language>
 			<language type="ar_001">Ụdị Arabiikị nke oge a</language>
 			<language type="arn">Mapuche</language>
@@ -34,81 +36,91 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="as">Asamisị</language>
 			<language type="asa">Asụ</language>
 			<language type="ast">Asturianị</language>
-			<language type="atj">Atikamekwe</language>
+			<language type="atj">Atikamekw</language>
 			<language type="av">Avarịk</language>
-			<language type="awa">Awadị</language>
-			<language type="ay">Ayịmarà</language>
-			<language type="az">Azerbajanị</language>
+			<language type="awa">Awadhi</language>
+			<language type="ay">Aymara</language>
+			<language type="az">Azerbaijani</language>
 			<language type="az" alt="short">Azeri</language>
-			<language type="ba">Bashki</language>
-			<language type="ban">Balinisị</language>
+			<language type="ba">Bashkir</language>
+			<language type="bal">Baluchi</language>
+			<language type="ban">Balinese</language>
 			<language type="bas">Basaà</language>
-			<language type="be">Belarusianụ</language>
+			<language type="be">Belarusian</language>
 			<language type="bem">Bembà</language>
+			<language type="bew">Betawi</language>
 			<language type="bez">Bena</language>
-			<language type="bg">Bọlụgarịa</language>
+			<language type="bg">Bulgarian</language>
 			<language type="bgc">Haryanvi</language>
+			<language type="bgn">Western Balochi</language>
 			<language type="bho">Bojpuri</language>
 			<language type="bi">Bislama</language>
 			<language type="bin">Bini</language>
 			<language type="bla">Siksikà</language>
+			<language type="blo">Anii</language>
+			<language type="blt">Tai Dam</language>
 			<language type="bm">Bambara</language>
-			<language type="bn">Bengali</language>
+			<language type="bn">Bangla</language>
 			<language type="bo">Tibetan</language>
 			<language type="br">Breton</language>
-			<language type="brx">Bọdọ</language>
-			<language type="bs">Bosnia</language>
-			<language type="bug">Buginisị</language>
+			<language type="brx">Bodo</language>
+			<language type="bs">Bosnian</language>
+			<language type="bss">Akoose</language>
+			<language type="bug">Buginese</language>
 			<language type="byn">Blin</language>
 			<language type="ca">Catalan</language>
+			<language type="cad">Caddo</language>
 			<language type="cay">Cayuga</language>
+			<language type="cch">Atsam</language>
 			<language type="ccp">Chakma</language>
 			<language type="ce">Chechen</language>
-			<language type="ceb">Cebụanọ</language>
+			<language type="ceb">Cebuano</language>
 			<language type="cgg">Chiga</language>
-			<language type="ch">Chamoro</language>
-			<language type="chk">Chukisị</language>
+			<language type="ch">Chamorro</language>
+			<language type="chk">Chuukese</language>
 			<language type="chm">Mari</language>
-			<language type="cho">Choctawu</language>
-			<language type="chp">Chipewan</language>
-			<language type="chr">Cheroke</language>
+			<language type="cho">Choctaw</language>
+			<language type="chp">Chipewyan</language>
+			<language type="chr">Cherokee</language>
 			<language type="chy">Cheyene</language>
-			<language type="ckb">Kurdish ọsote</language>
-			<language type="ckb" alt="variant">Kurdish ọzọ</language>
-			<language type="clc">Chilcotinị</language>
-			<language type="co">Kọsịan</language>
-			<language type="crg">Mịchif</language>
-			<language type="crj">Sọutarn East kree</language>
-			<language type="crk">Plains kree</language>
-			<language type="crl">Nọrtan Eastị Kree</language>
-			<language type="crm">Moọse kree</language>
-			<language type="crr">Carolina Algonịkwan</language>
-			<language type="cs">Cheekị</language>
-			<language type="csw">Swampi kree</language>
+			<language type="cic">Chickasaw</language>
+			<language type="ckb">Central Kurdish</language>
+			<language type="ckb" alt="menu">Kurdish, Central</language>
+			<language type="ckb" alt="variant">Kurdish, Sorani</language>
+			<language type="clc">Chilcotin</language>
+			<language type="co">Corsican</language>
+			<language type="crg">Michif</language>
+			<language type="crj">Southern East Cree</language>
+			<language type="crk">Plains Cree</language>
+			<language type="crl">Northern East Cree</language>
+			<language type="crm">Moose Cree</language>
+			<language type="crr">Carolina Algonquian</language>
+			<language type="cs">Czech</language>
+			<language type="csw">Asụsụ Swampy Kree</language>
 			<language type="cu">Church slavic</language>
 			<language type="cv">Chuvash</language>
-			<language type="cy">Wesh</language>
-			<language type="da">Danịsh</language>
+			<language type="cy">Welsh</language>
+			<language type="da">Danish</language>
 			<language type="dak">Dakota</language>
-			<language type="dar">Dagwa</language>
-			<language type="dav">Taịta</language>
-			<language type="de">Jamanị</language>
-			<language type="de_AT">Jaman ndị Austria</language>
-			<language type="de_CH">Jaman Izugbe ndị Switzerland</language>
-			<language type="dgr">Dogribụ</language>
+			<language type="dar">Dargwa</language>
+			<language type="dav">Taita</language>
+			<language type="de">German</language>
+			<language type="de_AT">Austrian German</language>
+			<language type="de_CH">Swiss High German</language>
+			<language type="dgr">Dogrib</language>
 			<language type="dje">Zarma</language>
 			<language type="doi">Dogri</language>
-			<language type="dsb">Lowa Sorbịan</language>
-			<language type="dua">Dụala</language>
+			<language type="dsb">Lower Sorbian</language>
+			<language type="dua">Duala</language>
 			<language type="dv">Divehi</language>
-			<language type="dyo">Jọla-Fọnyị</language>
+			<language type="dyo">Jola-Fonyi</language>
 			<language type="dz">Dọzngọka</language>
 			<language type="dzg">Dazaga</language>
-			<language type="ebu">Ebụm</language>
+			<language type="ebu">Embu</language>
 			<language type="ee">Ewe</language>
 			<language type="efi">Efik</language>
-			<language type="eka">Ekajukụ</language>
-			<language type="el">Giriikị</language>
+			<language type="eka">Ekajuk</language>
+			<language type="el">Grik</language>
 			<language type="en">Bekee</language>
 			<language type="en_AU">Bekee ndị Australia</language>
 			<language type="en_CA">Bekee ndị Canada</language>
@@ -116,395 +128,554 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_GB" alt="short">Bekee ndị UK</language>
 			<language type="en_US">Bekee ndị America</language>
 			<language type="en_US" alt="short">Bekee ndị US</language>
-			<language type="eo">Ndị Esperantọ</language>
-			<language type="es">Spanishi</language>
-			<language type="es_419">Spanishi ndị Latin America</language>
-			<language type="es_ES">Spanishi ndị Europe</language>
-			<language type="es_MX">Spanishi ndị Mexico</language>
-			<language type="et">Ndị Estọnịa</language>
-			<language type="eu">Baskwe</language>
-			<language type="ewo">Ewọndọ</language>
-			<language type="fa">Peshianụ</language>
+			<language type="eo">Esperanto</language>
+			<language type="es">Spanish</language>
+			<language type="es_419">Spanish ndị Latin America</language>
+			<language type="es_ES">Spanish ndị Europe</language>
+			<language type="es_MX">Spanish ndị Mexico</language>
+			<language type="et">Estonian</language>
+			<language type="eu">Basque</language>
+			<language type="ewo">Ewondo</language>
+			<language type="fa">Asụsụ Persia</language>
+			<language type="fa_AF">Dari</language>
 			<language type="ff">Fula</language>
-			<language type="fi">Fịnịsh</language>
-			<language type="fil">Fịlịpịnọ</language>
+			<language type="fi">Finnish</language>
+			<language type="fil">Filipino</language>
 			<language type="fj">Fijanị</language>
-			<language type="fo">Farọse</language>
+			<language type="fo">Faroese</language>
 			<language type="fon">Fon</language>
-			<language type="fr">Fụrenchị</language>
-			<language type="fr_CA">Fụrench ndị Canada</language>
-			<language type="fr_CH">Fụrench ndị Switzerland</language>
-			<language type="frc">Kajun Furenchị</language>
-			<language type="frr">Nọrtan Frisian</language>
-			<language type="fur">Frụlịan</language>
-			<language type="fy">Westan Frịsịan</language>
-			<language type="ga">Ịrịsh</language>
+			<language type="fr">French</language>
+			<language type="fr_CA">Canadian French</language>
+			<language type="fr_CH">Swiss French</language>
+			<language type="frc">Cajun French</language>
+			<language type="frr">Northern Frisian</language>
+			<language type="fur">Friulian</language>
+			<language type="fy">Ọdịda anyanwụ Frisian</language>
+			<language type="ga">Irish</language>
 			<language type="gaa">Ga</language>
-			<language type="gd">Sụkọtịs Gelị</language>
-			<language type="gez">Gịzị</language>
-			<language type="gil">Gilbertisị</language>
-			<language type="gl">Galịcịan</language>
-			<language type="gn">Gwarani</language>
+			<language type="gd">Asụsụ Scottish Gaelic</language>
+			<language type="gez">Geez</language>
+			<language type="gil">Gilbertese</language>
+			<language type="gl">Galician</language>
+			<language type="gn">Guarani</language>
 			<language type="gor">Gorontalo</language>
 			<language type="gsw">German Swiss</language>
-			<language type="gu">Gụaratị</language>
-			<language type="guz">Gụshị</language>
+			<language type="gu">Gujarati</language>
+			<language type="guz">Gusii</language>
 			<language type="gv">Mansị</language>
-			<language type="gwi">Gwichin</language>
+			<language type="gwi">Gwichʼin</language>
 			<language type="ha">Hausa</language>
 			<language type="hai">Haida</language>
 			<language type="haw">Hawaịlịan</language>
-			<language type="hax">Sọutarn Haida</language>
+			<language type="hax">Southern Haida</language>
 			<language type="he">Hebrew</language>
-			<language type="hi">Hindị</language>
+			<language type="hi">Hindi</language>
+			<language type="hi_Latn" alt="variant">Hinglish</language>
 			<language type="hil">Hiligayanon</language>
 			<language type="hmn">Hmong</language>
-			<language type="hr">Kọrọtịan</language>
-			<language type="hsb">Ụpa Sọrbịa</language>
+			<language type="hnj">Hmong Njua</language>
+			<language type="hr">Croatian</language>
+			<language type="hsb">Upper Sorbian</language>
 			<language type="ht">Haịtịan ndị Cerọle</language>
-			<language type="hu">Hụngarian</language>
+			<language type="hu">Hungarian</language>
 			<language type="hup">Hupa</language>
 			<language type="hur">Halkomelem</language>
 			<language type="hy">Armenianị</language>
 			<language type="hz">Herero</language>
-			<language type="ia">Intalịgụa</language>
-			<language type="iba">Ibanị</language>
+			<language type="ia">Interlingua</language>
+			<language type="iba">Iban</language>
 			<language type="ibb">Ibibio</language>
-			<language type="id">Indonisia</language>
+			<language type="id">Indonesian</language>
+			<language type="ie">Interlingue</language>
 			<language type="ig">Igbo</language>
-			<language type="ii">Sịchụayị</language>
+			<language type="ii">Sichuan Yi</language>
 			<language type="ikt">Westarn Canadian Inuktitut</language>
 			<language type="ilo">Iloko</language>
 			<language type="inh">Ingush</language>
 			<language type="io">Ido</language>
-			<language type="is">Icịlandịk</language>
-			<language type="it">Italịanu</language>
-			<language type="iu">Inuktitutị</language>
-			<language type="ja">Japaniisi</language>
+			<language type="is">Icelandic</language>
+			<language type="it">Italian</language>
+			<language type="iu">Inuktitut</language>
+			<language type="ja">Japanese</language>
 			<language type="jbo">Lojban</language>
-			<language type="jgo">Ngọmba</language>
+			<language type="jgo">Ngomba</language>
 			<language type="jmc">Machame</language>
-			<language type="jv">Java</language>
-			<language type="ka">Geọjịan</language>
+			<language type="jv">Javanese</language>
+			<language type="ka">Georgian</language>
+			<language type="kaa">Kara-Kalpak</language>
 			<language type="kab">Kabyle</language>
 			<language type="kac">Kachin</language>
-			<language type="kaj">Ju</language>
+			<language type="kaj">Jju</language>
 			<language type="kam">Kamba</language>
 			<language type="kbd">Kabadian</language>
-			<language type="kcg">Tịyap</language>
-			<language type="kde">Makọnde</language>
+			<language type="kcg">Tyap</language>
+			<language type="kde">Makonde</language>
 			<language type="kea">Kabụverdịanụ</language>
+			<language type="ken">Kenyang</language>
 			<language type="kfo">Koro</language>
-			<language type="kgp">Kainganga</language>
+			<language type="kgp">Kaingang</language>
 			<language type="kha">Khasi</language>
-			<language type="khq">Kọyra Chịnị</language>
-			<language type="ki">Kịkụyụ</language>
-			<language type="kj">Kwanyama</language>
-			<language type="kk">Kazak</language>
-			<language type="kkj">Kakọ</language>
-			<language type="kl">Kalaalịsụt</language>
-			<language type="kln">Kalenjịn</language>
-			<language type="km">Keme</language>
-			<language type="kmb">Kimbundụ</language>
-			<language type="kn">Kanhada</language>
-			<language type="ko">Korịa</language>
-			<language type="kok">Kọnkanị</language>
-			<language type="kpe">Kpele</language>
+			<language type="khq">Koyra Chiini</language>
+			<language type="ki">Kikuyu</language>
+			<language type="kj">Kuanyama</language>
+			<language type="kk">Kazakh</language>
+			<language type="kkj">Kako</language>
+			<language type="kl">Kalaallisut</language>
+			<language type="kln">Kalenjin</language>
+			<language type="km">Khmer</language>
+			<language type="kmb">Kimbundu</language>
+			<language type="kn">Kannada</language>
+			<language type="ko">Korean</language>
+			<language type="kok">Konkani</language>
+			<language type="kpe">Kpelle</language>
 			<language type="kr">Kanuri</language>
-			<language type="krc">Karaché-Balka</language>
+			<language type="krc">Karachay-Balkar</language>
 			<language type="krl">Karelian</language>
-			<language type="kru">Kuruk</language>
-			<language type="ks">Kashmịrị</language>
-			<language type="ksb">Shabala</language>
+			<language type="kru">Kurukh</language>
+			<language type="ks">Kashmiri</language>
+			<language type="ksb">Shambala</language>
 			<language type="ksf">Bafịa</language>
-			<language type="ksh">Colognịan</language>
-			<language type="ku">Ndị Kụrdịsh</language>
+			<language type="ksh">Colognian</language>
+			<language type="ku">Kurdish</language>
 			<language type="kum">Kumik</language>
 			<language type="kv">Komi</language>
-			<language type="kw">Kọnịsh</language>
-			<language type="kwk">Kwakwala</language>
-			<language type="ky">Kyrayz</language>
-			<language type="la">Latịn</language>
+			<language type="kw">Cornish</language>
+			<language type="kwk">Kwakʼwala</language>
+			<language type="kxv">Kuvi</language>
+			<language type="ky">Kyrgyz</language>
+			<language type="la">Latin</language>
 			<language type="lad">Ladino</language>
 			<language type="lag">Langị</language>
-			<language type="lb">Lụxenbọụgịsh</language>
-			<language type="lez">Lezgian</language>
+			<language type="lb">Luxembourgish</language>
+			<language type="lez">Lezghian</language>
 			<language type="lg">Ganda</language>
 			<language type="li">Limburgish</language>
+			<language type="lij">Ligurian</language>
 			<language type="lil">Liloetị</language>
 			<language type="lkt">Lakota</language>
-			<language type="ln">Lịngala</language>
-			<language type="lo">Laọ</language>
-			<language type="lou">Louisiana Kreole</language>
+			<language type="lld">ID</language>
+			<language type="lmo">Lombard</language>
+			<language type="ln">Lingala</language>
+			<language type="lo">Lao</language>
+			<language type="lou">Louisiana Creole</language>
 			<language type="loz">Lozi</language>
-			<language type="lrc">Nọrtụ Lụrị</language>
-			<language type="lsm">Samia</language>
-			<language type="lt">Lituanian</language>
-			<language type="lu">Lịba-Katanga</language>
+			<language type="lrc">Northern Luri</language>
+			<language type="lsm">Saamia</language>
+			<language type="lt">Lithuanian</language>
+			<language type="ltg">Latgalian</language>
+			<language type="lu">Luba-Katanga</language>
 			<language type="lua">Luba-Lulua</language>
 			<language type="lun">Lunda</language>
 			<language type="lus">Mizo</language>
-			<language type="luy">Lụyịa</language>
-			<language type="lv">Latviani</language>
+			<language type="luy">Luyia</language>
+			<language type="lv">Latvian</language>
 			<language type="mad">Madurese</language>
 			<language type="mag">Magahi</language>
-			<language type="mai">Maịtịlị</language>
-			<language type="mak">Makasa</language>
-			<language type="mas">Masaị</language>
+			<language type="mai">Maithili</language>
+			<language type="mak">Makasar</language>
+			<language type="mas">Masai</language>
 			<language type="mdf">Moksha</language>
 			<language type="men">Mende</language>
-			<language type="mer">Merụ</language>
-			<language type="mfe">Mọrịsye</language>
-			<language type="mg">Malagasị</language>
-			<language type="mgh">Makụwa Metọ</language>
+			<language type="mer">Meru</language>
+			<language type="mfe">Morisyen</language>
+			<language type="mg">Malagasy</language>
+			<language type="mgh">Makhuwa-Meetto</language>
 			<language type="mgo">Meta</language>
-			<language type="mh">Marshalese</language>
-			<language type="mi">Maọrị</language>
-			<language type="mic">Mịkmak</language>
-			<language type="min">Mịnangkabau</language>
-			<language type="mk">Masedọnịa</language>
+			<language type="mh">Marshallese</language>
+			<language type="mhn">mhnn</language>
+			<language type="mi">Māori</language>
+			<language type="mic">Mi'kmaw</language>
+			<language type="min">Minangkabau</language>
+			<language type="mk">Macedonian</language>
 			<language type="ml">Malayalam</language>
 			<language type="mn">Mọngolịan</language>
-			<language type="mni">Manịpụrị</language>
-			<language type="moe">Inu-imun</language>
-			<language type="moh">Mohọk</language>
+			<language type="mni">Asụsụ Manipuri</language>
+			<language type="moe">Innu-aimun</language>
+			<language type="moh">Mohawk</language>
 			<language type="mos">Mossi</language>
-			<language type="mr">Maratị</language>
-			<language type="ms">Maleyi</language>
-			<language type="mt">Matịse</language>
-			<language type="mua">Mụdang</language>
+			<language type="mr">Asụsụ Marathi</language>
+			<language type="ms">Malay</language>
+			<language type="mt">Asụsụ Malta</language>
+			<language type="mua">Mundang</language>
 			<language type="mul">Ọtụtụ asụsụ</language>
 			<language type="mus">Muscogee</language>
-			<language type="mwl">Mịrandisị</language>
-			<language type="my">Bụrmese</language>
-			<language type="myv">Erzaya</language>
-			<language type="mzn">Mazandaranị</language>
+			<language type="mwl">Mirandese</language>
+			<language type="my">Burmese</language>
+			<language type="myv">Erzya</language>
+			<language type="mzn">Mazanderani</language>
 			<language type="na">Nauru</language>
-			<language type="nap">Nịapolitan</language>
+			<language type="nap">Neapolitan</language>
 			<language type="naq">Nama</language>
-			<language type="nb">Nọrweyịan Bọkmal</language>
-			<language type="nd">Nọrtụ Ndabede</language>
-			<language type="nds">Lowa German</language>
+			<language type="nb">Norwegian Bokmål</language>
+			<language type="nd">North Ndebele</language>
+			<language type="nds">Low German</language>
+			<language type="nds_NL">Low Saxon</language>
 			<language type="ne">Nepali</language>
-			<language type="new">Nịwari</language>
+			<language type="new">Newari</language>
 			<language type="ng">Ndonga</language>
 			<language type="nia">Nias</language>
-			<language type="niu">Niwan</language>
-			<language type="nl">Dọchị</language>
-			<language type="nmg">Kwasịọ</language>
-			<language type="nn">Nọrweyịan Nynersk</language>
-			<language type="nnh">Nglembọn</language>
-			<language type="no">Nọrweyịan</language>
+			<language type="niu">Niuean</language>
+			<language type="nl">Dutch</language>
+			<language type="nl_BE">Flemish</language>
+			<language type="nmg">Kwasio</language>
+			<language type="nn">Norwegian Nynorsk</language>
+			<language type="nnh">Ngiemboon</language>
+			<language type="no">Norwegian</language>
 			<language type="nog">Nogai</language>
-			<language type="nqo">Nkọ</language>
-			<language type="nr">Sọut Ndebele</language>
-			<language type="nso">Nọrtan Sotọ</language>
-			<language type="nus">Nụer</language>
+			<language type="nqo">N’Ko</language>
+			<language type="nr">South Ndebele</language>
+			<language type="nso">Northern Sotho</language>
+			<language type="nus">Nuer</language>
 			<language type="nv">Navajo</language>
 			<language type="ny">Nyanja</language>
-			<language type="nyn">Nyakọle</language>
-			<language type="oc">Osịtan</language>
-			<language type="ojb">Nọrtwestan Ojibwa</language>
-			<language type="ojc">Ojibwa ọsote</language>
-			<language type="ojs">Oji-kree</language>
+			<language type="nyn">Nyankole</language>
+			<language type="oc">Asụsụ Osịtan</language>
+			<language type="ojb">Northwestern Ojibwa</language>
+			<language type="ojc">Central Ojibwa</language>
+			<language type="ojs">Oji-Cree</language>
 			<language type="ojw">Westarn Ojibwa</language>
 			<language type="oka">Okanagan</language>
-			<language type="om">Ọromo</language>
+			<language type="om">Oromo</language>
 			<language type="or">Ọdịa</language>
-			<language type="os">Osetik</language>
+			<language type="os">Ossetic</language>
+			<language type="osa">Osage</language>
 			<language type="pa">Punjabi</language>
 			<language type="pag">Pangasinan</language>
 			<language type="pam">Pampanga</language>
-			<language type="pap">Papịamento</language>
-			<language type="pau">Palawan</language>
-			<language type="pcm">Pidgịn</language>
-			<language type="pis">Pijịn</language>
-			<language type="pl">Poliishi</language>
-			<language type="pqm">Maliset-Pasamakwodị</language>
+			<language type="pap">Papiamento</language>
+			<language type="pau">Palauan</language>
+			<language type="pcm">Pidgin ndị Naijirịa</language>
+			<language type="pis">Pijin</language>
+			<language type="pl">Asụsụ Polish</language>
+			<language type="pqm">Maliseet-Passamaquoddy</language>
 			<language type="prg">Prụssịan</language>
 			<language type="ps">Pashọ</language>
 			<language type="pt">Pọrtụgụese</language>
-			<language type="pt_BR">Pọrtụgụese ndị Brazil</language>
+			<language type="pt_BR">Asụsụ Portugese ndị Brazil</language>
 			<language type="pt_PT">Asụsụ Portuguese ndị Europe</language>
-			<language type="qu">Qụechụa</language>
+			<language type="qu">Asụsụ Quechua</language>
+			<language type="quc">Kʼicheʼ</language>
 			<language type="raj">Rajastani</language>
-			<language type="rap">Rapunwị</language>
-			<language type="rar">Rarotonganị</language>
-			<language type="rhg">Rohinga</language>
-			<language type="rm">Rọmansị</language>
-			<language type="rn">Rụndị</language>
-			<language type="ro">Romania</language>
-			<language type="rof">Rọmbọ</language>
-			<language type="ru">Rọshian</language>
+			<language type="rap">Rapanui</language>
+			<language type="rar">Rarotongan</language>
+			<language type="rhg">Rohingya</language>
+			<language type="rif">Riffian</language>
+			<language type="rm">Asụsụ Romansh</language>
+			<language type="rn">Rundi</language>
+			<language type="ro">Asụsụ Romanian</language>
+			<language type="ro_MD">Moldavian</language>
+			<language type="rof">Rombo</language>
+			<language type="ru">Asụsụ Russia</language>
 			<language type="rup">Aromanian</language>
 			<language type="rw">Kinyarwanda</language>
 			<language type="rwk">Rwa</language>
-			<language type="sa">Sansịkịt</language>
+			<language type="sa">Asụsụ Sanskrit</language>
 			<language type="sad">Sandawe</language>
-			<language type="sah">Saka</language>
-			<language type="saq">Sambụrụ</language>
-			<language type="sat">Santalị</language>
-			<language type="sba">Nkambé</language>
-			<language type="sbp">Sangụ</language>
-			<language type="sc">Sardinian</language>
-			<language type="scn">Sisịlian</language>
+			<language type="sah">Yakut</language>
+			<language type="saq">Samburu</language>
+			<language type="sat">Asụsụ Santali</language>
+			<language type="sba">Ngambay</language>
+			<language type="sbp">Sangu</language>
+			<language type="sc">Asụsụ Sardini</language>
+			<language type="scn">Sicilian</language>
 			<language type="sco">Scots</language>
-			<language type="sd">Sịndh</language>
-			<language type="se">Nọrtan Samị</language>
+			<language type="sd">Asụsụ Sindhi</language>
+			<language type="sdh">Southern Kurdish</language>
+			<language type="se">Northern Sami</language>
 			<language type="seh">Sena</language>
-			<language type="ses">Kọyraboro Senị</language>
-			<language type="sg">Sangọ</language>
+			<language type="ses">Koyraboro Senni</language>
+			<language type="sg">Sango</language>
 			<language type="shi">Tachịkịt</language>
 			<language type="shn">Shan</language>
 			<language type="si">Sinhala</language>
-			<language type="sk">Slova</language>
-			<language type="sl">Slovịan</language>
-			<language type="slh">Sọutarn Lushoọtseed</language>
-			<language type="sm">Samọa</language>
-			<language type="smn">Inarị Samị</language>
+			<language type="sid">Sidamo</language>
+			<language type="sk">Asụsụ Slovak</language>
+			<language type="skr">skrr</language>
+			<language type="sl">Asụsụ Slovenia</language>
+			<language type="slh">Southern Lushootseed</language>
+			<language type="sm">Samoan</language>
+			<language type="sma">Southern Sami</language>
+			<language type="smj">Lule Sami</language>
+			<language type="smn">Inari Sami</language>
 			<language type="sms">Skolt sami</language>
-			<language type="sn">Shọna</language>
-			<language type="snk">Soninké</language>
+			<language type="sn">Shona</language>
+			<language type="snk">Soninke</language>
 			<language type="so">Somali</language>
-			<language type="sq">Albanianị</language>
-			<language type="sr">Sebịan</language>
+			<language type="sq">Asụsụ Albania</language>
+			<language type="sr">Asụsụ Serbia</language>
 			<language type="srn">Sranan Tongo</language>
 			<language type="ss">Swati</language>
-			<language type="st">Sọụth Soto</language>
+			<language type="ssy">Saho</language>
+			<language type="st">Southern Sotho</language>
 			<language type="str">Straits Salish</language>
-			<language type="su">Sudanese</language>
+			<language type="su">Asụsụ Sundan</language>
 			<language type="suk">Sukuma</language>
 			<language type="sv">Sụwidiishi</language>
-			<language type="sw">Swahili</language>
-			<language type="swb">Komorịan</language>
+			<language type="sw">Asụsụ Swahili</language>
+			<language type="swb">Comorian</language>
 			<language type="syr">Sirịak</language>
+			<language type="szl">Asụsụ Sileshia</language>
 			<language type="ta">Tamil</language>
-			<language type="tce">Sọutarn Tuchone</language>
-			<language type="te">Telụgụ</language>
+			<language type="tce">Southern Tutchone</language>
+			<language type="te">Telugu</language>
 			<language type="tem">Timne</language>
-			<language type="teo">Tesọ</language>
+			<language type="teo">Teso</language>
 			<language type="tet">Tetum</language>
-			<language type="tg">Tajịk</language>
+			<language type="tg">Tajik</language>
 			<language type="tgx">Tagish</language>
-			<language type="th">Taị</language>
+			<language type="th">Thai</language>
 			<language type="tht">Tahitan</language>
-			<language type="ti">Tịgrịnya</language>
-			<language type="tig">Tịgre</language>
-			<language type="tk">Turkịs</language>
+			<language type="ti">Tigrinya</language>
+			<language type="tig">Tigre</language>
+			<language type="tk">Turkmen</language>
 			<language type="tlh">Klingon</language>
-			<language type="tli">Tlịngịt</language>
-			<language type="tn">Swana</language>
-			<language type="to">Tọngan</language>
-			<language type="tok">Tokị pọna</language>
+			<language type="tli">Tlingit</language>
+			<language type="tn">Tswana</language>
+			<language type="to">Tongan</language>
+			<language type="tok">Toki Pona</language>
 			<language type="tpi">Tok pisin</language>
-			<language type="tr">Tọkiishi</language>
-			<language type="trv">Tarokọ</language>
-			<language type="ts">Songa</language>
-			<language type="tt">Tata</language>
-			<language type="ttm">Nọrtan Tuchone</language>
+			<language type="tr">Turkish</language>
+			<language type="trv">Taroko</language>
+			<language type="trw">Torwali</language>
+			<language type="ts">Tsonga</language>
+			<language type="tt">Asụsụ Tatar</language>
+			<language type="ttm">Northern Tutchone</language>
 			<language type="tum">Tumbuka</language>
 			<language type="tvl">Tuvalu</language>
-			<language type="twq">Tasawa</language>
+			<language type="twq">Tasawaq</language>
 			<language type="ty">Tahitian</language>
 			<language type="tyv">Tuvinian</language>
-			<language type="tzm">Central Atlas</language>
-			<language type="udm">Udumụrt</language>
-			<language type="ug">Ụyghụr</language>
-			<language type="uk">Ukureenị</language>
-			<language type="umb">Umbụndụ</language>
-			<language type="und">Asụsụ amaghị</language>
-			<language type="ur">Urdụ</language>
-			<language type="uz">Ụzbek</language>
-			<language type="vai">Val</language>
+			<language type="tzm">Central Atlas Tamazight</language>
+			<language type="udm">Udmurt</language>
+			<language type="ug">Uyghur</language>
+			<language type="uk">Asụsụ Ukrain</language>
+			<language type="umb">Umbundu</language>
+			<language type="und">Asụsụ a na-amaghị</language>
+			<language type="ur">Urdu</language>
+			<language type="uz">Uzbek</language>
 			<language type="ve">Venda</language>
-			<language type="vi">Vietnamisi</language>
-			<language type="vo">Volapụ</language>
-			<language type="vun">Vụnjọ</language>
-			<language type="wa">Waloọn</language>
-			<language type="wae">Wasa</language>
-			<language type="wal">Woleịta</language>
-			<language type="war">Waraị</language>
-			<language type="wo">Wolọf</language>
-			<language type="wuu">Wụ Chainisị</language>
-			<language type="xal">Kalmik</language>
-			<language type="xh">Xhọsa</language>
-			<language type="xog">Sọga</language>
+			<language type="vec">Asụsụ Veneshia</language>
+			<language type="vi">Vietnamese</language>
+			<language type="vmw">Makhuwa</language>
+			<language type="vo">Volapük</language>
+			<language type="vun">Vunjo</language>
+			<language type="wa">Walloon</language>
+			<language type="wae">Walser</language>
+			<language type="wal">Wolaytta</language>
+			<language type="war">Waray</language>
+			<language type="wbp">Warlpiri</language>
+			<language type="wo">Wolof</language>
+			<language type="wuu">Wu Chinese</language>
+			<language type="xal">Kalmyk</language>
+			<language type="xh">Xhosa</language>
+			<language type="xnr">Kangri</language>
+			<language type="xog">Soga</language>
 			<language type="yav">Yangben</language>
 			<language type="ybb">Yemba</language>
-			<language type="yi">Yịdịsh</language>
+			<language type="yi">Yiddish</language>
 			<language type="yo">Yoruba</language>
-			<language type="yrl">Nheengatụ</language>
-			<language type="yue">Katọnịse</language>
-			<language type="yue" alt="menu">Chinese,Cantonese</language>
-			<language type="zgh">Standard Moroccan Tamazait</language>
-			<language type="zh">Chainisi</language>
-			<language type="zh_Hans">Asụsụ Chinese dị mfe</language>
-			<language type="zh_Hant">Asụsụ Chinese Izugbe</language>
+			<language type="yrl">Asụsụ Nheengatu</language>
+			<language type="yue">Cantonese</language>
+			<language type="yue" alt="menu">Chaịniiz,Cantonese</language>
+			<language type="za">Zhuang</language>
+			<language type="zgh">Standard Moroccan Tamazight</language>
+			<language type="zh">Chaịniiz</language>
+			<language type="zh" alt="menu">Chaịniiz, Mandarin</language>
+			<language type="zh_Hans">Asụsụ Chaịniiz dị mfe</language>
+			<language type="zh_Hans" alt="long">Asụsụ Mandarin Chaịniiz dị mfe</language>
+			<language type="zh_Hant">Asụsụ ọdịnala Chaịniiz</language>
+			<language type="zh_Hant" alt="long">Asụsụ ọdịnala Mandarin Chaịniiz</language>
 			<language type="zu">Zulu</language>
 			<language type="zun">Zuni</language>
-			<language type="zxx">Ndị ọzọ abụghị asụsụ</language>
+			<language type="zxx">Enweghị asụsụ dịnaya</language>
 			<language type="zza">Zaza</language>
 		</languages>
 		<scripts>
 			<script type="Adlm">Adlam</script>
+			<script type="Aghb">Caucasian Albanian</script>
 			<script type="Arab">Mkpụrụ Okwu Arabic</script>
-			<script type="Aran">Nastalik</script>
+			<script type="Aran">Nastaliq</script>
+			<script type="Armi">Imperial Aramaic</script>
 			<script type="Armn">Mkpụrụ ọkwụ Armenịan</script>
+			<script type="Avst">Avestan</script>
+			<script type="Bali">Balinese</script>
+			<script type="Bamu">Bamum</script>
+			<script type="Bass">Bassa Vah</script>
+			<script type="Batk">Batak</script>
 			<script type="Beng">Mkpụrụ ọkwụ Bangla</script>
+			<script type="Bhks">Bhaiksuki</script>
 			<script type="Bopo">Mkpụrụ ọkwụ Bopomofo</script>
-			<script type="Brai">Braịlle</script>
+			<script type="Brah">Brahmi</script>
+			<script type="Brai">Braille</script>
+			<script type="Bugi">Buginese</script>
+			<script type="Buhd">Buhid</script>
 			<script type="Cakm">Chakma</script>
 			<script type="Cans">Unified Canadian Aboriginal Syllabics</script>
-			<script type="Cher">Cherọkee</script>
-			<script type="Cyrl">Mkpụrụ Okwu Cyrillic</script>
+			<script type="Cari">Carian</script>
+			<script type="Cher">Cherokee</script>
+			<script type="Chrs">Chorasmian</script>
+			<script type="Copt">Coptic</script>
+			<script type="Cpmn">Cypro-Minoan</script>
+			<script type="Cprt">Cypriot</script>
+			<script type="Cyrl">Cyrillic</script>
+			<script type="Cyrs">Old Church Slavonic Cyrillic</script>
 			<script type="Deva">Mkpụrụ ọkwụ Devangarị</script>
+			<script type="Diak">Dives Akuru</script>
+			<script type="Dogr">Dogra</script>
+			<script type="Dsrt">Deseret</script>
+			<script type="Dupl">Duployan shorthand</script>
+			<script type="Egyp">Egyptian hieroglyphs</script>
+			<script type="Elba">Elbasan</script>
+			<script type="Elym">Elymaic</script>
 			<script type="Ethi">Mkpụrụ ọkwụ Etọpịa</script>
+			<script type="Gara">Garay</script>
 			<script type="Geor">Mkpụrụ ọkwụ Geọjịan</script>
+			<script type="Glag">Glagolitic</script>
+			<script type="Gong">Gunjala Gondi</script>
+			<script type="Gonm">Masaram Gondi</script>
+			<script type="Goth">Gothic</script>
+			<script type="Gran">Grantha</script>
 			<script type="Grek">Mkpụrụ ọkwụ grịk</script>
 			<script type="Gujr">Mkpụrụ ọkwụ Gụjaratị</script>
+			<script type="Gukh">Gurung Khema</script>
 			<script type="Guru">Mkpụrụ ọkwụ Gụrmụkị</script>
 			<script type="Hanb">Han na Bopomofo</script>
 			<script type="Hang">Mkpụrụ ọkwụ Hangụl</script>
 			<script type="Hani">Mkpụrụ ọkwụ Han</script>
+			<script type="Hano">Hanunoo</script>
 			<script type="Hans">Nke dị mfe</script>
 			<script type="Hans" alt="stand-alone">Han di mfe</script>
-			<script type="Hant">Izugbe</script>
-			<script type="Hant" alt="stand-alone">Han Izugbe</script>
+			<script type="Hant">Omenala</script>
+			<script type="Hant" alt="stand-alone">Han site na omenala</script>
+			<script type="Hatr">Hatran</script>
 			<script type="Hebr">Mkpụrụ ọkwụ Hebrew</script>
 			<script type="Hira">Mkpụrụ okwụ Hịragana</script>
+			<script type="Hluw">Anatolian Hieroglyphs</script>
+			<script type="Hmng">Pahawh Hmong</script>
+			<script type="Hmnp">Nyiakeng Puachue Hmong</script>
 			<script type="Hrkt">mkpụrụ ọkwụ Japanịsị</script>
-			<script type="Jamo">Jamọ</script>
+			<script type="Hung">Old Hungarian</script>
+			<script type="Ital">Old Italic</script>
+			<script type="Java">Javanese</script>
 			<script type="Jpan">Japanese</script>
+			<script type="Kali">Kayah Li</script>
 			<script type="Kana">Katakana</script>
+			<script type="Kawi">KAWI</script>
+			<script type="Khar">Kharoshthi</script>
 			<script type="Khmr">Khmer</script>
-			<script type="Knda">Kannaada</script>
-			<script type="Kore">Korea</script>
-			<script type="Laoo">Laọ</script>
+			<script type="Khoj">Khojki</script>
+			<script type="Kits">Khitan small script</script>
+			<script type="Knda">Kannada</script>
+			<script type="Kore">Korean</script>
+			<script type="Krai">Kirat Rai</script>
+			<script type="Kthi">Kaithi</script>
+			<script type="Lana">Lanna</script>
+			<script type="Laoo">Lao</script>
+			<script type="Latf">Fraktur Latin</script>
+			<script type="Latg">Gaelic Latin</script>
 			<script type="Latn">Latin</script>
-			<script type="Mlym">Malayala</script>
-			<script type="Mong">Mọngọlịan</script>
+			<script type="Lepc">Lepcha</script>
+			<script type="Limb">Limbu</script>
+			<script type="Lina">Linear A</script>
+			<script type="Linb">Linear B</script>
+			<script type="Lisu">Fraser</script>
+			<script type="Lyci">Lycian</script>
+			<script type="Lydi">Lydian</script>
+			<script type="Mahj">Mahajani</script>
+			<script type="Maka">Makasar</script>
+			<script type="Mand">Mandaean</script>
+			<script type="Mani">Manichaean</script>
+			<script type="Marc">Marchen</script>
+			<script type="Medf">Medefaidrin</script>
+			<script type="Mend">Mende</script>
+			<script type="Merc">Meroitic Cursive</script>
+			<script type="Mero">Meroitic</script>
+			<script type="Mlym">Malayalam</script>
+			<script type="Mong">Mongolian</script>
+			<script type="Mroo">Mro</script>
 			<script type="Mtei">Meitei Mayek</script>
+			<script type="Mult">Multani</script>
 			<script type="Mymr">Myanmar</script>
-			<script type="Nkoo">Nkoọ</script>
-			<script type="Olck">Ochiki</script>
-			<script type="Orya">Ọdịa</script>
+			<script type="Nagm">Nag Mundari</script>
+			<script type="Nand">Nandinagari</script>
+			<script type="Narb">Old North Arabian</script>
+			<script type="Nbat">Nabataean</script>
+			<script type="Nkoo">N’Ko</script>
+			<script type="Nshu">Nüshu</script>
+			<script type="Ogam">Ogham</script>
+			<script type="Olck">Ol Chiki</script>
+			<script type="Onao">Ol Onal</script>
+			<script type="Orkh">Orkhon</script>
+			<script type="Orya">Odia</script>
+			<script type="Osge">Osage</script>
+			<script type="Osma">Osmanya</script>
+			<script type="Ougr">Old Uyghur</script>
+			<script type="Palm">Palmyrene</script>
+			<script type="Pauc">Pau Cin Hau</script>
+			<script type="Perm">Old Permic</script>
+			<script type="Phag">Phags-pa</script>
+			<script type="Phli">Inscriptional Pahlavi</script>
+			<script type="Phlp">Psalter Pahlavi</script>
+			<script type="Phnx">Phoenician</script>
+			<script type="Plrd">Pollard Phonetic</script>
+			<script type="Prti">Inscriptional Parthian</script>
+			<script type="Qaag">Zawgyi</script>
+			<script type="Rjng">Rejang</script>
 			<script type="Rohg">Hanifi</script>
+			<script type="Runr">Runic</script>
+			<script type="Samr">Samaritan</script>
+			<script type="Sarb">Old South Arabian</script>
+			<script type="Saur">Saurashtra</script>
+			<script type="Sgnw">SignWriting</script>
+			<script type="Shaw">Shavian</script>
+			<script type="Shrd">Sharada</script>
+			<script type="Sidd">Siddham</script>
+			<script type="Sind">Khudawadi</script>
 			<script type="Sinh">Sinhala</script>
-			<script type="Sund">Sundanisị</script>
-			<script type="Syrc">Syriak</script>
-			<script type="Taml">Tamịl</script>
-			<script type="Telu">Telụgụ</script>
-			<script type="Tfng">Tifinag</script>
-			<script type="Thaa">Taa</script>
-			<script type="Tibt">Tịbeta</script>
+			<script type="Sogd">Sogdian</script>
+			<script type="Sogo">Old Sogdian</script>
+			<script type="Sora">Sora Sompeng</script>
+			<script type="Soyo">Soyombo</script>
+			<script type="Sund">Sundanese</script>
+			<script type="Sunu">Sunuwar</script>
+			<script type="Sylo">Syloti Nagri</script>
+			<script type="Syrc">Siriak</script>
+			<script type="Syre">Estrangelo Syriac</script>
+			<script type="Syrj">Western Syriac</script>
+			<script type="Syrn">Eastern Syriac</script>
+			<script type="Tagb">Tagbanwa</script>
+			<script type="Takr">Takri</script>
+			<script type="Tale">Tai Le</script>
+			<script type="Talu">New Tai Lue</script>
+			<script type="Taml">Tamil</script>
+			<script type="Tang">Tangut</script>
+			<script type="Tavt">Tai Viet</script>
+			<script type="Telu">Telugu</script>
+			<script type="Tfng">Tifinagh</script>
+			<script type="Tglg">Tagalog</script>
+			<script type="Thaa">Thaana</script>
+			<script type="Tibt">Tibetan</script>
+			<script type="Tirh">Tirhuta</script>
+			<script type="Tnsa">Tangsa</script>
+			<script type="Todr">Todhri</script>
+			<script type="Tutg">Tulu-Tigalari</script>
+			<script type="Ugar">Ugaritic</script>
 			<script type="Vaii">Vai</script>
-			<script type="Yiii">Yị</script>
+			<script type="Vith">Vithkuqi</script>
+			<script type="Wara">Varang Kshiti</script>
+			<script type="Wcho">Wancho</script>
+			<script type="Xpeo">Old Persian</script>
+			<script type="Xsux">Sumero-Akkadian Cuneiform</script>
+			<script type="Yezi">Yezidi</script>
+			<script type="Yiii">Yi</script>
+			<script type="Zanb">Zanabazar Square</script>
+			<script type="Zinh">Inherited</script>
 			<script type="Zmth">Mkpụrụ ọkwụ Mgbakọ</script>
-			<script type="Zsye">Emojị</script>
+			<script type="Zsye">Emoji</script>
 			<script type="Zsym">Akara</script>
-			<script type="Zxxx">Edeghị ede</script>
-			<script type="Zyyy">kọmọn</script>
-			<script type="Zzzz">Mkpụrụ okwu amaghị</script>
+			<script type="Zxxx">A na-edeghị ede</script>
+			<script type="Zyyy">Common</script>
+			<script type="Zzzz">Edemede a na-amaghi</script>
 		</scripts>
 		<territories>
 			<territory type="001">Uwa</territory>
@@ -520,7 +691,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="018">Mpaghara Mgbada Ugwu Afrịka</territory>
 			<territory type="019">Amerịka</territory>
 			<territory type="021">Mpaghara Ugwu America</territory>
-			<territory type="029">Onye Carrabean</territory>
+			<territory type="029">Caribbean</territory>
 			<territory type="030">Mpaghara Ọwụwa Anyanwụ Asia</territory>
 			<territory type="034">Mpaghara Mgbada Ugwu Asia</territory>
 			<territory type="035">Mpaghara Mgbada Ugwu Asia dị na Ọwụwa Anyanwụ</territory>
@@ -553,7 +724,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="AT">Austria</territory>
 			<territory type="AU">Australia</territory>
 			<territory type="AW">Aruba</territory>
-			<territory type="AX">Agwaetiti Aland</territory>
+			<territory type="AX">Åland Islands</territory>
 			<territory type="AZ">Azerbaijan</territory>
 			<territory type="BA">Bosnia &amp; Herzegovina</territory>
 			<territory type="BB">Barbados</territory>
@@ -563,8 +734,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BG">Bulgaria</territory>
 			<territory type="BH">Bahrain</territory>
 			<territory type="BI">Burundi</territory>
-			<territory type="BJ">Binin</territory>
-			<territory type="BL">Barthélemy Dị nsọ</territory>
+			<territory type="BJ">Benin</territory>
+			<territory type="BL">St. Barthélemy</territory>
 			<territory type="BM">Bemuda</territory>
 			<territory type="BN">Brunei</territory>
 			<territory type="BO">Bolivia</territory>
@@ -572,11 +743,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BR">Brazil</territory>
 			<territory type="BS">Bahamas</territory>
 			<territory type="BT">Bhutan</territory>
-			<territory type="BV">Agwaetiti Bouvet</territory>
+			<territory type="BV">Bouvet Island</territory>
 			<territory type="BW">Botswana</territory>
 			<territory type="BY">Belarus</territory>
 			<territory type="BZ">Belize</territory>
-			<territory type="CA">Kanada</territory>
+			<territory type="CA">Canada</territory>
 			<territory type="CC">Agwaetiti Cocos (Keeling)</territory>
 			<territory type="CD">Congo - Kinshasa</territory>
 			<territory type="CD" alt="variant">Congo (DRC)</territory>
@@ -592,6 +763,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CN">China</territory>
 			<territory type="CO">Colombia</territory>
 			<territory type="CP">Agwaetiti Clipperton</territory>
+			<territory type="CQ">Sark</territory>
 			<territory type="CR">Kosta Rika</territory>
 			<territory type="CU">Cuba</territory>
 			<territory type="CV">Cape Verde</territory>
@@ -600,11 +772,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CY">Cyprus</territory>
 			<territory type="CZ">Czechia</territory>
 			<territory type="CZ" alt="variant">Czech Republik</territory>
-			<territory type="DE">Jamanị</territory>
+			<territory type="DE">Germany</territory>
 			<territory type="DG">Diego Garcia</territory>
 			<territory type="DJ">Djibouti</territory>
 			<territory type="DK">Denmark</territory>
-			<territory type="DM">Dominika</territory>
+			<territory type="DM">Dominica</territory>
 			<territory type="DO">Dominican Republik</territory>
 			<territory type="DZ">Algeria</territory>
 			<territory type="EA">Ceuta &amp; Melilla</territory>
@@ -619,16 +791,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="EZ">Gburugburu Euro</territory>
 			<territory type="FI">Finland</territory>
 			<territory type="FJ">Fiji</territory>
-			<territory type="FK">Agwaetiti Falkland</territory>
+			<territory type="FK">Falkland Islands</territory>
+			<territory type="FK" alt="variant">Falkland Islands (Islas Malvinas)</territory>
 			<territory type="FM">Micronesia</territory>
-			<territory type="FO">Agwaetiti Faroe</territory>
+			<territory type="FO">Faroe Islands</territory>
 			<territory type="FR">France</territory>
 			<territory type="GA">Gabon</territory>
 			<territory type="GB">United Kingdom</territory>
 			<territory type="GB" alt="short">UK</territory>
 			<territory type="GD">Grenada</territory>
 			<territory type="GE">Georgia</territory>
-			<territory type="GF">Frenchi Guiana</territory>
+			<territory type="GF">French Guiana</territory>
 			<territory type="GG">Guernsey</territory>
 			<territory type="GH">Ghana</territory>
 			<territory type="GI">Gibraltar</territory>
@@ -638,18 +811,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GP">Guadeloupe</territory>
 			<territory type="GQ">Equatorial Guinea</territory>
 			<territory type="GR">Greece</territory>
-			<territory type="GS">South Georgia na Agwaetiti South Sandwich</territory>
+			<territory type="GS">South Georgia &amp; South Sandwich Islands</territory>
 			<territory type="GT">Guatemala</territory>
 			<territory type="GU">Guam</territory>
 			<territory type="GW">Guinea-Bissau</territory>
 			<territory type="GY">Guyana</territory>
 			<territory type="HK">Hong Kong SAR China</territory>
+			<territory type="HK" alt="short">Hong Kong</territory>
 			<territory type="HM">Agwaetiti Heard na Agwaetiti McDonald</territory>
 			<territory type="HN">Honduras</territory>
 			<territory type="HR">Croatia</territory>
-			<territory type="HT">Hati</territory>
+			<territory type="HT">Haiti</territory>
 			<territory type="HU">Hungary</territory>
-			<territory type="IC">Agwaetiti Kanarị</territory>
+			<territory type="IC">Canary Islands</territory>
 			<territory type="ID">Indonesia</territory>
 			<territory type="IE">Ireland</territory>
 			<territory type="IL">Israel</territory>
@@ -669,16 +843,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="KG">Kyrgyzstan</territory>
 			<territory type="KH">Cambodia</territory>
 			<territory type="KI">Kiribati</territory>
-			<territory type="KM">Comorosu</territory>
-			<territory type="KN">Kitts na Nevis Dị nsọ</territory>
-			<territory type="KP">Ugwu Korea</territory>
+			<territory type="KM">Comoros</territory>
+			<territory type="KN">St. Kitts &amp; Nevis</territory>
+			<territory type="KP">North Korea</territory>
 			<territory type="KR">South Korea</territory>
 			<territory type="KW">Kuwait</territory>
-			<territory type="KY">Agwaetiti Cayman</territory>
+			<territory type="KY">Cayman Islands</territory>
 			<territory type="KZ">Kazakhstan</territory>
 			<territory type="LA">Laos</territory>
 			<territory type="LB">Lebanon</territory>
-			<territory type="LC">Lucia Dị nsọ</territory>
+			<territory type="LC">St. Lucia</territory>
 			<territory type="LI">Liechtenstein</territory>
 			<territory type="LK">Sri Lanka</territory>
 			<territory type="LR">Liberia</territory>
@@ -691,8 +865,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MC">Monaco</territory>
 			<territory type="MD">Moldova</territory>
 			<territory type="ME">Montenegro</territory>
-			<territory type="MF">Martin Dị nsọ</territory>
-			<territory type="MG">Madagaskar</territory>
+			<territory type="MF">St. Martin</territory>
+			<territory type="MG">Madagascar</territory>
 			<territory type="MH">Agwaetiti Marshall</territory>
 			<territory type="MK">North Macedonia</territory>
 			<territory type="ML">Mali</territory>
@@ -710,7 +884,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MW">Malawi</territory>
 			<territory type="MX">Mexico</territory>
 			<territory type="MY">Malaysia</territory>
-			<territory type="MZ">Mozambik</territory>
+			<territory type="MZ">Mozambique</territory>
 			<territory type="NA">Namibia</territory>
 			<territory type="NC">New Caledonia</territory>
 			<territory type="NE">Niger</territory>
@@ -723,18 +897,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="NR">Nauru</territory>
 			<territory type="NU">Niue</territory>
 			<territory type="NZ">New Zealand</territory>
+			<territory type="NZ" alt="variant">Aotearoa New Zealand</territory>
 			<territory type="OM">Oman</territory>
 			<territory type="PA">Panama</territory>
 			<territory type="PE">Peru</territory>
-			<territory type="PF">Frenchi Polynesia</territory>
+			<territory type="PF">French Polynesia</territory>
 			<territory type="PG">Papua New Guinea</territory>
 			<territory type="PH">Philippines</territory>
 			<territory type="PK">Pakistan</territory>
 			<territory type="PL">Poland</territory>
-			<territory type="PM">Pierre na Miquelon Dị nsọ</territory>
+			<territory type="PM">St. Pierre &amp; Miquelon</territory>
 			<territory type="PN">Agwaetiti Pitcairn</territory>
 			<territory type="PR">Puerto Rico</territory>
-			<territory type="PS">Palestinian Territories</territory>
+			<territory type="PS">Mpaghara ndị Palestine</territory>
+			<territory type="PS" alt="short">Palestine</territory>
 			<territory type="PT">Portugal</territory>
 			<territory type="PW">Palau</territory>
 			<territory type="PY">Paraguay</territory>
@@ -743,7 +919,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="RE">Réunion</territory>
 			<territory type="RO">Romania</territory>
 			<territory type="RS">Serbia</territory>
-			<territory type="RU">Rụssịa</territory>
+			<territory type="RU">Russia</territory>
 			<territory type="RW">Rwanda</territory>
 			<territory type="SA">Saudi Arabia</territory>
 			<territory type="SB">Agwaetiti Solomon</territory>
@@ -768,7 +944,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SZ">Eswatini</territory>
 			<territory type="SZ" alt="variant">Swaziland</territory>
 			<territory type="TA">Tristan da Cunha</territory>
-			<territory type="TC">Agwaetiti Turks na Caicos</territory>
+			<territory type="TC">Turks &amp; Caicos Islands</territory>
 			<territory type="TD">Chad</territory>
 			<territory type="TF">Ụmụ ngalaba Frenchi Southern</territory>
 			<territory type="TG">Togo</territory>
@@ -780,7 +956,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TM">Turkmenistan</territory>
 			<territory type="TN">Tunisia</territory>
 			<territory type="TO">Tonga</territory>
-			<territory type="TR">Turkey</territory>
+			<territory type="TR">Türkiye</territory>
 			<territory type="TT">Trinidad na Tobago</territory>
 			<territory type="TV">Tuvalu</territory>
 			<territory type="TW">Taiwan</territory>
@@ -793,10 +969,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="UY">Uruguay</territory>
 			<territory type="UZ">Uzbekistan</territory>
 			<territory type="VA">Vatican City</territory>
-			<territory type="VC">Vincent na Grenadines Dị nsọ</territory>
+			<territory type="VC">St. Vincent &amp; Grenadines</territory>
 			<territory type="VE">Venezuela</territory>
-			<territory type="VG">Agwaetiti British Virgin</territory>
-			<territory type="VI">Agwaetiti Virgin nke US</territory>
+			<territory type="VG">British Virgin Islands</territory>
+			<territory type="VI">U.S. Virgin Islands</territory>
 			<territory type="VN">Vietnam</territory>
 			<territory type="VU">Vanuatu</territory>
 			<territory type="WF">Wallis &amp; Futuna</territory>
@@ -809,62 +985,77 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZA">South Africa</territory>
 			<territory type="ZM">Zambia</territory>
 			<territory type="ZW">Zimbabwe</territory>
-			<territory type="ZZ">Mpaghara Amaghị</territory>
+			<territory type="ZZ">Mpaghara A na-amaghị</territory>
 		</territories>
 		<keys>
-			<key type="calendar">Kalịnda</key>
+			<key type="calendar">Kalenda</key>
 			<key type="cf">Ụsọrọ egọ</key>
 			<key type="collation">Ụsọrọ Nhazị</key>
 			<key type="currency">Egọ</key>
-			<key type="hc">Ọge ọkịrịkịrị</key>
+			<key type="hc">Okịrịkịrị Awa (12 vs 24)</key>
 			<key type="lb">Akara akanka nkwụsị</key>
 			<key type="ms">Ụsọrọ Mmeshọ</key>
 			<key type="numbers">Nọmba</key>
 		</keys>
 		<types>
-			<type key="calendar" type="buddhist">Kalịnda Bụddịst</type>
-			<type key="calendar" type="chinese">Kalịnda Chinese</type>
+			<type key="calendar" type="buddhist">Kalenda Bụddịst</type>
+			<type key="calendar" type="chinese">Kalenda Chinese</type>
 			<type key="calendar" type="coptic">Kalenda Koptic</type>
-			<type key="calendar" type="dangi">Kalịnda Dang</type>
-			<type key="calendar" type="ethiopic">Kalịnda Etopịa</type>
+			<type key="calendar" type="dangi">Kalenda Dang</type>
+			<type key="calendar" type="ethiopic">Kalenda Etopịa</type>
 			<type key="calendar" type="ethiopic-amete-alem">Etiopic Amete Alem Kalenda</type>
 			<type key="calendar" type="gregorian">Kalenda Gregory</type>
-			<type key="calendar" type="hebrew">Kalịnda Hebrew</type>
+			<type key="calendar" type="hebrew">Kalenda Hebrew</type>
+			<type key="calendar" type="indian">Kalenda India</type>
 			<type key="calendar" type="islamic">Kalenda Hijri</type>
 			<type key="calendar" type="islamic-civil">Kalenda Hijri</type>
+			<type key="calendar" type="islamic-rgsa">Kalenda Hijri (Saudi Arabia, sighting)</type>
+			<type key="calendar" type="islamic-tbla">Kalenda Hijri (tabular, astronomical epoch)</type>
 			<type key="calendar" type="islamic-umalqura">Kalenda Hijri (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Kalenda ISO-8601</type>
-			<type key="calendar" type="japanese">Kalịnda Japanese</type>
-			<type key="calendar" type="persian">Kalịnda Persian</type>
-			<type key="calendar" type="roc">Kalịnda repụblic nke China</type>
+			<type key="calendar" type="japanese">Kalenda Japanese</type>
+			<type key="calendar" type="persian">Kalenda Persian</type>
+			<type key="calendar" type="roc">Kalenda repụblic nke China</type>
 			<type key="cf" type="account">Ụsọrọ akantụ egọ</type>
 			<type key="cf" type="standard">Ụsọrọ egọ nzụgbe</type>
 			<type key="collation" type="ducet">Default Unicode ụsọrọ nhazị</type>
+			<type key="collation" type="phonebook">Nhazị akwụkwọ ebe a na-ede nọmba fon</type>
+			<type key="collation" type="pinyin">Pinyin ụsọrọ nhazị</type>
 			<type key="collation" type="search">Ọchụchụ nịle</type>
 			<type key="collation" type="standard">Usoro Nhazi</type>
-			<type key="hc" type="h11">Ụsọrọ Ọge ọkịrịkịri 12</type>
-			<type key="hc" type="h12">Ụsọrọ Oge okịrịkịri 12</type>
-			<type key="hc" type="h23">Ụsọrọ Oge okịrịkịrị 24</type>
-			<type key="hc" type="h24">Ụsọrọ Ọge okịrịkịrị 24</type>
+			<type key="hc" type="h11">Ụsọrọ Okịrịkịrị awa iri na abụọ (0–11)</type>
+			<type key="hc" type="h12">Ụsọrọ Okịrịkịrị awa iri na abụọ (0–12)</type>
+			<type key="hc" type="h23">Ụsọrọ Okịrịkịrị (0–23)</type>
+			<type key="hc" type="h24">Ụsọrọ Okịrịkịrị (1–24)</type>
 			<type key="lb" type="loose">Akara akanka nkwụsị esịghị ịke</type>
 			<type key="lb" type="normal">Akara akanka nkwụsị kwesịrị</type>
 			<type key="lb" type="strict">Akara akanka nkwụsị sịrị ịke</type>
-			<type key="ms" type="metric">Ụsọrọ Metịrịk</type>
+			<type key="ms" type="metric">Ụsọrọ Metric</type>
 			<type key="ms" type="uksystem">Ụsọrọ Mmeshọ ịmperịa</type>
 			<type key="ms" type="ussystem">Ụsọrọ Mmeshọ US</type>
+			<type key="numbers" type="ahom">Ọnụ ọgụgụ Ahom</type>
 			<type key="numbers" type="arab">Ọnụ ọgụgụ Arab na Indị</type>
 			<type key="numbers" type="arabext">Ọnụ ọgụgụ Arab na Indị agbatịrị</type>
-			<type key="numbers" type="armn">Ọnụ ọgụgụ Armenịan</type>
-			<type key="numbers" type="armnlow">ọbere ọnụ ọgụgụ Armenịan</type>
-			<type key="numbers" type="beng">Ọnụ ọgụgụ Bang</type>
+			<type key="numbers" type="armn">Ọnụ ọgụgụ Armenịa</type>
+			<type key="numbers" type="armnlow">ọbere ọnụ ọgụgụ Armenịa</type>
+			<type key="numbers" type="bali">Balinese Digits</type>
+			<type key="numbers" type="beng">Ọnụ ọgụgụ Bangla</type>
+			<type key="numbers" type="brah">Brahmi Digits</type>
 			<type key="numbers" type="cakm">Ọnụ ọgụgụ Chakma</type>
+			<type key="numbers" type="cham">Cham Digits</type>
+			<type key="numbers" type="cyrl">Ọnụ ọgụgụ Cyrillic</type>
 			<type key="numbers" type="deva">Ọnụ ọgụgụ Devanagarị</type>
+			<type key="numbers" type="diak">Ọnụ ọgụgụ Dives Akuru</type>
 			<type key="numbers" type="ethi">Ọnụ ọgụgụ Etọpịa</type>
 			<type key="numbers" type="fullwide">Ọnụ ọgụgụ ọbọsara</type>
-			<type key="numbers" type="geor">Ọnụ ọgụgụ Geọjịan</type>
-			<type key="numbers" type="grek">Ọnụ ọgụgụ Greek</type>
-			<type key="numbers" type="greklow">Ọbere ọnụ ọgụgụ Greek</type>
+			<type key="numbers" type="gara">Ọnụ ọgụgụ Garay</type>
+			<type key="numbers" type="geor">Ọnụ ọgụgụ Georgian</type>
+			<type key="numbers" type="gong">Ọnụ ọgụgụ Gunjala Gondi</type>
+			<type key="numbers" type="gonm">Ọnụ ọgụgụ Masaram Gondi</type>
+			<type key="numbers" type="grek">Ọnụ ọgụgụ Grik</type>
+			<type key="numbers" type="greklow">Ọbere ọnụ ọgụgụ Grik</type>
 			<type key="numbers" type="gujr">Ọnụ ọgụgụ Gụjaratị</type>
+			<type key="numbers" type="gukh">Ọnụ ọgụgụ Gurung Khema</type>
 			<type key="numbers" type="guru">Onụ ọgụgụ Gụmụkh</type>
 			<type key="numbers" type="hanidec">Ọnụ ọgụgụ ntụpọ Chịnese</type>
 			<type key="numbers" type="hans">Ọnụ ọgụgụ mfe Chịnese</type>
@@ -872,26 +1063,66 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="hant">Ọnụ ọgụgụ ọdinala chinese</type>
 			<type key="numbers" type="hantfin">Ọnụ ọgụgụ akantụ ọdịnala Chinese</type>
 			<type key="numbers" type="hebr">Ọnụ ọgụgụ Hebrew</type>
+			<type key="numbers" type="hmng">Ọnụ ọgụgụ Pahawh Hmong</type>
+			<type key="numbers" type="hmnp">Ọnụ ọgụgụ Nyiakeng Puachue Hmong</type>
 			<type key="numbers" type="java">Ọnụ ọgụgụ Javanịsị</type>
 			<type key="numbers" type="jpan">Ọnụ ọgụgụ Japanese</type>
 			<type key="numbers" type="jpanfin">Ọnụ ọgụgụ akantụ Japanese</type>
+			<type key="numbers" type="kali">Ọnụ ọgụgụ Kayah Li</type>
+			<type key="numbers" type="kawi">Ọnụ ọgụgụ Kawi</type>
 			<type key="numbers" type="khmr">Ọnụ ọgụgụ Khmer</type>
-			<type key="numbers" type="knda">Ọnụ ọgụgụ Kanada</type>
-			<type key="numbers" type="laoo">Ọnụ ọgụgụ Laọ</type>
+			<type key="numbers" type="knda">Ọnụ ọgụgụ Kannada</type>
+			<type key="numbers" type="krai">Ọnụ ọgụgụ Kirat Rai</type>
+			<type key="numbers" type="lana">Ọnụ ọgụgụ Tai Tham Hora</type>
+			<type key="numbers" type="lanatham">Ọnụ ọgụgụ Tai Tham Tham</type>
+			<type key="numbers" type="laoo">Ọnụ ọgụgụ Lao</type>
 			<type key="numbers" type="latn">Ọnụ Ọgụgụ Mpaghara Ọdịda Anyanwụ</type>
+			<type key="numbers" type="lepc">Ọnụ ọgụgụ Lepcha</type>
+			<type key="numbers" type="limb">Ọnụ ọgụgụ Limbu</type>
+			<type key="numbers" type="mathbold">Ọnụ ọgụgụ Mathematical Bold</type>
+			<type key="numbers" type="mathdbl">Ọnụ ọgụgụ Mathematical Double-Struck</type>
+			<type key="numbers" type="mathmono">Ọnụ ọgụgụ Mathematical Monospace</type>
+			<type key="numbers" type="mathsanb">Ọnụ ọgụgụ Mathematical Sans-Serif Bold</type>
+			<type key="numbers" type="mathsans">Ọnụ ọgụgụ Mathematical Sans-Serif</type>
 			<type key="numbers" type="mlym">Ọnụ ọgụgụ Malayala</type>
+			<type key="numbers" type="modi">Ọnụ ọgụgụ Modi</type>
+			<type key="numbers" type="mong">Ọnụ ọgụgụ Mongolian</type>
+			<type key="numbers" type="mroo">Ọnụ ọgụgụ Mro</type>
 			<type key="numbers" type="mtei">Ọnụ ọgụgụ Meetei Mayek</type>
 			<type key="numbers" type="mymr">Ọnụ ọgụgụ Myamar</type>
+			<type key="numbers" type="mymrepka">Ọnụ ọgụgụ Myanmar Eastern Pwo Karen</type>
+			<type key="numbers" type="mymrpao">Ọnụ ọgụgụ Myanmar Pao</type>
+			<type key="numbers" type="mymrshan">Ọnụ ọgụgụ Myanmar Shan</type>
+			<type key="numbers" type="mymrtlng">Ọnụ ọgụgụ Myanmar Tai Laing</type>
+			<type key="numbers" type="nagm">Ọnụ ọgụgụ Nag Mundari</type>
+			<type key="numbers" type="nkoo">Ọnụ ọgụgụ N’Ko</type>
 			<type key="numbers" type="olck">Ọnụ ọgụgụ Ochiki</type>
+			<type key="numbers" type="onao">Ọnụ ọgụgụ Ol Onal</type>
 			<type key="numbers" type="orya">Ọnụ ọgụgụ Ọdịa</type>
+			<type key="numbers" type="osma">Ọnụ ọgụgụ Osmanya</type>
+			<type key="numbers" type="outlined">Ọnụ ọgụgụ Outlined</type>
+			<type key="numbers" type="rohg">Ọnụ ọgụgụ Hanifi Rohingya</type>
 			<type key="numbers" type="roman">Ọnụ ọgụgụ Roman</type>
 			<type key="numbers" type="romanlow">Ọbere Ọnụ ọgụgụ Roman</type>
+			<type key="numbers" type="saur">Ọnụ ọgụgụ Saurashtra</type>
+			<type key="numbers" type="shrd">Ọnụ ọgụgụ Sharada</type>
+			<type key="numbers" type="sind">Ọnụ ọgụgụ Khudawadi</type>
+			<type key="numbers" type="sinh">Ọnụ ọgụgụ Sinhala Lith</type>
+			<type key="numbers" type="sora">Ọnụ ọgụgụ Sora Sompeng</type>
+			<type key="numbers" type="sund">Ọnụ ọgụgụ Sundanese</type>
+			<type key="numbers" type="sunu">Ọnụ ọgụgụ Sunuwar</type>
+			<type key="numbers" type="takr">Ọnụ ọgụgụ Takri</type>
+			<type key="numbers" type="talu">Ọnụ ọgụgụ New Tai Lue</type>
 			<type key="numbers" type="taml">Ọnụ ọgụgụ ọdịnala Tamịl</type>
 			<type key="numbers" type="tamldec">Ọnụ ọgụgụ Tamị</type>
 			<type key="numbers" type="telu">Ọnụ ọgụgụ Telụgụ</type>
 			<type key="numbers" type="thai">Ọnụ ọgụgụ Taị</type>
 			<type key="numbers" type="tibt">Ọnụ ọgụgụ Tịbeta</type>
+			<type key="numbers" type="tirh">Ọnụ ọgụgụ Tirhuta</type>
+			<type key="numbers" type="tnsa">Ọnụ ọgụgụ Tangsa</type>
 			<type key="numbers" type="vaii">Ọnụ ọgụgụ Vai</type>
+			<type key="numbers" type="wara">Ọnụ ọgụgụ Warang Citi</type>
+			<type key="numbers" type="wcho">Ọnụ ọgụgụ Wancho</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metriik</measurementSystemName>
@@ -903,9 +1134,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a b {ch} d eẹ f g {gb} {gh} {gw} h i ị j k {kp} {kw} l m n ṅ {nw} {ny} o ọ p r s {sh} t u ụ v w y z]</exemplarCharacters>
+		<exemplarCharacters>[a b {ch} d e f g {gb} {gh} {gw} h i ị j k {kp} {kw} l m n ṅ {nw} {ny} o ọ p r s {sh} t u ụ v w y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[áàā c éèē íìī {ị́}{ị̀} ḿ{m̀} ńǹ óòō {ọ́}{ọ̀} q úùū {ụ́}{ụ̀} x]</exemplarCharacters>
-		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B {CH} C D E F G {GB} {GH} {GW} H I Ị J K {KP} {KW} L M N Ṅ {NW} {NY} O Ọ P Q R S {SH} T U Ụ V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . ‘’ “” ( ) \[ \] \{ \}]</exemplarCharacters>
 	</characters>
 	<dates>
@@ -975,6 +1206,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">MMM – MMM</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
@@ -1000,7 +1236,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="3">Maachị</month>
 							<month type="4">Epreel</month>
 							<month type="5">Mee</month>
-							<month type="6">Juun</month>
+							<month type="6">Jun</month>
 							<month type="7">Julaị</month>
 							<month type="8">Ọgọọst</month>
 							<month type="9">Septemba</month>
@@ -1023,6 +1259,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10">Ọ</month>
 							<month type="11">N</month>
 							<month type="12">D</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Jenụwarị</month>
+							<month type="2">Febrụwarị</month>
+							<month type="3">Maachị</month>
+							<month type="4">Epreel</month>
+							<month type="5">Mee</month>
+							<month type="6">Jun</month>
+							<month type="7">Julaị</month>
+							<month type="8">Ọgọọst</month>
+							<month type="9">Septemba</month>
+							<month type="10">Ọktoba</month>
+							<month type="11">Novemba</month>
+							<month type="12">Disemba</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -1051,10 +1301,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<quarters>
 					<quarterContext type="format">
 						<quarterWidth type="abbreviated">
-							<quarter type="1">Ọ1</quarter>
-							<quarter type="2">Ọ2</quarter>
-							<quarter type="3">Ọ3</quarter>
-							<quarter type="4">Ọ4</quarter>
+							<quarter type="1">Q1</quarter>
+							<quarter type="2">Q2</quarter>
+							<quarter type="3">Q3</quarter>
+							<quarter type="4">Q4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">Ọkara 1</quarter>
@@ -1063,16 +1313,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="4">Ọkara 4</quarter>
 						</quarterWidth>
 					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Q1</quarter>
+							<quarter type="2">Q2</quarter>
+							<quarter type="3">Q3</quarter>
+							<quarter type="4">Q4</quarter>
+						</quarterWidth>
+					</quarterContext>
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">A.M.</dayPeriod>
-							<dayPeriod type="pm">P.M.</dayPeriod>
+							<dayPeriod type="am">N’ụtụtụ</dayPeriod>
+							<dayPeriod type="pm">N’abalị</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">N’ụtụtụ</dayPeriod>
+							<dayPeriod type="pm">N’abalị</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">N’ụtụtụ</dayPeriod>
 							<dayPeriod type="pm">N’abali</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">N’ụtụtụ</dayPeriod>
+							<dayPeriod type="pm">N’abalị</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">N’ụtụtụ</dayPeriod>
+							<dayPeriod type="pm">N’abalị</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">N’ụtụtụ</dayPeriod>
+							<dayPeriod type="pm">N’abalị</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -1084,10 +1360,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<era type="1" alt="variant">Oge Afọ</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">T.K.</era>
-						<era type="0" alt="variant">TOA</era>
-						<era type="1">A.K.</era>
-						<era type="1" alt="variant">OA</era>
+						<era type="0">BC</era>
+						<era type="0" alt="variant">BCE</era>
+						<era type="1">AD</era>
+						<era type="1" alt="variant">CE</era>
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0" alt="variant">BCE</era>
@@ -1207,13 +1483,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="a">h a – h a v</greatestDifference>
 							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">M – M</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">MM/dd – MM/dd</greatestDifference>
-							<greatestDifference id="M">MM/dd – MM/dd</greatestDifference>
+							<greatestDifference id="d">M/d – M/d</greatestDifference>
+							<greatestDifference id="M">M/d – M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, MM/dd – E, MM/dd</greatestDifference>
+							<greatestDifference id="d">E, M/d – E, M/d</greatestDifference>
 							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
@@ -1257,25 +1539,76 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</calendars>
 		<fields>
 			<field type="era">
-				<displayName>Agba</displayName>
+				<displayName>Oge</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>Oge</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>Oge</displayName>
 			</field>
 			<field type="year">
 				<displayName>Afọ</displayName>
 				<relative type="-1">Afọ gara aga</relative>
 				<relative type="0">Afọ a</relative>
-				<relative type="1">Afọ ọzọ</relative>
+				<relative type="1">Afọ na-abịa</relative>
+			</field>
+			<field type="year-short">
+				<relative type="-1">Afọ gara aga</relative>
+				<relative type="0">Afọ a</relative>
+				<relative type="1">afọ na-abịa</relative>
+			</field>
+			<field type="year-narrow">
+				<relative type="-1">Afọ gara aga</relative>
+				<relative type="0">Afọ a</relative>
+				<relative type="1">afọ na-abịa</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">Afọ {0} gara aga</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="quarter">
 				<displayName>Ọnwa atọ n’afọ</displayName>
 				<relative type="-1">Nkejị keanọ gara aga</relative>
 				<relative type="0">nkejị keanọ a</relative>
 				<relative type="1">nkejị keanọ na abịa</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">Nkejị keanọ {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">Nkejị keanọ {0} gara aga</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">Nkejị keanọ {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">Nkejị keanọ {0} gara aga</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">Nkejị keanọ {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">Nkejị keanọ {0} gara aga</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="month">
 				<displayName>Ọnwa</displayName>
 				<relative type="-1">Ọnwa gara aga</relative>
 				<relative type="0">Ọnwa a</relative>
-				<relative type="1">Ọnwa ọzọ</relative>
+				<relative type="1">Ọnwa na-abịa</relative>
+			</field>
+			<field type="month-short">
+				<relative type="-1">Ọnwa gara aga</relative>
+				<relative type="0">Ọnwa a</relative>
+				<relative type="1">Ọnwa na-abịa</relative>
+			</field>
+			<field type="month-narrow">
+				<relative type="-1">Ọnwa gara aga</relative>
+				<relative type="0">Ọnwa a</relative>
+				<relative type="1">Ọnwa na-abịa</relative>
 			</field>
 			<field type="week">
 				<displayName>Izu</displayName>
@@ -1297,6 +1630,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">Ụnyaahụ</relative>
 				<relative type="0">Taata</relative>
 				<relative type="1">Echi</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">n’ụbọchị {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">n’ụbọchị {0} gara aga</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">n’ụbọchị {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">n’ụbọchị {0} gara aga</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="dayOfYear">
 				<displayName>ụbọchị na afọ</displayName>
@@ -1324,9 +1671,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1">ụbọchị ụka na abịa</relative>
 			</field>
 			<field type="sun-narrow">
-				<relative type="-1">ụbọchị ụka gara aga</relative>
-				<relative type="0">ụbọchị ụka a</relative>
-				<relative type="1">ụbọchị ụka na abịa</relative>
+				<relative type="-1">ụbọchị Sọnde gara aga</relative>
+				<relative type="0">ụbọchị Sọnde a</relative>
+				<relative type="1">ụbọchị Sọnde na abịa</relative>
 			</field>
 			<field type="mon">
 				<relative type="-1">ụbọchị Mọnde gara aga</relative>
@@ -1344,19 +1691,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1">ụbọchị Monde na abịa</relative>
 			</field>
 			<field type="tue">
-				<relative type="-1">ụbọchị Tuesde gara aga</relative>
-				<relative type="0">ụbọchị Tuesde a</relative>
-				<relative type="1">ụbọchị Tuesde na abịa</relative>
+				<relative type="-1">ụbọchị Tuzde gara aga</relative>
+				<relative type="0">ụbọchị Tuzde a</relative>
+				<relative type="1">ụbọchị Tuzde na abịa</relative>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">ụbọchị Tụesde gara aga</relative>
-				<relative type="0">ụbọchị Tuesde a</relative>
-				<relative type="1">ụbọchị Tuesde na abịa</relative>
+				<relative type="0">ụbọchị Tuzde a</relative>
+				<relative type="1">ụbọchị Tuzde na abịa</relative>
 			</field>
 			<field type="tue-narrow">
-				<relative type="-1">ụbọchị Tuesde gara aga</relative>
-				<relative type="0">ụbọchị Tuesde a</relative>
-				<relative type="1">ụbọchị Tuesde na abịa</relative>
+				<relative type="-1">ụbọchị Tuzde gara aga</relative>
+				<relative type="0">ụbọchị Tuzde a</relative>
+				<relative type="1">ụbọchị Tuzde na abịa</relative>
 			</field>
 			<field type="wed">
 				<relative type="-1">ụbọchị wednesde gara aga</relative>
@@ -1397,21 +1744,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">ụbọchị Faraịde gara aga</relative>
 				<relative type="0">ụbọchị Faraịde a</relative>
 				<relative type="1">ụbọchị na abịa</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">n’ụbọchị Faraịde {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">n’ụbọchị Faraịde gara aga {0}</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">ụbọchị Faraịde gara aga</relative>
 				<relative type="0">ụbọchị Faraịde a</relative>
 				<relative type="1">ụọchị Faraịde na abịa</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">n’ụbọchị Faraịde {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">n’ụbọchị Faraịde gara aga {0}</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">ụbọchị Satụde gara aga</relative>
 				<relative type="0">ụbọchị Satụde a</relative>
 				<relative type="1">ụbọchị Satụde na abịa</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">Ụbọchị Satụde {0} gara aga</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">Ụbọchị Satụde gara aga</relative>
 				<relative type="0">ụbọchị Satụde a</relative>
 				<relative type="1">ụbọchị Satụde na abịa</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">Ụbọchị Satụde {0} gara aga</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">ụbọchị Satụde gara aga</relative>
@@ -1430,8 +1795,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">nkejị a</relative>
 			</field>
 			<field type="second">
-				<displayName>Tịm kọm</displayName>
 				<relative type="0">ụgbụa</relative>
+			</field>
+			<field type="second-short">
+				<displayName>sekọnd</displayName>
+			</field>
+			<field type="second-narrow">
+				<displayName>sekọnd</displayName>
 			</field>
 			<field type="zone">
 				<displayName>Mpaghara oge</displayName>
@@ -1458,6 +1828,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<daylight>Oge Okpomọkụ Ireland</daylight>
 				</long>
+			</zone>
+			<zone type="Pacific/Enderbury">
+				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<metazone type="Afghanistan">
 				<long>
@@ -1672,13 +2045,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Oge China</generic>
 					<standard>Oge Izugbe China</standard>
 					<daylight>Oge Ihe China</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Oge Choibals</generic>
-					<standard>Oge Izugbe Choibals</standard>
-					<daylight>Oge Okpomọkụ Choibals</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
@@ -1917,6 +2283,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Oge Japan</generic>
 					<standard>Oge Izugbe Japan</standard>
 					<daylight>Oge Ihe Japan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Oge Kazakhstan</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -2406,7 +2777,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -2764,7 +3134,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Ego Kina obodo Papua New Guinea</displayName>
 			</currency>
 			<currency type="PHP">
-				<displayName>Ego piso obodo Philippine</displayName>
+				<displayName>Ego Piso obodo Philippine</displayName>
 			</currency>
 			<currency type="PKR">
 				<displayName>Ego Rupee obodo Pakistan</displayName>
@@ -2938,16 +3308,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</miscPatterns>
 		<minimalPairs>
 			<pluralMinimalPairs count="other">ubochi {0}</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="other">Si uzo aka nri {0}</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Si uzo aka nri nke {0}th</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>deci{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>obere{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="10p-27">
 				<unitPrefixPattern>ronto{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-30">
 				<unitPrefixPattern>kwekto{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>mega{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>giga{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>tera{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p27">
 				<unitPrefixPattern>ronna{0}</unitPrefixPattern>
@@ -2955,20 +3340,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="10p30">
 				<unitPrefixPattern>kwetta{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="per">
+				<compoundUnitPattern>{0} per {1}</compoundUnitPattern>
+			</compoundUnit>
 			<compoundUnit type="power2">
-				<compoundUnitPattern1 count="other">{0} square</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} sukwia</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
-				<compoundUnitPattern1 count="other">{0} cubic</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} kubik</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="duration-century">
 				<displayName>Ọtụtụ nari afọ</displayName>
+				<unitPattern count="other">{0} Ọtụtụ nari afọ</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<displayName>Ọtụtụ afọ iri</displayName>
+				<unitPattern count="other">{0} Ọtụtụ afọ iri</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>Ọtụtụ Afọ</displayName>
+				<unitPattern count="other">{0} Ọtụtụ Afọ</unitPattern>
 			</unit>
 			<unit type="duration-quarter">
 				<displayName>Nkeji Nkeano</displayName>
@@ -2976,16 +3367,49 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="duration-month">
 				<displayName>Ọtụtụ Ọnwa</displayName>
+				<unitPattern count="other">{0} Ọnwa</unitPattern>
+				<perUnitPattern>{0} kwa Ọnwa</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>Ọtụtụ Izu</displayName>
+				<unitPattern count="other">{0} Ọtụtụ Izu</unitPattern>
+				<perUnitPattern>{0} kwa Izu</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>Ọtụtụ Ubochi</displayName>
+				<unitPattern count="other">{0} Ọtụtụ Ubochi</unitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>Ọtụtụ awa</displayName>
+				<unitPattern count="other">{0} Ọtụtụ awa</unitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>nkeji</displayName>
+				<unitPattern count="other">{0} nkeji</unitPattern>
+				<perUnitPattern>{0} kwa nkeji</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>sekọnd</displayName>
+				<unitPattern count="other">{0} sekọnd</unitPattern>
+				<perUnitPattern>{0} kwa sekọnd</perUnitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
 				<displayName>Kalori</displayName>
 				<unitPattern count="other">{0} Kalori</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<unitPattern count="other">{0} pixels</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>megapixels</displayName>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>pixels per centimeter</displayName>
+				<unitPattern count="other">{0} pixels per centimeter</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>pixels per inch</displayName>
+				<unitPattern count="other">{0} pixels per inch</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName>ntụpọ kwa sentimita</displayName>
@@ -3008,6 +3432,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-dram">
 				<displayName>mmiri dram</displayName>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>ìhè</displayName>
+				<unitPattern count="other">{0} ìhè</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>akụkụ kwa ijeri</displayName>
+				<unitPattern count="other">{0} akụkụ kwa ijeri</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>Ọtụtụ abali</displayName>
+				<unitPattern count="other">{0} Ọtụtụ abali</unitPattern>
+				<perUnitPattern>{0} kwa abali</perUnitPattern>
+			</unit>
+			<coordinateUnit>
+				<displayName>cardinal direction</displayName>
+				<coordinateUnitPattern type="north">{0} north</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} south</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} west</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
 			<unit type="concentr-item">
@@ -3017,24 +3460,53 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-quarter">
 				<unitPattern count="other">{0} qtrs</unitPattern>
 			</unit>
+			<unit type="duration-month">
+				<unitPattern count="other">{0} mths</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<unitPattern count="other">{0} wks</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>Ọtụtụ Ubochi</displayName>
+				<unitPattern count="other">{0} Ọtụtụ Ubochi</unitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>Ọtụtụ awa</displayName>
+				<unitPattern count="other">{0} awa</unitPattern>
+			</unit>
 			<unit type="energy-foodcalorie">
 				<displayName>Kal</displayName>
 				<unitPattern count="other">{0} Kal</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>nksm</displayName>
-				<unitPattern count="other">{0} nksm</unitPattern>
+				<displayName>dpcm</displayName>
+				<unitPattern count="other">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>nki</displayName>
+				<displayName>dpi</displayName>
 				<unitPattern count="other">{0} nki</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>ntụpọ</displayName>
 				<unitPattern count="other">{0} ntụpọ</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>ngaji mégharia onu</displayName>
+			</unit>
 			<unit type="volume-drop">
 				<displayName>dobé</displayName>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>ìhè</displayName>
+				<unitPattern count="other">{0} ìhè</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>akụkụ/ijeri</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>Ọtụtụ abali</displayName>
+				<unitPattern count="other">{0} Ọtụtụ abali</unitPattern>
+				<perUnitPattern>{0}/abali</perUnitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
@@ -3049,6 +3521,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="duration-quarter">
 				<unitPattern count="other">{0}q</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>Ubochi</displayName>
+				<unitPattern count="other">{0} Ọtụtụ Ubochi</unitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>awa</displayName>
+				<unitPattern count="other">{0} awa</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>μsec</displayName>
@@ -3076,25 +3556,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="graphics-megapixel">
 				<unitPattern count="other">{0}MP</unitPattern>
 			</unit>
-			<unit type="graphics-pixel-per-centimeter">
-				<displayName>pksm</displayName>
-				<unitPattern count="other">{0}pksm</unitPattern>
-			</unit>
-			<unit type="graphics-pixel-per-inch">
-				<displayName>pki</displayName>
-				<unitPattern count="other">{0}pki</unitPattern>
-			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<unitPattern count="other">{0}nksm</unitPattern>
+				<displayName>dpcm</displayName>
+				<unitPattern count="other">{0}dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<unitPattern count="other">{0}nki</unitPattern>
+				<displayName>dpi</displayName>
+				<unitPattern count="other">{0}dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
 				<unitPattern count="other">{0}ntụpọ</unitPattern>
 			</unit>
 			<unit type="speed-beaufort">
 				<unitPattern count="other">B{0}</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>ìhè</displayName>
+				<unitPattern count="other">{0}ìhè</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>akụkụ/ijeri</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>Ọtụtụ abali</displayName>
+				<unitPattern count="other">{0}Ọtụtụ abali</unitPattern>
+				<perUnitPattern>{0}/abali</perUnitPattern>
 			</unit>
 		</unitLength>
 	</units>
@@ -3103,7 +3589,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="end">{0}, na {1}</listPatternPart>
 			<listPatternPart type="2">{0} na {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="end">{0}, ma ọ bụ {1}</listPatternPart>
+			<listPatternPart type="2">{0} ma ọ bụ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="end">{0}, ma ọ bụ {1}</listPatternPart>
+			<listPatternPart type="2">{0} ma ọ bụ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="end">{0}, ma ọ bụ {1}</listPatternPart>
+			<listPatternPart type="2">{0} ma ọ bụ {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="standard-narrow">
+			<listPatternPart type="end">{0}, {1}</listPatternPart>
+			<listPatternPart type="2">{0}, {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit">
+			<listPatternPart type="end">{0}, {1}</listPatternPart>
+			<listPatternPart type="2">{0}, {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-narrow">
+			<listPatternPart type="end">{0} {1}</listPatternPart>
+			<listPatternPart type="2">{0} {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
@@ -3324,7 +3835,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nameField type="surname">Amadi</nameField>
 		</sampleName>
 		<sampleName item="nativeFull">
-			<nameField type="title">Mr.</nameField>
+			<nameField type="title">Maazị</nameField>
 			<nameField type="given">Christopher</nameField>
 			<nameField type="given-informal">Chris</nameField>
 			<nameField type="given2">Chukwudike</nameField>

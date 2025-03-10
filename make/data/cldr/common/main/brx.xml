@@ -847,7 +847,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">इज्राईल</territory>
 			<territory type="IM">आयोल अफ मेन</territory>
 			<territory type="IN">भारत</territory>
-			<territory type="IO" draft="provisional">ब्रिटिशनि भारतारि लैथो बाहागो</territory>
+			<territory type="IO">ब्रिटिशनि भारतारि लैथो बाहागो</territory>
 			<territory type="IQ">ईराक</territory>
 			<territory type="IR">ईरान</territory>
 			<territory type="IS">आइसलेण्ड</territory>
@@ -1050,9 +1050,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">ग्रेग’रियान फान्जामुथि</type>
 			<type key="calendar" type="hebrew">हिब्रिउ फान्जामुथि</type>
 			<type key="calendar" type="indian">भारतनि हादोरनां फान्जामुथि</type>
-			<type key="calendar" type="islamic" draft="provisional">इस्लामिक फान्जामुथि</type>
-			<type key="calendar" type="islamic-civil" draft="provisional">इस्लामिक फान्जामुथि ( फारि, हादोरारि मुगा)</type>
-			<type key="calendar" type="islamic-umalqura" draft="provisional">इस्लामिक फान्जामुथि( ऊम आल-कूरा)</type>
+			<type key="calendar" type="islamic">इस्लामिक फान्जामुथि</type>
+			<type key="calendar" type="islamic-civil">इस्लामिक फान्जामुथि ( फारि, हादोरारि मुगा)</type>
+			<type key="calendar" type="islamic-umalqura">इस्लामिक फान्जामुथि( ऊम आल-कूरा)</type>
 			<type key="calendar" type="iso8601">आइ.एस.अ-8601 फान्जामुथि</type>
 			<type key="calendar" type="japanese">जापानीज फान्जामुथि</type>
 			<type key="calendar" type="persian">पार्सियान फान्जामुथि</type>
@@ -1557,6 +1557,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
 						<dateFormatItem id="MMMd">d-MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
+						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, MMMM d</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">dd-MM-y</dateFormatItem>
@@ -1956,6 +1957,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<regionFormat>{0} सम</regionFormat>
 			<regionFormat type="daylight">{0} साननि सोरां सम</regionFormat>
 			<regionFormat type="standard">{0} थाखोआरि सम</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>हनलुलु</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>गोरोबहोनाय मुलुगनां सम</standard>
@@ -2693,9 +2697,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>उलानबातार</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>च’इबालसान</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>माकाऊ</exemplarCity>
 			</zone>
@@ -3092,9 +3093,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Nome">
 				<exemplarCity>न’म</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>हनलुलु</exemplarCity>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>एंकरेज</exemplarCity>
 			</zone>
@@ -3472,13 +3470,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>चाईना सम</generic>
 					<standard>चाईना थाखोआरि सम</standard>
 					<daylight>चाईना सानारि सम</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>च’इबालसान सम</generic>
-					<standard>च’इबालसान थाखोआरि सम</standard>
-					<daylight>च’इबालसान दैज्लां सम</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
@@ -4294,8 +4285,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -5232,7 +5221,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XOF">
 				<displayName>सोनाब आफ्रिकानि सि.एफ.ए फ्रांक</displayName>
-				<symbol draft="contributed">एफ सि.एफ.ए</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName>पैलेडियम</displayName>

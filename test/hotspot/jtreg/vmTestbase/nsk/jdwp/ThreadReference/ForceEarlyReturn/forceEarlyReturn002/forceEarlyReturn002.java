@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,8 +95,11 @@ public class forceEarlyReturn002 extends TestDebuggerType1 {
         return "nsk.jdwp.ThreadReference.ForceEarlyReturn.forceEarlyReturn002.forceEarlyReturn002a";
     }
 
-    public static void main(String[] argv) {
-        System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
+    public static void main (String argv[]) {
+        int result = run(argv, System.out);
+        if (result != 0) {
+            throw new RuntimeException("Test failed");
+        }
     }
 
     public static int run(String[] argv, PrintStream out) {

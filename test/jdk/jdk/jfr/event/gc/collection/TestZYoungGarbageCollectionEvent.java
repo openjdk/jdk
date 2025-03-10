@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,10 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test
- * @requires vm.hasJFR & vm.gc.ZGenerational
- * @key jfr
+ * @requires vm.hasJFR & vm.gc.Z
+ * @requires vm.flagless
  * @library /test/lib /test/jdk
- * @run main/othervm -Xmx50m -XX:+UseZGC -XX:+ZGenerational -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -Xlog:gc* jdk.jfr.event.gc.collection.TestZYoungGarbageCollectionEvent
+ * @run main/othervm -Xmx50m -XX:+UseZGC -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -Xlog:gc* jdk.jfr.event.gc.collection.TestZYoungGarbageCollectionEvent
  */
 public class TestZYoungGarbageCollectionEvent {
 

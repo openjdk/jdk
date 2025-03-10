@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,15 +72,15 @@ public class LineNumberTestBase extends TestBase {
                         classFile = ClassFile.of().parse(input.readAllBytes());
                     }
                     for (MethodModel m : classFile.methods()) {
-                        CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElse(null);
+                        CodeAttribute code_attribute = m.findAttribute(Attributes.code()).orElse(null);
 
                         assert code_attribute != null;
                         assertEquals(
-                                countAttributes(Attributes.LINE_NUMBER_TABLE, code_attribute),
+                                countAttributes(Attributes.lineNumberTable(), code_attribute),
                                 1,
                                 "Can be more than one LNT attribute, but javac should generate only one.");
 
-                        LineNumberTableAttribute tableAttribute = code_attribute.findAttribute(Attributes.LINE_NUMBER_TABLE).orElse(null);
+                        LineNumberTableAttribute tableAttribute = code_attribute.findAttribute(Attributes.lineNumberTable()).orElse(null);
                         assert tableAttribute != null;
                         checkAttribute(testCase, tableAttribute, code_attribute.codeLength());
                         Set<Integer> methodCoveredLines =
@@ -138,7 +138,7 @@ public class LineNumberTestBase extends TestBase {
     private <T extends Attribute<T>> int countAttributes(AttributeMapper<T> attr, AttributedElement attributedElement) {
         int i = 0;
         for (Attribute<?> attribute : attributedElement.attributes()) {
-            if (attribute.attributeName().equals(attr.name())) {
+            if (attribute.attributeName().equalsString(attr.name())) {
                 i++;
             }
         }

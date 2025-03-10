@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
@@ -130,7 +129,7 @@ void ZStackWatermark::save_old_watermark() {
   } else {
     // Found none too replace - push it to the top
     _old_watermarks_newest++;
-    assert(_old_watermarks_newest < _old_watermarks_max, "Unexpected amount of old watermarks");
+    assert(_old_watermarks_newest < OldWatermarksMax, "Unexpected amount of old watermarks");
   }
 
   // Install old watermark

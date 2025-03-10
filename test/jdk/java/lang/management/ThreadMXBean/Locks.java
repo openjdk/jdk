@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -422,6 +422,9 @@ public class Locks {
                             lock + " expected to have owner");
                 }
                 for (ThreadInfo info1 : infos) {
+                    if (info1 == null) {
+                        continue; // Missing thread, e.g. completed. Ignore.
+                    }
                     if (info1.getThreadId() == threadId) {
                         ownerInfo = info1;
                         break;

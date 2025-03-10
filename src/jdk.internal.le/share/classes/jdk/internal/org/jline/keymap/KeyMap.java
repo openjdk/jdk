@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author or authors.
+ * Copyright (c) 2002-2016, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -8,8 +8,6 @@
  */
 package jdk.internal.org.jline.keymap;
 
-import java.io.IOException;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -218,7 +216,6 @@ public class KeyMap<T> {
         return seqs;
     }
 
-
     public static String esc() {
         return "\033";
     }
@@ -264,7 +261,6 @@ public class KeyMap<T> {
     // Methods
     //
 
-
     public T getUnicode() {
         return unicode;
     }
@@ -306,9 +302,7 @@ public class KeyMap<T> {
         }
         for (int c = 0; c < keyMap.mapping.length; c++) {
             if (keyMap.mapping[c] instanceof KeyMap) {
-                doGetBoundKeys((KeyMap<T>) keyMap.mapping[c],
-                        prefix + (char) (c),
-                        bound);
+                doGetBoundKeys((KeyMap<T>) keyMap.mapping[c], prefix + (char) (c), bound);
             } else if (keyMap.mapping[c] != null) {
                 bound.put(prefix + (char) (c), (T) keyMap.mapping[c]);
             }
@@ -456,5 +450,4 @@ public class KeyMap<T> {
             }
         }
     }
-
 }

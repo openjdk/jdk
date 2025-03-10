@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
   *
   * @comment the test can't be run w/ TieredStopAtLevel < 4
   * @requires vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4
+  * @requires vm.compMode != "Xcomp"
   *
   * @library /test/lib /
   * @build jdk.test.whitebox.WhiteBox

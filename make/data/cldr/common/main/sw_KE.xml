@@ -587,13 +587,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Saa za Majira ya Joto za Kepuvede</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Saa za Choibalsan</generic>
-					<standard>Saa za Wastani za Choibalsan</standard>
-					<daylight>Saa za Majira ya Joto za Choibalsan</daylight>
-				</long>
-			</metazone>
 			<metazone type="Colombia">
 				<long>
 					<generic>Saa za Kolombia</generic>

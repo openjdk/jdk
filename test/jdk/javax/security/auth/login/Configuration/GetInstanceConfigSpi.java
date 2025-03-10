@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-import java.security.*;
+import java.security.URIParameter;
 import javax.security.auth.login.*;
 import com.sun.security.auth.login.*;
 
@@ -31,16 +31,11 @@ public class GetInstanceConfigSpi extends ConfigurationSpi {
 
     public GetInstanceConfigSpi(final Configuration.Parameters params) {
 
-        c = AccessController.doPrivileged
-            (new PrivilegedAction<Configuration>() {
-            public Configuration run() {
-                if (params instanceof URIParameter) {
-                    URIParameter uriParam = (URIParameter)params;
-                    return new ConfigFile(uriParam.getURI());
-                }
-                return new ConfigFile();
-            }
-        });
+        if (params instanceof URIParameter uriParam) {
+            c = new ConfigFile(uriParam.getURI());
+        } else {
+            c = new ConfigFile();
+        }
     }
 
     public AppConfigurationEntry[] engineGetAppConfigurationEntry(String name) {

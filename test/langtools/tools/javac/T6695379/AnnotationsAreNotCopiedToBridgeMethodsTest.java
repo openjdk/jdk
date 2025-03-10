@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
  * @bug 6695379
  * @summary Copy method annotations and parameter annotations to synthetic
  * bridge methods
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
- *          jdk.compiler/com.sun.tools.javac.util
+ * @modules jdk.compiler/com.sun.tools.javac.util
  * @run main AnnotationsAreNotCopiedToBridgeMethodsTest
  */
 
@@ -63,9 +61,9 @@ public class AnnotationsAreNotCopiedToBridgeMethodsTest {
         ClassModel classFile = ClassFile.of().parse(cfilePath);
         for (MethodModel method : classFile.methods()) {
             if ((method.flags().flagsMask() & ClassFile.ACC_BRIDGE) != 0) {
-                Assert.checkNonNull(method.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS),
+                Assert.checkNonNull(method.findAttribute(Attributes.runtimeVisibleAnnotations()),
                         "Annotations hasn't been copied to bridge method");
-                Assert.checkNonNull(method.findAttribute(Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS),
+                Assert.checkNonNull(method.findAttribute(Attributes.runtimeVisibleParameterAnnotations()),
                         "Annotations hasn't been copied to bridge method");
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -985,11 +985,8 @@ public final class Arrays {
      * circular dependencies. To be removed in a future release.
      */
     static final class LegacyMergeSort {
-        @SuppressWarnings("removal")
         private static final boolean userRequested =
-            java.security.AccessController.doPrivileged(
-                new sun.security.action.GetBooleanAction(
-                    "java.util.Arrays.useLegacyMergeSort")).booleanValue();
+                Boolean.getBoolean("java.util.Arrays.useLegacyMergeSort");
     }
 
     /**
@@ -1129,7 +1126,7 @@ public final class Arrays {
      * off is the offset to generate corresponding low, high in src
      * To be removed in a future release.
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     private static void mergeSort(Object[] src,
                                   Object[] dest,
                                   int low,
@@ -3491,8 +3488,8 @@ public final class Arrays {
      * is greater than that of the original array.
      * The resulting array is of the class {@code newType}.
      *
-     * @param <U> the class of the objects in the original array
      * @param <T> the class of the objects in the returned array
+     * @param <U> the class of the objects in the original array
      * @param original the array to be copied
      * @param newLength the length of the copy to be returned
      * @param newType the class of the copy to be returned
@@ -3782,8 +3779,8 @@ public final class Arrays {
      * of the returned array will be {@code to - from}.
      * The resulting array is of the class {@code newType}.
      *
-     * @param <U> the class of the objects in the original array
      * @param <T> the class of the objects in the returned array
+     * @param <U> the class of the objects in the original array
      * @param original the array from which a range is to be copied
      * @param from the initial index of the range to be copied, inclusive
      * @param to the final index of the range to be copied, exclusive.
@@ -4192,6 +4189,7 @@ public final class Arrays {
     {
         @java.io.Serial
         private static final long serialVersionUID = -2764017481108945198L;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final E[] a;
 
@@ -4358,11 +4356,7 @@ public final class Arrays {
         if (a == null) {
             return 0;
         }
-        return switch (a.length) {
-            case 0 -> 1;
-            case 1 -> 31 + a[0];
-            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_INT);
-        };
+        return ArraysSupport.hashCode(a, 0, a.length, 1);
     }
 
     /**
@@ -4385,11 +4379,7 @@ public final class Arrays {
         if (a == null) {
             return 0;
         }
-        return switch (a.length) {
-            case 0 -> 1;
-            case 1 -> 31 + (int)a[0];
-            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_SHORT);
-        };
+        return ArraysSupport.hashCode(a, 0, a.length, 1);
     }
 
     /**
@@ -4412,11 +4402,7 @@ public final class Arrays {
         if (a == null) {
             return 0;
         }
-        return switch (a.length) {
-            case 0 -> 1;
-            case 1 -> 31 + (int)a[0];
-            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_CHAR);
-        };
+        return ArraysSupport.hashCode(a, 0, a.length, 1);
     }
 
     /**
@@ -4439,11 +4425,7 @@ public final class Arrays {
         if (a == null) {
             return 0;
         }
-        return switch (a.length) {
-            case 0 -> 1;
-            case 1 -> 31 + (int)a[0];
-            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_BYTE);
-        };
+        return ArraysSupport.hashCode(a, 0, a.length, 1);
     }
 
     /**
@@ -4549,15 +4531,10 @@ public final class Arrays {
      * @since 1.5
      */
     public static int hashCode(Object[] a) {
-        if (a == null)
+        if (a == null) {
             return 0;
-
-        int result = 1;
-
-        for (Object element : a)
-            result = 31 * result + Objects.hashCode(element);
-
-        return result;
+        }
+        return ArraysSupport.hashCode(a, 0, a.length, 1);
     }
 
     /**

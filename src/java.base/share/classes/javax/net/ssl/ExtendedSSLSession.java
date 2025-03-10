@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
      *     order of preference.  The return value is an empty array if
      *     no signature algorithm is supported.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @see SSLParameters#getAlgorithmConstraints
      */
     public abstract String[] getLocalSupportedSignatureAlgorithms();
@@ -86,6 +87,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
      *     order of preference.  The return value is an empty array if
      *     the peer has not sent the supported signature algorithms.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @see X509KeyManager
      * @see X509ExtendedKeyManager
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 /**
  * @test
- * @requires vm.compiler2.enabled
  * @bug 8240281
  * @summary Test which needs to select the memory state of the first load in a load pack in SuperWord::co_locate_pack.
  *

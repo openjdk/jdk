@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.Executor;
@@ -33,11 +32,10 @@ import jdk.jpackage.test.Executor;
 /*
  * @test
  * @summary jpackage with --runtime-image
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile RuntimeImageTest.java
+ * @compile -Xlint:all -Werror RuntimeImageTest.java
  * @run main/othervm/timeout=1400 jdk.jpackage.test.Main
  *  --jpt-run=RuntimeImageTest
  */
@@ -45,10 +43,7 @@ import jdk.jpackage.test.Executor;
 public class RuntimeImageTest {
 
     @Test
-    @Parameter("0")
-    @Parameter("1")
-    @Parameter("2")
-    public static void test(String compression) throws Exception {
+    public static void test() throws Exception {
         final Path workDir = TKit.createTempDirectory("runtime").resolve("data");
         final Path jlinkOutputDir = workDir.resolve("temp.runtime");
         Files.createDirectories(jlinkOutputDir.getParent());
@@ -58,8 +53,7 @@ public class RuntimeImageTest {
         .dumpOutput()
         .addArguments(
                 "--output", jlinkOutputDir.toString(),
-                "--compress=" + compression,
-                "--add-modules", "ALL-MODULE-PATH",
+                "--add-modules", "java.desktop",
                 "--strip-debug",
                 "--no-header-files",
                 "--no-man-pages",

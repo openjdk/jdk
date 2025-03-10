@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8155643 8268125 8270461 8270098
+ * @bug 8155643 8268125 8270461 8270098 8332959
  * @summary Test Object.clone() intrinsic.
  * @modules java.base/java.lang:+open
  *
@@ -41,6 +41,7 @@
  * @run main/othervm -Xbatch -XX:-UseTypeProfile
  *                   -XX:CompileCommand=compileonly,compiler.arraycopy.TestObjectArrayClone::testClone*
  *                   -XX:CompileCommand=compileonly,jdk.internal.reflect.GeneratedMethodAccessor*::invoke
+ *                   -XX:CompileCommand=compileonly,*::invokeVirtual
  *                   compiler.arraycopy.TestObjectArrayClone
  */
 
@@ -188,9 +189,17 @@ public class TestObjectArrayClone {
         return clone.invoke(obj);
     }
 
-    public static void main(String[] args) throws Exception {
+    public static Object testCloneObjectWithMethodHandle(MethodHandle clone, Object obj) throws Throwable {
+        return clone.invokeExact(obj);
+    }
+
+    public static void main(String[] args) throws Throwable {
         Method clone = Object.class.getDeclaredMethod("clone");
         clone.setAccessible(true);
+
+        MethodHandles.Lookup privateLookup = MethodHandles.privateLookupIn(Object.class, MethodHandles.lookup());
+        MethodType mt = MethodType.methodType(Object.class);
+        MethodHandle mh = privateLookup.findVirtual(Object.class, "clone", mt);
 
         String[] arr1 = new String[42];
         for (int j = 0; j < arr1.length; j++) {
@@ -258,6 +267,17 @@ public class TestObjectArrayClone {
             verifyStr(value, value2);
         }
 
+        for (int i = 0; i < 50_000; i++) {
+            String[] arr2 = (String[]) testCloneObjectWithMethodHandle(mh, (Object)arr1);
+            verifyStr(arr1, arr2);
+            String[] arr3 = (String[]) testCloneObjectWithMethodHandle(mh, (Object)arr1);
+            verifyStr(arr1, arr3);
+            String[] arr4 = (String[]) testCloneObjectWithMethodHandle(mh, (Object)arr1);
+            verifyStr(arr1, arr4);
+            verifyStr(arr1, arr3);
+            verifyStr(arr1, arr2);
+        }
+
         int[] arr2 = new int[42];
         for (int i = 0; i < arr2.length; i++) {
             arr2[i] = i;
@@ -316,6 +336,17 @@ public class TestObjectArrayClone {
             Payload2 p2 = (Payload2) testCloneObject(clone, ref2);
             verifyPayload2(ref2, p2);
             Payload2 p3 = (Payload2) testCloneObject(clone, ref2);
+            verifyPayload2(ref2, p3);
+            verifyPayload2(p2, p3);
+            verifyPayload2(p1, p3);
+        }
+
+        for (int i = 0; i < 50_000; i++) {
+            Payload2 p1 = (Payload2) testCloneObjectWithMethodHandle(mh, ref2);
+            verifyPayload2(ref2, p1);
+            Payload2 p2 = (Payload2) testCloneObjectWithMethodHandle(mh, ref2);
+            verifyPayload2(ref2, p2);
+            Payload2 p3 = (Payload2) testCloneObjectWithMethodHandle(mh, ref2);
             verifyPayload2(ref2, p3);
             verifyPayload2(p2, p3);
             verifyPayload2(p1, p3);

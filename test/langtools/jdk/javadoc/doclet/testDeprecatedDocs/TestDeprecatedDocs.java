@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,6 @@ public class TestDeprecatedDocs extends JavadocTester {
 
         checkOutput("pkg/TestAnnotationType.html", true,
                 """
-                    <hr>
                     <div class="type-signature"><span class="annotations">@Deprecated(forRemoval=true)
                     @Documented
                     </span><span class="modifiers">public @interface </span><span class="element-name type-n\
@@ -135,7 +134,6 @@ public class TestDeprecatedDocs extends JavadocTester {
 
         checkOutput("pkg/TestClass.html", true,
                 """
-                    <hr>
                     <div class="type-signature"><span class="annotations">@Deprecated(forRemoval=true)
                     </span><span class="modifiers">public class </span><span class="element-name type-name-label">TestClass</span>
                     <span class="extends-implements">extends java.lang.Object</span></div>
@@ -212,7 +210,6 @@ public class TestDeprecatedDocs extends JavadocTester {
 
         checkOutput("pkg/TestEnum.html", true,
                 """
-                    <hr>
                     <div class="type-signature"><span class="annotations">@Deprecated(forRemoval=true)
                     </span><span class="modifiers">public enum </span><span class="element-name type-name-label">TestEnum</span>
                     <span class="extends-implements">extends java.lang.Enum&lt;<a href="TestEnum.htm\
@@ -233,7 +230,6 @@ public class TestDeprecatedDocs extends JavadocTester {
 
         checkOutput("pkg/TestError.html", true,
                 """
-                    <hr>
                     <div class="type-signature"><span class="annotations">@Deprecated(forRemoval=true)
                     </span><span class="modifiers">public class </span><span class="element-name type-name-label">TestError</span>
                     <span class="extends-implements">extends java.lang.Error</span></div>
@@ -244,7 +240,6 @@ public class TestDeprecatedDocs extends JavadocTester {
 
         checkOutput("pkg/TestException.html", true,
                 """
-                    <hr>
                     <div class="type-signature"><span class="annotations">@Deprecated(forRemoval=true)
                     </span><span class="modifiers">public class </span><span class="element-name type-name-label">TestException</span>
                     <span class="extends-implements">extends java.lang.Exception</span></div>
@@ -255,7 +250,6 @@ public class TestDeprecatedDocs extends JavadocTester {
 
         checkOutput("pkg/TestInterface.html", true,
                 """
-                    <hr>
                     <div class="type-signature"><span class="annotations">@Deprecated(forRemoval=true)
                     </span><span class="modifiers">public class </span><span class="element-name type-name-label">TestInterface</span>
                     <span class="extends-implements">extends java.lang.Object</span></div>

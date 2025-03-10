@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
@@ -30,15 +29,7 @@
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "runtime/safepoint.hpp"
 
-bool G1RemSetTrackingPolicy::needs_scan_for_rebuild(HeapRegion* r) const {
-  // All non-free and non-young regions need to be scanned for references;
-  // At every gc we gather references to other regions in young.
-  // Free regions trivially do not need scanning because they do not contain live
-  // objects.
-  return !(r->is_young() || r->is_free());
-}
-
-void G1RemSetTrackingPolicy::update_at_allocate(HeapRegion* r) {
+void G1RemSetTrackingPolicy::update_at_allocate(G1HeapRegion* r) {
   assert(r->is_young() || r->is_humongous() || r->is_old(),
         "Region %u with unexpected heap region type %s", r->hrm_index(), r->get_type_str());
   if (r->is_old()) {
@@ -51,11 +42,11 @@ void G1RemSetTrackingPolicy::update_at_allocate(HeapRegion* r) {
   r->rem_set()->set_state_complete();
 }
 
-void G1RemSetTrackingPolicy::update_at_free(HeapRegion* r) {
+void G1RemSetTrackingPolicy::update_at_free(G1HeapRegion* r) {
   /* nothing to do */
 }
 
-bool G1RemSetTrackingPolicy::update_humongous_before_rebuild(HeapRegion* r) {
+bool G1RemSetTrackingPolicy::update_humongous_before_rebuild(G1HeapRegion* r) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(r->is_starts_humongous(), "Region %u should be Humongous", r->hrm_index());
 
@@ -66,7 +57,7 @@ bool G1RemSetTrackingPolicy::update_humongous_before_rebuild(HeapRegion* r) {
   // support eager-reclaim. However, their remset state can be reset after
   // Full-GC. Try to re-enable remset-tracking for them if possible.
   if (cast_to_oop(r->bottom())->is_typeArray() && !r->rem_set()->is_tracked()) {
-    auto on_humongous_region = [] (HeapRegion* r) {
+    auto on_humongous_region = [] (G1HeapRegion* r) {
       r->rem_set()->set_state_updating();
     };
     G1CollectedHeap::heap()->humongous_obj_regions_iterate(r, on_humongous_region);
@@ -76,7 +67,7 @@ bool G1RemSetTrackingPolicy::update_humongous_before_rebuild(HeapRegion* r) {
   return selected_for_rebuild;
 }
 
-bool G1RemSetTrackingPolicy::update_old_before_rebuild(HeapRegion* r) {
+bool G1RemSetTrackingPolicy::update_old_before_rebuild(G1HeapRegion* r) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(r->is_old(), "Region %u should be Old", r->hrm_index());
 
@@ -93,7 +84,7 @@ bool G1RemSetTrackingPolicy::update_old_before_rebuild(HeapRegion* r) {
   return selected_for_rebuild;
 }
 
-void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
+void G1RemSetTrackingPolicy::update_after_rebuild(G1HeapRegion* r) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
 
   if (r->is_old_or_humongous()) {
@@ -107,12 +98,23 @@ void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
     if (r->is_starts_humongous() && !g1h->is_potential_eager_reclaim_candidate(r)) {
       // Handle HC regions with the HS region.
       g1h->humongous_obj_regions_iterate(r,
-                                         [&] (HeapRegion* r) {
+                                         [&] (G1HeapRegion* r) {
                                            assert(!r->is_continues_humongous() || r->rem_set()->is_empty(),
                                                   "Continues humongous region %u remset should be empty", r->hrm_index());
                                            r->rem_set()->clear(true /* only_cardset */);
                                          });
     }
+
+    size_t remset_bytes = r->rem_set()->mem_size();
+    size_t occupied = 0;
+    // per region cardset details only valid if group contains a single region.
+    if (r->rem_set()->is_added_to_cset_group() &&
+        r->rem_set()->cset_group()->length() == 1 ) {
+        G1CardSet *card_set = r->rem_set()->cset_group()->card_set();
+        remset_bytes += card_set->mem_size();
+        occupied = card_set->occupied();
+    }
+
     G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
     log_trace(gc, remset, tracking)("After rebuild region %u "
                                     "(tams " PTR_FORMAT " "
@@ -122,7 +124,7 @@ void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
                                     r->hrm_index(),
                                     p2i(cm->top_at_mark_start(r)),
                                     cm->live_bytes(r->hrm_index()),
-                                    r->rem_set()->occupied(),
-                                    r->rem_set()->mem_size());
+                                    occupied,
+                                    remset_bytes);
   }
 }

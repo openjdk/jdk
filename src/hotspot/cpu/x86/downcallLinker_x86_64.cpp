@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "code/codeBlob.hpp"
 #include "logging/logStream.hpp"
@@ -34,8 +33,8 @@
 
 #define __ _masm->
 
-static const int native_invoker_code_base_size = 512;
-static const int native_invoker_size_per_arg = 8;
+static const int native_invoker_code_base_size = 256;
+static const int native_invoker_size_per_arg = 16;
 
 RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
                                                 int num_args,

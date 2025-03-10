@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class CDSJDITest {
             // pass them to the subprocess it will create for the debuggee. This
             // is how the -javaopts are passed to the debuggee. See
             // VMConnection.getDebuggeeVMOptions().
-            getPropOpt("test.classes"),
+            getPropOpt("test.class.path"),
             getPropOpt("test.java.opts"),
             getPropOpt("test.vm.opts"),
             // Pass -showversion to the JDI test just so we get a bit of trace output.

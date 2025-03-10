@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@
   static bool narrow_klass_use_complex_address() {
     NOT_LP64(ShouldNotCallThis();)
     assert(UseCompressedClassPointers, "only for compressed klass code");
-    return (LogKlassAlignmentInBytes <= 3);
+    return (CompressedKlassPointers::shift() <= 3);
   }
 
   // Prefer ConN+DecodeN over ConP.

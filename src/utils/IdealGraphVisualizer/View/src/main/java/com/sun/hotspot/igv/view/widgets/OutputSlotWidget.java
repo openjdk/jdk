@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,8 @@
  */
 package com.sun.hotspot.igv.view.widgets;
 
-import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.OutputSlot;
 import com.sun.hotspot.igv.view.DiagramScene;
-import java.util.List;
-import org.netbeans.api.visual.widget.Widget;
 
 /**
  *
@@ -37,8 +34,8 @@ public class OutputSlotWidget extends SlotWidget {
 
     private OutputSlot outputSlot;
 
-    public OutputSlotWidget(OutputSlot slot, DiagramScene scene, Widget parent, FigureWidget fw) {
-        super(slot, scene, parent, fw);
+    public OutputSlotWidget(OutputSlot slot, DiagramScene scene, FigureWidget fw) {
+        super(slot, scene, fw);
         outputSlot = slot;
     }
 
@@ -47,17 +44,9 @@ public class OutputSlotWidget extends SlotWidget {
     }
 
     @Override
-    protected int calculateSlotWidth() {
-        List<OutputSlot> slots = getSlot().getFigure().getOutputSlots();
-        assert slots.contains(getSlot());
-        return calculateWidth(slots.size());
-
-    }
-
-    @Override
     protected int yOffset() {
         int overlap = getFigureWidget().getFigure().getDiagram().isCFG() ?
-            calculateClientArea().height : Figure.SLOT_START;
-        return getSlot().getFigure().getHeight() - overlap;
+            calculateClientArea().height / 2 : 0;
+        return getFigureWidget().getFigureHeight() - overlap;
     }
 }

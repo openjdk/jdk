@@ -38,7 +38,7 @@ inline void ShenandoahPacer::report_evac(size_t words) {
   report_internal(words);
 }
 
-inline void ShenandoahPacer::report_updaterefs(size_t words) {
+inline void ShenandoahPacer::report_update_refs(size_t words) {
   report_internal(words);
 }
 

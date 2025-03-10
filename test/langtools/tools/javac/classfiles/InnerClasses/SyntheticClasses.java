@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
  *  @bug 8034854
  *  @summary Verify that the InnerClasses attribute has outer_class_info_index zero if it has
  *           inner_name_index zero (for synthetic classes)
- *  @enablePreview
- *  @modules java.base/jdk.internal.classfile.impl
  *  @compile SyntheticClasses.java
  *  @run main SyntheticClasses
  */
@@ -47,14 +45,14 @@ public class SyntheticClasses {
         for (File classFile : Objects.requireNonNull(testClasses.listFiles(f -> f.getName().endsWith(".class")))) {
             ClassModel cf = ClassFile.of().parse(classFile.toPath());
             if (cf.thisClass().asInternalName().matches(".*\\$[0-9]+")) {
-                EnclosingMethodAttribute encl = cf.findAttribute(Attributes.ENCLOSING_METHOD).orElse(null);
+                EnclosingMethodAttribute encl = cf.findAttribute(Attributes.enclosingMethod()).orElse(null);
                 if (encl != null) {
                     if (encl.enclosingMethodName().isPresent())
                         throw new IllegalStateException("Invalid EnclosingMethod.method: " +
                                                         encl.enclosingMethodName().get().stringValue() + ".");
                 }
             }
-            InnerClassesAttribute attr = cf.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+            InnerClassesAttribute attr = cf.findAttribute(Attributes.innerClasses()).orElse(null);
             if (attr != null) {
                 for (InnerClassInfo info : attr.classes()) {
                     if (cf.majorVersion() < 51)

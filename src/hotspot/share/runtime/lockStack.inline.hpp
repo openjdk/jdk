@@ -31,6 +31,8 @@
 
 #include "memory/iterator.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/lightweightSynchronizer.hpp"
+#include "runtime/objectMonitor.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermark.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
@@ -213,13 +215,88 @@ inline bool LockStack::contains(oop o) const {
   return false;
 }
 
+inline int LockStack::monitor_count() const {
+  int end = to_index(_top);
+  assert(end <= CAPACITY, "invariant");
+  return end;
+}
+
+inline void LockStack::move_to_address(oop* start) {
+  int end = to_index(_top);
+  for (int i = 0; i < end; i++) {
+    start[i] = _base[i];
+    DEBUG_ONLY(_base[i] = nullptr;)
+  }
+  _top = lock_stack_base_offset;
+}
+
+inline void LockStack::move_from_address(oop* start, int count) {
+  assert(to_index(_top) == 0, "lockstack should be empty");
+  for (int i = 0; i < count; i++) {
+    _base[i] = start[i];
+    _top += oopSize;
+  }
+}
+
 inline void LockStack::oops_do(OopClosure* cl) {
-  verify("pre-oops-do");
+  // We don't perform pre oops_do verify here because this function
+  // is used by the GC to fix the oops.
+
   int end = to_index(_top);
   for (int i = 0; i < end; i++) {
     cl->do_oop(&_base[i]);
   }
   verify("post-oops-do");
+}
+
+inline void OMCache::set_monitor(ObjectMonitor *monitor) {
+  const int end = OMCache::CAPACITY - 1;
+
+  oop obj = monitor->object_peek();
+  assert(obj != nullptr, "must be alive");
+  assert(monitor == LightweightSynchronizer::get_monitor_from_table(JavaThread::current(), obj), "must exist in table");
+
+  OMCacheEntry to_insert = {obj, monitor};
+
+  for (int i = 0; i < end; ++i) {
+    if (_entries[i]._oop == obj ||
+        _entries[i]._monitor == nullptr ||
+        _entries[i]._monitor->is_being_async_deflated()) {
+      // Use stale slot.
+      _entries[i] = to_insert;
+      return;
+    }
+    // Swap with the most recent value.
+    ::swap(to_insert, _entries[i]);
+  }
+  _entries[end] = to_insert;
+}
+
+inline ObjectMonitor* OMCache::get_monitor(oop o) {
+  for (int i = 0; i < CAPACITY; ++i) {
+    if (_entries[i]._oop == o) {
+      assert(_entries[i]._monitor != nullptr, "monitor must exist");
+      if (_entries[i]._monitor->is_being_async_deflated()) {
+        // Bad monitor
+        // Shift down rest
+        for (; i < CAPACITY - 1; ++i) {
+          _entries[i] = _entries[i + 1];
+        }
+        // Clear end
+        _entries[i] = {};
+        return nullptr;
+      }
+      return _entries[i]._monitor;
+    }
+  }
+  return nullptr;
+}
+
+inline void OMCache::clear() {
+  for (size_t i = 0; i < CAPACITY; ++i) {
+    // Clear
+    _entries[i] = {};
+  }
 }
 
 #endif // SHARE_RUNTIME_LOCKSTACK_INLINE_HPP

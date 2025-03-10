@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
@@ -708,7 +707,8 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
 
   // handle the case of an anchor explicitly set in continuation code that doesn't have a callee
   JavaThread* thread = reg_map->thread();
-  if (thread->has_last_Java_frame() && fr.sp() == thread->last_Java_sp()) {
+  if ((thread->has_last_Java_frame() && fr.sp() == thread->last_Java_sp())
+      JVMTI_ONLY(|| (method()->is_continuation_enter_intrinsic() && thread->on_monitor_waited_event()))) {
     return;
   }
 
@@ -844,10 +844,8 @@ void nmethod::run_nmethod_entry_barrier() {
     // By calling this nmethod entry barrier, it plays along and acts
     // like any other nmethod found on the stack of a thread (fewer surprises).
     nmethod* nm = this;
-    if (bs_nm->is_armed(nm)) {
-      bool alive = bs_nm->nmethod_entry_barrier(nm);
-      assert(alive, "should be alive");
-    }
+    bool alive = bs_nm->nmethod_entry_barrier(nm);
+    assert(alive, "should be alive");
   }
 }
 
@@ -1229,9 +1227,6 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
   _oops_do_mark_link          = nullptr;
   _compiled_ic_data           = nullptr;
 
-#if INCLUDE_RTM_OPT
-  _rtm_state                  = NoRTM;
-#endif
   _is_unloading_state         = 0;
   _state                      = not_installed;
 
@@ -1239,6 +1234,7 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
   _has_method_handle_invokes  = 0;
   _has_wide_vectors           = 0;
   _has_monitors               = 0;
+  _has_scoped_access          = 0;
   _has_flushed_dependencies   = 0;
   _is_unlinked                = 0;
   _load_reported              = 0; // jvmti state
@@ -1253,7 +1249,8 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
 
   CHECKED_CAST(_entry_offset,              uint16_t, (offsets->value(CodeOffsets::Entry)));
   CHECKED_CAST(_verified_entry_offset,     uint16_t, (offsets->value(CodeOffsets::Verified_Entry)));
-  CHECKED_CAST(_skipped_instructions_size, uint16_t, (code_buffer->total_skipped_instructions_size()));
+
+  _skipped_instructions_size = code_buffer->total_skipped_instructions_size();
 }
 
 // Post initialization
@@ -1301,7 +1298,7 @@ nmethod::nmethod(
     _comp_level              = CompLevel_none;
     _compiler_type           = type;
     _orig_pc_offset          = 0;
-    _num_stack_arg_slots     = _method->constMethod()->num_stack_arg_slots();
+    _num_stack_arg_slots     = 0;
 
     if (offsets->value(CodeOffsets::Exceptions) != -1) {
       // Continuation enter intrinsic
@@ -1588,7 +1585,7 @@ void nmethod::log_identity(xmlStream* log) const {
 
 #define LOG_OFFSET(log, name)                    \
   if (p2i(name##_end()) - p2i(name##_begin())) \
-    log->print(" " XSTR(name) "_offset='" INTX_FORMAT "'"    , \
+    log->print(" " XSTR(name) "_offset='%zd'"    , \
                p2i(name##_begin()) - p2i(this))
 
 
@@ -1622,7 +1619,7 @@ void nmethod::log_new_nmethod() const {
 
 
 // Print out more verbose output usually for a newly created nmethod.
-void nmethod::print_on(outputStream* st, const char* msg) const {
+void nmethod::print_on_with_msg(outputStream* st, const char* msg) const {
   if (st != nullptr) {
     ttyLocker ttyl;
     if (WizardMode) {
@@ -1964,7 +1961,7 @@ void nmethod::log_state_change() const {
   if (LogCompilation) {
     if (xtty != nullptr) {
       ttyLocker ttyl;  // keep the following output all in one block
-      xtty->begin_elem("make_not_entrant thread='" UINTX_FORMAT "'",
+      xtty->begin_elem("make_not_entrant thread='%zu'",
                        os::current_thread_id());
       log_identity(xtty);
       xtty->stamp();
@@ -1974,7 +1971,7 @@ void nmethod::log_state_change() const {
 
   CompileTask::print_ul(this, "made not entrant");
   if (PrintCompilation) {
-    print_on(tty, "made not entrant");
+    print_on_with_msg(tty, "made not entrant");
   }
 }
 
@@ -2051,7 +2048,7 @@ bool nmethod::make_not_entrant() {
   } // leave critical region under NMethodState_lock
 
 #if INCLUDE_JVMCI
-  // Invalidate can't occur while holding the Patching lock
+  // Invalidate can't occur while holding the NMethodState_lock
   JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
   if (nmethod_data != nullptr) {
     nmethod_data->invalidate_nmethod_mirror(this);
@@ -2112,7 +2109,7 @@ void nmethod::purge(bool unregister_nmethod) {
   // completely deallocate this method
   Events::log_nmethod_flush(Thread::current(), "flushing %s nmethod " INTPTR_FORMAT, is_osr_method() ? "osr" : "", p2i(this));
   log_debug(codecache)("*flushing %s nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT
-                       "/Free CodeCache:" SIZE_FORMAT "Kb",
+                       "/Free CodeCache:%zuKb",
                        is_osr_method() ? "osr" : "",_compile_id, p2i(this), CodeCache::blob_count(),
                        CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(this))/1024);
 
@@ -2146,14 +2143,18 @@ oop nmethod::oop_at(int index) const {
   if (index == 0) {
     return nullptr;
   }
-  return NMethodAccess<AS_NO_KEEPALIVE>::oop_load(oop_addr_at(index));
+
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  return bs_nm->oop_load_no_keepalive(this, index);
 }
 
 oop nmethod::oop_at_phantom(int index) const {
   if (index == 0) {
     return nullptr;
   }
-  return NMethodAccess<ON_PHANTOM_OOP_REF>::oop_load(oop_addr_at(index));
+
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  return bs_nm->oop_load_phantom(this, index);
 }
 
 //
@@ -3032,12 +3033,7 @@ void nmethod::verify_scopes() {
 // -----------------------------------------------------------------------------
 // Printing operations
 
-void nmethod::print() const {
-  ttyLocker ttyl;   // keep the following output all in one block
-  print(tty);
-}
-
-void nmethod::print(outputStream* st) const {
+void nmethod::print_on_impl(outputStream* st) const {
   ResourceMark rm;
 
   st->print("Compiled method ");
@@ -3052,7 +3048,7 @@ void nmethod::print(outputStream* st) const {
     st->print("(n/a) ");
   }
 
-  print_on(st, nullptr);
+  print_on_with_msg(st, nullptr);
 
   if (WizardMode) {
     st->print("((nmethod*) " INTPTR_FORMAT ") ", p2i(this));
@@ -3273,7 +3269,7 @@ void nmethod::print_recorded_oop(int log_n, int i) {
   if (value == Universe::non_oop_word()) {
     tty->print("non-oop word");
   } else {
-    if (value == 0) {
+    if (value == nullptr) {
       tty->print("nullptr-oop");
     } else {
       oop_at(i)->print_value_on(tty);
@@ -3403,7 +3399,7 @@ void nmethod::decode2(outputStream* ost) const {
 #endif
 
   st->cr();
-  this->print(st);
+  this->print_on(st);
   st->cr();
 
 #if defined(SUPPORT_ASSEMBLY)
@@ -3554,7 +3550,10 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
   while (iter.next()) {
     have_one = true;
     switch (iter.type()) {
-        case relocInfo::none:                  return "no_reloc";
+        case relocInfo::none: {
+          // Skip it and check next
+          break;
+        }
         case relocInfo::oop_type: {
           // Get a non-resizable resource-allocated stringStream.
           // Our callees make use of (nested) ResourceMarks.
@@ -3583,6 +3582,16 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
           st.print("runtime_call");
           CallRelocation* r = (CallRelocation*)iter.reloc();
           address dest = r->destination();
+          if (StubRoutines::contains(dest)) {
+            StubCodeDesc* desc = StubCodeDesc::desc_for(dest);
+            if (desc == nullptr) {
+              desc = StubCodeDesc::desc_for(dest + frame::pc_return_offset);
+            }
+            if (desc != nullptr) {
+              st.print(" Stub::%s", desc->name());
+              return st.as_string();
+            }
+          }
           CodeBlob* cb = CodeCache::find_blob(dest);
           if (cb != nullptr) {
             st.print(" %s", cb->name());
@@ -3640,10 +3649,22 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
         case relocInfo::poll_type:             return "poll";
         case relocInfo::poll_return_type:      return "poll_return";
         case relocInfo::trampoline_stub_type:  return "trampoline_stub";
+        case relocInfo::entry_guard_type:      return "entry_guard";
+        case relocInfo::post_call_nop_type:    return "post_call_nop";
+        case relocInfo::barrier_type: {
+          barrier_Relocation* const reloc = iter.barrier_reloc();
+          stringStream st;
+          st.print("barrier format=%d", reloc->format());
+          return st.as_string();
+        }
+
         case relocInfo::type_mask:             return "type_bit_mask";
 
-        default:
-          break;
+        default: {
+          stringStream st;
+          st.print("unknown relocInfo=%d", (int) iter.type());
+          return st.as_string();
+        }
     }
   }
   return have_one ? "other" : nullptr;
@@ -3940,12 +3961,12 @@ address nmethod::call_instruction_address(address pc) const {
   return nullptr;
 }
 
+void nmethod::print_value_on_impl(outputStream* st) const {
+  st->print_cr("nmethod");
 #if defined(SUPPORT_DATA_STRUCTS)
-void nmethod::print_value_on(outputStream* st) const {
-  st->print("nmethod");
-  print_on(st, nullptr);
-}
+  print_on_with_msg(st, nullptr);
 #endif
+}
 
 #ifndef PRODUCT
 
@@ -3984,10 +4005,9 @@ void nmethod::print_statistics() {
 #endif
   unknown_java_nmethod_stats.print_nmethod_stats("Unknown");
   DebugInformationRecorder::print_statistics();
-#ifndef PRODUCT
   pc_nmethod_stats.print_pc_stats();
-#endif
   Dependencies::print_statistics();
+  ExternalsRecorder::print_statistics();
   if (xtty != nullptr)  xtty->tail("statistics");
 }
 

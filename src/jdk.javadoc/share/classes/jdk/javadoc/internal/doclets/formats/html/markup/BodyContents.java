@@ -25,13 +25,16 @@
 
 package jdk.javadoc.internal.doclets.formats.html.markup;
 
-import jdk.javadoc.internal.doclets.formats.html.Content;
-
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Content for the {@code <body>} element.
@@ -96,7 +99,7 @@ public class BodyContents extends Content {
 
         return new ContentBuilder()
                 .add(header)
-                .add(HtmlTree.DIV(HtmlStyle.mainGrid)
+                .add(HtmlTree.DIV(HtmlStyles.mainGrid)
                         .add(side == null ? Text.EMPTY : side)
                         .add(HtmlTree.MAIN()
                                 .add(mainContents)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @library lib
  * @modules java.base/sun.security.x509
  *          java.management
- *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jdeps/com.sun.tools.jdeps
  * @run main APIDeps
  */
@@ -104,17 +103,17 @@ public class APIDeps {
              new String[] {"c.I", "e.E", "f.F", "m.Bar"},
              new String[] {"-classpath", testDir.getPath(), "-verbose:class", "-filter:none"});
         test(new File(mDir, "Gee.class"),
-             new String[] {"g.G", "sun.security.x509.X509CertInfo", "com.sun.tools.classfile.ClassFile",
+             new String[] {"g.G", "sun.security.x509.X509CertInfo", "com.sun.tools.jdeps.Analyzer",
                            "com.sun.management.ThreadMXBean", "com.sun.source.tree.BinaryTree"},
              new String[] {"-classpath", testDir.getPath(), "-verbose"});
 
         // -jdkinternals
         test(new File(mDir, "Gee.class"),
-             new String[] {"sun.security.x509.X509CertInfo", "com.sun.tools.classfile.ClassFile"},
+             new String[] {"sun.security.x509.X509CertInfo", "com.sun.tools.jdeps.Analyzer"},
              new String[] {"-jdkinternals", "-quiet"});
         // -jdkinternals parses all classes on -classpath and the input arguments
         test(new File(mDir, "Gee.class"),
-             new String[] {"com.sun.tools.classfile.ClassFile",
+             new String[] {"com.sun.tools.jdeps.Analyzer",
                            "sun.security.x509.X509CertInfo"},
              // use -classpath tmp/a with no use of JDK internal API
              new String[] {"-classpath", dest.resolve("a").toString(), "-jdkinternals", "-quiet"});

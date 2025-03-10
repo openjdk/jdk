@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -731,6 +731,150 @@ jTlsMacParamsToCKTlsMacParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
     return ckParamPtr;
 }
 
+/*
+ * converts a Java CK_HKDF_PARAMS object to a CK_HKDF_PARAMS pointer
+ *
+ * @param env - used to call JNI functions to get Java classes and objects
+ * @param jParam - a Java CK_HKDF_PARAMS object to convert
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to a new CK_HKDF_PARAMS structure
+ */
+CK_HKDF_PARAMS_PTR
+jHkdfParamsToCKHkdfParamsPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength)
+{
+    CK_HKDF_PARAMS_PTR ckParamPtr = NULL;
+    jclass jHkdfParamsClass;
+    jfieldID fieldID;
+    jboolean jbExtract, jbExpand;
+    jlong jPrfHashMechanism, julSaltType, jhSaltKey;
+    jobject jpSalt, jpInfo;
+
+    if (pLength != NULL) {
+        *pLength = 0L;
+    }
+
+    jHkdfParamsClass = (*env)->FindClass(env, CLASS_HKDF_PARAMS);
+    if (jHkdfParamsClass == NULL) {
+        return NULL;
+    }
+    fieldID = (*env)->GetFieldID(env, jHkdfParamsClass, "bExtract", "Z");
+    if (fieldID == NULL) {
+        return NULL;
+    }
+    jbExtract = (*env)->GetBooleanField(env, jParam, fieldID);
+    fieldID = (*env)->GetFieldID(env, jHkdfParamsClass, "bExpand", "Z");
+    if (fieldID == NULL) {
+        return NULL;
+    }
+    jbExpand = (*env)->GetBooleanField(env, jParam, fieldID);
+    fieldID = (*env)->GetFieldID(env, jHkdfParamsClass, "prfHashMechanism", "J");
+    if (fieldID == NULL) {
+        return NULL;
+    }
+    jPrfHashMechanism = (*env)->GetLongField(env, jParam, fieldID);
+    fieldID = (*env)->GetFieldID(env, jHkdfParamsClass, "ulSaltType", "J");
+    if (fieldID == NULL) {
+        return NULL;
+    }
+    julSaltType = (*env)->GetLongField(env, jParam, fieldID);
+    fieldID = (*env)->GetFieldID(env, jHkdfParamsClass, "pSalt", "[B");
+    if (fieldID == NULL) {
+        return NULL;
+    }
+    jpSalt = (*env)->GetObjectField(env, jParam, fieldID);
+    fieldID = (*env)->GetFieldID(env, jHkdfParamsClass, "hSaltKey", "J");
+    if (fieldID == NULL) {
+        return NULL;
+    }
+    jhSaltKey = (*env)->GetLongField(env, jParam, fieldID);
+    fieldID = (*env)->GetFieldID(env, jHkdfParamsClass, "pInfo", "[B");
+    if (fieldID == NULL) {
+        return NULL;
+    }
+    jpInfo = (*env)->GetObjectField(env, jParam, fieldID);
+
+    ckParamPtr = calloc(1, sizeof(CK_HKDF_PARAMS));
+    if (ckParamPtr == NULL) {
+        p11ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
+
+    ckParamPtr->bExtract = jBooleanToCKBBool(jbExtract);
+    ckParamPtr->bExpand = jBooleanToCKBBool(jbExpand);
+    ckParamPtr->prfHashMechanism = jLongToCKULong(jPrfHashMechanism);
+    ckParamPtr->ulSaltType = jLongToCKULong(julSaltType);
+    jByteArrayToCKByteArray(env, jpSalt, &(ckParamPtr->pSalt), &(ckParamPtr->ulSaltLen));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
+    ckParamPtr->hSaltKey = jLongToCKULong(jhSaltKey);
+    jByteArrayToCKByteArray(env, jpInfo, &(ckParamPtr->pInfo), &(ckParamPtr->ulInfoLen));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_HKDF_PARAMS);
+    }
+    return ckParamPtr;
+cleanup:
+    free(ckParamPtr->pInfo);
+    free(ckParamPtr->pSalt);
+    free(ckParamPtr);
+    return NULL;
+}
+
+/*
+ * converts a Java CK_KEY_DERIVATION_STRING_DATA object to a CK_KEY_DERIVATION_STRING_DATA pointer
+ *
+ * @param env - used to call JNI functions to get Java classes and objects
+ * @param jParam - a Java CK_KEY_DERIVATION_STRING_DATA object to convert
+ * @param pLength - length of the allocated memory of the returned pointer
+ * @return pointer to a new CK_KEY_DERIVATION_STRING_DATA structure
+ */
+CK_KEY_DERIVATION_STRING_DATA_PTR
+jKeyDerivationStringDataToCKKeyDerivationStringDataPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
+{
+    CK_KEY_DERIVATION_STRING_DATA_PTR ckParamPtr = NULL;
+    jclass jKeyDerivationStringDataClass;
+    jfieldID fieldID;
+    jobject jpData;
+
+    if (pLength != NULL) {
+        *pLength = 0L;
+    }
+
+    jKeyDerivationStringDataClass = (*env)->FindClass(env, CLASS_KEY_DERIVATION_STRING_DATA);
+    if (jKeyDerivationStringDataClass == NULL) {
+        return NULL;
+    }
+    fieldID = (*env)->GetFieldID(env, jKeyDerivationStringDataClass, "pData", "[B");
+    if (fieldID == NULL) {
+        return NULL;
+    }
+    jpData = (*env)->GetObjectField(env, jParam, fieldID);
+
+    ckParamPtr = calloc(1, sizeof(CK_KEY_DERIVATION_STRING_DATA));
+    if (ckParamPtr == NULL) {
+        p11ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
+
+    jByteArrayToCKByteArray(env, jpData, &(ckParamPtr->pData), &(ckParamPtr->ulLen));
+    if ((*env)->ExceptionCheck(env)) {
+        goto cleanup;
+    }
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_KEY_DERIVATION_STRING_DATA);
+    }
+    return ckParamPtr;
+cleanup:
+    free(ckParamPtr->pData);
+    free(ckParamPtr);
+    return NULL;
+}
+
 void keyMatParamToCKKeyMatParam(JNIEnv *env, jobject jParam,
         jclass jKeyMatParamClass,
         CK_ULONG* cKKeyMatParamUlMacSizeInBits,
@@ -1014,18 +1158,19 @@ cleanup:
 }
 
 /*
- * converts the Java CK_GCM_PARAMS object to a CK_GCM_PARAMS_NO_IVBITS pointer
- * Note: Need to try NSS definition first to avoid SIGSEGV.
+ * converts the Java CK_GCM_PARAMS object to a CK_GCM_PARAMS pointer
+ * Note: Early NSS versions crash w/ CK_GCM_PARAMS and need to use
+ * CK_GCM_PARAMS_NO_IVBITS to avoid SIGSEGV.
  *
  * @param env - used to call JNI funktions to get the Java classes and objects
  * @param jParam - the Java CK_GCM_PARAMS object to convert
  * @param pLength - length of the allocated memory of the returned pointer
- * @return pointer to the new CK_GCM_PARAMS_NO_IVBITS structure
+ * @return pointer to the new CK_GCM_PARAMS structure
  */
-CK_GCM_PARAMS_NO_IVBITS_PTR
+CK_GCM_PARAMS_PTR
 jGCMParamsToCKGCMParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
 {
-    CK_GCM_PARAMS_NO_IVBITS_PTR ckParamPtr;
+    CK_GCM_PARAMS_PTR ckParamPtr;
     jclass jGcmParamsClass;
     jfieldID fieldID;
     jobject jIv, jAad;
@@ -1053,8 +1198,8 @@ jGCMParamsToCKGCMParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
     if (fieldID == NULL) { return NULL; }
     jTagLen = (*env)->GetLongField(env, jParam, fieldID);
 
-    // allocate memory for CK_GCM_PARAMS_NO_IVBITS pointer
-    ckParamPtr = calloc(1, sizeof(CK_GCM_PARAMS_NO_IVBITS));
+    // allocate memory for CK_GCM_PARAMS pointer
+    ckParamPtr = calloc(1, sizeof(CK_GCM_PARAMS));
     if (ckParamPtr == NULL) {
         p11ThrowOutOfMemoryError(env, 0);
         return NULL;
@@ -1065,6 +1210,8 @@ jGCMParamsToCKGCMParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
     if ((*env)->ExceptionCheck(env)) {
         goto cleanup;
     }
+    // adjust since the value is in bits
+    ckParamPtr->ulIvBits = ckParamPtr->ulIvLen << 3;
 
     jByteArrayToCKByteArray(env, jAad, &(ckParamPtr->pAAD), &(ckParamPtr->ulAADLen));
     if ((*env)->ExceptionCheck(env)) {
@@ -1074,9 +1221,9 @@ jGCMParamsToCKGCMParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
     ckParamPtr->ulTagBits = jLongToCKULong(jTagLen);
 
     if (pLength != NULL) {
-        *pLength = sizeof(CK_GCM_PARAMS_NO_IVBITS);
+        *pLength = sizeof(CK_GCM_PARAMS);
     }
-    TRACE1("Created inner GCM_PARAMS PTR w/o ulIvBits %p\n", ckParamPtr);
+    TRACE1("Created inner GCM_PARAMS PTR %p\n", ckParamPtr);
     return ckParamPtr;
 cleanup:
     free(ckParamPtr->pIv);
@@ -1492,6 +1639,15 @@ CK_VOID_PTR jMechParamToCKMechParamPtrSlow(JNIEnv *env, jobject jParam,
             break;
         case CKM_TLS_MAC:
             ckpParamPtr = jTlsMacParamsToCKTlsMacParamPtr(env, jParam,
+                    ckpLength);
+            break;
+        case CKM_HKDF_DATA:
+        case CKM_HKDF_DERIVE:
+            ckpParamPtr = jHkdfParamsToCKHkdfParamsPtr(env, jParam, ckpLength);
+            break;
+        case CKM_CONCATENATE_BASE_AND_DATA:
+        case CKM_CONCATENATE_DATA_AND_BASE:
+            ckpParamPtr = jKeyDerivationStringDataToCKKeyDerivationStringDataPtr(env, jParam,
                     ckpLength);
             break;
         case CKM_AES_CTR:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -114,8 +114,6 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
 };
 
 CONSTANT_REGISTER_DECLARATION(Register, noreg, (-1));
-#ifndef DONT_USE_REGISTER_DEFINES
 #define noreg ((Register)(noreg_RegisterEnumValue))
-#endif
 
 #endif // CPU_ZERO_REGISTER_ZERO_HPP

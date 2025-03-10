@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,9 @@ AC_DEFUN([LIB_SETUP_HSDIS_CAPSTONE],
     HSDIS_CFLAGS="-I${CAPSTONE}/include/capstone"
     if test "x$OPENJDK_TARGET_OS" != xwindows; then
       HSDIS_LDFLAGS="-L${CAPSTONE}/lib"
+      if test "x$OPENJDK_TARGET_CPU_BITS" = "x64" ; then
+        HSDIS_LDFLAGS="-L${CAPSTONE}/lib64 $HSDIS_LDFLAGS"
+      fi
       HSDIS_LIBS="-lcapstone"
     else
       HSDIS_LDFLAGS="-nodefaultlib:libcmt.lib"
@@ -163,8 +166,8 @@ AC_DEFUN([LIB_BUILD_BINUTILS],
 
   # We don't know the version, not checking for libsframe.a
   if test -e $BINUTILS_INSTALL_DIR/lib/libbfd.a && \
-     test -e $BINUTILS_INSTALL_DIR/lib/libopcodes.a && \
-     test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a; then
+      test -e $BINUTILS_INSTALL_DIR/lib/libopcodes.a && \
+      test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a; then
     AC_MSG_NOTICE([Found binutils binaries in binutils install directory -- not building])
   else
     # On Windows, we cannot build with the normal Microsoft CL, but must instead use
@@ -266,20 +269,38 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
     HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
   elif test "x$BINUTILS_INSTALL_DIR" != x; then
     disasm_header="\"$BINUTILS_INSTALL_DIR/include/dis-asm.h\""
-    if test -e $BINUTILS_INSTALL_DIR/lib/libbfd.a && \
-       test -e $BINUTILS_INSTALL_DIR/lib/libopcodes.a && \
-       (test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a || test -e $BINUTILS_INSTALL_DIR/lib64/libiberty.a); then
+    if (test -e $BINUTILS_INSTALL_DIR/lib/libbfd.a || \
+        test -e $BINUTILS_INSTALL_DIR/lib64/libbfd.a) && \
+        (test -e $BINUTILS_INSTALL_DIR/lib/libopcodes.a || \
+        test -e $BINUTILS_INSTALL_DIR/lib64/libopcodes.a) && \
+        (test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a || \
+        test -e $BINUTILS_INSTALL_DIR/lib64/libiberty.a || \
+        test -e $BINUTILS_INSTALL_DIR/lib32/libiberty.a); then
       HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB -I$BINUTILS_INSTALL_DIR/include"
 
-      # libiberty ignores --libdir and may be installed in $BINUTILS_INSTALL_DIR/lib or $BINUTILS_INSTALL_DIR/lib64
-      # depending on system setup
+      # libiberty ignores --libdir and may be installed in $BINUTILS_INSTALL_DIR/lib, $BINUTILS_INSTALL_DIR/lib32
+      # or $BINUTILS_INSTALL_DIR/lib64, depending on system setup
+      LIBOPCODES_LIB=""
+      LIBBFD_LIB=""
       LIBIBERTY_LIB=""
+      if test -e $BINUTILS_INSTALL_DIR/lib/libbfd.a; then
+        LIBBFD_LIB="$BINUTILS_INSTALL_DIR/lib/libbfd.a"
+      else
+        LIBBFD_LIB="$BINUTILS_INSTALL_DIR/lib64/libbfd.a"
+      fi
+      if test -e $BINUTILS_INSTALL_DIR/lib/libopcodes.a; then
+        LIBOPCODES_LIB="$BINUTILS_INSTALL_DIR/lib/libopcodes.a"
+      else
+        LIBOPCODES_LIB="$BINUTILS_INSTALL_DIR/lib64/libopcodes.a"
+      fi
       if test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a; then
         LIBIBERTY_LIB="$BINUTILS_INSTALL_DIR/lib/libiberty.a"
+      elif test -e $BINUTILS_INSTALL_DIR/lib32/libiberty.a; then
+        LIBIBERTY_LIB="$BINUTILS_INSTALL_DIR/lib32/libiberty.a"
       else
         LIBIBERTY_LIB="$BINUTILS_INSTALL_DIR/lib64/libiberty.a"
       fi
-      HSDIS_LIBS="$BINUTILS_INSTALL_DIR/lib/libbfd.a $BINUTILS_INSTALL_DIR/lib/libopcodes.a $LIBIBERTY_LIB"
+      HSDIS_LIBS="$LIBBFD_LIB $LIBOPCODES_LIB $LIBIBERTY_LIB"
       # If we have libsframe add it.
       if test -e $BINUTILS_INSTALL_DIR/lib/libsframe.a; then
         HSDIS_LIBS="$HSDIS_LIBS $BINUTILS_INSTALL_DIR/lib/libsframe.a"

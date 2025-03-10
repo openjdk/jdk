@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,7 @@ public final class ModuleInfoExtender {
         var cc = ClassFile.of();
         var cm = cc.parse(in.readAllBytes());
         Version v = ModuleInfoExtender.this.version;
-        return cc.transform(cm, ClassTransform.endHandler(clb -> {
+        return cc.transformClass(cm, ClassTransform.endHandler(clb -> {
             // ModuleMainClass attribute
             if (mainClass != null) {
                 clb.with(ModuleMainClassAttribute.of(ClassDesc.of(mainClass)));

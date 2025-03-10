@@ -71,6 +71,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bin">bini</language>
 			<language type="bkm">kom</language>
 			<language type="bla">siksika</language>
+			<language type="blo">anii</language>
 			<language type="bm">bambara</language>
 			<language type="bn">bengali</language>
 			<language type="bo">tibetansk</language>
@@ -298,6 +299,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">komi</language>
 			<language type="kw">cornisk</language>
 			<language type="kwk">kwakʼwala</language>
+			<language type="kxv">kuvi</language>
 			<language type="ky">kirgisisk</language>
 			<language type="la">latin</language>
 			<language type="lad">ladino</language>
@@ -308,8 +310,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">lezghian</language>
 			<language type="lg">ganda</language>
 			<language type="li">limburgsk</language>
+			<language type="lij">ligurisk</language>
 			<language type="lil">lillooet</language>
 			<language type="lkt">lakota</language>
+			<language type="lmo">lombardisk</language>
 			<language type="ln">lingala</language>
 			<language type="lo">lao</language>
 			<language type="lol">mongo</language>
@@ -322,7 +326,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lua">luba-Lulua</language>
 			<language type="lui">luiseno</language>
 			<language type="lun">lunda</language>
-			<language type="luo">luo</language>
 			<language type="lus">lushai</language>
 			<language type="luy">luyana</language>
 			<language type="lv">lettisk</language>
@@ -355,7 +358,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="moe">innu-aimun</language>
 			<language type="moh">mohawk</language>
 			<language type="mos">mossi</language>
-			<language type="mr">marathisk</language>
+			<language type="mr">marathi</language>
 			<language type="ms">malajisk</language>
 			<language type="mt">maltesisk</language>
 			<language type="mua">mundang</language>
@@ -411,7 +414,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="os">ossetisk</language>
 			<language type="osa">osage</language>
 			<language type="ota">osmannisk tyrkisk</language>
-			<language type="pa">punjabisk</language>
+			<language type="pa">punjabi</language>
 			<language type="pag">pangasinan</language>
 			<language type="pal">pahlavi</language>
 			<language type="pam">pampanga</language>
@@ -505,6 +508,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">comorisk</language>
 			<language type="syc">klassisk syrisk</language>
 			<language type="syr">syrisk</language>
+			<language type="szl">schlesisk</language>
 			<language type="ta">tamil</language>
 			<language type="tce">sydtutchone</language>
 			<language type="te">telugu</language>
@@ -552,9 +556,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="und">ukendt sprog</language>
 			<language type="ur">urdu</language>
 			<language type="uz">usbekisk</language>
-			<language type="vai">vai</language>
 			<language type="ve">venda</language>
+			<language type="vec">venetiansk</language>
 			<language type="vi">vietnamesisk</language>
+			<language type="vmw">makhuwa</language>
 			<language type="vo">volapyk</language>
 			<language type="vot">votisk</language>
 			<language type="vun">vunjo</language>
@@ -568,6 +573,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">wu-kinesisk</language>
 			<language type="xal">kalmyk</language>
 			<language type="xh">xhosa</language>
+			<language type="xnr">kangri</language>
 			<language type="xog">soga</language>
 			<language type="yao">yao</language>
 			<language type="yap">yapese</language>
@@ -2654,6 +2660,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0}-tid</regionFormat>
 			<regionFormat type="daylight">{0}-sommertid</regionFormat>
 			<regionFormat type="standard">{0}-normaltid</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Koordineret universaltid</standard>
@@ -2691,9 +2700,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
 				<exemplarCity>Kap Verde</exemplarCity>
-			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity>Curaçao</exemplarCity>
 			</zone>
 			<zone type="Indian/Christmas">
 				<exemplarCity>Juleøen</exemplarCity>
@@ -2771,9 +2777,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Ulan Bator</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Tsjojbalsan</exemplarCity>
-			</zone>
 			<zone type="Indian/Maldives">
 				<exemplarCity>Maldiverne</exemplarCity>
 			</zone>
@@ -2797,12 +2800,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Lisbon">
 				<exemplarCity>Lissabon</exemplarCity>
-			</zone>
-			<zone type="America/Asuncion">
-				<exemplarCity>Asunción</exemplarCity>
-			</zone>
-			<zone type="Indian/Reunion">
-				<exemplarCity>Réunion</exemplarCity>
 			</zone>
 			<zone type="Europe/Bucharest">
 				<exemplarCity>Bukarest</exemplarCity>
@@ -2831,9 +2828,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Kamchatka">
 				<exemplarCity>Kamtjatka</exemplarCity>
 			</zone>
-			<zone type="Africa/Sao_Tome">
-				<exemplarCity>São Tomé</exemplarCity>
-			</zone>
 			<zone type="Asia/Damascus">
 				<exemplarCity>Damaskus</exemplarCity>
 			</zone>
@@ -2845,9 +2839,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="Asia/Tashkent">
 				<exemplarCity>Tasjkent</exemplarCity>
@@ -3106,13 +3097,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Kinesisk tid</generic>
 					<standard>Kinesisk normaltid</standard>
 					<daylight>Kinesisk sommertid</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Tsjojbalsan-tid</generic>
-					<standard>Tsjojbalsan-normaltid</standard>
-					<daylight>Tsjojbalsan-sommertid</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
@@ -3378,6 +3362,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Petropavlovsk-Kamchatski tid</generic>
 					<standard>Petropavlovsk-Kamchatski normaltid</standard>
 					<daylight>Petropavlovsk-Kamchatski sommertid</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Kasakhstansk tid</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -3932,8 +3921,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">000 bio'.' ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -5510,9 +5497,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="other" gender="common">kubik{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="common" case="genitive">kubik{0}s</compoundUnitPattern1>
 			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern>{0} gange {1}</compoundUnitPattern>
-			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<gender>common</gender>
 				<unitPattern count="one">{0} G-kraft</unitPattern>
@@ -5633,9 +5617,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} karats</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<gender>neuter</gender>
 				<displayName>milligram pr. deciliter</displayName>
 				<unitPattern count="one">{0} milligram pr. deciliter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milligram pr. deciliters</unitPattern>
 				<unitPattern count="other">{0} milligram pr. deciliter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milligram pr. deciliters</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<gender>neuter</gender>
@@ -5945,7 +5932,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>common</gender>
 				<displayName>kilokalorier</displayName>
 				<unitPattern count="one">{0} kilokalorie</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilokalories</unitPattern>
 				<unitPattern count="other">{0} kilokalorier</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilokaloriers</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
 				<gender>common</gender>
@@ -6007,33 +5996,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>common</gender>
 				<displayName>gigahertz</displayName>
 				<unitPattern count="one">{0} gigahertz</unitPattern>
-				<unitPattern count="one" case="genitive">{0} gigahertz'</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigahertz’</unitPattern>
 				<unitPattern count="other">{0} gigahertz</unitPattern>
-				<unitPattern count="other" case="genitive">{0} gigahertz'</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gigahertz’</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
 				<gender>common</gender>
 				<displayName>megahertz</displayName>
 				<unitPattern count="one">{0} megahertz</unitPattern>
-				<unitPattern count="one" case="genitive">{0} megahertz'</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megahertz’</unitPattern>
 				<unitPattern count="other">{0} megahertz</unitPattern>
-				<unitPattern count="other" case="genitive">{0} megahertz'</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megahertz’</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
 				<gender>common</gender>
 				<displayName>kilohertz</displayName>
 				<unitPattern count="one">{0} kilohertz</unitPattern>
-				<unitPattern count="one" case="genitive">{0} kilohertz'</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilohertz’</unitPattern>
 				<unitPattern count="other">{0} kilohertz</unitPattern>
-				<unitPattern count="other" case="genitive">{0} kilohertz'</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilohertz’</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
 				<gender>common</gender>
 				<displayName>hertz</displayName>
 				<unitPattern count="one">{0} hertz</unitPattern>
-				<unitPattern count="one" case="genitive">{0} hertz'</unitPattern>
+				<unitPattern count="one" case="genitive">{0} hertz’</unitPattern>
 				<unitPattern count="other">{0} hertz</unitPattern>
-				<unitPattern count="other" case="genitive">{0} hertz'</unitPattern>
+				<unitPattern count="other" case="genitive">{0} hertz’</unitPattern>
 			</unit>
 			<unit type="graphics-em">
 				<gender>common</gender>
@@ -6159,7 +6148,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-mile">
 				<gender>common</gender>
-				<unitPattern count="one">{0} engelsk mil</unitPattern>
+				<unitPattern count="one">{0} mile</unitPattern>
 				<unitPattern count="other">{0} miles</unitPattern>
 			</unit>
 			<unit type="length-yard">
@@ -6208,9 +6197,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} svenske mils</unitPattern>
 			</unit>
 			<unit type="length-point">
+				<gender>neuter</gender>
 				<displayName>punkt</displayName>
 				<unitPattern count="one">{0} punkt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} punkts</unitPattern>
 				<unitPattern count="other">{0} punkt</unitPattern>
+				<unitPattern count="other" case="genitive">{0} punkts</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<gender>common</gender>
@@ -6384,9 +6376,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} hestekræfter</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
+				<gender>common</gender>
 				<displayName>millimeter kviksølv</displayName>
 				<unitPattern count="one">{0} millimeter kviksølv</unitPattern>
+				<unitPattern count="one" case="genitive">{0} millimeter kviksølvs</unitPattern>
 				<unitPattern count="other">{0} millimeter kviksølv</unitPattern>
+				<unitPattern count="other" case="genitive">{0} millimeter kviksølvs</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>pounds pr. kvadrattomme</displayName>
@@ -6616,7 +6611,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} metrisk pint</unitPattern>
 				<unitPattern count="one" case="genitive">{0} metrisk pints</unitPattern>
 				<unitPattern count="other">{0} metriske pints</unitPattern>
-				<unitPattern count="other" case="genitive">{0} metriske pints'</unitPattern>
+				<unitPattern count="other" case="genitive">{0} metriske pints’</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
 				<gender>common</gender>
@@ -6730,6 +6725,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} britisk quart</unitPattern>
 				<unitPattern count="other">{0} britiske quarts</unitPattern>
 			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<gender>common</gender>
+				<displayName>milliardtedele</displayName>
+				<unitPattern count="one">{0} milliardtedel</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milliardtedels</unitPattern>
+				<unitPattern count="other">{0} milliardtedele</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milliardtedeles</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<gender>common</gender>
+				<displayName>nætter</displayName>
+				<unitPattern count="one">{0} nat</unitPattern>
+				<unitPattern count="one" case="genitive">{0} nats</unitPattern>
+				<unitPattern count="other">{0} nætter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} nætters</unitPattern>
+				<perUnitPattern>{0} pr. nat</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>kompasretning</displayName>
 				<coordinateUnitPattern type="east">{0} øst</coordinateUnitPattern>
@@ -6739,9 +6751,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
-			<compoundUnit type="times">
-				<compoundUnitPattern>{0} ⋅ {1}</compoundUnitPattern>
-			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>G-kraft</displayName>
 			</unit>
@@ -7138,6 +7147,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} britisk qt</unitPattern>
 				<unitPattern count="other">{0} britiske qt</unitPattern>
 			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>dele/milliard</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>nætter</displayName>
+				<unitPattern count="one">{0} nat</unitPattern>
+				<unitPattern count="other">{0} nætter</unitPattern>
+				<perUnitPattern>{0}/nat</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>retning</displayName>
 				<coordinateUnitPattern type="east">{0}Ø</coordinateUnitPattern>
@@ -7145,9 +7163,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<compoundUnit type="times">
-				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<unitPattern count="one">{0}G</unitPattern>
 				<unitPattern count="other">{0}G</unitPattern>
@@ -7266,7 +7281,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>kWh/100 km</displayName>
 				<unitPattern count="one">{0}kWh/100km</unitPattern>
-				<unitPattern count="other">{0}kWh/100km</unitPattern>
+				<unitPattern count="other">{0} kWh/100 km</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>prik</displayName>
@@ -7336,8 +7351,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}hk</unitPattern>
 			</unit>
 			<unit type="pressure-inch-ofhg">
-				<unitPattern count="one">{0}&quot; Hg</unitPattern>
-				<unitPattern count="other">{0}&quot; Hg</unitPattern>
+				<unitPattern count="one">{0}″ Hg</unitPattern>
+				<unitPattern count="other">{0}″ Hg</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<unitPattern count="one">{0} mb</unitPattern>
@@ -7397,6 +7412,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<unitPattern count="one">{0} br. qt.</unitPattern>
 				<unitPattern count="other">{0} br. qt.</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>nætter</displayName>
+				<unitPattern count="one">{0}nat</unitPattern>
+				<unitPattern count="other">{0}nætter</unitPattern>
+				<perUnitPattern>{0}/nat</perUnitPattern>
 			</unit>
 		</unitLength>
 		<durationUnit type="hm">

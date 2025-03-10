@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/growableArray.hpp"
 #include "unittest.hpp"
@@ -35,8 +34,8 @@ struct WithEmbeddedArray {
   // Arena allocated data array
   WithEmbeddedArray(Arena* arena, int initial_max) : _a(arena, initial_max, 0, 0) {}
   // CHeap allocated data array
-  WithEmbeddedArray(int initial_max, MEMFLAGS memflags) : _a(initial_max, memflags) {
-    assert(memflags != mtNone, "test requirement");
+  WithEmbeddedArray(int initial_max, MemTag mem_tag) : _a(initial_max, mem_tag) {
+    assert(mem_tag != mtNone, "test requirement");
   }
   WithEmbeddedArray(const GrowableArray<int>& other) : _a(other) {}
 };
@@ -662,4 +661,31 @@ TEST(GrowableArrayCHeap, find_from_end_if) {
     });
     ASSERT_EQ(index, -1);
   }
+}
+
+TEST(GrowableArrayCHeap, returning_references_works_as_expected) {
+  GrowableArrayCHeap<int, mtTest> arr(8, 8, -1); // Pre-fill with 8 -1s
+  int& x = arr.at_grow(9, -1);
+  EXPECT_EQ(-1, arr.at(9));
+  EXPECT_EQ(-1, x);
+  x = 2;
+  EXPECT_EQ(2, arr.at(9));
+  int& x2 = arr.top();
+  EXPECT_EQ(2, arr.at(9));
+  x2 = 5;
+  EXPECT_EQ(5, arr.at(9));
+
+  int y = arr.at_grow(10, -1);
+  EXPECT_EQ(-1, arr.at(10));
+  y = arr.top();
+  EXPECT_EQ(-1, arr.at(10));
+
+  GrowableArrayCHeap<int, mtTest> arr2(1, 1, -1);
+  int& first = arr2.first();
+  int& last = arr2.last();
+  EXPECT_EQ(-1, first);
+  EXPECT_EQ(-1, last);
+  first = 5;
+  EXPECT_EQ(5, first);
+  EXPECT_EQ(5, last);
 }

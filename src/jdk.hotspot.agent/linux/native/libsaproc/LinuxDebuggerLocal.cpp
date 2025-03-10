@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2021, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -70,7 +70,7 @@ class AutoJavaString {
   const char* m_buf;
 
 public:
-  // check env->ExceptionOccurred() after ctor
+  // check env->ExceptionCheck() after ctor
   AutoJavaString(JNIEnv* env, jstring str)
     : m_env(env), m_str(str), m_buf(str == NULL ? NULL : env->GetStringUTFChars(str, NULL)) {
   }
@@ -101,8 +101,8 @@ static jmethodID listAdd_ID = 0;
  */
 static char *saaltroot = NULL;
 
-#define CHECK_EXCEPTION_(value) if (env->ExceptionOccurred()) { return value; }
-#define CHECK_EXCEPTION if (env->ExceptionOccurred()) { return;}
+#define CHECK_EXCEPTION_(value) if (env->ExceptionCheck()) { return value; }
+#define CHECK_EXCEPTION if (env->ExceptionCheck()) { return;}
 #define THROW_NEW_DEBUGGER_EXCEPTION_(str, value) { throw_new_debugger_exception(env, str); return value; }
 #define THROW_NEW_DEBUGGER_EXCEPTION(str) { throw_new_debugger_exception(env, str); return;}
 
@@ -319,7 +319,7 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_at
   CHECK_EXCEPTION;
 
   if ( (ph = Pgrab_core(execName_cstr, coreName_cstr)) == NULL) {
-    THROW_NEW_DEBUGGER_EXCEPTION("Can't attach to the core file");
+    THROW_NEW_DEBUGGER_EXCEPTION("Can't attach to the core file. For more information, export LIBSAPROC_DEBUG=1 and try again.");
   }
   env->SetLongField(this_obj, p_ps_prochandle_ID, (jlong)(intptr_t)ph);
   fillThreadsAndLoadObjects(env, this_obj, ph);
@@ -420,7 +420,6 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
   jboolean isCopy;
   jlongArray array;
   jlong *regs;
-  int i;
 
   struct ps_prochandle* ph = get_proc_handle(env, this_obj);
   if (get_lwp_regs(ph, lwp_id, &gregs) != true) {

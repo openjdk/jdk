@@ -34,7 +34,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-#define RETURN_FAILED errCode = STATUS_FAILED; fflush(0); return
+#define RETURN_FAILED errCode = STATUS_FAILED; fflush(nullptr); return
 
 static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
@@ -168,7 +168,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jmethodID mid,
         printf(" expected: %d\n", framesCount + 1);
         RETURN_FAILED;
     }
-    fflush(0);
+    fflush(nullptr);
 }
 
 void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
@@ -213,7 +213,7 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
                TranslateError(err), err);
         RETURN_FAILED;
     }
-    fflush(0);
+    fflush(nullptr);
 }
 
 void JNICALL SingleStep(jvmtiEnv *jvmti_env, JNIEnv *env,
@@ -251,7 +251,7 @@ void JNICALL SingleStep(jvmtiEnv *jvmti_env, JNIEnv *env,
             RETURN_FAILED;
         }
     }
-    fflush(0);
+    fflush(nullptr);
 }
 
 void JNICALL MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread,
@@ -274,7 +274,7 @@ void JNICALL MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread,
             errCode = STATUS_FAILED;
         }
     }
-    fflush(0);
+    fflush(nullptr);
 }
 
 #ifdef STATIC_BUILD
@@ -410,7 +410,7 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretobj_check(JNIEnv *env, jclass cls) 
             framesCount, framesExpected);
         errCode = STATUS_FAILED;
     }
-    fflush(0);
+    fflush(nullptr);
     return errCode;
 }
 
@@ -419,7 +419,7 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretobj_printObject(
          JNIEnv *env, jclass cls, jobject obj) {
 
     printf("\nReturned jobject: %#" PRIxPTR "\n", (uintptr_t)obj);
-    fflush(0);
+    fflush(nullptr);
     return;
 }
 

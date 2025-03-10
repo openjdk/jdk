@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8146293 8242556 8172366 8254717
+ * @library /test/lib
  * @summary Test RSASSA-PSS Key related support such as KeyPairGenerator
  * and KeyFactory of the SunRsaSign provider
  */
@@ -35,6 +36,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
+import jdk.test.lib.security.SecurityUtils;
 
 public class TestPSSKeySupport {
 
@@ -130,11 +132,13 @@ public class TestPSSKeySupport {
     }
 
     public static void main(String[] args) throws Exception {
+        int keySize = SecurityUtils.getTestKeySize("RSA");
         KeyPairGenerator kpg =
-            KeyPairGenerator.getInstance(ALGO, "SunRsaSign");
+            KeyPairGenerator.getInstance(ALGO,
+                    System.getProperty("test.provider.name", "SunRsaSign"));
 
         // Algorithm-Independent Initialization
-        kpg.initialize(2048);
+        kpg.initialize(keySize);
         KeyPair kp = kpg.generateKeyPair();
         checkKeyPair(kp);
         BigInteger pubExp = ((RSAPublicKey)kp.getPublic()).getPublicExponent();
@@ -142,17 +146,18 @@ public class TestPSSKeySupport {
         // Algorithm-specific Initialization
         PSSParameterSpec params = new PSSParameterSpec("SHA-256", "MGF1",
             MGF1ParameterSpec.SHA256, 32, 1);
-        kpg.initialize(new RSAKeyGenParameterSpec(2048, pubExp, params));
+        kpg.initialize(new RSAKeyGenParameterSpec(keySize, pubExp, params));
         KeyPair kp2 = kpg.generateKeyPair();
         checkKeyPair(kp2);
 
         params = new PSSParameterSpec("SHA3-256", "MGF1",
             new MGF1ParameterSpec("SHA3-256"), 32, 1);
-        kpg.initialize(new RSAKeyGenParameterSpec(2048, pubExp, params));
+        kpg.initialize(new RSAKeyGenParameterSpec(keySize, pubExp, params));
         KeyPair kp3 = kpg.generateKeyPair();
         checkKeyPair(kp3);
 
-        KeyFactory kf = KeyFactory.getInstance(ALGO, "SunRsaSign");
+        KeyFactory kf = KeyFactory.getInstance(ALGO,
+                            System.getProperty("test.provider.name", "SunRsaSign"));
         test(kf, kp.getPublic());
         test(kf, kp.getPrivate());
         test(kf, kp2.getPublic());

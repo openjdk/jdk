@@ -47,6 +47,7 @@ public class CheckSessionContext {
 
         // Initial client session
         TLSBase.Client client1 = new TLSBase.Client();
+        client1.connect();
         if (server.getSession(client1).getSessionContext() == null) {
             throw new Exception("Context was null.  Handshake failure.");
         } else {
@@ -66,6 +67,7 @@ public class CheckSessionContext {
 
         // Resume the client session
         TLSBase.Client client2 = new TLSBase.Client();
+        client2.connect();
         if (server.getSession(client2).getSessionContext() == null) {
             throw new Exception("Context was null on resumption");
         } else {
@@ -73,6 +75,5 @@ public class CheckSessionContext {
         }
         server.close(client2);
         client2.close();
-        server.done();
     }
 }

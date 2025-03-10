@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,16 +59,18 @@
  */
 package test.java.time;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertThrows;
 
 /**
  * Test Instant.
- * @bug 8273369
+ * @bug 8273369 8331202
  */
 @Test
 public class TestInstant extends AbstractTest {
@@ -119,5 +121,34 @@ public class TestInstant extends AbstractTest {
     public void test_millisUntil() {
         assertEquals(Instant.MIN.until(Instant.MIN.plusSeconds(1), ChronoUnit.MILLIS), 1000L);
         assertEquals(Instant.MAX.plusSeconds(-1).until(Instant.MAX, ChronoUnit.MILLIS), 1000L);
+    }
+
+    @DataProvider
+    private Object[][] provider_until_1arg() {
+        Instant t1 = Instant.ofEpochSecond(0, 10);
+        Instant t2 = Instant.ofEpochSecond(10, -20);
+        return new Object[][] {
+            {t1, t2},
+            {t2, t1},
+            {Instant.MIN, Instant.MAX},
+            {Instant.MAX, Instant.MIN},
+        };
+    }
+
+    @Test(dataProvider = "provider_until_1arg")
+    public void test_until_1arg(Instant start, Instant end) {
+        Duration result = start.until(end);
+        Duration expected = Duration.ofSeconds(end.getEpochSecond() - start.getEpochSecond(),
+                end.getNano() - start.getNano());
+        assertEquals(result, expected);
+        expected = Duration.between(start, end);
+        assertEquals(result, expected);
+    }
+
+    @Test
+    public void test_until_1arg_NPE() {
+        assertThrows(NullPointerException.class, () -> {
+            Instant.now().until(null);
+        });
     }
 }

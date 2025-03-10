@@ -168,7 +168,7 @@ annotations.
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE d MMMM, y G</pattern>
+							<pattern>EEEE, d MMMM y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -396,7 +396,7 @@ annotations.
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE d MMMM, y</pattern>
+							<pattern>EEEE, d MMMM y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -470,6 +470,7 @@ annotations.
 						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y, d MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y, dd MMM, E</dateFormatItem>
+						<dateFormatItem id="GyMMMEEEEd">G y, dd MMMM, E</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">MMMM 'kaa' 'week' W</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMM 'kaa' 'week' W</dateFormatItem>
 						<dateFormatItem id="yMMMd">d MMM, y</dateFormatItem>
@@ -1174,6 +1175,12 @@ annotations.
 			</field>
 		</fields>
 		<timeZoneNames>
+			<zone type="Pacific/Honolulu">
+				<short>
+					<generic>HST</generic>
+				</short>
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Antarctica/DumontDUrville">
 				<exemplarCity>DumontDUrville</exemplarCity>
 			</zone>
@@ -1233,12 +1240,6 @@ annotations.
 			</zone>
 			<zone type="Africa/Sao_Tome">
 				<exemplarCity>Sao Tome</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>HST</generic>
-				</short>
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="Asia/Saigon">
 				<exemplarCity>Saigon</exemplarCity>
@@ -1397,11 +1398,16 @@ annotations.
 				<unitPattern count="one">{0} dot per centimeter</unitPattern>
 				<unitPattern count="other">{0} dots per centimeter</unitPattern>
 			</unit>
-			<unit type="length-micrometer">
-				<displayName>micrometres</displayName>
-			</unit>
 			<unit type="length-mile-scandinavian">
 				<displayName>Scandinavian miles</displayName>
+			</unit>
+			<unit type="mass-tonne">
+				<unitPattern count="one">{0} metric ton</unitPattern>
+				<unitPattern count="other">{0} tonnes</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<unitPattern count="one">{0} tonne</unitPattern>
+				<unitPattern count="other">{0} tons</unitPattern>
 			</unit>
 			<unit type="mass-stone">
 				<displayName>stones</displayName>

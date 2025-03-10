@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ import java.util.Arrays;
  * <p> This class can be used to initialize a {@code Cipher} object that
  * implements the <i>RC2</i> algorithm.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2268
+ *      RFC 2268: A Description of the RC2(r) Encryption Algorithm
  * @author Jan Luehe
  *
  * @since 1.4
@@ -89,7 +91,10 @@ public class RC2ParameterSpec implements AlgorithmParameterSpec {
      * are copied to protect against subsequent modification.
      * @param offset the offset in {@code iv} where the 8-byte IV
      * starts.
-     * @exception IllegalArgumentException if {@code iv} is null.
+     * @exception IllegalArgumentException if {@code iv} is {@code null}
+     * or {@code iv.length - offset < 8}.
+     * @exception ArrayIndexOutOfBoundsException if
+     * {@code offset} is negative.
      */
     public RC2ParameterSpec(int effectiveKeyBits, byte[] iv, int offset) {
         this.effectiveKeyBits = effectiveKeyBits;

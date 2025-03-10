@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary Dummy
- * @run main/othervm/policy=security.policy/timeout=120 UseGetURLs
+ * @run main/othervm/timeout=120 UseGetURLs
  */
 
 import java.io.*;
@@ -49,10 +49,6 @@ public class UseGetURLs {
     public static void main(String[] args) {
 
         System.err.println("\nRegression test for bug 4137605\n");
-
-        TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
-        System.err.println("Security manager: " +
-                           System.getSecurityManager().getClass().getName());
 
         /*
          * Install dummy class in first codebase to be loaded from an

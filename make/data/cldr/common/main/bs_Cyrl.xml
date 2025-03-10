@@ -900,7 +900,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Израел</territory>
 			<territory type="IM">Острво Мен</territory>
 			<territory type="IN">Индија</territory>
-			<territory type="IO" draft="provisional">Британска територија у Индијском океану</territory>
+			<territory type="IO">Британска територија у Индијском океану</territory>
 			<territory type="IQ">Ирак</territory>
 			<territory type="IR">Иран</territory>
 			<territory type="IS">Исланд</territory>
@@ -1136,7 +1136,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">грегоријански календар</type>
 			<type key="calendar" type="hebrew">хебрејски календар</type>
 			<type key="calendar" type="indian">Индијски национални календар</type>
-			<type key="calendar" type="islamic" draft="provisional">исламски календар</type>
+			<type key="calendar" type="islamic">исламски календар</type>
 			<type key="calendar" type="islamic-civil" draft="provisional">Исламски цивилни календар</type>
 			<type key="calendar" type="iso8601">ISO-8601 календар</type>
 			<type key="calendar" type="japanese">јапански календар</type>
@@ -2528,6 +2528,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 		<timeZoneNames>
 			<regionFormat>Време: {0}</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Хонолулу</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Координисано универзално вријеме</standard>
@@ -3262,9 +3265,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Улан Батор</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Чојбалсан</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Макау</exemplarCity>
 			</zone>
@@ -3661,9 +3661,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Nome">
 				<exemplarCity>Ном</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Хонолулу</exemplarCity>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Енкориџ</exemplarCity>
 			</zone>
@@ -4043,13 +4040,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Кина љетње рачунање времена</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Чојбалсан вријеме</generic>
-					<standard>Чојбалсан стандардно вријеме</standard>
-					<daylight>Чојбалсан љетње рачунање времена</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Божићна острва вријеме</standard>
@@ -4298,6 +4288,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Петропавловско-камчатско време</generic>
 					<standard>Петропавловско-камчатско стандардно време</standard>
 					<daylight>Петропавловско-камчатско летње рачунање вемена</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Kazakhstan Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -4740,6 +4735,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Јекатеринбург љетње рачунање времена</daylight>
 				</long>
 			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>Yukon Time</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
@@ -4863,9 +4863,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000000000000" count="other">000 бил ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="few">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -6783,10 +6780,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>мегапиксели</displayName>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName draft="provisional">тачке по центиметру</displayName>
+				<displayName>тачке по центиметру</displayName>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName draft="provisional">тачке по инчу</displayName>
+				<displayName>тачке по инчу</displayName>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>километри</displayName>

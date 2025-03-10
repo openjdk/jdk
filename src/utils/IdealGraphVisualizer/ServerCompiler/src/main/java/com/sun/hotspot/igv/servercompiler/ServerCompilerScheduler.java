@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -382,7 +382,7 @@ public class ServerCompilerScheduler implements Scheduler {
     };
 
     private List<InputNode> scheduleBlock(Collection<Node> nodes) {
-        List<InputNode> schedule = new ArrayList<>();
+        LinkedHashSet<InputNode> schedule = new LinkedHashSet<InputNode>();
 
         // Initialize ready priority queue with nodes without predecessors.
         Queue<Node> ready = new PriorityQueue<>(schedulePriority);
@@ -407,7 +407,7 @@ public class ServerCompilerScheduler implements Scheduler {
                 }
                 boolean allPredsScheduled = true;
                 for (Node p : s.preds) {
-                    if (!visited.contains(p)) {
+                    if (!schedule.contains(p.inputNode)) {
                         allPredsScheduled = false;
                         break;
                     }
@@ -419,7 +419,7 @@ public class ServerCompilerScheduler implements Scheduler {
             }
         }
         assert(schedule.size() == nodes.size());
-        return schedule;
+        return new ArrayList<InputNode>(schedule);
     }
 
     // Return latest block that dominates all successors of n, or null if any

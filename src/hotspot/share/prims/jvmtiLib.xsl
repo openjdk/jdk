@@ -177,7 +177,7 @@
     <xsl:value-of select="../../@id"/>
   </code>
   is
-  <code>nullptr</code>, <xsl:apply-templates/>.
+  <code>null</code> pointer, <xsl:apply-templates/>.
 </xsl:template>
 
 <xsl:template match="vmbuf|allocfieldbuf|struct" mode="funcdescription">
@@ -378,7 +378,7 @@
       <xsl:value-of select="../@id"/>
     </code>
     is
-    <code>nullptr</code>, the current thread is used.
+    null, the current thread is used.
   </xsl:if>
 </xsl:template>
 

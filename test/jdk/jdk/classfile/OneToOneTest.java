@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,38 +24,32 @@
 /*
  * @test
  * @summary Testing ClassFile class writing and reading.
+ * @bug 8339368
  * @run junit OneToOneTest
  */
 import java.lang.constant.ClassDesc;
-import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
-import java.util.List;
-
-import java.lang.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Label;
 import java.lang.classfile.MethodModel;
-import java.lang.classfile.TypeKind;
 import java.lang.classfile.attribute.SourceFileAttribute;
-import static org.junit.jupiter.api.Assertions.*;
+import java.lang.classfile.instruction.*;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
-import java.lang.classfile.instruction.ConstantInstruction;
-import java.lang.classfile.instruction.StoreInstruction;
-import java.lang.classfile.instruction.BranchInstruction;
-import java.lang.classfile.instruction.LoadInstruction;
-import java.lang.classfile.instruction.OperatorInstruction;
-import java.lang.classfile.instruction.FieldInstruction;
-import java.lang.classfile.instruction.InvokeInstruction;
-
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.classfile.Opcode.*;
+import static java.lang.constant.ConstantDescs.*;
 import static helpers.TestConstants.CD_PrintStream;
 import static helpers.TestConstants.CD_System;
 import static helpers.TestConstants.MTD_INT_VOID;
 import static helpers.TestConstants.MTD_VOID;
-import static java.lang.classfile.Opcode.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 class OneToOneTest {
 
@@ -74,7 +68,7 @@ class OneToOneTest {
                                   )
               )
               .withMethod("main", MethodTypeDesc.of(CD_void, CD_String.arrayType()),
-                          AccessFlags.ofMethod(AccessFlag.STATIC, AccessFlag.PUBLIC).flagsMask(),
+                          ACC_PUBLIC | ACC_STATIC,
                           mb -> mb.withCode(c0 -> {
                                                 Label loopTop = c0.newLabel();
                                                 Label loopEnd = c0.newLabel();
@@ -154,5 +148,37 @@ class OneToOneTest {
             }
         }
         assertTrue(found);
+    }
+
+    @Test
+    void testJava5ClassWriteRead() {
+        MethodModel mm = ClassFile.of().parse(ClassFile.of().build(ClassDesc.of("MyClass"), clb -> clb
+                .withVersion(ClassFile.JAVA_5_VERSION, 0)
+                .withMethodBody("switches", MTD_void, ACC_STATIC, cob -> {
+                    Label l1 = cob.newLabel(), l2 = cob.newLabel(), l3 = cob.newLabel(), l4 = cob.newLabel();
+                    cob.iconst_0()
+                       .tableswitch(l1, List.of(SwitchCase.of(0, l2)))
+                       .labelBinding(l1)
+                       .nop()
+                       .labelBinding(l2)
+                       .iconst_0()
+                       .lookupswitch(l3, List.of(SwitchCase.of(0, l4)))
+                       .labelBinding(l3)
+                       .nop()
+                       .labelBinding(l4)
+                       .return_();
+                }))).methods().getFirst();
+        var it = mm.code().orElseThrow().iterator();
+        while (!(it.next() instanceof ConstantInstruction));
+        assertTrue(it.next() instanceof TableSwitchInstruction tsi
+                   && it.next() instanceof LabelTarget lt1 && lt1.label().equals(tsi.defaultTarget())
+                   && it.next() instanceof NopInstruction
+                   && it.next() instanceof LabelTarget lt2 && lt2.label().equals(tsi.cases().getFirst().target())
+                   && it.next() instanceof ConstantInstruction
+                   && it.next() instanceof LookupSwitchInstruction lsi
+                   && it.next() instanceof LabelTarget lt3 && lt3.label().equals(lsi.defaultTarget())
+                   && it.next() instanceof NopInstruction
+                   && it.next() instanceof LabelTarget lt4 && lt4.label().equals(lsi.cases().getFirst().target()),
+                () -> mm.code().get().elementList().toString());
     }
 }

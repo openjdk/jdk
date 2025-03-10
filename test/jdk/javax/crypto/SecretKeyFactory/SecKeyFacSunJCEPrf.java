@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,11 @@ import com.evilprovider.*;
 public class SecKeyFacSunJCEPrf {
 
     // One of the PBKDF2 HMAC-SHA1 test vectors from RFC 6070
-    private static final byte[] SALT = "salt".getBytes();
+    private static final byte[] SALT = "16-byte salt val".getBytes();
     private static final char[] PASS = "password".toCharArray();
     private static final int ITER = 4096;
     private static final byte[] EXP_OUT =
-            HexFormat.of().parseHex("4B007901B765489ABEAD49D926F721D065A429C1");
+            HexFormat.of().parseHex("D2CACD3F1D44AF293C704F0B1005338D903C688C");
 
     public static void main(String[] args) throws Exception {
         // Instantiate the Evil Provider and insert it in the
@@ -56,7 +56,8 @@ public class SecKeyFacSunJCEPrf {
         Security.insertProviderAt(evilProv, 1);
 
         SecretKeyFactory pbkdf2 =
-                SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1", "SunJCE");
+                SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1",
+                        System.getProperty("test.provider.name", "SunJCE"));
         PBEKeySpec pbks = new PBEKeySpec(PASS, SALT, ITER, 160);
 
         SecretKey secKey1 = pbkdf2.generateSecret(pbks);

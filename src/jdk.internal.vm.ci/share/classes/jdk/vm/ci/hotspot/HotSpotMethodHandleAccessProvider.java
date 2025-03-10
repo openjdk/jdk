@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,6 +146,8 @@ public class HotSpotMethodHandleAccessProvider implements MethodHandleAccessProv
             return IntrinsicMethod.LINK_TO_STATIC;
         } else if (intrinsicId == config.vmIntrinsicLinkToVirtual) {
             return IntrinsicMethod.LINK_TO_VIRTUAL;
+        } else if (intrinsicId == config.vmIntrinsicLinkToNative) {
+            return IntrinsicMethod.LINK_TO_NATIVE;
         }
         return null;
     }

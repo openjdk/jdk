@@ -121,6 +121,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jdk.internal.util.DecimalDigits;
+
 import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -1095,14 +1097,14 @@ public final class DateTimeFormatterBuilder {
      * During parsing, the text must match a known zone or offset.
      * There are two types of zone ID, offset-based, such as '+01:30' and
      * region-based, such as 'Europe/London'. These are parsed differently.
-     * If the parse starts with '+', '-', 'UT', 'UTC' or 'GMT', then the parser
-     * expects an offset-based zone and will not match region-based zones.
-     * The offset ID, such as '+02:30', may be at the start of the parse,
-     * or prefixed by  'UT', 'UTC' or 'GMT'. The offset ID parsing is
-     * equivalent to using {@link #appendOffset(String, String)} using the
-     * arguments 'HH:MM:ss' and the no offset string '0'.
-     * If the parse starts with 'UT', 'UTC' or 'GMT', and the parser cannot
-     * match a following offset ID, then {@link ZoneOffset#UTC} is selected.
+     * If the parse starts with '+' or '-', then the parser expects an
+     * offset-based zone and will not match region-based zones. The offset
+     * ID parsing is equivalent to using {@link #appendOffset(String, String)}
+     * using the arguments 'HH:MM:ss' and the no offset string '0'.
+     * If the parse starts with 'UT', 'UTC' or 'GMT', and the parser can
+     * match a following offset, then a region-based zone with the parsed
+     * offset will be returned, or else if the parser cannot match a following
+     * offset, then {@link ZoneOffset#UTC} is selected.
      * In all other cases, the list of known region-based zones is used to
      * find the longest available match. If no match is found, and the parse
      * starts with 'Z', then {@code ZoneOffset.UTC} is selected.
@@ -1116,9 +1118,9 @@ public final class DateTimeFormatterBuilder {
      *   "UTC"                     -- ZoneId.of("UTC")
      *   "GMT"                     -- ZoneId.of("GMT")
      *   "+01:30"                  -- ZoneOffset.of("+01:30")
-     *   "UT+01:30"                -- ZoneOffset.of("+01:30")
-     *   "UTC+01:30"               -- ZoneOffset.of("+01:30")
-     *   "GMT+01:30"               -- ZoneOffset.of("+01:30")
+     *   "UT+01:30"                -- ZoneId.of("UT+01:30")
+     *   "UTC+01:30"               -- ZoneId.of("UTC+01:30")
+     *   "GMT+01:30"               -- ZoneId.of("GMT+01:30")
      * </pre>
      *
      * @return this, for chaining, not null
@@ -1133,8 +1135,7 @@ public final class DateTimeFormatterBuilder {
      * Appends the time-zone region ID, such as 'Europe/Paris', to the formatter,
      * rejecting the zone ID if it is a {@code ZoneOffset}.
      * <p>
-     * This appends an instruction to format/parse the zone ID to the builder
-     * only if it is a region-based ID.
+     * This appends an instruction to format only region-based zone IDs to the builder.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
      * to querying the temporal with {@link TemporalQueries#zoneId()}.
@@ -1146,14 +1147,14 @@ public final class DateTimeFormatterBuilder {
      * During parsing, the text must match a known zone or offset.
      * There are two types of zone ID, offset-based, such as '+01:30' and
      * region-based, such as 'Europe/London'. These are parsed differently.
-     * If the parse starts with '+', '-', 'UT', 'UTC' or 'GMT', then the parser
-     * expects an offset-based zone and will not match region-based zones.
-     * The offset ID, such as '+02:30', may be at the start of the parse,
-     * or prefixed by  'UT', 'UTC' or 'GMT'. The offset ID parsing is
-     * equivalent to using {@link #appendOffset(String, String)} using the
-     * arguments 'HH:MM:ss' and the no offset string '0'.
-     * If the parse starts with 'UT', 'UTC' or 'GMT', and the parser cannot
-     * match a following offset ID, then {@link ZoneOffset#UTC} is selected.
+     * If the parse starts with '+' or '-', then the parser expects an
+     * offset-based zone and will not match region-based zones. The offset
+     * ID parsing is equivalent to using {@link #appendOffset(String, String)}
+     * using the arguments 'HH:MM:ss' and the no offset string '0'.
+     * If the parse starts with 'UT', 'UTC' or 'GMT', and the parser can
+     * match a following offset, then a region-based zone with the parsed
+     * offset will be returned, or else if the parser cannot match a following
+     * offset, then {@link ZoneOffset#UTC} is selected.
      * In all other cases, the list of known region-based zones is used to
      * find the longest available match. If no match is found, and the parse
      * starts with 'Z', then {@code ZoneOffset.UTC} is selected.
@@ -1167,9 +1168,9 @@ public final class DateTimeFormatterBuilder {
      *   "UTC"                     -- ZoneId.of("UTC")
      *   "GMT"                     -- ZoneId.of("GMT")
      *   "+01:30"                  -- ZoneOffset.of("+01:30")
-     *   "UT+01:30"                -- ZoneOffset.of("+01:30")
-     *   "UTC+01:30"               -- ZoneOffset.of("+01:30")
-     *   "GMT+01:30"               -- ZoneOffset.of("+01:30")
+     *   "UT+01:30"                -- ZoneId.of("UT+01:30")
+     *   "UTC+01:30"               -- ZoneId.of("UTC+01:30")
+     *   "GMT+01:30"               -- ZoneId.of("GMT+01:30")
      * </pre>
      * <p>
      * Note that this method is identical to {@code appendZoneId()} except
@@ -1204,14 +1205,14 @@ public final class DateTimeFormatterBuilder {
      * During parsing, the text must match a known zone or offset.
      * There are two types of zone ID, offset-based, such as '+01:30' and
      * region-based, such as 'Europe/London'. These are parsed differently.
-     * If the parse starts with '+', '-', 'UT', 'UTC' or 'GMT', then the parser
-     * expects an offset-based zone and will not match region-based zones.
-     * The offset ID, such as '+02:30', may be at the start of the parse,
-     * or prefixed by  'UT', 'UTC' or 'GMT'. The offset ID parsing is
-     * equivalent to using {@link #appendOffset(String, String)} using the
-     * arguments 'HH:MM:ss' and the no offset string '0'.
-     * If the parse starts with 'UT', 'UTC' or 'GMT', and the parser cannot
-     * match a following offset ID, then {@link ZoneOffset#UTC} is selected.
+     * If the parse starts with '+' or '-', then the parser expects an
+     * offset-based zone and will not match region-based zones. The offset
+     * ID parsing is equivalent to using {@link #appendOffset(String, String)}
+     * using the arguments 'HH:MM:ss' and the no offset string '0'.
+     * If the parse starts with 'UT', 'UTC' or 'GMT', and the parser can
+     * match a following offset, then a region-based zone with the parsed
+     * offset will be returned, or else if the parser cannot match a following
+     * offset, then {@link ZoneOffset#UTC} is selected.
      * In all other cases, the list of known region-based zones is used to
      * find the longest available match. If no match is found, and the parse
      * starts with 'Z', then {@code ZoneOffset.UTC} is selected.
@@ -1225,9 +1226,9 @@ public final class DateTimeFormatterBuilder {
      *   "UTC"                     -- ZoneId.of("UTC")
      *   "GMT"                     -- ZoneId.of("GMT")
      *   "+01:30"                  -- ZoneOffset.of("+01:30")
-     *   "UT+01:30"                -- ZoneOffset.of("UT+01:30")
-     *   "UTC+01:30"               -- ZoneOffset.of("UTC+01:30")
-     *   "GMT+01:30"               -- ZoneOffset.of("GMT+01:30")
+     *   "UT+01:30"                -- ZoneId.of("UT+01:30")
+     *   "UTC+01:30"               -- ZoneId.of("UTC+01:30")
+     *   "GMT+01:30"               -- ZoneId.of("GMT+01:30")
      * </pre>
      * <p>
      * Note that this method is identical to {@code appendZoneId()} except
@@ -2908,24 +2909,6 @@ public final class DateTimeFormatterBuilder {
             return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, this.subsequentWidth + subsequentWidth);
         }
 
-        /*
-         * Copied from Long.stringSize
-         */
-        private static int stringSize(long x) {
-            int d = 1;
-            if (x >= 0) {
-                d = 0;
-                x = -x;
-            }
-            long p = -10;
-            for (int i = 1; i < 19; i++) {
-                if (x > p)
-                    return i + d;
-                p = 10 * p;
-            }
-            return 19 + d;
-        }
-
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
             Long valueLong = context.getValue(field);
@@ -2934,7 +2917,7 @@ public final class DateTimeFormatterBuilder {
             }
             long value = getValue(context, valueLong);
             DecimalStyle decimalStyle = context.getDecimalStyle();
-            int size = stringSize(value);
+            int size = DecimalDigits.stringSize(value);
             if (value < 0) {
                 size--;
             }
@@ -2965,8 +2948,9 @@ public final class DateTimeFormatterBuilder {
                 }
             }
             char zeroDigit = decimalStyle.getZeroDigit();
-            for (int i = 0; i < minWidth - size; i++) {
-                buf.append(zeroDigit);
+            int zeros = minWidth - size;
+            if (zeros > 0) {
+                buf.repeat(zeroDigit, zeros);
             }
             if (zeroDigit == '0' && value != Long.MIN_VALUE) {
                 buf.append(Math.abs(value));
@@ -3368,17 +3352,6 @@ public final class DateTimeFormatterBuilder {
             return false;
         }
 
-        // Simplified variant of Integer.stringSize that assumes positive values
-        private static int stringSize(int x) {
-            int p = 10;
-            for (int i = 1; i < 10; i++) {
-                if (x < p)
-                    return i;
-                p = 10 * p;
-            }
-            return 10;
-        }
-
         private static final int[] TENS = new int[] {
             1,
             10,
@@ -3399,7 +3372,7 @@ public final class DateTimeFormatterBuilder {
             }
             int val = field.range().checkValidIntValue(value, field);
             DecimalStyle decimalStyle = context.getDecimalStyle();
-            int stringSize = stringSize(val);
+            int stringSize = DecimalDigits.stringSize(val);
             char zero = decimalStyle.getZeroDigit();
             if (val == 0 || stringSize < 10 - maxWidth) {
                 // 0 or would round down to 0
@@ -3410,17 +3383,16 @@ public final class DateTimeFormatterBuilder {
                     if (decimalPoint) {
                         buf.append(decimalStyle.getDecimalSeparator());
                     }
-                    for (int i = 0; i < width; i++) {
-                        buf.append(zero);
-                    }
+                    buf.repeat(zero, width);
                 }
             } else {
                 if (decimalPoint) {
                     buf.append(decimalStyle.getDecimalSeparator());
                 }
                 // add leading zeros
-                for (int i = 9 - stringSize; i > 0; i--) {
-                    buf.append(zero);
+                int zeros = 9 - stringSize;
+                if (zeros > 0) {
+                    buf.repeat(zero, zeros);
                 }
                 // truncate unwanted digits
                 if (maxWidth < 9) {
@@ -3594,9 +3566,7 @@ public final class DateTimeFormatterBuilder {
                     if (decimalPoint) {
                         buf.append(decimalStyle.getDecimalSeparator());
                     }
-                    for (int i = 0; i < minWidth; i++) {
-                        buf.append(decimalStyle.getZeroDigit());
-                    }
+                    buf.repeat(decimalStyle.getZeroDigit(), minWidth);
                 }
             } else {
                 int outputScale = Math.clamp(fraction.scale(), minWidth, maxWidth);

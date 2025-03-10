@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.internal.net.http.hpack;
 import jdk.internal.net.http.hpack.HPACK.Logger;
 
 import java.io.IOException;
+import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -107,12 +108,16 @@ public final class Decoder {
     private final StringReader stringReader;
     private final StringBuilder name;
     private final StringBuilder value;
+    private final int maxHeaderListSize;
+    private final int maxIndexed;
     private int intValue;
     private boolean firstValueRead;
     private boolean firstValueIndex;
     private boolean nameHuffmanEncoded;
     private boolean valueHuffmanEncoded;
     private int capacity;
+    private long size;
+    private int indexed;
 
     /**
      * Constructs a {@code Decoder} with the specified initial capacity of the
@@ -129,6 +134,31 @@ public final class Decoder {
      *         if capacity is negative
      */
     public Decoder(int capacity) {
+        this(capacity, 0, 0);
+    }
+
+    /**
+     * Constructs a {@code Decoder} with the specified initial capacity of the
+     * header table, a max header list size, and a maximum number of literals
+     * with indexing per header section.
+     *
+     * <p> The value of the capacity has to be agreed between decoder and encoder out-of-band,
+     * e.g. by a protocol that uses HPACK
+     * (see <a href="https://tools.ietf.org/html/rfc7541#section-4.2">4.2. Maximum Table Size</a>).
+     *
+     * @param capacity
+     *         a non-negative integer
+     * @param maxHeaderListSize
+     *         a maximum value for the header list size. This is the uncompressed
+     *         names size + uncompressed values size + 32 bytes per field line
+     * @param maxIndexed
+     *         the maximum number of literal with indexing we're prepared to handle
+     *         for a header field section
+     *
+     * @throws IllegalArgumentException
+     *         if capacity is negative
+     */
+    public Decoder(int capacity, int maxHeaderListSize, int maxIndexed) {
         id = DECODERS_IDS.incrementAndGet();
         logger = HPACK.getLogger().subLogger("Decoder#" + id);
         if (logger.isLoggable(NORMAL)) {
@@ -145,6 +175,8 @@ public final class Decoder {
                               toString(), hashCode);
             });
         }
+        this.maxHeaderListSize = maxHeaderListSize;
+        this.maxIndexed = maxIndexed;
         setMaxCapacity0(capacity);
         table = new SimpleHeaderTable(capacity, logger.subLogger("HeaderTable"));
         integerReader = new IntegerReader();
@@ -242,22 +274,25 @@ public final class Decoder {
         requireNonNull(consumer, "consumer");
         if (logger.isLoggable(NORMAL)) {
             logger.log(NORMAL, () -> format("reading %s, end of header block? %s",
-                                            headerBlock, endOfHeaderBlock));
+                    headerBlock, endOfHeaderBlock));
         }
         while (headerBlock.hasRemaining()) {
             proceed(headerBlock, consumer);
         }
         if (endOfHeaderBlock && state != State.READY) {
             logger.log(NORMAL, () -> format("unexpected end of %s representation",
-                                            state));
+                    state));
             throw new IOException("Unexpected end of header block");
+        }
+        if (endOfHeaderBlock) {
+            size = indexed = 0;
         }
     }
 
     private void proceed(ByteBuffer input, DecodingCallback action)
             throws IOException {
         switch (state) {
-            case READY                  ->  resumeReady(input);
+            case READY                  ->  resumeReady(input, action);
             case INDEXED                ->  resumeIndexed(input, action);
             case LITERAL                ->  resumeLiteral(input, action);
             case LITERAL_WITH_INDEXING  ->  resumeLiteralWithIndexing(input, action);
@@ -268,7 +303,7 @@ public final class Decoder {
         }
     }
 
-    private void resumeReady(ByteBuffer input) {
+    private void resumeReady(ByteBuffer input, DecodingCallback action) throws IOException {
         int b = input.get(input.position()) & 0xff; // absolute read
         State s = states.get(b);
         if (logger.isLoggable(EXTRA)) {
@@ -289,6 +324,9 @@ public final class Decoder {
                 }
                 break;
             case LITERAL_WITH_INDEXING:
+                if (maxIndexed > 0 && ++indexed > maxIndexed) {
+                    action.onMaxLiteralWithIndexingReached(indexed, maxIndexed);
+                }
                 state = State.LITERAL_WITH_INDEXING;
                 firstValueIndex = (b & 0b0011_1111) != 0;
                 if (firstValueIndex) {
@@ -315,6 +353,12 @@ public final class Decoder {
         }
     }
 
+    private void checkMaxHeaderListSize(long sz, DecodingCallback consumer) throws ProtocolException {
+        if (maxHeaderListSize > 0 && sz > maxHeaderListSize) {
+            consumer.onMaxHeaderListSizeReached(sz, maxHeaderListSize);
+        }
+    }
+
     //              0   1   2   3   4   5   6   7
     //            +---+---+---+---+---+---+---+---+
     //            | 1 |        Index (7+)         |
@@ -332,6 +376,8 @@ public final class Decoder {
         }
         try {
             SimpleHeaderTable.HeaderField f = getHeaderFieldAt(intValue);
+            size = size + 32 + f.name.length() + f.value.length();
+            checkMaxHeaderListSize(size, action);
             action.onIndexed(intValue, f.name, f.value);
         } finally {
             state = State.READY;
@@ -374,7 +420,7 @@ public final class Decoder {
     //
     private void resumeLiteral(ByteBuffer input, DecodingCallback action)
             throws IOException {
-        if (!completeReading(input)) {
+        if (!completeReading(input, action)) {
             return;
         }
         try {
@@ -385,6 +431,8 @@ public final class Decoder {
                             intValue, value, valueHuffmanEncoded));
                 }
                 SimpleHeaderTable.HeaderField f = getHeaderFieldAt(intValue);
+                size = size + 32 + f.name.length() + value.length();
+                checkMaxHeaderListSize(size, action);
                 action.onLiteral(intValue, f.name, value, valueHuffmanEncoded);
             } else {
                 if (logger.isLoggable(NORMAL)) {
@@ -392,6 +440,8 @@ public final class Decoder {
                             "literal without indexing ('%s', huffman=%b, '%s', huffman=%b)",
                             name, nameHuffmanEncoded, value, valueHuffmanEncoded));
                 }
+                size = size + 32 + name.length() + value.length();
+                checkMaxHeaderListSize(size, action);
                 action.onLiteral(name, nameHuffmanEncoded, value, valueHuffmanEncoded);
             }
         } finally {
@@ -425,7 +475,7 @@ public final class Decoder {
     private void resumeLiteralWithIndexing(ByteBuffer input,
                                            DecodingCallback action)
             throws IOException {
-        if (!completeReading(input)) {
+        if (!completeReading(input, action)) {
             return;
         }
         try {
@@ -445,6 +495,8 @@ public final class Decoder {
                 }
                 SimpleHeaderTable.HeaderField f = getHeaderFieldAt(intValue);
                 n = f.name;
+                size = size + 32 + n.length() + v.length();
+                checkMaxHeaderListSize(size, action);
                 action.onLiteralWithIndexing(intValue, n, v, valueHuffmanEncoded);
             } else {
                 n = name.toString();
@@ -453,6 +505,8 @@ public final class Decoder {
                             "literal with incremental indexing ('%s', huffman=%b, '%s', huffman=%b)",
                             n, nameHuffmanEncoded, value, valueHuffmanEncoded));
                 }
+                size = size + 32 + n.length() + v.length();
+                checkMaxHeaderListSize(size, action);
                 action.onLiteralWithIndexing(n, nameHuffmanEncoded, v, valueHuffmanEncoded);
             }
             table.put(n, v);
@@ -486,7 +540,7 @@ public final class Decoder {
     private void resumeLiteralNeverIndexed(ByteBuffer input,
                                            DecodingCallback action)
             throws IOException {
-        if (!completeReading(input)) {
+        if (!completeReading(input, action)) {
             return;
         }
         try {
@@ -497,6 +551,8 @@ public final class Decoder {
                             intValue, value, valueHuffmanEncoded));
                 }
                 SimpleHeaderTable.HeaderField f = getHeaderFieldAt(intValue);
+                size = size + 32 + f.name.length() + value.length();
+                checkMaxHeaderListSize(size, action);
                 action.onLiteralNeverIndexed(intValue, f.name, value, valueHuffmanEncoded);
             } else {
                 if (logger.isLoggable(NORMAL)) {
@@ -504,6 +560,8 @@ public final class Decoder {
                             "literal never indexed ('%s', huffman=%b, '%s', huffman=%b)",
                             name, nameHuffmanEncoded, value, valueHuffmanEncoded));
                 }
+                size = size + 32 + name.length() + value.length();
+                checkMaxHeaderListSize(size, action);
                 action.onLiteralNeverIndexed(name, nameHuffmanEncoded, value, valueHuffmanEncoded);
             }
         } finally {
@@ -541,7 +599,7 @@ public final class Decoder {
         }
     }
 
-    private boolean completeReading(ByteBuffer input) throws IOException {
+    private boolean completeReading(ByteBuffer input, DecodingCallback action) throws IOException {
         if (!firstValueRead) {
             if (firstValueIndex) {
                 if (!integerReader.read(input)) {
@@ -551,6 +609,8 @@ public final class Decoder {
                 integerReader.reset();
             } else {
                 if (!stringReader.read(input, name)) {
+                    long sz = size + 32 + name.length();
+                    checkMaxHeaderListSize(sz, action);
                     return false;
                 }
                 nameHuffmanEncoded = stringReader.isHuffmanEncoded();
@@ -560,6 +620,8 @@ public final class Decoder {
             return false;
         } else {
             if (!stringReader.read(input, value)) {
+                long sz = size + 32 + name.length() + value.length();
+                checkMaxHeaderListSize(sz, action);
                 return false;
             }
         }

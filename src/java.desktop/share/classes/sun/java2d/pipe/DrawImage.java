@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,6 +369,13 @@ public class DrawImage implements DrawImagePipe
         final AffineTransform itx;
         try {
             itx = tx.createInverse();
+            double[] mat = new double[6];
+            itx.getMatrix(mat);
+            for (double d : mat) {
+                if (!Double.isFinite(d)) {
+                    return;
+                }
+            }
         } catch (final NoninvertibleTransformException ignored) {
             // Non-invertible transform means no output
             return;

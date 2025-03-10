@@ -56,6 +56,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bi">bislama</language>
 			<language type="bin">bini</language>
 			<language type="bla">siksika</language>
+			<language type="blo">Anii</language>
 			<language type="bm">bambara</language>
 			<language type="bn">bengal</language>
 			<language type="bo">tibet</language>
@@ -179,6 +180,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="iba">iban</language>
 			<language type="ibb">ibibio</language>
 			<language type="id">indonez</language>
+			<language type="ie">interlingve</language>
 			<language type="ig">igbo</language>
 			<language type="ii">sichuan</language>
 			<language type="ikt">sharqiy-kanada inuktitut</language>
@@ -232,6 +234,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">komi</language>
 			<language type="kw">korn</language>
 			<language type="kwk">kvakvala</language>
+			<language type="kxv">kuvi</language>
 			<language type="ky">qirgʻizcha</language>
 			<language type="la">lotincha</language>
 			<language type="lad">ladino</language>
@@ -240,8 +243,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">lezgin</language>
 			<language type="lg">ganda</language>
 			<language type="li">limburg</language>
+			<language type="lij">liguryan</language>
 			<language type="lil">lilluet</language>
 			<language type="lkt">lakota</language>
+			<language type="lmo">lombard</language>
 			<language type="ln">lingala</language>
 			<language type="lo">laos</language>
 			<language type="lou">luiziana kreol</language>
@@ -252,7 +257,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lu">luba-katanga</language>
 			<language type="lua">luba-lulua</language>
 			<language type="lun">lunda</language>
-			<language type="luo">luo</language>
 			<language type="lus">lushay</language>
 			<language type="luy">luhya</language>
 			<language type="lv">latishcha</language>
@@ -396,7 +400,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sw">suaxili</language>
 			<language type="sw_CD">suaxili (Kongo)</language>
 			<language type="swb">qamar</language>
-			<language type="syr">suriyacha</language>
+			<language type="syr">suryoniy</language>
+			<language type="szl">silez</language>
 			<language type="ta">tamil</language>
 			<language type="tce">janubiy tutchone</language>
 			<language type="te">telugu</language>
@@ -434,9 +439,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="und">noma’lum til</language>
 			<language type="ur">urdu</language>
 			<language type="uz">o‘zbek</language>
-			<language type="vai">vai</language>
 			<language type="ve">venda</language>
+			<language type="vec">venet</language>
 			<language type="vi">vyetnam</language>
+			<language type="vmw">makua</language>
 			<language type="vo">volapyuk</language>
 			<language type="vun">vunjo</language>
 			<language type="wa">vallon</language>
@@ -448,6 +454,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">vu xitoy</language>
 			<language type="xal">qalmoq</language>
 			<language type="xh">kxosa</language>
+			<language type="xnr">kangri</language>
 			<language type="xog">soga</language>
 			<language type="yav">yangben</language>
 			<language type="ybb">yemba</language>
@@ -456,9 +463,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yrl">nyengatu</language>
 			<language type="yue">kanton</language>
 			<language type="yue" alt="menu">xitoy, kanton</language>
+			<language type="za">Chjuan</language>
 			<language type="zgh">tamazigxt</language>
 			<language type="zh">xitoy</language>
 			<language type="zh" alt="menu">xitoy, mandarin</language>
+			<language type="zh_Hans">zh_Hans</language>
 			<language type="zh_Hans" alt="long">xitoy (soddalashtirilgan mandarin)</language>
 			<language type="zh_Hant">xitoy (an’anaviy)</language>
 			<language type="zh_Hant" alt="long">xitoy (an’anaviy mandarin)</language>
@@ -1539,30 +1548,60 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<monthWidth type="abbreviated">
 							<month type="1">Muh.</month>
 							<month type="2">Saf.</month>
-							<month type="3">Rob. avv.</month>
-							<month type="4">Rob. ox.</month>
+							<month type="3">Rab. avv.</month>
+							<month type="4">Rab. son.</month>
 							<month type="5">Jum. avv.</month>
-							<month type="6">Jum. ox.</month>
+							<month type="6">Jum. son.</month>
 							<month type="7">Raj.</month>
 							<month type="8">Sha.</month>
 							<month type="9">Ram.</month>
 							<month type="10">Shav.</month>
-							<month type="11">Zul-q.</month>
-							<month type="12">Zul-h.</month>
+							<month type="11">Zulq.</month>
+							<month type="12">Zulh.</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Muharram</month>
 							<month type="2">Safar</month>
-							<month type="3">Robi’ ul-avval</month>
-							<month type="4">Robi’ ul-oxir</month>
-							<month type="5">Jumad ul-avval</month>
-							<month type="6">Jumad ul-oxir</month>
+							<month type="3">Rabiʼul avval</month>
+							<month type="4">Rabiʼus soniy</month>
+							<month type="5">Jumodul avval</month>
+							<month type="6">Jumodus soniy</month>
 							<month type="7">Rajab</month>
 							<month type="8">Sha’bon</month>
 							<month type="9">Ramazon</month>
 							<month type="10">Shavvol</month>
-							<month type="11">Zul-qa’da</month>
-							<month type="12">Zul-hijja</month>
+							<month type="11">Zulqaʼda</month>
+							<month type="12">Zulhijja</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">Muh.</month>
+							<month type="2">Saf.</month>
+							<month type="3">Rab. avv.</month>
+							<month type="4">Rab. son.</month>
+							<month type="5">Jum. avv.</month>
+							<month type="6">Jum. son.</month>
+							<month type="7">Raj.</month>
+							<month type="8">Sha.</month>
+							<month type="9">Ram.</month>
+							<month type="10">Shav.</month>
+							<month type="11">Zulq.</month>
+							<month type="12">Zulh.</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Muharram</month>
+							<month type="2">Safar</month>
+							<month type="3">Rabiʼul avval</month>
+							<month type="4">Rabiʼus soniy</month>
+							<month type="5">Jumodul avval</month>
+							<month type="6">Jumodus soniy</month>
+							<month type="7">Rajab</month>
+							<month type="8">Sha’bon</month>
+							<month type="9">Ramazon</month>
+							<month type="10">Shavvol</month>
+							<month type="11">Zulqaʼda</month>
+							<month type="12">Zulhijja</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -1888,6 +1927,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 		</fields>
 		<timeZoneNames>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Gonolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Koordinatali universal vaqt</standard>
@@ -2387,7 +2429,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Oqto‘ba</exemplarCity>
 			</zone>
 			<zone type="Asia/Qostanay">
-				<exemplarCity>Kustanay</exemplarCity>
+				<exemplarCity>Qoʻstanay</exemplarCity>
 			</zone>
 			<zone type="Asia/Qyzylorda">
 				<exemplarCity>Qizilo‘rda</exemplarCity>
@@ -2451,9 +2493,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Ulan-Bator</exemplarCity>
-			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Choybalsan</exemplarCity>
 			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Makao</exemplarCity>
@@ -2670,9 +2709,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>Nom</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Gonolulu</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ankorij</exemplarCity>
@@ -2985,13 +3021,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Xitoy yozgi vaqti</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Choybalsan vaqti</generic>
-					<standard>Choybalsan standart vaqti</standard>
-					<daylight>Choybalsan yozgi vaqti</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Rojdestvo oroli vaqti</standard>
@@ -3228,6 +3257,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Yaponiya vaqti</generic>
 					<standard>Yaponiya standart vaqti</standard>
 					<daylight>Yaponiya yozgi vaqti</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Qozogʻiston vaqti</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -3647,6 +3681,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
+		<symbols numberSystem="arab">
+			<approximatelySign>≈</approximatelySign>
+			<exponential>^</exponential>
+		</symbols>
 		<symbols numberSystem="arabext">
 			<plusSign>+</plusSign>
 			<minusSign>-</minusSign>
@@ -3753,8 +3791,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">000 trln ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -4901,11 +4937,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kelvin</unitPattern>
 				<unitPattern count="other">{0} kelvin</unitPattern>
 			</unit>
-			<unit type="torque-pound-force-foot">
-				<displayName>funt-fut</displayName>
-				<unitPattern count="one">{0} funt-kuch-fut</unitPattern>
-				<unitPattern count="other">{0} funt-fut</unitPattern>
-			</unit>
 			<unit type="torque-newton-meter">
 				<displayName>nyuton-metr</displayName>
 				<unitPattern count="one">{0} nyuton-metr</unitPattern>
@@ -4997,6 +5028,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>draxma</displayName>
 				<unitPattern count="one">{0} draxma</unitPattern>
 				<unitPattern count="other">{0} draxma</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>imp.kvarta</displayName>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>qism/milliard</displayName>
+				<unitPattern count="one">{0} ta qism/milliard</unitPattern>
+				<unitPattern count="other">{0} ta qism/milliard</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>kecha</displayName>
+				<unitPattern count="one">{0} kecha</unitPattern>
+				<unitPattern count="other">{0} kecha</unitPattern>
+				<perUnitPattern>{0}/kecha</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0} sharqiy uzunlik</coordinateUnitPattern>
@@ -5642,9 +5687,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} desert qoshiq</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
-				<displayName>imp desert qoshiq</displayName>
-				<unitPattern count="one">{0} imp desert qoshiq</unitPattern>
-				<unitPattern count="other">{0} imp desert qoshiq</unitPattern>
+				<displayName>imp. desert qoshiq</displayName>
+				<unitPattern count="one">{0} imp. desert qoshiq</unitPattern>
+				<unitPattern count="other">{0} imp. desert qoshiq</unitPattern>
 			</unit>
 			<unit type="volume-drop">
 				<displayName>tomchi</displayName>
@@ -5667,9 +5712,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} chimdim</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
-				<displayName>imp kvarta</displayName>
+				<displayName>imp.kvarta</displayName>
 				<unitPattern count="one">{0} imp. kvarta</unitPattern>
 				<unitPattern count="other">{0} imp. kvarta</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>qism/milliard</displayName>
+				<unitPattern count="one">{0} ta qism/mlrd</unitPattern>
+				<unitPattern count="other">{0} ta qism/mlrd</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>kecha</displayName>
+				<unitPattern count="one">{0} kecha</unitPattern>
+				<unitPattern count="other">{0} kecha</unitPattern>
+				<perUnitPattern>{0}/kecha</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>yo‘nalish</displayName>
@@ -5730,13 +5786,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} nqt/sm</unitPattern>
 				<unitPattern count="other">{0} nuqta/sm</unitPattern>
 			</unit>
-			<unit type="length-mile">
-				<unitPattern count="one">{0} milya</unitPattern>
-				<unitPattern count="other">{0} milya</unitPattern>
-			</unit>
 			<unit type="length-inch">
-				<unitPattern count="one">{0} dyuym</unitPattern>
-				<unitPattern count="other">{0} dyuym</unitPattern>
+				<unitPattern count="one">{0} duym</unitPattern>
+				<unitPattern count="other">{0} duym</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<unitPattern count="one">{0} yo.y.</unitPattern>
@@ -5759,30 +5811,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="mass-earth-mass">
 				<displayName>M⊕</displayName>
 			</unit>
-			<unit type="power-kilowatt">
-				<unitPattern count="one">{0} kW</unitPattern>
-				<unitPattern count="other">{0} kW</unitPattern>
-			</unit>
-			<unit type="power-watt">
-				<unitPattern count="one">{0} W</unitPattern>
-				<unitPattern count="other">{0} W</unitPattern>
-			</unit>
 			<unit type="power-horsepower">
-				<unitPattern count="one">{0} hp</unitPattern>
+				<unitPattern count="one">{0} o.k.</unitPattern>
 				<unitPattern count="other">{0} hp</unitPattern>
-			</unit>
-			<unit type="pressure-hectopascal">
-				<unitPattern count="one">{0} hPa</unitPattern>
-				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<unitPattern count="one">{0} mi/h</unitPattern>
 				<unitPattern count="other">{0} mi/h</unitPattern>
-			</unit>
-			<unit type="torque-pound-force-foot">
-				<displayName>funt-fut</displayName>
-				<unitPattern count="one">{0} funt-fut</unitPattern>
-				<unitPattern count="other">{0} funt-fut</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
 				<unitPattern count="one">{0}N⋅m</unitPattern>
@@ -5795,6 +5830,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-liter">
 				<unitPattern count="one">{0}L</unitPattern>
 				<unitPattern count="other">{0}L</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<unitPattern count="one">{0} imp. desert qoshiq</unitPattern>
+				<unitPattern count="other">{0} imp. desert qoshiq</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>imp.kvarta</displayName>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>qism/milliard</displayName>
+				<unitPattern count="one">{0} ta qism/mlrd</unitPattern>
+				<unitPattern count="other">{0} ta qism/mlrd</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>kecha</displayName>
+				<unitPattern count="one">{0} kecha</unitPattern>
+				<unitPattern count="other">{0} kecha</unitPattern>
+				<perUnitPattern>{0}/nkecha</perUnitPattern>
 			</unit>
 		</unitLength>
 	</units>
@@ -5992,6 +6045,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<personNames>
 		<nameOrderLocales order="givenFirst">und uz</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+		<parameterDefault parameter="formality">informal</parameterDefault>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{given} {given2} {surname} {credentials}</namePattern>
 		</personName>

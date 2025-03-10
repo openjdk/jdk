@@ -77,20 +77,14 @@ public class ThreadTest extends JSR166TestCase {
      */
     public void testGetAndSetDefaultUncaughtExceptionHandler() {
         assertNull(Thread.getDefaultUncaughtExceptionHandler());
-        // failure due to SecurityException is OK.
-        // Would be nice to explicitly test both ways, but cannot yet.
         Thread.UncaughtExceptionHandler defaultHandler
             = Thread.getDefaultUncaughtExceptionHandler();
         MyHandler eh = new MyHandler();
+        Thread.setDefaultUncaughtExceptionHandler(eh);
         try {
-            Thread.setDefaultUncaughtExceptionHandler(eh);
-            try {
-                assertSame(eh, Thread.getDefaultUncaughtExceptionHandler());
-            } finally {
-                Thread.setDefaultUncaughtExceptionHandler(defaultHandler);
-            }
-        } catch (SecurityException ok) {
-            assertNotNull(System.getSecurityManager());
+            assertSame(eh, Thread.getDefaultUncaughtExceptionHandler());
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(defaultHandler);
         }
         assertSame(defaultHandler, Thread.getDefaultUncaughtExceptionHandler());
     }

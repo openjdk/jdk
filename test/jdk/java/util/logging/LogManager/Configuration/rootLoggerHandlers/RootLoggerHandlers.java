@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -39,7 +38,6 @@ import java.util.stream.Stream;
  * @bug 8191033
  * @build custom.DotHandler custom.Handler
  * @run main/othervm RootLoggerHandlers
- * @run main/othervm/java.security.policy==test.policy RootLoggerHandlers
  * @author danielfuchs
  */
 public class RootLoggerHandlers {

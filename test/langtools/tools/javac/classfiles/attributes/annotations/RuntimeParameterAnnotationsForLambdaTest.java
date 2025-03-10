@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@
  * @test
  * @bug 8044411 8079060 8138612
  * @summary Tests the RuntimeParameterVisibleAnnotations/RuntimeParameterInvisibleAnnotations attribute.
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
- *          jdk.compiler/com.sun.tools.javac.api
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @library /tools/lib /tools/javac/lib ../lib
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
@@ -104,10 +102,10 @@ public class RuntimeParameterAnnotationsForLambdaTest extends RuntimeParameterAn
     protected void testAttributes(
             TestCase.TestMethodInfo testMethod,
             MethodModel method) {
-        RuntimeInvisibleParameterAnnotationsAttribute invAttr = method.findAttribute(Attributes.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS).orElse(null);
-        checkNull(invAttr, String.format("%s should be null", Attributes.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS));
-        RuntimeVisibleParameterAnnotationsAttribute vAttr = method.findAttribute(Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS).orElse(null);
-        checkNull(vAttr, String.format("%s should be null", Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS));
+        RuntimeInvisibleParameterAnnotationsAttribute invAttr = method.findAttribute(Attributes.runtimeInvisibleParameterAnnotations()).orElse(null);
+        checkNull(invAttr, String.format("%s should be null", Attributes.runtimeInvisibleParameterAnnotations()));
+        RuntimeVisibleParameterAnnotationsAttribute vAttr = method.findAttribute(Attributes.runtimeVisibleParameterAnnotations()).orElse(null);
+        checkNull(vAttr, String.format("%s should be null", Attributes.runtimeVisibleParameterAnnotations()));
     }
 
     public String generateLambdaSource(TestCase.TestMethodInfo method) {

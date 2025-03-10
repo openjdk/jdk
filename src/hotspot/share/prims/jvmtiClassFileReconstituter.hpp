@@ -117,13 +117,6 @@ class JvmtiClassFileReconstituter : public JvmtiConstantPoolReconstituter {
   void write_signature_attribute(u2 generic_signaure_index);
   void write_attribute_name_index(const char* name);
   void write_annotations_attribute(const char* attr_name, AnnotationArray* annos);
-  // With PreserveAllAnnotations option "runtime invisible" annotations
-  // (RuntimeInvisibleAnnotations/RuntimeInvisibleTypeAnnotations/RuntimeInvisibleParameterAnnotations)
-  // are considered "runtime visible" and ClassFileReconstituter writes them as
-  // RuntimeVisibleAnnotations/RuntimeVisibleTypeAnnotations/RuntimeVisibleParameterAnnotations.
-  // This helper method is for the corner case when "runtime visible" attribute name is not presents
-  // in the class constant pool and the annotations are written with fallback "runtime invisible" name.
-  void write_annotations_attribute(const char* attr_name, const char* fallback_attr_name, AnnotationArray* annos);
   void write_bootstrapmethod_attribute();
   void write_nest_host_attribute();
   void write_nest_members_attribute();

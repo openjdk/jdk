@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author or authors.
+ * Copyright (c) 2002-2016, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -32,27 +32,25 @@ public class DefaultExpander implements Expander {
             if (unicode > 0) {
                 escaped = (--unicode >= 0);
                 sb.append(c);
-            }
-            else if (escaped) {
+            } else if (escaped) {
                 if (c == 'u') {
                     unicode = 4;
                 } else {
                     escaped = false;
                 }
                 sb.append(c);
-            }
-            else if (c == '\'') {
+            } else if (c == '\'') {
                 inQuote = !inQuote;
                 sb.append(c);
-            }
-            else if (inQuote) {
+            } else if (inQuote) {
                 sb.append(c);
-            }
-            else {
+            } else {
                 switch (c) {
                     case '\\':
-                        // any '\!' should be considered an expansion escape, so skip expansion and strip the escape character
-                        // a leading '\^' should be considered an expansion escape, so skip expansion and strip the escape character
+                        // any '\!' should be considered an expansion escape, so skip expansion and strip the escape
+                        // character
+                        // a leading '\^' should be considered an expansion escape, so skip expansion and strip the
+                        // escape character
                         // otherwise, add the escape
                         escaped = true;
                         sb.append(c);
@@ -91,7 +89,8 @@ public class DefaultExpander implements Expander {
                                     if (history.size() == 0) {
                                         throw new IllegalArgumentException("!$: event not found");
                                     }
-                                    String previous = history.get(history.index() - 1).trim();
+                                    String previous =
+                                            history.get(history.index() - 1).trim();
                                     int lastSpace = previous.lastIndexOf(' ');
                                     if (lastSpace != -1) {
                                         rep = previous.substring(lastSpace + 1);
@@ -128,14 +127,18 @@ public class DefaultExpander implements Expander {
                                     try {
                                         idx = Integer.parseInt(line.substring(i1, i));
                                     } catch (NumberFormatException e) {
-                                        throw new IllegalArgumentException((neg ? "!-" : "!") + line.substring(i1, i) + ": event not found");
+                                        throw new IllegalArgumentException(
+                                                (neg ? "!-" : "!") + line.substring(i1, i) + ": event not found");
                                     }
                                     if (neg && idx > 0 && idx <= history.size()) {
                                         rep = history.get(history.index() - idx);
-                                    } else if (!neg && idx > history.index() - history.size() && idx <= history.index()) {
+                                    } else if (!neg
+                                            && idx > history.index() - history.size()
+                                            && idx <= history.index()) {
                                         rep = history.get(idx - 1);
                                     } else {
-                                        throw new IllegalArgumentException((neg ? "!-" : "!") + line.substring(i1, i) + ": event not found");
+                                        throw new IllegalArgumentException(
+                                                (neg ? "!-" : "!") + line.substring(i1, i) + ": event not found");
                                     }
                                     break;
                                 default:

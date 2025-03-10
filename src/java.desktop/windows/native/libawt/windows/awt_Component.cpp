@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3362,10 +3362,10 @@ BOOL AwtComponent::IsNumPadKey(UINT vkey, BOOL extended)
     return FALSE;
 }
 static void
-resetKbdState( BYTE kstate[256]) {
-    BYTE tmpState[256];
+resetKbdState( BYTE (&kstate)[AwtToolkit::KB_STATE_SIZE]) {
+    BYTE tmpState[AwtToolkit::KB_STATE_SIZE];
     WCHAR wc[2];
-    memmove(tmpState, kstate, 256 * sizeof(BYTE));
+    memmove(tmpState, kstate, sizeof(kstate));
     tmpState[VK_SHIFT] = 0;
     tmpState[VK_CONTROL] = 0;
     tmpState[VK_MENU] = 0;
@@ -4465,7 +4465,7 @@ void AwtComponent::DrawListItem(JNIEnv *env, DRAWITEMSTRUCT &drawInfo)
     if ((drawInfo.itemState & ODS_FOCUS)  &&
         (drawInfo.itemAction & (ODA_FOCUS | ODA_DRAWENTIRE))) {
       if (!unfocusableChoice){
-          if(::DrawFocusRect(hDC, &rect) == 0)
+          if (!::IsRectEmpty(&rect) && (::DrawFocusRect(hDC, &rect) == 0))
               VERIFY(::GetLastError() == 0);
       }
     }
@@ -6420,10 +6420,7 @@ void AwtComponent::PostUngrabEvent() {
 
 void AwtComponent::SetFocusedWindow(HWND window)
 {
-    HWND old = sm_focusedWindow;
     sm_focusedWindow = window;
-
-    AwtWindow::FocusedWindowChanged(old, window);
 }
 
 /************************************************************************

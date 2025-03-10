@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/codeHeapState.hpp"
@@ -34,7 +33,6 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
-#include "compiler/compilerDirectives.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -45,6 +43,7 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/method.inline.hpp"
@@ -166,8 +165,8 @@ class CodeBlob_sizes {
 // Iterate over all CodeBlobs (cb) on the given CodeHeap
 #define FOR_ALL_BLOBS(cb, heap) for (CodeBlob* cb = first_blob(heap); cb != nullptr; cb = next_blob(heap, cb))
 
-address CodeCache::_low_bound = 0;
-address CodeCache::_high_bound = 0;
+address CodeCache::_low_bound = nullptr;
+address CodeCache::_high_bound = nullptr;
 volatile int CodeCache::_number_of_nmethods_with_dependencies = 0;
 ExceptionCache* volatile CodeCache::_exception_cache_purge_list = nullptr;
 
@@ -178,10 +177,10 @@ GrowableArray<CodeHeap*>* CodeCache::_allocable_heaps = new(mtCode) GrowableArra
 
 static void check_min_size(const char* codeheap, size_t size, size_t required_size) {
   if (size < required_size) {
-    log_debug(codecache)("Code heap (%s) size " SIZE_FORMAT "K below required minimal size " SIZE_FORMAT "K",
+    log_debug(codecache)("Code heap (%s) size %zuK below required minimal size %zuK",
                          codeheap, size/K, required_size/K);
     err_msg title("Not enough space in %s to run VM", codeheap);
-    err_msg message(SIZE_FORMAT "K < " SIZE_FORMAT "K", size/K, required_size/K);
+    err_msg message("%zuK < %zuK", size/K, required_size/K);
     vm_exit_during_initialization(title, message);
   }
 }
@@ -228,6 +227,11 @@ void CodeCache::initialize_heaps() {
 
   if (!non_nmethod.set) {
     non_nmethod.size += compiler_buffer_size;
+    // Further down, just before FLAG_SET_ERGO(), all segment sizes are
+    // aligned down to the next lower multiple of min_size. For large page
+    // sizes, this may result in (non_nmethod.size == 0) which is not acceptable.
+    // Therefore, force non_nmethod.size to at least min_size.
+    non_nmethod.size = MAX2(non_nmethod.size, min_size);
   }
 
   if (!profiled.set && !non_profiled.set) {
@@ -251,15 +255,15 @@ void CodeCache::initialize_heaps() {
 
   size_t total = non_nmethod.size + profiled.size + non_profiled.size;
   if (total != cache_size && !cache_size_set) {
-    log_info(codecache)("ReservedCodeCache size " SIZE_FORMAT "K changed to total segments size NonNMethod "
-                        SIZE_FORMAT "K NonProfiled " SIZE_FORMAT "K Profiled " SIZE_FORMAT "K = " SIZE_FORMAT "K",
+    log_info(codecache)("ReservedCodeCache size %zuK changed to total segments size NonNMethod "
+                        "%zuK NonProfiled %zuK Profiled %zuK = %zuK",
                         cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K, total/K);
     // Adjust ReservedCodeCacheSize as necessary because it was not set explicitly
     cache_size = total;
   }
 
-  log_debug(codecache)("Initializing code heaps ReservedCodeCache " SIZE_FORMAT "K NonNMethod " SIZE_FORMAT "K"
-                       " NonProfiled " SIZE_FORMAT "K Profiled " SIZE_FORMAT "K",
+  log_debug(codecache)("Initializing code heaps ReservedCodeCache %zuK NonNMethod %zuK"
+                       " NonProfiled %zuK Profiled %zuK",
                        cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K);
 
   // Validation
@@ -277,16 +281,16 @@ void CodeCache::initialize_heaps() {
 
   // ReservedCodeCacheSize was set explicitly, so report an error and abort if it doesn't match the segment sizes
   if (total != cache_size && cache_size_set) {
-    err_msg message("NonNMethodCodeHeapSize (" SIZE_FORMAT "K)", non_nmethod.size/K);
+    err_msg message("NonNMethodCodeHeapSize (%zuK)", non_nmethod.size/K);
     if (profiled.enabled) {
-      message.append(" + ProfiledCodeHeapSize (" SIZE_FORMAT "K)", profiled.size/K);
+      message.append(" + ProfiledCodeHeapSize (%zuK)", profiled.size/K);
     }
     if (non_profiled.enabled) {
-      message.append(" + NonProfiledCodeHeapSize (" SIZE_FORMAT "K)", non_profiled.size/K);
+      message.append(" + NonProfiledCodeHeapSize (%zuK)", non_profiled.size/K);
     }
-    message.append(" = " SIZE_FORMAT "K", total/K);
+    message.append(" = %zuK", total/K);
     message.append((total > cache_size) ? " is greater than " : " is less than ");
-    message.append("ReservedCodeCacheSize (" SIZE_FORMAT "K).", cache_size/K);
+    message.append("ReservedCodeCacheSize (%zuK).", cache_size/K);
 
     vm_exit_during_initialization("Invalid code heap sizes", message);
   }
@@ -314,7 +318,7 @@ void CodeCache::initialize_heaps() {
   FLAG_SET_ERGO(NonProfiledCodeHeapSize, non_profiled.size);
   FLAG_SET_ERGO(ReservedCodeCacheSize, cache_size);
 
-  ReservedCodeSpace rs = reserve_heap_memory(cache_size, ps);
+  ReservedSpace rs = reserve_heap_memory(cache_size, ps);
 
   // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
   LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
@@ -344,13 +348,14 @@ size_t CodeCache::page_size(bool aligned, size_t min_pages) {
                    os::page_size_for_region_unaligned(ReservedCodeCacheSize, min_pages);
 }
 
-ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
+ReservedSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
   // Align and reserve space for code cache
   const size_t rs_align = MAX2(rs_ps, os::vm_allocation_granularity());
   const size_t rs_size = align_up(size, rs_align);
-  ReservedCodeSpace rs(rs_size, rs_align, rs_ps);
+
+  ReservedSpace rs = CodeMemoryReserver::reserve(rs_size, rs_align, rs_ps);
   if (!rs.is_reserved()) {
-    vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache (" SIZE_FORMAT "K)",
+    vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache (%zuK)",
                                           rs_size/K));
   }
 
@@ -429,9 +434,9 @@ void CodeCache::add_heap(ReservedSpace rs, const char* name, CodeBlobType code_b
 
   // Reserve Space
   size_t size_initial = MIN2((size_t)InitialCodeCacheSize, rs.size());
-  size_initial = align_up(size_initial, os::vm_page_size());
+  size_initial = align_up(size_initial, rs.page_size());
   if (!heap->reserve(rs, size_initial, CodeCacheSegmentSize)) {
-    vm_exit_during_initialization(err_msg("Could not reserve enough space in %s (" SIZE_FORMAT "K)",
+    vm_exit_during_initialization(err_msg("Could not reserve enough space in %s (%zuK)",
                                           heap->name(), size_initial/K));
   }
 
@@ -559,7 +564,7 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
       } else {
         tty->print("CodeCache");
       }
-      tty->print_cr(" extended to [" INTPTR_FORMAT ", " INTPTR_FORMAT "] (" SSIZE_FORMAT " bytes)",
+      tty->print_cr(" extended to [" INTPTR_FORMAT ", " INTPTR_FORMAT "] (%zd bytes)",
                     (intptr_t)heap->low_boundary(), (intptr_t)heap->high(),
                     (address)heap->high() - (address)heap->low_boundary());
     }
@@ -1126,7 +1131,7 @@ void CodeCache::initialize() {
     // If InitialCodeCacheSize is equal to ReservedCodeCacheSize, then it's more likely
     // users want to use the largest available page.
     const size_t min_pages = (InitialCodeCacheSize == ReservedCodeCacheSize) ? 1 : 8;
-    ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, min_pages));
+    ReservedSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, min_pages));
     // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
     LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
     add_heap(rs, "CodeCache", CodeBlobType::All);
@@ -1330,67 +1335,6 @@ void CodeCache::mark_all_nmethods_for_evol_deoptimization(DeoptimizationScope* d
 
 #endif // INCLUDE_JVMTI
 
-void CodeCache::mark_directives_matches(bool top_only) {
-  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  Thread *thread = Thread::current();
-  HandleMark hm(thread);
-
-  NMethodIterator iter(NMethodIterator::not_unloading);
-  while(iter.next()) {
-    nmethod* nm = iter.method();
-    methodHandle mh(thread, nm->method());
-    if (DirectivesStack::hasMatchingDirectives(mh, top_only)) {
-      ResourceMark rm;
-      log_trace(codecache)("Mark because of matching directives %s", mh->external_name());
-      mh->set_has_matching_directives();
-    }
-  }
-}
-
-void CodeCache::recompile_marked_directives_matches() {
-  Thread *thread = Thread::current();
-  HandleMark hm(thread);
-
-  // Try the max level and let the directives be applied during the compilation.
-  int comp_level = CompilationPolicy::highest_compile_level();
-  RelaxedNMethodIterator iter(RelaxedNMethodIterator::not_unloading);
-  while(iter.next()) {
-    nmethod* nm = iter.method();
-    methodHandle mh(thread, nm->method());
-    if (mh->has_matching_directives()) {
-      ResourceMark rm;
-      mh->clear_directive_flags();
-      bool deopt = false;
-
-      if (!nm->is_osr_method()) {
-        log_trace(codecache)("Recompile to level %d because of matching directives %s",
-                             comp_level, mh->external_name());
-        nmethod * comp_nm = CompileBroker::compile_method(mh, InvocationEntryBci, comp_level,
-                                                          methodHandle(), 0,
-                                                          CompileTask::Reason_DirectivesChanged,
-                                                          (JavaThread*)thread);
-        if (comp_nm == nullptr) {
-          log_trace(codecache)("Recompilation to level %d failed, deoptimize %s",
-                               comp_level, mh->external_name());
-          deopt = true;
-        }
-      } else {
-        log_trace(codecache)("Deoptimize OSR %s", mh->external_name());
-        deopt = true;
-      }
-      // For some reason the method cannot be compiled by C2, e.g. the new directives forbid it.
-      // Deoptimize the method and let the usual hotspot logic do the rest.
-      if (deopt) {
-        if (!nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
-          nm->make_not_entrant();
-          nm->make_deoptimized();
-        }
-      }
-      gc_on_allocation(); // Flush unused methods from CodeCache if required.
-    }
-  }
-}
-
 // Mark methods for deopt (if safe or possible).
 void CodeCache::mark_all_nmethods_for_deoptimization(DeoptimizationScope* deopt_scope) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -1546,10 +1490,10 @@ void CodeCache::print_memory_overhead() {
   }
   // Print bytes that are allocated in the freelist
   ttyLocker ttl;
-  tty->print_cr("Number of elements in freelist: " SSIZE_FORMAT,       freelists_length());
-  tty->print_cr("Allocated in freelist:          " SSIZE_FORMAT "kB",  bytes_allocated_in_freelists()/K);
-  tty->print_cr("Unused bytes in CodeBlobs:      " SSIZE_FORMAT "kB",  (wasted_bytes/K));
-  tty->print_cr("Segment map size:               " SSIZE_FORMAT "kB",  allocated_segments()/K); // 1 byte per segment
+  tty->print_cr("Number of elements in freelist: %zd",       freelists_length());
+  tty->print_cr("Allocated in freelist:          %zdkB",  bytes_allocated_in_freelists()/K);
+  tty->print_cr("Unused bytes in CodeBlobs:      %zdkB",  (wasted_bytes/K));
+  tty->print_cr("Segment map size:               %zdkB",  allocated_segments()/K); // 1 byte per segment
 }
 
 //------------------------------------------------------------------------------------------------
@@ -1572,9 +1516,14 @@ void CodeCache::print_trace(const char* event, CodeBlob* cb, uint size) {
 void CodeCache::print_internals() {
   int nmethodCount = 0;
   int runtimeStubCount = 0;
+  int upcallStubCount = 0;
   int adapterCount = 0;
+  int mhAdapterCount = 0;
+  int vtableBlobCount = 0;
   int deoptimizationStubCount = 0;
   int uncommonTrapStubCount = 0;
+  int exceptionStubCount = 0;
+  int safepointStubCount = 0;
   int bufferBlobCount = 0;
   int total = 0;
   int nmethodNotEntrant = 0;
@@ -1611,12 +1560,22 @@ void CodeCache::print_internals() {
         }
       } else if (cb->is_runtime_stub()) {
         runtimeStubCount++;
+      } else if (cb->is_upcall_stub()) {
+        upcallStubCount++;
       } else if (cb->is_deoptimization_stub()) {
         deoptimizationStubCount++;
       } else if (cb->is_uncommon_trap_stub()) {
         uncommonTrapStubCount++;
+      } else if (cb->is_exception_stub()) {
+        exceptionStubCount++;
+      } else if (cb->is_safepoint_stub()) {
+        safepointStubCount++;
       } else if (cb->is_adapter_blob()) {
         adapterCount++;
+      } else if (cb->is_method_handles_adapter_blob()) {
+        mhAdapterCount++;
+      } else if (cb->is_vtable_blob()) {
+        vtableBlobCount++;
       } else if (cb->is_buffer_blob()) {
         bufferBlobCount++;
       }
@@ -1643,10 +1602,15 @@ void CodeCache::print_internals() {
   tty->print_cr("\tjava: %d",nmethodJava);
   tty->print_cr("\tnative: %d",nmethodNative);
   tty->print_cr("runtime_stubs: %d",runtimeStubCount);
+  tty->print_cr("upcall_stubs: %d",upcallStubCount);
   tty->print_cr("adapters: %d",adapterCount);
+  tty->print_cr("MH adapters: %d",mhAdapterCount);
+  tty->print_cr("VTables: %d",vtableBlobCount);
   tty->print_cr("buffer blobs: %d",bufferBlobCount);
   tty->print_cr("deoptimization_stubs: %d",deoptimizationStubCount);
   tty->print_cr("uncommon_traps: %d",uncommonTrapStubCount);
+  tty->print_cr("exception_stubs: %d",exceptionStubCount);
+  tty->print_cr("safepoint_stubs: %d",safepointStubCount);
   tty->print_cr("\nnmethod size distribution");
   tty->print_cr("-------------------------------------------------");
 
@@ -1672,9 +1636,14 @@ void CodeCache::print() {
 
   CodeBlob_sizes live[CompLevel_full_optimization + 1];
   CodeBlob_sizes runtimeStub;
+  CodeBlob_sizes upcallStub;
   CodeBlob_sizes uncommonTrapStub;
   CodeBlob_sizes deoptimizationStub;
+  CodeBlob_sizes exceptionStub;
+  CodeBlob_sizes safepointStub;
   CodeBlob_sizes adapter;
+  CodeBlob_sizes mhAdapter;
+  CodeBlob_sizes vtableBlob;
   CodeBlob_sizes bufferBlob;
   CodeBlob_sizes other;
 
@@ -1686,12 +1655,22 @@ void CodeCache::print() {
         live[level].add(cb);
       } else if (cb->is_runtime_stub()) {
         runtimeStub.add(cb);
+      } else if (cb->is_upcall_stub()) {
+        upcallStub.add(cb);
       } else if (cb->is_deoptimization_stub()) {
         deoptimizationStub.add(cb);
       } else if (cb->is_uncommon_trap_stub()) {
         uncommonTrapStub.add(cb);
+      } else if (cb->is_exception_stub()) {
+        exceptionStub.add(cb);
+      } else if (cb->is_safepoint_stub()) {
+        safepointStub.add(cb);
       } else if (cb->is_adapter_blob()) {
         adapter.add(cb);
+      } else if (cb->is_method_handles_adapter_blob()) {
+        mhAdapter.add(cb);
+      } else if (cb->is_vtable_blob()) {
+        vtableBlob.add(cb);
       } else if (cb->is_buffer_blob()) {
         bufferBlob.add(cb);
       } else {
@@ -1722,9 +1701,14 @@ void CodeCache::print() {
     const CodeBlob_sizes* sizes;
   } non_nmethod_blobs[] = {
     { "runtime",        &runtimeStub },
+    { "upcall",         &upcallStub },
     { "uncommon trap",  &uncommonTrapStub },
     { "deoptimization", &deoptimizationStub },
+    { "exception",      &exceptionStub },
+    { "safepoint",      &safepointStub },
     { "adapter",        &adapter },
+    { "mh_adapter",     &mhAdapter },
+    { "vtable",         &vtableBlob },
     { "buffer blob",    &bufferBlob },
     { "other",          &other },
   };
@@ -1782,8 +1766,8 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
     total_used += used;
     total_max_used += max_used;
     total_free += free;
-    st->print_cr(" size=" SIZE_FORMAT "Kb used=" SIZE_FORMAT
-                 "Kb max_used=" SIZE_FORMAT "Kb free=" SIZE_FORMAT "Kb",
+    st->print_cr(" size=%zuKb used=%zu"
+                 "Kb max_used=%zuKb free=%zuKb",
                  size, used, max_used, free);
 
     if (detailed) {
@@ -1824,9 +1808,13 @@ void CodeCache::print_codelist(outputStream* st) {
     nmethod* nm = iter.method();
     ResourceMark rm;
     char* method_name = nm->method()->name_and_sig_as_C_string();
-    st->print_cr("%d %d %d %s [" INTPTR_FORMAT ", " INTPTR_FORMAT " - " INTPTR_FORMAT "]",
+    const char* jvmci_name = nullptr;
+#if INCLUDE_JVMCI
+    jvmci_name = nm->jvmci_name();
+#endif
+    st->print_cr("%d %d %d %s%s%s [" INTPTR_FORMAT ", " INTPTR_FORMAT " - " INTPTR_FORMAT "]",
                  nm->compile_id(), nm->comp_level(), nm->get_state(),
-                 method_name,
+                 method_name, jvmci_name ? " jvmci_name=" : "", jvmci_name ? jvmci_name : "",
                  (intptr_t)nm->header_begin(), (intptr_t)nm->code_begin(), (intptr_t)nm->code_end());
   }
 }
@@ -1839,26 +1827,28 @@ void CodeCache::print_layout(outputStream* st) {
 
 void CodeCache::log_state(outputStream* st) {
   st->print(" total_blobs='" UINT32_FORMAT "' nmethods='" UINT32_FORMAT "'"
-            " adapters='" UINT32_FORMAT "' free_code_cache='" SIZE_FORMAT "'",
+            " adapters='" UINT32_FORMAT "' free_code_cache='%zu'",
             blob_count(), nmethod_count(), adapter_count(),
             unallocated_capacity());
 }
 
 #ifdef LINUX
-void CodeCache::write_perf_map(const char* filename) {
+void CodeCache::write_perf_map(const char* filename, outputStream* st) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-
-  // Perf expects to find the map file at /tmp/perf-<pid>.map
-  // if the file name is not specified.
-  char fname[32];
+  char fname[JVM_MAXPATHLEN];
   if (filename == nullptr) {
-    jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
+    // Invocation outside of jcmd requires pid substitution.
+    if (!Arguments::copy_expand_pid(DEFAULT_PERFMAP_FILENAME,
+                                    strlen(DEFAULT_PERFMAP_FILENAME),
+                                    fname, JVM_MAXPATHLEN)) {
+      st->print_cr("Warning: Not writing perf map as pid substitution failed.");
+      return;
+    }
     filename = fname;
   }
-
   fileStream fs(filename, "w");
   if (!fs.is_open()) {
-    log_warning(codecache)("Failed to create %s for perf map", filename);
+    st->print_cr("Warning: Failed to create %s for perf map", filename);
     return;
   }
 
@@ -1866,12 +1856,20 @@ void CodeCache::write_perf_map(const char* filename) {
   while (iter.next()) {
     CodeBlob *cb = iter.method();
     ResourceMark rm;
-    const char* method_name =
-      cb->is_nmethod() ? cb->as_nmethod()->method()->external_name()
-                       : cb->name();
-    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s",
+    const char* method_name = nullptr;
+    const char* jvmci_name = nullptr;
+    if (cb->is_nmethod()) {
+      nmethod* nm = cb->as_nmethod();
+      method_name = nm->method()->external_name();
+#if INCLUDE_JVMCI
+      jvmci_name = nm->jvmci_name();
+#endif
+    } else {
+      method_name = cb->name();
+    }
+    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s%s%s",
                 (intptr_t)cb->code_begin(), (intptr_t)cb->code_size(),
-                method_name);
+                method_name, jvmci_name ? " jvmci_name=" : "", jvmci_name ? jvmci_name : "");
   }
 }
 #endif // LINUX

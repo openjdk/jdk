@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,37 @@
  */
 package java.lang.classfile;
 
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ClassDesc;
 
-import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AnnotationImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
-import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a key-value pair of an annotation.
+ * Models an element-value pair in the {@code element_value_pairs}
+ * table in the {@code annotation} structure defined in JVMS
+ * {@jvms 4.7.16} or the {@code type_annotation} structure defined
+ * in JVMS {@jvms 4.7.20}.
+ * <p>
+ * Two {@code AnnotationElement} objects should be compared using the
+ * {@link Object#equals(Object) equals} method.
  *
  * @see Annotation
- * @see AnnotationValue
- *
- * @since 22
+ * @see java.lang.reflect.AnnotatedElement Annotations in core reflection
+ * @jvms 4.7.16.1 The {@code element_value} structure
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface AnnotationElement
-        extends WritableElement<AnnotationElement>
         permits AnnotationImpl.AnnotationElementImpl {
 
     /**
      * {@return the element name}
+     *
+     * @apiNote
+     * In Java source code, by convention, the name of the sole element in a
+     * single-element annotation interface is {@code value}. (JLS {@jls 9.6.1})
+     * This is the case for single-element annotations (JLS {@jls 9.7.3}) and
+     * container annotations for multiple annotations (JLS {@jls 9.6.3}).
      */
     Utf8Entry name();
 
@@ -55,7 +64,7 @@ public sealed interface AnnotationElement
     AnnotationValue value();
 
     /**
-     * {@return an annotation key-value pair}
+     * {@return an element-value pair}
      * @param name the name of the key
      * @param value the associated value
      */
@@ -65,7 +74,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair}
+     * {@return an element-value pair}
      * @param name the name of the key
      * @param value the associated value
      */
@@ -75,9 +84,10 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for a class-valued annotation}
+     * {@return an element-value pair for a class-valued element}
      * @param name the name of the key
      * @param value the associated value
+     * @see AnnotationValue#ofClass(ClassDesc) AnnotationValue::ofClass
      */
     static AnnotationElement ofClass(String name,
                                      ClassDesc value) {
@@ -85,9 +95,10 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for a string-valued annotation}
+     * {@return an element-value pair for a string-valued element}
      * @param name the name of the key
      * @param value the associated value
+     * @see AnnotationValue#ofString(String) AnnotationValue::ofString
      */
     static AnnotationElement ofString(String name,
                                       String value) {
@@ -95,9 +106,10 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for a long-valued annotation}
+     * {@return an element-value pair for a long-valued element}
      * @param name the name of the key
      * @param value the associated value
+     * @see AnnotationValue#ofLong(long) AnnotationValue::ofLong
      */
     static AnnotationElement ofLong(String name,
                                     long value) {
@@ -105,9 +117,10 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for an int-valued annotation}
+     * {@return an element-value pair for an int-valued element}
      * @param name the name of the key
      * @param value the associated value
+     * @see AnnotationValue#ofInt(int) AnnotationValue::ofInt
      */
     static AnnotationElement ofInt(String name,
                                    int value) {
@@ -115,9 +128,10 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for a char-valued annotation}
+     * {@return an element-value pair for a char-valued element}
      * @param name the name of the key
      * @param value the associated value
+     * @see AnnotationValue#ofChar(char) AnnotationValue::ofChar
      */
     static AnnotationElement ofChar(String name,
                                     char value) {
@@ -125,9 +139,10 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for a short-valued annotation}
+     * {@return an element-value pair for a short-valued element}
      * @param name the name of the key
      * @param value the associated value
+     * @see AnnotationValue#ofShort(short) AnnotationValue::ofShort
      */
     static AnnotationElement ofShort(String name,
                                      short value) {
@@ -135,29 +150,32 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for a byte-valued annotation}
+     * {@return an element-value pair for a byte-valued element}
      * @param name the name of the key
      * @param value the associated value
+     * @see AnnotationValue#ofByte(byte) AnnotationValue::ofByte
      */
     static AnnotationElement ofByte(String name,
-                                      byte value) {
+                                    byte value) {
         return of(name, AnnotationValue.ofByte(value));
     }
 
     /**
-     * {@return an annotation key-value pair for a boolean-valued annotation}
+     * {@return an element-value pair for a boolean-valued element}
      * @param name the name of the key
      * @param value the associated value
+     * @see AnnotationValue#ofBoolean(boolean) AnnotationValue::ofBoolean
      */
     static AnnotationElement ofBoolean(String name,
-                                      boolean value) {
+                                       boolean value) {
         return of(name, AnnotationValue.ofBoolean(value));
     }
 
     /**
-     * {@return an annotation key-value pair for a double-valued annotation}
+     * {@return an element-value pair for a double-valued element}
      * @param name the name of the key
      * @param value the associated value
+     * @see AnnotationValue#ofDouble(double) AnnotationValue::ofDouble
      */
     static AnnotationElement ofDouble(String name,
                                       double value) {
@@ -165,9 +183,10 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for a float-valued annotation}
+     * {@return an element-value pair for a float-valued element}
      * @param name the name of the key
      * @param value the associated value
+     * @see AnnotationValue#ofFloat(float) AnnotationValue::ofFloat
      */
     static AnnotationElement ofFloat(String name,
                                      float value) {
@@ -175,9 +194,10 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for an annotation-valued annotation}
+     * {@return an element-value pair for an annotation-valued element}
      * @param name the name of the key
      * @param value the associated value
+     * @see AnnotationValue#ofAnnotation AnnotationValue::ofAnnotation
      */
     static AnnotationElement ofAnnotation(String name,
                                           Annotation value) {
@@ -185,9 +205,10 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for an array-valued annotation}
+     * {@return an element-value pair for an array-valued element}
      * @param name the name of the key
      * @param values the associated values
+     * @see AnnotationValue#ofArray(AnnotationValue...) AnnotationValue::ofArray
      */
     static AnnotationElement ofArray(String name,
                                      AnnotationValue... values) {

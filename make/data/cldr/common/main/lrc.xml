@@ -450,9 +450,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<symbols numberSystem="arabext">
 			<timeSeparator>:</timeSeparator>
 		</symbols>
-		<currencyFormats numberSystem="latn">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
 		<currencies>
 			<currency type="BRL">
 				<displayName>رئال بئرئزیل</displayName>

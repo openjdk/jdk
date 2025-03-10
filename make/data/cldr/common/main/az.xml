@@ -67,6 +67,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bik">bikol</language>
 			<language type="bin">bini</language>
 			<language type="bla">siksikə</language>
+			<language type="blo">anii</language>
 			<language type="bm">bambara</language>
 			<language type="bn">benqal</language>
 			<language type="bo">tibet</language>
@@ -291,6 +292,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">komi</language>
 			<language type="kw">korn</language>
 			<language type="kwk">Kvakvala</language>
+			<language type="kxv">kuvi</language>
 			<language type="ky">qırğız</language>
 			<language type="la">latın</language>
 			<language type="lad">sefard</language>
@@ -301,8 +303,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">ləzgi</language>
 			<language type="lg">qanda</language>
 			<language type="li">limburq</language>
+			<language type="lij">liquriya dili</language>
 			<language type="lil">Liluet</language>
 			<language type="lkt">lakota</language>
+			<language type="lmo">lombard dili</language>
 			<language type="ln">linqala</language>
 			<language type="lo">laos</language>
 			<language type="lol">monqo</language>
@@ -315,7 +319,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lua">luba-lulua</language>
 			<language type="lui">luyseno</language>
 			<language type="lun">lunda</language>
-			<language type="luo">luo</language>
 			<language type="lus">mizo</language>
 			<language type="luy">luyia</language>
 			<language type="lv">latış</language>
@@ -490,6 +493,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sw_CD">Konqo suahilicəsi</language>
 			<language type="swb">komor</language>
 			<language type="syr">suriya</language>
+			<language type="szl">silez dili</language>
 			<language type="ta">tamil</language>
 			<language type="tce">cənubi tuçon</language>
 			<language type="te">teluqu</language>
@@ -536,9 +540,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="und">naməlum dil</language>
 			<language type="ur">urdu</language>
 			<language type="uz">özbək</language>
-			<language type="vai">vai</language>
 			<language type="ve">venda</language>
+			<language type="vec">venet dili</language>
 			<language type="vi">vyetnam</language>
+			<language type="vmw">makua dili</language>
 			<language type="vo">volapük</language>
 			<language type="vot">votik</language>
 			<language type="vun">vunyo</language>
@@ -552,6 +557,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">vu</language>
 			<language type="xal">kalmık</language>
 			<language type="xh">xosa</language>
+			<language type="xnr">kanqri</language>
 			<language type="xog">soqa</language>
 			<language type="yao">yao</language>
 			<language type="yap">yapiz</language>
@@ -1133,7 +1139,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -2028,6 +2034,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} Vaxtı</regionFormat>
 			<regionFormat type="daylight">{0} Yay Vaxtı</regionFormat>
 			<regionFormat type="standard">{0} Standart Vaxtı</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Koordinasiya edilmiş ümumdünya vaxtı</standard>
@@ -2595,9 +2604,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Ulanbator</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Çoybalsan</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Makao</exemplarCity>
 			</zone>
@@ -2852,9 +2858,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>Nom</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ankorac</exemplarCity>
@@ -3167,13 +3170,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Çin Yay Vaxtı</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Çoybalsan Vaxtı</generic>
-					<standard>Çoybalsan Standart Vaxtı</standard>
-					<daylight>Çoybalsan Yay Vaxtı</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Milad Adası Vaxtı</standard>
@@ -3410,6 +3406,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Yaponiya Vaxtı</generic>
 					<standard>Yaponiya Standart Vaxtı</standard>
 					<daylight>Yaponiya Yay Vaxtı</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Qazaxıstan vaxtı</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -3836,10 +3837,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
+		<symbols numberSystem="arab">
+			<group>,</group>
+			<percentSign>٪</percentSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
+		</symbols>
+		<symbols numberSystem="arabext">
+			<decimal>,</decimal>
+			<percentSign>~</percentSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
+		</symbols>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group>.</group>
 		</symbols>
+		<decimalFormats numberSystem="arab">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>standart onluq kəsr0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="arabext">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>standart onluq kəsr0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength type="long">
 				<decimalFormat>
@@ -3892,6 +3919,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<scientificFormats numberSystem="arab">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>standart elmi#</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
@@ -3929,8 +3963,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">000T ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -6056,6 +6088,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} İmp. kvarta</unitPattern>
 				<unitPattern count="other">{0} İmp. kvarta</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>işıq</displayName>
+				<unitPattern count="one">{0} işıq</unitPattern>
+				<unitPattern count="other">{0} işıq</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>bir milyarda düşən hissə sayı</displayName>
+				<unitPattern count="one">bir milyarda düşən {0} hissə</unitPattern>
+				<unitPattern count="other">bir milyarda düşən {0} hissə</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>gecə</displayName>
+				<unitPattern count="one">{0} gecə</unitPattern>
+				<unitPattern count="other">{0} gecə</unitPattern>
+				<perUnitPattern>{0}/gecə</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>kardinal istiqamət</displayName>
 			</coordinateUnit>
@@ -6609,6 +6657,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kvarta İmp.</unitPattern>
 				<unitPattern count="other">{0} kvarta İmp.</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>işıq</displayName>
+				<unitPattern count="one">{0} işıq</unitPattern>
+				<unitPattern count="other">{0} işıq</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>hissə/milyard</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>gecə</displayName>
+				<unitPattern count="one">{0} gecə</unitPattern>
+				<unitPattern count="other">{0} gecə</unitPattern>
+				<perUnitPattern>{0}/gecə</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>istiqamət</displayName>
 			</coordinateUnit>
@@ -6861,6 +6923,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<unitPattern count="one">{0}qt-Imp.</unitPattern>
 				<unitPattern count="other">{0}qt-Imp.</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>işıq</displayName>
+				<unitPattern count="one">{0}işıq</unitPattern>
+				<unitPattern count="other">{0}işıq</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>gecə</displayName>
+				<unitPattern count="one">{0}gecə</unitPattern>
+				<unitPattern count="other">{0}gecə</unitPattern>
+				<perUnitPattern>{0}/gecə</perUnitPattern>
 			</unit>
 		</unitLength>
 	</units>

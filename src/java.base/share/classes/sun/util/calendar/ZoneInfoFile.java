@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StreamCorruptedException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,14 +42,13 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.SimpleTimeZone;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 import java.util.zip.CRC32;
 
 import jdk.internal.util.StaticProperty;
-import sun.security.action.GetPropertyAction;
 
 /**
  * Loads TZDB time-zone rules for j.u.TimeZone
@@ -62,22 +60,15 @@ public final class ZoneInfoFile {
     /**
      * Gets all available IDs supported in the Java run-time.
      *
-     * @return a set of time zone IDs.
+     * @return an array of time zone IDs.
      */
     public static String[] getZoneIds() {
-        int len = regions.length + oldMappings.length;
-        if (!USE_OLDMAPPING) {
-            len += 3;    // EST/HST/MST not in tzdb.dat
-        }
+        var shortIDs = ZoneId.SHORT_IDS.keySet();
+        int len = regions.length + shortIDs.size();
         String[] ids = Arrays.copyOf(regions, len);
         int i = regions.length;
-        if (!USE_OLDMAPPING) {
-            ids[i++] = "EST";
-            ids[i++] = "HST";
-            ids[i++] = "MST";
-        }
-        for (int j = 0; j < oldMappings.length; j++) {
-            ids[i++] = oldMappings[j][0];
+        for (var id : shortIDs) {
+            ids[i++] = id;
         }
         return ids;
     }
@@ -102,9 +93,33 @@ public final class ZoneInfoFile {
         // sorted list, though the specification does not
         // specify it. Keep the same behavior for better
         // compatibility.
-        String[] list = ids.toArray(new String[ids.size()]);
+        String[] list = ids.toArray(new String[0]);
         Arrays.sort(list);
         return list;
+    }
+
+    /**
+     * Gets all available IDs supported in the Java run-time.
+     *
+     * @return a stream of time zone IDs.
+     */
+    public static Stream<String> zoneIds() {
+        return Stream.concat(Arrays.stream(regions),
+                ZoneId.SHORT_IDS.keySet().stream());
+    }
+
+    /**
+     * Gets all available IDs that have the same value as the
+     * specified raw GMT offset.
+     *
+     * @param rawOffset  the GMT offset in milliseconds. This
+     *                   value should not include any daylight saving time.
+     * @return a stream of time zone IDs.
+     */
+    public static Stream<String> zoneIds(int rawOffset) {
+        return zoneIds()
+                .filter(id -> getZoneInfo(id).getRawOffset() == rawOffset)
+                .sorted(); // Sort the IDs, see getZoneIds(int)
     }
 
     public static ZoneInfo getZoneInfo(String zoneId) {
@@ -216,81 +231,21 @@ public final class ZoneInfoFile {
     private static String[] regions;
     private static int[] indices;
 
-    // Flag for supporting JDK backward compatible IDs, such as "EST".
-    private static final boolean USE_OLDMAPPING;
-
-    private static final String[][] oldMappings = new String[][] {
-        { "ACT", "Australia/Darwin" },
-        { "AET", "Australia/Sydney" },
-        { "AGT", "America/Argentina/Buenos_Aires" },
-        { "ART", "Africa/Cairo" },
-        { "AST", "America/Anchorage" },
-        { "BET", "America/Sao_Paulo" },
-        { "BST", "Asia/Dhaka" },
-        { "CAT", "Africa/Harare" },
-        { "CNT", "America/St_Johns" },
-        { "CST", "America/Chicago" },
-        { "CTT", "Asia/Shanghai" },
-        { "EAT", "Africa/Addis_Ababa" },
-        { "ECT", "Europe/Paris" },
-        { "IET", "America/Indiana/Indianapolis" },
-        { "IST", "Asia/Kolkata" },
-        { "JST", "Asia/Tokyo" },
-        { "MIT", "Pacific/Apia" },
-        { "NET", "Asia/Yerevan" },
-        { "NST", "Pacific/Auckland" },
-        { "PLT", "Asia/Karachi" },
-        { "PNT", "America/Phoenix" },
-        { "PRT", "America/Puerto_Rico" },
-        { "PST", "America/Los_Angeles" },
-        { "SST", "Pacific/Guadalcanal" },
-        { "VST", "Asia/Ho_Chi_Minh" },
-    };
-
     static {
-        String oldmapping = GetPropertyAction
-                .privilegedGetProperty("sun.timezone.ids.oldmapping", "false")
-                .toLowerCase(Locale.ROOT);
-        USE_OLDMAPPING = (oldmapping.equals("yes") || oldmapping.equals("true"));
         loadTZDB();
     }
 
-    @SuppressWarnings("removal")
     private static void loadTZDB() {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                try {
-                    String libDir = StaticProperty.javaHome() + File.separator + "lib";
-                    try (DataInputStream dis = new DataInputStream(
-                             new BufferedInputStream(new FileInputStream(
-                                 new File(libDir, "tzdb.dat"))))) {
-                        load(dis);
-                    }
-                } catch (Exception x) {
-                    throw new Error(x);
-                }
-                return null;
+        try {
+            String libDir = StaticProperty.javaHome() + File.separator + "lib";
+            try (DataInputStream dis = new DataInputStream(
+                     new BufferedInputStream(new FileInputStream(
+                         new File(libDir, "tzdb.dat"))))) {
+                load(dis);
             }
-        });
-    }
-
-    private static void addOldMapping() {
-        for (String[] alias : oldMappings) {
-            aliases.put(alias[0], alias[1]);
+        } catch (Exception x) {
+            throw new Error(x);
         }
-        if (USE_OLDMAPPING) {
-            aliases.put("EST", "America/New_York");
-            aliases.put("MST", "America/Denver");
-            aliases.put("HST", "Pacific/Honolulu");
-        } else {
-            zones.put("EST", new ZoneInfo("EST", -18000000));
-            zones.put("MST", new ZoneInfo("MST", -25200000));
-            zones.put("HST", new ZoneInfo("HST", -36000000));
-        }
-    }
-
-    public static boolean useOldMapping() {
-       return USE_OLDMAPPING;
     }
 
     /**
@@ -351,7 +306,7 @@ public final class ZoneInfoFile {
             }
         }
         // old us time-zone names
-        addOldMapping();
+        aliases.putAll(ZoneId.SHORT_IDS);
     }
 
     /////////////////////////Ser/////////////////////////////////

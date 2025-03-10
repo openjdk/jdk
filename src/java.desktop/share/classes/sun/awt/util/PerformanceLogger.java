@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,6 @@ import java.io.Writer;
  * exist once those APIs are in place.
  * @author Chet Haase
  */
-@SuppressWarnings("removal")
 public class PerformanceLogger {
 
     // Timing values of global interest
@@ -87,16 +86,12 @@ public class PerformanceLogger {
     private static long baseTime;
 
     static {
-        String perfLoggingProp =
-            java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("sun.perflog"));
+        String perfLoggingProp = System.getProperty("sun.perflog");
         if (perfLoggingProp != null) {
             perfLoggingOn = true;
 
             // Check if we should use nanoTime
-            String perfNanoProp =
-                java.security.AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction("sun.perflog.nano"));
+            String perfNanoProp = System.getProperty("sun.perflog.nano");
             if (perfNanoProp != null) {
                 useNanoTime = true;
             }
@@ -107,21 +102,15 @@ public class PerformanceLogger {
             }
             if (logFileName != null) {
                 if (logWriter == null) {
-                    java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Void>() {
-                        public Void run() {
-                            try {
-                                File logFile = new File(logFileName);
-                                logFile.createNewFile();
-                                logWriter = new FileWriter(logFile);
-                            } catch (Exception e) {
-                                System.out.println(e + ": Creating logfile " +
-                                                   logFileName +
-                                                   ".  Log to console");
-                            }
-                            return null;
-                        }
-                    });
+                    try {
+                        File logFile = new File(logFileName);
+                        logFile.createNewFile();
+                        logWriter = new FileWriter(logFile);
+                    } catch (Exception e) {
+                        System.out.println(e + ": Creating logfile " +
+                                           logFileName +
+                                           ".  Log to console");
+                    }
                 }
             }
             if (logWriter == null) {
@@ -137,9 +126,7 @@ public class PerformanceLogger {
 
     /**
      * Returns status of whether logging is enabled or not.  This is
-     * provided as a convenience method so that users do not have to
-     * perform the same GetPropertyAction check as above to determine whether
-     * to enable performance logging.
+     * provided as a convenience method.
      */
     public static boolean loggingEnabled() {
         return perfLoggingOn;

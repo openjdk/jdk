@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,33 @@
  * questions.
  */
 
-
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Button;
+import java.awt.Checkbox;
+import java.awt.Choice;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.Label;
+import java.awt.List;
+import java.awt.Panel;
+import java.awt.Robot;
+import java.awt.Scrollbar;
+import java.awt.TextArea;
+import java.awt.TextField;
+import java.awt.event.HierarchyBoundsListener;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import javax.swing.SwingUtilities;
-import java.io.*;
+
+import jdk.test.lib.Platform;
 
 /**
  * AWT Mixing test for HierarchyBoundsListener ancestors.
@@ -37,7 +58,8 @@ import java.io.*;
  * @key headful
  * @bug 6768230 8221823
  * @summary Mixing test for HierarchyBoundsListener ancestors
- * @build FrameBorderCounter
+ * @library /test/lib
+ * @build FrameBorderCounter jdk.test.lib.Platform
  * @run main HierarchyBoundsListenerMixingTest
  */
 public class HierarchyBoundsListenerMixingTest {
@@ -137,9 +159,9 @@ public class HierarchyBoundsListenerMixingTest {
         robot.mouseMove((int) components[0].getLocationOnScreen().x + components[0].getSize().width / 2,
                         (int) components[0].getLocationOnScreen().y + components[0].getSize().height / 2);
         robot.delay(delay);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(delay);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(delay);
 
         resetValues();
@@ -177,45 +199,54 @@ public class HierarchyBoundsListenerMixingTest {
         robot.delay(delay * 5);
 
         resetValues();
-        int x = (int) frame.getLocationOnScreen().x;
-        int y = (int) frame.getLocationOnScreen().y;
-        int w = frame.getSize().width;
-        int h = frame.getSize().height;
 
-        robot.mouseMove(x + w + BORDER_SHIFT, y + h / 2);
-        robot.delay(delay);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.delay(delay);
-        for (int i = 0; i < 20; i++) {
-            robot.mouseMove(x + w + i + BORDER_SHIFT, y + h / 2);
-            robot.delay(50);
-        }
-        robot.delay(delay);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        int x;
+        int y;
+        int w;
+        int h;
 
-        if (! resizeTriggered) {
-            synchronized (resizeLock) {
-                try {
-                    resizeLock.wait(delay * 10);
-                } catch (Exception e) {
+        if (!Platform.isOnWayland()) {
+            x = frame.getLocationOnScreen().x;
+            y = frame.getLocationOnScreen().y;
+            w = frame.getSize().width;
+            h = frame.getSize().height;
+
+            robot.mouseMove(x + w + BORDER_SHIFT, y + h / 2);
+            robot.delay(delay);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.delay(delay);
+            for (int i = 0; i < 20; i++) {
+                robot.mouseMove(x + w + i + BORDER_SHIFT, y + h / 2);
+                robot.delay(50);
+            }
+            robot.delay(delay);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
+            if (!resizeTriggered) {
+                synchronized (resizeLock) {
+                    try {
+                        resizeLock.wait(delay * 10);
+                    } catch (Exception e) {
+                    }
                 }
             }
-        }
 
-        for (int i = 0; i < components.length; i++) {
-            if (! ancestorResized[i]) {
-                System.err.println("FAIL: Frame resized using mouse action. " +
-                                   "Ancestor resized event did not occur for " +
-                                   components[i].getClass());
+            for (int i = 0; i < components.length; i++) {
+                if (!ancestorResized[i]) {
+                    System.err.println("FAIL: Frame resized using mouse action. " +
+                            "Ancestor resized event did not occur for " +
+                            components[i].getClass());
+                    passed = false;
+                }
+            }
+            if (moveCount > 0) {
+                System.err.println("FAIL: Ancestor moved event occurred when Frame resized using mouse");
                 passed = false;
             }
-        }
-        if (moveCount > 0) {
-            System.err.println("FAIL: Ancestor moved event occured when Frame resized using mouse");
-            passed = false;
+
+            resetValues();
         }
 
-        resetValues();
         try {
             EventQueue.invokeAndWait(new Runnable() {
                 public void run() {
@@ -250,51 +281,54 @@ public class HierarchyBoundsListenerMixingTest {
         robot.delay(delay * 10);
 
         resetValues();
-        x = (int) frame.getLocationOnScreen().x;
-        y = (int) frame.getLocationOnScreen().y;
-        w = frame.getSize().width;
-        h = frame.getSize().height;
 
-        //Click on the dummy frame so that the test frame loses focus. This is to workaround
-        //a bug in Linux AS.
-        robot.mouseMove((int) dummy.getLocationOnScreen().x + dummy.getSize().width / 2,
-                        (int) dummy.getLocationOnScreen().y + dummy.getSize().height / 2);
-        robot.delay(delay);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.delay(delay);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.delay(delay);
+        if (!Platform.isOnWayland()) {
+            x = frame.getLocationOnScreen().x;
+            y = frame.getLocationOnScreen().y;
+            w = frame.getSize().width;
+            h = frame.getSize().height;
 
-        robot.mouseMove(x + w / 2, y + 10);
-        robot.delay(delay);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.delay(delay);
-        for (int i = 1; i <= 20; i++) {
-            robot.mouseMove(x + w / 2 + i, y + 10);
-            robot.delay(50);
-        }
-        robot.delay(delay);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            //Click on the dummy frame so that the test frame loses focus. This is to workaround
+            //a bug in Linux AS.
+            robot.mouseMove((int) dummy.getLocationOnScreen().x + dummy.getSize().width / 2,
+                            (int) dummy.getLocationOnScreen().y + dummy.getSize().height / 2);
+            robot.delay(delay);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.delay(delay);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.delay(delay);
 
-        if (! moveTriggered) {
-            synchronized (moveLock) {
-                try {
-                    moveLock.wait(delay * 10);
-                } catch (Exception e) {
+            robot.mouseMove(x + w / 2, y + 10);
+            robot.delay(delay);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.delay(delay);
+            for (int i = 1; i <= 20; i++) {
+                robot.mouseMove(x + w / 2 + i, y + 10);
+                robot.delay(50);
+            }
+            robot.delay(delay);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
+            if (! moveTriggered) {
+                synchronized (moveLock) {
+                    try {
+                        moveLock.wait(delay * 10);
+                    } catch (Exception e) {
+                    }
                 }
             }
-        }
 
-        for (int i = 0; i < components.length; i++) {
-            if (! ancestorMoved[i]) {
-                System.err.println("FAIL: Frame moved using mouse action. " +
-                                   "Ancestor moved event did not occur for " + components[i].getClass());
+            for (int i = 0; i < components.length; i++) {
+                if (! ancestorMoved[i]) {
+                    System.err.println("FAIL: Frame moved using mouse action. " +
+                                       "Ancestor moved event did not occur for " + components[i].getClass());
+                    passed = false;
+                }
+            }
+            if (resizeCount > 0) {
+                System.err.println("FAIL: Ancestor resized event occured when Frame moved using mouse");
                 passed = false;
             }
-        }
-        if (resizeCount > 0) {
-            System.err.println("FAIL: Ancestor resized event occured when Frame moved using mouse");
-            passed = false;
         }
 
         return passed;
@@ -450,7 +484,7 @@ public class HierarchyBoundsListenerMixingTest {
     //  instantiated in the same VM.  Being static (and using
     //  static vars), it aint gonna work.  Not worrying about
     //  it for now.
-    public static void main(String args[]) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException {
         mainThread = Thread.currentThread();
         try {
             init();

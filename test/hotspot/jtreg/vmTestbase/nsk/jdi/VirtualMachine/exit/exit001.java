@@ -173,6 +173,12 @@ public class exit001 {
             logHandler.complain("TEST FAILED");
         }
 
+        int code = debuggee.waitFor();
+        if (code != 0) {
+            log2("Debugee FAILED with exit code: " + code);
+            testExitCode = Consts.TEST_FAILED;
+        }
+
         return testExitCode;
     }
 }

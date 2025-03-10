@@ -114,6 +114,9 @@ public class Lookup {
         // Now check that a reverse lookup will succeed with the dual stack.
         InetAddress ia = InetAddress.getByName(addr);
         String name = ia.getHostName();
+        // output details of dual stack lookup by address
+        System.out.println("dual stack lookup for addr " + addr + " returned IP address " + ia);
+        System.out.println(" with hostname " + name);
 
         System.out.println("(default) " + addr + "--> " + name
                                + " (reversed IPv4: " + ipv4Reversed + ")");

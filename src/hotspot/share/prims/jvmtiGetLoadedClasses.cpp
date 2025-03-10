@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
@@ -105,7 +104,7 @@ JvmtiGetLoadedClasses::getLoadedClasses(JvmtiEnv *env, jint* classCountPtr, jcla
     // Iterate through all classes in ClassLoaderDataGraph
     // and collect them using the LoadedClassesClosure
     MutexLocker mcld(ClassLoaderDataGraph_lock);
-    ClassLoaderDataGraph::loaded_classes_do(&closure);
+    ClassLoaderDataGraph::loaded_classes_do_keepalive(&closure);
   }
 
   return closure.get_result(env, classCountPtr, classesPtr);

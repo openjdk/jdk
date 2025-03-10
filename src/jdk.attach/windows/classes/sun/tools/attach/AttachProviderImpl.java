@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+@SuppressWarnings("restricted")
 public class AttachProviderImpl extends HotSpotAttachProvider {
 
     public AttachProviderImpl() {
@@ -50,8 +51,6 @@ public class AttachProviderImpl extends HotSpotAttachProvider {
     public VirtualMachine attachVirtualMachine(String vmid)
         throws AttachNotSupportedException, IOException
     {
-        checkAttachPermission();
-
         // AttachNotSupportedException will be thrown if the target VM can be determined
         // to be not attachable.
         testAttachable(vmid);

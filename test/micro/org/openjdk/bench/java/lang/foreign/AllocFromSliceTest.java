@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED" })
+@Fork(value = 3, jvmArgs = { "--enable-native-access=ALL-UNNAMED" })
 public class AllocFromSliceTest extends CLayouts {
 
     @Param({"5", "20", "100", "500", "1000"})
@@ -55,10 +55,10 @@ public class AllocFromSliceTest extends CLayouts {
 
     @Setup
     public void setup() {
-        arr = new byte[1024];
+        arr = new byte[size * 2];
         Random random = new Random(0);
         random.nextBytes(arr);
-        start = random.nextInt(1024 - size);
+        start = random.nextInt(size);
     }
 
     @Benchmark

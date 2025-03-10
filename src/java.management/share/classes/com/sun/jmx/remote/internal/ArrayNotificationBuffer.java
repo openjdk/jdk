@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,6 @@
 
 package com.sun.jmx.remote.internal;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -396,20 +392,6 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
 
                 if (nextSeq < nextSequenceNumber()) {
                     candidate = notificationAt(nextSeq);
-                    // Skip security check if NotificationBufferFilter is not overloaded
-                    if (!(filter instanceof ServerNotifForwarder.NotifForwarderBufferFilter)) {
-                        try {
-                            ServerNotifForwarder.checkMBeanPermission(this.mBeanServer,
-                                                      candidate.getObjectName(),"addNotificationListener");
-                        } catch (InstanceNotFoundException | SecurityException e) {
-                            if (logger.debugOn()) {
-                                logger.debug("fetchNotifications", "candidate: " + candidate + " skipped. exception " + e);
-                            }
-                            ++nextSeq;
-                            continue;
-                        }
-                    }
-
                     if (logger.debugOn()) {
                         logger.debug("fetchNotifications", "candidate: " +
                                      candidate);
@@ -653,54 +635,27 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
         }
     }
 
-    @SuppressWarnings("removal")
     private void addNotificationListener(final ObjectName name,
                                          final NotificationListener listener,
                                          final NotificationFilter filter,
                                          final Object handback)
             throws Exception {
-        try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                public Void run() throws InstanceNotFoundException {
-                    mBeanServer.addNotificationListener(name,
-                                                        listener,
-                                                        filter,
-                                                        handback);
-                    return null;
-                }
-            });
-        } catch (Exception e) {
-            throw extractException(e);
-        }
+        mBeanServer.addNotificationListener(name,
+                                                listener,
+                                                filter,
+                                                handback);
     }
 
-    @SuppressWarnings("removal")
     private void removeNotificationListener(final ObjectName name,
                                             final NotificationListener listener)
             throws Exception {
-        try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                public Void run() throws Exception {
-                    mBeanServer.removeNotificationListener(name, listener);
-                    return null;
-                }
-            });
-        } catch (Exception e) {
-            throw extractException(e);
-        }
+        mBeanServer.removeNotificationListener(name, listener);
     }
 
-    @SuppressWarnings("removal")
     private Set<ObjectName> queryNames(final ObjectName name,
                                        final QueryExp query) {
-        PrivilegedAction<Set<ObjectName>> act =
-            new PrivilegedAction<>() {
-                public Set<ObjectName> run() {
-                    return mBeanServer.queryNames(name, query);
-                }
-            };
         try {
-            return AccessController.doPrivileged(act);
+            return mBeanServer.queryNames(name, query);
         } catch (RuntimeException e) {
             logger.fine("queryNames", "Failed to query names: " + e);
             logger.debug("queryNames", e);
@@ -708,18 +663,11 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
         }
     }
 
-    @SuppressWarnings("removal")
     private static boolean isInstanceOf(final MBeanServer mbs,
                                         final ObjectName name,
                                         final String className) {
-        PrivilegedExceptionAction<Boolean> act =
-            new PrivilegedExceptionAction<>() {
-                public Boolean run() throws InstanceNotFoundException {
-                    return mbs.isInstanceOf(name, className);
-                }
-            };
         try {
-            return AccessController.doPrivileged(act);
+            return mbs.isInstanceOf(name, className);
         } catch (Exception e) {
             logger.fine("isInstanceOf", "failed: " + e);
             logger.debug("isInstanceOf", e);
@@ -823,17 +771,6 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
     private void checkNoLocks() {
         if (Thread.holdsLock(this) || Thread.holdsLock(globalLock))
             logger.warning("checkNoLocks", "lock protocol violation");
-    }
-
-    /**
-     * Iterate until we extract the real exception
-     * from a stack of PrivilegedActionExceptions.
-     */
-    private static Exception extractException(Exception e) {
-        while (e instanceof PrivilegedActionException) {
-            e = ((PrivilegedActionException)e).getException();
-        }
-        return e;
     }
 
     private static final ClassLogger logger =

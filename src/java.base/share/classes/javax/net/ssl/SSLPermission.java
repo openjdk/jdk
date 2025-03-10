@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,62 +33,16 @@ import java.security.*;
  * no actions list; you either have the named permission
  * or you don't.
  * <P>
- * The target name is the name of the network permission (see below). The naming
+ * The target name is the name of the network permission. The naming
  * convention follows the  hierarchical property naming convention.
  * Also, an asterisk
  * may appear at the end of the name, following a ".", or by itself, to
  * signify a wildcard match. For example: "foo.*" and "*" signify a wildcard
  * match, while "*foo" and "a*b" do not.
- * <P>
- * The following table lists all the possible SSLPermission target names,
- * and for each provides a description of what the permission allows
- * and a discussion of the risks of granting code the permission.
  *
- * <table class="striped">
- * <caption style="display:none">permission name, what it allows, and associated risks</caption>
- * <thead>
- * <tr>
- * <th scope="col">Permission Target Name</th>
- * <th scope="col">What the Permission Allows</th>
- * <th scope="col">Risks of Allowing this Permission</th>
- * </tr>
- * </thead>
- *
- * <tbody>
- * <tr>
- *   <th scope="row">setHostnameVerifier</th>
- *   <td>The ability to set a callback which can decide whether to
- * allow a mismatch between the host being connected to by
- * an HttpsURLConnection and the common name field in
- * server certificate.
- *  </td>
- *   <td>Malicious
- * code can set a verifier that monitors host names visited by
- * HttpsURLConnection requests or that allows server certificates
- * with invalid common names.
- * </td>
- * </tr>
- *
- * <tr>
- *   <th scope="row">getSSLSessionContext</th>
- *   <td>The ability to get the SSLSessionContext of an SSLSession.
- * </td>
- *   <td>Malicious code may monitor sessions which have been established
- * with SSL peers or might invalidate sessions to slow down performance.
- * </td>
- * </tr>
- *
- * <tr>
- *   <th scope="row">setDefaultSSLContext</th>
- *   <td>The ability to set the default SSL context
- * </td>
- *   <td>Malicious code can set a context that monitors the opening of
- * connections or the plaintext data that is transmitted.
- * </td>
- * </tr>
- *
- * </tbody>
- * </table>
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
  * @see java.security.BasicPermission
  * @see java.security.Permission

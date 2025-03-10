@@ -29,7 +29,6 @@ import jdk.jfr.Category;
 import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
-import jdk.jfr.StackTrace;
 import jdk.jfr.internal.MirrorEvent;
 import jdk.jfr.internal.RemoveFields;
 import jdk.jfr.internal.Type;

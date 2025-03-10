@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,13 +100,16 @@ final class WindowController {
         controllerLock.lock();
         try {
             Integer old = streams.remove(streamid);
-            // Odd stream numbers (client streams) should have been registered.
+            // A client initiated stream might be closed (as unprocessed, due to a
+            // GOAWAY received on the connection) even before the stream is
+            // registered with this WindowController instance (when sending out request headers).
+            // Thus, for client initiated streams, we don't enforce the presence of the
+            // stream in the registered "streams" map.
+
             // Even stream numbers (server streams - aka Push Streams) should
             // not be registered
             final boolean isClientStream = (streamid & 0x1) == 1;
-            if (old == null && isClientStream) {
-                throw new InternalError("Expected entry for streamid: " + streamid);
-            } else if (old != null && !isClientStream) {
+            if (old != null && !isClientStream) {
                 throw new InternalError("Unexpected entry for streamid: " + streamid);
             }
         } finally {

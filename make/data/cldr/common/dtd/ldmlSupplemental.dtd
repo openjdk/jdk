@@ -12,10 +12,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:any-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "45" >
+<!ATTLIST version cldrVersion CDATA #FIXED "46" >
     <!--@MATCH:version-->
     <!--@VALUE-->
-<!ATTLIST version unicodeVersion CDATA #FIXED "15.1.0" >
+<!ATTLIST version unicodeVersion CDATA #FIXED "16.0.0" >
     <!--@MATCH:version-->
     <!--@VALUE-->
 
@@ -1078,7 +1078,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST numberingSystem radix NMTOKEN #IMPLIED >
     <!--@VALUE-->
 <!ATTLIST numberingSystem digits CDATA #IMPLIED >
-    <!--@MATCH:unicodeset/[\p{Nd}[\u3007\u4E00\u4E03\u4E09\u4E5D\u4E8C\u4E94\u516B\u516D\u56DB][\U00011F50-\U00011F59\U0001E4F0-\U0001E4F9]]-->
+    <!--@MATCH:unicodeset/[\p{Nd}[\u3007\u4E00\u4E03\u4E09\u4E5D\u4E8C\u4E94\u516B\u516D\u56DB][\U00010D40-\U00010D49\U000116D0-\U000116E3\U00011BF0-\U00011BF9\U00016130-\U00016139\U00016D70-\U00016D79\U0001CCF0-\U0001CCF9\U0001E5F1-\U0001E5FA]]-->
     <!--@VALUE-->
 <!ATTLIST numberingSystem rules CDATA #IMPLIED >
     <!--@MATCH:any-->
@@ -1155,17 +1155,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT matchVariable EMPTY >
 <!ATTLIST matchVariable id CDATA #REQUIRED >
-    <!--@MATCH:regex/\$[a-zA-Z0-9_]+-->
+    <!--@MATCH:regex/(?!undefined)\$[a-zA-Z0-9_]+-->
 <!ATTLIST matchVariable value CDATA #REQUIRED >
-    <!--@MATCH:any-->
+    <!--@MATCH:regex/([A-Z]{2}|[0-9]{3})(\+([A-Z]{2}|[0-9]{3}))*-->
     <!--@VALUE-->
 
 <!ELEMENT languageMatch EMPTY >
     <!--@ORDERED-->
 <!ATTLIST languageMatch desired CDATA #REQUIRED >
-    <!--@MATCH:any/TODO-->
+    <!--@MATCH:regex/(?!undefined).*-->
 <!ATTLIST languageMatch supported CDATA #REQUIRED >
-    <!--@MATCH:any/TODO-->
+    <!--@MATCH:any/regex/(?!undefined).*-->
 <!ATTLIST languageMatch percent NMTOKEN #IMPLIED >
     <!--@MATCH:range/0~100-->
     <!--@VALUE-->
@@ -1278,7 +1278,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST coverageLevel inLanguage CDATA #IMPLIED >
     <!--@MATCH:any-->
 <!ATTLIST coverageLevel inScript CDATA #IMPLIED >
-    <!--@MATCH:validity/script-->
+    <!--@MATCH:any-->
 <!ATTLIST coverageLevel inTerritory CDATA #IMPLIED >
     <!--@MATCH:any-->
 <!ATTLIST coverageLevel value CDATA #REQUIRED >

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,11 @@
 
 /**
  * @test
- * @requires vm.compiler2.enabled
  * @bug 8238438
  * @summary Tests to select the memory state of the last load in a load pack in SuperWord::co_locate_pack.
  *
  * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,compiler.loopopts.superword.CoLocatePackMemoryState::test
- *      -XX:LoopMaxUnroll=16 compiler.loopopts.superword.CoLocatePackMemoryState
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:LoopMaxUnroll=16 compiler.loopopts.superword.CoLocatePackMemoryState
  */
 
 package compiler.loopopts.superword;

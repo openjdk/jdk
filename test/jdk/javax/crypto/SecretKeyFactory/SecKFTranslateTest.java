@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,8 @@ import javax.security.auth.DestroyFailedException;
  */
 
 public class SecKFTranslateTest {
-    private static final String SUN_JCE = "SunJCE";
+    private static final String PROVIDER_NAME =
+                        System.getProperty("test.provider.name", "SunJCE");
 
     public static void main(String[] args) throws Exception {
 
@@ -77,10 +78,10 @@ public class SecKFTranslateTest {
         Random random = new Random();
         // Initialization
         SecretKeyFactory skf = SecretKeyFactory.getInstance(algo.toString(),
-                SUN_JCE);
+                PROVIDER_NAME);
 
         random.nextBytes(plainText);
-        Cipher ci = Cipher.getInstance(algo.toString(), SUN_JCE);
+        Cipher ci = Cipher.getInstance(algo.toString(), PROVIDER_NAME);
         // Encryption
         ci.init(Cipher.ENCRYPT_MODE, key1, aps[0]);
         byte[] cipherText = new byte[ci.getOutputSize(plainText.length)];

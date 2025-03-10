@@ -29,6 +29,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="an">арагон тілі</language>
 			<language type="ann">оболо тілі</language>
 			<language type="anp">ангика тілі</language>
+			<language type="apc" draft="unconfirmed">араб тілі (леватин)</language>
 			<language type="ar">араб тілі</language>
 			<language type="ar_001">қазіргі стандартты араб тілі</language>
 			<language type="arn">мапуче тілі</language>
@@ -43,28 +44,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ay">аймара тілі</language>
 			<language type="az">әзірбайжан тілі</language>
 			<language type="ba">башқұрт тілі</language>
+			<language type="bal" draft="unconfirmed">балучи тілі</language>
 			<language type="ban">бали тілі</language>
 			<language type="bas">баса тілі</language>
 			<language type="be">беларусь тілі</language>
 			<language type="bem">бемба тілі</language>
+			<language type="bew" draft="unconfirmed">бетауи тілі</language>
 			<language type="bez">бена тілі</language>
 			<language type="bg">болгар тілі</language>
-			<language type="bgc" draft="contributed">хариани тілі</language>
+			<language type="bgc">хариани тілі</language>
 			<language type="bgn">батыс балучи тілі</language>
 			<language type="bho">бходжпури тілі</language>
 			<language type="bi">бислама тілі</language>
 			<language type="bin">бини тілі</language>
 			<language type="bla">сиксика тілі</language>
+			<language type="blo">ании тілі</language>
+			<language type="blt" draft="unconfirmed">тай дам тілі</language>
 			<language type="bm">бамбара тілі</language>
 			<language type="bn">бенгал тілі</language>
 			<language type="bo">тибет тілі</language>
 			<language type="br">бретон тілі</language>
 			<language type="brx">бодо тілі</language>
 			<language type="bs">босния тілі</language>
+			<language type="bss" draft="unconfirmed">акусе тілі</language>
 			<language type="bug">бугис тілі</language>
 			<language type="byn">блин тілі</language>
 			<language type="ca">каталан тілі</language>
+			<language type="cad" draft="unconfirmed">каддо тілі</language>
 			<language type="cay">кайюга тілі</language>
+			<language type="cch" draft="unconfirmed">атсам тілі</language>
 			<language type="ccp">чакма тілі</language>
 			<language type="ce">шешен тілі</language>
 			<language type="ceb">себуано тілі</language>
@@ -76,6 +84,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chp">чипевайан тілі</language>
 			<language type="chr">чероки тілі</language>
 			<language type="chy">шайен тілі</language>
+			<language type="cic" draft="unconfirmed">чикасау тілі</language>
 			<language type="ckb">сорани тілі</language>
 			<language type="clc">чилкотин тілі</language>
 			<language type="co">корсика тілі</language>
@@ -153,6 +162,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hi_Latn" alt="variant">хинглиш</language>
 			<language type="hil">хилигайнон тілі</language>
 			<language type="hmn">хмонг тілі</language>
+			<language type="hnj" draft="unconfirmed">хмоң ниуа тілі</language>
 			<language type="hr">хорват тілі</language>
 			<language type="hsb">жоғарғы лужица тілі</language>
 			<language type="ht">гаити тілі</language>
@@ -181,6 +191,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="jmc">мачаме тілі</language>
 			<language type="jv">ява тілі</language>
 			<language type="ka">грузин тілі</language>
+			<language type="kaa" draft="unconfirmed">қарақалпақ тілі</language>
 			<language type="kab">кабил тілі</language>
 			<language type="kac">качин тілі</language>
 			<language type="kaj">каджи тілі</language>
@@ -189,6 +200,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kcg">тьяп тілі</language>
 			<language type="kde">маконде тілі</language>
 			<language type="kea">кабувердьяну тілі</language>
+			<language type="ken" draft="unconfirmed">кеняң тілі</language>
 			<language type="kfo">коро тілі</language>
 			<language type="kgp">кайнганг тілі</language>
 			<language type="kha">кхаси тілі</language>
@@ -219,6 +231,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">коми тілі</language>
 			<language type="kw">корн тілі</language>
 			<language type="kwk">квакиутль тілі</language>
+			<language type="kxv">куви тілі</language>
 			<language type="ky">қырғыз тілі</language>
 			<language type="la">латын тілі</language>
 			<language type="lad">ладино тілі</language>
@@ -227,10 +240,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">лезгин тілі</language>
 			<language type="lg">ганда тілі</language>
 			<language type="li">лимбург тілі</language>
-			<language type="lij" draft="contributed">лигур тілі</language>
+			<language type="lij">лигур тілі</language>
 			<language type="lil">лиллуэт тілі</language>
 			<language type="lkt">лакота тілі</language>
-			<language type="lmo" draft="contributed">Ломбард</language>
+			<language type="lld" draft="unconfirmed">ладин тілі</language>
+			<language type="lmo">ломбард тілі</language>
 			<language type="ln">лингала тілі</language>
 			<language type="lo">лаос тілі</language>
 			<language type="lou">креоль тілі (Луизиана)</language>
@@ -238,6 +252,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lrc">солтүстік люри тілі</language>
 			<language type="lsm">самия тілі</language>
 			<language type="lt">литва тілі</language>
+			<language type="ltg" draft="unconfirmed">латгалиан тілі</language>
 			<language type="lu">луба-катанга тілі</language>
 			<language type="lua">луба-лулуа тілі</language>
 			<language type="lun">лунда тілі</language>
@@ -258,6 +273,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="mgh">макуа-меетто тілі</language>
 			<language type="mgo">мета тілі</language>
 			<language type="mh">маршалл тілі</language>
+			<language type="mhn" draft="unconfirmed">мокено тілі</language>
 			<language type="mi">маори тілі</language>
 			<language type="mic">микмак тілі</language>
 			<language type="min">минангкабау тілі</language>
@@ -330,10 +346,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pt_PT">еуропалық португал тілі</language>
 			<language type="qu">кечуа тілі</language>
 			<language type="quc">киче тілі</language>
-			<language type="raj" draft="contributed">раджастани тілі</language>
+			<language type="raj">раджастани тілі</language>
 			<language type="rap">рапануй тілі</language>
 			<language type="rar">раротонган тілі</language>
 			<language type="rhg">рохинджа</language>
+			<language type="rif" draft="unconfirmed">риффиан тілі</language>
 			<language type="rm">романш тілі</language>
 			<language type="rn">рунди тілі</language>
 			<language type="ro">румын тілі</language>
@@ -363,7 +380,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="shi">ташелхит тілі</language>
 			<language type="shn">шан тілі</language>
 			<language type="si">сингал тілі</language>
+			<language type="sid" draft="unconfirmed">сидамо тілі</language>
 			<language type="sk">словак тілі</language>
+			<language type="skr" draft="unconfirmed">сарайки тілі</language>
 			<language type="sl">словен тілі</language>
 			<language type="slh">оңтүстік лушуцид тілі</language>
 			<language type="sm">самоа тілі</language>
@@ -388,6 +407,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sw_CD">конго суахили тілі</language>
 			<language type="swb">комор тілі</language>
 			<language type="syr">сирия тілі</language>
+			<language type="szl">силез тілі</language>
 			<language type="ta">тамил тілі</language>
 			<language type="tce">оңтүстік тутчоне тілі</language>
 			<language type="te">телугу тілі</language>
@@ -409,6 +429,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="tpi">ток-писин тілі</language>
 			<language type="tr">түрік тілі</language>
 			<language type="trv">тароко тілі</language>
+			<language type="trw" draft="unconfirmed">торуали тілі</language>
 			<language type="ts">тсонга тілі</language>
 			<language type="tt">татар тілі</language>
 			<language type="ttm">солтүстік тутчоне тілі</language>
@@ -428,8 +449,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="uz">өзбек тілі</language>
 			<language type="vai">вай тілі</language>
 			<language type="ve">венда тілі</language>
-			<language type="vec" draft="contributed">венеция тілі</language>
+			<language type="vec">венеция тілі</language>
 			<language type="vi">вьетнам тілі</language>
+			<language type="vmw">макуа тілі</language>
 			<language type="vo">волапюк тілі</language>
 			<language type="vun">вунджо тілі</language>
 			<language type="wa">валлон тілі</language>
@@ -441,6 +463,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">қытай тілі (У)</language>
 			<language type="xal">қалмақ тілі</language>
 			<language type="xh">кхоса тілі</language>
+			<language type="xnr">кангри тілі</language>
 			<language type="xog">сога тілі</language>
 			<language type="yav">янгбен тілі</language>
 			<language type="ybb">йемба тілі</language>
@@ -449,6 +472,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yrl">ньенгату тілі</language>
 			<language type="yue">кантон тілі</language>
 			<language type="yue" alt="menu">қытай тілі (кантон)</language>
+			<language type="za">чжуан тілі</language>
 			<language type="zgh">марокколық стандартты тамазигхт тілі</language>
 			<language type="zh">қытай тілі</language>
 			<language type="zh" alt="menu">қытай тілі (мандарин)</language>
@@ -791,8 +815,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Израиль</territory>
 			<territory type="IM">Мэн аралы</territory>
 			<territory type="IN">Үндістан</territory>
-			<territory type="IO" draft="contributed">Үнді мұхитындағы Британ аймағы</territory>
-			<territory type="IO" alt="chagos" draft="contributed">Чагос архипелагі</territory>
+			<territory type="IO">Үнді мұхитындағы Британ аймағы</territory>
+			<territory type="IO" alt="chagos">Чагос архипелагі</territory>
 			<territory type="IQ">Ирак</territory>
 			<territory type="IR">Иран</territory>
 			<territory type="IS">Исландия</territory>
@@ -1088,11 +1112,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">Грегориандық күнтізбе</type>
 			<type key="calendar" type="hebrew">Көне еврей күнтізбесі</type>
 			<type key="calendar" type="indian" draft="contributed">Үндістанның ұлттық күнтізбесі</type>
-			<type key="calendar" type="islamic" draft="contributed">Ислам күнтізбесі</type>
-			<type key="calendar" type="islamic-civil" draft="contributed">Ислам күнтізбесі (кестелік, азаматтық дәуір)</type>
-			<type key="calendar" type="islamic-rgsa" draft="provisional">Ислам күнтізбесі (Сауд Арабиясы, жаңа ай)</type>
-			<type key="calendar" type="islamic-tbla" draft="provisional">Ислам күнтізбесі (кестелік, астрономиялық дәуір)</type>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">Ислам күнтізбесі (Умм аль-Кура)</type>
+			<type key="calendar" type="islamic">Ислам күнтізбесі</type>
+			<type key="calendar" type="islamic-civil">Ислам күнтізбесі (кестелік, азаматтық дәуір)</type>
+			<type key="calendar" type="islamic-rgsa" draft="contributed">Ислам күнтізбесі (Сауд Арабиясы, жаңа ай)</type>
+			<type key="calendar" type="islamic-tbla" draft="contributed">Ислам күнтізбесі (кестелік, астрономиялық дәуір)</type>
+			<type key="calendar" type="islamic-umalqura">Ислам күнтізбесі (Умм аль-Кура)</type>
 			<type key="calendar" type="iso8601">ISO-8601 күнтізбесі</type>
 			<type key="calendar" type="japanese">Жапон күнтізбесі</type>
 			<type key="calendar" type="persian">Парсы күнтізбесі</type>
@@ -1234,6 +1258,92 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</delimiters>
 	<dates>
 		<calendars>
+			<calendar type="chinese">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">1-ай</month>
+							<month type="2">2-ай</month>
+							<month type="3">3-ай</month>
+							<month type="4">4-ай</month>
+							<month type="5">5-ай</month>
+							<month type="6">6-ай</month>
+							<month type="7">7-ай</month>
+							<month type="8">8-ай</month>
+							<month type="9">9-ай</month>
+							<month type="10">10-ай</month>
+							<month type="11">11-ай</month>
+							<month type="12">12-ай</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Бірінші ай</month>
+							<month type="2">Екінші ай</month>
+							<month type="3">Үшінші ай</month>
+							<month type="4">Төртінші ай</month>
+							<month type="5">Бесінші ай</month>
+							<month type="6">Алтыншы ай</month>
+							<month type="7">Жетінші ай</month>
+							<month type="8">Сегізінші ай</month>
+							<month type="9">Тоғызыншы ай</month>
+							<month type="10">Оныншы ай</month>
+							<month type="11">Он бірінші ай</month>
+							<month type="12">Он екінші ай</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">1-ай</month>
+							<month type="2">2-ай</month>
+							<month type="3">3-ай</month>
+							<month type="4">4-ай</month>
+							<month type="5">5-ай</month>
+							<month type="6">6-ай</month>
+							<month type="7">7-ай</month>
+							<month type="8">8-ай</month>
+							<month type="9">9-ай</month>
+							<month type="10">10-ай</month>
+							<month type="11">11-ай</month>
+							<month type="12">12-ай</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Бірінші ай</month>
+							<month type="2">Екінші ай</month>
+							<month type="3">Үшінші ай</month>
+							<month type="4">Төртінші ай</month>
+							<month type="5">Бесінші ай</month>
+							<month type="6">Алтыншы ай</month>
+							<month type="7">Жетінші ай</month>
+							<month type="8">Сегізінші ай</month>
+							<month type="9">Тоғызыншы ай</month>
+							<month type="10">Оныншы ай</month>
+							<month type="11">Он бірінші ай</month>
+							<month type="12">Он екінші ай</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, MMMM d, r(U)</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>MMMM d, r(U)</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>MMM d, r</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>M/d/r</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+			</calendar>
 			<calendar type="coptic">
 				<months>
 					<monthContext type="format">
@@ -1835,51 +1945,76 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">Қаң.</month>
-							<month type="2" draft="contributed">Ақп.</month>
-							<month type="3">Нау.</month>
-							<month type="4" draft="contributed">Сәу.</month>
-							<month type="5" draft="contributed">Мам.</month>
-							<month type="6">Jum. II</month>
-							<month type="7" draft="contributed">шіл.</month>
-							<month type="8" draft="contributed">там.</month>
-							<month type="9" draft="contributed">Қыр.</month>
-							<month type="10" draft="contributed">Қаз.</month>
-							<month type="11" draft="contributed">Қар.</month>
-							<month type="12" draft="contributed">Жел.</month>
+							<month type="1">Мұх.</month>
+							<month type="2">Саф.</month>
+							<month type="3">Раб. I</month>
+							<month type="4">Раб. II</month>
+							<month type="5">Жұм. I</month>
+							<month type="6">Жұм. II</month>
+							<month type="7">Ереж.</month>
+							<month type="8">Шағ.</month>
+							<month type="9">Рам.</month>
+							<month type="10">Шәу.</month>
+							<month type="11">Зұлқ.</month>
+							<month type="12">Зұлх.</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Мұхаррам</month>
 							<month type="2">Сафар</month>
-							<month type="3">Рабиғ әл-әууәл</month>
-							<month type="4">Рабиғ әс-сәни</month>
-							<month type="5">Джумада әл-әууәл</month>
-							<month type="6">Жумад ас-сәни</month>
-							<month type="7">Раджаб</month>
+							<month type="3">Рабиғул әууәл</month>
+							<month type="4">Рабиғул ахир</month>
+							<month type="5">Жұмадәл аууәл</month>
+							<month type="6">Жұмадәл ахир</month>
+							<month type="7">Ережеп</month>
 							<month type="8">Шағбан</month>
-							<month type="9">Рамадан</month>
-							<month type="10">Шәууәл</month>
-							<month type="11">Зул-Қағда</month>
-							<month type="12">Зул-Хиджа</month>
+							<month type="9">Рамазан</month>
+							<month type="10">Шәууал</month>
+							<month type="11">Зұлқағда</month>
+							<month type="12">Зұлхижжа</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">Мұх.</month>
-							<month type="2" draft="contributed">Саф.</month>
-							<month type="3" draft="contributed">Раб. І</month>
-							<month type="4" draft="contributed">Раб. ІІ</month>
-							<month type="5" draft="contributed">Жум. І</month>
-							<month type="6" draft="contributed">Жум. ІІ</month>
-							<month type="7" draft="contributed">Радж.</month>
-							<month type="8" draft="contributed">Шағ.</month>
-							<month type="9" draft="contributed">Рам.</month>
-							<month type="10" draft="contributed">Шәу.</month>
-							<month type="11" draft="contributed">Зул-Қ.</month>
-							<month type="12" draft="contributed">Зул-Х.</month>
+							<month type="1">Мұх.</month>
+							<month type="2">Саф.</month>
+							<month type="3">Раб. І</month>
+							<month type="4">Раб. ІІ</month>
+							<month type="5">Жұм. I</month>
+							<month type="6">Жұм. II</month>
+							<month type="7">Ереж.</month>
+							<month type="8">Шағ.</month>
+							<month type="9">Рам.</month>
+							<month type="10">Шәу.</month>
+							<month type="11">Зұлқ.</month>
+							<month type="12">Зұлх.</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Мұхаррам</month>
+							<month type="2">Сафар</month>
+							<month type="3">Рабиғул әууәл</month>
+							<month type="4">Рабиғул ахир</month>
+							<month type="5">Жұмадәл аууәл</month>
+							<month type="6">Жұмадәл ахир</month>
+							<month type="7">Ережеп</month>
+							<month type="8">Шағбан</month>
+							<month type="9">Рамазан</month>
+							<month type="10">Шәууал</month>
+							<month type="11">Зұлқағда</month>
+							<month type="12">Зұлхижжа</month>
 						</monthWidth>
 					</monthContext>
 				</months>
+				<eras>
+					<eraNames>
+						<era type="0">ХЖ</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">ХЖ</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0">ХЖ</era>
+					</eraNarrow>
+				</eras>
 			</calendar>
 			<calendar type="persian">
 				<months>
@@ -2389,6 +2524,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} уақыты</regionFormat>
 			<regionFormat type="daylight">{0} жазғы уақыты</regionFormat>
 			<regionFormat type="standard">{0} стандартты уақыты</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Гонолулу</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Дүниежүзілік үйлестірілген уақыт</standard>
@@ -3007,7 +3145,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Эндербери</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kanton">
-				<exemplarCity draft="contributed">Кантон</exemplarCity>
+				<exemplarCity>Кантон</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Киритимати</exemplarCity>
@@ -3125,9 +3263,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Ұланбатыр</exemplarCity>
-			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Чойбалсан</exemplarCity>
 			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Макао</exemplarCity>
@@ -3528,9 +3663,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Nome">
 				<exemplarCity>Ном</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Гонолулу</exemplarCity>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Анкоридж</exemplarCity>
 			</zone>
@@ -3875,13 +4007,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Қытай жазғы уақыты</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Чойбалсан уақыты</generic>
-					<standard>Чойбалсан стандартты уақыты</standard>
-					<daylight>Чойбалсан жазғы уақыты</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Рождество аралының уақыты</standard>
@@ -4123,6 +4248,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Жапония уақыты</generic>
 					<standard>Жапония стандартты уақыты</standard>
 					<daylight>Жапония жазғы уақыты</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Қазақстан уақыты</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -4611,7 +4741,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern>#,##0.00 ¤</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
-					<pattern alt="noCurrency" draft="contributed">#,##0.00;(#,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -4642,8 +4772,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">000 трлн ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -6004,6 +6132,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} британдық кварта</unitPattern>
 				<unitPattern count="other">{0} брит. кварта</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>жарық</displayName>
+				<unitPattern count="one">{0} жарық</unitPattern>
+				<unitPattern count="other">{0} жарық</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>миллиардтағы бөлік</displayName>
+				<unitPattern count="one">{0} б/млрд</unitPattern>
+				<unitPattern count="other">{0} б/млрд</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>түн</displayName>
+				<unitPattern count="one">{0} түн</unitPattern>
+				<unitPattern count="other">{0} түн</unitPattern>
+				<perUnitPattern>{0}/түн</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>негізгі бағыт</displayName>
 				<coordinateUnitPattern type="east">{0} шығыс</coordinateUnitPattern>
@@ -6991,6 +7135,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} брит. кварта</unitPattern>
 				<unitPattern count="other">{0} брит. кварта</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>жарық</displayName>
+				<unitPattern count="one">{0} жарық</unitPattern>
+				<unitPattern count="other">{0} жарық</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>бөлік/миллиард</displayName>
+				<unitPattern count="one">{0} б/млрд</unitPattern>
+				<unitPattern count="other">{0} б/млрд</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>түн</displayName>
+				<unitPattern count="one">{0} түн</unitPattern>
+				<unitPattern count="other">{0} түн</unitPattern>
+				<perUnitPattern>{0}/түн</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>бағыт</displayName>
 				<coordinateUnitPattern type="east">{0} Ш</coordinateUnitPattern>
@@ -7133,6 +7293,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} имп. сұй. унц.</unitPattern>
 				<unitPattern count="other">{0} имп. сұй. унц.</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>жарық</displayName>
+				<unitPattern count="one">{0} жарық</unitPattern>
+				<unitPattern count="other">{0} жарық</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>б/млрд</displayName>
+				<unitPattern count="one">{0} б/млрд</unitPattern>
+				<unitPattern count="other">{0} б/млрд</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>түн</displayName>
+				<unitPattern count="one">{0}түн</unitPattern>
+				<unitPattern count="other">{0}түн</unitPattern>
+				<perUnitPattern>{0}/түн</perUnitPattern>
+			</unit>
 		</unitLength>
 	</units>
 	<listPatterns>
@@ -7161,8 +7337,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="compatibility">{0} — үйлесімді</characterLabelPattern>
 		<characterLabelPattern type="enclosed">{0} — енгізілген</characterLabelPattern>
 		<characterLabelPattern type="extended">{0} — кеңейтілген</characterLabelPattern>
-		<characterLabelPattern type="facing-left" draft="contributed">{0} солға қаратылған</characterLabelPattern>
-		<characterLabelPattern type="facing-right" draft="contributed">{0} оңға қаратылған</characterLabelPattern>
+		<characterLabelPattern type="facing-left">{0} солға қаратылған</characterLabelPattern>
+		<characterLabelPattern type="facing-right">{0} оңға қаратылған</characterLabelPattern>
 		<characterLabelPattern type="historic">{0} — тарихи</characterLabelPattern>
 		<characterLabelPattern type="miscellaneous">{0} — әртүрлі</characterLabelPattern>
 		<characterLabelPattern type="other">{0} — басқа</characterLabelPattern>

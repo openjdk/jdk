@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ public class SourceFileTestBase extends TestBase {
 
         SourceFileAttribute attribute = sourceFileAttributes.get(0);
 
-        assertEquals(attribute.attributeName(), Attributes.SOURCE_FILE.name(), "Incorrect attribute name");
+        assertEquals(attribute.attributeName().stringValue(), Attributes.sourceFile().name(), "Incorrect attribute name");
         assertEquals(attribute.sourceFile().stringValue(), fileName,
                 "Incorrect source file name");
         assertEquals(((BoundAttribute<?>)attribute).payloadLen(), 2, "Incorrect attribute length");

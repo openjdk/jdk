@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ class Type_Array : public AnyObj {
   const Type **_types;
   void grow( uint i );          // Grow array node to fit
 public:
-  Type_Array(Arena *a) : _a(a), _max(0), _types(0) {}
+  Type_Array(Arena *a) : _a(a), _max(0), _types(nullptr) {}
   const Type *operator[] ( uint i ) const // Lookup, or null for not mapped
   { return (i<_max) ? _types[i] : (Type*)nullptr; }
   const Type *fast_lookup(uint i) const{assert(i<_max,"oob");return _types[i];}

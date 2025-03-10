@@ -124,65 +124,63 @@ package org.w3c.dom;
  * </thead>
  * <tbody>
  * <tr>
- * <th scope="row" valign='top' rowspan='1' colspan='1'>
+ * <th scope="row">
  * Character reference</th>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td>
  * <pre>"x&amp;#178;=5"</pre>
  * </td>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td>
  * <pre>"x&#178;=5"</pre>
  * </td>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td>
  * <pre>"x&amp;#178;=5"</pre>
  * </td>
  * </tr>
  * <tr>
- * <th scope="row" valign='top' rowspan='1' colspan='1'>Built-in
- * character entity</th>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <th scope="row">Built-in character entity</th>
+ * <td>
  * <pre>"y&amp;lt;6"</pre>
  * </td>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td>
  * <pre>"y&lt;6"</pre>
  * </td>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td>
  * <pre>"y&amp;lt;6"</pre>
  * </td>
  * </tr>
  * <tr>
- * <th scope="row" valign='top' rowspan='1' colspan='1'>Literal newline between</th>
- * <td valign='top' rowspan='1' colspan='1'>
- * <pre>
- * "x=5&amp;#10;y=6"</pre>
+ * <th scope="row">Literal newline between</th>
+ * <td>
+ * <pre>"x=5&amp;#10;y=6"</pre>
  * </td>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td>
  * <pre>"x=5 y=6"</pre>
  * </td>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td>
  * <pre>"x=5&amp;#10;y=6"</pre>
  * </td>
  * </tr>
  * <tr>
- * <th scope="row" valign='top' rowspan='1' colspan='1'>Normalized newline between</th>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <th scope="row">Normalized newline between</th>
+ * <td>
  * <pre>"x=5
  * y=6"</pre>
  * </td>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td>
  * <pre>"x=5 y=6"</pre>
  * </td>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td>
  * <pre>"x=5 y=6"</pre>
  * </td>
  * </tr>
  * <tr>
- * <th scope="row" valign='top' rowspan='1' colspan='1'>Entity <code>e</code> with literal newline</th>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <th scope="row">Entity <code>e</code> with literal newline</th>
+ * <td>
  * <pre>
  * &lt;!ENTITY e '...&amp;#10;...'&gt; [...]&gt; "x=5&amp;e;y=6"</pre>
  * </td>
- * <td valign='top' rowspan='1' colspan='1'><em>Dependent on Implementation and Load Options</em></td>
- * <td valign='top' rowspan='1' colspan='1'><em>Dependent on Implementation and Load/Save Options</em></td>
+ * <td><em>Dependent on Implementation and Load Options</em></td>
+ * <td><em>Dependent on Implementation and Load/Save Options</em></td>
  * </tr>
  * </tbody>
  * </table>

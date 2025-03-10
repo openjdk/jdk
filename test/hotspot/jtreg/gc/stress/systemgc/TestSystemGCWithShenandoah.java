@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,17 +43,20 @@ package gc.stress.systemgc;
  */
 
 /*
- * @test id=iu
+ * @test id=generational
  * @key stress
  * @library /
  * @requires vm.gc.Shenandoah
  * @summary Stress the Shenandoah GC full GC by allocating objects of different lifetimes concurrently with System.gc().
  *
  * @run main/othervm/timeout=300 -Xlog:gc*=info -Xmx512m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
  *      -XX:+ShenandoahVerify
  *      gc.stress.systemgc.TestSystemGCWithShenandoah 270
  *
+ * @run main/othervm/timeout=300 -Xlog:gc*=info -Xmx512m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      gc.stress.systemgc.TestSystemGCWithShenandoah 270
  */
 public class TestSystemGCWithShenandoah {
     public static void main(String[] args) throws Exception {

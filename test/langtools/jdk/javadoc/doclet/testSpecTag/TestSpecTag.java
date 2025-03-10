@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6251738 8226279 8297802 8296546 8305407
+ * @bug 6251738 8226279 8297802 8305407
  * @summary JDK-8226279 javadoc should support a new at-spec tag
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -509,20 +509,6 @@ public class TestSpecTag extends JavadocTester {
                            ^
                     """
                     .replace("#FILE#", src.resolve("p").resolve("C.java").toString()));
-    }
-
-    @Test
-    public void testSuppressSpecPage(Path base) throws IOException {
-        Path src = base.resolve("src");
-        tb.writeJavaFiles(src, "package p; /** @spec http://example.com label */ public class C { }");
-
-        javadoc("-d", base.resolve("out").toString(),
-                "--source-path", src.toString(),
-                "--no-external-specs-page",
-                "p");
-        checkExit(Exit.OK);
-
-        checkFiles(false, "external-specs.html");
     }
 
     @Test

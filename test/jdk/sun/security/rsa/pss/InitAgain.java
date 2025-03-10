@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,34 @@
  */
 import java.security.*;
 import java.security.spec.*;
+import jdk.test.lib.security.SecurityUtils;
 
 /**
  * @test
  * @bug 8205445
+ * @library /test/lib
  * @summary Make sure old state is cleared when init is called again
+ * @run main InitAgain default
+ * @run main InitAgain SHA-256
  */
 public class InitAgain {
 
     public static void main(String[] args) throws Exception {
+        String mdName = args[0];
+        PSSParameterSpec pssParamSpec = "default".equals(mdName) ? PSSParameterSpec.DEFAULT :
+                new PSSParameterSpec(mdName, "MGF1", new MGF1ParameterSpec(mdName), 20, 1);
 
         byte[] msg = "hello".getBytes();
 
         Signature s1 = Signature.getInstance("RSASSA-PSS");
         Signature s2 = Signature.getInstance("RSASSA-PSS");
 
-        s1.setParameter(PSSParameterSpec.DEFAULT);
-        s2.setParameter(PSSParameterSpec.DEFAULT);
+        s1.setParameter(pssParamSpec);
+        s2.setParameter(pssParamSpec);
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-        kpg.initialize(1024);
+        String kpgAlgorithm = "RSA";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp = kpg.generateKeyPair();
 
         s1.initSign(kp.getPrivate());

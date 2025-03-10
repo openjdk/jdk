@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,6 +136,8 @@ class NativeCall: public NativeInstruction {
     load_const_from_method_toc_instruction_size = 16,
     instruction_size                            = 16 // Used in shared code for calls with reloc_info.
   };
+
+  static int byte_size() { return instruction_size; }
 
   static bool is_call_at(address a) {
     return Assembler::is_bl(*(int*)(a));

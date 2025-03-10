@@ -156,21 +156,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="2">फ़रवरी</month>
 							<month type="3">मार्च</month>
 							<month type="4">अप्रैल</month>
-							<month type="5">मे</month>
+							<month type="5">मई</month>
 							<month type="6">जून</month>
 							<month type="7">जुलाई</month>
 							<month type="8">अगस्त</month>
 							<month type="9">सतुंबर</month>
 							<month type="10">अक्तूबर</month>
 							<month type="11">नवूमबर</month>
-							<month type="12">दसूमबर</month>
+							<month type="12">दसमबर</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">जनवरी</month>
 							<month type="2">फ़रवरी</month>
 							<month type="3">मार्च</month>
 							<month type="4">अप्रैल</month>
-							<month type="5">मे</month>
+							<month type="5">मई</month>
 							<month type="6">जून</month>
 							<month type="7">जुलाई</month>
 							<month type="8">अगस्त</month>
@@ -186,14 +186,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="2">फ़रवरी</month>
 							<month type="3">मार्च</month>
 							<month type="4">अप्रैल</month>
-							<month type="5">मे</month>
+							<month type="5">मई</month>
 							<month type="6">जून</month>
 							<month type="7">जुलाई</month>
 							<month type="8">अगस्त</month>
 							<month type="9">सतुंबर</month>
 							<month type="10">अकतुम्बर</month>
 							<month type="11">नवूमबर</month>
-							<month type="12">दसूमबर</month>
+							<month type="12">दसमबर</month>
 						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">ज</month>
@@ -214,7 +214,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="2">फ़रवरी</month>
 							<month type="3">मार्च</month>
 							<month type="4">अप्रैल</month>
-							<month type="5">मे</month>
+							<month type="5">मई</month>
 							<month type="6">जून</month>
 							<month type="7">जुलाई</month>
 							<month type="8">अगस्त</month>
@@ -524,214 +524,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<currencyFormats numberSystem="adlm">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="ahom">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
 		<currencyFormats numberSystem="arabext">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="bali">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="beng">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="bhks">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="brah">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="cakm">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="cham">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="deva">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="diak">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="fullwide">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="gong">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="gonm">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="gujr">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="guru">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="hanidec">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="hmng">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="hmnp">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="java">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="kali">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="kawi">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="khmr">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="knda">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="lana">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="lanatham">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="laoo">
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="lepc">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="limb">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="mathbold">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="mathdbl">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="mathmono">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="mathsanb">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="mathsans">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="mlym">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="modi">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="mong">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="mroo">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="mtei">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="mymr">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="mymrshan">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="mymrtlng">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="nagm">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="newa">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="nkoo">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="olck">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="orya">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="osma">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="rohg">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="saur">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="segment">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="shrd">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="sind">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="sinh">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="sora">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="sund">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="takr">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="talu">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="tamldec">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="telu">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="thai">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="tibt">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="tirh">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="tnsa">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="vaii">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="wara">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="wcho">
 			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>

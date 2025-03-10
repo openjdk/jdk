@@ -70,7 +70,7 @@ int compare_stack_trace(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
 
     int exp_idx = expected_frames_length - 1 - i;
     printf("expected idx %d\n", exp_idx);
-    fflush(0);
+    fflush(nullptr);
     if (i < expected_frames_length) {
 
       // for generated classes don't compare lambda indicies

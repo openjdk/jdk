@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,9 +70,6 @@ public abstract class ConfigurationSpi {
      * <p> The default implementation of this method does nothing.
      * This method should be overridden if a refresh operation is supported
      * by the implementation.
-     *
-     * @exception SecurityException if the caller does not have permission
-     *          to refresh its Configuration.
      */
     protected void engineRefresh() { }
 }

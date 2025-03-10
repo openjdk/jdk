@@ -25,7 +25,7 @@
  * @test
  * @summary Test to stress directory listings
  * @library /test/lib
- * @run testng/othervm/timeout=180 -Dsun.net.httpserver.nodelay=true StressDirListings
+ * @run testng/othervm/timeout=180 StressDirListings
  */
 
 import java.io.IOException;

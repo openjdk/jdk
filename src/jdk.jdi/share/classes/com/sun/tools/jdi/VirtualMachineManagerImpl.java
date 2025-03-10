@@ -59,13 +59,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManagerService {
     private static VirtualMachineManagerImpl vmm;
 
     public static VirtualMachineManager virtualMachineManager() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            JDIPermission vmmPermission =
-                new JDIPermission("virtualMachineManager");
-            sm.checkPermission(vmmPermission);
-        }
         synchronized (lock) {
             if (vmm == null) {
                 vmm = new VirtualMachineManagerImpl();

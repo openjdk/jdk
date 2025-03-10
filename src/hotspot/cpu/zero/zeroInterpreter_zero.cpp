@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -37,6 +36,7 @@
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/basicLock.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -44,6 +44,7 @@
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #include "entry_zero.hpp"
@@ -331,23 +332,24 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
   if (method->is_synchronized()) {
     monitor = (BasicObjectLock*) istate->stack_base();
     oop lockee = monitor->obj();
-    markWord disp = lockee->mark().set_unlocked();
-    monitor->lock()->set_displaced_header(disp);
-    bool call_vm = (LockingMode == LM_MONITOR);
-    bool inc_monitor_count = true;
-    if (call_vm || lockee->cas_set_mark(markWord::from_pointer(monitor), disp) != disp) {
-      // Is it simple recursive case?
-      if (!call_vm && thread->is_lock_owned((address) disp.clear_lock_bits().to_pointer())) {
-        monitor->lock()->set_displaced_header(markWord::from_pointer(nullptr));
-      } else {
-        inc_monitor_count = false;
-        CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
-        if (HAS_PENDING_EXCEPTION)
-          goto unwind_and_return;
+    bool success = false;
+    if (LockingMode == LM_LEGACY) {
+      markWord disp = lockee->mark().set_unlocked();
+      monitor->lock()->set_displaced_header(disp);
+      success = true;
+      if (lockee->cas_set_mark(markWord::from_pointer(monitor), disp) != disp) {
+        // Is it simple recursive case?
+        if (thread->is_lock_owned((address) disp.clear_lock_bits().to_pointer())) {
+          monitor->lock()->set_displaced_header(markWord::from_pointer(nullptr));
+        } else {
+          success = false;
+        }
       }
     }
-    if (inc_monitor_count) {
-      THREAD->inc_held_monitor_count();
+    if (!success) {
+      CALL_VM_NOCHECK(InterpreterRuntime::monitorenter(thread, monitor));
+          if (HAS_PENDING_EXCEPTION)
+            goto unwind_and_return;
     }
   }
 
@@ -479,26 +481,27 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
 
   // Unlock if necessary
   if (monitor) {
-    BasicLock *lock = monitor->lock();
-    markWord header = lock->displaced_header();
-    oop rcvr = monitor->obj();
-    monitor->set_obj(nullptr);
-
-    bool dec_monitor_count = true;
-    if (header.to_pointer() != nullptr) {
-      markWord old_header = markWord::encode(lock);
-      if (rcvr->cas_set_mark(header, old_header) != old_header) {
-        monitor->set_obj(rcvr);
-        dec_monitor_count = false;
-        InterpreterRuntime::monitorexit(monitor);
+    bool success = false;
+    if (LockingMode == LM_LEGACY) {
+      BasicLock* lock = monitor->lock();
+      oop rcvr = monitor->obj();
+      monitor->set_obj(nullptr);
+      success = true;
+      markWord header = lock->displaced_header();
+      if (header.to_pointer() != nullptr) { // Check for recursive lock
+        markWord old_header = markWord::encode(lock);
+        if (rcvr->cas_set_mark(header, old_header) != old_header) {
+          monitor->set_obj(rcvr);
+          success = false;
+        }
       }
     }
-    if (dec_monitor_count) {
-      THREAD->dec_held_monitor_count();
+    if (!success) {
+      InterpreterRuntime::monitorexit(monitor);
     }
   }
 
- unwind_and_return:
+  unwind_and_return:
 
   // Unwind the current activation
   thread->pop_zero_frame();

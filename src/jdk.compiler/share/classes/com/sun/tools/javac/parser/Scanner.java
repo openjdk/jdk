@@ -125,7 +125,7 @@ public class Scanner implements Lexer {
             if (token.comments != null) {
                 for (var c : token.comments) {
                     switch (c.getStyle()) {
-                        case JAVADOC -> {
+                        case JAVADOC_BLOCK, JAVADOC_LINE -> {
                             docComments.add(c);
                         }
                     }

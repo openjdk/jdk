@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4818598
  * @summary Tests Method value encoding
- * @run main/othervm -Djava.security.manager=allow java_lang_reflect_Method
+ * @run main/othervm java_lang_reflect_Method
  * @author Sergey Malenkov
  */
 
@@ -33,7 +33,7 @@ import java.lang.reflect.Method;
 
 public final class java_lang_reflect_Method extends AbstractTest<Method> {
     public static void main(String[] args) {
-        new java_lang_reflect_Method().test(true);
+        new java_lang_reflect_Method().test();
     }
 
     protected Method getObject() {

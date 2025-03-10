@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,10 +84,6 @@ private:
   ZPhysicalMemoryBacking _backing;
   ZMemoryManager         _manager;
 
-  void pretouch_view(zaddress addr, size_t size) const;
-  void map_view(zaddress_unsafe addr, const ZPhysicalMemory& pmem) const;
-  void unmap_view(zaddress_unsafe addr, size_t size) const;
-
 public:
   ZPhysicalMemoryManager(size_t max_capacity);
 
@@ -101,8 +97,6 @@ public:
 
   bool commit(ZPhysicalMemory& pmem);
   bool uncommit(ZPhysicalMemory& pmem);
-
-  void pretouch(zoffset offset, size_t size) const;
 
   void map(zoffset offset, const ZPhysicalMemory& pmem) const;
   void unmap(zoffset offset, size_t size) const;

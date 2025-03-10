@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -430,6 +429,10 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
           return nullptr;
         }
         values.at_put(j, res);
+      } else if (val->is_top()) {
+        // This indicates that this path into the phi is dead. Top will eventually also propagate into the Region.
+        // IGVN will clean this up later.
+        values.at_put(j, val);
       } else {
         DEBUG_ONLY( val->dump(); )
         assert(false, "unknown node on this path");
@@ -572,6 +575,9 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
     res_type = igvn->type(res)->isa_oopptr();
     if (res_type == nullptr) {
       NOT_PRODUCT(fail_eliminate = "Neither instance or array allocation";)
+      can_eliminate = false;
+    } else if (!res_type->klass_is_exact()) {
+      NOT_PRODUCT(fail_eliminate = "Not an exact type.";)
       can_eliminate = false;
     } else if (res_type->isa_aryptr()) {
       int length = alloc->in(AllocateNode::ALength)->find_int_con(-1);
@@ -1309,8 +1315,7 @@ void PhaseMacroExpand::expand_allocate_common(
     slow_region = new RegionNode(3);
 
     // Now make the initial failure test.  Usually a too-big test but
-    // might be a TRUE for finalizers or a fancy class check for
-    // newInstance0.
+    // might be a TRUE for finalizers.
     IfNode *toobig_iff = new IfNode(ctrl, initial_slow_test, PROB_MIN, COUNT_UNKNOWN);
     transform_later(toobig_iff);
     // Plug the failing-too-big test into the slow-path region
@@ -1704,7 +1709,9 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
   }
   rawmem = make_store(control, rawmem, object, oopDesc::mark_offset_in_bytes(), mark_node, TypeX_X->basic_type());
 
-  rawmem = make_store(control, rawmem, object, oopDesc::klass_offset_in_bytes(), klass_node, T_METADATA);
+  if (!UseCompactObjectHeaders) {
+    rawmem = make_store(control, rawmem, object, oopDesc::klass_offset_in_bytes(), klass_node, T_METADATA);
+  }
   int header_size = alloc->minimum_header_size();  // conservatively small
 
   // Array length
@@ -2043,7 +2050,7 @@ void PhaseMacroExpand::mark_eliminated_box(Node* box, Node* obj) {
 
 //-----------------------mark_eliminated_locking_nodes-----------------------
 void PhaseMacroExpand::mark_eliminated_locking_nodes(AbstractLockNode *alock) {
-  if (alock->box_node()->as_BoxLock()->is_unbalanced()) {
+  if (!alock->is_balanced()) {
     return; // Can't do any more elimination for this locking region
   }
   if (EliminateNestedLocks) {
@@ -2217,7 +2224,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   mem_phi->init_req(2, mem);
 
   // Make slow path call
-  CallNode *call = make_slow_call((CallNode *) lock, OptoRuntime::complete_monitor_enter_Type(),
+  CallNode* call = make_slow_call(lock, OptoRuntime::complete_monitor_enter_Type(),
                                   OptoRuntime::complete_monitor_locking_Java(), nullptr, slow_path,
                                   obj, box, nullptr);
 
@@ -2331,7 +2338,7 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
       subklass = obj_or_subklass;
     } else {
       Node* k_adr = basic_plus_adr(obj_or_subklass, oopDesc::klass_offset_in_bytes());
-      subklass = _igvn.transform(LoadKlassNode::make(_igvn, nullptr, C->immutable_memory(), k_adr, TypeInstPtr::KLASS));
+      subklass = _igvn.transform(LoadKlassNode::make(_igvn, C->immutable_memory(), k_adr, TypeInstPtr::KLASS));
     }
 
     Node* not_subtype_ctrl = Phase::gen_subtype_check(subklass, superklass, &ctrl, nullptr, _igvn, check->method(), check->bci());
@@ -2426,8 +2433,10 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         break;
       default:
         assert(n->Opcode() == Op_LoopLimit ||
-               n->Opcode() == Op_Opaque3   ||
-               n->Opcode() == Op_Opaque4   ||
+               n->Opcode() == Op_ModD ||
+               n->Opcode() == Op_ModF ||
+               n->is_OpaqueNotNull()       ||
+               n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
                n->Opcode() == Op_MinL      ||
                BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(n),
@@ -2478,43 +2487,27 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       } else if (n->is_Opaque1()) {
         _igvn.replace_node(n, n->in(1));
         success = true;
-#if INCLUDE_RTM_OPT
-      } else if ((n->Opcode() == Op_Opaque3) && ((Opaque3Node*)n)->rtm_opt()) {
-        assert(C->profile_rtm(), "should be used only in rtm deoptimization code");
-        assert((n->outcnt() == 1) && n->unique_out()->is_Cmp(), "");
-        Node* cmp = n->unique_out();
-#ifdef ASSERT
-        // Validate graph.
-        assert((cmp->outcnt() == 1) && cmp->unique_out()->is_Bool(), "");
-        BoolNode* bol = cmp->unique_out()->as_Bool();
-        assert((bol->outcnt() == 1) && bol->unique_out()->is_If() &&
-               (bol->_test._test == BoolTest::ne), "");
-        IfNode* ifn = bol->unique_out()->as_If();
-        assert((ifn->outcnt() == 2) &&
-               ifn->proj_out(1)->is_uncommon_trap_proj(Deoptimization::Reason_rtm_state_change) != nullptr, "");
-#endif
-        Node* repl = n->in(1);
-        if (!_has_locks) {
-          // Remove RTM state check if there are no locks in the code.
-          // Replace input to compare the same value.
-          repl = (cmp->in(1) == n) ? cmp->in(2) : cmp->in(1);
-        }
-        _igvn.replace_node(n, repl);
-        success = true;
-#endif
-      } else if (n->Opcode() == Op_Opaque4) {
-        // With Opaque4 nodes, the expectation is that the test of input 1
-        // is always equal to the constant value of input 2. So we can
-        // remove the Opaque4 and replace it by input 2. In debug builds,
-        // leave the non constant test in instead to sanity check that it
-        // never fails (if it does, that subgraph was constructed so, at
-        // runtime, a Halt node is executed).
+      } else if (n->is_OpaqueNotNull()) {
+        // Tests with OpaqueNotNull nodes are implicitly known to be true. Replace the node with true. In debug builds,
+        // we leave the test in the graph to have an additional sanity check at runtime. If the test fails (i.e. a bug),
+        // we will execute a Halt node.
 #ifdef ASSERT
         _igvn.replace_node(n, n->in(1));
 #else
-        _igvn.replace_node(n, n->in(2));
+        _igvn.replace_node(n, _igvn.intcon(1));
 #endif
         success = true;
+      } else if (n->is_OpaqueInitializedAssertionPredicate()) {
+          // Initialized Assertion Predicates must always evaluate to true. Therefore, we get rid of them in product
+          // builds as they are useless. In debug builds we keep them as additional verification code. Even though
+          // loop opts are already over, we want to keep Initialized Assertion Predicates alive as long as possible to
+          // enable folding of dead control paths within which cast nodes become top after due to impossible types -
+          // even after loop opts are over. Therefore, we delay the removal of these opaque nodes until now.
+#ifdef ASSERT
+        _igvn.replace_node(n, n->in(1));
+#else
+        _igvn.replace_node(n, _igvn.intcon(1));
+#endif // ASSERT
       } else if (n->Opcode() == Op_OuterStripMinedLoop) {
         n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
         C->remove_macro_node(n);
@@ -2593,7 +2586,30 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       expand_subtypecheck_node(n->as_SubTypeCheck());
       break;
     default:
-      assert(false, "unknown node type in macro list");
+      switch (n->Opcode()) {
+      case Op_ModD:
+      case Op_ModF: {
+        bool is_drem = n->Opcode() == Op_ModD;
+        CallNode* mod_macro = n->as_Call();
+        CallNode* call = new CallLeafNode(mod_macro->tf(),
+                                          is_drem ? CAST_FROM_FN_PTR(address, SharedRuntime::drem)
+                                                  : CAST_FROM_FN_PTR(address, SharedRuntime::frem),
+                                          is_drem ? "drem" : "frem", TypeRawPtr::BOTTOM);
+        call->init_req(TypeFunc::Control, mod_macro->in(TypeFunc::Control));
+        call->init_req(TypeFunc::I_O, mod_macro->in(TypeFunc::I_O));
+        call->init_req(TypeFunc::Memory, mod_macro->in(TypeFunc::Memory));
+        call->init_req(TypeFunc::ReturnAdr, mod_macro->in(TypeFunc::ReturnAdr));
+        call->init_req(TypeFunc::FramePtr, mod_macro->in(TypeFunc::FramePtr));
+        for (unsigned int i = 0; i < mod_macro->tf()->domain()->cnt() - TypeFunc::Parms; i++) {
+          call->init_req(TypeFunc::Parms + i, mod_macro->in(TypeFunc::Parms + i));
+        }
+        _igvn.replace_node(mod_macro, call);
+        transform_later(call);
+        break;
+      }
+      default:
+        assert(false, "unknown node type in macro list");
+      }
     }
     assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
     if (C->failing())  return true;

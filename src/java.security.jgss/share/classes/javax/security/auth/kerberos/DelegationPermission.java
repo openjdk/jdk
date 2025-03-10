@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * This class is used to restrict the usage of the Kerberos
- * delegation model, ie: forwardable and proxiable tickets.
+ * This class is for Kerberos delegation permissions.
  * <p>
  * The target name of this {@code Permission} specifies a pair of
  * kerberos service principals. The first is the subordinate service principal
@@ -43,20 +42,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * interact with on behalf of the initiating KerberosPrincipal. This
  * latter service principal is specified to restrict the use of a
  * proxiable ticket.
- * <p>
- * For example, to specify the "host" service use of a forwardable TGT the
- * target permission is specified as follows:
  *
- * <pre>
- *  DelegationPermission("\"host/foo.example.com@EXAMPLE.COM\" \"krbtgt/EXAMPLE.COM@EXAMPLE.COM\"");
- * </pre>
- * <p>
- * To give the "backup" service a proxiable nfs service ticket the target permission
- * might be specified:
- *
- * <pre>
- *  DelegationPermission("\"backup/bar.example.com@EXAMPLE.COM\" \"nfs/home.EXAMPLE.COM@EXAMPLE.COM\"");
- * </pre>
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
  * @since 1.4
  */

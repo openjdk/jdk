@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ class ConstMethodFlags {
    flag(jvmti_mount_transition    , 1 << 18) \
    flag(deprecated                , 1 << 19) \
    flag(deprecated_for_removal    , 1 << 20) \
+   flag(jvmti_hide_events         , 1 << 21) \
    /* end of list */
 
 #define CM_FLAGS_ENUM_NAME(name, value)    _misc_##name = value,

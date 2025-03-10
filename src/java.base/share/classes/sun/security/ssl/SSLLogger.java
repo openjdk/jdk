@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.util.HexDumpEncoder;
 import sun.security.util.Debug;
 import sun.security.x509.*;
@@ -64,7 +63,7 @@ public final class SSLLogger {
     public static final boolean isOn;
 
     static {
-        String p = GetPropertyAction.privilegedGetProperty("javax.net.debug");
+        String p = System.getProperty("javax.net.debug");
         if (p != null) {
             if (p.isEmpty()) {
                 property = "";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
@@ -286,7 +286,8 @@ document.addEventListener("DOMContentLoaded", function(e) {
     });
     var expanded = false;
     var windowWidth;
-    function collapse() {
+    var bodyHeight;
+    function collapse(e) {
         if (expanded) {
             mainnav.removeAttribute("style");
             if (toc) {
@@ -336,7 +337,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     document.querySelectorAll("h1, h2, h3, h4, h5, h6")
         .forEach((hdr, idx) => {
             // Create anchor links for headers with an associated id attribute
-            var id = hdr.getAttribute("id") || hdr.parentElement.getAttribute("id")
+            var id = hdr.parentElement.getAttribute("id") || hdr.getAttribute("id")
                 || (hdr.querySelector("a") && hdr.querySelector("a").getAttribute("id"));
             if (id) {
                 var template = document.createElement('template');
@@ -351,6 +352,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     var scrollTimeoutNeeded;
     var prevHash;
     function initSectionData() {
+        bodyHeight = document.body.offsetHeight;
         sections = [{ id: "", top: 0 }].concat(Array.from(main.querySelectorAll("section[id], h2[id], h2 a[id], div[id]"))
             .filter((e) => {
                 return sidebar.querySelector("a[href=\"#" + encodeURI(e.getAttribute("id")) + "\"]") !== null
@@ -447,7 +449,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
         })
     }
     // Resize handler
-    function handleResize(e) {
+    new ResizeObserver((entries) => {
         if (expanded) {
             if (windowWidth !== window.innerWidth) {
                 collapse();
@@ -455,13 +457,11 @@ document.addEventListener("DOMContentLoaded", function(e) {
                 expand();
             }
         }
-        if (sections) {
+        if (sections && document.body.offsetHeight !== bodyHeight) {
             initSectionData();
             prevHash = null;
             handleScroll();
         }
         setTopMargin();
-    }
-    window.addEventListener("orientationchange", handleResize);
-    window.addEventListener("resize", handleResize);
+    }).observe(document.body);
 });

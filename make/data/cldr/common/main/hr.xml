@@ -64,7 +64,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bez">bena</language>
 			<language type="bfd">bafut</language>
 			<language type="bg">bugarski</language>
-			<language type="bgc" draft="contributed">haryanvi</language>
+			<language type="bgc">haryanvi</language>
 			<language type="bgn">zapadnobaludžijski</language>
 			<language type="bho">bhojpuri</language>
 			<language type="bi">bislama</language>
@@ -72,6 +72,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bin">bini</language>
 			<language type="bkm">kom</language>
 			<language type="bla">siksika</language>
+			<language type="blo">anii</language>
 			<language type="bm">bambara</language>
 			<language type="bn">bangla</language>
 			<language type="bo">tibetski</language>
@@ -301,6 +302,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">komi</language>
 			<language type="kw">kornski</language>
 			<language type="kwk">kwakʼwala</language>
+			<language type="kxv">kuvi</language>
 			<language type="ky">kirgiski</language>
 			<language type="la">latinski</language>
 			<language type="lad">ladino</language>
@@ -311,8 +313,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">lezgiški</language>
 			<language type="lg">ganda</language>
 			<language type="li">limburški</language>
+			<language type="lij">ligurski</language>
 			<language type="lil">lillooet</language>
 			<language type="lkt">lakota</language>
+			<language type="lmo">lombardski</language>
 			<language type="ln">lingala</language>
 			<language type="lo">laoski</language>
 			<language type="lol">mongo</language>
@@ -325,7 +329,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lua">luba-lulua</language>
 			<language type="lui">luiseno</language>
 			<language type="lun">lunda</language>
-			<language type="luo">luo</language>
 			<language type="lus">lushai</language>
 			<language type="luy">luyia</language>
 			<language type="lv">latvijski</language>
@@ -508,6 +511,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">komorski</language>
 			<language type="syc">klasični sirski</language>
 			<language type="syr">sirijski</language>
+			<language type="szl">šleski</language>
 			<language type="ta">tamilski</language>
 			<language type="tce">južni tutchone</language>
 			<language type="te">teluški</language>
@@ -554,9 +558,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="und">nepoznati jezik</language>
 			<language type="ur">urdski</language>
 			<language type="uz">uzbečki</language>
-			<language type="vai">vai</language>
 			<language type="ve">venda</language>
+			<language type="vec">venecijanski</language>
 			<language type="vi">vijetnamski</language>
+			<language type="vmw">makhuwa</language>
 			<language type="vo">volapük</language>
 			<language type="vot">votski</language>
 			<language type="vun">vunjo</language>
@@ -570,6 +575,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">wu kineski</language>
 			<language type="xal">kalmyk</language>
 			<language type="xh">xhosa</language>
+			<language type="xnr">kangri</language>
 			<language type="xog">soga</language>
 			<language type="yao">yao</language>
 			<language type="yap">japski</language>
@@ -797,7 +803,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="155">Zapadna Europa</territory>
 			<territory type="202">Subsaharska Afrika</territory>
 			<territory type="419">Latinska Amerika</territory>
-			<territory type="AC">Otok Ascension</territory>
+			<territory type="AC">Otok Uzašašća</territory>
 			<territory type="AD">Andora</territory>
 			<territory type="AE">Ujedinjeni Arapski Emirati</territory>
 			<territory type="AF">Afganistan</territory>
@@ -836,7 +842,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="BY">Bjelorusija</territory>
 			<territory type="BZ">Belize</territory>
 			<territory type="CA">Kanada</territory>
-			<territory type="CC">Kokosovi (Keelingovi) otoci</territory>
+			<territory type="CC">Kokosovi (Keelingovi) Otoci</territory>
 			<territory type="CD">Kongo - Kinshasa</territory>
 			<territory type="CD" alt="variant">Kongo (DR)</territory>
 			<territory type="CF">Srednjoafrička Republika</territory>
@@ -845,7 +851,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CH">Švicarska</territory>
 			<territory type="CI">Obala Bjelokosti</territory>
 			<territory type="CI" alt="variant">Bjelokosna Obala</territory>
-			<territory type="CK">Cookovi otoci</territory>
+			<territory type="CK">Cookovi Otoci</territory>
 			<territory type="CL">Čile</territory>
 			<territory type="CM">Kamerun</territory>
 			<territory type="CN">Kina</territory>
@@ -855,7 +861,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CU">Kuba</territory>
 			<territory type="CV">Zelenortska Republika</territory>
 			<territory type="CW">Curaçao</territory>
-			<territory type="CX">Božićni otok</territory>
+			<territory type="CX">Božićni Otok</territory>
 			<territory type="CY">Cipar</territory>
 			<territory type="CZ">Češka</territory>
 			<territory type="CZ" alt="variant">Češka Republika</territory>
@@ -878,10 +884,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="EZ">eurozona</territory>
 			<territory type="FI">Finska</territory>
 			<territory type="FJ">Fidži</territory>
-			<territory type="FK">Falklandski otoci</territory>
-			<territory type="FK" alt="variant">Falklandski otoci (Malvini)</territory>
+			<territory type="FK">Falklandski Otoci</territory>
+			<territory type="FK" alt="variant">Falklandski Otoci (Malvini)</territory>
 			<territory type="FM">Mikronezija</territory>
-			<territory type="FO">Farski otoci</territory>
+			<territory type="FO">Ovčji Otoci</territory>
 			<territory type="FR">Francuska</territory>
 			<territory type="GA">Gabon</territory>
 			<territory type="GB">Ujedinjeno Kraljevstvo</territory>
@@ -898,7 +904,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="GP">Guadalupe</territory>
 			<territory type="GQ">Ekvatorska Gvineja</territory>
 			<territory type="GR">Grčka</territory>
-			<territory type="GS">Južna Georgija i Južni Sendvički Otoci</territory>
+			<territory type="GS">Južna Georgia i Otoci Južni Sandwich</territory>
 			<territory type="GT">Gvatemala</territory>
 			<territory type="GU">Guam</territory>
 			<territory type="GW">Gvineja Bisau</territory>
@@ -910,14 +916,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="HR">Hrvatska</territory>
 			<territory type="HT">Haiti</territory>
 			<territory type="HU">Mađarska</territory>
-			<territory type="IC">Kanarski otoci</territory>
+			<territory type="IC">Kanari</territory>
 			<territory type="ID">Indonezija</territory>
 			<territory type="IE">Irska</territory>
 			<territory type="IL">Izrael</territory>
 			<territory type="IM">Otok Man</territory>
 			<territory type="IN">Indija</territory>
-			<territory type="IO" draft="contributed">Britanski Indijskooceanski teritorij</territory>
-			<territory type="IO" alt="chagos" draft="contributed">Otočje Chagos</territory>
+			<territory type="IO">Britanski Indijskooceanski Teritorij</territory>
+			<territory type="IO" alt="biot">Britanski Teritorij u Indijskome Oceanu</territory>
+			<territory type="IO" alt="chagos">Otočje Chagos</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Island</territory>
@@ -935,7 +942,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="KP">Sjeverna Koreja</territory>
 			<territory type="KR">Južna Koreja</territory>
 			<territory type="KW">Kuvajt</territory>
-			<territory type="KY">Kajmanski otoci</territory>
+			<territory type="KY">Kajmanski Otoci</territory>
 			<territory type="KZ">Kazahstan</territory>
 			<territory type="LA">Laos</territory>
 			<territory type="LB">Libanon</territory>
@@ -961,7 +968,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="MN">Mongolija</territory>
 			<territory type="MO">PUP Makao Kina</territory>
 			<territory type="MO" alt="short">Makao</territory>
-			<territory type="MP">Sjevernomarijanski otoci</territory>
+			<territory type="MP">Sjevernomarijanski Otoci</territory>
 			<territory type="MQ">Martinik</territory>
 			<territory type="MR">Mauretanija</territory>
 			<territory type="MS">Montserrat</territory>
@@ -994,7 +1001,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="PK">Pakistan</territory>
 			<territory type="PL">Poljska</territory>
 			<territory type="PM">Sveti Petar i Mikelon</territory>
-			<territory type="PN">Otoci Pitcairn</territory>
+			<territory type="PN">Pitcairnovi Otoci</territory>
 			<territory type="PR">Portoriko</territory>
 			<territory type="PS">Palestinsko područje</territory>
 			<territory type="PS" alt="short">Palestina</territory>
@@ -1009,7 +1016,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="RU">Rusija</territory>
 			<territory type="RW">Ruanda</territory>
 			<territory type="SA">Saudijska Arabija</territory>
-			<territory type="SB">Salomonski Otoci</territory>
+			<territory type="SB">Salomonovi Otoci</territory>
 			<territory type="SC">Sejšeli</territory>
 			<territory type="SD">Sudan</territory>
 			<territory type="SE">Švedska</territory>
@@ -1033,7 +1040,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TA">Tristan da Cunha</territory>
 			<territory type="TC">Otoci Turks i Caicos</territory>
 			<territory type="TD">Čad</territory>
-			<territory type="TF">Francuski južni i antarktički teritoriji</territory>
+			<territory type="TF">Francuski Južni Teritoriji</territory>
 			<territory type="TG">Togo</territory>
 			<territory type="TH">Tajland</territory>
 			<territory type="TJ">Tadžikistan</territory>
@@ -1058,11 +1065,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="US" alt="short">SAD</territory>
 			<territory type="UY">Urugvaj</territory>
 			<territory type="UZ">Uzbekistan</territory>
-			<territory type="VA">Vatikanski Grad</territory>
+			<territory type="VA">Vatikan</territory>
 			<territory type="VC">Sveti Vincent i Grenadini</territory>
 			<territory type="VE">Venezuela</territory>
-			<territory type="VG">Britanski Djevičanski otoci</territory>
-			<territory type="VI">Američki Djevičanski otoci</territory>
+			<territory type="VG">Britanski Djevičanski Otoci</territory>
+			<territory type="VI">Američki Djevičanski Otoci</territory>
 			<territory type="VN">Vijetnam</territory>
 			<territory type="VU">Vanuatu</territory>
 			<territory type="WF">Wallis i Futuna</territory>
@@ -1300,7 +1307,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -2858,6 +2865,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<hourFormat>+HH:mm; -HH:mm</hourFormat>
 			<regionFormat type="daylight">{0}, ljetno vrijeme</regionFormat>
 			<regionFormat type="standard">{0}, standardno vrijeme</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>koordinirano svjetsko vrijeme</standard>
@@ -2893,20 +2903,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/St_Barthelemy">
 				<exemplarCity>Saint Barthélemy</exemplarCity>
 			</zone>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity>Bermudi</exemplarCity>
+			</zone>
 			<zone type="Asia/Brunei">
 				<exemplarCity>Brunej</exemplarCity>
 			</zone>
 			<zone type="Europe/Zurich">
 				<exemplarCity>Zürich</exemplarCity>
 			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity>Urumči</exemplarCity>
+			</zone>
 			<zone type="Asia/Shanghai">
 				<exemplarCity>Šangaj</exemplarCity>
 			</zone>
 			<zone type="America/Costa_Rica">
 				<exemplarCity>Kostarika</exemplarCity>
-			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity>Curaçao</exemplarCity>
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>Nikozija</exemplarCity>
@@ -2993,6 +3006,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Jamaica">
 				<exemplarCity>Jamajka</exemplarCity>
 			</zone>
+			<zone type="Asia/Tokyo">
+				<exemplarCity>Tokio</exemplarCity>
+			</zone>
 			<zone type="Asia/Bishkek">
 				<exemplarCity>Biškek</exemplarCity>
 			</zone>
@@ -3001,6 +3017,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Pyongyang">
 				<exemplarCity>Pjongjang</exemplarCity>
+			</zone>
+			<zone type="Asia/Seoul">
+				<exemplarCity>Seul</exemplarCity>
 			</zone>
 			<zone type="Asia/Kuwait">
 				<exemplarCity>Kuvajt</exemplarCity>
@@ -3033,7 +3052,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Skoplje</exemplarCity>
 			</zone>
 			<zone type="Asia/Rangoon">
-				<exemplarCity>Rangoon</exemplarCity>
+				<exemplarCity>Rangun</exemplarCity>
 			</zone>
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Ulan Bator</exemplarCity>
@@ -3059,8 +3078,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Cancun">
 				<exemplarCity>Cancun</exemplarCity>
 			</zone>
+			<zone type="Asia/Katmandu">
+				<exemplarCity>Katmandu</exemplarCity>
+			</zone>
 			<zone type="Pacific/Marquesas">
 				<exemplarCity>Markižansko otočje</exemplarCity>
+			</zone>
+			<zone type="Asia/Karachi">
+				<exemplarCity>Karači</exemplarCity>
 			</zone>
 			<zone type="Europe/Warsaw">
 				<exemplarCity>Varšava</exemplarCity>
@@ -3069,19 +3094,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Portoriko</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Azores">
-				<exemplarCity>Azorski otoci</exemplarCity>
+				<exemplarCity>Azori</exemplarCity>
 			</zone>
 			<zone type="Europe/Lisbon">
 				<exemplarCity>Lisabon</exemplarCity>
 			</zone>
-			<zone type="America/Asuncion">
-				<exemplarCity>Asunción</exemplarCity>
-			</zone>
 			<zone type="Asia/Qatar">
 				<exemplarCity>Katar</exemplarCity>
-			</zone>
-			<zone type="Indian/Reunion">
-				<exemplarCity>Réunion</exemplarCity>
 			</zone>
 			<zone type="Europe/Bucharest">
 				<exemplarCity>Bukurešt</exemplarCity>
@@ -3137,8 +3156,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Singapore">
 				<exemplarCity>Singapur</exemplarCity>
 			</zone>
-			<zone type="Africa/Sao_Tome">
-				<exemplarCity>São Tomé</exemplarCity>
+			<zone type="Atlantic/St_Helena">
+				<exemplarCity>Sveta Helena</exemplarCity>
 			</zone>
 			<zone type="America/El_Salvador">
 				<exemplarCity>Salvador</exemplarCity>
@@ -3160,9 +3179,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>Simferopolj</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Beulah">
 				<exemplarCity>Beulah, Sjeverna Dakota</exemplarCity>
@@ -3437,21 +3453,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>kinesko ljetno vrijeme</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>choibalsansko vrijeme</generic>
-					<standard>choibalsansko standardno vrijeme</standard>
-					<daylight>choibalsansko ljetno vrijeme</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
-					<standard>vrijeme Božićnog otoka</standard>
+					<standard>vrijeme Božićnog Otoka</standard>
 				</long>
 			</metazone>
 			<metazone type="Cocos">
 				<long>
-					<standard>vrijeme Kokosovih otoka</standard>
+					<standard>vrijeme Kokosovih Otoka</standard>
 				</long>
 			</metazone>
 			<metazone type="Colombia">
@@ -3463,9 +3472,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Cook">
 				<long>
-					<generic>vrijeme Cookovih otoka</generic>
-					<standard>standardno vrijeme Cookovih otoka</standard>
-					<daylight>Cookovi otoci, polusatni pomak, ljetno vrijeme</daylight>
+					<generic>vrijeme Cookovih Otoka</generic>
+					<standard>standardno vrijeme Cookovih Otoka</standard>
+					<daylight>Cookovi Otoci, polusatni pomak, ljetno vrijeme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cuba">
@@ -3564,7 +3573,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="French_Southern">
 				<long>
-					<standard>vrijeme Francuskih južnih i antarktičkih teritorija</standard>
+					<standard>vrijeme Francuskih Južnih Teritorija</standard>
 				</long>
 			</metazone>
 			<metazone type="Galapagos">
@@ -3710,6 +3719,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic draft="contributed">Petropavlovsk-kamčatsko vrijeme</generic>
 					<standard draft="contributed">Petropavlovsk-kamčatsko standardno vrijeme</standard>
 					<daylight draft="contributed">Petropavlovsk-kamčatsko ljetno vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>kazahstansko vrijeme</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -4019,7 +4033,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Solomon">
 				<long>
-					<standard>vrijeme Salomonskih Otoka</standard>
+					<standard>vrijeme Salomonovih Otoka</standard>
 				</long>
 			</metazone>
 			<metazone type="South_Georgia">
@@ -4288,9 +4302,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">000 bil'.' ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="few">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -5332,10 +5343,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">mauritanijskih ouguja (1973. – 2017.)</displayName>
 			</currency>
 			<currency type="MRU">
-				<displayName>mauritanijska ouguja</displayName>
-				<displayName count="one">mauritanijska ouguja</displayName>
-				<displayName count="few">mauritanijske ouguje</displayName>
-				<displayName count="other">mauritanijskih ouguja</displayName>
+				<displayName>mauretanska ouguja</displayName>
+				<displayName count="one">mauretanska ouguja</displayName>
+				<displayName count="few">mauretanske ouguje</displayName>
+				<displayName count="other">mauretanskih ouguja</displayName>
 			</currency>
 			<currency type="MTL">
 				<displayName>malteška lira</displayName>
@@ -5424,8 +5435,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="NGN">
 				<displayName>nigerijska naira</displayName>
-				<displayName count="one">nigerijski nair</displayName>
-				<displayName count="few">nigerijska naira</displayName>
+				<displayName count="one">nigerijska naira</displayName>
+				<displayName count="few">nigerijske naire</displayName>
 				<displayName count="other">nigerijskih naira</displayName>
 			</currency>
 			<currency type="NIC">
@@ -5656,13 +5667,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SLE">
 				<displayName>sijeraleonski leone</displayName>
 				<displayName count="one">sijeraleonski leon</displayName>
-				<displayName count="few">sijeraleonske leone</displayName>
+				<displayName count="few">sijarelonska leona</displayName>
 				<displayName count="other">sijeraleonskih leona</displayName>
 			</currency>
 			<currency type="SLL">
 				<displayName>sijeraleonski leone (1964—2022)</displayName>
-				<displayName count="one">sijeraleonski leon (1964—2022)</displayName>
-				<displayName count="few">sijeraleonske leone (1964—2022)</displayName>
+				<displayName count="one">sijeraleonski leone (1964—2022)</displayName>
+				<displayName count="few">sijeraleonskih leona (1964—2022)</displayName>
 				<displayName count="other">sijeraleonskih leona (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
@@ -6544,10 +6555,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="instrumental">{0} karata</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<gender>inanimate</gender>
 				<displayName>miligrami po decilitru</displayName>
 				<unitPattern count="one">{0} miligram po decilitru</unitPattern>
+				<unitPattern count="one" case="accusative">{0} miligram po decilitru</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mligrama po decilitru</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} miligramom po decilitru</unitPattern>
 				<unitPattern count="few">{0} miligrama po decilitru</unitPattern>
+				<unitPattern count="few" case="accusative">{0} miligrama po decilitru</unitPattern>
+				<unitPattern count="few" case="genitive">{0} miligrama po decilitru</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} miligrama po decilitru</unitPattern>
 				<unitPattern count="other">{0} miligrama po decilitru</unitPattern>
+				<unitPattern count="other" case="accusative">{0} miligrama po decilitru</unitPattern>
+				<unitPattern count="other" case="genitive">{0} miligrama po decilitru</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} miligrama po decilitru</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<gender>inanimate</gender>
@@ -7172,10 +7193,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="instrumental">{0} volta</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
+				<gender>feminine</gender>
 				<displayName>kilokalorije</displayName>
 				<unitPattern count="one">{0} kilokalorija</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilokaloriju</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilokalorije</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilokalorijom</unitPattern>
 				<unitPattern count="few">{0} kilokalorije</unitPattern>
+				<unitPattern count="few" case="accusative">{0} kilokalorije</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilokalorije</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} kilokalorije</unitPattern>
 				<unitPattern count="other">{0} kilokalorija</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilokalorija</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilokalorija</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilokalorija</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
 				<gender>feminine</gender>
@@ -7656,9 +7687,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="instrumental">{0} skandinavskih milja</unitPattern>
 			</unit>
 			<unit type="length-point">
+				<gender>feminine</gender>
 				<unitPattern count="one">{0} tipografska točka</unitPattern>
+				<unitPattern count="one" case="accusative">{0} tipografsku točku</unitPattern>
+				<unitPattern count="one" case="genitive">{0} tipografske točke</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} tipografskom točkom</unitPattern>
 				<unitPattern count="few">{0} tipografske točke</unitPattern>
+				<unitPattern count="few" case="accusative">{0} tipografske točke</unitPattern>
+				<unitPattern count="few" case="genitive">{0} tipografske točke</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} tipografske točke</unitPattern>
 				<unitPattern count="other">{0} tipografskih točaka</unitPattern>
+				<unitPattern count="other" case="accusative">{0} tipografskih točaka</unitPattern>
+				<unitPattern count="other" case="genitive">{0} tipografskih točaka</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} tipografskih točaka</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>Sunčevi polumjeri</displayName>
@@ -7956,10 +7997,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} konjskih snaga</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
+				<gender>inanimate</gender>
 				<displayName>milimetri živina stupca</displayName>
 				<unitPattern count="one">{0} milimetar živina stupca</unitPattern>
+				<unitPattern count="one" case="accusative">{0} milimetar živina stupca</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milimetar živina stupca</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milimetar živina stupca</unitPattern>
 				<unitPattern count="few">{0} milimetra živina stupca</unitPattern>
+				<unitPattern count="few" case="accusative">{0} milimetra živina stupca</unitPattern>
+				<unitPattern count="few" case="genitive">{0} milimetra živina stupca</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} milimetra živina stupca</unitPattern>
 				<unitPattern count="other">{0} milimetara živina stupca</unitPattern>
+				<unitPattern count="other" case="accusative">{0} milimetara živina stupca</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milimetara živina stupca</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} milimetara živina stupca</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>funte po kvadratnom inču</displayName>
@@ -8495,6 +8546,55 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} imperijalne četvrtine</unitPattern>
 				<unitPattern count="other">{0} imperijalne četvrtine</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<gender>neuter</gender>
+				<displayName>svjetlo</displayName>
+				<unitPattern count="one">{0} svjetlo</unitPattern>
+				<unitPattern count="one" case="accusative">{0} svjetlo</unitPattern>
+				<unitPattern count="one" case="genitive">{0} svjetla</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} svjetlom</unitPattern>
+				<unitPattern count="few">{0} svjetla</unitPattern>
+				<unitPattern count="few" case="accusative">{0} svjetla</unitPattern>
+				<unitPattern count="few" case="genitive">{0} svjetla</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} svjetla</unitPattern>
+				<unitPattern count="other">{0} svjetala</unitPattern>
+				<unitPattern count="other" case="accusative">{0} svjetala</unitPattern>
+				<unitPattern count="other" case="genitive">{0} svjetala</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} svjetala</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<gender>inanimate</gender>
+				<displayName>dijelovi na milijardu</displayName>
+				<unitPattern count="one">{0} dio na milijardu</unitPattern>
+				<unitPattern count="one" case="accusative">{0} dio na milijardu</unitPattern>
+				<unitPattern count="one" case="genitive">{0} dijela na milijardu</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} dijelom na milijardu</unitPattern>
+				<unitPattern count="few">{0} dijela na milijardu</unitPattern>
+				<unitPattern count="few" case="accusative">{0} dijela na milijardu</unitPattern>
+				<unitPattern count="few" case="genitive">{0} dijela na milijardu</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} dijela na milijardu</unitPattern>
+				<unitPattern count="other">{0} dijelova na milijardu</unitPattern>
+				<unitPattern count="other" case="accusative">{0} dijelova na milijardu</unitPattern>
+				<unitPattern count="other" case="genitive">{0} dijelova na milijardu</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} dijelova na milijardu</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<gender>feminine</gender>
+				<displayName>noći</displayName>
+				<unitPattern count="one">{0} noć</unitPattern>
+				<unitPattern count="one" case="accusative">{0} noć</unitPattern>
+				<unitPattern count="one" case="genitive">{0} noći</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} noći</unitPattern>
+				<unitPattern count="few">{0} noći</unitPattern>
+				<unitPattern count="few" case="accusative">{0} noći</unitPattern>
+				<unitPattern count="few" case="genitive">{0} noći</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} noći</unitPattern>
+				<unitPattern count="other">{0} noći</unitPattern>
+				<unitPattern count="other" case="accusative">{0} noći</unitPattern>
+				<unitPattern count="other" case="genitive">{0} noći</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} noći</unitPattern>
+				<perUnitPattern>{0}/noć</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>kardinalni smjer</displayName>
 				<coordinateUnitPattern type="east">{0} istočno</coordinateUnitPattern>
@@ -8903,6 +9003,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} prstohvata</unitPattern>
 				<unitPattern count="other">{0} prstohvata</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>svjetlo</displayName>
+				<unitPattern count="one">{0} svjetlo</unitPattern>
+				<unitPattern count="few">{0} svjetla</unitPattern>
+				<unitPattern count="other">{0} svjetala</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>dijelovi/milijarda</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>noć</displayName>
+				<unitPattern count="one">{0} noć</unitPattern>
+				<unitPattern count="few">{0} noći</unitPattern>
+				<unitPattern count="other">{0} noći</unitPattern>
+				<perUnitPattern>{0}/noć</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>smjer</displayName>
 				<coordinateUnitPattern type="east">{0} I</coordinateUnitPattern>
@@ -9008,6 +9124,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} jigger</unitPattern>
 				<unitPattern count="few">{0} jiggera</unitPattern>
 				<unitPattern count="other">{0} jiggera</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>svjetlo</displayName>
+				<unitPattern count="one">{0} svjetlo</unitPattern>
+				<unitPattern count="few">{0} svjetla</unitPattern>
+				<unitPattern count="other">{0} svjetala</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>dijelovi/milijarda</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>noć</displayName>
+				<unitPattern count="one">{0} noć</unitPattern>
+				<unitPattern count="few">{0} noći</unitPattern>
+				<unitPattern count="other">{0} noći</unitPattern>
+				<perUnitPattern>{0}/noć</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0}I</coordinateUnitPattern>
@@ -9148,6 +9280,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="ital" subtype="1">kurziv</styleName>
 		<styleName type="opsz" subtype="8">veliko slovo</styleName>
 		<styleName type="opsz" subtype="12">tekst</styleName>
+		<styleName type="opsz" subtype="18">naslovni</styleName>
 		<styleName type="opsz" subtype="72">ukrasni</styleName>
 		<styleName type="slnt" subtype="-12">lijevo nagnut</styleName>
 		<styleName type="slnt" subtype="0">uspravan</styleName>

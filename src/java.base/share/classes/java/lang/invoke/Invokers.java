@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
@@ -144,7 +145,7 @@ class Invokers {
         MethodType invokerType = mtype.invokerType();
         int which = (isExact ? MethodTypeForm.LF_EX_INVOKER : MethodTypeForm.LF_GEN_INVOKER);
         LambdaForm lform = invokeHandleForm(mtype, false, which);
-        MethodHandle invoker = BoundMethodHandle.bindSingle(invokerType, lform, mtype);
+        MethodHandle invoker = BoundMethodHandle.bindSingleL(invokerType, lform, mtype);
         String whichName = (isExact ? "invokeExact" : "invoke");
         invoker = invoker.withInternalMemberName(MemberName.makeMethodHandleInvoke(whichName, mtype), false);
         assert(checkInvoker(invoker));
@@ -158,7 +159,7 @@ class Invokers {
 
         LambdaForm lform = varHandleMethodInvokerHandleForm(mtype, isExact);
         VarHandle.AccessDescriptor ad = new VarHandle.AccessDescriptor(mtype, ak.at.ordinal(), ak.ordinal());
-        MethodHandle invoker = BoundMethodHandle.bindSingle(invokerType, lform, ad);
+        MethodHandle invoker = BoundMethodHandle.bindSingleL(invokerType, lform, ad);
 
         invoker = invoker.withInternalMemberName(MemberName.makeVarHandleMethodInvoke(ak.methodName(), mtype), false);
         assert(checkVarHandleInvoker(invoker));
@@ -314,14 +315,14 @@ class Invokers {
         final int CHECK_TYPE   = nameCursor++;
         final int CHECK_CUSTOM = (CUSTOMIZE_THRESHOLD >= 0) ? nameCursor++ : -1;
         final int LINKER_CALL  = nameCursor++;
-        MethodType invokerFormType = mtype.invokerType();
+        MethodType invokerFormType = mtype;
         if (isLinker) {
             if (!customized)
                 invokerFormType = invokerFormType.appendParameterTypes(MemberName.class);
         } else {
             invokerFormType = invokerFormType.invokerType();
         }
-        Name[] names = arguments(nameCursor - INARG_LIMIT, invokerFormType);
+        Name[] names = invokeArguments(nameCursor - INARG_LIMIT, invokerFormType);
         assert(names.length == nameCursor)
                 : Arrays.asList(mtype, customized, which, nameCursor, names.length);
         if (MTYPE_ARG >= INARG_LIMIT) {
@@ -390,11 +391,11 @@ class Invokers {
         final int LINKER_CALL  = nameCursor++;
 
         Name[] names = new Name[LINKER_CALL + 1];
-        names[THIS_VH] = argument(THIS_VH, BasicType.basicType(Object.class));
+        names[THIS_VH] = argument(THIS_VH, BasicType.L_TYPE);
         for (int i = 0; i < mtype.parameterCount(); i++) {
             names[ARG_BASE + i] = argument(ARG_BASE + i, BasicType.basicType(mtype.parameterType(i)));
         }
-        names[VAD_ARG] = new Name(ARG_LIMIT, BasicType.basicType(Object.class));
+        names[VAD_ARG] = new Name(ARG_LIMIT, BasicType.L_TYPE);
 
         names[UNBOUND_VH] = new Name(getFunction(NF_directVarHandleTarget), names[THIS_VH]);
 
@@ -446,8 +447,8 @@ class Invokers {
         final int LINKER_CALL  = nameCursor++;
 
         Name[] names = new Name[LINKER_CALL + 1];
-        names[THIS_MH] = argument(THIS_MH, BasicType.basicType(Object.class));
-        names[CALL_VH] = argument(CALL_VH, BasicType.basicType(Object.class));
+        names[THIS_MH] = argument(THIS_MH, BasicType.L_TYPE);
+        names[CALL_VH] = argument(CALL_VH, BasicType.L_TYPE);
         for (int i = 0; i < mtype.parameterCount(); i++) {
             names[ARG_BASE + i] = argument(ARG_BASE + i, BasicType.basicType(mtype.parameterType(i)));
         }
@@ -589,17 +590,16 @@ class Invokers {
         final int CSITE_ARG    = skipCallSite ? -1 : APPENDIX_ARG;
         final int CALL_MH      = skipCallSite ? APPENDIX_ARG : nameCursor++;  // result of getTarget
         final int LINKER_CALL  = nameCursor++;
-        MethodType invokerFormType = mtype.appendParameterTypes(skipCallSite ? MethodHandle.class : CallSite.class);
-        Name[] names = arguments(nameCursor - INARG_LIMIT, invokerFormType);
-        assert(names.length == nameCursor);
-        assert(names[APPENDIX_ARG] != null);
+        Name[] names = arguments(nameCursor - INARG_LIMIT + 1, mtype);
+        assert(names.length == nameCursor && names[APPENDIX_ARG] == null);
+        names[APPENDIX_ARG] = argument(APPENDIX_ARG, BasicType.L_TYPE);
         if (!skipCallSite)
             names[CALL_MH] = new Name(getFunction(NF_getCallSiteTarget), names[CSITE_ARG]);
         // (site.)invokedynamic(a*):R => mh = site.getTarget(); mh.invokeBasic(a*)
         final int PREPEND_MH = 0, PREPEND_COUNT = 1;
-        Object[] outArgs = Arrays.copyOfRange(names, ARG_BASE, OUTARG_LIMIT + PREPEND_COUNT, Object[].class);
+        Object[] outArgs = new Object[OUTARG_LIMIT + PREPEND_COUNT];
+        System.arraycopy(names, 0, outArgs, PREPEND_COUNT, outArgs.length - PREPEND_COUNT);
         // prepend MH argument:
-        System.arraycopy(outArgs, 0, outArgs, PREPEND_COUNT, outArgs.length - PREPEND_COUNT);
         outArgs[PREPEND_MH] = names[CALL_MH];
         names[LINKER_CALL] = new Name(mtype, outArgs);
         lform = LambdaForm.create(INARG_LIMIT, names,
@@ -682,16 +682,9 @@ class Invokers {
     }
 
     private static class Lazy {
-        private static final MethodHandle MH_asSpreader;
-
-        static {
-            try {
-                MH_asSpreader = IMPL_LOOKUP.findVirtual(MethodHandle.class, "asSpreader",
-                        MethodType.methodType(MethodHandle.class, Class.class, int.class));
-            } catch (ReflectiveOperationException ex) {
-                throw newInternalError(ex);
-            }
-        }
+        private static final MethodHandle MH_asSpreader = MhUtil.findVirtual(
+                IMPL_LOOKUP, MethodHandle.class, "asSpreader",
+                MethodType.methodType(MethodHandle.class, Class.class, int.class));
     }
 
     static {

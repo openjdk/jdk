@@ -64,13 +64,17 @@
   flags(AFTER_LOOP_PEELING,             "After Loop Peeling") \
   flags(BEFORE_LOOP_UNSWITCHING,        "Before Loop Unswitching") \
   flags(AFTER_LOOP_UNSWITCHING,         "After Loop Unswitching") \
+  flags(BEFORE_LOOP_MULTIVERSIONING,    "Before Loop Multiversioning") \
+  flags(AFTER_LOOP_MULTIVERSIONING,     "After Loop Multiversioning") \
   flags(BEFORE_RANGE_CHECK_ELIMINATION, "Before Range Check Elimination") \
   flags(AFTER_RANGE_CHECK_ELIMINATION,  "After Range Check Elimination") \
   flags(BEFORE_PRE_MAIN_POST,           "Before Pre/Main/Post Loops") \
   flags(AFTER_PRE_MAIN_POST,            "After Pre/Main/Post Loops") \
-  flags(SUPERWORD1_BEFORE_SCHEDULE,     "Superword 1, Before Schedule") \
-  flags(SUPERWORD2_BEFORE_OUTPUT,       "Superword 2, Before Output") \
-  flags(SUPERWORD3_AFTER_OUTPUT,        "Superword 3, After Output") \
+  flags(AUTO_VECTORIZATION1_BEFORE_APPLY,                     "AutoVectorization 1, Before Apply") \
+  flags(AUTO_VECTORIZATION2_AFTER_REORDER,                    "AutoVectorization 2, After Apply Memop Reordering") \
+  flags(AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT,               "AutoVectorization 3, After Adjusting Pre-Loop Limit") \
+  flags(AUTO_VECTORIZATION4_AFTER_SPECULATIVE_RUNTIME_CHECKS, "AutoVectorization 4, After Adding Speculative Runtime Checks") \
+  flags(AUTO_VECTORIZATION5_AFTER_APPLY,                      "AutoVectorization 5, After Apply") \
   flags(BEFORE_CLOOPS,                  "Before CountedLoop") \
   flags(AFTER_CLOOPS,                   "After CountedLoop") \
   flags(PHASEIDEAL_BEFORE_EA,           "PhaseIdealLoop before EA") \
@@ -92,6 +96,15 @@
   flags(BEFORE_MATCHING,                "Before matching") \
   flags(MATCHING,                       "After matching") \
   flags(GLOBAL_CODE_MOTION,             "Global code motion") \
+  flags(INITIAL_LIVENESS,               "Initial liveness") \
+  flags(AGGRESSIVE_COALESCING,          "Aggressive coalescing") \
+  flags(INITIAL_SPILLING,               "Initial spilling") \
+  flags(CONSERVATIVE_COALESCING,        "Conservative coalescing") \
+  flags(ITERATIVE_SPILLING,             "Iterative spilling") \
+  flags(AFTER_ITERATIVE_SPILLING,       "After iterative spilling") \
+  flags(POST_ALLOCATION_COPY_REMOVAL,   "Post-allocation copy removal") \
+  flags(MERGE_MULTI_DEFS,               "Merge multiple definitions") \
+  flags(FIX_UP_SPILLS,                  "Fix up spills") \
   flags(REGISTER_ALLOCATION,            "Register Allocation") \
   flags(BLOCK_ORDERING,                 "Block Ordering") \
   flags(PEEPHOLE,                       "Peephole") \

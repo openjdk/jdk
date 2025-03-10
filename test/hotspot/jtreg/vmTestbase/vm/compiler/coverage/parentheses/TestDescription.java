@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 /*
  * @test
  * @key randomness
- * @modules java.base/jdk.internal.org.objectweb.asm:+open java.base/jdk.internal.misc:+open
  *
  * @summary converted from VM Testbase vm/compiler/coverage/parentheses.
  * VM Testbase keywords: [quick, stressopt, jit]
@@ -44,6 +43,7 @@
  *     For generation instructions test using right parentheses sequence. Open parenthesis "(" is correspondent to
  *     stack increasing instructions, ")" is corresponded stack decreasing instructions.
  *
+ * @library /testlibrary/asm
  * @library /vmTestbase
  *          /test/lib
  * @run main/othervm vm.compiler.coverage.parentheses.Parentheses

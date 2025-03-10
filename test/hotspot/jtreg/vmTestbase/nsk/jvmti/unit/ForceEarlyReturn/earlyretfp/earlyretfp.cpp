@@ -33,7 +33,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-#define RETURN_FAILED errCode = STATUS_FAILED; fflush(0); return
+#define RETURN_FAILED errCode = STATUS_FAILED; fflush(nullptr); return
 
 #define METHCNT 2
 static jvmtiEnv *jvmti = nullptr;
@@ -175,7 +175,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jmethodID mid,
         printf(" expected: %d\n", framesCount + 1);
         RETURN_FAILED;
     }
-    fflush(0);
+    fflush(nullptr);
 }
 
 void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
@@ -220,7 +220,7 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
                TranslateError(err), err);
         RETURN_FAILED;
     }
-    fflush(0);
+    fflush(nullptr);
 }
 
 void JNICALL SingleStep(jvmtiEnv *jvmti_env, JNIEnv *env,
@@ -256,7 +256,7 @@ void JNICALL SingleStep(jvmtiEnv *jvmti_env, JNIEnv *env,
             RETURN_FAILED;
         }
     }
-    fflush(0);
+    fflush(nullptr);
 }
 
 void JNICALL MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread,
@@ -289,7 +289,7 @@ void JNICALL MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread,
         printf("Method was_popped_by_exception unexpectedly\n");
         errCode = STATUS_FAILED;
     }
-    fflush(0);
+    fflush(nullptr);
 }
 
 #ifdef STATIC_BUILD
@@ -361,7 +361,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printf("Warning: Breakpoint or SingleStep event are not implemented\n");
     }
 
-    fflush(0);
+    fflush(nullptr);
     return JNI_OK;
 }
 
@@ -431,7 +431,7 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretfp_printFloat(
       JNIEnv *env, jclass cls, jfloat val) {
 
     printf("\n>>> Returned value is %8.4f, hex: %#a\n", val, val);
-    fflush(0);
+    fflush(nullptr);
     return;
 }
 
@@ -440,7 +440,7 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretfp_printDouble(
       JNIEnv *env, jclass cls, jdouble val) {
 
     printf("\n>>> Returned value is %8.4f, hex: %#a\n", val, val);
-    fflush(0);
+    fflush(nullptr);
     return;
 }
 
@@ -451,7 +451,7 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretfp_check(JNIEnv *env, jclass cls) {
             framesCount, framesExpected);
         errCode = STATUS_FAILED;
     }
-    fflush(0);
+    fflush(nullptr);
     return errCode;
 }
 

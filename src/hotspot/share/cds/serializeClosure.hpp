@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,20 @@ public:
   // Read/write the bool pointed to by p.
   virtual void do_bool(bool* p) = 0;
 
-  // Read/write the region specified.
-  virtual void do_region(u_char* start, size_t size) = 0;
+  // Iterate on the pointers from p[0] through p[num_pointers-1]
+  void do_ptrs(void** p, size_t size) {
+    assert((intptr_t)p % sizeof(intptr_t) == 0, "bad alignment");
+    assert(size % sizeof(intptr_t) == 0, "bad size");
+    do_tag((int)size);
+    while (size > 0) {
+      do_ptr(p);
+      p++;
+      size -= sizeof(intptr_t);
+    }
+  }
+
+  // Address of the first element being written (write only)
+  virtual char* region_top() = 0;
 
   // Check/write the tag.  If reading, then compare the tag against
   // the passed in value and fail is they don't match.  This allows

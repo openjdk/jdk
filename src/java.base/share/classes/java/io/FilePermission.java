@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
 package java.io;
 
 import java.nio.file.*;
-import java.security.*;
+import java.security.Permission;
+import java.security.PermissionCollection;
 import java.util.Enumeration;
 import java.util.Objects;
 import java.util.StringJoiner;
@@ -36,7 +37,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import jdk.internal.access.JavaIOFilePermissionAccess;
 import jdk.internal.access.SharedSecrets;
 import sun.nio.fs.DefaultFileSystemProvider;
-import sun.security.action.GetPropertyAction;
 import sun.security.util.FilePermCompat;
 import sun.security.util.SecurityConstants;
 
@@ -61,39 +61,15 @@ import sun.security.util.SecurityConstants;
  * (recursively) all files and subdirectories contained in the current
  * directory.
  * <P>
- * The actions to be granted are passed to the constructor in a string containing
+ * The actions are passed to the constructor in a string containing
  * a list of one or more comma-separated keywords. The possible keywords are
- * "read", "write", "execute", "delete", and "readlink". Their meaning is
- * defined as follows:
- *
- * <DL>
- *    <DT> read <DD> read permission
- *    <DT> write <DD> write permission
- *    <DT> execute
- *    <DD> execute permission. Allows {@code Runtime.exec} to
- *         be called. Corresponds to {@code SecurityManager.checkExec}.
- *    <DT> delete
- *    <DD> delete permission. Allows {@code File.delete} to
- *         be called. Corresponds to {@code SecurityManager.checkDelete}.
- *    <DT> readlink
- *    <DD> read link permission. Allows the target of a
- *         <a href="../nio/file/package-summary.html#links">symbolic link</a>
- *         to be read by invoking the {@link java.nio.file.Files#readSymbolicLink
- *         readSymbolicLink } method.
- * </DL>
+ * "read", "write", "execute", "delete", and "readlink".
  * <P>
  * The actions string is converted to lowercase before processing.
- * <P>
- * Be careful when granting FilePermissions. Think about the implications
- * of granting read and especially write access to various files and
- * directories. The {@literal "<<ALL FILES>>"} permission with write action is
- * especially dangerous. This grants permission to write to the entire
- * file system. One thing this effectively allows is replacement of the
- * system binary, including the JVM runtime environment.
- * <P>
- * Please note: Code can always read a file from the same
- * directory it's in (or a subdirectory of that directory); it does not
- * need explicit permission to do so.
+ *
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
  * @see java.security.Permission
  * @see java.security.Permissions
@@ -205,8 +181,7 @@ public final class FilePermission extends Permission implements Serializable {
     private static final java.nio.file.FileSystem builtInFS =
         DefaultFileSystemProvider.theFileSystem();
 
-    private static final Path here = builtInFS.getPath(
-            GetPropertyAction.privilegedGetProperty("user.dir"));
+    private static final Path here = builtInFS.getPath(jdk.internal.util.StaticProperty.userDir());
 
     private static final Path EMPTY_PATH = builtInFS.getPath("");
     private static final Path DASH_PATH = builtInFS.getPath("-");
@@ -308,7 +283,6 @@ public final class FilePermission extends Permission implements Serializable {
      * @param mask the actions mask to use.
      *
      */
-    @SuppressWarnings("removal")
     private void init(int mask) {
         if ((mask & ALL) != mask)
                 throw new IllegalArgumentException("invalid actions mask");
@@ -385,25 +359,20 @@ public final class FilePermission extends Permission implements Serializable {
             }
 
             // store only the canonical cpath if possible
-            cpath = AccessController.doPrivileged(new PrivilegedAction<>() {
-                public String run() {
-                    try {
-                        String path = cpath;
-                        if (cpath.endsWith("*")) {
-                            // call getCanonicalPath with a path with wildcard character
-                            // replaced to avoid calling it with paths that are
-                            // intended to match all entries in a directory
-                            path = path.substring(0, path.length() - 1) + "-";
-                            path = new File(path).getCanonicalPath();
-                            return path.substring(0, path.length() - 1) + "*";
-                        } else {
-                            return new File(path).getCanonicalPath();
-                        }
-                    } catch (IOException ioe) {
-                        return cpath;
-                    }
+            try {
+                String path = cpath;
+                if (cpath.endsWith("*")) {
+                    // call getCanonicalPath with a path with wildcard character
+                    // replaced to avoid calling it with paths that are
+                    // intended to match all entries in a directory
+                    path = path.substring(0, path.length() - 1) + "-";
+                    path = new File(path).getCanonicalPath();
+                    cpath = path.substring(0, path.length() - 1) + "*";
+                } else {
+                    cpath = new File(path).getCanonicalPath();
                 }
-            });
+            } catch (IOException ignore) {
+            }
 
             int len = cpath.length();
             char last = ((len > 0) ? cpath.charAt(len - 1) : 0);

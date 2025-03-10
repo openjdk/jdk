@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,9 @@ class klassVtable {
   klassVtable(Klass* klass, void* base, int length) : _klass(klass) {
     _tableOffset = int((address)base - (address)klass);
     _length = length;
+#ifndef PRODUCT
+    _verify_count = 0;
+#endif
   }
 
   // accessors

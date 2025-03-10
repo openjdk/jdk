@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -52,6 +51,7 @@
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "gc/z/zVerify.hpp"
 #include "gc/z/zWorkers.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiTagMap.hpp"
@@ -131,10 +131,6 @@ ZGeneration::ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocato
     _stat_relocation(),
     _gc_timer(nullptr) {}
 
-bool ZGeneration::is_initialized() const {
-  return _mark.is_initialized();
-}
-
 ZWorkers* ZGeneration::workers() {
   return &_workers;
 }
@@ -151,8 +147,8 @@ void ZGeneration::threads_do(ThreadClosure* tc) const {
   _workers.threads_do(tc);
 }
 
-void ZGeneration::mark_flush_and_free(Thread* thread) {
-  _mark.flush_and_free(thread);
+void ZGeneration::mark_flush(Thread* thread) {
+  _mark.flush(thread);
 }
 
 void ZGeneration::mark_free() {
@@ -298,7 +294,7 @@ void ZGeneration::reset_statistics() {
   _page_allocator->reset_statistics(_id);
 }
 
-ssize_t ZGeneration::freed() const {
+size_t ZGeneration::freed() const {
   return _freed;
 }
 
@@ -360,7 +356,7 @@ void ZGeneration::log_phase_switch(Phase from, Phase to) {
     index += 1;
   }
 
-  assert(index < ARRAY_SIZE(str), "OOB: " SIZE_FORMAT " < " SIZE_FORMAT, index, ARRAY_SIZE(str));
+  assert(index < ARRAY_SIZE(str), "OOB: %zu < %zu", index, ARRAY_SIZE(str));
 
   Events::log_zgc_phase_switch("%-21s %4u", str[index], seqnum());
 }
@@ -438,7 +434,7 @@ public:
   virtual void doit() {
     // Setup GC id and active marker
     GCIdMark gc_id_mark(_gc_id);
-    IsGCActiveMark gc_active_mark;
+    IsSTWGCActiveMark gc_active_mark;
 
     // Verify before operation
     ZVerify::before_zoperation();
@@ -447,11 +443,15 @@ public:
     _success = do_operation();
 
     // Update statistics
-    ZStatSample(ZSamplerJavaThreads, Threads::number_of_threads());
+    ZStatSample(ZSamplerJavaThreads, (uint64_t)Threads::number_of_threads());
   }
 
   virtual void doit_epilogue() {
     Heap_lock->unlock();
+
+    // GC thread root traversal likely used OopMapCache a lot, which
+    // might have created lots of old entries. Trigger the cleanup now.
+    OopMapCache::try_trigger_cleanup();
   }
 
   bool success() const {
@@ -791,8 +791,8 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   // if the GC is finding it hard to keep up with the allocation rate.
   const double tenuring_threshold_raw = young_life_decay_factor * young_log_residency;
 
-  log_trace(gc, reloc)("Young Allocated: " SIZE_FORMAT "M", young_allocated / M);
-  log_trace(gc, reloc)("Young Garbage: " SIZE_FORMAT "M", young_garbage / M);
+  log_trace(gc, reloc)("Young Allocated: %zuM", young_allocated / M);
+  log_trace(gc, reloc)("Young Garbage: %zuM", young_garbage / M);
   log_debug(gc, reloc)("Allocated To Garbage: %.1f", allocated_garbage_ratio);
   log_trace(gc, reloc)("Young Log: %.1f", young_log);
   log_trace(gc, reloc)("Young Residency Reciprocal: %.1f", young_residency_reciprocal);
@@ -1279,6 +1279,10 @@ bool ZGenerationOld::mark_end() {
 
 void ZGenerationOld::set_soft_reference_policy(bool clear) {
   _reference_processor.set_soft_reference_policy(clear);
+}
+
+bool ZGenerationOld::uses_clear_all_soft_reference_policy() const {
+  return _reference_processor.uses_clear_all_soft_reference_policy();
 }
 
 class ZRendezvousHandshakeClosure : public HandshakeClosure {

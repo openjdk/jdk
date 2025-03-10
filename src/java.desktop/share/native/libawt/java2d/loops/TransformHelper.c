@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
 
 #include "sun_java2d_loops_TransformHelper.h"
 #include "java_awt_image_AffineTransformOp.h"
+
+#include "ub.h"
 
 /*
  * The stub functions replace the bilinear and bicubic interpolation
@@ -120,7 +122,7 @@ TransformInterpFunc *pBicubicFunc = BicubicInterp;
 /* We reject coordinates not less than 1<<30 so that the distance between */
 /* any 2 of them is less than 1<<31 which would overflow into the sign */
 /* bit of a signed long value used to represent fixed point coordinates. */
-#define TX_FIXED_UNSAFE(v)  (fabs(v) >= (1<<30))
+#define TX_FIXED_UNSAFE(v)  (isinf(v) || isnan(v) || fabs(v) >= (1<<30))
 static jboolean
 checkOverflow(jint dxoff, jint dyoff,
               SurfaceDataBounds *pBounds,
@@ -661,6 +663,7 @@ Transform_SafeHelper(JNIEnv *env,
         ((jubyte *)pRes)[comp] = (jubyte) ((cR + (1<<15)) >> 16); \
     } while (0)
 
+ATTRIBUTE_NO_UBSAN
 static void
 BilinearInterp(jint *pRGB, jint numpix,
                jint xfract, jint dxfract,

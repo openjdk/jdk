@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static org.testng.Assert.*;
 
 public class TestSegments {
@@ -234,8 +234,10 @@ public class TestSegments {
         assertTrue(s.contains("byteSize: "));
         if (segment.heapBase().isPresent()) {
             assertTrue(s.contains("heapBase: ["));
+            assertFalse(s.contains("native"));
         } else {
             assertFalse(s.contains("heapBase: "));
+            assertTrue(s.contains("native"));
         }
         assertFalse(s.contains("Optional"));
     }
@@ -383,9 +385,32 @@ public class TestSegments {
             assertEquals(MemorySegment.ofAddress(42).reinterpret(100, Arena.ofAuto(), null).byteSize(), 100);
             // check scope and cleanup
             assertEquals(MemorySegment.ofAddress(42).reinterpret(100, arena, s -> counter.incrementAndGet()).scope(), arena.scope());
-            assertEquals(MemorySegment.ofAddress(42).reinterpret(arena, s -> counter.incrementAndGet()).scope(), arena.scope());
+            assertEquals(MemorySegment.ofAddress(42).reinterpret(arena, _ -> counter.incrementAndGet()).scope(), arena.scope());
+            // check read-only state
+            assertFalse(MemorySegment.ofAddress(42).reinterpret(100).isReadOnly());
+            assertTrue(MemorySegment.ofAddress(42).asReadOnly().reinterpret(100).isReadOnly());
+            assertTrue(MemorySegment.ofAddress(42).asReadOnly().reinterpret(100, Arena.ofAuto(), null).isReadOnly());
+            assertTrue(MemorySegment.ofAddress(42).asReadOnly().reinterpret(arena, _ -> counter.incrementAndGet()).isReadOnly());
         }
-        assertEquals(counter.get(), 2);
+        assertEquals(counter.get(), 3);
+    }
+
+    @Test
+    void testReinterpretArenaClose() {
+        MemorySegment segment;
+        try (Arena arena = Arena.ofConfined()){
+            try (Arena otherArena = Arena.ofConfined()) {
+                segment = arena.allocate(100);
+                segment = segment.reinterpret(otherArena, null);
+            }
+            final MemorySegment sOther = segment;
+            assertThrows(IllegalStateException.class, () -> sOther.get(JAVA_BYTE, 0));
+            segment = segment.reinterpret(arena, null);
+            final MemorySegment sOriginal = segment;
+            sOriginal.get(JAVA_BYTE, 0);
+        }
+        final MemorySegment closed = segment;
+        assertThrows(IllegalStateException.class, () -> closed.get(JAVA_BYTE, 0));
     }
 
     @Test

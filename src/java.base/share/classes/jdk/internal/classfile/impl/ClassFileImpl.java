@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,51 +25,71 @@
 
 package jdk.internal.classfile.impl;
 
-import java.util.List;
-import java.util.function.Function;
-import java.util.function.Consumer;
-
 import java.lang.classfile.AttributeMapper;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.ClassFile.*;
 import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 import jdk.internal.classfile.impl.verifier.VerifierImpl;
 
-public record ClassFileImpl(StackMapsOption stackMapsOption,
-                            DebugElementsOption debugElementsOption,
-                            LineNumbersOption lineNumbersOption,
-                            AttributesProcessingOption attributesProcessingOption,
-                            ConstantPoolSharingOption constantPoolSharingOption,
-                            ShortJumpsOption shortJumpsOption,
-                            DeadCodeOption deadCodeOption,
-                            DeadLabelsOption deadLabelsOption,
-                            ClassHierarchyResolverOption classHierarchyResolverOption,
-                            AttributeMapperOption attributeMapperOption) implements ClassFile {
+import static java.util.Objects.requireNonNull;
+
+public final class ClassFileImpl implements ClassFile {
+
+    private Option stackMapsOption;
+    private Option debugElementsOption;
+    private Option lineNumbersOption;
+    private Option attributesProcessingOption;
+    private Option constantPoolSharingOption;
+    private Option shortJumpsOption;
+    private Option deadCodeOption;
+    private Option deadLabelsOption;
+    private Option classHierarchyResolverOption;
+    private Option attributeMapperOption;
+
+    private ClassFileImpl(Option stackMapsOption,
+                          Option debugElementsOption,
+                          Option lineNumbersOption,
+                          Option attributesProcessingOption,
+                          Option constantPoolSharingOption,
+                          Option shortJumpsOption,
+                          Option deadCodeOption,
+                          Option deadLabelsOption,
+                          Option classHierarchyResolverOption,
+                          Option attributeMapperOption) {
+        this.stackMapsOption              = stackMapsOption;
+        this.debugElementsOption          = debugElementsOption;
+        this.lineNumbersOption            = lineNumbersOption;
+        this.attributesProcessingOption   = attributesProcessingOption;
+        this.constantPoolSharingOption    = constantPoolSharingOption;
+        this.shortJumpsOption             = shortJumpsOption;
+        this.deadCodeOption               = deadCodeOption;
+        this.deadLabelsOption             = deadLabelsOption;
+        this.classHierarchyResolverOption = classHierarchyResolverOption;
+        this.attributeMapperOption        = attributeMapperOption;
+    }
 
     public static final ClassFileImpl DEFAULT_CONTEXT = new ClassFileImpl(
-            StackMapsOption.STACK_MAPS_WHEN_REQUIRED,
-            DebugElementsOption.PASS_DEBUG,
-            LineNumbersOption.PASS_LINE_NUMBERS,
-            AttributesProcessingOption.PASS_ALL_ATTRIBUTES,
-            ConstantPoolSharingOption.SHARED_POOL,
-            ShortJumpsOption.FIX_SHORT_JUMPS,
-            DeadCodeOption.PATCH_DEAD_CODE,
-            DeadLabelsOption.FAIL_ON_DEAD_LABELS,
-            new ClassHierarchyResolverOptionImpl(ClassHierarchyResolver.defaultResolver()),
-            new AttributeMapperOptionImpl(new Function<>() {
-                @Override
-                public AttributeMapper<?> apply(Utf8Entry k) {
-                    return null;
-                }
-            }));
+            null, // StackMapsOption.STACK_MAPS_WHEN_REQUIRED
+            null, // DebugElementsOption.PASS_DEBUG,
+            null, // LineNumbersOption.PASS_LINE_NUMBERS,
+            null, // AttributesProcessingOption.PASS_ALL_ATTRIBUTES,
+            null, // ConstantPoolSharingOption.SHARED_POOL,
+            null, // ShortJumpsOption.FIX_SHORT_JUMPS,
+            null, // DeadCodeOption.PATCH_DEAD_CODE,
+            null, // DeadLabelsOption.FAIL_ON_DEAD_LABELS,
+            null, // new ClassHierarchyResolverOptionImpl(ClassHierarchyResolver.defaultResolver()),
+            null  // _ -> null
+        );
 
-    @SuppressWarnings("unchecked")
     @Override
     public ClassFileImpl withOptions(Option... options) {
         var smo = stackMapsOption;
@@ -83,17 +103,28 @@ public record ClassFileImpl(StackMapsOption stackMapsOption,
         var chro = classHierarchyResolverOption;
         var amo = attributeMapperOption;
         for (var o : options) {
-            switch (o) {
-                case StackMapsOption oo -> smo = oo;
-                case DebugElementsOption oo -> deo = oo;
-                case LineNumbersOption oo -> lno = oo;
-                case AttributesProcessingOption oo -> apo = oo;
-                case ConstantPoolSharingOption oo -> cpso = oo;
-                case ShortJumpsOption oo -> sjo = oo;
-                case DeadCodeOption oo -> dco = oo;
-                case DeadLabelsOption oo -> dlo = oo;
-                case ClassHierarchyResolverOption oo -> chro = oo;
-                case AttributeMapperOption oo -> amo = oo;
+            if (o instanceof StackMapsOption oo) {
+                smo = oo;
+            } else if (o instanceof ClassHierarchyResolverOption oo) {
+                chro = oo;
+            } else if (o instanceof DebugElementsOption oo) {
+                deo = oo;
+            } else if (o instanceof LineNumbersOption oo) {
+                lno = oo;
+            } else if (o instanceof AttributesProcessingOption oo) {
+                apo = oo;
+            } else if (o instanceof ConstantPoolSharingOption oo) {
+                cpso = oo;
+            } else if (o instanceof ShortJumpsOption oo) {
+                sjo = oo;
+            } else if (o instanceof DeadCodeOption oo) {
+                dco = oo;
+            } else if (o instanceof DeadLabelsOption oo) {
+                dlo = oo;
+            } else if (o instanceof AttributeMapperOption oo) {
+                amo = oo;
+            } else { // null or unknown Option type
+                throw new IllegalArgumentException("Invalid option: " + requireNonNull(o));
             }
         }
         return new ClassFileImpl(smo, deo, lno, apo, cpso, sjo, dco, dlo, chro, amo);
@@ -115,10 +146,9 @@ public record ClassFileImpl(StackMapsOption stackMapsOption,
     }
 
     @Override
-    public byte[] transform(ClassModel model, ClassEntry newClassName, ClassTransform transform) {
-        ConstantPoolBuilder constantPool = constantPoolSharingOption() == ConstantPoolSharingOption.SHARED_POOL
-                                                                     ? ConstantPoolBuilder.of(model)
-                                                                     : ConstantPoolBuilder.of();
+    public byte[] transformClass(ClassModel model, ClassEntry newClassName, ClassTransform transform) {
+        ConstantPoolBuilder constantPool = sharedConstantPool() ? ConstantPoolBuilder.of(model)
+                                                                : ConstantPoolBuilder.of();
         return build(newClassName, constantPool,
                 new Consumer<ClassBuilder>() {
                     @Override
@@ -130,9 +160,17 @@ public record ClassFileImpl(StackMapsOption stackMapsOption,
                 });
     }
 
+    public boolean sharedConstantPool() {
+        return constantPoolSharingOption == null || constantPoolSharingOption == ConstantPoolSharingOption.SHARED_POOL;
+    }
+
     @Override
     public List<VerifyError> verify(ClassModel model) {
-        return VerifierImpl.verify(model, classHierarchyResolverOption().classHierarchyResolver(), null);
+        try {
+            return VerifierImpl.verify(model, classHierarchyResolver(), null);
+        } catch (IllegalArgumentException verifierInitializationError) {
+            return List.of(new VerifyError(verifierInitializationError.getMessage()));
+        }
     }
 
     @Override
@@ -142,6 +180,58 @@ public record ClassFileImpl(StackMapsOption stackMapsOption,
         } catch (IllegalArgumentException parsingError) {
             return List.of(new VerifyError(parsingError.getMessage()));
         }
+    }
+
+    public Function<Utf8Entry, AttributeMapper<?>> attributeMapper() {
+        if (attributeMapperOption == null) {
+            return _ -> null;
+        } else {
+            return ((AttributeMapperOption)attributeMapperOption).attributeMapper();
+        }
+    }
+
+    public ClassHierarchyResolver classHierarchyResolver() {
+        if (classHierarchyResolverOption == null) {
+            return ClassHierarchyImpl.DEFAULT_RESOLVER;
+        } else {
+            return ((ClassHierarchyResolverOption)classHierarchyResolverOption).classHierarchyResolver();
+        }
+    }
+
+    public boolean dropDeadLabels() {
+        return (deadLabelsOption != null && deadLabelsOption == DeadLabelsOption.DROP_DEAD_LABELS);
+    }
+
+    public boolean passDebugElements() {
+        return (debugElementsOption == null || debugElementsOption == DebugElementsOption.PASS_DEBUG);
+    }
+
+    public boolean passLineNumbers() {
+        return (lineNumbersOption == null || lineNumbersOption == LineNumbersOption.PASS_LINE_NUMBERS);
+    }
+
+    public AttributesProcessingOption attributesProcessingOption() {
+        return (attributesProcessingOption == null) ? AttributesProcessingOption.PASS_ALL_ATTRIBUTES : (AttributesProcessingOption)attributesProcessingOption;
+    }
+
+    public boolean fixShortJumps() {
+        return (shortJumpsOption == null || shortJumpsOption == ShortJumpsOption.FIX_SHORT_JUMPS);
+    }
+
+    public boolean stackMapsWhenRequired() {
+        return (stackMapsOption == null || stackMapsOption == StackMapsOption.STACK_MAPS_WHEN_REQUIRED);
+    }
+
+    public boolean generateStackMaps() {
+        return (stackMapsOption == StackMapsOption.GENERATE_STACK_MAPS);
+    }
+
+    public boolean dropStackMaps() {
+        return (stackMapsOption == StackMapsOption.DROP_STACK_MAPS);
+    }
+
+    public boolean patchDeadCode() {
+        return (deadCodeOption == null || deadCodeOption == DeadCodeOption.PATCH_DEAD_CODE);
     }
 
     public record AttributeMapperOptionImpl(Function<Utf8Entry, AttributeMapper<?>> attributeMapper)

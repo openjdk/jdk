@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,12 @@ public class RestrictedAPIListBuilder extends SummaryAPIListBuilder {
      * @param configuration the current configuration of the doclet
      */
     public RestrictedAPIListBuilder(BaseConfiguration configuration) {
-        super(configuration, configuration.utils::isRestrictedAPI);
+        super(configuration);
         buildSummaryAPIInfo();
+    }
+
+    @Override
+    protected boolean belongsToSummary(Element element) {
+        return utils.isRestrictedAPI(element);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
@@ -74,6 +73,16 @@ InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(
   _stack_offset = 0;
 }
 
+// The C ABI specifies:
+// "integer scalars narrower than XLEN bits are widened according to the sign
+// of their type up to 32 bits, then sign-extended to XLEN bits."
+// Applies for both passed in register and stack.
+//
+// Java uses 32-bit stack slots; jint, jshort, jchar, jbyte uses one slot.
+// Native uses 64-bit stack slots for all integer scalar types.
+//
+// lw loads the Java stack slot, sign-extends and
+// sd store this widened integer into a 64 bit native stack slot.
 void InterpreterRuntime::SignatureHandlerGenerator::pass_int() {
   const Address src(from(), Interpreter::local_offset_in_bytes(offset()));
 
@@ -82,7 +91,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_int() {
     __ lw(reg, src);
   } else {
     __ lw(x10, src);
-    __ sw(x10, Address(to(), next_stack_offset()));
+    __ sd(x10, Address(to(), next_stack_offset()));
   }
 }
 
@@ -128,10 +137,10 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
   Register reg = next_gpr();
   if (reg == c_rarg1) {
     assert(offset() == 0, "argument register 1 can only be (non-null) receiver");
-    __ addi(c_rarg1, from(), Interpreter::local_offset_in_bytes(offset()));
+    __ add(c_rarg1, from(), Interpreter::local_offset_in_bytes(offset()));
   } else if (reg != noreg) {
       // c_rarg2-c_rarg7
-      __ addi(x10, from(), Interpreter::local_offset_in_bytes(offset()));
+      __ add(x10, from(), Interpreter::local_offset_in_bytes(offset()));
       __ mv(reg, zr); //_num_reg_int_args:c_rarg -> 1:c_rarg2,  2:c_rarg3...
       __ ld(temp(), x10);
       Label L;
@@ -140,7 +149,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
       __ bind(L);
   } else {
     //to stack
-    __ addi(x10, from(), Interpreter::local_offset_in_bytes(offset()));
+    __ add(x10, from(), Interpreter::local_offset_in_bytes(offset()));
     __ ld(temp(), x10);
     Label L;
     __ bnez(temp(), L);
@@ -156,7 +165,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprin
   iterate(fingerprint);
 
   // return result handler
-  __ la(x10, ExternalAddress(Interpreter::result_handler(method()->result_type())));
+  __ movptr(x10, ExternalAddress(Interpreter::result_handler(method()->result_type())));
   __ ret();
 
   __ flush();

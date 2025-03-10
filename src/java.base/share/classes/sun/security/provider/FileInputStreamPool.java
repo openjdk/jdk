@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,9 +65,6 @@ class FileInputStreamPool {
      * @throws FileNotFoundException if the file does not exist, is a directory
      *                               rather than a regular file, or for some
      *                               other reason cannot be opened for  reading.
-     * @throws SecurityException     if a security manager exists and its
-     *                               <code>checkRead</code> method denies read
-     *                               access to the file.
      */
     static InputStream getInputStream(File file) throws IOException {
 
@@ -78,9 +75,6 @@ class FileInputStreamPool {
         }
 
         // canonicalize the path
-        // (this also checks the read permission on the file if SecurityManager
-        // is present, so no checking is needed later when we just return the
-        // already opened stream)
         File cfile = file.getCanonicalFile();
 
         // check if it exists in pool

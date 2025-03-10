@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,50 +26,13 @@
 package com.sun.jdi;
 
 /**
- * The {@code JDIPermission} class represents access rights to
- * the {@code VirtualMachineManager}.  This is the permission
- * which the SecurityManager will check when code that is running with
- * a SecurityManager requests access to the VirtualMachineManager, as
- * defined in the Java Debug Interface (JDI) for the Java platform.
- * <P>
  * A {@code JDIPermission} object contains a name (also referred
  * to as a "target name") but no actions list; you either have the
  * named permission or you don't.
- * <P>
- * The following table provides a summary description of what the
- * permission allows, and discusses the risks of granting code the
- * permission.
  *
- * <table class="striped">
- * <caption style="display:none">Table shows permission target name, what the
- * permission allows, and associated risks</caption>
- * <thead>
- * <tr>
- * <th scope="col">Permission Target Name</th>
- * <th scope="col">What the Permission Allows</th>
- * <th scope="col">Risks of Allowing this Permission</th>
- * </tr>
- * </thead>
- *
- * <tbody>
- * <tr>
- *   <th scope="row">virtualMachineManager</th>
- *   <td>Ability to inspect and modify the JDI objects in the
- *   {@code VirtualMachineManager}
- *   </td>
- *   <td>This allows an attacker to control the
- *   {@code VirtualMachineManager} and cause the system to
- *   misbehave.
- *   </td>
- * </tr>
- * </tbody>
- *
- * </table>
- *
- * <p>
- * Programmers do not normally create JDIPermission objects directly.
- * Instead they are created by the security policy code based on reading
- * the security policy file.
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
  * @author  Tim Bell
  * @since   1.5

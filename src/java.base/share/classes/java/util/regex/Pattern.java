@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,7 @@ import jdk.internal.util.regex.Grapheme;
  *     <td headers="matches predef any">Any character (may or may not match <a href="#lt">line terminators</a>)</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="digit">{@code \d}</th>
  *     <td headers="matches predef digit">A digit: {@code [0-9]} if <a href="#UNICODE_CHARACTER_CLASS">
- *  *         UNICODE_CHARACTER_CLASS</a> is not set. See <a href="#unicodesupport">Unicode Support</a>.</td></tr>
+ *          UNICODE_CHARACTER_CLASS</a> is not set. See <a href="#unicodesupport">Unicode Support</a>.</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_digit">{@code \D}</th>
  *     <td headers="matches predef non_digit">A non-digit: {@code [^0-9]}</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="horiz_white">{@code \h}</th>
@@ -251,8 +251,9 @@ import jdk.internal.util.regex.Grapheme;
  * <tr><th style="vertical-align:top; font-weight:normal" id="end_line">{@code $}</th>
  *     <td headers="matches bounds end_line">The end of a line</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="word_boundary">{@code \b}</th>
- *     <td headers="matches bounds word_boundary">A word boundary: {@code (?:(?<=\w)(?=\W)|(?<=\W)(?=\w))} (the location
- *     where a non-word character abuts a word character)</td></tr>
+ *     <td headers="matches bounds word_boundary">A word boundary:
+ *     at the beginning or at the end of a line if a word character ({@code \w}) appears there;
+ *     or between a word ({@code \w}) and a non-word character ({@code \W}), in either order.</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="grapheme_cluster_boundary">{@code \b{g}}</th>
  *     <td headers="matches bounds grapheme_cluster_boundary">A Unicode extended grapheme cluster boundary</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_word_boundary">{@code \B}</th>
@@ -1501,8 +1502,8 @@ public final class Pattern
             return "\\Q" + s + "\\E";
 
         int lenHint = s.length();
-        lenHint = (lenHint < Integer.MAX_VALUE - 8 - lenHint) ?
-                (lenHint << 1) : (Integer.MAX_VALUE - 8);
+        lenHint = (lenHint < ArraysSupport.SOFT_MAX_ARRAY_LENGTH - lenHint) ?
+                (lenHint << 1) : ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
         StringBuilder sb = new StringBuilder(lenHint);
         sb.append("\\Q");
@@ -3368,7 +3369,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * Parses the second part of inlined match flags and turns off
      * flags appropriately.
      */
-    @SuppressWarnings("fallthrough")
     private void subFlag() {
         int ch = peek();
         for (;;) {

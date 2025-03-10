@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,12 +104,15 @@ final class HotSpotJVMCICompilerConfig {
                         }
                     }
                     if (factory == null) {
+                        String reason;
                         if (Services.IS_IN_NATIVE_IMAGE) {
-                            throw runtime.exitHotSpotWithMessage(1, "JVMCI compiler '%s' not found in JVMCI native library.%n" +
+                            reason = String.format("JVMCI compiler '%s' not found in JVMCI native library.%n" +
                                             "Use -XX:-UseJVMCINativeLibrary when specifying a JVMCI compiler available on a class path with %s.%n",
                                             compilerName, compPropertyName);
+                        } else {
+                            reason = String.format("JVMCI compiler '%s' specified by %s not found%n", compilerName, compPropertyName);
                         }
-                        throw runtime.exitHotSpotWithMessage(1, "JVMCI compiler '%s' specified by %s not found%n", compilerName, compPropertyName);
+                        factory = new DummyCompilerFactory(reason, runtime);
                     }
                 }
             } else {

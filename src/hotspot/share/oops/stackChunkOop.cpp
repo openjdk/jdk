@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/nmethod.hpp"
 #include "code/scopeDesc.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -61,6 +60,21 @@ public:
     } else {
       OopMapDo<OopClosure, DerivedOopClosure, IncludeAllValues> visitor(cl, nullptr);
       visitor.oops_do(&_f, _map, _f.oop_map());
+    }
+  }
+};
+
+class LockStackOopIterator : public OopIterator {
+private:
+  const stackChunkOop _chunk;
+public:
+  LockStackOopIterator(const stackChunkOop chunk) : _chunk(chunk) {}
+
+  virtual void oops_do(OopClosure* cl) override {
+    int cnt = _chunk->lockstack_size();
+    oop* lockstack_start = (oop*)_chunk->start_address();
+    for (int i = 0; i < cnt; i++) {
+      cl->do_oop(&lockstack_start[i]);
     }
   }
 };
@@ -125,7 +139,7 @@ static int num_java_frames(const StackChunkFrameStream<ChunkFrames::Mixed>& f) {
 int stackChunkOopDesc::num_java_frames() const {
   int n = 0;
   for (StackChunkFrameStream<ChunkFrames::Mixed> f(const_cast<stackChunkOopDesc*>(this)); !f.is_done();
-       f.next(SmallRegisterMap::instance)) {
+       f.next(SmallRegisterMap::instance())) {
     if (!f.is_stub()) {
       n += ::num_java_frames(f);
     }
@@ -224,6 +238,14 @@ public:
 
     return true;
   }
+
+  bool do_lockstack() {
+    BarrierSetStackChunk* bs_chunk = BarrierSet::barrier_set()->barrier_set_stack_chunk();
+    LockStackOopIterator iterator(_chunk);
+    bs_chunk->encode_gc_mode(_chunk, &iterator);
+
+    return true;
+  }
 };
 
 bool stackChunkOopDesc::try_acquire_relativization() {
@@ -298,6 +320,7 @@ void stackChunkOopDesc::relativize_derived_pointers_concurrently() {
   DerivedPointersSupport::RelativizeClosure derived_cl;
   EncodeGCModeConcurrentFrameClosure<decltype(derived_cl)> frame_cl(this, &derived_cl);
   iterate_stack(&frame_cl);
+  frame_cl.do_lockstack();
 
   release_relativization();
 }
@@ -320,6 +343,14 @@ public:
 
     return true;
   }
+
+  bool do_lockstack() {
+    BarrierSetStackChunk* bs_chunk = BarrierSet::barrier_set()->barrier_set_stack_chunk();
+    LockStackOopIterator iterator(_chunk);
+    bs_chunk->encode_gc_mode(_chunk, &iterator);
+
+    return true;
+  }
 };
 
 void stackChunkOopDesc::transform() {
@@ -332,6 +363,7 @@ void stackChunkOopDesc::transform() {
 
   TransformStackChunkClosure closure(this);
   iterate_stack(&closure);
+  closure.do_lockstack();
 }
 
 template <stackChunkOopDesc::BarrierType barrier, bool compressedOopsWithBitmap>
@@ -408,6 +440,35 @@ void stackChunkOopDesc::fix_thawed_frame(const frame& f, const RegisterMapT* map
 template void stackChunkOopDesc::fix_thawed_frame(const frame& f, const RegisterMap* map);
 template void stackChunkOopDesc::fix_thawed_frame(const frame& f, const SmallRegisterMap* map);
 
+void stackChunkOopDesc::transfer_lockstack(oop* dst, bool requires_barriers) {
+  const bool requires_gc_barriers = is_gc_mode() || requires_barriers;
+  const bool requires_uncompress = has_bitmap() && UseCompressedOops;
+  const auto load_and_clear_obj = [&](intptr_t* at) -> oop {
+    if (requires_gc_barriers) {
+      if (requires_uncompress) {
+        oop value = HeapAccess<>::oop_load(reinterpret_cast<narrowOop*>(at));
+        HeapAccess<>::oop_store(reinterpret_cast<narrowOop*>(at), nullptr);
+        return value;
+      } else {
+        oop value = HeapAccess<>::oop_load(reinterpret_cast<oop*>(at));
+        HeapAccess<>::oop_store(reinterpret_cast<oop*>(at), nullptr);
+        return value;
+      }
+    } else {
+      oop value = *reinterpret_cast<oop*>(at);
+      return value;
+    }
+  };
+
+  const int cnt = lockstack_size();
+  intptr_t* lockstack_start = start_address();
+  for (int i = 0; i < cnt; i++) {
+    oop mon_owner = load_and_clear_obj(&lockstack_start[i]);
+    assert(oopDesc::is_oop(mon_owner), "not an oop");
+    dst[i] = mon_owner;
+  }
+}
+
 void stackChunkOopDesc::print_on(bool verbose, outputStream* st) const {
   if (*((juint*)this) == badHeapWordVal) {
     st->print_cr("BAD WORD");
@@ -435,7 +496,7 @@ public:
     assert(obj == nullptr || dbg_is_good_oop(obj), "p: " PTR_FORMAT " obj: " PTR_FORMAT, p2i(p), p2i(obj));
     if (_chunk->has_bitmap()) {
       BitMap::idx_t index = _chunk->bit_index_for(p);
-      assert(_chunk->bitmap().at(index), "Bit not set at index " SIZE_FORMAT " corresponding to " PTR_FORMAT, index, p2i(p));
+      assert(_chunk->bitmap().at(index), "Bit not set at index %zu corresponding to " PTR_FORMAT, index, p2i(p));
     }
   }
 
@@ -456,9 +517,9 @@ public:
   int _num_interpreted_frames;
   int _num_i2c;
 
-  VerifyStackChunkFrameClosure(stackChunkOop chunk, int num_frames, int size)
+  VerifyStackChunkFrameClosure(stackChunkOop chunk)
     : _chunk(chunk), _sp(nullptr), _cb(nullptr), _callee_interpreted(false),
-      _size(size), _argsize(0), _num_oops(0), _num_frames(num_frames), _num_interpreted_frames(0), _num_i2c(0) {}
+      _size(0), _argsize(0), _num_oops(0), _num_frames(0), _num_interpreted_frames(0), _num_i2c(0) {}
 
   template <ChunkFrames frame_kind, typename RegisterMapT>
   bool do_frame(const StackChunkFrameStream<frame_kind>& f, const RegisterMapT* map) {
@@ -520,7 +581,7 @@ public:
 
     oop obj = _chunk->load_oop(p);
     assert(obj == nullptr || dbg_is_good_oop(obj),
-           "p: " PTR_FORMAT " obj: " PTR_FORMAT " index: " SIZE_FORMAT,
+           "p: " PTR_FORMAT " obj: " PTR_FORMAT " index: %zu",
            p2i(p), p2i((oopDesc*)obj), index);
 
     return true; // continue processing
@@ -552,11 +613,8 @@ bool stackChunkOopDesc::verify(size_t* out_size, int* out_oops, int* out_frames,
   assert((size == 0) == is_empty(), "");
 
   const StackChunkFrameStream<ChunkFrames::Mixed> first(this);
-  const bool has_safepoint_stub_frame = first.is_stub();
 
-  VerifyStackChunkFrameClosure closure(this,
-                                       has_safepoint_stub_frame ? 1 : 0, // Iterate_stack skips the safepoint stub
-                                       has_safepoint_stub_frame ? first.frame_size() : 0);
+  VerifyStackChunkFrameClosure closure(this);
   iterate_stack(&closure);
 
   assert(!is_empty() || closure._cb == nullptr, "");

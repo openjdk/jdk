@@ -43,7 +43,7 @@ import jdk.test.lib.SA.SATestUtils;
  *          jdk.hotspot.agent/sun.jvm.hotspot.code
  *          jdk.hotspot.agent/sun.jvm.hotspot.debugger
  *          jdk.hotspot.agent/sun.jvm.hotspot.runtime
- * @run main/othervm/timeout=2400 -Xmx1g -Xcomp TestDebugInfoDecode
+ * @run driver TestDebugInfoDecode
  */
 
 public class TestDebugInfoDecode {
@@ -107,7 +107,7 @@ public class TestDebugInfoDecode {
         if (args == null || args.length == 0) {
             try {
                 theApp = new LingeredApp();
-                LingeredApp.startApp(theApp);
+                LingeredApp.startApp(theApp, "-Xcomp");
                 createAnotherToAttach(theApp.getPid());
             } finally {
                 LingeredApp.stopApp(theApp);

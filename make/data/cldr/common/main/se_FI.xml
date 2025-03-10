@@ -1383,13 +1383,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Kiinná geasseáigi</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Choibolsana áigi</generic>
-					<standard>Choibolsana dálveáigi</standard>
-					<daylight>Choibolsana geasseáigi</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Juovlasullo áigi</standard>

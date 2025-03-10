@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,6 +137,8 @@ public abstract class AbstractSelectableChannel
 
     void removeKey(SelectionKey k) {                    // package-private
         synchronized (keyLock) {
+            if (keys == null)
+                return;
             for (int i = 0; i < keys.length; i++)
                 if (keys[i] == k) {
                     keys[i] = null;
@@ -233,7 +235,7 @@ public abstract class AbstractSelectableChannel
                     k.interestOps(ops);
                 } else {
                     // New registration
-                    k = ((AbstractSelector)sel).register(this, ops, att);
+                    k = ((AbstractSelector) sel).register(this, ops, att);
                     addKey(k);
                 }
                 return k;

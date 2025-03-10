@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,8 @@ public class AnnotationDefaultVerifier {
 
     private abstract class TestElementValue {
         public void testLength(TestResult testCase, AnnotationDefaultAttribute attr) {
-            BufWriter buf = new BufWriterImpl(ConstantPoolBuilder.of(), (ClassFileImpl) ClassFile.of());
-            attr.defaultValue().writeTo(buf);
+            var buf = new BufWriterImpl(ConstantPoolBuilder.of(), (ClassFileImpl) ClassFile.of());
+            AnnotationReader.writeAnnotationValue(buf, attr.defaultValue());
             testCase.checkEquals(((BoundAttribute<?>)attr).payloadLen(), buf.size(),
                     "attribute_length");
         }
@@ -103,7 +103,7 @@ public class AnnotationDefaultVerifier {
                 case AnnotationValue.OfByte ev -> {
                     testCase.checkEquals((int)ev.byteValue(), Integer.parseInt(values[0]), "const_value_index");
                 }
-                case AnnotationValue.OfCharacter ev -> {
+                case AnnotationValue.OfChar ev -> {
                     testCase.checkEquals((int)ev.charValue(), Integer.parseInt(values[0]), "const_value_index");
                 }
                 case AnnotationValue.OfShort ev -> {
@@ -113,7 +113,7 @@ public class AnnotationDefaultVerifier {
                     testCase.checkEquals(ev.booleanValue()? 1: 0, Integer.parseInt(values[0]), "const_value_index");
                 }
                 default -> {
-                    testCase.checkEquals(((AnnotationValue.OfInteger) element_value).intValue(), Integer.parseInt(values[0]), "const_value_index");
+                    testCase.checkEquals(((AnnotationValue.OfInt) element_value).intValue(), Integer.parseInt(values[0]), "const_value_index");
                 }
             }
         }

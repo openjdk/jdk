@@ -28,7 +28,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kbd">cabardiano</language>
 			<language type="krc">karachái-bálkaro</language>
 			<language type="ks">cachemiro</language>
-			<language type="lo">laosiano</language>
+			<language type="lij">genovés</language>
 			<language type="ml">malabar</language>
 			<language type="mni">manipuri</language>
 			<language type="nr">ndebele del sur</language>
@@ -47,6 +47,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="tet">tetun</language>
 			<language type="tyv">tuvano</language>
 			<language type="ug" alt="variant">uighur</language>
+			<language type="vec">véneto</language>
 			<language type="wal">walamo</language>
 			<language type="wuu">wu</language>
 			<language type="xal">calmuco</language>
@@ -96,8 +97,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="colNormalization">orden normalizado</key>
 		</keys>
 		<types>
-			<type key="calendar" type="islamic-rgsa" draft="provisional">calendario islámico (Arabia Saudita)</type>
-			<type key="calendar" type="islamic-tbla" draft="provisional">calendario islámico tabular</type>
+			<type key="calendar" type="islamic-rgsa" draft="contributed">calendario islámico (Arabia Saudita)</type>
+			<type key="calendar" type="islamic-tbla">calendario islámico tabular</type>
 			<type key="colAlternate" type="non-ignorable">ordenar símbolos</type>
 			<type key="colAlternate" type="shifted">ordenar ignorando símbolos</type>
 			<type key="colBackwards" type="no">ordenar acentos normalmente</type>
@@ -576,24 +577,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">en {0} domingos</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="fri-short">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">hace {0} viernes</relativeTimePattern>
-					<relativeTimePattern count="other">hace {0} viernes</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="fri-narrow">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">hace {0} viernes</relativeTimePattern>
-					<relativeTimePattern count="other">hace {0} viernes</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sat-narrow">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">hace {0} sábados</relativeTimePattern>
-					<relativeTimePattern count="other">hace {0} sábados</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="dayperiod">
 				<displayName>a.m./p.m.</displayName>
 			</field>
@@ -774,16 +757,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<group>,</group>
 		</symbols>
 		<decimalFormats numberSystem="latn">
-			<decimalFormatLength type="long">
-				<decimalFormat>
-					<pattern type="1000000000000" count="one">0 billón</pattern>
-					<pattern type="1000000000000" count="other">0 billón</pattern>
-					<pattern type="10000000000000" count="one">00 billones</pattern>
-					<pattern type="10000000000000" count="other">00 billones</pattern>
-					<pattern type="100000000000000" count="one">000 billones</pattern>
-					<pattern type="100000000000000" count="other">000 billones</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
 			<decimalFormatLength type="short">
 				<decimalFormat>
 					<pattern type="1000" count="one">0 K</pattern>
@@ -902,6 +875,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">córdoba nicaragüense</displayName>
 				<displayName count="other">córdobas nicaragüenses</displayName>
 			</currency>
+			<currency type="SLE">
+				<displayName>leone</displayName>
+				<displayName count="one">leone</displayName>
+				<displayName count="other">leones</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>leones (1964—2022)</displayName>
+				<displayName count="one">leone (1964—2022)</displayName>
+				<displayName count="other">leones (1964—2022)</displayName>
+			</currency>
 			<currency type="SSP">
 				<symbol alt="narrow">SD£</symbol>
 			</currency>
@@ -940,9 +923,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>fuerza G</displayName>
 				<unitPattern count="one">{0} unidad de fuerza gravitacional</unitPattern>
 				<unitPattern count="other">{0} unidades de fuerza gravitacional</unitPattern>
-			</unit>
-			<unit type="concentr-milligram-ofglucose-per-deciliter">
-				<displayName>mg/dL</displayName>
 			</unit>
 			<unit type="electric-ampere">
 				<displayName>amperes</displayName>
@@ -990,6 +970,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">caballo de fuerza</unitPattern>
 				<unitPattern count="other">{0} caballos de fuerza</unitPattern>
 			</unit>
+			<unit type="speed-beaufort">
+				<gender>masculine</gender>
+			</unit>
 			<unit type="temperature-generic">
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
@@ -1008,6 +991,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>onzas fluidas</displayName>
 				<unitPattern count="one">{0} onza fluida</unitPattern>
 				<unitPattern count="other">{0} onzas fluidas</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>partes por mil millones</displayName>
+				<unitPattern count="one">{0} parte por mil millones</unitPattern>
+				<unitPattern count="other">{0} partes por mil millones</unitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="short">
@@ -1148,10 +1136,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}d.</unitPattern>
 				<unitPattern count="other">{0}dd.</unitPattern>
 			</unit>
-			<unit type="energy-calorie">
-				<unitPattern count="one">{0} cal</unitPattern>
-				<unitPattern count="other">{0}cal</unitPattern>
-			</unit>
 			<unit type="energy-therm-us">
 				<unitPattern count="one">{0}thm EE.UU.</unitPattern>
 				<unitPattern count="other">{0}thm EE.UU.</unitPattern>
@@ -1170,7 +1154,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-light-year">
 				<displayName>aa. l.</displayName>
 				<unitPattern count="one">{0}a. l.</unitPattern>
-				<unitPattern count="other">{0}a.a. l.</unitPattern>
+				<unitPattern count="other">{0}aa. l.</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<unitPattern count="one">{0}ua</unitPattern>
+				<unitPattern count="other">{0}ua</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<unitPattern count="one">{0}nmi</unitPattern>
@@ -1183,14 +1171,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="mass-ton">
 				<unitPattern count="one">{0}ton</unitPattern>
 				<unitPattern count="other">{0}ton</unitPattern>
-			</unit>
-			<unit type="mass-pound">
-				<unitPattern count="one">{0} lb</unitPattern>
-				<unitPattern count="other">{0}lb</unitPattern>
-			</unit>
-			<unit type="mass-ounce">
-				<unitPattern count="one">{0} oz</unitPattern>
-				<unitPattern count="other">{0}oz</unitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
 				<unitPattern count="one">{0}ozt</unitPattern>
@@ -1221,9 +1201,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}bbl</unitPattern>
 				<unitPattern count="other">{0}bbl</unitPattern>
 			</unit>
-			<unit type="volume-quart-imperial">
-				<unitPattern count="one">{0} qt imp.</unitPattern>
-				<unitPattern count="other">{0}qt imp</unitPattern>
+			<unit type="speed-light-speed">
+				<unitPattern count="one">{0} luz</unitPattern>
+				<unitPattern count="other">{0} luz</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<unitPattern count="one">{0} noche</unitPattern>
+				<unitPattern count="other">{0} noches</unitPattern>
 			</unit>
 		</unitLength>
 	</units>
@@ -1243,7 +1227,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="building">edificio</characterLabel>
 		<characterLabel type="consonantal_jamo">Jamo consonántico</characterLabel>
 		<characterLabel type="currency_symbols">símbolos de monedas</characterLabel>
-		<characterLabel type="dash_connector">Guión/conector</characterLabel>
+		<characterLabel type="dash_connector">Guion/conector</characterLabel>
 		<characterLabel type="digits">dígitos</characterLabel>
 		<characterLabel type="downwards_upwards_arrows">Flechas hacia arriba y hacia abajo</characterLabel>
 		<characterLabel type="european_scripts">Símbolos de escritura de Europa</characterLabel>

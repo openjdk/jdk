@@ -30,7 +30,7 @@ import org.openjdk.jmh.annotations.*;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Fork(jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})
+@Fork(jvmArgs = {"--add-modules=jdk.incubator.vector"})
 public class StoreMaskTrueCount {
     private static final VectorSpecies<Short> S_SPECIES = ShortVector.SPECIES_PREFERRED;
     private static final VectorSpecies<Integer> I_SPECIES = IntVector.SPECIES_PREFERRED;

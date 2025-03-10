@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,21 +58,12 @@ package gc;
  */
 
 /*
- * @test id=ZSinglegen
- * @requires vm.gc.ZSinglegen
+ * @test id=Z
+ * @requires vm.gc.Z
  * @comment ZGC will not start when LargePages cannot be allocated, therefore
  *          we do not run such configuration.
  * @summary Runs System.gc() with different flags.
- * @run main/othervm -XX:+UseZGC -XX:-ZGenerational gc.TestSystemGC
- */
-
-/*
- * @test id=ZGenerational
- * @requires vm.gc.ZGenerational
- * @comment ZGC will not start when LargePages cannot be allocated, therefore
- *          we do not run such configuration.
- * @summary Runs System.gc() with different flags.
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational gc.TestSystemGC
+ * @run main/othervm -XX:+UseZGC gc.TestSystemGC
  */
 
 public class TestSystemGC {

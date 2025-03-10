@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/psVirtualspace.hpp"
-#include "memory/virtualspace.hpp"
+#include "memory/reservedSpace.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 
@@ -78,7 +77,7 @@ bool PSVirtualSpace::expand_by(size_t bytes) {
 
   char* const base_addr = committed_high_addr();
   bool result = special() ||
-         os::commit_memory(base_addr, bytes, alignment(), !ExecMem, mtGC);
+         os::commit_memory(base_addr, bytes, alignment(), !ExecMem);
   if (result) {
     _committed_high_addr += bytes;
   }
@@ -95,7 +94,7 @@ bool PSVirtualSpace::shrink_by(size_t bytes) {
   }
 
   char* const base_addr = committed_high_addr() - bytes;
-  bool result = special() || os::uncommit_memory(base_addr, bytes, !ExecMem, mtGC);
+  bool result = special() || os::uncommit_memory(base_addr, bytes);
   if (result) {
     _committed_high_addr -= bytes;
   }

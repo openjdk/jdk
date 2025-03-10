@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,20 @@
 # questions.
 #
 
-include CopyCommon.gmk
-
 ################################################################################
 
-XML_LIB_SRC := $(TOPDIR)/src/java.xml/share/conf
+include CopyCommon.gmk
+include Modules.gmk
 
-$(CONF_DST_DIR)/jaxp.properties: $(XML_LIB_SRC)/jaxp.properties
-	$(call install-file)
+################################################################################
+# Copy property and template files from share/conf to CONF_DST_DIR
+#
+$(eval $(call SetupCopyFiles, COPY_XML_MODULE_CONF, \
+    DEST := $(CONF_DST_DIR), \
+    SRC := $(TOPDIR)/src/java.xml/share/conf, \
+    FILES := jaxp.properties jaxp-strict.properties.template, \
+))
 
-TARGETS := $(CONF_DST_DIR)/jaxp.properties
+TARGETS += $(COPY_XML_MODULE_CONF)
 
 ################################################################################

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -128,8 +128,8 @@
   static const bool int_in_long = true;
 
   // Does the CPU supports vector variable shift instructions?
-  static constexpr bool supports_vector_variable_shifts(void) {
-    return false;
+  static bool supports_vector_variable_shifts(void) {
+    return UseRVV;
   }
 
   // Does target support predicated operation emulation.
@@ -138,18 +138,18 @@
   }
 
   // Does the CPU supports vector variable rotate instructions?
-  static constexpr bool supports_vector_variable_rotates(void) {
-    return false;
+  static bool supports_vector_variable_rotates(void) {
+    return UseZvbb;
   }
 
   // Does the CPU supports vector constant rotate instructions?
-  static constexpr bool supports_vector_constant_rotates(int shift) {
-    return false;
+  static bool supports_vector_constant_rotates(int shift) {
+    return UseZvbb;
   }
 
   // Does the CPU supports vector unsigned comparison instructions?
-  static constexpr bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
-    return false;
+  static bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
+    return UseRVV;
   }
 
   // Some microarchitectures have mask registers used on vectors

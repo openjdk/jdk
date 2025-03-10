@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,9 +80,6 @@ static char *logfile = NULL;                /* Name of logfile (if logging) */
 static unsigned logflags = 0;               /* Log flags */
 
 static char *names;                         /* strings derived from OnLoad options */
-
-static jboolean allowStartViaJcmd = JNI_FALSE;  /* if true we allow the debugging to be started via a jcmd */
-static jboolean startedViaJcmd = JNI_FALSE;     /* if false, we have not yet started debugging via a jcmd */
 
 /*
  * Elements of the transports bag
@@ -983,7 +980,6 @@ parseOptions(char *options)
     int length;
     char *str;
     char *errmsg;
-    jboolean onJcmd = JNI_FALSE;
 
     /* Set defaults */
     gdata->assertOn     = DEFAULT_ASSERT_ON;
@@ -994,6 +990,8 @@ parseOptions(char *options)
     gdata->vthreadsSupported = JNI_TRUE;
     gdata->includeVThreads = JNI_FALSE;
     gdata->rememberVThreadsWhenDisconnected = JNI_FALSE;
+
+    gdata->jvmti_data_dump = JNI_FALSE;
 
     /* Options being NULL will end up being an error. */
     if (options == NULL) {
@@ -1159,6 +1157,13 @@ parseOptions(char *options)
             if ( dopause ) {
                 do_pause();
             }
+        } else if (strcmp(buf, "datadump") == 0) {
+          // Enable JVMTI DATA_DUMP_REQUEST support.
+          // This is not a documented flag. This feature is experimental and is only intended
+          // to be used by debug agent developers. See comment for cbDataDump() for more details.
+          if ( !get_boolean(&str, &(gdata->jvmti_data_dump)) ) {
+                goto syntax_error;
+            }
         } else if (strcmp(buf, "coredump") == 0) {
             if ( !get_boolean(&str, &docoredump) ) {
                 goto syntax_error;
@@ -1222,10 +1227,6 @@ parseOptions(char *options)
             if ( !get_boolean(&str, &useStandardAlloc) ) {
                 goto syntax_error;
             }
-        } else if (strcmp(buf, "onjcmd") == 0) {
-            if (!get_boolean(&str, &onJcmd)) {
-                goto syntax_error;
-            }
         } else {
             goto syntax_error;
         }
@@ -1274,20 +1275,6 @@ parseOptions(char *options)
             errmsg = "Specify launch=<command line> when using onthrow or onuncaught suboption";
             goto bad_option_with_errmsg;
         }
-    }
-
-    if (onJcmd) {
-        if (launchOnInit != NULL) {
-            errmsg = "Cannot combine onjcmd and launch suboptions";
-            goto bad_option_with_errmsg;
-        }
-        if (!isServer) {
-            errmsg = "Can only use onjcmd with server=y";
-            goto bad_option_with_errmsg;
-        }
-        suspendOnInit = JNI_FALSE;
-        initOnStartup = JNI_FALSE;
-        allowStartViaJcmd = JNI_TRUE;
     }
 
     return JNI_TRUE;
@@ -1357,46 +1344,4 @@ debugInit_exit(jvmtiError error, const char *msg)
 
     // Last chance to die, this kills the entire process.
     forceExit(EXIT_JVMTI_ERROR);
-}
-
-static jboolean getFirstTransport(void *item, void *arg)
-{
-    TransportSpec** store = arg;
-    *store = item;
-
-    return JNI_FALSE; /* Want the first */
-}
-
-/* Call to start up debugging. */
-JNIEXPORT char const* JNICALL debugInit_startDebuggingViaCommand(JNIEnv* env, jthread thread, char const** transport_name,
-                                                                char const** address, jboolean* first_start) {
-    jboolean is_first_start = JNI_FALSE;
-    TransportSpec* spec = NULL;
-
-    if (!vmInitialized) {
-        return "Not yet initialized. Try again later.";
-    }
-
-    if (!allowStartViaJcmd) {
-        return "Starting debugging via jcmd was not enabled via the onjcmd option of the jdwp agent.";
-    }
-
-    if (!startedViaJcmd) {
-        startedViaJcmd = JNI_TRUE;
-        is_first_start = JNI_TRUE;
-        initialize(env, thread, EI_VM_INIT, NULL);
-    }
-
-    bagEnumerateOver(transports, getFirstTransport, &spec);
-
-    if ((spec != NULL) && (transport_name != NULL) && (address != NULL)) {
-        *transport_name = spec->name;
-        *address = spec->address;
-    }
-
-    if (first_start != NULL) {
-        *first_start = is_first_start;
-    }
-
-    return NULL;
 }

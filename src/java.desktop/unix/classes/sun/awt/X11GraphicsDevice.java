@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.awt;
 
-import java.awt.AWTPermission;
 import java.awt.DisplayMode;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
@@ -33,13 +32,14 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Window;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 
+import sun.awt.image.SurfaceManager;
 import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.loops.SurfaceType;
@@ -62,9 +62,8 @@ public final class X11GraphicsDevice extends GraphicsDevice
      * therefore methods, which is using this id should be ready to it.
      */
     private volatile int screen;
-    HashMap<SurfaceType, Object> x11ProxyKeyMap = new HashMap<>();
+    Map<SurfaceType, SurfaceManager.ProxyCache> x11ProxyCacheMap = Collections.synchronizedMap(new HashMap<>());
 
-    private static AWTPermission fullScreenExclusivePermission;
     private static Boolean xrandrExtSupported;
     private SunDisplayChanger topLevels = new SunDisplayChanger();
     private DisplayMode origDisplayMode;
@@ -72,6 +71,15 @@ public final class X11GraphicsDevice extends GraphicsDevice
     private volatile Insets insets;
     private boolean shutdownHookRegistered;
     private int scale;
+
+    // Wayland clients are by design not allowed to change the resolution in Wayland.
+    // XRandR in Xwayland is just an emulation, it doesn't actually change the resolution.
+    // This emulation is per window/x11 client, so different clients can have
+    // different emulated resolutions at the same time.
+    // So any request to get the current display mode will always return
+    // the original screen resolution, even if we are in emulated resolution.
+    // To handle this situation, we store the last set display mode in this variable.
+    private volatile DisplayMode xwlCurrentDisplayMode;
 
     public X11GraphicsDevice(int screennum) {
         this.screen = screennum;
@@ -86,15 +94,8 @@ public final class X11GraphicsDevice extends GraphicsDevice
         return screen;
     }
 
-    public Object getProxyKeyFor(SurfaceType st) {
-        synchronized (x11ProxyKeyMap) {
-            Object o = x11ProxyKeyMap.get(st);
-            if (o == null) {
-                o = new Object();
-                x11ProxyKeyMap.put(st, o);
-            }
-            return o;
-        }
+    public SurfaceManager.ProxyCache getProxyCacheFor(SurfaceType st) {
+        return x11ProxyCacheMap.computeIfAbsent(st, unused -> new SurfaceManager.ProxyCache());
     }
 
     /**
@@ -125,6 +126,20 @@ public final class X11GraphicsDevice extends GraphicsDevice
 
     private Rectangle getBoundsImpl() {
         Rectangle rect = pGetBounds(getScreen());
+
+        if (XToolkit.isOnWayland() && xwlCurrentDisplayMode != null) {
+            // XRandR resolution change in Xwayland is an emulation,
+            // and implemented in such a way that multiple display modes
+            // for a device are only available in a single screen scenario,
+            // if we have multiple screens they will each have a single display mode
+            // (no emulated resolution change is available).
+            // So we don't have to worry about x and y for a screen here.
+            rect.setSize(
+                    xwlCurrentDisplayMode.getWidth(),
+                    xwlCurrentDisplayMode.getHeight()
+            );
+        }
+
         if (getScaleFactor() != 1) {
             rect.x = scaleDown(rect.x);
             rect.y = scaleDown(rect.y);
@@ -341,23 +356,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
 
     @Override
     public boolean isFullScreenSupported() {
-        boolean fsAvailable = isXrandrExtensionSupported();
-        if (fsAvailable) {
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                if (fullScreenExclusivePermission == null) {
-                    fullScreenExclusivePermission =
-                        new AWTPermission("fullScreenExclusive");
-                }
-                try {
-                    security.checkPermission(fullScreenExclusivePermission);
-                } catch (SecurityException e) {
-                    return false;
-                }
-            }
-        }
-        return fsAvailable;
+        return isXrandrExtensionSupported();
     }
 
     @Override
@@ -424,10 +423,19 @@ public final class X11GraphicsDevice extends GraphicsDevice
     @Override
     public synchronized DisplayMode getDisplayMode() {
         if (isFullScreenSupported()) {
+            if (XToolkit.isOnWayland() && xwlCurrentDisplayMode != null) {
+                return xwlCurrentDisplayMode;
+            }
+
             DisplayMode mode = getCurrentDisplayMode(screen);
             if (mode == null) {
                 mode = getDefaultDisplayMode();
             }
+
+            if (XToolkit.isOnWayland()) {
+                xwlCurrentDisplayMode = mode;
+            }
+
             return mode;
         } else {
             if (origDisplayMode == null) {
@@ -451,7 +459,6 @@ public final class X11GraphicsDevice extends GraphicsDevice
         return modes.toArray(retArray);
     }
 
-    @SuppressWarnings("removal")
     @Override
     public synchronized void setDisplayMode(DisplayMode dm) {
         if (!isDisplayChangeSupported()) {
@@ -478,30 +485,30 @@ public final class X11GraphicsDevice extends GraphicsDevice
             // is already in the original DisplayMode at that time, this
             // hook will have no effect)
             shutdownHookRegistered = true;
-            PrivilegedAction<Void> a = () -> {
-                Runnable r = () -> {
-                    Window old = getFullScreenWindow();
-                    if (old != null) {
-                        exitFullScreenExclusive(old);
-                        if (isDisplayChangeSupported()) {
-                            setDisplayMode(origDisplayMode);
-                        }
+            Runnable r = () -> {
+                Window old = getFullScreenWindow();
+                if (old != null) {
+                    exitFullScreenExclusive(old);
+                    if (isDisplayChangeSupported()) {
+                        setDisplayMode(origDisplayMode);
                     }
-                };
-                String name = "Display-Change-Shutdown-Thread-" + screen;
-                Thread t = new Thread(
-                      ThreadGroupUtils.getRootThreadGroup(), r, name, 0, false);
-                t.setContextClassLoader(null);
-                Runtime.getRuntime().addShutdownHook(t);
-                return null;
+                }
             };
-            AccessController.doPrivileged(a);
+            String name = "Display-Change-Shutdown-Thread-" + screen;
+            Thread t = new Thread(
+                  ThreadGroupUtils.getRootThreadGroup(), r, name, 0, false);
+            t.setContextClassLoader(null);
+            Runtime.getRuntime().addShutdownHook(t);
         }
 
         // switch to the new DisplayMode
         configDisplayMode(screen,
                           dm.getWidth(), dm.getHeight(),
                           dm.getRefreshRate());
+
+        if (XToolkit.isOnWayland()) {
+            xwlCurrentDisplayMode = dm;
+        }
 
         // update bounds of the fullscreen window
         w.setBounds(0, 0, dm.getWidth(), dm.getHeight());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
  *  Arguments order <KeyExchangeAlgorithm> <Provider> <KeyGenAlgorithm>
  *                  <keySize> <Curve*>
  * @library /test/lib
- * @run main NegativeTest DiffieHellman SunJCE DiffieHellman 1024
+ * @run main NegativeTest DiffieHellman SunJCE DiffieHellman 2048
  * @run main NegativeTest ECDH SunEC EC 256
  * @run main NegativeTest XDH SunEC XDH 255 X25519
  * @run main NegativeTest XDH SunEC XDH 448 X448
@@ -59,13 +59,14 @@ import java.security.spec.XECPublicKeySpec;
 import java.util.Arrays;
 import java.util.HexFormat;
 import javax.crypto.KeyAgreement;
+import jdk.test.lib.security.SecurityUtils;
 
 public class NegativeTest {
 
     public static void main(String[] args) throws Exception {
 
         String kaAlgo = args[0];
-        String provider = args[1];
+        String provider = System.getProperty("test.provider.name", args[1]);
         String kpgAlgo = args[2];
         int keySize = Integer.parseInt(args[3]);
         String kpgInit = (args.length > 4) ? args[4] : args[2];
@@ -93,7 +94,7 @@ public class NegativeTest {
                 Security.getProvider(provider));
         switch (kpgInit) {
             case "DiffieHellman":
-                kpg.initialize(512);
+                kpg.initialize(SecurityUtils.getTestKeySize(kpgInit));
                 break;
             case "EC":
                 kpg.initialize(256);

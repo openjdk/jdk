@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ public class ArtifactResolver {
         try {
             String managerName = System.getProperty("jdk.test.lib.artifacts.artifactmanager");
             if (managerName != null) {
-                manager = (ArtifactManager) Class.forName(managerName).newInstance();
+                manager = (ArtifactManager) Class.forName(managerName).getDeclaredConstructor().newInstance();
             } else if (System.getenv().containsKey(JibArtifactManager.JIB_HOME_ENV_NAME)) {
                 manager = JibArtifactManager.newInstance();
             } else {

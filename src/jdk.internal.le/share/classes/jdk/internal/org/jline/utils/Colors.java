@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -20,6 +20,8 @@ import java.util.stream.Stream;
 import static jdk.internal.org.jline.terminal.TerminalBuilder.PROP_COLOR_DISTANCE;
 
 public class Colors {
+
+    // @spotless:off
 
     /**
      * Default 256 colors palette
@@ -111,24 +113,26 @@ public class Colors {
             0x2e2e2e, 0x5c5c5c, 0x737373, 0x8b8b8b, 0xa2a2a2, 0xb9b9b9, 0xd0d0d0, 0xe7e7e7,
     };
 
+    // @spotless:on
+
     /** D50 illuminant for CAM color spaces */
-    public static final double[] D50 = new double[] { 96.422f, 100.0f,  82.521f };
+    public static final double[] D50 = new double[] {96.422f, 100.0f, 82.521f};
     /** D65 illuminant for CAM color spaces */
-    public static final double[] D65 = new double[] { 95.047, 100.0, 108.883 };
+    public static final double[] D65 = new double[] {95.047, 100.0, 108.883};
 
     /** Average surrounding for CAM color spaces */
-    public static final double[] averageSurrounding = new double[] { 1.0, 0.690, 1.0 };
+    public static final double[] averageSurrounding = new double[] {1.0, 0.690, 1.0};
     /** Dim surrounding for CAM color spaces */
-    public static final double[] dimSurrounding =     new double[] { 0.9, 0.590, 0.9 };
+    public static final double[] dimSurrounding = new double[] {0.9, 0.590, 0.9};
     /** Dark surrounding for CAM color spaces */
-    public static final double[] darkSurrounding =    new double[] { 0.8, 0.525, 0.8 };
+    public static final double[] darkSurrounding = new double[] {0.8, 0.525, 0.8};
 
     /** sRGB encoding environment */
-    public static final double[] sRGB_encoding_environment = vc(D50,  64.0,  64.0/5, dimSurrounding);
+    public static final double[] sRGB_encoding_environment = vc(D50, 64.0, 64.0 / 5, dimSurrounding);
     /** sRGB typical environment */
-    public static final double[] sRGB_typical_environment  = vc(D50, 200.0, 200.0/5, averageSurrounding);
+    public static final double[] sRGB_typical_environment = vc(D50, 200.0, 200.0 / 5, averageSurrounding);
     /** Adobe RGB environment */
-    public static final double[] AdobeRGB_environment      = vc(D65, 160.0, 160.0/5, averageSurrounding);
+    public static final double[] AdobeRGB_environment = vc(D65, 160.0, 160.0 / 5, averageSurrounding);
 
     private static int[] COLORS_256 = DEFAULT_COLORS_256;
 
@@ -149,8 +153,9 @@ public class Colors {
         if (COLOR_NAMES == null) {
             Map<String, Integer> colors = new LinkedHashMap<>();
             try (InputStream is = InfoCmp.class.getResourceAsStream("colors.txt");
-                 BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                br.lines().map(String::trim)
+                    BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                br.lines()
+                        .map(String::trim)
                         .filter(s -> !s.startsWith("#"))
                         .filter(s -> !s.isEmpty())
                         .forEachOrdered(s -> {
@@ -206,7 +211,7 @@ public class Colors {
         if (dist == null) {
             dist = System.getProperty(PROP_COLOR_DISTANCE, "cie76");
         }
-        return doGetDistance(dist);
+        return new NamedDistance(dist, doGetDistance(dist));
     }
 
     private static Distance doGetDistance(String dist) {
@@ -216,7 +221,7 @@ public class Colors {
                 double[] c1 = rgb(p1);
                 double[] c2 = rgb(p2);
                 double rmean = (c1[0] + c2[0]) / 2.0;
-                double[] w = { 2.0 + rmean, 4.0, 3.0 - rmean };
+                double[] w = {2.0 + rmean, 4.0, 3.0 - rmean};
                 return scalar(c1, c2, w);
             };
         }
@@ -228,7 +233,7 @@ public class Colors {
         }
         if (dist.matches("lab\\(([0-9]+(\\.[0-9]+)?),([0-9]+(\\.[0-9]+)?)\\)")) {
             double[] w = getWeights(dist);
-            return (p1, p2) -> scalar(rgb2cielab(p1), rgb2cielab(p2), new double[] { w[0], w[1], w[1] });
+            return (p1, p2) -> scalar(rgb2cielab(p1), rgb2cielab(p2), new double[] {w[0], w[1], w[1]});
         }
         if (dist.equals("cie94")) {
             return (p1, p2) -> cie94(rgb2cielab(p1), rgb2cielab(p2));
@@ -251,7 +256,7 @@ public class Colors {
                 double[] c1 = camlab(p1, sRGB_typical_environment);
                 double[] c2 = camlab(p2, sRGB_typical_environment);
                 double[] w = getWeights(dist);
-                return scalar(c1, c2, new double[] { w[0], w[1], w[1] });
+                return scalar(c1, c2, new double[] {w[0], w[1], w[1]});
             };
         }
         if (dist.matches("camlch")) {
@@ -273,20 +278,37 @@ public class Colors {
     }
 
     private static double[] getWeights(String dist) {
-        String[] weights = dist.substring(dist.indexOf('(') + 1, dist.length() - 1).split(",");
+        String[] weights =
+                dist.substring(dist.indexOf('(') + 1, dist.length() - 1).split(",");
         return Stream.of(weights).mapToDouble(Double::parseDouble).toArray();
     }
 
     private static double scalar(double[] c1, double[] c2, double[] w) {
-        return sqr((c1[0] - c2[0]) * w[0])
-             + sqr((c1[1] - c2[1]) * w[1])
-             + sqr((c1[2] - c2[2]) * w[2]);
+        return sqr((c1[0] - c2[0]) * w[0]) + sqr((c1[1] - c2[1]) * w[1]) + sqr((c1[2] - c2[2]) * w[2]);
     }
 
     private static double scalar(double[] c1, double[] c2) {
-        return sqr(c1[0] - c2[0])
-             + sqr(c1[1] - c2[1])
-             + sqr(c1[2] - c2[2]);
+        return sqr(c1[0] - c2[0]) + sqr(c1[1] - c2[1]) + sqr(c1[2] - c2[2]);
+    }
+
+    private static class NamedDistance implements Distance {
+        private final String name;
+        private final Distance delegate;
+
+        public NamedDistance(String name, Distance delegate) {
+            this.name = name;
+            this.delegate = delegate;
+        }
+
+        @Override
+        public double compute(int c1, int c2) {
+            return delegate.compute(c1, c2);
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
     }
 
     private static final int L = 0;
@@ -325,7 +347,7 @@ public class Colors {
         double c_star_average_ab = (c_star_1_ab + c_star_2_ab) / 2.0;
         double c_star_average_ab_pot_3 = c_star_average_ab * c_star_average_ab * c_star_average_ab;
         double c_star_average_ab_pot_7 = c_star_average_ab_pot_3 * c_star_average_ab_pot_3 * c_star_average_ab;
-        double G = 0.5 * (1.0 - Math.sqrt(c_star_average_ab_pot_7 / (c_star_average_ab_pot_7 + 6103515625.0))); //25^7
+        double G = 0.5 * (1.0 - Math.sqrt(c_star_average_ab_pot_7 / (c_star_average_ab_pot_7 + 6103515625.0))); // 25^7
         double a1_prime = (1.0 + G) * lab1[A];
         double a2_prime = (1.0 + G) * lab2[A];
         double C_prime_1 = Math.sqrt(a1_prime * a1_prime + lab1[B] * lab1[B]);
@@ -365,16 +387,18 @@ public class Colors {
                 + 0.24 * Math.cos(Math.toRadians(h_prime_average * 2.0))
                 + 0.32 * Math.cos(Math.toRadians(h_prime_average * 3.0 + 6.0))
                 - 0.20 * Math.cos(Math.toRadians(h_prime_average * 4.0 - 63.0));
-        double S_L = 1.0 + ((0.015 * L_prime_average_minus_50_square) / Math.sqrt(20.0 + L_prime_average_minus_50_square));
+        double S_L =
+                1.0 + ((0.015 * L_prime_average_minus_50_square) / Math.sqrt(20.0 + L_prime_average_minus_50_square));
         double S_C = 1.0 + 0.045 * C_prime_average;
         double S_H = 1.0 + 0.015 * T * C_prime_average;
         double h_prime_average_minus_275_div_25 = (h_prime_average - 275.0) / (25.0);
-        double h_prime_average_minus_275_div_25_square = h_prime_average_minus_275_div_25 * h_prime_average_minus_275_div_25;
+        double h_prime_average_minus_275_div_25_square =
+                h_prime_average_minus_275_div_25 * h_prime_average_minus_275_div_25;
         double delta_theta = 30.0 * Math.exp(-h_prime_average_minus_275_div_25_square);
         double C_prime_average_pot_3 = C_prime_average * C_prime_average * C_prime_average;
         double C_prime_average_pot_7 = C_prime_average_pot_3 * C_prime_average_pot_3 * C_prime_average;
-        double R_C = 2.0 * Math.sqrt(C_prime_average_pot_7 / (C_prime_average_pot_7 + 6103515625.0)); //25^7
-        double R_T = - Math.sin(Math.toRadians(2.0 * delta_theta)) * R_C;
+        double R_C = 2.0 * Math.sqrt(C_prime_average_pot_7 / (C_prime_average_pot_7 + 6103515625.0)); // 25^7
+        double R_T = -Math.sin(Math.toRadians(2.0 * delta_theta)) * R_C;
         double dLKlsl = delta_L_prime / (kl * S_L);
         double dCkcsc = delta_C_prime / (kc * S_C);
         double dHkhsh = delta_H_prime / (kh * S_H);
@@ -392,11 +416,11 @@ public class Colors {
         double sM = ((1.0 / 0.0228) * Math.log(1.0 + 0.0228 * lch[1]));
         double a = sM * Math.cos(Math.toRadians(lch[2]));
         double b = sM * Math.sin(Math.toRadians(lch[2]));
-        return new double[] {sJ, a, b };
+        return new double[] {sJ, a, b};
     }
 
     static double camlch(double[] c1, double[] c2) {
-        return camlch(c1, c2, new double[] { 1.0, 1.0, 1.0 });
+        return camlch(c1, c2, new double[] {1.0, 1.0, 1.0});
     }
 
     static double camlch(double[] c1, double[] c2, double[] w) {
@@ -414,18 +438,16 @@ public class Colors {
     private static double hueDifference(double hue1, double hue2, double c) {
         double difference = (hue2 - hue1) % c;
         double ch = c / 2;
-        if (difference > ch)
-            difference -= c;
-        if (difference < -ch)
-            difference += c;
+        if (difference > ch) difference -= c;
+        if (difference < -ch) difference += c;
         return difference;
     }
 
     private static double[] rgb(int color) {
         int r = (color >> 16) & 0xFF;
-        int g = (color >>  8) & 0xFF;
-        int b = (color >>  0) & 0xFF;
-        return new double[] { r / 255.0, g / 255.0, b / 255.0 };
+        int g = (color >> 8) & 0xFF;
+        int b = (color >> 0) & 0xFF;
+        return new double[] {r / 255.0, g / 255.0, b / 255.0};
     }
 
     static double[] rgb2xyz(int color) {
@@ -454,13 +476,13 @@ public class Colors {
 
     static double[] lch2lab(double[] lch) {
         double toRad = Math.PI / 180;
-        return new double[] { lch[0], lch[1] * Math.cos(lch[2] * toRad), lch[1] * Math.sin(lch[2] * toRad) };
+        return new double[] {lch[0], lch[1] * Math.cos(lch[2] * toRad), lch[1] * Math.sin(lch[2] * toRad)};
     }
 
     private static double[] xyz2camlch(double[] xyz, double[] vc) {
         double[] XYZ = new double[] {xyz[0] * 100.0, xyz[1] * 100.0, xyz[2] * 100.0};
         double[] cam = forwardTransform(XYZ, vc);
-        return new double[] { cam[J], cam[M], cam[h] };
+        return new double[] {cam[J], cam[M], cam[h]};
     }
 
     /** Lightness */
@@ -478,12 +500,12 @@ public class Colors {
     /** Hue */
     public static final int h = 6;
 
-
     /** CIECAM02 appearance correlates */
     private static double[] forwardTransform(double[] XYZ, double[] vc) {
         // calculate sharpened cone response
         double[] RGB = forwardPreAdaptationConeResponse(XYZ);
-        // calculate corresponding (sharpened) cone response considering various luminance level and surround conditions in D
+        // calculate corresponding (sharpened) cone response considering various luminance level and surround conditions
+        // in D
         double[] RGB_c = forwardPostAdaptationConeResponse(RGB, vc);
         // calculate HPE equal area cone fundamentals
         double[] RGBPrime = CAT02toHPE(RGB_c);
@@ -501,37 +523,40 @@ public class Colors {
         // calculate eccentricity
         double e = ((12500.0 / 13.0) * vc[VC_N_C] * vc[VC_N_CB]) * (Math.cos(Math.toRadians(h) + 2.0) + 3.8);
         // get t
-        double t = e * Math.sqrt(Math.pow(a, 2.0) + Math.pow(b, 2.0)) / (RGBPrime_a[0] + RGBPrime_a[1] + 1.05 * RGBPrime_a[2]);
+        double t = e
+                * Math.sqrt(Math.pow(a, 2.0) + Math.pow(b, 2.0))
+                / (RGBPrime_a[0] + RGBPrime_a[1] + 1.05 * RGBPrime_a[2]);
         // calculate brightness
         double Q = (4.0 / vc[VC_C]) * Math.sqrt(J / 100.0) * (vc[VC_A_W] + 4.0) * Math.pow(vc[VC_F_L], 0.25);
         // calculate the correlates of chroma, colorfulness, and saturation
-        double C = Math.signum(t) * Math.pow(Math.abs(t), 0.9) * Math.sqrt(J / 100.0) * Math.pow(1.64- Math.pow(0.29, vc[VC_N]), 0.73);
+        double C = Math.signum(t)
+                * Math.pow(Math.abs(t), 0.9)
+                * Math.sqrt(J / 100.0)
+                * Math.pow(1.64 - Math.pow(0.29, vc[VC_N]), 0.73);
         double M = C * Math.pow(vc[VC_F_L], 0.25);
         double s = 100.0 * Math.sqrt(M / Q);
         // calculate hue composition
         double H = calculateH(h);
-        return new double[] { J, Q, C, M, s, H, h };
+        return new double[] {J, Q, C, M, s, H, h};
     }
 
     private static double calculateH(double h) {
-        if (h < 20.14)
-            h = h + 360;
+        if (h < 20.14) h = h + 360;
         double i;
-        if (h >= 20.14 && h < 90.0) {  // index i = 1
+        if (h >= 20.14 && h < 90.0) { // index i = 1
             i = (h - 20.14) / 0.8;
             return 100.0 * i / (i + (90 - h) / 0.7);
         } else if (h < 164.25) { // index i = 2
             i = (h - 90) / 0.7;
             return 100.0 + 100.0 * i / (i + (164.25 - h) / 1);
-        } else if (h < 237.53) {  // index i = 3
+        } else if (h < 237.53) { // index i = 3
             i = (h - 164.25) / 1.0;
             return 200.0 + 100.0 * i / (i + (237.53 - h) / 1.2);
-        } else if (h <= 380.14) {  // index i = 4
+        } else if (h <= 380.14) { // index i = 4
             i = (h - 237.53) / 1.2;
             double H = 300.0 + 100.0 * i / (i + (380.14 - h) / 0.8);
             // don't use 400 if we can use 0
-            if (H <= 400.0 && H >= 399.999)
-                H = 0;
+            if (H <= 400.0 && H >= 399.999) H = 0;
             return H;
         } else {
             throw new IllegalArgumentException("h outside assumed range 0..360: " + h);
@@ -540,8 +565,8 @@ public class Colors {
 
     private static double[] forwardResponseCompression(double[] RGB, double[] vc) {
         double[] result = new double[3];
-        for(int channel = 0; channel < RGB.length; channel++) {
-            if(RGB[channel] >= 0) {
+        for (int channel = 0; channel < RGB.length; channel++) {
+            if (RGB[channel] >= 0) {
                 double n = Math.pow(vc[VC_F_L] * RGB[channel] / 100.0, 0.42);
                 result[channel] = 400.0 * n / (n + 27.13) + 0.1;
             } else {
@@ -553,22 +578,22 @@ public class Colors {
     }
 
     private static double[] forwardPostAdaptationConeResponse(double[] RGB, double[] vc) {
-        return new double[] { vc[VC_D_RGB_R] * RGB[0], vc[VC_D_RGB_G] * RGB[1], vc[VC_D_RGB_B] * RGB[2] };
+        return new double[] {vc[VC_D_RGB_R] * RGB[0], vc[VC_D_RGB_G] * RGB[1], vc[VC_D_RGB_B] * RGB[2]};
     }
 
     public static double[] CAT02toHPE(double[] RGB) {
         double[] RGBPrime = new double[3];
-        RGBPrime[0] =  0.7409792 * RGB[0] + 0.2180250 * RGB[1] + 0.0410058 * RGB[2];
-        RGBPrime[1] =  0.2853532 * RGB[0] + 0.6242014 * RGB[1] + 0.0904454 * RGB[2];
+        RGBPrime[0] = 0.7409792 * RGB[0] + 0.2180250 * RGB[1] + 0.0410058 * RGB[2];
+        RGBPrime[1] = 0.2853532 * RGB[0] + 0.6242014 * RGB[1] + 0.0904454 * RGB[2];
         RGBPrime[2] = -0.0096280 * RGB[0] - 0.0056980 * RGB[1] + 1.0153260 * RGB[2];
         return RGBPrime;
     }
 
     private static double[] forwardPreAdaptationConeResponse(double[] XYZ) {
         double[] RGB = new double[3];
-        RGB[0] =  0.7328 * XYZ[0] + 0.4296 * XYZ[1] - 0.1624 * XYZ[2];
+        RGB[0] = 0.7328 * XYZ[0] + 0.4296 * XYZ[1] - 0.1624 * XYZ[2];
         RGB[1] = -0.7036 * XYZ[0] + 1.6975 * XYZ[1] + 0.0061 * XYZ[2];
-        RGB[2] =  0.0030 * XYZ[0] + 0.0136 * XYZ[1] + 0.9834 * XYZ[2];
+        RGB[2] = 0.0030 * XYZ[0] + 0.0136 * XYZ[1] + 0.9834 * XYZ[2];
         return RGB;
     }
 
@@ -581,8 +606,8 @@ public class Colors {
     static final int VC_Z_W = 2;
     static final int VC_L_A = 3;
     static final int VC_Y_B = 4;
-    static final int VC_F =   5;
-    static final int VC_C =   6;
+    static final int VC_F = 5;
+    static final int VC_C = 6;
     static final int VC_N_C = 7;
 
     static final int VC_Z = 8;
@@ -607,33 +632,33 @@ public class Colors {
         vc[VC_N_C] = surrounding[SUR_N_C];
 
         double[] RGB_w = forwardPreAdaptationConeResponse(xyz_w);
-        double D = Math.max(0.0, Math.min(1.0, vc[VC_F] * (1.0 - (1.0 / 3.6) * Math.pow(Math.E, (-L_A - 42.0) / 92.0))));
+        double D =
+                Math.max(0.0, Math.min(1.0, vc[VC_F] * (1.0 - (1.0 / 3.6) * Math.pow(Math.E, (-L_A - 42.0) / 92.0))));
         double Yw = xyz_w[1];
         double[] RGB_c = new double[] {
-                (D * Yw / RGB_w[0]) + (1.0 - D),
-                (D * Yw / RGB_w[1]) + (1.0 - D),
-                (D * Yw / RGB_w[2]) + (1.0 - D),
+            (D * Yw / RGB_w[0]) + (1.0 - D), (D * Yw / RGB_w[1]) + (1.0 - D), (D * Yw / RGB_w[2]) + (1.0 - D),
         };
 
         // calculate increase in brightness and colorfulness caused by brighter viewing environments
         double L_Ax5 = 5.0 * L_A;
         double k = 1.0 / (L_Ax5 + 1.0);
         double kpow4 = Math.pow(k, 4.0);
-        vc[VC_F_L] = 0.2 * kpow4 * (L_Ax5) + 0.1 * Math.pow(1.0 - kpow4, 2.0) * Math.pow(L_Ax5, 1.0/3.0);
+        vc[VC_F_L] = 0.2 * kpow4 * (L_Ax5) + 0.1 * Math.pow(1.0 - kpow4, 2.0) * Math.pow(L_Ax5, 1.0 / 3.0);
 
         // calculate response compression on J and C caused by background lightness.
         vc[VC_N] = Y_b / Yw;
         vc[VC_Z] = 1.48 + Math.sqrt(vc[VC_N]);
 
         vc[VC_N_BB] = 0.725 * Math.pow(1.0 / vc[VC_N], 0.2);
-        vc[VC_N_CB] = vc[VC_N_BB]; // chromatic contrast factors (calculate increase in J, Q, and C caused by dark backgrounds)
+        vc[VC_N_CB] = vc[
+                VC_N_BB]; // chromatic contrast factors (calculate increase in J, Q, and C caused by dark backgrounds)
 
         // calculate achromatic response to white
         double[] RGB_wc = new double[] {RGB_c[0] * RGB_w[0], RGB_c[1] * RGB_w[1], RGB_c[2] * RGB_w[2]};
         double[] RGBPrime_w = CAT02toHPE(RGB_wc);
         double[] RGBPrime_aw = new double[3];
-        for(int channel = 0; channel < RGBPrime_w.length; channel++) {
-            if(RGBPrime_w[channel] >= 0) {
+        for (int channel = 0; channel < RGBPrime_w.length; channel++) {
+            if (RGBPrime_w[channel] >= 0) {
                 double n = Math.pow(vc[VC_F_L] * RGBPrime_w[channel] / 100.0, 0.42);
                 RGBPrime_aw[channel] = 400.0 * n / (n + 27.13) + 0.1;
             } else {
@@ -660,7 +685,7 @@ public class Colors {
         double x = vr * 0.4124564 + vg * 0.3575761 + vb * 0.1804375;
         double y = vr * 0.2126729 + vg * 0.7151522 + vb * 0.0721750;
         double z = vr * 0.0193339 + vg * 0.1191920 + vb * 0.9503041;
-        return new double[] { x, y, z };
+        return new double[] {x, y, z};
     }
 
     private static double pivotRgb(double n) {
@@ -674,11 +699,12 @@ public class Colors {
         double l = 116.0 * fy - 16.0;
         double a = 500.0 * (fx - fy);
         double b = 200.0 * (fy - fz);
-        return new double[] { l, a, b };
+        return new double[] {l, a, b};
     }
 
     private static final double epsilon = 216.0 / 24389.0;
     private static final double kappa = 24389.0 / 27.0;
+
     private static double pivotXyz(double n) {
         return n > epsilon ? Math.cbrt(n) : (kappa * n + 16) / 116;
     }
@@ -686,5 +712,4 @@ public class Colors {
     private static double sqr(double n) {
         return n * n;
     }
-
 }

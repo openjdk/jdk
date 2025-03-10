@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 
 package nsk.share.test;
+
+import jtreg.SkippedException;
 
 import nsk.share.log.*;
 import nsk.share.runner.*;
@@ -82,6 +84,8 @@ public class Tests {
                                         ((Runnable) o).run();
                                 if (o instanceof TestExitCode)
                                         exitCode = ((TestExitCode) o).getExitCode();
+                        } catch (SkippedException se) {
+                                throw se;
                         } catch (RuntimeException t) {
                                 getLog().error(t);
                                 exitCode = 97;

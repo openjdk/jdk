@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
@@ -126,6 +125,22 @@ bool ClassLoadingService::set_verbose(bool verbose) {
   LogConfiguration::configure_stdout(level, false, LOG_TAGS(class, load));
   reset_trace_class_unloading();
   return verbose;
+}
+
+bool ClassLoadingService::get_verbose() {
+  for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
+    // set_verbose looks for a non-exact match for class+load,
+    // so look for all tag sets that match class+load*
+    if (ts->contains(LogTag::_class) &&
+        ts->contains(LogTag::_load)) {
+      LogLevelType l = ts->level_for(LogConfiguration::StdoutLog);
+      if (l != LogLevel::Info && l != LogLevel::Debug && l != LogLevel::Trace) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 // Caller to this function must own Management_lock

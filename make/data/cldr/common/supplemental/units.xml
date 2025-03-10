@@ -110,7 +110,11 @@ For terms of use, see http://www.unicode.org/copyright.html
         <unitQuantity baseUnit='second' quantity='duration' status='simple'/> <!-- use duration because 'time' can mean absolute time -->
         <unitQuantity baseUnit='second-ampere' quantity='electric-charge'/>
 
+        <!-- special duration, because months..years are not comparable to seconds -->
         <unitQuantity baseUnit='year' quantity='year-duration' status='simple'/> <!-- non-SI but here for ordering -->
+        
+        <!-- special duration, because nights are not comparable to seconds -->
+        <unitQuantity baseUnit='night' quantity='night-duration' status='simple'/>
         
         <unitQuantity baseUnit='ampere' quantity='electric-current' status='simple'/>
         <unitQuantity baseUnit='ampere-per-square-meter' quantity='current-density'/>
@@ -141,7 +145,6 @@ For terms of use, see http://www.unicode.org/copyright.html
         <unitQuantity baseUnit='pixel-per-meter' quantity='resolution'/>
 
         <unitQuantity baseUnit='em' quantity='typewidth' status='simple'/>
-        
     </unitQuantities>    
     <convertUnits>
         <!-- Values where possible from:
@@ -238,6 +241,9 @@ For terms of use, see http://www.unicode.org/copyright.html
         <convertUnit source='decade' baseUnit='year' factor='10' systems="metric_adjacent ussystem uksystem astronomical"/>
         <convertUnit source='century' baseUnit='year' factor='100' systems="metric_adjacent ussystem uksystem astronomical"/>
         
+        <!-- night-duration -->
+        <convertUnit source='night' baseUnit='night' systems="metric_adjacent uksystem ussystem"/>
+        
         <!-- electric-current -->
         <convertUnit source='ampere' baseUnit='ampere' systems="si metric prefixable"/>
         
@@ -289,7 +295,7 @@ For terms of use, see http://www.unicode.org/copyright.html
         <convertUnit source='pascal' baseUnit='kilogram-per-meter-square-second' systems="si metric prefixable"/>
         <convertUnit source='bar' baseUnit='kilogram-per-meter-square-second' factor='100000' systems="si_acceptable metric prefixable"/>
         <convertUnit source='atmosphere' baseUnit='kilogram-per-meter-square-second' factor='101325' systems="ussystem uksystem "/>
-        <convertUnit source='gasoline-energy-density' baseUnit='kilogram-per-meter-square-second' factor='33.705 * 3600 * 1000/gal_to_m3'  systems="metric_adjacent ussystem uksystem" description="Constructed so that 1 gallon-gasoline-energy-density = 33.705 kWh as per https://www3.epa.gov/otaq/gvg/learn-more-technology.htm"/>
+        <convertUnit source='gasoline-energy-density' baseUnit='kilogram-per-meter-square-second' factor='33.705 * 3600 * 1000/gal_to_m3'  systems="ussystem uksystem" description="Constructed so that 1 gallon-gasoline-energy-density = 33.705 kWh as per https://www3.epa.gov/otaq/gvg/learn-more-technology.htm"/>
 
         <!-- pressure-per-length -->
         <convertUnit source='ofhg' baseUnit='kilogram-per-square-meter-square-second' factor='13595.1*gravity' systems="metric_adjacent uksystem ussystem"/>
@@ -342,8 +348,8 @@ For terms of use, see http://www.unicode.org/copyright.html
        
         <!-- speed -->
         <convertUnit source='knot' baseUnit='meter-per-second' factor='1852/3600' systems="ussystem uksystem si_acceptable"/>
+        <convertUnit source='light-speed' baseUnit='meter-per-second' factor='speed_of_light_meters_per_second' systems="ussystem uksystem si_acceptable"/>
         <convertUnit source='beaufort' baseUnit='meter-per-second' special='beaufort' systems="metric_adjacent"/>
-
         
         <!-- magnetic-induction -->
         <convertUnit source='tesla' baseUnit='kilogram-per-square-second-ampere' systems='si metric prefixable'/>
@@ -562,7 +568,7 @@ For terms of use, see http://www.unicode.org/copyright.html
         </unitPreferences>
         <unitPreferences category="speed" usage="wind">
             <unitPreference regions="001">kilometer-per-hour</unitPreference>
-            <unitPreference regions="FI KR NO PL RU SE">meter-per-second</unitPreference>
+            <unitPreference regions="CN DK FI JP KR NO PL RU SE">meter-per-second</unitPreference>
             <unitPreference regions="GB US">mile-per-hour</unitPreference>
         </unitPreferences>
         <unitPreferences category="temperature" usage="default">

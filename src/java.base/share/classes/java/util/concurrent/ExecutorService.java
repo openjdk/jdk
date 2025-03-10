@@ -156,14 +156,6 @@ public interface ExecutorService extends Executor, AutoCloseable {
      * <p>This method does not wait for previously submitted tasks to
      * complete execution.  Use {@link #awaitTermination awaitTermination}
      * to do that.
-     *
-     * @throws SecurityException if a security manager exists and
-     *         shutting down this ExecutorService may manipulate
-     *         threads that the caller is not permitted to modify
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")},
-     *         or the security manager's {@code checkAccess} method
-     *         denies access.
      */
     void shutdown();
 
@@ -182,13 +174,6 @@ public interface ExecutorService extends Executor, AutoCloseable {
      * task that fails to respond to interrupts may never terminate.
      *
      * @return list of tasks that never commenced execution
-     * @throws SecurityException if a security manager exists and
-     *         shutting down this ExecutorService may manipulate
-     *         threads that the caller is not permitted to modify
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")},
-     *         or the security manager's {@code checkAccess} method
-     *         denies access.
      */
     List<Runnable> shutdownNow();
 
@@ -397,13 +382,6 @@ public interface ExecutorService extends Executor, AutoCloseable {
      * The default implementation invokes {@code shutdown()} and waits for tasks
      * to complete execution with {@code awaitTermination}.
      *
-     * @throws SecurityException if a security manager exists and
-     *         shutting down this ExecutorService may manipulate
-     *         threads that the caller is not permitted to modify
-     *         because it does not hold {@link
-     *         java.lang.RuntimePermission}{@code ("modifyThread")},
-     *         or the security manager's {@code checkAccess} method
-     *         denies access.
      * @since 19
      */
     @Override

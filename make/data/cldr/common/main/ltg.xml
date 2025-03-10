@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="ltg"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="en" draft="unconfirmed">angļu</language>
+			<language type="ltg" draft="unconfirmed">latgalīšu</language>
+			<language type="lv" draft="unconfirmed">latvīšu</language>
+		</languages>
+		<territories>
+			<territory type="LV" draft="unconfirmed">Latveja</territory>
+		</territories>
+		<codePatterns>
+			<codePattern type="language" draft="unconfirmed">Volūda: {0}</codePattern>
+			<codePattern type="script" draft="unconfirmed">Raksteiba: {0}</codePattern>
+			<codePattern type="territory" draft="unconfirmed">Regions: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[aā b cč d eē f gģ h iī j kķ lļ m nņ oō p r sš t uū v y zž]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[q ŗ w x]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’‚ &quot;“”„ ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">janvars</month>
+							<month type="2" draft="unconfirmed">februars</month>
+							<month type="3" draft="unconfirmed">marts</month>
+							<month type="4" draft="unconfirmed">apreļs</month>
+							<month type="5" draft="unconfirmed">majs</month>
+							<month type="6" draft="unconfirmed">juņs</month>
+							<month type="7" draft="unconfirmed">juļs</month>
+							<month type="8" draft="unconfirmed">augusts</month>
+							<month type="9" draft="unconfirmed">septembris</month>
+							<month type="10" draft="unconfirmed">oktobris</month>
+							<month type="11" draft="unconfirmed">novembris</month>
+							<month type="12" draft="unconfirmed">decembris</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">janvars</month>
+							<month type="2" draft="unconfirmed">februars</month>
+							<month type="3" draft="unconfirmed">marts</month>
+							<month type="4" draft="unconfirmed">apreļs</month>
+							<month type="5" draft="unconfirmed">majs</month>
+							<month type="6" draft="unconfirmed">juņs</month>
+							<month type="7" draft="unconfirmed">juļs</month>
+							<month type="8" draft="unconfirmed">augusts</month>
+							<month type="9" draft="unconfirmed">septembris</month>
+							<month type="10" draft="unconfirmed">oktobris</month>
+							<month type="11" draft="unconfirmed">novembris</month>
+							<month type="12" draft="unconfirmed">decembris</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">svātdīne</day>
+							<day type="mon" draft="unconfirmed">pyrmūdīne</day>
+							<day type="tue" draft="unconfirmed">ūtardīne</day>
+							<day type="wed" draft="unconfirmed">trešdīne</day>
+							<day type="thu" draft="unconfirmed">catūrtdīne</day>
+							<day type="fri" draft="unconfirmed">pīktdīne</day>
+							<day type="sat" draft="unconfirmed">sastdīne</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">1. catūrksnis</quarter>
+							<quarter type="2" draft="unconfirmed">2. catūrksnis</quarter>
+							<quarter type="3" draft="unconfirmed">3. catūrksnis</quarter>
+							<quarter type="4" draft="unconfirmed">4. catūrksnis</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="unconfirmed">1.</quarter>
+							<quarter type="2" draft="unconfirmed">2.</quarter>
+							<quarter type="3" draft="unconfirmed">3.</quarter>
+							<quarter type="4" draft="unconfirmed">4.</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">prīškpušdīnē</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">piecpušdīnē</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0" draft="unconfirmed">pyrma myusu erys</era>
+						<era type="0" alt="variant" draft="unconfirmed">pyrma myusu erys</era>
+						<era type="1" draft="unconfirmed">myusu erā</era>
+						<era type="1" alt="variant" draft="unconfirmed">myusu erā</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="unconfirmed">p.m.e.</era>
+						<era type="1" draft="unconfirmed">m.e.</era>
+					</eraAbbr>
+				</eras>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="hm" draft="unconfirmed">h:mm a</dateFormatItem>
+						<dateFormatItem id="hms" draft="unconfirmed">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hmsv" draft="unconfirmed">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="yMd" draft="unconfirmed">d.MM.y.</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="unconfirmed">y. 'g'. d. MMM</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<regionFormat draft="unconfirmed">Laika jūsla: {0}</regionFormat>
+			<regionFormat type="daylight" draft="unconfirmed">{0}: vosorys laiks</regionFormat>
+			<regionFormat type="standard" draft="unconfirmed">{0}: standarta laiks</regionFormat>
+			<metazone type="GMT">
+				<long>
+					<standard draft="unconfirmed">Griničys laiks</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+		</symbols>
+		<currencies>
+			<currency type="EUR">
+				<displayName draft="unconfirmed">eiro</displayName>
+				<displayName count="other" draft="unconfirmed">eiro</displayName>
+			</currency>
+			<currency type="LVL">
+				<displayName draft="unconfirmed">Latvejis lats</displayName>
+				<displayName count="other" draft="unconfirmed">Latvejis lati</displayName>
+			</currency>
+			<currency type="LVR">
+				<displayName draft="unconfirmed">Latvejis rublis</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

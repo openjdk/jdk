@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @summary Verify the correct constantpool entries are created for invokedynamic instructions using
  *          the same bootstrap and type, but different name.
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.comp
@@ -35,7 +34,6 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- *          java.base/jdk.internal.classfile.impl
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.JarTask toolbox.JavacTask toolbox.JavapTask toolbox.ToolBox
  * @run main IndyCorrectInvocationName
@@ -165,12 +163,12 @@ public class IndyCorrectInvocationName implements Plugin {
 
         Path testClass = classes.resolve("Test.class");
         ClassModel cf = ClassFile.of().parse(testClass);
-        BootstrapMethodsAttribute bootAttr = cf.findAttribute(Attributes.BOOTSTRAP_METHODS).orElseThrow();
+        BootstrapMethodsAttribute bootAttr = cf.findAttribute(Attributes.bootstrapMethods()).orElseThrow();
         if (bootAttr.bootstrapMethodsSize() != 1) {
             throw new AssertionError("Incorrect number of bootstrap methods: " +
                                      bootAttr.bootstrapMethodsSize());
         }
-        CodeAttribute codeAttr = cf.methods().get(1).findAttribute(Attributes.CODE).orElseThrow();
+        CodeAttribute codeAttr = cf.methods().get(1).findAttribute(Attributes.code()).orElseThrow();
         Set<BootstrapMethodEntry> seenBootstraps = new HashSet<>();
         Set<NameAndTypeEntry> seenNameAndTypes = new HashSet<>();
         Set<String> seenNames = new HashSet<>();

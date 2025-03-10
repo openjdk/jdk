@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,10 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/mutex.hpp"
 
+class Thread;
+
 // Mutexes used in the VM.
 
-extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
 extern Mutex*   NMethodState_lock;               // a lock used to guard a compiled method state
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
 extern Mutex*   InvokeMethodTypeTable_lock;
@@ -40,16 +41,14 @@ extern Mutex*   SharedDictionary_lock;           // a lock on the CDS shared dic
 extern Monitor* ClassInitError_lock;             // a lock on the class initialization error table
 extern Mutex*   Module_lock;                     // a lock on module and package related data structures
 extern Mutex*   CompiledIC_lock;                 // a lock used to guard compiled IC patching and access
-extern Mutex*   InlineCacheBuffer_lock;          // a lock used to guard the InlineCacheBuffer
 extern Mutex*   VMStatistic_lock;                // a lock used to guard statistics count increment
 extern Mutex*   JmethodIdCreation_lock;          // a lock on creating JNI method identifiers
 extern Mutex*   JfieldIdCreation_lock;           // a lock on creating JNI static field identifiers
-extern Monitor* JNICritical_lock;                // a lock used while entering and exiting JNI critical regions, allows GC to sometimes get in
 extern Mutex*   JvmtiThreadState_lock;           // a lock on modification of JVMTI thread data
 extern Monitor* EscapeBarrier_lock;              // a lock to sync reallocating and relocking objects because of JVMTI access
 extern Monitor* JvmtiVTMSTransition_lock;        // a lock for Virtual Thread Mount State transition (VTMS transition) management
 extern Monitor* Heap_lock;                       // a lock on the heap
-#ifdef INCLUDE_PARALLELGC
+#if INCLUDE_PARALLELGC
 extern Mutex*   PSOldGenExpand_lock;         // a lock on expanding the heap
 #endif
 extern Mutex*   AdapterHandlerLibrary_lock;      // a lock on the AdapterHandlerLibrary
@@ -62,6 +61,8 @@ extern Monitor* CodeCache_lock;                  // a lock on the CodeCache
 extern Mutex*   TouchedMethodLog_lock;           // a lock on allocation of LogExecutedMethods info
 extern Mutex*   RetData_lock;                    // a lock on installation of RetData inside method data
 extern Monitor* VMOperation_lock;                // a lock on queue of vm_operations waiting to execute
+extern Monitor* ThreadsLockThrottle_lock;        // used by Thread start/exit to reduce competition for Threads_lock,
+                                                 // so a VM thread calling a safepoint is prioritized
 extern Monitor* Threads_lock;                    // a lock on the Threads table of active Java threads
                                                  // (also used by Safepoints too to block threads creation/destruction)
 extern Mutex*   NonJavaThreadsList_lock;         // a lock on the NonJavaThreads list
@@ -96,7 +97,6 @@ extern Mutex*   FullGCALot_lock;                 // a lock to make FullGCALot MT
 extern Mutex*   RawMonitor_lock;
 extern Mutex*   PerfDataMemAlloc_lock;           // a lock on the allocator for PerfData memory for performance data
 extern Mutex*   PerfDataManager_lock;            // a long on access to PerfDataManager resources
-extern Mutex*   OopMapCacheAlloc_lock;           // protects allocation of oop_map caches
 
 extern Mutex*   FreeList_lock;                   // protects the free region list during safepoints
 extern Mutex*   OldSets_lock;                    // protects the old region sets
@@ -116,6 +116,7 @@ extern Mutex*   SharedDecoder_lock;              // serializes access to the dec
 extern Mutex*   DCmdFactory_lock;                // serialize access to DCmdFactory information
 extern Mutex*   NMTQuery_lock;                   // serialize NMT Dcmd queries
 extern Mutex*   NMTCompilationCostHistory_lock;  // guards NMT compilation cost history
+extern Mutex*   NmtVirtualMemory_lock;           // guards NMT virtual memory updates
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
 extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for_jvmti
@@ -143,6 +144,8 @@ extern Mutex*   ClassLoaderDataGraph_lock;       // protects CLDG list, needed f
 extern Mutex*   CodeHeapStateAnalytics_lock;     // lock print functions against concurrent analyze functions.
                                                  // Only used locally in PrintCodeCacheLayout processing.
 
+extern Mutex*   ExternalsRecorder_lock;          // used to guard access to the external addresses table
+
 extern Monitor* ContinuationRelativize_lock;
 
 #if INCLUDE_JVMCI
@@ -167,11 +170,6 @@ extern Mutex*   tty_lock;                          // lock to synchronize output
 // order*.  And that their destructors do a release and unlock, in *that*
 // order.  If their implementations change such that these assumptions
 // are violated, a whole lot of code will break.
-
-// Print all mutexes/monitors that are currently owned by a thread; called
-// by fatal error handler.
-void print_owned_locks_on_error(outputStream* st);
-void print_lock_ranks(outputStream* st);
 
 // for debugging: check that we're already owning this lock (or are at a safepoint / handshake)
 #ifdef ASSERT

@@ -16,20 +16,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ar_001" draft="unconfirmed">taɛrabt tamaynut</language>
 			<language type="bn" draft="unconfirmed">tabanɣaliyt</language>
 			<language type="de" draft="unconfirmed">talimant</language>
-			<language type="de_AT" draft="unconfirmed">talimant (AT)</language>
-			<language type="de_CH" draft="unconfirmed">talimant (CH)</language>
 			<language type="en" draft="unconfirmed">taglinzit</language>
-			<language type="en_AU" draft="unconfirmed">taglinzit (AU)</language>
-			<language type="en_CA" draft="unconfirmed">taglinzit (CA)</language>
-			<language type="en_GB" draft="unconfirmed">taglinzit (GB)</language>
-			<language type="en_US" draft="unconfirmed">taglinzit (US)</language>
+			<language type="en_GB" alt="short" draft="unconfirmed">taglinzit (UK)</language>
 			<language type="es" draft="unconfirmed">taseppanyut</language>
-			<language type="es_419" draft="unconfirmed">taseppanyut talatinit</language>
-			<language type="es_ES" draft="unconfirmed">taseppanyut (ES)</language>
-			<language type="es_MX" draft="unconfirmed">taseppanyut (MX)</language>
 			<language type="fr" draft="unconfirmed">tafransist</language>
-			<language type="fr_CA" draft="unconfirmed">tafransist (CA)</language>
-			<language type="fr_CH" draft="unconfirmed">tafransist (CH)</language>
 			<language type="hi_Latn" draft="unconfirmed">tahindawiyt</language>
 			<language type="id" draft="unconfirmed">tayindusiyt</language>
 			<language type="it" draft="unconfirmed">tatayalt</language>
@@ -38,12 +28,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nl" draft="unconfirmed">tahulandiyt</language>
 			<language type="nl_BE" draft="unconfirmed">taflamant</language>
 			<language type="pl" draft="unconfirmed">tapulandiyt</language>
-			<language type="pt" draft="unconfirmed">tapuruɣaliyt</language>
-			<language type="pt_BR" draft="unconfirmed">tapuruɣaliyt (BR)</language>
-			<language type="pt_PT" draft="unconfirmed">tapuruɣaliyt (PT)</language>
+			<language type="pt" draft="unconfirmed">tapurtuɣaliyt</language>
+			<language type="pt_BR" draft="unconfirmed">tapurtuɣaliyt (brazil)</language>
+			<language type="pt_PT" draft="unconfirmed">tapurtuɣaliyt (uruppa)</language>
 			<language type="rif">Tarifit</language>
 			<language type="ru" draft="unconfirmed">tarusiyt</language>
-			<language type="th" draft="unconfirmed">taṭayiyt</language>
+			<language type="th" draft="unconfirmed">taṭayit</language>
 			<language type="tr" draft="unconfirmed">taṭurkiyt</language>
 			<language type="und" draft="unconfirmed">tutlayt nneɣni</language>
 			<language type="zh" draft="unconfirmed">tatcinwiyt</language>
@@ -376,7 +366,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="islamic-tbla" draft="unconfirmed">taklindart tameslemt (ayur)</type>
 			<type key="calendar" type="iso8601" draft="unconfirmed">kalandar n ISO-8601</type>
 			<type key="collation" type="standard" draft="unconfirmed">asettef sṭandar</type>
-			<type key="numbers" type="latn" draft="unconfirmed">nnurwat irumiyyen</type>
+			<type key="numbers" type="latn" draft="unconfirmed">nnumrawat irumiyyen</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric" draft="unconfirmed">amitrik</measurementSystemName>
@@ -880,7 +870,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
 							<greatestDifference id="d" draft="unconfirmed">E dd/MM – E dd/MM</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E dd/MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E dd/MM – E dd/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M" draft="unconfirmed">MMM – MMM</greatestDifference>
@@ -1101,20 +1091,272 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard draft="unconfirmed">akud agraɣlan amezday</standard>
 				</long>
 			</zone>
+			<zone type="Europe/Andorra">
+				<exemplarCity draft="unconfirmed">andura</exemplarCity>
+			</zone>
+			<zone type="Asia/Dubai">
+				<exemplarCity draft="unconfirmed">dubay</exemplarCity>
+			</zone>
+			<zone type="America/Antigua">
+				<exemplarCity draft="unconfirmed">antigwa</exemplarCity>
+			</zone>
+			<zone type="America/Anguilla">
+				<exemplarCity draft="unconfirmed">angwiya</exemplarCity>
+			</zone>
+			<zone type="Europe/Tirane">
+				<exemplarCity draft="unconfirmed">tiran</exemplarCity>
+			</zone>
+			<zone type="Asia/Yerevan">
+				<exemplarCity draft="unconfirmed">yiriban</exemplarCity>
+			</zone>
+			<zone type="Africa/Luanda">
+				<exemplarCity draft="unconfirmed">lwanda</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Rio_Gallegos">
+				<exemplarCity draft="unconfirmed">riyugayyigus</exemplarCity>
+			</zone>
+			<zone type="America/Mendoza">
+				<exemplarCity draft="unconfirmed">minduza</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Juan">
+				<exemplarCity draft="unconfirmed">sanxwan</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Ushuaia">
+				<exemplarCity draft="unconfirmed">ucwaya</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/La_Rioja">
+				<exemplarCity draft="unconfirmed">lariyuxa</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Luis">
+				<exemplarCity draft="unconfirmed">sanluwis</exemplarCity>
+			</zone>
+			<zone type="America/Catamarca">
+				<exemplarCity draft="unconfirmed">katamarka</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Salta">
+				<exemplarCity draft="unconfirmed">salṭa</exemplarCity>
+			</zone>
+			<zone type="America/Jujuy">
+				<exemplarCity draft="unconfirmed">jujuy</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Tucuman">
+				<exemplarCity draft="unconfirmed">tutcuman</exemplarCity>
+			</zone>
+			<zone type="America/Cordoba">
+				<exemplarCity draft="unconfirmed">qurṭuba</exemplarCity>
+			</zone>
+			<zone type="America/Buenos_Aires">
+				<exemplarCity draft="unconfirmed">bwinusayris</exemplarCity>
+			</zone>
+			<zone type="Europe/Vienna">
+				<exemplarCity draft="unconfirmed">byinna</exemplarCity>
+			</zone>
 			<zone type="America/Aruba">
 				<exemplarCity draft="unconfirmed">aruba</exemplarCity>
+			</zone>
+			<zone type="Europe/Mariehamn">
+				<exemplarCity draft="unconfirmed">maryaham</exemplarCity>
+			</zone>
+			<zone type="Asia/Baku">
+				<exemplarCity draft="unconfirmed">batci</exemplarCity>
+			</zone>
+			<zone type="Europe/Sarajevo">
+				<exemplarCity draft="unconfirmed">sarayubu</exemplarCity>
 			</zone>
 			<zone type="America/Barbados">
 				<exemplarCity draft="unconfirmed">barbadus</exemplarCity>
 			</zone>
+			<zone type="Europe/Brussels">
+				<exemplarCity draft="unconfirmed">bruksil</exemplarCity>
+			</zone>
+			<zone type="Africa/Ouagadougou">
+				<exemplarCity draft="unconfirmed">wagadugu</exemplarCity>
+			</zone>
+			<zone type="Europe/Sofia">
+				<exemplarCity draft="unconfirmed">sufya</exemplarCity>
+			</zone>
+			<zone type="Asia/Bahrain">
+				<exemplarCity draft="unconfirmed">baḥrin</exemplarCity>
+			</zone>
+			<zone type="Africa/Bujumbura">
+				<exemplarCity draft="unconfirmed">bujumbura</exemplarCity>
+			</zone>
+			<zone type="Africa/Porto-Novo">
+				<exemplarCity draft="unconfirmed">purtunubu</exemplarCity>
+			</zone>
+			<zone type="America/St_Barthelemy">
+				<exemplarCity draft="unconfirmed">sanbartilimi</exemplarCity>
+			</zone>
 			<zone type="Atlantic/Bermuda">
 				<exemplarCity draft="unconfirmed">birmuda</exemplarCity>
+			</zone>
+			<zone type="America/La_Paz">
+				<exemplarCity draft="unconfirmed">lappaz</exemplarCity>
+			</zone>
+			<zone type="America/Kralendijk">
+				<exemplarCity draft="unconfirmed">kralendik</exemplarCity>
+			</zone>
+			<zone type="America/Eirunepe">
+				<exemplarCity draft="unconfirmed">irunippi</exemplarCity>
+			</zone>
+			<zone type="America/Rio_Branco">
+				<exemplarCity draft="unconfirmed">riyubranku</exemplarCity>
+			</zone>
+			<zone type="America/Porto_Velho">
+				<exemplarCity draft="unconfirmed">purtubilhu</exemplarCity>
+			</zone>
+			<zone type="America/Boa_Vista">
+				<exemplarCity draft="unconfirmed">buwabista</exemplarCity>
+			</zone>
+			<zone type="America/Manaus">
+				<exemplarCity draft="unconfirmed">manaws</exemplarCity>
+			</zone>
+			<zone type="America/Cuiaba">
+				<exemplarCity draft="unconfirmed">kiyaba</exemplarCity>
+			</zone>
+			<zone type="America/Santarem">
+				<exemplarCity draft="unconfirmed">santarim</exemplarCity>
+			</zone>
+			<zone type="America/Campo_Grande">
+				<exemplarCity draft="unconfirmed">campugrandi</exemplarCity>
+			</zone>
+			<zone type="America/Belem">
+				<exemplarCity draft="unconfirmed">bilim</exemplarCity>
+			</zone>
+			<zone type="America/Araguaina">
+				<exemplarCity draft="unconfirmed">aragwayna</exemplarCity>
+			</zone>
+			<zone type="America/Sao_Paulo">
+				<exemplarCity draft="unconfirmed">sawpawlu</exemplarCity>
+			</zone>
+			<zone type="America/Bahia">
+				<exemplarCity draft="unconfirmed">bahiya</exemplarCity>
+			</zone>
+			<zone type="America/Fortaleza">
+				<exemplarCity draft="unconfirmed">furṭaliza</exemplarCity>
+			</zone>
+			<zone type="America/Maceio">
+				<exemplarCity draft="unconfirmed">masiyu</exemplarCity>
+			</zone>
+			<zone type="America/Recife">
+				<exemplarCity draft="unconfirmed">risifi</exemplarCity>
+			</zone>
+			<zone type="America/Noronha">
+				<exemplarCity draft="unconfirmed">nurunha</exemplarCity>
+			</zone>
+			<zone type="America/Nassau">
+				<exemplarCity draft="unconfirmed">nassaw</exemplarCity>
+			</zone>
+			<zone type="Africa/Gaborone">
+				<exemplarCity draft="unconfirmed">gaburun</exemplarCity>
+			</zone>
+			<zone type="Europe/Minsk">
+				<exemplarCity draft="unconfirmed">minsk</exemplarCity>
+			</zone>
+			<zone type="America/Belize">
+				<exemplarCity draft="unconfirmed">biliz</exemplarCity>
+			</zone>
+			<zone type="America/Dawson">
+				<exemplarCity draft="unconfirmed">dawsun</exemplarCity>
+			</zone>
+			<zone type="America/Whitehorse">
+				<exemplarCity draft="unconfirmed">waythurs</exemplarCity>
+			</zone>
+			<zone type="America/Inuvik">
+				<exemplarCity draft="unconfirmed">inuvik</exemplarCity>
+			</zone>
+			<zone type="America/Vancouver">
+				<exemplarCity draft="unconfirmed">fankufer</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity draft="unconfirmed">furt nilsun</exemplarCity>
+			</zone>
+			<zone type="America/Dawson_Creek">
+				<exemplarCity draft="unconfirmed">dawsun krik</exemplarCity>
+			</zone>
+			<zone type="America/Creston">
+				<exemplarCity draft="unconfirmed">kristun</exemplarCity>
+			</zone>
+			<zone type="America/Edmonton">
+				<exemplarCity draft="unconfirmed">idmunṭun</exemplarCity>
+			</zone>
+			<zone type="America/Swift_Current">
+				<exemplarCity draft="unconfirmed">swiftkurrent</exemplarCity>
+			</zone>
+			<zone type="America/Cambridge_Bay">
+				<exemplarCity draft="unconfirmed">kambridj bay</exemplarCity>
 			</zone>
 			<zone type="America/Regina">
 				<exemplarCity draft="unconfirmed">rigina</exemplarCity>
 			</zone>
+			<zone type="America/Winnipeg">
+				<exemplarCity draft="unconfirmed">winippig</exemplarCity>
+			</zone>
+			<zone type="America/Resolute">
+				<exemplarCity draft="unconfirmed">rizulṭ</exemplarCity>
+			</zone>
+			<zone type="America/Rankin_Inlet">
+				<exemplarCity draft="unconfirmed">rankinilit</exemplarCity>
+			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity draft="unconfirmed">atikukan</exemplarCity>
+			</zone>
+			<zone type="America/Toronto">
+				<exemplarCity draft="unconfirmed">ṭurunṭu</exemplarCity>
+			</zone>
+			<zone type="America/Iqaluit">
+				<exemplarCity draft="unconfirmed">ikaluwit</exemplarCity>
+			</zone>
+			<zone type="America/Moncton">
+				<exemplarCity draft="unconfirmed">muktun</exemplarCity>
+			</zone>
+			<zone type="America/Halifax">
+				<exemplarCity draft="unconfirmed">halifax</exemplarCity>
+			</zone>
+			<zone type="America/Goose_Bay">
+				<exemplarCity draft="unconfirmed">guzbay</exemplarCity>
+			</zone>
+			<zone type="America/Glace_Bay">
+				<exemplarCity draft="unconfirmed">glasbay</exemplarCity>
+			</zone>
+			<zone type="America/Blanc-Sablon">
+				<exemplarCity draft="unconfirmed">blank-sablun</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity draft="unconfirmed">sanjuns</exemplarCity>
+			</zone>
+			<zone type="Africa/Kinshasa">
+				<exemplarCity draft="unconfirmed">kincasa</exemplarCity>
+			</zone>
+			<zone type="Africa/Lubumbashi">
+				<exemplarCity draft="unconfirmed">lubumbaci</exemplarCity>
+			</zone>
+			<zone type="Africa/Bangui">
+				<exemplarCity draft="unconfirmed">bangi</exemplarCity>
+			</zone>
+			<zone type="Africa/Brazzaville">
+				<exemplarCity draft="unconfirmed">brazabil</exemplarCity>
+			</zone>
+			<zone type="Europe/Zurich">
+				<exemplarCity draft="unconfirmed">zyurix</exemplarCity>
+			</zone>
+			<zone type="Africa/Abidjan">
+				<exemplarCity draft="unconfirmed">abidjan</exemplarCity>
+			</zone>
+			<zone type="Pacific/Easter">
+				<exemplarCity draft="unconfirmed">ister</exemplarCity>
+			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity draft="unconfirmed">puntarinas</exemplarCity>
+			</zone>
+			<zone type="America/Santiago">
+				<exemplarCity draft="unconfirmed">santyagu</exemplarCity>
+			</zone>
+			<zone type="Africa/Douala">
+				<exemplarCity draft="unconfirmed">diwala</exemplarCity>
+			</zone>
+			<zone type="America/Bogota">
+				<exemplarCity draft="unconfirmed">buguṭa</exemplarCity>
 			</zone>
 			<zone type="America/Costa_Rica">
 				<exemplarCity draft="unconfirmed">kustarika</exemplarCity>
@@ -1122,23 +1364,563 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Havana">
 				<exemplarCity draft="unconfirmed">havana</exemplarCity>
 			</zone>
+			<zone type="Atlantic/Cape_Verde">
+				<exemplarCity draft="unconfirmed">qabubirdi</exemplarCity>
+			</zone>
+			<zone type="America/Curacao">
+				<exemplarCity draft="unconfirmed">kuracaw</exemplarCity>
+			</zone>
+			<zone type="Asia/Nicosia">
+				<exemplarCity draft="unconfirmed">nikuzya</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity draft="unconfirmed">famagusṭa</exemplarCity>
+			</zone>
+			<zone type="Europe/Prague">
+				<exemplarCity draft="unconfirmed">pprag</exemplarCity>
+			</zone>
+			<zone type="Europe/Busingen">
+				<exemplarCity draft="unconfirmed">buzingen</exemplarCity>
+			</zone>
+			<zone type="Europe/Berlin">
+				<exemplarCity draft="unconfirmed">birlin</exemplarCity>
+			</zone>
+			<zone type="Africa/Djibouti">
+				<exemplarCity draft="unconfirmed">djibuti</exemplarCity>
+			</zone>
+			<zone type="Europe/Copenhagen">
+				<exemplarCity draft="unconfirmed">kuppenhagen</exemplarCity>
+			</zone>
 			<zone type="America/Dominica">
 				<exemplarCity draft="unconfirmed">duminika</exemplarCity>
+			</zone>
+			<zone type="America/Santo_Domingo">
+				<exemplarCity draft="unconfirmed">santudumingu</exemplarCity>
+			</zone>
+			<zone type="Africa/Algiers">
+				<exemplarCity draft="unconfirmed">ddzayer</exemplarCity>
+			</zone>
+			<zone type="Pacific/Galapagos">
+				<exemplarCity draft="unconfirmed">galapagus</exemplarCity>
+			</zone>
+			<zone type="America/Guayaquil">
+				<exemplarCity draft="unconfirmed">gwayakil</exemplarCity>
+			</zone>
+			<zone type="Europe/Tallinn">
+				<exemplarCity draft="unconfirmed">talin</exemplarCity>
+			</zone>
+			<zone type="Africa/Cairo">
+				<exemplarCity draft="unconfirmed">lqahira</exemplarCity>
+			</zone>
+			<zone type="Africa/El_Aaiun">
+				<exemplarCity draft="unconfirmed">leɛyun</exemplarCity>
+			</zone>
+			<zone type="Africa/Asmera">
+				<exemplarCity draft="unconfirmed">asmara</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity draft="unconfirmed">kanari</exemplarCity>
+			</zone>
+			<zone type="Africa/Ceuta">
+				<exemplarCity draft="unconfirmed">sebta</exemplarCity>
+			</zone>
+			<zone type="Europe/Madrid">
+				<exemplarCity draft="unconfirmed">madri</exemplarCity>
+			</zone>
+			<zone type="Africa/Addis_Ababa">
+				<exemplarCity draft="unconfirmed">adisababa</exemplarCity>
+			</zone>
+			<zone type="Europe/Helsinki">
+				<exemplarCity draft="unconfirmed">hilsinki</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Stanley">
+				<exemplarCity draft="unconfirmed">sṭanli</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Faeroe">
+				<exemplarCity draft="unconfirmed">faraw</exemplarCity>
+			</zone>
+			<zone type="Europe/Paris">
+				<exemplarCity draft="unconfirmed">pari</exemplarCity>
+			</zone>
+			<zone type="Africa/Libreville">
+				<exemplarCity draft="unconfirmed">liberbil</exemplarCity>
+			</zone>
+			<zone type="Europe/London">
+				<long>
+					<daylight draft="unconfirmed">akud n uzil n uglinzi</daylight>
+				</long>
+				<exemplarCity draft="unconfirmed">lundun</exemplarCity>
+			</zone>
+			<zone type="America/Grenada">
+				<exemplarCity draft="unconfirmed">grinada</exemplarCity>
+			</zone>
+			<zone type="Asia/Tbilisi">
+				<exemplarCity draft="unconfirmed">tbilisi</exemplarCity>
+			</zone>
+			<zone type="America/Cayenne">
+				<exemplarCity draft="unconfirmed">kayen</exemplarCity>
+			</zone>
+			<zone type="Europe/Guernsey">
+				<exemplarCity draft="unconfirmed">girensiy</exemplarCity>
+			</zone>
+			<zone type="Africa/Accra">
+				<exemplarCity draft="unconfirmed">akra</exemplarCity>
+			</zone>
+			<zone type="Europe/Gibraltar">
+				<exemplarCity draft="unconfirmed">jabalṭariq</exemplarCity>
+			</zone>
+			<zone type="America/Thule">
+				<exemplarCity draft="unconfirmed">tula</exemplarCity>
 			</zone>
 			<zone type="America/Godthab">
 				<exemplarCity draft="unconfirmed">nuk</exemplarCity>
 			</zone>
+			<zone type="America/Scoresbysund">
+				<exemplarCity draft="unconfirmed">iṭukurturmit</exemplarCity>
+			</zone>
+			<zone type="America/Danmarkshavn">
+				<exemplarCity draft="unconfirmed">danmarkshaven</exemplarCity>
+			</zone>
+			<zone type="Africa/Banjul">
+				<exemplarCity draft="unconfirmed">banjul</exemplarCity>
+			</zone>
+			<zone type="Africa/Conakry">
+				<exemplarCity draft="unconfirmed">kunakri</exemplarCity>
+			</zone>
+			<zone type="America/Guadeloupe">
+				<exemplarCity draft="unconfirmed">gwadlup</exemplarCity>
+			</zone>
+			<zone type="Africa/Malabo">
+				<exemplarCity draft="unconfirmed">malabu</exemplarCity>
+			</zone>
+			<zone type="Europe/Athens">
+				<exemplarCity draft="unconfirmed">atina</exemplarCity>
+			</zone>
+			<zone type="Atlantic/South_Georgia">
+				<exemplarCity draft="unconfirmed">sawtgyurgya</exemplarCity>
+			</zone>
 			<zone type="America/Guatemala">
 				<exemplarCity draft="unconfirmed">gwatimala</exemplarCity>
+			</zone>
+			<zone type="Africa/Bissau">
+				<exemplarCity draft="unconfirmed">bisaw</exemplarCity>
+			</zone>
+			<zone type="America/Guyana">
+				<exemplarCity draft="unconfirmed">guyana</exemplarCity>
+			</zone>
+			<zone type="America/Tegucigalpa">
+				<exemplarCity draft="unconfirmed">tigicigalpa</exemplarCity>
+			</zone>
+			<zone type="Europe/Zagreb">
+				<exemplarCity draft="unconfirmed">zagreb</exemplarCity>
+			</zone>
+			<zone type="America/Port-au-Prince">
+				<exemplarCity draft="unconfirmed">ppurtuprins</exemplarCity>
+			</zone>
+			<zone type="Europe/Budapest">
+				<exemplarCity draft="unconfirmed">budabist</exemplarCity>
+			</zone>
+			<zone type="Europe/Dublin">
+				<long>
+					<daylight draft="unconfirmed">akud anaway ayirlandi</daylight>
+				</long>
+				<exemplarCity draft="unconfirmed">dablin</exemplarCity>
+			</zone>
+			<zone type="Asia/Jerusalem">
+				<exemplarCity draft="unconfirmed">lquds</exemplarCity>
+			</zone>
+			<zone type="Europe/Isle_of_Man">
+				<exemplarCity draft="unconfirmed">tagzirt n man</exemplarCity>
+			</zone>
+			<zone type="Indian/Chagos">
+				<exemplarCity draft="unconfirmed">ttcagus</exemplarCity>
+			</zone>
+			<zone type="Asia/Baghdad">
+				<exemplarCity draft="unconfirmed">baɣdad</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Reykjavik">
+				<exemplarCity draft="unconfirmed">reykjavik</exemplarCity>
+			</zone>
+			<zone type="Europe/Rome">
+				<exemplarCity draft="unconfirmed">ruma</exemplarCity>
+			</zone>
+			<zone type="Europe/Jersey">
+				<exemplarCity draft="unconfirmed">jirsiy</exemplarCity>
+			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity draft="unconfirmed">jamayka</exemplarCity>
+			</zone>
+			<zone type="Asia/Amman">
+				<exemplarCity draft="unconfirmed">ɛamman</exemplarCity>
+			</zone>
+			<zone type="Africa/Nairobi">
+				<exemplarCity draft="unconfirmed">nayrubi</exemplarCity>
+			</zone>
+			<zone type="Indian/Comoro">
+				<exemplarCity draft="unconfirmed">kumuru</exemplarCity>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity draft="unconfirmed">sankits</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuwait">
+				<exemplarCity draft="unconfirmed">kuwit</exemplarCity>
 			</zone>
 			<zone type="America/Cayman">
 				<exemplarCity draft="unconfirmed">sayman</exemplarCity>
 			</zone>
+			<zone type="Asia/Beirut">
+				<exemplarCity draft="unconfirmed">bayrut</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity draft="unconfirmed">sanlucya</exemplarCity>
+			</zone>
+			<zone type="Europe/Vaduz">
+				<exemplarCity draft="unconfirmed">vaduts</exemplarCity>
+			</zone>
+			<zone type="Africa/Monrovia">
+				<exemplarCity draft="unconfirmed">munrubya</exemplarCity>
+			</zone>
+			<zone type="Africa/Maseru">
+				<exemplarCity draft="unconfirmed">maziru</exemplarCity>
+			</zone>
+			<zone type="Europe/Vilnius">
+				<exemplarCity draft="unconfirmed">filinyus</exemplarCity>
+			</zone>
+			<zone type="Europe/Luxembourg">
+				<exemplarCity draft="unconfirmed">lluksemburg</exemplarCity>
+			</zone>
+			<zone type="Europe/Riga">
+				<exemplarCity draft="unconfirmed">riga</exemplarCity>
+			</zone>
+			<zone type="Africa/Tripoli">
+				<exemplarCity draft="unconfirmed">ṭarablus</exemplarCity>
+			</zone>
+			<zone type="Africa/Casablanca">
+				<exemplarCity draft="unconfirmed">ddarbida</exemplarCity>
+			</zone>
+			<zone type="Europe/Monaco">
+				<exemplarCity draft="unconfirmed">munaku</exemplarCity>
+			</zone>
+			<zone type="Europe/Chisinau">
+				<exemplarCity draft="unconfirmed">cisinaw</exemplarCity>
+			</zone>
+			<zone type="Europe/Podgorica">
+				<exemplarCity draft="unconfirmed">pudgurisa</exemplarCity>
+			</zone>
+			<zone type="America/Marigot">
+				<exemplarCity draft="unconfirmed">mariguṭ</exemplarCity>
+			</zone>
+			<zone type="Indian/Antananarivo">
+				<exemplarCity draft="unconfirmed">antananaribu</exemplarCity>
+			</zone>
+			<zone type="Europe/Skopje">
+				<exemplarCity draft="unconfirmed">skupya</exemplarCity>
+			</zone>
+			<zone type="Africa/Bamako">
+				<exemplarCity draft="unconfirmed">bamaku</exemplarCity>
+			</zone>
+			<zone type="America/Martinique">
+				<exemplarCity draft="unconfirmed">martinik</exemplarCity>
+			</zone>
+			<zone type="Africa/Nouakchott">
+				<exemplarCity draft="unconfirmed">nwakcuṭ</exemplarCity>
+			</zone>
+			<zone type="America/Montserrat">
+				<exemplarCity draft="unconfirmed">muntsirat</exemplarCity>
+			</zone>
+			<zone type="Europe/Malta">
+				<exemplarCity draft="unconfirmed">malta</exemplarCity>
+			</zone>
+			<zone type="Indian/Mauritius">
+				<exemplarCity draft="unconfirmed">muriṭanya</exemplarCity>
+			</zone>
+			<zone type="Africa/Blantyre">
+				<exemplarCity draft="unconfirmed">blanṭayr</exemplarCity>
+			</zone>
+			<zone type="America/Tijuana">
+				<exemplarCity draft="unconfirmed">tiywana</exemplarCity>
+			</zone>
+			<zone type="America/Hermosillo">
+				<exemplarCity draft="unconfirmed">hirmusiyyu</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity draft="unconfirmed">tidad xwaris</exemplarCity>
+			</zone>
+			<zone type="America/Mazatlan">
+				<exemplarCity draft="unconfirmed">mazatlan</exemplarCity>
+			</zone>
+			<zone type="America/Chihuahua">
+				<exemplarCity draft="unconfirmed">ciwawa</exemplarCity>
+			</zone>
+			<zone type="America/Bahia_Banderas">
+				<exemplarCity draft="unconfirmed">bayya di bandiras</exemplarCity>
+			</zone>
+			<zone type="America/Ojinaga">
+				<exemplarCity draft="unconfirmed">ujinaga</exemplarCity>
+			</zone>
+			<zone type="America/Monterrey">
+				<exemplarCity draft="unconfirmed">muntiri</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity draft="unconfirmed">miksiku siti</exemplarCity>
+			</zone>
+			<zone type="America/Matamoros">
+				<exemplarCity draft="unconfirmed">matamurus</exemplarCity>
+			</zone>
+			<zone type="America/Merida">
+				<exemplarCity draft="unconfirmed">mirida</exemplarCity>
+			</zone>
+			<zone type="America/Cancun">
+				<exemplarCity draft="unconfirmed">kankun</exemplarCity>
+			</zone>
+			<zone type="Africa/Maputo">
+				<exemplarCity draft="unconfirmed">maputu</exemplarCity>
+			</zone>
+			<zone type="Africa/Windhoek">
+				<exemplarCity draft="unconfirmed">binhuwk</exemplarCity>
+			</zone>
+			<zone type="Africa/Niamey">
+				<exemplarCity draft="unconfirmed">nyamiy</exemplarCity>
+			</zone>
+			<zone type="Africa/Lagos">
+				<exemplarCity draft="unconfirmed">lagus</exemplarCity>
+			</zone>
+			<zone type="America/Managua">
+				<exemplarCity draft="unconfirmed">mangwa</exemplarCity>
+			</zone>
+			<zone type="Europe/Amsterdam">
+				<exemplarCity draft="unconfirmed">amesterdem</exemplarCity>
+			</zone>
+			<zone type="Europe/Oslo">
+				<exemplarCity draft="unconfirmed">uslu</exemplarCity>
+			</zone>
+			<zone type="Asia/Muscat">
+				<exemplarCity draft="unconfirmed">masqaṭ</exemplarCity>
+			</zone>
 			<zone type="America/Panama">
 				<exemplarCity draft="unconfirmed">panama</exemplarCity>
 			</zone>
+			<zone type="America/Lima">
+				<exemplarCity draft="unconfirmed">lima</exemplarCity>
+			</zone>
+			<zone type="Europe/Warsaw">
+				<exemplarCity draft="unconfirmed">warsaw</exemplarCity>
+			</zone>
+			<zone type="America/Miquelon">
+				<exemplarCity draft="unconfirmed">mikilon</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity draft="unconfirmed">ppurturiku</exemplarCity>
+			</zone>
+			<zone type="Asia/Gaza">
+				<exemplarCity draft="unconfirmed">ɣezza</exemplarCity>
+			</zone>
+			<zone type="Asia/Hebron">
+				<exemplarCity draft="unconfirmed">lxalil</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Azores">
+				<exemplarCity draft="unconfirmed">azures</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Madeira">
+				<exemplarCity draft="unconfirmed">madiyra</exemplarCity>
+			</zone>
+			<zone type="Europe/Lisbon">
+				<exemplarCity draft="unconfirmed">licbuna</exemplarCity>
+			</zone>
+			<zone type="America/Asuncion">
+				<exemplarCity draft="unconfirmed">asuntyun</exemplarCity>
+			</zone>
+			<zone type="Asia/Qatar">
+				<exemplarCity draft="unconfirmed">qaṭar</exemplarCity>
+			</zone>
+			<zone type="Indian/Reunion">
+				<exemplarCity draft="unconfirmed">riyunyun</exemplarCity>
+			</zone>
+			<zone type="Europe/Bucharest">
+				<exemplarCity draft="unconfirmed">buxarist</exemplarCity>
+			</zone>
+			<zone type="Europe/Belgrade">
+				<exemplarCity draft="unconfirmed">bilgrad</exemplarCity>
+			</zone>
+			<zone type="Europe/Kaliningrad">
+				<exemplarCity draft="unconfirmed">kaliningrad</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity draft="unconfirmed">musku</exemplarCity>
+			</zone>
+			<zone type="Europe/Volgograd">
+				<exemplarCity draft="unconfirmed">bulgugrad</exemplarCity>
+			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity draft="unconfirmed">saratub</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity draft="unconfirmed">astraxan</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity draft="unconfirmed">ulyanubesk</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity draft="unconfirmed">kirub</exemplarCity>
+			</zone>
+			<zone type="Europe/Samara">
+				<exemplarCity draft="unconfirmed">samara</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity draft="unconfirmed">yekaterinburg</exemplarCity>
+			</zone>
+			<zone type="Asia/Omsk">
+				<exemplarCity draft="unconfirmed">omsek</exemplarCity>
+			</zone>
+			<zone type="Asia/Novosibirsk">
+				<exemplarCity draft="unconfirmed">nubusibiresk</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity draft="unconfirmed">barnul</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity draft="unconfirmed">tumsek</exemplarCity>
+			</zone>
+			<zone type="Asia/Novokuznetsk">
+				<exemplarCity draft="unconfirmed">nubukuznitesk</exemplarCity>
+			</zone>
+			<zone type="Asia/Krasnoyarsk">
+				<exemplarCity draft="unconfirmed">krasnuyarsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Irkutsk">
+				<exemplarCity draft="unconfirmed">irkutsek</exemplarCity>
+			</zone>
+			<zone type="Asia/Chita">
+				<exemplarCity draft="unconfirmed">cita</exemplarCity>
+			</zone>
+			<zone type="Asia/Yakutsk">
+				<exemplarCity draft="unconfirmed">yatutsek</exemplarCity>
+			</zone>
+			<zone type="Asia/Vladivostok">
+				<exemplarCity draft="unconfirmed">bladibustuk</exemplarCity>
+			</zone>
+			<zone type="Asia/Khandyga">
+				<exemplarCity draft="unconfirmed">xandiga</exemplarCity>
+			</zone>
+			<zone type="Asia/Sakhalin">
+				<exemplarCity draft="unconfirmed">saxalin</exemplarCity>
+			</zone>
+			<zone type="Asia/Ust-Nera">
+				<exemplarCity draft="unconfirmed">ustnira</exemplarCity>
+			</zone>
+			<zone type="Asia/Magadan">
+				<exemplarCity draft="unconfirmed">magadan</exemplarCity>
+			</zone>
+			<zone type="Asia/Srednekolymsk">
+				<exemplarCity draft="unconfirmed">sridnikulimsek</exemplarCity>
+			</zone>
+			<zone type="Asia/Kamchatka">
+				<exemplarCity draft="unconfirmed">kamcatka</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity draft="unconfirmed">anadic</exemplarCity>
+			</zone>
+			<zone type="Africa/Kigali">
+				<exemplarCity draft="unconfirmed">kigali</exemplarCity>
+			</zone>
+			<zone type="Asia/Riyadh">
+				<exemplarCity draft="unconfirmed">riyad</exemplarCity>
+			</zone>
+			<zone type="Indian/Mahe">
+				<exemplarCity draft="unconfirmed">mahi</exemplarCity>
+			</zone>
+			<zone type="Africa/Khartoum">
+				<exemplarCity draft="unconfirmed">xarṭum</exemplarCity>
+			</zone>
+			<zone type="Europe/Stockholm">
+				<exemplarCity draft="unconfirmed">sṭukhulm</exemplarCity>
+			</zone>
+			<zone type="Atlantic/St_Helena">
+				<exemplarCity draft="unconfirmed">santhilina</exemplarCity>
+			</zone>
+			<zone type="Europe/Ljubljana">
+				<exemplarCity draft="unconfirmed">lyubliyana</exemplarCity>
+			</zone>
+			<zone type="Arctic/Longyearbyen">
+				<exemplarCity draft="unconfirmed">lunyabyan</exemplarCity>
+			</zone>
+			<zone type="Europe/Bratislava">
+				<exemplarCity draft="unconfirmed">bratislaba</exemplarCity>
+			</zone>
+			<zone type="Africa/Freetown">
+				<exemplarCity draft="unconfirmed">fritawn</exemplarCity>
+			</zone>
+			<zone type="Europe/San_Marino">
+				<exemplarCity draft="unconfirmed">sanmarinu</exemplarCity>
+			</zone>
+			<zone type="Africa/Dakar">
+				<exemplarCity draft="unconfirmed">dakar</exemplarCity>
+			</zone>
+			<zone type="Africa/Mogadishu">
+				<exemplarCity draft="unconfirmed">mugadicu</exemplarCity>
+			</zone>
+			<zone type="America/Paramaribo">
+				<exemplarCity draft="unconfirmed">paramaribu</exemplarCity>
+			</zone>
+			<zone type="Africa/Juba">
+				<exemplarCity draft="unconfirmed">juba</exemplarCity>
+			</zone>
+			<zone type="Africa/Sao_Tome">
+				<exemplarCity draft="unconfirmed">sawtumi</exemplarCity>
+			</zone>
+			<zone type="America/El_Salvador">
+				<exemplarCity draft="unconfirmed">ssalbadur</exemplarCity>
+			</zone>
+			<zone type="America/Lower_Princes">
+				<exemplarCity draft="unconfirmed">bariyyu n luwerprans</exemplarCity>
+			</zone>
+			<zone type="Asia/Damascus">
+				<exemplarCity draft="unconfirmed">dimacq</exemplarCity>
+			</zone>
+			<zone type="Africa/Mbabane">
+				<exemplarCity draft="unconfirmed">mbaban</exemplarCity>
+			</zone>
+			<zone type="America/Grand_Turk">
+				<exemplarCity draft="unconfirmed">grandṭurk</exemplarCity>
+			</zone>
+			<zone type="Africa/Ndjamena">
+				<exemplarCity draft="unconfirmed">njamina</exemplarCity>
+			</zone>
+			<zone type="Indian/Kerguelen">
+				<exemplarCity draft="unconfirmed">kergilan</exemplarCity>
+			</zone>
+			<zone type="Africa/Lome">
+				<exemplarCity draft="unconfirmed">lumi</exemplarCity>
+			</zone>
+			<zone type="Africa/Tunis">
+				<exemplarCity draft="unconfirmed">tunes</exemplarCity>
+			</zone>
+			<zone type="Europe/Istanbul">
+				<exemplarCity draft="unconfirmed">sṭanbul</exemplarCity>
+			</zone>
+			<zone type="America/Port_of_Spain">
+				<exemplarCity draft="unconfirmed">ppurtufspin</exemplarCity>
+			</zone>
+			<zone type="Africa/Dar_es_Salaam">
+				<exemplarCity draft="unconfirmed">daressalam</exemplarCity>
+			</zone>
+			<zone type="Europe/Kiev">
+				<exemplarCity draft="unconfirmed">kyib</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity draft="unconfirmed">simfarupul</exemplarCity>
+			</zone>
+			<zone type="Africa/Kampala">
+				<exemplarCity draft="unconfirmed">kampala</exemplarCity>
+			</zone>
 			<zone type="America/Adak">
 				<exemplarCity draft="unconfirmed">adak</exemplarCity>
+			</zone>
+			<zone type="America/Nome">
+				<exemplarCity draft="unconfirmed">num</exemplarCity>
+			</zone>
+			<zone type="America/Anchorage">
+				<exemplarCity draft="unconfirmed">ancuraj</exemplarCity>
 			</zone>
 			<zone type="America/Yakutat">
 				<exemplarCity draft="unconfirmed">yakutat</exemplarCity>
@@ -1146,18 +1928,130 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Sitka">
 				<exemplarCity draft="unconfirmed">sitka</exemplarCity>
 			</zone>
+			<zone type="America/Juneau">
+				<exemplarCity draft="unconfirmed">junaw</exemplarCity>
+			</zone>
+			<zone type="America/Metlakatla">
+				<exemplarCity draft="unconfirmed">mitlakatla</exemplarCity>
+			</zone>
+			<zone type="America/Los_Angeles">
+				<exemplarCity draft="unconfirmed">lusanjlus</exemplarCity>
+			</zone>
+			<zone type="America/Boise">
+				<exemplarCity draft="unconfirmed">boysi</exemplarCity>
+			</zone>
+			<zone type="America/Phoenix">
+				<exemplarCity draft="unconfirmed">finiks</exemplarCity>
+			</zone>
 			<zone type="America/Denver">
 				<exemplarCity draft="unconfirmed">dinver</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity draft="unconfirmed">bulah, nurtdakuṭa</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity draft="unconfirmed">nyusalem, nurtdakuṭa</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity draft="unconfirmed">santer, nurtdakuṭa</exemplarCity>
 			</zone>
 			<zone type="America/Chicago">
 				<exemplarCity draft="unconfirmed">cikagu</exemplarCity>
 			</zone>
+			<zone type="America/Menominee">
+				<exemplarCity draft="unconfirmed">minumini</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vincennes">
+				<exemplarCity draft="unconfirmed">vinsanz, indyana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Petersburg">
+				<exemplarCity draft="unconfirmed">pitersburg, indyana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Tell_City">
+				<exemplarCity draft="unconfirmed">tilsiti, indyana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Knox">
+				<exemplarCity draft="unconfirmed">nux, indyana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Winamac">
+				<exemplarCity draft="unconfirmed">winamak, indyana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Marengo">
+				<exemplarCity draft="unconfirmed">maringu, indyana</exemplarCity>
+			</zone>
 			<zone type="America/Indianapolis">
 				<exemplarCity draft="unconfirmed">indyanapulis</exemplarCity>
+			</zone>
+			<zone type="America/Louisville">
+				<exemplarCity draft="unconfirmed">lwisvil</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vevay">
+				<exemplarCity draft="unconfirmed">vivi, indyana</exemplarCity>
+			</zone>
+			<zone type="America/Kentucky/Monticello">
+				<exemplarCity draft="unconfirmed">muntitcilu, kinṭaki</exemplarCity>
 			</zone>
 			<zone type="America/Detroit">
 				<exemplarCity draft="unconfirmed">ditruyd</exemplarCity>
 			</zone>
+			<zone type="America/New_York">
+				<exemplarCity draft="unconfirmed">nyuyurk</exemplarCity>
+			</zone>
+			<zone type="America/Montevideo">
+				<exemplarCity draft="unconfirmed">muntibidyu</exemplarCity>
+			</zone>
+			<zone type="Europe/Vatican">
+				<exemplarCity draft="unconfirmed">lbatikan</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity draft="unconfirmed">sanvinsint</exemplarCity>
+			</zone>
+			<zone type="America/Caracas">
+				<exemplarCity draft="unconfirmed">karakas</exemplarCity>
+			</zone>
+			<zone type="America/Tortola">
+				<exemplarCity draft="unconfirmed">ṭurṭula</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity draft="unconfirmed">sanṭumas</exemplarCity>
+			</zone>
+			<zone type="Asia/Aden">
+				<exemplarCity draft="unconfirmed">ɛadan</exemplarCity>
+			</zone>
+			<zone type="Indian/Mayotte">
+				<exemplarCity draft="unconfirmed">mayuṭ</exemplarCity>
+			</zone>
+			<zone type="Africa/Johannesburg">
+				<exemplarCity draft="unconfirmed">djuhanasburg</exemplarCity>
+			</zone>
+			<zone type="Africa/Lusaka">
+				<exemplarCity draft="unconfirmed">lusaka</exemplarCity>
+			</zone>
+			<zone type="Africa/Harare">
+				<exemplarCity draft="unconfirmed">harari</exemplarCity>
+			</zone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard draft="unconfirmed">akud n tefriqt n lwesṭ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard draft="unconfirmed">akud n tefriqt n ccerq</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard draft="unconfirmed">akud n tefriqt n wadday</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic draft="unconfirmed">akud n tefriqt n lɣerb</generic>
+					<standard draft="unconfirmed">akud anaway n tefriqt n lɣerb</standard>
+					<daylight draft="unconfirmed">akud n uzil n tefriqt n lɣerb</daylight>
+				</long>
+			</metazone>
 			<metazone type="Alaska">
 				<long>
 					<generic draft="unconfirmed">akud n alaska</generic>
@@ -1200,6 +2094,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n pasifik</daylight>
 				</long>
 			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic draft="unconfirmed">akud n waɛrab</generic>
+					<standard draft="unconfirmed">akud anaway n waɛrab</standard>
+					<daylight draft="unconfirmed">akud n uzil n waɛrab</daylight>
+				</long>
+			</metazone>
 			<metazone type="Argentina">
 				<long>
 					<generic draft="unconfirmed">akud n arjentina</generic>
@@ -1207,11 +2108,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n arjentina</daylight>
 				</long>
 			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic draft="unconfirmed">akud n lɣerb n arjentina</generic>
+					<standard draft="unconfirmed">akud anaway n lɣerb n arjentina</standard>
+					<daylight draft="unconfirmed">akud n uzil n lɣerb n arjentina</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic draft="unconfirmed">akud n arminya</generic>
+					<standard draft="unconfirmed">akud anaway n arminya</standard>
+					<daylight draft="unconfirmed">akud n uzil n arminya</daylight>
+				</long>
+			</metazone>
 			<metazone type="Atlantic">
 				<long>
 					<generic draft="unconfirmed">akud n atlantik</generic>
 					<standard draft="unconfirmed">akud anaway n atlantik</standard>
 					<daylight draft="unconfirmed">akud n uzil n atlantik</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic draft="unconfirmed">akud n azrabidjan</generic>
+					<standard draft="unconfirmed">akud anaway n azrabidjan</standard>
+					<daylight draft="unconfirmed">akud n uzil n azrabidjan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic draft="unconfirmed">akud n azures</generic>
+					<standard draft="unconfirmed">akud anaway n azuresn azures</standard>
+					<daylight draft="unconfirmed">akud n uzil n azures</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bolivia">
@@ -1226,11 +2155,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n brazilya</daylight>
 				</long>
 			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic draft="unconfirmed">akud n qabubirdi</generic>
+					<standard draft="unconfirmed">akud anaway n qabubirdi</standard>
+					<daylight draft="unconfirmed">akud n uzil n qabubirdi</daylight>
+				</long>
+			</metazone>
 			<metazone type="Chile">
 				<long>
 					<generic draft="unconfirmed">akud n cili</generic>
 					<standard draft="unconfirmed">akud anaway n cili</standard>
 					<daylight draft="unconfirmed">akud n uzil n cili</daylight>
+				</long>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic draft="unconfirmed">akud n tcina</generic>
+					<standard draft="unconfirmed">akud anaway n tcina</standard>
+					<daylight draft="unconfirmed">akud n uzil n tcina</daylight>
 				</long>
 			</metazone>
 			<metazone type="Colombia">
@@ -1247,14 +2190,71 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n kuba</daylight>
 				</long>
 			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic draft="unconfirmed">akud n isterayland</generic>
+					<standard draft="unconfirmed">akud anaway n isterayland</standard>
+					<daylight draft="unconfirmed">akud n uzil n isterayland</daylight>
+				</long>
+			</metazone>
 			<metazone type="Ecuador">
 				<long>
 					<standard draft="unconfirmed">akud n ikwadur</standard>
 				</long>
 			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic draft="unconfirmed">akud n wuruppa n lwesṭ</generic>
+					<standard draft="unconfirmed">akud anaway n wuruppa n lwesṭ</standard>
+					<daylight draft="unconfirmed">akud n uzil n wuruppa n lwesṭ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic draft="unconfirmed">akud n wuruppa n ccerq</generic>
+					<standard draft="unconfirmed">akud anaway n wuruppa n ccerq</standard>
+					<daylight draft="unconfirmed">akud n uzil n wuruppa n ccerq</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard draft="unconfirmed">akud n wuruppa tacerqect qaɛ</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic draft="unconfirmed">akud n wuruppa n lɣerb</generic>
+					<standard draft="unconfirmed">akud anaway n wuruppa n lɣerb</standard>
+					<daylight draft="unconfirmed">akud n uzil n wuruppa n lɣerb</daylight>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic draft="unconfirmed">akud n falkland</generic>
+					<standard draft="unconfirmed">akud anaway n falkland</standard>
+					<daylight draft="unconfirmed">akud n uzil n falkland</daylight>
+				</long>
+			</metazone>
 			<metazone type="French_Guiana">
 				<long>
 					<standard draft="unconfirmed">akud n ɣana tafransist</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard draft="unconfirmed">akud n tiwaddayin tifransisin</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard draft="unconfirmed">akud n galappagus</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic draft="unconfirmed">akud n jyurjya</generic>
+					<standard draft="unconfirmed">akud anaway n jyurjya</standard>
+					<daylight draft="unconfirmed">akud n uzil n jyurjya</daylight>
 				</long>
 			</metazone>
 			<metazone type="GMT">
@@ -1276,6 +2276,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n lwesṭ n grinland</daylight>
 				</long>
 			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard draft="unconfirmed">akud n lxalij</standard>
+				</long>
+			</metazone>
 			<metazone type="Guyana">
 				<long>
 					<standard draft="unconfirmed">akud n guyana</standard>
@@ -1288,11 +2293,111 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n haway-alucyan</daylight>
 				</long>
 			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic draft="unconfirmed">akud n hungkung</generic>
+					<standard draft="unconfirmed">akud anaway n hungkung</standard>
+					<daylight draft="unconfirmed">akud n uzil n hungkung</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic draft="unconfirmed">akud n hubd</generic>
+					<standard draft="unconfirmed">akud anaway n hubd</standard>
+					<daylight draft="unconfirmed">akud n uzil n hubd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard draft="unconfirmed">akud n lebḥer ahindi</standard>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic draft="unconfirmed">akud n yisrayil</generic>
+					<standard draft="unconfirmed">akud anaway n yisrayil</standard>
+					<daylight draft="unconfirmed">akud n uzil n yisrayil</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic draft="unconfirmed">akud n mawritus</generic>
+					<standard draft="unconfirmed">akud anaway n mawritus</standard>
+					<daylight draft="unconfirmed">akud n uzil n mawritus</daylight>
+				</long>
+			</metazone>
 			<metazone type="Mexico_Pacific">
 				<long>
 					<generic draft="unconfirmed">akud n pasifik amiksikan</generic>
 					<standard draft="unconfirmed">akud anaway n pasifik amiksikan</standard>
 					<daylight draft="unconfirmed">akud n uzil n pasifik amiksikan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic draft="unconfirmed">akud n nyuw fawemd land</generic>
+					<standard draft="unconfirmed">akud anaway n nyuw fawemd land</standard>
+					<daylight draft="unconfirmed">akud n uzil n nyuw fawemd land</daylight>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic draft="unconfirmed">akud n firnardu dinurunha</generic>
+					<standard draft="unconfirmed">akud anaway n firnardu dinurunha</standard>
+					<daylight draft="unconfirmed">akud n uzil n firnardu dinurunha</daylight>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic draft="unconfirmed">akud n pparagway</generic>
+					<standard draft="unconfirmed">akud anaway n pparagway</standard>
+					<daylight draft="unconfirmed">akud n uzil n pparagway</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic draft="unconfirmed">akud n ppiru</generic>
+					<standard draft="unconfirmed">akud anaway n ppiru</standard>
+					<daylight draft="unconfirmed">akud n uzil n ppiru</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic draft="unconfirmed">akud n sant-pyiɣ d mikilun</generic>
+					<standard draft="unconfirmed">akud anaway n sant-pyiɣ d mikilun</standard>
+					<daylight draft="unconfirmed">akud n uzil n sant-pyiɣ d mikilun</daylight>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard draft="unconfirmed">akud n riyunyun</standard>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard draft="unconfirmed">akud n saycal</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard draft="unconfirmed">akud n jyurjya n wadday</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard draft="unconfirmed">akud n surinam</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic draft="unconfirmed">akud n urugway</generic>
+					<standard draft="unconfirmed">akud anaway n urugway</standard>
+					<daylight draft="unconfirmed">akud n uzil n urugway</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard draft="unconfirmed">akud n vinzwila</standard>
 				</long>
 			</metazone>
 			<metazone type="Yukon">
@@ -1307,6 +2412,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<decimal draft="unconfirmed">,</decimal>
 			<group draft="unconfirmed"> </group>
 		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength type="long">
+				<decimalFormat>
+					<pattern type="1000" count="other" draft="unconfirmed">0 alaf</pattern>
+					<pattern type="10000" count="other" draft="unconfirmed">00 alaf</pattern>
+					<pattern type="100000" count="other" draft="unconfirmed">000 alaf</pattern>
+					<pattern type="1000000" count="other" draft="unconfirmed">0 melyun</pattern>
+					<pattern type="10000000" count="other" draft="unconfirmed">00 melyun</pattern>
+					<pattern type="100000000" count="other" draft="unconfirmed">000 melyun</pattern>
+					<pattern type="1000000000" count="other" draft="unconfirmed">0 melyar</pattern>
+					<pattern type="10000000000" count="other" draft="unconfirmed">00 melyar</pattern>
+					<pattern type="100000000000" count="other" draft="unconfirmed">000 melyar</pattern>
+					<pattern type="1000000000000" count="other" draft="unconfirmed">0 trilyun</pattern>
+					<pattern type="10000000000000" count="other" draft="unconfirmed">00 trilyun</pattern>
+					<pattern type="100000000000000" count="other" draft="unconfirmed">000 trilyun</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
@@ -1320,7 +2443,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="BMD">
@@ -1404,7 +2526,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<units>
 		<unitLength type="long">
 			<compoundUnit type="per">
-				<compoundUnitPattern draft="unconfirmed">{0} xef {1}</compoundUnitPattern>
+				<compoundUnitPattern draft="unconfirmed">{0} di {1}</compoundUnitPattern>
 			</compoundUnit>
 			<coordinateUnit>
 				<displayName draft="unconfirmed">amnad akardinal</displayName>
@@ -1441,10 +2563,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="start" draft="unconfirmed">{0} niɣ {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} niɣ {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="end" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0}, {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
 			<listPatternPart type="start" draft="unconfirmed">{0} {1}</listPatternPart>

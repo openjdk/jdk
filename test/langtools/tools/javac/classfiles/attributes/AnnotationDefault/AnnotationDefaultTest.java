@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8042947
  * @summary Checking AnnotationDefault attribute.
  * @library /tools/lib /tools/javac/lib ../lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          java.base/jdk.internal.classfile.impl
@@ -77,7 +76,7 @@ public class AnnotationDefaultTest extends TestResult {
                 String methodName = method.methodName().stringValue();
                 printf("Testing method : %s\n", methodName);
                 AnnotationDefaultAttribute attr =
-                        method.findAttribute(Attributes.ANNOTATION_DEFAULT).orElse(null);
+                        method.findAttribute(Attributes.annotationDefault()).orElse(null);
 
                 if (hasDefault && !checkNotNull(attr, "Attribute is not null")
                         || !hasDefault && checkNull(attr, "Attribute is null")) {
@@ -88,7 +87,7 @@ public class AnnotationDefaultTest extends TestResult {
                 checkEquals(countNumberOfAttributes(method.attributes()),
                         1L,
                         "Number of AnnotationDefault attribute");
-                checkEquals(attr.attributeName(),
+                checkEquals(attr.attributeName().stringValue(),
                         "AnnotationDefault", "attribute_name_index");
 
                 ExpectedValues expectedValue = expectedValues.get(methodName);

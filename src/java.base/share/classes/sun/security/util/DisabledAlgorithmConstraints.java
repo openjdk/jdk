@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,21 +42,21 @@ import java.security.spec.NamedParameterSpec;
 import java.security.spec.PSSParameterSpec;
 import java.time.DateTimeException;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.Collection;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Algorithm constraints for disabled algorithms property
@@ -101,6 +101,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     private final Set<String> disabledAlgorithms;
+    private final List<Pattern> disabledPatterns;
     private final Constraints algorithmConstraints;
     private volatile SoftReference<Map<String, Boolean>> cacheRef =
             new SoftReference<>(null);
@@ -135,6 +136,13 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             AlgorithmDecomposer decomposer) {
         super(decomposer);
         disabledAlgorithms = getAlgorithms(propertyName);
+
+        // Support patterns only for jdk.tls.disabledAlgorithms
+        if (PROPERTY_TLS_DISABLED_ALGS.equals(propertyName)) {
+            disabledPatterns = getDisabledPatterns();
+        } else {
+            disabledPatterns = null;
+        }
 
         // Check for alias
         for (String s : disabledAlgorithms) {
@@ -967,9 +975,46 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         if (result != null) {
             return result;
         }
-        result = checkAlgorithm(disabledAlgorithms, algorithm, decomposer);
+        // We won't check patterns if algorithm check fails.
+        result = checkAlgorithm(disabledAlgorithms, algorithm, decomposer)
+                && checkDisabledPatterns(algorithm);
         cache.put(algorithm, result);
         return result;
+    }
+
+    private boolean checkDisabledPatterns(final String algorithm) {
+        return disabledPatterns == null || disabledPatterns.stream().noneMatch(
+                p -> p.matcher(algorithm).matches());
+    }
+
+    private List<Pattern> getDisabledPatterns() {
+        List<Pattern> ret = null;
+        List<String> patternStrings = new ArrayList<>(4);
+
+        for (String p : disabledAlgorithms) {
+            if (p.contains("*")) {
+                if (!p.startsWith("TLS_")) {
+                    throw new IllegalArgumentException(
+                            "Wildcard pattern must start with \"TLS_\"");
+                }
+                patternStrings.add(p);
+            }
+        }
+
+        if (!patternStrings.isEmpty()) {
+            ret = new ArrayList<>(patternStrings.size());
+
+            for (String p : patternStrings) {
+                // Exclude patterns from algorithm code flow.
+                disabledAlgorithms.remove(p);
+
+                // Ignore all regex characters but asterisk.
+                ret.add(Pattern.compile(
+                        "^\\Q" + p.replace("*", "\\E.*\\Q") + "\\E$"));
+            }
+        }
+
+        return ret;
     }
 
     /*
