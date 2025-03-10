@@ -76,7 +76,7 @@ public class JpegWriterWriteNonOpaqueIndexColorModelTest {
             }
             System.out.println("Tested passed");
             return true;
-        } catch(Exception e) {
+        } catch (Exception e) {
             System.err.println(name + " test failed");
             e.printStackTrace();
             return false;
