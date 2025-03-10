@@ -465,7 +465,8 @@ dl.name-value > dd {
 .main-grid nav.toc button span {
     display: none;
 }
-.main-grid nav.toc button:hover {
+.main-grid nav.toc button:hover,
+.main-grid nav.toc button:focus {
     color: var(--body-text-color);
     border: 1px solid var(--subnav-background-color);
 }
@@ -474,10 +475,11 @@ dl.name-value > dd {
     color: var(--link-color-active);
 }
 .main-grid nav.toc button:hover span,
-.main-grid nav.toc button:active span  {
+.main-grid nav.toc button:focus span  {
     display: inline;
 }
-.main-grid nav.toc button:hover {
+.main-grid nav.toc button:hover,
+.main-grid nav.toc button:focus {
     box-shadow: 1px 1px 5px rgba(0,0,0,0.2);
 }
 .main-grid nav.toc.hide-sidebar {
@@ -511,12 +513,9 @@ nav.toc > ol.toc-list {
 }
 nav.toc ol.toc-list {
     list-style: none;
+    font-size: var(--nav-font-size);
     padding-left: 0;
     margin: 0;
-}
-nav.toc ol.toc-list li {
-    margin: 0;
-    font-size: var(--nav-font-size);
 }
 a.current-selection {
     font-weight: bold;
@@ -535,6 +534,11 @@ nav.toc a:hover {
 }
 nav.toc a.current-selection {
     background-color: var(--toc-highlight-color);
+}
+nav.toc a:focus-visible {
+    background-color: var(--selected-background-color);
+    color: var(--selected-text-color);
+    outline: none;
 }
 /*
  * Styles for lists.
@@ -1015,9 +1019,9 @@ input#search-input {
     margin: 0;
 }
 input.filter-input {
-    width: 44%;
-    max-width: 140px;
-    margin: 0 4px;
+    min-width: 40px;
+    width: 180px;
+    margin: 0 -8px 0 5px;
     padding-right: 18px;
 }
 input#reset-search, input.reset-filter {
@@ -1029,8 +1033,10 @@ input#reset-search, input.reset-filter {
     border-radius:0;
     width:12px;
     height:12px;
+    min-width:12px;
+    min-height:12px;
     font-size:0;
-    display:none;
+    visibility:hidden;
 }
 input#reset-search {
     position:absolute;
@@ -1039,12 +1045,24 @@ input#reset-search {
 }
 input.reset-filter {
     position: relative;
-    right: 20px;
+    right: 10px;
     top: 0;
 }
 input::placeholder {
     color:var(--search-input-placeholder-color);
     opacity: 1;
+}
+input:focus::placeholder {
+    color: transparent;
+}
+kbd {
+    background-color: #eeeeee;
+    border: 1px solid #b0b0b0;
+    border-radius: 3px;
+    padding: 0 4px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2), 0 2px 0 0 rgba(255, 255, 255, 0.6) inset;
+    font-size: 0.9em;
+    font-weight: bold;
 }
 .search-tag-desc-result {
     font-style:italic;
