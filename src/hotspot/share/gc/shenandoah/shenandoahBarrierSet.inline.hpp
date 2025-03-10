@@ -122,9 +122,6 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(DecoratorSet decorators,
   }
 
   // Allow runtime to see unreachable objects that are visited during concurrent class-unloading.
-  // Note that this may also interfere with the DeadCounterClosure when visiting weak oop storage,
-  // but it does not seem to be a problem in practice because the dead count callbacks do not care
-  // about the precise number of dead objects (only that there are dead objects).
   if ((decorators & AS_NO_KEEPALIVE) != 0 &&
       _heap->is_concurrent_weak_root_in_progress() &&
       !_heap->marking_context()->is_marked(obj)) {
