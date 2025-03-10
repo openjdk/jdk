@@ -77,6 +77,8 @@ TEST_VM(SynchronizerTest, monitorListStats) {
   ThreadInVMfromNative invm(THREAD);
   ResourceMark rm(THREAD);
 
+  // Something to reference in OM. It makes no difference which oop it is,
+  // as long as it is correct.
   oop obj = vmClasses::Byte_klass()->allocate_instance(THREAD);
 
   // Test various combinations of thread counts, including single-threaded test.
