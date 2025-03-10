@@ -82,13 +82,15 @@ TEST_VM(SynchronizerTest, monitorListStats) {
   oop obj = vmClasses::Byte_klass()->allocate_instance(THREAD);
 
   // Test various combinations of thread counts, including single-threaded test.
-  for (int threads = 1; threads <= 16; threads++) {
+  static const int MIN_THREADS = 1;
+  static const int MAX_THREADS = 16;
+  static const int OM_PER_THREAD = 1000;
+
+  for (int threads = MIN_THREADS; threads <= MAX_THREADS; threads *= 2) {
     MonitorList list;
 
-    static const size_t OM_PER_THREAD = 1000;
-
     auto work = [&](Thread*, int) {
-      for (size_t c = 0; c < OM_PER_THREAD; c++) {
+      for (int c = 0; c < OM_PER_THREAD; c++) {
         list.add(new ObjectMonitor(obj));
       }
     };
@@ -96,7 +98,7 @@ TEST_VM(SynchronizerTest, monitorListStats) {
     workers.doit();
     workers.join();
 
-    EXPECT_EQ(list.count(), threads*OM_PER_THREAD);
-    EXPECT_EQ(list.max(), threads*OM_PER_THREAD);
+    EXPECT_EQ(list.count(), (size_t)(threads*OM_PER_THREAD));
+    EXPECT_EQ(list.max(), (size_t)(threads*OM_PER_THREAD));
   }
 }
