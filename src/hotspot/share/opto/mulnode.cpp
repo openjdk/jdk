@@ -1395,15 +1395,15 @@ Node* RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   // Check for (x & 0xFF000000) >> 24, whose mask can be made smaller.
   // and convert to (x >> 24) & (0xFF000000 >> 24) = x >> 24
   // Such expressions arise normally from shift chains like (byte)(x >> 24).
-  const TypeInteger* mask_t;
   const Node* and_node = in(1);
-  if (and_node->Opcode() == Op_And(bt) &&
-      (mask_t = phase->type(and_node->in(2))->isa_integer(bt)) &&
-      mask_t->is_con()) {
-    jlong maskbits = mask_t->get_con_as_long(bt);
-    // Convert to "(x >> shift) & (mask >> shift)"
-    Node* shr_nomask = phase->transform(RShiftNode::make(and_node->in(1), in(2), bt));
-    return MulNode::make_and(shr_nomask, phase->integercon(maskbits >> shift, bt), bt);
+  if (and_node->Opcode() == Op_And(bt)) {
+    const TypeInteger* mask_t = phase->type(and_node->in(2))->isa_integer(bt);
+    if (mask_t != nullptr && mask_t->is_con()) {
+      jlong maskbits = mask_t->get_con_as_long(bt);
+      // Convert to "(x >> shift) & (mask >> shift)"
+      Node* shr_nomask = phase->transform(RShiftNode::make(and_node->in(1), in(2), bt));
+      return MulNode::make_and(shr_nomask, phase->integercon(maskbits >> shift, bt), bt);
+    }
   }
   return nullptr;
 }
@@ -1425,10 +1425,11 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return nullptr;
   }
 
-  const TypeInt* left_shift_t;
-  if (shift == 16 &&
-      (left_shift_t = phase->type(shl->in(2))->isa_int()) &&
-      left_shift_t->is_con(16)) {
+  const TypeInt* left_shift_t = phase->type(shl->in(2))->isa_int();
+  if (left_shift_t == nullptr) {
+    return nullptr;
+  }
+  if (shift == 16 && left_shift_t->is_con(16)) {
     Node *ld = shl->in(1);
     if (ld->Opcode() == Op_LoadS) {
       // Sign extension is just useless here.  Return a RShiftI of zero instead
@@ -1448,9 +1449,7 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Check for "(byte[i] <<24)>>24" which simply sign-extends
-  if (shift == 24 &&
-      (left_shift_t = phase->type(shl->in(2))->isa_int()) &&
-      left_shift_t->is_con(24)) {
+  if (shift == 24 && left_shift_t->is_con(24)) {
     Node *ld = shl->in(1);
     if (ld->Opcode() == Op_LoadB) {
       // Sign extension is just useless here

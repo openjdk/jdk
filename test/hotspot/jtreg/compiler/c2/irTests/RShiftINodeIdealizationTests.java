@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8320330
+ * @bug 8320330 8349361
  * @summary Test that RShiftINode optimizations are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.RShiftINodeIdealizationTests
