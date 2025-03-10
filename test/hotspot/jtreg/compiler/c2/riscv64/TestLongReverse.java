@@ -26,7 +26,7 @@
  * @test
  * @key randomness
  * @bug 8318221
- * @summary Test ReverseI intrinsic
+ * @summary Test ReverseL intrinsic
  *
  * @library /test/lib /
  * @requires os.arch == "riscv64" & vm.cpu.features ~= ".*zbkb.*"
