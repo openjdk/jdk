@@ -1638,7 +1638,7 @@ WB_ENTRY(void, WB_RelocateNMethodTo(JNIEnv* env, jobject o, jobject method, jint
   nmethod::relocate_to(code, static_cast<CodeBlobType>(blob_type));
 WB_END
 
-WB_ENTRY(void, WB_ReplaceAllNMethods(JNIEnv* env))
+WB_ENTRY(void, WB_RelocateAllNMethods(JNIEnv* env))
   ResourceMark rm(THREAD);
 
   // Get all nmethods in heap
@@ -2926,7 +2926,7 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_GetNMethod         },
   {CC"relocateNMethodTo0", CC"(Ljava/lang/reflect/Executable;I)V",
                                                       (void*)&WB_RelocateNMethodTo  },
-  {CC"replaceAllNMethods", CC"()V",                   (void*)&WB_ReplaceAllNMethods },
+  {CC"relocateAllNMethods", CC"()V",                  (void*)&WB_RelocateAllNMethods},
   {CC"allocateCodeBlob",   CC"(II)J",                 (void*)&WB_AllocateCodeBlob   },
   {CC"freeCodeBlob",       CC"(J)V",                  (void*)&WB_FreeCodeBlob       },
   {CC"getCodeHeapEntries", CC"(I)[Ljava/lang/Object;",(void*)&WB_GetCodeHeapEntries },

@@ -333,7 +333,7 @@ class nmethod : public CodeBlob {
 #endif
           );
 
-  nmethod(const nmethod& nm);
+  nmethod(nmethod& nm);
 
   // Create nmethod in a specific code heap
   void* operator new(size_t size, int nmethod_size, CodeBlobType code_blob_type) throw();

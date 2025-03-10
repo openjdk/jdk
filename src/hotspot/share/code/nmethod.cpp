@@ -1381,7 +1381,7 @@ nmethod::nmethod(
   }
 }
 
-nmethod::nmethod(const nmethod& nm) : CodeBlob(nm.name(), CodeBlobKind::Nmethod, nm.size(), nm.header_size())
+nmethod::nmethod(nmethod& nm) : CodeBlob(nm.name(), CodeBlobKind::Nmethod, nm.size(), nm.header_size())
 {
   debug_only(NoSafepointVerifier nsv;)
   assert_locked_or_safepoint(CodeCache_lock);
@@ -1503,11 +1503,12 @@ nmethod::nmethod(const nmethod& nm) : CodeBlob(nm.name(), CodeBlobKind::Nmethod,
 
   ICache::invalidate_range(code_begin(), code_size());
 
+  _method                     = nm._method;
+
   post_init();
 
   // Update corresponding Java method to point to this nmethod
   MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
-  _method                     = nm._method;
   if (_method != nullptr && _method->code() == &nm) {
     methodHandle mh(Thread::current(), _method);
     _method->set_code(mh, this, true);
