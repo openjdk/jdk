@@ -203,9 +203,9 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
                                     // deflated. It is also used by the async deflation protocol. See
                                     // ObjectMonitor::deflate_monitor().
 
-  ObjectWaiter* volatile _WaitSet;  // LL of threads wait()ing on the monitor
+  ObjectWaiter* volatile _wait_set; // LL of threads waiting on the monitor - wait()
   volatile int  _waiters;           // number of waiting threads
-  volatile int _WaitSetLock;        // protects Wait Queue - simple spinlock
+  volatile int _wait_set_lock;      // protects wait set queue - simple spinlock
 
   // Used in LM_LEGACY mode to store BasicLock* in case of inflation by contending thread.
   BasicLock* volatile _stack_locker;
@@ -375,7 +375,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   // JVM/TI GetObjectMonitorUsage() needs this:
   int waiters() const;
-  ObjectWaiter* first_waiter()                                         { return _WaitSet; }
+  ObjectWaiter* first_waiter()                                         { return _wait_set; }
   ObjectWaiter* next_waiter(ObjectWaiter* o)                           { return o->_next; }
   JavaThread* thread_of_waiter(ObjectWaiter* o)                        { return o->_thread; }
 

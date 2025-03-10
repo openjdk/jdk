@@ -127,7 +127,7 @@ ParkEvent* ObjectMonitor::_vthread_unparker_ParkEvent = nullptr;
 //   its owner_id (return value from owner_id_from()).
 //
 // * Invariant: A thread appears on at most one monitor list --
-//   entry_list or WaitSet -- at any one time.
+//   entry_list or wait_set -- at any one time.
 //
 // * Contending threads "push" themselves onto the entry_list with CAS
 //   and then spin/park.
@@ -252,10 +252,10 @@ ParkEvent* ObjectMonitor::_vthread_unparker_ParkEvent = nullptr;
 //   the semantics of park-unpark. Put another way, this monitor implementation
 //   depends only on atomic operations and park-unpark.
 //
-// * Waiting threads reside on the WaitSet list -- wait() puts
-//   the caller onto the WaitSet.
+// * Waiting threads reside on the wait_set list -- wait() puts
+//   the caller onto the wait_set.
 //
-// * notify() or notifyAll() simply transfers threads from the WaitSet
+// * notify() or notifyAll() simply transfers threads from the wait_set
 //   to the entry_list. Subsequent exit() operations will
 //   unpark/re-schedule the notifyee. Unparking/re-scheduling a
 //   notifyee in notify() is inefficient - it's likely the notifyee
@@ -296,9 +296,9 @@ ObjectMonitor::ObjectMonitor(oop object) :
   _succ(NO_OWNER),
   _SpinDuration(ObjectMonitor::Knob_SpinLimit),
   _contentions(0),
-  _WaitSet(nullptr),
+  _wait_set(nullptr),
   _waiters(0),
-  _WaitSetLock(0),
+  _wait_set_lock(0),
   _stack_locker(nullptr)
 { }
 
@@ -1765,14 +1765,14 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
   // Enter the waiting queue, which is a circular doubly linked list in this case
   // but it could be a priority queue or any data structure.
-  // _WaitSetLock protects the wait queue.  Normally the wait queue is accessed only
+  // _wait_set_lock protects the wait queue.  Normally the wait queue is accessed only
   // by the owner of the monitor *except* in the case where park()
   // returns because of a timeout of interrupt.  Contention is exceptionally rare
   // so we use a simple spin-lock instead of a heavier-weight blocking lock.
 
-  Thread::SpinAcquire(&_WaitSetLock, "WaitSet - add");
+  Thread::SpinAcquire(&_wait_set_lock, "wait_set - add");
   add_waiter(&node);
-  Thread::SpinRelease(&_WaitSetLock);
+  Thread::SpinRelease(&_wait_set_lock);
 
   intx save = _recursions;     // record the old recursion count
   _waiters++;                  // increment the number of waiters
@@ -1780,7 +1780,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   exit(current);               // exit the monitor
   guarantee(!has_owner(current), "invariant");
 
-  // The thread is on the WaitSet list - now park() it.
+  // The thread is on the wait_set list - now park() it.
   // On MP systems it's conceivable that a brief spin before we park
   // could be profitable.
   //
@@ -1813,10 +1813,10 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       }
     }
 
-    // Node may be on the WaitSet, or on the entry_list, or in transition
-    // from the WaitSet to the entry_list.
-    // See if we need to remove Node from the WaitSet.
-    // We use double-checked locking to avoid grabbing _WaitSetLock
+    // Node may be on the wait_set, or on the entry_list, or in transition
+    // from the wait_set to the entry_list.
+    // See if we need to remove Node from the wait_set.
+    // We use double-checked locking to avoid grabbing _wait_set_lock
     // if the thread is not on the wait queue.
     //
     // Note that we don't need a fence before the fetch of TState.
@@ -1829,13 +1829,13 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     // That is, we fail toward safety.
 
     if (node.TState == ObjectWaiter::TS_WAIT) {
-      Thread::SpinAcquire(&_WaitSetLock, "WaitSet - unlink");
+      Thread::SpinAcquire(&_wait_set_lock, "wait_set - unlink");
       if (node.TState == ObjectWaiter::TS_WAIT) {
-        dequeue_specific_waiter(&node);       // unlink from WaitSet
+        dequeue_specific_waiter(&node);       // unlink from wait_set
         assert(!node._notified, "invariant");
         node.TState = ObjectWaiter::TS_RUN;
       }
-      Thread::SpinRelease(&_WaitSetLock);
+      Thread::SpinRelease(&_wait_set_lock);
     }
 
     // The thread is now either on off-list (TS_RUN),
@@ -1940,11 +1940,11 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
 // Consider:
 // If the lock is cool (entry_list == null && succ == null) and we're on an MP system
-// then instead of transferring a thread from the WaitSet to the entry_list
-// we might just dequeue a thread from the WaitSet and directly unpark() it.
+// then instead of transferring a thread from the wait_set to the entry_list
+// we might just dequeue a thread from the wait_set and directly unpark() it.
 
 void ObjectMonitor::notify_internal(JavaThread* current) {
-  Thread::SpinAcquire(&_WaitSetLock, "WaitSet - notify");
+  Thread::SpinAcquire(&_wait_set_lock, "wait_set - notify");
   ObjectWaiter* iterator = dequeue_waiter();
   if (iterator != nullptr) {
     guarantee(iterator->TState == ObjectWaiter::TS_WAIT, "invariant");
@@ -1970,19 +1970,19 @@ void ObjectMonitor::notify_internal(JavaThread* current) {
     iterator->_notifier_tid = JFR_THREAD_ID(current);
     add_to_entry_list(current, iterator);
 
-    // _WaitSetLock protects the wait queue, not the entry_list.  We could
+    // _wait_set_lock protects the wait queue, not the entry_list.  We could
     // move the add-to-entry_list operation, above, outside the critical section
-    // protected by _WaitSetLock.  In practice that's not useful.  With the
+    // protected by _wait_set_lock.  In practice that's not useful.  With the
     // exception of  wait() timeouts and interrupts the monitor owner
-    // is the only thread that grabs _WaitSetLock.  There's almost no contention
-    // on _WaitSetLock so it's not profitable to reduce the length of the
+    // is the only thread that grabs _wait_set_lock.  There's almost no contention
+    // on _wait_set_lock so it's not profitable to reduce the length of the
     // critical section.
 
     if (!iterator->is_vthread()) {
       iterator->wait_reenter_begin(this);
     }
   }
-  Thread::SpinRelease(&_WaitSetLock);
+  Thread::SpinRelease(&_wait_set_lock);
 }
 
 // Consider: a not-uncommon synchronization bug is to use notify() when
@@ -1998,7 +1998,7 @@ void ObjectMonitor::notify_internal(JavaThread* current) {
 void ObjectMonitor::notify(TRAPS) {
   JavaThread* current = THREAD;
   CHECK_OWNER();  // Throws IMSE if not owner.
-  if (_WaitSet == nullptr) {
+  if (_wait_set == nullptr) {
     return;
   }
   DTRACE_MONITOR_PROBE(notify, this, object(), current);
@@ -2015,13 +2015,13 @@ void ObjectMonitor::notify(TRAPS) {
 void ObjectMonitor::notifyAll(TRAPS) {
   JavaThread* current = THREAD;
   CHECK_OWNER();  // Throws IMSE if not owner.
-  if (_WaitSet == nullptr) {
+  if (_wait_set == nullptr) {
     return;
   }
 
   DTRACE_MONITOR_PROBE(notifyAll, this, object(), current);
   int tally = 0;
-  while (_WaitSet != nullptr) {
+  while (_wait_set != nullptr) {
     tally++;
     notify_internal(current);
   }
@@ -2038,14 +2038,14 @@ void ObjectMonitor::vthread_wait(JavaThread* current, jlong millis) {
 
   // Enter the waiting queue, which is a circular doubly linked list in this case
   // but it could be a priority queue or any data structure.
-  // _WaitSetLock protects the wait queue.  Normally the wait queue is accessed only
+  // _wait_set_lock protects the wait queue.  Normally the wait queue is accessed only
   // by the owner of the monitor *except* in the case where park()
   // returns because of a timeout or interrupt.  Contention is exceptionally rare
   // so we use a simple spin-lock instead of a heavier-weight blocking lock.
 
-  Thread::SpinAcquire(&_WaitSetLock, "WaitSet - add");
+  Thread::SpinAcquire(&_wait_set_lock, "wait_set - add");
   add_waiter(node);
-  Thread::SpinRelease(&_WaitSetLock);
+  Thread::SpinRelease(&_wait_set_lock);
 
   node->_recursions = _recursions;   // record the old recursion count
   _recursions = 0;                   // set the recursion level to be 0
@@ -2064,15 +2064,15 @@ void ObjectMonitor::vthread_wait(JavaThread* current, jlong millis) {
 bool ObjectMonitor::vthread_wait_reenter(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont) {
   // The first time we run after being preempted on Object.wait() we
   // need to check if we were interrupted or the wait timed-out, and
-  // in that case remove ourselves from the _WaitSet queue.
+  // in that case remove ourselves from the _wait_set queue.
   if (node->TState == ObjectWaiter::TS_WAIT) {
-    Thread::SpinAcquire(&_WaitSetLock, "WaitSet - unlink");
+    Thread::SpinAcquire(&_wait_set_lock, "wait_set - unlink");
     if (node->TState == ObjectWaiter::TS_WAIT) {
-      dequeue_specific_waiter(node);       // unlink from WaitSet
+      dequeue_specific_waiter(node);       // unlink from wait_set
       assert(!node->_notified, "invariant");
       node->TState = ObjectWaiter::TS_RUN;
     }
-    Thread::SpinRelease(&_WaitSetLock);
+    Thread::SpinRelease(&_wait_set_lock);
   }
 
   // If this was an interrupted case, set the _interrupted boolean so that
@@ -2365,7 +2365,7 @@ bool ObjectMonitor::try_spin(JavaThread* current) {
 
 
 // -----------------------------------------------------------------------------
-// WaitSet management ...
+// wait_set management ...
 
 ObjectWaiter::ObjectWaiter(JavaThread* current) {
   _next     = nullptr;
@@ -2412,12 +2412,12 @@ inline void ObjectMonitor::add_waiter(ObjectWaiter* node) {
   assert(node->_prev == nullptr, "node already in list");
   assert(node->_next == nullptr, "node already in list");
   // put node at end of queue (circular doubly linked list)
-  if (_WaitSet == nullptr) {
-    _WaitSet = node;
+  if (_wait_set == nullptr) {
+    _wait_set = node;
     node->_prev = node;
     node->_next = node;
   } else {
-    ObjectWaiter* head = _WaitSet;
+    ObjectWaiter* head = _wait_set;
     ObjectWaiter* tail = head->_prev;
     assert(tail->_next == head, "invariant check");
     tail->_next = node;
@@ -2429,7 +2429,7 @@ inline void ObjectMonitor::add_waiter(ObjectWaiter* node) {
 
 inline ObjectWaiter* ObjectMonitor::dequeue_waiter() {
   // dequeue the very first waiter
-  ObjectWaiter* waiter = _WaitSet;
+  ObjectWaiter* waiter = _wait_set;
   if (waiter) {
     dequeue_specific_waiter(waiter);
   }
@@ -2446,15 +2446,15 @@ inline void ObjectMonitor::dequeue_specific_waiter(ObjectWaiter* node) {
   ObjectWaiter* next = node->_next;
   if (next == node) {
     assert(node->_prev == node, "invariant check");
-    _WaitSet = nullptr;
+    _wait_set = nullptr;
   } else {
     ObjectWaiter* prev = node->_prev;
     assert(prev->_next == node, "invariant check");
     assert(next->_prev == node, "invariant check");
     next->_prev = prev;
     prev->_next = next;
-    if (_WaitSet == node) {
-      _WaitSet = next;
+    if (_wait_set == node) {
+      _wait_set = next;
     }
   }
   node->_next = nullptr;
@@ -2554,9 +2554,9 @@ void ObjectMonitor::print() const { print_on(tty); }
 //   _succ = 0x0000000000000000
 //   _SpinDuration = 5000
 //   _contentions = 0
-//   _WaitSet = 0x0000700009756248
+//   _wait_set = 0x0000700009756248
 //   _waiters = 1
-//   _WaitSetLock = 0
+//   _wait_set_lock = 0
 // }
 //
 void ObjectMonitor::print_debug_style_on(outputStream* st) const {
@@ -2582,9 +2582,9 @@ void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("  _succ = " INT64_FORMAT, successor());
   st->print_cr("  _SpinDuration = %d", _SpinDuration);
   st->print_cr("  _contentions = %d", contentions());
-  st->print_cr("  _WaitSet = " INTPTR_FORMAT, p2i(_WaitSet));
+  st->print_cr("  _wait_set = " INTPTR_FORMAT, p2i(_wait_set));
   st->print_cr("  _waiters = %d", _waiters);
-  st->print_cr("  _WaitSetLock = %d", _WaitSetLock);
+  st->print_cr("  _wait_set_lock = %d", _wait_set_lock);
   st->print_cr("}");
 }
 #endif
