@@ -1054,7 +1054,7 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
 }
 
 void LIRGenerator::do_update_CRC32(Intrinsic* x) {
-  assert(UseCRC32Intrinsics, "need AVX and LCMUL instructions support");
+  assert(UseCRC32Intrinsics, "need AVX and CLMUL instructions support");
   // Make all state_for calls early since they can emit code
   LIR_Opr result = rlock_result(x);
   int flags = 0;
@@ -1131,7 +1131,7 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
 }
 
 void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
-  assert(UseCRC32CIntrinsics, "need AVX and LCMUL instructions support");
+  assert(UseCRC32CIntrinsics, "need AVX and CLMUL instructions support");
   LIR_Opr result = rlock_result(x);
 
   switch (x->id()) {
