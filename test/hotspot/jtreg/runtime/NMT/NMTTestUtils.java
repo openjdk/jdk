@@ -28,10 +28,10 @@ import jdk.test.lib.process.ProcessTools;
 
 public class NMTTestUtils {
 
-private long startTime = System.currentTimeMillis();
+private static long startTime = System.currentTimeMillis();
 
     public static OutputAnalyzer startJcmdVMNativeMemory(String... additional_args) throws Exception {
-System.out("[" + (System.currentTimeMillis() - startTime) + "]: >> startJcmdVMNativeMemory");
+System.out.println("[" + (System.currentTimeMillis() - startTime) + "]: >> startJcmdVMNativeMemory");
         if (additional_args == null) {
             additional_args = new String[] {};
         }
@@ -41,10 +41,10 @@ System.out("[" + (System.currentTimeMillis() - startTime) + "]: >> startJcmdVMNa
         fullargs[2] = "VM.native_memory";
         System.arraycopy(additional_args, 0, fullargs, 3, additional_args.length);
         ProcessBuilder pb = new ProcessBuilder();
-System.out("[" + (System.currentTimeMillis() - startTime) + "]:   startJcmdVMNativeMemory, args = " + fullargs);
+System.out.println("[" + (System.currentTimeMillis() - startTime) + "]:   startJcmdVMNativeMemory, args = " + fullargs);
         pb.command(fullargs);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-System.out("[" + (System.currentTimeMillis() - startTime) + "]: << startJcmdVMNativeMemory");
+System.out.println("[" + (System.currentTimeMillis() - startTime) + "]: << startJcmdVMNativeMemory");
         return output;
     }
 
