@@ -29,7 +29,7 @@
 #include <limits>
 
 // A few arbitrarily chosen values to test the align functions on.
-static constexpr uint64_t values[] = {1, 3, 10, 345, 1023, 1024, 1025, 23909034, INT_MAX, uint64_t(-1) / 2, uint64_t(-1) / 2 + 100, uint64_t(-1)};
+static constexpr uint64_t values[] = {1, 3, 10, 345, 1023, 1024, 1025, 23909034, INT_MAX, uint64_t(-1) / 2, uint64_t(-1) / 2 + 100, ~(uint64_t(1) << 62)};
 
 template <typename T>
 static constexpr T max_alignment() {
@@ -194,3 +194,78 @@ TEST(Align, alignments) {
 
   test_alignments<int8_t, int8_t>();
 }
+
+template<typename T, typename A>
+static constexpr void test_can_align_up() {
+  int alignment_value = 4;
+  int small_value = 63;
+  A alignment = static_cast<A>(alignment_value);
+
+  ASSERT_TRUE(can_align_up(static_cast<T>(small_value), alignment));
+  ASSERT_TRUE(can_align_up(static_cast<T>(-small_value), alignment));
+  ASSERT_TRUE(can_align_up(std::numeric_limits<T>::min(), alignment));
+  ASSERT_FALSE(can_align_up(std::numeric_limits<T>::max(), alignment));
+  ASSERT_FALSE(can_align_up(std::numeric_limits<T>::max() - 1, alignment));
+  ASSERT_TRUE(can_align_up(align_down(std::numeric_limits<T>::max(), alignment), alignment));
+  ASSERT_FALSE(can_align_up(align_down(std::numeric_limits<T>::max(), alignment) + 1, alignment));
+  if (std::is_signed<T>::value) {
+    ASSERT_TRUE(can_align_up(static_cast<T>(-1), alignment));
+    ASSERT_TRUE(can_align_up(align_down(static_cast<T>(-1), alignment), alignment));
+    ASSERT_TRUE(can_align_up(align_down(static_cast<T>(-1) + 1, alignment), alignment));
+  }
+}
+
+TEST(Align, test_can_align_up_int32_int32) {
+  test_can_align_up<int32_t, int32_t>();
+}
+
+TEST(Align, test_can_align_up_uint32_uint32) {
+  test_can_align_up<uint32_t, uint32_t>();
+}
+
+TEST(Align, test_can_align_up_int32_uint32) {
+  test_can_align_up<int32_t, uint32_t>();
+}
+
+TEST(Align, test_can_align_up_uint32_int32) {
+  test_can_align_up<uint32_t, int32_t>();
+}
+
+TEST(Align, test_can_align_up_ptr) {
+  uint alignment = 4;
+  char buffer[8];
+
+  ASSERT_TRUE(can_align_up(buffer, alignment));
+  ASSERT_FALSE(can_align_up(reinterpret_cast<void*>(UINTPTR_MAX), alignment));
+}
+
+#ifdef ASSERT
+template <typename T, typename A>
+static void test_fail_alignment() {
+  A alignment = max_alignment<A>();
+  T value = align_down(std::numeric_limits<T>::max(), alignment) + 1;
+  // Aligning value to alignment would now overflow.
+  // Assert inside align_up expected.
+  T aligned = align_up(value, alignment);
+}
+
+TEST_VM_ASSERT(Align, fail_alignments_same_size) {
+  test_fail_alignment<uint64_t, uint64_t>();
+}
+
+TEST_VM_ASSERT(Align, fail_alignments_unsigned_signed) {
+  test_fail_alignment<uint32_t, int32_t>();
+}
+
+TEST_VM_ASSERT(Align, fail_alignments_signed_unsigned) {
+  test_fail_alignment<int64_t, uint32_t>();
+}
+
+TEST_VM_ASSERT(Align, fail_alignments_small_large) {
+  test_fail_alignment<uint8_t, uint64_t>();
+}
+
+TEST_VM_ASSERT(Align, fail_alignments_large_small) {
+  test_fail_alignment<uint64_t, uint8_t>();
+}
+#endif // ASSERT
