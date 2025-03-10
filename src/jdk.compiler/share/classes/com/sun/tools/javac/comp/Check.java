@@ -162,16 +162,13 @@ public class Check {
         profile = Profile.instance(context);
         preview = Preview.instance(context);
 
-        boolean verboseDeprecated = lint.isEnabled(LintCategory.DEPRECATION);
-        boolean verboseRemoval = lint.isEnabled(LintCategory.REMOVAL);
-        boolean verboseUnchecked = lint.isEnabled(LintCategory.UNCHECKED);
         boolean enforceMandatoryWarnings = true;
 
-        deprecationHandler = new MandatoryWarningHandler(log, null, verboseDeprecated,
+        deprecationHandler = new MandatoryWarningHandler(log, null,
                 enforceMandatoryWarnings, LintCategory.DEPRECATION, "deprecated");
-        removalHandler = new MandatoryWarningHandler(log, null, verboseRemoval,
+        removalHandler = new MandatoryWarningHandler(log, null,
                 enforceMandatoryWarnings, LintCategory.REMOVAL);
-        uncheckedHandler = new MandatoryWarningHandler(log, null, verboseUnchecked,
+        uncheckedHandler = new MandatoryWarningHandler(log, null,
                 enforceMandatoryWarnings, LintCategory.UNCHECKED);
 
         deferredLintHandler = DeferredLintHandler.instance(context);
@@ -240,18 +237,16 @@ public class Check {
      */
     void warnDeprecated(DiagnosticPosition pos, Symbol sym) {
         if (sym.isDeprecatedForRemoval()) {
-            if (!lint.isSuppressed(LintCategory.REMOVAL)) {
-                if (sym.kind == MDL) {
-                    removalHandler.report(pos, LintWarnings.HasBeenDeprecatedForRemovalModule(sym));
-                } else {
-                    removalHandler.report(pos, LintWarnings.HasBeenDeprecatedForRemoval(sym, sym.location()));
-                }
-            }
-        } else if (!lint.isSuppressed(LintCategory.DEPRECATION)) {
             if (sym.kind == MDL) {
-                deprecationHandler.report(pos, LintWarnings.HasBeenDeprecatedModule(sym));
+                removalHandler.report(lint, pos, LintWarnings.HasBeenDeprecatedForRemovalModule(sym));
             } else {
-                deprecationHandler.report(pos, LintWarnings.HasBeenDeprecated(sym, sym.location()));
+                removalHandler.report(lint, pos, LintWarnings.HasBeenDeprecatedForRemoval(sym, sym.location()));
+            }
+        } else {
+            if (sym.kind == MDL) {
+                deprecationHandler.report(lint, pos, LintWarnings.HasBeenDeprecatedModule(sym));
+            } else {
+                deprecationHandler.report(lint, pos, LintWarnings.HasBeenDeprecated(sym, sym.location()));
             }
         }
     }
@@ -260,7 +255,7 @@ public class Check {
      *  @param pos        Position to be used for error reporting.
      *  @param msg        A Warning describing the problem.
      */
-    public void warnPreviewAPI(DiagnosticPosition pos, LintWarning warnKey) {
+    public void warnPreviewAPI(Lint lint, DiagnosticPosition pos, LintWarning warnKey) {
         if (!lint.isSuppressed(LintCategory.PREVIEW))
             preview.reportPreviewWarning(pos, warnKey);
     }
@@ -269,7 +264,7 @@ public class Check {
      *  @param pos        Position to be used for error reporting.
      *  @param msg        A Warning describing the problem.
      */
-    public void warnDeclaredUsingPreview(DiagnosticPosition pos, Symbol sym) {
+    public void warnDeclaredUsingPreview(Lint lint, DiagnosticPosition pos, Symbol sym) {
         if (!lint.isSuppressed(LintCategory.PREVIEW))
             preview.reportPreviewWarning(pos, LintWarnings.DeclaredUsingPreview(kindName(sym), sym));
     }
@@ -287,8 +282,7 @@ public class Check {
      *  @param msg        A string describing the problem.
      */
     public void warnUnchecked(DiagnosticPosition pos, LintWarning warnKey) {
-        if (!lint.isSuppressed(LintCategory.UNCHECKED))
-            uncheckedHandler.report(pos, warnKey);
+        uncheckedHandler.report(lint, pos, warnKey);
     }
 
     /**
@@ -3830,10 +3824,10 @@ public class Check {
                     log.error(pos, Errors.IsPreview(s));
                 } else {
                     preview.markUsesPreview(pos);
-                    deferredLintHandler.report(_l -> warnPreviewAPI(pos, LintWarnings.IsPreview(s)));
+                    warnPreviewAPI(lint, pos, LintWarnings.IsPreview(s));
                 }
             } else {
-                    deferredLintHandler.report(_l -> warnPreviewAPI(pos, LintWarnings.IsPreviewReflective(s)));
+                    warnPreviewAPI(lint, pos, LintWarnings.IsPreviewReflective(s));
             }
         }
         if (preview.declaredUsingPreviewFeature(s)) {
@@ -3842,7 +3836,7 @@ public class Check {
                 //If "s" is compiled from source, then there was an error for it already;
                 //if "s" is from classfile, there already was an error for the classfile.
                 preview.markUsesPreview(pos);
-                deferredLintHandler.report(_l -> warnDeclaredUsingPreview(pos, s));
+                warnDeclaredUsingPreview(lint, pos, s);
             }
         }
     }
@@ -3996,6 +3990,8 @@ public class Check {
             Assert.check(scanDepth == 1);
 
             // Initialize state for this method
+            Lint prevLint = lint;
+            lint = lint.augment(tree.sym);
             constructor = TreeInfo.isConstructor(tree);
             try {
 
@@ -4016,6 +4012,7 @@ public class Check {
                 constructor = false;
                 earlyReturn = null;
                 initCall = null;
+                lint = prevLint;
             }
         }
 
@@ -4058,7 +4055,7 @@ public class Check {
 
                 // If super()/this() isn't first, require flexible constructors feature
                 if (!firstStatement)
-                    preview.checkSourceLevel(apply.pos(), Feature.FLEXIBLE_CONSTRUCTORS);
+                    preview.checkSourceLevel(lint, apply.pos(), Feature.FLEXIBLE_CONSTRUCTORS);
 
                 // We found a legitimate super()/this() call; remember it
                 initCall = methodName;
@@ -4733,7 +4730,7 @@ public class Check {
                 boolean allPatternCaseLabels = c.labels.stream().allMatch(p -> p instanceof JCPatternCaseLabel);
 
                 if (allPatternCaseLabels) {
-                    preview.checkSourceLevel(c.labels.tail.head.pos(), Feature.UNNAMED_VARIABLES);
+                    preview.checkSourceLevel(lint, c.labels.tail.head.pos(), Feature.UNNAMED_VARIABLES);
                 }
 
                 for (JCCaseLabel label : c.labels.tail) {
