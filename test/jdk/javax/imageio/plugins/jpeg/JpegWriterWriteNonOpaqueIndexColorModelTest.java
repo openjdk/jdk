@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8351108
  * @summary This test verifies that attempting to write a JPEG using
