@@ -26,9 +26,8 @@
 * @key randomness
 * @bug 8350835
 * @summary Test bug fix for JDK-8350835 discovered through Template Framework
-* @requires vm.compiler2.enabled
 * @library /test/lib /
-* @run main/othervm -XX:-TieredCompilation -XX:CompileOnly=compiler.vectorization.TestFloat16ToFloatConv::test* compiler.vectorization.TestFloat16ToFloatConv
+* @run main/othervm compiler.vectorization.TestFloat16ToFloatConv
 */
 
 package compiler.vectorization;
@@ -41,25 +40,30 @@ public class TestFloat16ToFloatConv {
     private static final Random RANDOM = Utils.getRandomInstance();
     private static final int SIZE = 1024;
     private static byte[] aB = new byte[SIZE];
+    private static char[] aC = new char[SIZE];
     private static short[] aS = new short[SIZE];
     private static int[] aI = new int[SIZE];
     private static long[] aL = new long[SIZE];
-    private static float[] goldB, goldS, goldI, goldL;
+    private static float[] goldB, goldC, goldS, goldI, goldL;
 
     static {
         for (int i = 0; i < aB.length; i++) {
             aB[i] = (byte)RANDOM.nextInt();
+            aC[i] = (char)RANDOM.nextInt();
             aS[i] = (short)RANDOM.nextInt();
             aI[i] = RANDOM.nextInt();
             aL[i] = RANDOM.nextLong();
         }
         goldB = testByteKernel(aB);
+        goldC = testCharKernel(aC);
         goldS = testShortKernel(aS);
         goldI = testIntKernel(aI);
         goldL = testLongKernel(aL);
     }
 
     @Test
+    // Not vectorized due to JDK-8350835
+    @IR(failOn = { IRNode.VECTOR_CAST_HF2F })
     public static float[] testByteKernel(byte[] barr) {
         float[] res = new float[barr.length];
         for (int i = 0; i < barr.length; i++) {
@@ -69,6 +73,23 @@ public class TestFloat16ToFloatConv {
     }
 
     @Test
+    @IR(counts = {IRNode.VECTOR_CAST_HF2F, "> 0"},
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        applyIfCPUFeatureOr = {"f16c", "true", "avx512f", "true", "zvfh", "true", "asimd", "true", "sve", "true"})
+    public static float[] testCharKernel(char[] carr) {
+        float[] res = new float[carr.length];
+        for (int i = 0; i < carr.length; i++) {
+            res[i] = Float.float16ToFloat((short)carr[i]);
+        }
+        return res;
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_CAST_HF2F, "> 0"},
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        applyIfCPUFeatureOr = {"f16c", "true", "avx512f", "true", "zvfh", "true", "asimd", "true", "sve", "true"})
     public static float[] testShortKernel(short[] sarr) {
         float[] res = new float[sarr.length];
         for (int i = 0; i < sarr.length; i++) {
@@ -78,6 +99,8 @@ public class TestFloat16ToFloatConv {
     }
 
     @Test
+    // Not vectorized due to JDK-8350835
+    @IR(failOn = { IRNode.VECTOR_CAST_HF2F })
     public static float[] testIntKernel(int[] iarr) {
         float[] res = new float[iarr.length];
         for (int i = 0; i < iarr.length; i++) {
@@ -87,6 +110,8 @@ public class TestFloat16ToFloatConv {
     }
 
     @Test
+    // Not vectorized due to JDK-8350835
+    @IR(failOn = { IRNode.VECTOR_CAST_HF2F })
     public static float[] testLongKernel(long[] larr) {
         float[] res = new float[larr.length];
         for (int i = 0; i < larr.length; i++) {
@@ -107,6 +132,12 @@ public class TestFloat16ToFloatConv {
     public static void testByte() {
         float[] farr = testByteKernel(aB);
         checkResult(farr, goldB);
+    }
+
+    @Run(test = {"testCharKernel"})
+    public static void testChar() {
+        float[] farr = testCharKernel(aC);
+        checkResult(farr, goldC);
     }
 
     @Run(test = {"testShortKernel"})
