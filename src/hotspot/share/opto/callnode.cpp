@@ -1069,9 +1069,13 @@ void CallJavaNode::dump_compact_spec(outputStream* st) const {
 }
 #endif
 
-void CallJavaNode::prepend_and_reset_generator(PhaseGVN* phase, CallGenerator* cg) {
-  phase->C->prepend_late_inline(cg);
-  set_generator(nullptr);
+void CallJavaNode::register_for_late_inline() {
+  if (generator() != nullptr) {
+    Compile::current()->prepend_late_inline(generator());
+    set_generator(nullptr);
+  } else {
+    assert(false, "repeated inline attempt");
+  }
 }
 
 //=============================================================================
@@ -1094,14 +1098,14 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       vmIntrinsics::ID iid = callee->intrinsic_id();
       if (iid == vmIntrinsics::_invokeBasic) {
         if (in(TypeFunc::Parms)->Opcode() == Op_ConP) {
-          prepend_and_reset_generator(phase, cg);
+          register_for_late_inline();
         }
       } else if (iid == vmIntrinsics::_linkToNative) {
         // never retry
       } else {
         assert(callee->has_member_arg(), "wrong type of call?");
         if (in(TypeFunc::Parms + callee->arg_size() - 1)->Opcode() == Op_ConP) {
-          prepend_and_reset_generator(phase, cg);
+          register_for_late_inline();
           phase->C->inc_number_of_mh_late_inlines();
         }
       }
@@ -1112,7 +1116,7 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         phase->C->inline_printer()->record(cg->method(), cg->call_node()->jvms(), InliningResult::FAILURE,
           "static call node changed: trying again");
       }
-      prepend_and_reset_generator(phase, cg);
+      register_for_late_inline();
     }
   }
   return CallNode::Ideal(phase, can_reshape);
@@ -1212,7 +1216,7 @@ Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       if (!call_does_dispatch) {
         // Register for late inlining.
         cg->set_callee_method(callee);
-        prepend_and_reset_generator(phase, cg); // MH late inlining prepends to the list, so do the same
+        register_for_late_inline(); // MH late inlining prepends to the list, so do the same
       }
     } else {
       assert(IncrementalInline, "required");
@@ -1220,7 +1224,7 @@ Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         phase->C->inline_printer()->record(cg->method(), cg->call_node()->jvms(), InliningResult::FAILURE,
           "dynamic call node changed: trying again");
       }
-      prepend_and_reset_generator(phase, cg);
+      register_for_late_inline();
     }
   }
   return CallNode::Ideal(phase, can_reshape);
