@@ -41,6 +41,7 @@
 #include "jfr/jfrEvents.hpp"
 #include "jvm_io.h"
 #include "memory/allocation.hpp"
+#include "memory/arena.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
@@ -436,6 +437,9 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
         n->raw_del_out(j);
         --j;
         --max;
+        if (child->is_data_proj_of_pure_function(n)) {
+          worklist.push(n);
+        }
       }
     }
     if (n->outcnt() == 1 && n->has_special_unique_user()) {
@@ -635,7 +639,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _has_method_handle_invokes(false),
       _clinit_barrier_on_entry(false),
       _stress_seed(0),
-      _comp_arena(mtCompiler),
+      _comp_arena(mtCompiler, Arena::Tag::tag_comp),
       _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
       _env(ci_env),
       _directive(directive),
@@ -658,7 +662,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _node_arena_two(mtCompiler, Arena::Tag::tag_node),
       _node_arena(&_node_arena_one),
       _mach_constant_base_node(nullptr),
-      _Compile_types(mtCompiler),
+      _Compile_types(mtCompiler, Arena::Tag::tag_type),
       _initial_gvn(nullptr),
       _igvn_worklist(nullptr),
       _types(nullptr),
@@ -912,7 +916,7 @@ Compile::Compile(ciEnv* ci_env,
       _has_method_handle_invokes(false),
       _clinit_barrier_on_entry(false),
       _stress_seed(0),
-      _comp_arena(mtCompiler),
+      _comp_arena(mtCompiler, Arena::Tag::tag_comp),
       _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
       _env(ci_env),
       _directive(directive),
@@ -924,11 +928,11 @@ Compile::Compile(ciEnv* ci_env,
           _unique(0),
       _dead_node_count(0),
       _dead_node_list(comp_arena()),
-      _node_arena_one(mtCompiler),
-      _node_arena_two(mtCompiler),
+      _node_arena_one(mtCompiler, Arena::Tag::tag_node),
+      _node_arena_two(mtCompiler, Arena::Tag::tag_node),
       _node_arena(&_node_arena_one),
       _mach_constant_base_node(nullptr),
-      _Compile_types(mtCompiler),
+      _Compile_types(mtCompiler, Arena::Tag::tag_type),
       _initial_gvn(nullptr),
       _igvn_worklist(nullptr),
       _types(nullptr),
@@ -3010,6 +3014,13 @@ void Compile::Code_Gen() {
     print_method(PHASE_POSTALLOC_EXPAND, 3);
   }
 
+#ifdef ASSERT
+  {
+    CompilationMemoryStatistic::do_test_allocations();
+    if (failing()) return;
+  }
+#endif
+
   // Convert Nodes to instruction bits in a buffer
   {
     TracePhase tp(_t_output);
@@ -4310,6 +4321,7 @@ Compile::TracePhase::TracePhase(const char* name, PhaseTraceId id)
     _dolog(CITimeVerbose)
 {
   assert(_compile != nullptr, "sanity check");
+  assert(id != PhaseTraceId::_t_none, "Don't use none");
   if (_dolog) {
     _log = _compile->log();
   }
@@ -4318,12 +4330,23 @@ Compile::TracePhase::TracePhase(const char* name, PhaseTraceId id)
     _log->stamp();
     _log->end_head();
   }
+
+  // Inform memory statistic, if enabled
+  if (CompilationMemoryStatistic::enabled()) {
+    CompilationMemoryStatistic::on_phase_start((int)id, name);
+  }
 }
 
 Compile::TracePhase::TracePhase(PhaseTraceId id)
   : TracePhase(Phase::get_phase_trace_id_text(id), id) {}
 
 Compile::TracePhase::~TracePhase() {
+
+  // Inform memory statistic, if enabled
+  if (CompilationMemoryStatistic::enabled()) {
+    CompilationMemoryStatistic::on_phase_end();
+  }
+
   if (_compile->failing_internal()) {
     if (_log != nullptr) {
       _log->done("phase");

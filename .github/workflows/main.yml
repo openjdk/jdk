@@ -225,6 +225,43 @@ jobs:
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.prepare.outputs.linux-x64-variants == 'true'
 
+  build-linux-x64-static:
+    name: linux-x64-static
+    needs: prepare
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      platform: linux-x64
+      make-target: 'static-jdk-image'
+      # There are issues with fastdebug static build in GHA due to space limit.
+      # Only do release build for now.
+      debug-levels: '[ "release" ]'
+      gcc-major-version: '10'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
+      # It currently doesn't produce any bundles, but probably will do in
+      # the future.
+      bundle-suffix: "-static"
+    if: needs.prepare.outputs.linux-x64 == 'true'
+
+  build-linux-x64-static-libs:
+    name: linux-x64-static-libs
+    needs: prepare
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      platform: linux-x64
+      make-target: 'static-libs-bundles'
+      # Only build static-libs-bundles for release builds.
+      # For debug builds, building static-libs often exceeds disk space.
+      debug-levels: '[ "release" ]'
+      gcc-major-version: '10'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
+      # Upload static libs bundles separately to avoid interference with normal linux-x64 bundle.
+      # This bundle is not used by testing jobs, but downstreams use it to check that
+      # dependent projects, e.g. libgraal, builds fine.
+      bundle-suffix: "-static-libs"
+    if: needs.prepare.outputs.linux-x64-variants == 'true'
+
   build-linux-cross-compile:
     name: linux-cross-compile
     needs: prepare

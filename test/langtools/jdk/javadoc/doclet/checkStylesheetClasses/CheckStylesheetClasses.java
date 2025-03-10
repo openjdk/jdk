@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,13 +118,13 @@ public class CheckStylesheetClasses {
         htmlStyleNames.removeIf(s -> s.endsWith("-summary") && !styleSheetNames.contains(s));
 
         // signature classes
-        removeAll(htmlStyleNames, "annotations", "element-name", "extends-implements",
+        removeAll(htmlStyleNames, "element-name", "extends-implements",
                 "modifiers", "permits", "return-type");
 
         // misc: these are defined in HtmlStyle, and used by the doclet
-        removeAll(htmlStyleNames, "col-plain", "external-link", "header",
-                "hierarchy", "index", "package-uses", "packages", "permits-note",
-                "serialized-package-container", "source-container");
+        removeAll(htmlStyleNames, "col-plain", "external-link", "header", "index",
+                "package-uses", "packages", "permits-note", "serialized-package-container",
+                "source-container");
 
         // Remove names from styleSheetNames if they are false positives,
         // or used by other code (i.e. not HtmlStyle),
