@@ -59,8 +59,9 @@ public class JpegWriterWriteNonOpaqueIndexColorModelTest {
                 for (int a = 0; a < alpha.length; a++) {
                     alpha[a] = -1;
                 }
-                if (imageType == Transparency.BITMASK)
+                if (imageType == Transparency.BITMASK) {
                     alpha[0] = 0;
+                }
             } else if (imageType == Transparency.TRANSLUCENT) {
                 for (int a = 0; a < alpha.length; a++) {
                     alpha[a] = (byte) a;
