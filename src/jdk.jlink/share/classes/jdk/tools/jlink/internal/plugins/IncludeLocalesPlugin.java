@@ -217,7 +217,7 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
             available = Stream.concat(module.entries()
                                         .map(md -> p.matcher(md.path()))
                                         .filter(Matcher::matches)
-                                        .map(m -> m.group("tag").replace("_", "-")),
+                                        .map(m -> m.group("tag").replace('_', '-')),
                                     Stream.of(jaJPJPTag, thTHTHTag, "und"))
                 .distinct()
                 .sorted()
@@ -250,7 +250,7 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
             return List.of();
         }
 
-        List<String> files = new ArrayList<>(includeLocaleFiles(tag.replace("-", "_")));
+        List<String> files = new ArrayList<>(includeLocaleFiles(tag.replace('-', '_')));
 
         // Add Thai BreakIterator related data files
         if (tag.equals("th")) {

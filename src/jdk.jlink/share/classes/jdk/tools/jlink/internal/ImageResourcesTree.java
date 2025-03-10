@@ -300,7 +300,7 @@ public final class ImageResourcesTree {
                 return null;
             }
             String pkg = removeRadical(path, module + "/");
-            return pkg.replace("/", ".");
+            return pkg.replace('/', '.');
         }
 
         public String removeRadical(Node node) {
