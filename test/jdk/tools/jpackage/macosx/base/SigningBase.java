@@ -34,7 +34,7 @@ public class SigningBase {
 
     enum CertIndex {
         ASCII_INDEX(0),
-        UNICODE_INDEX(0),
+        UNICODE_INDEX(1),
         INVALID_INDEX(-1);
 
         CertIndex(int value) {
