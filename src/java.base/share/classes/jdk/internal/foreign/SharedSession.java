@@ -104,7 +104,7 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
     /**
      * A shared resource list; this implementation has to handle add vs. add races, as well as add vs. cleanup races.
      */
-    static class SharedResourceList extends ResourceList {
+    static final class SharedResourceList extends ResourceList {
 
         static final VarHandle FST = MhUtil.findVarHandle(
                 MethodHandles.lookup(), ResourceList.class, "fst", ResourceCleanup.class);

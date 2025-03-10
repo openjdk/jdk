@@ -100,7 +100,7 @@ public abstract sealed class MemorySessionImpl
                 (owner == null || owner == thread);
     }
 
-    public void addCloseAction(Runnable runnable) {
+    public final void addCloseAction(Runnable runnable) {
         Objects.requireNonNull(runnable);
         addInternal(ResourceList.ResourceCleanup.ofRunnable(runnable));
     }
@@ -115,7 +115,7 @@ public abstract sealed class MemorySessionImpl
      * new segment to the client). For this reason, it's not worth adding extra complexity to the segment
      * initialization logic here - and using an optimistic logic works well in practice.
      */
-    public void addOrCleanupIfFail(ResourceList.ResourceCleanup resource) {
+    public final void addOrCleanupIfFail(ResourceList.ResourceCleanup resource) {
         try {
             addInternal(resource);
         } catch (Throwable ex) {
@@ -160,7 +160,7 @@ public abstract sealed class MemorySessionImpl
 
     public abstract void acquire0();
 
-    public void whileAlive(Runnable action) {
+    public final void whileAlive(Runnable action) {
         Objects.requireNonNull(action);
         acquire0();
         try {
@@ -183,7 +183,7 @@ public abstract sealed class MemorySessionImpl
      * Returns true, if this session is still open. This method may be called in any thread.
      * @return {@code true} if this session is not closed yet.
      */
-    public boolean isAlive() {
+    public final boolean isAlive() {
         return state >= OPEN;
     }
 
@@ -196,7 +196,7 @@ public abstract sealed class MemorySessionImpl
      * please use {@link #checkValidState()}.
      */
     @ForceInline
-    public void checkValidStateRaw() {
+    public final void checkValidStateRaw() {
         if (owner != null && owner != Thread.currentThread()) {
             throw WRONG_THREAD;
         }
@@ -210,7 +210,7 @@ public abstract sealed class MemorySessionImpl
      * @throws IllegalStateException if this session is already closed or if this is
      * a confined session and this method is called outside the owner thread.
      */
-    public void checkValidState() {
+    public final void checkValidState() {
         try {
             checkValidStateRaw();
         } catch (ScopedMemoryAccess.ScopedAccessError error) {
@@ -223,7 +223,7 @@ public abstract sealed class MemorySessionImpl
     }
 
     @Override
-    protected Object clone() throws CloneNotSupportedException {
+    protected final Object clone() throws CloneNotSupportedException {
         throw new CloneNotSupportedException();
     }
 
@@ -236,7 +236,7 @@ public abstract sealed class MemorySessionImpl
      * @throws IllegalStateException if this session is already closed or if this is
      * a confined session and this method is called outside the owner thread.
      */
-    public void close() {
+    public final void close() {
         justClose();
         resourceList.cleanup();
     }
