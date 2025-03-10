@@ -26,16 +26,14 @@
 
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/z/zAddress.hpp"
+#include "oops/oopsHierarchy.hpp"
 
 class ZStringDedupContext {
 private:
   StringDedup::Requests _requests;
 
-  void request(zaddress addr);
-
 public:
-  void request_for_marked(zaddress addr);
-  void request_for_promoted(zaddress addr);
+  void request(oop obj);
 };
 
 #endif // SHARE_GC_Z_ZSTRINGDEDUP_HPP

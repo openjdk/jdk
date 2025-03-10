@@ -48,7 +48,6 @@
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zStat.hpp"
-#include "gc/z/zStringDedup.inline.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zThreadLocalAllocBuffer.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
@@ -389,9 +388,6 @@ void ZMark::follow_object(oop obj, bool finalizable) {
   }
 }
 
-static void maybe_string_dedup(ZMarkContext* context, zaddress addr) {
-  context->string_dedup_context()->request_for_marked(addr);
-}
 
 void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
   // Decode flags
@@ -433,13 +429,7 @@ void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
     if (is_array(addr)) {
       follow_array_object(objArrayOop(to_oop(addr)), finalizable);
     } else {
-      const oop obj = to_oop(addr);
-      follow_object(obj, finalizable);
-
-      if (!finalizable) {
-        // Maybe deduplicate
-        maybe_string_dedup(context, addr);
-      }
+      follow_object(to_oop(addr), finalizable);
     }
   }
 }

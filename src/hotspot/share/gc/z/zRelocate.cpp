@@ -801,8 +801,8 @@ private:
   void maybe_string_dedup(zaddress to_addr) {
     const bool is_promotion = _forwarding->to_age() == ZPageAge::old && _forwarding->from_age() != ZPageAge::old;
     if (is_promotion) {
-      // Only deduplicate promoted objects, and let short-lived strings simply die instead
-      _string_dedup_context.request_for_promoted(to_addr);
+      // Only deduplicate promoted objects, and let short-lived strings simply die instead.
+      _string_dedup_context.request(to_oop(to_addr));
     }
   }
 
@@ -1199,7 +1199,7 @@ public:
         ZIterator::basic_oop_iterate_safe(obj, remap_and_maybe_add_remset);
 
         // String dedup
-        string_dedup_context.request_for_promoted(to_zaddress(obj));
+        string_dedup_context.request(obj);
       });
 
       SuspendibleThreadSet::yield();

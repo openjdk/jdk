@@ -29,13 +29,11 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 
-inline void ZStringDedupContext::request(zaddress addr) {
+inline void ZStringDedupContext::request(oop obj) {
   if (!StringDedup::is_enabled()) {
     // Not enabled
     return;
   }
-
-  oop obj = to_oop(addr);
 
   if (!java_lang_String::is_instance(obj)) {
     // Not a String object
@@ -49,18 +47,6 @@ inline void ZStringDedupContext::request(zaddress addr) {
 
   // Request deduplication
   _requests.add(obj);
-}
-
-inline void ZStringDedupContext::request_for_marked(zaddress addr) {
-  if (!ZStringDedupAtPromotion) {
-    request(addr);
-  }
-}
-
-inline void ZStringDedupContext::request_for_promoted(zaddress addr) {
-  if (ZStringDedupAtPromotion) {
-    return request(addr);
-  }
 }
 
 #endif // SHARE_GC_Z_ZSTRINGDEDUP_INLINE_HPP
