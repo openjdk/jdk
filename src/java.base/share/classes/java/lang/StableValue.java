@@ -318,7 +318,7 @@ import java.util.function.Supplier;
  * <p>
  * The at-most-once write operation on a stable value that succeeds
  * (e.g. {@linkplain #trySet(Object) trySet()})
- * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
+ * {@linkplain java.util.concurrent##MemoryVisibility <em>happens-before</em>}
  * any subsequent read operation (e.g. {@linkplain #orElseThrow()}).
  * <p>
  * The method {@linkplain StableValue#orElseSet(Supplier) orElseSet()} guarantees that
