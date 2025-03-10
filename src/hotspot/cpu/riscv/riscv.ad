@@ -4451,6 +4451,12 @@ pipe_class pipe_slow()
   LDST   : MEM;
 %}
 
+// The real do-nothing guy
+pipe_class real_empty()
+%{
+    instruction_count(0);
+%}
+
 // Empty pipeline class
 pipe_class pipe_class_empty()
 %{
@@ -7877,7 +7883,157 @@ instruct xorL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
 // ============================================================================
 // MemBar Instruction
 
+// ZTSO
+
+instruct no_membar_tso() %{
+  predicate(UseZtso && UseNewCode);
+  match(LoadFence);
+  match(StoreFence);
+  match(StoreStoreFence);
+  match(MemBarAcquire);
+  match(MemBarRelease);
+  match(MemBarStoreStore);
+  match(MemBarAcquireLock);
+  match(MemBarReleaseLock);
+
+  ins_cost(0);
+
+  size(0);
+
+  format %{ "no_membar_tso elided/tso (empty encoding)" %}
+  ins_encode %{
+    __ block_comment("no_membar_tso");
+  %}
+  ins_pipe(real_empty);
+%}
+
+instruct membar_volatile_tso() %{
+  predicate(UseZtso && UseNewCode);
+  match(MemBarVolatile);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "membar_volatile_tso\n\t"
+            "fence w, r"%}
+
+  ins_encode %{
+    __ block_comment("membar_volatile_tso");
+    __ membar(MacroAssembler::StoreLoad);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct unnecessary_membar_volatile_tso() %{
+  predicate(UseZtso && UseNewCode2 && Matcher::post_store_load_barrier(n));
+  match(MemBarVolatile);
+  ins_cost(0);
+
+  size(0);
+  
+  format %{ "unnecessary_membar_volatile_tso (unnecessary so empty encoding)" %}
+  ins_encode %{
+    assert(UseZtso, "Must be");
+    __ block_comment("unnecessary_membar_volatile_tso");
+  %}
+  ins_pipe(real_empty);
+%}
+
+// RVWMO
+
+instruct membar_rvwmo_aqcuire() %{
+  predicate(!UseZtso && UseNewCode);
+  match(LoadFence);
+  match(MemBarAcquire);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "membar_rvwmo_aqcuire\n\t"
+            "fence r, rw" %}
+
+  ins_encode %{
+    __ block_comment("membar_rvwmo_aqcuire");
+    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct membar_rvwmo_release() %{
+  predicate(!UseZtso && UseNewCode);
+  match(StoreFence);
+  match(MemBarRelease);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "membar_rvwmo_release\n\t"
+            "fence rw, w" %}
+
+  ins_encode %{
+    __ block_comment("membar_rvwmo_release");
+    __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct membar_rvwmo_storestore() %{
+  predicate(!UseZtso && UseNewCode);
+  match(MemBarStoreStore);
+  match(StoreStoreFence);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "membar_rvwmo_storestore\n\t"
+            "fence rw, w" %}
+
+  ins_encode %{
+    __ membar(MacroAssembler::StoreStore);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct membar_rvwmo_volatile() %{
+  predicate(!UseZtso && UseNewCode);
+  match(MemBarVolatile);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "membar_rvwmo_volatile\n\t"
+             "fence w, r"%}
+
+  ins_encode %{
+    __ block_comment("membar_rvwmo_volatile");
+    __ membar(MacroAssembler::StoreLoad);
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
+instruct membar_rvwmo_lock() %{
+  predicate(!UseZtso && UseNewCode);
+  match(MemBarAcquireLock);
+  match(MemBarReleaseLock);
+  ins_cost(0);
+
+  format %{ "membar_rvwmo_lock (elided)" %}
+
+  ins_encode %{
+    __ block_comment("membar_rvwmo_lock (elided)");
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
+instruct unnecessary_membar_volatile_rvwmo() %{
+  predicate(!UseZtso && UseNewCode2 && Matcher::post_store_load_barrier(n));
+  match(MemBarVolatile);
+  ins_cost(0);
+
+  size(0);
+  format %{ "unnecessary_membar_volatile_rvwmo (unnecessary so empty encoding)" %}
+  ins_encode %{
+    __ block_comment("unnecessary_membar_volatile_rvwmo");
+  %}
+  ins_pipe(real_empty);
+%}
+
+############# OLD MEMBAR ##############
 instruct load_fence() %{
+  predicate(!UseNewCode);
   match(LoadFence);
   ins_cost(ALU_COST);
 
@@ -7890,6 +8046,7 @@ instruct load_fence() %{
 %}
 
 instruct membar_acquire() %{
+  predicate(!UseNewCode);
   match(MemBarAcquire);
   ins_cost(ALU_COST);
 
@@ -7905,6 +8062,7 @@ instruct membar_acquire() %{
 %}
 
 instruct membar_acquire_lock() %{
+  predicate(!UseNewCode);
   match(MemBarAcquireLock);
   ins_cost(0);
 
@@ -7918,6 +8076,7 @@ instruct membar_acquire_lock() %{
 %}
 
 instruct store_fence() %{
+  predicate(!UseNewCode);
   match(StoreFence);
   ins_cost(ALU_COST);
 
@@ -7930,6 +8089,7 @@ instruct store_fence() %{
 %}
 
 instruct membar_release() %{
+  predicate(!UseNewCode);
   match(MemBarRelease);
   ins_cost(ALU_COST);
 
@@ -7944,6 +8104,7 @@ instruct membar_release() %{
 %}
 
 instruct membar_storestore() %{
+  predicate(!UseNewCode);
   match(MemBarStoreStore);
   match(StoreStoreFence);
   ins_cost(ALU_COST);
@@ -7957,6 +8118,7 @@ instruct membar_storestore() %{
 %}
 
 instruct membar_release_lock() %{
+  predicate(!UseNewCode);
   match(MemBarReleaseLock);
   ins_cost(0);
 
@@ -7970,6 +8132,7 @@ instruct membar_release_lock() %{
 %}
 
 instruct membar_volatile() %{
+  predicate(!UseNewCode);
   match(MemBarVolatile);
   ins_cost(ALU_COST);
 
@@ -7983,6 +8146,8 @@ instruct membar_volatile() %{
 
   ins_pipe(pipe_serial);
 %}
+
+############# END OLD MEMBAR ##############
 
 instruct spin_wait() %{
   predicate(UseZihintpause);
