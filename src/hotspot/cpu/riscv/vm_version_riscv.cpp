@@ -126,10 +126,6 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
-  if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
-    FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
-  }
-
   if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
       FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
   }
@@ -151,6 +147,10 @@ void VM_Version::common_initialize() {
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
     FLAG_SET_DEFAULT(AvoidUnalignedAccesses,
       unaligned_access.value() != MISALIGNED_FAST);
+  }
+
+  if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics) && !AvoidUnalignedAccesses) {
+    FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
   }
 
   // See JDK-8026049
@@ -314,7 +314,7 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, true);
   }
 
-  if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
+  if (FLAG_IS_DEFAULT(UseMD5Intrinsics) && !AvoidUnalignedAccesses) {
     FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
   }
 
@@ -365,7 +365,7 @@ void VM_Version::c2_initialize() {
 
   // SHA-1, no RVV required though.
   if (UseSHA) {
-    if (FLAG_IS_DEFAULT(UseSHA1Intrinsics)) {
+    if (FLAG_IS_DEFAULT(UseSHA1Intrinsics) && !AvoidUnalignedAccesses) {
       FLAG_SET_DEFAULT(UseSHA1Intrinsics, true);
     }
   } else if (UseSHA1Intrinsics) {
