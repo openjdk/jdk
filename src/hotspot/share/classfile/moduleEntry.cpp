@@ -22,10 +22,10 @@
  *
  */
 
+#include "cds/aotClassLocation.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -61,7 +61,7 @@ void ModuleEntry::set_location(Symbol* location) {
   if (location != nullptr) {
     location->increment_refcount();
     CDS_ONLY(if (CDSConfig::is_using_archive()) {
-        _shared_path_index = FileMapInfo::get_module_shared_path_index(location);
+        _shared_path_index = AOTClassLocationConfig::runtime()->get_module_shared_path_index(_location);
       });
   }
 }
@@ -413,7 +413,13 @@ ModuleEntry* ModuleEntry::allocate_archived_entry() const {
   _archive_modules_entries->put(this, archived_entry);
   DEBUG_ONLY(_num_archived_module_entries++);
 
-  assert(archived_entry->shared_protection_domain() == nullptr, "never set during -Xshare:dump");
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    OopHandle null_handle;
+    archived_entry->_shared_pd = null_handle;
+  } else {
+    assert(archived_entry->shared_protection_domain() == nullptr, "never set during -Xshare:dump");
+  }
+
   // Clear handles and restore at run time. Handles cannot be archived.
   OopHandle null_handle;
   archived_entry->_module = null_handle;
@@ -483,7 +489,7 @@ void ModuleEntry::init_as_archived_entry() {
   set_archived_reads(write_growable_array(reads()));
 
   _loader_data = nullptr;  // re-init at runtime
-  _shared_path_index = FileMapInfo::get_module_shared_path_index(_location);
+  _shared_path_index = AOTClassLocationConfig::dumptime()->get_module_shared_path_index(_location);
   if (name() != nullptr) {
     _name = ArchiveBuilder::get_buffered_symbol(_name);
     ArchivePtrMarker::mark_pointer((address*)&_name);
