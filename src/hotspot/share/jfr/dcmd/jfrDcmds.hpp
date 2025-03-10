@@ -63,7 +63,7 @@ class JfrStartFlightRecordingDCmd : public JfrDCmd {
     return "jdk/jfr/internal/dcmd/DCmdStart";
   }
   static int num_arguments() {
-    return 11;
+    return 12;
   }
 };
 

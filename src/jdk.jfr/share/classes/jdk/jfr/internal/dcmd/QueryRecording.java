@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import jdk.jfr.internal.util.UserDataException;
  * Helper class that holds recording chunks alive during a query. It also helps
  * out with configuration shared by DCmdView and DCmdQuery
  */
-final class QueryRecording implements AutoCloseable {
+public final class QueryRecording implements AutoCloseable {
     private final long DEFAULT_MAX_SIZE = 32 * 1024 * 1024L;
     private final long DEFAULT_MAX_AGE = 60 * 10;
 
@@ -51,6 +51,16 @@ final class QueryRecording implements AutoCloseable {
     private final List<RepositoryChunk> chunks;
     private final EventStream eventStream;
     private final Instant endTime;
+
+    public QueryRecording(Instant startTime, Instant endTime) throws IOException {
+        this.recorder = PrivateAccess.getInstance().getPlatformRecorder();
+        this.endTime = endTime;
+        this.chunks = acquireChunks(startTime);
+        if (chunks.isEmpty()) {
+            throw new IOException("No recording data found on disk.");
+        }
+        eventStream = makeStream(startTime);
+    }
 
     public QueryRecording(Configuration configuration, ArgumentParser parser) throws IOException, DCmdException, UserDataException {
         if (!FlightRecorder.isInitialized()) {
