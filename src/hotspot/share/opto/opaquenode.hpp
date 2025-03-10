@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,7 @@ public:
     init_class_id(Class_OpaqueMultiversioning);
   }
   virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
   bool is_delayed_slow_loop() const { return _is_delayed_slow_loop; }
   DEBUG_ONLY( bool is_useless() const { return _useless; } )
@@ -119,12 +120,7 @@ public:
     _is_delayed_slow_loop = false;
   }
 
-  void mark_useless() {
-    assert(_is_delayed_slow_loop, "must still be delayed");
-    _useless = true;
-  }
-
-  virtual Node* Identity(PhaseGVN* phase);
+  void mark_useless(PhaseIterGVN& igvn);
   NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
 };
 
@@ -153,33 +149,72 @@ class OpaqueNotNullNode : public Node {
 // after loop opts and thus is never converted to actual code. In the post loop opts IGVN phase, the
 // OpaqueTemplateAssertionPredicateNode is replaced by true in order to fold the Template Assertion Predicate away.
 class OpaqueTemplateAssertionPredicateNode : public Node {
+  // When splitting a loop or when the associated loop dies, the Template Assertion Predicate with this
+  // OpaqueTemplateAssertionPredicateNode also needs to be removed. We set this flag and then clean this node up in the
+  // next IGVN phase by checking this flag in Value().
+  bool _useless;
+
+  // OpaqueTemplateAssertionPredicateNodes are unique to a Template Assertion Predicate expression and should never
+  // common up. We still make sure of that by returning NO_HASH here.
+  virtual uint hash() const {
+    return NO_HASH;
+  }
+
  public:
-  OpaqueTemplateAssertionPredicateNode(BoolNode* bol) : Node(nullptr, bol) {
+  OpaqueTemplateAssertionPredicateNode(BoolNode* bol) : Node(nullptr, bol),
+      _useless(false) {
     init_class_id(Class_OpaqueTemplateAssertionPredicate);
   }
 
   virtual int Opcode() const;
+  virtual uint size_of() const { return sizeof(*this); }
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
+
+  bool is_useless() const {
+    return _useless;
+  }
+
+  void mark_useless(PhaseIterGVN& igvn);
+  NOT_PRODUCT(void dump_spec(outputStream* st) const);
 };
 
 // This node is used for Initialized Assertion Predicate BoolNodes. Initialized Assertion Predicates must always evaluate
-// to true. During  macro expansion, we replace the OpaqueInitializedAssertionPredicateNodes with true in product builds
+// to true. During macro expansion, we replace the OpaqueInitializedAssertionPredicateNodes with true in product builds
 // such that the actually unneeded checks are folded and do not end up in the emitted code. In debug builds, we keep the
 // actual checks as additional verification code (i.e. removing OpaqueInitializedAssertionPredicateNodes and use the
 // BoolNode inputs instead).
 class OpaqueInitializedAssertionPredicateNode : public Node {
+  // When updating a loop in Loop Unrolling, we forcefully kill old Initialized Assertion Predicates. We set this flag
+  // and then clean this node up in the next IGVN phase by checking this flag in Value().
+  bool _useless;
+
+  // OpaqueInitializedAssertionPredicateNode are unique to an Initialized Assertion Predicate expression and should never
+  // common up. Thus, we return NO_HASH here.
+  virtual uint hash() const {
+    return NO_HASH;
+  }
+
  public:
-  OpaqueInitializedAssertionPredicateNode(BoolNode* bol, Compile* C) : Node(nullptr, bol) {
+  OpaqueInitializedAssertionPredicateNode(BoolNode* bol, Compile* C) : Node(nullptr, bol),
+      _useless(false) {
     init_class_id(Class_OpaqueInitializedAssertionPredicate);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 
   virtual int Opcode() const;
+  virtual uint size_of() const { return sizeof(*this); }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
+
+  bool is_useless() const {
+    return _useless;
+  }
+
+  void mark_useless(PhaseIterGVN& igvn);
+  NOT_PRODUCT(void dump_spec(outputStream* st) const);
 };
 
 //------------------------------ProfileBooleanNode-------------------------------
