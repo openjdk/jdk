@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,15 +44,7 @@
 // properties names and values to the output stream). When the function
 // complets the result value and any result data is returned to the client
 // tool.
-
 class AttachOperation;
-
-typedef jint (*AttachOperationFunction)(AttachOperation* op, outputStream* out);
-
-struct AttachOperationFunctionInfo {
-  const char* name;
-  AttachOperationFunction func;
-};
 
 enum AttachListenerState {
   AL_NOT_INITIALIZED,
@@ -68,6 +60,13 @@ Version 2 (since jdk24): attach operations may have any number of arguments of a
   To detect if target VM supports version 2, client sends "getversion" command.
   Old VM reports "Operation not recognized" error, newer VM reports version supported by the implementation.
   If the target VM does not support version 2, client uses version 1 to enqueue operations.
+jdk25 update: client may specify additional options in the attach operation request.
+  The options are passed as part of the operation command name: "command option1,option2,option3".
+  "getversion" command with "options" argument returns list of comma-separated options
+  supported by the target VM.
+  Option "streaming":
+    - "streaming=1" turns on streaming output. Output data are sent as they become available.
+    - "streaming=0" turns off streaming output. Output is buffered and sent after the operation is complete.
 */
 enum AttachAPIVersion: int {
   ATTACH_API_V1 = 1,
@@ -110,9 +109,18 @@ class AttachListener: AllStatic {
 
   static AttachAPIVersion _supported_version;
 
+  static bool _default_streaming_output;
+
  public:
   static void set_supported_version(AttachAPIVersion version);
   static AttachAPIVersion get_supported_version();
+
+  static void set_default_streaming(bool value) {
+    _default_streaming_output = value;
+  }
+  static bool get_default_streaming() {
+    return _default_streaming_output;
+  }
 
   static void set_state(AttachListenerState new_state) {
     Atomic::store(&_state, new_state);
@@ -176,6 +184,7 @@ public:
 private:
   char* _name;
   GrowableArrayCHeap<char*, mtServiceability> _args;
+  bool _streaming; // streaming output is requested
 
   static char* copy_str(const char* value) {
     return value == nullptr ? nullptr : os::strdup(value, mtServiceability);
@@ -198,8 +207,7 @@ public:
   const char* arg(int i) const {
     // Historically clients expect empty string for absent or null arguments.
     if (i >= _args.length() || _args.at(i) == nullptr) {
-      static char empty_str[] = "";
-      return empty_str;
+      return "";
     }
     return _args.at(i);
   }
@@ -214,15 +222,22 @@ public:
     _args.at_put_grow(i, copy_str(arg), nullptr);
   }
 
+  bool streaming_output() const {
+    return _streaming;
+  }
+  void set_streaming_output(bool value) {
+    _streaming = value;
+  }
+
   // create an v1 operation of a given name (for compatibility, deprecated)
-  AttachOperation(const char* name) : _name(nullptr) {
+  AttachOperation(const char* name) : _name(nullptr), _streaming(AttachListener::get_default_streaming()) {
     set_name(name);
     for (int i = 0; i < arg_count_max; i++) {
       set_arg(i, nullptr);
     }
   }
 
-  AttachOperation() : _name(nullptr) {
+  AttachOperation() : _name(nullptr), _streaming(AttachListener::get_default_streaming()) {
   }
 
   virtual ~AttachOperation() {
@@ -250,11 +265,22 @@ public:
     // In that case we get "premature EOF" error.
     // If may_be_empty is true, the error is not logged.
     int read_uint(bool may_be_empty = false);
+
+
+    // Reads standard operation request (v1 or v2), sets properties of the provided AttachOperation.
+    // Some errors known by clients are reported to error_writer.
+    bool read_request(AttachOperation* op, ReplyWriter* error_writer);
+
+  private:
+    bool read_request_data(AttachOperation* op, int buffer_size, int min_str_count, int min_read_size);
+    // Parses options.
+    // Note: the buffer is modified to zero-terminate option names and values.
+    void parse_options(AttachOperation* op, char* str);
+    // Gets option name and value.
+    // Returns pointer to the next option.
+    char* get_option(char* src, char** name, char** value);
   };
 
-  // Reads standard operation request (v1 or v2).
-  // Some errors known by clients are reported to error_writer.
-  bool read_request(RequestReader* reader, ReplyWriter* error_writer);
 
   class ReplyWriter {
   public:
@@ -264,14 +290,16 @@ public:
     virtual void flush() {}
 
     bool write_fully(const void* buffer, int size);
+
+    // Writes standard operation reply.
+    bool write_reply(jint result, const char* message, int message_len = -1);
+    bool write_reply(jint result, bufferedStream* result_stream);
   };
 
-  // Writes standard operation reply (to be called from 'complete' method).
-  bool write_reply(ReplyWriter* writer, jint result, const char* message, int message_len = -1);
-  bool write_reply(ReplyWriter* writer, jint result, bufferedStream* result_stream);
-
-private:
-  bool read_request_data(AttachOperation::RequestReader* reader, int buffer_size, int min_str_count, int min_read_size);
+  // Platform implementation needs to implement the method to support streaming output.
+  virtual ReplyWriter* get_reply_writer() {
+    return nullptr;
+  }
 
 };
 
