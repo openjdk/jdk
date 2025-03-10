@@ -44,6 +44,7 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicMenuItemUI;
 
+import com.sun.java.swing.SwingUtilities3;
 import com.sun.java.swing.plaf.windows.TMSchema.Part;
 import com.sun.java.swing.plaf.windows.TMSchema.State;
 import com.sun.java.swing.plaf.windows.XPStyle.Skin;
@@ -161,112 +162,44 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
     }
 
     private static void applyInsets(Rectangle rect, Insets insets) {
-        if(insets != null) {
-            rect.x += insets.left;
-            rect.y += insets.top;
-            rect.width -= (insets.right + rect.x);
-            rect.height -= (insets.bottom + rect.y);
-        }
+        SwingUtilities3.applyInsets(rect, insets);
     }
 
     private static void paintCheckIcon(Graphics g, MenuItemLayoutHelper lh,
                                 MenuItemLayoutHelper.LayoutResult lr,
                                 Color holdc, Color foreground) {
-        if (lh.getCheckIcon() != null) {
-            ButtonModel model = lh.getMenuItem().getModel();
-            if (model.isArmed() || (lh.getMenuItem() instanceof JMenu
-                    && model.isSelected())) {
-                g.setColor(foreground);
-            } else {
-                g.setColor(holdc);
-            }
-            if (lh.useCheckAndArrow()) {
-                lh.getCheckIcon().paintIcon(lh.getMenuItem(), g,
-                        lr.getCheckRect().x, lr.getCheckRect().y);
-            }
-            g.setColor(holdc);
-        }
+        SwingUtilities3.paintCheckIcon(g, lh, lr, holdc, foreground);
     }
 
     private static void paintIcon(Graphics g, MenuItemLayoutHelper lh,
                            MenuItemLayoutHelper.LayoutResult lr, Color holdc) {
-        if (lh.getIcon() != null) {
-            Icon icon;
-            ButtonModel model = lh.getMenuItem().getModel();
-            if (!model.isEnabled()) {
-                icon = lh.getMenuItem().getDisabledIcon();
-            } else if (model.isPressed() && model.isArmed()) {
-                icon = lh.getMenuItem().getPressedIcon();
-                if (icon == null) {
-                    // Use default icon
-                    icon = lh.getMenuItem().getIcon();
-                }
-            } else {
-                icon = lh.getMenuItem().getIcon();
-            }
+        SwingUtilities3.paintIcon(g, lh, lr, holdc);
+    }
 
-            if (icon != null) {
-                icon.paintIcon(lh.getMenuItem(), g, lr.getIconRect().x,
-                        lr.getIconRect().y);
-                g.setColor(holdc);
-            }
-        }
+    private static void setDisabledForeground() {
+        SwingUtilities3.setDisabledForeground(disabledForeground);
+    }
+
+    private static void setAcceleratorSelectionForeground() {
+        SwingUtilities3.setAcceleratorSelectionForeground(acceleratorSelectionForeground);
+    }
+
+    private static void setAcceleratorForeground() {
+        SwingUtilities3.setAcceleratorForeground(acceleratorForeground);
     }
 
     private static void paintAccText(Graphics g, MenuItemLayoutHelper lh,
                               MenuItemLayoutHelper.LayoutResult lr) {
-        if (!lh.getAccText().isEmpty()) {
-            ButtonModel model = lh.getMenuItem().getModel();
-            g.setFont(lh.getAccFontMetrics().getFont());
-            if (!model.isEnabled()) {
-
-                // *** paint the accText disabled
-                if (disabledForeground != null) {
-                    g.setColor(disabledForeground);
-                    SwingUtilities2.drawString(lh.getMenuItem(), g,
-                            lh.getAccText(), lr.getAccRect().x,
-                            lr.getAccRect().y + lh.getAccFontMetrics().getAscent());
-                } else {
-                    g.setColor(lh.getMenuItem().getBackground().brighter());
-                    SwingUtilities2.drawString(lh.getMenuItem(), g,
-                            lh.getAccText(), lr.getAccRect().x,
-                            lr.getAccRect().y + lh.getAccFontMetrics().getAscent());
-                    g.setColor(lh.getMenuItem().getBackground().darker());
-                    SwingUtilities2.drawString(lh.getMenuItem(), g,
-                            lh.getAccText(), lr.getAccRect().x - 1,
-                            lr.getAccRect().y + lh.getFontMetrics().getAscent() - 1);
-                }
-            } else {
-
-                // *** paint the accText normally
-                if (model.isArmed()
-                        || (lh.getMenuItem() instanceof JMenu
-                        && model.isSelected())) {
-                    g.setColor(acceleratorSelectionForeground);
-                } else {
-                    g.setColor(acceleratorForeground);
-                }
-                SwingUtilities2.drawString(lh.getMenuItem(), g, lh.getAccText(),
-                        lr.getAccRect().x, lr.getAccRect().y +
-                                lh.getAccFontMetrics().getAscent());
-            }
-        }
+        setDisabledForeground();
+        setAcceleratorSelectionForeground();
+        setAcceleratorForeground();
+        SwingUtilities3.paintAccText(g, lh, lr);
     }
 
     private static void paintArrowIcon(Graphics g, MenuItemLayoutHelper lh,
                                 MenuItemLayoutHelper.LayoutResult lr,
                                 Color foreground) {
-        if (lh.getArrowIcon() != null) {
-            ButtonModel model = lh.getMenuItem().getModel();
-            if (model.isArmed() || (lh.getMenuItem() instanceof JMenu
-                    && model.isSelected())) {
-                g.setColor(foreground);
-            }
-            if (lh.useCheckAndArrow()) {
-                lh.getArrowIcon().paintIcon(lh.getMenuItem(), g,
-                        lr.getArrowRect().x, lr.getArrowRect().y);
-            }
-        }
+        SwingUtilities3.paintArrowIcon(g, lh, lr, foreground);
     }
 
     protected void paintMenuItem(Graphics g, JComponent c,
@@ -282,7 +215,6 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
         }
         super.paintMenuItem(g, c, checkIcon, arrowIcon, background,
                 foreground, defaultTextIconGap);
-        return;
     }
 
     static void paintMenuItem(WindowsMenuItemUIAccessor accessor, Graphics g,
