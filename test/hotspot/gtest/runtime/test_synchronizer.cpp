@@ -21,9 +21,14 @@
  * questions.
  */
 
+#include "classfile/vmClasses.hpp"
 #include "memory/allocation.hpp"
+#include "memory/universe.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/vm_version.hpp"
+#include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 
 class SynchronizerTest : public ::testing::Test {
@@ -64,5 +69,32 @@ TEST_VM(SynchronizerTest, sanity) {
             << "the SharedGlobals.hc_sequence field is closer "
             << "to the struct end than a cache line which permits false "
             << "sharing.";
+  }
+}
+
+TEST_VM(SynchronizerTest, monitorListStats) {
+  JavaThread* THREAD = JavaThread::current();
+  ThreadInVMfromNative invm(THREAD);
+  ResourceMark rm(THREAD);
+
+  oop obj = vmClasses::Byte_klass()->allocate_instance(THREAD);
+
+  // Test various combinations of thread counts, including single-threaded test.
+  for (int threads = 1; threads <= 16; threads++) {
+    MonitorList list;
+
+    static const size_t OM_PER_THREAD = 1000;
+
+    auto work = [&](Thread*, int) {
+      for (size_t c = 0; c < OM_PER_THREAD; c++) {
+        list.add(new ObjectMonitor(obj));
+      }
+    };
+    TestThreadGroup<decltype(work)> workers{work, threads};
+    workers.doit();
+    workers.join();
+
+    EXPECT_EQ(list.count(), threads*OM_PER_THREAD);
+    EXPECT_EQ(list.max(), threads*OM_PER_THREAD);
   }
 }
