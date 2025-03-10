@@ -142,13 +142,16 @@ bool ZVirtualMemoryManager::reserve_contiguous(zoffset start, size_t size) {
   // Reserve address views
   const zaddress_unsafe addr = ZOffset::address_unsafe(start);
 
-  // Reserve address space
-  if (!pd_reserve(addr, size)) {
-    return false;
-  }
+  {
+    // Reserve address space
+    MemTracker::NmtVirtualMemoryLocker nvml;
+    if (!pd_reserve(addr, size)) {
+      return false;
+    }
 
-  // Register address views with native memory tracker
-  ZNMT::reserve(addr, size);
+    // Register address views with native memory tracker
+    ZNMT::reserve(addr, size);
+  }
 
   // Make the address range free
   _manager.free(start, size);

@@ -1913,9 +1913,13 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
 }
 
 char* os::reserve_memory(size_t bytes, bool executable, MemTag mem_tag) {
-  char* result = pd_reserve_memory(bytes, executable);
-  if (result != nullptr) {
+  char* result;
+  {
+    MemTracker::NmtVirtualMemoryLocker nvml;
+    result = pd_reserve_memory(bytes, executable);
     MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC, mem_tag);
+  }
+  if (result != nullptr) {
     log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
   } else {
     log_info(os, map)("Reserve failed (%zu bytes)", bytes);
@@ -1924,9 +1928,13 @@ char* os::reserve_memory(size_t bytes, bool executable, MemTag mem_tag) {
 }
 
 char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, MemTag mem_tag) {
-  char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
+  char *result;
+  {
+    MemTracker::NmtVirtualMemoryLocker nvml;
+    result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
+    MemTracker::record_virtual_memory_reserve((address) result, bytes, CALLER_PC, mem_tag);
+  }
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, mem_tag);
     log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
   } else {
     log_info(os, map)("Attempt to reserve " RANGEFMT " failed",
@@ -2106,16 +2114,19 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
            i, points[i], num_attach_points, ARGSFMTARGS);
   }
 #endif
-
-  // Now reserve
-  for (unsigned i = 0; result == nullptr && i < num_attempts; i++) {
-    const unsigned candidate_offset = points[i];
-    char* const candidate = lo_att + candidate_offset * alignment_adjusted;
-    assert(candidate <= hi_att, "Invalid offset %u (" ARGSFMT ")", candidate_offset, ARGSFMTARGS);
-    result = SimulateFullAddressSpace ? nullptr : os::pd_attempt_reserve_memory_at(candidate, bytes, false);
-    if (!result) {
-      log_trace(os, map)("Failed to attach at " PTR_FORMAT, p2i(candidate));
+  {
+    MemTracker::NmtVirtualMemoryLocker nvml;
+    // Now reserve
+    for (unsigned i = 0; result == nullptr && i < num_attempts; i++) {
+      const unsigned candidate_offset = points[i];
+      char *const candidate = lo_att + candidate_offset * alignment_adjusted;
+      assert(candidate <= hi_att, "Invalid offset %u (" ARGSFMT ")", candidate_offset, ARGSFMTARGS);
+      result = SimulateFullAddressSpace ? nullptr : os::pd_attempt_reserve_memory_at(candidate, bytes, false);
+      if (!result) {
+        log_trace(os, map)("Failed to attach at " PTR_FORMAT, p2i(candidate));
+      }
     }
+    MemTracker::record_virtual_memory_reserve((address) result, bytes, CALLER_PC);
   }
 
   // Sanity checks, logging, NMT stuff:
@@ -2129,7 +2140,6 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     assert(is_aligned(result, alignment), "alignment invalid (" ERRFMT ")", ERRFMTARGS);
     log_trace(os, map)(ERRFMT, ERRFMTARGS);
     log_debug(os, map)("successfully attached at " PTR_FORMAT, p2i(result));
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
   } else {
     log_debug(os, map)("failed to attach anywhere in [" PTR_FORMAT "-" PTR_FORMAT ")", p2i(min), p2i(max));
   }
@@ -2160,6 +2170,7 @@ julong os::used_memory() {
 
 bool os::commit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
+  MemTracker::NmtVirtualMemoryLocker nvml;
   bool res = pd_commit_memory(addr, bytes, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
@@ -2173,9 +2184,15 @@ bool os::commit_memory(char* addr, size_t bytes, bool executable) {
 bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
                               bool executable) {
   assert_nonempty_range(addr, size);
-  bool res = os::pd_commit_memory(addr, size, alignment_hint, executable);
+  bool res;
+  {
+    MemTracker::NmtVirtualMemoryLocker nvml;
+    res = os::pd_commit_memory(addr, size, alignment_hint, executable);
+    if (res) {
+      MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
+    }
+  }
   if (res) {
-    MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
     log_debug(os, map)("Committed " RANGEFMT, RANGEFMTARGS(addr, size));
   } else {
     log_info(os, map)("Failed to commit " RANGEFMT, RANGEFMTARGS(addr, size));
@@ -2186,6 +2203,7 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
 void os::commit_memory_or_exit(char* addr, size_t bytes, bool executable,
                                const char* mesg) {
   assert_nonempty_range(addr, bytes);
+  MemTracker::NmtVirtualMemoryLocker nvml;
   pd_commit_memory_or_exit(addr, bytes, executable, mesg);
   MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
 }
@@ -2193,6 +2211,7 @@ void os::commit_memory_or_exit(char* addr, size_t bytes, bool executable,
 void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
                                bool executable, const char* mesg) {
   assert_nonempty_range(addr, size);
+  MemTracker::NmtVirtualMemoryLocker nvml;
   os::pd_commit_memory_or_exit(addr, size, alignment_hint, executable, mesg);
   MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
 }
@@ -2200,14 +2219,12 @@ void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
 bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res;
-  if (MemTracker::enabled()) {
+  {
     MemTracker::NmtVirtualMemoryLocker nvml;
     res = pd_uncommit_memory(addr, bytes, executable);
     if (res) {
       MemTracker::record_virtual_memory_uncommit(addr, bytes);
     }
-  } else {
-    res = pd_uncommit_memory(addr, bytes, executable);
   }
 
   if (res) {
@@ -2222,14 +2239,12 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
 bool os::release_memory(char* addr, size_t bytes) {
   assert_nonempty_range(addr, bytes);
   bool res;
-  if (MemTracker::enabled()) {
+  {
     MemTracker::NmtVirtualMemoryLocker nvml;
     res = pd_release_memory(addr, bytes);
     if (res) {
       MemTracker::record_virtual_memory_release(addr, bytes);
     }
-  } else {
-    res = pd_release_memory(addr, bytes);
   }
   if (!res) {
     log_info(os, map)("Failed to release " RANGEFMT, RANGEFMTARGS(addr, bytes));
@@ -2280,41 +2295,34 @@ char* os::map_memory_to_file(size_t bytes, int file_desc, MemTag mem_tag) {
   // Could have called pd_reserve_memory() followed by replace_existing_mapping_with_file_mapping(),
   // but AIX may use SHM in which case its more trouble to detach the segment and remap memory to the file.
   // On all current implementations null is interpreted as any available address.
+  MemTracker::NmtVirtualMemoryLocker nvml;
   char* result = os::map_memory_to_file(nullptr /* addr */, bytes, file_desc);
-  if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC, mem_tag);
-  }
+  MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC, mem_tag);
   return result;
 }
 
 char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc, MemTag mem_tag) {
+  MemTracker::NmtVirtualMemoryLocker nvml;
   char* result = pd_attempt_map_memory_to_file_at(addr, bytes, file_desc);
-  if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, mem_tag);
-  }
+  MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, mem_tag);
   return result;
 }
 
 char* os::map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only,
                            bool allow_exec, MemTag mem_tag) {
+  MemTracker::NmtVirtualMemoryLocker nvml;
   char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
-  if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, mem_tag);
-  }
+  MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, mem_tag);
   return result;
 }
 
 bool os::unmap_memory(char *addr, size_t bytes) {
   bool result;
-  if (MemTracker::enabled()) {
-    MemTracker::NmtVirtualMemoryLocker nvml;
-    result = pd_unmap_memory(addr, bytes);
-    if (result) {
-      MemTracker::record_virtual_memory_release(addr, bytes);
-    }
-  } else {
-    result = pd_unmap_memory(addr, bytes);
+  MemTracker::NmtVirtualMemoryLocker nvml;
+  result = pd_unmap_memory(addr, bytes);
+  if (result) {
+    MemTracker::record_virtual_memory_release(addr, bytes);
   }
   return result;
 }
@@ -2331,11 +2339,14 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
                                  char* addr, bool executable) {
 
   assert(is_aligned(addr, alignment), "Unaligned request address");
-
-  char* result = pd_reserve_memory_special(size, alignment, page_size, addr, executable);
+  char* result;
+  {
+    MemTracker::NmtVirtualMemoryLocker nvml;
+    result = pd_reserve_memory_special(size, alignment, page_size, addr, executable);
+    MemTracker::record_virtual_memory_reserve_and_commit((address) result, size, CALLER_PC);
+  }
   if (result != nullptr) {
     // The memory is committed
-    MemTracker::record_virtual_memory_reserve_and_commit((address)result, size, CALLER_PC);
     log_debug(os, map)("Reserved and committed " RANGEFMT, RANGEFMTARGS(result, size));
   } else {
     log_info(os, map)("Reserve and commit failed (%zu bytes)", size);
@@ -2346,14 +2357,10 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
 
 bool os::release_memory_special(char* addr, size_t bytes) {
   bool res;
-  if (MemTracker::enabled()) {
-    MemTracker::NmtVirtualMemoryLocker nvml;
-    res = pd_release_memory_special(addr, bytes);
-    if (res) {
-      MemTracker::record_virtual_memory_release(addr, bytes);
-    }
-  } else {
-    res = pd_release_memory_special(addr, bytes);
+  MemTracker::NmtVirtualMemoryLocker nvml;
+  res = pd_release_memory_special(addr, bytes);
+  if (res) {
+    MemTracker::record_virtual_memory_release(addr, bytes);
   }
   return res;
 }
