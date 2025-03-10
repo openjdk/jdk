@@ -635,15 +635,16 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
                                        " This will cause existing log files to be overwritten.");
   out->cr();
 
-  out->print_cr("Asynchronous logging (off by default):");
+  out->print_cr("Asynchronous logging (on by default):");
   out->print_cr(" -Xlog:async[:[mode]]");
-  out->print_cr("  All log messages are written to an intermediate buffer first and will then be flushed"
+  out->print_cr(" When turned on, all log messages are written to an intermediate buffer first and will then be flushed"
                 " to the corresponding log outputs by a standalone thread. Write operations at logsites are"
                 " guaranteed non-blocking.");
-  out->print_cr(" A mode, either 'drop' or 'stall', may be provided. If 'drop' is provided then"
+  out->print_cr(" A mode, 'drop', 'stall' or 'off', may be provided. If 'drop' is provided then"
                 " messages will be dropped if there is no room in the intermediate buffer."
                 " If 'stall' is provided then the log operation will wait for room to be made by the output thread, without dropping any messages."
-                " The default mode is 'drop'.");
+                " If 'off' is provided, then each logging thread synchronously outputs its own message, without the help of a flushing thread."
+                " The default mode is 'stall'.");
 
   out->cr();
 
@@ -720,17 +721,19 @@ void LogConfiguration::notify_update_listeners() {
   }
 }
 
-LogConfiguration::AsyncMode LogConfiguration::_async_mode = AsyncMode::Off;
+LogConfiguration::AsyncMode LogConfiguration::_async_mode = AsyncMode::Stall;
 
 bool LogConfiguration::parse_async_argument(const char* async_tail) {
   bool ret = true;
   if (*async_tail == '\0') {
-    // Default is to drop.
-    LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Drop);
+    // Default is to stall.
+    LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Stall);
   } else if (strcmp(async_tail, ":stall") == 0) {
     LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Stall);
   } else if (strcmp(async_tail, ":drop") == 0) {
     LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Drop);
+  } else if (strcmp(async_tail, ":off") == 0) {
+    LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Off);
   } else {
     // User provided unknown async option
     ret = false;

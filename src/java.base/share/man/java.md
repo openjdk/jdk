@@ -3356,23 +3356,23 @@ getting overwritten.
 
 ### -Xlog Output Mode
 
-By default logging messages are output synchronously - each log message is written to
-the designated output when the logging call is made. You can instead use asynchronous
-logging mode by specifying:
+By default, unified logging outputs message asynchronously in stalling mode. This means that
+log sites enqueue all logging messages to an intermediate buffer and a standalone thread is responsible for flushing them to the corresponding outputs. The
+intermediate buffer is bounded. On buffer exhaustion, the logging threads are stalled until the flushing thread catches up.
 
-`-Xlog:async[:[stall|drop]]`
+`-Xlog:async[:[stall|drop|off]]`
 :     Write all logging asynchronously.
 
-In asynchronous logging mode, log sites enqueue all logging messages to an intermediate buffer
-and a standalone thread is responsible for flushing them to the corresponding outputs. The
-intermediate buffer is bounded. On buffer exhaustion the enqueuing message is either discarded (`async:drop`),
-or logging threads are stalled until the flushing thread catches up (`async:stall`).
-If no specific mode is chosen, then `async:drop` is chosen by default.
+If dropping mode (`async:drop`) is specified, then messages are discarded on buffer exhaustion.
+This guarantees that logging threads will not stall until the flushing thread catches up, but may lead to message loss.
 Log entry write operations are guaranteed to be non-blocking in the `async:drop` case.
 
-The option `-XX:AsyncLogBufferSize=N` specifies the memory budget in bytes for the intermediate buffer.
+If asynchronous mode is turned off (`async:off`), then there is no flushing thread. Instead, all logging threads output
+its logs synchronously.
+
+If asynchronously logging, then the option `-XX:AsyncLogBufferSize=N` specifies the memory budget in bytes for the intermediate buffer.
 The default value should be big enough to cater for most cases. Users can provide a custom value to
-trade memory overhead for log accuracy if they need to.
+trade memory overhead for log accuracy, in dropping mode, or latency, in stalling mode, if they need to.
 
 ### Decorations
 
