@@ -81,6 +81,9 @@ TEST_VM(SynchronizerTest, monitorListStats) {
   // as long as it is correct.
   oop obj = vmClasses::Byte_klass()->allocate_instance(THREAD);
 
+  HandleMark hm(THREAD);
+  Handle h_obj(THREAD, obj);
+
   // Test various combinations of thread counts, including single-threaded test.
   static const int MIN_THREADS = 1;
   static const int MAX_THREADS = 16;
@@ -91,7 +94,7 @@ TEST_VM(SynchronizerTest, monitorListStats) {
 
     auto work = [&](Thread*, int) {
       for (int c = 0; c < OM_PER_THREAD; c++) {
-        list.add(new ObjectMonitor(obj));
+        list.add(new ObjectMonitor(h_obj()));
       }
     };
     TestThreadGroup<decltype(work)> workers{work, threads};
