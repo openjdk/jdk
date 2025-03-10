@@ -818,18 +818,31 @@ size_t ShenandoahHeap::initial_capacity() const {
 }
 
 bool ShenandoahHeap::is_in(const void* p) const {
-  if (is_in_reserved(p)) {
-    if (is_full_gc_move_in_progress()) {
-      // Full GC move is running, we do not have a consistent region
-      // information yet. But we know the pointer is in heap.
-      return true;
-    }
-    // Now check if we point to a live section in active region.
-    ShenandoahHeapRegion* r = heap_region_containing(p);
-    return (r->is_active() && p < r->top());
-  } else {
+  if (!is_in_reserved(p)) {
     return false;
   }
+
+  if (is_full_gc_move_in_progress()) {
+    // Full GC move is running, we do not have a consistent region
+    // information yet. But we know the pointer is in heap.
+    return true;
+  }
+
+  // Now check if we point to a live section in active region.
+  const ShenandoahHeapRegion* r = heap_region_containing(p);
+  if (p >= r->top()) {
+    return false;
+  }
+
+  if (r->is_active()) {
+    return true;
+  }
+
+  // The region is trash, but won't be recycled until after concurrent weak
+  // roots. We also don't allow mutators to allocate from trash regions
+  // during weak roots. Concurrent class unloading may access unmarked oops
+  // in trash regions.
+  return r->is_trash() && is_concurrent_weak_root_in_progress();
 }
 
 void ShenandoahHeap::notify_soft_max_changed() {
