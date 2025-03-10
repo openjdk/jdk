@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,8 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
 //                return hkdf.expand(secret, hkdfInfo,
 //                        ks.getKeyLength(cs),
 //                        ks.getAlgorithm(cs, algorithm));
-                KDF hkdf = KDF.getInstance(cs.hashAlg.name);
+                KDF hkdf =
+                        KDF.getInstance(Utilities.digestAlgToKDFAlg(cs.hashAlg.name));
                 byte[] hkdfInfo =
                           createHkdfInfo(ks.label, ks.getKeyLength(cs));
                 return hkdf.deriveKey(ks.getAlgorithm(cs, algorithm),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -812,7 +812,7 @@ final class Finished {
                 // derive application secrets
                 HashAlg hashAlg = shc.negotiatedCipherSuite.hashAlg;
 //                HKDF hkdf = new HKDF(hashAlg.name);
-                KDF hkdf = KDF.getInstance(hashAlg.name);
+                KDF hkdf = KDF.getInstance(Utilities.digestAlgToKDFAlg(hashAlg.name));
                 byte[] zeros = new byte[hashAlg.hashLength];
                 SecretKeySpec sharedSecret =
                         new SecretKeySpec(zeros, "TlsZeroSecret");
@@ -975,7 +975,7 @@ final class Finished {
                 // derive application secrets
                 HashAlg hashAlg = chc.negotiatedCipherSuite.hashAlg;
 //                HKDF hkdf = new HKDF(hashAlg.name);
-                KDF hkdf = KDF.getInstance(hashAlg.name);
+                KDF hkdf = KDF.getInstance(Utilities.digestAlgToKDFAlg(hashAlg.name));
                 byte[] zeros = new byte[hashAlg.hashLength];
                 SecretKeySpec sharedSecret =
                         new SecretKeySpec(zeros, "TlsZeroSecret");

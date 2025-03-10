@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
             CipherSuite.HashAlg hashAlg = context.negotiatedCipherSuite.hashAlg;
             SSLKeyDerivation kd = context.handshakeKeyDerivation;
 //            HKDF hkdf = new HKDF(hashAlg.name);
-            KDF hkdf = KDF.getInstance(hashAlg.name);
+            KDF hkdf = KDF.getInstance(Utilities.digestAlgToKDFAlg(hashAlg.name));
             if (kd == null) {   // No PSK is in use.
                 // If PSK is not in use Early Secret will still be
                 // HKDF-Extract(0, 0).

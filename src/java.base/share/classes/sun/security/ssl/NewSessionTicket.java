@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,7 +289,7 @@ final class NewSessionTicket {
             SecretKey resumptionMasterSecret, byte[] nonce) throws IOException {
         try {
 //            HKDF hkdf = new HKDF(hashAlg.name);
-            KDF hkdf = KDF.getInstance(hashAlg.name);
+            KDF hkdf = KDF.getInstance(Utilities.digestAlgToKDFAlg(hashAlg.name));
             byte[] hkdfInfo = SSLSecretDerivation.createHkdfInfo(
                     "tls13 resumption".getBytes(), nonce, hashAlg.hashLength);
 //            return hkdf.expand(resumptionMasterSecret, hkdfInfo,

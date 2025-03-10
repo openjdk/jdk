@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ final class SSLBasicKeyDerivation implements SSLKeyDerivation {
 //            HKDF hkdf = new HKDF(hashAlg);
 //            return hkdf.expand(secret, hkdfInfo,
 //                    ((SecretSizeSpec)keySpec).length, algorithm);
-            KDF hkdf = KDF.getInstance(hashAlg);
+            KDF hkdf = KDF.getInstance(Utilities.digestAlgToKDFAlg(hashAlg));
             return hkdf.deriveKey(algorithm,
                           HKDFParameterSpec.expandOnly(secret, hkdfInfo,
                                                        ((SecretSizeSpec)keySpec).length));
