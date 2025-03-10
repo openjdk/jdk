@@ -8031,7 +8031,7 @@ instruct unnecessary_membar_volatile_rvwmo() %{
   ins_pipe(real_empty);
 %}
 
-############# OLD MEMBAR ##############
+// ############# OLD MEMBAR ##############
 instruct load_fence() %{
   predicate(!UseNewCode);
   match(LoadFence);
@@ -8147,7 +8147,7 @@ instruct membar_volatile() %{
   ins_pipe(pipe_serial);
 %}
 
-############# END OLD MEMBAR ##############
+// ############# END OLD MEMBAR ##############
 
 instruct spin_wait() %{
   predicate(UseZihintpause);
