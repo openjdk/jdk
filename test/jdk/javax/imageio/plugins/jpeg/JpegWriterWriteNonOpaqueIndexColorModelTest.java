@@ -78,6 +78,7 @@ public class JpegWriterWriteNonOpaqueIndexColorModelTest {
                     alpha[a] = (byte) a;
                 }
             }
+
             IndexColorModel indexColorModel = new IndexColorModel(8, 256, gray, gray, gray, alpha);
             System.out.println("colorModel.getTransparency() = " + indexColorModel.getTransparency());
             BufferedImage bi = new BufferedImage(10, 10, BufferedImage.TYPE_BYTE_INDEXED, indexColorModel);
