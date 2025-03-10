@@ -530,21 +530,34 @@ define SetupRunGtestTestBody
 	$$(call LogWarn, Test report is stored in $$(strip \
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
 	$$(if $$(wildcard $$($1_RESULT_FILE)), \
-	  $$(eval $1_TOTAL := $$(shell $$(AWK) '/==========.* tests? from .* \
-	      test (cases?|suites?) ran/ { print $$$$2 }' $$($1_RESULT_FILE))) \
-	  $$(if $$($1_TOTAL), , $$(eval $1_TOTAL := 0)) \
+	  $$(eval $1_RUN := $$(shell $$(AWK) \
+	      '/==========.* tests? from .* test (cases?|suites?) ran/ { print $$$$2 }' \
+	      $$($1_RESULT_FILE))) \
+	  $$(if $$($1_RUN), , $$(eval $1_RUN := 0)) \
 	  $$(eval $1_PASSED := $$(shell $$(AWK) '/\[  PASSED  \] .* tests?./ \
 	      { print $$$$4 }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_PASSED), , $$(eval $1_PASSED := 0)) \
+	  $$(eval $1_SKIPPED := $$(shell $$(AWK) \
+	      '/YOU HAVE [0-9]+ DISABLED TEST/ { \
+	          if (match($$$$0, /[0-9]+/, arr)) { \
+	            print arr[0]; \
+	            found=1; \
+	          } \
+	       } \
+	       END { if (!found) print 0; }' \
+	      $$($1_RESULT_FILE))) \
 	  $$(eval $1_FAILED := $$(shell $$(AWK) '/\[  FAILED  \] .* tests?, \
 	      listed below/ { print $$$$4 }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_FAILED), , $$(eval $1_FAILED := 0)) \
 	  $$(eval $1_ERROR := $$(shell \
-	      $$(EXPR) $$($1_TOTAL) - $$($1_PASSED) - $$($1_FAILED))) \
+	      $$(EXPR) $$($1_RUN) - $$($1_PASSED) - $$($1_FAILED))) \
+	  $$(eval $1_TOTAL := $$(shell \
+	      $$(EXPR) $$($1_RUN) + $$($1_SKIPPED))) \
 	, \
 	  $$(eval $1_PASSED := 0) \
 	  $$(eval $1_FAILED := 0) \
 	  $$(eval $1_ERROR := 1) \
+	  $$(eval $1_SKIPPED := 0) \
 	  $$(eval $1_TOTAL := 1) \
 	)
 
@@ -668,6 +681,7 @@ define SetupRunMicroTestBody
 	  $$(eval $1_ERROR := 1) \
 	  $$(eval $1_TOTAL := 1) \
 	)
+	$$(eval $1_SKIPPED := 0)
 
   $1: run-test-$1 parse-test-$1
 
@@ -1036,23 +1050,64 @@ define SetupRunJtregTestBody
 	$$(call LogWarn, Finished running test '$$($1_TEST)')
 	$$(call LogWarn, Test report is stored in $$(strip \
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
+
+	# Read jtreg documentation to learn on the test stats categories:
+	# https://github.com/openjdk/jtreg/blob/master/src/share/doc/javatest/regtest/faq.md#what-do-all-those-numbers-in-the-test-results-line-mean
+	# In jtreg, "skipped:" category accounts for tests that threw jtreg.SkippedException at runtime.
+	# At the same time these tests contribute to "passed:" tests.
+	# In here we don't want that and so we substract number of "skipped:" from "passed:".
+
 	$$(if $$(wildcard $$($1_RESULT_FILE)), \
-	  $$(eval $1_PASSED := $$(shell $$(AWK) '{ gsub(/[,;]/, ""); \
+	  $$(eval $1_PASSED_AND_RUNTIME_SKIPPED := $$(shell $$(AWK) '{ gsub(/[,;]/, ""); \
 	      for (i=1; i<=NF; i++) { if ($$$$i == "passed:") \
 	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
-	  $$(if $$($1_PASSED), , $$(eval $1_PASSED := 0)) \
+	  $$(if $$($1_PASSED_AND_RUNTIME_SKIPPED), , $$(eval $1_PASSED_AND_RUNTIME_SKIPPED := 0)) \
 	  $$(eval $1_FAILED := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
 	      for (i=1; i<=NF; i++) { if ($$$$i == "failed:") \
 	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_FAILED), , $$(eval $1_FAILED := 0)) \
+	  $$(eval $1_RUNTIME_SKIPPED := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
+	      for (i=1; i<=NF; i++) { if ($$$$i == "skipped:") \
+	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
+	  $$(if $$($1_RUNTIME_SKIPPED), , $$(eval $1_RUNTIME_SKIPPED := 0)) \
+	  $$(eval $1_SKIPPED := $$(shell \
+	      $$(AWK) \
+	        'BEGIN { \
+	          overall_skipped = 0; \
+	          patterns[1] = "skipped"; \
+	          patterns[2] = "excluded"; \
+	          patterns[3] = "not in match-list"; \
+	          patterns[4] = "did not match keywords"; \
+	          patterns[5] = "did not meet module requirements"; \
+	          patterns[6] = "did not meet platform requirements"; \
+	          patterns[7] = "did not match prior status"; \
+	          patterns[8] = "did not meet time-limit requirements"; \
+	        } { \
+	          split($$$$0, arr, ";"); \
+	          for (item in arr) { \
+	            for (p in patterns) { \
+	              if (match(arr[item], patterns[p] ": [0-9]+")) { \
+	                overall_skipped += substr(arr[item], RSTART + length(patterns[p]) + 2, RLENGTH); \
+	              } \
+	            } \
+	          } \
+	          print overall_skipped; \
+	        }' \
+	        $$($1_RESULT_FILE) \
+	  )) \
 	  $$(eval $1_ERROR := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
 	      for (i=1; i<=NF; i++) { if ($$$$i == "error:") \
 	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_ERROR), , $$(eval $1_ERROR := 0)) \
+	  \
+	  $$(eval $1_PASSED := $$(shell \
+	      $$(EXPR) $$($1_PASSED_AND_RUNTIME_SKIPPED) - $$($1_RUNTIME_SKIPPED))) \
 	  $$(eval $1_TOTAL := $$(shell \
-	      $$(EXPR) $$($1_PASSED) + $$($1_FAILED) + $$($1_ERROR))) \
+	      $$(EXPR) $$($1_PASSED) + $$($1_FAILED) + $$($1_ERROR) + $$($1_SKIPPED))) \
 	, \
-	  $$(eval $1_PASSED := 0) \
+	  $$(eval $1_PASSED_AND_RUNTIME_SKIPPED := 0) \
+	  $$(eval $1_RUNTIME_SKIPPED := 0) \
+	  $$(eval $1_SKIPPED := 0) \
 	  $$(eval $1_FAILED := 0) \
 	  $$(eval $1_ERROR := 1) \
 	  $$(eval $1_TOTAL := 1) \
@@ -1111,8 +1166,6 @@ define SetupRunSpecialTestBody
 	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
 	))
 
-  $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/gtest.txt
-
   # We can not parse the various "special" tests.
   parse-test-$1: run-test-$1
 	$$(call LogWarn, Finished running test '$$($1_TEST)')
@@ -1122,6 +1175,7 @@ define SetupRunSpecialTestBody
 	$$(eval $1_PASSED := $$(shell \
 	  if [ `$(CAT) $$($1_EXITCODE)` = "0" ]; then $(ECHO) 1; else $(ECHO) 0; fi \
 	))
+	$$(eval $1_SKIPPED := 0)
 	$$(eval $1_FAILED := $$(shell \
 	  if [ `$(CAT) $$($1_EXITCODE)` = "0" ]; then $(ECHO) 0; else $(ECHO) 1; fi \
 	))
@@ -1231,8 +1285,8 @@ run-test-report: post-run-test
 	$(ECHO) >> $(TEST_SUMMARY) ==============================
 	$(ECHO) >> $(TEST_SUMMARY) Test summary
 	$(ECHO) >> $(TEST_SUMMARY) ==============================
-	$(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5s %5s %5s %5s %2s\n" "  " \
-	    TEST TOTAL PASS FAIL ERROR " "
+	$(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5s %5s %5s %5s %5s %2s\n" "  " \
+	    TEST TOTAL PASS FAIL ERROR SKIP " "
 	$(foreach test, $(TESTS_TO_RUN), \
 	  $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
 	      $(TR) -cs '[a-z][A-Z][0-9]\n' '[_*1000]')) \
@@ -1244,15 +1298,15 @@ run-test-report: post-run-test
 	  , \
 	    $(eval TEST_NAME := $(test)) \
 	  ) \
-	  $(if $(filter $($(TEST_ID)_PASSED), $($(TEST_ID)_TOTAL)), \
-	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %2s\n" \
-	        "  " "$(TEST_NAME)" $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) \
-	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) "  " $(NEWLINE) \
-	  , \
-	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %2s\n" \
+	  $(if $(filter-out 0, $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR)), \
+	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %5d %2s\n" \
 	         ">>" "$(TEST_NAME)" $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) \
-	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) "<<" $(NEWLINE) \
+	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) $($(TEST_ID)_SKIPPED) "<<" $(NEWLINE) \
 	    $(eval TEST_FAILURE := true) \
+	  , \
+	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %5d %2s\n" \
+	        "  " "$(TEST_NAME)" $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) \
+	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) $($(TEST_ID)_SKIPPED) "  " $(NEWLINE) \
 	  ) \
 	)
 	$(ECHO) >> $(TEST_SUMMARY) ==============================

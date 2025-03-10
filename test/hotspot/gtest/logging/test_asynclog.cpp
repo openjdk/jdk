@@ -253,18 +253,6 @@ TEST_VM_F(AsyncLogTest, droppingMessage) {
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
 }
 
-TEST_VM_F(AsyncLogTest, StallingModePreventsDroppedMessages) {
-  if (AsyncLogWriter::instance() == nullptr) {
-    return;
-  }
-  set_log_config(TestLogFileName, "logging=debug");
-  LogConfiguration::AsyncMode prev_mode = LogConfiguration::async_mode();
-  LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Off);
-  test_asynclog_drop_messages();
-  EXPECT_FALSE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
-  LogConfiguration::set_async_mode(prev_mode);
-}
-
 TEST_VM_F(AsyncLogTest, stdoutOutput) {
   testing::internal::CaptureStdout();
 
@@ -272,7 +260,8 @@ TEST_VM_F(AsyncLogTest, stdoutOutput) {
     return;
   }
 
-  bool async = AsyncLogWriter::instance() != nullptr;
+  bool async = AsyncLogWriter::instance() != nullptr
+               && LogConfiguration::async_mode() == LogConfiguration::AsyncMode::Drop;
   if (async) {
     test_asynclog_drop_messages();
     AsyncLogWriter::flush();
@@ -301,7 +290,8 @@ TEST_VM_F(AsyncLogTest, stderrOutput) {
     return;
   }
 
-  bool async = AsyncLogWriter::instance() != nullptr;
+  bool async = AsyncLogWriter::instance() != nullptr
+               && LogConfiguration::async_mode() == LogConfiguration::AsyncMode::Drop;
   if (async) {
     test_asynclog_drop_messages();
     AsyncLogWriter::flush();

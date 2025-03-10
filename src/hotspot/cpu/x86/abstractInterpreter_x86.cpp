@@ -87,7 +87,10 @@ void AbstractInterpreter::layout_activation(Method* method,
 
 #ifdef ASSERT
   if (caller->is_interpreted_frame()) {
-    assert(locals < caller->fp() + frame::interpreter_frame_initial_sp_offset, "bad placement");
+    // Test exact placement on top of caller args
+    intptr_t* l2 = caller->interpreter_frame_last_sp() + caller_actual_parameters - 1;
+    assert(l2 <= caller->interpreter_frame_expression_stack(), "bad placement");
+    assert(l2 >= locals, "bad placement");
   }
 #endif
 

@@ -499,7 +499,6 @@ java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 m
 
 # Wayland related
 
-java/awt/FullScreen/FullscreenWindowProps/FullscreenWindowProps.java 8280991 linux-x64
 java/awt/FullScreen/SetFullScreenTest.java 8332155 linux-x64
 
 ############################################################################
@@ -538,8 +537,9 @@ java/io/IO/IO.java                                              8337935 linux-pp
 
 # jdk_management
 
-com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
-com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
+# First bug for AIX, second for Windows
+com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957,8351002 aix-all,windows-all
+com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957,8351002 aix-all,windows-all
 
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
@@ -749,6 +749,7 @@ sun/tools/jstat/jstatLineCounts4.sh                             8248691,8268211 
 
 jdk/incubator/vector/ShortMaxVectorTests.java                   8306592 generic-i586
 jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-x64
+jdk/incubator/vector/Long256VectorTests.java                    8350840 generic-x64
 
 ############################################################################
 
