@@ -1911,8 +1911,10 @@ void Compile::process_for_merge_stores_igvn(PhaseIterGVN& igvn) {
       n->remove_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
       igvn._worklist.push(n);
     }
+    igvn.optimize();
     if (failing()) return;
     assert(_for_merge_stores_igvn.length() == 0, "no more delayed nodes allowed");
+    print_method(PHASE_AFTER_MERGE_STORES, 3);
   }
 }
 
