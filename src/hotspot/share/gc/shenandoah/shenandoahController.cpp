@@ -61,9 +61,11 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest& re
 
   if (block) {
     MonitorLocker ml(&_alloc_failure_waiters_lock);
+    _alloc_failure_waiters_count++;
     while (!should_terminate() && ShenandoahCollectorPolicy::is_allocation_failure(heap->cancelled_cause())) {
       ml.wait();
     }
+    _alloc_failure_waiters_count--;
   }
 }
 
