@@ -87,7 +87,8 @@ public class TestFuzzExpression {
         IRTestClass.Info info = new IRTestClass.Info(comp.getEscapedClassPathOfCompiledClasses(),
                                                      "p.xyz", "InnerTest",
                                                      List.of("compiler.lib.generators.*",
-                                                             "compiler.lib.verify.*"));
+                                                             "compiler.lib.verify.*"),
+                                                     List.of());
 
         // Example 1:
         // We use the "expression" twice: once in a reference method that runs in the interpreter,

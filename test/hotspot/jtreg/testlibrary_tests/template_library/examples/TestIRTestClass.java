@@ -81,7 +81,8 @@ public class TestIRTestClass {
         IRTestClass.Info info = new IRTestClass.Info(comp.getEscapedClassPathOfCompiledClasses(),
                                                      "p.xyz", "InnerTest",
                                                      List.of("compiler.lib.generators.*",
-                                                             "compiler.lib.verify.*"));
+                                                             "compiler.lib.verify.*"),
+                                                     List.of());
 
         // We define a Test-Template:
         // - static fields for inputs: INPUT_A and INPUT_B
