@@ -446,7 +446,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   bool      vthread_monitor_enter(JavaThread* current, ObjectWaiter* node = nullptr);
   void      vthread_wait(JavaThread* current, jlong millis);
-  bool      vthread_waitReenter(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont);
+  bool      vthread_wait_reenter(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont);
   void      vthread_epilog(JavaThread* current, ObjectWaiter* node);
 
   enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };

@@ -1188,7 +1188,7 @@ bool ObjectMonitor::resume_operation(JavaThread* current, ObjectWaiter* node, Co
   assert(!has_owner(current), "");
 
   if (node->is_wait() && !node->at_reenter()) {
-    bool acquired_monitor = vthread_waitReenter(current, node, cont);
+    bool acquired_monitor = vthread_wait_reenter(current, node, cont);
     if (acquired_monitor) return true;
   }
 
@@ -2061,7 +2061,7 @@ void ObjectMonitor::vthread_wait(JavaThread* current, jlong millis) {
   java_lang_VirtualThread::set_objectWaiter(vthread, node);
 }
 
-bool ObjectMonitor::vthread_waitReenter(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont) {
+bool ObjectMonitor::vthread_wait_reenter(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont) {
   // The first time we run after being preempted on Object.wait() we
   // need to check if we were interrupted or the wait timed-out, and
   // in that case remove ourselves from the _WaitSet queue.
