@@ -919,8 +919,8 @@ public class ImageTypeSpecifier {
 
         if (image instanceof BufferedImage) {
             int bufferedImageType = ((BufferedImage)image).getType();
-            if (bufferedImageType != BufferedImage.TYPE_CUSTOM &&
-                  bufferedImageType != BufferedImage.TYPE_BYTE_INDEXED) {
+            if (bufferedImageType != BufferedImage.TYPE_CUSTOM
+                    && bufferedImageType != BufferedImage.TYPE_BYTE_INDEXED) {
                 return getSpecifier(bufferedImageType);
             }
         }
