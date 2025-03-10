@@ -58,61 +58,70 @@ public class bug8033699 {
     private static JRadioButton radioBtnSingle;
 
     public static void main(String[] args) throws Throwable {
+        robot = new Robot();
+
         // Get all installed Look and Feels
         UIManager.LookAndFeelInfo[] lafs = UIManager.getInstalledLookAndFeels();
-        // Iterate over each LaF
         for (UIManager.LookAndFeelInfo laf : lafs) {
-            try {
-                SwingUtilities.invokeAndWait(() -> {
-                    setLookAndFeel(laf);
-                    createAndShowGUI();
-                });
+            testLaF(laf);
+        }
+    }
 
-                robot = new Robot();
-                robot.waitForIdle();
-                robot.delay(1000);
+    private static void testLaF(UIManager.LookAndFeelInfo laf) throws Exception {
+        try {
+            System.out.println("Testing LaF: " + laf.getName());
+            SwingUtilities.invokeAndWait(() -> {
+                setLookAndFeel(laf);
+                createAndShowGUI();
+            });
 
-                // tab key test grouped radio button
-                runTest1();
-                robot.delay(100);
+            robot.waitForIdle();
+            robot.delay(1000);
 
-                // tab key test non-grouped radio button
-                runTest2();
-                robot.delay(100);
+            // tab key test grouped radio button
+            runTest1();
+            robot.delay(100);
 
-                // shift tab key test grouped and non-grouped radio button
-                runTest3();
-                robot.delay(100);
+            // tab key test non-grouped radio button
+            runTest2();
+            robot.delay(100);
 
-                // left/up key test in grouped radio button
-                runTest4();
-                robot.delay(100);
+            // shift tab key test grouped and non-grouped radio button
+            runTest3();
+            robot.delay(100);
 
-                // down/right key test in grouped radio button
-                runTest5();
-                robot.delay(100);
+            // left/up key test in grouped radio button
+            runTest4();
+            robot.delay(100);
 
-                // tab from radio button in group to next component in the middle of button group layout
-                runTest6();
-                robot.delay(100);
+            // down/right key test in grouped radio button
+            runTest5();
+            robot.delay(100);
 
-                // tab to radio button in group from component in the middle of button group layout
-                runTest7();
-                robot.delay(100);
+            // tab from radio button in group to next component in the middle of button group layout
+            runTest6();
+            robot.delay(100);
 
-                // down key circle back to first button in grouped radio button
-                runTest8();
-                robot.delay(100);
+            // tab to radio button in group from component in the middle of button group layout
+            runTest7();
+            robot.delay(100);
 
-                // Verify that ActionListener is called when a RadioButton is selected using arrow key.
-                runTest9();
-                robot.delay(100);
+            // down key circle back to first button in grouped radio button
+            runTest8();
+            robot.delay(100);
 
-                SwingUtilities.invokeAndWait(() -> mainFrame.dispose());
-            } catch (Exception e) {
-                System.err.println("Error testing LaF: " + laf.getName());
-                throw e;
-            }
+            // Verify that ActionListener is called when a RadioButton is selected using arrow key.
+            runTest9();
+            robot.delay(100);
+        } catch (Exception e) {
+            throw new RuntimeException("Error testing LaF: " + laf.getName(), e);
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (mainFrame != null) {
+                    mainFrame.dispose();
+                    mainFrame = null;
+                }
+            });
         }
     }
 
