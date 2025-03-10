@@ -436,7 +436,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
  private:
   void      add_to_entry_list(JavaThread* current, ObjectWaiter* node);
   void      AddWaiter(ObjectWaiter* waiter);
-  void      INotify(JavaThread* current);
+  bool      INotify(JavaThread* current);
   ObjectWaiter* DequeueWaiter();
   void      DequeueSpecificWaiter(ObjectWaiter* waiter);
   void      EnterI(JavaThread* current);
