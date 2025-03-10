@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,9 @@ public class TestPassThruFiles extends JavadocTester {
 
         var files = List.of(
                 "resource-files/copy.svg",
+                "resource-files/down.svg",
                 "resource-files/link.svg",
+                "resource-files/right.svg",
                 "resource-files/stylesheet.css",
                 "script-files/script.js",
                 "script-files/search.js",

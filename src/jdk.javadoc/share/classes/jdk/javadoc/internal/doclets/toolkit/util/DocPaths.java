@@ -103,6 +103,12 @@ public class DocPaths {
     /** The name of the template of the default javascript file. */
     public static final DocPath SCRIPT_JS_TEMPLATE = DocPath.create("script.js.template");
 
+    /** The name of the downwards pointing angle icon. */
+    public static final DocPath DOWN_SVG = DocPath.create("down.svg");
+
+    /** The name of the right pointing angle icon. */
+    public static final DocPath RIGHT_SVG = DocPath.create("right.svg");
+
     /** The name of the copy-to-clipboard icon file. */
     public static final DocPath CLIPBOARD_SVG = DocPath.create("copy.svg");
 

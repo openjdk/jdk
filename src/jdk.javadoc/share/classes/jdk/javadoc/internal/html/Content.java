@@ -143,6 +143,13 @@ public abstract class Content {
     }
 
     /**
+     * {@return the plain text of this content with HTML tags removed}
+     */
+    public Content stripTags() {
+        return this;
+    }
+
+    /**
      * {@return true if the content is "phrasing content"}
      *
      * Phrasing content is content that may appear in a paragraph, such as text, or certain HTML elements.

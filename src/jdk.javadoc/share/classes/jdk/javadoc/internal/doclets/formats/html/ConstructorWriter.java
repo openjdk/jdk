@@ -30,7 +30,6 @@ import java.util.List;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
@@ -40,7 +39,6 @@ import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlStyle;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -291,10 +289,6 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
                 .setCaption(contents.constructors)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setColumnStyles(bodyRowStyles);
-    }
-
-    @Override
-    public void addInheritedSummaryLabel(TypeElement typeElement, Content content) {
     }
 
     @Override

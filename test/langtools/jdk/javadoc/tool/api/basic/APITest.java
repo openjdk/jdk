@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,9 +205,11 @@ class APITest {
             "pkg/package-summary.html",
             "pkg/package-tree.html",
             "resource-files/copy.svg",
+            "resource-files/down.svg",
             "resource-files/glass.png",
             "resource-files/jquery-ui.min.css",
             "resource-files/link.svg",
+            "resource-files/right.svg",
             "resource-files/stylesheet.css",
             "resource-files/x.png",
             "resource-files/fonts/dejavu.css",
