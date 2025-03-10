@@ -124,16 +124,6 @@ bool ShenandoahGenerationSizer::transfer_regions(ShenandoahGeneration* src, Shen
     return false;
   }
 
-  if (dst->max_capacity() + bytes_to_transfer > max_size_for(dst)) {
-    // This transfer would cause the destination generation to grow above its configured maximum size.
-    return false;
-  }
-
-  if (src->max_capacity() - bytes_to_transfer < min_size_for(src)) {
-    // This transfer would cause the source generation to shrink below its configured minimum size.
-    return false;
-  }
-
   src->decrease_capacity(bytes_to_transfer);
   dst->increase_capacity(bytes_to_transfer);
   const size_t new_size = dst->max_capacity();
