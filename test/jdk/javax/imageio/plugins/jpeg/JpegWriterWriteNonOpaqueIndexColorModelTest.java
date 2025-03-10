@@ -45,17 +45,6 @@ public class JpegWriterWriteNonOpaqueIndexColorModelTest {
             throw new Error("Test failed");
     }
 
-    /**
-     * Test writing a JPEG using a IndexColorModel
-     *
-     * @param imageType a Transparency constant (OPAQUE, BITMASK, TRANSLUCENT) that is used to
-     *                  define a new IndexColorModel.
-     * @param name the name of the Transparency constant
-     * @param expectedWriteReturnValue the expected return value of <code>ImageIO.write(..)</code>
-     * @return true if <code>ImageIO.write(..) == expectedWriteReturnValue</code>, or false otherwise.
-     *         This also returns false if <code>ImageIO.write(..)</code> throws an exception. We do not
-     *         expect that to happen anymore. (Prior to resolving 8351108 ImageIO threw an exception.)
-     */
     private static boolean testJpegWriter(int imageType, String name, boolean expectedWriteReturnValue) {
         System.out.println();
         System.out.println("TESTING " + name);
