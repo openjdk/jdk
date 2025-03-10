@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8241780 8273244 8284908
+ * @bug 7021614 8241780 8273244 8284908 8346118
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -128,9 +128,72 @@ DocComment[DOC_COMMENT, pos:1
       name:pre
       attributes: empty
     ]
-    Literal[CODE, pos:6, |_____@Override|_____void_m()_{_}|_]
+    Literal[CODE, pos:6, ____@Override|____void_m()_{_}|]
   body: 1
     EndElement[END_ELEMENT, pos:48, pre]
+  block tags: empty
+]
+*/
+
+    /**<pre>{@code
+     *     @Override
+     *     void m() { }
+     * }</pre>
+     */
+    void pre_code_first_line() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:0
+      name:pre
+      attributes: empty
+    ]
+    Literal[CODE, pos:5, ____@Override|____void_m()_{_}|]
+  body: 1
+    EndElement[END_ELEMENT, pos:47, pre]
+  block tags: empty
+]
+*/
+
+    /**
+     *<pre>{@code
+     *    @Override
+     *    void m() { }
+     *}</pre>
+     */
+    @NormalizeTags(false) // see DocCommentTester.PrettyChecker
+    void pre_code_no_indent() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:0
+      name:pre
+      attributes: empty
+    ]
+    Literal[CODE, pos:5, ____@Override|____void_m()_{_}|]
+  body: 1
+    EndElement[END_ELEMENT, pos:44, pre]
+  block tags: empty
+]
+*/
+
+    /**
+     *  <pre>{@code
+     *      @Override
+     *      void m() { }
+     *  }</pre>
+     */
+    void pre_code_double_indent() { }
+/*
+DocComment[DOC_COMMENT, pos:2
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:2
+      name:pre
+      attributes: empty
+    ]
+    Literal[CODE, pos:7, _____@Override|_____void_m()_{_}|_]
+  body: 1
+    EndElement[END_ELEMENT, pos:52, pre]
   block tags: empty
 ]
 */

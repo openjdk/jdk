@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,14 @@ import java.util.regex.Pattern;
 
 import com.sun.source.doctree.AttributeTree.ValueKind;
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.ErroneousTree;
+import com.sun.source.doctree.LiteralTree;
+import com.sun.source.doctree.StartElementTree;
+import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.doctree.UnknownInlineTagTree;
+import com.sun.source.util.SimpleDocTreeVisitor;
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.tree.DCTree;
 import com.sun.tools.javac.tree.DCTree.DCAttribute;
@@ -126,6 +131,9 @@ public class DocCommentParser {
     private int lastNonWhite = -1;
     private boolean newline = true;
 
+    /** Used to skip whitespace normalization for comments that don't need it */
+    private boolean hasPreElement = false;
+
     private final Map<Name, TagParser> tagParsers;
 
     /**
@@ -211,7 +219,7 @@ public class DocCommentParser {
         nextChar();
 
         List<DCTree> preamble = isHtmlFile ? content(Phase.PREAMBLE) : List.nil();
-        List<DCTree> body = content(Phase.BODY);
+        List<DCTree> body = normalizeWhitespace(content(Phase.BODY));
         List<DCTree> tags = blockTags();
         List<DCTree> postamble = isHtmlFile ? content(Phase.POSTAMBLE) : List.nil();
 
@@ -257,7 +265,7 @@ public class DocCommentParser {
         while (isHorizontalWhitespace(ch) && bp < buflen) {
             nextChar();
         }
-        return content(Phase.BODY);
+        return normalizeWhitespace(content(Phase.BODY));
     }
 
     /**
@@ -1054,6 +1062,9 @@ public class DocCommentParser {
                 }
                 if (ch == '>') {
                     nextChar();
+                    if ("pre".equalsIgnoreCase(name.toString())) {
+                        hasPreElement = true;
+                    }
                     return m.at(p).newStartElementTree(name, attrs, selfClosing).setEndPos(bp);
                 }
             }
@@ -1854,6 +1865,185 @@ public class DocCommentParser {
         }
     }
 
+    /*
+     * Check if every newline character in the doc comment is followed by at least
+     * one space character, which suggests that indentation is incidental and should be
+     * removed in preformatted text.
+     */
+    private boolean canStripLeadingSpace() {
+        for (int i = 0; i < buf.length - 2; i++) {
+            if (buf[i] == '\n') {
+                char c = buf[i + 1];
+                if (c != '\n' && c != ' ') {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /*
+     * This method performs whitespace normalization of preformatted text in parsed comments.
+     * Two kinds of normalization are carried out on top-level text and bodies of
+     * {@code}/{@literal} tags inside <pre>...</pre> tags:
+     *
+     *  - Removal of one leading space following each line break. This is commonly
+     *    caused by doc comment formatting conventions and parsing rules, and results
+     *    in unintentional indentation and a trailing blank line in rendered <pre> content.
+     *
+     *  - Removal of a single line break after a <code> or {@code tag at the beginning
+     *    of <pre> content. Browsers ignore a leading line break immediately following
+     *    the <pre> tag, but not after a <code> tag or other whitespace. This causes
+     *    a leading blank line in the rendered <pre> content.
+     *
+     * Normalization is only performed on traditional doc comments since they are uniquely
+     * affected by these problems (Markdown comments already come stripped from leading
+     * whitespace). Leading spaces are only removed if all line breaks in the comment are
+     * followed by a space character. Both steps are performed independently of each other.
+     */
+    private List<DCTree> normalizeWhitespace(List<DCTree> list) {
+
+        // Do nothing if comment is not eligible for whitespace normalization.
+        if (!hasPreElement || textKind == DocTree.Kind.MARKDOWN || isHtmlFile) {
+            return list;
+        }
+
+        final var stripLeadingSpace = canStripLeadingSpace();
+
+        // Context for whitespace normalization visitor
+        class NormalizationContext {
+            int pos = 0;                // current position in doctree list
+            int currentPre = -1;        // position of active pre start tag
+            int strippableNewline = -1; // position marker for leading newline to be stripped
+
+            // Are we currently inside a <pre> element?
+            boolean inPre() {
+                return currentPre > -1;
+            }
+            // Is this the first element following a <pre> start tag?
+            boolean firstInPre() {
+                return inPre() && currentPre == pos - 1;
+            }
+            // Does the current doctree have leading newline that should be stripped?
+            boolean stripLeadingNewline() {
+                return strippableNewline == pos;
+            }
+        }
+
+        var normalized = new ListBuffer<DCTree>();
+        var visitor = new SimpleDocTreeVisitor<DCTree, NormalizationContext>() {
+
+            private DCText normalizePreContent(DCText text, NormalizationContext cx) {
+                var body = text.getBody();
+
+                if (stripLeadingSpace && body.contains("\n ")) {
+                    // Remove a single leading space following each newline character.
+                    body = body.replace("\n ", "\n");
+                }
+                if (cx.stripLeadingNewline()) {
+                    // Remove a leading newline if this text has been marked for it.
+                    assert(body.startsWith("\n"));
+                    body = body.substring(1);
+                }
+
+                return body == text.getBody() ? text : m.at(text.pos).newTextTree(body);
+            }
+
+            private DCText normalizeStartOfPreContent(DCText text, NormalizationContext cx) {
+                // Check if <pre> content starts with one or more space characters, followed by
+                // {@code}, {@literal} or <code> with leading newline in its content. If so,
+                // drop the space(s) and mark the newline for removal to avoid a blank leading line.
+                if (cx.pos < list.length() - 1 && text.getBody().matches(" +")) {
+                    var next = list.get(cx.pos + 1);
+                    if (next instanceof LiteralTree literal
+                            && literal.getBody().getBody().startsWith("\n")) {
+                        // <pre> {@code\n
+                        cx.strippableNewline = cx.pos + 1;
+                        return null;
+
+                    } else if (cx.pos < list.length() - 2
+                            && next instanceof StartElementTree elem
+                            && elem.getName().toString().equalsIgnoreCase("code")
+                            && list.get(cx.pos + 2) instanceof DCText code
+                            && code.getBody().startsWith("\n")) {
+                        // <pre> <code>\n
+                        cx.strippableNewline = cx.pos + 2;
+                        return null;
+                    }
+                }
+                // Do normal pre content normalization.
+                return normalizePreContent(text, cx);
+            }
+
+            @Override
+            public DCTree visitText(TextTree text, NormalizationContext cx) {
+                if (cx.inPre()) {
+                    return cx.firstInPre()
+                            ? normalizeStartOfPreContent((DCText) text, cx)
+                            : normalizePreContent((DCText) text, cx);
+                }
+                return (DCTree) text;
+            }
+
+            @Override
+            public DCTree visitLiteral(LiteralTree literal, NormalizationContext cx) {
+                if (cx.inPre()) {
+                    if (cx.firstInPre() && literal.getBody().getBody().startsWith("\n")) {
+                        // <pre>{@code\n
+                        cx.strippableNewline = cx.pos;
+                    }
+                    var normalized = normalizePreContent((DCText) literal.getBody(), cx);
+                    if (normalized != literal.getBody()) {
+                        m.at(((DCTree) literal).pos);
+                        return literal.getKind() == DocTree.Kind.CODE
+                                ? m.newCodeTree(normalized)
+                                : m.newLiteralTree(normalized);
+                    }
+                }
+                return (DCTree) literal;
+            }
+
+            @Override
+            public DCTree visitStartElement(StartElementTree node, NormalizationContext cx) {
+                if (node.getName().toString().equalsIgnoreCase("pre")) {
+                    cx.currentPre = cx.pos;
+                } else if (cx.firstInPre() && node.getName().toString().equalsIgnoreCase("code")) {
+                    if (cx.pos < list.length() - 1
+                            && list.get(cx.pos + 1) instanceof DCText code
+                            && code.getBody().startsWith("\n")) {
+                        // <pre><code>\n
+                        cx.strippableNewline = cx.pos + 1;
+                    }
+                }
+                return (DCTree) node;
+            }
+
+            @Override
+            public DCTree visitEndElement(EndElementTree node, NormalizationContext cx) {
+                if (node.getName().toString().equalsIgnoreCase("pre")) {
+                    cx.currentPre = -1;
+                }
+                return (DCTree) node;
+            }
+
+            @Override
+            protected DCTree defaultAction(DocTree node, NormalizationContext context) {
+                return (DCTree) node;
+            }
+        };
+
+        var cx = new NormalizationContext();
+        for (var tree : list) {
+            var visited = visitor.visit(tree, cx);
+            if (visited != null) {
+                normalized.add(visited);
+            }
+            cx.pos++;
+        }
+
+        return normalized.toList();
+    }
+
     /**
      * @see <a href="https://docs.oracle.com/en/java/javase/15/docs/specs/javadoc/doc-comment-spec.html">JavaDoc Tags</a>
      */
@@ -2110,7 +2300,7 @@ public class DocCommentParser {
                     DCIdentifier name = identifier();
                     skipWhitespace();
                     DCReference type = reference(ReferenceParser.Mode.MEMBER_DISALLOWED);
-                    List<DCTree> description = null;
+                    List<DCTree> description = List.nil();
                     if (isWhitespace(ch)) {
                         skipWhitespace();
                         description = blockContent();
