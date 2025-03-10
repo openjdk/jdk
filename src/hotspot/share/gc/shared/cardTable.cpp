@@ -208,6 +208,18 @@ void CardTable::dirty_MemRegion(MemRegion mr) {
 }
 
 void CardTable::clear_MemRegion(MemRegion mr) {
+  // The MemRegion mr can have a word size of 0. This occurs the first time
+  // a SerialGC full collection is performed, for example. In that case, the
+  // MemRegion corresponds to the previously used region in the tenured space.
+  // Since that is an empty region, mr.last() will fall outside the bounds
+  // of the heap if the tenured region is at the start of the whole heap.
+  // We can avoid that assertion failure since there are no words to be cleared
+  // for a region with a word size of 0.
+  if (mr.word_size() == 0) {
+    // no need to call memset on a card table region of size 0 bytes
+    return;
+  }
+
   // Be conservative: only clean cards entirely contained within the
   // region.
   CardValue* cur;
