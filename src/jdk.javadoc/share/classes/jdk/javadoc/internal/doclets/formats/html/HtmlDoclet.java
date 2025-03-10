@@ -317,6 +317,8 @@ public class HtmlDoclet extends AbstractDoclet {
             copyResource(DocPaths.STYLESHEET, DocPaths.RESOURCE_FILES.resolve(DocPaths.STYLESHEET), true);
         }
         copyResource(DocPaths.SCRIPT_JS_TEMPLATE, DocPaths.SCRIPT_FILES.resolve(DocPaths.SCRIPT_JS), true);
+        copyResource(DocPaths.DOWN_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.DOWN_SVG), true);
+        copyResource(DocPaths.RIGHT_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.RIGHT_SVG), true);
         copyResource(DocPaths.CLIPBOARD_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.CLIPBOARD_SVG), true);
         copyResource(DocPaths.LINK_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.LINK_SVG), true);
 

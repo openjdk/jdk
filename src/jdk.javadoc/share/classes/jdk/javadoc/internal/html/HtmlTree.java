@@ -176,6 +176,7 @@ public class HtmlTree extends Content {
      */
     @Override
     public HtmlTree add(Content content) {
+        Objects.requireNonNull(content, "Content must not be null");
         if (content instanceof ContentBuilder cb) {
             cb.contents.forEach(this::add);
         } else if (!content.isDiscardable()) {
@@ -275,6 +276,15 @@ public class HtmlTree extends Content {
             n += c.charCount();
         }
         return n;
+    }
+
+    @Override
+    public Content stripTags() {
+        var text = new ContentBuilder();
+        for (Content c : content) {
+            text.add(c.stripTags());
+        }
+        return text;
     }
 
     /*
