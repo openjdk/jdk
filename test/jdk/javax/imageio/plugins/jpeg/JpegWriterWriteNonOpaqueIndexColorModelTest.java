@@ -37,7 +37,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class JpegWriterWriteNonOpaqueIndexColorModelTest {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         boolean b1 = testJpegWriter(Transparency.OPAQUE, "OPAQUE", true);
         boolean b2 = testJpegWriter(Transparency.BITMASK, "BITMASK", false);
         boolean b3 = testJpegWriter(Transparency.TRANSLUCENT, "TRANSLUCENT", false);
