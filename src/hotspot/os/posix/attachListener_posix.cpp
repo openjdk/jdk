@@ -105,7 +105,9 @@ private:
 public:
   SocketChannel(int socket) : _socket(socket) {}
   ~SocketChannel() {
+    log_debug(attach)(">>~SocketChannel");
     close();
+    log_debug(attach)("<<~SocketChannel");
   }
 
   bool opened() const {
@@ -114,6 +116,8 @@ public:
 
   void close() {
     if (opened()) {
+log_debug(attach)("SocketChannel - closing the socket");
+
       ::shutdown(_socket, SHUT_RDWR);
       ::close(_socket);
       _socket = -1;
@@ -321,7 +325,9 @@ PosixAttachOperation* PosixAttachListener::dequeue() {
 // socket could be made non-blocking and a timeout could be used.
 
 void PosixAttachOperation::complete(jint result, bufferedStream* st) {
-  delete this;
+    log_debug(attach)(">>PosixAttachOperation::complete");
+    delete this;
+    log_debug(attach)("<<PosixAttachOperation::complete");
 }
 
 

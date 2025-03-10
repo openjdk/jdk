@@ -636,6 +636,7 @@ void AttachListenerThread::thread_entry(JavaThread* thread, TRAPS) {
         st.set_result(JNI_ERR);
         st.print("Operation %s not recognized!", op->name());
       }
+      log_debug(attach)("command executed: %s", op->name());
       st.complete();
     }
 

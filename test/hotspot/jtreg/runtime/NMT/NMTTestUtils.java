@@ -41,7 +41,7 @@ System.out.println("[" + (System.currentTimeMillis() - startTime) + "]: >> start
         fullargs[2] = "VM.native_memory";
         System.arraycopy(additional_args, 0, fullargs, 3, additional_args.length);
         ProcessBuilder pb = new ProcessBuilder();
-System.out.println("[" + (System.currentTimeMillis() - startTime) + "]:   startJcmdVMNativeMemory, args = " + fullargs);
+System.out.println("[" + (System.currentTimeMillis() - startTime) + "]:   startJcmdVMNativeMemory, args = " + java.util.Arrays.toString(fullargs));
         pb.command(fullargs);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 System.out.println("[" + (System.currentTimeMillis() - startTime) + "]: << startJcmdVMNativeMemory");
