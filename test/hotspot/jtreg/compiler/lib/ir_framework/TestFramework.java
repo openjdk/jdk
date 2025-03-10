@@ -597,32 +597,37 @@ public class TestFramework {
             return;
         }
 
-        boolean debugTest, irTest, nonWhiteListedTest;
+        boolean debugTest, intTest, compTest, irTest, nonWhiteListedTest;
 
-        debugTest = Platform.isDebugBuild() && !Platform.isInt() && !Platform.isComp();
+        debugTest = Platform.isDebugBuild();
+        intTest = !Platform.isInt();
+        compTest = !Platform.isComp();
         irTest = hasIRAnnotations();
         // No IR verification is done if additional non-whitelisted JTreg VM or Javaoptions flag is specified.
         List<String> nonWhiteListedFlags = anyNonWhitelistedJTregVMAndJavaOptsFlags();
         nonWhiteListedTest = nonWhiteListedFlags.isEmpty();
 
-        irVerificationPossible = debugTest && irTest && nonWhiteListedTest;
+        irVerificationPossible = debugTest && intTest && compTest && irTest && nonWhiteListedTest;
         if (irVerificationPossible) {
             return;
         }
 
-        System.out.println("IR verification disabled due to:");
+        System.out.println("IR verification disabled due to the following reason(s):");
         if (!debugTest) {
-            System.out.println("\tnot running a debug build (required for PrintIdeal and PrintOptoAssembly), " +
-                               "running with -Xint, or -Xcomp (use warm-up of 0 instead)");
+            System.out.println("- Not running a debug build (required for PrintIdeal and PrintOptoAssembly)");
         }
-
+        if (!intTest) {
+            System.out.println("- Running with -Xint (use warm-up of 0 instead)");
+        }
+        if (!compTest) {
+            System.out.println("- Running with -Xcomp (use warm-up of 0 instead)");
+        }
         if (!irTest) {
-            System.out.println("\ttest " + testClass + " not specifying any @IR annotations");
+            System.out.println("- Test " + testClass + " not specifying any @IR annotations");
         }
-
         if (!nonWhiteListedTest) {
-            System.out.println("\tusing non-whitelisted JTreg VM or Javaoptions flag(s),");
-            nonWhiteListedFlags.forEach((f) -> System.out.println("\t\t" + f));
+            System.out.println("- Using non-whitelisted JTreg VM or Javaoptions flag(s):");
+            nonWhiteListedFlags.forEach((f) -> System.out.println("  - " + f));
         }
 
         System.out.println("");
