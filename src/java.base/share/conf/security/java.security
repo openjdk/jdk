@@ -745,11 +745,11 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #
 #     Handshake restricts the use of the algorithm in TLS handshake signatures.
 #     Certificate restricts the use of the algorithm in certificate signatures.
-#     These constraints cannot be mixed with other usage constraints for the
-#     same algorithm, they also cannot be linked with other constraints by an
-#     ampersand '&'. The usage type follows the keyword and more than one usage
-#     type can be specified with a whitespace delimiter.
-#     Example: "rsa_pkcs1_sha1 usage handshake"
+#     An algorithm with this constraint cannot include other usage types
+#     defined in the jdk.certpath.disabledAlgorithms property. The usage type
+#     follows the keyword and more than one usage type can be specified with a
+#     whitespace delimiter.
+#     Example: "rsa_pkcs1_sha1 usage Handshake"
 #
 # Note: The algorithm restrictions do not apply to trust anchors or
 # self-signed certificates.
