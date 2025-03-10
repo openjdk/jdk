@@ -220,9 +220,10 @@ size_t ZArguments::heap_virtual_to_physical_ratio() {
 }
 
 CollectedHeap* ZArguments::create_heap() {
-  // ZCollectedHeap has an alignment >= ZCacheLineSize, which may be larger than
-  // std::max_align_t. Instead of using operator new, align the storage manually
-  // and construct the ZCollectedHeap using operator placement new
+  // ZCollectedHeap has an alignment greater than or equal to ZCacheLineSize,
+  // which may be larger than std::max_align_t. Instead of using operator new,
+  // align the storage manually and construct the ZCollectedHeap using operator
+  // placement new.
 
   static_assert(alignof(ZCollectedHeap) >= ZCacheLineSize,
                 "ZCollectedHeap is no longer ZCacheLineSize aligned");
