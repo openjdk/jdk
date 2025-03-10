@@ -6227,7 +6227,7 @@ instruct cmovI_regUCF_ndd(rRegI dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegI src1, 
 
 
 instruct cmovI_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) %{
-  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
+  predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -6240,10 +6240,24 @@ instruct cmovI_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) 
   ins_pipe(pipe_cmov_reg);
 %}
 
+instruct cmovI_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src1, rRegI src2) %{
+  predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
+  match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
+
+  ins_cost(200); // XXX
+  format %{ "ecmovpl  $dst, $src1, $src2\n\t"
+            "ecmovnel $dst, $src1, $src2" %}
+  ins_encode %{
+    __ ecmovl(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ ecmovl(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);
+%}
+
 // Since (x == y) == !(x != y), we can flip the sense of the test by flipping the
 // inputs of the CMove
 instruct cmovI_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) %{
-  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
+  predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveI (Binary cop cr) (Binary src dst)));
 
   ins_cost(200); // XXX
@@ -6252,6 +6266,20 @@ instruct cmovI_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) 
   ins_encode %{
     __ cmovl(Assembler::parity, $dst$$Register, $src$$Register);
     __ cmovl(Assembler::notEqual, $dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);
+%}
+
+instruct cmovI_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src1, rRegI src2) %{
+  predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
+  match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
+
+  ins_cost(200); // XXX
+  format %{ "ecmovpl  $dst, $src1, $src2\n\t"
+            "ecmovnel $dst, $src1, $src2" %}
+  ins_encode %{
+    __ ecmovl(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ ecmovl(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6507,7 +6535,7 @@ instruct cmovP_regUCF_ndd(rRegP dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegP src1, 
 %}
 
 instruct cmovP_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
-  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
+  predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveP (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -6520,10 +6548,24 @@ instruct cmovP_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) 
   ins_pipe(pipe_cmov_reg);
 %}
 
+instruct cmovP_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src1, rRegP src2) %{
+  predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
+  match(Set dst (CMoveP (Binary cop cr) (Binary src1 src2)));
+
+  ins_cost(200); // XXX
+  format %{ "ecmovpq  $dst, $src1, $src2\n\t"
+            "ecmovneq $dst, $src1, $src2" %}
+  ins_encode %{
+    __ ecmovq(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ ecmovq(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);
+%}
+
 // Since (x == y) == !(x != y), we can flip the sense of the test by flipping the
 // inputs of the CMove
 instruct cmovP_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
-  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
+  predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveP (Binary cop cr) (Binary src dst)));
 
   ins_cost(200); // XXX
@@ -6532,6 +6574,20 @@ instruct cmovP_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) 
   ins_encode %{
     __ cmovq(Assembler::parity, $dst$$Register, $src$$Register);
     __ cmovq(Assembler::notEqual, $dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);
+%}
+
+instruct cmovP_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src1, rRegP src2) %{
+  predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
+  match(Set dst (CMoveP (Binary cop cr) (Binary src1 src2)));
+
+  ins_cost(200); // XXX
+  format %{ "ecmovpq  $dst, $src1, $src2\n\t"
+            "ecmovneq $dst, $src1, $src2" %}
+  ins_encode %{
+    __ ecmovq(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ ecmovq(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
 %}
@@ -6676,7 +6732,7 @@ instruct cmovL_regUCF_ndd(rRegL dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegL src1, 
 %}
 
 instruct cmovL_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) %{
-  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
+  predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveL (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -6689,10 +6745,24 @@ instruct cmovL_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) 
   ins_pipe(pipe_cmov_reg);
 %}
 
+instruct cmovL_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src1, rRegL src2) %{
+  predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
+  match(Set dst (CMoveL (Binary cop cr) (Binary src1 src2)));
+
+  ins_cost(200); // XXX
+  format %{ "ecmovpq  $dst, $src1, $src2\n\t"
+            "ecmovneq $dst, $src1, $src2" %}
+  ins_encode %{
+    __ ecmovq(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ ecmovq(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);
+%}
+
 // Since (x == y) == !(x != y), we can flip the sense of the test by flipping the
 // inputs of the CMove
 instruct cmovL_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) %{
-  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
+  predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveL (Binary cop cr) (Binary src dst)));
 
   ins_cost(200); // XXX
@@ -6704,6 +6774,21 @@ instruct cmovL_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) 
   %}
   ins_pipe(pipe_cmov_reg);
 %}
+
+instruct cmovL_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src1, rRegL src2) %{
+  predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
+  match(Set dst (CMoveL (Binary cop cr) (Binary src1 src2)));
+
+  ins_cost(200); // XXX
+  format %{ "ecmovpq  $dst, $src1, $src2\n\t"
+            "ecmovneq $dst, $src1, $src2" %}
+  ins_encode %{
+    __ ecmovq(Assembler::parity, $dst$$Register, $src1$$Register, $src2$$Register);
+    __ ecmovq(Assembler::notEqual, $dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);
+%}
+
 
 instruct cmovL_memU(cmpOpU cop, rFlagsRegU cr, rRegL dst, memory src)
 %{
