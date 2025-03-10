@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import com.sun.hotspot.igv.util.LookupHistory;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
+import java.util.List;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
@@ -46,6 +47,10 @@ public class BlockWidget extends Widget implements DoubleClickHandler {
     private static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 14);
     public static final Color TITLE_COLOR = new Color(42, 42, 171);
     private final Block block;
+    private static final Font LIVE_RANGE_FONT = new Font("Arial", Font.BOLD, 12);
+    public static final Color LIVE_RANGE_COLOR = Color.BLACK;
+    private int nodeWidth;
+    private List<Integer> liveRangeIds;
 
     public BlockWidget(Scene scene, Block block) {
         super(scene);
@@ -53,6 +58,14 @@ public class BlockWidget extends Widget implements DoubleClickHandler {
         this.setBackground(BACKGROUND_COLOR);
         this.setOpaque(true);
         this.setCheckClipping(true);
+    }
+
+    public void setLiveRangeIds(List<Integer> liveRangeIds) {
+        this.liveRangeIds = liveRangeIds;
+    }
+
+    public void setNodeWidth(int nodeWidth) {
+        this.nodeWidth = nodeWidth;
     }
 
     @Override
@@ -75,6 +88,19 @@ public class BlockWidget extends Widget implements DoubleClickHandler {
         String s = "B" + getBlockNode().getName();
         Rectangle2D r1 = g.getFontMetrics().getStringBounds(s, g);
         g.drawString(s, r.x + 5, r.y + (int) r1.getHeight());
+
+        g.setColor(LIVE_RANGE_COLOR);
+        g.setFont(LIVE_RANGE_FONT);
+        if (liveRangeIds != null) {
+            int x = nodeWidth + block.getLiveRangeSeparation();
+            for (int liveRangeId : liveRangeIds) {
+                String ls = "L" + String.valueOf(liveRangeId);
+                Rectangle2D lr = g.getFontMetrics().getStringBounds(ls, g);
+                g.drawString(ls, r.x + x, r.y + (int) lr.getHeight() + 2);
+                x += block.getLiveRangeSeparation();
+            }
+        }
+
         g.setStroke(old);
     }
 
@@ -82,7 +108,7 @@ public class BlockWidget extends Widget implements DoubleClickHandler {
         InputGraphProvider graphProvider = LookupHistory.getLast(InputGraphProvider.class);
         if (graphProvider != null) {
             if (!additiveSelection) {
-                graphProvider.clearSelectedNodes();
+                graphProvider.clearSelectedElements();
             }
             graphProvider.addSelectedNodes(blockWidget.getBlockNode().getNodes(), false);
         }
