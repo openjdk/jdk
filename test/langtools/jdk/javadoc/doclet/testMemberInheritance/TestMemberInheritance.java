@@ -216,7 +216,7 @@ public class TestMemberInheritance extends JavadocTester {
                     </dd>""");
         checkOutput("member-search-index.js", true,
                 """
-                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentField"}""",
+                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentField","k":"1"}""",
                 """
                     {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentMethod(String)","u":"parentMethod(T)"}""");
         // Search tags from inherited doc comments are not added to the index (8341904).
@@ -265,7 +265,7 @@ public class TestMemberInheritance extends JavadocTester {
                     </dd>""");
         checkOutput("member-search-index.js", true,
                 """
-                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentField"}""",
+                    {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentField","k":"1"}""",
                 """
                     {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentMethod(String)","u":"parentMethod(T)"}""");
         // Search tags from inherited doc comments are not added to the index (8341904).

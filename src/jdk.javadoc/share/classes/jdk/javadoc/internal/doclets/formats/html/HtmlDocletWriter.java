@@ -1882,7 +1882,7 @@ public abstract class HtmlDocletWriter {
             String tagText = headingContent.replaceAll("\\s+", " ");
             IndexItem item = IndexItem.of(element, node, tagText,
                     getTagletWriterInstance(context).getHolderName(element),
-                    resources.getText("doclet.Section"),
+                    "",
                     new DocLink(path, id));
             configuration.indexBuilder.add(item);
         }
