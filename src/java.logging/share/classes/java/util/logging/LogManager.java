@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2406,16 +2406,17 @@ public class LogManager {
      * @return a {@link LoggingMXBean} object.
      *
      * @deprecated {@code java.util.logging.LoggingMXBean} is deprecated and
-     *      replaced with {@code java.lang.management.PlatformLoggingMXBean}. Use
-     *      {@link java.management/java.lang.management.ManagementFactory#getPlatformMXBean(Class)
+     *      replaced with {@code java.lang.management.PlatformLoggingMXBean}.
+     *      This method will be removed.
+     *      Use {@link java.management/java.lang.management.ManagementFactory#getPlatformMXBean(Class)
      *      ManagementFactory.getPlatformMXBean}(PlatformLoggingMXBean.class)
      *      instead.
      *
      * @see java.management/java.lang.management.PlatformLoggingMXBean
      * @since 1.5
      */
-    @Deprecated(since="9")
-    @SuppressWarnings("doclint:reference")
+    @Deprecated(since="9", forRemoval=true)
+    @SuppressWarnings({"doclint:reference", "removal"})
     public static synchronized LoggingMXBean getLoggingMXBean() {
         return Logging.getInstance();
     }
