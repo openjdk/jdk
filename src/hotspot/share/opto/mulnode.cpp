@@ -1396,14 +1396,15 @@ Node* RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   // and convert to (x >> 24) & (0xFF000000 >> 24) = x >> 24
   // Such expressions arise normally from shift chains like (byte)(x >> 24).
   const Node* and_node = in(1);
-  if (and_node->Opcode() == Op_And(bt)) {
-    const TypeInteger* mask_t = phase->type(and_node->in(2))->isa_integer(bt);
-    if (mask_t != nullptr && mask_t->is_con()) {
-      jlong maskbits = mask_t->get_con_as_long(bt);
-      // Convert to "(x >> shift) & (mask >> shift)"
-      Node* shr_nomask = phase->transform(RShiftNode::make(and_node->in(1), in(2), bt));
-      return MulNode::make_and(shr_nomask, phase->integercon(maskbits >> shift, bt), bt);
-    }
+  if (and_node->Opcode() != Op_And(bt)) {
+    return nullptr;
+  }
+  const TypeInteger* mask_t = phase->type(and_node->in(2))->isa_integer(bt);
+  if (mask_t != nullptr && mask_t->is_con()) {
+    jlong maskbits = mask_t->get_con_as_long(bt);
+    // Convert to "(x >> shift) & (mask >> shift)"
+    Node* shr_nomask = phase->transform(RShiftNode::make(and_node->in(1), in(2), bt));
+    return MulNode::make_and(shr_nomask, phase->integercon(maskbits >> shift, bt), bt);
   }
   return nullptr;
 }

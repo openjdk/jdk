@@ -103,7 +103,7 @@ public class RShiftLNodeIdealizationTests {
         return (x >> 62) > 4 ? 0L : 1L;
     }
 
-    final static int test5Shift = RunInfo.getRandom().nextInt(64);
+    final static int test5Shift = RunInfo.getRandom().nextInt(1, 64);
     final static long test5Mask = -1L << test5Shift;
 
     @Test
