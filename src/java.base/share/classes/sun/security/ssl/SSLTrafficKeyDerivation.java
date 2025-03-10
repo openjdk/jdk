@@ -30,8 +30,10 @@ import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.ProviderException;
 import java.security.spec.AlgorithmParameterSpec;
+import javax.crypto.KDF;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLHandshakeException;
@@ -147,12 +149,18 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
                 AlgorithmParameterSpec params) throws IOException {
             KeySchedule ks = KeySchedule.valueOf(algorithm);
             try {
-                HKDF hkdf = new HKDF(cs.hashAlg.name);
+//                HKDF hkdf = new HKDF(cs.hashAlg.name);
+//                byte[] hkdfInfo =
+//                        createHkdfInfo(ks.label, ks.getKeyLength(cs));
+//                return hkdf.expand(secret, hkdfInfo,
+//                        ks.getKeyLength(cs),
+//                        ks.getAlgorithm(cs, algorithm));
+                KDF hkdf = KDF.getInstance(cs.hashAlg.name);
                 byte[] hkdfInfo =
-                        createHkdfInfo(ks.label, ks.getKeyLength(cs));
-                return hkdf.expand(secret, hkdfInfo,
-                        ks.getKeyLength(cs),
-                        ks.getAlgorithm(cs, algorithm));
+                          createHkdfInfo(ks.label, ks.getKeyLength(cs));
+                return hkdf.deriveKey(ks.getAlgorithm(cs, algorithm),
+                          HKDFParameterSpec.expandOnly(secret, hkdfInfo,
+                                                       ks.getKeyLength(cs)));
             } catch (GeneralSecurityException gse) {
                 throw new SSLHandshakeException(
                         "Could not generate secret", gse);

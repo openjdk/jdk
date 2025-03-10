@@ -31,7 +31,9 @@ import java.security.SecureRandom;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Locale;
+import javax.crypto.KDF;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.net.ssl.SSLHandshakeException;
 import sun.security.ssl.PskKeyExchangeModesExtension.PskKeyExchangeMode;
 import sun.security.ssl.PskKeyExchangeModesExtension.PskKeyExchangeModesSpec;
@@ -286,11 +288,15 @@ final class NewSessionTicket {
     private static SecretKey derivePreSharedKey(CipherSuite.HashAlg hashAlg,
             SecretKey resumptionMasterSecret, byte[] nonce) throws IOException {
         try {
-            HKDF hkdf = new HKDF(hashAlg.name);
+//            HKDF hkdf = new HKDF(hashAlg.name);
+            KDF hkdf = KDF.getInstance(hashAlg.name);
             byte[] hkdfInfo = SSLSecretDerivation.createHkdfInfo(
                     "tls13 resumption".getBytes(), nonce, hashAlg.hashLength);
-            return hkdf.expand(resumptionMasterSecret, hkdfInfo,
-                    hashAlg.hashLength, "TlsPreSharedKey");
+//            return hkdf.expand(resumptionMasterSecret, hkdfInfo,
+//                    hashAlg.hashLength, "TlsPreSharedKey");
+            return hkdf.deriveKey("TlsPreSharedKey",
+                          HKDFParameterSpec.expandOnly(resumptionMasterSecret,
+                                                       hkdfInfo, hashAlg.hashLength));
         } catch (GeneralSecurityException gse) {
             throw new SSLHandshakeException("Could not derive PSK", gse);
         }

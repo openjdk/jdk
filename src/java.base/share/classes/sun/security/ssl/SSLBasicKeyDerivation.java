@@ -29,7 +29,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.spec.AlgorithmParameterSpec;
+import javax.crypto.KDF;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.net.ssl.SSLHandshakeException;
 
 final class SSLBasicKeyDerivation implements SSLKeyDerivation {
@@ -48,9 +50,13 @@ final class SSLBasicKeyDerivation implements SSLKeyDerivation {
     public SecretKey deriveKey(String algorithm,
             AlgorithmParameterSpec keySpec) throws IOException {
         try {
-            HKDF hkdf = new HKDF(hashAlg);
-            return hkdf.expand(secret, hkdfInfo,
-                    ((SecretSizeSpec)keySpec).length, algorithm);
+//            HKDF hkdf = new HKDF(hashAlg);
+//            return hkdf.expand(secret, hkdfInfo,
+//                    ((SecretSizeSpec)keySpec).length, algorithm);
+            KDF hkdf = KDF.getInstance(hashAlg);
+            return hkdf.deriveKey(algorithm,
+                          HKDFParameterSpec.expandOnly(secret, hkdfInfo,
+                                                       ((SecretSizeSpec)keySpec).length));
         } catch (GeneralSecurityException gse) {
             throw new SSLHandshakeException("Could not generate secret", gse);
         }

@@ -29,8 +29,10 @@ import java.nio.ByteBuffer;
 import java.security.*;
 import java.text.MessageFormat;
 import java.util.*;
+import javax.crypto.KDF;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLProtocolException;
 import static sun.security.ssl.ClientAuthType.CLIENT_AUTH_REQUIRED;
@@ -785,12 +787,15 @@ final class PreSharedKeyExtension {
             SSLSessionImpl session, byte[] digest) throws IOException {
         try {
             CipherSuite.HashAlg hashAlg = session.getSuite().hashAlg;
-            HKDF hkdf = new HKDF(hashAlg.name);
+//            HKDF hkdf = new HKDF(hashAlg.name);
+            KDF hkdf = KDF.getInstance(hashAlg.name);
             byte[] label = ("tls13 finished").getBytes();
             byte[] hkdfInfo = SSLSecretDerivation.createHkdfInfo(
                     label, new byte[0], hashAlg.hashLength);
-            SecretKey finishedKey = hkdf.expand(
-                    binderKey, hkdfInfo, hashAlg.hashLength, "TlsBinderKey");
+//            SecretKey finishedKey = hkdf.expand(
+//                    binderKey, hkdfInfo, hashAlg.hashLength, "TlsBinderKey");
+            SecretKey finishedKey = hkdf.deriveKey("TlsBinderKey",
+                       HKDFParameterSpec.expandOnly(binderKey, hkdfInfo, hashAlg.hashLength));
 
             String hmacAlg =
                 "Hmac" + hashAlg.name.replace("-", "");
@@ -810,16 +815,22 @@ final class PreSharedKeyExtension {
             SecretKey psk, SSLSessionImpl session) throws IOException {
         try {
             CipherSuite.HashAlg hashAlg = session.getSuite().hashAlg;
-            HKDF hkdf = new HKDF(hashAlg.name);
+//            HKDF hkdf = new HKDF(hashAlg.name);
+            KDF hkdf = KDF.getInstance(hashAlg.name);
             byte[] zeros = new byte[hashAlg.hashLength];
-            SecretKey earlySecret = hkdf.extract(zeros, psk, "TlsEarlySecret");
-
+//            SecretKey earlySecret = hkdf.extract(zeros, psk, "TlsEarlySecret");
+            SecretKey earlySecret = hkdf.deriveKey("TlsEarlySecret",
+                       HKDFParameterSpec.ofExtract()
+                                        .addSalt(zeros)
+                                        .addIKM(psk).extractOnly());
             byte[] label = ("tls13 res binder").getBytes();
             MessageDigest md = MessageDigest.getInstance(hashAlg.name);
             byte[] hkdfInfo = SSLSecretDerivation.createHkdfInfo(
                     label, md.digest(new byte[0]), hashAlg.hashLength);
-            return hkdf.expand(earlySecret,
-                    hkdfInfo, hashAlg.hashLength, "TlsBinderKey");
+//            return hkdf.expand(earlySecret,
+//                    hkdfInfo, hashAlg.hashLength, "TlsBinderKey");
+            return hkdf.deriveKey("TlsBinderKey",
+                      HKDFParameterSpec.expandOnly(earlySecret, hkdfInfo, hashAlg.hashLength));
         } catch (GeneralSecurityException ex) {
             throw context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
         }

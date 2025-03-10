@@ -32,7 +32,9 @@ import java.security.CryptoPrimitive;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
 import java.util.*;
+import javax.crypto.KDF;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
@@ -1201,9 +1203,15 @@ final class ServerHello {
 
         try {
             CipherSuite.HashAlg hashAlg = hc.negotiatedCipherSuite.hashAlg;
-            HKDF hkdf = new HKDF(hashAlg.name);
+//            HKDF hkdf = new HKDF(hashAlg.name);
+            KDF hkdf = KDF.getInstance(hashAlg.name);
             byte[] zeros = new byte[hashAlg.hashLength];
-            SecretKey earlySecret = hkdf.extract(zeros, psk, "TlsEarlySecret");
+//            SecretKey earlySecret = hkdf.extract(zeros, psk, "TlsEarlySecret");
+            HKDFParameterSpec hkdfParameterSpec =
+                    HKDFParameterSpec.ofExtract()
+                                     .addSalt(zeros)
+                                     .addIKM(psk).extractOnly();
+            SecretKey earlySecret = hkdf.deriveKey("TlsEarlySecret", hkdfParameterSpec);
             hc.handshakeKeyDerivation =
                     new SSLSecretDerivation(hc, earlySecret);
         } catch  (GeneralSecurityException gse) {
