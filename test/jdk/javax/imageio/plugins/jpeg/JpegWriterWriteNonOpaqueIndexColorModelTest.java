@@ -30,7 +30,7 @@
  */
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Transparency;
 import java.awt.image.BufferedImage;
 import java.awt.image.IndexColorModel;
 import java.io.ByteArrayOutputStream;
