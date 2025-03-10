@@ -127,6 +127,8 @@ public:
   // Called after the operation is completed.
   // If reply_writer is provided, writes the results.
   void complete() {
+    JavaThread* thread = JavaThread::current();
+    ThreadBlockInVM tbivm(thread);
     flush_reply();
   }
 
@@ -638,6 +640,7 @@ void AttachListenerThread::thread_entry(JavaThread* thread, TRAPS) {
       }
       log_debug(attach)("command executed: %s", op->name());
       st.complete();
+      log_debug(attach)("<<st.complete()");
     }
 
     op->complete(st.get_result(), st.get_buffered_stream());
