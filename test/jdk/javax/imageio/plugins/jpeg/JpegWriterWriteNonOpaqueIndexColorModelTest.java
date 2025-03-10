@@ -70,8 +70,9 @@ public class JpegWriterWriteNonOpaqueIndexColorModelTest {
             System.out.println("colorModel.getTransparency() = " + indexColorModel.getTransparency());
             BufferedImage bi = new BufferedImage(10, 10, BufferedImage.TYPE_BYTE_INDEXED, indexColorModel);
             boolean result = ImageIO.write(bi, "jpg", new ByteArrayOutputStream());
-            if (result != expectedWriteReturnValue)
+            if (result != expectedWriteReturnValue) {
                 throw new Error("ImageIO.write(..) returned " + result + " but we expected " + expectedWriteReturnValue);
+            }
             System.out.println("Tested passed");
             return true;
         } catch(Exception e) {
