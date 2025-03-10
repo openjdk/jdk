@@ -58,7 +58,7 @@ import java.util.stream.StreamSupport;
  * constructors) but all of the general-purpose {@code Collection}
  * implementations in the Java platform libraries comply.
  *
- * <p>Certain methods are specified to be
+ * <p><a id="optional-operations"></a>Certain methods are specified to be
  * <i>optional</i>. If a collection implementation doesn't implement a
  * particular operation, it should define the corresponding method to throw
  * {@code UnsupportedOperationException}. Such methods are marked "optional
