@@ -75,10 +75,11 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
     AC_MSG_NOTICE([Rewriting ORIGINAL_PATH to $REWRITTEN_PATH])
   fi
 
+  if test "x$OPENJDK_TARGET_CPU" = xx86 && test "x$with_jvm_variants" != xzero; then
+    AC_MSG_ERROR([32-bit x86 builds are not supported])
+  fi
+
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    if test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
-      AC_MSG_ERROR([32-bit Windows builds are not supported])
-    fi
     BASIC_SETUP_PATHS_WINDOWS
   fi
 
