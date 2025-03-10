@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,24 @@
 package compiler.c2.irTests;
 
 import jdk.test.lib.Asserts;
+import compiler.lib.generators.*;
 import compiler.lib.ir_framework.*;
+
+import static java.lang.Long.MAX_VALUE;
+import static java.lang.Long.MIN_VALUE;
 
 /*
  * @test
- * @bug 8281453
- * @summary Convert ~x into -1-x when ~x is used in an arithmetic expression
+ * @bug 8281453 8347645 8261008 8267332
+ * @summary Test correctness of optimizations of xor
  * @library /test/lib /
  * @run driver compiler.c2.irTests.XorLNodeIdealizationTests
  */
 public class XorLNodeIdealizationTests {
+    private static final RestrictableGenerator<Long> G = Generators.G.longs();
+    private static final long CONST_1 = G.next();
+    private static final long CONST_2 = G.next();
+
     public static void main(String[] args) {
         TestFramework.run();
     }
@@ -42,15 +50,17 @@ public class XorLNodeIdealizationTests {
                  "test7", "test8", "test9",
                  "test10", "test11", "test12",
                  "test13", "test14", "test15",
-                 "test16", "test17"})
+                 "test16", "test17",
+                 "testConstXor", "testXorSelf",
+    })
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
         long c = RunInfo.getRandom().nextLong();
         long d = RunInfo.getRandom().nextLong();
 
-        long min = Long.MIN_VALUE;
-        long max = Long.MAX_VALUE;
+        long min = MIN_VALUE;
+        long max = MAX_VALUE;
 
         assertResult(0, 0, 0, 0);
         assertResult(a, b, c, d);
@@ -77,6 +87,8 @@ public class XorLNodeIdealizationTests {
         Asserts.assertEQ(~a                 , test15(a));
         Asserts.assertEQ((~a + b) + (~a | c), test16(a, b, c));
         Asserts.assertEQ(-2023 - a          , test17(a));
+        Asserts.assertEQ(CONST_1 ^ CONST_2  , testConstXor());
+        Asserts.assertEQ(0L                 , testXorSelf(a));
     }
 
     @Test
@@ -216,5 +228,83 @@ public class XorLNodeIdealizationTests {
     // Checks ~(x + c) => (-c-1) - x
     public long test17(long x) {
         return ~(x + 2022);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_L, "1"})
+    // Checks (c1 ^ c2)  => c3 (constant folded)
+    public long testConstXor() {
+        return CONST_1 ^ CONST_2;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_L, "1"})
+    // Checks (x ^ x)  => c (constant folded)
+    public long testXorSelf(long x) {
+        return x ^ x;
+    }
+
+    @Run(test = {
+            "testFoldableXor", "testFoldableXorPow2", "testUnfoldableXorPow2",
+            "testFoldableXorDifferingLength", "testXorMax"
+    })
+    public void runRangeTests() {
+        long a = G.next();
+        long b = G.next();
+        checkXor(a, b);
+
+        for (a = 0; a < 32; a++) {
+            for (b = a; b < 32; b++) {
+                checkXor(a, b);
+                checkXor(MAX_VALUE, MAX_VALUE - b);
+            }
+        }
+    }
+
+    @DontCompile
+    public void checkXor(long a, long b) {
+        Asserts.assertEQ(true, testFoldableXor(a, b));
+        Asserts.assertEQ(((a & 0b1000) ^ (b & 0b1000)) < 0b1000, testUnfoldableXorPow2(a, b));
+        Asserts.assertEQ(true, testFoldableXorPow2(a, b));
+        Asserts.assertEQ(true, testFoldableXorDifferingLength(a, b));
+        Asserts.assertEQ((a & MAX_VALUE) ^ (b & 0b11), testXorMax(a, b));
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_I, "1"})
+    public boolean testFoldableXorPow2(long x, long y) {
+        return ((x & 0b1000) ^ (y & 0b1000)) < 0b10000;
+    }
+
+    @Test
+    @IR(counts = {IRNode.XOR, "1"})
+    public boolean testUnfoldableXorPow2(long x, long y) {
+        return ((x & 0b1000) ^ (y & 0b1000)) < 0b1000;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_I, "1"}) // note boolean is a CON_I
+    public boolean testFoldableXor(long x, long y) {
+        var xor = (x & 0b111) ^ (y & 0b100);
+        return xor < 0b1000;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_I, "1"})
+    public boolean testFoldableXorDifferingLength(long x, long y) {
+        var xor = (x & 0b111) ^ (y & 0b11);
+        return xor < 0b1000;
+    }
+
+    @Test
+    public long testXorMax(long x, long y) {
+        return (x & MAX_VALUE) ^ (y & 0b11);
+        // can't do the folding range check here since xor <= MAX_VALUE is
+        // constant with or without the xor
     }
 }
