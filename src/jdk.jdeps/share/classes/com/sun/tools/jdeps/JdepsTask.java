@@ -790,8 +790,8 @@ class JdepsTask {
                     String replacementApiTitle = getMessage("public.api.replacement.column.header");
                     log.format("%-40s %s%n", internalApiTitle, replacementApiTitle);
                     log.format("%-40s %s%n",
-                               internalApiTitle.replaceAll(".", "-"),
-                               replacementApiTitle.replaceAll(".", "-"));
+                               "-".repeat(internalApiTitle.length()),
+                               "_".repeat(replacementApiTitle.length()));
                     jdkInternals.entrySet()
                         .forEach(e -> {
                             String key = e.getKey();
