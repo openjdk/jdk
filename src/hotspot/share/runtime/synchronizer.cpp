@@ -80,7 +80,7 @@ void MonitorList::add(ObjectMonitor* m) {
   size_t old_max;
   do {
     old_max = Atomic::load(&_max);
-    if (count < old_max) {
+    if (count <= old_max) {
       break;
     }
   } while (Atomic::cmpxchg(&_max, old_max, count, memory_order_relaxed) != old_max);
