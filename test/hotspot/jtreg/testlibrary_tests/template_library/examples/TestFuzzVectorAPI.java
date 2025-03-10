@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Test the Template Library's expression generation for the Vector API.
+ * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @compile ../../../compiler/lib/ir_framework/TestFramework.java
@@ -67,7 +68,7 @@ public class TestFuzzVectorAPI {
         comp.addJavaSourceCode("p.xyz.InnerTest", generate(comp));
 
         // Compile the source file.
-        comp.compile();
+        comp.compile("--add-modules=jdk.incubator.vector");
 
         // Object ret = p.xyz.InnterTest.main();
         Object ret = comp.invoke("p.xyz.InnerTest", "main", new Object[] {});
@@ -82,7 +83,8 @@ public class TestFuzzVectorAPI {
                                                      "p.xyz", "InnerTest",
                                                      List.of("compiler.lib.generators.*",
                                                              "compiler.lib.verify.*",
-                                                             "jdk.incubator.vector.*"));
+                                                             "jdk.incubator.vector.*"),
+                                                     List.of("--add-modules=jdk.incubator.vector"));
 
         // Example 1:
         // We only use the "expression" once, and so we can conveniently just run it with

@@ -34,7 +34,7 @@ import static compiler.lib.template_framework.Template.let;
  *
  */
 public abstract class IRTestClass {
-    public record Info(String classpath, String packageName, String className, List<String> imports) {};
+    public record Info(String classpath, String packageName, String className, List<String> imports, List<String> vmFlags) {};
 
     public static final Template.TwoArgs<Info, List<TemplateWithArgs>> TEMPLATE =
         Template.make("info", "templates", (Info info, List<TemplateWithArgs> templates) -> body(
@@ -61,7 +61,11 @@ public abstract class IRTestClass {
 
                 public static void main() {
                     TestFramework framework = new TestFramework(#className.class);
-                    framework.addFlags("-classpath", "#classpath");
+                    framework.addFlags("-classpath", "#classpath"
+            """,
+            info.vmFlags().stream().map(f -> ", \"" + f + "\"").toList(),
+            """
+            );
                     framework.start();
                 }
 
