@@ -59,8 +59,9 @@ public class JpegWriterWriteNonOpaqueIndexColorModelTest {
                 for (int a = 0; a < alpha.length; a++) {
                     alpha[a] = -1;
                 }
-                if (imageType == Transparency.BITMASK)
+                if (imageType == Transparency.BITMASK) {
                     alpha[0] = 0;
+                }
             } else if (imageType == Transparency.TRANSLUCENT) {
                 for (int a = 0; a < alpha.length; a++) {
                     alpha[a] = (byte) a;
@@ -70,11 +71,12 @@ public class JpegWriterWriteNonOpaqueIndexColorModelTest {
             System.out.println("colorModel.getTransparency() = " + indexColorModel.getTransparency());
             BufferedImage bi = new BufferedImage(10, 10, BufferedImage.TYPE_BYTE_INDEXED, indexColorModel);
             boolean result = ImageIO.write(bi, "jpg", new ByteArrayOutputStream());
-            if (result != expectedWriteReturnValue)
+            if (result != expectedWriteReturnValue) {
                 throw new Error("ImageIO.write(..) returned " + result + " but we expected " + expectedWriteReturnValue);
+            }
             System.out.println("Tested passed");
             return true;
-        } catch(Exception e) {
+        } catch (Exception e) {
             System.err.println(name + " test failed");
             e.printStackTrace();
             return false;
