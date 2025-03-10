@@ -43,7 +43,6 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import java.util.Arrays;
 import javax.swing.UnsupportedLookAndFeelException;
 
 public class bug8033699 {
