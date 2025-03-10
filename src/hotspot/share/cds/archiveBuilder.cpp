@@ -507,9 +507,8 @@ bool ArchiveBuilder::is_excluded(Klass* klass) {
     return SystemDictionaryShared::is_excluded_class(ik);
   } else if (klass->is_objArray_klass()) {
     Klass* bottom = ObjArrayKlass::cast(klass)->bottom_klass();
-    if (MetaspaceShared::is_shared_static(bottom)) {
+    if (CDSConfig::is_dumping_dynamic_archive() && MetaspaceShared::is_shared_static(bottom)) {
       // The bottom class is in the static archive so it's clearly not excluded.
-      assert(CDSConfig::is_dumping_dynamic_archive(), "sanity");
       return false;
     } else if (bottom->is_instance_klass()) {
       return SystemDictionaryShared::is_excluded_class(InstanceKlass::cast(bottom));
@@ -521,7 +520,7 @@ bool ArchiveBuilder::is_excluded(Klass* klass) {
 
 ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref *ref) {
   address obj = ref->obj();
-  if (MetaspaceShared::is_in_shared_metaspace(obj)) {
+  if (CDSConfig::is_dumping_dynamic_archive() && MetaspaceShared::is_in_shared_metaspace(obj)) {
     // Don't dump existing shared metadata again.
     return point_to_it;
   } else if (ref->msotype() == MetaspaceObj::MethodDataType ||
@@ -787,6 +786,7 @@ void ArchiveBuilder::make_klasses_shareable() {
     const char* aotlinked_msg = "";
     const char* inited_msg = "";
     Klass* k = get_buffered_addr(klasses()->at(i));
+    bool inited = false;
     k->remove_java_mirror();
 #ifdef _LP64
     if (UseCompactObjectHeaders) {
@@ -811,7 +811,7 @@ void ArchiveBuilder::make_klasses_shareable() {
       InstanceKlass* ik = InstanceKlass::cast(k);
       InstanceKlass* src_ik = get_source_addr(ik);
       bool aotlinked = AOTClassLinker::is_candidate(src_ik);
-      bool inited = ik->has_aot_initialized_mirror();
+      inited = ik->has_aot_initialized_mirror();
       ADD_COUNT(num_instance_klasses);
       if (CDSConfig::is_dumping_dynamic_archive()) {
         // For static dump, class loader type are already set.
@@ -834,7 +834,7 @@ void ArchiveBuilder::make_klasses_shareable() {
           type = "bad";
           assert(0, "shouldn't happen");
         }
-        if (CDSConfig::is_dumping_invokedynamic()) {
+        if (CDSConfig::is_dumping_method_handles()) {
           assert(HeapShared::is_archivable_hidden_klass(ik), "sanity");
         } else {
           // Legacy CDS support for lambda proxies
@@ -892,7 +892,11 @@ void ArchiveBuilder::make_klasses_shareable() {
         aotlinked_msg = " aot-linked";
       }
       if (inited) {
-        inited_msg = " inited";
+        if (InstanceKlass::cast(k)->static_field_size() == 0) {
+          inited_msg = " inited (no static fields)";
+        } else {
+          inited_msg = " inited";
+        }
       }
 
       MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);

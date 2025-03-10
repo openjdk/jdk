@@ -2916,6 +2916,7 @@ operand immByteMapBase()
 %{
   // Get base of card map
   predicate(BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet) &&
+            SHENANDOAHGC_ONLY(!BarrierSet::barrier_set()->is_a(BarrierSet::ShenandoahBarrierSet) &&)
             (CardTable::CardValue*)n->get_ptr() ==
              ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base());
   match(ConP);
@@ -4097,21 +4098,19 @@ pipe_class fp_div_d(fRegD dst, fRegD src1, fRegD src2)
   FPU    : S5;
 %}
 
-pipe_class fp_sqrt_s(fRegF dst, fRegF src1, fRegF src2)
+pipe_class fp_sqrt_s(fRegF dst, fRegF src)
 %{
   single_instruction;
-  src1   : S1(read);
-  src2   : S2(read);
+  src    : S1(read);
   dst    : S5(write);
   DECODE : ID;
   FPU    : S5;
 %}
 
-pipe_class fp_sqrt_d(fRegD dst, fRegD src1, fRegD src2)
+pipe_class fp_sqrt_d(fRegD dst, fRegD src)
 %{
   single_instruction;
-  src1   : S1(read);
-  src2   : S2(read);
+  src    : S1(read);
   dst    : S5(write);
   DECODE : ID;
   FPU    : S5;
@@ -7287,7 +7286,7 @@ instruct nmaddD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
 // Math.max(FF)F
 instruct maxF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
   match(Set dst (MaxF src1 src2));
-  effect(TEMP_DEF dst, KILL cr);
+  effect(KILL cr);
 
   format %{ "maxF $dst, $src1, $src2" %}
 
@@ -7303,7 +7302,7 @@ instruct maxF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
 // Math.min(FF)F
 instruct minF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
   match(Set dst (MinF src1 src2));
-  effect(TEMP_DEF dst, KILL cr);
+  effect(KILL cr);
 
   format %{ "minF $dst, $src1, $src2" %}
 
@@ -7319,7 +7318,7 @@ instruct minF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
 // Math.max(DD)D
 instruct maxD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
   match(Set dst (MaxD src1 src2));
-  effect(TEMP_DEF dst, KILL cr);
+  effect(KILL cr);
 
   format %{ "maxD $dst, $src1, $src2" %}
 
@@ -7335,7 +7334,7 @@ instruct maxD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
 // Math.min(DD)D
 instruct minD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
   match(Set dst (MinD src1 src2));
-  effect(TEMP_DEF dst, KILL cr);
+  effect(KILL cr);
 
   format %{ "minD $dst, $src1, $src2" %}
 
