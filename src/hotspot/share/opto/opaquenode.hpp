@@ -112,6 +112,7 @@ public:
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
   bool is_delayed_slow_loop() const { return _is_delayed_slow_loop; }
+  DEBUG_ONLY( bool is_useless() const { return _useless; } )
 
   void notify_slow_loop_that_it_can_resume_optimizations() {
     assert(!_useless, "must still be useful");
