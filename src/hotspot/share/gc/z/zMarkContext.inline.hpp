@@ -32,8 +32,7 @@ inline ZMarkContext::ZMarkContext(size_t nstripes,
   : _cache(nstripes),
     _stripe(stripe),
     _stacks(stacks),
-    _nstripes(nstripes),
-    _string_dedup_requests() {}
+    _nstripes(nstripes) {}
 
 inline ZMarkCache* ZMarkContext::cache() {
   return &_cache;
@@ -49,10 +48,6 @@ inline void ZMarkContext::set_stripe(ZMarkStripe* stripe) {
 
 inline ZMarkThreadLocalStacks* ZMarkContext::stacks() {
   return _stacks;
-}
-
-inline StringDedup::Requests* ZMarkContext::string_dedup_requests() {
-  return &_string_dedup_requests;
 }
 
 inline size_t ZMarkContext::nstripes() {

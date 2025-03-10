@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,34 +21,19 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZMARKCONTEXT_HPP
-#define SHARE_GC_Z_ZMARKCONTEXT_HPP
+#ifndef SHARE_GC_Z_ZSTRINGDEDUP_HPP
+#define SHARE_GC_Z_ZSTRINGDEDUP_HPP
 
-#include "gc/z/zMarkCache.hpp"
-#include "memory/allocation.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
+#include "gc/z/zAddress.hpp"
+#include "oops/oopsHierarchy.hpp"
 
-class ZMarkStripe;
-class ZMarkThreadLocalStacks;
-
-class ZMarkContext : public StackObj {
+class ZStringDedupContext {
 private:
-  ZMarkCache                    _cache;
-  ZMarkStripe*                  _stripe;
-  ZMarkThreadLocalStacks* const _stacks;
-  size_t                        _nstripes;
+  StringDedup::Requests _requests;
 
 public:
-  ZMarkContext(size_t nstripes,
-               ZMarkStripe* stripe,
-               ZMarkThreadLocalStacks* stacks);
-
-  ZMarkCache* cache();
-  ZMarkStripe* stripe();
-  void set_stripe(ZMarkStripe* stripe);
-  ZMarkThreadLocalStacks* stacks();
-
-  size_t nstripes();
-  void set_nstripes(size_t nstripes);
+  void request(oop obj);
 };
 
-#endif // SHARE_GC_Z_ZMARKCONTEXT_HPP
+#endif // SHARE_GC_Z_ZSTRINGDEDUP_HPP
