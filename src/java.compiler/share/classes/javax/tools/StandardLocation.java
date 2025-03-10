@@ -28,6 +28,7 @@ package javax.tools;
 import javax.tools.JavaFileManager.Location;
 
 import java.util.concurrent.*;
+import java.util.regex.Pattern;
 
 /**
  * Standard locations of file objects.
@@ -110,6 +111,22 @@ public enum StandardLocation implements Location {
     PATCH_MODULE_PATH;
 
     /**
+     * Canonical location instances.
+     */
+    private static final ConcurrentMap<String, Location> LOCATIONS = new ConcurrentHashMap<>();
+
+    private static class PatternHolder {
+        /**
+         * Regexp that checks for the word "MODULE".
+         */
+        static final Pattern MODULE_WORD_PATTERN = Pattern.compile("\\bMODULE\\b");
+    }
+
+    /* package private */ static final boolean computeIsModuleOrientedLocation(String name) {
+        return PatternHolder.MODULE_WORD_PATTERN.matcher(name).matches();
+    }
+
+    /**
      * Returns a location object with the given name.  The following
      * property must hold: {@code locationFor(x) ==
      * locationFor(y)} if and only if {@code x.equals(y)}.
@@ -122,23 +139,39 @@ public enum StandardLocation implements Location {
      * @return a location
      */
     public static Location locationFor(final String name) {
-        if (locations.isEmpty()) {
-            // can't use valueOf which throws IllegalArgumentException
-            for (Location location : values())
-                locations.putIfAbsent(location.getName(), location);
-        }
         name.getClass(); /* null-check */
-        locations.putIfAbsent(name, new Location() {
-                @Override
-                public String getName() { return name; }
-                @Override
-                public boolean isOutputLocation() { return name.endsWith("_OUTPUT"); }
-            });
-        return locations.get(name);
+
+        // Check for immediate hit.
+        Location loc = LOCATIONS.get(name);
+        if (loc != null) {
+            return loc;
+        }
+
+        // Need to create the cache entry.
+        Location newLoc = null;
+
+        // See if this is one of the standard Locations.
+        for (Location location : values()) {
+            if (location.getName().equals(name)) {
+                newLoc = location;
+                break;
+            }
+        }
+
+        // Brand new non-standard location, compute the fitting instance.
+        if (newLoc == null) {
+            boolean isOutputLocation = name.endsWith("_OUTPUT");
+            boolean isModuleOrientedLocation = computeIsModuleOrientedLocation(name);
+            newLoc = new Location() {
+                @Override public String getName() { return name; }
+                @Override public boolean isOutputLocation() { return isOutputLocation; }
+                @Override public boolean isModuleOrientedLocation() { return isModuleOrientedLocation; }
+            };
+        }
+
+        Location exist = LOCATIONS.putIfAbsent(name, newLoc);
+        return (exist != null) ? exist : newLoc;
     }
-    //where
-        private static final ConcurrentMap<String,Location> locations
-            = new ConcurrentHashMap<>();
 
     @Override
     public String getName() { return name(); }
