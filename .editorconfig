@@ -2,13 +2,8 @@ root = true
 
 [*]
 trim_trailing_whitespace = true
-# Open curly brace is on the same line.
-indent_brace_style = K&R
 
-[Makefile]
-indent_style = tab
-
-[*.{cpp,hpp,c,h}]
+[*.{cpp,hpp,c,h,cc,hh}]
 indent_style = space
 indent_size = 2
 
