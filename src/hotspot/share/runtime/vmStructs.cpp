@@ -23,18 +23,9 @@
  */
 
 #include "cds/filemap.hpp"
-#include "ci/ciField.hpp"
-#include "ci/ciInstance.hpp"
-#include "ci/ciMethodData.hpp"
-#include "ci/ciObjArrayKlass.hpp"
-#include "ci/ciSymbol.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
-#include "classfile/stringTable.hpp"
-#include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeBlob.hpp"
@@ -103,10 +94,8 @@
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/serviceThread.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/threadSMR.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vmStructs.hpp"
 #include "runtime/vm_version.hpp"
@@ -411,7 +400,7 @@
      volatile_static_field(PerfMemory,         _initialized,                                  int)                                   \
                                                                                                                                      \
   /********************/                                                                                                             \
-  /* SystemDictionary */                                                                                                             \
+  /* VM Classes       */                                                                                                             \
   /********************/                                                                                                             \
                                                                                                                                      \
      static_field(vmClasses,                   VM_CLASS_AT(Object_klass),                        InstanceKlass*)                     \
@@ -635,7 +624,6 @@
   nonstatic_field(JavaThread,                  _monitor_owner_id,                             int64_t)                               \
   volatile_nonstatic_field(JavaThread,         _terminated,                                   JavaThread::TerminatedTypes)           \
   nonstatic_field(Thread,                      _osthread,                                     OSThread*)                             \
-  nonstatic_field(Thread,                      _resource_area,                                ResourceArea*)                         \
                                                                                                                                      \
   /************/                                                                                                                     \
   /* OSThread */                                                                                                                     \
@@ -1009,17 +997,14 @@
   declare_type(PerfData, CHeapObj<mtInternal>)                            \
                                                                           \
   /********************/                                                  \
-  /* SystemDictionary */                                                  \
+  /* VM Classes       */                                                  \
   /********************/                                                  \
                                                                           \
-  declare_toplevel_type(SystemDictionary)                                 \
   declare_toplevel_type(vmClasses)                                        \
   declare_toplevel_type(vmSymbols)                                        \
                                                                           \
   declare_toplevel_type(GrowableArrayBase)                                \
   declare_toplevel_type(GrowableArray<int>)                               \
-  declare_toplevel_type(Arena)                                            \
-    declare_type(ResourceArea, Arena)                                     \
                                                                           \
   /***********************************************************/           \
   /* Thread hierarchy (needed for run-time type information) */           \
@@ -1089,8 +1074,6 @@
   /*************************************************************/         \
   /* CodeBlob hierarchy (needed for run-time type information) */         \
   /*************************************************************/         \
-                                                                          \
-  declare_toplevel_type(SharedRuntime)                                    \
                                                                           \
   declare_toplevel_type(CodeBlob)                                         \
   declare_type(RuntimeBlob,              CodeBlob)                        \
@@ -1162,12 +1145,6 @@
   declare_toplevel_type(ObjectSynchronizer)                               \
   declare_toplevel_type(BasicLock)                                        \
   declare_toplevel_type(BasicObjectLock)                                  \
-                                                                          \
-  /*********************/                                                 \
-  /* Adapter Blob Entries */                                              \
-  /*********************/                                                 \
-  declare_toplevel_type(AdapterHandlerEntry)                              \
-  declare_toplevel_type(AdapterHandlerEntry*)                             \
                                                                           \
   /********************/                                                  \
   /* -XX flags        */                                                  \

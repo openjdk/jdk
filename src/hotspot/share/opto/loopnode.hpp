@@ -290,6 +290,8 @@ public:
   bool has_atomic_post_loop  () const { return (_loop_flags & HasAtomicPostLoop) == HasAtomicPostLoop; }
   void set_main_no_pre_loop() { _loop_flags |= MainHasNoPreLoop; }
 
+  IfNode* find_multiversion_if_from_multiversion_fast_main_loop();
+
   int main_idx() const { return _main_idx; }
 
 
@@ -932,6 +934,7 @@ private:
   // clear out dead code after build_loop_late
   Node_List _deadlist;
   Node_List _zero_trip_guard_opaque_nodes;
+  Node_List _multiversion_opaque_nodes;
 
   // Support for faster execution of get_late_ctrl()/dom_lca()
   // when a node has many uses and dominator depth is deep.
@@ -1453,6 +1456,7 @@ public:
   void eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates);
 
   void eliminate_useless_zero_trip_guard();
+  void eliminate_useless_multiversion_if();
 
  public:
   // Change the control input of expensive nodes to allow commoning by

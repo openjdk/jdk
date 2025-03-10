@@ -114,7 +114,7 @@ $(window).on("load", function() {
                     });
                     visibleTabs.push(key);
                 } else {
-                    $("<span class='page-search-header active-table-tab'>" + categories[key]
+                    $("<span class='page-search-header'>" + categories[key]
                         + "<span style='font-weight: normal'> (" + count + ")</span></span>").appendTo(tabContainer);
                     renderTable(key, r[key]).appendTo(resultContainer);
                     tabContainer = $("<div class='table-tabs'></div>").appendTo(resultContainer);

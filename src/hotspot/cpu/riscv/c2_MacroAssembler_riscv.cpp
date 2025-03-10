@@ -233,10 +233,8 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
   // StoreLoad achieves this.
   membar(StoreLoad);
 
-  // Check if the entry lists are empty (EntryList first - by convention).
-  ld(t0, Address(tmp, ObjectMonitor::EntryList_offset()));
-  ld(tmp1Reg, Address(tmp, ObjectMonitor::cxq_offset()));
-  orr(t0, t0, tmp1Reg);
+  // Check if the entry_list is empty.
+  ld(t0, Address(tmp, ObjectMonitor::entry_list_offset()));
   beqz(t0, unlocked); // If so we are done.
 
   // Check if there is a successor.
@@ -569,10 +567,8 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box,
     // StoreLoad achieves this.
     membar(StoreLoad);
 
-    // Check if the entry lists are empty (EntryList first - by convention).
-    ld(t0, Address(tmp1_monitor, ObjectMonitor::EntryList_offset()));
-    ld(tmp3_t, Address(tmp1_monitor, ObjectMonitor::cxq_offset()));
-    orr(t0, t0, tmp3_t);
+    // Check if the entry_list is empty.
+    ld(t0, Address(tmp1_monitor, ObjectMonitor::entry_list_offset()));
     beqz(t0, unlocked); // If so we are done.
 
     // Check if there is a successor.
