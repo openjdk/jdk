@@ -72,18 +72,18 @@ public class TestLongReverse {
       input[i] = r.nextLong();
     }
     input[0] = 0L;
-    input[0] = 1L;
-    input[0] = -1L;
-    input[0] = Long.MIN_VALUE;
-    input[0] = Long.MAX_VALUE;
+    input[1] = 1L;
+    input[2] = -1L;
+    input[3] = Long.MIN_VALUE;
+    input[4] = Long.MAX_VALUE;
 
-    test_reverse(output, input);
+    test_reverse(input, output);
     // skip test/verify when warming up
     if (runInfo.isWarmUp()) {
       return;
     }
 
-    test_reverse(output, input);
+    test_reverse(input, output);
 
     for (int i = 0; i < ARRLEN; i++) {
       long golden_val = golden_reverse_long(input[i]);

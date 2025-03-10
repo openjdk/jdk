@@ -72,18 +72,18 @@ public class TestIntegerReverse {
       input[i] = r.nextInt();
     }
     input[0] = 0;
-    input[0] = 1;
-    input[0] = -1;
-    input[0] = Integer.MIN_VALUE;
-    input[0] = Integer.MAX_VALUE;
+    input[1] = 1;
+    input[2] = -1;
+    input[3] = Integer.MIN_VALUE;
+    input[4] = Integer.MAX_VALUE;
 
-    test_reverse(output, input);
+    test_reverse(input, output);
     // skip test/verify when warming up
     if (runInfo.isWarmUp()) {
       return;
     }
 
-    test_reverse(output, input);
+    test_reverse(input, output);
 
     for (int i = 0; i < ARRLEN; i++) {
       int golden_val = golden_reverse_integer(input[i]);
