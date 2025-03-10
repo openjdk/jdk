@@ -113,7 +113,7 @@ public sealed class ICC_Profile implements Serializable
      * This check is used in {@link #setData(int, byte[])} to prevent modifying
      * built-in profiles.
      */
-    private final boolean builtIn;
+    private transient final boolean builtIn;
 
     /**
      * The lazy registry of singleton profile objects for specific built-in
