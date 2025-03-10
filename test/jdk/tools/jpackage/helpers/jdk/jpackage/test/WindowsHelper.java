@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public class WindowsHelper {
         final Optional<Path> msiLogFile;
         if (createMsiLog) {
             msiLogFile = Optional.of(TKit.createTempFile(String.format("logs\\%s-msi.log",
-                    cmd.packageType().getName())));
+                    cmd.packageType().getType())));
         } else {
             msiLogFile = Optional.empty();
         }
@@ -175,13 +175,19 @@ public class WindowsHelper {
                 Path installationSubDirectory = getInstallationSubDirectory(cmd);
                 Path from = Path.of(extraPathComponent).resolve(installationSubDirectory);
                 Path to = installationSubDirectory;
-                TKit.trace(String.format("Convert [%s] into [%s] in [%s] directory", from, to,
-                        unpackDir));
+
                 ThrowingRunnable.toRunnable(() -> {
                     Files.createDirectories(unpackDir.resolve(to).getParent());
-                    Files.move(unpackDir.resolve(from), unpackDir.resolve(to));
-                    TKit.deleteDirectoryRecursive(unpackDir.resolve(extraPathComponent));
                 }).run();
+
+                // Files.move() occasionally results into java.nio.file.AccessDeniedException
+                Executor.tryRunMultipleTimes(ThrowingRunnable.toRunnable(() -> {
+                    TKit.trace(String.format("Convert [%s] into [%s] in [%s] directory", from, to, unpackDir));
+                    final var dstDir = unpackDir.resolve(to);
+                    TKit.deleteDirectoryRecursive(dstDir);
+                    Files.move(unpackDir.resolve(from), dstDir);
+                    TKit.deleteDirectoryRecursive(unpackDir.resolve(extraPathComponent));
+                }), 3, 5);
             }
         }
         return destinationDir;
@@ -656,7 +662,7 @@ public class WindowsHelper {
         private final RegValuePath reg;
         private final Optional<SpecialFolderDotNet> alt;
 
-        private final static Map<SpecialFolder, Path> CACHE = new ConcurrentHashMap<>();
+        private static final Map<SpecialFolder, Path> CACHE = new ConcurrentHashMap<>();
     }
 
     private static final class ShortPathUtils {
