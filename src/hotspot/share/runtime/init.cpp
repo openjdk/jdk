@@ -178,9 +178,7 @@ jint init_globals2() {
     return JNI_EINVAL;
   }
 #if INCLUDE_JVMCI
-  if (EnableJVMCI) {
-    JVMCI::initialize_globals();
-  }
+  JVMCI::initialize_globals();
 #endif
 
   if (!universe_post_init()) {
