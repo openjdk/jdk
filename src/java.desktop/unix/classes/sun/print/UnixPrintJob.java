@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -820,10 +820,10 @@ public class UnixPrintJob implements CancelablePrintJob {
                                  boolean noJobSheet,
                                  String jobTitle, int copies, String spoolFile) {
         int PRINTER = 0x1;
-        int OPTIONS = 0x2;
         int JOBTITLE  = 0x4;
         int COPIES  = 0x8;
         int NOSHEET  = 0x10;
+        String[] optionArgs = null;
         int pFlags = 0;
         String[] execCmd;
         int ncomps = 2; // minimum number of print args
@@ -835,8 +835,8 @@ public class UnixPrintJob implements CancelablePrintJob {
             ncomps+=1;
         }
         if (options != null && !options.isEmpty()) {
-            pFlags |= OPTIONS;
-            ncomps+=1;
+            optionArgs = options.trim().split(" ");
+            ncomps+=optionArgs.length;
         }
         if (jobTitle != null && !jobTitle.isEmpty()) {
             pFlags |= JOBTITLE;
@@ -870,8 +870,10 @@ public class UnixPrintJob implements CancelablePrintJob {
                    isAttributeCategorySupported(JobSheets.class)) {
             execCmd[n++] = "-o job-sheets=standard";
         }
-        if ((pFlags & OPTIONS) != 0) {
-            execCmd[n++] = "-o" + options;
+        if (optionArgs != null) {
+            for (String option : optionArgs) {
+                execCmd[n++] = "-o " + option;
+            }
         }
         execCmd[n++] = spoolFile;
         if (IPPPrintService.debugPrint) {
