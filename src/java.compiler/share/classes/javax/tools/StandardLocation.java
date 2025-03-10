@@ -27,6 +27,7 @@ package javax.tools;
 
 import javax.tools.JavaFileManager.Location;
 
+import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.regex.Pattern;
 
@@ -113,9 +114,9 @@ public enum StandardLocation implements Location {
     /**
      * Canonical location instances.
      */
-    private static final ConcurrentMap<String, Location> LOCATIONS = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Location> LOCATIONS = new ConcurrentHashMap<>();
 
-    private static class PatternHolder {
+    private static class LazyPatternHolder {
         /**
          * Regexp that checks for the word "MODULE".
          */
@@ -123,7 +124,7 @@ public enum StandardLocation implements Location {
     }
 
     /* package private */ static final boolean computeIsModuleOrientedLocation(String name) {
-        return PatternHolder.MODULE_WORD_PATTERN.matcher(name).matches();
+        return LazyPatternHolder.MODULE_WORD_PATTERN.matcher(name).matches();
     }
 
     /**
@@ -139,7 +140,7 @@ public enum StandardLocation implements Location {
      * @return a location
      */
     public static Location locationFor(final String name) {
-        name.getClass(); /* null-check */
+        Objects.requireNonNull(name, "name");
 
         // Check for immediate hit.
         Location loc = LOCATIONS.get(name);
@@ -158,7 +159,7 @@ public enum StandardLocation implements Location {
             }
         }
 
-        // Brand new non-standard location, compute the fitting instance.
+        // Compute the fitting instance for non-standard location, if needed.
         if (newLoc == null) {
             boolean isOutputLocation = name.endsWith("_OUTPUT");
             boolean isModuleOrientedLocation = computeIsModuleOrientedLocation(name);
@@ -169,6 +170,7 @@ public enum StandardLocation implements Location {
             };
         }
 
+        // Thread-safe install
         Location exist = LOCATIONS.putIfAbsent(name, newLoc);
         return (exist != null) ? exist : newLoc;
     }
