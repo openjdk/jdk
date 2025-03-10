@@ -24,8 +24,11 @@
 import org.testng.annotations.Test;
 
 import java.io.IOException;
-import java.lang.foreign.*;
 import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.net.URI;
 import java.net.URISyntaxException;
