@@ -6564,7 +6564,7 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
  * int java.util.zip.CRC32.update(int crc, int b)
  */
 bool LibraryCallKit::inline_updateCRC32() {
-  assert(UseCRC32Intrinsics, "need AVX and LCMUL instructions support");
+  assert(UseCRC32Intrinsics, "need AVX and CLMUL instructions support");
   assert(callee()->signature()->size() == 2, "update has 2 parameters");
   // no receiver since it is static method
   Node* crc  = argument(0); // type: int
@@ -6599,7 +6599,7 @@ bool LibraryCallKit::inline_updateCRC32() {
  * int java.util.zip.CRC32.updateBytes(int crc, byte[] buf, int off, int len)
  */
 bool LibraryCallKit::inline_updateBytesCRC32() {
-  assert(UseCRC32Intrinsics, "need AVX and LCMUL instructions support");
+  assert(UseCRC32Intrinsics, "need AVX and CLMUL instructions support");
   assert(callee()->signature()->size() == 4, "updateBytes has 4 parameters");
   // no receiver since it is static method
   Node* crc     = argument(0); // type: int
@@ -6643,7 +6643,7 @@ bool LibraryCallKit::inline_updateBytesCRC32() {
  * int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
  */
 bool LibraryCallKit::inline_updateByteBufferCRC32() {
-  assert(UseCRC32Intrinsics, "need AVX and LCMUL instructions support");
+  assert(UseCRC32Intrinsics, "need AVX and CLMUL instructions support");
   assert(callee()->signature()->size() == 5, "updateByteBuffer has 4 parameters and one is long");
   // no receiver since it is static method
   Node* crc     = argument(0); // type: int
