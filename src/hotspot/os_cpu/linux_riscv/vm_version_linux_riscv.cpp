@@ -285,7 +285,6 @@ void VM_Version::rivos_features() {
   ext_Zba.enable_feature();
   ext_Zbb.enable_feature();
   ext_Zbs.enable_feature();
-  ext_Zbkb.enable_feature();
 
   ext_Zcb.enable_feature();
 
