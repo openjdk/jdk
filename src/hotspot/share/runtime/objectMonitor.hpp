@@ -463,6 +463,10 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   bool      deflate_monitor(Thread* current);
  private:
   void      install_displaced_markword_in_object(const oop obj);
+
+  // JFR support
+public:
+  static bool is_jfr_excluded(const Klass* monitor_klass);
 };
 
 // RAII object to ensure that ObjectMonitor::is_being_async_deflated() is
