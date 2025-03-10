@@ -30,7 +30,7 @@
  * @compile -XDstringConcat=inline TestReduceAllocationAndNullableLoads.java
  * @run main/othervm -XX:CompileCommand=compileonly,*TestReduceAllocationAndNullableLoads*::*
  *                   -XX:CompileCommand=dontinline,*TestReduceAllocationAndNullableLoads*::*
- *                   -XX:-TieredCompilation -Xcomp -server
+ *                   -XX:-TieredCompilation -Xcomp
  *                   compiler.c2.TestReduceAllocationAndNullableLoads
  */
 
