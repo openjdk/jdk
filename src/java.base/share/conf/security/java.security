@@ -729,11 +729,27 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 # This is in addition to the jdk.certpath.disabledAlgorithms property above.
 #
 # See the specification of "jdk.certpath.disabledAlgorithms" for the
-# syntax of the disabled algorithm string. Additionally, TLS cipher suites
-# can be disabled with this property using one or more "*" wildcard characters.
-# For example, "TLS_RSA_*" disables all cipher suites that start with
-# "TLS_RSA_". Only cipher suites starting with "TLS_" are allowed to have
-# wildcard characters.
+# syntax of the disabled algorithm string.
+#
+# Additional TLS-specific syntax supported:
+#
+#   - TLS cipher suites can be disabled with this property using one or more
+#     "*" wildcard characters. For example, "TLS_RSA_*" disables all cipher
+#     suites that start with "TLS_RSA_". Only cipher suites starting with
+#     "TLS_" are allowed to have wildcard characters.
+#
+#   - TLS protocol specific usage constraints are supported by this property:
+#
+#     UsageConstraint:
+#       usage [Handshake] [Certificate]
+#
+#     Handshake restricts the use of the algorithm in TLS handshake signatures.
+#     Certificate restricts the use of the algorithm in certificate signatures.
+#     These constraints cannot be mixed with other usage constraints for the
+#     same algorithm, they also cannot be linked with other constraints by an
+#     ampersand '&'. The usage type follows the keyword and more than one usage
+#     type can be specified with a whitespace delimiter.
+#     Example: "rsa_pkcs1_sha1 usage handshake"
 #
 # Note: The algorithm restrictions do not apply to trust anchors or
 # self-signed certificates.
