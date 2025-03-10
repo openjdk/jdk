@@ -50,10 +50,6 @@ endif
 STATIC_LIB_MODULES := $(patsubst $(SUPPORT_OUTPUTDIR)/modules_static-libs/%, \
     %, $(wildcard $(SUPPORT_OUTPUTDIR)/modules_static-libs/*))
 
-# Filter out libjsig by default. Statically linking libjsig causes signal
-# chaining being enabled by default on static JDK.
-EXCLUDED_STATIC_LIBS = jsig
-
 # Filter out known broken libraries. This is a temporary measure until
 # proper support for these libraries can be provided.
 ifeq ($(call isTargetOs, linux), true)
@@ -74,10 +70,8 @@ else ifeq ($(call isTargetOs, windows), true)
   BROKEN_STATIC_LIBS += dt_shmem
 endif
 
-EXCLUDED_STATIC_LIBS += $(BROKEN_STATIC_LIBS)
-
 $(foreach module, $(STATIC_LIB_MODULES), \
-    $(eval LIBS_$(module) := $(filter-out $(EXCLUDED_STATIC_LIBS), $(shell cat \
+    $(eval LIBS_$(module) := $(filter-out $(BROKEN_STATIC_LIBS), $(shell cat \
     $(SUPPORT_OUTPUTDIR)/modules_static-libs/$(module)/module-included-libs.txt))) \
 )
 
