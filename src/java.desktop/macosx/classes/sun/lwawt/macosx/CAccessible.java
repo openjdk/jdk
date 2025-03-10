@@ -32,6 +32,7 @@ import java.util.Objects;
 
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
+import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 
 import static javax.accessibility.AccessibleContext.ACCESSIBLE_ACTIVE_DESCENDANT_PROPERTY;
@@ -121,7 +122,11 @@ class CAccessible extends CFRetainedResource implements Accessible {
                 if (name.equals(ACCESSIBLE_CARET_PROPERTY)) {
                     selectedTextChanged(ptr);
                 } else if (name.equals(ACCESSIBLE_TEXT_PROPERTY)) {
-                    valueChanged(ptr);
+                    AccessibleContext thisAC = accessible.getAccessibleContext();
+                    Accessible parentAccessible = thisAC.getAccessibleParent();
+                    if (!(parentAccessible instanceof JSpinner.NumberEditor)) {
+                        valueChanged(ptr);
+                    }
                 } else if (name.equals(ACCESSIBLE_SELECTION_PROPERTY)) {
                     selectionChanged(ptr);
                 } else if (name.equals(ACCESSIBLE_TABLE_MODEL_CHANGED)) {
