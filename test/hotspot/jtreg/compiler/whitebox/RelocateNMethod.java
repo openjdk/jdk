@@ -22,18 +22,73 @@
  */
 
 /*
- * @test RelocateNMethod
+ * @test id=Serial
  * @bug 8316694
  * @summary test that WB::relocateNMethodTo() correctly creates a new nmethod
  * @library /test/lib /
- * @modules java.base/jdk.internal.misc
- *          java.management
+ * @modules java.base/jdk.internal.misc java.management
  *
  * @requires vm.opt.DeoptimizeALot != true
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache compiler.whitebox.RelocateNMethod
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseSerialGC compiler.whitebox.RelocateNMethod
+ */
+
+/*
+ * @test id=Parallel
+ * @bug 8316694
+ * @summary test that WB::relocateNMethodTo() correctly creates a new nmethod
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc java.management
+ *
+ * @requires vm.opt.DeoptimizeALot != true
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseParallelGC compiler.whitebox.RelocateNMethod
+ */
+
+/*
+ * @test id=G1
+ * @bug 8316694
+ * @summary test that WB::relocateNMethodTo() correctly creates a new nmethod
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc java.management
+ *
+ * @requires vm.opt.DeoptimizeALot != true
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseG1GC compiler.whitebox.RelocateNMethod
+ */
+
+/*
+ * @test id=Shenandoah
+ * @bug 8316694
+ * @summary test that WB::relocateNMethodTo() correctly creates a new nmethod
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc java.management
+ *
+ * @requires vm.opt.DeoptimizeALot != true
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseShenandoahGC compiler.whitebox.RelocateNMethod
+ */
+
+/*
+ * @test id=ZGC
+ * @bug 8316694
+ * @summary test that WB::relocateNMethodTo() correctly creates a new nmethod
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc java.management
+ *
+ * @requires vm.opt.DeoptimizeALot != true
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseZGC compiler.whitebox.RelocateNMethod
  */
 
 package compiler.whitebox;
