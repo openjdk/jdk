@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8351108
  * @summary This test verifies that attempting to write a JPEG using
@@ -41,8 +41,9 @@ public class JpegWriterWriteNonOpaqueIndexColorModelTest {
         boolean b1 = testJpegWriter(Transparency.OPAQUE, "OPAQUE", true);
         boolean b2 = testJpegWriter(Transparency.BITMASK, "BITMASK", false);
         boolean b3 = testJpegWriter(Transparency.TRANSLUCENT, "TRANSLUCENT", false);
-        if (!(b1 && b2 && b3))
+        if (!(b1 && b2 && b3)) {
             throw new Error("Test failed");
+        }
     }
 
     private static boolean testJpegWriter(int imageType, String name, boolean expectedWriteReturnValue) {
