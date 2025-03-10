@@ -56,6 +56,7 @@ public class PrintExecCmdOptionTest {
         OutputBin outputBin = null;
         MediaTray mediaTray = null;
         for (PrintService ps : printServices) {
+            mediaTray = null;
             Media[] medias = (Media[]) ps.
                     getSupportedAttributeValues(Media.class, null, null);
             if (medias != null) {
