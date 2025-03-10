@@ -1902,6 +1902,9 @@ void Compile::remove_from_merge_stores_igvn(Node* n) {
 //   StoreI            [   StoreL  ]            StoreI
 // But now it would have been better to do this instead:
 //   [         StoreL       ] [       StoreL         ]
+//
+// Note: we allow stores to merge in this dedicated IGVN round, and any later IGVN round,
+//       since we never unset _merge_stores_phase.
 void Compile::process_for_merge_stores_igvn(PhaseIterGVN& igvn) {
   C->set_merge_stores_phase();
 
