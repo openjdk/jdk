@@ -1957,7 +1957,9 @@ void nmethod::invalidate_osr_method() {
   }
 }
 
-void nmethod::log_state_change() const {
+void nmethod::log_state_change(const char* reason) const {
+  assert(reason != nullptr, "Must provide a reason");
+
   if (LogCompilation) {
     if (xtty != nullptr) {
       ttyLocker ttyl;  // keep the following output all in one block
@@ -1969,9 +1971,12 @@ void nmethod::log_state_change() const {
     }
   }
 
-  CompileTask::print_ul(this, "made not entrant");
+  stringStream ss;
+  ss.print("made not entrant: %s", reason);
+
+  CompileTask::print_ul(this, ss.freeze());
   if (PrintCompilation) {
-    print_on_with_msg(tty, "made not entrant");
+    print_on_with_msg(tty, ss.freeze());
   }
 }
 
@@ -1982,7 +1987,9 @@ void nmethod::unlink_from_method() {
 }
 
 // Invalidate code
-bool nmethod::make_not_entrant() {
+bool nmethod::make_not_entrant(const char* reason) {
+  assert(reason != nullptr, "Must provide a reason");
+
   // This can be called while the system is already at a safepoint which is ok
   NoSafepointVerifier nsv;
 
@@ -2040,7 +2047,7 @@ bool nmethod::make_not_entrant() {
     assert(success, "Transition can't fail");
 
     // Log the transition once
-    log_state_change();
+    log_state_change(reason);
 
     // Remove nmethod from method.
     unlink_from_method();
