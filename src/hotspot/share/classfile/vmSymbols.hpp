@@ -746,7 +746,6 @@ class SerializeClosure;
                                                                                                                   \
   /* Stable Values */                                                                                             \
   template(java_lang_StableValue_signature,        "Ljava/lang/StableValue;")                                     \
-  template(java_lang_StableValue_array_signature,  "[Ljava/lang/StableValue;")                                    \
                                                                                                                   \
   /* jcmd Thread.vthread_scheduler and Thread.vthread_pollers */                                                  \
   template(jdk_internal_vm_JcmdVThreadCommands,    "jdk/internal/vm/JcmdVThreadCommands")                         \

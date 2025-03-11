@@ -251,8 +251,7 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
 }
 
 static bool trust_final_non_static_fields_of_type(Symbol* signature) {
-  return signature == vmSymbols::java_lang_StableValue_signature() ||
-         signature == vmSymbols::java_lang_StableValue_array_signature();
+  return signature == vmSymbols::java_lang_StableValue_signature();
 }
 
 void ciField::initialize_from(fieldDescriptor* fd) {

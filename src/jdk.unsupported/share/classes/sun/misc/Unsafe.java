@@ -895,7 +895,7 @@ public final class Unsafe {
         if (f == null) {
             throw new NullPointerException();
         }
-        assertNotTrusted(f);
+        ensureNotTrusted(f);
         beforeMemoryAccess();
         return theInternalUnsafe.objectFieldOffset(f);
     }
@@ -929,7 +929,7 @@ public final class Unsafe {
         if (f == null) {
             throw new NullPointerException();
         }
-        assertNotTrusted(f);
+        ensureNotTrusted(f);
         beforeMemoryAccess();
         return theInternalUnsafe.staticFieldOffset(f);
     }
@@ -955,7 +955,7 @@ public final class Unsafe {
         if (f == null) {
             throw new NullPointerException();
         }
-        assertNotTrusted(f);
+        ensureNotTrusted(f);
         beforeMemoryAccess();
         return theInternalUnsafe.staticFieldBase(f);
     }
@@ -980,7 +980,7 @@ public final class Unsafe {
     }
 
     @ForceInline
-    private static void assertNotTrusted(Field f) {
+    private static void ensureNotTrusted(Field f) {
         Class<?> declaringClass = f.getDeclaringClass();
         if (declaringClass.isHidden()) {
             throw new UnsupportedOperationException("can't get base address on a hidden class: " + f);
