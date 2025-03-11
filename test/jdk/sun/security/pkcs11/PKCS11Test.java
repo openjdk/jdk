@@ -31,7 +31,6 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
@@ -43,27 +42,14 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.ServiceConfigurationError;
-import java.util.ServiceLoader;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
-import jdk.test.lib.artifacts.Artifact;
-import jdk.test.lib.artifacts.ArtifactResolver;
-import jdk.test.lib.artifacts.ArtifactResolverException;
+import jdk.test.lib.security.NSSArtifactFetcher;
 import jtreg.SkippedException;
 
 public abstract class PKCS11Test {
@@ -80,18 +66,13 @@ public abstract class PKCS11Test {
     private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
     private static final SecureRandom srdm = new SecureRandom();
 
-    // Version of the NSS artifact. This coincides with the version of
-    // the NSS version
-    private static final String NSS_BUNDLE_VERSION = "3.101";
-    private static final String NSSLIB = "jpg.tests.jdk.nsslib";
-
     static double nss_version = -1;
     static ECCState nss_ecc_status = ECCState.Basic;
 
     // The NSS library we need to search for in getNSSLibDir()
     // Default is "libsoftokn3.so", listed as "softokn3"
     // The other is "libnss3.so", listed as "nss3".
-    static String nss_library = "softokn3";
+    static String nss_library = NSSArtifactFetcher.DEFAULT_NSS_LIBRARY;
 
     // NSS versions of each library.  It is simpler to keep nss_version
     // for quick checking for generic testing than many if-else statements.
@@ -227,45 +208,11 @@ public abstract class PKCS11Test {
     }
 
     public static String getNSSLibDir() throws Exception {
-        return getNSSLibDir(nss_library);
+        return NSSArtifactFetcher.getNSSLibDir(nss_library);
     }
 
-    static String getNSSLibDir(String library) throws Exception {
-        Path libPath = getNSSLibPath(library);
-        if (libPath == null) {
-            return null;
-        }
-
-        String libDir = String.valueOf(libPath.getParent()) + File.separatorChar;
-        System.out.println("nssLibDir: " + libDir);
-        System.setProperty("pkcs11test.nss.libdir", libDir);
-        return libDir;
-    }
-
-    private static Path getNSSLibPath() throws Exception {
-        return getNSSLibPath(nss_library);
-    }
-
-    static Path getNSSLibPath(String library) throws Exception {
-        String osid = getOsId();
-        Path libraryName = Path.of(System.mapLibraryName(library));
-        Path nssLibPath = fetchNssLib(osid, libraryName);
-        if (nssLibPath == null) {
-            throw new SkippedException("Warning: unsupported OS: " + osid
-                    + ", please initialize NSS library location, skipping test");
-        }
-        return nssLibPath;
-    }
-
-    private static String getOsId() {
-        String osName = props.getProperty("os.name");
-        if (osName.startsWith("Win")) {
-            osName = "Windows";
-        } else if (osName.equals("Mac OS X")) {
-            osName = "MacOSX";
-        }
-        return osName + "-" + props.getProperty("os.arch") + "-"
-                + props.getProperty("sun.arch.data.model");
+    public static Path getNSSLibPath() throws Exception {
+        return NSSArtifactFetcher.getNSSLibPath(nss_library);
     }
 
     static boolean isBadNSSVersion(Provider p) {
@@ -715,64 +662,6 @@ public abstract class PKCS11Test {
         return data;
     }
 
-    private static Path fetchNssLib(String osId, Path libraryName) {
-        switch (osId) {
-            case "Windows-amd64-64":
-                return fetchNssLib(WINDOWS_X64.class, libraryName);
-
-            case "MacOSX-x86_64-64":
-                return fetchNssLib(MACOSX_X64.class, libraryName);
-
-            case "MacOSX-aarch64-64":
-                return fetchNssLib(MACOSX_AARCH64.class, libraryName);
-
-            case "Linux-amd64-64":
-                if (Platform.isOracleLinux7()) {
-                    throw new SkippedException("Skipping Oracle Linux prior to v8");
-                } else {
-                    return fetchNssLib(LINUX_X64.class, libraryName);
-                }
-
-            case "Linux-aarch64-64":
-                if (Platform.isOracleLinux7()) {
-                    throw new SkippedException("Skipping Oracle Linux prior to v8");
-                } else {
-                    return fetchNssLib(LINUX_AARCH64.class, libraryName);
-                }
-            default:
-                return null;
-        }
-    }
-
-    private static Path fetchNssLib(Class<?> clazz, Path libraryName) {
-        Path path = null;
-        try {
-            Path p = ArtifactResolver.resolve(clazz).entrySet().stream()
-                    .findAny().get().getValue();
-            path = findNSSLibrary(p, libraryName);
-        } catch (ArtifactResolverException | IOException e) {
-            Throwable cause = e.getCause();
-            if (cause == null) {
-                System.out.println("Cannot resolve artifact, "
-                        + "please check if JIB jar is present in classpath.");
-            } else {
-                throw new RuntimeException("Fetch artifact failed: " + clazz
-                        + "\nPlease make sure the artifact is available.", e);
-            }
-        }
-        return path;
-    }
-
-    private static Path findNSSLibrary(Path path, Path libraryName) throws IOException {
-        try(Stream<Path> files = Files.find(path, 10,
-                (tp, attr) -> tp.getFileName().equals(libraryName))) {
-
-            return files.findAny()
-                        .orElseThrow(() ->
-                            new RuntimeException("NSS library \"" + libraryName + "\" was not found in " + path));
-        }
-    }
-
     //Copy the nss config files to the current directory for tests. Returns the destination path
     private static String copyNssFiles() throws Exception {
         String nss = "nss";
@@ -872,44 +761,4 @@ public abstract class PKCS11Test {
     // NSS version info
     public static enum ECCState {None, Basic, Extended}
 
-    @Artifact(
-            organization = NSSLIB,
-            name = "nsslib-windows_x64",
-            revision = NSS_BUNDLE_VERSION,
-            extension = "zip")
-    private static class WINDOWS_X64 {
-    }
-
-    @Artifact(
-            organization = NSSLIB,
-            name = "nsslib-macosx_x64",
-            revision = NSS_BUNDLE_VERSION,
-            extension = "zip")
-    private static class MACOSX_X64 {
-    }
-
-    @Artifact(
-            organization = NSSLIB,
-            name = "nsslib-macosx_aarch64",
-            revision = NSS_BUNDLE_VERSION,
-            extension = "zip")
-    private static class MACOSX_AARCH64 {
-    }
-
-    @Artifact(
-            organization = NSSLIB,
-            name = "nsslib-linux_x64",
-            revision = NSS_BUNDLE_VERSION,
-            extension = "zip")
-    private static class LINUX_X64 {
-    }
-
-    @Artifact(
-            organization = NSSLIB,
-            name = "nsslib-linux_aarch64",
-            revision = NSS_BUNDLE_VERSION,
-            extension = "zip"
-    )
-    private static class LINUX_AARCH64{
-    }
 }
