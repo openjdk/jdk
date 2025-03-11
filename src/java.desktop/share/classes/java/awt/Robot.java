@@ -218,12 +218,9 @@ public class Robot {
      * @param y         Y position
      */
     public synchronized void mouseMove(int x, int y) {
-        int leastXDiff = Integer.MAX_VALUE;
-        int leastYDiff = Integer.MAX_VALUE;
-        int finX1 = x;
-        int finY1 = y;
-        int finX2 = x;
-        int finY2 = y;
+        int leastDiff = Integer.MAX_VALUE;
+        int finX = x;
+        int finY = y;
 
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gs = ge.getScreenDevices();
@@ -238,32 +235,29 @@ public class Robot {
 
             int currXDiff = Math.abs(x - cP.x);
             int currYDiff = Math.abs(y - cP.y);
+            int currDiff = (int) Math.round(Math.hypot(currXDiff, currYDiff));
 
-            if ((currXDiff == 0) && (currYDiff == 0)) {
+            if (currDiff == 0) {
                 peer.mouseMove(x,y);
                 afterEvent();
                 return;
-            } if (currXDiff < leastXDiff) {
-                finX1 = cP.x;
-                finY1 = cP.y;
-                leastXDiff = currXDiff;
-            } if (currYDiff < leastYDiff) {
-                finX2 = cP.x;
-                finY2 = cP.y;
-                leastYDiff = currYDiff;
+            } if (currDiff < leastDiff) {
+                finX = cP.x;
+                finY = cP.y;
+                leastDiff = currDiff;
             }
         }
 
-        if (leastXDiff > leastYDiff) {
-            peer.mouseMove(finX2, finY2);
-        } else {
-            peer.mouseMove(finX1, finY1);
-        }
-
+        peer.mouseMove(finX, finY);
         afterEvent();
     }
 
     private Point calcClosestPoint(int x, int y, Rectangle screenBounds) {
+        Point p = new Point(Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width-1),
+                Math.min(Math.max(y, screenBounds.y), screenBounds.y + screenBounds.height-1));
+        System.out.println("bounds " + screenBounds);
+        System.out.println("tpt " + new Point(x,y));
+        System.out.println("cpt " + p + "\n");
         return new Point(Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width-1),
                 Math.min(Math.max(y, screenBounds.y), screenBounds.y + screenBounds.height-1));
     }
