@@ -253,19 +253,19 @@ public class HPKE extends CipherSpi {
             this.id = id;
             try {
                 switch (id) {
-                    case 1 -> {
+                    case HPKEParameterSpec.AEAD_AES_128_GCM -> {
                         cipher = Cipher.getInstance("AES/GCM/NoPadding");
                         Nk = 16;
                     }
-                    case 2 -> {
+                    case HPKEParameterSpec.AEAD_AES_256_GCM -> {
                         cipher = Cipher.getInstance("AES/GCM/NoPadding");
                         Nk = 32;
                     }
-                    case 3 -> {
+                    case HPKEParameterSpec.AEAD_CHACHA20_POLY1305 -> {
                         cipher = Cipher.getInstance("ChaCha20-Poly1305");
                         Nk = 32;
                     }
-                    case 65535 -> {
+                    case HPKEParameterSpec.EXPORT_ONLY -> {
                         cipher = null;
                         Nk = -1;
                     }
@@ -280,7 +280,7 @@ public class HPKE extends CipherSpi {
 
         void start(int opmode, SecretKey key, byte[] nonce) {
             try {
-                if (id == 3) {
+                if (id == HPKEParameterSpec.AEAD_CHACHA20_POLY1305) {
                     cipher.init(opmode, key, new IvParameterSpec(nonce));
                 } else {
                     cipher.init(opmode, key, new GCMParameterSpec(Nt * 8, nonce));
@@ -436,17 +436,22 @@ public class HPKE extends CipherSpi {
                 throws InvalidKeyException, InvalidAlgorithmParameterException {
             var p = k.getParams();
             if (p instanceof ECParameterSpec ecp) {
-                if ((!ECUtil.equals(ecp, CurveDB.P_256) || kem_id != 0x10)
-                        && (!ECUtil.equals(ecp, CurveDB.P_384) || kem_id != 0x11)
-                        && (!ECUtil.equals(ecp, CurveDB.P_521) || kem_id != 0x12)) {
+                if ((!ECUtil.equals(ecp, CurveDB.P_256)
+                        || kem_id != HPKEParameterSpec.KEM_DHKEM_P_256_HKDF_SHA256)
+                        && (!ECUtil.equals(ecp, CurveDB.P_384)
+                        || kem_id != HPKEParameterSpec.KEM_DHKEM_P_384_HKDF_SHA384)
+                        && (!ECUtil.equals(ecp, CurveDB.P_521)
+                        || kem_id != HPKEParameterSpec.KEM_DHKEM_P_521_HKDF_SHA512)) {
                     var name = ECUtil.getCurveName(ecp);
                     throw new InvalidAlgorithmParameterException(
                             name + " does not match " + kem_id);
                 }
             } else if (p instanceof NamedParameterSpec ns) {
                 var name = ns.getName();
-                if ((!name.equalsIgnoreCase("x25519") || kem_id != 0x20)
-                        && (!name.equalsIgnoreCase("x448") || kem_id != 0x21)) {
+                if ((!name.equalsIgnoreCase("x25519")
+                        || kem_id != HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256)
+                        && (!name.equalsIgnoreCase("x448")
+                        || kem_id != HPKEParameterSpec.KEM_DHKEM_X448_HKDF_SHA512)) {
                     throw new InvalidAlgorithmParameterException(
                             name + " does not match " + kem_id);
                 }
@@ -468,17 +473,17 @@ public class HPKE extends CipherSpi {
             var p = k.getParams();
             if (p instanceof ECParameterSpec ecp) {
                 if (ECUtil.equals(ecp, CurveDB.P_256)) {
-                    return 0x10;
+                    return HPKEParameterSpec.KEM_DHKEM_P_256_HKDF_SHA256;
                 } else if (ECUtil.equals(ecp, CurveDB.P_384)) {
-                    return 0x11;
+                    return HPKEParameterSpec.KEM_DHKEM_P_384_HKDF_SHA384;
                 } else if (ECUtil.equals(ecp, CurveDB.P_521)) {
-                    return 0x12;
+                    return HPKEParameterSpec.KEM_DHKEM_P_521_HKDF_SHA512;
                 }
             } else if (p instanceof NamedParameterSpec ns) {
                 if (ns.getName().equalsIgnoreCase("X25519")) {
-                    return 0x20;
+                    return HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256;
                 } else if (ns.getName().equalsIgnoreCase("X448")) {
-                    return 0x21;
+                    return HPKEParameterSpec.KEM_DHKEM_X448_HKDF_SHA512;
                 }
             }
             throw new InvalidKeyException("Unsupported key");
@@ -486,15 +491,26 @@ public class HPKE extends CipherSpi {
 
         private void setParams(AsymmetricKey key, HPKEParameterSpec p)
                 throws InvalidKeyException, InvalidAlgorithmParameterException {
-            if (p.kem_id() == -1) {
-                int kem_id = kemIdFromKey(key);
-                int kdf_id = switch (kem_id) {
-                    case 0x10, 0x20 -> 0x1;
-                    case 0x11 -> 0x2;
-                    case 0x12, 0x21 -> 0x3;
+            if (p.kem_id() == -1 || p.kdf_id() == -1 || p.aead_id() == -1) {
+                var kem_id = p.kem_id() != -1
+                        ? p.kem_id()
+                        : kemIdFromKey(key);
+                var kdf_id = p.kdf_id() != -1
+                        ? p.kdf_id()
+                        : switch (kem_id) {
+                    case HPKEParameterSpec.KEM_DHKEM_P_256_HKDF_SHA256,
+                         HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256
+                            -> HPKEParameterSpec.KDF_HKDF_SHA256;
+                    case HPKEParameterSpec.KEM_DHKEM_P_384_HKDF_SHA384
+                            -> HPKEParameterSpec.KDF_HKDF_SHA384;
+                    case HPKEParameterSpec.KEM_DHKEM_P_521_HKDF_SHA512,
+                         HPKEParameterSpec.KEM_DHKEM_X448_HKDF_SHA512
+                            -> HPKEParameterSpec.KDF_HKDF_SHA512;
                     default -> throw new InvalidAlgorithmParameterException();
                 };
-                int aead_id = 0x2;
+                var aead_id = p.aead_id() != -1
+                        ? p.aead_id()
+                        : HPKEParameterSpec.AEAD_AES_256_GCM;
                 params = HPKEParameterSpec.of(kem_id, kdf_id, aead_id)
                         .info(p.info())
                         .psk(p.psk(), p.psk_id())
@@ -510,15 +526,15 @@ public class HPKE extends CipherSpi {
                     DHKEM.I2OSP(params.kdf_id(), 2),
                     DHKEM.I2OSP(params.aead_id(), 2));
             kdfAlg = switch (params.kdf_id()) {
-                case 1 -> "HKDF-SHA256";
-                case 2 -> "HKDF-SHA384";
-                case 3 -> "HKDF-SHA512";
+                case HPKEParameterSpec.KDF_HKDF_SHA256 -> "HKDF-SHA256";
+                case HPKEParameterSpec.KDF_HKDF_SHA384 -> "HKDF-SHA384";
+                case HPKEParameterSpec.KDF_HKDF_SHA512 -> "HKDF-SHA512";
                 default -> throw new InvalidAlgorithmParameterException();
             };
             kdfNh = switch (params.kdf_id()) {
-                case 1 -> 32;
-                case 2 -> 48;
-                case 3 -> 64;
+                case HPKEParameterSpec.KDF_HKDF_SHA256 -> 32;
+                case HPKEParameterSpec.KDF_HKDF_SHA384 -> 48;
+                case HPKEParameterSpec.KDF_HKDF_SHA512 -> 64;
                 default -> throw new InvalidAlgorithmParameterException();
             };
             aead = new AEAD(params.aead_id());

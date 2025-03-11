@@ -26,10 +26,10 @@ package sun.security.util;
 
 import javax.crypto.SecretKey;
 
-/// An interface for `SecretKey`s that supports using its slice as a new
+/// An interface for `SecretKey`s that support using its slice as a new
 /// `SecretKey`.
 ///
-/// This is mainly used by PKCS #11 implementations that supports the
+/// This is mainly used by PKCS #11 implementations that support the
 /// EXTRACT_KEY_FROM_KEY mechanism even if the key itself is sensitive
 /// and non-extractable.
 public interface SliceableSecretKey {

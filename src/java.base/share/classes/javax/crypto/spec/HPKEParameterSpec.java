@@ -51,6 +51,9 @@ import java.util.Objects;
  * <li> {@link #of()} creates an instance with unspecified KEM, KDF, and AEAD
  * algorithms, which will be determined by the implementation based on the key
  * provided to {@code init()}.
+ * <li> {@link #of(int, int)} creates an instance with explicitly specified
+ * KDF, and AEAD algorithm identifiers, but the KEM algorithm identifier will be
+ * determined by the implementation based on the key provided to {@code init()}.
  * <li> {@link #of(int, int, int)} creates an instance with explicitly
  * specified KEM, KDF, and AEAD algorithm identifiers.
  * </ul>
@@ -185,9 +188,81 @@ import java.util.Objects;
  */
 public final class HPKEParameterSpec implements AlgorithmParameterSpec {
 
-    private final int kem_id; // 0 is determined by key later
-    private final int kdf_id; // 0 is determined by key later
-    private final int aead_id; // 0 is determined by key later
+    /**
+     * KEM algorithm identifier for DHKEM(P-256, HKDF-SHA256) as defined in
+     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-key-encapsulation-mechanism">Section 7.1 of RFC 9180</a>.
+     */
+    public static final int KEM_DHKEM_P_256_HKDF_SHA256 = 0x10;
+
+    /**
+     * KEM algorithm identifier for DHKEM(P-384, HKDF-SHA384) as defined in
+     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-key-encapsulation-mechanism">Section 7.1 of RFC 9180</a>.
+     */
+    public static final int KEM_DHKEM_P_384_HKDF_SHA384 = 0x11;
+
+    /**
+     * KEM algorithm identifier for DHKEM(P-521, HKDF-SHA512) as defined in
+     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-key-encapsulation-mechanism">Section 7.1 of RFC 9180</a>.
+     */
+    public static final int KEM_DHKEM_P_521_HKDF_SHA512 = 0x12;
+
+    /**
+     * KEM algorithm identifier for DHKEM(X25519, HKDF-SHA256) as defined in
+     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-key-encapsulation-mechanism">Section 7.1 of RFC 9180</a>.
+     */
+    public static final int KEM_DHKEM_X25519_HKDF_SHA256 = 0x20;
+
+    /**
+     * KEM algorithm identifier for DHKEM(X448, HKDF-SHA512) as defined in
+     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-key-encapsulation-mechanism">Section 7.1 of RFC 9180</a>.
+     */
+    public static final int KEM_DHKEM_X448_HKDF_SHA512 = 0x21;
+
+    /**
+     * KDF algorithm identifier for HKDF-SHA256 as defined in
+     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-key-derivation-functions-kd">Section 7.2 of RFC 9180</a>.
+     */
+    public static final int KDF_HKDF_SHA256 = 0x1;
+
+    /**
+     * KDF algorithm identifier for HKDF-SHA384 as defined in
+     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-key-derivation-functions-kd">Section 7.2 of RFC 9180</a>.
+     */
+    public static final int KDF_HKDF_SHA384 = 0x2;
+
+    /**
+     * KDF algorithm identifier for HKDF-SHA512 as defined in
+     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-key-derivation-functions-kd">Section 7.2 of RFC 9180</a>.
+     */
+    public static final int KDF_HKDF_SHA512 = 0x3;
+
+    /**
+     * AEAD algorithm identifier for AES-128-GCM as defined in
+     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-authenticated-encryption-wi">Section 7.3 of RFC 9180</a>.
+     */
+    public static final int AEAD_AES_128_GCM = 0x1;
+
+    /**
+     * AEAD algorithm identifier for AES-256-GCM as defined in
+     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-authenticated-encryption-wi">Section 7.3 of RFC 9180</a>.
+     */
+    public static final int AEAD_AES_256_GCM = 0x2;
+
+    /**
+     * AEAD algorithm identifier for ChaCha20Poly1305 as defined in
+     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-authenticated-encryption-wi">Section 7.3 of RFC 9180</a>.
+     */
+    public static final int AEAD_CHACHA20_POLY1305 = 0x3;
+
+    /**
+     * AEAD algorithm identifier for Export-only as defined in
+     * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#name-authenticated-encryption-wi">Section 7.3 of RFC 9180</a>.
+     */
+    public static final int EXPORT_ONLY = 0xffff;
+
+    private final int kem_id; // -1 is determined by key later
+    private final int kdf_id; // -1 is determined by key later
+    private final int aead_id; // -1 is determined by key later
     private final byte[] info; // never null, can be empty
     private final SecretKey psk; // null if not used
     private final byte[] psk_id; // never null, can be empty
@@ -217,6 +292,29 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      */
     public static HPKEParameterSpec of() {
         return new HPKEParameterSpec(-1, -1, -1,
+                new byte[0], null, new byte[0], null, null);
+    }
+
+    /**
+     * A factory method to create a new {@code HPKEParameterSpec} object with
+     * specified KDF, and AEAD algorithm identifiers in {@code mode_base}
+     * mode with an empty {@code info}. The KEM algorithm identifier is not
+     * specified and will be determined by the key used in cipher initialization.
+     *
+     * @param kdf_id identifier for KDF, must be between 0 and 65535 (inclusive)
+     * @param aead_id identifier for AEAD, must be between 0 and 65535 (inclusive)
+     * @return a new {@code HPKEParameterSpec} object
+     * @throws IllegalArgumentException if any input value
+     *      is out of range (must be between 0 and 65535, inclusive).
+     */
+    public static HPKEParameterSpec of(int kdf_id, int aead_id) {
+        if (kdf_id < 0 || kdf_id > 65535) {
+            throw new IllegalArgumentException("Invalid kdf_id: " + kdf_id);
+        }
+        if (aead_id < 0 || aead_id > 65535) {
+            throw new IllegalArgumentException("Invalid aead_id: " + aead_id);
+        }
+        return new HPKEParameterSpec(-1, kdf_id, aead_id,
                 new byte[0], null, new byte[0], null, null);
     }
 
