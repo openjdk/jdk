@@ -277,7 +277,7 @@ public class LogManager {
         };
     }
 
-    // TODO only need to adjust levels logger already exists
+    // TODO only need to adjust levels if logger already exists
     private static void configureLogger(Logger logger, Level level) {
         logger.setUseParentHandlers(false);
         ConsoleHandler handler = new ConsoleHandler();
