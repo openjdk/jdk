@@ -24,6 +24,7 @@
 /*
  * @test id=Serial
  * @bug 8316694
+ * @requires vm.debug == true
  * @summary test that relocated nmethod is correctly deoptimized
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
@@ -37,6 +38,7 @@
 /*
  * @test id=Parallel
  * @bug 8316694
+ * @requires vm.debug == true
  * @summary test that relocated nmethod is correctly deoptimized
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
@@ -50,6 +52,7 @@
 /*
  * @test id=G1
  * @bug 8316694
+ * @requires vm.debug == true
  * @summary test that relocated nmethod is correctly deoptimized
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
@@ -63,6 +66,7 @@
 /*
  * @test id=Shenandoah
  * @bug 8316694
+ * @requires vm.debug == true
  * @summary test that relocated nmethod is correctly deoptimized
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
@@ -76,6 +80,7 @@
 /*
  * @test id=ZGC
  * @bug 8316694
+ * @requires vm.debug == true
  * @summary test that relocated nmethod is correctly deoptimized
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
