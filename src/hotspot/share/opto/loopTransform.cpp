@@ -3850,7 +3850,10 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
 
   BasicType t = store->adr_type()->isa_aryptr()->elem()->array_element_basic_type();
   BasicType memory_type = store->as_Mem()->memory_type();
-  assert((memory_type == T_CHAR && t == T_SHORT) || memory_type == t, "unexpected type mismatch");
+  assert((memory_type == T_CHAR && t == T_SHORT) ||
+         (memory_type == T_BYTE && t == T_BOOLEAN) ||
+         memory_type == t,
+         "unexpected type mismatch: t == %u vs. memory_type == %u", t, memory_type);
   bool aligned = false;
   if (offset != nullptr && head->init_trip()->is_Con()) {
     int element_size = type2aelembytes(t);
