@@ -597,15 +597,13 @@ public class TestFramework {
             return;
         }
 
-        boolean debugTest, intTest, compTest, irTest, nonWhiteListedTest;
-
-        debugTest = Platform.isDebugBuild();
-        intTest = !Platform.isInt();
-        compTest = !Platform.isComp();
-        irTest = hasIRAnnotations();
+        boolean debugTest = Platform.isDebugBuild();
+        boolean intTest = !Platform.isInt();
+        boolean compTest = !Platform.isComp();
+        boolean irTest = hasIRAnnotations();
         // No IR verification is done if additional non-whitelisted JTreg VM or Javaoptions flag is specified.
         List<String> nonWhiteListedFlags = anyNonWhitelistedJTregVMAndJavaOptsFlags();
-        nonWhiteListedTest = nonWhiteListedFlags.isEmpty();
+        boolean nonWhiteListedTest = nonWhiteListedFlags.isEmpty();
 
         irVerificationPossible = debugTest && intTest && compTest && irTest && nonWhiteListedTest;
         if (irVerificationPossible) {
@@ -617,7 +615,7 @@ public class TestFramework {
             System.out.println("- Not running a debug build (required for PrintIdeal and PrintOptoAssembly)");
         }
         if (!intTest) {
-            System.out.println("- Running with -Xint (use warm-up of 0 instead)");
+            System.out.println("- Running with -Xint (no compilations)");
         }
         if (!compTest) {
             System.out.println("- Running with -Xcomp (use warm-up of 0 instead)");
