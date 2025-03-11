@@ -143,13 +143,15 @@ public class TestMinMaxIdentities {
     // Floats
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"}, counts = { IRNode.MIN_F, "1" })
+    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"}, counts = { IRNode.MIN_F, "1" })
+    @IR(applyIfPlatform = { "riscv64", "true" }, counts = { IRNode.MIN_F, "1" })
     public float floatMinMin(float a, float b) {
         return Math.min(a, Math.min(a, b));
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"}, counts = { IRNode.MAX_F, "1" })
+    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"}, counts = { IRNode.MAX_F, "1" })
+    @IR(applyIfPlatform = { "riscv64", "true" }, counts = { IRNode.MAX_F, "1" })
     public float floatMaxMax(float a, float b) {
         return Math.max(a, Math.max(a, b));
     }
@@ -157,13 +159,15 @@ public class TestMinMaxIdentities {
     // Doubles
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"}, counts = { IRNode.MIN_D, "1" })
+    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"}, counts = { IRNode.MIN_D, "1" })
+    @IR(applyIfPlatform = { "riscv64", "true" }, counts = { IRNode.MIN_D, "1" })
     public double doubleMinMin(double a, double b) {
         return Math.min(a, Math.min(a, b));
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"}, counts = { IRNode.MAX_D, "1" })
+    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"}, counts = { IRNode.MAX_D, "1" })
+    @IR(applyIfPlatform = { "riscv64", "true" }, counts = { IRNode.MAX_D, "1" })
     public double doubleMaxMax(double a, double b) {
         return Math.max(a, Math.max(a, b));
     }
@@ -171,25 +175,29 @@ public class TestMinMaxIdentities {
     // Float and double identities that cannot be simplified due to NaN
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"}, counts = { IRNode.MIN_F, "1", IRNode.MAX_F, "1" })
+    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"}, counts = { IRNode.MIN_F, "1", IRNode.MAX_F, "1" })
+    @IR(applyIfPlatform = { "riscv64", "true" }, counts = { IRNode.MIN_F, "1", IRNode.MAX_F, "1" })
     public float floatMinMax(float a, float b) {
         return Math.min(a, Math.max(a, b));
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"}, counts = { IRNode.MIN_F, "1", IRNode.MAX_F, "1" })
+    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"}, counts = { IRNode.MIN_F, "1", IRNode.MAX_F, "1" })
+    @IR(applyIfPlatform = { "riscv64", "true" }, counts = { IRNode.MIN_F, "1", IRNode.MAX_F, "1" })
     public float floatMaxMin(float a, float b) {
         return Math.max(a, Math.min(a, b));
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"}, counts = { IRNode.MIN_D, "1", IRNode.MAX_D, "1" })
+    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"}, counts = { IRNode.MIN_D, "1", IRNode.MAX_D, "1" })
+    @IR(applyIfPlatform = { "riscv64", "true" }, counts = { IRNode.MIN_D, "1", IRNode.MAX_D, "1" })
     public double doubleMinMax(double a, double b) {
         return Math.min(a, Math.max(a, b));
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"}, counts = { IRNode.MIN_D, "1", IRNode.MAX_D, "1" })
+    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"}, counts = { IRNode.MIN_D, "1", IRNode.MAX_D, "1" })
+    @IR(applyIfPlatform = { "riscv64", "true" }, counts = { IRNode.MIN_D, "1", IRNode.MAX_D, "1" })
     public double doubleMaxMin(double a, double b) {
         return Math.max(a, Math.min(a, b));
     }
