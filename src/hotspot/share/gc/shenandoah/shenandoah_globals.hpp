@@ -406,7 +406,7 @@
           "to be more than this.")                                          \
           range(0, 100)                                                     \
                                                                             \
-  product(bool, ShenandoahPacing, true, EXPERIMENTAL,                       \
+  product(bool, ShenandoahPacing, false, EXPERIMENTAL,                       \
           "Pace application allocations to give GC chance to start "        \
           "and complete before allocation failure is reached.")             \
                                                                             \
