@@ -2,11 +2,3 @@ root = true
 
 [*]
 trim_trailing_whitespace = true
-
-[*.{cpp,hpp,c,h,cc,hh}]
-indent_style = space
-indent_size = 2
-
-[*.java]
-indent_style = space
-indent_size = 4
