@@ -151,7 +151,7 @@ public enum StandardLocation implements Location {
         // Need to create the cache entry.
         Location newLoc = null;
 
-        // See if this is one of the standard Locations.
+        // See if this is one of the known Locations first.
         for (Location location : values()) {
             if (location.getName().equals(name)) {
                 newLoc = location;
@@ -159,7 +159,7 @@ public enum StandardLocation implements Location {
             }
         }
 
-        // Compute the fitting instance for non-standard location, if needed.
+        // Compute the fitting instance for unknown location, if needed.
         if (newLoc == null) {
             boolean isOutputLocation = name.endsWith("_OUTPUT");
             boolean isModuleOrientedLocation = computeIsModuleOrientedLocation(name);
@@ -170,7 +170,7 @@ public enum StandardLocation implements Location {
             };
         }
 
-        // Thread-safe install
+        // Thread-safe install.
         Location exist = LOCATIONS.putIfAbsent(name, newLoc);
         return (exist != null) ? exist : newLoc;
     }
