@@ -177,7 +177,7 @@ public class HelpWriter extends HtmlDocletWriter {
         // Keyboard Navigation
         section = newHelpSection(contents.getContent("doclet.help.keyboard_navigation.title"),
                 HtmlIds.HELP_KEYBOARD_NAVIGATION);
-        var  keyboardPara = HtmlTree.P(contents.getContent("doclet.help.keyboard_navigation.intro"));
+        section.add(HtmlTree.P(contents.getContent("doclet.help.keyboard_navigation.intro")));
         var keyboardList = HtmlTree.UL();
         if (options.createIndex()) {
             keyboardList.add(HtmlTree.LI(contents.getContent("doclet.help.keyboard_navigation.index",
@@ -192,7 +192,7 @@ public class HelpWriter extends HtmlDocletWriter {
                 HtmlTree.KBD(Entity.of("uparrow")))));
         keyboardList.add(HtmlTree.LI(contents.getContent("doclet.help.keyboard_navigation.tabs",
                 HtmlTree.KBD(Entity.of("leftarrow")), HtmlTree.KBD(Entity.of("rightarrow")))));
-        navSection.add(section.add(keyboardPara.add(keyboardList)));
+        navSection.add(section.add(keyboardList));
 
         tableOfContents.popNestedList();
 
