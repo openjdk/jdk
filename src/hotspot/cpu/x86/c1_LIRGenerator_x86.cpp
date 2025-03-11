@@ -1166,11 +1166,7 @@ void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
       LIR_Address* a = nullptr;
 
       if (index->is_valid()) {
-        LIR_Opr tmp = new_register(T_LONG);
-        __ convert(Bytecodes::_i2l, index, tmp);
-        index = tmp;
-        __ add(index, LIR_OprFact::intptrConst(offset), index);
-        a = new LIR_Address(base_op, index, T_BYTE);
+        a = new LIR_Address(base_op, index, offset, T_BYTE);
       } else {
         a = new LIR_Address(base_op, offset, T_BYTE);
       }
@@ -1190,7 +1186,7 @@ void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
       __ leal(LIR_OprFact::address(a), arg2);
       __ move(len, arg3);
 
-      __ call_runtime_leaf(StubRoutines::updateBytesCRC32C(), LIR_OprFact::illegalOpr, result_reg, cc->args());
+      __ call_runtime_leaf(StubRoutines::updateBytesCRC32C(), getThreadTemp(), result_reg, cc->args());
       __ move(result_reg, result);
       break;
     }
