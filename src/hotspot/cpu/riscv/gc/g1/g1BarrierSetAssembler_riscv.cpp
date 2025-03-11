@@ -89,13 +89,41 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
 
 void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                              Register start, Register count, Register tmp, RegSet saved_regs) {
-  __ push_reg(saved_regs, sp);
-  assert_different_registers(start, count, tmp);
-  assert_different_registers(c_rarg0, count);
-  __ mv(c_rarg0, start);
-  __ mv(c_rarg1, count);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_post_entry), 2);
-  __ pop_reg(saved_regs, sp);
+  Label loop, next, done;
+  const Register end = count;
+
+  // Zero count? Nothing to do.
+  __ beqz(count, done);
+
+  __ shadd(end, count, start, tmp, LogBytesPerHeapOop); // end = start + count << LogBytesPerHeapOop
+  __ subi(end, end, BytesPerHeapOop);                   // last element address to make inclusive
+
+  __ srli(start, start, CardTable::card_shift());
+  __ srli(end, end, CardTable::card_shift());
+  __ sub(count, end, start);                            // Number of bytes to mark
+
+  Address card_table_address(xthread, G1ThreadLocalData::card_table_base_offset());
+  __ ld(tmp, card_table_address);
+  __ add(start, start, tmp);
+
+  __ bind(loop);
+  if (UseCondCardMark) {
+    __ add(tmp, start, count);
+    static_assert((uint)G1CardTable::clean_card_val() == 0xff, "must be");
+    __ lbu(tmp, Address(tmp, 0));
+    __ subi(tmp, tmp, G1CardTable::clean_card_val());   // Convert to clean_card_value() to a comparison
+                                                        // against zero to avoid use of an extra temp.
+    __ bnez(tmp, next);
+  }
+  static_assert(G1CardTable::dirty_card_val() == 0, "must be to use zr");
+  __ add(tmp, start, count);
+  __ sb(zr, Address(tmp, 0));
+
+  __ bind(next);
+  __ subi(count, count, 1);
+  __ bgez(count, loop);
+
+  __ bind(done);
 }
 
 static void generate_queue_test_and_insertion(MacroAssembler* masm, ByteSize index_offset, ByteSize buffer_offset, Label& runtime,
@@ -217,7 +245,7 @@ static void generate_post_barrier_fast_path(MacroAssembler* masm,
   if (UseCondCardMark) {
     static_assert((uint)G1CardTable::clean_card_val() == 0xff, "must be");
     __ lbu(tmp2, Address(tmp1, 0));                      // tmp2 := card
-    __ sub(tmp2, tmp2, G1CardTable::clean_card_val());   // Convert to clean_card_value() to a comparison
+    __ subi(tmp2, tmp2, G1CardTable::clean_card_val());  // Convert to clean_card_value() to a comparison
                                                          // against zero to avoid use of an extra temp.
     __ bnez(tmp2, done);
   }
