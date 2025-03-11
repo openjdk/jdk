@@ -928,7 +928,8 @@ void VM_Version::get_processor_features() {
 
   // Check if processor has Intel Ecore
   if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && cpu_family() == 6 &&
-    (_model == 0x97 || _model == 0xAA || _model == 0xAC || _model == 0xAF)) {
+    (_model == 0x97 || _model == 0xAA || _model == 0xAC || _model == 0xAF ||
+      _model == 0xCC || _model == 0xDD)) {
     FLAG_SET_DEFAULT(EnableX86ECoreOpts, true);
   }
 

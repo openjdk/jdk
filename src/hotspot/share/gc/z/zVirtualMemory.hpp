@@ -77,6 +77,7 @@ public:
 
   size_t reserved() const;
   zoffset lowest_available_address() const;
+  zoffset_end highest_available_address_end() const;
 
   ZVirtualMemory alloc(size_t size, bool force_low_address);
   void free(const ZVirtualMemory& vmem);
