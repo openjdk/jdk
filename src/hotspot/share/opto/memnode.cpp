@@ -3450,12 +3450,23 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   if (MergeStores && UseUnalignedAccesses) {
-    if (phase->C->post_loop_opts_phase()) {
+    if (phase->C->merge_stores_phase()) {
       MergePrimitiveStores merge(phase, this);
       Node* progress = merge.run();
       if (progress != nullptr) { return progress; }
     } else {
-      phase->C->record_for_post_loop_opts_igvn(this);
+      // We need to wait with merging stores until RangeCheck smearing has removed the RangeChecks during
+      // the post loops IGVN phase. If we do it earlier, then there may still be some RangeChecks between
+      // the stores, and we merge the wrong sequence of stores.
+      // Example:
+      //   StoreI RangeCheck StoreI StoreI RangeCheck StoreI
+      // Apply MergeStores:
+      //   StoreI RangeCheck [   StoreL  ] RangeCheck StoreI
+      // Remove more RangeChecks:
+      //   StoreI            [   StoreL  ]            StoreI
+      // But now it would have been better to do this instead:
+      //   [         StoreL       ] [       StoreL         ]
+      phase->C->record_for_merge_stores_igvn(this);
     }
   }
 
