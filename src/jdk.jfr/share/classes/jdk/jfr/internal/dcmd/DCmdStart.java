@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -53,7 +54,6 @@ import jdk.jfr.internal.jfc.model.JFCModel;
 import jdk.jfr.internal.jfc.model.JFCModelException;
 import jdk.jfr.internal.jfc.model.XmlInput;
 import jdk.jfr.internal.query.Report;
-
 import jdk.jfr.internal.util.Utils;
 
 /**
@@ -85,6 +85,7 @@ final class DCmdStart extends AbstractDCmd {
         Long flush = parser.getOption("flush-interval");
         Boolean dumpOnExit = parser.getOption("dumponexit");
         Boolean pathToGcRoots = parser.getOption("path-to-gc-roots");
+        List<String> reports = parser.getOption("report-on-exit");
 
         if (name != null) {
             try {
@@ -203,7 +204,6 @@ final class DCmdStart extends AbstractDCmd {
             recording.setDumpOnExit(dumpOnExit);
         }
 
-        List<String> reports = parser.getOption("report-on-exit");
         if (reports != null) {
             addReports(pr, reports);
         }
@@ -241,6 +241,20 @@ final class DCmdStart extends AbstractDCmd {
             print("Use jcmd " + getPid() + " JFR." + cmd + " " + recordingspecifier + " " + fileOption + "to copy recording data to file.");
             println();
         }
+    }
+    
+    // Add report-on-exit for -XX:StartFlightRecording
+    @Override
+    protected Argument[] getParseArguments(String source) {
+        Argument[] argumentInfo = getArgumentInfos();;
+        if (!"internal".equals(source)) {
+            return argumentInfo;
+        }
+        Argument[] newArray = Arrays.copyOf(argumentInfo, argumentInfo.length + 1);
+        newArray[argumentInfo.length] = new Argument("report-on-exit",
+                "Display views on exit. See 'jfr help view' for available views to report.",
+                "STRING SET", false, true, null, true);
+        return newArray;
     }
 
     private LinkedHashMap<String, String> configureStandard(String[] settings) throws DCmdException {
@@ -347,6 +361,7 @@ final class DCmdStart extends AbstractDCmd {
             "$DELIMITER", ",",
             "$DELIMITER_NAME", "comma",
             "$DIRECTORY", exampleDirectory(),
+            "$REPORT_ON_EXIT", reportOnExit(),
             "$JFC_OPTIONS", jfcOptions()
         );
         return Utils.format(helpTemplate(), parameters).lines().toArray(String[]::new);
@@ -361,6 +376,7 @@ final class DCmdStart extends AbstractDCmd {
            "$DELIMITER", " ",
            "$DELIMITER_NAME", "whitespace",
            "$DIRECTORY", exampleDirectory(),
+           "$REPORT_ON_EXIT", "",
            "$JFC_OPTIONS", jfcOptions()
         );
         return Utils.format(helpTemplate(), parameters).lines().toArray(String[]::new);
@@ -429,12 +445,7 @@ final class DCmdStart extends AbstractDCmd {
                                   'profile', then the information collected includes the stack
                                   trace from where the potential leaking object was allocated.
                                   (BOOLEAN, false)
-
-                 report-on-exit   Specifies the name of the view to display when the Java Virtual
-                                  Machine (JVM) shuts down. This option is not available if disk
-                                  the disk option is set to false. For a list of available views,
-                                  see 'jfr help view'. By default, no report is generated.
-
+                 $REPORT_ON_EXIT
                  settings         (Optional) Name of the settings file that identifies which events
                                   to record. To specify more than one file, use the settings
                                   parameter repeatedly. Include the path if the file is not in
@@ -484,6 +495,17 @@ final class DCmdStart extends AbstractDCmd {
                Note, if the default event settings are modified, overhead may exceed 1%.
 
                """;
+    }
+
+    private static String reportOnExit() {
+        return
+        """
+
+          report-on-exit   Specifies the name of the view to display when the Java Virtual
+                           Machine (JVM) shuts down. This option is not available if disk
+                           the disk option is set to false. For a list of available views,
+                           see 'jfr help view'. By default, no report is generated.
+        """;
     }
 
     private static String jfcOptions() {
@@ -542,11 +564,7 @@ final class DCmdStart extends AbstractDCmd {
                 "BOOLEAN", false, true, "false", false),
             new Argument("path-to-gc-roots",
                 "Collect path to GC roots",
-                "BOOLEAN", false, true, "false", false),
-            new Argument("report-on-exit",
-                "Display views on exit. See 'jfr help view' for available views to report.",
-                "STRING SET", false, true, null, true)
-
+                "BOOLEAN", false, true, "false", false)
         };
     }
 }
