@@ -237,6 +237,7 @@ public class Main {
     private boolean badNetscapeCertType = false;
     private boolean signerSelfSigned = false;
     private boolean allAliasesFound = true;
+    private boolean hasMultipleManifests = false;
 
     private Throwable chainNotValidatedReason = null;
     private Throwable tsaChainNotValidatedReason = null;
@@ -1252,6 +1253,11 @@ public class Main {
                         rb.getString("The.full.keyAlgName.signing.key.is.considered.a.security.risk.and.is.disabled."),
                         fullDisplayKeyName(privateKey)));
             }
+
+            if(hasMultipleManifests) {
+                warnings.add(String.format(rb.getString("multiple.manifest.warning.")));
+            }
+
         } else {
             if ((legacyAlg & 1) != 0) {
                 warnings.add(String.format(
@@ -1982,10 +1988,7 @@ public class Main {
                 // intentionally "eat" this, since we don't want to fail
             }
             if(manifestNum > 1) {
-                System.out.println();
-                System.out.println(rb.getString("Warning."));
-                System.out.println(rb.getString("multiple.manifest.warning."));
-                System.out.println();
+                hasMultipleManifests = true;
             }
         }
 
