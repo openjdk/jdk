@@ -3524,8 +3524,9 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // (the right in the notation below).
 // We can simplify into
 // (StoreB ... (LShiftI _ valIn (conIL - conIR)) )
-// This case happens when the right-hand side of the store was itself a left shift, that gets merged
-// into the inner left shift of the sign-extension. For instance, if we have
+// This case happens when the value of the store was itself a left shift, that
+// gets merged into the inner left shift of the sign-extension. For instance,
+// if we have
 // array_of_shorts[0] = (short)(X << 2)
 // We get a structure such as:
 // (StoreB ... (RShiftI _ (LShiftI _ (LShiftI _ X 2) 16) 16))
