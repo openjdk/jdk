@@ -1398,7 +1398,6 @@ nmethod::nmethod(nmethod& nm) : CodeBlob(nm.name(), CodeBlobKind::Nmethod, nm.si
   debug_only(NoSafepointVerifier nsv;)
   assert_locked_or_safepoint(CodeCache_lock);
 
-  // CodeBlob data
   if (nm.oop_maps() == nullptr) {
     _oop_maps                   = nullptr;
   } else {
@@ -1412,7 +1411,6 @@ nmethod::nmethod(nmethod& nm) : CodeBlob(nm.name(), CodeBlobKind::Nmethod, nm.si
   _frame_complete_offset        = nm._frame_complete_offset;
   _caller_must_gc_arguments     = nm._caller_must_gc_arguments;
 
-  // nmethod data
   _deoptimization_generation    = nm._deoptimization_generation;
 
   _gc_epoch                     = nm._gc_epoch;
@@ -1421,90 +1419,99 @@ nmethod::nmethod(nmethod& nm) : CodeBlob(nm.name(), CodeBlobKind::Nmethod, nm.si
   _native_receiver_sp_offset    = nm._native_receiver_sp_offset;
   _native_basic_lock_sp_offset  = nm._native_basic_lock_sp_offset;
 
-  // nmethod's read-only data
+  // Allocate memory and copy immutable data from C heap
   if (nm.immutable_data_size() > 0) {
-    _immutable_data = (address)os::malloc(nm.immutable_data_size(), mtCode);
+    _immutable_data             = (address)os::malloc(nm.immutable_data_size(), mtCode);
+    if (_immutable_data == nullptr) {
+      vm_exit_out_of_memory(nm.immutable_data_size(), OOM_MALLOC_ERROR, "nmethod: no space for immutable data");
+    }
     memcpy(immutable_data_begin(), nm.immutable_data_begin(), nm.immutable_data_size());
   } else {
-    _immutable_data = data_end();
+    _immutable_data             = data_end();
   }
 
-  _exception_cache            = nullptr;
+  _exception_cache              = nullptr;
 
-  _gc_data                    = nullptr;
+  _gc_data                      = nullptr;
 
-  _oops_do_mark_nmethods      = nm._oops_do_mark_nmethods;
+  _oops_do_mark_nmethods        = nm._oops_do_mark_nmethods;
 
-  _oops_do_mark_link          = nm._oops_do_mark_link;
+  _oops_do_mark_link            = nm._oops_do_mark_link;
 
-  _compiled_ic_data           = nullptr;
+  _compiled_ic_data             = nullptr;
 
-  _osr_entry_point            = code_begin() + (nm._osr_entry_point - nm.code_begin());
-  _entry_offset               = nm._entry_offset;
-  _verified_entry_offset      = nm._verified_entry_offset;
-  _entry_bci                  = nm._entry_bci;
-  _immutable_data_size        = nm._immutable_data_size;
+  _osr_entry_point              = code_begin() + (nm._osr_entry_point - nm.code_begin());
+  _entry_offset                 = nm._entry_offset;
+  _verified_entry_offset        = nm._verified_entry_offset;
+  _entry_bci                    = nm._entry_bci;
+  _immutable_data_size          = nm._immutable_data_size;
 
-  _skipped_instructions_size  = nm._skipped_instructions_size;
+  _skipped_instructions_size    = nm._skipped_instructions_size;
 
-  _stub_offset                = nm._stub_offset;
+  _stub_offset                  = nm._stub_offset;
 
-  _exception_offset           = nm._exception_offset;
+  _exception_offset             = nm._exception_offset;
 
-  _deopt_handler_offset       = nm._deopt_handler_offset;
-  _deopt_mh_handler_offset    = nm._deopt_mh_handler_offset;
-  _unwind_handler_offset      = nm._unwind_handler_offset;
+  _deopt_handler_offset         = nm._deopt_handler_offset;
+  _deopt_mh_handler_offset      = nm._deopt_mh_handler_offset;
+  _unwind_handler_offset        = nm._unwind_handler_offset;
 
-  _num_stack_arg_slots        = nm._num_stack_arg_slots;
+  _num_stack_arg_slots          = nm._num_stack_arg_slots;
 
-  _metadata_offset            = nm._metadata_offset;
+  _oops_size                    = nm._oops_size;
 
 #if INCLUDE_JVMCI
-  _jvmci_data_offset          = nm._jvmci_data_offset;
+  _jvmci_data_size              = nm._jvmci_data_size;
 #endif
 
-  _nul_chk_table_offset       = nm._nul_chk_table_offset;
-  _handler_table_offset       = nm._handler_table_offset;
-  _scopes_pcs_offset          = nm._scopes_pcs_offset;
-  _scopes_data_offset         = nm._scopes_data_offset;
+  _nul_chk_table_offset         = nm._nul_chk_table_offset;
+  _handler_table_offset         = nm._handler_table_offset;
+  _scopes_pcs_offset            = nm._scopes_pcs_offset;
+  _scopes_data_offset           = nm._scopes_data_offset;
 
   if (nm._pc_desc_container == nullptr) {
-    _pc_desc_container        = nullptr;
+    _pc_desc_container          = nullptr;
   } else {
-    _pc_desc_container        = new PcDescContainer(scopes_pcs_begin());
+    _pc_desc_container          = new PcDescContainer(scopes_pcs_begin());
   }
 
 #if INCLUDE_JVMCI
-  _speculations_offset        = nm._speculations_offset;
+  _speculations_offset          = nm._speculations_offset;
 #endif
 
-  _orig_pc_offset             = nm._orig_pc_offset;
+  _orig_pc_offset               = nm._orig_pc_offset;
 
-  _compile_id                 = nm._compile_id;
-  _comp_level                 = nm._comp_level;
-  _compiler_type              = nm._compiler_type;
+  _compile_id                   = nm._compile_id;
+  _comp_level                   = nm._comp_level;
+  _compiler_type                = nm._compiler_type;
 
-  _is_unloading_state         = nm._is_unloading_state;
+  _is_unloading_state           = nm._is_unloading_state;
 
-  _state                      = nm._state;
+  _state                        = nm._state;
 
-  _has_unsafe_access          = nm._has_method_handle_invokes;
-  _has_method_handle_invokes  = nm._has_method_handle_invokes;
-  _has_wide_vectors           = nm._has_wide_vectors;
-  _has_monitors               = nm._has_monitors;
-  _has_scoped_access          = nm._has_scoped_access;
-  _has_flushed_dependencies   = nm._has_flushed_dependencies;
-  _is_unlinked                = nm._is_unlinked;
-  _load_reported              = nm._load_reported;
+  _has_unsafe_access            = nm._has_method_handle_invokes;
+  _has_method_handle_invokes    = nm._has_method_handle_invokes;
+  _has_wide_vectors             = nm._has_wide_vectors;
+  _has_monitors                 = nm._has_monitors;
+  _has_scoped_access            = nm._has_scoped_access;
+  _has_flushed_dependencies     = nm._has_flushed_dependencies;
+  _is_unlinked                  = nm._is_unlinked;
+  _load_reported                = nm._load_reported;
 
-  _deoptimization_status      = nm._deoptimization_status;
+  _deoptimization_status        = nm._deoptimization_status;
 
-  memcpy(relocation_begin(),    nm.relocation_begin(),    nm.relocation_size());
-  memcpy(consts_begin(),        nm.consts_begin(),        nm.consts_size());
-  memcpy(insts_begin(),         nm.insts_begin(),         nm.insts_size());
-  memcpy(stub_begin(),          nm.stub_begin(),          nm.stub_size());
-  memcpy((void*) oops_begin(),  (void*) nm.oops_begin(),  nm.oops_size());
-  memcpy(metadata_begin(),      nm.metadata_begin(),      nm.metadata_size());
+  // Allocate memory and copy mutable data from C heap
+  _mutable_data_size            = nm._mutable_data_size;
+  if (_mutable_data_size > 0) {
+    _mutable_data               = (address)os::malloc(_mutable_data_size, mtCode);
+    if (_mutable_data == nullptr) {
+      vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "nmethod: no space for mutable data");
+    }
+    memcpy(mutable_data_begin(), nm.mutable_data_begin(), nm.mutable_data_size());
+  }
+
+  // Copy all nmethod data outside of header
+  memcpy(content_begin(), nm.content_begin(), nm.size() - nm.header_size());
 
   RelocIterator iter(this);
   CodeBuffer src((CodeBlob *)&nm);
@@ -1515,7 +1522,7 @@ nmethod::nmethod(nmethod& nm) : CodeBlob(nm.name(), CodeBlobKind::Nmethod, nm.si
 
   ICache::invalidate_range(code_begin(), code_size());
 
-  _method                     = nm._method;
+  _method                       = nm._method;
 
   post_init();
 
