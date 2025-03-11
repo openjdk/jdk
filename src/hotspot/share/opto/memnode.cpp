@@ -3556,7 +3556,9 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // to study where the left shift returns 0 unconditionally (clears all the bits):
 // it might look like a corner case to pay attention to, but it actually is not.
 //
+// If you don't like case analysis, jump after the conclusion.
 // ### Case 1 : conIL == conIR
+// ###### Case 1.1: conIL == conIR == num_rejected_bits
 // If we do the shift left then right by 24 bits, we get:
 // after << 24
 // +---------+------------------------+
@@ -3568,9 +3570,43 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // |        sign bit        | v[0..7] |
 // +------------------------+---------+
 //  31                     8 7        0
-// The non-rejected bits are the same before and after, so, indeed, simplifying is correct.
+// The non-rejected bits (bits kept by the store, that is the 8 lower bits of the
+// result) are the same before and after, so, indeed, simplifying is correct.
+
+// ###### Case 1.2: conIL == conIR < num_rejected_bits
+// If we do the shift left then right by 22 bits, we get:
+// after << 22
+// +---------+------------------------+
+// | v[0..9] |           0            |
+// +---------+------------------------+
+//  31     22 21                      0
+// after >> 22
+// +------------------------+---------+
+// |        sign bit        | v[0..9] |
+// +------------------------+---------+
+//  31                    10 9        0
+// The non-rejected bits are the 8 lower bits of v. The bits 8 and 9 of v are still
+// present in (v << 22) >> 22 but will be dropped by the store. The simplification is
+// still correct.
+
+// ###### But! Case 1.3: conIL == conIR > num_rejected_bits
+// If we do the shift left then right by 26 bits, we get:
+// after << 26
+// +---------+------------------------+
+// | v[0..5] |           0            |
+// +---------+------------------------+
+//  31     26 25                      0
+// after >> 26
+// +------------------------+---------+
+// |        sign bit        | v[0..6] |
+// +------------------------+---------+
+//  31                     6 5        0
+// The non-rejected bits are the 8 lower bits of v. The bits 8 and 9 of v are still
+// present in (v << 22) >> 22 but will be dropped by the store. The simplification is
+// still correct.
 //
-// ### Case 2: conIL > conIR == num_rejected_bits
+// ### Case 2: conIL > conIR
+// ###### Case 2.1: conIR == num_rejected_bits
 // We take conIL == 26 for this example.
 // after << 26
 // +---------+------------------------+
@@ -3586,7 +3622,7 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // The bits 6 and 7 of v have been thrown away after the shift left.
 // The simplification is still correct.
 //
-// ### Case 3: conIL > conIR < num_rejected_bits.
+// ###### Case 2.2: conIR < num_rejected_bits.
 // Let's say conIL == 26 and conIR == 22.
 // after << 26
 // +---------+------------------------+
@@ -3598,12 +3634,14 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // |     sign bit     | v[0..5] |  0  |
 // +------------------+---------+-----+
 //  31              10 9       4 3   0
-// The non-rejected bits are the 8 lower ones of (v << conIL - conIR).
-// The bits 6 and 7 of v have been thrown away after the shift left.
-// The bits 4 and 5 of v are still present, but outside the kept bits (the 8 lower ones).
+// The bits non-rejected by the store are exactly the 8 lower ones of (v << (conIL - conIR)):
+// - 0-3 => 0
+// - 4-7 => bits 0 to 3 of v
 // The simplification is still correct.
+// The bits 4 and 5 of v are still present in (v << (conIL - conIR)) but they don't
+// matter as they are not in the 8 lower bits: they will be cut out by the store.
 //
-// ### But! Case 4: conIL > conIR > num_rejected_bits.
+// ###### But! Case 2.3: conIR > num_rejected_bits.
 // Let's see that this case is not as easy to simplify.
 // Let's say conIL == 28 and conIR == 26.
 // after << 28
@@ -3625,6 +3663,21 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 //
 // ### Conclusion:
 // Valid if conIL >= conIR <= num_rejected_bits
+//
+// ### A rationale without case analysis:
+// After the shift left, conIL upper  bits of v are discarded and conIL lower bit
+// zeroes are added. After the shift right, conIR lower bits of the previous result
+// are discarded. If conIL >= conIR, we discard only the zeroes we made up during
+// the shift left, but if conIL < conIR, then we discard also lower bits of v. But
+// the point of the simplification is to get an expression of the form
+// (v << (conIL - conIR)). This expression discard only higher bits of v, thus the
+// simplification is not correct if conIL < conIR.
+//
+// Moreover, after the shift right, the higher bit of (v << conIL) is repeated on the
+// conIR higher bits of ((v << conIL) >> conIR), it's the sign-extension. If
+// conIR > num_rejected_bits, then at least one artificial copy of this sign bit will
+// be in the window of the store. Thus ((v << conIL) >> conIR) is not equivalent to
+// (v << (conIL-conIR)) if conIR > num_rejected_bits.
 //
 // We do not treat the case conIR > conIL here since the point of this function is
 // to skip sign-extensions (that is conIL == conIR == num_rejected_bits). The need
