@@ -122,8 +122,6 @@ public sealed class ICC_Profile implements Serializable
      */
     private interface BuiltInProfile {
         /*
-         * Deferral is only used for standard profiles. Enabling the appropriate
-         * access privileges is handled at a lower level.
          * ProfileDeferralInfo is used for only built-in profile creation and
          * all built-in profiles should be constructed using it.
          */
