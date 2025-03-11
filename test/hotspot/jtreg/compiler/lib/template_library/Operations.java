@@ -422,9 +422,9 @@ final class Operations {
                 ops.add(new Operation.Binary(type, "", type, ".or(", type, ")", null));
             }
 
-            // TODO: blend(int e, VectorMask<Integer> m)
-            // TODO: blend(long e, VectorMask<Integer> m)
-            // TODO: blend(Vector<Integer> v, VectorMask<Integer> m)
+            ops.add(new Operation.Ternary(type, "", type, ".blend(", type.elementType, ", ", type.maskType, ")", null));
+            ops.add(new Operation.Ternary(type, "", type, ".blend(", Type.longs(), ", ", type.maskType, ")", List.of("IllegalArgumentException")));
+            ops.add(new Operation.Ternary(type, "", type, ".blend(", type, ", ", type.maskType, ")", null));
 
             ops.add(new Operation.Unary(type, type.vectorType + ".broadcast(" + type.species + ", ", type.elementType, ")", null));
             ops.add(new Operation.Unary(type, type.vectorType + ".broadcast(" + type.species + ", ", Type.longs(), ")", List.of("IllegalArgumentException")));
