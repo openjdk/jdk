@@ -198,7 +198,6 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
     jvmti->RawMonitorExit(syncLock);
 
     NSK_DISPLAY0("Let debuggee to finish\n");
-
     if (!nsk_jvmti_resumeSync())
         return;
 
