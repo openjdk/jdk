@@ -6544,11 +6544,6 @@ static const int64_t right_3_bits = right_n_bits(3);
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
-    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != nullptr) {
-      StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
-    }
-
 #ifdef COMPILER2
     if (UseSecondarySupersTable) {
       StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();

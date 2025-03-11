@@ -688,10 +688,6 @@ address nmethod::oops_reloc_begin() const {
     return code_begin() + frame_complete_offset();
   }
 
-  // It is not safe to read oops concurrently using entry barriers, if their
-  // location depend on whether the nmethod is entrant or not.
-  // assert(BarrierSet::barrier_set()->barrier_set_nmethod() == nullptr, "Not safe oop scan");
-
   address low_boundary = verified_entry_point();
   if (!is_in_use()) {
     low_boundary += NativeJump::instruction_size;
