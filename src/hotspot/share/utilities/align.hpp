@@ -76,12 +76,10 @@ constexpr bool can_align_up(T size, A alignment) {
   return align_down(std::numeric_limits<T>::max(), alignment) >= size;
 }
 
-// Precondition: can_align_up(size, alignment) == true
 template<typename T, typename A, ENABLE_IF(std::is_integral<T>::value)>
 constexpr T align_up(T size, A alignment) {
-  T mask = checked_cast<T>(alignment_mask(alignment));
-  assert(size <= std::numeric_limits<T>::max() - mask, "overflow");
-  T adjusted = size + mask;
+  assert(can_align_up(size, alignment), "precondition");
+  T adjusted = checked_cast<T>(size + alignment_mask(alignment));
   return align_down(adjusted, alignment);
 }
 
