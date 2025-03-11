@@ -1492,7 +1492,8 @@ VectorNode* VectorCastNode::make(int vopc, Node* n1, BasicType bt, uint vlen) {
 }
 
 int VectorCastNode::opcode(int sopc, BasicType bt, bool is_signed) {
-  assert((is_integral_type(bt) && bt != T_LONG) || is_signed, "");
+  assert((is_integral_type(bt) && bt != T_LONG) || is_signed, "sopc=%s, bt=%s, is_signed=%s",
+         NodeClassNames[sopc], type2name(bt), is_signed ? "true" : "false");
 
   // Handle special case for to/from Half Float conversions
   switch (sopc) {
