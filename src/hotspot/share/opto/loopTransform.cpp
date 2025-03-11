@@ -753,7 +753,6 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 #ifndef PRODUCT
       if (TraceLoopOpts) {
         tty->print("Peeling a 'main' loop; resetting to 'normal' ");
-        loop->dump_head();
       }
 #endif
     }
