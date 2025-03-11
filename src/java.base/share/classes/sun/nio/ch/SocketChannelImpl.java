@@ -1612,4 +1612,170 @@ class SocketChannelImpl
         sb.append(']');
         return sb.toString();
     }
+
+    /**
+     * Skips over and discards {@code n} bytes of data from this source
+     * channel. The {@code skip} method may, for a variety of reasons, end
+     * up skipping over some smaller number of bytes, possibly {@code 0}.
+     * This may result from any of a number of conditions; reaching end of file
+     * before {@code n} bytes have been skipped is only one possibility.
+     * The actual number of bytes skipped is returned. If {@code n} is
+     * negative, the {@code skip} method for class {@code SocketChannelImpl} always
+     * returns 0, and no bytes are skipped. Subclasses may handle the negative
+     * value differently.
+     *
+     * @implSpec
+     * The {@code skip} method implementation of this class creates an off-heap
+     * byte array and then repeatedly reads into it until {@code n} bytes
+     * have been read or the end of the stream has been reached. Subclasses are
+     * encouraged to provide a more efficient implementation of this method.
+     * For instance, the implementation may depend on the ability to seek.
+     *
+     * @param      n   the number of bytes to be skipped.
+     * @return     the actual number of bytes skipped which might be zero.
+     * @throws     IOException  if an I/O error occurs.
+     */
+    public long skip(long n) throws IOException {
+        if (n < 1)
+            return 0;
+
+        if (!SocketReadEvent.enabled()) {
+            return implSkip(n);
+        }
+        long start = SocketReadEvent.timestamp();
+        long nbytes = implSkip(n);
+        SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
+        return nbytes;
+    }
+
+    private long implSkip(long nt) throws IOException {
+        readLock.lock();
+        try {
+            ensureOpenAndConnected();
+            boolean blocking = isBlocking();
+            long n = 0;
+            try {
+                beginRead(blocking);
+
+                // check if connection has been reset
+                if (connectionReset)
+                    throwConnectionReset();
+
+                // check if input is shutdown
+                if (isInputClosed)
+                    return IOStatus.EOF;
+
+                configureSocketNonBlockingIfVirtualThread();
+                n = IOUtil.skip(fd, nt, nd);
+                if (blocking) {
+                    while (IOStatus.okayToRetry(n) && isOpen()) {
+                        park(Net.POLLIN);
+                        n = IOUtil.skip(fd, nt, nd);
+                    }
+                }
+            } catch (ConnectionResetException e) {
+                connectionReset = true;
+                throwConnectionReset();
+            } finally {
+                endRead(blocking, n > 0);
+                if (n <= 0 && isInputClosed)
+                    return IOStatus.EOF;
+            }
+            return IOStatus.normalize(n);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    /**
+     * Attempts to skip bytes from the socket.
+     */
+    private long trySkip(long len) throws IOException {
+        return IOUtil.skip(fd, len, nd);
+    }
+
+    /**
+     * Skips bytes from the socket with a timeout.
+     * @throws SocketTimeoutException if the read timeout elapses
+     */
+    private long timedSkip(long len, long nanos) throws IOException {
+        long startNanos = System.nanoTime();
+        long n = trySkip(len);
+        while (n == IOStatus.UNAVAILABLE && isOpen()) {
+            long remainingNanos = nanos - (System.nanoTime() - startNanos);
+            if (remainingNanos <= 0) {
+                throw new SocketTimeoutException("Skip timed out");
+            }
+            park(Net.POLLIN, remainingNanos);
+            n = trySkip(len);
+        }
+        return n;
+    }
+
+    /**
+     * Skips bytes from the socket.
+     *
+     * @apiNote This method is for use by the socket adaptor.
+     *
+     * @throws IllegalBlockingModeException if the channel is non-blocking
+     * @throws SocketTimeoutException if the skip timeout elapses
+     */
+    long blockingSkip(long len, long nanos) throws IOException {
+        if (len == 0) {
+            // nothing to do
+            return 0;
+        }
+
+        readLock.lock();
+        try {
+            ensureOpenAndConnected();
+
+            // check that channel is configured blocking
+            if (!isBlocking())
+                throw new IllegalBlockingModeException();
+
+            long n = 0;
+            try {
+                beginRead(true);
+
+                // check if connection has been reset
+                if (connectionReset)
+                    throwConnectionReset();
+
+                // check if input is shutdown
+                if (isInputClosed)
+                    return IOStatus.EOF;
+
+                if (nanos > 0) {
+                    // change socket to non-blocking
+                    lockedConfigureBlocking(false);
+                    try {
+                        n = timedSkip(len, nanos);
+                    } finally {
+                        // restore socket to blocking mode (if channel is open)
+                        tryLockedConfigureBlocking(true);
+                    }
+                } else {
+                    // skip, no timeout
+                    configureSocketNonBlockingIfVirtualThread();
+                    n = trySkip(len);
+                    while (IOStatus.okayToRetry(n) && isOpen()) {
+                        park(Net.POLLIN);
+                        n = trySkip(len);
+                    }
+                }
+            } catch (ConnectionResetException e) {
+                connectionReset = true;
+                throwConnectionReset();
+            } finally {
+                endRead(true, n > 0);
+                if (n <= 0 && isInputClosed)
+                    return IOStatus.EOF;
+            }
+            assert n >= 0 || n == -1;
+            return n;
+        } finally {
+            readLock.unlock();
+        }
+    }
 }
