@@ -83,6 +83,7 @@ public class SharedSecrets {
     private static JavaUtilCollectionAccess javaUtilCollectionAccess;
     private static JavaUtilConcurrentTLRAccess javaUtilConcurrentTLRAccess;
     private static JavaUtilConcurrentFJPAccess javaUtilConcurrentFJPAccess;
+    private static JavaUtilLoggingAccess javaUtilLoggingAccess;
     private static JavaUtilJarAccess javaUtilJarAccess;
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
@@ -149,6 +150,14 @@ public class SharedSecrets {
 
     public static void setJavaUtilJarAccess(JavaUtilJarAccess access) {
         javaUtilJarAccess = access;
+    }
+
+    public static void setJavaUtilLoggingAccess(JavaUtilLoggingAccess access) {
+        javaUtilLoggingAccess = access;
+    }
+
+    public static JavaUtilLoggingAccess getJavaUtilLoggingAccess() {
+        return javaUtilLoggingAccess;
     }
 
     public static void setJavaLangAccess(JavaLangAccess jla) {

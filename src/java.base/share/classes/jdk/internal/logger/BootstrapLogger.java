@@ -1043,6 +1043,8 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
         // real logger returned from the loaded LoggerFinder.
         if (accessors != null) {
             RedirectedLoggers.replaceSurrogateLoggers(accessors);
+            // Dormant loggers inherit their own custom Level
+            DormantLoggers.reloadLevels();
         }
 
         BootstrapExecutors.flush();

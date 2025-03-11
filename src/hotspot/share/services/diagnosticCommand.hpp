@@ -364,6 +364,27 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class SystemLoggingLevelDCmd: public DCmdWithParser {
+private:
+  void setLevel(const char* logger, const char* level, TRAPS);
+protected:
+  DCmdArgument<char*> _loggername;   // option of VM.cds
+  DCmdArgument<char*> _levelvalue;    // file name, optional
+public:
+  static int num_arguments() { return 2; }
+  SystemLoggingLevelDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "System.logging_level";
+  }
+  static const char* description() {
+    return "Adjust the logging level for internal JDK debug loggers";
+  }
+  static const char* impact() {
+    return "Medium: Depends on the data output from logger level";
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 // Enhanced JMX Agent support
 
 class JMXStartRemoteDCmd : public DCmdWithParser {

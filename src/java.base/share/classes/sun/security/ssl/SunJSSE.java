@@ -32,7 +32,7 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
 /**
  * The JSSE provider.
  */
-public class SunJSSE extends java.security.Provider {
+public final class SunJSSE extends java.security.Provider {
 
     @java.io.Serial
     private static final long serialVersionUID = 3231825739635378733L;

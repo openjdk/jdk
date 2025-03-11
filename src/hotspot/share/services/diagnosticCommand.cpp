@@ -101,6 +101,7 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSystemPropertiesDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintVMFlagsDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SetVMFlagDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemLoggingLevelDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMDynamicLibrariesDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMUptimeDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMInfoDCmd>(full_export, true, false));
@@ -902,6 +903,51 @@ void EventLogDCmd::execute(DCmdSource source, TRAPS) {
   } else {
     Events::print_all(output(), max);
   }
+}
+
+SystemLoggingLevelDCmd::SystemLoggingLevelDCmd(outputStream* output, bool heap) :
+                                           DCmdWithParser(output, heap),
+  _loggername("logger", "Name of logger to be adjusted", "STRING", false, "false"),
+  _levelvalue("level", "Logger Level (e.g. INFO, FINE)", "STRING", false, "OFF") {
+  _dcmdparser.add_dcmd_option(&_loggername);
+  _dcmdparser.add_dcmd_option(&_levelvalue);
+}
+
+void SystemLoggingLevelDCmd::execute(DCmdSource source, TRAPS) {
+  char* logger = _loggername.value();
+  char* level = _levelvalue.value();
+  setLevel(logger, level, CHECK);
+}
+
+
+void SystemLoggingLevelDCmd::setLevel(const char* logger, const char* level, TRAPS) {
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+
+  Handle h_logger = java_lang_String::create_from_str(logger, CHECK);
+  Handle h_level = java_lang_String::create_from_str(level, CHECK);
+  // load VMSupport
+  Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
+  Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK);
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  if (ik->should_be_initialized()) {
+    ik->initialize(THREAD);
+  }
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, output());
+    output()->cr();
+    CLEAR_PENDING_EXCEPTION;
+    return;
+  }
+
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_static(&result,
+                            k,
+                            vmSymbols::setLogLevel(),
+                            vmSymbols::setLogLevel_signature(),
+                            h_logger,
+                            h_level,
+                            THREAD);
 }
 
 void CompilerDirectivesPrintDCmd::execute(DCmdSource source, TRAPS) {

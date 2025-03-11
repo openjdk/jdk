@@ -24,8 +24,9 @@
  */
 package jdk.internal.vm;
 
+import jdk.internal.access.JavaUtilLoggingAccess;
+import jdk.internal.logger.DormantLoggers;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.misc.VM;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.reflect.ConstantPool;
@@ -567,6 +568,15 @@ public class VMSupport {
             dos.writeByte((byte) (0x80 | length));
         } else {
             dos.writeInt(length);
+        }
+    }
+
+    private static void setLogLevel(String logger, String level) {
+        JavaUtilLoggingAccess jla = SharedSecrets.getJavaUtilLoggingAccess();
+        if (jla != null) {
+            jla.setLevel(logger, level);
+        } else {
+            DormantLoggers.setDormantLoggerLevel(logger, level);
         }
     }
 

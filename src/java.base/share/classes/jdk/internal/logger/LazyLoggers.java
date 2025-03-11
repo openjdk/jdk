@@ -102,7 +102,7 @@ public final class LazyLoggers {
      */
     static final class LazyLoggerAccessor implements LoggerAccessor {
 
-        // The factories that will be used to create the logger lazyly
+        // The factories that will be used to create the logger lazily
         final LazyLoggerFactories<? extends Logger> factories;
 
         // We need to pass the actual caller module when creating the logger.
@@ -111,7 +111,7 @@ public final class LazyLoggers {
         // whether this is the loading thread, can be null
         private final BooleanSupplier isLoadingThread;
 
-        // The name of the logger that will be created lazyly
+        // The name of the logger that will be created lazily
         final String name;
         // The plain logger SPI object - null until it is accessed for the
         // first time.
@@ -370,7 +370,7 @@ public final class LazyLoggers {
     // on the logic embedded in BootstrapLogger to avoid loading the concrete
     // logger provider until the VM has finished booting.
     //
-    private static final class JdkLazyLogger extends LazyLoggerWrapper {
+    static final class JdkLazyLogger extends LazyLoggerWrapper {
         JdkLazyLogger(String name, Module module) {
             this(LazyLoggerAccessor.makeAccessor(name, factories, module),
                  (Void)null);
@@ -446,5 +446,4 @@ public final class LazyLoggers {
             return getLoggerFromFinder(name, module);
         }
     }
-
 }

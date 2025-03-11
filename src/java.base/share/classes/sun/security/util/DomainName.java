@@ -193,7 +193,7 @@ class DomainName {
                 }
                 return getRules(tld, new ZipInputStream(pubSuffixStream));
             } catch (IOException e) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
                     SSLLogger.fine(
                         "cannot parse public suffix data for " + tld +
                          ": " + e.getMessage());
@@ -210,7 +210,7 @@ class DomainName {
                 is = new FileInputStream(f);
             } catch (FileNotFoundException e) { }
             if (is == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl") &&
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl") &&
                         SSLLogger.isOn("trustmanager")) {
                     SSLLogger.fine(
                         "lib/security/public_suffix_list.dat not found");
@@ -231,7 +231,7 @@ class DomainName {
                 }
             }
             if (!found) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
                     SSLLogger.fine("Domain " + tld + " not found");
                 }
                 return null;

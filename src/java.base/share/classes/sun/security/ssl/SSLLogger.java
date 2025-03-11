@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
+import java.lang.invoke.SwitchPoint;
 import java.nio.ByteBuffer;
 import java.security.cert.Certificate;
 import java.security.cert.Extension;
@@ -40,10 +41,13 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Supplier;
 
+import jdk.internal.logger.DormantLoggers;
 import sun.security.util.HexDumpEncoder;
 import sun.security.util.Debug;
 import sun.security.x509.*;
+import sun.util.logging.PlatformLogger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -60,7 +64,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public final class SSLLogger {
     private static final System.Logger logger;
     private static final String property;
-    public static final boolean isOn;
+
+    private static final SwitchPoint loggingRequested = new SwitchPoint();
 
     static {
         String p = System.getProperty("javax.net.debug");
@@ -76,11 +81,25 @@ public final class SSLLogger {
 
                 logger = new SSLConsoleLogger("javax.net.ssl", p);
             }
-            isOn = true;
+            SwitchPoint.invalidateAll(new SwitchPoint[] {loggingRequested});
         } else {
-            property = null;
-            logger = null;
-            isOn = false;
+            property = "";
+            logger = DormantLoggers.getDormantLogger(
+                    "javax.net.ssl", SSLLogger.class.getModule());
+        }
+    }
+
+    public static boolean isOn() {
+        if (loggingRequested.hasBeenInvalidated()) {
+            return DormantLoggers.getLevel(logger) != PlatformLogger.Level.OFF;
+        } else {
+            return false;
+        }
+    }
+
+    public static void notifyLevelChange() {
+        if (DormantLoggers.getLevel(logger) != PlatformLogger.Level.OFF) {
+            SwitchPoint.invalidateAll(new SwitchPoint[] {loggingRequested});
         }
     }
 
@@ -120,12 +139,11 @@ public final class SSLLogger {
      * debug check points, or System.Logger is used.
      */
     public static boolean isOn(String checkPoints) {
-        if (property == null) {              // debugging is turned off
-            return false;
-        } else if (property.isEmpty()) {     // use System.Logger
+        if (property == null || property.isEmpty()) {
+            // logger in use
             return true;
-        }                                   // use provider logger
-
+        }
+        // use provider logger
         String[] options = checkPoints.split(",");
         for (String option : options) {
             option = option.trim();
@@ -160,7 +178,14 @@ public final class SSLLogger {
         SSLLogger.log(Level.ERROR, msg, params);
     }
 
+    public static void severe(Supplier<String> msg, Object... params) {
+        SSLLogger.log(Level.ERROR, msg, params);
+    }
+
     public static void warning(String msg, Object... params) {
+        SSLLogger.log(Level.WARNING, msg, params);
+    }
+    public static void warning(Supplier<String> msg, Object... params) {
         SSLLogger.log(Level.WARNING, msg, params);
     }
 
@@ -168,27 +193,56 @@ public final class SSLLogger {
         SSLLogger.log(Level.INFO, msg, params);
     }
 
+    public static void info(Supplier<String> msg, Object... params) {
+        SSLLogger.log(Level.INFO, msg, params);
+    }
+
     public static void fine(String msg, Object... params) {
+        SSLLogger.log(Level.DEBUG, msg, params);
+    }
+    public static void fine(Supplier<String> msg, Object... params) {
         SSLLogger.log(Level.DEBUG, msg, params);
     }
 
     public static void finer(String msg, Object... params) {
         SSLLogger.log(Level.TRACE, msg, params);
     }
+    public static void finer(Supplier<String> msg, Object... params) {
+        SSLLogger.log(Level.TRACE, msg, params);
+    }
 
     public static void finest(String msg, Object... params) {
         SSLLogger.log(Level.ALL, msg, params);
     }
+    public static void finest(Supplier<String> msg, Object... params) {
+        SSLLogger.log(Level.ALL, msg, params);
+    }
 
     private static void log(Level level, String msg, Object... params) {
-        if (logger != null && logger.isLoggable(level)) {
+        if (logger.isLoggable(level)) {
             if (params == null || params.length == 0) {
                 logger.log(level, msg);
             } else {
                 try {
                     String formatted =
                             SSLSimpleFormatter.formatParameters(params);
-                    logger.log(level, msg, formatted);
+                    logger.log(level, msg + " (\n" + formatted + "\n)");
+                } catch (Exception exp) {
+                    // ignore it, just for debugging.
+                }
+            }
+        }
+    }
+
+    private static void log(Level level, Supplier<String> msg, Object... params) {
+        if (logger.isLoggable(level)) {
+            if (params == null || params.length == 0) {
+                logger.log(level, msg);
+            } else {
+                try {
+                    String formatted =
+                            SSLSimpleFormatter.formatParameters(params);
+                    logger.log(level, msg.get() + " (\n" + formatted + "\n)");
                 } catch (Exception exp) {
                     // ignore it, just for debugging.
                 }
@@ -207,7 +261,7 @@ public final class SSLLogger {
     // Logs a warning message and always returns false. This method
     // can be used as an OR Predicate to add a log in a stream filter.
     public static boolean logWarning(String option, String s) {
-        if (SSLLogger.isOn && SSLLogger.isOn(option)) {
+        if (SSLLogger.isOn() && SSLLogger.isOn(option)) {
             SSLLogger.warning(s);
         }
         return false;

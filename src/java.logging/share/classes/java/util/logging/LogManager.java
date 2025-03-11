@@ -38,6 +38,11 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import jdk.internal.access.JavaUtilLoggingAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.logger.DormantLoggers;
+import sun.util.logging.PlatformLogger;
 import sun.util.logging.internal.LoggingProviderImpl;
 import static jdk.internal.logger.DefaultLoggerFinder.isSystem;
 
@@ -183,6 +188,7 @@ public class LogManager {
     private volatile int globalHandlersState; // = STATE_INITIALIZED;
     // A concurrency lock for reset(), readConfiguration() and Cleaner.
     private final ReentrantLock configurationLock = new ReentrantLock();
+    private static final JavaUtilLoggingAccess jla = setupAccess();
 
     // This list contains the loggers for which some handlers have been
     // explicitly configured in the configuration file.
@@ -242,9 +248,49 @@ public class LogManager {
         if (mgr == null) {
             mgr = new LogManager();
         }
+        SharedSecrets.setJavaUtilLoggingAccess(jla);
         return mgr;
     }
 
+    private static JavaUtilLoggingAccess setupAccess() {
+        return new JavaUtilLoggingAccess() {
+            @Override
+            public void setLevel(String loggerName, String levelName) {
+                if (!DORMANT_LOGGER_NAMES.contains(loggerName)) {
+                    return;
+                }
+
+                Logger logger = Logger.getLogger(loggerName);
+                Level level = Level.parse(levelName);
+                configureLogger(logger, level);
+                DormantLoggers.notifyLevelChange(loggerName);
+            }
+            @Override
+            public PlatformLogger.Level getLevel(String loggerName) {
+                Level level = Logger.getLogger(loggerName).getLevel();
+                if (level == null) {
+                    // default level of dormant logger
+                    return PlatformLogger.Level.OFF;
+                }
+                return PlatformLogger.Level.valueOf(level.intValue());
+            }
+        };
+    }
+
+    // TODO only need to adjust levels logger already exists
+    private static void configureLogger(Logger logger, Level level) {
+        logger.setUseParentHandlers(false);
+        ConsoleHandler handler = new ConsoleHandler();
+        handler.setLevel(level);
+        logger.addHandler(handler);
+        logger.setLevel(level);
+    }
+
+    static final List<String> DORMANT_LOGGER_NAMES =  new ArrayList<>();
+
+    static {
+        DORMANT_LOGGER_NAMES.add("javax.net.ssl");
+    }
 
     // This private class is used as a shutdown hook.
     // It does a "reset" to close all open handlers.
@@ -414,6 +460,7 @@ public class LogManager {
 
                 // Platform loggers begin to delegate to java.util.logging.Logger
                 jdk.internal.logger.BootstrapLogger.redirectTemporaryLoggers();
+
 
             } catch (Exception ex) {
                 assert false : "Exception raised while reading logging configuration: " + ex;
@@ -1947,6 +1994,13 @@ public class LogManager {
             // concise error message than new IOException(x);
             throw new IOException(x.getMessage(), x);
         }
+/*
+        System.err.println("update logging config. current props: ");
+        Set<String> propertyNames = props.stringPropertyNames();
+        for (String key : propertyNames) {
+            System.err.println("Key: " + key + ", Value: " + props.getProperty(key));
+        }
+*/
 
         if (globalHandlersState == STATE_SHUTDOWN) return;
 
@@ -1963,6 +2017,7 @@ public class LogManager {
                     Stream.concat(previous.stringPropertyNames().stream(),
                                   next.stringPropertyNames().stream())
                         .collect(Collectors.toCollection(TreeSet::new));
+            //System.err.println("updatePropertyNames is " + updatePropertyNames.toString());
 
             if (mapper != null) {
                 // mapper will potentially modify the content of
@@ -2115,6 +2170,13 @@ public class LogManager {
 
         // We changed the configuration: invoke configuration listeners
         invokeConfigurationListeners();
+	/*
+        System.err.println("finished update logger config.");
+        propertyNames = props.stringPropertyNames();
+        for (String key : propertyNames) {
+            System.err.println("Key: " + key + ", Value: " + props.getProperty(key));
+        }
+	*/
     }
 
     /**

@@ -372,6 +372,7 @@ public class PlatformLogger {
     public void setLevel(Level newLevel) {
         final ConfigurableBridge.LoggerConfiguration spi =
                 PlatformLogger.ConfigurableBridge.getLoggerConfiguration(loggerProxy);
+        System.err.println("PlatformLogger: SPI is: " + spi);
         if (spi != null) {
             spi.setPlatformLevel(newLevel);
         }
