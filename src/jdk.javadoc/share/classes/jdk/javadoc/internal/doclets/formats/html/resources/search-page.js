@@ -24,13 +24,13 @@ $(function() {
         copyToClipboard(this.previousSibling.innerText);
         switchCopyLabel(this, this.lastElementChild);
     }
-    copy.click(copyLink);
+    copy.on("click", copyLink);
     copy[0].onmouseenter = function() {};
-    redirect.click(setSearchUrlTemplate);
+    redirect.on("click", setSearchUrlTemplate);
     setSearchUrlTemplate();
     copy.prop("disabled", false);
     redirect.prop("disabled", false);
-    expand.click(function (e) {
+    expand.on("click", function (e) {
         var searchInfo = $("div.page-search-info");
         if(this.parentElement.hasAttribute("open")) {
             searchInfo.attr("style", " display:none;");
@@ -51,6 +51,7 @@ $(window).on("load", function() {
     var fixedTab = false;
     var visibleTabs = [];
     var feelingLucky = false;
+    const MIN_TABBED_RESULTS = 10;
     function renderResults(result) {
         if (!result.length) {
             notify.html(messages.noResult);
@@ -105,8 +106,8 @@ $(window).on("load", function() {
             var id = "#result-tab-" + key.replace("searchTags", "search_tags");
             if (r[key].length) {
                 var count = r[key].length >= 1000 ? "999+" : r[key].length;
-                if (result.length > 20 && categoryCount > 1) {
-                    var button = $("<button/>")
+                if (result.length > MIN_TABBED_RESULTS && categoryCount > 1) {
+                    let button = $("<button/>")
                         .attr("id", "result-tab-" + key)
                         .attr("tabIndex", "-1")
                         .addClass("page-search-header")
@@ -115,11 +116,10 @@ $(window).on("load", function() {
                             .append($("<span/>")
                                 .attr("style", "font-weight:normal;")
                                 .html(" (" + count + ")")))
-                        .appendTo(tabContainer);
-                    button.click(key, function(e) {
-                        fixedTab = true;
-                        renderResult(e.data, $(this));
-                    });
+                        .on("click", null, key, function(e) {
+                            fixedTab = true;
+                            renderResult(e.data, $(this));
+                        }).appendTo(tabContainer);
                     visibleTabs.push(key);
                 } else {
                     $("<span class='page-search-header'>" + categories[key]
@@ -129,7 +129,7 @@ $(window).on("load", function() {
                 }
             }
         }
-        if (activeTab && result.length > 20 && categoryCount > 1) {
+        if (activeTab && result.length > MIN_TABBED_RESULTS && categoryCount > 1) {
             $("button#result-tab-" + activeTab).addClass("active-table-tab");
             renderTable(activeTab, r[activeTab]).appendTo(resultContainer);
         }
@@ -139,12 +139,12 @@ $(window).on("load", function() {
             setSearchUrl();
             resultContainer.find("div.result-table").remove();
             renderTable(activeTab, r[activeTab]).appendTo(resultContainer);
-            button.siblings().removeClass("active-table-tab");
-            button.addClass("active-table-tab");
+            button.siblings().removeClass("active-table-tab").attr("tabIndex", "-1");
+            button.addClass("active-table-tab").attr("tabIndex", "0");
         }
     }
     function selectTab(category) {
-        $("button#result-tab-" + category).click();
+        $("button#result-tab-" + category).focus().trigger("click");
     }
     function renderTable(category, items) {
         var table = $("<div class='result-table'>");
@@ -259,17 +259,25 @@ $(window).on("load", function() {
         } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
             let links = Array.from(
                 document.querySelectorAll("div.result-table > a.search-result-link"));
-                // .filter(link => link.offsetParent);
             let current = links.indexOf(selectedLink);
+            let activeButton = document.querySelector("button.active-table-tab");
             if (e.key === "ArrowUp" || (e.key === "Tab" && e.shiftKey)) {
                 if (current > 0) {
                     setSelected(links[current - 1]);
                 } else {
                     setSelected(null);
-                    input.focus();
+                    if (activeButton && current === 0) {
+                        activeButton.focus();
+                    } else {
+                        input.focus();
+                    }
                 }
-            } else if (e.key === "ArrowDown" && current < links.length - 1) {
-                setSelected(links[current + 1]);
+            } else if (e.key === "ArrowDown") {
+                if (document.activeElement === input[0] && activeButton) {
+                    activeButton.focus();
+                } else if (current < links.length - 1) {
+                    setSelected(links[current + 1]);
+                }
             }
             e.preventDefault();
         } else if (e.key.length === 1 || e.key === "Backspace") {
@@ -278,9 +286,11 @@ $(window).on("load", function() {
         } else if (e.key === "Escape" && input.val()) {
             input.val("").focus();
             input[0].dispatchEvent(new InputEvent("input"));
+        } else if (e.key === "Enter" && selectedLink && document.activeElement !== selectedLink) {
+            window.location = selectedLink.getAttribute("href");
         }
     });
-    reset.click(function() {
+    reset.on("click", function() {
         notify.html(messages.enterTerm);
         resultSection.hide();
         activeTab = "";

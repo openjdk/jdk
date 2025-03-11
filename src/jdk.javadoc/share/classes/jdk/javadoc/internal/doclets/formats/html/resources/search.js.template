@@ -513,8 +513,6 @@ $(function() {
         response: function(event, ui) {
             if (!ui.content.length) {
                 ui.content.push({ l: messages.noResult });
-            } else {
-                $("#search-input").empty();
             }
         },
         autoFocus: true,
@@ -528,6 +526,7 @@ $(function() {
             if (ui.item.indexItem) {
                 var url = getURL(ui.item.indexItem, ui.item.category);
                 window.location.href = pathtoroot + url;
+                search.blur();
             }
         }
     });
