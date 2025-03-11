@@ -918,7 +918,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                 String baseName = fileName.basename();
                 // Use the sibling to determine the output location where possible, unless
                 // it is in a JAR/ZIP file (we don't attempt to write class files back into
-                // archives). See JDK-8338675.
+                // archives).
                 if (sibling instanceof PathFileObject pathFileObject && !pathFileObject.isJarFile()) {
                     return pathFileObject.getSibling(baseName);
                 } else {

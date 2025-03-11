@@ -25,7 +25,7 @@
  * @test
  * @bug 8338675
  * @summary javac shouldn't silently change .jar files on the classpath
- * @library /tools/lib
+ * @library /tools/lib /tools/javac/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
@@ -37,11 +37,7 @@ import toolbox.JarTask;
 import toolbox.JavacTask;
 import toolbox.ToolBox;
 
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.Filer;
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
@@ -118,15 +114,7 @@ public class AnnotationFilerTest {
                 .writeAll();
     }
 
-    @SupportedAnnotationTypes("*")
-    static class TestAnnotationProcessor extends AbstractProcessor {
-        private ProcessingEnvironment processingEnv = null;
-
-        @Override
-        public void init(ProcessingEnvironment processingEnv) {
-            this.processingEnv = processingEnv;
-        }
-
+    static class TestAnnotationProcessor extends JavacTestingAbstractProcessor {
         @Override
         public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment env) {
             // Only run this once (during the final pass), or else we get a spurious failure
@@ -136,12 +124,11 @@ public class AnnotationFilerTest {
                 return false;
             }
 
-            TypeElement libType = processingEnv.getElementUtils().getTypeElement(LIB_CLASS_TYPE_NAME);
+            TypeElement libType = elements.getTypeElement(LIB_CLASS_TYPE_NAME);
             JavaFileObject libClass;
             // This is the primary code-under-test. The Filer must not return a file object
             // that's a sibling to the source file of the given type (that's in the JAR,
             // which MUST NOT be modified). Before bug 8338675 was fixed, this would fail.
-            Filer filer = processingEnv.getFiler();
             try {
                 libClass = filer.createClassFile("LibClass", libType);
             } catch (IOException e) {
