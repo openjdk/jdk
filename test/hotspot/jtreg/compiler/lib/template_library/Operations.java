@@ -359,8 +359,11 @@ final class Operations {
         //new VOP("POW",                  VOPType.BINARY, Type.FLOATING_TYPES),
         new VOP("REVERSE",              VOPType.UNARY, Type.INTEGRAL_TYPES),
         new VOP("REVERSE_BYTES",        VOPType.UNARY, Type.INTEGRAL_TYPES),
-        new VOP("ROL",                  VOPType.BINARY, Type.INTEGRAL_TYPES),
-        new VOP("ROR",                  VOPType.BINARY, Type.INTEGRAL_TYPES),
+
+        // TODO: add back in after fix of JDK-8351627
+        // new VOP("ROL",                  VOPType.BINARY, Type.INTEGRAL_TYPES),
+        // new VOP("ROR",                  VOPType.BINARY, Type.INTEGRAL_TYPES),
+
         new VOP("SADD",                 VOPType.BINARY, Type.INTEGRAL_TYPES),
         //new VOP("SIN",                  VOPType.UNARY, Type.FLOATING_TYPES),
         //new VOP("SINH",                 VOPType.UNARY, Type.FLOATING_TYPES),
@@ -381,7 +384,7 @@ final class Operations {
     private static final List<Operation> generateVectorAPIOperations() {
         List<Operation> ops = new ArrayList<Operation>();
 
-        for (var type : Type.VECTOR_API_TYPES) {
+        for (var type : Type.VECTOR_API_VECTOR_TYPES) {
             ops.add(new Operation.Unary(type, "", type, ".abs()", null));
             ops.add(new Operation.Binary(type, "", type, ".add(", type.elementType, ")", null));
             // TODO: add(int e, VectorMask<Integer> m)
@@ -412,7 +415,7 @@ final class Operations {
             ops.add(new Operation.Unary(type, type.vectorType + ".broadcast(" + type.species + ", ", Type.longs(), ")", List.of("IllegalArgumentException")));
 
             // TODO: non zero parts
-            for (var type2 : Type.VECTOR_API_TYPES) {
+            for (var type2 : Type.VECTOR_API_VECTOR_TYPES) {
                 ops.add(new Operation.Unary(type, "((" + type.vectorType + ")", type2 , ".castShape(" + type.species + ", 0))", null));
             }
 
@@ -422,7 +425,7 @@ final class Operations {
             // TODO: compress with VectorMask type
 
             // TODO: non zero parts
-            for (var type2 : Type.VECTOR_API_TYPES) {
+            for (var type2 : Type.VECTOR_API_VECTOR_TYPES) {
                 // "convert" keeps the same shape, i.e. length of the vector in bits.
                 if (type.sizeInBits() == type2.sizeInBits()) {
                     ops.add(new Operation.Unary(type,

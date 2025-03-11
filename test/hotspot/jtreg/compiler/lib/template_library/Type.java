@@ -79,60 +79,68 @@ public abstract class Type implements Name.Type {
         doubles()
     );
 
-    public static final List<VectorAPIType> VECTOR_API_BYTE_TYPES = List.of(
+    public static final List<VectorAPIType> VECTOR_API_BYTE_VECTOR_TYPES = List.of(
         VectorAPIType.BYTE_64,
         VectorAPIType.BYTE_128,
         VectorAPIType.BYTE_256,
         VectorAPIType.BYTE_512
     );
 
-    public static final List<VectorAPIType> VECTOR_API_SHORT_TYPES = List.of(
+    public static final List<VectorAPIType> VECTOR_API_SHORT_VECTOR_TYPES = List.of(
         VectorAPIType.SHORT_64,
         VectorAPIType.SHORT_128,
         VectorAPIType.SHORT_256,
         VectorAPIType.SHORT_512
     );
 
-    public static final List<VectorAPIType> VECTOR_API_INT_TYPES = List.of(
+    public static final List<VectorAPIType> VECTOR_API_INT_VECTOR_TYPES = List.of(
         VectorAPIType.INT_64,
         VectorAPIType.INT_128,
         VectorAPIType.INT_256,
         VectorAPIType.INT_512
     );
 
-    public static final List<VectorAPIType> VECTOR_API_LONG_TYPES = List.of(
+    public static final List<VectorAPIType> VECTOR_API_LONG_VECTOR_TYPES = List.of(
         VectorAPIType.LONG_64,
         VectorAPIType.LONG_128,
         VectorAPIType.LONG_256,
         VectorAPIType.LONG_512
     );
 
-    public static final List<VectorAPIType> VECTOR_API_FLOAT_TYPES = List.of(
+    public static final List<VectorAPIType> VECTOR_API_FLOAT_VECTOR_TYPES = List.of(
         VectorAPIType.FLOAT_64,
         VectorAPIType.FLOAT_128,
         VectorAPIType.FLOAT_256,
         VectorAPIType.FLOAT_512
     );
 
-    public static final List<VectorAPIType> VECTOR_API_DOUBLE_TYPES = List.of(
+    public static final List<VectorAPIType> VECTOR_API_DOUBLE_VECTOR_TYPES = List.of(
         VectorAPIType.DOUBLE_64,
         VectorAPIType.DOUBLE_128,
         VectorAPIType.DOUBLE_256,
         VectorAPIType.DOUBLE_512
     );
 
-    public static final List<VectorAPIType> VECTOR_API_TYPES = Stream.of(
-        VECTOR_API_BYTE_TYPES,
-        VECTOR_API_SHORT_TYPES,
-        VECTOR_API_INT_TYPES,
-        VECTOR_API_LONG_TYPES,
-        VECTOR_API_FLOAT_TYPES,
-        VECTOR_API_DOUBLE_TYPES
+    public static final List<VectorAPIType> VECTOR_API_VECTOR_TYPES = Stream.of(
+        VECTOR_API_BYTE_VECTOR_TYPES,
+        VECTOR_API_SHORT_VECTOR_TYPES,
+        VECTOR_API_INT_VECTOR_TYPES,
+        VECTOR_API_LONG_VECTOR_TYPES,
+        VECTOR_API_FLOAT_VECTOR_TYPES,
+        VECTOR_API_DOUBLE_VECTOR_TYPES
     ).flatMap((List<VectorAPIType> l) -> l.stream()).toList();
+
+    public static final List<VectorAPIType.MaskType> VECTOR_API_MASK_TYPES =
+        VECTOR_API_VECTOR_TYPES.stream().map(t -> t.maskType).toList();
+
+    public static final List<Type> ALL_VECTOR_API_TYPES = Library.concat(
+        VECTOR_API_VECTOR_TYPES,
+        VECTOR_API_MASK_TYPES
+    );
 
     public static final List<Type> ALL_BUILTIN_TYPES = Library.concat(
         PRIMITIVE_TYPES,
-        VECTOR_API_TYPES
+        ALL_VECTOR_API_TYPES
     );
 
     /**

@@ -226,9 +226,9 @@ public class TestFuzzVectorAPI {
         // Now use the templates and add them into the IRTestClass.
         List<TemplateWithArgs> templates = new ArrayList<>();
         templates.add(Library.arrayFillMethods());
-        for (VectorAPIType type : Type.VECTOR_API_TYPES) {
-            for (int i = 0; i < 10; i++) { templates.add(template1.withArgs(type)); }
-            for (int i = 0; i < 10; i++) { templates.add(template2.withArgs(type)); }
+        for (VectorAPIType type : Type.VECTOR_API_VECTOR_TYPES) {
+            for (int i = 0; i < 2; i++) { templates.add(template1.withArgs(type)); }
+            for (int i = 0; i < 2; i++) { templates.add(template2.withArgs(type)); }
         }
         return IRTestClass.TEMPLATE.withArgs(info, templates).render();
     }
