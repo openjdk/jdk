@@ -167,6 +167,9 @@ public class TestFuzzVectorAPI {
                 } else if (argType instanceof VectorAPIType vt) {
                     elementType = vt.elementType;
                     args.add(vt.vectorType + ".fromArray(" + vt.species + ", " + name + ", 0)");
+                } else if (argType instanceof VectorAPIType.MaskType mt) {
+                    elementType = Type.booleans();
+                    args.add("VectorMask.fromArray(" + mt.vectorType.species + ", " + name + ", 0)");
                 } else {
                     throw new RuntimeException("Not handled: " + argType);
                 }

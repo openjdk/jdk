@@ -116,7 +116,7 @@ public final class VectorAPIType extends Type {
         @Override
         public final Object con() {
             // TODO:
-            return vectorMaskTypeName + ".allTrue()";
+            return List.of("VectorMask.fromLong(", vectorType.species, ", ", longs().con(), ")");
         }
 
         public final int sizeInBits() { return vectorType.sizeInBits(); }

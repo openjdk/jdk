@@ -131,7 +131,9 @@ final class Operations {
         new Operation.Binary(Type.ints(), "Short.compareUnsigned(", Type.shorts(), ", ", Type.shorts(), ")", null),
         new Operation.Unary(Type.ints(), "Short.toUnsignedInt(", Type.shorts(), ")", null),
 
-        new Operation.Unary(Type.ints(), "Integer.bitCount(", Type.ints(), ")", null),
+        // TODO: enable after JDK-8350177
+        // new Operation.Unary(Type.ints(), "Integer.bitCount(", Type.ints(), ")", null),
+
         new Operation.Binary(Type.ints(), "Integer.compare(", Type.ints(), ", ", Type.ints(), ")", null),
         new Operation.Binary(Type.ints(), "Integer.compareUnsigned(", Type.ints(), ", ", Type.ints(), ")", null),
         //new Operation.Binary(Type.ints(), "Integer.compress(", Type.ints(), ", ", Type.ints(), ")", null),
@@ -142,10 +144,16 @@ final class Operations {
         new Operation.Unary(Type.ints(), "Integer.lowestOneBit(", Type.ints(), ")", null),
         new Operation.Binary(Type.ints(), "Integer.min(", Type.ints(), ", ", Type.ints(), ")", null),
         new Operation.Binary(Type.ints(), "Integer.max(", Type.ints(), ", ", Type.ints(), ")", null),
-        new Operation.Unary(Type.ints(), "Integer.numberOfLeadingZeros(", Type.ints(), ")", null),
-        new Operation.Unary(Type.ints(), "Integer.numberOfTrailingZeros(", Type.ints(), ")", null),
+
+        // TODO: enable after JDK-8350177
+        // new Operation.Unary(Type.ints(), "Integer.numberOfLeadingZeros(", Type.ints(), ")", null),
+        // new Operation.Unary(Type.ints(), "Integer.numberOfTrailingZeros(", Type.ints(), ")", null),
+
         new Operation.Binary(Type.ints(), "Integer.remainderUnsigned(", Type.ints(), ", ", Type.ints(), ")", List.of("ArithmeticException")),
-        new Operation.Unary(Type.ints(), "Integer.reverse(", Type.ints(), ")", null),
+
+        // TODO: enable after JDK-8350177
+        // new Operation.Unary(Type.ints(), "Integer.reverse(", Type.ints(), ")", null),
+
         new Operation.Unary(Type.ints(), "Integer.reverseBytes(", Type.ints(), ")", null),
         new Operation.Binary(Type.ints(), "Integer.rotateLeft(", Type.ints(), ", ", Type.ints(), ")", null),
         new Operation.Binary(Type.ints(), "Integer.rotateRight(", Type.ints(), ", ", Type.ints(), ")", null),
@@ -387,9 +395,9 @@ final class Operations {
         for (var type : Type.VECTOR_API_VECTOR_TYPES) {
             ops.add(new Operation.Unary(type, "", type, ".abs()", null));
             ops.add(new Operation.Binary(type, "", type, ".add(", type.elementType, ")", null));
-            // TODO: add(int e, VectorMask<Integer> m)
+            ops.add(new Operation.Ternary(type, "", type, ".add(", type.elementType, ", ", type.maskType, ")", null));
             ops.add(new Operation.Binary(type, "", type, ".add(", type, ")", null));
-            // TODO: add(Vector<Integer> v, VectorMask<Integer> m)
+            ops.add(new Operation.Ternary(type, "", type, ".add(", type, ", ", type.maskType, ")", null));
 
             // If VLENGTH*scale overflows, then a IllegalArgumentException is thrown.
             ops.add(new Operation.Unary(type, "", type, ".addIndex(1)", null));
