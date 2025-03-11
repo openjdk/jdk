@@ -799,8 +799,7 @@ private:
   }
 
   void maybe_string_dedup(zaddress to_addr) {
-    const bool is_promotion = _forwarding->to_age() == ZPageAge::old && _forwarding->from_age() != ZPageAge::old;
-    if (is_promotion) {
+    if (_forwarding->is_promotion()) {
       // Only deduplicate promoted objects, and let short-lived strings simply die instead.
       _string_dedup_context.request(to_oop(to_addr));
     }
