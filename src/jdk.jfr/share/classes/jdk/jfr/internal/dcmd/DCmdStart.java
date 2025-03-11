@@ -242,7 +242,7 @@ final class DCmdStart extends AbstractDCmd {
             println();
         }
     }
-    
+
     // Add report-on-exit for -XX:StartFlightRecording
     @Override
     protected Argument[] getParseArguments(String source) {
