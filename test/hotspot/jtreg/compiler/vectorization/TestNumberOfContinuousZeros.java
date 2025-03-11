@@ -30,7 +30,8 @@
 * @requires vm.compiler2.enabled
 * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") |
 *           (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*sve.*") |
-*           (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*zvbb.*")
+*           (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*zvbb.*") |
+*           os.arch == "ppc64" | os.arch == "ppc64le"
 * @library /test/lib /
 * @modules jdk.incubator.vector
 * @run driver compiler.vectorization.TestNumberOfContinuousZeros

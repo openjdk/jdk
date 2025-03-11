@@ -2108,7 +2108,11 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_RoundDoubleModeV:
       return SuperwordUseVSX;
     case Op_PopCountVI:
+    case Op_PopCountVL:
       return (SuperwordUseVSX && UsePopCountInstruction);
+    case Op_CountLeadingZerosV:
+    case Op_CountTrailingZerosV:
+      return (SuperwordUseVSX && UseCountLeadingZerosInstructionsPPC64);
     case Op_FmaF:
     case Op_FmaD:
       return UseFMA;
@@ -2139,6 +2143,10 @@ bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, Basi
 }
 
 bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
+  if (SuperwordUseVSX && type2aelembytes(bt) * vlen < 16) {
+    // Only allow L2I conversion.
+    return (opcode == Op_VectorCastL2X && bt == T_INT);
+  }
   if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
     return false;
   }
@@ -2184,11 +2192,11 @@ int Matcher::vector_width_in_bytes(BasicType bt) {
 
 // Vector ideal reg.
 uint Matcher::vector_ideal_reg(int size) {
-  if (SuperwordUseVSX) {
-    assert(MaxVectorSize == 16 && size == 16, "");
+  if (SuperwordUseVSX && size == 16) {
+    assert(MaxVectorSize == 16, "");
     return Op_VecX;
   } else {
-    assert(MaxVectorSize == 8 && size == 8, "");
+    assert(size == 8, "");
     return Op_RegL;
   }
 }
@@ -2200,7 +2208,7 @@ int Matcher::max_vector_size(const BasicType bt) {
 }
 
 int Matcher::min_vector_size(const BasicType bt) {
-  return max_vector_size(bt); // Same as max.
+  return 8/type2aelembytes(bt);
 }
 
 int Matcher::max_vector_size_auto_vectorization(const BasicType bt) {
@@ -14077,10 +14085,29 @@ instruct vsqrt2D_reg(vecX dst, vecX src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Vector Population Count Instructions
+// Vector Population Count Instructions & Friends
+
+// Casting long to int vectors is needed because the bitcount vector instructions
+// for long produce long results but ints are needed.
+instruct vcast_l2x(iRegLdst dst, vecX src) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_INT);
+  match(Set dst (VectorCastL2X src));
+  ins_cost(3 * DEFAULT_COST);
+  format %{ "MFVSRLD    $dst, $src\t// move lower word into dst register\n\t"
+            "MFVSRD     R0, $src\t// move higher word into scratch register\n\t"
+            "RLDIMI     dst, R0, 32, 0\t// rotate R0 left by 32 bits and then insert into dst register" %}
+  size(12);
+  ins_encode %{
+    __ mfvsrld($dst$$Register, $src$$VectorSRegister);
+    __ mfvsrd(R0, $src$$VectorSRegister);
+    __ rldimi($dst$$Register, R0, 32, 0);
+  %}
+  ins_pipe(pipe_class_default);
+%}
 
 instruct vpopcnt_reg(vecX dst, vecX src) %{
   match(Set dst (PopCountVI src));
+  match(Set dst (PopCountVL src));
   format %{ "VPOPCNT $dst,$src\t// pop count packed" %}
   size(4);
   ins_encode %{
@@ -14097,6 +14124,58 @@ instruct vpopcnt_reg(vecX dst, vecX src) %{
         break;
       case T_LONG:
         __ vpopcntd($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vcount_leading_zeros_reg(vecX dst, vecX src) %{
+  match(Set dst (CountLeadingZerosV src));
+  format %{ "VCLZ $dst,$src\t// leading zeros count packed" %}
+  size(4);
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_BYTE:
+        __ vclzb($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_SHORT:
+        __ vclzh($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_INT:
+        __ vclzw($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_LONG:
+        __ vclzd($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vcount_trailing_zeros_reg(vecX dst, vecX src) %{
+  match(Set dst (CountTrailingZerosV src));
+  format %{ "VCTZ $dst,$src\t// trailing zeros count packed" %}
+  size(4);
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_BYTE:
+        __ vctzb($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_SHORT:
+        __ vctzh($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_INT:
+        __ vctzw($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_LONG:
+        __ vctzd($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
         break;
       default:
         ShouldNotReachHere();
