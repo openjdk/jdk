@@ -3582,7 +3582,7 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // |     sign bit     | v[0..5] |  0  |
 // +------------------+---------+-----+
 //  31               8 7       2 1   0
-// The non-rejected bits are the 8 lower one of (v << conIL - conIR).
+// The non-rejected bits are the 8 lower ones of (v << conIL - conIR).
 // The bits 6 and 7 of v have been thrown away after the shift left.
 // The simplification is still fine.
 //
@@ -3598,7 +3598,7 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // |     sign bit     | v[0..5] |  0  |
 // +------------------+---------+-----+
 //  31              10 9       4 3   0
-// The non-rejected bits are the 8 lower one of (v << conIL - conIR).
+// The non-rejected bits are the 8 lower ones of (v << conIL - conIR).
 // The bits 6 and 7 of v have been thrown away after the shift left.
 // The bits 4 and 5 of v are still present, but outside the kept bits (the 8 lower ones).
 // The simplification is still fine.
