@@ -47,6 +47,27 @@ public class TestMemoryWithSubgroups {
 
     private static final String imageName = Common.imageName("subgroup");
 
+    static String getEngineInfo(String format) throws Exception {
+        return DockerTestUtils.execute(Container.ENGINE_COMMAND, "info", "-f", format)
+            .shouldHaveExitValue(0)
+            .getStdout();
+    }
+
+    static boolean isPodman() {
+        return Container.ENGINE_COMMAND.endsWith("podman");
+    }
+
+    static boolean isDocker() {
+        return Container.ENGINE_COMMAND.endsWith("docker");
+    }
+
+    static boolean isRootless() throws Exception {
+        return (isDocker() &&
+                getEngineInfo("{{.SecurityOptions}}").contains("name=rootless")) || (
+                isPodman() &&
+                getEngineInfo("{{.Host.Security.Rootless}}").contains("true"));
+    }
+
     public static void main(String[] args) throws Exception {
         Metrics metrics = Metrics.systemMetrics();
         if (metrics == null) {
@@ -57,12 +78,7 @@ public class TestMemoryWithSubgroups {
             System.out.println("Unable to run docker tests.");
             return;
         }
-        if (DockerTestUtils.execute(Container.ENGINE_COMMAND,
-                                    "info",
-                                    "-f", "{{println .SecurityOptions}}")
-                .shouldHaveExitValue(0)
-                .getStdout()
-                .contains("name=rootless")) {
+        if (isRootless()) {
             throw new SkippedException("Test skipped in rootless mode");
         }
         Common.prepareWhiteBox();
