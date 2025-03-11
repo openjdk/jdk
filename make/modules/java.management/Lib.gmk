@@ -27,6 +27,10 @@
 
 include LibCommon.gmk
 
+################################################################################
+## Build libmanagement
+################################################################################
+
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT, \
     NAME := management, \
     OPTIMIZATION := HIGH, \
