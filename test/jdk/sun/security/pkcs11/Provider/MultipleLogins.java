@@ -41,67 +41,38 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
-import jdk.test.lib.Utils;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.security.*;
-import java.util.List;
 
 import jdk.test.lib.util.ForceGC;
 import jtreg.SkippedException;
 
-public class MultipleLogins {
-    private static final String KS_TYPE = "PKCS11";
+public class MultipleLogins extends PKCS11Test {
     private static final int NUM_PROVIDERS = 20;
     private static final SunPKCS11[] providers = new SunPKCS11[NUM_PROVIDERS];
 
-    private static void copyDbFiles() throws IOException {
-        final var testFolder = System.getProperty("test.src", ".");
-        final var srcDbFolder = Paths.get(testFolder).getParent().resolve("nss", "db");
-
-        // Getting path & creating the temporary scratch directory ./nss/db
-        final var nssFolder = Path.of(".").resolve("nss");
-        Files.createDirectory(nssFolder);
-        final var destination = nssFolder.resolve("db");
-
-        final var sourceFiles = List.of(
-                srcDbFolder.resolve("cert9.db"),
-                srcDbFolder.resolve("key4.db"),
-                srcDbFolder.resolve("cert8.db"),
-                srcDbFolder.resolve("key3.db")
-        );
-
-        final var copiedFiles = Utils.copyFiles(sourceFiles, destination, StandardCopyOption.REPLACE_EXISTING);
-        copiedFiles.forEach(path -> path.toFile().setWritable(true));
-
-        System.out.println("NSS db files copied to: ");
-        copiedFiles.forEach(System.out::println);
+    public static void main(String[] args) throws Exception {
+        // This bypasses the PKCS11Test settings and run the mandatory
+        // main method directly. This is needed to keep the custom logic of the test
+        new MultipleLogins().main((Provider)null);
     }
 
-    public static void main(String[] args) throws Exception {
-        copyDbFiles();
+    @Override
+    public void main(Provider p) throws Exception {
+        copyNssCertKeyToClassesDir();
 
-        String nssConfig = null;
-        try {
-            nssConfig = PKCS11Test.getNssConfig();
-        } catch (SkippedException exc) {
-            System.out.println("Skipping test: " + exc.getMessage());
-        }
+        String nssConfig = getNssConfig();
 
         if (nssConfig == null) {
             // No test framework support yet. Ignore
-            System.out.println("No NSS config found. Skipping.");
-            return;
+            throw new SkippedException("No NSS config found. Skipping.");
         }
 
-        for (int i =0; i < NUM_PROVIDERS; i++) {
+        for (int i = 0; i < NUM_PROVIDERS; i++) {
             // loop to set up test without security manger
-            providers[i] = (SunPKCS11)PKCS11Test.newPKCS11Provider();
+            providers[i] = (SunPKCS11)newPKCS11Provider();
         }
 
         for (int i =0; i < NUM_PROVIDERS; i++) {
@@ -111,7 +82,7 @@ public class MultipleLogins {
         }
 
         WeakReference<SunPKCS11>[] weakRef = new WeakReference[NUM_PROVIDERS];
-        for (int i =0; i < NUM_PROVIDERS; i++) {
+        for (int i = 0; i < NUM_PROVIDERS; i++) {
             weakRef[i] = new WeakReference<>(providers[i]);
             providers[i].logout();
 
@@ -138,7 +109,7 @@ public class MultipleLogins {
     }
 
     private static void test(SunPKCS11 p) throws Exception {
-        KeyStore ks = KeyStore.getInstance(KS_TYPE, p);
+        KeyStore ks = KeyStore.getInstance(PKCS11, p);
         p.setCallbackHandler(new PasswordCallbackHandler());
         try {
             ks.load(null, (char[]) null);
@@ -154,23 +125,23 @@ public class MultipleLogins {
         try {
             ks.load(null, (char[]) null);
         } catch (IOException e) {
-            if (e.getCause() instanceof LoginException &&
-                    e.getCause().getMessage().contains("No token present")) {
-                // expected
-            } else {
+            if (!(e.getCause() instanceof LoginException) ||
+                !(e.getCause().getMessage().contains("No token present"))) {
+
                 throw new RuntimeException("Token was present", e);
-            }
+            } // else expected
         }
     }
 
     public static class PasswordCallbackHandler implements CallbackHandler {
         public void handle(Callback[] callbacks)
                 throws IOException, UnsupportedCallbackException {
-            if (!(callbacks[0] instanceof PasswordCallback)) {
+            if (callbacks[0] instanceof PasswordCallback pc) {
+                pc.setPassword(null);
+            } else {
                 throw new UnsupportedCallbackException(callbacks[0]);
             }
-            PasswordCallback pc = (PasswordCallback)callbacks[0];
-            pc.setPassword(null);
+
         }
     }
 }
