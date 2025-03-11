@@ -983,7 +983,7 @@ static int maskShiftAmount(PhaseGVN* phase, Node* shiftNode, int nBits) {
 // if con0 + con1 < nbits => X << (con1 + con0)
 static Node* collapse_nested_shift_left(PhaseGVN* phase, Node* outer_shift, int con0, BasicType bt) {
   assert(bt == T_LONG || bt == T_INT, "Unexpected type");
-  int nbits = bt == T_LONG ? BitsPerJavaLong : BitsPerJavaInteger;
+  int nbits = static_cast<int>(bits_per_java_integer(bt));
   Node* inner_shift = outer_shift->in(1);
   if (inner_shift->Opcode() != Op_LShift(bt)) {
     return nullptr;
