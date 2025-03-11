@@ -477,7 +477,7 @@ public class Net {
     static FileDescriptor socket(ProtocolFamily family, boolean stream) throws IOException {
         boolean preferIPv6 = isIPv6Available() &&
             (family != StandardProtocolFamily.INET);
-        return IOUtil.newFD(socket0(preferIPv6, stream, false, FAST_LOOPBACK));
+        return NIOUtil.newFD(socket0(preferIPv6, stream, false, FAST_LOOPBACK));
     }
 
     static FileDescriptor serverSocket(boolean stream) {
@@ -487,7 +487,7 @@ public class Net {
     static FileDescriptor serverSocket(ProtocolFamily family, boolean stream) {
         boolean preferIPv6 = isIPv6Available() &&
             (family != StandardProtocolFamily.INET);
-        return IOUtil.newFD(socket0(preferIPv6, stream, true, FAST_LOOPBACK));
+        return NIOUtil.newFD(socket0(preferIPv6, stream, true, FAST_LOOPBACK));
     }
 
     // Due to oddities SO_REUSEADDR on Windows reuse is ignored
@@ -759,7 +759,7 @@ public class Net {
     static native short pollconnValue();
 
     static {
-        IOUtil.load();
+        NIOUtil.load();
         initIDs();
 
         POLLIN     = pollinValue();

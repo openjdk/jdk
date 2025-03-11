@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,11 @@
 #include "nio_util.h"
 
 #include "sun_nio_ch_InheritedChannel.h"
+
+/* Defined in UnixDomainSockets.c */
+extern jbyteArray sockaddrToUnixAddressBytes(JNIEnv *env,
+                                             struct sockaddr_un *sa,
+                                             socklen_t len);
 
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_InheritedChannel_initIDs(JNIEnv *env, jclass cla)
