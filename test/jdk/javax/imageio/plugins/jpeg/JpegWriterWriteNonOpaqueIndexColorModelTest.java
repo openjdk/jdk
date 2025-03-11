@@ -34,7 +34,6 @@ import java.awt.Transparency;
 import java.awt.image.BufferedImage;
 import java.awt.image.IndexColorModel;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 public class JpegWriterWriteNonOpaqueIndexColorModelTest {
     public static void main(String[] args) {
