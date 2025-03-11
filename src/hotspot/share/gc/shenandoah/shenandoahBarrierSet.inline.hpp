@@ -153,19 +153,13 @@ inline void ShenandoahBarrierSet::enqueue(oop obj) {
 
 template <DecoratorSet decorators, typename T>
 inline void ShenandoahBarrierSet::satb_barrier(T *field) {
-  assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Reference strength must be known");
-
   if (HasDecorator<decorators, IS_DEST_UNINITIALIZED>::value ||
-      HasDecorator<decorators, AS_NO_KEEPALIVE>::value) {
-    return;
-  }
-
-  if (HasDecorator<decorators, ON_WEAK_OOP_REF>::value ||
+      HasDecorator<decorators, AS_NO_KEEPALIVE>::value ||
+      HasDecorator<decorators, ON_WEAK_OOP_REF>::value ||
       HasDecorator<decorators, ON_PHANTOM_OOP_REF>::value) {
     return;
   }
 
-  assert((decorators & ON_STRONG_OOP_REF) != 0, "Expected strong reference");
   if (ShenandoahSATBBarrier && _heap->is_concurrent_mark_in_progress()) {
     T heap_oop = RawAccess<>::oop_load(field);
     if (!CompressedOops::is_null(heap_oop)) {
@@ -270,6 +264,7 @@ inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_st
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_not_in_heap(T* addr, oop value) {
+  assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Reference strength must be known");
   oop_store_common(addr, value);
 }
 
@@ -281,8 +276,7 @@ inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_st
 
   oop_store_common(addr, value);
   if (ShenandoahCardBarrier) {
-    ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
-    bs->write_ref_field_post<decorators>(addr);
+    barrier_set()->write_ref_field_post<decorators>(addr);
   }
 }
 
