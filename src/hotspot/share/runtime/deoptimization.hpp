@@ -111,15 +111,15 @@ class Deoptimization : AllStatic {
     Reason_age,                   // nmethod too old; tier threshold reached
     Reason_predicate,             // compiler generated predicate failed
     Reason_loop_limit_check,      // compiler generated loop limits check failed
-    Reason_short_running_loop,    // profile reports loop runs for small number of iterations
     Reason_speculate_class_check, // saw unexpected object class from type speculation
     Reason_speculate_null_check,  // saw unexpected null from type speculation
     Reason_speculate_null_assert, // saw unexpected null from type speculation
     Reason_unstable_if,           // a branch predicted always false was taken
     Reason_unstable_fused_if,     // fused two ifs that had each one untaken branch. One is now taken.
     Reason_receiver_constraint,   // receiver subtype check failed
+    Reason_short_running_loop,    // profile reports loop runs for small number of iterations
 #if INCLUDE_JVMCI
-    Reason_aliasing,              // optimistic assumption about aliasing failed
+    Reason_aliasing = Reason_short_running_loop, // optimistic assumption about aliasing failed
     Reason_transfer_to_interpreter, // explicit transferToInterpreter()
     Reason_not_compiled_exception_handler,
     Reason_unresolved,
