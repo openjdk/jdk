@@ -413,7 +413,7 @@ $.widget("custom.catcomplete", $.ui.autocomplete, {
     },
     _renderItem: function(ul, item) {
         var label = getResultLabel(item);
-        var resultDesc = getResultDescription(item, false);
+        var resultDesc = getResultDescription(item);
         return $("<li/>")
             .append($("<div/>")
                 .append($("<span/>").addClass("search-result-label").html(label))
@@ -441,7 +441,7 @@ function getResultLabel(item) {
     }
     return getHighlightedText(item.name, item.boundaries, 0, item.name.length);
 }
-function getResultDescription(item, link) {
+function getResultDescription(item) {
     if (!item.indexItem) {
         return "";
     }
@@ -451,7 +451,7 @@ function getResultDescription(item, link) {
             var typeName = checkUnnamed(item.indexItem.p, ".") + item.indexItem.c;
             var typeDesc = getEnclosingTypeDesc(item.indexItem);
             kind = itemDesc[item.indexItem.k || 5][0];
-            return kind.replace("{0}", typeDesc + " " + getEnclosingLabel(typeName, item, link));
+            return kind.replace("{0}", typeDesc + " " + typeName);
         case "types":
             var pkgName = checkUnnamed(item.indexItem.p, "");
             if (!pkgName) {
@@ -459,7 +459,7 @@ function getResultDescription(item, link) {
                 return item.indexItem.k === "18" ? kind : kind + " " + item.indexItem.l;
             }
             kind = itemDesc[item.indexItem.k || 12][0];
-            return getEnclosingDescription(kind, pkgDescLower, getEnclosingLabel(pkgName, item, link));
+            return getEnclosingDescription(kind, pkgDescLower, pkgName);
         case "packages":
             if (item.indexItem.k === "18") {
                 return itemDesc[item.indexItem.k][0]; // "All Packages" summary page
@@ -467,7 +467,7 @@ function getResultDescription(item, link) {
                 return pkgDesc + " " + item.indexItem.l;
             }
             var mdlName = item.indexItem.m;
-            return getEnclosingDescription(pkgDesc, mdlDescLower, getEnclosingLabel(mdlName, item, link));
+            return getEnclosingDescription(pkgDesc, mdlDescLower, mdlName);
         case "modules":
             return mdlDesc + " " + item.indexItem.l;
         case "searchTags":
@@ -482,10 +482,6 @@ function getResultDescription(item, link) {
 function getEnclosingDescription(elem, desc, label) {
     return inDesc.replace("{0}", elem).replace("{1}", desc + " " + label);
 }
-function getEnclosingLabel(label, item, link) {
-    var url = link ? getEnclosingURL(item.indexItem, item.category) : "";
-    return url ? "<a href='" + url + "'>" + label + "</a>" : label;
-}
 function getEnclosingTypeDesc(item) {
     if (!item.typeDesc) {
         $.each(typeSearchIndex, function(index, it) {
@@ -496,21 +492,6 @@ function getEnclosingTypeDesc(item) {
         });
     }
     return item.typeDesc || "";
-}
-function getEnclosingURL(item, category) {
-    if (!item) {
-        return "";
-    }
-    switch (category) {
-        case "packages":
-            return item.m ? item.m + "/module-summary.html" : "";
-        case "types":
-        case "members":
-            var url = getURLPrefix(item, category);
-            url += checkUnnamed(item.p, "/").replace(/\./g, '/');
-            return category === "types" ? url + "package-summary.html" : url + item.c + ".html";
-    }
-    return "";
 }
 $(function() {
     var search = $("#search-input");

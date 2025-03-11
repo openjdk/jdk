@@ -33,9 +33,9 @@ $(function() {
     expand.click(function (e) {
         var searchInfo = $("div.page-search-info");
         if(this.parentElement.hasAttribute("open")) {
-            searchInfo.attr("style", "border-width: 0;");
+            searchInfo.attr("style", " display:none;");
         } else {
-            searchInfo.attr("style", "border-width: 1px;").height(searchInfo.prop("scrollHeight"));
+            searchInfo.attr("style", "display:block;");
         }
     });
 });
@@ -45,6 +45,7 @@ $(window).on("load", function() {
     var notify = $("#page-search-notify");
     var resultSection = $("div#result-section");
     var resultContainer = $("div#result-container");
+    var selectedLink;
     var searchTerm = "";
     var activeTab = "";
     var fixedTab = false;
@@ -105,9 +106,16 @@ $(window).on("load", function() {
             if (r[key].length) {
                 var count = r[key].length >= 1000 ? "999+" : r[key].length;
                 if (result.length > 20 && categoryCount > 1) {
-                    var button = $("<button id='result-tab-" + key
-                        + "' class='page-search-header'><span>" + categories[key] + "</span>"
-                        + "<span style='font-weight: normal'> (" + count + ")</span></button>").appendTo(tabContainer);
+                    var button = $("<button/>")
+                        .attr("id", "result-tab-" + key)
+                        .attr("tabIndex", "-1")
+                        .addClass("page-search-header")
+                        .append($("<span/>")
+                            .html(categories[key])
+                            .append($("<span/>")
+                                .attr("style", "font-weight:normal;")
+                                .html(" (" + count + ")")))
+                        .appendTo(tabContainer);
                     button.click(key, function(e) {
                         fixedTab = true;
                         renderResult(e.data, $(this));
@@ -118,7 +126,6 @@ $(window).on("load", function() {
                         + "<span style='font-weight: normal'> (" + count + ")</span></span>").appendTo(tabContainer);
                     renderTable(key, r[key]).appendTo(resultContainer);
                     tabContainer = $("<div class='table-tabs'></div>").appendTo(resultContainer);
-
                 }
             }
         }
@@ -130,7 +137,7 @@ $(window).on("load", function() {
         function renderResult(category, button) {
             activeTab = category;
             setSearchUrl();
-            resultContainer.find("div.summary-table").remove();
+            resultContainer.find("div.result-table").remove();
             renderTable(activeTab, r[activeTab]).appendTo(resultContainer);
             button.siblings().removeClass("active-table-tab");
             button.addClass("active-table-tab");
@@ -140,8 +147,7 @@ $(window).on("load", function() {
         $("button#result-tab-" + category).click();
     }
     function renderTable(category, items) {
-        var table = $("<div class='summary-table'>")
-            .addClass("two-column-search-results");
+        var table = $("<div class='result-table'>");
         var col1, col2;
         if (category === "modules") {
             col1 = mdlDesc;
@@ -155,24 +161,36 @@ $(window).on("load", function() {
             col1 = tagDesc;
         }
         col2 = descDesc;
-        $("<div class='table-header col-first'>" + col1 + "</div>").appendTo(table);
-        $("<div class='table-header col-last'>" + col2 + "</div>").appendTo(table);
+        $("<div class='table-header'/>")
+            .append($("<span class='table-header'/>").html(col1))
+            .append($("<span class='table-header'/>").html(col2))
+            .appendTo(table);
         $.each(items, function(index, item) {
-            var rowColor = index % 2 ? "odd-row-color" : "even-row-color";
-            renderItem(item, table, rowColor);
+            renderItem(item, table);
         });
         return table;
     }
-    function renderItem(item, table, rowColor) {
+    function renderItem(item, table) {
         var label = getResultLabel(item);
+        var desc = getResultDescription(item);
         var link = $("<a/>")
             .attr("href",  getURL(item.indexItem, item.category))
             .attr("tabindex", "0")
             .addClass("search-result-link")
-            .html(label);
-        var desc = getResultDescription(item, true);
-        $("<div/>").html(link).addClass("col-plain").addClass(rowColor).appendTo(table);
-        $("<div/>").html(desc).addClass("col-last").addClass(rowColor).appendTo(table);
+            .on("mousemove", function(e) {
+                if (this !== document.activeElement) {
+                    setSelected(this);
+                }
+            }).on("mouseleave", function(e) {
+                if (this === document.activeElement) {
+                    setSelected(null);
+                }
+            }).on("focus", function(e) {
+                setSelected(this);
+            });
+        link.append($("<span/>").addClass("search-result-label").html(label))
+            .append($("<span/>").addClass("search-result-desc").html(desc))
+            .appendTo(table);
     }
     var timeout;
     function schedulePageSearch() {
@@ -212,14 +230,54 @@ $(window).on("load", function() {
         feelingLucky = false;
         schedulePageSearch();
     });
-    $(document).keydown(function(e) {
-        if ((e.ctrlKey || e.metaKey) && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
-            if (activeTab && visibleTabs.length > 1) {
-                var idx = visibleTabs.indexOf(activeTab);
-                idx += e.key === "ArrowLeft" ? visibleTabs.length - 1 : 1;
-                selectTab(visibleTabs[idx % visibleTabs.length]);
-                return false;
+    function setSelected(link) {
+        if (selectedLink) {
+            selectedLink.classList.remove("selected");
+            selectedLink.blur();
+        }
+        if (link) {
+            link.classList.add("selected");
+            link.focus({focusVisible: true});
+        }
+        selectedLink = link;
+    }
+    document.addEventListener("keydown", e => {
+        if (e.ctrlKey || e.altKey || e.metaKey) {
+            return;
+        }
+        if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+            if (activeTab && visibleTabs.length > 1 && e.target !== input[0]) {
+                var tab = visibleTabs.indexOf(activeTab);
+                var newTab = e.key === "ArrowLeft"
+                    ? Math.max(0, tab - 1)
+                    : Math.min(visibleTabs.length - 1, tab + 1);
+                if (newTab !== tab) {
+                    selectTab(visibleTabs[newTab]);
+                }
+                e.preventDefault();
             }
+        } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+            let links = Array.from(
+                document.querySelectorAll("div.result-table > a.search-result-link"));
+                // .filter(link => link.offsetParent);
+            let current = links.indexOf(selectedLink);
+            if (e.key === "ArrowUp" || (e.key === "Tab" && e.shiftKey)) {
+                if (current > 0) {
+                    setSelected(links[current - 1]);
+                } else {
+                    setSelected(null);
+                    input.focus();
+                }
+            } else if (e.key === "ArrowDown" && current < links.length - 1) {
+                setSelected(links[current + 1]);
+            }
+            e.preventDefault();
+        } else if (e.key.length === 1 || e.key === "Backspace") {
+            setSelected(null);
+            input.focus();
+        } else if (e.key === "Escape" && input.val()) {
+            input.val("").focus();
+            input[0].dispatchEvent(new InputEvent("input"));
         }
     });
     reset.click(function() {
