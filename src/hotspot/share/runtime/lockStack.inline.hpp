@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,17 +53,6 @@ JavaThread* LockStack::get_thread() const {
 
 inline bool LockStack::is_full() const {
   return to_index(_top) == CAPACITY;
-}
-
-inline bool LockStack::is_owning_thread() const {
-  Thread* current = Thread::current();
-  if (current->is_Java_thread()) {
-    JavaThread* thread = JavaThread::cast(current);
-    bool is_owning = &thread->lock_stack() == this;
-    assert(is_owning == (get_thread() == thread), "is_owning sanity");
-    return is_owning;
-  }
-  return false;
 }
 
 inline void LockStack::push(oop o) {

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ class LockStack {
   inline JavaThread* get_thread() const;
 
   // Tests if the calling thread is the thread that owns this lock-stack.
-  bool is_owning_thread() const;
+  bool is_owning_thread(JavaThread* current) const PRODUCT_RETURN;
 
   // Verifies consistency of the lock-stack.
   void verify(const char* msg) const PRODUCT_RETURN;
