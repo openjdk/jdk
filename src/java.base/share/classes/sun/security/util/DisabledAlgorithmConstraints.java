@@ -273,7 +273,13 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 }
                 yield List.of(nc.getNameAndAliases());
             }
-            default -> List.of(key.getAlgorithm(), KeyUtil.getAlgorithm(key));
+            default -> {
+                String n = KeyUtil.getAlgorithm(key);
+                if (n.equalsIgnoreCase(key.getAlgorithm())) {
+                    yield List.of(n);
+                }
+                yield List.of(key.getAlgorithm(), n);
+            }
         };
     }
 
