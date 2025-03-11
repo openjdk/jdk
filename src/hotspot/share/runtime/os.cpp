@@ -626,49 +626,7 @@ void* os::malloc(size_t size, MemTag mem_tag) {
 }
 
 void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
-
-  // Special handling for NMT preinit phase before arguments are parsed
-  void* rc = nullptr;
-  if (NMTPreInit::handle_malloc(&rc, size)) {
-    // No need to fill with 0 because CDS static dumping doesn't use these
-    // early allocations.
-    return rc;
-  }
-
-  DEBUG_ONLY(check_crash_protection());
-
-  // On malloc(0), implementations of malloc(3) have the choice to return either
-  // null or a unique non-null pointer. To unify libc behavior across our platforms
-  // we chose the latter.
-  size = MAX2((size_t)1, size);
-
-  // Observe MallocLimit
-  if (MemTracker::check_exceeds_limit(size, mem_tag)) {
-    return nullptr;
-  }
-
-  const size_t outer_size = size + MemTracker::overhead_per_malloc();
-
-  // Check for overflow.
-  if (outer_size < size) {
-    return nullptr;
-  }
-
-  ALLOW_C_FUNCTION(::malloc, void* const outer_ptr = ::malloc(outer_size);)
-  if (outer_ptr == nullptr) {
-    return nullptr;
-  }
-
-  void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, mem_tag, stack);
-
-  if (CDSConfig::is_dumping_static_archive()) {
-    // Need to deterministically fill all the alignment gaps in C++ structures.
-    ::memset(inner_ptr, 0, size);
-  } else {
-    DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
-  }
-  DEBUG_ONLY(break_if_ptr_caught(inner_ptr);)
-  return inner_ptr;
+  return os::realloc(nullptr, size, mem_tag, stack);
 }
 
 void* os::realloc(void *memblock, size_t size, MemTag mem_tag) {
@@ -683,10 +641,6 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     return rc;
   }
 
-  if (memblock == nullptr) {
-    return os::malloc(size, mem_tag, stack);
-  }
-
   DEBUG_ONLY(check_crash_protection());
 
   // On realloc(p, 0), implementers of realloc(3) have the choice to return either
@@ -694,57 +648,65 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
   // we chose the latter.
   size = MAX2((size_t)1, size);
 
+  const size_t new_outer_size = size + MemTracker::overhead_per_malloc();
+
+  // Handle size overflow.
+  if (new_outer_size < size) {
+    return nullptr;
+  }
+
   if (MemTracker::enabled()) {
-    // NMT realloc handling
+    if (memblock != nullptr) {
+      // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3)
+      // since it may invalidate the old block, including its header.
+      MallocHeader* header = MallocHeader::resolve_checked(memblock);
+      MallocHeader::FreeInfo free_info = header->free_info();
+      size_t old_size = free_info.size;
+      header->mark_block_as_dead();
 
-    const size_t new_outer_size = size + MemTracker::overhead_per_malloc();
+      // Observe MallocLimit
+      if ((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, mem_tag)) {
+        return nullptr;
+      }
 
-    // Handle size overflow.
-    if (new_outer_size < size) {
-      return nullptr;
+      // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3) since it may invalidate the old block, including its header.
+      assert(mem_tag == header->mem_tag(), "weird NMT type mismatch (new:\"%s\" != old:\"%s\")\n",
+             NMTUtil::tag_to_name(mem_tag), NMTUtil::tag_to_name(header->mem_tag()));
+
+      header->mark_block_as_dead();
+
+      // the real realloc
+      ALLOW_C_FUNCTION(::realloc, rc = ::realloc(header, new_outer_size);)
+      if (rc == nullptr) {
+        // realloc(3) failed and the block still exists.
+        // We have however marked it as dead, revert this change.
+        header->revive();
+        return nullptr;
+      }
+
+      // realloc(3) succeeded, variable header now points to invalid memory and we need to deaccount the old block.
+      MemTracker::deaccount(free_info);
     }
-
-    const size_t old_size = MallocTracker::malloc_header(memblock)->size();
-
-    // Observe MallocLimit
-    if ((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, mem_tag)) {
-      return nullptr;
+    else
+    {
+      ALLOW_C_FUNCTION(::realloc, rc = ::realloc(nullptr, new_outer_size);)
+      if (rc == nullptr) {
+        // realloc(3) failed
+        return nullptr;
+      }
     }
-
-    // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3) since it
-    // may invalidate the old block, including its header.
-    MallocHeader* header = MallocHeader::resolve_checked(memblock);
-    assert(mem_tag == header->mem_tag(), "weird NMT type mismatch (new:\"%s\" != old:\"%s\")\n",
-           NMTUtil::tag_to_name(mem_tag), NMTUtil::tag_to_name(header->mem_tag()));
-    const MallocHeader::FreeInfo free_info = header->free_info();
-
-    header->mark_block_as_dead();
-
-    // the real realloc
-    ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc(header, new_outer_size);)
-
-    if (new_outer_ptr == nullptr) {
-      // realloc(3) failed and the block still exists.
-      // We have however marked it as dead, revert this change.
-      header->revive();
-      return nullptr;
-    }
-    // realloc(3) succeeded, variable header now points to invalid memory and we need to deaccount the old block.
-    MemTracker::deaccount(free_info);
 
     // After a successful realloc(3), we account the resized block with its new size
     // to NMT.
-    void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, mem_tag, stack);
+    rc = MemTracker::record_malloc(rc, size, mem_tag, stack);
 
 #ifdef ASSERT
     assert(old_size == free_info.size, "Sanity");
     if (old_size < size) {
       // We also zap the newly extended region.
-      ::memset((char*)new_inner_ptr + old_size, uninitBlockPad, size - old_size);
+      ::memset((char*)rc + old_size, uninitBlockPad, size - old_size);
     }
 #endif
-
-    rc = new_inner_ptr;
 
   } else {
 
@@ -755,6 +717,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     }
 
   }
+
 
   DEBUG_ONLY(break_if_ptr_caught(rc);)
 

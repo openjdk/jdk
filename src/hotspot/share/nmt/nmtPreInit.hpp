@@ -267,34 +267,27 @@ public:
   // Returns true if allocation was handled here; in that case,
   // *rc contains the return address.
   static bool handle_malloc(void** rc, size_t size) {
-    size = MAX2((size_t)1, size);         // malloc(0)
-    if (!MemTracker::is_initialized()) {
-      // pre-NMT-init:
-      // Allocate entry and add address to lookup table
-      NMTPreInitAllocation* a = NMTPreInitAllocation::do_alloc(size);
-      add_to_map(a);
-      (*rc) = a->payload;
-      _num_mallocs_pre++;
-      return true;
-    }
-    return false;
+    return handle_realloc(rc, nullptr, size, mtNone);
   }
 
   // Called from os::realloc.
   // Returns true if reallocation was handled here; in that case,
   // *rc contains the return address.
   static bool handle_realloc(void** rc, void* old_p, size_t new_size, MemTag mem_tag) {
-    if (old_p == nullptr) {                  // realloc(null, n)
-      return handle_malloc(rc, new_size);
-    }
     new_size = MAX2((size_t)1, new_size); // realloc(.., 0)
     switch (MemTracker::tracking_level()) {
       case NMT_unknown: {
         // pre-NMT-init:
-        // - the address must already be in the lookup table
-        // - find the old entry, remove from table, reallocate, add to table
-        NMTPreInitAllocation* a = find_and_remove_in_map(old_p);
-        a = NMTPreInitAllocation::do_reallocate(a, new_size);
+        NMTPreInitAllocation* a = nullptr;
+        new_size = MAX2((size_t)1, new_size); // realloc(.., 0)
+        if (old_p != nullptr) {
+          // - the address must already be in the lookup table
+          // - find the old entry, remove from table
+          a = find_and_remove_in_map(old_p);
+          a = NMTPreInitAllocation::do_reallocate(a, new_size);
+        } else {
+          a = NMTPreInitAllocation::do_alloc(new_size);
+        }
         add_to_map(a);
         (*rc) = a->payload;
         _num_reallocs_pre++;
