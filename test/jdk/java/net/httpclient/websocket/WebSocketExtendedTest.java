@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,7 @@
 /*
  * @test
  * @bug 8159053
- *
- *
+ * @modules java.net.http/jdk.internal.net.http.websocket
  * @run testng/othervm
  *      -Djdk.internal.httpclient.websocket.debug=true
  *      -Djdk.internal.httpclient.debug=true
@@ -33,6 +32,7 @@
  *      -Djdk.httpclient.websocket.intermediateBufferSize=2048 WebSocketExtendedTest
  */
 
+import jdk.internal.net.http.websocket.Frame;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -78,17 +78,17 @@ public class WebSocketExtendedTest {
             ws.sendBinary(expected.duplicate(), true).join();
             ws.abort();
             ByteBuffer data = server.read();
-            List<Frame> frames = readFrames(data);
+            List<DecodedFrame> frames = readFrames(data);
             assertEquals(frames.size(), 1);
-            Frame f = frames.get(0);
+            DecodedFrame f = frames.get(0);
             assertTrue(f.last);
             assertEquals(f.opcode, Frame.Opcode.BINARY);
             assertEquals(f.data, expected);
         }
     }
 
-    private static List<Frame> readFrames(ByteBuffer src) {
-        List<Frame> frames = new ArrayList<>();
+    private static List<DecodedFrame> readFrames(ByteBuffer src) {
+        List<DecodedFrame> frames = new ArrayList<>();
         Frame.Consumer consumer = new Frame.Consumer() {
 
             ByteBuffer data;
@@ -151,7 +151,7 @@ public class WebSocketExtendedTest {
 
             @Override
             public void endFrame() {
-                frames.add(new Frame(opcode, this.data.flip(), last));
+                frames.add(new DecodedFrame(opcode, this.data.flip(), last));
             }
         };
 
@@ -161,6 +161,8 @@ public class WebSocketExtendedTest {
         }
         return frames;
     }
+
+    public record DecodedFrame(Frame.Opcode opcode, ByteBuffer data, boolean last) {}
 
     @Test(dataProvider = "pingPong")
     public void ping(ByteBuffer expected) throws Exception {
@@ -173,9 +175,9 @@ public class WebSocketExtendedTest {
             ws.sendPing(expected.duplicate()).join();
             ws.abort();
             ByteBuffer data = server.read();
-            List<Frame> frames = readFrames(data);
+            List<DecodedFrame> frames = readFrames(data);
             assertEquals(frames.size(), 1);
-            Frame f = frames.get(0);
+            DecodedFrame f = frames.get(0);
             assertEquals(f.opcode, Frame.Opcode.PING);
             ByteBuffer actual = ByteBuffer.allocate(expected.remaining());
             actual.put(f.data);
@@ -195,9 +197,9 @@ public class WebSocketExtendedTest {
             ws.sendPong(expected.duplicate()).join();
             ws.abort();
             ByteBuffer data = server.read();
-            List<Frame> frames = readFrames(data);
+            List<DecodedFrame> frames = readFrames(data);
             assertEquals(frames.size(), 1);
-            Frame f = frames.get(0);
+            DecodedFrame f = frames.get(0);
             assertEquals(f.opcode, Frame.Opcode.PONG);
             ByteBuffer actual = ByteBuffer.allocate(expected.remaining());
             actual.put(f.data);
@@ -217,11 +219,11 @@ public class WebSocketExtendedTest {
             ws.sendClose(statusCode, reason).join();
             ws.abort();
             ByteBuffer data = server.read();
-            List<Frame> frames = readFrames(data);
+            List<DecodedFrame> frames = readFrames(data);
             assertEquals(frames.size(), 1);
-            Frame f = frames.get(0);
+            DecodedFrame f = frames.get(0);
             assertEquals(f.opcode, Frame.Opcode.CLOSE);
-            ByteBuffer actual = ByteBuffer.allocate(Frame.MAX_CONTROL_FRAME_PAYLOAD_SIZE);
+            ByteBuffer actual = ByteBuffer.allocate(Frame.MAX_CONTROL_FRAME_PAYLOAD_LENGTH);
             actual.put(f.data);
             actual.flip();
             assertEquals(actual.getChar(), statusCode);
@@ -240,7 +242,7 @@ public class WebSocketExtendedTest {
             ws.sendText(expected, true).join();
             ws.abort();
             ByteBuffer data = server.read();
-            List<Frame> frames = readFrames(data);
+            List<DecodedFrame> frames = readFrames(data);
 
             int maxBytes = (int) StandardCharsets.UTF_8.newEncoder().maxBytesPerChar() * expected.length();
             ByteBuffer actual = ByteBuffer.allocate(maxBytes);

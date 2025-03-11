@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,14 @@ import static jdk.internal.net.http.websocket.Frame.Opcode.ofCode;
 /*
  * A collection of utilities for reading, writing, and masking frames.
  */
-final class Frame {
+public final class Frame {
 
     private Frame() { }
 
     static final int MAX_HEADER_SIZE_BYTES = 2 + 8 + 4;
-    static final int MAX_CONTROL_FRAME_PAYLOAD_LENGTH = 125;
+    public static final int MAX_CONTROL_FRAME_PAYLOAD_LENGTH = 125;
 
-    enum Opcode {
+    public enum Opcode {
 
         CONTINUATION   (0x0),
         TEXT           (0x1),
@@ -87,7 +87,7 @@ final class Frame {
     /*
      * A utility for masking frame payload data.
      */
-    static final class Masker {
+    public static final class Masker {
 
         // Exploiting ByteBuffer's ability to read/write multi-byte integers
         private final ByteBuffer acc = ByteBuffer.allocate(8);
@@ -114,7 +114,7 @@ final class Frame {
          *
          * The behaviour is as if the mask was set on a newly created instance.
          */
-        Masker mask(int value) {
+        public Masker mask(int value) {
             acc.clear().putInt(value).putInt(value).flip();
             for (int i = 0; i < maskBytes.length; i++) {
                 maskBytes[i] = acc.get(i);
@@ -132,7 +132,7 @@ final class Frame {
          * The source and the destination buffers may be the same instance. If
          * the mask hasn't been previously set it is assumed to be 0.
          */
-        Masker transferMasking(ByteBuffer src, ByteBuffer dst) {
+        public Masker transferMasking(ByteBuffer src, ByteBuffer dst) {
             begin(src, dst);
             loop(src, dst);
             end(src, dst);
@@ -204,14 +204,14 @@ final class Frame {
      * header structure to the given buffer. The order of calls to intermediate
      * methods is NOT significant.
      */
-    static final class HeaderWriter {
+    public static final class HeaderWriter {
 
         private char firstChar;
         private long payloadLen;
         private int maskingKey;
         private boolean mask;
 
-        HeaderWriter fin(boolean value) {
+        public HeaderWriter fin(boolean value) {
             if (value) {
                 firstChar |=  0b10000000_00000000;
             } else {
@@ -254,12 +254,12 @@ final class Frame {
             return this;
         }
 
-        HeaderWriter opcode(Opcode value) {
+        public HeaderWriter opcode(Opcode value) {
             firstChar = (char) ((firstChar & 0xF0FF) | (value.code << 8));
             return this;
         }
 
-        HeaderWriter payloadLen(long value) {
+        public HeaderWriter payloadLen(long value) {
             if (value < 0) {
                 throw new IllegalArgumentException("Negative: " + value);
             }
@@ -282,7 +282,7 @@ final class Frame {
             return this;
         }
 
-        HeaderWriter noMask() {
+        public HeaderWriter noMask() {
             // Explicit cast required: see fin() above
             firstChar &= (char) ~0b00000000_10000000;
             mask = false;
@@ -295,7 +295,7 @@ final class Frame {
          * The buffer must have at least MAX_HEADER_SIZE_BYTES remaining. The
          * buffer's position is incremented by the number of bytes written.
          */
-        void write(ByteBuffer buffer) {
+        public void write(ByteBuffer buffer) {
             buffer.putChar(firstChar);
             if (payloadLen >= 126) {
                 if (payloadLen < 65536) {
@@ -317,7 +317,7 @@ final class Frame {
      *
      *     fin rsv1 rsv2 rsv3 opcode mask payloadLength maskingKey? payloadData+ endFrame
      */
-    interface Consumer {
+    public interface Consumer {
 
         void fin(boolean value);
 
@@ -358,7 +358,7 @@ final class Frame {
      *
      * No protocol-level rules are checked.
      */
-    static final class Reader {
+    public static final class Reader {
 
         private static final int AWAITING_FIRST_BYTE  =  1;
         private static final int AWAITING_SECOND_BYTE =  2;
@@ -382,7 +382,7 @@ final class Frame {
          *
          * Throws FailWebSocketException if detects the frame is malformed.
          */
-        void readFrame(ByteBuffer input, Consumer consumer) {
+        public void readFrame(ByteBuffer input, Consumer consumer) {
             loop:
             while (true) {
                 byte b;
