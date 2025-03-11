@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug     7028071
- * @summary Basic unit test of OperatingSystemMXBean.getProcessCpuLoad()
+ * @summary Basic unit test of OperatingSystemMXBean.getSystemCpuLoad()
  *
  * @run main GetSystemCpuLoad
  */
@@ -39,7 +39,7 @@ public class GetSystemCpuLoad {
         double load;
         for(int i=0; i<10; i++) {
             load = mbean.getSystemCpuLoad();
-            if((load<0.0 || load>1.0) && load != -1.0) {
+            if(load<0.0 || load>1.0) {
                 throw new RuntimeException("getSystemCpuLoad() returns " + load
                        +  " which is not in the [0.0,1.0] interval");
             }

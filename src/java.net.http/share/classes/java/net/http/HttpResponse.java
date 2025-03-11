@@ -1008,8 +1008,8 @@ public interface HttpResponse<T> {
      * HTTP exchange are properly released, an implementation of {@code
      * BodySubscriber} should ensure to {@linkplain Flow.Subscription#request(long)
      * request} more data until one of {@link #onComplete() onComplete} or
-     * {@link #onError(Throwable) onError} are signalled, or {@linkplain
-     * Subscription#cancel() cancel} its {@linkplain
+     * {@link #onError(Throwable) onError} are signalled, or {@link
+     * Flow.Subscription#cancel cancel} its {@linkplain
      * #onSubscribe(Flow.Subscription) subscription} if unable or unwilling to
      * do so. Calling {@code cancel} before exhausting the response body data
      * may cause the underlying HTTP connection to be closed and prevent it
@@ -1074,7 +1074,7 @@ public interface HttpResponse<T> {
      *  {@link AutoCloseable} and may need to be explicitly closed in order for
      *  the resources associated with the request and the client to be {@linkplain
      *  HttpClient##closing eventually reclaimed}.
-     *  Some other implementations are {@linkplain Publisher publishers} which need to be
+     *  Some other implementations are {@linkplain  Publisher publishers} which need to be
      *  {@linkplain BodySubscribers#ofPublisher() subscribed} in order for their associated
      *  resources to be released and for the associated request to {@linkplain
      *  HttpClient##closing run to completion}.
