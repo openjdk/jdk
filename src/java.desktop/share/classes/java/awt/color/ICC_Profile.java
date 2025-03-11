@@ -1170,8 +1170,7 @@ public sealed class ICC_Profile implements Serializable
      */
     public void setData(int tagSignature, byte[] tagData) {
         if (builtIn) {
-            throw new IllegalArgumentException("Built-in profile"
-                                               + " cannot be modified");
+            throw new IllegalArgumentException("Built-in profile cannot be modified");
         }
 
         if (tagSignature == ICC_Profile.icSigHead) {

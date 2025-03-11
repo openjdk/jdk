@@ -34,6 +34,7 @@ public class BuiltInProfileCheck {
     private static final int HEADER_TAG = ICC_Profile.icSigHead;
     private static final int PROFILE_CLASS_START_INDEX =
                                        ICC_Profile.icHdrDeviceClass;
+    private static final String EXCEPTION_MSG = "Built-in profile cannot be modified";
 
     public static void main(String[] args) {
         System.out.println("CASE 1: Testing BuiltIn Profile");
@@ -66,7 +67,10 @@ public class BuiltInProfileCheck {
                 iccProfile.setData(HEADER_TAG, headerData);
                 throw new RuntimeException("Test Failed! IAE NOT thrown.");
             } catch (IllegalArgumentException iae) {
-                System.out.println("IAE expected: " + iae.getMessage());
+                if (!iae.getMessage().equals(EXCEPTION_MSG)) {
+                    throw new RuntimeException("Test Failed! IAE with exception msg \""
+                                               + EXCEPTION_MSG + "\" NOT thrown.");
+                }
             }
         } else {
             // Modifying custom profile should NOT throw IAE
