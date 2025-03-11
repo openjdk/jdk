@@ -242,16 +242,18 @@ public final class ThreadLocalRandom extends Random {
      * the classes that use them. Briefly, a thread's "probe" value is
      * a non-zero hash code that (probably) does not collide with
      * other existing threads with respect to any power of two
-     * collision space. When it does collide, it is pseudo-randomly
-     * adjusted (using a Marsaglia XorShift). The nextSecondarySeed
-     * method is used in the same contexts as ThreadLocalRandom, but
-     * only for transient usages such as random adaptive spin/block
-     * sequences for which a cheap RNG suffices and for which it could
-     * in principle disrupt user-visible statistical properties of the
-     * main ThreadLocalRandom if we were to use it.
+     * collision space, based on carrier threads in the case of
+     * VirtualThreads to reduce the expected collision rate. When it
+     * does collide, it is pseudo-randomly adjusted (using a Marsaglia
+     * XorShift). The nextSecondarySeed method is used in the same
+     * contexts as ThreadLocalRandom, but only for transient usages
+     * such as random adaptive spin/block sequences for which a cheap
+     * RNG suffices and for which it could in principle disrupt
+     * user-visible statistical properties of the main
+     * ThreadLocalRandom if we were to use it.
      *
-     * Note: Because of package-protection issues, versions of some
-     * these methods also appear in some subpackage classes.
+     * Note: jdk SharedSecrets are used enable use in jdk classes
+     * outside this package.
      */
 
     /**
@@ -396,6 +398,12 @@ public final class ThreadLocalRandom extends Random {
                 new JavaUtilConcurrentTLRAccess() {
                     public int nextSecondaryThreadLocalRandomSeed() {
                         return nextSecondarySeed();
+                    }
+                    public int getThreadLocalRandomProbe() {
+                        return getProbe();
+                    }
+                    public int advanceThreadLocalRandomProbe(int r) {
+                        return advanceProbe(r);
                     }
                 }
             );

@@ -1273,7 +1273,7 @@ public class ForkJoinPool extends AbstractExecutorService
         /**
          * Pushes a task. Called only by owner or if already locked
          *
-         * @param task the task. Caller must ensure non-null.
+         * @param task the task; no-op if null
          * @param pool the pool to signal if was previously empty, else null
          * @param internal if caller owns this queue
          * @throws RejectedExecutionException if array could not be resized
@@ -1281,7 +1281,9 @@ public class ForkJoinPool extends AbstractExecutorService
         final void push(ForkJoinTask<?> task, ForkJoinPool pool,
                         boolean internal) {
             int s = top, b = base, m, cap, room; ForkJoinTask<?>[] a;
-            if ((a = array) != null && (cap = a.length) > 0) { // else disabled
+            if ((a = array) != null && (cap = a.length) > 0 && // else disabled
+                task != null) {
+                int pk = task.noUserHelp() + 1;             // prev slot offset
                 if ((room = (m = cap - 1) - (s - b)) >= 0) {
                     top = s + 1;
                     long pos = slotOffset(m & s);
@@ -1296,9 +1298,7 @@ public class ForkJoinPool extends AbstractExecutorService
                     unlockPhase();
                 if (room < 0)
                     throw new RejectedExecutionException("Queue capacity exceeded");
-                if ((room == 0 ||        // pad if no caller-run
-                     a[m & (s - ((internal || task == null ||
-                                  task.noUserHelp() == 0) ? 1 : 2))] == null) &&
+                if ((room == 0 || a[m & (s - pk)] == null) &&
                     pool != null)
                     pool.signalWork();   // may have appeared empty
             }
@@ -2016,14 +2016,13 @@ public class ForkJoinPool extends AbstractExecutorService
                             }
                             else {
                                 boolean propagate;
-                                int nb = q.base = b + 1;
+                                int nb = q.base = b + 1, prevSrc = src;
                                 w.nsteals = ++nsteals;
-                                int ts = t.status;
-                                w.source = j;             // volatile
+                                w.source = src = j;       // volatile
                                 rescan = true;
+                                int nh = t.noUserHelp();
                                 if (propagate =
-                                    ((src != (src = j) || t.noUserHelp() != 0) &&
-                                     a[nb & m] != null))
+                                    (prevSrc != src || nh != 0) && a[nb & m] != null)
                                     signalWork();
                                 w.topLevelExec(t, fifo);
                                 if ((b = q.base) != nb && !propagate)
@@ -2062,8 +2061,8 @@ public class ForkJoinPool extends AbstractExecutorService
             ((e & SHUTDOWN) != 0L && ac == 0 && quiescent() > 0) ||
             (qs = queues) == null || (n = qs.length) <= 0)
             return IDLE;                      // terminating
-        int prechecks = 3;                    // reactivation threshold
-        for (int k = Math.max(n << 2, SPIN_WAITS << 1);;) {
+        int k = Math.max(n << 2, SPIN_WAITS << 1);
+        for (int prechecks = k / n;;) {       // reactivation threshold
             WorkQueue q; int cap; ForkJoinTask<?>[] a; long c;
             if (w.phase == activePhase)
                 return activePhase;
@@ -2072,7 +2071,7 @@ public class ForkJoinPool extends AbstractExecutorService
             if ((q = qs[k & (n - 1)]) == null)
                 Thread.onSpinWait();
             else if ((a = q.array) != null && (cap = a.length) > 0 &&
-                     a[q.base & (cap - 1)] != null && --prechecks < 0 &&
+                     a[q.base & (cap - 1)] != null && --prechecks <= 0 &&
                      (int)(c = ctl) == activePhase &&
                      compareAndSetCtl(c, (sp & LMASK) | ((c + RC_UNIT) & UMASK)))
                 return w.phase = activePhase; // reactivate

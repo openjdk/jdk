@@ -273,7 +273,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     static final int ABNORMAL       = 1 << 16;
     static final int THROWN         = 1 << 17;
     static final int HAVE_EXCEPTION = DONE | ABNORMAL | THROWN;
-    static final int NO_USER_HELP   = 1 << 24; // no external caller-run helping
+    static final int NUH_BIT        = 24;      // no external caller helping
+    static final int NO_USER_HELP   = 1 << NUH_BIT;
     static final int MARKER         = 1 << 30; // utility marker
     static final int SMASK          = 0xffff;  // short bits for tags
     static final int UNCOMPENSATE   = 1 << 16; // helpJoin sentinel
@@ -293,8 +294,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     private boolean casStatus(int c, int v) {
         return U.compareAndSetInt(this, STATUS, c, v);
     }
-    final int noUserHelp() {    // nonvolatile read
-        return U.getInt(this, STATUS) & NO_USER_HELP;
+    final int noUserHelp() {     // nonvolatile read; return 0 or 1
+        return (U.getInt(this, STATUS) & NO_USER_HELP) >>> NUH_BIT;
     }
     final void setNoUserHelp() { // for use in constructors only
         U.putInt(this, STATUS, NO_USER_HELP);
