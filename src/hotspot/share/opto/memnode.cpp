@@ -3534,7 +3534,7 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // (StoreB ... (RShiftI _ (LShiftI _ X 18) 16)).
 // It is thus useful to handle the case where conIL > conIR.
 //
-// Let's assume we have the following 32 bits integer that we want to stuff in 8 bits char:
+// Let's assume we have the following 32 bits integer that we want to stuff in 8 bits byte:
 // +------------------------+---------+
 // |        v[8..31]        | v[0..7] |
 // +------------------------+---------+
