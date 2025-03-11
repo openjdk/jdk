@@ -3568,7 +3568,7 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // |        sign bit        | v[0..7] |
 // +------------------------+---------+
 //  31                     8 7        0
-// The non-rejected bits are the same before and after, so, indeed, simplifying is fine.
+// The non-rejected bits are the same before and after, so, indeed, simplifying is correct.
 //
 // ### Case 2: conIL > conIR == num_rejected_bits
 // We take conIL == 26 for this example.
@@ -3584,7 +3584,7 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 //  31               8 7       2 1   0
 // The non-rejected bits are the 8 lower ones of (v << conIL - conIR).
 // The bits 6 and 7 of v have been thrown away after the shift left.
-// The simplification is still fine.
+// The simplification is still correct.
 //
 // ### Case 3: conIL > conIR < num_rejected_bits.
 // Let's say conIL == 26 and conIR == 22.
@@ -3601,7 +3601,7 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // The non-rejected bits are the 8 lower ones of (v << conIL - conIR).
 // The bits 6 and 7 of v have been thrown away after the shift left.
 // The bits 4 and 5 of v are still present, but outside the kept bits (the 8 lower ones).
-// The simplification is still fine.
+// The simplification is still correct.
 //
 // ### But! Case 4: conIL > conIR > num_rejected_bits.
 // Let's see that this case is not as easy to simplify.
