@@ -407,10 +407,6 @@ bool ObjectSynchronizer::quick_enter_legacy(oop obj, BasicLock* lock, JavaThread
     return false;  // Slow path
   }
 
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    return LightweightSynchronizer::quick_enter(obj, lock, current);
-  }
-
   assert(LockingMode == LM_LEGACY, "legacy mode below");
 
   const markWord mark = obj->mark();
