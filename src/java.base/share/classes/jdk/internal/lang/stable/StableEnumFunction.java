@@ -25,11 +25,14 @@
 
 package jdk.internal.lang.stable;
 
+import jdk.internal.util.ImmutableBitSetPredicate;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
+import java.util.BitSet;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.IntPredicate;
 import java.util.function.Supplier;
 
 /**
@@ -46,11 +49,15 @@ import java.util.function.Supplier;
  */
 record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
                                                 int firstOrdinal,
+                                                IntPredicate member,
                                                 @Stable StableValueImpl<R>[] delegates,
                                                 Function<? super E, ? extends R> original) implements Function<E, R> {
     @ForceInline
     @Override
     public R apply(E value) {
+        if (!member.test(value.ordinal())) {
+            throw new IllegalArgumentException("Input not allowed: " + value);
+        }
         final int index = value.ordinal() - firstOrdinal;
         try {
             return delegates[index]
@@ -80,16 +87,22 @@ record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
         final StringBuilder sb = new StringBuilder();
         sb.append("{");
         boolean first = true;
-        int ordinal = firstOrdinal;
         final E[] enumElements = enumType.getEnumConstants();
-        for (int i = 0; i < delegates.length; i++) {
-            if (first) { first = false; } else { sb.append(", "); };
-            final Object value = delegates[i].wrappedValue();
-            sb.append(enumElements[ordinal++]).append('=');
-            if (value == this) {
-                sb.append("(this StableEnumFunction)");
-            } else {
-                sb.append(StableValueImpl.renderWrapped(value));
+        int ordinal = firstOrdinal;
+        for (int i = 0; i < delegates.length; i++, ordinal++) {
+            if (member.test(ordinal)) {
+                if (first) {
+                    first = false;
+                } else {
+                    sb.append(", ");
+                }
+                final Object value = delegates[i].wrappedValue();
+                sb.append(enumElements[ordinal]).append('=');
+                if (value == this) {
+                    sb.append("(this StableEnumFunction)");
+                } else {
+                    sb.append(StableValueImpl.renderWrapped(value));
+                }
             }
         }
         sb.append("}");
@@ -99,16 +112,21 @@ record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
     @SuppressWarnings("unchecked")
     static <T, E extends Enum<E>, R> Function<T, R> of(Set<? extends T> inputs,
                                                        Function<? super T, ? extends R> original) {
+        final BitSet bitSet = new BitSet(inputs.size());
         // The input set is not empty
         int min = Integer.MAX_VALUE;
         int max = Integer.MIN_VALUE;
         for (T t : inputs) {
-            min = Math.min(min, ((E) t).ordinal());
-            max = Math.max(max, ((E) t).ordinal());
+            final int ordinal = ((E) t).ordinal();
+            min = Math.min(min, ordinal);
+            max = Math.max(max, ordinal);
+            bitSet.set(ordinal);
         }
+
         final int size = max - min + 1;
         final Class<E> enumType = (Class<E>)inputs.iterator().next().getClass();
-        return (Function<T, R>) new StableEnumFunction<E, R>(enumType, min, StableValueFactories.array(size), (Function<E, R>) original);
+        final IntPredicate member = ImmutableBitSetPredicate.of(bitSet);
+        return (Function<T, R>) new StableEnumFunction<E, R>(enumType, min, member, StableValueFactories.array(size), (Function<E, R>) original);
     }
 
 }

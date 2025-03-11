@@ -49,11 +49,13 @@ final class StableFunctionTest {
         // Zero is here so that we have enums with ordinals before the first one
         // actually used in input sets (i.e. ZERO is not in the input set)
         ZERO(0),
+        ILLEGAL_BEFORE(-1),
         // Valid values
         THIRTEEN(13),
+        ILLEGAL_BETWEEN(-2),
         FORTY_TWO(42),
         // Illegal values (not in the input set)
-        ILLEGAL(-1);
+        ILLEGAL_AFTER(-3);
 
         final int intValue;
 
@@ -93,12 +95,16 @@ final class StableFunctionTest {
         assertTrue(cached.toString().startsWith(cached.getClass().getSimpleName() + "[values={"));
         // Key order is unspecified
         assertTrue(cached.toString().contains(Value.THIRTEEN + "=.unset"));
-        assertTrue(cached.toString().contains(Value.FORTY_TWO + "=[" + mapper.apply(Value.FORTY_TWO) + "]"));
+        assertTrue(cached.toString().contains(Value.FORTY_TWO + "=[" + mapper.apply(Value.FORTY_TWO) + "]"), cached.toString());
         assertTrue(cached.toString().endsWith(", original=" + cif + "]"));
         // One between the values and one just before "original"
-        assertEquals(2L, cached.toString().chars().filter(ch -> ch == ',').count());
-        var x = assertThrows(IllegalArgumentException.class, () -> cached.apply(Value.ILLEGAL));
-        assertTrue(x.getMessage().contains("ILLEGAL"));
+        assertEquals(2L, cached.toString().chars().filter(ch -> ch == ',').count(), cached.toString());
+        var x0 = assertThrows(IllegalArgumentException.class, () -> cached.apply(Value.ILLEGAL_BEFORE));
+        assertTrue(x0.getMessage().contains("ILLEGAL"));
+        var x1 = assertThrows(IllegalArgumentException.class, () -> cached.apply(Value.ILLEGAL_BETWEEN));
+        assertTrue(x1.getMessage().contains("ILLEGAL"));
+        var x2 = assertThrows(IllegalArgumentException.class, () -> cached.apply(Value.ILLEGAL_AFTER));
+        assertTrue(x2.getMessage().contains("ILLEGAL"));
     }
 
     @ParameterizedTest
@@ -126,7 +132,7 @@ final class StableFunctionTest {
         assertTrue(cached.toString().startsWith(cached.getClass().getSimpleName() + "[values={"));
         // Key order is unspecified
         assertTrue(cached.toString().contains(Value.THIRTEEN + "=.unset"));
-        assertTrue(cached.toString().contains(Value.FORTY_TWO + "=.unset"));
+        assertTrue(cached.toString().contains(Value.FORTY_TWO + "=.unset"), cached.toString());
         assertTrue(cached.toString().endsWith(", original=" + cif + "]"));
     }
 
@@ -138,7 +144,7 @@ final class StableFunctionTest {
         ref.set(cached);
         cached.apply(Value.FORTY_TWO);
         String toString = cached.toString();
-        assertTrue(toString.contains("(this " + cached.getClass().getSimpleName() + ")"));
+        assertTrue(toString.contains("(this " + cached.getClass().getSimpleName() + ")"), toString);
         assertDoesNotThrow(cached::hashCode);
         assertDoesNotThrow((() -> cached.equals(cached)));
     }

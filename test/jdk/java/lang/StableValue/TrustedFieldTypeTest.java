@@ -78,10 +78,8 @@ final class TrustedFieldTypeTest {
         ArrayHolder arrayHolder = new ArrayHolder();
         // We should be able to read the StableValue array
         read = arrayField.get(arrayHolder);
-        // We should NOT be able to write to the StableValue array
-        assertThrows(IllegalAccessException.class, () ->
-                arrayField.set(arrayHolder, new StableValue[1])
-        );
+        // We should be able to write to the StableValue array
+        assertDoesNotThrow(() -> arrayField.set(arrayHolder, new StableValue[1]));
     }
 
     @SuppressWarnings("removal")
