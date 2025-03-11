@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -4389,7 +4389,6 @@ instruct loadNKlassCompactHeaders(rRegN dst, memory mem, rFlagsReg cr)
   ins_pipe(ialu_reg_mem); // XXX
 %}
 
-
 // Load Float
 instruct loadF(regF dst, memory mem)
 %{
@@ -5783,7 +5782,6 @@ instruct popCountI(rRegI dst, rRegI src, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-
 instruct popCountI_mem(rRegI dst, memory mem, rFlagsReg cr) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountI (LoadI mem)));
@@ -5795,7 +5793,6 @@ instruct popCountI_mem(rRegI dst, memory mem, rFlagsReg cr) %{
   %}
   ins_pipe(ialu_reg);
 %}
-
 
 // Note: Long.bitCount(long) returns an int.
 instruct popCountL(rRegI dst, rRegL src, rFlagsReg cr) %{
@@ -5809,7 +5806,6 @@ instruct popCountL(rRegI dst, rRegL src, rFlagsReg cr) %{
   %}
   ins_pipe(ialu_reg);
 %}
-
 
 // Note: Long.bitCount(long) returns an int.
 instruct popCountL_mem(rRegI dst, memory mem, rFlagsReg cr) %{
@@ -6180,7 +6176,6 @@ instruct cmovI_regU(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src) %{
   ins_pipe(pipe_cmov_reg);
 %}
 
-
 instruct cmovI_regU_ndd(rRegI dst, cmpOpU cop, rFlagsRegU cr, rRegI src1, rRegI src2) %{
   predicate(UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
@@ -6226,7 +6221,6 @@ instruct cmovI_regUCF_ndd(rRegI dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegI src1, 
   %}
   ins_pipe(pipe_cmov_reg);
 %}
-
 
 instruct cmovI_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) %{
   predicate(!UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
@@ -6425,7 +6419,6 @@ instruct cmovN_regU_ndd(rRegN dst, cmpOpU cop, rFlagsRegU cr, rRegN src1, rRegN 
   %}
   ins_pipe(pipe_cmov_reg);
 %}
-
 
 instruct cmovN_regUCF_ndd(rRegN dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegN src1, rRegN src2) %{
   predicate(UseAPX);
@@ -6799,7 +6792,6 @@ instruct cmovL_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL s
   ins_pipe(pipe_cmov_reg);
 %}
 
-
 instruct cmovL_memU(cmpOpU cop, rFlagsRegU cr, rRegL dst, memory src)
 %{
   predicate(!UseAPX);
@@ -7051,7 +7043,6 @@ instruct addI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2, rFlagsReg cr
   %}
   ins_pipe(ialu_reg_mem);
 %}
-
 
 instruct addI_mem_rReg(memory dst, rRegI src, rFlagsReg cr)
 %{
@@ -13652,7 +13643,6 @@ instruct cmovI_reg_g(rRegI dst, rRegI src, rFlagsReg cr)
   ins_pipe(pipe_cmov_reg);
 %}
 
-
 instruct cmovI_reg_g_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
@@ -13664,8 +13654,6 @@ instruct cmovI_reg_g_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
   %}
   ins_pipe(pipe_cmov_reg);
 %}
-
-
 
 instruct minI_rReg(rRegI dst, rRegI src)
 %{
@@ -13680,7 +13668,6 @@ instruct minI_rReg(rRegI dst, rRegI src)
   %}
 %}
 
-
 instruct minI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
 %{
   predicate(UseAPX);
@@ -13694,7 +13681,6 @@ instruct minI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
     cmovI_reg_g_ndd(dst, src1, src2, cr);
   %}
 %}
-
 
 instruct cmovI_reg_l(rRegI dst, rRegI src, rFlagsReg cr)
 %{
@@ -13719,7 +13705,6 @@ instruct cmovI_reg_l_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
   %}
   ins_pipe(pipe_cmov_reg);
 %}
-
 
 instruct maxI_rReg(rRegI dst, rRegI src)
 %{
