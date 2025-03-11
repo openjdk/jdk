@@ -84,7 +84,7 @@ public class ArtifactResolver {
      * local copy of the artifact and the system property must be set as specified
      * above.
      *
-     * @param clazz a class annotated with {@link jdk.test.lib.artifacts.Artifact}
+     * @param klass a class annotated with {@link jdk.test.lib.artifacts.Artifact}
      * @return the local path to the artifact. If the artifact is a compressed
      * file that gets unpacked, this path will point to the root
      * directory of the uncompressed file.
@@ -95,16 +95,14 @@ public class ArtifactResolver {
             return ArtifactResolver.resolve(klass).entrySet().stream()
                     .findAny().get().getValue();
         } catch (ArtifactResolverException e) {
-            Throwable cause = e.getCause();
-            if (cause == null) {
-                // if property doesn't exist
-                throw new IOException("Cannot resolve artifact, "
-                        + "please check if JIB jar is present in classpath.");
+            Artifact artifact = klass.getAnnotation(Artifact.class);
+            String message;
+            if (artifact != null) {
+                message = "Cannot find the artifact " + artifact.name();
             } else {
-                // can't get it from the repository
-                throw new IOException("Fetch artifact failed: " + klass
-                        + "\nPlease make sure the artifact is available.", e);
+                message = "Class " + klass.getName() + " missing @Artifact annotation.";
             }
+            throw new IOException(message);
         }
     }
 
