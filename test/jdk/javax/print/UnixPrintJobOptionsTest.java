@@ -22,7 +22,12 @@
  * questions.
  */
 
+import javax.print.DocFlavor;
+import javax.print.DocPrintJob;
 import javax.print.PrintException;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
+import javax.print.SimpleDoc;
 import javax.print.attribute.HashDocAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttribute;
@@ -30,11 +35,6 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.NumberUp;
 import javax.print.attribute.standard.OrientationRequested;
 import javax.print.attribute.standard.Sides;
-import javax.print.DocFlavor;
-import javax.print.SimpleDoc;
-import javax.print.PrintServiceLookup;
-import javax.print.PrintService;
-import javax.print.DocPrintJob;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -47,8 +47,9 @@ import java.util.regex.Pattern;
  * @test
  * @bug 8349350
  * @key printer
+ * @requires (os.family == "linux" | os.family == "mac")
  * @summary lpr command syntax for options. lpr [ -o option[=value] ]
- * @run main/othervm -Dsun.print.ippdebug=true UnixPrintJobOptionsTest
+ * @run main/manual/othervm -Dsun.print.ippdebug=true UnixPrintJobOptionsTest
  */
 
 public class UnixPrintJobOptionsTest {
@@ -70,18 +71,31 @@ public class UnixPrintJobOptionsTest {
         }
 
         PrintStream origPrintStream = System.out;
-
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        PrintStream printStream = new PrintStream(os);
+        ByteArrayOutputStream debugOutputStream = new ByteArrayOutputStream();
+        PrintStream printStream = new PrintStream(debugOutputStream);
         System.setOut(printStream);
+        try {
+            if (!executeTest(debugOutputStream)) {
+                System.out.println("Acceptable print service not found");
+            }
+        } finally {
+            System.setOut(origPrintStream);
+            System.out.println(debugOutputStream.toString());
+        }
+    }
 
-        boolean success = false;
-
+    /**
+     * Tries to execute the test on one of the available print services
+     * @param debugOutputStream 'standard' output stream
+     * @return true - test was run and pass, false - test was not run
+     */
+    private static boolean executeTest(ByteArrayOutputStream debugOutputStream) {
         for (PrintService testPrintService : printerSupportedAttrs.keySet()) {
             String patternStr = "/usr/bin/lpr\\s+.*";
             PrintRequestAttributeSet attributeSet = new HashPrintRequestAttributeSet();
             for (Class<? extends PrintRequestAttribute> attrClass : printerSupportedAttrs.get(testPrintService)) {
-                Object supportedValues = testPrintService.getSupportedAttributeValues(attrClass, docFlavor, attributeSet);
+                Object supportedValues = testPrintService
+                        .getSupportedAttributeValues(attrClass, docFlavor, attributeSet);
                 if (supportedValues == null || ((Object[]) supportedValues).length == 0) {
                     continue;
                 }
@@ -114,24 +128,16 @@ public class UnixPrintJobOptionsTest {
                         docFlavor, new HashDocAttributeSet()), attributeSet);
             } catch (PrintException ex) {
                 throw new RuntimeException(ex);
-            } finally {
-                System.setOut(origPrintStream);
-
             }
-            String debug = os.toString();
-            System.out.print(debug);
+            String debug = debugOutputStream.toString();
             Pattern pattern = Pattern.compile(patternStr);
             if (!pattern.matcher(debug).find()) {
                 throw new RuntimeException("Output does not contain necessary options");
             } else {
-                success = true;
-                break;
+                return true;
             }
         }
-        if (!success) {
-            System.setOut(origPrintStream);
-            System.out.println("Acceptable print service not found");
-        }
+        return false;
     }
 
     private static void initializeTestPrintServices() {
