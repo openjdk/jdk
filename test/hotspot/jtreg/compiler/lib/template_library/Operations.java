@@ -139,7 +139,10 @@ final class Operations {
         //new Operation.Binary(Type.ints(), "Integer.compress(", Type.ints(), ", ", Type.ints(), ")", null),
         // TODO: add back after JDK-8350896
         new Operation.Binary(Type.ints(), "Integer.divideUnsigned(", Type.ints(), ", ", Type.ints(), ")", List.of("ArithmeticException")),
-        new Operation.Binary(Type.ints(), "Integer.expand(", Type.ints(), ", ", Type.ints(), ")", null),
+
+        // TODO: enamble after 	JDK-8351645
+        // new Operation.Binary(Type.ints(), "Integer.expand(", Type.ints(), ", ", Type.ints(), ")", null),
+
         new Operation.Unary(Type.ints(), "Integer.highestOneBit(", Type.ints(), ")", null),
         new Operation.Unary(Type.ints(), "Integer.lowestOneBit(", Type.ints(), ")", null),
         new Operation.Binary(Type.ints(), "Integer.min(", Type.ints(), ", ", Type.ints(), ")", null),
@@ -211,8 +214,12 @@ final class Operations {
 
         // new Operation.Binary(Type.longs(), "Long.compress(", Type.longs(), ", ", Type.longs(), ")", null),
         // TODO: add back after JDK-8350896
+        //
         new Operation.Binary(Type.longs(), "Long.divideUnsigned(", Type.longs(), ", ", Type.longs(), ")", List.of("ArithmeticException")),
-        new Operation.Binary(Type.longs(), "Long.expand(", Type.longs(), ", ", Type.longs(), ")", null),
+
+        // TODO: enable after JDK-8351645
+        // new Operation.Binary(Type.longs(), "Long.expand(", Type.longs(), ", ", Type.longs(), ")", null),
+
         new Operation.Unary(Type.longs(), "Long.highestOneBit(", Type.longs(), ")", null),
         new Operation.Unary(Type.longs(), "Long.lowestOneBit(", Type.longs(), ")", null),
         new Operation.Binary(Type.longs(), "Long.min(", Type.longs(), ", ", Type.longs(), ")", null),
