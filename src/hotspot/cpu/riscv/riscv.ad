@@ -8341,12 +8341,12 @@ instruct min_max_HF_reg(fRegF dst, fRegF src1, fRegF src2)
   ins_pipe(pipe_class_default);
 %}
 
-instruct fma_HF_reg(fRegF dst, fRegF src1, fRegF src2)
+instruct fma_HF_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3)
 %{
-  match(Set dst (FmaHF src2 (Binary dst src1)));
-  format %{ "fmadd.h $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
+  match(Set dst (FmaHF src3 (Binary src1 src2)));
+  format %{ "fmadd.h $dst, $src1, $src2, $src3\t# $dst = $src1 * $src2 + $src3 fma packedH" %}
   ins_encode %{
-    __ fmadd_h($dst$$FloatRegister, $dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister);
+    __ fmadd_h($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
