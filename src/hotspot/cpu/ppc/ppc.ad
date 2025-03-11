@@ -2108,7 +2108,12 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_RoundDoubleModeV:
       return SuperwordUseVSX;
     case Op_PopCountVI:
+    case Op_PopCountVL:
       return (SuperwordUseVSX && UsePopCountInstruction);
+    case Op_CountLeadingZerosV:
+      return SuperwordUseVSX && UseCountLeadingZerosInstructionsPPC64;
+    case Op_CountTrailingZerosV:
+      return SuperwordUseVSX && UseCountTrailingZerosInstructionsPPC64;
     case Op_FmaF:
     case Op_FmaD:
       return UseFMA;
@@ -2139,10 +2144,22 @@ bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, Basi
 }
 
 bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
-  if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
-    return false;
+  if (!match_rule_supported(opcode)) return false;
+
+  int byte_len = vlen * type2aelembytes(bt);
+  if (byte_len < 16 && bt == T_INT) {
+    switch (opcode) {
+      case Op_VectorCastL2X:
+      case Op_LoadVector:
+      case Op_StoreVector:
+        return true;
+    }
   }
-  return true; // Per default match rules are supported.
+
+  // We don't support other versions of L2X.
+  if (opcode == Op_VectorCastL2X) return false;
+
+  return byte_len == (SuperwordUseVSX ? 16 : 8);
 }
 
 bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
@@ -2184,11 +2201,11 @@ int Matcher::vector_width_in_bytes(BasicType bt) {
 
 // Vector ideal reg.
 uint Matcher::vector_ideal_reg(int size) {
-  if (SuperwordUseVSX) {
-    assert(MaxVectorSize == 16 && size == 16, "");
+  if (SuperwordUseVSX && size == 16) {
+    assert(MaxVectorSize == 16, "");
     return Op_VecX;
   } else {
-    assert(MaxVectorSize == 8 && size == 8, "");
+    assert(size == 8, "");
     return Op_RegL;
   }
 }
@@ -2200,7 +2217,7 @@ int Matcher::max_vector_size(const BasicType bt) {
 }
 
 int Matcher::min_vector_size(const BasicType bt) {
-  return max_vector_size(bt); // Same as max.
+  return 8/type2aelembytes(bt);
 }
 
 int Matcher::max_vector_size_auto_vectorization(const BasicType bt) {
@@ -14077,10 +14094,64 @@ instruct vsqrt2D_reg(vecX dst, vecX src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Vector Population Count Instructions
+// Vector Population Count Instructions & Friends
+
+// Casting long to int vectors is needed because the bitcount vector instructions
+// for long produce long results but ints are needed.
+instruct vcast_l2i(iRegLdst dst, vecX src) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_INT && PowerArchitecturePPC64 >= 9);
+  match(Set dst (VectorCastL2X src));
+  ins_cost(3 * DEFAULT_COST);
+  format %{ "VectorCastL2I $dst, $src" %}
+  size(12);
+  ins_encode %{
+    VectorSRegister s = $src$$VectorSRegister;
+    Register        d = $dst$$Register;
+
+    // Vector load and store instructions use 8 byte endianess specific ordering.
+    // We need to convert endianess when switching to 64 bit register.
+#ifdef VM_LITTLE_ENDIAN
+    __ mfvsrld(R0, s);
+    __ mfvsrd(d, s);
+#else
+    __ mfvsrld(d, s);
+    __ mfvsrd(R0, s);
+#endif
+    __ rldimi(d, R0, 32, 0);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vcast_l2i_power8(iRegLdst dst, vecX src, vecX tmp) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_INT);
+  match(Set dst (VectorCastL2X src));
+  effect(TEMP tmp);
+  ins_cost(4 * DEFAULT_COST);
+  format %{ "VectorCastL2I $dst, $src\t// Power8" %}
+  size(16);
+  ins_encode %{
+    VectorSRegister t = $tmp$$VectorSRegister;
+    VectorSRegister s = $src$$VectorSRegister;
+    Register        d = $dst$$Register;
+
+    __ vsldoi(t->to_vr(), s->to_vr(), s->to_vr(), 8);
+    // Vector load and store instructions use 8 byte endianess specific ordering.
+    // We need to convert endianess when switching to 64 bit register.
+#ifdef VM_LITTLE_ENDIAN
+    __ mfvsrd(R0, t);
+    __ mfvsrd(d, s);
+#else
+    __ mfvsrd(d, t);
+    __ mfvsrd(R0, s);
+#endif
+    __ rldimi(d, R0, 32, 0);
+  %}
+  ins_pipe(pipe_class_default);
+%}
 
 instruct vpopcnt_reg(vecX dst, vecX src) %{
   match(Set dst (PopCountVI src));
+  match(Set dst (PopCountVL src));
   format %{ "VPOPCNT $dst,$src\t// pop count packed" %}
   size(4);
   ins_encode %{
@@ -14097,6 +14168,58 @@ instruct vpopcnt_reg(vecX dst, vecX src) %{
         break;
       case T_LONG:
         __ vpopcntd($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vcount_leading_zeros_reg(vecX dst, vecX src) %{
+  match(Set dst (CountLeadingZerosV src));
+  format %{ "VCLZ $dst,$src\t// leading zeros count packed" %}
+  size(4);
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_BYTE:
+        __ vclzb($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_SHORT:
+        __ vclzh($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_INT:
+        __ vclzw($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_LONG:
+        __ vclzd($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vcount_trailing_zeros_reg(vecX dst, vecX src) %{
+  match(Set dst (CountTrailingZerosV src));
+  format %{ "VCTZ $dst,$src\t// trailing zeros count packed" %}
+  size(4);
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_BYTE:
+        __ vctzb($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_SHORT:
+        __ vctzh($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_INT:
+        __ vctzw($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_LONG:
+        __ vctzd($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
         break;
       default:
         ShouldNotReachHere();
