@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,9 +246,9 @@ inline void Assembler::nop()                              { Assembler::ori(R0, R
 // NOP for FP and BR units (different versions to allow them to be in one group)
 inline void Assembler::fpnop0()                           { Assembler::fmr(F30, F30); }
 inline void Assembler::fpnop1()                           { Assembler::fmr(F31, F31); }
-inline void Assembler::brnop0()                           { Assembler::mcrf(CCR2, CCR2); }
-inline void Assembler::brnop1()                           { Assembler::mcrf(CCR3, CCR3); }
-inline void Assembler::brnop2()                           { Assembler::mcrf(CCR4,  CCR4); }
+inline void Assembler::brnop0()                           { Assembler::mcrf(CR2, CR2); }
+inline void Assembler::brnop1()                           { Assembler::mcrf(CR3, CR3); }
+inline void Assembler::brnop2()                           { Assembler::mcrf(CR4,  CR4); }
 
 inline void Assembler::mr(      Register d, Register s)   { Assembler::orr(d, s, s); }
 inline void Assembler::ori_opt( Register d, int ui16)     { if (ui16!=0) Assembler::ori( d, d, ui16); }
@@ -303,7 +303,7 @@ inline void Assembler::clrlsldi_(Register a, Register s, int clrl6, int shl6) { 
 inline void Assembler::extrdi(  Register a, Register s, int n, int b){ Assembler::rldicl(a, s, b+n, 64-n); }
 // testbit with condition register.
 inline void Assembler::testbitdi(ConditionRegister cr, Register a, Register s, int ui6) {
-  if (cr == CCR0) {
+  if (cr == CR0) {
     Assembler::rldicr_(a, s, 63-ui6, 0);
   } else {
     Assembler::rldicr(a, s, 63-ui6, 0);

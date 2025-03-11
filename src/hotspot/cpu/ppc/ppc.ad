@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+// Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2012, 2025 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -236,14 +236,14 @@ register %{
   // in the CR register.
 
   // types: v = volatile, nv = non-volatile, s = system
-  reg_def CCR0(SOC, SOC, Op_RegFlags, 0, CCR0->as_VMReg());  // v
-  reg_def CCR1(SOC, SOC, Op_RegFlags, 1, CCR1->as_VMReg());  // v
-  reg_def CCR2(SOC, SOC, Op_RegFlags, 2, CCR2->as_VMReg());  // nv
-  reg_def CCR3(SOC, SOC, Op_RegFlags, 3, CCR3->as_VMReg());  // nv
-  reg_def CCR4(SOC, SOC, Op_RegFlags, 4, CCR4->as_VMReg());  // nv
-  reg_def CCR5(SOC, SOC, Op_RegFlags, 5, CCR5->as_VMReg());  // v
-  reg_def CCR6(SOC, SOC, Op_RegFlags, 6, CCR6->as_VMReg());  // v
-  reg_def CCR7(SOC, SOC, Op_RegFlags, 7, CCR7->as_VMReg());  // v
+  reg_def CR0(SOC, SOC, Op_RegFlags, 0, CR0->as_VMReg());  // v
+  reg_def CR1(SOC, SOC, Op_RegFlags, 1, CR1->as_VMReg());  // v
+  reg_def CR2(SOC, SOC, Op_RegFlags, 2, CR2->as_VMReg());  // nv
+  reg_def CR3(SOC, SOC, Op_RegFlags, 3, CR3->as_VMReg());  // nv
+  reg_def CR4(SOC, SOC, Op_RegFlags, 4, CR4->as_VMReg());  // nv
+  reg_def CR5(SOC, SOC, Op_RegFlags, 5, CR5->as_VMReg());  // v
+  reg_def CR6(SOC, SOC, Op_RegFlags, 6, CR6->as_VMReg());  // v
+  reg_def CR7(SOC, SOC, Op_RegFlags, 7, CR7->as_VMReg());  // v
 
   // Special registers of PPC64
 
@@ -443,14 +443,14 @@ alloc_class chunk1 (
 alloc_class chunk2 (
   // Chunk2 contains *all* 8 condition code registers.
 
-  CCR0,
-  CCR1,
-  CCR2,
-  CCR3,
-  CCR4,
-  CCR5,
-  CCR6,
-  CCR7
+  CR0,
+  CR1,
+  CR2,
+  CR3,
+  CR4,
+  CR5,
+  CR6,
+  CR7
 );
 
 alloc_class chunk3 (
@@ -803,30 +803,30 @@ reg_class bits64_reg_ro(
 // Special Class for Condition Code Flags Register
 
 reg_class int_flags(
-/*CCR0*/             // scratch
-/*CCR1*/             // scratch
-/*CCR2*/             // nv!
-/*CCR3*/             // nv!
-/*CCR4*/             // nv!
-  CCR5,
-  CCR6,
-  CCR7
+/*CR0*/             // scratch
+/*CR1*/             // scratch
+/*CR2*/             // nv!
+/*CR3*/             // nv!
+/*CR4*/             // nv!
+  CR5,
+  CR6,
+  CR7
 );
 
 reg_class int_flags_ro(
-  CCR0,
-  CCR1,
-  CCR2,
-  CCR3,
-  CCR4,
-  CCR5,
-  CCR6,
-  CCR7
+  CR0,
+  CR1,
+  CR2,
+  CR3,
+  CR4,
+  CR5,
+  CR6,
+  CR7
 );
 
-reg_class int_flags_CR0(CCR0);
-reg_class int_flags_CR1(CCR1);
-reg_class int_flags_CR6(CCR6);
+reg_class int_flags_CR0(CR0);
+reg_class int_flags_CR1(CR1);
+reg_class int_flags_CR6(CR6);
 reg_class ctr_reg(SR_CTR);
 
 // ----------------------------
@@ -5568,8 +5568,8 @@ instruct loadF_ac(regF dst, memory mem, flagsRegCR0 cr0) %{
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     Label next;
     __ lfs($dst$$FloatRegister, Idisp, $mem$$base$$Register);
-    __ fcmpu(CCR0, $dst$$FloatRegister, $dst$$FloatRegister);
-    __ bne(CCR0, next);
+    __ fcmpu(CR0, $dst$$FloatRegister, $dst$$FloatRegister);
+    __ bne(CR0, next);
     __ bind(next);
     __ isync();
   %}
@@ -5604,8 +5604,8 @@ instruct loadD_ac(regD dst, memory mem, flagsRegCR0 cr0) %{
     int Idisp = $mem$$disp + frame_slots_bias($mem$$base, ra_);
     Label next;
     __ lfd($dst$$FloatRegister, Idisp, $mem$$base$$Register);
-    __ fcmpu(CCR0, $dst$$FloatRegister, $dst$$FloatRegister);
-    __ bne(CCR0, next);
+    __ fcmpu(CR0, $dst$$FloatRegister, $dst$$FloatRegister);
+    __ bne(CR0, next);
     __ bind(next);
     __ isync();
   %}
@@ -7394,8 +7394,8 @@ instruct compareAndSwapB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGB $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgb(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 $res$$Register, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -7413,8 +7413,8 @@ instruct compareAndSwapB4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIs
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGB $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgb(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 $res$$Register, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -7432,8 +7432,8 @@ instruct compareAndSwapS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGH $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgh(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 $res$$Register, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -7451,8 +7451,8 @@ instruct compareAndSwapS4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIs
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGH $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgh(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 $res$$Register, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -7469,8 +7469,8 @@ instruct compareAndSwapI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGW $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgw(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgw(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 $res$$Register, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -7488,8 +7488,8 @@ instruct compareAndSwapN_regP_regN_regN(iRegIdst res, iRegPdst mem_ptr, iRegNsrc
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGW $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgw(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgw(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 $res$$Register, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -7506,8 +7506,8 @@ instruct compareAndSwapL_regP_regL_regL(iRegIdst res, iRegPdst mem_ptr, iRegLsrc
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGD $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgd(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgd(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 $res$$Register, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -7525,8 +7525,8 @@ instruct compareAndSwapP_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, iRegPsrc
   predicate(n->as_LoadStore()->barrier_data() == 0);
   format %{ "CMPXCHGD $res, $mem_ptr, $src1, $src2; as bool; ptr" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgd(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgd(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 $res$$Register, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -7546,8 +7546,8 @@ instruct weakCompareAndSwapB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGB $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgb(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 MacroAssembler::MemBarNone,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7560,8 +7560,8 @@ instruct weakCompareAndSwapB4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iR
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGB $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgb(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
                 MacroAssembler::MemBarNone,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7574,8 +7574,8 @@ instruct weakCompareAndSwapB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGB acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgb(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7588,8 +7588,8 @@ instruct weakCompareAndSwapB4_acq_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGB acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgb(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
                 support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7602,8 +7602,8 @@ instruct weakCompareAndSwapS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGH $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgh(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 MacroAssembler::MemBarNone,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7616,8 +7616,8 @@ instruct weakCompareAndSwapS4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iR
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGH $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgh(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
                 MacroAssembler::MemBarNone,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7630,8 +7630,8 @@ instruct weakCompareAndSwapS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGH acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgh(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7644,8 +7644,8 @@ instruct weakCompareAndSwapS4_acq_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP tmp2, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGH acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgh(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, $tmp2$$Register,
                 support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7658,8 +7658,8 @@ instruct weakCompareAndSwapI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGW $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgw(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgw(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7672,10 +7672,10 @@ instruct weakCompareAndSwapI_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGW acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     // Acquire only needed in successful case. Weak node is allowed to report unsuccessful in additional rare cases and
     // value is never passed to caller.
-    __ cmpxchgw(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    __ cmpxchgw(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7688,8 +7688,8 @@ instruct weakCompareAndSwapN_regP_regN_regN(iRegIdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGW $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgw(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgw(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7702,10 +7702,10 @@ instruct weakCompareAndSwapN_acq_regP_regN_regN(iRegIdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGW acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     // Acquire only needed in successful case. Weak node is allowed to report unsuccessful in additional rare cases and
     // value is never passed to caller.
-    __ cmpxchgw(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    __ cmpxchgw(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7718,9 +7718,9 @@ instruct weakCompareAndSwapL_regP_regL_regL(iRegIdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGD $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     // value is never passed to caller.
-    __ cmpxchgd(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    __ cmpxchgd(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7733,10 +7733,10 @@ instruct weakCompareAndSwapL_acq_regP_regL_regL(iRegIdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGD acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     // Acquire only needed in successful case. Weak node is allowed to report unsuccessful in additional rare cases and
     // value is never passed to caller.
-    __ cmpxchgd(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    __ cmpxchgd(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7749,8 +7749,8 @@ instruct weakCompareAndSwapP_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGD $res, $mem_ptr, $src1, $src2; as bool; ptr" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgd(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgd(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7763,10 +7763,10 @@ instruct weakCompareAndSwapP_acq_regP_regP_regP(iRegIdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGD acq $res, $mem_ptr, $src1, $src2; as bool; ptr" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
     // Acquire only needed in successful case. Weak node is allowed to report unsuccessful in additional rare cases and
     // value is never passed to caller.
-    __ cmpxchgd(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    __ cmpxchgd(CR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
                 MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
   %}
@@ -7781,8 +7781,8 @@ instruct compareAndExchangeB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGB $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgb(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
   %}
@@ -7795,8 +7795,8 @@ instruct compareAndExchangeB4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iR
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP cr0);
   format %{ "CMPXCHGB $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, R0,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgb(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, R0,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
   %}
@@ -7809,8 +7809,8 @@ instruct compareAndExchangeB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGB acq $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgb(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -7829,8 +7829,8 @@ instruct compareAndExchangeB4_acq_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP cr0);
   format %{ "CMPXCHGB acq $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, R0,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgb(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, R0,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -7849,8 +7849,8 @@ instruct compareAndExchangeS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGH $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgh(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
   %}
@@ -7863,8 +7863,8 @@ instruct compareAndExchangeS4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iR
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP cr0);
   format %{ "CMPXCHGH $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, R0,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgh(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, R0,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
   %}
@@ -7877,8 +7877,8 @@ instruct compareAndExchangeS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGH acq $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgh(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, noreg, noreg,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -7897,8 +7897,8 @@ instruct compareAndExchangeS4_acq_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr
   effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP tmp1, TEMP cr0);
   format %{ "CMPXCHGH acq $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, R0,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgh(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register, $tmp1$$Register, R0,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -7917,8 +7917,8 @@ instruct compareAndExchangeI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGW $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgw(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgw(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
   %}
@@ -7931,8 +7931,8 @@ instruct compareAndExchangeI_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGW acq $res, $mem_ptr, $src1, $src2; as int" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgw(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgw(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -7951,8 +7951,8 @@ instruct compareAndExchangeN_regP_regN_regN(iRegNdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGW $res, $mem_ptr, $src1, $src2; as narrow oop" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgw(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgw(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
   %}
@@ -7965,8 +7965,8 @@ instruct compareAndExchangeN_acq_regP_regN_regN(iRegNdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGW acq $res, $mem_ptr, $src1, $src2; as narrow oop" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgw(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgw(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -7985,8 +7985,8 @@ instruct compareAndExchangeL_regP_regL_regL(iRegLdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGD $res, $mem_ptr, $src1, $src2; as long" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgd(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgd(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
   %}
@@ -7999,8 +7999,8 @@ instruct compareAndExchangeL_acq_regP_regL_regL(iRegLdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGD acq $res, $mem_ptr, $src1, $src2; as long" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgd(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgd(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -8020,8 +8020,8 @@ instruct compareAndExchangeP_regP_regP_regP(iRegPdst res, iRegPdst mem_ptr, iReg
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGD $res, $mem_ptr, $src1, $src2; as ptr; ptr" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgd(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgd(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
   %}
@@ -8035,8 +8035,8 @@ instruct compareAndExchangeP_acq_regP_regP_regP(iRegPdst res, iRegPdst mem_ptr, 
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGD acq $res, $mem_ptr, $src1, $src2; as ptr; ptr" %}
   ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgd(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
+    // CmpxchgX sets CR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
+    __ cmpxchgd(CR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, nullptr, true);
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -11389,7 +11389,7 @@ instruct cmpL3_reg_reg(iRegIdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 c
   format %{ "cmpL3_reg_reg $dst, $src1, $src2" %}
 
   ins_encode %{
-    __ cmpd(CCR0, $src1$$Register, $src2$$Register);
+    __ cmpd(CR0, $src1$$Register, $src2$$Register);
     __ set_cmp3($dst$$Register);
   %}
   ins_pipe(pipe_class_default);
@@ -11661,11 +11661,11 @@ instruct cmpF_reg_reg_Ex(flagsReg crx, regF src1, regF src2) %{
   //
   // block BXX:
   // 0: instruct cmpFUnordered_reg_reg (cmpF_reg_reg-0):
-  //    cmpFUrd CCR6, F11, F9
+  //    cmpFUrd CR6, F11, F9
   // 4: instruct cmov_bns_less (cmpF_reg_reg-1):
-  //    cmov CCR6
+  //    cmov CR6
   // 8: instruct branchConSched:
-  //    B_FARle CCR6, B56  P=0.500000 C=-1.000000
+  //    B_FARle CR6, B56  P=0.500000 C=-1.000000
   match(Set crx (CmpF src1 src2));
   ins_cost(DEFAULT_COST+BRANCH_COST);
 
@@ -11724,7 +11724,7 @@ instruct cmpF3_reg_reg(iRegIdst dst, regF src1, regF src2, flagsRegCR0 cr0) %{
   format %{ "cmpF3_reg_reg $dst, $src1, $src2" %}
 
   ins_encode %{
-    __ fcmpu(CCR0, $src1$$FloatRegister, $src2$$FloatRegister);
+    __ fcmpu(CR0, $src1$$FloatRegister, $src2$$FloatRegister);
     __ set_cmpu3($dst$$Register, true); // C2 requires unordered to get treated like less
   %}
   ins_pipe(pipe_class_default);
@@ -11808,7 +11808,7 @@ instruct cmpD3_reg_reg(iRegIdst dst, regD src1, regD src2, flagsRegCR0 cr0) %{
   format %{ "cmpD3_reg_reg $dst, $src1, $src2" %}
 
   ins_encode %{
-    __ fcmpu(CCR0, $src1$$FloatRegister, $src2$$FloatRegister);
+    __ fcmpu(CR0, $src1$$FloatRegister, $src2$$FloatRegister);
     __ set_cmpu3($dst$$Register, true); // C2 requires unordered to get treated like less
   %}
   ins_pipe(pipe_class_default);
@@ -12770,7 +12770,7 @@ instruct string_inflate(Universe dummy, rarg1RegP src, rarg2RegP dst, iRegIsrc l
     __ string_inflate_16($src$$Register, $dst$$Register, $len$$Register, $tmp1$$Register,
                          $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, $tmp5$$Register);
     __ rldicl_($tmp1$$Register, $len$$Register, 0, 64-3); // Remaining characters.
-    __ beq(CCR0, Ldone);
+    __ beq(CR0, Ldone);
     __ string_inflate($src$$Register, $dst$$Register, $tmp1$$Register, $tmp2$$Register);
     __ bind(Ldone);
   %}
@@ -12854,8 +12854,8 @@ instruct minI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
   ins_cost(DEFAULT_COST*2);
 
   ins_encode %{
-    __ cmpw(CCR0, $src1$$Register, $src2$$Register);
-    __ isel($dst$$Register, CCR0, Assembler::less, /*invert*/false, $src1$$Register, $src2$$Register);
+    __ cmpw(CR0, $src1$$Register, $src2$$Register);
+    __ isel($dst$$Register, CR0, Assembler::less, /*invert*/false, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -12887,8 +12887,8 @@ instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
   ins_cost(DEFAULT_COST*2);
 
   ins_encode %{
-    __ cmpw(CCR0, $src1$$Register, $src2$$Register);
-    __ isel($dst$$Register, CCR0, Assembler::greater, /*invert*/false, $src1$$Register, $src2$$Register);
+    __ cmpw(CR0, $src1$$Register, $src2$$Register);
+    __ isel($dst$$Register, CR0, Assembler::greater, /*invert*/false, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}

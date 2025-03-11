@@ -62,6 +62,7 @@
 #include "utilities/align.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/globalCounter.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/preserveException.hpp"
@@ -365,7 +366,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
     if (mon->first_waiter() != nullptr) {
       // We have one or more waiters. Since this is an inflated monitor
       // that we own, we can transfer one or more threads from the waitset
-      // to the entrylist here and now, avoiding the slow-path.
+      // to the entry_list here and now, avoiding the slow-path.
       if (all) {
         DTRACE_MONITOR_PROBE(notifyAll, mon, obj, current);
       } else {
@@ -373,7 +374,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
       }
       int free_count = 0;
       do {
-        mon->INotify(current);
+        mon->notify_internal(current);
         ++free_count;
       } while (mon->first_waiter() != nullptr && all);
       OM_PERFDATA_OP(Notifications, inc(free_count));

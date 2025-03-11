@@ -129,6 +129,7 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     @CallerSensitive
+    @ForceInline
     public final MemorySegment reinterpret(long newSize, Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
         return reinterpretInternal(Reflection.getCallerClass(), newSize,
@@ -137,12 +138,14 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     @CallerSensitive
+    @ForceInline
     public final MemorySegment reinterpret(long newSize) {
         return reinterpretInternal(Reflection.getCallerClass(), newSize, scope, null);
     }
 
     @Override
     @CallerSensitive
+    @ForceInline
     public final MemorySegment reinterpret(Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
         return reinterpretInternal(Reflection.getCallerClass(), byteSize(),

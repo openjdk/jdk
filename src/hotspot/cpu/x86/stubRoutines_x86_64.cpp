@@ -32,14 +32,3 @@
 
 jint    StubRoutines::x86::_mxcsr_std = 0;
 jint    StubRoutines::x86::_mxcsr_rz = 0;
-
-address StubRoutines::x86::_get_previous_sp_entry = nullptr;
-
-address StubRoutines::x86::_f2i_fixup = nullptr;
-address StubRoutines::x86::_f2l_fixup = nullptr;
-address StubRoutines::x86::_d2i_fixup = nullptr;
-address StubRoutines::x86::_d2l_fixup = nullptr;
-address StubRoutines::x86::_float_sign_mask = nullptr;
-address StubRoutines::x86::_float_sign_flip = nullptr;
-address StubRoutines::x86::_double_sign_mask = nullptr;
-address StubRoutines::x86::_double_sign_flip = nullptr;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_PERFDATA_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/timer.hpp"
@@ -244,6 +245,18 @@ enum CounterNS {
  * UsePerfData, a product flag set to true by default. This flag may
  * be removed from the product in the future.
  *
+ * There are possible shutdown races between counter uses and counter
+ * destruction code. Normal shutdown happens with taking VM_Exit safepoint
+ * operation, so in the vast majority of uses this is not an issue. On the
+ * paths where a concurrent access can still happen when VM is at safepoint,
+ * use the following pattern to coordinate with shutdown:
+ *
+ * {
+ *   GlobalCounter::CriticalSection cs(Thread::current());
+ *   if (PerfDataManager::has_PerfData()) {
+ *     <update-counter>
+ *   }
+ * }
  */
 class PerfData : public CHeapObj<mtInternal> {
 
@@ -788,7 +801,7 @@ class PerfDataManager : AllStatic {
     }
 
     static void destroy();
-    static bool has_PerfData() { return _has_PerfData; }
+    static bool has_PerfData() { return Atomic::load_acquire(&_has_PerfData); }
 };
 
 // Useful macros to create the performance counters

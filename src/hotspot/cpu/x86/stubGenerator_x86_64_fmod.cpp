@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Intel Corporation. All rights reserved.
+ * Copyright (c) 2023, 2024, Intel Corporation. All rights reserved.
  * Intel Math Library (LIBM) Source Code
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -73,7 +73,8 @@ ATTRIBUTE_ALIGNED(32) static const uint64_t CONST_e307[] = {
 
 address StubGenerator::generate_libmFmod() {
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "libmFmod");
+  StubGenStubId stub_id = StubGenStubId::fmod_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 

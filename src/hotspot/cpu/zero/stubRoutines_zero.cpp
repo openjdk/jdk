@@ -27,3 +27,5 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/stubRoutines.hpp"
+
+// zero has no arch-specific stubs nor any associated entries

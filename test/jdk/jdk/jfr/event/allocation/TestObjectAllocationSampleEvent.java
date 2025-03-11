@@ -33,7 +33,6 @@ import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @summary Tests ObjectAllocationSampleEvent
- * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm -XX:+UseTLAB -XX:TLABSize=2k -XX:-ResizeTLAB jdk.jfr.event.allocation.TestObjectAllocationSampleEvent

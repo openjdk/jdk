@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,13 +144,13 @@ final class TestInstance implements ThrowingRunnable {
             return desc;
         }
 
-        private Class clazz;
+        private Class<?> clazz;
         private String functionName;
         private String functionArgs;
         private String instanceArgs;
     }
 
-    TestInstance(ThrowingRunnable testBody) {
+    TestInstance(ThrowingRunnable testBody, Path workDirRoot) {
         assertCount = 0;
         this.testConstructor = (unused) -> null;
         this.testBody = (unused) -> testBody.run();
@@ -158,11 +158,11 @@ final class TestInstance implements ThrowingRunnable {
         this.afterActions = Collections.emptyList();
         this.testDesc = TestDesc.createBuilder().get();
         this.dryRun = false;
-        this.workDir = createWorkDirName(testDesc);
+        this.workDir = workDirRoot.resolve(createWorkDirPath(testDesc));
     }
 
-    TestInstance(MethodCall testBody, List<ThrowingConsumer> beforeActions,
-            List<ThrowingConsumer> afterActions, boolean dryRun) {
+    TestInstance(MethodCall testBody, List<ThrowingConsumer<Object>> beforeActions,
+            List<ThrowingConsumer<Object>> afterActions, boolean dryRun, Path workDirRoot) {
         assertCount = 0;
         this.testConstructor = v -> ((MethodCall)v).newInstance();
         this.testBody = testBody;
@@ -170,7 +170,7 @@ final class TestInstance implements ThrowingRunnable {
         this.afterActions = afterActions;
         this.testDesc = testBody.createDescription();
         this.dryRun = dryRun;
-        this.workDir = createWorkDirName(testDesc);
+        this.workDir = workDirRoot.resolve(createWorkDirPath(testDesc));
     }
 
     void notifyAssert() {
@@ -255,7 +255,7 @@ final class TestInstance implements ThrowingRunnable {
         }
     }
 
-    private static Class enclosingMainMethodClass() {
+    private static Class<?> enclosingMainMethodClass() {
         StackTraceElement st[] = Thread.currentThread().getStackTrace();
         for (StackTraceElement ste : st) {
             if ("main".equals(ste.getMethodName())) {
@@ -276,8 +276,8 @@ final class TestInstance implements ThrowingRunnable {
         return false;
     }
 
-    private static Path createWorkDirName(TestDesc testDesc) {
-        Path result = Path.of(".");
+    private static Path createWorkDirPath(TestDesc testDesc) {
+        Path result = Path.of("");
         if (!isCalledByJavatest()) {
             result = result.resolve(testDesc.clazz.getSimpleName());
         }
@@ -323,10 +323,10 @@ final class TestInstance implements ThrowingRunnable {
     private Status status;
     private RuntimeException skippedTestException;
     private final TestDesc testDesc;
-    private final ThrowingFunction testConstructor;
-    private final ThrowingConsumer testBody;
-    private final List<ThrowingConsumer> beforeActions;
-    private final List<ThrowingConsumer> afterActions;
+    private final ThrowingFunction<ThrowingConsumer<Object>, Object> testConstructor;
+    private final ThrowingConsumer<Object> testBody;
+    private final List<ThrowingConsumer<Object>> beforeActions;
+    private final List<ThrowingConsumer<Object>> afterActions;
     private final boolean dryRun;
     private final Path workDir;
 

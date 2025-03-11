@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -42,8 +41,6 @@ import static java.lang.String.checkIndex;
 import static java.lang.String.checkOffset;
 
 final class StringLatin1 {
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-
     public static char charAt(byte[] value, int index) {
         checkIndex(index, value.length);
         return (char)(value[index] & 0xff);
@@ -710,27 +707,6 @@ final class StringLatin1 {
 
     static Stream<String> lines(byte[] value) {
         return StreamSupport.stream(LinesSpliterator.spliterator(value), false);
-    }
-
-    static void putCharsAt(byte[] val, int index, int c1, int c2, int c3, int c4) {
-        assert index >= 0 && index + 3 < length(val) : "Trusted caller missed bounds check";
-        // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
-        long offset = (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
-        UNSAFE.putByte(val, offset    , (byte)(c1));
-        UNSAFE.putByte(val, offset + 1, (byte)(c2));
-        UNSAFE.putByte(val, offset + 2, (byte)(c3));
-        UNSAFE.putByte(val, offset + 3, (byte)(c4));
-    }
-
-    static void putCharsAt(byte[] val, int index, int c1, int c2, int c3, int c4, int c5) {
-        assert index >= 0 && index + 4 < length(val) : "Trusted caller missed bounds check";
-        // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
-        long offset  = (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
-        UNSAFE.putByte(val, offset    , (byte)(c1));
-        UNSAFE.putByte(val, offset + 1, (byte)(c2));
-        UNSAFE.putByte(val, offset + 2, (byte)(c3));
-        UNSAFE.putByte(val, offset + 3, (byte)(c4));
-        UNSAFE.putByte(val, offset + 4, (byte)(c5));
     }
 
     public static void putChar(byte[] val, int index, int c) {
