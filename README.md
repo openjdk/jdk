@@ -1,4 +1,5 @@
 # Welcome to the JDK!
+test
 
 For build instructions please see the
 [online documentation](https://openjdk.org/groups/build/doc/building.html),
