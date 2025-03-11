@@ -1166,6 +1166,9 @@ void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
       LIR_Address* a = nullptr;
 
       if (index->is_valid()) {
+        LIR_Opr tmp = new_register(T_LONG);
+        __ convert(Bytecodes::_i2l, index, tmp);
+        index = tmp;
         a = new LIR_Address(base_op, index, offset, T_BYTE);
       } else {
         a = new LIR_Address(base_op, offset, T_BYTE);
