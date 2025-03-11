@@ -866,7 +866,7 @@ void MetaspaceShared::preload_classes(TRAPS) {
   const char* filesep = os::file_separator();
 
   jio_snprintf(default_classlist, JVM_MAXPATHLEN, "%s%slib%sclasslist",
-               Arguments::get_java_home(), filesep, filesep); 
+               Arguments::get_java_home(), filesep, filesep);
   if (SharedClassListFile == nullptr) {
     classlist_path = default_classlist;
   } else {
