@@ -3516,37 +3516,40 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 
 //------------------------------Ideal_sign_extended_input----------------------
 // Check for useless sign-extension before a partial-word store
-// (StoreB ... (RShiftI _ (LShiftI _ valIn conIL ) conIR) )
-// If (conIL == conIR && conIR <= num_bits)  this simplifies to
-// (StoreB ... (valIn) )
-// If (conIL > conIR) we are inventing 0 lower bits, and throwing
-// away upper bits, but we are not introducing garbage bits from the upper bits
-// (the right in the notation below).
-// We can simplify into
-// (StoreB ... (LShiftI _ valIn (conIL - conIR)) )
+// (StoreB ... (RShiftI _ (LShiftI _ v conIL) conIR))
+// If (conIL == conIR && conIR <= num_bits) this simplifies to
+// (StoreB ... (v))
+// If (conIL > conIR) under some conditions, it can be simplified into
+// (StoreB ... (LShiftI _ v (conIL - conIR)))
 // This case happens when the value of the store was itself a left shift, that
 // gets merged into the inner left shift of the sign-extension. For instance,
 // if we have
-// array_of_shorts[0] = (short)(X << 2)
+// array_of_shorts[0] = (short)(v << 2)
 // We get a structure such as:
-// (StoreB ... (RShiftI _ (LShiftI _ (LShiftI _ X 2) 16) 16))
+// (StoreB ... (RShiftI _ (LShiftI _ (LShiftI _ v 2) 16) 16))
 // that is simplified into
-// (StoreB ... (RShiftI _ (LShiftI _ X 18) 16)).
-// It is thus useful to handle the case where conIL > conIR.
+// (StoreB ... (RShiftI _ (LShiftI _ v 18) 16)).
+// It is thus useful to handle cases where conIL > conIR. But this simplification
+// does not always hold. Let's see in which cases it's valid.
 //
-// Let's assume we have the following 32 bits integer that we want to stuff in 8 bits byte:
-// +------------------------+---------+
-// |        v[8..31]        | v[0..7] |
-// +------------------------+---------+
-//  31                     8 7        0
-// v[0..7] is meaningful, but v[8..31] is not. In this case, num_rejected_bits == 24.
-// Let's study what happens in different cases to see that the simplification into
-// (StoreB ... (LShiftI _ valIn (conIL - conIR)) )
-// is valid if:
+// Let's assume we have the following 32 bits integer v:
+// +----------------------------------+
+// |             v[0..31]             |
+// +----------------------------------+
+//  31                               0
+// that will be stuffed in 8 bits byte after a shift left and a shift right of
+// potentially different magnitudes.
+// We denote num_rejected_bits the number of bits of the discarded part. In this
+// case, num_rejected_bits == 24.
+// Let's study different cases of (RShiftI _ (LShiftI _ v conIL) conIR).
+// Eventually, we show that the simplification into (LShiftI _ v (conIL-conIR))
+// is valid if (but not iff):
 // - conIL >= conIR
 // - conIR <= num_rejected_bits
-// Let's also remember that conIL < 32 since (x << 33) is simplified into (x << 1)
-// and (x << 31) << 2 is simplified into 0. This means that in any case, after the
+// Remembering that only the 8 lower bits have to be correct.
+//
+// Let's also remember that conIL < 32 since (v << 33) is simplified into (v << 1)
+// and (v << 31) << 2 is simplified into 0. This means that in any case, after the
 // left shift, we always have at least one bit of the original v.
 //
 // ### Case 1 : conIL == conIR
@@ -3593,7 +3596,7 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 //  31              10 9       4 3   0
 // The non-rejected bits are the 8 lower one of (v << conIL - conIR).
 // The bits 6 and 7 of v have been thrown away after the shift left.
-// The bits 4 and 5 of v are still present, but outside of the kept bits (the 8 lower ones).
+// The bits 4 and 5 of v are still present, but outside the kept bits (the 8 lower ones).
 // The simplification is still fine.
 //
 // ### But! Case 4: conIL > conIR > num_rejected_bits.
@@ -3613,7 +3616,7 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // - 0-1 => 0
 // - 2-5 => the bits 0 to 3 of v
 // - 6-7 => the sign bit of v[0..3] (that is v[3])
-// Simplifying this as (X << 2) is not correct.
+// Simplifying this as (v << 2) is not correct.
 // The condition conIR <= num_rejected_bits is indeed necessary.
 //
 // ### Conclusion:
@@ -3624,7 +3627,7 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // of treating conIL > conIR comes from the cases where the sign-extended value is
 // also left-shift expression. Computing the sign-extension of a right-shift expression
 // doesn't yield a situation such as
-// (StoreB ... (RShiftI _ (LShiftI _ valIn conIL ) conIR) )
+// (StoreB ... (RShiftI _ (LShiftI _ v conIL) conIR))
 // where conIL < conIR.
 Node* StoreNode::Ideal_sign_extended_input(PhaseGVN* phase, int num_rejected_bits) {
   Node* shr = in(MemNode::ValueIn);
