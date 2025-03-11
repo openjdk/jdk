@@ -77,9 +77,8 @@ uint32_t LockStack::end_offset() {
 
 #ifndef PRODUCT
 bool LockStack::is_owning_thread(JavaThread* current) const {
- JavaThread* thread = JavaThread::cast(current);
- bool is_owning = &thread->lock_stack() == this;
- assert(is_owning == (get_thread() == thread), "is_owning sanity");
+ bool is_owning = &current->lock_stack() == this;
+ assert(is_owning == (get_thread() == current), "is_owning sanity");
  return is_owning;
 }
 

@@ -67,7 +67,7 @@ class LockStack {
   inline JavaThread* get_thread() const;
 
   // Tests if the calling thread is the thread that owns this lock-stack.
-  bool is_owning_thread(JavaThread* current) const PRODUCT_RETURN_({ return false; })
+  NOT_PRODUCT(bool is_owning_thread(JavaThread* current) const;)
 
   // Verifies consistency of the lock-stack.
   void verify(const char* msg) const PRODUCT_RETURN;
