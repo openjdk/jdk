@@ -103,7 +103,7 @@ import compiler.whitebox.CompilerWhiteBoxTest;
 public class RelocateNMethod extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {
-        CompilerWhiteBoxTest.main(RelocateNMethod::new, args);
+        CompilerWhiteBoxTest.main(RelocateNMethod::new, new String[] {"CONSTRUCTOR_TEST", "METHOD_TEST", "STATIC_TEST"});
     }
 
     private RelocateNMethod(TestCase testCase) {

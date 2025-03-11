@@ -1597,6 +1597,10 @@ bool nmethod::is_relocatable() const {
     return false;
   }
 
+  if (is_osr_method()) {
+    return false;
+  }
+
   if (method()->is_method_handle_intrinsic()) {
     return false;
   }
