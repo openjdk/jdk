@@ -233,7 +233,7 @@ hb_shape_plan_create2 (hb_face_t                     *face,
                   num_coords,
                   shaper_list);
 
-  if (unlikely (props->direction == HB_DIRECTION_INVALID))
+  if (unlikely (!HB_DIRECTION_IS_VALID (props->direction)))
     return hb_shape_plan_get_empty ();
 
   hb_shape_plan_t *shape_plan;
