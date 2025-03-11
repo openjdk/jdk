@@ -633,9 +633,9 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue) {
       task = next_task;
       continue;
     }
-    if (task->compile_reason() == CompileTask::Reason_Whitebox) {
-      // Whitebox (CTW) tasks do not participate in rate selection and/or any level
-      // adjustments. Just return them in order.
+    if (task->is_blocking() && task->compile_reason() == CompileTask::Reason_Whitebox) {
+      // CTW tasks, submitted as blocking Whitebox requests, do not participate in rate
+      // selection and/or any level adjustments. Just return them in order.
       return task;
     }
     Method* method = task->method();
