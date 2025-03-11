@@ -25,8 +25,7 @@
  * @test
  * @requires vm.cds
  * @requires vm.flagless
- * @bug 8005933
- * @summary -Xshare:auto is the default when -Xshare is not specified
+ * @summary -Xshare:auto is the default
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
