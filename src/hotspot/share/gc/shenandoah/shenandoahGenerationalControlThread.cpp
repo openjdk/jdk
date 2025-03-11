@@ -277,14 +277,9 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     notify_gc_waiters();
   }
 
-  {
-    MonitorLocker ml(&_alloc_failure_waiters_lock);
-    if (_alloc_failure_waiters_count > 0 && !_heap->cancelled_gc()) {
-      log_debug(gc, thread)("Notify %zu threads waiting because of allocation failures", _alloc_failure_waiters_count);
-      // If there are threads waiting because of allocation failures, and we
-      // completed a cycle that cleared the cancellation, notify the waiters.
-      ml.notify_all();
-    }
+  // If this cycle completed successfully, notify threads waiting to retry allocation
+  if (!_heap->cancelled_gc()) {
+    notify_alloc_failure_waiters();
   }
 
   // Report current free set state at the end of cycle, whether

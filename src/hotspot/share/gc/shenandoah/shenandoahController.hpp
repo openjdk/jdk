@@ -48,7 +48,6 @@ protected:
   // GC waiters when alloc failure GC cycle finishes. We want instead
   // to make complete explicit cycle for demanding customers.
   Monitor _alloc_failure_waiters_lock;
-  size_t  _alloc_failure_waiters_count;
   Monitor _gc_waiters_lock;
 
   // Increments the internal GC count.
@@ -59,7 +58,6 @@ public:
     _allocs_seen(0),
     _gc_id(0),
     _alloc_failure_waiters_lock(Mutex::safepoint-2, "ShenandoahAllocFailureGC_lock", true),
-    _alloc_failure_waiters_count(0),
     _gc_waiters_lock(Mutex::safepoint-2, "ShenandoahRequestedGC_lock", true)
   { }
 
