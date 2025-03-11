@@ -77,16 +77,7 @@
 #include <unistd.h>
 #endif
 
-#if defined(_WIN64)
-#define LD_FORMAT "%ld"
-#define LD_FORMAT2 "%10ld"
-// TODO: suppress undefined errors for now
-#define STDERR_FILENO 2
-#define STDOUT_FILENO 1
-#else
 #define LD_FORMAT "%'ld"
-#define LD_FORMAT2 "%'10ld"
-#endif
 
 static void* raw_realloc(void* old, size_t s)   { ALLOW_C_FUNCTION(::realloc, return ::realloc(old, s);) }
 #if defined(LINUX)
@@ -96,6 +87,8 @@ static void* raw_realloc(void* old, size_t s)   { ALLOW_C_FUNCTION(::realloc, re
 #elif defined(__APPLE__)
   static size_t raw_malloc_size(void* ptr)   { ALLOW_C_FUNCTION(::malloc_size, return ::malloc_size(ptr);) }
 #endif
+
+#define NMT_HEADER_SIZE 16
 
 NMT_MemoryLogRecorder NMT_MemoryLogRecorder::_recorder;
 NMT_VirtualMemoryLogRecorder NMT_VirtualMemoryLogRecorder::_recorder;
@@ -176,20 +169,6 @@ void NMT_LogRecorder::unlock() {
 #endif
 }
 
-long int NMT_LogRecorder::thread_id() {
-  return os::current_thread_id();
-//#if defined(LINUX) || defined(__APPLE__)
-//  long int tid = (long int)pthread_self();
-//  if (tid == 0) {
-//    fprintf(stderr, "NMT_LogRecorder::thread_id: %6ld\n", tid);
-//  }
-//  return tid;
-//#elif defined(_WIN64)
-//  // TODO: NMT_LogRecorder::thread_id
-//  return 0;
-//#endif
-}
-
 void NMT_LogRecorder::get_thread_name(char* buf) {
 #if defined(__APPLE__)
   if (pthread_main_np()) {
@@ -210,7 +189,7 @@ void NMT_LogRecorder::logThreadName() {
   NMT_LogRecorder::lock();
   {
     bool found = false;
-    long int tid = NMT_LogRecorder::thread_id();
+    long int tid = os::current_thread_id();
     for (size_t i = 0; i < _threads_names_size; i++) {
       if (_threads_names[i].thread == tid) {
         found = true;
@@ -231,11 +210,6 @@ void NMT_LogRecorder::logThreadName() {
     }
   }
   NMT_LogRecorder::unlock();
-}
-
-size_t NMT_LogRecorder::mallocSize(void* ptr)
-{
-  return raw_malloc_size(ptr);
 }
 
 #define IS_FREE(e)           ((e->requested == 0) && (e->old == nullptr))
@@ -623,14 +597,14 @@ void NMT_MemoryLogRecorder::_record(MemTag mem_tag, size_t requested, address pt
       if (MemTracker::is_initialized()) {
         entry.time = os::javaTimeNanos();
       }
-      entry.thread = NMT_LogRecorder::thread_id();
+      entry.thread = os::current_thread_id();
       entry.ptr = ptr;
       entry.old = old;
       //fprintf(stderr, "record %p:%zu:%p\n", ptr, requested, old);fflush(stderr);
       entry.requested = requested;
       entry.actual = 0;
       if (entry.requested > 0) {
-        entry.actual = NMT_LogRecorder::mallocSize(ptr);
+        entry.actual = raw_malloc_size(ptr);
       }
 
       entry.mem_tag = (long int)mem_tag;
@@ -660,7 +634,7 @@ void NMT_MemoryLogRecorder::record_free(void *ptr) {
   if (!recorder->done()) {
     address resolved_ptr = (address)ptr;
     if (MemTracker::enabled()) {
-      resolved_ptr = (address)ptr - 16;
+      resolved_ptr = (address)ptr - NMT_HEADER_SIZE;
     }
     NMT_MemoryLogRecorder::_record(mtNone, 0, resolved_ptr, nullptr, nullptr);
   }
@@ -669,13 +643,13 @@ void NMT_MemoryLogRecorder::record_free(void *ptr) {
 void NMT_MemoryLogRecorder::record_malloc(MemTag mem_tag, size_t requested, void* ptr, const NativeCallStack *stack, void* old) {
   NMT_MemoryLogRecorder *recorder = NMT_MemoryLogRecorder::instance();
   if (!recorder->done()) {
-    address resolved_old = (address)old;
+    address resolved_ptr = (address)old;
     if (old != nullptr) {
       if (MemTracker::enabled()) {
-        resolved_old = (address)old - 16;
+        resolved_ptr = (address)old - NMT_HEADER_SIZE;
       }
     }
-    NMT_MemoryLogRecorder::_record(mem_tag, requested, (address)ptr, resolved_old, stack);
+    NMT_MemoryLogRecorder::_record(mem_tag, requested, (address)ptr, resolved_ptr, stack);
   }
 }
 
@@ -856,7 +830,7 @@ void NMT_VirtualMemoryLogRecorder::_record(NMT_VirtualMemoryLogRecorder::Type ty
       {
         entry.time = os::javaTimeNanos();
       }
-      entry.thread = NMT_LogRecorder::thread_id();
+      entry.thread = os::current_thread_id();
       entry.ptr = ptr;
       entry.mem_tag = (long int)mem_tag;
       entry.mem_tag_split = (long int)mem_tag_split;

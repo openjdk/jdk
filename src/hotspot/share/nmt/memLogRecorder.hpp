@@ -48,6 +48,8 @@ protected:
   long int _count  = 0;
   int _log_fd;
   volatile bool _done = true;
+
+protected:
   volatile size_t _threads_names_size = 0;
   typedef struct thread_name_info {
     char name[MAXTHREADNAMESIZE];
@@ -60,8 +62,6 @@ public:
   static void finish();
   static void replay();
   static void logThreadName(const char* name);
-  static size_t mallocSize(void* ptr);
-  static long int thread_id();
 
 public:
   void init();
