@@ -127,6 +127,8 @@ public:
   // Called after the operation is completed.
   // If reply_writer is provided, writes the results.
   void complete() {
+    JavaThread* thread = JavaThread::current();
+    ThreadBlockInVM tbivm(thread);
     flush_reply();
   }
 
