@@ -42,7 +42,7 @@ import sun.nio.cs.UTF_8;
  * <p>
  * The {@linkplain #UTF8 UTF-8 ZipCoder instance}, which gets returned by {@link #get(Charset)}
  * for {@linkplain java.nio.charset.StandardCharsets#UTF_8 UTF-8 Charset} is thread-safe
- * and can be used by concurrently by multiple threads. All other {@code ZipCoder} instances
+ * and can be used concurrently by multiple threads. All other {@code ZipCoder} instances
  * are not thread-safe and external synchronization is required by callers, if those
  * instances are to be used concurrently by multiple threads.
  */
