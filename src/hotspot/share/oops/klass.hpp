@@ -166,9 +166,9 @@ class Klass : public Metadata {
   uint8_t  _hash_slot;
 
 private:
-  // This is an index into FileMapHeader::_shared_path_table[], to
-  // associate this class with the JAR file where it's loaded from during
-  // dump time. If a class is not loaded from the shared archive, this field is
+  // This is an index into AOTClassLocationConfig::class_locations(), to
+  // indicate the AOTClassLocation where this class is loaded from during
+  // dump time. If a class is not loaded from the AOT cache, this field is
   // -1.
   s2 _shared_class_path_index;
 
@@ -749,8 +749,13 @@ public:
   virtual void release_C_heap_structures(bool release_constant_pool = true);
 
  public:
-  virtual u2 compute_modifier_flags() const = 0;
+  // Get modifier flags from Java mirror cache.
   int modifier_flags() const;
+
+  // Compute modifier flags from the original data. This also allows
+  // accessing flags when Java mirror is already dead, e.g. during class
+  // unloading.
+  virtual u2 compute_modifier_flags() const = 0;
 
   // JVMTI support
   virtual jint jvmti_class_status() const;

@@ -33,11 +33,11 @@ endif
 
 # Print an indented message, also counting the top-level makefile as a level
 ifeq ($(LOG_FLOW), true)
-  $(info :$(foreach s, top $(HELPER_STACK),    )Enter $(THIS_SNIPPET) [snippet])
+  $(info :$(foreach s, top $(INCLUDE_STACK) $(SNIPPET_STACK),    )Enter $(THIS_SNIPPET) [snippet])
 endif
 
 # Push our helper name onto the stack
-HELPER_STACK := $(THIS_SNIPPET) $(HELPER_STACK)
+SNIPPET_STACK := $(THIS_SNIPPET) $(SNIPPET_STACK)
 
 # Hook to include the corresponding custom file, if present.
 ifneq ($(NO_CUSTOM_EXTENSIONS), true)

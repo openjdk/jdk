@@ -250,7 +250,7 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
 
   // Generation counters -- generation 0, 3 subspaces
   _gen_counters = new GenerationCounters("new", 0, 3,
-      min_size, max_size, &_virtual_space);
+      min_size, max_size, _virtual_space.committed_size());
   _gc_counters = new CollectorCounters(policy, 0);
 
   _eden_counters = new CSpaceCounters("eden", 0, _max_eden_size, _eden_space,
@@ -365,18 +365,6 @@ bool DefNewGeneration::expand(size_t bytes) {
     HeapWord* new_high = (HeapWord*) _virtual_space.high();
     MemRegion mangle_region(prev_high, new_high);
     SpaceMangler::mangle_region(mangle_region);
-  }
-
-  // Do not attempt an expand-to-the reserve size.  The
-  // request should properly observe the maximum size of
-  // the generation so an expand-to-reserve should be
-  // unnecessary.  Also a second call to expand-to-reserve
-  // value potentially can cause an undue expansion.
-  // For example if the first expand fail for unknown reasons,
-  // but the second succeeds and expands the heap to its maximum
-  // value.
-  if (GCLocker::is_active()) {
-    log_debug(gc)("Garbage collection disabled, expanded heap instead");
   }
 
   return success;
@@ -826,7 +814,7 @@ void DefNewGeneration::update_counters() {
     _eden_counters->update_all();
     _from_counters->update_all();
     _to_counters->update_all();
-    _gen_counters->update_all();
+    _gen_counters->update_all(_virtual_space.committed_size());
   }
 }
 
