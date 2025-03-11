@@ -113,7 +113,7 @@ public sealed class ICC_Profile implements Serializable
      * This check is used in {@link #setData(int, byte[])} to prevent modifying
      * built-in profiles.
      */
-    private transient final boolean builtIn;
+    private final transient boolean builtIn;
 
     /**
      * The lazy registry of singleton profile objects for specific built-in
@@ -124,6 +124,8 @@ public sealed class ICC_Profile implements Serializable
         /*
          * Deferral is only used for standard profiles. Enabling the appropriate
          * access privileges is handled at a lower level.
+         * ProfileDeferralInfo is used for only built-in profile creation and
+         * all built-in profiles should be constructed using it.
          */
         ICC_Profile SRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
                "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
