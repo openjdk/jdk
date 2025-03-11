@@ -3692,11 +3692,11 @@ Node* StoreNode::Ideal_sign_extended_input(PhaseGVN* phase, int num_rejected_bit
   Node* shr = in(MemNode::ValueIn);
   if (shr->Opcode() == Op_RShiftI) {
     const TypeInt* conIR = phase->type(shr->in(2))->isa_int();
-    if (conIR != nullptr && conIR->is_con() && conIR->get_con() <= num_rejected_bits) {
+    if (conIR != nullptr && conIR->is_con() && conIR->get_con() >= 0 && conIR->get_con() < BitsPerJavaInteger && conIR->get_con() <= num_rejected_bits) {
       Node* shl = shr->in(1);
       if (shl->Opcode() == Op_LShiftI) {
         const TypeInt* conIL = phase->type(shl->in(2))->isa_int();
-        if (conIL != nullptr && conIL->is_con()) {
+        if (conIL != nullptr && conIL->is_con() && conIL->get_con() >= 0 && conIL->get_con() < BitsPerJavaInteger) {
           if (conIL->get_con() == conIR->get_con()) {
             set_req_X(MemNode::ValueIn, shl->in(1), phase);
             return this;
