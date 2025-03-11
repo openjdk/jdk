@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,8 @@ static volatile int currentAgentStatus = NSK_STATUS_PASSED;
 
 void nsk_jvmti_setFailStatus() {
     currentAgentStatus = NSK_STATUS_FAILED;
+    LOG("Test failed by setFailStatus(true). See log.");
+    exit(97);
 }
 
 int nsk_jvmti_isFailStatus() {
