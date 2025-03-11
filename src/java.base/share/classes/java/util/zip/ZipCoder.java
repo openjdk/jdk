@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,13 @@ import jdk.internal.util.ArraysSupport;
 import sun.nio.cs.UTF_8;
 
 /**
- * Utility class for ZIP file entry name and comment decoding and encoding
+ * Utility class for ZIP file entry name and comment decoding and encoding.
+ * <p>
+ * The {@linkplain #UTF8 UTF-8 ZipCoder instance}, which gets returned by {@link #get(Charset)}
+ * for {@linkplain java.nio.charset.StandardCharsets#UTF_8 UTF-8 Charset} is thread-safe
+ * and can be used by concurrently by multiple threads. All other {@code ZipCoder} instances
+ * are not thread-safe and external synchronization is required by callers, if those
+ * instances are to be used concurrently by multiple threads.
  */
 class ZipCoder {
 
