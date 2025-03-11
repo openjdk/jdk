@@ -3550,7 +3550,11 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 //
 // Let's also remember that conIL < 32 since (v << 33) is simplified into (v << 1)
 // and (v << 31) << 2 is simplified into 0. This means that in any case, after the
-// left shift, we always have at least one bit of the original v.
+// left shift, we always have at least one bit of v remaining after the double shift.
+// Thus, after the right shift, the upper bits will be a repetition of the higher bit
+// of v that wasn't discarded by the left shift. The point is that there is no case
+// to study where the left shift returns 0 unconditionally (clears all the bits):
+// it might look like a corner case to pay attention to, but it actually is not.
 //
 // ### Case 1 : conIL == conIR
 // If we do the shift left then right by 24 bits, we get:
