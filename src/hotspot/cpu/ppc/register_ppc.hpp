@@ -214,6 +214,7 @@ class FloatRegister {
 
   // testers
   constexpr bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
+  constexpr bool is_nonvolatile() const { return (14 <= _encoding && _encoding <= 31 ); }
 
   const char* name() const;
 
@@ -323,6 +324,7 @@ class VectorRegister {
 
   // testers
   constexpr bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
+  constexpr bool is_nonvolatile() const { return (20 <= _encoding && _encoding <= 31 ); }
 
   const char* name() const;
 
@@ -480,7 +482,7 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   enum {
     max_gpr = Register::number_of_registers * 2,
     max_fpr = max_gpr + FloatRegister::number_of_registers * 2,
-    max_vsr = max_fpr + VectorSRegister::number_of_registers,
+    max_vsr = max_fpr + VectorSRegister::number_of_registers * 4,
     max_cnd = max_vsr + ConditionRegister::number_of_registers,
     max_spr = max_cnd + SpecialRegister::number_of_registers,
     // This number must be large enough to cover REG_COUNT (defined by c2) registers.

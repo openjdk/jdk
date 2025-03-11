@@ -62,7 +62,7 @@ inline FloatRegister as_FloatRegister() {
 
 inline VectorSRegister as_VectorSRegister() {
   assert(is_VectorSRegister(), "must be");
-  return ::as_VectorSRegister(value() - ConcreteRegisterImpl::max_fpr);
+  return ::as_VectorSRegister((value() - ConcreteRegisterImpl::max_fpr) >> 2);
 }
 
 inline bool is_concrete() {

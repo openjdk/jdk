@@ -35,83 +35,15 @@
 
 #define __ _masm->
 
-// for callee saved regs, according to the caller's ABI
-static int compute_reg_save_area_size(const ABIDescriptor& abi) {
-  int size = 0;
-  for (int i = 0; i < Register::number_of_registers; i++) {
-    Register reg = as_Register(i);
-    // R1 saved/restored by prologue/epilogue, R13 (system thread) won't get modified!
-    if (reg == R1_SP || reg == R13) continue;
-    if (!abi.is_volatile_reg(reg)) {
-      size += 8; // bytes
-    }
-  }
-
-  for (int i = 0; i < FloatRegister::number_of_registers; i++) {
-    FloatRegister reg = as_FloatRegister(i);
-    if (!abi.is_volatile_reg(reg)) {
-      size += 8; // bytes
-    }
-  }
-
-  return size;
-}
-
 static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDescriptor& abi, int reg_save_area_offset) {
-  // 1. iterate all registers in the architecture
-  //     - check if they are volatile or not for the given abi
-  //     - if NOT, we need to save it here
-
-  int offset = reg_save_area_offset;
-
   __ block_comment("{ preserve_callee_saved_regs ");
-  for (int i = 0; i < Register::number_of_registers; i++) {
-    Register reg = as_Register(i);
-    // R1 saved/restored by prologue/epilogue, R13 (system thread) won't get modified!
-    if (reg == R1_SP || reg == R13) continue;
-    if (!abi.is_volatile_reg(reg)) {
-      __ std(reg, offset, R1_SP);
-      offset += 8;
-    }
-  }
-
-  for (int i = 0; i < FloatRegister::number_of_registers; i++) {
-    FloatRegister reg = as_FloatRegister(i);
-    if (!abi.is_volatile_reg(reg)) {
-      __ stfd(reg, offset, R1_SP);
-      offset += 8;
-    }
-  }
-
+  __ save_nonvolatile_registers(R1_SP, reg_save_area_offset, true, SuperwordUseVSX);
   __ block_comment("} preserve_callee_saved_regs ");
 }
 
 static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescriptor& abi, int reg_save_area_offset) {
-  // 1. iterate all registers in the architecture
-  //     - check if they are volatile or not for the given abi
-  //     - if NOT, we need to restore it here
-
-  int offset = reg_save_area_offset;
-
   __ block_comment("{ restore_callee_saved_regs ");
-  for (int i = 0; i < Register::number_of_registers; i++) {
-    Register reg = as_Register(i);
-    // R1 saved/restored by prologue/epilogue, R13 (system thread) won't get modified!
-    if (reg == R1_SP || reg == R13) continue;
-    if (!abi.is_volatile_reg(reg)) {
-      __ ld(reg, offset, R1_SP);
-      offset += 8;
-    }
-  }
-
-  for (int i = 0; i < FloatRegister::number_of_registers; i++) {
-    FloatRegister reg = as_FloatRegister(i);
-    if (!abi.is_volatile_reg(reg)) {
-      __ lfd(reg, offset, R1_SP);
-      offset += 8;
-    }
-  }
-
+  __ restore_nonvolatile_registers(R1_SP, reg_save_area_offset, true, SuperwordUseVSX);
   __ block_comment("} restore_callee_saved_regs ");
 }
 
@@ -140,7 +72,8 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   // The Java call uses the JIT ABI, but we also call C.
   int out_arg_area = MAX2(frame::jit_out_preserve_size + out_arg_bytes, (int)frame::native_abi_reg_args_size);
 
-  int reg_save_area_size = compute_reg_save_area_size(abi);
+  MacroAssembler* _masm = new MacroAssembler(&buffer);
+  int reg_save_area_size = __ save_nonvolatile_registers_size(true, SuperwordUseVSX);
   RegSpiller arg_spiller(call_regs._arg_regs);
   RegSpiller result_spiller(call_regs._ret_regs);
 
@@ -202,7 +135,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 
   //////////////////////////////////////////////////////////////////////////////
 
-  MacroAssembler* _masm = new MacroAssembler(&buffer);
   address start = __ function_entry(); // called by C
   __ save_LR_CR(R0);
   assert((abi._stack_alignment_bytes % 16) == 0, "must be 16 byte aligned");

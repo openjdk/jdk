@@ -41,7 +41,8 @@ inline VMReg FloatRegister::as_VMReg() const {
 }
 
 inline VMReg VectorSRegister::as_VMReg() const {
-  return VMRegImpl::as_VMReg((encoding()) + ConcreteRegisterImpl::max_fpr);
+  // Four halves, multiply by 4.
+  return VMRegImpl::as_VMReg((encoding() << 2) + ConcreteRegisterImpl::max_fpr);
 }
 
 inline VMReg ConditionRegister::as_VMReg() const {
