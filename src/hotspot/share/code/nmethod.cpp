@@ -1971,7 +1971,8 @@ void nmethod::log_state_change(const char* reason) const {
     }
   }
 
-  stringStream ss;
+  ResourceMark rm;
+  stringStream ss(NEW_RESOURCE_ARRAY(char, 256), 256);
   ss.print("made not entrant: %s", reason);
 
   CompileTask::print_ul(this, ss.freeze());
