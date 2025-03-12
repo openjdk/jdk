@@ -325,6 +325,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseChaCha20Intrinsics, false, DIAGNOSTIC,                   \
           "Use intrinsics for the vectorized version of ChaCha20")          \
                                                                             \
+  product(bool, UseDilithiumIntrinsics, false, DIAGNOSTIC,                  \
+          "Use intrinsics for the vectorized version of Dilithium")         \
+                                                                            \
   product(bool, UseMD5Intrinsics, false, DIAGNOSTIC,                        \
           "Use intrinsics for MD5 crypto hash function")                    \
                                                                             \
@@ -1403,6 +1406,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
           "Print metaspace statistics upon VM exit.")                       \
                                                                             \
+  product(bool, PrintCompilerMemoryStatisticsAtExit, false, DIAGNOSTIC,     \
+          "Print compiler memory statistics upon VM exit.")                 \
+                                                                            \
   product(uintx, MinHeapFreeRatio, 40, MANAGEABLE,                          \
           "The minimum percentage of heap free after GC to avoid expansion."\
           " For most GCs this applies to the old generation. In G1 and"     \
@@ -1560,13 +1566,13 @@ const int ObjectAlignmentInBytes = 8;
           "Minimal number of lookupswitch entries for rewriting to binary " \
           "switch")                                                         \
                                                                             \
-  develop(intx, StopInterpreterAt, 0,                                       \
+  develop(uintx, StopInterpreterAt, 0,                                      \
           "Stop interpreter execution at specified bytecode number")        \
                                                                             \
-  develop(intx, TraceBytecodesAt, 0,                                        \
+  develop(uintx, TraceBytecodesAt, 0,                                       \
           "Trace bytecodes starting with specified bytecode number")        \
                                                                             \
-  develop(intx, TraceBytecodesStopAt, 0,                                    \
+  develop(uintx, TraceBytecodesStopAt, 0,                                   \
           "Stop bytecode tracing at the specified bytecode number")         \
                                                                             \
   /* Priorities */                                                          \

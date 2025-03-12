@@ -47,7 +47,6 @@ bool CDSConfig::_is_using_optimized_module_handling = true;
 bool CDSConfig::_is_dumping_full_module_graph = true;
 bool CDSConfig::_is_using_full_module_graph = true;
 bool CDSConfig::_has_aot_linked_classes = false;
-bool CDSConfig::_has_archived_invokedynamic = false;
 bool CDSConfig::_old_cds_flags_used = false;
 bool CDSConfig::_new_aot_flags_used = false;
 bool CDSConfig::_disable_heap_dumping = false;
@@ -68,9 +67,16 @@ int CDSConfig::get_status() {
 
 void CDSConfig::initialize() {
   if (is_dumping_static_archive() && !is_dumping_final_static_archive()) {
-    if (RequireSharedSpaces) {
-      warning("Cannot dump shared archive while using shared archive");
-    }
+    // Note: -Xshare and -XX:AOTMode flags are mutually exclusive.
+    // - Classic workflow: -Xshare:on and -Xshare:dump cannot take effect at the same time.
+    // - JEP 483 workflow: -XX:AOTMode:record and -XX:AOTMode=on cannot take effect at the same time.
+    // So we can never come to here with RequireSharedSpaces==true.
+    assert(!RequireSharedSpaces, "sanity");
+
+    // If dumping the classic archive, or making an AOT training run (dumping a preimage archive),
+    // for sanity, parse all classes from classfiles.
+    // TODO: in the future, if we want to support re-training on top of an existing AOT cache, this
+    // needs to be changed.
     UseSharedSpaces = false;
   }
 
@@ -89,12 +95,10 @@ void CDSConfig::initialize() {
 
 char* CDSConfig::default_archive_path() {
   if (_default_archive_path == nullptr) {
-    char jvm_path[JVM_MAXPATHLEN];
-    os::jvm_path(jvm_path, sizeof(jvm_path));
-    char *end = strrchr(jvm_path, *os::file_separator());
-    if (end != nullptr) *end = '\0';
     stringStream tmp;
-    tmp.print("%s%sclasses", jvm_path, os::file_separator());
+    const char* subdir = WINDOWS_ONLY("bin") NOT_WINDOWS("lib");
+    tmp.print("%s%s%s%s%s%sclasses", Arguments::get_java_home(), os::file_separator(), subdir,
+              os::file_separator(), Abstract_VM_Version::vm_variant(), os::file_separator());
 #ifdef _LP64
     if (!UseCompressedOops) {
       tmp.print_raw("_nocoops");
@@ -733,8 +737,13 @@ bool CDSConfig::is_dumping_invokedynamic() {
   return AOTInvokeDynamicLinking && is_dumping_aot_linked_classes() && is_dumping_heap();
 }
 
-bool CDSConfig::is_loading_invokedynamic() {
-  return UseSharedSpaces && is_using_full_module_graph() && _has_archived_invokedynamic;
+// When we are dumping aot-linked classes and we are able to write archived heap objects, we automatically
+// enable the archiving of MethodHandles. This will in turn enable the archiving of MethodTypes and hidden
+// classes that are used in the implementation of MethodHandles.
+// Archived MethodHandles are required for higher-level optimizations such as AOT resolution of invokedynamic
+// and dynamic proxies.
+bool CDSConfig::is_dumping_method_handles() {
+  return is_initing_classes_at_dump_time();
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP
