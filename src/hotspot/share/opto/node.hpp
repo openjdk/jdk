@@ -335,9 +335,9 @@ protected:
   void grow( uint len );
   // Grow the output array to the next larger power-of-2 bigger than len.
   void out_grow( uint len );
-  // Resize input or output array to grow it the next larger power-of-2 bigger
-  // than len.
-  void resize_array(Node**& array, node_idx_t& max_size, uint len, bool is_input_array);
+  // Resize input or output array to grow it to the next larger power-of-2
+  // bigger than len.
+  void resize_array(Node**& array, node_idx_t& max_size, uint len, bool needs_clearing);
 
 public:
   // Each Node is assigned a unique small/dense number. This number is used
