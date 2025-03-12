@@ -83,7 +83,6 @@ public class PhoneCodeProblem {
                     .map(String::toUpperCase)
                     .collect(Collectors.groupingBy(PhoneCodeProblem::wordToNumber));
         } catch (Exception ex) {
-            ex.printStackTrace(System.err);
             return Collections.emptyMap();
         }
     }
