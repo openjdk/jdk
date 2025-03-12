@@ -25,18 +25,52 @@
 
 package javax.swing.plaf.basic;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
+import javax.swing.ButtonModel;
+import javax.swing.Icon;
+import javax.swing.InputMap;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComponent;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.JRadioButtonMenuItem;
+import javax.swing.KeyStroke;
+import javax.swing.LookAndFeel;
+import javax.swing.MenuElement;
+import javax.swing.MenuSelectionManager;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.event.MenuDragMouseEvent;
+import javax.swing.event.MenuDragMouseListener;
+import javax.swing.event.MenuKeyListener;
+
+import javax.swing.event.MouseInputListener;
+import javax.swing.plaf.ComponentInputMapUIResource;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.MenuItemUI;
+import javax.swing.plaf.UIResource;
 import javax.swing.text.View;
 
 import com.sun.java.swing.SwingUtilities3;
-import sun.swing.*;
+import sun.swing.MenuItemCheckIconFactory;
+import sun.swing.MenuItemLayoutHelper;
+import sun.swing.SwingUtilities2;
+import sun.swing.UIAction;
+
 
 /**
  * BasicMenuItem implementation
