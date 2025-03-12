@@ -199,7 +199,6 @@ class DatagramChannelImpl
             this.family = family;
             this.fd = fd = Net.socket(family, false);
             this.fdVal = IOUtil.fdVal(fd);
-
             sockAddrs = NativeSocketAddress.allocate(3);
             readLock.lock();
             try {
