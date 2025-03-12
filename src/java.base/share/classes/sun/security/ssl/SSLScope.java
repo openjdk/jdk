@@ -30,15 +30,22 @@ package sun.security.ssl;
  */
 
 public enum SSLScope {
-    // Handshake scope as in signature_algorithms extension.
-    HANDSHAKE,
-    // Certificate scope as in signature_algorithms_cert extension.
-    CERTIFICATE;
+    // Handshake signature scope as in signature_algorithms extension.
+    HANDSHAKE_SIGNATURE("HandshakeSignature"),
 
-    // Note: the SSLScope is case-insensitive.
-    public static SSLScope nameOf(String name) {
+    // Certificate signature scope as in signature_algorithms_cert extension.
+    CERTIFICATE_SIGNATURE("CertificateSignature"),;
+
+    final String name;
+
+    SSLScope(String name) {
+        this.name = name;
+    }
+
+    // Note: the SSLScope name is case-insensitive.
+    public static SSLScope nameOf(String scopeName) {
         for (SSLScope scope : SSLScope.values()) {
-            if (scope.name().equalsIgnoreCase(name)) {
+            if (scope.name.equalsIgnoreCase(scopeName)) {
                 return scope;
             }
         }

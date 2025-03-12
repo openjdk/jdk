@@ -40,7 +40,7 @@ public class MixingTLSUsageConstraintsWithNonTLS extends SSLSocketTemplate {
 
     public static void main(String[] args) throws Exception {
         Security.setProperty("jdk.tls.disabledAlgorithms",
-                "rsa_pkcs1_sha1 usage handshake certificate TLSServer");
+                "rsa_pkcs1_sha1 usage handshakeSignature certificateSignature TLSServer");
 
         runAndCheckException(
                 () -> new MixingTLSUsageConstraintsWithNonTLS().run(),

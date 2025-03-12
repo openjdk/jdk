@@ -48,8 +48,8 @@ public class DisableSignatureSchemePerScopeTLS12 extends
 
     // jdk.tls.disabledAlgorithms value
     protected static final String DISABLED_CONSTRAINTS =
-            HANDSHAKE_DISABLED_SIG + " usage HandShake, "
-            + CERTIFICATE_DISABLED_SIG + " usage Certificate";
+            HANDSHAKE_DISABLED_SIG + " usage HandShakesignature, "
+            + CERTIFICATE_DISABLED_SIG + " usage certificateSignature";
 
     protected DisableSignatureSchemePerScopeTLS12() throws Exception {
         super();

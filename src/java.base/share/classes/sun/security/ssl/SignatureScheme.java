@@ -219,11 +219,11 @@ enum SignatureScheme {
 
     // Handshake signature scope.
     public static final Set<SSLScope> HANDSHAKE_SCOPE =
-            Set.of(SSLScope.HANDSHAKE);
+            Set.of(SSLScope.HANDSHAKE_SIGNATURE);
 
     // Certificate signature scope.
     public static final Set<SSLScope> CERTIFICATE_SCOPE =
-            Set.of(SSLScope.CERTIFICATE);
+            Set.of(SSLScope.CERTIFICATE_SIGNATURE);
 
     // Non-TLS specific SIGNATURE CryptoPrimitive.
     private static final Set<CryptoPrimitive> SIGNATURE_PRIMITIVE_SET =
