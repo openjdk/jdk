@@ -28,6 +28,7 @@
  * @library /test/lib
  */
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -36,6 +37,7 @@ import java.util.List;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
 
 public class ConsolePromptTest {
 
@@ -48,7 +50,15 @@ public class ConsolePromptTest {
         for (Method m : ConsolePromptTest.class.getDeclaredMethods()) {
             if (m.getName().startsWith("test")) {
                 for (List<String> variant : VARIANTS) {
-                    m.invoke(new ConsolePromptTest(variant));
+                    try {
+                        m.invoke(new ConsolePromptTest(variant));
+                    } catch (InvocationTargetException e) {
+                        if (e.getCause() instanceof SkippedException se) {
+                            throw se;
+                        } else {
+                            throw e;
+                        }
+                    }
                 }
             }
         }
@@ -61,21 +71,18 @@ public class ConsolePromptTest {
     }
 
     void testCorrectOutputReadLine() throws Exception {
-        doRunConsoleTest("testCorrectOutputReadLine", "inp", "%s");
+        doRunConsoleTest("testCorrectOutputReadLine");
     }
 
     void testCorrectOutputReadPassword() throws Exception {
-        doRunConsoleTest("testCorrectOutputReadPassword", "inp", "%s");
+        doRunConsoleTest("testCorrectOutputReadPassword");
     }
 
-    void doRunConsoleTest(String testName,
-                          String input,
-                          String expectedOut) throws Exception {
+    void doRunConsoleTest(String testName) throws Exception {
         // check "expect" command availability
         var expect = Paths.get("/usr/bin/expect");
         if (!Files.exists(expect) || !Files.isExecutable(expect)) {
-            System.out.println("'expect' command not found. Test ignored.");
-            return;
+            throw new SkippedException("'expect' command not found. Test ignored.");
         }
 
         // invoking "expect" command
@@ -87,7 +94,7 @@ public class ConsolePromptTest {
         command.add("expect");
         command.add("-n");
         command.add(testSrc + "/consolePrompt.exp");
-        command.add(expectedOut);
+        command.add("%s");
         command.add(jdkDir + "/bin/java");
         command.addAll(extraParams);
         command.add("-cp");
