@@ -443,6 +443,8 @@ class InitializedAssertionPredicate : public Predicate {
   IfTrueNode* const _success_proj;
   IfNode* const _if_node;
 
+  DEBUG_ONLY(static bool has_halt(const IfTrueNode* success_proj);)
+
  public:
   explicit InitializedAssertionPredicate(IfTrueNode* success_proj)
       : _success_proj(success_proj),

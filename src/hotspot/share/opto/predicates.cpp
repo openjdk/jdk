@@ -308,10 +308,35 @@ bool InitializedAssertionPredicate::is_predicate(const Node* maybe_success_proj)
   }
   IfNode* if_node = maybe_success_proj->in(0)->as_If();
   bool is_initialized_assertion_predicate = if_node->in(1)->is_OpaqueInitializedAssertionPredicate();
-  assert(!is_initialized_assertion_predicate || AssertionPredicate::has_halt(maybe_success_proj->as_IfTrue()),
+  assert(!is_initialized_assertion_predicate || has_halt(maybe_success_proj->as_IfTrue()),
          "Initialized Assertion Predicate must have a Halt Node on the failing path");
   return is_initialized_assertion_predicate;
 }
+
+#ifdef ASSERT
+bool InitializedAssertionPredicate::has_halt(const IfTrueNode* success_proj) {
+  ProjNode* other_proj = success_proj->other_if_proj();
+  if (other_proj->outcnt() != 1) {
+    return false;
+  }
+
+  Node* out = other_proj->unique_out();
+  // Either the Halt node is directly the unique output.
+  if (out->is_Halt()) {
+    return true;
+  }
+  // Or we have a Region that merges serval paths to a single Halt node. Even though OpaqueInitializedAssertionPredicate
+  // nodes do not common up (i.e. NO_HASH), we could have Initialized Assertion Predicates from already folded loops
+  // being now part of the innermost loop. When then further splitting this loop, we could be cloning the If node
+  // of the Initialized Assertion Predicate (part of the loop body) while the OpaqueInitializedAssertionPredicate is not
+  // cloned because it's outside the loop body. We end up sharing the OpaqueInitializedAssertionPredicate between the
+  // original and the cloned If. This should be fine.
+  if (out->is_Region() && out->outcnt() == 2) {
+    return out->find_out_with(Op_Halt);
+  }
+  return false;
+}
+#endif
 
 // Kills this Initialized Assertion Predicate by marking the associated OpaqueInitializedAssertionPredicate node useless.
 // It will then be folded away in the next IGVN round.
