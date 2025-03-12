@@ -146,21 +146,26 @@ public final class PEMDecoder {
                     d = kf.generatePrivate(
                         new PKCS8EncodedKeySpec(p8key.getEncoded(),
                             p8key.getAlgorithm()));
-                    // Check if this is a OneAsymmetricKey encoding, then check
-                    // if this could be a SEC1-v2 EC encoding, otherwise return
-                    // the private key
+
+                    // Look for a public key inside the pkcs8 encoding.
                     if (p8key.getPubKeyEncoded() != null) {
+                        // Check if this is a OneAsymmetricKey encoding
                         X509EncodedKeySpec spec = new X509EncodedKeySpec(
                             p8key.getPubKeyEncoded(), p8key.getAlgorithm());
                         yield new KeyPair(getKeyFactory(p8key.getAlgorithm()).
                             generatePublic(spec), (PrivateKey) d);
+
                     } else if (d instanceof PKCS8Key p8 &&
                         p8.getPubKeyEncoded() != null) {
+                        // If the KeyFactory decoded an algorithm-specific
+                        // encodings, look for the public key again.  This
+                        // happens with EC and SEC1-v2 encoding
                         X509EncodedKeySpec spec = new X509EncodedKeySpec(
                             p8.getPubKeyEncoded(), p8.getAlgorithm());
                         yield new KeyPair(getKeyFactory(p8.getAlgorithm()).
                             generatePublic(spec), p8);
                     } else {
+                        // No public key, return the private key.
                         yield d;
                     }
                 }

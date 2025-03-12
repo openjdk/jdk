@@ -196,15 +196,9 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
                 }
                 if (value.isContextSpecific((byte) 1)) {
                     DerValue bits = value.withTag(DerValue.tag_BitString);
-                    //byte[] bytes = bits.getBitString();
-                    //BitArray bitArray = new BitArray(bytes[0] * 8 - 2, bytes, 3);
                     BitArray bitArray = bits.data.getUnalignedBitString();
                     pubKeyEncoded = new X509Key(algid,
                         bitArray).getEncoded();
-/*
-                    pubKeyEncoded = new X509Key(algid,
-                        bits.getUnalignedBitString()).getEncoded();
- */
                 } else {
                     throw new InvalidKeyException("Unexpected value: " + value);
                 }
