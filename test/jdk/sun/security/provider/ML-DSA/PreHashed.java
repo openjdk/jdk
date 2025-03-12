@@ -28,7 +28,6 @@
  */
 
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -62,15 +61,12 @@ public class PreHashed {
 
         var s = Signature.getInstance("HashML-DSA-65-SHA512");
         s.setParameter(new SignatureParameterSpec("SHA-512", new byte[10]));
-        Utils.runAndCheckException(
-                () -> s.setParameter(new SignatureParameterSpec(null, null)),
-                InvalidAlgorithmParameterException.class);
-        Utils.runAndCheckException(
-                () -> s.setParameter(new SignatureParameterSpec("SHA-256", null)),
-                InvalidAlgorithmParameterException.class);
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> s.setParameter(new SignatureParameterSpec(null, null)));
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> s.setParameter(new SignatureParameterSpec("SHA-256", null)));
 
-        Utils.runAndCheckException(
-                () -> s.initSign(kp.getPrivate()),
-                InvalidKeyException.class);
+        Asserts.assertThrows(InvalidKeyException.class,
+                () -> s.initSign(kp.getPrivate()));
     }
 }

@@ -28,7 +28,6 @@
  */
 
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
@@ -73,17 +72,14 @@ public class Parameters {
         Asserts.assertEqualsByteArray(sig1, sig5);
 
         // Unknown hash algorithm
-        Utils.runAndCheckException(
-                () -> s.setParameter(new SignatureParameterSpec("NOHASH", null)),
-                InvalidAlgorithmParameterException.class);
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> s.setParameter(new SignatureParameterSpec("NOHASH", null)));
         // Unknown feature
-        Utils.runAndCheckException(
-                () -> s.setParameter(new SignatureParameterSpec(null, null, "unknown")),
-                InvalidAlgorithmParameterException.class);
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> s.setParameter(new SignatureParameterSpec(null, null, "unknown")));
         // externalMu without internal
-        Utils.runAndCheckException(
-                () -> s.setParameter(new SignatureParameterSpec(null, null, "externalMu")),
-                InvalidAlgorithmParameterException.class);
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> s.setParameter(new SignatureParameterSpec(null, null, "externalMu")));
     }
 
     static void paramsTest() throws Exception {
@@ -93,15 +89,12 @@ public class Parameters {
         // Just maximum allowed length
         new SignatureParameterSpec(null, new byte[255]);
         // context too long
-        Utils.runAndCheckException(
-                () -> new SignatureParameterSpec(null, new byte[256]),
-                IllegalArgumentException.class);
+        Asserts.assertThrows(IllegalArgumentException.class,
+                () -> new SignatureParameterSpec(null, new byte[256]));
         // features cannot be null
-        Utils.runAndCheckException(
-                () -> new SignatureParameterSpec(null, null, (String)null),
-                NullPointerException.class);
-        Utils.runAndCheckException(
-                () -> new SignatureParameterSpec(null, null, (String[])null),
-                NullPointerException.class);
+        Asserts.assertThrows(NullPointerException.class,
+                () -> new SignatureParameterSpec(null, null, (String)null));
+        Asserts.assertThrows(NullPointerException.class,
+                () -> new SignatureParameterSpec(null, null, (String[])null));
     }
 }
