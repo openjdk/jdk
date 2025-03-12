@@ -97,6 +97,7 @@ public class AccessZeroNKlassHitsProtectionZone {
         args.add("-Xmx128m");
         args.add("-XX:-CreateCoredumpOnCrash");
         args.add("-Xlog:metaspace*");
+        args.add("-Xlog:cds");
         if (COH) {
             args.add("-XX:+UnlockExperimentalVMOptions");
             args.add("-XX:+UseCompactObjectHeaders");
@@ -127,6 +128,13 @@ public class AccessZeroNKlassHitsProtectionZone {
         long forceBase = -1;
         if (CDS) {
             output = run_test(COH, CDS, "");
+            // Not all distributions build COH archives. We tolerate that.
+            if (COH) {
+                String s = output.firstMatch("Specified shared archive file not found .*coh.jsa");
+                if (s != null) {
+                    throw new SkippedException("Failed to find COH archive, was it not built? Skipping test.");
+                }
+            }
         } else {
             long g4 = 0x1_0000_0000L;
             long start = g4 * 8; // 32g
