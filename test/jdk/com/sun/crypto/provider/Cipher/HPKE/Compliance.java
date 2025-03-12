@@ -22,7 +22,6 @@
  */
 
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.HPKEParameterSpec;
@@ -85,36 +84,26 @@ public class Compliance {
         Asserts.assertEqualsByteArray(spec3.psk_id(), new byte[0]);
 
         // identifiers must be in range
-        Utils.runAndCheckException(
-                () -> HPKEParameterSpec.of(-1, 0),
-                IllegalArgumentException.class);
-        Utils.runAndCheckException(
-                () -> HPKEParameterSpec.of(0, -1),
-                IllegalArgumentException.class);
-        Utils.runAndCheckException(
-                () -> HPKEParameterSpec.of(65536, 0),
-                IllegalArgumentException.class);
-        Utils.runAndCheckException(
-                () -> HPKEParameterSpec.of(0, 65536),
-                IllegalArgumentException.class);
-        Utils.runAndCheckException(
-                () -> HPKEParameterSpec.of(-1, 0, 0),
-                IllegalArgumentException.class);
-        Utils.runAndCheckException(
-                () -> HPKEParameterSpec.of(0, -1, 0),
-                IllegalArgumentException.class);
-        Utils.runAndCheckException(
-                () -> HPKEParameterSpec.of(0, 0, -1),
-                IllegalArgumentException.class);
-        Utils.runAndCheckException(
-                () -> HPKEParameterSpec.of(65536, 0, 0),
-                IllegalArgumentException.class);
-        Utils.runAndCheckException(
-                () -> HPKEParameterSpec.of(0, 65536, 0),
-                IllegalArgumentException.class);
-        Utils.runAndCheckException(
-                () -> HPKEParameterSpec.of(0, 0, 65536),
-                IllegalArgumentException.class);
+        Asserts.assertThrows(IllegalArgumentException.class,
+                () -> HPKEParameterSpec.of(-1, 0));
+        Asserts.assertThrows(IllegalArgumentException.class,
+                () -> HPKEParameterSpec.of(0, -1));
+        Asserts.assertThrows(IllegalArgumentException.class,
+                () -> HPKEParameterSpec.of(65536, 0));
+        Asserts.assertThrows(IllegalArgumentException.class,
+                () -> HPKEParameterSpec.of(0, 65536));
+        Asserts.assertThrows(IllegalArgumentException.class,
+                () -> HPKEParameterSpec.of(-1, 0, 0));
+        Asserts.assertThrows(IllegalArgumentException.class,
+                () -> HPKEParameterSpec.of(0, -1, 0));
+        Asserts.assertThrows(IllegalArgumentException.class,
+                () -> HPKEParameterSpec.of(0, 0, -1));
+        Asserts.assertThrows(IllegalArgumentException.class,
+                () -> HPKEParameterSpec.of(65536, 0, 0));
+        Asserts.assertThrows(IllegalArgumentException.class,
+                () -> HPKEParameterSpec.of(0, 65536, 0));
+        Asserts.assertThrows(IllegalArgumentException.class,
+                () -> HPKEParameterSpec.of(0, 0, 65536));
 
         Asserts.assertTrue(spec.authKey(null).authKey() == null);
         Asserts.assertTrue(spec.authKey(kp.getPrivate()).authKey() != null);
@@ -122,9 +111,7 @@ public class Compliance {
         Asserts.assertTrue(spec.authKey(kp.getPrivate()).authKey(null).authKey() == null);
 
         // Info can be empty but not null
-        Utils.runAndCheckException(
-                () -> spec.info(null),
-                NullPointerException.class);
+        Asserts.assertThrows(NullPointerException.class, () -> spec.info(null));
         Asserts.assertEqualsByteArray(spec.info(info).info(), info);
 
         Asserts.assertTrue(spec.encapsulation(null).encapsulation() == null);
@@ -132,17 +119,11 @@ public class Compliance {
         Asserts.assertTrue(spec.encapsulation(info).encapsulation(null).encapsulation() == null);
 
         // psk_id can be empty but not null
-        Utils.runAndCheckException(
-                () -> spec.psk(psk, null),
-                NullPointerException.class);
+        Asserts.assertThrows(NullPointerException.class, () -> spec.psk(psk, null));
 
         // psk and psk_id must match
-        Utils.runAndCheckException(
-                () -> spec.psk(psk, new byte[0]),
-                InvalidAlgorithmParameterException.class);
-        Utils.runAndCheckException(
-                () -> spec.psk(null, psk_id),
-                InvalidAlgorithmParameterException.class);
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class, () -> spec.psk(psk, new byte[0]));
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class, () -> spec.psk(null, psk_id));
 
         Asserts.assertEqualsByteArray(spec.psk(psk, psk_id).psk().getEncoded(), psk.getEncoded());
         Asserts.assertEqualsByteArray(spec.psk(psk, psk_id).psk_id(), psk_id);
@@ -155,16 +136,16 @@ public class Compliance {
 
         // Still at BEGIN, not initialized
         Asserts.assertEQ(c1.getIV(), null);
-        Utils.runAndCheckException(() -> c1.getBlockSize(), IllegalStateException.class);
-        Utils.runAndCheckException(() -> c1.getOutputSize(100), IllegalStateException.class);
-        Utils.runAndCheckException(() -> c1.update(new byte[1]), IllegalStateException.class);
-        Utils.runAndCheckException(() -> c1.update(new byte[1], 0, 1), IllegalStateException.class);
-        Utils.runAndCheckException(() -> c1.updateAAD(new byte[1]), IllegalStateException.class);
-        Utils.runAndCheckException(() -> c1.updateAAD(new byte[1], 0, 1), IllegalStateException.class);
-        Utils.runAndCheckException(() -> c1.doFinal(), IllegalStateException.class);
-        Utils.runAndCheckException(() -> c1.doFinal(new byte[1]), IllegalStateException.class);
-        Utils.runAndCheckException(() -> c1.doFinal(new byte[1], 0, 1), IllegalStateException.class);
-        Utils.runAndCheckException(() -> c1.doFinal(new byte[1], 0, 1, new byte[1024], 0), IllegalStateException.class);
+        Asserts.assertThrows(IllegalStateException.class, () -> c1.getBlockSize());
+        Asserts.assertThrows(IllegalStateException.class, () -> c1.getOutputSize(100));
+        Asserts.assertThrows(IllegalStateException.class, () -> c1.update(new byte[1]));
+        Asserts.assertThrows(IllegalStateException.class, () -> c1.update(new byte[1], 0, 1));
+        Asserts.assertThrows(IllegalStateException.class, () -> c1.updateAAD(new byte[1]));
+        Asserts.assertThrows(IllegalStateException.class, () -> c1.updateAAD(new byte[1], 0, 1));
+        Asserts.assertThrows(IllegalStateException.class, () -> c1.doFinal());
+        Asserts.assertThrows(IllegalStateException.class, () -> c1.doFinal(new byte[1]));
+        Asserts.assertThrows(IllegalStateException.class, () -> c1.doFinal(new byte[1], 0, 1));
+        Asserts.assertThrows(IllegalStateException.class, () -> c1.doFinal(new byte[1], 0, 1, new byte[1024], 0));
 
         // Simplest usages
         c1.init(Cipher.ENCRYPT_MODE, kp.getPublic());
@@ -172,58 +153,46 @@ public class Compliance {
         c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(), HPKEParameterSpec.of().encapsulation(c1.getIV()));
 
         // Does not support WRAP and UNWRAP mode
-        Utils.runAndCheckException(
-                () -> c1.init(Cipher.WRAP_MODE, kp.getPublic()),
-                UnsupportedOperationException.class);
-        Utils.runAndCheckException(
-                () -> c1.init(Cipher.UNWRAP_MODE, kp.getPublic()),
-                UnsupportedOperationException.class);
+        Asserts.assertThrows(UnsupportedOperationException.class,
+                () -> c1.init(Cipher.WRAP_MODE, kp.getPublic()));
+        Asserts.assertThrows(UnsupportedOperationException.class,
+                () -> c1.init(Cipher.UNWRAP_MODE, kp.getPublic()));
 
         // Cannot init sender with private key
-        Utils.runAndCheckException(
-                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPrivate()),
-                InvalidKeyException.class);
+        Asserts.assertThrows(InvalidKeyException.class,
+                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPrivate()));
         // Cannot provide key encap msg to sender
-        Utils.runAndCheckException(
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
                 () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(),
-                        HPKEParameterSpec.of().encapsulation(new byte[32])),
-                InvalidAlgorithmParameterException.class);
+                        HPKEParameterSpec.of().encapsulation(new byte[32])));
 
         // Cannot init recipient with public key
-        Utils.runAndCheckException(
-                () -> c2.init(Cipher.DECRYPT_MODE, kp.getPublic()),
-                InvalidKeyException.class);
+        Asserts.assertThrows(InvalidKeyException.class,
+                () -> c2.init(Cipher.DECRYPT_MODE, kp.getPublic()));
         // Must provide key encap msg to recipient
-        Utils.runAndCheckException(
-                () -> c2.init(Cipher.DECRYPT_MODE, kp.getPrivate()),
-                InvalidKeyException.class);
+        Asserts.assertThrows(InvalidKeyException.class,
+                () -> c2.init(Cipher.DECRYPT_MODE, kp.getPrivate()));
 
         // Unknown identifiers
         c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), HPKEParameterSpec.of(0x20, 1, 1));
 
         // Unknown identifiers
-        Utils.runAndCheckException(
-                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), HPKEParameterSpec.of(0, 1, 1)),
-                InvalidAlgorithmParameterException.class);
-        Utils.runAndCheckException(
-                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), HPKEParameterSpec.of(0x200, 1, 1)),
-                InvalidAlgorithmParameterException.class);
-        Utils.runAndCheckException(
-                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), HPKEParameterSpec.of(0x20, 4, 1)),
-                InvalidAlgorithmParameterException.class);
-        Utils.runAndCheckException(
-                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), HPKEParameterSpec.of(0x20, 1, 4)),
-                InvalidAlgorithmParameterException.class);
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), HPKEParameterSpec.of(0, 1, 1)));
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), HPKEParameterSpec.of(0x200, 1, 1)));
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), HPKEParameterSpec.of(0x20, 4, 1)));
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), HPKEParameterSpec.of(0x20, 1, 4)));
 
         // No key encap msg for recipient
-        Utils.runAndCheckException(
-                () -> c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(), HPKEParameterSpec.of(0x20, 1, 1)),
-                InvalidAlgorithmParameterException.class);
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(), HPKEParameterSpec.of(0x20, 1, 1)));
 
         // No key encap msg for recipient
-        Utils.runAndCheckException(
-                () -> c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(), HPKEParameterSpec.of(0x20, 1, 65535)),
-                InvalidAlgorithmParameterException.class);
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(), HPKEParameterSpec.of(0x20, 1, 65535)));
 
         var aad = "AAD".getBytes(StandardCharsets.UTF_8);
 
@@ -255,14 +224,12 @@ public class Compliance {
         var kp2 = KeyPairGenerator.getInstance("X25519").generateKeyPair();
 
         // mod_auth, wrong key type
-        Utils.runAndCheckException(
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
                 () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(),
-                        HPKEParameterSpec.of().authKey(kp2.getPublic())),
-                InvalidAlgorithmParameterException.class);
-        Utils.runAndCheckException(
+                        HPKEParameterSpec.of().authKey(kp2.getPublic())));
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
                 () -> c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(),
-                        HPKEParameterSpec.of().authKey(kp2.getPrivate())),
-                InvalidAlgorithmParameterException.class);
+                        HPKEParameterSpec.of().authKey(kp2.getPrivate())));
 
         // mod_auth
         checkEncryptDecrypt(kp,
