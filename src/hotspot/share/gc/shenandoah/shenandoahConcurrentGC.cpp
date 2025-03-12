@@ -195,7 +195,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     heap->concurrent_prepare_for_update_refs();
 
     // Perform update-refs phase.
-    if (ShenandoahVerify || ShenandoahPacing) {
+    if (ShenandoahVerify) {
       vmop_entry_init_update_refs();
     }
 
@@ -594,9 +594,7 @@ void ShenandoahConcurrentGC::entry_reset_after_collect() {
 
 void ShenandoahConcurrentGC::op_reset() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  if (ShenandoahPacing) {
-    heap->pacer()->setup_for_reset();
-  }
+
   // If it is old GC bootstrap cycle, always clear bitmap for global gen
   // to ensure bitmap for old gen is clear for old GC cycle after this.
   if (_do_old_gc_bootstrap) {
@@ -699,9 +697,6 @@ void ShenandoahConcurrentGC::op_init_mark() {
   ShenandoahCodeRoots::arm_nmethods_for_mark();
 
   ShenandoahStackWatermark::change_epoch_id();
-  if (ShenandoahPacing) {
-    heap->pacer()->setup_for_mark();
-  }
 
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::init_propagate_gc_state);
@@ -761,9 +756,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
       ShenandoahCodeRoots::arm_nmethods_for_evac();
       ShenandoahStackWatermark::change_epoch_id();
 
-      if (ShenandoahPacing) {
-        heap->pacer()->setup_for_evac();
-      }
     } else {
       if (ShenandoahVerify) {
         if (has_in_place_promotions(heap)) {
@@ -1088,9 +1080,6 @@ void ShenandoahConcurrentGC::op_init_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (ShenandoahVerify) {
     heap->verifier()->verify_before_update_refs();
-  }
-  if (ShenandoahPacing) {
-    heap->pacer()->setup_for_update_refs();
   }
 }
 

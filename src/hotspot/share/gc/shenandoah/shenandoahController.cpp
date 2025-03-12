@@ -30,10 +30,6 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 
-void ShenandoahController::pacing_notify_alloc(size_t words) {
-  assert(ShenandoahPacing, "should only call when pacing is enabled");
-  Atomic::add(&_allocs_seen, words, memory_order_relaxed);
-}
 
 size_t ShenandoahController::reset_allocs_seen() {
   return Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);

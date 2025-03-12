@@ -32,7 +32,6 @@
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
-#include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
@@ -202,9 +201,6 @@ void ShenandoahControlThread::run_service() {
 
       // Commit worker statistics to cycle data
       heap->phase_timings()->flush_par_workers_to_cycle();
-      if (ShenandoahPacing) {
-        heap->pacer()->flush_stats_to_cycle();
-      }
 
       // Print GC stats for current cycle
       {
@@ -213,9 +209,6 @@ void ShenandoahControlThread::run_service() {
           ResourceMark rm;
           LogStream ls(lt);
           heap->phase_timings()->print_cycle_on(&ls);
-          if (ShenandoahPacing) {
-            heap->pacer()->print_cycle_on(&ls);
-          }
         }
       }
 
@@ -224,16 +217,6 @@ void ShenandoahControlThread::run_service() {
 
       // Print Metaspace change following GC (if logging is enabled).
       MetaspaceUtils::print_metaspace_change(meta_sizes);
-
-      // GC is over, we are at idle now
-      if (ShenandoahPacing) {
-        heap->pacer()->setup_for_idle();
-      }
-    } else {
-      // Report to pacer that we have seen this many words allocated
-      if (ShenandoahPacing && (allocs_seen > 0)) {
-        heap->pacer()->report_alloc(allocs_seen);
-      }
     }
 
     // Check if we have seen a new target for soft max heap size or if a gc was requested.
