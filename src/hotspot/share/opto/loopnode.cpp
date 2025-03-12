@@ -310,7 +310,7 @@ IdealLoopTree* PhaseIdealLoop::insert_outer_loop(IdealLoopTree* loop, LoopNode* 
 // clone the outer loop as well as the inner, unrolling needs to only
 // clone the inner loop etc. No optimizations need to change the outer
 // strip mined loop as it is only a skeleton.
-IdealLoopTree* PhaseIdealLoop::create_outer_strip_mined_loop(BoolNode *test, Node *cmp, Node *init_control,
+IdealLoopTree* PhaseIdealLoop::create_outer_strip_mined_loop(Node *init_control,
                                                              IdealLoopTree* loop, float cl_prob, float le_fcnt,
                                                              Node*& entry_control, Node*& iffalse) {
   Node* outer_test = intcon(0);
@@ -342,7 +342,7 @@ IdealLoopTree* PhaseIdealLoop::create_outer_strip_mined_loop(BoolNode *test, Nod
   return outer_ilt;
 }
 
-void PhaseIdealLoop::insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj,
+void PhaseIdealLoop::insert_loop_limit_check_predicate(const ParsePredicateSuccessProj* loop_limit_check_parse_proj,
                                                        Node* cmp_limit, Node* bol) {
   assert(loop_limit_check_parse_proj->in(0)->is_ParsePredicate(), "must be parse predicate");
   Node* new_predicate_proj = create_new_if_for_predicate(loop_limit_check_parse_proj, nullptr,
@@ -364,7 +364,7 @@ void PhaseIdealLoop::insert_loop_limit_check_predicate(ParsePredicateSuccessProj
 #endif
 }
 
-Node* PhaseIdealLoop::loop_exit_control(Node* x, IdealLoopTree* loop) {
+Node* PhaseIdealLoop::loop_exit_control(const Node* x, const IdealLoopTree* loop) const {
   // Counted loop head must be a good RegionNode with only 3 not null
   // control input edges: Self, Entry, LoopBack.
   if (x->in(LoopNode::Self) == nullptr || x->req() != 3 || loop->_irreducible) {
@@ -404,8 +404,8 @@ Node* PhaseIdealLoop::loop_exit_control(Node* x, IdealLoopTree* loop) {
   return iftrue;
 }
 
-Node* PhaseIdealLoop::loop_exit_test(Node* back_control, IdealLoopTree* loop, Node*& incr, Node*& limit, BoolTest::mask& bt, float& cl_prob) {
-  Node* iftrue = back_control;
+Node* PhaseIdealLoop::loop_exit_test(const Node* back_control, const IdealLoopTree* loop, Node*& incr, Node*& limit, BoolTest::mask& bt, float& cl_prob) {
+  const Node* iftrue = back_control;
   uint iftrue_op = iftrue->Opcode();
   Node* iff = iftrue->in(0);
   BoolNode* test = iff->in(1)->as_Bool();
@@ -444,7 +444,7 @@ Node* PhaseIdealLoop::loop_exit_test(Node* back_control, IdealLoopTree* loop, No
   return cmp;
 }
 
-Node* PhaseIdealLoop::loop_iv_incr(Node* incr, Node* x, IdealLoopTree* loop, Node*& phi_incr) {
+Node* PhaseIdealLoop::loop_iv_incr(Node* incr, const Node* x, const IdealLoopTree* loop, const Node*& phi_incr) {
   if (incr->is_Phi()) {
     if (incr->as_Phi()->region() != x || incr->req() != 3) {
       return nullptr; // Not simple trip counter expression
@@ -458,7 +458,7 @@ Node* PhaseIdealLoop::loop_iv_incr(Node* incr, Node* x, IdealLoopTree* loop, Nod
   return incr;
 }
 
-Node* PhaseIdealLoop::loop_iv_stride(Node* incr, IdealLoopTree* loop, Node*& xphi) {
+Node* PhaseIdealLoop::loop_iv_stride(const Node* incr, Node*& xphi) {
   assert(incr->Opcode() == Op_AddI || incr->Opcode() == Op_AddL, "caller resp.");
   // Get merge point
   xphi = incr->in(1);
@@ -467,14 +467,13 @@ Node* PhaseIdealLoop::loop_iv_stride(Node* incr, IdealLoopTree* loop, Node*& xph
     if (!xphi->is_Con()) {     // Is the other guy a constant?
       return nullptr;          // Nope, unknown stride, bail out
     }
-    Node *tmp = xphi;          // 'incr' is commutative, so ok to swap
-    xphi = stride;
-    stride = tmp;
+
+    swap(xphi, stride);        // 'incr' is commutative, so ok to swap
   }
   return stride;
 }
 
-PhiNode* PhaseIdealLoop::loop_iv_phi(Node* xphi, Node* phi_incr, Node* x, IdealLoopTree* loop) {
+PhiNode* PhaseIdealLoop::loop_iv_phi(const Node* xphi, const Node* phi_incr, const Node* x) {
   if (!xphi->is_Phi()) {
     return nullptr; // Too much math on the trip counter
   }
@@ -615,7 +614,7 @@ void PhaseIdealLoop::add_parse_predicate(Deoptimization::DeoptReason reason, Nod
 // Find a safepoint node that dominates the back edge. We need a
 // SafePointNode so we can use its jvm state to create empty
 // predicates.
-static bool no_side_effect_since_safepoint(Compile* C, Node* x, Node* mem, MergeMemNode* mm, PhaseIdealLoop* phase) {
+static bool no_side_effect_since_safepoint(Compile* C, const Node* x, const Node* mem, MergeMemNode* mm, const PhaseIdealLoop* phase) {
   SafePointNode* safepoint = nullptr;
   for (DUIterator_Fast imax, i = x->fast_outs(imax); i < imax; i++) {
     Node* u = x->fast_out(i);
@@ -668,7 +667,7 @@ static bool no_side_effect_since_safepoint(Compile* C, Node* x, Node* mem, Merge
   return true;
 }
 
-SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, IdealLoopTree* loop) {
+SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, const Node* x, const IdealLoopTree* loop) {
   IfNode* exit_test = back_control->in(0)->as_If();
   SafePointNode* safepoint = nullptr;
   if (exit_test->in(0)->is_SafePoint() && exit_test->in(0)->outcnt() == 1) {
@@ -1476,16 +1475,16 @@ void PhaseIdealLoop::check_counted_loop_shape(IdealLoopTree* loop, Node* x, Basi
   Node* cmp = loop_exit_test(back_control, loop, incr, limit, mask, cl_prob);
   assert(cmp != nullptr && cmp->Opcode() == Op_Cmp(bt), "no exit test");
 
-  Node* phi_incr = nullptr;
+  const Node* phi_incr = nullptr;
   incr = loop_iv_incr(incr, x, loop, phi_incr);
   assert(incr != nullptr && incr->Opcode() == Op_Add(bt), "no incr");
 
   Node* xphi = nullptr;
-  Node* stride = loop_iv_stride(incr, loop, xphi);
+  Node* stride = loop_iv_stride(incr, xphi);
 
   assert(stride != nullptr, "no stride");
 
-  PhiNode* phi = loop_iv_phi(xphi, phi_incr, x, loop);
+  PhiNode* phi = loop_iv_phi(xphi, phi_incr, x);
 
   assert(phi != nullptr && phi->in(LoopNode::LoopBackControl) == incr, "No phi");
 
@@ -1505,7 +1504,7 @@ void PhaseIdealLoop::check_counted_loop_shape(IdealLoopTree* loop, Node* x, Basi
 #ifdef ASSERT
 // convert an int counted loop to a long counted to stress handling of
 // long counted loops
-bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* loop) {
+bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, const Node* phi, const IdealLoopTree* loop) {
   Unique_Node_List iv_nodes;
   Node_List old_new;
   iv_nodes.push(cmp);
@@ -1634,7 +1633,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     incr = incr->in(1);
   }
 
-  Node* phi_incr = nullptr;
+  const Node* phi_incr = nullptr;
   incr = loop_iv_incr(incr, x, loop, phi_incr);
   if (incr == nullptr) {
     return false;
@@ -1650,7 +1649,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   assert(incr->Opcode() == Op_Add(iv_bt), "wrong increment code");
 
   Node* xphi = nullptr;
-  Node* stride = loop_iv_stride(incr, loop, xphi);
+  Node* stride = loop_iv_stride(incr, xphi);
 
   if (stride == nullptr) {
     return false;
@@ -1664,7 +1663,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   jlong stride_con = stride->get_integer_as_long(iv_bt);
   assert(stride_con != 0, "missed some peephole opt");
 
-  PhiNode* phi = loop_iv_phi(xphi, phi_incr, x, loop);
+  PhiNode* phi = loop_iv_phi(xphi, phi_incr, x);
 
   if (phi == nullptr ||
       (trunc1 == nullptr && phi->in(LoopNode::LoopBackControl) != incr) ||
@@ -2255,7 +2254,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
                          is_deleteable_safept(sfpt);
   IdealLoopTree* outer_ilt = nullptr;
   if (strip_mine_loop) {
-    outer_ilt = create_outer_strip_mined_loop(test, cmp, init_control, loop,
+    outer_ilt = create_outer_strip_mined_loop(init_control, loop,
                                               cl_prob, le->_fcnt, entry_control,
                                               iffalse);
   }
@@ -3949,7 +3948,7 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
 
 //---------------------------is_deleteable_safept----------------------------
 // Is safept not required by an outer loop?
-bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
+bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) const {
   assert(sfpt->Opcode() == Op_SafePoint, "");
   IdealLoopTree* lp = get_loop(sfpt)->_parent;
   while (lp != nullptr) {
