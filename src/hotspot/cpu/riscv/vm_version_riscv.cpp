@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
@@ -127,10 +126,6 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
-  if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
-    FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
-  }
-
   if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
       FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
   }
@@ -152,6 +147,10 @@ void VM_Version::common_initialize() {
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
     FLAG_SET_DEFAULT(AvoidUnalignedAccesses,
       unaligned_access.value() != MISALIGNED_FAST);
+  }
+
+  if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics) && !AvoidUnalignedAccesses) {
+    FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
   }
 
   // See JDK-8026049
@@ -315,7 +314,7 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, true);
   }
 
-  if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
+  if (FLAG_IS_DEFAULT(UseMD5Intrinsics) && !AvoidUnalignedAccesses) {
     FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
   }
 
@@ -366,7 +365,7 @@ void VM_Version::c2_initialize() {
 
   // SHA-1, no RVV required though.
   if (UseSHA) {
-    if (FLAG_IS_DEFAULT(UseSHA1Intrinsics)) {
+    if (FLAG_IS_DEFAULT(UseSHA1Intrinsics) && !AvoidUnalignedAccesses) {
       FLAG_SET_DEFAULT(UseSHA1Intrinsics, true);
     }
   } else if (UseSHA1Intrinsics) {

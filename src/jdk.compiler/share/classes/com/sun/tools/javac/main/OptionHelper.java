@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,11 @@ public abstract class OptionHelper {
     public abstract String getOwnName();
 
     /**
+     * Initialize this instance, as needed, if not already initialized.
+     */
+    public abstract void initialize();
+
+    /**
      * Returns a new InvalidValueException, with a localized detail message.
      * @param key the resource key for the message
      * @param args the arguments, if any, for the resource string
@@ -137,6 +142,10 @@ public abstract class OptionHelper {
         @Override
         public boolean handleFileManagerOption(Option option, String value) {
             throw new IllegalArgumentException();
+        }
+
+        @Override
+        public void initialize() {
         }
 
         @Override

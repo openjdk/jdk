@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
@@ -301,7 +300,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register tmp1
   // align object end
   mv(arr_size, (int32_t)base_offset_in_bytes + MinObjAlignmentInBytesMask);
   shadd(arr_size, len, arr_size, t0, f);
-  andi(arr_size, arr_size, ~(uint)MinObjAlignmentInBytesMask);
+  andi(arr_size, arr_size, ~MinObjAlignmentInBytesMask);
 
   try_allocate(obj, arr_size, 0, tmp1, tmp2, slow_case);
 

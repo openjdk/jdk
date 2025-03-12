@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_CFGPrinter.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_IR.hpp"
@@ -410,6 +409,8 @@ int Compilation::compile_java_method() {
   if (_directive->DumpReplayOption) {
     env()->dump_replay_data(env()->compile_id());
   }
+
+  DEBUG_ONLY(CompilationMemoryStatistic::do_test_allocations();)
 
   {
     PhaseTraceTime timeit(_t_codeemit);

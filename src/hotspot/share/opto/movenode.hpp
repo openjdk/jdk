@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ class CMoveNode : public TypeNode {
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  static CMoveNode *make(Node *c, Node *bol, Node *left, Node *right, const Type *t);
+  static CMoveNode* make(Node* bol, Node* left, Node* right, const Type* t);
   // Helper function to spot cmove graph shapes
   static Node* is_cmove_id(PhaseTransform* phase, Node* cmp, Node* t, Node* f, BoolNode* b);
   static Node* Ideal_minmax(PhaseGVN* phase, CMoveNode* cmov);
@@ -87,14 +87,14 @@ class CMoveLNode : public CMoveNode {
 //------------------------------CMovePNode-------------------------------------
 class CMovePNode : public CMoveNode {
   public:
-  CMovePNode( Node *c, Node *bol, Node *left, Node *right, const TypePtr* t ) : CMoveNode(bol,left,right,t) { init_req(Control,c); }
+  CMovePNode(Node* bol, Node* left, Node* right, const TypePtr* t) : CMoveNode(bol, left, right, t) {}
   virtual int Opcode() const;
 };
 
 //------------------------------CMoveNNode-------------------------------------
 class CMoveNNode : public CMoveNode {
   public:
-  CMoveNNode( Node *c, Node *bol, Node *left, Node *right, const Type* t ) : CMoveNode(bol,left,right,t) { init_req(Control,c); }
+  CMoveNNode(Node* bol, Node* left, Node* right, const Type* t ) : CMoveNode(bol, left, right, t) {}
   virtual int Opcode() const;
 };
 

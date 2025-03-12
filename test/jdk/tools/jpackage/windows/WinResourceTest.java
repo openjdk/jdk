@@ -45,7 +45,7 @@ import static jdk.jpackage.test.WindowsHelper.getWixTypeFromVerboseJPackageOutpu
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @compile WinResourceTest.java
+ * @compile -Xlint:all -Werror WinResourceTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinResourceTest
  */

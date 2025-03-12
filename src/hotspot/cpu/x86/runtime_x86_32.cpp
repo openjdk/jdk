@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #ifdef COMPILER2
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
@@ -46,7 +45,8 @@ void OptoRuntime::generate_uncommon_trap_blob() {
   // allocate space for the code
   ResourceMark rm;
   // setup code generation tools
-  CodeBuffer   buffer("uncommon_trap_blob", 512, 512);
+  const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
+  CodeBuffer   buffer(name, 512, 512);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   enum frame_layout {
@@ -256,7 +256,8 @@ void OptoRuntime::generate_exception_blob() {
   // allocate space for the code
   ResourceMark rm;
   // setup code generation tools
-  CodeBuffer   buffer("exception_blob", 512, 512);
+  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
+  CodeBuffer   buffer(name, 512, 512);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   OopMapSet *oop_maps = new OopMapSet();

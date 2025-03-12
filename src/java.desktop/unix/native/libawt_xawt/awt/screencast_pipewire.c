@@ -31,7 +31,63 @@
 #include "jni_util.h"
 #include "awt.h"
 #include "screencast_pipewire.h"
-#include "fp_pipewire.h"
+
+struct pw_buffer *(*fp_pw_stream_dequeue_buffer)(struct pw_stream *stream);
+const char * (*fp_pw_stream_state_as_string)(enum pw_stream_state state);
+int (*fp_pw_stream_queue_buffer)(struct pw_stream *stream,
+                                 struct pw_buffer *buffer);
+int (*fp_pw_stream_set_active)(struct pw_stream *stream, bool active);
+
+int (*fp_pw_stream_connect)(
+        struct pw_stream *stream,
+        enum pw_direction direction,
+        uint32_t target_id,
+        enum pw_stream_flags flags,
+        const struct spa_pod **params,
+        uint32_t n_params);
+
+struct pw_stream *(*fp_pw_stream_new)(
+        struct pw_core *core,
+        const char *name,
+        struct pw_properties *props
+);
+void (*fp_pw_stream_add_listener)(struct pw_stream *stream,
+                            struct spa_hook *listener,
+                            const struct pw_stream_events *events,
+                            void *data);
+int (*fp_pw_stream_disconnect)(struct pw_stream *stream);
+void (*fp_pw_stream_destroy)(struct pw_stream *stream);
+
+
+void (*fp_pw_init)(int *argc, char **argv[]);
+
+struct pw_core *
+(*fp_pw_context_connect_fd)(struct pw_context *context,
+                      int fd,
+                      struct pw_properties *properties,
+                      size_t user_data_size);
+
+int (*fp_pw_core_disconnect)(struct pw_core *core);
+
+struct pw_context * (*fp_pw_context_new)(struct pw_loop *main_loop,
+                                   struct pw_properties *props,
+                                   size_t user_data_size);
+
+struct pw_thread_loop *
+(*fp_pw_thread_loop_new)(const char *name, const struct spa_dict *props);
+struct pw_loop * (*fp_pw_thread_loop_get_loop)(struct pw_thread_loop *loop);
+void (*fp_pw_thread_loop_signal)(struct pw_thread_loop *loop,
+                                 bool wait_for_accept);
+void (*fp_pw_thread_loop_wait)(struct pw_thread_loop *loop);
+void (*fp_pw_thread_loop_accept)(struct pw_thread_loop *loop);
+int (*fp_pw_thread_loop_start)(struct pw_thread_loop *loop);
+void (*fp_pw_thread_loop_stop)(struct pw_thread_loop *loop);
+void (*fp_pw_thread_loop_destroy)(struct pw_thread_loop *loop);
+void (*fp_pw_thread_loop_lock)(struct pw_thread_loop *loop);
+void (*fp_pw_thread_loop_unlock)(struct pw_thread_loop *loop);
+
+struct pw_properties * (*fp_pw_properties_new)(const char *key, ...);
+
 #include <stdio.h>
 
 #include "gtk_interface.h"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,11 +222,11 @@ public class CaretFloatingPointAPITest {
 
             Graphics2D g2d = (Graphics2D) g;
             g2d.draw(new Line2D.Float(c, cy, c, cy + ch));
-            g2d.draw(new Line2D.Float(cx, cy, cx + cw, cy));
-            g2d.draw(new Line2D.Float(cx, cy + ch, cx + cw, cy + ch));
         }
 
         void repaint(Rectangle r) {
+            r.width += 1;
+            r.height += 1;
             component.repaint(r);
         }
 
@@ -424,6 +424,8 @@ public class CaretFloatingPointAPITest {
 
         protected synchronized void damage(Rectangle r) {
             if (r != null && component != null) {
+                r.width += 1;
+                r.height += 1;
                 component.repaint(r);
             }
         }

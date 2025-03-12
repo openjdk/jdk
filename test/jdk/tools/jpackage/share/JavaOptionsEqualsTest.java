@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.HelloApp;
-import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.TKit;
 
 /*
@@ -36,7 +35,7 @@ import jdk.jpackage.test.TKit;
  * @summary jpackage create image with --java-options test
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile JavaOptionsEqualsTest.java
+ * @compile -Xlint:all -Werror JavaOptionsEqualsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=JavaOptionsEqualsTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useExecutableByDefault
@@ -47,7 +46,7 @@ import jdk.jpackage.test.TKit;
  * @summary jpackage create image with --java-options test
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile JavaOptionsEqualsTest.java
+ * @compile -Xlint:all -Werror JavaOptionsEqualsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=JavaOptionsEqualsTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useToolProviderByDefault
@@ -67,7 +66,7 @@ public class JavaOptionsEqualsTest {
     private final JPackageCommand cmd;
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         return List.of(new Object[][]{
             {"Hello", new String[]{"--java-options", OPTION1,
                                    "--java-options", OPTION2 },

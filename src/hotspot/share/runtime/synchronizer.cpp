@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -63,6 +62,7 @@
 #include "utilities/align.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/globalCounter.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/preserveException.hpp"
@@ -76,10 +76,14 @@ void MonitorList::add(ObjectMonitor* m) {
     m->set_next_om(head);
   } while (Atomic::cmpxchg(&_head, head, m) != head);
 
-  size_t count = Atomic::add(&_count, 1u);
-  if (count > max()) {
-    Atomic::inc(&_max);
-  }
+  size_t count = Atomic::add(&_count, 1u, memory_order_relaxed);
+  size_t old_max;
+  do {
+    old_max = Atomic::load(&_max);
+    if (count <= old_max) {
+      break;
+    }
+  } while (Atomic::cmpxchg(&_max, old_max, count, memory_order_relaxed) != old_max);
 }
 
 size_t MonitorList::count() const {
@@ -366,7 +370,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
     if (mon->first_waiter() != nullptr) {
       // We have one or more waiters. Since this is an inflated monitor
       // that we own, we can transfer one or more threads from the waitset
-      // to the entrylist here and now, avoiding the slow-path.
+      // to the entry_list here and now, avoiding the slow-path.
       if (all) {
         DTRACE_MONITOR_PROBE(notifyAll, mon, obj, current);
       } else {
@@ -374,7 +378,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
       }
       int free_count = 0;
       do {
-        mon->INotify(current);
+        mon->notify_internal(current);
         ++free_count;
       } while (mon->first_waiter() != nullptr && all);
       OM_PERFDATA_OP(Notifications, inc(free_count));
@@ -405,10 +409,6 @@ bool ObjectSynchronizer::quick_enter_legacy(oop obj, BasicLock* lock, JavaThread
 
   if (useHeavyMonitors()) {
     return false;  // Slow path
-  }
-
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    return LightweightSynchronizer::quick_enter(obj, lock, current);
   }
 
   assert(LockingMode == LM_LEGACY, "legacy mode below");
@@ -1294,8 +1294,8 @@ static bool monitors_used_above_threshold(MonitorList* list) {
 
       ObjectSynchronizer::set_in_use_list_ceiling(new_ceiling);
       log_info(monitorinflation)("Too many deflations without progress; "
-                                 "bumping in_use_list_ceiling from " SIZE_FORMAT
-                                 " to " SIZE_FORMAT, old_ceiling, new_ceiling);
+                                 "bumping in_use_list_ceiling from %zu"
+                                 " to %zu", old_ceiling, new_ceiling);
       _no_progress_cnt = 0;
       ceiling = new_ceiling;
 
@@ -1303,13 +1303,21 @@ static bool monitors_used_above_threshold(MonitorList* list) {
       monitor_usage = (monitors_used * 100LL) / ceiling;
       is_above_threshold = int(monitor_usage) > MonitorUsedDeflationThreshold;
     }
-    log_info(monitorinflation)("monitors_used=" SIZE_FORMAT ", ceiling=" SIZE_FORMAT
-                               ", monitor_usage=" SIZE_FORMAT ", threshold=%d",
+    log_info(monitorinflation)("monitors_used=%zu, ceiling=%zu"
+                               ", monitor_usage=%zu, threshold=%d",
                                monitors_used, ceiling, monitor_usage, MonitorUsedDeflationThreshold);
     return is_above_threshold;
   }
 
   return false;
+}
+
+size_t ObjectSynchronizer::in_use_list_count() {
+  return _in_use_list.count();
+}
+
+size_t ObjectSynchronizer::in_use_list_max() {
+  return _in_use_list.max();
 }
 
 size_t ObjectSynchronizer::in_use_list_ceiling() {
@@ -1354,7 +1362,7 @@ bool ObjectSynchronizer::is_async_deflation_needed() {
     // We need to clean up the used monitors even if the threshold is
     // not reached, to keep the memory utilization at bay when many threads
     // touched many monitors.
-    log_info(monitorinflation)("Async deflation needed: guaranteed interval (" INTX_FORMAT " ms) "
+    log_info(monitorinflation)("Async deflation needed: guaranteed interval (%zd ms) "
                                "is greater than time since last deflation (" JLONG_FORMAT " ms)",
                                GuaranteedAsyncDeflationInterval, time_since_last);
 
@@ -1419,7 +1427,11 @@ static void post_monitor_inflate_event(EventJavaMonitorInflate* event,
                                        const oop obj,
                                        ObjectSynchronizer::InflateCause cause) {
   assert(event != nullptr, "invariant");
-  event->set_monitorClass(obj->klass());
+  const Klass* monitor_klass = obj->klass();
+  if (ObjectMonitor::is_jfr_excluded(monitor_klass)) {
+    return;
+  }
+  event->set_monitorClass(monitor_klass);
   event->set_address((uintptr_t)(void*)obj);
   event->set_cause((u1)cause);
   event->commit();
@@ -1710,8 +1722,8 @@ class ObjectMonitorDeflationLogging: public StackObj {
   elapsedTimer                             _timer;
 
   size_t ceiling() const { return ObjectSynchronizer::in_use_list_ceiling(); }
-  size_t count() const   { return ObjectSynchronizer::_in_use_list.count(); }
-  size_t max() const     { return ObjectSynchronizer::_in_use_list.max(); }
+  size_t count() const   { return ObjectSynchronizer::in_use_list_count(); }
+  size_t max() const     { return ObjectSynchronizer::in_use_list_max(); }
 
 public:
   ObjectMonitorDeflationLogging()
@@ -1725,7 +1737,7 @@ public:
 
   void begin() {
     if (_stream != nullptr) {
-      _stream->print_cr("begin deflating: in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+      _stream->print_cr("begin deflating: in_use_list stats: ceiling=%zu, count=%zu, max=%zu",
                         ceiling(), count(), max());
       _timer.start();
     }
@@ -1734,9 +1746,9 @@ public:
   void before_handshake(size_t unlinked_count) {
     if (_stream != nullptr) {
       _timer.stop();
-      _stream->print_cr("before handshaking: unlinked_count=" SIZE_FORMAT
-                        ", in_use_list stats: ceiling=" SIZE_FORMAT ", count="
-                        SIZE_FORMAT ", max=" SIZE_FORMAT,
+      _stream->print_cr("before handshaking: unlinked_count=%zu"
+                        ", in_use_list stats: ceiling=%zu, count="
+                        "%zu, max=%zu",
                         unlinked_count, ceiling(), count(), max());
     }
   }
@@ -1744,7 +1756,7 @@ public:
   void after_handshake() {
     if (_stream != nullptr) {
       _stream->print_cr("after handshaking: in_use_list stats: ceiling="
-                        SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+                        "%zu, count=%zu, max=%zu",
                         ceiling(), count(), max());
       _timer.start();
     }
@@ -1754,10 +1766,10 @@ public:
     if (_stream != nullptr) {
       _timer.stop();
       if (deflated_count != 0 || unlinked_count != 0 || _debug.is_enabled()) {
-        _stream->print_cr("deflated_count=" SIZE_FORMAT ", {unlinked,deleted}_count=" SIZE_FORMAT " monitors in %3.7f secs",
+        _stream->print_cr("deflated_count=%zu, {unlinked,deleted}_count=%zu monitors in %3.7f secs",
                           deflated_count, unlinked_count, _timer.seconds());
       }
-      _stream->print_cr("end deflating: in_use_list stats: ceiling=" SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+      _stream->print_cr("end deflating: in_use_list stats: ceiling=%zu, count=%zu, max=%zu",
                         ceiling(), count(), max());
     }
   }
@@ -1765,16 +1777,16 @@ public:
   void before_block_for_safepoint(const char* op_name, const char* cnt_name, size_t cnt) {
     if (_stream != nullptr) {
       _timer.stop();
-      _stream->print_cr("pausing %s: %s=" SIZE_FORMAT ", in_use_list stats: ceiling="
-                        SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+      _stream->print_cr("pausing %s: %s=%zu, in_use_list stats: ceiling="
+                        "%zu, count=%zu, max=%zu",
                         op_name, cnt_name, cnt, ceiling(), count(), max());
     }
   }
 
   void after_block_for_safepoint(const char* op_name) {
     if (_stream != nullptr) {
-      _stream->print_cr("resuming %s: in_use_list stats: ceiling=" SIZE_FORMAT
-                        ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT, op_name,
+      _stream->print_cr("resuming %s: in_use_list stats: ceiling=%zu"
+                        ", count=%zu, max=%zu", op_name,
                         ceiling(), count(), max());
       _timer.start();
     }
@@ -2001,7 +2013,7 @@ void ObjectSynchronizer::audit_and_print_stats(outputStream* ls, bool on_exit) {
 void ObjectSynchronizer::chk_in_use_list(outputStream* out, int *error_cnt_p) {
   size_t l_in_use_count = _in_use_list.count();
   size_t l_in_use_max = _in_use_list.max();
-  out->print_cr("count=" SIZE_FORMAT ", max=" SIZE_FORMAT, l_in_use_count,
+  out->print_cr("count=%zu, max=%zu", l_in_use_count,
                 l_in_use_max);
 
   size_t ck_in_use_count = 0;
@@ -2013,21 +2025,21 @@ void ObjectSynchronizer::chk_in_use_list(outputStream* out, int *error_cnt_p) {
   }
 
   if (l_in_use_count == ck_in_use_count) {
-    out->print_cr("in_use_count=" SIZE_FORMAT " equals ck_in_use_count="
-                  SIZE_FORMAT, l_in_use_count, ck_in_use_count);
+    out->print_cr("in_use_count=%zu equals ck_in_use_count=%zu",
+                  l_in_use_count, ck_in_use_count);
   } else {
-    out->print_cr("WARNING: in_use_count=" SIZE_FORMAT " is not equal to "
-                  "ck_in_use_count=" SIZE_FORMAT, l_in_use_count,
+    out->print_cr("WARNING: in_use_count=%zu is not equal to "
+                  "ck_in_use_count=%zu", l_in_use_count,
                   ck_in_use_count);
   }
 
   size_t ck_in_use_max = _in_use_list.max();
   if (l_in_use_max == ck_in_use_max) {
-    out->print_cr("in_use_max=" SIZE_FORMAT " equals ck_in_use_max="
-                  SIZE_FORMAT, l_in_use_max, ck_in_use_max);
+    out->print_cr("in_use_max=%zu equals ck_in_use_max=%zu",
+                  l_in_use_max, ck_in_use_max);
   } else {
-    out->print_cr("WARNING: in_use_max=" SIZE_FORMAT " is not equal to "
-                  "ck_in_use_max=" SIZE_FORMAT, l_in_use_max, ck_in_use_max);
+    out->print_cr("WARNING: in_use_max=%zu is not equal to "
+                  "ck_in_use_max=%zu", l_in_use_max, ck_in_use_max);
   }
 }
 

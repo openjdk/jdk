@@ -214,8 +214,8 @@ public:
   void verify_after_concmark();
   void verify_after_concmark_with_promotions();
   void verify_before_evacuation();
-  void verify_before_updaterefs();
-  void verify_after_updaterefs();
+  void verify_before_update_refs();
+  void verify_after_update_refs();
   void verify_before_fullgc();
   void verify_after_fullgc();
   void verify_after_degenerated();

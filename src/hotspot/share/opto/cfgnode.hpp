@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ public:
 #endif //ASSERT
   LoopStatus loop_status() const { return _loop_status; };
   void set_loop_status(LoopStatus status);
-  DEBUG_ONLY(void verify_can_be_irreducible_entry() const;)
+  bool can_be_irreducible_entry() const;
 
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
@@ -181,6 +181,8 @@ class PhiNode : public TypeNode {
   static Node* merge_through_phi(Node* root_phi, PhaseIterGVN* igvn);
 
   bool must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const;
+
+  bool is_split_through_mergemem_terminating() const;
 
 public:
   // Node layout (parallels RegionNode):
@@ -428,7 +430,7 @@ public:
   IfNode(Node* control, Node* bol, float p, float fcnt);
   IfNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicateType assertion_predicate_type);
 
-  static IfNode* make_with_same_profile(IfNode* if_node_profile, Node* ctrl, BoolNode* bol);
+  static IfNode* make_with_same_profile(IfNode* if_node_profile, Node* ctrl, Node* bol);
 
   virtual int Opcode() const;
   virtual bool pinned() const { return true; }

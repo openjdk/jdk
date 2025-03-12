@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,10 @@ import java.io.InputStreamReader;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
@@ -336,5 +340,113 @@ public class CDS {
         String archiveFilePath = new File(archiveFileName).getAbsolutePath();
         System.out.println("The process was attached by jcmd and dumped a " + (isStatic ? "static" : "dynamic") + " archive " + archiveFilePath);
         return archiveFilePath;
+    }
+
+    /**
+     * This class is used only by native JVM code at CDS dump time for loading
+     * "unregistered classes", which are archived classes that are intended to
+     * be loaded by custom class loaders during runtime.
+     * See src/hotspot/share/cds/unregisteredClasses.cpp.
+     */
+    private static class UnregisteredClassLoader extends URLClassLoader {
+        private String currentClassName;
+        private Class<?> currentSuperClass;
+        private Class<?>[] currentInterfaces;
+
+        /**
+         * Used only by native code. Construct an UnregisteredClassLoader for loading
+         * unregistered classes from the specified file. If the file doesn't exist,
+         * the exception will be caughted by native code which will print a warning message and continue.
+         *
+         * @param fileName path of the the JAR file to load unregistered classes from.
+         */
+        private UnregisteredClassLoader(String fileName) throws InvalidPathException, IOException {
+            super(toURLArray(fileName), /*parent*/null);
+            currentClassName = null;
+            currentSuperClass = null;
+            currentInterfaces = null;
+        }
+
+        private static URL[] toURLArray(String fileName) throws InvalidPathException, IOException {
+            if (!((new File(fileName)).exists())) {
+                throw new IOException("No such file: " + fileName);
+            }
+            return new URL[] {
+                // Use an intermediate File object to construct a URI/URL without
+                // authority component as URLClassPath can't handle URLs with a UNC
+                // server name in the authority component.
+                Path.of(fileName).toRealPath().toFile().toURI().toURL()
+            };
+        }
+
+
+        /**
+         * Load the class of the given <code>/name<code> from the JAR file that was given to
+         * the constructor of the current UnregisteredClassLoader instance. This class must be
+         * a direct subclass of <code>superClass</code>. This class must be declared to implement
+         * the specified <code>interfaces</code>.
+         * <p>
+         * This method must be called in a single threaded context. It will never be recursed (thus
+         * the asserts)
+         *
+         * @param name the name of the class to be loaded.
+         * @param superClass must not be null. The named class must have a super class.
+         * @param interfaces could be null if the named class does not implement any interfaces.
+         */
+        private Class<?> load(String name, Class<?> superClass, Class<?>[] interfaces)
+            throws ClassNotFoundException
+        {
+            assert currentClassName == null;
+            assert currentSuperClass == null;
+            assert currentInterfaces == null;
+
+            try {
+                currentClassName = name;
+                currentSuperClass = superClass;
+                currentInterfaces = interfaces;
+
+                return findClass(name);
+            } finally {
+                currentClassName = null;
+                currentSuperClass = null;
+                currentInterfaces = null;
+            }
+        }
+
+        /**
+         * This method must be called from inside the <code>load()</code> method. The <code>/name<code>
+         * can be only:
+         * <ul>
+         * <li> the <code>name</code> parameter for <code>load()</code>
+         * <li> the name of the <code>superClass</code> parameter for <code>load()</code>
+         * <li> the name of one of the interfaces in <code>interfaces</code> parameter for <code>load()</code>
+         * <ul>
+         *
+         * For all other cases, a <code>ClassNotFoundException</code> will be thrown.
+         */
+        protected Class<?> findClass(final String name)
+            throws ClassNotFoundException
+        {
+            Objects.requireNonNull(currentClassName);
+            Objects.requireNonNull(currentSuperClass);
+
+            if (name.equals(currentClassName)) {
+                // Note: the following call will call back to <code>this.findClass(name)</code> to
+                // resolve the super types of the named class.
+                return super.findClass(name);
+            }
+            if (name.equals(currentSuperClass.getName())) {
+                return currentSuperClass;
+            }
+            if (currentInterfaces != null) {
+                for (Class<?> c : currentInterfaces) {
+                    if (name.equals(c.getName())) {
+                        return c;
+                    }
+                }
+            }
+
+            throw new ClassNotFoundException(name);
+        }
     }
 }

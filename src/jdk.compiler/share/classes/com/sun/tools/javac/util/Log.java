@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,20 +134,28 @@ public class Log extends AbstractLog {
     public static class DeferredDiagnosticHandler extends DiagnosticHandler {
         private Queue<JCDiagnostic> deferred = new ListBuffer<>();
         private final Predicate<JCDiagnostic> filter;
+        private final boolean passOnNonDeferrable;
 
         public DeferredDiagnosticHandler(Log log) {
             this(log, null);
         }
 
-        @SuppressWarnings("this-escape")
         public DeferredDiagnosticHandler(Log log, Predicate<JCDiagnostic> filter) {
+            this(log, filter, true);
+        }
+
+        @SuppressWarnings("this-escape")
+        public DeferredDiagnosticHandler(Log log, Predicate<JCDiagnostic> filter, boolean passOnNonDeferrable) {
             this.filter = filter;
+            this.passOnNonDeferrable = passOnNonDeferrable;
             install(log);
         }
 
         @Override
         public void report(JCDiagnostic diag) {
-            if (!diag.isFlagSet(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE) &&
+            boolean deferrable = !passOnNonDeferrable ||
+                                 !diag.isFlagSet(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE);
+            if (deferrable &&
                 (filter == null || filter.test(diag))) {
                 deferred.add(diag);
             } else {
@@ -345,9 +353,15 @@ public class Log extends AbstractLog {
         messages = JavacMessages.instance(context);
         messages.add(Main.javacBundleName);
 
+        // Initialize fields configured by Options that we may need before it is ready
+        this.emitWarnings = true;
+        this.MaxErrors = getDefaultMaxErrors();
+        this.MaxWarnings = getDefaultMaxWarnings();
+        this.diagFormatter = new BasicDiagnosticFormatter(messages);
+
+        // Once Options is ready, complete the initialization
         final Options options = Options.instance(context);
-        initOptions(options);
-        options.addListener(() -> initOptions(options));
+        options.whenReady(this::initOptions);
     }
     // where
         private void initOptions(Options options) {

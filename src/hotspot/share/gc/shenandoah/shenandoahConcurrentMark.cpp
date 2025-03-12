@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shared/strongRootsScope.hpp"

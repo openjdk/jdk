@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,8 +67,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * decimal conversion issues} in {@code java.lang.Double} is also
  * applicable to {@code float} values.
  *
- * @see <a href="https://standards.ieee.org/ieee/754/6210/">
- *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
+ * @spec https://standards.ieee.org/ieee/754/6210/
+ *       IEEE Standard for Floating-Point Arithmetic
  *
  * @author  Lee Boynton
  * @author  Arthur van Hoff

@@ -16,11 +16,20 @@ extern "C" {
 #include <spa/utils/type.h>
 #include <spa/param/video/raw.h>
 
+#ifndef SPA_API_VIDEO_RAW_TYPES
+ #ifdef SPA_API_IMPL
+  #define SPA_API_VIDEO_RAW_TYPES SPA_API_IMPL
+ #else
+  #define SPA_API_VIDEO_RAW_TYPES static inline
+ #endif
+#endif
+
 #define SPA_TYPE_INFO_VideoFormat        SPA_TYPE_INFO_ENUM_BASE "VideoFormat"
 #define SPA_TYPE_INFO_VIDEO_FORMAT_BASE        SPA_TYPE_INFO_VideoFormat ":"
 
 static const struct spa_type_info spa_type_video_format[] = {
-    { SPA_VIDEO_FORMAT_ENCODED,    SPA_TYPE_Int, SPA_TYPE_INFO_VIDEO_FORMAT_BASE "encoded", NULL },
+    { SPA_VIDEO_FORMAT_UNKNOWN,    SPA_TYPE_Int, SPA_TYPE_INFO_VIDEO_FORMAT_BASE "UNKNOWN", NULL },
+    { SPA_VIDEO_FORMAT_ENCODED,    SPA_TYPE_Int, SPA_TYPE_INFO_VIDEO_FORMAT_BASE "ENCODED", NULL },
     { SPA_VIDEO_FORMAT_I420,    SPA_TYPE_Int, SPA_TYPE_INFO_VIDEO_FORMAT_BASE "I420", NULL },
     { SPA_VIDEO_FORMAT_YV12,    SPA_TYPE_Int, SPA_TYPE_INFO_VIDEO_FORMAT_BASE "YV12", NULL },
     { SPA_VIDEO_FORMAT_YUY2,    SPA_TYPE_Int, SPA_TYPE_INFO_VIDEO_FORMAT_BASE "YUY2", NULL },
@@ -109,6 +118,15 @@ static const struct spa_type_info spa_type_video_format[] = {
     { SPA_VIDEO_FORMAT_BGRA_102LE,    SPA_TYPE_Int, SPA_TYPE_INFO_VIDEO_FORMAT_BASE "BGRA_102LE", NULL },
     { 0, 0, NULL, NULL },
 };
+
+SPA_API_VIDEO_RAW_TYPES uint32_t spa_type_video_format_from_short_name(const char *name)
+{
+    return spa_type_from_short_name(name, spa_type_video_format, SPA_VIDEO_FORMAT_UNKNOWN);
+}
+SPA_API_VIDEO_RAW_TYPES const char * spa_type_video_format_to_short_name(uint32_t type)
+{
+    return spa_type_to_short_name(type, spa_type_video_format, "UNKNOWN");
+}
 
 #define SPA_TYPE_INFO_VideoFlags    SPA_TYPE_INFO_FLAGS_BASE "VideoFlags"
 #define SPA_TYPE_INFO_VIDEO_FLAGS_BASE    SPA_TYPE_INFO_VideoFlags ":"

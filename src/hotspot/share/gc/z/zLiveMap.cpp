@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zLiveMap.inline.hpp"
@@ -103,7 +102,7 @@ void ZLiveMap::reset_segment(BitMap::idx_t segment) {
         ZStatInc(ZCounterMarkSegmentResetContention);
         contention = true;
 
-        log_trace(gc)("Mark segment reset contention, thread: " PTR_FORMAT " (%s), map: " PTR_FORMAT ", segment: " SIZE_FORMAT,
+        log_trace(gc)("Mark segment reset contention, thread: " PTR_FORMAT " (%s), map: " PTR_FORMAT ", segment: %zu",
                       p2i(Thread::current()), ZUtils::thread_name(), p2i(this), segment);
       }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,8 +361,8 @@ private:
   do {                                                                        \
     size_t cur_used_bytes = g1h->used();                                      \
     size_t recal_used_bytes = g1h->recalculate_used();                        \
-    assert(cur_used_bytes == recal_used_bytes, "Used(" SIZE_FORMAT ") is not" \
-           " same as recalculated used(" SIZE_FORMAT ").",                    \
+    assert(cur_used_bytes == recal_used_bytes, "Used(%zu) is not" \
+           " same as recalculated used(%zu).",                    \
            cur_used_bytes, recal_used_bytes);                                 \
   } while (0)
 #else
@@ -781,15 +781,15 @@ private:
   G1MonotonicArenaFreePool _card_set_freelist_pool;
 
   // Group cardsets
-  G1CardSetMemoryManager _young_regions_cardset_mm;
-  G1CardSet _young_regions_cardset;
+  G1CSetCandidateGroup _young_regions_cset_group;
 
 public:
   G1CardSetConfiguration* card_set_config() { return &_card_set_config; }
 
-  G1CardSet* young_regions_cardset() { return &_young_regions_cardset; };
+  G1CSetCandidateGroup* young_regions_cset_group() { return &_young_regions_cset_group; }
+  G1CardSet* young_regions_cardset() { return _young_regions_cset_group.card_set(); };
 
-  G1CardSetMemoryManager* young_regions_card_set_mm() { return &_young_regions_cardset_mm; }
+  G1MonotonicArenaMemoryStats young_regions_card_set_memory_stats() { return _young_regions_cset_group.card_set_memory_stats(); }
 
   void prepare_group_cardsets_for_scan();
 
