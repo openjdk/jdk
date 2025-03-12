@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,6 @@ public abstract class WriteBarrier {
     private int[] indicesLarge;
 
     private Object[] youngArraySmall;
-
     private Object[] youngArrayLarge;
 
     private Object nullRef;
@@ -132,12 +131,6 @@ public abstract class WriteBarrier {
         this.youngHead = new Referencer();
         this.youngTail = new Referencer();
     }
-
-//    @TearDown(Level.Iteration)
-//    public void tearDownIteration() {
-//        System.gc();
-//    }
-
 
     private int get_random() {
         m_z = 36969 * (m_z & 65535) + (m_z >> 16);
