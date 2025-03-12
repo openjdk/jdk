@@ -100,6 +100,7 @@ function getURLPrefix(item, category) {
             $.each(packageSearchIndex, function(index, it) {
                 if (it.m && item.p === it.l) {
                     urlPrefix = it.m + slash;
+                    item.m = it.m;
                     return false;
                 }
             });
@@ -283,6 +284,7 @@ function rateDistance(str) {
 function doSearch(request, response) {
     var term = request.term.trim();
     var maxResults = request.maxResults || MAX_RESULTS;
+    var module = checkUnnamed(request.module, "/");
     var matcher = {
         plainMatcher: createMatcher(term, false),
         camelCaseMatcher: createMatcher(term, true)
@@ -315,6 +317,12 @@ function doSearch(request, response) {
             return matches;
         }
         $.each(indexArray, function (i, item) {
+            if (module) {
+                var modulePrefix = getURLPrefix(item, category) || item.u;
+                if (modulePrefix.indexOf("/") > -1 && !modulePrefix.startsWith(module)) {
+                    return;
+                }
+            }
             var prefix = getPrefix(item, category);
             var classPrefix = getClassPrefix(item, category);
             var simpleName = classPrefix + item.l;
@@ -454,11 +462,11 @@ function getResultDescription(item) {
             return kind.replace("{0}", typeDesc + " " + typeName);
         case "types":
             var pkgName = checkUnnamed(item.indexItem.p, "");
+            kind = itemDesc[item.indexItem.k || 12][0];
             if (!pkgName) {
                 // Handle "All Classes" summary page and unnamed package
                 return item.indexItem.k === "18" ? kind : kind + " " + item.indexItem.l;
             }
-            kind = itemDesc[item.indexItem.k || 12][0];
             return getEnclosingDescription(kind, pkgDescLower, pkgName);
         case "packages":
             if (item.indexItem.k === "18") {

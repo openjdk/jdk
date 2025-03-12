@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8289332 8286470 8309471
+ * @bug 8289332 8286470 8309471 8345555
  * @summary Auto-generate ids for user-defined headings
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool

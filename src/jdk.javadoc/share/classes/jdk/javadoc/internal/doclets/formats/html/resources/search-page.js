@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
@@ -42,6 +42,7 @@ $(function() {
 $(window).on("load", function() {
     var input = $("#page-search-input");
     var reset = $("#page-search-reset");
+    var modules = $("#search-modules");
     var notify = $("#page-search-notify");
     var resultSection = $("div#result-section");
     var resultContainer = $("div#result-container");
@@ -73,14 +74,12 @@ $(window).on("load", function() {
             var arr = r[item.category];
             arr.push(item);
         }
-        if (!activeTab || r[activeTab].length === 0 || !fixedTab) {
-            Object.keys(r).reduce(function(prev, curr) {
-                if (r[curr].length > 0 && r[curr][0].score - prev > 0.1) {
-                    activeTab = curr;
-                    return r[curr][0].score;
+        if (!activeTab || r[activeTab].length === 0) {
+            activeTab = Object.keys(r).find(category => {
+                if (r[category].length > 0) {
+                    return true;
                 }
-                return prev;
-            }, 0);
+            });
         }
         if (feelingLucky && activeTab) {
             notify.html(messages.redirecting)
@@ -88,14 +87,10 @@ $(window).on("load", function() {
             window.location = getURL(firstItem.indexItem, firstItem.category);
             return;
         }
-        if (result.length > 20) {
-            if (searchTerm[searchTerm.length - 1] === ".") {
-                if (activeTab === "types" && r["members"].length > r["types"].length) {
-                    activeTab = "members";
-                } else if (activeTab === "packages" && r["types"].length > r["packages"].length) {
-                    activeTab = "types";
-                }
-            }
+        if (searchTerm.endsWith(".") && !fixedTab && activeTab === "types"
+                && r["types"].length < MIN_TABBED_RESULTS && r["members"].length > MIN_TABBED_RESULTS) {
+            // Other members are usually more interesting than nested classes
+            activeTab = "members";
         }
         var categoryCount = Object.keys(r).reduce(function(prev, curr) {
             return prev + (r[curr].length > 0 ? 1 : 0);
@@ -130,7 +125,7 @@ $(window).on("load", function() {
             }
         }
         if (activeTab && result.length > MIN_TABBED_RESULTS && categoryCount > 1) {
-            $("button#result-tab-" + activeTab).addClass("active-table-tab");
+            $("button#result-tab-" + activeTab).addClass("active-table-tab").attr("tabIndex", "0");
             renderTable(activeTab, r[activeTab]).appendTo(resultContainer);
         }
         resultSection.show();
@@ -170,25 +165,28 @@ $(window).on("load", function() {
         });
         return table;
     }
+    function select() {
+        if (!this.classList.contains("selected")) {
+            setSelected(this);
+        }
+    }
+    function unselect() {
+        if (this.classList.contains("selected")) {
+            setSelected(null);
+        }
+    }
     function renderItem(item, table) {
         var label = getResultLabel(item);
         var desc = getResultDescription(item);
         var link = $("<a/>")
             .attr("href",  getURL(item.indexItem, item.category))
             .attr("tabindex", "0")
-            .addClass("search-result-link")
-            .on("mousemove", function(e) {
-                if (this !== document.activeElement) {
-                    setSelected(this);
-                }
-            }).on("mouseleave", function(e) {
-                if (this === document.activeElement) {
-                    setSelected(null);
-                }
-            }).on("focus", function(e) {
-                setSelected(this);
-            });
-        link.append($("<span/>").addClass("search-result-label").html(label))
+            .addClass("search-result-link");
+        link.on("mousemove", select.bind(link[0]))
+            .on("focus", select.bind(link[0]))
+            .on("mouseleave", unselect.bind(link[0]))
+            .on("blur", unselect.bind(link[0]))
+            .append($("<span/>").addClass("search-result-label").html(label))
             .append($("<span/>").addClass("search-result-desc").html(desc))
             .appendTo(table);
     }
@@ -212,7 +210,8 @@ $(window).on("load", function() {
             resultSection.hide();
         } else {
             notify.html(messages.searching);
-            doSearch({ term: term, maxResults: 1200 }, renderResults);
+            var module = modules.val();
+            doSearch({ term: term, maxResults: 1200, module: module}, renderResults);
         }
     }
     function setSearchUrl() {
@@ -223,11 +222,15 @@ $(window).on("load", function() {
             if (activeTab && fixedTab) {
                 url += "&c=" + activeTab;
             }
+            if (modules.val()) {
+                url += "&m=" + modules.val();
+            }
         }
         history.replaceState({query: query}, "", url);
     }
     input.on("input", function(e) {
         feelingLucky = false;
+        reset.css("visibility", input.val() ? "visible" : "hidden");
         schedulePageSearch();
     });
     function setSelected(link) {
@@ -243,6 +246,14 @@ $(window).on("load", function() {
     }
     document.addEventListener("keydown", e => {
         if (e.ctrlKey || e.altKey || e.metaKey) {
+            return;
+        }
+        if (e.key === "Escape" && input.val()) {
+            input.val("").focus();
+            doPageSearch();
+            e.preventDefault();
+        }
+        if (e.target === modules[0]) {
             return;
         }
         if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
@@ -283,11 +294,6 @@ $(window).on("load", function() {
         } else if (e.key.length === 1 || e.key === "Backspace") {
             setSelected(null);
             input.focus();
-        } else if (e.key === "Escape" && input.val()) {
-            input.val("").focus();
-            input[0].dispatchEvent(new InputEvent("input"));
-        } else if (e.key === "Enter" && selectedLink && document.activeElement !== selectedLink) {
-            window.location = selectedLink.getAttribute("href");
         }
     });
     reset.on("click", function() {
@@ -299,13 +305,34 @@ $(window).on("load", function() {
         input.val('').focus();
         setSearchUrl();
     });
+    modules.on("change", function() {
+        if (input.val()) {
+            doPageSearch();
+        }
+        input.focus();
+        try {
+            localStorage.setItem("search-modules", modules.val());
+        } catch (unsupported) {}
+    });
+
     input.prop("disabled", false);
     input.attr("autocapitalize", "off");
     reset.prop("disabled", false);
 
     var urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("m")) {
+        modules.val(urlParams.get("m"));
+    } else {
+        try {
+            var searchModules = localStorage.getItem("search-modules");
+            if (searchModules) {
+                modules.val(searchModules);
+            }
+        } catch (unsupported) {}
+    }
     if (urlParams.has("q")) {
-        input.val(urlParams.get("q"))
+        input.val(urlParams.get("q"));
+        reset.css("visibility", input.val() ? "visible" : "hidden");
     }
     if (urlParams.has("c")) {
         activeTab = urlParams.get("c");
