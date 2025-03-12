@@ -232,10 +232,6 @@ public abstract class PKCS11Test {
 
     static String getNSSLibDir(String library) throws Exception {
         Path libPath = getNSSLibPath(library);
-        if (libPath == null) {
-            return null;
-        }
-
         String libDir = String.valueOf(libPath.getParent()) + File.separatorChar;
         System.out.println("nssLibDir: " + libDir);
         System.setProperty("pkcs11test.nss.libdir", libDir);
@@ -249,12 +245,7 @@ public abstract class PKCS11Test {
     static Path getNSSLibPath(String library) throws Exception {
         String osid = getOsId();
         Path libraryName = Path.of(System.mapLibraryName(library));
-        Path nssLibPath = fetchNssLib(osid, libraryName);
-        if (nssLibPath == null) {
-            throw new SkippedException("Warning: unsupported OS: " + osid
-                    + ", please initialize NSS library location, skipping test");
-        }
-        return nssLibPath;
+        return fetchNssLib(osid, libraryName);
     }
 
     private static String getOsId() {
@@ -740,7 +731,7 @@ public abstract class PKCS11Test {
                     return fetchNssLib(LINUX_AARCH64.class, libraryName);
                 }
             default:
-                return null;
+                throw new SkippedException("Unsupported OS: " + osId);
         }
     }
 

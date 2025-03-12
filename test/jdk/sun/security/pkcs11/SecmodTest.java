@@ -46,7 +46,7 @@ public class SecmodTest extends PKCS11Test {
         useNSS();
         LIBPATH = getNSSLibDir();
         // load all the libraries except libnss3 into memory
-        if ((LIBPATH == null) || (!loadNSPR(LIBPATH))) {
+        if (!loadNSPR(LIBPATH)) {
             throw new SkippedException("Failed to load NSS libraries");
         }
 

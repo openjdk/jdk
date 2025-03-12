@@ -23,13 +23,12 @@
 
 package jdk.test.lib.security;
 
-import java.io.IOException;
-
 import java.nio.file.Path;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
+import jtreg.SkippedException;
 
 public class OpensslArtifactFetcher {
 
@@ -49,6 +48,7 @@ public class OpensslArtifactFetcher {
            and return that path, if download fails then return null.
      *
      * @return openssl binary path of the current version
+     * @throws SkippedException if a valid version of OpenSSL cannot be found
      */
     public static String getOpensslPath() {
         String path = getOpensslFromSystemProp(OPENSSL_BUNDLE_VERSION);
@@ -75,7 +75,16 @@ public class OpensslArtifactFetcher {
                 path = fetchOpenssl(MACOSX_AARCH64.class);
             }
         }
-        return verifyOpensslVersion(path, OPENSSL_BUNDLE_VERSION) ? path : null;
+
+        if (!verifyOpensslVersion(path, OPENSSL_BUNDLE_VERSION)) {
+            String exMsg = "Can't find the version: "
+                    + OpensslArtifactFetcher.getTestOpensslBundleVersion()
+                    + " of openssl binary on this machine, please install"
+                    + " and set openssl path with property 'test.openssl.path'";
+            throw new SkippedException(exMsg);
+        } else {
+            return path;
+        }
     }
 
     private static String getOpensslFromSystemProp(String version) {

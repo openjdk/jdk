@@ -25,7 +25,6 @@ package jdk.test.lib.artifacts;
 
 import jtreg.SkippedException;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -75,11 +74,12 @@ public class ArtifactResolver {
      * Retrieve an artifact/library/file from a repository or local file system.
      * <p>
      * Artifacts are defined with the {@link jdk.test.lib.artifacts.Artifact}
-     * annotation. The file name should have the format ARTIFACT_NAME-VERSION.EXT
+     * annotation.
      * <p>
      * If you have a local version of a dependency that you want to use, you can
-     * specify that by setting the System property:
-     * <code>jdk.test.lib.artifacts.ARTIFACT_NAME</code>
+     * specify that by setting the system property:
+     * <code>jdk.test.lib.artifacts.ARTIFACT_NAME</code>. Where ARTIFACT_NAME
+     * is the name field of the Artifact annotation.
      * <p>
      * Generally, tests that use this method should be run with <code>make test</code>.
      * However, tests can also be run with <code>jtreg</code> but you must have a
@@ -89,7 +89,7 @@ public class ArtifactResolver {
      * @param klass a class annotated with {@link jdk.test.lib.artifacts.Artifact}
      * @return the local path to the artifact. If the artifact is a compressed
      * file that gets unpacked, this path will point to the root
-     * directory of the uncompressed file.
+     * directory of the uncompressed file(s).
      * @throws SkippedException thrown if the artifact cannot be found
      */
     public static Path fetchOne(Class<?> klass) {
