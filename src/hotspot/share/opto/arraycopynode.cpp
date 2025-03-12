@@ -681,13 +681,11 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
   return CallNode::may_modify_arraycopy_helper(dest_t, t_oop, phase);
 }
 
-bool ArrayCopyNode::may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, CallNode*& call) {
+bool ArrayCopyNode::may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, ArrayCopyNode*&call) {
   if (n != nullptr &&
-      n->is_Call() &&
-      n->as_Call()->may_modify(t_oop, phase) &&
-      (n->as_Call()->is_ArrayCopy() || n->as_Call()->is_call_to_arraycopystub())) {
-    assert(!n->as_Call()->is_call_to_arraycopystub(), "");
-    call = n->as_Call();
+      n->is_ArrayCopy() &&
+      n->as_ArrayCopy()->may_modify(t_oop, phase)) {
+    call = n->as_ArrayCopy();
     return true;
   }
   return false;
@@ -710,19 +708,17 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, MemBarNode* mb, PhaseVal
     for (uint i = 1; i < c->req(); i++) {
       if (c->in(i) != nullptr) {
         Node* n = c->in(i)->in(0);
-        if (may_modify_helper(t_oop, n, phase, call)) {
-          ac = call->isa_ArrayCopy();
+        if (may_modify_helper(t_oop, n, phase, ac)) {
           assert(c == mb->in(0), "only for clone");
           return true;
         }
       }
     }
-  } else if (may_modify_helper(t_oop, c->in(0), phase, call)) {
-    ac = call->isa_ArrayCopy();
+  } else if (may_modify_helper(t_oop, c->in(0), phase, ac)) {
 #ifdef ASSERT
     bool use_ReduceInitialCardMarks = BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet) &&
       static_cast<CardTableBarrierSetC2*>(bs)->use_ReduceInitialCardMarks();
-    assert(c == mb->in(0) || (ac != nullptr && ac->is_clonebasic() && !use_ReduceInitialCardMarks), "only for clone");
+    assert(c == mb->in(0) || (ac->is_clonebasic() && !use_ReduceInitialCardMarks), "only for clone");
 #endif
     return true;
   }
