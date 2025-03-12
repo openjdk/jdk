@@ -2172,65 +2172,59 @@ void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRe
     case FLOAT_TYPE::half_precision:
       fclass_h(t0, src1);
       fclass_h(t1, src2);
+
+      orr(t0, t0, t1);
+      andi(t0, t0, FClassBits::nan); // if src1 or src2 is quiet or signaling NaN then return NaN
+      beqz(t0, Compare);
+
+      fadd_h(dst, src1, src2);
+      j(Done);
+
+      bind(Compare);
+      if (is_min) {
+        fmin_h(dst, src1, src2);
+      } else {
+        fmax_h(dst, src1, src2);
+      }
       break;
     case FLOAT_TYPE::single_precision:
       fclass_s(t0, src1);
       fclass_s(t1, src2);
+
+      orr(t0, t0, t1);
+      andi(t0, t0, FClassBits::nan); // if src1 or src2 is quiet or signaling NaN then return NaN
+      beqz(t0, Compare);
+
+      fadd_s(dst, src1, src2);
+      j(Done);
+
+      bind(Compare);
+      if (is_min) {
+        fmin_s(dst, src1, src2);
+      } else {
+        fmax_s(dst, src1, src2);
+      }
       break;
     case FLOAT_TYPE::double_precision:
       fclass_d(t0, src1);
       fclass_d(t1, src2);
-      break;
-    default:
-      ShouldNotReachHere();
-  }
-  orr(t0, t0, t1);
-  andi(t0, t0, FClassBits::nan); // if src1 or src2 is quiet or signaling NaN then return NaN
-  beqz(t0, Compare);
-  switch (ft) {
-    case FLOAT_TYPE::half_precision:
-      fadd_h(dst, src1, src2);
-      break;
-    case FLOAT_TYPE::single_precision:
-      fadd_s(dst, src1, src2);
-      break;
-    case FLOAT_TYPE::double_precision:
-      fadd_d(dst, src1, src2);
-      break;
-    default:
-      ShouldNotReachHere();
-  }
-  j(Done);
 
-  bind(Compare);
-  if (is_min) {
-    switch (ft) {
-      case FLOAT_TYPE::half_precision:
-        fmin_h(dst, src1, src2);
-        break;
-      case FLOAT_TYPE::single_precision:
-        fmin_s(dst, src1, src2);
-        break;
-      case FLOAT_TYPE::double_precision:
+      orr(t0, t0, t1);
+      andi(t0, t0, FClassBits::nan); // if src1 or src2 is quiet or signaling NaN then return NaN
+      beqz(t0, Compare);
+
+      fadd_d(dst, src1, src2);
+      j(Done);
+
+      bind(Compare);
+      if (is_min) {
         fmin_d(dst, src1, src2);
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-  } else {
-    switch (ft) {
-      case FLOAT_TYPE::half_precision:
-        fmax_h(dst, src1, src2);
-        break;
-      case FLOAT_TYPE::single_precision:
-        fmax_s(dst, src1, src2);
-        break;
-      case FLOAT_TYPE::double_precision:
+      } else {
         fmax_d(dst, src1, src2);
-        break;
-      default:
-        ShouldNotReachHere();
-    }
+      }
+      break;
+    default:
+      ShouldNotReachHere();
   }
 
   bind(Done);
