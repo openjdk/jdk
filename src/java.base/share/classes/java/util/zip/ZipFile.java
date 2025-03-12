@@ -1748,6 +1748,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 }
 
                 int entryPos = pos + CENHDR;
+                // the ZipCoder for any non-UTF8 entries
                 final ZipCoder entryZipCoder;
                 if (useUTF8Coder(cen, pos)) {
                     // entry name explicitly wants UTF-8 Charset
