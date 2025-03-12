@@ -50,7 +50,7 @@ public class OpensslArtifactFetcher {
      *
      * @return openssl binary path of the current version
      */
-    public static String getOpensslPath() throws IOException {
+    public static String getOpensslPath() {
         String path = getOpensslFromSystemProp(OPENSSL_BUNDLE_VERSION);
         if (path != null) {
             return path;
@@ -110,7 +110,7 @@ public class OpensslArtifactFetcher {
         return false;
     }
 
-    private static String fetchOpenssl(Class<?> clazz) throws IOException {
+    private static String fetchOpenssl(Class<?> clazz) {
         return ArtifactResolver.fetchOne(clazz)
                 .resolve("openssl", "bin", "openssl")
                 .toString();

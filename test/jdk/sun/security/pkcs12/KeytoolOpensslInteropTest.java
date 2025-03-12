@@ -81,16 +81,15 @@ public class KeytoolOpensslInteropTest {
     public static void main(String[] args) throws Throwable {
         boolean generatePKCS12 = Boolean.parseBoolean(args[0]);
         if (generatePKCS12) {
-            String opensslPath;
-            try {
-                opensslPath = OpensslArtifactFetcher.getOpensslPath();
-            } catch (IOException exc) {
+            String opensslPath = OpensslArtifactFetcher.getOpensslPath();
+            if (opensslPath == null) {
                 String exMsg = "Can't find the version: "
                         + OpensslArtifactFetcher.getTestOpensslBundleVersion()
                         + " of openssl binary on this machine, please install"
                         + " and set openssl path with property 'test.openssl.path'";
-                throw new SkippedException(exMsg, exc);
+                throw new SkippedException(exMsg);
             }
+
             // if the current version of openssl is available, perform all
             // keytool <-> openssl interop tests
             generateInitialKeystores(opensslPath);

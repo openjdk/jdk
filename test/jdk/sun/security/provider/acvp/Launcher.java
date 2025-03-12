@@ -106,7 +106,7 @@ public class Launcher {
 
     public static void main(String[] args) throws Exception {
 
-        Path archivePath = fetchACVPServerTests(ACVP_SERVER_TESTS.class);
+        Path archivePath = ArtifactResolver.fetchOne(ACVP_SERVER_TESTS.class);
         System.out.println("Data path: " + archivePath);
 
         if (PROVIDER != null) {
@@ -175,14 +175,6 @@ public class Launcher {
             throw re;
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private static Path fetchACVPServerTests(Class<?> clazz) {
-        try {
-            return ArtifactResolver.fetchOne(clazz);
-        } catch (IOException e) {
-            throw new SkippedException("Fetch artifact failed: " + clazz, e);
         }
     }
 
