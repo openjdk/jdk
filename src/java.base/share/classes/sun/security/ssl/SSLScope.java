@@ -34,7 +34,7 @@ public enum SSLScope {
     HANDSHAKE_SIGNATURE("HandshakeSignature"),
 
     // Certificate signature scope as in signature_algorithms_cert extension.
-    CERTIFICATE_SIGNATURE("CertificateSignature"),;
+    CERTIFICATE_SIGNATURE("CertificateSignature");
 
     final String name;
 
