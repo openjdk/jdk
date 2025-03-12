@@ -40,7 +40,6 @@ import java.io.IOException;
 import java.net.http.WebSocket;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
@@ -77,92 +76,14 @@ public class WebSocketExtendedTest {
                     .join();
             ws.sendBinary(expected.duplicate(), true).join();
             ws.abort();
-            ByteBuffer data = server.read();
-            List<DecodedFrame> frames = readFrames(data);
+            List<DummyWebSocketServer.DecodedFrame> frames = server.readFrames();
             assertEquals(frames.size(), 1);
-            DecodedFrame f = frames.get(0);
-            assertTrue(f.last);
-            assertEquals(f.opcode, Frame.Opcode.BINARY);
-            assertEquals(f.data, expected);
+            DummyWebSocketServer.DecodedFrame f = frames.get(0);
+            assertTrue(f.last());
+            assertEquals(f.opcode(), Frame.Opcode.BINARY);
+            assertEquals(f.data(), expected);
         }
     }
-
-    private static List<DecodedFrame> readFrames(ByteBuffer src) {
-        List<DecodedFrame> frames = new ArrayList<>();
-        Frame.Consumer consumer = new Frame.Consumer() {
-
-            ByteBuffer data;
-            Frame.Opcode opcode;
-            Frame.Masker masker = new Frame.Masker();
-            boolean last;
-
-            @Override
-            public void fin(boolean value) {
-                last = value;
-            }
-
-            @Override
-            public void rsv1(boolean value) {
-                if (value) {
-                    throw new AssertionError();
-                }
-            }
-
-            @Override
-            public void rsv2(boolean value) {
-                if (value) {
-                    throw new AssertionError();
-                }
-            }
-
-            @Override
-            public void rsv3(boolean value) {
-                if (value) {
-                    throw new AssertionError();
-                }
-            }
-
-            @Override
-            public void opcode(Frame.Opcode value) {
-                opcode = value;
-            }
-
-            @Override
-            public void mask(boolean value) {
-                if (!value) { // Frames from the client MUST be masked
-                    throw new AssertionError();
-                }
-            }
-
-            @Override
-            public void payloadLen(long value) {
-                data = ByteBuffer.allocate((int) value);
-            }
-
-            @Override
-            public void maskingKey(int value) {
-                masker.mask(value);
-            }
-
-            @Override
-            public void payloadData(ByteBuffer data) {
-                masker.transferMasking(data, this.data);
-            }
-
-            @Override
-            public void endFrame() {
-                frames.add(new DecodedFrame(opcode, this.data.flip(), last));
-            }
-        };
-
-        Frame.Reader r = new Frame.Reader();
-        while (src.hasRemaining()) {
-            r.readFrame(src, consumer);
-        }
-        return frames;
-    }
-
-    public record DecodedFrame(Frame.Opcode opcode, ByteBuffer data, boolean last) {}
 
     @Test(dataProvider = "pingPong")
     public void ping(ByteBuffer expected) throws Exception {
@@ -174,13 +95,12 @@ public class WebSocketExtendedTest {
                     .join();
             ws.sendPing(expected.duplicate()).join();
             ws.abort();
-            ByteBuffer data = server.read();
-            List<DecodedFrame> frames = readFrames(data);
+            List<DummyWebSocketServer.DecodedFrame> frames = server.readFrames();
             assertEquals(frames.size(), 1);
-            DecodedFrame f = frames.get(0);
-            assertEquals(f.opcode, Frame.Opcode.PING);
+            DummyWebSocketServer.DecodedFrame f = frames.get(0);
+            assertEquals(f.opcode(), Frame.Opcode.PING);
             ByteBuffer actual = ByteBuffer.allocate(expected.remaining());
-            actual.put(f.data);
+            actual.put(f.data());
             actual.flip();
             assertEquals(actual, expected);
         }
@@ -196,13 +116,12 @@ public class WebSocketExtendedTest {
                     .join();
             ws.sendPong(expected.duplicate()).join();
             ws.abort();
-            ByteBuffer data = server.read();
-            List<DecodedFrame> frames = readFrames(data);
+            List<DummyWebSocketServer.DecodedFrame> frames = server.readFrames();
             assertEquals(frames.size(), 1);
-            DecodedFrame f = frames.get(0);
-            assertEquals(f.opcode, Frame.Opcode.PONG);
+            DummyWebSocketServer.DecodedFrame f = frames.get(0);
+            assertEquals(f.opcode(), Frame.Opcode.PONG);
             ByteBuffer actual = ByteBuffer.allocate(expected.remaining());
-            actual.put(f.data);
+            actual.put(f.data());
             actual.flip();
             assertEquals(actual, expected);
         }
@@ -218,13 +137,12 @@ public class WebSocketExtendedTest {
                     .join();
             ws.sendClose(statusCode, reason).join();
             ws.abort();
-            ByteBuffer data = server.read();
-            List<DecodedFrame> frames = readFrames(data);
+            List<DummyWebSocketServer.DecodedFrame> frames = server.readFrames();
             assertEquals(frames.size(), 1);
-            DecodedFrame f = frames.get(0);
-            assertEquals(f.opcode, Frame.Opcode.CLOSE);
+            DummyWebSocketServer.DecodedFrame f = frames.get(0);
+            assertEquals(f.opcode(), Frame.Opcode.CLOSE);
             ByteBuffer actual = ByteBuffer.allocate(Frame.MAX_CONTROL_FRAME_PAYLOAD_LENGTH);
-            actual.put(f.data);
+            actual.put(f.data());
             actual.flip();
             assertEquals(actual.getChar(), statusCode);
             assertEquals(StandardCharsets.UTF_8.decode(actual).toString(), reason);
@@ -241,12 +159,10 @@ public class WebSocketExtendedTest {
                     .join();
             ws.sendText(expected, true).join();
             ws.abort();
-            ByteBuffer data = server.read();
-            List<DecodedFrame> frames = readFrames(data);
-
+            List<DummyWebSocketServer.DecodedFrame> frames = server.readFrames();
             int maxBytes = (int) StandardCharsets.UTF_8.newEncoder().maxBytesPerChar() * expected.length();
             ByteBuffer actual = ByteBuffer.allocate(maxBytes);
-            frames.stream().forEachOrdered(f -> actual.put(f.data));
+            frames.stream().forEachOrdered(f -> actual.put(f.data()));
             actual.flip();
             assertEquals(StandardCharsets.UTF_8.decode(actual).toString(), expected);
         }

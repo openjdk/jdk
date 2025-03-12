@@ -21,6 +21,8 @@
  * questions.
  */
 
+import jdk.internal.net.http.websocket.Frame;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -216,6 +218,90 @@ public class DummyWebSocketServer implements Closeable {
             }
         }
     }
+
+    public List<DecodedFrame> readFrames() throws InterruptedException {
+        ByteBuffer buffer = read();
+        Frame.Reader reader = new Frame.Reader();
+        DecodedFrameCollector consumer = new DecodedFrameCollector();
+        while (buffer.hasRemaining()) {
+            reader.readFrame(buffer, consumer);
+        }
+        return consumer.frames;
+    }
+
+    private static final class DecodedFrameCollector implements Frame.Consumer {
+
+        private final Frame.Masker masker = new Frame.Masker();
+
+        private final List<DecodedFrame> frames = new ArrayList<>();
+
+        private ByteBuffer data;
+
+        private Frame.Opcode opcode;
+
+        private boolean last;
+
+        @Override
+        public void fin(boolean value) {
+            last = value;
+        }
+
+        @Override
+        public void rsv1(boolean value) {
+            if (value) {
+                throw new AssertionError();
+            }
+        }
+
+        @Override
+        public void rsv2(boolean value) {
+            if (value) {
+                throw new AssertionError();
+            }
+        }
+
+        @Override
+        public void rsv3(boolean value) {
+            if (value) {
+                throw new AssertionError();
+            }
+        }
+
+        @Override
+        public void opcode(Frame.Opcode value) {
+            opcode = value;
+        }
+
+        @Override
+        public void mask(boolean value) {
+            if (!value) { // Frames from the client MUST be masked
+                throw new AssertionError();
+            }
+        }
+
+        @Override
+        public void payloadLen(long value) {
+            data = ByteBuffer.allocate((int) value);
+        }
+
+        @Override
+        public void maskingKey(int value) {
+            masker.reset(value);
+        }
+
+        @Override
+        public void payloadData(ByteBuffer data) {
+            masker.mask(data, this.data);
+        }
+
+        @Override
+        public void endFrame() {
+            frames.add(new DecodedFrame(opcode, this.data.flip(), last));
+        }
+
+    }
+
+    public record DecodedFrame(Frame.Opcode opcode, ByteBuffer data, boolean last) {}
 
     public ByteBuffer read() throws InterruptedException {
         readReady.await();

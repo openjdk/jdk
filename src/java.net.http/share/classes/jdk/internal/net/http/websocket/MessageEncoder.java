@@ -257,7 +257,7 @@ public class MessageEncoder {
 
     private int maskAvailable(ByteBuffer src, ByteBuffer dst) {
         int r0 = dst.remaining();
-        payloadMasker.transferMasking(src, dst);
+        payloadMasker.mask(src, dst);
         int masked = r0 - dst.remaining();
         return src.hasRemaining() ? -masked : masked;
     }
@@ -393,6 +393,6 @@ public class MessageEncoder {
                     .write(headerBuffer);
         }
         headerBuffer.flip();
-        payloadMasker.mask(mask);
+        payloadMasker.reset(mask);
     }
 }

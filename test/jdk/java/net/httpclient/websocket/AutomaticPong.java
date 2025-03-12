@@ -188,12 +188,12 @@ public class AutomaticPong {
 
                     @Override
                     public void maskingKey(int value) {
-                        masker.mask(value);
+                        masker.reset(value);
                     }
 
                     @Override
                     public void payloadData(ByteBuffer src) {
-                        masker.transferMasking(src, number);
+                        masker.mask(src, number);
                         if (closed) {
                             return;
                         }

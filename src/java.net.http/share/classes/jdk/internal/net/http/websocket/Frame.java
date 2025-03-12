@@ -26,6 +26,7 @@
 package jdk.internal.net.http.websocket;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import static jdk.internal.net.http.common.Utils.dump;
 import static jdk.internal.net.http.websocket.Frame.Opcode.ofCode;
@@ -89,11 +90,10 @@ public final class Frame {
      */
     public static final class Masker {
 
-        // Exploiting ByteBuffer's ability to read/write multi-byte integers
-        private final ByteBuffer acc = ByteBuffer.allocate(8);
         private final int[] maskBytes = new int[4];
         private int offset;
-        private long maskLong;
+        private long maskLongBe;
+        private long maskLongLe;
 
         /*
          * Reads all remaining bytes from the given input buffer, masks them
@@ -102,11 +102,11 @@ public final class Frame {
          *
          * The source and the destination buffers may be the same instance.
          */
-        static void transferMasking(ByteBuffer src, ByteBuffer dst, int mask) {
+        static void mask(ByteBuffer src, ByteBuffer dst, int mask) {
             if (src.remaining() > dst.remaining()) {
                 throw new IllegalArgumentException(dump(src, dst));
             }
-            new Masker().mask(mask).transferMasking(src, dst);
+            new Masker().reset(mask).mask(src, dst);
         }
 
         /*
@@ -114,13 +114,14 @@ public final class Frame {
          *
          * The behaviour is as if the mask was set on a newly created instance.
          */
-        public Masker mask(int value) {
-            acc.clear().putInt(value).putInt(value).flip();
+        public Masker reset(int mask) {
+            ByteBuffer acc = ByteBuffer.allocate(8).putInt(mask).putInt(mask).flip();
             for (int i = 0; i < maskBytes.length; i++) {
                 maskBytes[i] = acc.get(i);
             }
             offset = 0;
-            maskLong = acc.getLong(0);
+            maskLongBe = acc.getLong(0);
+            maskLongLe = Long.reverseBytes(maskLongBe);
             return this;
         }
 
@@ -132,18 +133,20 @@ public final class Frame {
          * The source and the destination buffers may be the same instance. If
          * the mask hasn't been previously set it is assumed to be 0.
          */
-        public Masker transferMasking(ByteBuffer src, ByteBuffer dst) {
-            begin(src, dst);
-            loop(src, dst);
-            end(src, dst);
-            return this;
+        public void mask(ByteBuffer src, ByteBuffer dst) {
+            if (src.order() == dst.order()) {
+                initGallopingMasking(src, dst);
+                doGallopingMasking(src, dst);
+            }
+            doPlainMasking(src, dst);
         }
 
-        /*
-         * Applies up to 3 remaining from the previous pass bytes of the mask.
+        /**
+         * Positions the {@link #offset} at 0, which is needed for galloping, by masking necessary amount of bytes.
          */
-        private void begin(ByteBuffer src, ByteBuffer dst) {
-            if (offset == 0) { // No partially applied mask from the previous invocation
+        private void initGallopingMasking(ByteBuffer src, ByteBuffer dst) {
+            assert src.order() == dst.order() : "galloping is only allowed on matching byte orders";
+            if (offset == 0) {
                 return;
             }
             int i = src.position(), j = dst.position();
@@ -158,12 +161,16 @@ public final class Frame {
         }
 
         /*
-         * Gallops one long (mask + mask) at a time.
+         * Masks one {@code long} at a time.
          */
-        private void loop(ByteBuffer src, ByteBuffer dst) {
+        private void doGallopingMasking(ByteBuffer src, ByteBuffer dst) {
+            assert src.order() == dst.order() : "galloping is only allowed on matching byte orders";
+            long maskLong = ByteOrder.LITTLE_ENDIAN == src.order() ? maskLongLe : maskLongBe;
             int i = src.position();
             int j = dst.position();
             final int srcLongLim = src.limit() - 7, dstLongLim = dst.limit() - 7;
+            assert !(i < srcLongLim && j < dstLongLim) || // That is, if loop will run at least once
+                    offset == 0 : "offset must have been positioned at 0";
             for (; i < srcLongLim && j < dstLongLim; i += 8, j += 8) {
                 dst.putLong(j, src.getLong(i) ^ maskLong);
             }
@@ -180,11 +187,9 @@ public final class Frame {
         }
 
         /*
-         * Applies up to 7 remaining from the "galloping" phase bytes of the
-         * mask.
+         * Masks one {@code byte} at a time.
          */
-        private void end(ByteBuffer src, ByteBuffer dst) {
-            assert Math.min(src.remaining(), dst.remaining()) < 8;
+        private void doPlainMasking(ByteBuffer src, ByteBuffer dst) {
             final int srcLim = src.limit(), dstLim = dst.limit();
             int i = src.position(), j = dst.position();
             for (; i < srcLim && j < dstLim;
@@ -195,6 +200,7 @@ public final class Frame {
             src.position(i);
             dst.position(j);
         }
+
     }
 
     /*
