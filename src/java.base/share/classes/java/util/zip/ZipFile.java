@@ -84,7 +84,7 @@ public class ZipFile implements ZipConstants, Closeable {
     private final String fileName;     // name of the file
     // the ZipCoder instance is derived from the Charset passed to the ZipFile constructor
     // and will be used for decoding the non-UTF-8 entry names and the ZIP file comment.
-    private final ZipCoder entryNameCommentCoder;
+    private final ZipCoder zipCoder;
     private volatile boolean closeRequested;
 
     // The "resource" used by this ZIP file that needs to be
@@ -202,7 +202,7 @@ public class ZipFile implements ZipConstants, Closeable {
         long t0 = System.nanoTime();
 
         this.res = new CleanableResource(this, charset, file, mode);
-        this.entryNameCommentCoder = ZipCoder.get(charset);
+        this.zipCoder = ZipCoder.get(charset);
 
         PerfCounter.getZipFileOpenTime().addElapsedTimeFrom(t0);
         PerfCounter.getZipFileCount().increment();
@@ -269,7 +269,7 @@ public class ZipFile implements ZipConstants, Closeable {
             // If there is a problem decoding the byte array which represents
             // the ZIP file comment, return null;
             try {
-                return entryNameCommentCoder.toString(res.zsrc.comment);
+                return zipCoder.toString(res.zsrc.comment);
             } catch (IllegalArgumentException iae) {
                 return null;
             }
@@ -292,7 +292,7 @@ public class ZipFile implements ZipConstants, Closeable {
             // Look up the name and CEN header position of the entry.
             // The resolved name may include a trailing slash.
             // See Source::getEntryPos for details.
-            EntryPos pos = res.zsrc.getEntryPos(name, true, entryNameCommentCoder);
+            EntryPos pos = res.zsrc.getEntryPos(name, true, zipCoder);
             if (pos != null) {
                 entry = getZipEntry(pos.name, pos.pos);
             }
@@ -332,7 +332,7 @@ public class ZipFile implements ZipConstants, Closeable {
             if (Objects.equals(lastEntryName, entry.name)) {
                 pos = lastEntryPos;
             } else {
-                EntryPos entryPos = zsrc.getEntryPos(entry.name, false, entryNameCommentCoder);
+                EntryPos entryPos = zsrc.getEntryPos(entry.name, false, zipCoder);
                 if (entryPos != null) {
                     pos = entryPos.pos;
                 } else {
@@ -575,7 +575,7 @@ public class ZipFile implements ZipConstants, Closeable {
     private String getEntryName(int pos) {
         byte[] cen = res.zsrc.cen;
         int nlen = CENNAM(cen, pos);
-        ZipCoder zc = useUTF8Coder(cen, pos) ? ZipCoder.UTF8 : entryNameCommentCoder;
+        ZipCoder zc = useUTF8Coder(cen, pos) ? ZipCoder.UTF8 : zipCoder;
         return zc.toString(cen, pos + CENHDR, nlen);
     }
 
@@ -646,7 +646,7 @@ public class ZipFile implements ZipConstants, Closeable {
         }
         if (clen != 0) {
             int start = pos + CENHDR + nlen + elen;
-            ZipCoder zc = useUTF8Coder(cen, pos) ? ZipCoder.UTF8 : entryNameCommentCoder;
+            ZipCoder zc = useUTF8Coder(cen, pos) ? ZipCoder.UTF8 : zipCoder;
             e.comment = zc.toString(cen, start, clen);
         }
         lastEntryName = e.name;
@@ -678,11 +678,11 @@ public class ZipFile implements ZipConstants, Closeable {
 
         Source zsrc;
 
-        CleanableResource(ZipFile zf, Charset entryNameCharset, File file, int mode) throws IOException {
+        CleanableResource(ZipFile zf, Charset charset, File file, int mode) throws IOException {
             this.cleanable = CleanerFactory.cleaner().register(zf, this);
             this.istreams = Collections.newSetFromMap(new WeakHashMap<>());
             this.inflaterCache = new ArrayDeque<>();
-            this.zsrc = Source.get(file, (mode & OPEN_DELETE) != 0, entryNameCharset);
+            this.zsrc = Source.get(file, (mode & OPEN_DELETE) != 0, charset);
         }
 
         void clean() {
@@ -1421,17 +1421,24 @@ public class ZipFile implements ZipConstants, Closeable {
             private final File file;
             // the Charset to be used for processing non-UTF-8 entry names in the ZIP file
             // and the ZIP file comment
-            private final Charset entryNameCommentCharset;
+            private final Charset charset;
 
-            public Key(File file, BasicFileAttributes attrs, Charset entryNameCommentCharset) {
+            /**
+             * Constructs a {@code Key} to a {@code Source} of a {@code ZipFile}
+             *
+             * @param file    the ZIP file
+             * @param attrs   the attributes of the ZIP file
+             * @param charset the Charset that was provided when constructing the ZipFile instance
+             */
+            public Key(File file, BasicFileAttributes attrs, Charset charset) {
                 this.attrs = attrs;
                 this.file = file;
-                this.entryNameCommentCharset = entryNameCommentCharset;
+                this.charset = charset;
             }
 
             @Override
             public int hashCode() {
-                long t = entryNameCommentCharset.hashCode();
+                long t = charset.hashCode();
                 t += attrs.lastModifiedTime().toMillis();
                 Object fk = attrs.fileKey();
                 return Long.hashCode(t) +
@@ -1441,7 +1448,7 @@ public class ZipFile implements ZipConstants, Closeable {
             @Override
             public boolean equals(Object obj) {
                 if (obj instanceof Key key) {
-                    if (!entryNameCommentCharset.equals(key.entryNameCommentCharset)) {
+                    if (!charset.equals(key.charset)) {
                         return false;
                     }
                     if (!attrs.lastModifiedTime().equals(key.attrs.lastModifiedTime())) {
@@ -1465,12 +1472,12 @@ public class ZipFile implements ZipConstants, Closeable {
         private static final java.nio.file.FileSystem builtInFS =
                 DefaultFileSystemProvider.theFileSystem();
 
-        static Source get(File file, boolean toDelete, Charset entryNameCharset) throws IOException {
+        static Source get(File file, boolean toDelete, Charset charset) throws IOException {
             final Key key;
             try {
                 key = new Key(file,
                         Files.readAttributes(builtInFS.getPath(file.getPath()),
-                                BasicFileAttributes.class), entryNameCharset);
+                                BasicFileAttributes.class), charset);
             } catch (InvalidPathException ipe) {
                 throw new IOException(ipe);
             }
@@ -1749,7 +1756,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     // use the ZipCoder corresponding to the Charset that
                     // was provided when constructing the ZipFile
                     if (zipCoder == null) {
-                        zipCoder = ZipCoder.get(key.entryNameCommentCharset);
+                        zipCoder = ZipCoder.get(key.charset);
                     }
                     entryZipCoder = zipCoder;
                 }
@@ -1823,10 +1830,10 @@ public class ZipFile implements ZipConstants, Closeable {
 
         /*
          * Returns the resolved name and position of the ZIP cen entry corresponding
-         *  to the specified entry name, or {@code null} if not found.
+         * to the specified entry name, or {@code null} if not found.
          */
         private EntryPos getEntryPos(final String name, final boolean addSlash,
-                                     final ZipCoder entryNameCommentCoder) {
+                                     final ZipCoder zipCoder) {
             if (total == 0) {
                 return null;
             }
@@ -1852,7 +1859,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     } else {
                         // use the ZipCoder corresponding to the Charset that
                         // was provided when constructing the ZipFile
-                        zc = entryNameCommentCoder;
+                        zc = zipCoder;
                     }
                     // Compare the lookup name with the name encoded in the CEN
                     switch (zc.compare(name, cen, noff, nlen, addSlash)) {
