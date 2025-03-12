@@ -1775,7 +1775,7 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
 
   if (!deoptimize) {
     // Prevent future executions of the nmethod but let current executions complete.
-    nm->make_not_entrant();
+    nm->make_not_entrant("JVMCI invalidate nmethod mirror");
 
     // Do not clear the address field here as the Java code may still
     // want to later call this method with deoptimize == true. That requires
@@ -1784,7 +1784,7 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
     // Deoptimize the nmethod immediately.
     DeoptimizationScope deopt_scope;
     deopt_scope.mark(nm);
-    nm->make_not_entrant();
+    nm->make_not_entrant("JVMCI invalidate nmethod mirror");
     nm->make_deoptimized();
     deopt_scope.deoptimize_marked();
 
