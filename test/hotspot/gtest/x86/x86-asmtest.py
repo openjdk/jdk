@@ -627,6 +627,7 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                 # additional tests with rax as destination
                 if RegOp in [RegRegImmNddInstruction]:
                     test_reg1 = 'rax'
+                    test_reg2 = random.choice(test_regs)
                     lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
                     instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, imm=imm)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
