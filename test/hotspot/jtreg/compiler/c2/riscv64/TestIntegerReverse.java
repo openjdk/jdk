@@ -48,8 +48,9 @@ public class TestIntegerReverse {
   static final int ITERS  = 11000;
   static final int ARRLEN = 997;
   static int input[] = new int[ARRLEN];
-  static int output[] = new int[ARRLEN];
-  static boolean err;
+  static int outputI[] = new int[ARRLEN];
+  static long outputL[] = new long[ARRLEN];
+  static int err;
 
   public static void main(String args[]) {
     TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3",
@@ -58,13 +59,32 @@ public class TestIntegerReverse {
 
   @Test
   @IR(counts = {IRNode.REVERSE_I, "> 0"})
-  static void test_reverse(int[] input, int[] output) {
+  static void test_reverse_ia(int[] input, int[] outputI) {
     for (int i = 0; i < input.length; i+=1) {
-      output[i] = Integer.reverse(input[i]);
+      outputI[i] = Integer.reverse(input[i]);
     }
   }
 
-  @Run(test = "test_reverse")
+  @Test
+  @IR(counts = {IRNode.REVERSE_I, "> 0"})
+  static void test_reverse_la(int[] input, long[] outputL) {
+    for (int i = 0; i < input.length; i+=1) {
+      outputL[i] = Integer.reverse(input[i]);
+    }
+  }
+
+  @Test
+  @IR(counts = {IRNode.REVERSE_I, "> 0"})
+  static void test_reverse_l(int input, long expected) {
+    if (Integer.reverse(input) != expected) {
+      err++;
+      System.out.println("Test failure, input: " + input +
+                         ", actual: " + Integer.reverse(input) +
+                         ", expected: " + expected);
+    }
+  }
+
+  @Run(test = {"test_reverse_ia", "test_reverse_la", "test_reverse_l"})
   @Warmup(ITERS)
   static void test(RunInfo runInfo) {
     // Initialize
@@ -77,20 +97,35 @@ public class TestIntegerReverse {
     input[3] = Integer.MIN_VALUE;
     input[4] = Integer.MAX_VALUE;
 
-    test_reverse(input, output);
+    test_reverse_ia(input, outputI);
+    test_reverse_la(input, outputL);
+    for (int i = 0; i < ARRLEN; i++) {
+      test_reverse_l(input[i], golden_reverse_integer(input[i]));
+    }
     // skip test/verify when warming up
     if (runInfo.isWarmUp()) {
       return;
     }
 
-    test_reverse(input, output);
+    test_reverse_ia(input, outputI);
+    test_reverse_la(input, outputL);
 
     for (int i = 0; i < ARRLEN; i++) {
       int golden_val = golden_reverse_integer(input[i]);
-      Asserts.assertEquals(output[i], golden_val,
-                          "Test failure, input: " + input[i] +
-                          ", actual: " + output[i] +
-                          ", expected: " + golden_reverse_integer(input[i]));
+      Asserts.assertEquals(outputI[i], golden_val,
+                          "Test failure (integer array), input: " + input[i] +
+                          ", actual: " + outputI[i] +
+                          ", expected: " + golden_val);
+      Asserts.assertEquals(outputL[i], (long)golden_val,
+                          "Test failure (long array), input: " + input[i] +
+                          ", actual: " + outputL[i] +
+                          ", expected: " + (long)golden_val);
     }
+
+    err = 0;
+    for (int i = 0; i < ARRLEN; i++) {
+      test_reverse_l(input[i], golden_reverse_integer(input[i]));
+    }
+    Asserts.assertTrue(err == 0, "Some tests(" + err + ") failed, check previous log for details");
   }
 }

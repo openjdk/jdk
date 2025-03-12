@@ -49,7 +49,6 @@ public class TestLongReverse {
   static final int ARRLEN = 997;
   static long input[] = new long[ARRLEN];
   static long output[] = new long[ARRLEN];
-  static boolean err;
 
   public static void main(String args[]) {
     TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3",
@@ -90,7 +89,7 @@ public class TestLongReverse {
       Asserts.assertEquals(output[i], golden_val,
                           "Test failure, input: " + input[i] +
                           ", actual: " + output[i] +
-                          ", expected: " + golden_reverse_long(input[i]));
+                          ", expected: " + golden_val);
     }
   }
 }
