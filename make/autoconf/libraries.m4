@@ -206,7 +206,7 @@ AC_DEFUN_ONCE([LIB_SETUP_MISC_LIBS],
   AC_SUBST(LIBPTHREAD)
 
   # Setup libiconv flags and library
-  if test "x$OPENJDK_TARGET_OS" != "xwindows"; then
+  if test "x$OPENJDK_TARGET_OS" == "xaix" || test "x$OPENJDK_TARGET_OS" == "xmacosx"; then
     ICONV_CFLAGS=
     ICONV_LDFLAGS=
     ICONV_LIBS=-liconv
