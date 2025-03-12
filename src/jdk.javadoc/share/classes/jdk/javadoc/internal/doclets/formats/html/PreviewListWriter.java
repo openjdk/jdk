@@ -38,6 +38,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlStyle;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
@@ -93,6 +94,22 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
             Content label = contents.getContent("doclet.Preview_API_Checkbox_Toggle_All");
             list.add(HtmlTree.LI(getCheckbox(label, ID_ALL, "feature-")));
             target.add(list);
+        }
+    }
+
+    @Override
+    protected void addExtraSection(Content content) {
+        var notes = builder.getElementNotes();
+        if (!notes.isEmpty()) {
+            addSummaryAPI(notes, HtmlId.of("preview-api-notes"),
+                    "doclet.Preview_Notes_Elements", "doclet.Element", content);
+        }
+    }
+
+    @Override
+    protected void addExtraIndexLink(Content target) {
+        if (!builder.getElementNotes().isEmpty()) {
+            addIndexLink(HtmlId.of("preview-api-notes"), "doclet.Preview_Notes", target);
         }
     }
 
