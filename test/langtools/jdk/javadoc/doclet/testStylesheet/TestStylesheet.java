@@ -126,8 +126,10 @@ public class TestStylesheet extends JavadocTester {
                         border-radius:0;
                         width:12px;
                         height:12px;
+                        min-width:12px;
+                        min-height:12px;
                         font-size:0;
-                        display:none;
+                        visibility:hidden;
                     }""",
                 """
                     ::placeholder {
