@@ -7306,7 +7306,6 @@ instruct maxF_reg_reg_zfa(fRegF dst, fRegF src1, fRegF src2) %{
 
   format %{ "maxF $dst, $src1, $src2" %}
 
-  // try add some temp commit for temp test 
   ins_encode %{
     __ fmaxm_s(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
