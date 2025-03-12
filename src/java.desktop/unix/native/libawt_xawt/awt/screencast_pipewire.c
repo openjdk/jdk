@@ -30,6 +30,8 @@
 #include <dlfcn.h>
 #include "jni_util.h"
 #include "awt.h"
+
+#ifndef _AIX
 #include "screencast_pipewire.h"
 
 struct pw_buffer *(*fp_pw_stream_dequeue_buffer)(struct pw_stream *stream);
@@ -1095,3 +1097,14 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
     releaseToken(env, jtoken, token);
     return 0;
 }
+#else
+JNIEXPORT void JNICALL
+Java_sun_awt_screencast_ScreencastHelper_closeSession(JNIEnv *env, jclass cls) {
+}
+
+JNIEXPORT jboolean JNICALL Java_sun_awt_screencast_ScreencastHelper_loadPipewire(
+        JNIEnv *env, jclass cls, jboolean screencastDebug
+) {
+    return JNI_FALSE;
+}
+#endif
