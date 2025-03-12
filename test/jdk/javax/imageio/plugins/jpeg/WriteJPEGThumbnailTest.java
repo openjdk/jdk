@@ -25,7 +25,7 @@
  * @test
  * @bug     8351110
  * @summary Test verifies that when a JFIF thumbnail may exceed 65535 bytes
- *          we still write a valid JPEG file.
+ *          we still write a valid JPEG file by clipping the thumbnail.
  * @run     main WriteJPEGThumbnailTest
  */
 
@@ -55,7 +55,12 @@ public class WriteJPEGThumbnailTest {
     }
 
     public static void main(String[] args) throws Exception {
+        // this always passed. 21800 * 3 = 65400, which fits in a 65535-byte segment.
         boolean b1 = new WriteJPEGThumbnailTest(100, 218).run();
+
+        // this failed prior to resolving 8351110. 21900 * 3 = 65700, which is too large
+        // for a JPEG segment. Now we clip the thumbnail to make it fit. (Previously
+        // we wrote a corrupt JPEG file.)
         boolean b2 = new WriteJPEGThumbnailTest(100, 219).run();
         if (!(b1 && b2))
             System.err.println("Test failed");
