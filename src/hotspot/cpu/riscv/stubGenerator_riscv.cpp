@@ -2436,8 +2436,7 @@ class StubGenerator: public StubCodeGenerator {
                              Register strL, Register strU, Label& DIFF) {
     const Register tmp = x30, tmpLval = x12;
 
-    int base_offset = arrayOopDesc::base_offset_in_bytes(T_CHAR);
-
+    int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
     assert((base_offset % (UseCompactObjectHeaders ? 4 :
                            (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
 
@@ -2495,25 +2494,21 @@ class StubGenerator: public StubCodeGenerator {
     const Register result = x10, str1 = x11, str2 = x13, cnt2 = x14,
                    tmp1 = x28, tmp2 = x29, tmp3 = x30, tmp4 = x12;
 
-    int base_offset1 = arrayOopDesc::base_offset_in_bytes(T_BYTE);
-    int base_offset2 = arrayOopDesc::base_offset_in_bytes(T_CHAR);
-
-    assert((base_offset1 % (UseCompactObjectHeaders ? 4 :
-                            (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
-    assert((base_offset2 % (UseCompactObjectHeaders ? 4 :
-                            (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
+    int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+    assert((base_offset % (UseCompactObjectHeaders ? 4 :
+                           (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
 
     Register strU = isLU ? str2 : str1,
              strL = isLU ? str1 : str2,
              tmpU = isLU ? tmp2 : tmp1, // where to keep U for comparison
              tmpL = isLU ? tmp1 : tmp2; // where to keep L for comparison
 
-    if (AvoidUnalignedAccesses && (base_offset1 % 8) != 0) {
+    if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
       // Load 4 bytes from strL to make sure main loop is 8-byte aligned
       // cnt2 is >= 68 here, no need to check it for >= 0
       __ lwu(tmpL, Address(strL));
       __ addi(strL, strL, wordSize / 2);
-      __ load_long_misaligned(tmpU, Address(strU), tmp4, (base_offset2 % 8) != 0 ? 4 : 8);
+      __ load_long_misaligned(tmpU, Address(strU), tmp4, (base_offset % 8) != 0 ? 4 : 8);
       __ addi(strU, strU, wordSize);
       __ inflate_lo32(tmp3, tmpL);
       __ mv(tmpL, tmp3);

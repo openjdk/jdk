@@ -1385,8 +1385,7 @@ void C2_MacroAssembler::string_compare_long_same_encoding(Register result, Regis
                                                   const int STUB_THRESHOLD, Label *STUB, Label *SHORT_STRING, Label *DONE) {
   Label TAIL_CHECK, TAIL, NEXT_WORD, DIFFERENCE;
 
-  const int base_offset = isLL ? arrayOopDesc::base_offset_in_bytes(T_BYTE)
-                               : arrayOopDesc::base_offset_in_bytes(T_CHAR);
+  const int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
   assert((base_offset % (UseCompactObjectHeaders ? 4 :
                         (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
 
@@ -1480,7 +1479,7 @@ void C2_MacroAssembler::string_compare_long_different_encoding(Register result, 
                                                const int STUB_THRESHOLD, Label *STUB, Label *DONE) {
   Label TAIL, NEXT_WORD, DIFFERENCE;
 
-  const int base_offset = arrayOopDesc::base_offset_in_bytes(T_CHAR);
+  const int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
   assert((base_offset % (UseCompactObjectHeaders ? 4 :
                           (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
 
