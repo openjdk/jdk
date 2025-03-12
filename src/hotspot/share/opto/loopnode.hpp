@@ -1271,7 +1271,7 @@ public:
   static Node* loop_iv_stride(const Node* incr, Node*& xphi);
   static PhiNode* loop_iv_phi(const Node* xphi, const Node* phi_incr, const Node* x);
 
-  bool is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt);
+  bool is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicType iv_bt);
 
   Node* loop_nest_replace_iv(Node* iv_to_replace, Node* inner_iv, Node* outer_phi, Node* inner_head, BasicType bt);
   bool create_loop_nest(IdealLoopTree* loop, Node_List &old_new);

@@ -1611,7 +1611,7 @@ bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, const Node* phi, const Idea
 #endif
 
 //------------------------------is_counted_loop--------------------------------
-bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt) {
+bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicType iv_bt) {
   PhaseGVN *gvn = &_igvn;
 
   Node* back_control = loop_exit_control(x, loop);
