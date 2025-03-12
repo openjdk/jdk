@@ -50,9 +50,6 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.UIManager;
 
-
-import java.io.File;
-
 public class TestRadioAndCheckMenuItemWithIcon {
 
     private static final String INSTRUCTIONS = """

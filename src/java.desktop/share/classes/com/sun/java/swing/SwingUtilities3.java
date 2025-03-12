@@ -156,7 +156,7 @@ public class SwingUtilities3 {
     }
 
     public static void applyInsets(Rectangle rect, Insets insets) {
-        if(insets != null) {
+        if (insets != null) {
             rect.x += insets.left;
             rect.y += insets.top;
             rect.width -= (insets.right + rect.x);
@@ -216,7 +216,7 @@ public class SwingUtilities3 {
             g.setFont(lh.getAccFontMetrics().getFont());
             if (!model.isEnabled()) {
 
-                // *** paint the accText disabled
+                // paint the accText disabled
                 if (disabledForeground != null) {
                     g.setColor(disabledForeground);
                     SwingUtilities2.drawString(lh.getMenuItem(), g,
@@ -234,7 +234,7 @@ public class SwingUtilities3 {
                 }
             } else {
 
-                // *** paint the accText normally
+                // paint the accText normally
                 if (model.isArmed()
                         || (lh.getMenuItem() instanceof JMenu
                         && model.isSelected())) {
