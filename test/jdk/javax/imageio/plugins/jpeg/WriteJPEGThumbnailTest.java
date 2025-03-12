@@ -96,7 +96,7 @@ public class WriteJPEGThumbnailTest {
                 }
             }
             System.out.println("\tTest passed");
-        } catch(Exception e) {
+        } catch(Throwable e) {
             e.printStackTrace();
             return false;
         }
