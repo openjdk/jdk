@@ -124,6 +124,7 @@ ifeq ($(call isTargetOsType, unix), true)
       DISABLED_WARNINGS_clang_jsig.c := unused-but-set-variable, \
       LIBS_linux := $(LIBDL), \
       LIBS_aix := $(LIBDL), \
+      ONLY_EXPORTED := true, \
   ))
 
   TARGETS += $(BUILD_LIBJSIG)
