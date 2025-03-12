@@ -40,6 +40,14 @@ import java.util.zip.ZipFile;
  * @library /test/lib
  * @modules java.base/sun.security.provider
  * @run main Launcher
+ */
+
+/*
+ * @test
+ * @summary Test verifying the intrinsic implementation.
+ * @bug 8342442 8345057
+ * @library /test/lib
+ * @modules java.base/sun.security.provider
  * @run main/othervm -Xcomp Launcher
  */
 
