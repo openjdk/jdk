@@ -283,7 +283,7 @@ get_thread_info(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
 
 static jint
 get_thread_state(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
-  jint thread_state;
+  jint thread_state = 0;
   jvmtiError err = jvmti->GetThreadState(thread, &thread_state);
   check_jvmti_status(jni, err, "get_thread_state: error in JVMTI GetThreadState call");
   return thread_state;

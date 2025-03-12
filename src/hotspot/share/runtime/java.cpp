@@ -231,7 +231,7 @@ static void print_method_invocation_histogram() {
 
 static void print_bytecode_count() {
   if (CountBytecodes || TraceBytecodes || StopInterpreterAt) {
-    tty->print_cr("[BytecodeCounter::counter_value = %d]", BytecodeCounter::counter_value());
+    tty->print_cr("[BytecodeCounter::counter_value = %zu]", BytecodeCounter::counter_value());
   }
 }
 
@@ -353,8 +353,8 @@ void print_statistics() {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 
-  if (CompilerOracle::should_print_final_memstat_report()) {
-    CompilationMemoryStatistic::print_all_by_size(tty, false, 0);
+  if (PrintCompilerMemoryStatisticsAtExit) {
+    CompilationMemoryStatistic::print_final_report(tty);
   }
 
   ThreadsSMRSupport::log_statistics();
