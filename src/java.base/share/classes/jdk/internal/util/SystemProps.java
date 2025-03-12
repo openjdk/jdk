@@ -272,16 +272,6 @@ public final class SystemProps {
         }
 
         /**
-         * Returns the platform specific property values identified
-         * by {@code "_xxx_NDX"} indexes.
-         * The indexes are strictly private, to be shared only with the native code.
-         *
-         * @return a array of strings, the properties are indexed by the {@code _xxx_NDX}
-         * indexes.  The values are Strings and may be null.
-         */
-        private static native String[] platformProperties();
-
-        /**
          * Returns a HashMap containing properties obtained from the command line
          * and from the JVM. The HashMap is sized to include the fixed properties.
          *
@@ -316,5 +306,15 @@ public final class SystemProps {
          *      The first null key indicates there are no more key, value pairs.
          */
         private static native String[] vmProperties();
+
+        /**
+         * Returns the platform specific property values identified
+         * by {@code "_xxx_NDX"} indexes.
+         * The indexes are strictly private, to be shared only with the native code.
+         *
+         * @return a array of strings, the properties are indexed by the {@code _xxx_NDX}
+         * indexes.  The values are Strings and may be null.
+         */
+        private static native String[] platformProperties();
     }
 }
