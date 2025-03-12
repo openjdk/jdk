@@ -179,6 +179,12 @@ public class TestTemplate {
         checkEQ(template4.withArgs(0  ).render(), "start 0 end");
         checkEQ(template4.withArgs(22 ).render(), "start 22 end");
         checkEQ(template4.withArgs(444).render(), "start 444 end");
+
+        // Test Strings with backslashes:
+        var template5 = Template.make("a", (String a) -> body("start #a " + a + " end"));
+        checkEQ(template5.withArgs("/").render(), "start / / end");
+        checkEQ(template5.withArgs("\\").render(), "start \\ \\ end");
+        checkEQ(template5.withArgs("\\\\").render(), "start \\\\ \\\\ end");
     }
 
     public static void testWithTwoArguments() {

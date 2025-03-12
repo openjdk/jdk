@@ -282,7 +282,7 @@ class Renderer {
 	);
         return HASHTAG_REPLACEMENT_PATTERN.matcher(temp).replaceAll(
             // We must escape "$", because it has a special meaning in replaceAll.
-            (MatchResult result) -> getHashtagReplacement(result.group(1)).replace("$", "\\$")
+            (MatchResult result) -> getHashtagReplacement(result.group(1)).replace("\\", "\\\\").replace("$", "\\$")
         );
     }
 
