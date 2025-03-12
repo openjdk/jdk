@@ -3997,15 +3997,19 @@ void MacroAssembler::kernel_crc32_vpmsum_aligned(Register crc, Register buf, Reg
   // Save non-volatile vector registers (frameless).
   Register offset = t1;
   int offsetInt = 0;
-  offsetInt -= 16; li(offset, offsetInt); stvx(VR20, offset, R1_SP);
-  offsetInt -= 16; li(offset, offsetInt); stvx(VR21, offset, R1_SP);
-  offsetInt -= 16; li(offset, offsetInt); stvx(VR22, offset, R1_SP);
-  offsetInt -= 16; li(offset, offsetInt); stvx(VR23, offset, R1_SP);
-  offsetInt -= 16; li(offset, offsetInt); stvx(VR24, offset, R1_SP);
-  offsetInt -= 16; li(offset, offsetInt); stvx(VR25, offset, R1_SP);
+  // C code treats VR20-31 as non-volatile. This code is called by interpreter, C1 and C2 which don't do that.
+  // We only need to save them here if we haven't done it earlier.
+  if (!SuperwordUseVSX) { // Otherwise, nv VRs already got saved when entering Java (call_stub etc.).
+    offsetInt -= 16; li(offset, offsetInt); stvx(VR20, offset, R1_SP);
+    offsetInt -= 16; li(offset, offsetInt); stvx(VR21, offset, R1_SP);
+    offsetInt -= 16; li(offset, offsetInt); stvx(VR22, offset, R1_SP);
+    offsetInt -= 16; li(offset, offsetInt); stvx(VR23, offset, R1_SP);
+    offsetInt -= 16; li(offset, offsetInt); stvx(VR24, offset, R1_SP);
+    offsetInt -= 16; li(offset, offsetInt); stvx(VR25, offset, R1_SP);
 #ifndef VM_LITTLE_ENDIAN
-  offsetInt -= 16; li(offset, offsetInt); stvx(VR26, offset, R1_SP);
+    offsetInt -= 16; li(offset, offsetInt); stvx(VR26, offset, R1_SP);
 #endif
+  }
   offsetInt -= 8; std(R14, offsetInt, R1_SP);
   offsetInt -= 8; std(R15, offsetInt, R1_SP);
 
@@ -4249,15 +4253,17 @@ void MacroAssembler::kernel_crc32_vpmsum_aligned(Register crc, Register buf, Reg
 
   // Restore non-volatile Vector registers (frameless).
   offsetInt = 0;
-  offsetInt -= 16; li(offset, offsetInt); lvx(VR20, offset, R1_SP);
-  offsetInt -= 16; li(offset, offsetInt); lvx(VR21, offset, R1_SP);
-  offsetInt -= 16; li(offset, offsetInt); lvx(VR22, offset, R1_SP);
-  offsetInt -= 16; li(offset, offsetInt); lvx(VR23, offset, R1_SP);
-  offsetInt -= 16; li(offset, offsetInt); lvx(VR24, offset, R1_SP);
-  offsetInt -= 16; li(offset, offsetInt); lvx(VR25, offset, R1_SP);
+  if (!SuperwordUseVSX) {
+    offsetInt -= 16; li(offset, offsetInt); lvx(VR20, offset, R1_SP);
+    offsetInt -= 16; li(offset, offsetInt); lvx(VR21, offset, R1_SP);
+    offsetInt -= 16; li(offset, offsetInt); lvx(VR22, offset, R1_SP);
+    offsetInt -= 16; li(offset, offsetInt); lvx(VR23, offset, R1_SP);
+    offsetInt -= 16; li(offset, offsetInt); lvx(VR24, offset, R1_SP);
+    offsetInt -= 16; li(offset, offsetInt); lvx(VR25, offset, R1_SP);
 #ifndef VM_LITTLE_ENDIAN
-  offsetInt -= 16; li(offset, offsetInt); lvx(VR26, offset, R1_SP);
+    offsetInt -= 16; li(offset, offsetInt); lvx(VR26, offset, R1_SP);
 #endif
+  }
   offsetInt -= 8;  ld(R14, offsetInt, R1_SP);
   offsetInt -= 8;  ld(R15, offsetInt, R1_SP);
 }
