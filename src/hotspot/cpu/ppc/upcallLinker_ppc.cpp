@@ -80,6 +80,9 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   int res_save_area_offset   = out_arg_area;
   int arg_save_area_offset   = res_save_area_offset   + result_spiller.spill_size_bytes();
   int reg_save_area_offset   = arg_save_area_offset   + arg_spiller.spill_size_bytes();
+  if (SuperwordUseVSX) { // VectorRegisters want alignment
+    reg_save_area_offset = align_up(reg_save_area_offset, StackAlignmentInBytes);
+  }
   int frame_data_offset      = reg_save_area_offset   + reg_save_area_size;
   int frame_bottom_offset    = frame_data_offset      + sizeof(UpcallStub::FrameData);
 
