@@ -38,11 +38,12 @@ Java_sun_management_VMManagementImpl_getVersion0
     char buf[MAX_VERSION_LEN];
     jstring version_string = NULL;
 
+    unsigned int major = ((unsigned int) jmm_version & 0x0FFF0000) >> 16;
+    unsigned int minor = ((unsigned int) jmm_version & 0xFF00) >> 8;
+
     // for internal use
     unsigned int micro = (unsigned int) jmm_version & 0xFF;
 
-    unsigned int major = ((unsigned int) jmm_version & 0x0FFF0000) >> 16;
-    unsigned int minor = ((unsigned int) jmm_version & 0xFF00) >> 8;
     snprintf(buf, sizeof(buf), "%d.%d", major, minor);
     version_string = (*env)->NewStringUTF(env, buf);
     return version_string;
