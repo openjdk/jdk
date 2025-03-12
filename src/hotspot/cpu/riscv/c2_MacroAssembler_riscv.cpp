@@ -2614,6 +2614,7 @@ void C2_MacroAssembler::clear_array_v(Register base, Register cnt) {
 
 void C2_MacroAssembler::arrays_equals_v(Register a1, Register a2, Register result,
                                         Register cnt1, int elem_size) {
+  assert(elem_size == 1 || elem_size == 2, "must be char or byte");
   Label DONE;
   Register tmp1 = t0;
   Register tmp2 = t1;
