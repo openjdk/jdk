@@ -36,6 +36,7 @@
  * @bug 8292695
  * @summary Check that Ctrl-\ causes HotSpot VM to print a full thread dump when signal chaining is used.
  * @requires os.family != "windows" & os.family != "aix"
+ * @requires !jdk.static
  * @library /vmTestbase
  *          /test/lib
  * @run driver TestBreakSignalThreadDump load_libjsig

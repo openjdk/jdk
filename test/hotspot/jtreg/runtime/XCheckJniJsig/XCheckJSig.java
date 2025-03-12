@@ -29,6 +29,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @requires os.family == "linux" | os.family == "mac"
+ * @requires !jdk.static
  * @run driver XCheckJSig
  */
 
