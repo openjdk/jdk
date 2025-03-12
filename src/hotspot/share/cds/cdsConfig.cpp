@@ -480,7 +480,12 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
 
   if (is_dumping_static_archive()) {
     if (is_dumping_preimage_static_archive()) {
-      // Don't tweak execution mode
+      // Don't tweak execution mode -- we are in the app's training run so we want to respect the
+      // app's command-line as much as possible. JDK-8351778 doesn't apply as metaspaceShared.cpp
+      // will not patch Java heap objects during the training run.
+    } else if (AOTClassLinking) {
+      // Work around JDK-8351778 -- JIT may get confused after metaspaceShared.cpp patches heap objects.
+      Arguments::set_mode_flags(Arguments::_int);
     } else if (!mode_flag_cmd_line) {
       // By default, -Xshare:dump runs in interpreter-only mode, which is required for deterministic archive.
       //
