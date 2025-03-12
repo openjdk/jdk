@@ -680,23 +680,12 @@ public class BasicMenuItemUI extends MenuItemUI
         SwingUtilities3.paintCheckIcon(g, lh, lr, holdc, foreground);
     }
 
-    private void setDisabledForeground() {
-        SwingUtilities3.setDisabledForeground(disabledForeground);
-    }
-
-    private void setAcceleratorSelectionForeground() {
-        SwingUtilities3.setAcceleratorSelectionForeground(acceleratorSelectionForeground);
-    }
-
-    private void setAcceleratorForeground() {
-        SwingUtilities3.setAcceleratorForeground(acceleratorForeground);
-    }
-
     private void paintAccText(Graphics g, MenuItemLayoutHelper lh,
                               MenuItemLayoutHelper.LayoutResult lr) {
-        setDisabledForeground();
-        setAcceleratorSelectionForeground();
-        setAcceleratorForeground();
+        SwingUtilities3.setDisabledForeground(disabledForeground);
+        SwingUtilities3.setAcceleratorSelectionForeground(
+                        acceleratorSelectionForeground);
+        SwingUtilities3.setAcceleratorForeground(acceleratorForeground);
         SwingUtilities3.paintAccText(g, lh, lr);
     }
 

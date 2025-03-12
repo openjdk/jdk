@@ -176,23 +176,12 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
         SwingUtilities3.paintIcon(g, lh, lr, holdc);
     }
 
-    private static void setDisabledForeground() {
-        SwingUtilities3.setDisabledForeground(disabledForeground);
-    }
-
-    private static void setAcceleratorSelectionForeground() {
-        SwingUtilities3.setAcceleratorSelectionForeground(acceleratorSelectionForeground);
-    }
-
-    private static void setAcceleratorForeground() {
-        SwingUtilities3.setAcceleratorForeground(acceleratorForeground);
-    }
-
     private static void paintAccText(Graphics g, MenuItemLayoutHelper lh,
                               MenuItemLayoutHelper.LayoutResult lr) {
-        setDisabledForeground();
-        setAcceleratorSelectionForeground();
-        setAcceleratorForeground();
+        SwingUtilities3.setDisabledForeground(disabledForeground);
+        SwingUtilities3.setAcceleratorSelectionForeground(
+                        acceleratorSelectionForeground);
+        SwingUtilities3.setAcceleratorForeground(acceleratorForeground);
         SwingUtilities3.paintAccText(g, lh, lr);
     }
 
