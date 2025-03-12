@@ -1997,11 +1997,11 @@ void PhaseCCP::push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2*
 // Add the AndI/L nodes back to the worklist to re-apply Value() in case the value is now a constant or shift
 // value changed.
 void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const {
-  const TypeInteger* new_type = type(parent)->isa_integer(type(parent)->basic_type());
+  const TypeInteger* parent_type = type(parent)->isa_integer(type(parent)->basic_type());
   uint use_op = use->Opcode();
   if (
     // Pattern: parent (now constant) -> (ConstraintCast | ConvI2L)* -> And
-    (new_type != nullptr && new_type->is_con()) ||
+    (parent_type != nullptr && parent_type->is_con()) ||
     // Pattern: parent -> LShift (use) -> (ConstraintCast | ConvI2L)* -> And
     ((use_op == Op_LShiftI || use_op == Op_LShiftL) && use->in(2) == parent)) {
 
