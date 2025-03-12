@@ -76,10 +76,14 @@ void MonitorList::add(ObjectMonitor* m) {
     m->set_next_om(head);
   } while (Atomic::cmpxchg(&_head, head, m) != head);
 
-  size_t count = Atomic::add(&_count, 1u);
-  if (count > max()) {
-    Atomic::inc(&_max);
-  }
+  size_t count = Atomic::add(&_count, 1u, memory_order_relaxed);
+  size_t old_max;
+  do {
+    old_max = Atomic::load(&_max);
+    if (count <= old_max) {
+      break;
+    }
+  } while (Atomic::cmpxchg(&_max, old_max, count, memory_order_relaxed) != old_max);
 }
 
 size_t MonitorList::count() const {
