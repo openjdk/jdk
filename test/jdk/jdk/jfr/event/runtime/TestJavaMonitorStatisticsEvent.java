@@ -50,7 +50,7 @@ import jdk.test.lib.thread.XRun;
 public class TestJavaMonitorStatisticsEvent {
 
     private static final String FIELD_COUNT = "count";
-    private static final String FIELD_MAX_COUNT = "maxCount";
+    private static final String FIELD_PEAK_COUNT = "peakCount";
 
     private static final String EVENT_NAME = EventNames.JavaMonitorStatistics;
     private static final int NUM_LOCKS = 512;
@@ -89,19 +89,19 @@ public class TestJavaMonitorStatisticsEvent {
             System.out.println(events);
             assertFalse(events.isEmpty());
 
-            long globalMax = Long.MIN_VALUE;
+            long globalPeakCount = Long.MIN_VALUE;
             long globalCount = Long.MIN_VALUE;
             for (RecordedEvent ev : events) {
-                long evMaxCount = Events.assertField(ev, FIELD_MAX_COUNT).getValue();
+                long evPeakCount = Events.assertField(ev, FIELD_PEAK_COUNT).getValue();
                 long evCount = Events.assertField(ev, FIELD_COUNT).getValue();
-                assertTrue(evCount <= evMaxCount, "Count should be below max: " + evCount + " <= " + evMaxCount);
-                assertTrue(evMaxCount >= 0, "Max should be non-negative: " + evMaxCount);
+                assertTrue(evCount <= evPeakCount, "Count should be less or equal to peak: " + evCount + " <= " + evPeakCount);
+                assertTrue(evPeakCount >= 0, "Peak should be non-negative: " + evPeakCount);
                 assertTrue(evCount >= 0, "Count should be non-negative: " + evCount);
-                globalMax = Math.max(globalMax, evMaxCount);
+                globalPeakCount = Math.max(globalPeakCount, evPeakCount);
                 globalCount = Math.max(globalCount, evCount);
             }
 
-            assertTrue(globalMax >= NUM_LOCKS, "Global max should be at least " + NUM_LOCKS + ": " + globalMax);
+            assertTrue(globalPeakCount >= NUM_LOCKS, "Global peak should be at least " + NUM_LOCKS + ": " + globalPeakCount);
             assertTrue(globalCount >= NUM_LOCKS, "Global count should be at least " + NUM_LOCKS + ": " + globalCount);
         }
     }

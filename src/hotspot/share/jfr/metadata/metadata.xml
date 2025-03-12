@@ -123,7 +123,7 @@
 
   <Event name="JavaMonitorStatistics" category="Java Application, Statistics" label="Java Monitor Statistics" period="everyChunk">
     <Field type="ulong" name="count" label="Monitors in Use" description="Current number of in-use monitors" />
-    <Field type="ulong" name="maxCount" label="Maximum Monitors in Use" description="Maximum number of in-use monitors over the entire JVM lifetime" />
+    <Field type="ulong" name="peakCount" label="Peak Monitors in Use" description="Peak number of in-use monitors over the entire JVM lifetime" />
   </Event>
 
   <Event name="SyncOnValueBasedClass" category="Java Virtual Machine, Diagnostics" label="Value Based Class Synchronization" thread="true" stackTrace="true" startTime="false" experimental="true">
