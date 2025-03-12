@@ -153,9 +153,15 @@ inline void ShenandoahBarrierSet::enqueue(oop obj) {
 
 template <DecoratorSet decorators, typename T>
 inline void ShenandoahBarrierSet::satb_barrier(T *field) {
+  // Uninitialized and no-keepalive stores do not need barrier.
   if (HasDecorator<decorators, IS_DEST_UNINITIALIZED>::value ||
-      HasDecorator<decorators, AS_NO_KEEPALIVE>::value ||
-      HasDecorator<decorators, ON_WEAK_OOP_REF>::value ||
+      HasDecorator<decorators, AS_NO_KEEPALIVE>::value) {
+    return;
+  }
+
+  // Stores to weak/phantom require no barrier. The original references would
+  // have been enqueued in the SATB buffer by the load barrier if they were needed.
+  if (HasDecorator<decorators, ON_WEAK_OOP_REF>::value ||
       HasDecorator<decorators, ON_PHANTOM_OOP_REF>::value) {
     return;
   }
