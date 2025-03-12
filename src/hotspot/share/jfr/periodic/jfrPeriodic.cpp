@@ -743,6 +743,5 @@ TRACE_REQUEST_FUNC(NativeMemoryUsageTotal) {
 TRACE_REQUEST_FUNC(JavaMonitorStatistics) {
   EventJavaMonitorStatistics event;
   event.set_count(ObjectSynchronizer::in_use_list_count());
-  event.set_peakCount(ObjectSynchronizer::in_use_list_max());
   event.commit();
 }

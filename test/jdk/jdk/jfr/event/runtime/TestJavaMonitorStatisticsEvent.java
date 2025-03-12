@@ -50,7 +50,6 @@ import jdk.test.lib.thread.XRun;
 public class TestJavaMonitorStatisticsEvent {
 
     private static final String FIELD_COUNT = "count";
-    private static final String FIELD_PEAK_COUNT = "peakCount";
 
     private static final String EVENT_NAME = EventNames.JavaMonitorStatistics;
     private static final int NUM_LOCKS = 512;
@@ -89,19 +88,13 @@ public class TestJavaMonitorStatisticsEvent {
             System.out.println(events);
             assertFalse(events.isEmpty());
 
-            long globalPeakCount = Long.MIN_VALUE;
             long globalCount = Long.MIN_VALUE;
             for (RecordedEvent ev : events) {
-                long evPeakCount = Events.assertField(ev, FIELD_PEAK_COUNT).getValue();
                 long evCount = Events.assertField(ev, FIELD_COUNT).getValue();
-                assertTrue(evCount <= evPeakCount, "Count should be less or equal to peak: " + evCount + " <= " + evPeakCount);
-                assertTrue(evPeakCount >= 0, "Peak should be non-negative: " + evPeakCount);
                 assertTrue(evCount >= 0, "Count should be non-negative: " + evCount);
-                globalPeakCount = Math.max(globalPeakCount, evPeakCount);
                 globalCount = Math.max(globalCount, evCount);
             }
 
-            assertTrue(globalPeakCount >= NUM_LOCKS, "Global peak should be at least " + NUM_LOCKS + ": " + globalPeakCount);
             assertTrue(globalCount >= NUM_LOCKS, "Global count should be at least " + NUM_LOCKS + ": " + globalCount);
         }
     }
