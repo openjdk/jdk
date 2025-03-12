@@ -10332,7 +10332,6 @@ instruct orI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
   format %{ "eorl     $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
     __ eorl($dst$$Register, $src1$$Register, $src2$$Register, false);
-
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -10366,7 +10365,6 @@ instruct orI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-/*
 instruct orI_rReg_imm_rReg_ndd(rRegI dst, immI src1, rRegI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
@@ -10379,7 +10377,7 @@ instruct orI_rReg_imm_rReg_ndd(rRegI dst, immI src1, rRegI src2, rFlagsReg cr)
     __ eorl($dst$$Register, $src2$$Register, $src1$$constant, false);
   %}
   ins_pipe(ialu_reg);
-%}*/
+%}
 
 instruct orI_rReg_mem_imm_ndd(rRegI dst, memory src1, immI src2, rFlagsReg cr)
 %{
