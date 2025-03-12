@@ -76,18 +76,16 @@ public final class SystemProps {
 
         // Platform defined encoding cannot be overridden on the command line
         put(props, "sun.jnu.encoding", raw.propDefault(Raw._sun_jnu_encoding_NDX));
-        var nativeEncoding = ((raw.propDefault(Raw._file_encoding_NDX) == null)
-                ? raw.propDefault(Raw._sun_jnu_encoding_NDX)
-                : raw.propDefault(Raw._file_encoding_NDX));
+        String nativeEncoding = raw.propDefault(Raw._native_encoding_NDX);
         put(props, "native.encoding", nativeEncoding);
 
         // "file.encoding" defaults to "UTF-8", unless specified in the command line
         // where "COMPAT" designates the native encoding.
-        var fileEncoding = props.getOrDefault("file.encoding", "UTF-8");
-        if ("COMPAT".equals(fileEncoding)) {
+        var fileEncoding = props.get("file.encoding");
+        if (fileEncoding == null) {
+            put(props, "file.encoding", "UTF-8");
+        } else if ("COMPAT".equals(fileEncoding)) {
             put(props, "file.encoding", nativeEncoding);
-        } else {
-            putIfAbsent(props, "file.encoding", fileEncoding);
         }
 
         // "stdout/err.encoding", prepared for System.out/err. For compatibility
@@ -209,17 +207,17 @@ public final class SystemProps {
     }
 
     /**
-     * Read the raw properties from native System.c.
+     * Read raw properties values from JVM command line and from platform-
+     * specific code using native methods in System.c.
      */
     public static class Raw {
-        // Array indices written by native vmProperties()
+        // Array indices written by native platformProperties()
         // The order is arbitrary (but alphabetic for convenience)
         @Native private static final int _display_country_NDX = 0;
         @Native private static final int _display_language_NDX = 1 + _display_country_NDX;
         @Native private static final int _display_script_NDX = 1 + _display_language_NDX;
         @Native private static final int _display_variant_NDX = 1 + _display_script_NDX;
-        @Native private static final int _file_encoding_NDX = 1 + _display_variant_NDX;
-        @Native private static final int _file_separator_NDX = 1 + _file_encoding_NDX;
+        @Native private static final int _file_separator_NDX = 1 + _display_variant_NDX;
         @Native private static final int _format_country_NDX = 1 + _file_separator_NDX;
         @Native private static final int _format_language_NDX = 1 + _format_country_NDX;
         @Native private static final int _format_script_NDX = 1 + _format_language_NDX;
@@ -234,7 +232,8 @@ public final class SystemProps {
         @Native private static final int _https_proxyPort_NDX = 1 + _https_proxyHost_NDX;
         @Native private static final int _java_io_tmpdir_NDX = 1 + _https_proxyPort_NDX;
         @Native private static final int _line_separator_NDX = 1 + _java_io_tmpdir_NDX;
-        @Native private static final int _os_arch_NDX = 1 + _line_separator_NDX;
+        @Native private static final int _native_encoding_NDX = 1 + _line_separator_NDX;
+        @Native private static final int _os_arch_NDX = 1 + _native_encoding_NDX;
         @Native private static final int _os_name_NDX = 1 + _os_arch_NDX;
         @Native private static final int _os_version_NDX = 1 + _os_name_NDX;
         @Native private static final int _path_separator_NDX = 1 + _os_version_NDX;
@@ -255,7 +254,7 @@ public final class SystemProps {
         @Native private static final int _user_name_NDX = 1 + _user_home_NDX;
         @Native private static final int FIXED_LENGTH = 1 + _user_name_NDX;
 
-        // Array of Strings returned from the VM and Command line properties
+        // Array of String properties returned from platform-specific native code
         // The array is not used after initialization is complete.
         private final String[] platformProps;
 
@@ -264,27 +263,36 @@ public final class SystemProps {
         }
 
         /**
-         * Return the value for a well known default from native.
-         * @param index the index of the known property
-         * @return the value
+         * Return property value obtained from platform-specific native code.
+         * @param index the index of the property
+         * @return the property value, may be null
          */
         String propDefault(int index) {
             return platformProps[index];
         }
 
         /**
-         * Return a Properties instance of the command line and VM options
-         * defined by name and value.
-         * The Properties instance is sized to include the fixed properties.
+         * Returns the platform specific property values identified
+         * by {@code "_xxx_NDX"} indexes.
+         * The indexes are strictly private, to be shared only with the native code.
          *
-         * @return return a Properties instance of the command line and VM options
+         * @return a array of strings, the properties are indexed by the {@code _xxx_NDX}
+         * indexes.  The values are Strings and may be null.
+         */
+        private static native String[] platformProperties();
+
+        /**
+         * Returns a HashMap containing properties obtained from the command line
+         * and from the JVM. The HashMap is sized to include the fixed properties.
+         *
+         * @return return a HashMap containing command line and JVM properties
          */
         private HashMap<String, String> cmdProperties() {
             String[] vmProps = vmProperties();
-            // While optimal initialCapacity here would be the exact number of properties
-            // divided by LOAD_FACTOR, a large portion of the properties in Raw are
-            // usually not set, so for typical cases the chosen capacity avoids resizing
-            var cmdProps = new HashMap<String, String>((vmProps.length / 2) + Raw.FIXED_LENGTH);
+            // Many platformProperties are null, so this initial size is an overestimate.
+            // However, more properties are added later, including encoding properties
+            // and version properties, so the excess space is justified.
+            HashMap<String, String> cmdProps = HashMap.newHashMap((vmProps.length / 2) + Raw.FIXED_LENGTH);
             for (int i = 0; i < vmProps.length;) {
                 String k = vmProps[i++];
                 if (k != null) {
@@ -308,15 +316,5 @@ public final class SystemProps {
          *      The first null key indicates there are no more key, value pairs.
          */
         private static native String[] vmProperties();
-
-        /**
-         * Returns the platform specific property values identified
-         * by {@code "_xxx_NDX"} indexes.
-         * The indexes are strictly private, to be shared only with the native code.
-         *
-         * @return a array of strings, the properties are indexed by the {@code _xxx_NDX}
-         * indexes.  The values are Strings and may be null.
-         */
-        private static native String[] platformProperties();
     }
 }
