@@ -453,7 +453,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size, uint node_i
     // here and the follow-on attempt will be at the start of the next loop
     // iteration (after taking the Heap_lock).
     size_t dummy = 0;
-    result = _allocator->attempt_allocation(word_size, word_size, &dummy, node_index);
+    result = _allocator->attempt_allocation(word_size, word_size, node_index, &dummy);
     if (result != nullptr) {
       return result;
     }
@@ -590,7 +590,7 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t min_word_size,
   // Fix NUMA node association for the duration of this allocation
   const uint node_index = _allocator->current_node_index();
 
-  HeapWord* result = _allocator->attempt_allocation(min_word_size, desired_word_size, actual_word_size, node_index);
+  HeapWord* result = _allocator->attempt_allocation(min_word_size, desired_word_size, node_index, actual_word_size);
 
   if (result == nullptr) {
     *actual_word_size = desired_word_size;

@@ -215,7 +215,7 @@ HeapWord* G1Allocator::par_allocate_during_gc(G1HeapRegionAttr dest,
                                               size_t word_size,
                                               uint node_index) {
   size_t temp = 0;
-  HeapWord* result = par_allocate_during_gc(dest, word_size, word_size, &temp, node_index);
+  HeapWord* result = par_allocate_during_gc(dest, word_size, word_size, node_index, &temp);
   assert(result == nullptr || temp == word_size,
          "Requested %zu words, but got %zu at " PTR_FORMAT,
          word_size, temp, p2i(result));
@@ -225,11 +225,11 @@ HeapWord* G1Allocator::par_allocate_during_gc(G1HeapRegionAttr dest,
 HeapWord* G1Allocator::par_allocate_during_gc(G1HeapRegionAttr dest,
                                               size_t min_word_size,
                                               size_t desired_word_size,
-                                              size_t* actual_word_size,
-                                              uint node_index) {
+                                              uint node_index,
+                                              size_t* actual_word_size) {
   switch (dest.type()) {
     case G1HeapRegionAttr::Young:
-      return survivor_attempt_allocation(min_word_size, desired_word_size, actual_word_size, node_index);
+      return survivor_attempt_allocation(min_word_size, desired_word_size, node_index, actual_word_size);
     case G1HeapRegionAttr::Old:
       return old_attempt_allocation(min_word_size, desired_word_size, actual_word_size);
     default:
@@ -240,8 +240,8 @@ HeapWord* G1Allocator::par_allocate_during_gc(G1HeapRegionAttr dest,
 
 HeapWord* G1Allocator::survivor_attempt_allocation(size_t min_word_size,
                                                    size_t desired_word_size,
-                                                   size_t* actual_word_size,
-                                                   uint node_index) {
+                                                   uint node_index,
+                                                   size_t* actual_word_size) {
   assert(!_g1h->is_humongous(desired_word_size),
          "we should not be seeing humongous-size allocations in this path");
 
@@ -399,8 +399,8 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
     HeapWord* buf = _allocator->par_allocate_during_gc(dest,
                                                        required_in_plab,
                                                        plab_word_size,
-                                                       &actual_plab_size,
-                                                       node_index);
+                                                       node_index,
+                                                       &actual_plab_size);
 
     assert(buf == nullptr || ((actual_plab_size >= required_in_plab) && (actual_plab_size <= plab_word_size)),
            "Requested at minimum %zu, desired %zu words, but got %zu at " PTR_FORMAT,

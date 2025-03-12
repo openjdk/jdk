@@ -51,8 +51,8 @@ inline OldGCAllocRegion* G1Allocator::old_gc_alloc_region() {
 
 inline HeapWord* G1Allocator::attempt_allocation(size_t min_word_size,
                                                  size_t desired_word_size,
-                                                 size_t* actual_word_size,
-                                                 uint node_index) {
+                                                 uint node_index,
+                                                 size_t* actual_word_size) {
   HeapWord* result = mutator_alloc_region(node_index)->attempt_retained_allocation(min_word_size, desired_word_size, actual_word_size);
   if (result != nullptr) {
     return result;
