@@ -414,8 +414,6 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   // Despite our balanced locking property we still check that m->_owner == Self
   // as java routines or native JNI code called by this thread might
   // have released the lock.
-  // Refer to the comments in synchronizer.cpp for how we might encode extra
-  // state in _succ so we can avoid fetching EntryList|cxq.
   //
   // If there's no contention try a 1-0 exit.  That is, exit without
   // a costly MEMBAR or CAS.  See synchronizer.cpp for details on how
@@ -447,9 +445,8 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   // StoreLoad achieves this.
   membar(StoreLoad);
 
-  // Check if the entry lists are empty (EntryList first - by convention).
-  movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-  orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
+  // Check if the entry_list is empty.
+  cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(entry_list)), NULL_WORD);
   jccb(Assembler::zero, LSuccess);    // If so we are done.
 
   // Check if there is a successor.
@@ -767,9 +764,8 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
     }
     const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
     const Address recursions_address{monitor, ObjectMonitor::recursions_offset() - monitor_tag};
-    const Address cxq_address{monitor, ObjectMonitor::cxq_offset() - monitor_tag};
     const Address succ_address{monitor, ObjectMonitor::succ_offset() - monitor_tag};
-    const Address EntryList_address{monitor, ObjectMonitor::EntryList_offset() - monitor_tag};
+    const Address entry_list_address{monitor, ObjectMonitor::entry_list_offset() - monitor_tag};
     const Address owner_address{monitor, ObjectMonitor::owner_offset() - monitor_tag};
 
     Label recursive;
@@ -785,9 +781,8 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
     // StoreLoad achieves this.
     membar(StoreLoad);
 
-    // Check if the entry lists are empty (EntryList first - by convention).
-    movptr(reg_rax, EntryList_address);
-    orptr(reg_rax, cxq_address);
+    // Check if the entry_list is empty.
+    cmpptr(entry_list_address, NULL_WORD);
     jccb(Assembler::zero, unlocked);    // If so we are done.
 
     // Check if there is a successor.

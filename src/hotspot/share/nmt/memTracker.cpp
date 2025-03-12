@@ -62,7 +62,7 @@ void MemTracker::initialize() {
   assert(level == NMT_off || level == NMT_summary || level == NMT_detail,
          "Invalid setting for NativeMemoryTracking (%s)", NativeMemoryTracking);
 
-  // Memory type is encoded into tracking header as a byte field,
+  // Memory tag is encoded into tracking header as a byte field,
   // make sure that we don't overflow it.
   STATIC_ASSERT(mt_number_of_tags <= max_jubyte);
 
