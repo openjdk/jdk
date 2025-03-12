@@ -1278,8 +1278,8 @@ public:
 
 ShenandoahMarkingContext* ShenandoahVerifier::get_marking_context_for_old() {
   shenandoah_assert_generations_reconciled();
-  if (_heap->old_generation()->is_mark_complete() || _heap->gc_generation()->is_global()) {
-    return _heap->complete_marking_context();
+  if (_heap->old_generation()->is_mark_complete()) {
+    return _heap->old_generation()->complete_marking_context();
   }
   return nullptr;
 }
@@ -1374,12 +1374,13 @@ void ShenandoahVerifier::verify_rem_set_before_mark() {
 void ShenandoahVerifier::verify_rem_set_after_full_gc() {
   shenandoah_assert_safepoint();
   shenandoah_assert_generational();
+  ShenandoahMarkingContext* ctx = get_marking_context_for_old();
 
   ShenandoahWriteTableScanner scanner(ShenandoahGenerationalHeap::heap()->old_generation()->card_scan());
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_old() && !r->is_cset()) {
-      help_verify_region_rem_set(&scanner, r, nullptr, r->top(), "Remembered set violation at end of Full GC");
+      help_verify_region_rem_set(&scanner, r, ctx, r->top(), "Remembered set violation at end of Full GC");
     }
   }
 }
