@@ -75,11 +75,7 @@ $(window).on("load", function() {
             arr.push(item);
         }
         if (!activeTab || r[activeTab].length === 0) {
-            activeTab = Object.keys(r).find(category => {
-                if (r[category].length > 0) {
-                    return true;
-                }
-            });
+            activeTab = Object.keys(r).find(category => r[category].length > 0);
         }
         if (feelingLucky && activeTab) {
             notify.html(messages.redirecting)
