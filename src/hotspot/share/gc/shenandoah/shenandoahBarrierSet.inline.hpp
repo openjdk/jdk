@@ -276,7 +276,8 @@ inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_st
 
   oop_store_common(addr, value);
   if (ShenandoahCardBarrier) {
-    barrier_set()->write_ref_field_post<decorators>(addr);
+    ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
+    bs->write_ref_field_post<decorators>(addr);
   }
 }
 
