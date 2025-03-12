@@ -76,7 +76,7 @@ import java.util.function.Supplier;
  *        if (!logger.isSet()) {
  *            logger.trySet(Logger.create(Component.class));
  *        }
- *         return logger.orThrow();
+ *         return logger.orElseThrow();
  *    }
  *
  *    public void process() {
@@ -124,7 +124,7 @@ import java.util.function.Supplier;
  * Furthermore, {@code orElseSet()} guarantees that the supplier provided is
  * evaluated only once, even when {@code logger.orElseSet()} is invoked concurrently.
  * This property is crucial as evaluation of the supplier may have side effects,
- * e.g., the call above to {@code Logger.getLogger()} may result in storage resources
+ * e.g., the call above to {@code Logger.create()} may result in storage resources
  * being prepared.
  *
  * <h2 id="stable-functions">Stable Functions</h2>
@@ -420,7 +420,7 @@ public sealed interface StableValue<T>
      *
      * {@snippet lang=java:
      * if (stable.isSet()) {
-     *     return stable.get();
+     *     return stable.orElseThrow();
      * } else {
      *     T newValue = supplier.get();
      *     stable.setOrThrow(newValue);
@@ -540,6 +540,7 @@ public sealed interface StableValue<T>
      * @param size     the size of the allowed inputs in {@code [0, size)}
      * @param original IntFunction used to compute cached values
      * @param <R>      the type of results delivered by the returned IntFunction
+     * @throws IllegalArgumentException if the provided {@code size} is negative.
      */
     static <R> IntFunction<R> intFunction(int size,
                                           IntFunction<? extends R> original) {
@@ -608,6 +609,7 @@ public sealed interface StableValue<T>
      * @param mapper to invoke whenever an element is first accessed
      *               (may return {@code null})
      * @param <E>    the type of elements in the returned list
+     * @throws IllegalArgumentException if the provided {@code size} is negative.
      */
     static <E> List<E> list(int size,
                             IntFunction<? extends E> mapper) {
