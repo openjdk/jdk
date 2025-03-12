@@ -462,7 +462,6 @@ java/awt/PopupMenu/PopupMenuLocation.java 8259913,8315878 windows-all,macosx-aar
 java/awt/GridLayout/ComponentPreferredSize/ComponentPreferredSize.java 8238720,8324782 windows-all,macosx-all
 java/awt/GridLayout/ChangeGridSize/ChangeGridSize.java   8238720,8324782 windows-all,macosx-all
 java/awt/event/MouseEvent/FrameMouseEventAbsoluteCoordsTest/FrameMouseEventAbsoluteCoordsTest.java 8238720 windows-all
-java/awt/Headless/HeadlessMalfunctionTest.java 8349099 generic-all
 
 # Several tests which fail sometimes on macos11
 java/awt/Window/MainKeyWindowTest/TestMainKeyWindow.java 8265985 macosx-all
@@ -537,11 +536,9 @@ java/io/IO/IO.java                                              8337935 linux-pp
 
 # jdk_management
 
-com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
-com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
-
-com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8351002 windows-all
-com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8351002 windows-all
+# First bug for AIX, second for Windows
+com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957,8351002 aix-all,windows-all
+com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957,8351002 aix-all,windows-all
 
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all

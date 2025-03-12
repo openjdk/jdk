@@ -369,6 +369,10 @@ void ShenandoahConcurrentGC::entry_reset() {
                                 msg);
     op_reset();
   }
+
+  if (heap->mode()->is_generational()) {
+    heap->old_generation()->card_scan()->mark_read_table_as_clean();
+  }
 }
 
 void ShenandoahConcurrentGC::entry_scan_remembered_set() {
@@ -640,12 +644,10 @@ void ShenandoahConcurrentGC::op_init_mark() {
   assert(!_generation->is_mark_complete(), "should not be complete");
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
-
   if (heap->mode()->is_generational()) {
     if (_generation->is_young()) {
-      // The current implementation of swap_remembered_set() copies the write-card-table to the read-card-table.
       ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_swap_rset);
-      _generation->swap_remembered_set();
+      _generation->swap_card_tables();
     }
 
     if (_generation->is_global()) {

@@ -1453,7 +1453,7 @@ public:
   void eliminate_useless_template_assertion_predicates();
   void collect_useful_template_assertion_predicates(Unique_Node_List& useful_predicates);
   static void collect_useful_template_assertion_predicates_for_loop(IdealLoopTree* loop, Unique_Node_List& useful_predicates);
-  void eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates);
+  void eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates) const;
 
   void eliminate_useless_zero_trip_guard();
   void eliminate_useless_multiversion_if();
