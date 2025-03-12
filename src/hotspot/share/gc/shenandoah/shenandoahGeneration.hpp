@@ -159,10 +159,11 @@ private:
   void log_status(const char* msg) const;
 
   // Used directly by FullGC
+  template <bool FOR_CURRENT_CYCLE, bool FULL_GC = false>
   void reset_mark_bitmap();
 
   // Used by concurrent and degenerated GC to reset remembered set.
-  void swap_remembered_set();
+  void swap_card_tables();
 
   // Update the read cards with the state of the write table (write table is not cleared).
   void merge_write_table();

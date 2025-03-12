@@ -368,13 +368,13 @@
  * <p>
  * or lift the code transform into the class transform directly:
  * {@snippet lang=java :
- * ClassTransform ct = ClassTransform.transformingMethodBodiess(fooToBar);
+ * ClassTransform ct = ClassTransform.transformingMethodBodies(fooToBar);
  * }
  * <p>
  * and then transform the classfile:
  * {@snippet lang=java :
  * var cc = ClassFile.of();
- * byte[] newBytes = cc.transform(cc.parse(bytes), ct);
+ * byte[] newBytes = cc.transformClass(cc.parse(bytes), ct);
  * }
  * <p>
  * This is much more concise (and less error-prone) than the equivalent
@@ -393,7 +393,7 @@
  *
  * {@snippet lang=java :
  * var cc = ClassFile.of();
- * byte[] newBytes = cc.transform(cc.parse(bytes),
+ * byte[] newBytes = cc.transformClass(cc.parse(bytes),
  *                                ClassTransform.transformingMethods(
  *                                    MethodTransform.transformingCode(
  *                                        fooToBar.andThen(instrumentCalls))));

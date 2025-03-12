@@ -23,8 +23,8 @@
 # questions.
 #
 
-ifndef _MODULES_GMK
-_MODULES_GMK := 1
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
 
 ################################################################################
 # Setup module sets for classloaders
@@ -44,11 +44,6 @@ include $(TOPDIR)/make/conf/docs-modules.conf
 # Setup module sets needed by the build system
 
 include $(TOPDIR)/make/conf/build-module-sets.conf
-
-################################################################################
-# Hook to include the corresponding custom file, if present.
-# Allowing MODULE list extensions setup above.
-$(eval $(call IncludeCustomExtension, common/Modules.gmk))
 
 ################################################################################
 # Depending on the configuration, we might need to filter out some modules that
@@ -92,7 +87,10 @@ SRC_SUBDIRS += share/classes
 
 SPEC_SUBDIRS += share/specs
 
-MAN_SUBDIRS += share/man windows/man
+MAN_SUBDIRS += share/man $(TARGET_OS)/man
+
+# The docs should include the sum of all man pages for all platforms
+MAN_DOCS_SUBDIRS += share/man windows/man
 
 # Find all module-info.java files for the current build target platform and
 # configuration.
@@ -157,6 +155,10 @@ FindModuleSpecsDirs = \
 FindModuleManDirs = \
     $(strip $(wildcard \
         $(foreach sub, $(MAN_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS)))))
+
+FindModuleManDirsForDocs = \
+    $(strip $(wildcard \
+        $(foreach sub, $(MAN_DOCS_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS)))))
 
 # Construct the complete module source path
 GetModuleSrcPath = \
@@ -316,4 +318,5 @@ endef
 
 ################################################################################
 
-endif # _MODULES_GMK
+endif # include guard
+include MakeIncludeEnd.gmk

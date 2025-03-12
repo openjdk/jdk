@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.nio.ByteOrder;
 
 /*
  * @test
- * @bug 8326139
+ * @bug 8326139 8348659
  * @summary Test splitting packs in SuperWord
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestSplitPacks nCOH_nAV
@@ -816,7 +816,17 @@ public class TestSplitPacks {
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"MaxVectorSize", ">=32", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeature = {"sse4.1", "true"})
+    // aarch64 limits minimum vector size to 8B, thus a vector size of
+    // length 2 for type "short" will not be generated
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.ADD_VS,        IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.ADD_VS,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeature = {"sve", "true"})
     // Split pack into power-of-2 sizes
     static Object[] test5a(short[] a, short[] b, short val) {
         for (int i = 0; i < RANGE; i+=16) {

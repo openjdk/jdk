@@ -1972,12 +1972,6 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
                                  ciKlass* klass) const {
   assert(!UseCompactObjectHeaders || tkls->offset() != in_bytes(Klass::prototype_header_offset()),
          "must not happen");
-  if (tkls->offset() == in_bytes(Klass::modifier_flags_offset())) {
-    // The field is Klass::_modifier_flags.  Return its (constant) value.
-    // (Folds up the 2nd indirection in aClassConstant.getModifiers().)
-    assert(Opcode() == Op_LoadUS, "must load an unsigned short from _modifier_flags");
-    return TypeInt::make(klass->modifier_flags());
-  }
   if (tkls->offset() == in_bytes(Klass::access_flags_offset())) {
     // The field is Klass::_access_flags.  Return its (constant) value.
     // (Folds up the 2nd indirection in Reflection.getClassAccessFlags(aClassConstant).)
@@ -2398,30 +2392,24 @@ const Type* LoadSNode::Value(PhaseGVN* phase) const {
 //=============================================================================
 //----------------------------LoadKlassNode::make------------------------------
 // Polymorphic factory method:
-Node* LoadKlassNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* at, const TypeKlassPtr* tk) {
+Node* LoadKlassNode::make(PhaseGVN& gvn, Node* mem, Node* adr, const TypePtr* at, const TypeKlassPtr* tk) {
   // sanity check the alias category against the created node type
-  const TypePtr *adr_type = adr->bottom_type()->isa_ptr();
+  const TypePtr* adr_type = adr->bottom_type()->isa_ptr();
   assert(adr_type != nullptr, "expecting TypeKlassPtr");
 #ifdef _LP64
   if (adr_type->is_ptr_to_narrowklass()) {
     assert(UseCompressedClassPointers, "no compressed klasses");
-    Node* load_klass = gvn.transform(new LoadNKlassNode(ctl, mem, adr, at, tk->make_narrowklass(), MemNode::unordered));
+    Node* load_klass = gvn.transform(new LoadNKlassNode(mem, adr, at, tk->make_narrowklass(), MemNode::unordered));
     return new DecodeNKlassNode(load_klass, load_klass->bottom_type()->make_ptr());
   }
 #endif
   assert(!adr_type->is_ptr_to_narrowklass() && !adr_type->is_ptr_to_narrowoop(), "should have got back a narrow oop");
-  return new LoadKlassNode(ctl, mem, adr, at, tk, MemNode::unordered);
+  return new LoadKlassNode(mem, adr, at, tk, MemNode::unordered);
 }
 
 //------------------------------Value------------------------------------------
 const Type* LoadKlassNode::Value(PhaseGVN* phase) const {
   return klass_value_common(phase);
-}
-
-// In most cases, LoadKlassNode does not have the control input set. If the control
-// input is set, it must not be removed (by LoadNode::Ideal()).
-bool LoadKlassNode::can_remove_control() const {
-  return false;
 }
 
 const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
@@ -2461,7 +2449,7 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
           // a primitive Class (e.g., int.class) has null for a klass field
           return TypePtr::NULL_PTR;
         }
-        // (Folds up the 1st indirection in aClassConstant.getModifiers().)
+        // Fold up the load of the hidden field
         return TypeKlassPtr::make(t->as_klass(), Type::trust_interfaces);
       }
       // non-constant mirror, so we can't tell what's going on

@@ -2980,6 +2980,11 @@ G1CMTask::G1CMTask(uint worker_id,
 #define G1PPRL_DOUBLE_FORMAT          "%14.1f"
 #define G1PPRL_GCEFF_FORMAT           "  %14s"
 #define G1PPRL_GCEFF_H_FORMAT         "  %14s"
+#define G1PPRL_GID_H_FORMAT           "  %9s"
+#define G1PPRL_GID_FORMAT             "  " UINT32_FORMAT_W(9)
+#define G1PPRL_LEN_FORMAT             "  " UINT32_FORMAT_W(14)
+#define G1PPRL_LEN_H_FORMAT           "  %14s"
+#define G1PPRL_GID_GCEFF_FORMAT       "  %14.1f"
 
 // For summary info
 #define G1PPRL_SUM_ADDR_FORMAT(tag)    "  " tag ":" G1PPRL_ADDR_BASE_FORMAT
@@ -2992,7 +2997,6 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
   _total_capacity_bytes(0),
   _total_live_bytes(0),
   _total_remset_bytes(0),
-  _young_cardset_bytes_per_region(0),
   _total_code_roots_bytes(0)
 {
   if (!log_is_enabled(Trace, gc, liveness)) {
@@ -3002,13 +3006,6 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   MemRegion reserved = g1h->reserved();
   double now = os::elapsedTime();
-
-  uint num_young_regions = g1h->young_regions_count();
-  size_t young_cardset_bytes = g1h->young_regions_cardset()->mem_size();
-
-  if (num_young_regions > 0) {
-    _young_cardset_bytes_per_region = young_cardset_bytes / num_young_regions;
-  }
 
   // Print the header of the output.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX" PHASE %s @ %1.3f", phase_name, now);
@@ -3023,25 +3020,24 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
                           G1PPRL_ADDR_BASE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
-                          G1PPRL_GCEFF_H_FORMAT
-                          G1PPRL_BYTE_H_FORMAT
                           G1PPRL_STATE_H_FORMAT
-                          G1PPRL_BYTE_H_FORMAT,
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_GID_H_FORMAT,
                           "type", "address-range",
-                          "used", "live", "gc-eff",
-                          "remset", "state", "code-roots");
+                          "used", "live",
+                          "state", "code-roots",
+                          "group-id");
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
                           G1PPRL_TYPE_H_FORMAT
                           G1PPRL_ADDR_BASE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
-                          G1PPRL_GCEFF_H_FORMAT
-                          G1PPRL_BYTE_H_FORMAT
                           G1PPRL_STATE_H_FORMAT
-                          G1PPRL_BYTE_H_FORMAT,
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_GID_H_FORMAT,
                           "", "",
-                          "(bytes)", "(bytes)", "(bytes/ms)",
-                          "(bytes)", "", "(bytes)");
+                          "(bytes)", "(bytes)",
+                          "", "(bytes)", "");
 }
 
 bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
@@ -3055,14 +3051,13 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
   size_t capacity_bytes  = r->capacity();
   size_t used_bytes      = r->used();
   size_t live_bytes      = r->live_bytes();
-  double gc_eff          = r->calc_gc_efficiency();
   size_t remset_bytes    = r->rem_set()->mem_size();
   size_t code_roots_bytes = r->rem_set()->code_roots_mem_size();
   const char* remset_type = r->rem_set()->get_short_state_str();
-  FormatBuffer<16> gc_efficiency("");
+  uint cset_groud_gid     = 0;
 
-  if (r->is_young()) {
-    remset_bytes = _young_cardset_bytes_per_region;
+  if (r->rem_set()->is_added_to_cset_group()) {
+    cset_groud_gid = r->rem_set()->cset_group_id();
   }
 
   _total_used_bytes      += used_bytes;
@@ -3071,25 +3066,19 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
   _total_remset_bytes    += remset_bytes;
   _total_code_roots_bytes += code_roots_bytes;
 
-  if(gc_eff < 0) {
-    gc_efficiency.append("-");
-  } else {
-    gc_efficiency.append(G1PPRL_DOUBLE_FORMAT, gc_eff);
-  }
-
   // Print a line for this particular region.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
                         G1PPRL_TYPE_FORMAT
                         G1PPRL_ADDR_BASE_FORMAT
                         G1PPRL_BYTE_FORMAT
                         G1PPRL_BYTE_FORMAT
-                        G1PPRL_GCEFF_FORMAT
-                        G1PPRL_BYTE_FORMAT
                         G1PPRL_STATE_FORMAT
-                        G1PPRL_BYTE_FORMAT,
+                        G1PPRL_BYTE_FORMAT
+                        G1PPRL_GID_FORMAT,
                         type, p2i(bottom), p2i(end),
-                        used_bytes, live_bytes, gc_efficiency.buffer(),
-                        remset_bytes, remset_type, code_roots_bytes);
+                        used_bytes, live_bytes,
+                        remset_type, code_roots_bytes,
+                        cset_groud_gid);
 
   return false;
 }
@@ -3103,6 +3092,9 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
   _total_remset_bytes += g1h->card_set_freelist_pool()->mem_size();
   // add static memory usages to remembered set sizes
   _total_remset_bytes += G1HeapRegionRemSet::static_mem_size();
+
+  do_cset_groups();
+
   // Print the footer of the output.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
@@ -3119,4 +3111,78 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
                          percent_of(_total_live_bytes, _total_capacity_bytes),
                          bytes_to_mb(_total_remset_bytes),
                          bytes_to_mb(_total_code_roots_bytes));
+}
+
+void G1PrintRegionLivenessInfoClosure::do_cset_groups() {
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX" Collectionset Candidate Groups");
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX " Types: Y=Young Regions, M=From Marking Regions, R=Retained Regions");
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
+                          G1PPRL_GID_H_FORMAT
+                          G1PPRL_LEN_H_FORMAT
+                          G1PPRL_GCEFF_H_FORMAT
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_TYPE_H_FORMAT,
+                          "groud-id", "num-regions",
+                          "gc-eff", "liveness",
+                          "remset", "type");
+
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
+                          G1PPRL_GID_H_FORMAT
+                          G1PPRL_LEN_H_FORMAT
+                          G1PPRL_GCEFF_H_FORMAT
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_TYPE_H_FORMAT,
+                          "", "",
+                          "(bytes/ms)", "%",
+                          "(bytes)", "");
+
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1CSetCandidateGroup* young_only_cset_group =g1h->young_regions_cset_group();
+
+  _total_remset_bytes += young_only_cset_group->card_set()->mem_size();
+
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
+                          G1PPRL_GID_FORMAT
+                          G1PPRL_LEN_FORMAT
+                          G1PPRL_GCEFF_FORMAT
+                          G1PPRL_BYTE_FORMAT
+                          G1PPRL_BYTE_FORMAT
+                          G1PPRL_TYPE_H_FORMAT,
+                          young_only_cset_group->group_id(), young_only_cset_group->length(),
+                          "-",
+                          size_t(0), young_only_cset_group->card_set()->mem_size(),
+                          "Y");
+
+  for (G1CSetCandidateGroup* group : g1h->policy()->candidates()->from_marking_groups()) {
+    _total_remset_bytes += group->card_set()->mem_size();
+    log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
+                            G1PPRL_GID_FORMAT
+                            G1PPRL_LEN_FORMAT
+                            G1PPRL_GID_GCEFF_FORMAT
+                            G1PPRL_BYTE_FORMAT
+                            G1PPRL_BYTE_FORMAT
+                            G1PPRL_TYPE_H_FORMAT,
+                            group->group_id(), group->length(),
+                            group->gc_efficiency(),
+                            group->liveness(), group->card_set()->mem_size(),
+                            "M");
+  }
+
+  for (G1CSetCandidateGroup* group : g1h->policy()->candidates()->retained_groups()) {
+    _total_remset_bytes += group->card_set()->mem_size();
+    log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
+                            G1PPRL_GID_FORMAT
+                            G1PPRL_LEN_FORMAT
+                            G1PPRL_GID_GCEFF_FORMAT
+                            G1PPRL_BYTE_FORMAT
+                            G1PPRL_BYTE_FORMAT
+                            G1PPRL_TYPE_H_FORMAT,
+                            group->group_id(), group->length(),
+                            group->gc_efficiency(),
+                            group->liveness(), group->card_set()->mem_size(),
+                            "R");
+  }
 }
