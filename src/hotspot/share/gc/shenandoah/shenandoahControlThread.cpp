@@ -68,9 +68,6 @@ void ShenandoahControlThread::run_service() {
     const bool is_gc_requested = _gc_requested.is_set();
     const GCCause::Cause requested_gc_cause = _requested_gc_cause;
 
-    // This control loop iteration has seen this much allocation.
-    const size_t allocs_seen = reset_allocs_seen();
-
     // Choose which GC mode to run in. The block below should select a single mode.
     GCMode mode = none;
     GCCause::Cause cause = GCCause::_last_gc_cause;

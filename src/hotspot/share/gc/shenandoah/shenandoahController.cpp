@@ -31,10 +31,6 @@
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 
 
-size_t ShenandoahController::reset_allocs_seen() {
-  return Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);
-}
-
 void ShenandoahController::update_gc_id() {
   Atomic::inc(&_gc_id);
 }

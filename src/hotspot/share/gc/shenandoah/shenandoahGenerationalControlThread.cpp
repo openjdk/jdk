@@ -63,9 +63,6 @@ void ShenandoahGenerationalControlThread::run_service() {
   ShenandoahGCRequest request;
   while (!should_terminate()) {
 
-    // This control loop iteration has seen this much allocation.
-    const size_t allocs_seen = reset_allocs_seen();
-
     // Figure out if we have pending requests.
     check_for_request(request);
 
