@@ -83,10 +83,12 @@ $(window).on("load", function() {
             window.location = getURL(firstItem.indexItem, firstItem.category);
             return;
         }
-        if (searchTerm.endsWith(".") && !fixedTab && activeTab === "types"
-                && r["types"].length < MIN_TABBED_RESULTS && r["members"].length > MIN_TABBED_RESULTS) {
-            // Other members are usually more interesting than nested classes
-            activeTab = "members";
+        if (searchTerm.endsWith(".") && result.length > MIN_TABBED_RESULTS) {
+            if (activeTab === "types" && r["members"].length > r["types"].length) {
+                activeTab = "members";
+            } else if (activeTab === "packages" && r["types"].length > r["packages"].length) {
+                activeTab = "types";
+            }
         }
         var categoryCount = Object.keys(r).reduce(function(prev, curr) {
             return prev + (r[curr].length > 0 ? 1 : 0);
