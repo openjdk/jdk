@@ -278,8 +278,10 @@ ol.sub-nav-list li {
     scroll-snap-align: start;
 }
 ol.sub-nav-list li:not(:first-child) {
-    list-style-type: "> ";
-    margin-left: 19px;
+    background: url("right.svg") no-repeat 3px;
+    background-size: 10px;
+    padding-left: 17px;
+    list-style: none;
 }
 ol.sub-nav-list a {
     padding: 3px;
@@ -454,6 +456,11 @@ dl.name-value > dd {
     cursor: pointer;
     padding: 6px 10px;
     white-space: nowrap;
+}
+.main-grid nav.toc button > img {
+    vertical-align: middle;
+    width: 16px;
+    height: 16px;
 }
 .main-grid nav.toc button.hide-sidebar {
     right: 0;
@@ -997,10 +1004,10 @@ li.ui-static-link a, li.ui-static-link a:visited {
     padding-bottom: 5px;
 }
 input[type="text"] {
-    background-image:url('glass.png');
+    background-image:url('glass.svg');
     background-size:13px;
     background-repeat:no-repeat;
-    background-position:3px 5px;
+    background-position:3px 4px;
     background-color: var(--search-input-background-color);
     color: var(--search-input-text-color);
     border-color: var(--border-color);
@@ -1026,7 +1033,7 @@ input.filter-input {
 }
 input#reset-search, input.reset-filter {
     background-color: transparent;
-    background-image:url('x.png');
+    background-image:url('x.svg');
     background-repeat:no-repeat;
     background-size:contain;
     border:0;
