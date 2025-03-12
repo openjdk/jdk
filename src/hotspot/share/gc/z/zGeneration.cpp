@@ -131,10 +131,6 @@ ZGeneration::ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocato
     _stat_relocation(),
     _gc_timer(nullptr) {}
 
-bool ZGeneration::is_initialized() const {
-  return _mark.is_initialized();
-}
-
 ZWorkers* ZGeneration::workers() {
   return &_workers;
 }
@@ -151,8 +147,8 @@ void ZGeneration::threads_do(ThreadClosure* tc) const {
   _workers.threads_do(tc);
 }
 
-void ZGeneration::mark_flush_and_free(Thread* thread) {
-  _mark.flush_and_free(thread);
+void ZGeneration::mark_flush(Thread* thread) {
+  _mark.flush(thread);
 }
 
 void ZGeneration::mark_free() {
