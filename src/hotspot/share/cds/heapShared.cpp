@@ -336,6 +336,18 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
         if (mirror_k != nullptr) {
           AOTArtifactFinder::add_cached_class(mirror_k);
         }
+      } else if (java_lang_invoke_ResolvedMethodName::is_instance(obj)) {
+        Method* m = java_lang_invoke_ResolvedMethodName::vmtarget(obj);
+        if (m != nullptr) {
+          InstanceKlass* method_holder = m->method_holder();
+          AOTArtifactFinder::add_cached_class(method_holder);
+          AOTArtifactFinder::add_aot_inited_class(method_holder);
+
+          if (log_is_enabled(Debug, cds, init)) {
+            ResourceMark rm;
+            log_debug(cds, init)("%s should be aot-initialized (referenced by MethodHandle)", method_holder->external_name());
+          }
+        }
       }
     }
 
@@ -565,7 +577,7 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
     assert(success, "sanity");
   }
 
-  if (log_is_enabled(Info, cds, init)) {
+  if (log_is_enabled(Debug, cds, init)) {
     ResourceMark rm;
     log_debug(cds, init)("copied %3d field(s) in aot-initialized mirror %s%s%s", nfields, ik->external_name(),
                          ik->is_hidden() ? " (hidden)" : "",
