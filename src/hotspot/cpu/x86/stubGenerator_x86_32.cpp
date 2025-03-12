@@ -61,7 +61,6 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
-const int MXCSR_MASK  = 0xFFC0;  // Mask out any pending exceptions
 const int FPU_CNTRL_WRD_MASK = 0xFFFF;
 
 ATTRIBUTE_ALIGNED(16) static const uint32_t KEY_SHUFFLE_MASK[] = {
@@ -175,11 +174,7 @@ class StubGenerator: public StubCodeGenerator {
     // save and initialize %mxcsr
     if (sse_save) {
       Label skip_ldmx;
-      __ stmxcsr(mxcsr_save);
-      __ movl(rax, mxcsr_save);
-      __ andl(rax, MXCSR_MASK);    // Only check control and mask bits
-      ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
-      __ cmp32(rax, mxcsr_std);
+      __ cmp32_mxcsr_std(mxcsr_save, rax);
       __ jcc(Assembler::equal, skip_ldmx);
       __ ldmxcsr(mxcsr_std);
       __ bind(skip_ldmx);
@@ -465,17 +460,14 @@ class StubGenerator: public StubCodeGenerator {
 
     if (CheckJNICalls && UseSSE > 0 ) {
       Label ok_ret;
-      ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
       __ push(rax);
       __ subptr(rsp, wordSize);      // allocate a temp location
-      __ stmxcsr(mxcsr_save);
-      __ movl(rax, mxcsr_save);
-      __ andl(rax, MXCSR_MASK);
-      __ cmp32(rax, mxcsr_std);
+      __ cmp32_mxcsr_std(mxcsr_save, rax);
       __ jcc(Assembler::equal, ok_ret);
 
       __ warn("MXCSR changed by native JNI code.");
 
+      ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
       __ ldmxcsr(mxcsr_std);
 
       __ bind(ok_ret);

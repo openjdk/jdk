@@ -23,11 +23,15 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
 ################################################################################
 # This file contains functionality related to compiling a single native source
 # file (C, C++ or Objective-C) into an object file. It also harbours related
 # functionality for generating PCH (precompiled headers) and Windows resource
 # files.
+################################################################################
 
 ################################################################################
 # Creates a recipe that creates a compile_commands.json fragment. Remove any
@@ -352,3 +356,8 @@ define CreateWindowsResourceFile
 		    > $$($1_RES_DEPS_TARGETS_FILE)
   endif
 endef
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

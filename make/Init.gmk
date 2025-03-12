@@ -23,6 +23,8 @@
 # questions.
 #
 
+include MakeFileStart.gmk
+
 ################################################################################
 # Init.gmk sits between PreInit.gmk and Main.gmk when bootstrapping the build.
 # It is called from PreInit.gmk, and its main responsibility is to launch
@@ -31,27 +33,19 @@
 # value of $(MAKE) for all further make calls.
 ################################################################################
 
-# This must be the first rule
-default:
-.PHONY: default
+# Our helper functions.
+include $(TOPDIR)/make/InitSupport.gmk
+include LogUtils.gmk
+
+# Force early generation of module-deps.gmk and find-tests.gmk
+GENERATE_MODULE_DEPS_FILE := true
+include Modules.gmk
+GENERATE_FIND_TESTS_FILE := true
+include FindTests.gmk
 
 # Inclusion of this pseudo-target will cause make to execute this file
 # serially, regardless of -j.
 .NOTPARALLEL:
-
-include $(SPEC)
-
-include $(TOPDIR)/make/common/MakeBase.gmk
-
-# Our helper functions.
-include $(TOPDIR)/make/InitSupport.gmk
-include $(TOPDIR)/make/common/LogUtils.gmk
-
-# Force early generation of module-deps.gmk and find-tests.gmk
-GENERATE_MODULE_DEPS_FILE := true
-include $(TOPDIR)/make/common/Modules.gmk
-GENERATE_FIND_TESTS_FILE := true
-include $(TOPDIR)/make/common/FindTests.gmk
 
 # Parse COMPARE_BUILD (for makefile development)
 $(eval $(call ParseCompareBuild))
@@ -169,7 +163,7 @@ main: $(INIT_TARGETS)
 	        $(PRINTF) "\nERROR: Build failed for $(TARGET_DESCRIPTION) (exit code $$exitcode) \n" \
 	            $(BUILD_LOG_PIPE_SIMPLE) && \
 	        cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -j 1 -f make/Init.gmk \
-	            HAS_SPEC=true on-failure ; \
+	            on-failure ; \
 	        exit $$exitcode ) )
 	    $(call CleanupJavacServer)
 	    $(call StopGlobalTimer)
@@ -205,3 +199,7 @@ post-compare-build:
 	$(call CompareBuildDoComparison)
 
 .PHONY: main on-failure pre-compare-build post-compare-build
+
+################################################################################
+
+include MakeFileEnd.gmk

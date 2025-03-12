@@ -419,7 +419,7 @@ _unwind___jsvml_cbrt4_ha_l9_B6_B10:
         DD      imagerel _unwind___jsvml_cbrt4_ha_l9_B6_B10
 
 .pdata  ENDS
-_RDATA  SEGMENT     READ PAGE   'DATA'
+_RDATA  SEGMENT     READONLY PAGE   'DATA'
         ALIGN  32
 __VUNPACK_ODD_ind1_2671_0_2     DD      0
         DD      0
@@ -2063,7 +2063,7 @@ _unwind___jsvml_dcbrt_ha_cout_rare_internal_B1_B9:
 _DATA   SEGMENT      'DATA'
 _DATA   ENDS
 
-_RDATA  SEGMENT     READ  'DATA'
+_RDATA  SEGMENT     READONLY  'DATA'
         DD 8 DUP (0H)
         PUBLIC __jsvml_dcbrt_ha_data_internal_avx512
 __jsvml_dcbrt_ha_data_internal_avx512   DD      0

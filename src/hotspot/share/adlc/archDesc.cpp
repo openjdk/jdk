@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1053,6 +1053,7 @@ const char *ArchDesc::getIdealType(const char *idealOp) {
   case 'P':    return "TypePtr::BOTTOM";
   case 'N':    return "TypeNarrowOop::BOTTOM";
   case 'F':    return "Type::FLOAT";
+  case 'H':    return "Type::HALF_FLOAT";
   case 'D':    return "Type::DOUBLE";
   case 'L':    return "TypeLong::LONG";
   case 's':    return "TypeInt::CC /*flags*/";
@@ -1090,7 +1091,7 @@ void ArchDesc::initBaseOpTypes() {
     char *ident = (char *)NodeClassNames[j];
     if (!strcmp(ident, "ConI") || !strcmp(ident, "ConP") ||
         !strcmp(ident, "ConN") || !strcmp(ident, "ConNKlass") ||
-        !strcmp(ident, "ConF") || !strcmp(ident, "ConD") ||
+        !strcmp(ident, "ConH") || !strcmp(ident, "ConF") || !strcmp(ident, "ConD") ||
         !strcmp(ident, "ConL") || !strcmp(ident, "Con" ) ||
         !strcmp(ident, "Bool")) {
       constructOperand(ident, true);

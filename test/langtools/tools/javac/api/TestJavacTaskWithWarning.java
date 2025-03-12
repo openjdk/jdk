@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     8348212
+ * @bug     8348212 8349475
  * @summary Ensure the warn() phase executes when the compiler is invoked via the API
  * @modules jdk.compiler/com.sun.tools.javac.api
  */
@@ -50,7 +50,7 @@ public class TestJavacTaskWithWarning {
     public static void warningTest() throws Exception {
 
         // Create a source file that will generate a warning
-        String srcdir = System.getProperty("test.src");
+        String srcdir = ".";
         File file = new File(srcdir, "GeneratesWarning.java");
         try (PrintStream out = new PrintStream(new FileOutputStream(file))) {
             out.print(

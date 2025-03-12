@@ -23,18 +23,9 @@
  */
 
 #include "cds/filemap.hpp"
-#include "ci/ciField.hpp"
-#include "ci/ciInstance.hpp"
-#include "ci/ciMethodData.hpp"
-#include "ci/ciObjArrayKlass.hpp"
-#include "ci/ciSymbol.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
-#include "classfile/stringTable.hpp"
-#include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeBlob.hpp"
@@ -103,10 +94,8 @@
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/serviceThread.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/threadSMR.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vmStructs.hpp"
 #include "runtime/vm_version.hpp"
@@ -115,36 +104,11 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 #ifdef COMPILER2
-#include "opto/addnode.hpp"
-#include "opto/block.hpp"
-#include "opto/callnode.hpp"
-#include "opto/castnode.hpp"
-#include "opto/cfgnode.hpp"
-#include "opto/chaitin.hpp"
-#include "opto/convertnode.hpp"
-#include "opto/divnode.hpp"
-#include "opto/intrinsicnode.hpp"
-#include "opto/locknode.hpp"
-#include "opto/loopnode.hpp"
-#include "opto/machnode.hpp"
-#include "opto/matcher.hpp"
-#include "opto/mathexactnode.hpp"
-#include "opto/movenode.hpp"
-#include "opto/mulnode.hpp"
-#include "opto/narrowptrnode.hpp"
-#include "opto/opaquenode.hpp"
 #include "opto/optoreg.hpp"
-#include "opto/parse.hpp"
-#include "opto/phaseX.hpp"
-#include "opto/regalloc.hpp"
-#include "opto/rootnode.hpp"
-#include "opto/subnode.hpp"
-#include "opto/vectornode.hpp"
 #endif // COMPILER2
 
 #include CPU_HEADER(vmStructs)
 #include OS_HEADER(vmStructs)
-#include OS_CPU_HEADER(vmStructs)
 
 // Note: the cross-product of (c1, c2, product, nonproduct, ...),
 // (nonstatic, static), and (unchecked, checked) has not been taken.
@@ -183,11 +147,7 @@
                    volatile_static_field,                                                                                            \
                    unchecked_nonstatic_field,                                                                                        \
                    volatile_nonstatic_field,                                                                                         \
-                   nonproduct_nonstatic_field,                                                                                       \
-                   c1_nonstatic_field,                                                                                               \
-                   c2_nonstatic_field,                                                                                               \
-                   unchecked_c1_static_field,                                                                                        \
-                   unchecked_c2_static_field)                                                                                        \
+                   nonproduct_nonstatic_field)                                                                                       \
                                                                                                                                      \
   /*************/                                                                                                                    \
   /* GC fields */                                                                                                                    \
@@ -262,7 +222,6 @@
   nonstatic_field(Klass,                       _secondary_supers,                             Array<Klass*>*)                        \
   nonstatic_field(Klass,                       _primary_supers[0],                            Klass*)                                \
   nonstatic_field(Klass,                       _java_mirror,                                  OopHandle)                             \
-  nonstatic_field(Klass,                       _modifier_flags,                               u2)                                    \
   nonstatic_field(Klass,                       _super,                                        Klass*)                                \
   volatile_nonstatic_field(Klass,              _subklass,                                     Klass*)                                \
   nonstatic_field(Klass,                       _layout_helper,                                jint)                                  \
@@ -441,7 +400,7 @@
      volatile_static_field(PerfMemory,         _initialized,                                  int)                                   \
                                                                                                                                      \
   /********************/                                                                                                             \
-  /* SystemDictionary */                                                                                                             \
+  /* VM Classes       */                                                                                                             \
   /********************/                                                                                                             \
                                                                                                                                      \
      static_field(vmClasses,                   VM_CLASS_AT(Object_klass),                        InstanceKlass*)                     \
@@ -550,6 +509,7 @@
                                                                                                                                      \
   nonstatic_field(CodeBlob,                    _name,                                         const char*)                           \
   nonstatic_field(CodeBlob,                    _size,                                         int)                                   \
+  nonstatic_field(CodeBlob,                    _kind,                                         CodeBlobKind)                          \
   nonstatic_field(CodeBlob,                    _header_size,                                  u2)                                    \
   nonstatic_field(CodeBlob,                    _relocation_size,                              int)                                   \
   nonstatic_field(CodeBlob,                    _content_offset,                               int)                                   \
@@ -559,6 +519,8 @@
   nonstatic_field(CodeBlob,                    _frame_size,                                   int)                                   \
   nonstatic_field(CodeBlob,                    _oop_maps,                                     ImmutableOopMapSet*)                   \
   nonstatic_field(CodeBlob,                    _caller_must_gc_arguments,                     bool)                                  \
+  nonstatic_field(CodeBlob,                    _mutable_data,                                 address)                               \
+  nonstatic_field(CodeBlob,                    _mutable_data_size,                            int)                                   \
                                                                                                                                      \
   nonstatic_field(DeoptimizationBlob,          _unpack_offset,                                int)                                   \
                                                                                                                                      \
@@ -581,8 +543,7 @@
   nonstatic_field(nmethod,                     _deopt_mh_handler_offset,                      int)                                   \
   nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \
   nonstatic_field(nmethod,                     _stub_offset,                                  int)                                   \
-  nonstatic_field(nmethod,                     _metadata_offset,                              u2)                                    \
-  nonstatic_field(nmethod,                     _scopes_pcs_offset,                            int)                                    \
+  nonstatic_field(nmethod,                     _scopes_pcs_offset,                            int)                                   \
   nonstatic_field(nmethod,                     _scopes_data_offset,                           int)                                   \
   nonstatic_field(nmethod,                     _handler_table_offset,                         u2)                                    \
   nonstatic_field(nmethod,                     _nul_chk_table_offset,                         u2)                                    \
@@ -594,8 +555,6 @@
   nonstatic_field(nmethod,                     _compile_id,                                   int)                                   \
   nonstatic_field(nmethod,                     _comp_level,                                   CompLevel)                             \
   volatile_nonstatic_field(nmethod,            _exception_cache,                              ExceptionCache*)                       \
-                                                                                                                                     \
-  unchecked_c2_static_field(Deoptimization,    _trap_reason_name,                             void*)                                 \
                                                                                                                                      \
   nonstatic_field(Deoptimization::UnrollBlock, _size_of_deoptimized_frame,                    int)                                   \
   nonstatic_field(Deoptimization::UnrollBlock, _caller_adjustment,                            int)                                   \
@@ -666,8 +625,6 @@
   nonstatic_field(JavaThread,                  _monitor_owner_id,                             int64_t)                               \
   volatile_nonstatic_field(JavaThread,         _terminated,                                   JavaThread::TerminatedTypes)           \
   nonstatic_field(Thread,                      _osthread,                                     OSThread*)                             \
-  nonstatic_field(Thread,                      _resource_area,                                ResourceArea*)                         \
-  nonstatic_field(CompilerThread,              _env,                                          ciEnv*)                                \
                                                                                                                                      \
   /************/                                                                                                                     \
   /* OSThread */                                                                                                                     \
@@ -710,75 +667,6 @@
      static_field(VMRegImpl,                   regName[0],                                    const char*)                           \
      static_field(VMRegImpl,                   stack0,                                        VMReg)                                 \
                                                                                                                                      \
-  /*******************************/                                                                                                  \
-  /* Runtime1 (NOTE: incomplete) */                                                                                                  \
-  /*******************************/                                                                                                  \
-                                                                                                                                     \
-  unchecked_c1_static_field(Runtime1,          _blobs,                                 sizeof(Runtime1::_blobs)) /* NOTE: no type */ \
-                                                                                                                                     \
-  /**************/                                                                                                                   \
-  /* CI */                                                                                                                           \
-  /************/                                                                                                                     \
-                                                                                                                                     \
-  nonstatic_field(ciEnv,                       _compiler_data,                                void*)                                 \
-  nonstatic_field(ciEnv,                       _factory,                                      ciObjectFactory*)                      \
-  nonstatic_field(ciEnv,                       _dependencies,                                 Dependencies*)                         \
-  nonstatic_field(ciEnv,                       _task,                                         CompileTask*)                          \
-  nonstatic_field(ciEnv,                       _arena,                                        Arena*)                                \
-                                                                                                                                     \
-  nonstatic_field(ciBaseObject,                _ident,                                        uint)                                  \
-                                                                                                                                     \
-  nonstatic_field(ciObject,                    _handle,                                       jobject)                               \
-  nonstatic_field(ciObject,                    _klass,                                        ciKlass*)                              \
-                                                                                                                                     \
-  nonstatic_field(ciMetadata,                  _metadata,                                     Metadata*)                             \
-                                                                                                                                     \
-  nonstatic_field(ciSymbol,                    _symbol,                                       Symbol*)                               \
-                                                                                                                                     \
-  nonstatic_field(ciType,                      _basic_type,                                   BasicType)                             \
-                                                                                                                                     \
-  nonstatic_field(ciKlass,                     _name,                                         ciSymbol*)                             \
-                                                                                                                                     \
-  nonstatic_field(ciArrayKlass,                _dimension,                                    jint)                                  \
-                                                                                                                                     \
-  nonstatic_field(ciObjArrayKlass,             _element_klass,                                ciKlass*)                              \
-  nonstatic_field(ciObjArrayKlass,             _base_element_klass,                           ciKlass*)                              \
-                                                                                                                                     \
-  nonstatic_field(ciInstanceKlass,             _init_state,                                   InstanceKlass::ClassState)             \
-  nonstatic_field(ciInstanceKlass,             _is_shared,                                    bool)                                  \
-                                                                                                                                     \
-  nonstatic_field(ciMethod,                    _interpreter_invocation_count,                 int)                                   \
-  nonstatic_field(ciMethod,                    _interpreter_throwout_count,                   int)                                   \
-  nonstatic_field(ciMethod,                    _inline_instructions_size,                     int)                                   \
-                                                                                                                                     \
-  nonstatic_field(ciMethodData,                _data_size,                                    int)                                   \
-  nonstatic_field(ciMethodData,                _state,                                        u_char)                                \
-  nonstatic_field(ciMethodData,                _extra_data_size,                              int)                                   \
-  nonstatic_field(ciMethodData,                _data,                                         intptr_t*)                             \
-  nonstatic_field(ciMethodData,                _hint_di,                                      int)                                   \
-  nonstatic_field(ciMethodData,                _eflags,                                       intx)                                  \
-  nonstatic_field(ciMethodData,                _arg_local,                                    intx)                                  \
-  nonstatic_field(ciMethodData,                _arg_stack,                                    intx)                                  \
-  nonstatic_field(ciMethodData,                _arg_returned,                                 intx)                                  \
-  nonstatic_field(ciMethodData,                _orig,                                         MethodData::CompilerCounters)          \
-                                                                                                                                     \
-  nonstatic_field(ciField,                     _holder,                                       ciInstanceKlass*)                      \
-  nonstatic_field(ciField,                     _name,                                         ciSymbol*)                             \
-  nonstatic_field(ciField,                     _signature,                                    ciSymbol*)                             \
-  nonstatic_field(ciField,                     _offset,                                       int)                                   \
-  nonstatic_field(ciField,                     _is_constant,                                  bool)                                  \
-  nonstatic_field(ciField,                     _constant_value,                               ciConstant)                            \
-                                                                                                                                     \
-  nonstatic_field(ciObjectFactory,             _ci_metadata,                                  GrowableArray<ciMetadata*>)            \
-  nonstatic_field(ciObjectFactory,             _symbols,                                      GrowableArray<ciSymbol*>)              \
-                                                                                                                                     \
-  nonstatic_field(ciConstant,                  _type,                                         BasicType)                             \
-  nonstatic_field(ciConstant,                  _value._int,                                   jint)                                  \
-  nonstatic_field(ciConstant,                  _value._long,                                  jlong)                                 \
-  nonstatic_field(ciConstant,                  _value._float,                                 jfloat)                                \
-  nonstatic_field(ciConstant,                  _value._double,                                jdouble)                               \
-  nonstatic_field(ciConstant,                  _value._object,                                ciObject*)                             \
-                                                                                                                                     \
   /************/                                                                                                                     \
   /* Monitors */                                                                                                                     \
   /************/                                                                                                                     \
@@ -796,123 +684,6 @@
   nonstatic_field(BasicObjectLock,             _obj,                                          oop)                                   \
   static_field(ObjectSynchronizer,             _in_use_list,                                  MonitorList)                           \
   volatile_nonstatic_field(MonitorList,        _head,                                         ObjectMonitor*)                        \
-                                                                                                                                     \
-  /*********************/                                                                                                            \
-  /* Matcher (C2 only) */                                                                                                            \
-  /*********************/                                                                                                            \
-                                                                                                                                     \
-  unchecked_c2_static_field(Matcher,           _regEncode,                          sizeof(Matcher::_regEncode)) /* NOTE: no type */ \
-                                                                                                                                     \
-  c2_nonstatic_field(Node,                     _in,                                           Node**)                                \
-  c2_nonstatic_field(Node,                     _out,                                          Node**)                                \
-  c2_nonstatic_field(Node,                     _cnt,                                          node_idx_t)                            \
-  c2_nonstatic_field(Node,                     _max,                                          node_idx_t)                            \
-  c2_nonstatic_field(Node,                     _outcnt,                                       node_idx_t)                            \
-  c2_nonstatic_field(Node,                     _outmax,                                       node_idx_t)                            \
-  c2_nonstatic_field(Node,                     _idx,                                          const node_idx_t)                      \
-  c2_nonstatic_field(Node,                     _class_id,                                     juint)                                 \
-  c2_nonstatic_field(Node,                     _flags,                                        juint)                                 \
-                                                                                                                                     \
-  c2_nonstatic_field(Compile,                  _root,                                         RootNode*)                             \
-  c2_nonstatic_field(Compile,                  _unique,                                       uint)                                  \
-  c2_nonstatic_field(Compile,                  _entry_bci,                                    int)                                   \
-  c2_nonstatic_field(Compile,                  _top,                                          Node*)                                 \
-  c2_nonstatic_field(Compile,                  _cfg,                                          PhaseCFG*)                             \
-  c2_nonstatic_field(Compile,                  _regalloc,                                     PhaseRegAlloc*)                        \
-  c2_nonstatic_field(Compile,                  _method,                                       ciMethod*)                             \
-  c2_nonstatic_field(Compile,                  _compile_id,                                   const int)                             \
-  c2_nonstatic_field(Compile,                  _options,                                      const Options)                         \
-  c2_nonstatic_field(Compile,                  _ilt,                                          InlineTree*)                           \
-                                                                                                                                     \
-  c2_nonstatic_field(Options,                  _subsume_loads,                                const bool)                            \
-  c2_nonstatic_field(Options,                  _do_escape_analysis,                           const bool)                            \
-  c2_nonstatic_field(Options,                  _eliminate_boxing,                             const bool)                            \
-  c2_nonstatic_field(Options,                  _do_locks_coarsening,                          const bool)                            \
-  c2_nonstatic_field(Options,                  _install_code,                                 const bool)                            \
-                                                                                                                                     \
-  c2_nonstatic_field(InlineTree,               _caller_jvms,                                  JVMState*)                             \
-  c2_nonstatic_field(InlineTree,               _method,                                       ciMethod*)                             \
-  c2_nonstatic_field(InlineTree,               _caller_tree,                                  InlineTree*)                           \
-  c2_nonstatic_field(InlineTree,               _subtrees,                                     GrowableArray<InlineTree*>)            \
-                                                                                                                                     \
-  c2_nonstatic_field(OptoRegPair,              _first,                                        short)                                 \
-  c2_nonstatic_field(OptoRegPair,              _second,                                       short)                                 \
-                                                                                                                                     \
-  c2_nonstatic_field(JVMState,                 _caller,                                       JVMState*)                             \
-  c2_nonstatic_field(JVMState,                 _depth,                                        uint)                                  \
-  c2_nonstatic_field(JVMState,                 _locoff,                                       uint)                                  \
-  c2_nonstatic_field(JVMState,                 _stkoff,                                       uint)                                  \
-  c2_nonstatic_field(JVMState,                 _monoff,                                       uint)                                  \
-  c2_nonstatic_field(JVMState,                 _scloff,                                       uint)                                  \
-  c2_nonstatic_field(JVMState,                 _endoff,                                       uint)                                  \
-  c2_nonstatic_field(JVMState,                 _sp,                                           uint)                                  \
-  c2_nonstatic_field(JVMState,                 _bci,                                          int)                                   \
-  c2_nonstatic_field(JVMState,                 _method,                                       ciMethod*)                             \
-  c2_nonstatic_field(JVMState,                 _map,                                          SafePointNode*)                        \
-                                                                                                                                     \
-  c2_nonstatic_field(SafePointNode,            _jvms,                                         JVMState* const)                       \
-                                                                                                                                     \
-  c2_nonstatic_field(MachSafePointNode,        _jvms,                                         JVMState*)                             \
-  c2_nonstatic_field(MachSafePointNode,        _jvmadj,                                       uint)                                  \
-                                                                                                                                     \
-  c2_nonstatic_field(MachIfNode,               _prob,                                         jfloat)                                \
-  c2_nonstatic_field(MachIfNode,               _fcnt,                                         jfloat)                                \
-                                                                                                                                     \
-  c2_nonstatic_field(MachJumpNode,             _probs,                                        jfloat*)                               \
-                                                                                                                                     \
-  c2_nonstatic_field(CallNode,                 _entry_point,                                  address)                               \
-                                                                                                                                     \
-  c2_nonstatic_field(CallJavaNode,             _method,                                       ciMethod*)                             \
-                                                                                                                                     \
-  c2_nonstatic_field(CallRuntimeNode,          _name,                                         const char*)                           \
-                                                                                                                                     \
-  c2_nonstatic_field(CallStaticJavaNode,       _name,                                         const char*)                           \
-                                                                                                                                     \
-  c2_nonstatic_field(MachCallJavaNode,         _method,                                       ciMethod*)                             \
-                                                                                                                                     \
-  c2_nonstatic_field(MachCallStaticJavaNode,   _name,                                         const char*)                           \
-                                                                                                                                     \
-  c2_nonstatic_field(MachCallRuntimeNode,      _name,                                         const char*)                           \
-                                                                                                                                     \
-  c2_nonstatic_field(PhaseCFG,                 _number_of_blocks,                             uint)                                  \
-  c2_nonstatic_field(PhaseCFG,                 _blocks,                                       Block_List)                            \
-  c2_nonstatic_field(PhaseCFG,                 _node_to_block_mapping,                        Block_Array)                           \
-  c2_nonstatic_field(PhaseCFG,                 _root_block,                                   Block*)                                \
-                                                                                                                                     \
-  c2_nonstatic_field(PhaseRegAlloc,            _node_regs,                                    OptoRegPair*)                          \
-  c2_nonstatic_field(PhaseRegAlloc,            _node_regs_max_index,                          uint)                                  \
-  c2_nonstatic_field(PhaseRegAlloc,            _framesize,                                    uint)                                  \
-  c2_nonstatic_field(PhaseRegAlloc,            _max_reg,                                      OptoReg::Name)                         \
-                                                                                                                                     \
-  c2_nonstatic_field(PhaseChaitin,             _trip_cnt,                                     int)                                   \
-  c2_nonstatic_field(PhaseChaitin,             _alternate,                                    int)                                   \
-  c2_nonstatic_field(PhaseChaitin,             _lo_degree,                                    uint)                                  \
-  c2_nonstatic_field(PhaseChaitin,             _lo_stk_degree,                                uint)                                  \
-  c2_nonstatic_field(PhaseChaitin,             _hi_degree,                                    uint)                                  \
-  c2_nonstatic_field(PhaseChaitin,             _simplified,                                   uint)                                  \
-                                                                                                                                     \
-  c2_nonstatic_field(Block,                    _nodes,                                        Node_List)                             \
-  c2_nonstatic_field(Block,                    _succs,                                        Block_Array)                           \
-  c2_nonstatic_field(Block,                    _num_succs,                                    uint)                                  \
-  c2_nonstatic_field(Block,                    _pre_order,                                    uint)                                  \
-  c2_nonstatic_field(Block,                    _dom_depth,                                    uint)                                  \
-  c2_nonstatic_field(Block,                    _idom,                                         Block*)                                \
-  c2_nonstatic_field(Block,                    _freq,                                         jdouble)                               \
-                                                                                                                                     \
-  c2_nonstatic_field(CFGElement,               _freq,                                         jdouble)                               \
-                                                                                                                                     \
-  c2_nonstatic_field(Block_List,               _cnt,                                          uint)                                  \
-                                                                                                                                     \
-  c2_nonstatic_field(Block_Array,              _size,                                         uint)                                  \
-  c2_nonstatic_field(Block_Array,              _blocks,                                       Block**)                               \
-  c2_nonstatic_field(Block_Array,              _arena,                                        Arena*)                                \
-                                                                                                                                     \
-  c2_nonstatic_field(Node_List,                _cnt,                                          uint)                                  \
-                                                                                                                                     \
-  c2_nonstatic_field(Node_Array,               _max,                                          uint)                                  \
-  c2_nonstatic_field(Node_Array,               _nodes,                                        Node**)                                \
-  c2_nonstatic_field(Node_Array,               _a,                                            Arena*)                                \
-                                                                                                                                     \
                                                                                                                                      \
   /*********************/                                                                                                            \
   /* -XX flags         */                                                                                                            \
@@ -1063,10 +834,7 @@
                  declare_toplevel_type,                                   \
                  declare_oop_type,                                        \
                  declare_integer_type,                                    \
-                 declare_unsigned_integer_type,                           \
-                 declare_c1_toplevel_type,                                \
-                 declare_c2_type,                                         \
-                 declare_c2_toplevel_type)                                \
+                 declare_unsigned_integer_type)                           \
                                                                           \
   /*************************************************************/         \
   /* Java primitive types -- required by the SA implementation */         \
@@ -1230,17 +998,14 @@
   declare_type(PerfData, CHeapObj<mtInternal>)                            \
                                                                           \
   /********************/                                                  \
-  /* SystemDictionary */                                                  \
+  /* VM Classes       */                                                  \
   /********************/                                                  \
                                                                           \
-  declare_toplevel_type(SystemDictionary)                                 \
   declare_toplevel_type(vmClasses)                                        \
   declare_toplevel_type(vmSymbols)                                        \
                                                                           \
   declare_toplevel_type(GrowableArrayBase)                                \
   declare_toplevel_type(GrowableArray<int>)                               \
-  declare_toplevel_type(Arena)                                            \
-    declare_type(ResourceArea, Arena)                                     \
                                                                           \
   /***********************************************************/           \
   /* Thread hierarchy (needed for run-time type information) */           \
@@ -1311,8 +1076,6 @@
   /* CodeBlob hierarchy (needed for run-time type information) */         \
   /*************************************************************/         \
                                                                           \
-  declare_toplevel_type(SharedRuntime)                                    \
-                                                                          \
   declare_toplevel_type(CodeBlob)                                         \
   declare_type(RuntimeBlob,              CodeBlob)                        \
   declare_type(BufferBlob,               RuntimeBlob)                     \
@@ -1325,8 +1088,8 @@
   declare_type(UpcallStub,               RuntimeBlob)                     \
   declare_type(SafepointBlob,            SingletonBlob)                   \
   declare_type(DeoptimizationBlob,       SingletonBlob)                   \
-  declare_c2_type(ExceptionBlob,         SingletonBlob)                   \
-  declare_c2_type(UncommonTrapBlob,      RuntimeBlob)                     \
+  COMPILER2_PRESENT(declare_type(ExceptionBlob,    SingletonBlob))        \
+  COMPILER2_PRESENT(declare_type(UncommonTrapBlob, RuntimeBlob))          \
                                                                           \
   /***************************************/                               \
   /* PcDesc and other compiled code info */                               \
@@ -1374,12 +1137,6 @@
                                                                           \
   declare_toplevel_type(OopStorage)                                       \
                                                                           \
-  /**********************/                                                \
-  /* Runtime1 (C1 only) */                                                \
-  /**********************/                                                \
-                                                                          \
-  declare_c1_toplevel_type(Runtime1)                                      \
-                                                                          \
   /************/                                                          \
   /* Monitors */                                                          \
   /************/                                                          \
@@ -1389,466 +1146,6 @@
   declare_toplevel_type(ObjectSynchronizer)                               \
   declare_toplevel_type(BasicLock)                                        \
   declare_toplevel_type(BasicObjectLock)                                  \
-                                                                          \
-  /*********************/                                                 \
-  /* Matcher (C2 only) */                                                 \
-  /*********************/                                                 \
-                                                                          \
-  declare_c2_toplevel_type(Matcher)                                       \
-  declare_c2_toplevel_type(Compile)                                       \
-  declare_c2_toplevel_type(Options)                                       \
-  declare_c2_toplevel_type(InlineTree)                                    \
-  declare_c2_toplevel_type(OptoRegPair)                                   \
-  declare_c2_toplevel_type(JVMState)                                      \
-  declare_c2_toplevel_type(Phase)                                         \
-    declare_c2_type(PhaseCFG, Phase)                                      \
-    declare_c2_type(PhaseRegAlloc, Phase)                                 \
-    declare_c2_type(PhaseChaitin, PhaseRegAlloc)                          \
-  declare_c2_toplevel_type(CFGElement)                                    \
-    declare_c2_type(Block, CFGElement)                                    \
-  declare_c2_toplevel_type(Block_Array)                                   \
-    declare_c2_type(Block_List, Block_Array)                              \
-  declare_c2_toplevel_type(Node_Array)                                    \
-  declare_c2_type(Node_List, Node_Array)                                  \
-  declare_c2_type(Unique_Node_List, Node_List)                            \
-  declare_c2_toplevel_type(Node)                                          \
-  declare_c2_type(AddNode, Node)                                          \
-  declare_c2_type(AddINode, AddNode)                                      \
-  declare_c2_type(AddLNode, AddNode)                                      \
-  declare_c2_type(AddFNode, AddNode)                                      \
-  declare_c2_type(AddDNode, AddNode)                                      \
-  declare_c2_type(AddPNode, Node)                                         \
-  declare_c2_type(OrINode, AddNode)                                       \
-  declare_c2_type(OrLNode, AddNode)                                       \
-  declare_c2_type(XorINode, AddNode)                                      \
-  declare_c2_type(XorLNode, AddNode)                                      \
-  declare_c2_type(MaxNode, AddNode)                                       \
-  declare_c2_type(MaxINode, MaxNode)                                      \
-  declare_c2_type(MinINode, MaxNode)                                      \
-  declare_c2_type(MaxLNode, MaxNode)                                      \
-  declare_c2_type(MinLNode, MaxNode)                                      \
-  declare_c2_type(MaxFNode, MaxNode)                                      \
-  declare_c2_type(MinFNode, MaxNode)                                      \
-  declare_c2_type(MaxDNode, MaxNode)                                      \
-  declare_c2_type(MinDNode, MaxNode)                                      \
-  declare_c2_type(StartNode, MultiNode)                                   \
-  declare_c2_type(StartOSRNode, StartNode)                                \
-  declare_c2_type(ParmNode, ProjNode)                                     \
-  declare_c2_type(ReturnNode, Node)                                       \
-  declare_c2_type(RethrowNode, Node)                                      \
-  declare_c2_type(TailCallNode, ReturnNode)                               \
-  declare_c2_type(TailJumpNode, ReturnNode)                               \
-  declare_c2_type(ForwardExceptionNode, ReturnNode)                       \
-  declare_c2_type(SafePointNode, MultiNode)                               \
-  declare_c2_type(CallNode, SafePointNode)                                \
-  declare_c2_type(CallJavaNode, CallNode)                                 \
-  declare_c2_type(CallStaticJavaNode, CallJavaNode)                       \
-  declare_c2_type(CallDynamicJavaNode, CallJavaNode)                      \
-  declare_c2_type(CallRuntimeNode, CallNode)                              \
-  declare_c2_type(CallLeafNode, CallRuntimeNode)                          \
-  declare_c2_type(CallLeafNoFPNode, CallLeafNode)                         \
-  declare_c2_type(CallLeafVectorNode, CallLeafNode)                       \
-  declare_c2_type(AllocateNode, CallNode)                                 \
-  declare_c2_type(AllocateArrayNode, AllocateNode)                        \
-  declare_c2_type(LockNode, AbstractLockNode)                             \
-  declare_c2_type(UnlockNode, AbstractLockNode)                           \
-  declare_c2_type(FastLockNode, CmpNode)                                  \
-  declare_c2_type(FastUnlockNode, CmpNode)                                \
-  declare_c2_type(RegionNode, Node)                                       \
-  declare_c2_type(JProjNode, ProjNode)                                    \
-  declare_c2_type(PhiNode, TypeNode)                                      \
-  declare_c2_type(GotoNode, Node)                                         \
-  declare_c2_type(CProjNode, ProjNode)                                    \
-  declare_c2_type(MultiBranchNode, MultiNode)                             \
-  declare_c2_type(IfNode, MultiBranchNode)                                \
-  declare_c2_type(IfTrueNode, CProjNode)                                  \
-  declare_c2_type(IfFalseNode, CProjNode)                                 \
-  declare_c2_type(PCTableNode, MultiBranchNode)                           \
-  declare_c2_type(JumpNode, PCTableNode)                                  \
-  declare_c2_type(JumpProjNode, JProjNode)                                \
-  declare_c2_type(CatchNode, PCTableNode)                                 \
-  declare_c2_type(CatchProjNode, CProjNode)                               \
-  declare_c2_type(CreateExNode, TypeNode)                                 \
-  declare_c2_type(ClearArrayNode, Node)                                   \
-  declare_c2_type(NeverBranchNode, MultiBranchNode)                       \
-  declare_c2_type(ConNode, TypeNode)                                      \
-  declare_c2_type(ConINode, ConNode)                                      \
-  declare_c2_type(ConPNode, ConNode)                                      \
-  declare_c2_type(ConNNode, ConNode)                                      \
-  declare_c2_type(ConLNode, ConNode)                                      \
-  declare_c2_type(ConFNode, ConNode)                                      \
-  declare_c2_type(ConDNode, ConNode)                                      \
-  declare_c2_type(BinaryNode, Node)                                       \
-  declare_c2_type(CMoveNode, TypeNode)                                    \
-  declare_c2_type(CMoveDNode, CMoveNode)                                  \
-  declare_c2_type(CMoveFNode, CMoveNode)                                  \
-  declare_c2_type(CMoveINode, CMoveNode)                                  \
-  declare_c2_type(CMoveLNode, CMoveNode)                                  \
-  declare_c2_type(CMovePNode, CMoveNode)                                  \
-  declare_c2_type(CMoveNNode, CMoveNode)                                  \
-  declare_c2_type(EncodePNode, TypeNode)                                  \
-  declare_c2_type(DecodeNNode, TypeNode)                                  \
-  declare_c2_type(EncodePKlassNode, TypeNode)                             \
-  declare_c2_type(DecodeNKlassNode, TypeNode)                             \
-  declare_c2_type(ConstraintCastNode, TypeNode)                           \
-  declare_c2_type(CastIINode, ConstraintCastNode)                         \
-  declare_c2_type(CastPPNode, ConstraintCastNode)                         \
-  declare_c2_type(CheckCastPPNode, TypeNode)                              \
-  declare_c2_type(Conv2BNode, Node)                                       \
-  declare_c2_type(ConvertNode, TypeNode)                                  \
-  declare_c2_type(ConvD2FNode, Node)                                      \
-  declare_c2_type(ConvD2INode, Node)                                      \
-  declare_c2_type(ConvD2LNode, Node)                                      \
-  declare_c2_type(ConvF2DNode, Node)                                      \
-  declare_c2_type(ConvF2INode, Node)                                      \
-  declare_c2_type(ConvF2LNode, Node)                                      \
-  declare_c2_type(ConvI2DNode, Node)                                      \
-  declare_c2_type(ConvI2FNode, Node)                                      \
-  declare_c2_type(ConvI2LNode, TypeNode)                                  \
-  declare_c2_type(ConvL2DNode, Node)                                      \
-  declare_c2_type(ConvL2FNode, Node)                                      \
-  declare_c2_type(ConvL2INode, Node)                                      \
-  declare_c2_type(CastX2PNode, Node)                                      \
-  declare_c2_type(CastP2XNode, Node)                                      \
-  declare_c2_type(MemBarNode, MultiNode)                                  \
-  declare_c2_type(MemBarAcquireNode, MemBarNode)                          \
-  declare_c2_type(MemBarReleaseNode, MemBarNode)                          \
-  declare_c2_type(LoadFenceNode, MemBarNode)                              \
-  declare_c2_type(StoreFenceNode, MemBarNode)                             \
-  declare_c2_type(MemBarVolatileNode, MemBarNode)                         \
-  declare_c2_type(MemBarCPUOrderNode, MemBarNode)                         \
-  declare_c2_type(OnSpinWaitNode, MemBarNode)                             \
-  declare_c2_type(BlackholeNode, MultiNode)                               \
-  declare_c2_type(InitializeNode, MemBarNode)                             \
-  declare_c2_type(ThreadLocalNode, Node)                                  \
-  declare_c2_type(Opaque1Node, Node)                                      \
-  declare_c2_type(PartialSubtypeCheckNode, Node)                          \
-  declare_c2_type(MoveI2FNode, Node)                                      \
-  declare_c2_type(MoveL2DNode, Node)                                      \
-  declare_c2_type(MoveF2INode, Node)                                      \
-  declare_c2_type(MoveD2LNode, Node)                                      \
-  declare_c2_type(DivINode, Node)                                         \
-  declare_c2_type(DivLNode, Node)                                         \
-  declare_c2_type(DivFNode, Node)                                         \
-  declare_c2_type(DivDNode, Node)                                         \
-  declare_c2_type(UDivINode, Node)                                        \
-  declare_c2_type(UDivLNode, Node)                                        \
-  declare_c2_type(ModINode, Node)                                         \
-  declare_c2_type(ModLNode, Node)                                         \
-  declare_c2_type(ModFNode, Node)                                         \
-  declare_c2_type(ModDNode, Node)                                         \
-  declare_c2_type(UModINode, Node)                                        \
-  declare_c2_type(UModLNode, Node)                                        \
-  declare_c2_type(DivModNode, MultiNode)                                  \
-  declare_c2_type(DivModINode, DivModNode)                                \
-  declare_c2_type(DivModLNode, DivModNode)                                \
-  declare_c2_type(UDivModINode, DivModNode)                               \
-  declare_c2_type(UDivModLNode, DivModNode)                               \
-  declare_c2_type(BoxLockNode, Node)                                      \
-  declare_c2_type(LoopNode, RegionNode)                                   \
-  declare_c2_type(CountedLoopNode, LoopNode)                              \
-  declare_c2_type(CountedLoopEndNode, IfNode)                             \
-  declare_c2_type(MachNode, Node)                                         \
-  declare_c2_type(MachIdealNode, MachNode)                                \
-  declare_c2_type(MachTypeNode, MachNode)                                 \
-  declare_c2_type(MachBreakpointNode, MachIdealNode)                      \
-  declare_c2_type(MachUEPNode, MachIdealNode)                             \
-  declare_c2_type(MachPrologNode, MachIdealNode)                          \
-  declare_c2_type(MachEpilogNode, MachIdealNode)                          \
-  declare_c2_type(MachNopNode, MachIdealNode)                             \
-  declare_c2_type(MachSpillCopyNode, MachIdealNode)                       \
-  declare_c2_type(MachNullCheckNode, MachIdealNode)                       \
-  declare_c2_type(MachProjNode, ProjNode)                                 \
-  declare_c2_type(MachIfNode, MachNode)                                   \
-  declare_c2_type(MachJumpNode, MachNode)                                 \
-  declare_c2_type(MachFastLockNode, MachNode)                             \
-  declare_c2_type(MachReturnNode, MachNode)                               \
-  declare_c2_type(MachSafePointNode, MachReturnNode)                      \
-  declare_c2_type(MachCallNode, MachSafePointNode)                        \
-  declare_c2_type(MachCallJavaNode, MachCallNode)                         \
-  declare_c2_type(MachCallStaticJavaNode, MachCallJavaNode)               \
-  declare_c2_type(MachCallDynamicJavaNode, MachCallJavaNode)              \
-  declare_c2_type(MachCallRuntimeNode, MachCallNode)                      \
-  declare_c2_type(MachHaltNode, MachReturnNode)                           \
-  declare_c2_type(MachTempNode, MachNode)                                 \
-  declare_c2_type(MemNode, Node)                                          \
-  declare_c2_type(MergeMemNode, Node)                                     \
-  declare_c2_type(LoadNode, MemNode)                                      \
-  declare_c2_type(LoadBNode, LoadNode)                                    \
-  declare_c2_type(LoadUSNode, LoadNode)                                   \
-  declare_c2_type(LoadINode, LoadNode)                                    \
-  declare_c2_type(LoadRangeNode, LoadINode)                               \
-  declare_c2_type(LoadLNode, LoadNode)                                    \
-  declare_c2_type(LoadL_unalignedNode, LoadLNode)                         \
-  declare_c2_type(LoadFNode, LoadNode)                                    \
-  declare_c2_type(LoadDNode, LoadNode)                                    \
-  declare_c2_type(LoadD_unalignedNode, LoadDNode)                         \
-  declare_c2_type(LoadPNode, LoadNode)                                    \
-  declare_c2_type(LoadNNode, LoadNode)                                    \
-  declare_c2_type(LoadKlassNode, LoadPNode)                               \
-  declare_c2_type(LoadNKlassNode, LoadNNode)                              \
-  declare_c2_type(LoadSNode, LoadNode)                                    \
-  declare_c2_type(StoreNode, MemNode)                                     \
-  declare_c2_type(StoreBNode, StoreNode)                                  \
-  declare_c2_type(StoreCNode, StoreNode)                                  \
-  declare_c2_type(StoreINode, StoreNode)                                  \
-  declare_c2_type(StoreLNode, StoreNode)                                  \
-  declare_c2_type(StoreFNode, StoreNode)                                  \
-  declare_c2_type(StoreDNode, StoreNode)                                  \
-  declare_c2_type(StorePNode, StoreNode)                                  \
-  declare_c2_type(StoreNNode, StoreNode)                                  \
-  declare_c2_type(StoreNKlassNode, StoreNode)                             \
-  declare_c2_type(SCMemProjNode, ProjNode)                                \
-  declare_c2_type(LoadStoreNode, Node)                                    \
-  declare_c2_type(CompareAndSwapNode, LoadStoreConditionalNode)           \
-  declare_c2_type(CompareAndSwapBNode, CompareAndSwapNode)                \
-  declare_c2_type(CompareAndSwapSNode, CompareAndSwapNode)                \
-  declare_c2_type(CompareAndSwapLNode, CompareAndSwapNode)                \
-  declare_c2_type(CompareAndSwapINode, CompareAndSwapNode)                \
-  declare_c2_type(CompareAndSwapPNode, CompareAndSwapNode)                \
-  declare_c2_type(CompareAndSwapNNode, CompareAndSwapNode)                \
-  declare_c2_type(WeakCompareAndSwapBNode, CompareAndSwapNode)            \
-  declare_c2_type(WeakCompareAndSwapSNode, CompareAndSwapNode)            \
-  declare_c2_type(WeakCompareAndSwapLNode, CompareAndSwapNode)            \
-  declare_c2_type(WeakCompareAndSwapINode, CompareAndSwapNode)            \
-  declare_c2_type(WeakCompareAndSwapPNode, CompareAndSwapNode)            \
-  declare_c2_type(WeakCompareAndSwapNNode, CompareAndSwapNode)            \
-  declare_c2_type(CompareAndExchangeNode, LoadStoreNode)                  \
-  declare_c2_type(CompareAndExchangeBNode, CompareAndExchangeNode)        \
-  declare_c2_type(CompareAndExchangeSNode, CompareAndExchangeNode)        \
-  declare_c2_type(CompareAndExchangeLNode, CompareAndExchangeNode)        \
-  declare_c2_type(CompareAndExchangeINode, CompareAndExchangeNode)        \
-  declare_c2_type(CompareAndExchangePNode, CompareAndExchangeNode)        \
-  declare_c2_type(CompareAndExchangeNNode, CompareAndExchangeNode)        \
-  declare_c2_type(MulNode, Node)                                          \
-  declare_c2_type(MulINode, MulNode)                                      \
-  declare_c2_type(MulLNode, MulNode)                                      \
-  declare_c2_type(MulFNode, MulNode)                                      \
-  declare_c2_type(MulDNode, MulNode)                                      \
-  declare_c2_type(MulHiLNode, Node)                                       \
-  declare_c2_type(UMulHiLNode, Node)                                      \
-  declare_c2_type(AndINode, MulINode)                                     \
-  declare_c2_type(AndLNode, MulLNode)                                     \
-  declare_c2_type(LShiftINode, Node)                                      \
-  declare_c2_type(LShiftLNode, Node)                                      \
-  declare_c2_type(RShiftINode, Node)                                      \
-  declare_c2_type(RShiftLNode, Node)                                      \
-  declare_c2_type(URShiftINode, Node)                                     \
-  declare_c2_type(URShiftLNode, Node)                                     \
-  declare_c2_type(MultiNode, Node)                                        \
-  declare_c2_type(ProjNode, Node)                                         \
-  declare_c2_type(TypeNode, Node)                                         \
-  declare_c2_type(RootNode, LoopNode)                                     \
-  declare_c2_type(HaltNode, Node)                                         \
-  declare_c2_type(SubNode, Node)                                          \
-  declare_c2_type(SubINode, SubNode)                                      \
-  declare_c2_type(SubLNode, SubNode)                                      \
-  declare_c2_type(SubFPNode, SubNode)                                     \
-  declare_c2_type(SubFNode, SubFPNode)                                    \
-  declare_c2_type(SubDNode, SubFPNode)                                    \
-  declare_c2_type(CmpNode, SubNode)                                       \
-  declare_c2_type(CmpINode, CmpNode)                                      \
-  declare_c2_type(CmpUNode, CmpNode)                                      \
-  declare_c2_type(CmpU3Node, CmpUNode)                                    \
-  declare_c2_type(CmpPNode, CmpNode)                                      \
-  declare_c2_type(CmpNNode, CmpNode)                                      \
-  declare_c2_type(CmpLNode, CmpNode)                                      \
-  declare_c2_type(CmpULNode, CmpNode)                                     \
-  declare_c2_type(CmpL3Node, CmpLNode)                                    \
-  declare_c2_type(CmpUL3Node, CmpULNode)                                  \
-  declare_c2_type(CmpFNode, CmpNode)                                      \
-  declare_c2_type(CmpF3Node, CmpFNode)                                    \
-  declare_c2_type(CmpDNode, CmpNode)                                      \
-  declare_c2_type(CmpD3Node, CmpDNode)                                    \
-  declare_c2_type(BoolNode, Node)                                         \
-  declare_c2_type(AbsNode, Node)                                          \
-  declare_c2_type(AbsINode, AbsNode)                                      \
-  declare_c2_type(AbsFNode, AbsNode)                                      \
-  declare_c2_type(AbsDNode, AbsNode)                                      \
-  declare_c2_type(CmpLTMaskNode, Node)                                    \
-  declare_c2_type(NegNode, Node)                                          \
-  declare_c2_type(NegINode, NegNode)                                      \
-  declare_c2_type(NegLNode, NegNode)                                      \
-  declare_c2_type(NegFNode, NegNode)                                      \
-  declare_c2_type(NegDNode, NegNode)                                      \
-  declare_c2_type(AtanDNode, Node)                                        \
-  declare_c2_type(SqrtFNode, Node)                                        \
-  declare_c2_type(SqrtDNode, Node)                                        \
-  declare_c2_type(ReverseBytesINode, Node)                                \
-  declare_c2_type(ReverseBytesLNode, Node)                                \
-  declare_c2_type(ReductionNode, Node)                                    \
-  declare_c2_type(VectorNode, Node)                                       \
-  declare_c2_type(AbsVFNode, VectorNode)                                  \
-  declare_c2_type(AbsVDNode, VectorNode)                                  \
-  declare_c2_type(AbsVBNode, VectorNode)                                  \
-  declare_c2_type(AbsVSNode, VectorNode)                                  \
-  declare_c2_type(AbsVINode, VectorNode)                                  \
-  declare_c2_type(AbsVLNode, VectorNode)                                  \
-  declare_c2_type(AddVBNode, VectorNode)                                  \
-  declare_c2_type(AddVSNode, VectorNode)                                  \
-  declare_c2_type(AddVINode, VectorNode)                                  \
-  declare_c2_type(AddReductionVINode, ReductionNode)                      \
-  declare_c2_type(AddVLNode, VectorNode)                                  \
-  declare_c2_type(AddReductionVLNode, ReductionNode)                      \
-  declare_c2_type(AddVFNode, VectorNode)                                  \
-  declare_c2_type(AddReductionVFNode, ReductionNode)                      \
-  declare_c2_type(AddVDNode, VectorNode)                                  \
-  declare_c2_type(AddReductionVDNode, ReductionNode)                      \
-  declare_c2_type(SubVBNode, VectorNode)                                  \
-  declare_c2_type(SubVSNode, VectorNode)                                  \
-  declare_c2_type(SubVINode, VectorNode)                                  \
-  declare_c2_type(SubVLNode, VectorNode)                                  \
-  declare_c2_type(SubVFNode, VectorNode)                                  \
-  declare_c2_type(SubVDNode, VectorNode)                                  \
-  declare_c2_type(MulVBNode, VectorNode)                                  \
-  declare_c2_type(MulVSNode, VectorNode)                                  \
-  declare_c2_type(MulVLNode, VectorNode)                                  \
-  declare_c2_type(MulReductionVLNode, ReductionNode)                      \
-  declare_c2_type(MulVINode, VectorNode)                                  \
-  declare_c2_type(MulReductionVINode, ReductionNode)                      \
-  declare_c2_type(MulVFNode, VectorNode)                                  \
-  declare_c2_type(MulReductionVFNode, ReductionNode)                      \
-  declare_c2_type(MulVDNode, VectorNode)                                  \
-  declare_c2_type(NegVNode, VectorNode)                                   \
-  declare_c2_type(NegVINode, NegVNode)                                    \
-  declare_c2_type(NegVLNode, NegVNode)                                    \
-  declare_c2_type(NegVFNode, NegVNode)                                    \
-  declare_c2_type(NegVDNode, NegVNode)                                    \
-  declare_c2_type(FmaVDNode, VectorNode)                                  \
-  declare_c2_type(FmaVFNode, VectorNode)                                  \
-  declare_c2_type(CompressVNode, VectorNode)                              \
-  declare_c2_type(CompressMNode, VectorNode)                              \
-  declare_c2_type(ExpandVNode, VectorNode)                                \
-  declare_c2_type(CompressBitsVNode, VectorNode)                          \
-  declare_c2_type(ExpandBitsVNode, VectorNode)                            \
-  declare_c2_type(MulReductionVDNode, ReductionNode)                      \
-  declare_c2_type(DivVFNode, VectorNode)                                  \
-  declare_c2_type(DivVDNode, VectorNode)                                  \
-  declare_c2_type(PopCountVINode, VectorNode)                             \
-  declare_c2_type(PopCountVLNode, VectorNode)                             \
-  declare_c2_type(LShiftVBNode, VectorNode)                               \
-  declare_c2_type(LShiftVSNode, VectorNode)                               \
-  declare_c2_type(LShiftVINode, VectorNode)                               \
-  declare_c2_type(LShiftVLNode, VectorNode)                               \
-  declare_c2_type(RShiftVBNode, VectorNode)                               \
-  declare_c2_type(RShiftVSNode, VectorNode)                               \
-  declare_c2_type(RShiftVINode, VectorNode)                               \
-  declare_c2_type(RShiftVLNode, VectorNode)                               \
-  declare_c2_type(URShiftVBNode, VectorNode)                              \
-  declare_c2_type(URShiftVSNode, VectorNode)                              \
-  declare_c2_type(URShiftVINode, VectorNode)                              \
-  declare_c2_type(URShiftVLNode, VectorNode)                              \
-  declare_c2_type(MinReductionVNode, ReductionNode)                       \
-  declare_c2_type(MaxReductionVNode, ReductionNode)                       \
-  declare_c2_type(AndVNode, VectorNode)                                   \
-  declare_c2_type(AndReductionVNode, ReductionNode)                       \
-  declare_c2_type(OrVNode, VectorNode)                                    \
-  declare_c2_type(OrReductionVNode, ReductionNode)                        \
-  declare_c2_type(XorVNode, VectorNode)                                   \
-  declare_c2_type(XorReductionVNode, ReductionNode)                       \
-  declare_c2_type(MaxVNode, VectorNode)                                   \
-  declare_c2_type(MinVNode, VectorNode)                                   \
-  declare_c2_type(LoadVectorNode, LoadNode)                               \
-  declare_c2_type(StoreVectorNode, StoreNode)                             \
-  declare_c2_type(ReplicateNode, VectorNode)                              \
-  declare_c2_type(PopulateIndexNode, VectorNode)                          \
-  declare_c2_type(PackNode, VectorNode)                                   \
-  declare_c2_type(PackBNode, PackNode)                                    \
-  declare_c2_type(PackSNode, PackNode)                                    \
-  declare_c2_type(PackINode, PackNode)                                    \
-  declare_c2_type(PackLNode, PackNode)                                    \
-  declare_c2_type(PackFNode, PackNode)                                    \
-  declare_c2_type(PackDNode, PackNode)                                    \
-  declare_c2_type(Pack2LNode, PackNode)                                   \
-  declare_c2_type(Pack2DNode, PackNode)                                   \
-  declare_c2_type(ExtractNode, Node)                                      \
-  declare_c2_type(ExtractBNode, ExtractNode)                              \
-  declare_c2_type(ExtractUBNode, ExtractNode)                             \
-  declare_c2_type(ExtractCNode, ExtractNode)                              \
-  declare_c2_type(ExtractSNode, ExtractNode)                              \
-  declare_c2_type(ExtractINode, ExtractNode)                              \
-  declare_c2_type(ExtractLNode, ExtractNode)                              \
-  declare_c2_type(ExtractFNode, ExtractNode)                              \
-  declare_c2_type(ExtractDNode, ExtractNode)                              \
-  declare_c2_type(OverflowNode, CmpNode)                                  \
-  declare_c2_type(OverflowINode, OverflowNode)                            \
-  declare_c2_type(OverflowAddINode, OverflowINode)                        \
-  declare_c2_type(OverflowSubINode, OverflowINode)                        \
-  declare_c2_type(OverflowMulINode, OverflowINode)                        \
-  declare_c2_type(OverflowLNode, OverflowNode)                            \
-  declare_c2_type(OverflowAddLNode, OverflowLNode)                        \
-  declare_c2_type(OverflowSubLNode, OverflowLNode)                        \
-  declare_c2_type(OverflowMulLNode, OverflowLNode)                        \
-  declare_c2_type(FmaDNode, Node)                                         \
-  declare_c2_type(FmaFNode, Node)                                         \
-  declare_c2_type(CopySignDNode, Node)                                    \
-  declare_c2_type(CopySignFNode, Node)                                    \
-  declare_c2_type(SignumDNode, Node)                                      \
-  declare_c2_type(SignumFNode, Node)                                      \
-  declare_c2_type(IsInfiniteFNode, Node)                                  \
-  declare_c2_type(IsInfiniteDNode, Node)                                  \
-  declare_c2_type(IsFiniteFNode, Node)                                    \
-  declare_c2_type(IsFiniteDNode, Node)                                    \
-  declare_c2_type(LoadVectorGatherNode, LoadVectorNode)                   \
-  declare_c2_type(StoreVectorScatterNode, StoreVectorNode)                \
-  declare_c2_type(VectorLoadMaskNode, VectorNode)                         \
-  declare_c2_type(VectorLoadShuffleNode, VectorNode)                      \
-  declare_c2_type(VectorStoreMaskNode, VectorNode)                        \
-  declare_c2_type(VectorBlendNode, VectorNode)                            \
-  declare_c2_type(VectorRearrangeNode, VectorNode)                        \
-  declare_c2_type(VectorMaskWrapperNode, VectorNode)                      \
-  declare_c2_type(VectorMaskCmpNode, VectorNode)                          \
-  declare_c2_type(VectorCastB2XNode, VectorNode)                          \
-  declare_c2_type(VectorCastS2XNode, VectorNode)                          \
-  declare_c2_type(VectorCastI2XNode, VectorNode)                          \
-  declare_c2_type(VectorCastL2XNode, VectorNode)                          \
-  declare_c2_type(VectorCastF2XNode, VectorNode)                          \
-  declare_c2_type(VectorCastD2XNode, VectorNode)                          \
-  declare_c2_type(VectorUCastB2XNode, VectorNode)                         \
-  declare_c2_type(VectorUCastS2XNode, VectorNode)                         \
-  declare_c2_type(VectorUCastI2XNode, VectorNode)                         \
-  declare_c2_type(VectorInsertNode, VectorNode)                           \
-  declare_c2_type(VectorUnboxNode, VectorNode)                            \
-  declare_c2_type(VectorReinterpretNode, VectorNode)                      \
-  declare_c2_type(VectorMaskCastNode, VectorNode)                         \
-  declare_c2_type(CountLeadingZerosVNode, VectorNode)                     \
-  declare_c2_type(CountTrailingZerosVNode, VectorNode)                    \
-  declare_c2_type(ReverseBytesVNode, VectorNode)                          \
-  declare_c2_type(ReverseVNode, VectorNode)                               \
-  declare_c2_type(MaskAllNode, VectorNode)                                \
-  declare_c2_type(AndVMaskNode, VectorNode)                               \
-  declare_c2_type(OrVMaskNode, VectorNode)                                \
-  declare_c2_type(XorVMaskNode, VectorNode)                               \
-  declare_c2_type(VectorBoxNode, Node)                                    \
-  declare_c2_type(VectorBoxAllocateNode, CallStaticJavaNode)              \
-  declare_c2_type(VectorTestNode, CmpNode)                                \
-                                                                          \
-  /*********************/                                                 \
-  /* Adapter Blob Entries */                                              \
-  /*********************/                                                 \
-  declare_toplevel_type(AdapterHandlerEntry)                              \
-  declare_toplevel_type(AdapterHandlerEntry*)                             \
-                                                                          \
-  /*********************/                                                 \
-  /* CI */                                                                \
-  /*********************/                                                 \
-  declare_toplevel_type(ciEnv)                                            \
-  declare_toplevel_type(ciObjectFactory)                                  \
-  declare_toplevel_type(ciConstant)                                       \
-  declare_toplevel_type(ciField)                                          \
-  declare_toplevel_type(ciSymbol)                                         \
-  declare_toplevel_type(ciBaseObject)                                     \
-  declare_type(ciObject, ciBaseObject)                                    \
-  declare_type(ciInstance, ciObject)                                      \
-  declare_type(ciMetadata, ciBaseObject)                                  \
-  declare_type(ciMethod, ciMetadata)                                      \
-  declare_type(ciMethodData, ciMetadata)                                  \
-  declare_type(ciType, ciMetadata)                                        \
-  declare_type(ciKlass, ciType)                                           \
-  declare_type(ciInstanceKlass, ciKlass)                                  \
-  declare_type(ciArrayKlass, ciKlass)                                     \
-  declare_type(ciTypeArrayKlass, ciArrayKlass)                            \
-  declare_type(ciObjArrayKlass, ciArrayKlass)                             \
                                                                           \
   /********************/                                                  \
   /* -XX flags        */                                                  \
@@ -1894,7 +1191,6 @@
    declare_integer_type(Location::Type)                                   \
    declare_integer_type(Location::Where)                                  \
    declare_integer_type(JVMFlag::Flags)                                   \
-   COMPILER2_PRESENT(declare_integer_type(OptoReg::Name))                 \
                                                                           \
    declare_toplevel_type(CHeapObj<mtInternal>)                            \
             declare_type(Array<int>, MetaspaceObj)                        \
@@ -1917,6 +1213,7 @@
                                                                           \
   declare_integer_type(CompLevel)                                         \
   declare_integer_type(ByteSize)                                          \
+  declare_integer_type(CodeBlobKind)                                      \
   JVMTI_ONLY(declare_toplevel_type(BreakpointInfo))                       \
   JVMTI_ONLY(declare_toplevel_type(BreakpointInfo*))                      \
   declare_toplevel_type(CodeBlob*)                                        \
@@ -1945,7 +1242,6 @@
   declare_toplevel_type(Mutex)                                            \
   declare_toplevel_type(Mutex*)                                           \
   declare_toplevel_type(nmethod*)                                         \
-  COMPILER2_PRESENT(declare_unsigned_integer_type(node_idx_t))            \
   declare_toplevel_type(ObjectMonitor*)                                   \
   declare_toplevel_type(oop*)                                             \
   declare_toplevel_type(OopMapCache*)                                     \
@@ -1985,10 +1281,7 @@
 
 #define VM_INT_CONSTANTS(declare_constant,                                \
                          declare_constant_with_value,                     \
-                         declare_preprocessor_constant,                   \
-                         declare_c1_constant,                             \
-                         declare_c2_constant,                             \
-                         declare_c2_preprocessor_constant)                \
+                         declare_preprocessor_constant)                   \
                                                                           \
   /****************/                                                      \
   /* GC constants */                                                      \
@@ -2002,6 +1295,7 @@
   /******************/                                                    \
                                                                           \
   declare_preprocessor_constant("ASSERT", DEBUG_ONLY(1) NOT_DEBUG(0))     \
+  declare_preprocessor_constant("COMPILER2", COMPILER2_PRESENT(1) NOT_COMPILER2(0)) \
                                                                           \
   /****************/                                                      \
   /* Object sizes */                                                      \
@@ -2268,6 +1562,7 @@
   declare_constant(Deoptimization::Reason_age)                            \
   declare_constant(Deoptimization::Reason_predicate)                      \
   declare_constant(Deoptimization::Reason_loop_limit_check)               \
+  declare_constant(Deoptimization::Reason_auto_vectorization_check)       \
   declare_constant(Deoptimization::Reason_speculate_class_check)          \
   declare_constant(Deoptimization::Reason_speculate_null_check)           \
   declare_constant(Deoptimization::Reason_speculate_null_assert)          \
@@ -2350,12 +1645,6 @@
   declare_constant(LM_LEGACY)                                             \
   declare_constant(LM_LIGHTWEIGHT)                                        \
                                                                           \
-  /*********************/                                                 \
-  /* Matcher (C2 only) */                                                 \
-  /*********************/                                                 \
-                                                                          \
-  declare_c2_preprocessor_constant("Matcher::interpreter_frame_pointer_reg", Matcher::interpreter_frame_pointer_reg()) \
-                                                                          \
   /*********************************************/                         \
   /* MethodCompilation (globalDefinitions.hpp) */                         \
   /*********************************************/                         \
@@ -2373,6 +1662,23 @@
   declare_constant(CompLevel_limited_profile)                             \
   declare_constant(CompLevel_full_profile)                                \
   declare_constant(CompLevel_full_optimization)                           \
+                                                                          \
+  /****************/                                                      \
+  /* CodeBlobKind */                                                      \
+  /****************/                                                      \
+                                                                          \
+  declare_constant(CodeBlobKind::Nmethod)                                 \
+  declare_constant(CodeBlobKind::Buffer)                                  \
+  declare_constant(CodeBlobKind::Adapter)                                 \
+  declare_constant(CodeBlobKind::Vtable)                                  \
+  declare_constant(CodeBlobKind::MHAdapter)                               \
+  declare_constant(CodeBlobKind::RuntimeStub)                             \
+  declare_constant(CodeBlobKind::Deoptimization)                          \
+  declare_constant(CodeBlobKind::Safepoint)                               \
+  COMPILER2_PRESENT(declare_constant(CodeBlobKind::Exception))            \
+  COMPILER2_PRESENT(declare_constant(CodeBlobKind::UncommonTrap))         \
+  declare_constant(CodeBlobKind::Upcall)                                  \
+  declare_constant(CodeBlobKind::Number_Of_Kinds)                         \
                                                                           \
   /***************/                                                       \
   /* OopMapValue */                                                       \
@@ -2438,8 +1744,8 @@
                                                                           \
   declare_constant(ConcreteRegisterImpl::number_of_registers)             \
   declare_preprocessor_constant("REG_COUNT", REG_COUNT)                   \
-  declare_c2_preprocessor_constant("SAVED_ON_ENTRY_REG_COUNT", SAVED_ON_ENTRY_REG_COUNT) \
-  declare_c2_preprocessor_constant("C_SAVED_ON_ENTRY_REG_COUNT", C_SAVED_ON_ENTRY_REG_COUNT) \
+  COMPILER2_PRESENT(declare_preprocessor_constant("SAVED_ON_ENTRY_REG_COUNT", SAVED_ON_ENTRY_REG_COUNT)) \
+  COMPILER2_PRESENT(declare_preprocessor_constant("C_SAVED_ON_ENTRY_REG_COUNT", C_SAVED_ON_ENTRY_REG_COUNT)) \
                                                                           \
   /************/                                                          \
   /* PerfData */                                                          \
@@ -2490,7 +1796,7 @@
 // enums, etc., while "declare_preprocessor_constant" must be used for
 // all #defined constants.
 
-#define VM_LONG_CONSTANTS(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \
+#define VM_LONG_CONSTANTS(declare_constant, declare_preprocessor_constant) \
                                                                           \
   /****************/                                                      \
   /* GC constants */                                                      \
@@ -2556,108 +1862,6 @@
 # define ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT(a, b, c)
 #endif /* PRODUCT */
 
-// Generate and check a nonstatic field in C1 builds
-#ifdef COMPILER1
-# define GENERATE_C1_NONSTATIC_VM_STRUCT_ENTRY(a, b, c) GENERATE_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define CHECK_C1_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)    CHECK_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define ENSURE_C1_FIELD_TYPE_PRESENT(a, b, c)          ENSURE_FIELD_TYPE_PRESENT(a, b, c)
-#else
-# define GENERATE_C1_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define CHECK_C1_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define ENSURE_C1_FIELD_TYPE_PRESENT(a, b, c)
-#endif /* COMPILER1 */
-// Generate and check a nonstatic field in C2 builds
-#ifdef COMPILER2
-# define GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY(a, b, c) GENERATE_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define CHECK_C2_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)    CHECK_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define ENSURE_C2_FIELD_TYPE_PRESENT(a, b, c)          ENSURE_FIELD_TYPE_PRESENT(a, b, c)
-#else
-# define GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define CHECK_C2_NONSTATIC_VM_STRUCT_ENTRY(a, b, c)
-# define ENSURE_C2_FIELD_TYPE_PRESENT(a, b, c)
-#endif /* COMPILER2 */
-
-// Generate but do not check a static field in C1 builds
-#ifdef COMPILER1
-# define GENERATE_C1_UNCHECKED_STATIC_VM_STRUCT_ENTRY(a, b, c) GENERATE_UNCHECKED_STATIC_VM_STRUCT_ENTRY(a, b, c)
-#else
-# define GENERATE_C1_UNCHECKED_STATIC_VM_STRUCT_ENTRY(a, b, c)
-#endif /* COMPILER1 */
-
-// Generate but do not check a static field in C2 builds
-#ifdef COMPILER2
-# define GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY(a, b, c) GENERATE_UNCHECKED_STATIC_VM_STRUCT_ENTRY(a, b, c)
-#else
-# define GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY(a, b, c)
-#endif /* COMPILER2 */
-
-//--------------------------------------------------------------------------------
-// VMTypeEntry build-specific macros
-//
-
-#ifdef COMPILER1
-# define GENERATE_C1_TOPLEVEL_VM_TYPE_ENTRY(a)               GENERATE_TOPLEVEL_VM_TYPE_ENTRY(a)
-# define CHECK_C1_TOPLEVEL_VM_TYPE_ENTRY(a)
-#else
-# define GENERATE_C1_TOPLEVEL_VM_TYPE_ENTRY(a)
-# define CHECK_C1_TOPLEVEL_VM_TYPE_ENTRY(a)
-#endif /* COMPILER1 */
-
-#ifdef COMPILER2
-# define GENERATE_C2_VM_TYPE_ENTRY(a, b)                     GENERATE_VM_TYPE_ENTRY(a, b)
-# define CHECK_C2_VM_TYPE_ENTRY(a, b)                        CHECK_VM_TYPE_ENTRY(a, b)
-# define GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY(a)               GENERATE_TOPLEVEL_VM_TYPE_ENTRY(a)
-# define CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY(a)
-#else
-# define GENERATE_C2_VM_TYPE_ENTRY(a, b)
-# define CHECK_C2_VM_TYPE_ENTRY(a, b)
-# define GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY(a)
-# define CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY(a)
-#endif /* COMPILER2 */
-
-
-//--------------------------------------------------------------------------------
-// VMIntConstantEntry build-specific macros
-//
-
-// Generate an int constant for a C1 build
-#ifdef COMPILER1
-# define GENERATE_C1_VM_INT_CONSTANT_ENTRY(name)  GENERATE_VM_INT_CONSTANT_ENTRY(name)
-#else
-# define GENERATE_C1_VM_INT_CONSTANT_ENTRY(name)
-#endif /* COMPILER1 */
-
-// Generate an int constant for a C2 build
-#ifdef COMPILER2
-# define GENERATE_C2_VM_INT_CONSTANT_ENTRY(name)                      GENERATE_VM_INT_CONSTANT_ENTRY(name)
-# define GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY(name, value)  GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY(name, value)
-#else
-# define GENERATE_C2_VM_INT_CONSTANT_ENTRY(name)
-# define GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY(name, value)
-#endif /* COMPILER1 */
-
-
-//--------------------------------------------------------------------------------
-// VMLongConstantEntry build-specific macros
-//
-
-// Generate a long constant for a C1 build
-#ifdef COMPILER1
-# define GENERATE_C1_VM_LONG_CONSTANT_ENTRY(name)  GENERATE_VM_LONG_CONSTANT_ENTRY(name)
-#else
-# define GENERATE_C1_VM_LONG_CONSTANT_ENTRY(name)
-#endif /* COMPILER1 */
-
-// Generate a long constant for a C2 build
-#ifdef COMPILER2
-# define GENERATE_C2_VM_LONG_CONSTANT_ENTRY(name)                     GENERATE_VM_LONG_CONSTANT_ENTRY(name)
-# define GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY(name, value) GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY(name, value)
-#else
-# define GENERATE_C2_VM_LONG_CONSTANT_ENTRY(name)
-# define GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY(name, value)
-#endif /* COMPILER1 */
-
-
 //
 // Instantiation of VMStructEntries, VMTypeEntries and VMIntConstantEntries
 //
@@ -2671,39 +1875,20 @@ VMStructEntry VMStructs::localHotSpotVMStructs[] = {
              GENERATE_VOLATILE_STATIC_VM_STRUCT_ENTRY,
              GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
              GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-             GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
-             GENERATE_C1_NONSTATIC_VM_STRUCT_ENTRY,
-             GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY,
-             GENERATE_C1_UNCHECKED_STATIC_VM_STRUCT_ENTRY,
-             GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY)
+             GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
 
   VM_STRUCTS_OS(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                 GENERATE_STATIC_VM_STRUCT_ENTRY,
                 GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
                 GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
-                GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY,
-                GENERATE_C1_UNCHECKED_STATIC_VM_STRUCT_ENTRY,
-                GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY)
+                GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
   VM_STRUCTS_CPU(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                  GENERATE_STATIC_VM_STRUCT_ENTRY,
                  GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
                  GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                 GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
-                 GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY,
-                 GENERATE_C1_UNCHECKED_STATIC_VM_STRUCT_ENTRY,
-                 GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY)
-
-  VM_STRUCTS_OS_CPU(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                    GENERATE_STATIC_VM_STRUCT_ENTRY,
-                    GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
-                    GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                    GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
-                    GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY,
-                    GENERATE_C1_UNCHECKED_STATIC_VM_STRUCT_ENTRY,
-                    GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY)
+                 GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
   GENERATE_VM_STRUCT_LAST_ENTRY()
 };
@@ -2718,38 +1903,19 @@ VMTypeEntry VMStructs::localHotSpotVMTypes[] = {
            GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
            GENERATE_OOP_VM_TYPE_ENTRY,
            GENERATE_INTEGER_VM_TYPE_ENTRY,
-           GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY,
-           GENERATE_C1_TOPLEVEL_VM_TYPE_ENTRY,
-           GENERATE_C2_VM_TYPE_ENTRY,
-           GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
-
+           GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY)
 
   VM_TYPES_OS(GENERATE_VM_TYPE_ENTRY,
               GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
               GENERATE_OOP_VM_TYPE_ENTRY,
               GENERATE_INTEGER_VM_TYPE_ENTRY,
-              GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY,
-              GENERATE_C1_TOPLEVEL_VM_TYPE_ENTRY,
-              GENERATE_C2_VM_TYPE_ENTRY,
-              GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
+              GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY)
 
   VM_TYPES_CPU(GENERATE_VM_TYPE_ENTRY,
                GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
                GENERATE_OOP_VM_TYPE_ENTRY,
                GENERATE_INTEGER_VM_TYPE_ENTRY,
-               GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY,
-               GENERATE_C1_TOPLEVEL_VM_TYPE_ENTRY,
-               GENERATE_C2_VM_TYPE_ENTRY,
-               GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
-
-  VM_TYPES_OS_CPU(GENERATE_VM_TYPE_ENTRY,
-                  GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
-                  GENERATE_OOP_VM_TYPE_ENTRY,
-                  GENERATE_INTEGER_VM_TYPE_ENTRY,
-                  GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY,
-                  GENERATE_C1_TOPLEVEL_VM_TYPE_ENTRY,
-                  GENERATE_C2_VM_TYPE_ENTRY,
-                  GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
+               GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY)
 
   GENERATE_VM_TYPE_LAST_ENTRY()
 };
@@ -2762,28 +1928,14 @@ VMIntConstantEntry VMStructs::localHotSpotVMIntConstants[] = {
 
   VM_INT_CONSTANTS(GENERATE_VM_INT_CONSTANT_ENTRY,
                    GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY,
-                   GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY,
-                   GENERATE_C1_VM_INT_CONSTANT_ENTRY,
-                   GENERATE_C2_VM_INT_CONSTANT_ENTRY,
-                   GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
+                   GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 
   VM_INT_CONSTANTS_OS(GENERATE_VM_INT_CONSTANT_ENTRY,
-                      GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY,
-                      GENERATE_C1_VM_INT_CONSTANT_ENTRY,
-                      GENERATE_C2_VM_INT_CONSTANT_ENTRY,
-                      GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
+                      GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 
   VM_INT_CONSTANTS_CPU(GENERATE_VM_INT_CONSTANT_ENTRY,
-                       GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY,
-                       GENERATE_C1_VM_INT_CONSTANT_ENTRY,
-                       GENERATE_C2_VM_INT_CONSTANT_ENTRY,
-                       GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
+                       GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 
-  VM_INT_CONSTANTS_OS_CPU(GENERATE_VM_INT_CONSTANT_ENTRY,
-                          GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY,
-                          GENERATE_C1_VM_INT_CONSTANT_ENTRY,
-                          GENERATE_C2_VM_INT_CONSTANT_ENTRY,
-                          GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 #ifdef VM_INT_CPU_FEATURE_CONSTANTS
   VM_INT_CPU_FEATURE_CONSTANTS
 #endif
@@ -2798,28 +1950,14 @@ size_t VMStructs::localHotSpotVMIntConstantsLength() {
 VMLongConstantEntry VMStructs::localHotSpotVMLongConstants[] = {
 
   VM_LONG_CONSTANTS(GENERATE_VM_LONG_CONSTANT_ENTRY,
-                    GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY,
-                    GENERATE_C1_VM_LONG_CONSTANT_ENTRY,
-                    GENERATE_C2_VM_LONG_CONSTANT_ENTRY,
-                    GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
+                    GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
 
   VM_LONG_CONSTANTS_OS(GENERATE_VM_LONG_CONSTANT_ENTRY,
-                       GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY,
-                       GENERATE_C1_VM_LONG_CONSTANT_ENTRY,
-                       GENERATE_C2_VM_LONG_CONSTANT_ENTRY,
-                       GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
+                       GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
 
   VM_LONG_CONSTANTS_CPU(GENERATE_VM_LONG_CONSTANT_ENTRY,
-                        GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY,
-                        GENERATE_C1_VM_LONG_CONSTANT_ENTRY,
-                        GENERATE_C2_VM_LONG_CONSTANT_ENTRY,
-                        GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
+                        GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
 
-  VM_LONG_CONSTANTS_OS_CPU(GENERATE_VM_LONG_CONSTANT_ENTRY,
-                           GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY,
-                           GENERATE_C1_VM_LONG_CONSTANT_ENTRY,
-                           GENERATE_C2_VM_LONG_CONSTANT_ENTRY,
-                           GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
 #ifdef VM_LONG_CPU_FEATURE_CONSTANTS
   VM_LONG_CPU_FEATURE_CONSTANTS
 #endif
@@ -2873,58 +2011,26 @@ void VMStructs::init() {
              CHECK_VOLATILE_STATIC_VM_STRUCT_ENTRY,
              CHECK_NO_OP,
              CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
-             CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
-             CHECK_C1_NONSTATIC_VM_STRUCT_ENTRY,
-             CHECK_C2_NONSTATIC_VM_STRUCT_ENTRY,
-             CHECK_NO_OP,
-             CHECK_NO_OP);
-
+             CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
   VM_STRUCTS_CPU(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
                  CHECK_STATIC_VM_STRUCT_ENTRY,
                  CHECK_NO_OP,
                  CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
-                 CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
-                 CHECK_C2_NONSTATIC_VM_STRUCT_ENTRY,
-                 CHECK_NO_OP,
-                 CHECK_NO_OP);
-
-  VM_STRUCTS_OS_CPU(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
-                    CHECK_STATIC_VM_STRUCT_ENTRY,
-                    CHECK_NO_OP,
-                    CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
-                    CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
-                    CHECK_C2_NONSTATIC_VM_STRUCT_ENTRY,
-                    CHECK_NO_OP,
-                    CHECK_NO_OP);
+                 CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
   VM_TYPES(CHECK_VM_TYPE_ENTRY,
            CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
            CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
            CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-           CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-           CHECK_C1_TOPLEVEL_VM_TYPE_ENTRY,
-           CHECK_C2_VM_TYPE_ENTRY,
-           CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY);
+           CHECK_SINGLE_ARG_VM_TYPE_NO_OP)
 
 
   VM_TYPES_CPU(CHECK_VM_TYPE_ENTRY,
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-               CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-               CHECK_C1_TOPLEVEL_VM_TYPE_ENTRY,
-               CHECK_C2_VM_TYPE_ENTRY,
-               CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY);
-
-  VM_TYPES_OS_CPU(CHECK_VM_TYPE_ENTRY,
-                  CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-                  CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-                  CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-                  CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-                  CHECK_C1_TOPLEVEL_VM_TYPE_ENTRY,
-                  CHECK_C2_VM_TYPE_ENTRY,
-                  CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY);
+               CHECK_SINGLE_ARG_VM_TYPE_NO_OP)
 
   //
   // Split VM_STRUCTS() invocation into two parts to allow MS VC++ 6.0
@@ -2948,39 +2054,20 @@ void VMStructs::init() {
              CHECK_NO_OP,
              CHECK_NO_OP,
              CHECK_NO_OP,
-             CHECK_NO_OP,
-             CHECK_NO_OP,
-             CHECK_NO_OP,
-             CHECK_NO_OP,
-             CHECK_NO_OP);
+             CHECK_NO_OP)
 
   VM_STRUCTS(CHECK_NO_OP,
              ENSURE_FIELD_TYPE_PRESENT,
              ENSURE_FIELD_TYPE_PRESENT,
              CHECK_NO_OP,
              ENSURE_FIELD_TYPE_PRESENT,
-             ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT,
-             ENSURE_C1_FIELD_TYPE_PRESENT,
-             ENSURE_C2_FIELD_TYPE_PRESENT,
-             CHECK_NO_OP,
-             CHECK_NO_OP);
+             ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT)
 
   VM_STRUCTS_CPU(ENSURE_FIELD_TYPE_PRESENT,
                  ENSURE_FIELD_TYPE_PRESENT,
                  CHECK_NO_OP,
                  ENSURE_FIELD_TYPE_PRESENT,
-                 ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT,
-                 ENSURE_C2_FIELD_TYPE_PRESENT,
-                 CHECK_NO_OP,
-                 CHECK_NO_OP);
-  VM_STRUCTS_OS_CPU(ENSURE_FIELD_TYPE_PRESENT,
-                    ENSURE_FIELD_TYPE_PRESENT,
-                    CHECK_NO_OP,
-                    ENSURE_FIELD_TYPE_PRESENT,
-                    ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT,
-                    ENSURE_C2_FIELD_TYPE_PRESENT,
-                    CHECK_NO_OP,
-                    CHECK_NO_OP);
+                 ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT)
 #endif // !_WINDOWS
 }
 

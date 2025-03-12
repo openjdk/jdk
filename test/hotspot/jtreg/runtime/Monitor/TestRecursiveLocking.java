@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,21 +34,21 @@
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -Xint
  *     -XX:LockingMode=0
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 1
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -Xint
  *     -XX:LockingMode=1
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 1
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -Xint
  *     -XX:LockingMode=2
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 1
  */
 
@@ -64,21 +64,21 @@
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -Xint
  *     -XX:LockingMode=0
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 2
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -Xint
  *     -XX:LockingMode=1
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 2
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -Xint
  *     -XX:LockingMode=2
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 2
  */
 
@@ -95,21 +95,21 @@
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:TieredStopAtLevel=1
  *     -XX:LockingMode=0
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 1
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:TieredStopAtLevel=1
  *     -XX:LockingMode=1
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 1
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:TieredStopAtLevel=1
  *     -XX:LockingMode=2
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 1
  */
 
@@ -126,21 +126,21 @@
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:TieredStopAtLevel=1
  *     -XX:LockingMode=0
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 2
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:TieredStopAtLevel=1
  *     -XX:LockingMode=1
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 2
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:TieredStopAtLevel=1
  *     -XX:LockingMode=2
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 2
  */
 
@@ -157,21 +157,21 @@
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:-EliminateNestedLocks
  *     -XX:LockingMode=0
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 1
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:-EliminateNestedLocks
  *     -XX:LockingMode=1
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 1
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:-EliminateNestedLocks
  *     -XX:LockingMode=2
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 1
  */
 
@@ -188,21 +188,21 @@
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:LockingMode=0
  *     -XX:-EliminateNestedLocks
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 2
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:LockingMode=1
  *     -XX:-EliminateNestedLocks
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 2
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:LockingMode=2
  *     -XX:-EliminateNestedLocks
- *     -ms256m -mx256m
+ *     -Xms256m -Xmx256m
  *     TestRecursiveLocking 5 2
  */
 
