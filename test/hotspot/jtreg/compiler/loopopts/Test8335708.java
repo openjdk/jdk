@@ -25,6 +25,7 @@
  * @test
  * @bug 8335708
  * @summary Crash Compile::verify_graph_edges
+ * @requires vm.debug == true & vm.flavor == "server"
  * @library /test/lib
  *
  * @run main/othervm
