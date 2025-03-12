@@ -104,6 +104,7 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
         undef stringop-overflow, \
     DISABLED_WARNINGS_gcc_test_metaspace_misc.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_test_threadCpuLoad.cpp := address, \
+    DISABLED_WARNINGS_gcc_test_tribool.cpp := uninitialized, \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang) \
         undef switch format-nonliteral tautological-undefined-compare \
         self-assign-overloaded, \

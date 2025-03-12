@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,7 +314,6 @@ class ReverseOrderSortedMapView<K, V> extends AbstractMap<K, V> implements Sorte
         final K head; // head key, or negative infinity if null
         final K tail; // tail key, or positive infinity if null
 
-        @SuppressWarnings("unchecked")
         Submap(K head, K tail) {
             this.head = head;
             this.tail = tail;

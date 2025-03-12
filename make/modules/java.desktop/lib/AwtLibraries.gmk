@@ -285,7 +285,7 @@ ifeq ($(call isTargetOs, windows macosx)+$(ENABLE_HEADLESS_ONLY), false+false)
       JDK_LIBS := libawt java.base:libjava, \
       LIBS_unix := $(LIBDL) $(LIBM) $(X_LIBS) -lX11 -lXext -lXi -lXrender \
           -lXtst, \
-      LIBS_linux := -lpthread, \
+      LIBS_linux := $(LIBPTHREAD), \
       STATIC_LIB_EXCLUDE_OBJS := $(LIBAWT_XAWT_STATIC_EXCLUDE_OBJS), \
   ))
 

@@ -107,7 +107,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   // Automatic selection for aot-inited classes
   // ==========================================
   //
-  // When CDSConfig::is_initing_classes_at_dump_time() is enabled,
+  // When CDSConfig::is_initing_classes_at_dump_time is enabled,
   // AOTArtifactFinder::find_artifacts() finds the classes of all
   // heap objects that are reachable from HeapShared::_run_time_special_subgraph,
   // and mark these classes as aot-inited. This preserves the initialized
@@ -266,7 +266,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     }
   }
 
-  if (CDSConfig::is_dumping_invokedynamic()) {
+  if (CDSConfig::is_dumping_method_handles()) {
     // This table was created with the help of CDSHeapVerifier.
     // Also, some $Holder classes are needed. E.g., Invokers.<clinit> explicitly
     // initializes Invokers$Holder. Since Invokers.<clinit> won't be executed

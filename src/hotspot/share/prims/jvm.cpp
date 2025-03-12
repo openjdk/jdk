@@ -3766,7 +3766,7 @@ JVM_ENTRY(jobject, JVM_TakeVirtualThreadListToUnblock(JNIEnv* env, jclass ignore
   ParkEvent* parkEvent = ObjectMonitor::vthread_unparker_ParkEvent();
   assert(parkEvent != nullptr, "not initialized");
 
-  OopHandle& list_head = ObjectMonitor::vthread_cxq_head();
+  OopHandle& list_head = ObjectMonitor::vthread_list_head();
   oop vthread_head = nullptr;
   while (true) {
     if (list_head.peek() != nullptr) {

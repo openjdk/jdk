@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
 
 /*
  * @test
- * @bug 8215937
+ * @bug 8215937 8345940
  * @modules java.base/sun.security.util
- *          java.base/sun.security.tools.keytool
- *          jdk.jartool/sun.security.tools.jarsigner
+ *          java.base/sun.security.util.resources
+ *          java.base/sun.security.tools.keytool.resources
+ *          jdk.jartool/sun.security.tools.jarsigner.resources
  * @summary Check usages of security-related Resources files
+ * @run main/othervm Usages
  */
 
 import java.io.IOException;
@@ -106,17 +108,22 @@ public class Usages {
 
     // For each Resources file, where and how the strings are used.
     static Map<ListResourceBundle, List<Pair>> MAP = Map.of(
-            new sun.security.tools.keytool.Resources(), List.of(
+            new sun.security.tools.keytool.resources.keytool(),
+            List.of(
                     new Pair("java.base/share/classes/sun/security/tools/keytool/Main.java",
                             List.of(RB_GETSTRING, KT_ENUM)),
                     new Pair("java.base/share/classes/sun/security/tools/KeyStoreUtil.java",
                             List.of(RB_GETSTRING))),
-            new sun.security.util.AuthResources(), List.of(
+
+            new sun.security.util.resources.auth(),
+            List.of(
                     new Pair("java.base/share/classes/sun/security/provider/ConfigFile.java",
                             List.of(GETAUTHSTRING, IOEXCEPTION)),
                     new Pair("jdk.security.auth/share/classes/com/sun/security/auth/",
                             List.of(GETAUTHSTRING))),
-            new sun.security.tools.jarsigner.Resources(), List.of(
+
+            new sun.security.tools.jarsigner.resources.jarsigner(),
+            List.of(
                     new Pair("jdk.jartool/share/classes/sun/security/tools/jarsigner/Main.java",
                             List.of(RB_GETSTRING)),
                     new Pair("java.base/share/classes/sun/security/provider/certpath/OCSP.java",
@@ -125,7 +132,9 @@ public class Usages {
                             List.of(EVENT_OCSP_CRL)),
                     new Pair("java.base/share/classes/sun/security/tools/KeyStoreUtil.java",
                             List.of(RB_GETSTRING))),
-            new sun.security.util.Resources(), List.of(
+
+            new sun.security.util.resources.security(),
+            List.of(
                     new Pair("jdk.crypto.cryptoki/share/classes/sun/security/pkcs11/SunPKCS11.java",
                             List.of(MGR_GETSTRING)),
                     new Pair("java.base/share/classes/sun/security/provider/PolicyParser.java",

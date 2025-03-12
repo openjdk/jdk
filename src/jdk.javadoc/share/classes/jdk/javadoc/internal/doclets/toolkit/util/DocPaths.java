@@ -73,8 +73,8 @@ public class DocPaths {
     /** The name of the DejaVu web fonts CSS file. */
     public static final DocPath DEJAVU_CSS = DocPath.create("dejavu.css");
 
-    /** The name of the image file showing a magnifying glass on the search box. */
-    public static final DocPath GLASS_IMG = DocPath.create("glass.png");
+    /** The name of the svg file showing a magnifying glass on the search box. */
+    public static final DocPath GLASS_SVG = DocPath.create("glass.svg");
 
     /** The name of the file for help info. */
     public static final DocPath HELP_DOC = DocPath.create("help-doc.html");
@@ -106,8 +106,14 @@ public class DocPaths {
     /** The name of the copy-to-clipboard icon file. */
     public static final DocPath CLIPBOARD_SVG = DocPath.create("copy.svg");
 
+    /** The name of the left pointing angle icon. */
+    public static final DocPath LEFT_SVG = DocPath.create("left.svg");
+
     /** The name of the link icon file. */
     public static final DocPath LINK_SVG = DocPath.create("link.svg");
+
+    /** The name of the right pointing angle icon. */
+    public static final DocPath RIGHT_SVG = DocPath.create("right.svg");
 
     /** The name of the default jQuery directory. */
     public static final DocPath JQUERY_DIR = DocPath.create("jquery");
@@ -338,7 +344,7 @@ public class DocPaths {
     /** The name of the type search index js file. */
     public static final DocPath TYPE_SEARCH_INDEX_JS = DocPath.create("type-search-index.js");
 
-    /** The name of the image file for undo button on the search box. */
-    public static final DocPath X_IMG = DocPath.create("x.png");
+    /** The name of the svg file for undo button on the search box. */
+    public static final DocPath X_SVG = DocPath.create("x.svg");
 
 }

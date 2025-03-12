@@ -2892,7 +2892,6 @@ void MacroAssembler::revb(Register Rd, Register Rs, Register tmp1, Register tmp2
     slli(tmp1, tmp1, 8);
   }
   srli(Rd, Rs, 56);
-  zext(Rd, Rd, 8);
   orr(Rd, tmp1, Rd);
 }
 

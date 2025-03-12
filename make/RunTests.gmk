@@ -543,8 +543,8 @@ define SetupRunGtestTestBody
 	            print arr[0]; \
 	            found=1; \
 	          } \
-	          if (!found) { print 0; } \
-	      }' \
+	       } \
+	       END { if (!found) print 0; }' \
 	      $$($1_RESULT_FILE))) \
 	  $$(eval $1_FAILED := $$(shell $$(AWK) '/\[  FAILED  \] .* tests?, \
 	      listed below/ { print $$$$4 }' $$($1_RESULT_FILE))) \

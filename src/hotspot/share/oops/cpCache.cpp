@@ -572,7 +572,7 @@ bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, Resolv
       method_entry->is_resolved(Bytecodes::_invokespecial)) {
     return true;
   } else if (method_entry->is_resolved(Bytecodes::_invokehandle)) {
-    if (CDSConfig::is_dumping_invokedynamic()) {
+    if (CDSConfig::is_dumping_method_handles()) {
       // invokehandle depends on archived MethodType and LambdaForms.
       return true;
     } else {

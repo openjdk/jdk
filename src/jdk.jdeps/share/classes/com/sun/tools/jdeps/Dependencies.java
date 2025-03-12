@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,6 @@ public class Dependencies {
     /**
      * Thrown when a class file cannot be found.
      */
-    @SuppressWarnings("this-escape")
     public static class ClassFileNotFoundException extends Exception {
         private static final long serialVersionUID = 3632265927794475048L;
 
@@ -76,7 +75,6 @@ public class Dependencies {
     /**
      * Thrown when an exception is found processing a class file.
      */
-    @SuppressWarnings("this-escape")
     public static class ClassFileError extends Error {
         private static final long serialVersionUID = 4111110813961313203L;
 

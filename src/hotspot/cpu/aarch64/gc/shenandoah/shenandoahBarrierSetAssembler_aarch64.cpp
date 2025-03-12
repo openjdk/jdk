@@ -377,7 +377,8 @@ void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register o
 
   assert(CardTable::dirty_card_val() == 0, "must be");
 
-  __ load_byte_map_base(rscratch1);
+  Address curr_ct_holder_addr(rthread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
+  __ ldr(rscratch1, curr_ct_holder_addr);
 
   if (UseCondCardMark) {
     Label L_already_dirty;
@@ -624,7 +625,8 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
   // number of bytes to copy
   __ sub(count, end, start);
 
-  __ load_byte_map_base(scratch);
+  Address curr_ct_holder_addr(rthread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
+  __ ldr(scratch, curr_ct_holder_addr);
   __ add(start, start, scratch);
   __ bind(L_loop);
   __ strb(zr, Address(start, count));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlTag;
@@ -85,7 +86,8 @@ public class SearchWriter extends HtmlDocletWriter {
                 .add(HtmlTree.DIV(HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlId.of("page-search-input"))
                                 .put(HtmlAttr.PLACEHOLDER, resources.getText("doclet.search_placeholder"))
                                 .put(HtmlAttr.ARIA_LABEL, resources.getText("doclet.search_in_documentation"))
-                                .put(HtmlAttr.AUTOCOMPLETE, "off"))
+                                .put(HtmlAttr.AUTOCOMPLETE, "off")
+                                .put(HtmlAttr.SPELLCHECK, "false"))
                         .add(HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlId.of("page-search-reset"))
                                 .put(HtmlAttr.VALUE, resources.getText("doclet.search_reset"))
                                 .put(HtmlAttr.STYLE, "margin: 6px;"))
@@ -93,7 +95,10 @@ public class SearchWriter extends HtmlDocletWriter {
                                 .add(HtmlTree.SUMMARY(contents.getContent("doclet.search.show_more"))
                                         .setId(HtmlId.of("page-search-expand")))))
                 .add(HtmlTree.DIV(HtmlStyles.pageSearchInfo, helpSection)
-                        .add(HtmlTree.P(contents.getContent("doclet.search.keyboard_info")))
+                        .add(HtmlTree.P(contents.getContent("doclet.search.keyboard_info",
+                                HtmlTree.KBD(Text.of("Ctrl")), HtmlTree.KBD(Text.of("Cmd")),
+                                new ContentBuilder(HtmlTree.KBD(Entity.of("leftarrow")), Text.of("/"),
+                                        HtmlTree.KBD(Entity.of("rightarrow"))))))
                         .add(HtmlTree.P(contents.getContent("doclet.search.browser_info")))
                         .add(HtmlTree.SPAN(Text.of("link"))
                                 .setId(HtmlId.of("page-search-link")))

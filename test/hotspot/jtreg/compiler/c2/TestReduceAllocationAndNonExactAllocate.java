@@ -36,7 +36,6 @@
  *                   -XX:-TieredCompilation
  *                   -Xbatch
  *                   -Xcomp
- *                   -server
  *                   compiler.c2.TestReduceAllocationAndNonExactAllocate
  */
 

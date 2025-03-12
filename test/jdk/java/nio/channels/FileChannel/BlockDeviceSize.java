@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
  * @bug 8054029 8313368
  * @requires (os.family == "linux")
  * @summary FileChannel.size() should be equal to RandomAccessFile.size() and > 0 for block devs on Linux
+ * @comment The test must be launched with sudo or the block devices listed in
+ * the BLK_FNAMES array must be readable by the user running the test.
  * @library /test/lib
+ * @run main/manual BlockDeviceSize
  */
 
 import java.io.RandomAccessFile;

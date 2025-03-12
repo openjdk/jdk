@@ -76,10 +76,14 @@ void MonitorList::add(ObjectMonitor* m) {
     m->set_next_om(head);
   } while (Atomic::cmpxchg(&_head, head, m) != head);
 
-  size_t count = Atomic::add(&_count, 1u);
-  if (count > max()) {
-    Atomic::inc(&_max);
-  }
+  size_t count = Atomic::add(&_count, 1u, memory_order_relaxed);
+  size_t old_max;
+  do {
+    old_max = Atomic::load(&_max);
+    if (count <= old_max) {
+      break;
+    }
+  } while (Atomic::cmpxchg(&_max, old_max, count, memory_order_relaxed) != old_max);
 }
 
 size_t MonitorList::count() const {
@@ -366,7 +370,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
     if (mon->first_waiter() != nullptr) {
       // We have one or more waiters. Since this is an inflated monitor
       // that we own, we can transfer one or more threads from the waitset
-      // to the entrylist here and now, avoiding the slow-path.
+      // to the entry_list here and now, avoiding the slow-path.
       if (all) {
         DTRACE_MONITOR_PROBE(notifyAll, mon, obj, current);
       } else {
@@ -374,7 +378,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
       }
       int free_count = 0;
       do {
-        mon->INotify(current);
+        mon->notify_internal(current);
         ++free_count;
       } while (mon->first_waiter() != nullptr && all);
       OM_PERFDATA_OP(Notifications, inc(free_count));
@@ -405,10 +409,6 @@ bool ObjectSynchronizer::quick_enter_legacy(oop obj, BasicLock* lock, JavaThread
 
   if (useHeavyMonitors()) {
     return false;  // Slow path
-  }
-
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    return LightweightSynchronizer::quick_enter(obj, lock, current);
   }
 
   assert(LockingMode == LM_LEGACY, "legacy mode below");

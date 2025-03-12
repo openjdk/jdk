@@ -787,7 +787,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             invokeAll(tasks.toArray(new ForkJoinTask<?>[0]));
             return tasks;
         }
-        @SuppressWarnings("unchecked")
         List<? extends ForkJoinTask<?>> ts =
             (List<? extends ForkJoinTask<?>>) tasks;
         Throwable ex = null;

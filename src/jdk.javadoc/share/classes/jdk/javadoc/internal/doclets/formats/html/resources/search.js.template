@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
@@ -390,7 +390,6 @@ $(function() {
         minLength: 1,
         delay: 200,
         source: function(request, response) {
-            reset.css("display", "inline");
             if (request.term.trim() === "") {
                 return this.close();
             }
@@ -403,12 +402,6 @@ $(function() {
                 $("#search-input").empty();
             }
         },
-        close: function(event, ui) {
-            reset.css("display", search.val() ? "inline" : "none");
-        },
-        change: function(event, ui) {
-            reset.css("display", search.val() ? "inline" : "none");
-        },
         autoFocus: true,
         focus: function(event, ui) {
             return false;
@@ -420,17 +413,15 @@ $(function() {
             if (ui.item.indexItem) {
                 var url = getURL(ui.item.indexItem, ui.item.category);
                 window.location.href = pathtoroot + url;
-                $("#search-input").focus();
             }
         }
     });
     search.val('');
+    search.on("input", () => reset.css("visibility", search.val() ? "visible" : "hidden"))
     search.prop("disabled", false);
     search.attr("autocapitalize", "off");
     reset.prop("disabled", false);
     reset.click(function() {
         search.val('').focus();
-        reset.css("display", "none");
     });
-    search.focus();
 });

@@ -72,19 +72,6 @@ CompactHashtableWriter::~CompactHashtableWriter() {
   FREE_C_HEAP_ARRAY(GrowableArray<Entry>*, _buckets);
 }
 
-size_t CompactHashtableWriter::estimate_size(int num_entries) {
-  int num_buckets = calculate_num_buckets(num_entries);
-  size_t bucket_bytes = ArchiveBuilder::ro_array_bytesize<u4>(num_buckets + 1);
-
-  // In worst case, we have no VALUE_ONLY_BUCKET_TYPE, so each entry takes 2 slots
-  int entries_space = 2 * num_entries;
-  size_t entry_bytes = ArchiveBuilder::ro_array_bytesize<u4>(entries_space);
-
-  return bucket_bytes
-       + entry_bytes
-       + SimpleCompactHashtable::calculate_header_size();
-}
-
 // Add a symbol entry to the temporary hash table
 void CompactHashtableWriter::add(unsigned int hash, u4 value) {
   int index = hash % _num_buckets;

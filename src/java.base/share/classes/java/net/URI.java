@@ -3466,7 +3466,7 @@ public final class URI
                 if (q < m) break;
                 return q;
             }
-            fail("Malformed IPv4 address", q);
+            if (strict) fail("Malformed IPv4 address", q);
             return -1;
         }
 
@@ -3495,12 +3495,16 @@ public final class URI
                 return -1;
             }
 
+            if (p == -1) {
+                return p;
+            }
+
             if (p > start && p < n) {
                 // IPv4 address is followed by something - check that
                 // it's a ":" as this is the only valid character to
                 // follow an address.
                 if (input.charAt(p) != ':') {
-                    p = -1;
+                    return -1;
                 }
             }
 

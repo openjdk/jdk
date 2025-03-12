@@ -26,8 +26,11 @@
 
 #include "gc/shared/concurrentGCThread.hpp"
 
+class ShenandoahHeap;
 class ShenandoahHeuristics;
+class ShenandoahGeneration;
 class ShenandoahGenerationalControlThread;
+class ShenandoahOldHeuristics;
 
 /*
  * The purpose of this class (and thread) is to allow us to continue
@@ -58,9 +61,10 @@ class ShenandoahRegulatorThread: public ConcurrentGCThread {
   void regulate_young_and_global_cycles();
 
   // These return true if a cycle was started.
-  bool start_old_cycle();
-  bool start_young_cycle();
-  bool start_global_cycle();
+  bool start_old_cycle() const;
+  bool start_young_cycle() const;
+  bool start_global_cycle() const;
+  bool resume_old_cycle();
 
   // The generational mode can only unload classes in a global cycle. The regulator
   // thread itself will trigger a global cycle if metaspace is out of memory.
@@ -70,11 +74,12 @@ class ShenandoahRegulatorThread: public ConcurrentGCThread {
   void regulator_sleep();
 
   // Provides instrumentation to track how long it takes to acknowledge a request.
-  bool request_concurrent_gc(ShenandoahGenerationType generation);
+  bool request_concurrent_gc(ShenandoahGeneration* generation) const;
 
+  ShenandoahHeap* _heap;
   ShenandoahGenerationalControlThread* _control_thread;
   ShenandoahHeuristics* _young_heuristics;
-  ShenandoahHeuristics* _old_heuristics;
+  ShenandoahOldHeuristics* _old_heuristics;
   ShenandoahHeuristics* _global_heuristics;
 
   uint _sleep;

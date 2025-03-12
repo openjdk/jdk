@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1079,7 +1079,6 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
     }
 
     @Override
-    @SuppressWarnings("fallthrough")
     public void endElement(String uri, String localName, String qName) throws SAXException {
         assert qName.equals(currentContainer.getqName()) : "current=" + currentContainer.getqName() + ", param=" + qName;
         switch (qName) {

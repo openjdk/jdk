@@ -1267,7 +1267,7 @@ public:
       oop obj = CompressedOops::decode_not_null(o);
       if (_heap->is_in_young(obj) && !_scanner->is_card_dirty((HeapWord*) p)) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
-                                         _message, "clean card should be dirty", __FILE__, __LINE__);
+                                         _message, "clean card, it should be dirty.", __FILE__, __LINE__);
       }
     }
   }

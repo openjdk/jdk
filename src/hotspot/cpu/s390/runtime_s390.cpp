@@ -70,7 +70,8 @@ void OptoRuntime::generate_exception_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  CodeBuffer buffer("exception_blob", 2048, 1024);
+  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
+  CodeBuffer buffer(name, 2048, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   Register handle_exception = Z_ARG5;

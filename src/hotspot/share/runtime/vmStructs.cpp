@@ -23,18 +23,9 @@
  */
 
 #include "cds/filemap.hpp"
-#include "ci/ciField.hpp"
-#include "ci/ciInstance.hpp"
-#include "ci/ciMethodData.hpp"
-#include "ci/ciObjArrayKlass.hpp"
-#include "ci/ciSymbol.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
-#include "classfile/stringTable.hpp"
-#include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeBlob.hpp"
@@ -103,10 +94,8 @@
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/serviceThread.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/threadSMR.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vmStructs.hpp"
 #include "runtime/vm_version.hpp"
@@ -120,7 +109,6 @@
 
 #include CPU_HEADER(vmStructs)
 #include OS_HEADER(vmStructs)
-#include OS_CPU_HEADER(vmStructs)
 
 // Note: the cross-product of (c1, c2, product, nonproduct, ...),
 // (nonstatic, static), and (unchecked, checked) has not been taken.
@@ -412,7 +400,7 @@
      volatile_static_field(PerfMemory,         _initialized,                                  int)                                   \
                                                                                                                                      \
   /********************/                                                                                                             \
-  /* SystemDictionary */                                                                                                             \
+  /* VM Classes       */                                                                                                             \
   /********************/                                                                                                             \
                                                                                                                                      \
      static_field(vmClasses,                   VM_CLASS_AT(Object_klass),                        InstanceKlass*)                     \
@@ -531,6 +519,8 @@
   nonstatic_field(CodeBlob,                    _frame_size,                                   int)                                   \
   nonstatic_field(CodeBlob,                    _oop_maps,                                     ImmutableOopMapSet*)                   \
   nonstatic_field(CodeBlob,                    _caller_must_gc_arguments,                     bool)                                  \
+  nonstatic_field(CodeBlob,                    _mutable_data,                                 address)                               \
+  nonstatic_field(CodeBlob,                    _mutable_data_size,                            int)                                   \
                                                                                                                                      \
   nonstatic_field(DeoptimizationBlob,          _unpack_offset,                                int)                                   \
                                                                                                                                      \
@@ -553,8 +543,7 @@
   nonstatic_field(nmethod,                     _deopt_mh_handler_offset,                      int)                                   \
   nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \
   nonstatic_field(nmethod,                     _stub_offset,                                  int)                                   \
-  nonstatic_field(nmethod,                     _metadata_offset,                              u2)                                    \
-  nonstatic_field(nmethod,                     _scopes_pcs_offset,                            int)                                    \
+  nonstatic_field(nmethod,                     _scopes_pcs_offset,                            int)                                   \
   nonstatic_field(nmethod,                     _scopes_data_offset,                           int)                                   \
   nonstatic_field(nmethod,                     _handler_table_offset,                         u2)                                    \
   nonstatic_field(nmethod,                     _nul_chk_table_offset,                         u2)                                    \
@@ -636,7 +625,6 @@
   nonstatic_field(JavaThread,                  _monitor_owner_id,                             int64_t)                               \
   volatile_nonstatic_field(JavaThread,         _terminated,                                   JavaThread::TerminatedTypes)           \
   nonstatic_field(Thread,                      _osthread,                                     OSThread*)                             \
-  nonstatic_field(Thread,                      _resource_area,                                ResourceArea*)                         \
                                                                                                                                      \
   /************/                                                                                                                     \
   /* OSThread */                                                                                                                     \
@@ -1010,17 +998,14 @@
   declare_type(PerfData, CHeapObj<mtInternal>)                            \
                                                                           \
   /********************/                                                  \
-  /* SystemDictionary */                                                  \
+  /* VM Classes       */                                                  \
   /********************/                                                  \
                                                                           \
-  declare_toplevel_type(SystemDictionary)                                 \
   declare_toplevel_type(vmClasses)                                        \
   declare_toplevel_type(vmSymbols)                                        \
                                                                           \
   declare_toplevel_type(GrowableArrayBase)                                \
   declare_toplevel_type(GrowableArray<int>)                               \
-  declare_toplevel_type(Arena)                                            \
-    declare_type(ResourceArea, Arena)                                     \
                                                                           \
   /***********************************************************/           \
   /* Thread hierarchy (needed for run-time type information) */           \
@@ -1090,8 +1075,6 @@
   /*************************************************************/         \
   /* CodeBlob hierarchy (needed for run-time type information) */         \
   /*************************************************************/         \
-                                                                          \
-  declare_toplevel_type(SharedRuntime)                                    \
                                                                           \
   declare_toplevel_type(CodeBlob)                                         \
   declare_type(RuntimeBlob,              CodeBlob)                        \
@@ -1163,12 +1146,6 @@
   declare_toplevel_type(ObjectSynchronizer)                               \
   declare_toplevel_type(BasicLock)                                        \
   declare_toplevel_type(BasicObjectLock)                                  \
-                                                                          \
-  /*********************/                                                 \
-  /* Adapter Blob Entries */                                              \
-  /*********************/                                                 \
-  declare_toplevel_type(AdapterHandlerEntry)                              \
-  declare_toplevel_type(AdapterHandlerEntry*)                             \
                                                                           \
   /********************/                                                  \
   /* -XX flags        */                                                  \
@@ -1913,12 +1890,6 @@ VMStructEntry VMStructs::localHotSpotVMStructs[] = {
                  GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                  GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
-  VM_STRUCTS_OS_CPU(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                    GENERATE_STATIC_VM_STRUCT_ENTRY,
-                    GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
-                    GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                    GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
-
   GENERATE_VM_STRUCT_LAST_ENTRY()
 };
 
@@ -1946,12 +1917,6 @@ VMTypeEntry VMStructs::localHotSpotVMTypes[] = {
                GENERATE_INTEGER_VM_TYPE_ENTRY,
                GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY)
 
-  VM_TYPES_OS_CPU(GENERATE_VM_TYPE_ENTRY,
-                  GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
-                  GENERATE_OOP_VM_TYPE_ENTRY,
-                  GENERATE_INTEGER_VM_TYPE_ENTRY,
-                  GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY)
-
   GENERATE_VM_TYPE_LAST_ENTRY()
 };
 
@@ -1971,8 +1936,6 @@ VMIntConstantEntry VMStructs::localHotSpotVMIntConstants[] = {
   VM_INT_CONSTANTS_CPU(GENERATE_VM_INT_CONSTANT_ENTRY,
                        GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 
-  VM_INT_CONSTANTS_OS_CPU(GENERATE_VM_INT_CONSTANT_ENTRY,
-                          GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 #ifdef VM_INT_CPU_FEATURE_CONSTANTS
   VM_INT_CPU_FEATURE_CONSTANTS
 #endif
@@ -1995,8 +1958,6 @@ VMLongConstantEntry VMStructs::localHotSpotVMLongConstants[] = {
   VM_LONG_CONSTANTS_CPU(GENERATE_VM_LONG_CONSTANT_ENTRY,
                         GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
 
-  VM_LONG_CONSTANTS_OS_CPU(GENERATE_VM_LONG_CONSTANT_ENTRY,
-                           GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
 #ifdef VM_LONG_CPU_FEATURE_CONSTANTS
   VM_LONG_CPU_FEATURE_CONSTANTS
 #endif
@@ -2058,12 +2019,6 @@ void VMStructs::init() {
                  CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
                  CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
 
-  VM_STRUCTS_OS_CPU(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
-                    CHECK_STATIC_VM_STRUCT_ENTRY,
-                    CHECK_NO_OP,
-                    CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
-                    CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY)
-
   VM_TYPES(CHECK_VM_TYPE_ENTRY,
            CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
            CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
@@ -2076,12 +2031,6 @@ void VMStructs::init() {
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
                CHECK_SINGLE_ARG_VM_TYPE_NO_OP)
-
-  VM_TYPES_OS_CPU(CHECK_VM_TYPE_ENTRY,
-                  CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-                  CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-                  CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-                  CHECK_SINGLE_ARG_VM_TYPE_NO_OP)
 
   //
   // Split VM_STRUCTS() invocation into two parts to allow MS VC++ 6.0
@@ -2119,12 +2068,6 @@ void VMStructs::init() {
                  CHECK_NO_OP,
                  ENSURE_FIELD_TYPE_PRESENT,
                  ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT)
-
-  VM_STRUCTS_OS_CPU(ENSURE_FIELD_TYPE_PRESENT,
-                    ENSURE_FIELD_TYPE_PRESENT,
-                    CHECK_NO_OP,
-                    ENSURE_FIELD_TYPE_PRESENT,
-                    ENSURE_NONPRODUCT_FIELD_TYPE_PRESENT)
 #endif // !_WINDOWS
 }
 

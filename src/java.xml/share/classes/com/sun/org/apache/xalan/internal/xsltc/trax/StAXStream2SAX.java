@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,32 +275,18 @@ public class StAXStream2SAX implements XMLReader, Locator {
     }
 
     private void handleCharacters() throws XMLStreamException {
-
-        // workaround for bugid 5046319 - switch over to commented section
-        // below when it is fixed.
         int textLength = staxStreamReader.getTextLength();
         char[] chars = new char[textLength];
 
-        staxStreamReader.getTextCharacters(0, chars, 0, textLength);
+        if (textLength > 0) {
+            staxStreamReader.getTextCharacters(0, chars, 0, textLength);
+        }
 
         try {
             _sax.characters(chars, 0, chars.length);
         } catch (SAXException e) {
             throw new XMLStreamException(e);
         }
-
-
-//        int start = 0;
-//        int len;
-//        do {
-//            len = staxStreamReader.getTextCharacters(start, buf, 0, buf.length);
-//            start += len;
-//            try {
-//                _sax.characters(buf, 0, len);
-//            } catch (SAXException e) {
-//                throw new XMLStreamException(e);
-//            }
-//        } while (len == buf.length);
     }
 
     private void handleEndElement() throws XMLStreamException {

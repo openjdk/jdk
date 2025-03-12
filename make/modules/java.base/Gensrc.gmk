@@ -80,16 +80,17 @@ $(eval $(call SetupCompileProperties, SUN_UTIL, \
     CLASS := sun.util.resources.LocaleNamesBundle, \
 ))
 
-TARGETS += $(LIST_RESOURCE_BUNDLE) $(SUN_UTIL)
+$(eval $(call SetupCompileProperties, SECURITY_RESOURCES, \
+    SRC_DIRS := $(MODULE_SRC)/share/classes/sun/security/util/resources, \
+    CLASS := ListResourceBundle, \
+))
 
-# Some resources bundles are already present as java files but still need to be
-# copied to zh_HK locale.
-$(eval $(call SetupCopy-zh_HK,COPY_ZH_HK, \
-    $(addprefix $(TOPDIR)/src/java.base/share/classes/, \
-        sun/security/util/AuthResources_zh_TW.java \
-        sun/security/util/Resources_zh_TW.java)))
+$(eval $(call SetupCompileProperties, KEYTOOL_RESOURCES, \
+    SRC_DIRS := $(MODULE_SRC)/share/classes/sun/security/tools/keytool/resources, \
+    CLASS := ListResourceBundle, \
+))
 
-TARGETS += $(COPY_ZH_HK)
+TARGETS += $(LIST_RESOURCE_BUNDLE) $(SUN_UTIL) $(SECURITY_RESOURCES) $(KEYTOOL_RESOURCES)
 
 ################################################################################
 

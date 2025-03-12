@@ -1864,9 +1864,7 @@ CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj) {
 
 void JVMCINMethodHandle::set_nmethod(nmethod* nm) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != nullptr) {
-    bs_nm->nmethod_entry_barrier(nm);
-  }
+  bs_nm->nmethod_entry_barrier(nm);
   _thread->set_live_nmethod(nm);
 }
 

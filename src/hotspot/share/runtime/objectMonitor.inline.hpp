@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,7 +249,7 @@ inline ObjectMonitorContentionMark::ObjectMonitorContentionMark(ObjectMonitor* m
   // contended enter protocol, which prevents the deflater thread from
   // winning the last part of the 2-part async deflation
   // protocol. See: ObjectMonitor::deflate_monitor() and
-  // ObjectMonitor::TryLockWithContentionMark().
+  // ObjectMonitor::try_lock_with_contention_mark().
   _monitor->add_to_contentions(1);
 }
 
@@ -261,7 +261,7 @@ inline ObjectMonitorContentionMark::~ObjectMonitorContentionMark() {
 }
 
 inline void ObjectMonitorContentionMark::extend() {
-  // Used by ObjectMonitor::TryLockWithContentionMark() to "extend the
+  // Used by ObjectMonitor::try_lock_with_contention_mark() to "extend the
   // lifetime" of the contention mark.
   assert(!_extended, "extending twice is probably a bad design");
   _monitor->add_to_contentions(1);

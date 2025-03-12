@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ class Invokers {
         MethodType invokerType = mtype.invokerType();
         int which = (isExact ? MethodTypeForm.LF_EX_INVOKER : MethodTypeForm.LF_GEN_INVOKER);
         LambdaForm lform = invokeHandleForm(mtype, false, which);
-        MethodHandle invoker = BoundMethodHandle.bindSingle(invokerType, lform, mtype);
+        MethodHandle invoker = BoundMethodHandle.bindSingleL(invokerType, lform, mtype);
         String whichName = (isExact ? "invokeExact" : "invoke");
         invoker = invoker.withInternalMemberName(MemberName.makeMethodHandleInvoke(whichName, mtype), false);
         assert(checkInvoker(invoker));
@@ -159,7 +159,7 @@ class Invokers {
 
         LambdaForm lform = varHandleMethodInvokerHandleForm(mtype, isExact);
         VarHandle.AccessDescriptor ad = new VarHandle.AccessDescriptor(mtype, ak.at.ordinal(), ak.ordinal());
-        MethodHandle invoker = BoundMethodHandle.bindSingle(invokerType, lform, ad);
+        MethodHandle invoker = BoundMethodHandle.bindSingleL(invokerType, lform, ad);
 
         invoker = invoker.withInternalMemberName(MemberName.makeVarHandleMethodInvoke(ak.methodName(), mtype), false);
         assert(checkVarHandleInvoker(invoker));

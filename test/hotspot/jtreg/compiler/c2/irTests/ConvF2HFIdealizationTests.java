@@ -31,6 +31,7 @@ import jdk.test.lib.Asserts;
  * @test
  * @bug 8338061
  * @summary Test that Ideal transformations of ConvF2HF are being performed as expected.
+ * @requires (os.arch != "ppc64" & os.arch != "ppc64le") | vm.cpu.features ~= ".*darn.*"
  * @modules jdk.incubator.vector
  * @library /test/lib /
  * @run driver compiler.c2.irTests.ConvF2HFIdealizationTests

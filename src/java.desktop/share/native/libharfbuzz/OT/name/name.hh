@@ -242,7 +242,9 @@ struct NameRecord
   bool sanitize (hb_sanitize_context_t *c, const void *base) const
   {
     TRACE_SANITIZE (this);
-    return_trace (c->check_struct (this) && offset.sanitize (c, base, length));
+    return_trace (c->check_struct (this) &&
+                  hb_barrier () &&
+                  offset.sanitize (c, base, length));
   }
 
   HBUINT16      platformID;     /* Platform ID. */
@@ -465,6 +467,7 @@ struct name
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
+                  hb_barrier () &&
                   likely (format == 0 || format == 1) &&
                   c->check_array (nameRecordZ.arrayZ, count) &&
                   c->check_range (this, stringOffset) &&
@@ -482,7 +485,7 @@ struct name
       const hb_array_t<const NameRecord> all_names (this->table->nameRecordZ.arrayZ,
                                                     this->table->count);
 
-      this->names.alloc (all_names.length, true);
+      this->names.alloc_exact (all_names.length);
 
       for (unsigned int i = 0; i < all_names.length; i++)
       {

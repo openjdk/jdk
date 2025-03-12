@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@
 
 #include "sun_java2d_pipe_ShapeSpanIterator.h"
 #include "java_awt_geom_PathIterator.h"
+
+#include "ub.h"
 
 /*
  * This structure holds all of the information needed to trace and
@@ -1233,6 +1235,7 @@ ShapeSIIntersectClipBox(JNIEnv *env, void *private,
     }
 }
 
+ATTRIBUTE_NO_UBSAN
 static jboolean
 ShapeSINextSpan(void *state, jint spanbox[])
 {

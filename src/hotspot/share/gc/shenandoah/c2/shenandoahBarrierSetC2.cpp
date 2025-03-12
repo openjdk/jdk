@@ -433,17 +433,6 @@ void ShenandoahBarrierSetC2::insert_pre_barrier(GraphKit* kit, Node* base_oop, N
   kit->final_sync(ideal);
 }
 
-Node* ShenandoahBarrierSetC2::byte_map_base_node(GraphKit* kit) const {
-  BarrierSet* bs = BarrierSet::barrier_set();
-  ShenandoahBarrierSet* ctbs = barrier_set_cast<ShenandoahBarrierSet>(bs);
-  CardTable::CardValue* card_table_base = ctbs->card_table()->byte_map_base();
-  if (card_table_base != nullptr) {
-    return kit->makecon(TypeRawPtr::make((address)card_table_base));
-  } else {
-    return kit->null();
-  }
-}
-
 void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
                                           Node* ctl,
                                           Node* oop_store,
@@ -487,14 +476,20 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
 
   IdealKit ideal(kit, true);
 
+  Node* tls = __ thread(); // ThreadLocalStorage
+
   // Convert the pointer to an int prior to doing math on it
   Node* cast = __ CastPX(__ ctrl(), adr);
+
+  Node* curr_ct_holder_offset = __ ConX(in_bytes(ShenandoahThreadLocalData::card_table_offset()));
+  Node* curr_ct_holder_addr  = __ AddP(__ top(), tls, curr_ct_holder_offset);
+  Node* curr_ct_base_addr = __ load( __ ctrl(), curr_ct_holder_addr, TypeRawPtr::NOTNULL, T_ADDRESS, Compile::AliasIdxRaw);
 
   // Divide by card size
   Node* card_offset = __ URShiftX( cast, __ ConI(CardTable::card_shift()) );
 
   // Combine card table base and card offset
-  Node* card_adr = __ AddP(__ top(), byte_map_base_node(kit), card_offset );
+  Node* card_adr = __ AddP(__ top(), curr_ct_base_addr, card_offset);
 
   // Get the alias_index for raw card-mark memory
   int adr_type = Compile::AliasIdxRaw;

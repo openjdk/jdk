@@ -818,7 +818,7 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
     st->print("# stack alignment check");
 #endif
   }
-  if (C->stub_function() != nullptr && BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
+  if (C->stub_function() != nullptr) {
     st->print("\n\t");
     st->print("cmpl    [r15_thread + #disarmed_guard_value_offset], #disarmed_guard_value\t");
     st->print("\n\t");

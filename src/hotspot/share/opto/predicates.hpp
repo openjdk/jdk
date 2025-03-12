@@ -403,6 +403,10 @@ class TemplateAssertionPredicate : public Predicate {
     return _if_node->assertion_predicate_type() == AssertionPredicateType::LastValue;
   }
 
+  bool is_useless() const {
+    return opaque_node()->is_useless();
+  }
+
   TemplateAssertionPredicate clone(Node* new_control, PhaseIdealLoop* phase) const;
   TemplateAssertionPredicate clone_and_replace_opaque_input(Node* new_control, Node* new_opaque_input,
                                                             PhaseIdealLoop* phase) const;
@@ -410,8 +414,8 @@ class TemplateAssertionPredicate : public Predicate {
   InitializedAssertionPredicate initialize(PhaseIdealLoop* phase) const;
   void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
                                      const PhaseIdealLoop* phase) const;
-  void kill(PhaseIdealLoop* phase) const;
-  static bool is_predicate(const Node* node);
+  void kill(PhaseIterGVN& igvn) const;
+  static bool is_predicate(const Node* maybe_success_proj);
 
 #ifdef ASSERT
   static void verify(IfTrueNode* template_assertion_predicate_success_proj) {
@@ -456,8 +460,12 @@ class InitializedAssertionPredicate : public Predicate {
     return _if_node->assertion_predicate_type() == AssertionPredicateType::LastValue;
   }
 
-  void kill(PhaseIdealLoop* phase) const;
-  static bool is_predicate(const Node* node);
+  bool is_useless() const {
+    return opaque_node()->is_useless();
+  }
+
+  void kill(PhaseIterGVN& igvn) const;
+  static bool is_predicate(const Node* maybe_success_proj);
 
 #ifdef ASSERT
   static void verify(IfTrueNode* initialized_assertion_predicate_success_proj) {
@@ -652,44 +660,78 @@ class InitializedAssertionPredicateCreator : public StackObj {
 
 // This class iterates through all predicates of a Regular Predicate Block and applies the given visitor to each.
 class RegularPredicateBlockIterator : public StackObj {
-  Node* const _start_node;
+  Node* _current_node;
   const Deoptimization::DeoptReason _deopt_reason;
 
  public:
   RegularPredicateBlockIterator(Node* start_node, Deoptimization::DeoptReason deopt_reason)
-      : _start_node(start_node),
+      : _current_node(start_node),
         _deopt_reason(deopt_reason) {}
   NONCOPYABLE(RegularPredicateBlockIterator);
 
   // Skip all predicates by just following the inputs. We do not call any user provided visitor.
-  Node* skip_all() const {
+  Node* skip_all() {
     PredicateVisitor do_nothing; // No real visits, just do nothing.
     return for_each(do_nothing);
   }
 
   // Walk over all predicates of this block (if any) and apply the given 'predicate_visitor' to each predicate.
   // Returns the entry to the earliest predicate.
-  Node* for_each(PredicateVisitor& predicate_visitor) const {
-    Node* current = _start_node;
+  Node* for_each(PredicateVisitor& predicate_visitor) {
     while (predicate_visitor.should_continue()) {
-      if (TemplateAssertionPredicate::is_predicate(current)) {
-        TemplateAssertionPredicate template_assertion_predicate(current->as_IfTrue());
-        predicate_visitor.visit(template_assertion_predicate);
-        current = template_assertion_predicate.entry();
-      } else if (RuntimePredicate::is_predicate(current, _deopt_reason)) {
-        RuntimePredicate runtime_predicate(current->as_IfProj());
-        predicate_visitor.visit(runtime_predicate);
-        current = runtime_predicate.entry();
-      } else if (InitializedAssertionPredicate::is_predicate(current)) {
-        InitializedAssertionPredicate initialized_assertion_predicate(current->as_IfTrue());
-        predicate_visitor.visit(initialized_assertion_predicate);
-        current = initialized_assertion_predicate.entry();
-      } else {
-        // Either a Parse Predicate or not a Regular Predicate. In both cases, the node does not belong to this block.
-        break;
+      if (process_template_assertion_predicate(predicate_visitor)) {
+        continue;
       }
+
+      if (process_runtime_predicate(predicate_visitor)) {
+        continue;
+      }
+
+      if (process_initialized_assertion_predicate(predicate_visitor)) {
+        continue;
+      }
+      // Either a Parse Predicate or not a Regular Predicate. In both cases, the node does not belong to this block.
+      break;
     }
-    return current;
+    return _current_node;
+  }
+
+  bool process_template_assertion_predicate(PredicateVisitor& predicate_visitor) {
+    if (!TemplateAssertionPredicate::is_predicate(_current_node)) {
+      return false;
+    }
+
+    TemplateAssertionPredicate template_assertion_predicate(_current_node->as_IfTrue());
+    if (!template_assertion_predicate.is_useless()) {
+      // Only visit if not useless. Otherwise, just skip over it to possibly process other predicates above.
+      predicate_visitor.visit(template_assertion_predicate);
+    }
+    _current_node = template_assertion_predicate.entry();
+    return true;
+  }
+
+  bool process_runtime_predicate(PredicateVisitor& predicate_visitor) {
+    if (!RuntimePredicate::is_predicate(_current_node, _deopt_reason)) {
+      return false;
+    }
+    RuntimePredicate runtime_predicate(_current_node->as_IfProj());
+    predicate_visitor.visit(runtime_predicate);
+    _current_node = runtime_predicate.entry();
+    return true;
+  }
+
+  bool process_initialized_assertion_predicate(PredicateVisitor& predicate_visitor) {
+    if (!InitializedAssertionPredicate::is_predicate(_current_node)) {
+      return false;
+    }
+
+    InitializedAssertionPredicate initialized_assertion_predicate(_current_node->as_IfTrue());
+    if (!initialized_assertion_predicate.is_useless()) {
+      // Only visit if not useless. Otherwise, just skip over it to possibly process other predicates above.
+      predicate_visitor.visit(initialized_assertion_predicate);
+    }
+    _current_node = initialized_assertion_predicate.entry();
+    return true;
   }
 };
 
@@ -697,7 +739,7 @@ class RegularPredicateBlockIterator : public StackObj {
 class PredicateBlockIterator : public StackObj {
   Node* const _start_node;
   const ParsePredicate _parse_predicate; // Could be missing.
-  const RegularPredicateBlockIterator _regular_predicate_block_iterator;
+  RegularPredicateBlockIterator _regular_predicate_block_iterator;
 
  public:
   PredicateBlockIterator(Node* start_node, Deoptimization::DeoptReason deopt_reason)
@@ -707,7 +749,7 @@ class PredicateBlockIterator : public StackObj {
 
   // Walk over all predicates of this block (if any) and apply the given 'predicate_visitor' to each predicate.
   // Returns the entry to the earliest predicate.
-  Node* for_each(PredicateVisitor& predicate_visitor) const {
+  Node* for_each(PredicateVisitor& predicate_visitor) {
     if (!predicate_visitor.should_continue()) {
       return _start_node;
     }
@@ -731,20 +773,20 @@ class PredicateIterator : public StackObj {
   // Apply the 'predicate_visitor' for each predicate found in the predicate chain started at the provided node.
   // Returns the entry to the earliest predicate.
   Node* for_each(PredicateVisitor& predicate_visitor) const {
-    Node* current = _start_node;
-    PredicateBlockIterator loop_limit_check_predicate_iterator(current, Deoptimization::Reason_loop_limit_check);
-    current = loop_limit_check_predicate_iterator.for_each(predicate_visitor);
-    PredicateBlockIterator auto_vectorization_check_iterator(current, Deoptimization::Reason_auto_vectorization_check);
-    current = auto_vectorization_check_iterator.for_each(predicate_visitor);
+    Node* current_node = _start_node;
+    PredicateBlockIterator loop_limit_check_predicate_iterator(current_node, Deoptimization::Reason_loop_limit_check);
+    current_node = loop_limit_check_predicate_iterator.for_each(predicate_visitor);
+    PredicateBlockIterator auto_vectorization_check_iterator(current_node, Deoptimization::Reason_auto_vectorization_check);
+    current_node = auto_vectorization_check_iterator.for_each(predicate_visitor);
     if (UseLoopPredicate) {
       if (UseProfiledLoopPredicate) {
-        PredicateBlockIterator profiled_loop_predicate_iterator(current, Deoptimization::Reason_profile_predicate);
-        current = profiled_loop_predicate_iterator.for_each(predicate_visitor);
+        PredicateBlockIterator profiled_loop_predicate_iterator(current_node, Deoptimization::Reason_profile_predicate);
+        current_node = profiled_loop_predicate_iterator.for_each(predicate_visitor);
       }
-      PredicateBlockIterator loop_predicate_iterator(current, Deoptimization::Reason_predicate);
-      current = loop_predicate_iterator.for_each(predicate_visitor);
+      PredicateBlockIterator loop_predicate_iterator(current_node, Deoptimization::Reason_predicate);
+      current_node = loop_predicate_iterator.for_each(predicate_visitor);
     }
-    return current;
+    return current_node;
   }
 };
 
@@ -1193,15 +1235,6 @@ class UpdateStrideForAssertionPredicates : public PredicateVisitor {
   using PredicateVisitor::visit;
 
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
-
-  // Kill the old Initialized Assertion Predicates with old strides before unrolling. The new Initialized Assertion
-  // Predicates are inserted after the Template Assertion Predicate which ensures that we are not accidentally visiting
-  // and killing a newly created Initialized Assertion Predicate here.
-  void visit(const InitializedAssertionPredicate& initialized_assertion_predicate) override {
-    if (initialized_assertion_predicate.is_last_value()) {
-      // Only Last Value Initialized Assertion Predicates need to be killed and updated.
-      initialized_assertion_predicate.kill(_phase);
-    }
-  }
+  void visit(const InitializedAssertionPredicate& initialized_assertion_predicate) override;
 };
 #endif // SHARE_OPTO_PREDICATES_HPP
