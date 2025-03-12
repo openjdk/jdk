@@ -110,11 +110,13 @@ public class TableOfContents {
                 .add(HtmlTree.SPAN(writer.contents.hideSidebar).add(Entity.NO_BREAK_SPACE))
                 .add(HtmlTree.of(HtmlTag.IMG)
                         .put(HtmlAttr.SRC, writer.pathToRoot.resolve(DocPaths.RESOURCE_FILES)
-                                .resolve(DocPaths.LEFT_SVG).getPath())));
+                                .resolve(DocPaths.LEFT_SVG).getPath())
+                        .put(HtmlAttr.ALT, writer.contents.hideSidebar.toString())));
         content.add(HtmlTree.BUTTON(HtmlStyles.showSidebar)
                 .add(HtmlTree.of(HtmlTag.IMG)
                         .put(HtmlAttr.SRC, writer.pathToRoot.resolve(DocPaths.RESOURCE_FILES)
-                                .resolve(DocPaths.RIGHT_SVG).getPath()))
+                                .resolve(DocPaths.RIGHT_SVG).getPath())
+                        .put(HtmlAttr.ALT, writer.contents.showSidebar.toString()))
                 .add(HtmlTree.SPAN(Entity.NO_BREAK_SPACE).add(writer.contents.showSidebar)));
         return content;
     }
