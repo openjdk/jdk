@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8189841 8253117 8263507 8320458
+ * @bug 8189841 8253117 8263507 8320458 8350638
  * @summary Error in alternate row coloring in package-summary files
  * @summary Improve structure of package summary pages
  * @library  ../../lib/
@@ -51,14 +51,14 @@ public class TestPackageSummary extends JavadocTester {
 
         checkOutput("pkg/package-summary.html", true,
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#class-summary" tabindex="0">Classes and Interfaces</a></li>
                     </ol>
                     """);
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#related-package-summary" tabindex="0">Related Packages</a></li>
                     <li><a href="#class-summary" tabindex="0">Classes and Interfaces</a></li>
@@ -66,7 +66,7 @@ public class TestPackageSummary extends JavadocTester {
                     """);
         checkOutput("pkg1/sub/package-summary.html", true,
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#related-package-summary" tabindex="0">Related Packages</a></li>
                     <li><a href="#class-summary" tabindex="0">Classes and Interfaces</a></li>

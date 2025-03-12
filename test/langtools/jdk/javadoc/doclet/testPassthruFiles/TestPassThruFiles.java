@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8323628
+ * @bug      8323628 8351626
  * @summary  Update license on "pass-through" files
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -60,10 +60,6 @@ public class TestPassThruFiles extends JavadocTester {
         checkExit(Exit.OK);
 
         var files = List.of(
-                "resource-files/copy.svg",
-                "resource-files/down.svg",
-                "resource-files/link.svg",
-                "resource-files/right.svg",
                 "resource-files/stylesheet.css",
                 "script-files/script.js",
                 "script-files/search.js",
@@ -118,6 +114,6 @@ public class TestPassThruFiles extends JavadocTester {
     private boolean requiresCheck(Path p) {
         var fn = p.getFileName().toString();
         return !fn.startsWith("jquery")
-                && !fn.endsWith(".png");
+                && !fn.endsWith(".svg");
     }
 }

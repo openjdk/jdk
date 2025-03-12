@@ -92,6 +92,7 @@ public class HtmlIds {
     static final HtmlId FIELD_SUMMARY = HtmlId.of("field-summary");
     static final HtmlId FOR_REMOVAL = HtmlId.of("for-removal");
     static final HtmlId HELP_NAVIGATION = HtmlId.of("help-navigation");
+    static final HtmlId HELP_KEYBOARD_NAVIGATION = HtmlId.of("help-keyboard-navigation");
     static final HtmlId HELP_PAGES = HtmlId.of("help-pages");
     static final HtmlId HELP_RELEASES = HtmlId.of("help-releases");
     static final HtmlId METHOD_DETAIL = HtmlId.of("method-detail");

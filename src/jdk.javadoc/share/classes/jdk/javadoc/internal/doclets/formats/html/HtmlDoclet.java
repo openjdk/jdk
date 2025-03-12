@@ -318,6 +318,7 @@ public class HtmlDoclet extends AbstractDoclet {
         }
         copyResource(DocPaths.SCRIPT_JS_TEMPLATE, DocPaths.SCRIPT_FILES.resolve(DocPaths.SCRIPT_JS), true);
         copyResource(DocPaths.DOWN_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.DOWN_SVG), true);
+        copyResource(DocPaths.LEFT_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.LEFT_SVG), true);
         copyResource(DocPaths.RIGHT_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.RIGHT_SVG), true);
         copyResource(DocPaths.CLIPBOARD_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.CLIPBOARD_SVG), true);
         copyResource(DocPaths.LINK_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.LINK_SVG), true);
@@ -325,8 +326,8 @@ public class HtmlDoclet extends AbstractDoclet {
         if (options.createIndex()) {
             copyResource(DocPaths.SEARCH_JS_TEMPLATE, DocPaths.SCRIPT_FILES.resolve(DocPaths.SEARCH_JS), true);
             copyResource(DocPaths.SEARCH_PAGE_JS, DocPaths.SCRIPT_FILES.resolve(DocPaths.SEARCH_PAGE_JS), true);
-            copyResource(DocPaths.GLASS_IMG, DocPaths.RESOURCE_FILES.resolve(DocPaths.GLASS_IMG), false);
-            copyResource(DocPaths.X_IMG, DocPaths.RESOURCE_FILES.resolve(DocPaths.X_IMG), false);
+            copyResource(DocPaths.GLASS_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.GLASS_SVG), false);
+            copyResource(DocPaths.X_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.X_SVG), false);
             // No newline replacement for JQuery files
             copyResource(DocPaths.JQUERY_DIR.resolve(DocPaths.JQUERY_JS),
                     DocPaths.SCRIPT_FILES.resolve(DocPaths.JQUERY_JS), false);
