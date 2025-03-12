@@ -560,6 +560,8 @@ public:
   // Live bytes in the given region as determined by concurrent marking, i.e. the amount of
   // live bytes between bottom and TAMS.
   size_t live_bytes(uint region) const { return _region_mark_stats[region]._live_words * HeapWordSize; }
+
+  size_t ref_count(uint region) const { return _region_mark_stats[region]._refs_to_region; }
   // Set live bytes for concurrent marking.
   void set_live_bytes(uint region, size_t live_bytes) { _region_mark_stats[region]._live_words = live_bytes / HeapWordSize; }
 
@@ -951,6 +953,8 @@ public:
            G1RegionMarkStats* mark_stats);
 
   inline void update_liveness(oop const obj, size_t const obj_size);
+
+  inline void update_ref_count(oop const obj);
 
   // Clear (without flushing) the mark cache entry for the given region.
   void clear_mark_stats_cache(uint region_idx);

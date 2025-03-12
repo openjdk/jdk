@@ -106,9 +106,11 @@ public:
   // up at the end of the list.
   static int compare_gc_efficiency(G1CSetCandidateGroup** gr1, G1CSetCandidateGroup** gr2);
 
-  static int compare_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
+  static int compare_weighted_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
 
   double gc_efficiency() const { return _gc_efficiency; }
+
+  size_t reclaimable_bytes() const { return _reclaimable_bytes; }
 
   G1HeapRegion* region_at(uint i) const { return _candidates.at(i)._r; }
 

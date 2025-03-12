@@ -237,6 +237,10 @@ private:
   // Amount of dead data in the region.
   size_t _garbage_bytes;
 
+  // Approximate number of references to this regions
+  // at the end of concurrent marking.
+  size_t _ref_count;
+
   // Data for young region survivor prediction.
   uint  _young_index_in_cset;
   G1SurvRateGroup* _surv_rate_group;
@@ -339,6 +343,11 @@ public:
     return capacity() - known_live_bytes;
   }
 
+  double weighted_reclaimable_bytes() {
+    double const epsilon = 1e-6; // Boost regions with zero reference count and also avoid divide by zero checks
+    return reclaimable_bytes() / (_ref_count + epsilon);
+  }
+
   inline bool is_collection_set_candidate() const;
 
   // Retrieve parsable bottom; since it may be modified concurrently, outside a
@@ -353,7 +362,7 @@ public:
 
   // Notify the region that concurrent marking has finished. Passes TAMS and the number of
   // bytes marked between bottom and TAMS.
-  inline void note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes);
+  inline void note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes, size_t ref_count);
 
   // Notify the region that scrubbing has completed.
   inline void note_end_of_scrubbing();

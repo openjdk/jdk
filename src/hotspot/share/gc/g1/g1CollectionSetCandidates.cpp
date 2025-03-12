@@ -134,7 +134,7 @@ int G1CSetCandidateGroup::compare_gc_efficiency(G1CSetCandidateGroup** gr1, G1CS
   }
 }
 
-int G1CSetCandidateGroup::compare_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
+int G1CSetCandidateGroup::compare_weighted_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
   // Make sure that null entries are moved to the end.
   if (ci1->_r == nullptr) {
     if (ci2->_r == nullptr) {
@@ -146,8 +146,8 @@ int G1CSetCandidateGroup::compare_reclaimble_bytes(G1CollectionSetCandidateInfo*
     return -1;
   }
 
-  size_t reclaimable1 = ci1->_r->reclaimable_bytes();
-  size_t reclaimable2 = ci2->_r->reclaimable_bytes();
+  size_t reclaimable1 = ci1->_r->weighted_reclaimable_bytes();
+  size_t reclaimable2 = ci2->_r->weighted_reclaimable_bytes();
 
   if (reclaimable1 > reclaimable2) {
     return -1;
