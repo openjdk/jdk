@@ -25,6 +25,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlAttr;
@@ -107,9 +108,13 @@ public class TableOfContents {
         content.add(listBuilder);
         content.add(HtmlTree.BUTTON(HtmlStyles.hideSidebar)
                 .add(HtmlTree.SPAN(writer.contents.hideSidebar).add(Entity.NO_BREAK_SPACE))
-                .add(Entity.LEFT_POINTING_ANGLE));
+                .add(HtmlTree.of(HtmlTag.IMG)
+                        .put(HtmlAttr.SRC, writer.pathToRoot.resolve(DocPaths.RESOURCE_FILES)
+                                .resolve(DocPaths.LEFT_SVG).getPath())));
         content.add(HtmlTree.BUTTON(HtmlStyles.showSidebar)
-                .add(Entity.RIGHT_POINTING_ANGLE)
+                .add(HtmlTree.of(HtmlTag.IMG)
+                        .put(HtmlAttr.SRC, writer.pathToRoot.resolve(DocPaths.RESOURCE_FILES)
+                                .resolve(DocPaths.RIGHT_SVG).getPath()))
                 .add(HtmlTree.SPAN(Entity.NO_BREAK_SPACE).add(writer.contents.showSidebar)));
         return content;
     }

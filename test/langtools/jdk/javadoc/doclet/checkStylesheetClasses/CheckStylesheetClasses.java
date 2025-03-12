@@ -131,7 +131,7 @@ public class CheckStylesheetClasses {
         // or if they are unused and therefore candidates to be deleted.
 
         // false positives: file extensions and URL components
-        removeAll(styleSheetNames, "css", "png", "w3", "org");
+        removeAll(styleSheetNames, "css", "svg", "w3", "org");
 
         // for doc-comment authors; maybe worthy of inclusion in HtmlStyle, just to be documented
         removeAll(styleSheetNames, "borderless", "plain", "striped");
