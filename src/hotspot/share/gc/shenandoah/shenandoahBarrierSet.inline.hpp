@@ -121,10 +121,9 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(DecoratorSet decorators,
     return nullptr;
   }
 
-  // Prevent resurrection of unreachable objects that are visited during
-  // concurrent class-unloading.
+  // Allow runtime to see unreachable objects that are visited during concurrent class-unloading.
   if ((decorators & AS_NO_KEEPALIVE) != 0 &&
-      _heap->is_evacuation_in_progress() &&
+      _heap->is_concurrent_weak_root_in_progress() &&
       !_heap->marking_context()->is_marked(obj)) {
     return obj;
   }
