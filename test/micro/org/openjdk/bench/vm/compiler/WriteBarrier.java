@@ -183,7 +183,6 @@ public abstract class WriteBarrier {
         }
     }
 
-
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathOldToYoungLarge() {
