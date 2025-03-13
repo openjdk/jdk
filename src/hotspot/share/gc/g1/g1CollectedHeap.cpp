@@ -402,7 +402,7 @@ G1CollectedHeap::mem_allocate(size_t word_size,
   return attempt_allocation(word_size, word_size, &dummy);
 }
 
-HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size, uint node_index) {
+HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_size) {
   ResourceMark rm; // For retrieving the thread names in log messages.
 
   // Make sure you read the note in attempt_allocation_humongous().
@@ -426,7 +426,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size, uint node_i
 
       // Now that we have the lock, we first retry the allocation in case another
       // thread changed the region while we were waiting to acquire the lock.
-      result = _allocator->attempt_allocation_locked(word_size, node_index);
+      result = _allocator->attempt_allocation_locked(node_index, word_size);
       if (result != nullptr) {
         return result;
       }
@@ -453,7 +453,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size, uint node_i
     // here and the follow-on attempt will be at the start of the next loop
     // iteration (after taking the Heap_lock).
     size_t dummy = 0;
-    result = _allocator->attempt_allocation(word_size, word_size, node_index, &dummy);
+    result = _allocator->attempt_allocation(node_index, word_size, word_size, &dummy);
     if (result != nullptr) {
       return result;
     }
@@ -590,11 +590,11 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t min_word_size,
   // Fix NUMA node association for the duration of this allocation
   const uint node_index = _allocator->current_node_index();
 
-  HeapWord* result = _allocator->attempt_allocation(min_word_size, desired_word_size, node_index, actual_word_size);
+  HeapWord* result = _allocator->attempt_allocation(node_index, min_word_size, desired_word_size, actual_word_size);
 
   if (result == nullptr) {
     *actual_word_size = desired_word_size;
-    result = attempt_allocation_slow(desired_word_size, node_index);
+    result = attempt_allocation_slow(node_index, desired_word_size);
   }
 
   assert_heap_not_locked();
@@ -705,7 +705,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
   const uint node_index = _allocator->current_node_index();
 
   if (!is_humongous(word_size)) {
-    return _allocator->attempt_allocation_locked(word_size, node_index);
+    return _allocator->attempt_allocation_locked(node_index, word_size);
   } else {
     HeapWord* result = humongous_obj_allocate(word_size);
     if (result != nullptr && policy()->need_to_start_conc_mark("STW humongous allocation")) {
