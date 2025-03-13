@@ -1380,7 +1380,6 @@ Node* RShiftINode::Identity(PhaseGVN* phase) {
   return IdentityIL(phase, T_INT);
 }
 
-//------------------------------Ideal------------------------------------------
 Node* RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   // Inputs may be TOP if they are dead.
   const TypeInteger* t1 = phase->type(in(1))->isa_integer(bt);
