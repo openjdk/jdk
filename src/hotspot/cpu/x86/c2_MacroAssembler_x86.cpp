@@ -134,21 +134,19 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
   if (!is_stub) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
  #ifdef _LP64
-    if (BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
-      // We put the non-hot code of the nmethod entry barrier out-of-line in a stub.
-      Label dummy_slow_path;
-      Label dummy_continuation;
-      Label* slow_path = &dummy_slow_path;
-      Label* continuation = &dummy_continuation;
-      if (!Compile::current()->output()->in_scratch_emit_size()) {
-        // Use real labels from actual stub when not emitting code for the purpose of measuring its size
-        C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
-        Compile::current()->output()->add_stub(stub);
-        slow_path = &stub->entry();
-        continuation = &stub->continuation();
-      }
-      bs->nmethod_entry_barrier(this, slow_path, continuation);
+    // We put the non-hot code of the nmethod entry barrier out-of-line in a stub.
+    Label dummy_slow_path;
+    Label dummy_continuation;
+    Label* slow_path = &dummy_slow_path;
+    Label* continuation = &dummy_continuation;
+    if (!Compile::current()->output()->in_scratch_emit_size()) {
+      // Use real labels from actual stub when not emitting code for the purpose of measuring its size
+      C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
+      Compile::current()->output()->add_stub(stub);
+      slow_path = &stub->entry();
+      continuation = &stub->continuation();
     }
+    bs->nmethod_entry_barrier(this, slow_path, continuation);
 #else
     // Don't bother with out-of-line nmethod entry barrier stub for x86_32.
     bs->nmethod_entry_barrier(this, nullptr /* slow_path */, nullptr /* continuation */);
@@ -6857,7 +6855,7 @@ void C2_MacroAssembler::vpsign_extend_dq(BasicType elem_bt, XMMRegister dst, XMM
 
 void C2_MacroAssembler::vpgenmax_value(BasicType elem_bt, XMMRegister dst, XMMRegister allones, int vlen_enc, bool compute_allones) {
   if (compute_allones) {
-    if (vlen_enc == Assembler::AVX_512bit) {
+    if (VM_Version::supports_avx512vl() || vlen_enc == Assembler::AVX_512bit) {
       vpternlogd(allones, 0xff, allones, allones, vlen_enc);
     } else {
       vpcmpeqq(allones, allones, allones, vlen_enc);
@@ -6873,7 +6871,7 @@ void C2_MacroAssembler::vpgenmax_value(BasicType elem_bt, XMMRegister dst, XMMRe
 
 void C2_MacroAssembler::vpgenmin_value(BasicType elem_bt, XMMRegister dst, XMMRegister allones, int vlen_enc, bool compute_allones) {
   if (compute_allones) {
-    if (vlen_enc == Assembler::AVX_512bit) {
+    if (VM_Version::supports_avx512vl() || vlen_enc == Assembler::AVX_512bit) {
       vpternlogd(allones, 0xff, allones, allones, vlen_enc);
     } else {
       vpcmpeqq(allones, allones, allones, vlen_enc);

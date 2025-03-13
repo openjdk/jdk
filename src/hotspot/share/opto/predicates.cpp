@@ -220,10 +220,10 @@ InitializedAssertionPredicate TemplateAssertionPredicate::initialize(PhaseIdealL
   return initialized_assertion_predicate;
 }
 
-// Kills the Template Assertion Predicate by setting the condition to true. Will be folded away in the next IGVN round.
-void TemplateAssertionPredicate::kill(PhaseIdealLoop* phase) const {
-  ConINode* true_con = phase->intcon(1);
-  phase->igvn().replace_input_of(_if_node, 1, true_con);
+// Kills this Template Assertion Predicate by marking the associated OpaqueTemplateAssertionPredicate node useless.
+// It will then be folded away in the next IGVN round.
+void TemplateAssertionPredicate::kill(PhaseIterGVN& igvn) const {
+  opaque_node()->mark_useless(igvn);
 }
 
 #ifdef ASSERT
@@ -303,9 +303,10 @@ bool InitializedAssertionPredicate::is_predicate(const Node* node) {
   return if_node->in(1)->is_OpaqueInitializedAssertionPredicate();
 }
 
-void InitializedAssertionPredicate::kill(PhaseIdealLoop* phase) const {
-  Node* true_con = phase->intcon(1);
-  phase->igvn().replace_input_of(_if_node, 1, true_con);
+// Kills this Initialized Assertion Predicate by marking the associated OpaqueInitializedAssertionPredicate node useless.
+// It will then be folded away in the next IGVN round.
+void InitializedAssertionPredicate::kill(PhaseIterGVN& igvn) const {
+  opaque_node()->mark_useless(igvn);
 }
 
 #ifdef ASSERT
@@ -1084,7 +1085,7 @@ void CloneUnswitchedLoopPredicatesVisitor::visit(const TemplateAssertionPredicat
 
   _clone_predicate_to_true_path_loop.clone_template_assertion_predicate(template_assertion_predicate);
   _clone_predicate_to_false_path_loop.clone_template_assertion_predicate(template_assertion_predicate);
-  template_assertion_predicate.kill(_phase);
+  template_assertion_predicate.kill(_phase->igvn());
 }
 
 // Update the Template Assertion Predicate by setting a new input for the OpaqueLoopStrideNode. Create a new
@@ -1099,6 +1100,16 @@ void UpdateStrideForAssertionPredicates::visit(const TemplateAssertionPredicate&
   InitializedAssertionPredicate initialized_assertion_predicate =
       initialize_from_updated_template(template_assertion_predicate);
   connect_initialized_assertion_predicate(template_tail_control_out, initialized_assertion_predicate);
+}
+
+// Kill the old Initialized Assertion Predicates with old strides before unrolling. The new Initialized Assertion
+// Predicates are inserted after the Template Assertion Predicate which ensures that we are not accidentally visiting
+// and killing a newly created Initialized Assertion Predicate here.
+void UpdateStrideForAssertionPredicates::visit(const InitializedAssertionPredicate& initialized_assertion_predicate) {
+  if (initialized_assertion_predicate.is_last_value()) {
+    // Only Last Value Initialized Assertion Predicates need to be killed and updated.
+    initialized_assertion_predicate.kill(_phase->igvn());
+  }
 }
 
 // Replace the input to OpaqueLoopStrideNode with 'new_stride' and leave the other nodes unchanged.
