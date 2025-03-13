@@ -335,9 +335,6 @@ class nmethod : public CodeBlob {
 
   nmethod(nmethod& nm);
 
-  // Create nmethod in a specific code heap
-  void* operator new(size_t size, int nmethod_size, CodeBlobType code_blob_type) throw();
-
   // helper methods
   void* operator new(size_t size, int nmethod_size, int comp_level) throw();
 
@@ -345,6 +342,8 @@ class nmethod : public CodeBlob {
   // Attention: Only allow NonNMethod space for special nmethods which don't need to be
   // findable by nmethod iterators! In particular, they must not contain oops!
   void* operator new(size_t size, int nmethod_size, bool allow_NonNMethod_space) throw();
+
+  nmethod* clone(CodeBlobType code_blob_type);
 
   const char* reloc_string_for(u_char* begin, u_char* end);
 

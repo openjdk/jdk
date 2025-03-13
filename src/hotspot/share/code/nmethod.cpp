@@ -1393,145 +1393,63 @@ nmethod::nmethod(
   }
 }
 
-nmethod::nmethod(nmethod& nm) : CodeBlob(nm.name(), CodeBlobKind::Nmethod, nm.size(), nm.header_size())
-{
+nmethod* nmethod::clone(CodeBlobType code_blob_type) {
   debug_only(NoSafepointVerifier nsv;)
   assert_locked_or_safepoint(CodeCache_lock);
 
-  if (nm.oop_maps() == nullptr) {
-    _oop_maps                   = nullptr;
-  } else {
-    _oop_maps                   = nm.oop_maps()->clone();
-  }
-  _relocation_size              = nm._relocation_size;
-  _content_offset               = nm._content_offset;
-  _code_offset                  = nm._code_offset;
-  _data_offset                  = nm._data_offset;
-  _frame_size                   = nm._frame_size;
-  _frame_complete_offset        = nm._frame_complete_offset;
-  _caller_must_gc_arguments     = nm._caller_must_gc_arguments;
-
-  _deoptimization_generation    = nm._deoptimization_generation;
-
-  _gc_epoch                     = nm._gc_epoch;
-
-  _osr_link                     = nm._osr_link;
-  _native_receiver_sp_offset    = nm._native_receiver_sp_offset;
-  _native_basic_lock_sp_offset  = nm._native_basic_lock_sp_offset;
+  // Allocate memory in code heap and copy data from nmethod
+  nmethod* nm_copy = (nmethod*) CodeCache::allocate(size(), code_blob_type);
+  memcpy(nm_copy, this, size());
 
   // Allocate memory and copy immutable data from C heap
-  if (nm.immutable_data_size() > 0) {
-    _immutable_data             = (address)os::malloc(nm.immutable_data_size(), mtCode);
-    if (_immutable_data == nullptr) {
-      vm_exit_out_of_memory(nm.immutable_data_size(), OOM_MALLOC_ERROR, "nmethod: no space for immutable data");
+  if (immutable_data_size() > 0) {
+    nm_copy->_immutable_data = (address)os::malloc(immutable_data_size(), mtCode);
+    if (nm_copy->_immutable_data == nullptr) {
+      vm_exit_out_of_memory(immutable_data_size(), OOM_MALLOC_ERROR, "nmethod: no space for immutable data");
     }
-    memcpy(immutable_data_begin(), nm.immutable_data_begin(), nm.immutable_data_size());
+    memcpy(nm_copy->immutable_data_begin(), immutable_data_begin(), immutable_data_size());
   } else {
-    _immutable_data             = data_end();
+    nm_copy->_immutable_data = nm_copy->data_end();
   }
-
-  _exception_cache              = nullptr;
-
-  _gc_data                      = nullptr;
-
-  _oops_do_mark_nmethods        = nm._oops_do_mark_nmethods;
-
-  _oops_do_mark_link            = nm._oops_do_mark_link;
-
-  _compiled_ic_data             = nullptr;
-
-  _osr_entry_point              = code_begin() + (nm._osr_entry_point - nm.code_begin());
-  _entry_offset                 = nm._entry_offset;
-  _verified_entry_offset        = nm._verified_entry_offset;
-  _entry_bci                    = nm._entry_bci;
-  _immutable_data_size          = nm._immutable_data_size;
-
-  _skipped_instructions_size    = nm._skipped_instructions_size;
-
-  _stub_offset                  = nm._stub_offset;
-
-  _exception_offset             = nm._exception_offset;
-
-  _deopt_handler_offset         = nm._deopt_handler_offset;
-  _deopt_mh_handler_offset      = nm._deopt_mh_handler_offset;
-  _unwind_handler_offset        = nm._unwind_handler_offset;
-
-  _num_stack_arg_slots          = nm._num_stack_arg_slots;
-
-  _oops_size                    = nm._oops_size;
-
-#if INCLUDE_JVMCI
-  _jvmci_data_size              = nm._jvmci_data_size;
-#endif
-
-  _nul_chk_table_offset         = nm._nul_chk_table_offset;
-  _handler_table_offset         = nm._handler_table_offset;
-  _scopes_pcs_offset            = nm._scopes_pcs_offset;
-  _scopes_data_offset           = nm._scopes_data_offset;
-
-  if (nm._pc_desc_container == nullptr) {
-    _pc_desc_container          = nullptr;
-  } else {
-    _pc_desc_container          = new PcDescContainer(scopes_pcs_begin());
-  }
-
-#if INCLUDE_JVMCI
-  _speculations_offset          = nm._speculations_offset;
-#endif
-
-  _orig_pc_offset               = nm._orig_pc_offset;
-
-  _compile_id                   = nm._compile_id;
-  _comp_level                   = nm._comp_level;
-  _compiler_type                = nm._compiler_type;
-
-  _is_unloading_state           = nm._is_unloading_state;
-
-  _state                        = nm._state;
-
-  _has_unsafe_access            = nm._has_method_handle_invokes;
-  _has_method_handle_invokes    = nm._has_method_handle_invokes;
-  _has_wide_vectors             = nm._has_wide_vectors;
-  _has_monitors                 = nm._has_monitors;
-  _has_scoped_access            = nm._has_scoped_access;
-  _has_flushed_dependencies     = nm._has_flushed_dependencies;
-  _is_unlinked                  = nm._is_unlinked;
-  _load_reported                = nm._load_reported;
-
-  _deoptimization_status        = nm._deoptimization_status;
 
   // Allocate memory and copy mutable data from C heap
-  _mutable_data_size            = nm._mutable_data_size;
   if (_mutable_data_size > 0) {
-    _mutable_data               = (address)os::malloc(_mutable_data_size, mtCode);
+    nm_copy->_mutable_data = (address)os::malloc(_mutable_data_size, mtCode);
     if (_mutable_data == nullptr) {
       vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "nmethod: no space for mutable data");
     }
-    memcpy(mutable_data_begin(), nm.mutable_data_begin(), nm.mutable_data_size());
+    memcpy(nm_copy->mutable_data_begin(), mutable_data_begin(), mutable_data_size());
   }
 
-  // Copy all nmethod data outside of header
-  memcpy(content_begin(), nm.content_begin(), nm.size() - nm.header_size());
+  // Fix new nmethod specific data
+  if (oop_maps() != nullptr) {
+    nm_copy->_oop_maps = oop_maps()->clone();
+  }
 
-  RelocIterator iter(this);
-  CodeBuffer src((CodeBlob *)&nm);
-  CodeBuffer dst(this);
+  nm_copy->_exception_cache = nullptr;
+  nm_copy->_gc_data = nullptr;
+  nm_copy->_compiled_ic_data = nullptr;
+
+  if (_pc_desc_container != nullptr) {
+    nm_copy->_pc_desc_container = new PcDescContainer(nm_copy->scopes_pcs_begin());
+  }
+
+  _asm_remarks.reuse();
+  _dbg_strings.reuse();
+
+  // Fix relocation
+  RelocIterator iter(nm_copy);
+  CodeBuffer src((CodeBlob *)this);
+  CodeBuffer dst(nm_copy);
   while (iter.next()) {
     iter.reloc()->fix_relocation_after_move(&src, &dst);
   }
 
-  ICache::invalidate_range(code_begin(), code_size());
+  ICache::invalidate_range(nm_copy->code_begin(), nm_copy->code_size());
 
-  _method                       = nm._method;
+  nm_copy->post_init();
 
-  post_init();
-
-  // Update corresponding Java method to point to this nmethod
-  MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
-  if (_method != nullptr && _method->code() == &nm) {
-    methodHandle mh(Thread::current(), _method);
-    _method->set_code(mh, this, true);
-  }
+  return nm_copy;
 }
 
 nmethod* nmethod::relocate_to(nmethod* nm, CodeBlobType code_blob_type) {
@@ -1552,7 +1470,7 @@ nmethod* nmethod::relocate_to(nmethod* nm, CodeBlobType code_blob_type) {
     VMThread::execute(&clear_nmethod_ics);
 
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    nm_copy = new (nm->size(), code_blob_type) nmethod(*nm);
+    nm_copy = nm->clone(code_blob_type);
 
     if (nm_copy != nullptr) {
       // To make dependency checking during class loading fast, record
@@ -1577,6 +1495,14 @@ nmethod* nmethod::relocate_to(nmethod* nm, CodeBlobType code_blob_type) {
           ik->add_dependent_nmethod(nm_copy);
         }
       }
+
+      // Update corresponding Java method to point to this nmethod
+      MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
+      if (nm_copy->method() != nullptr && nm_copy->method()->code() == nm) {
+        methodHandle mh(Thread::current(), nm_copy->method());
+        nm_copy->method()->set_code(mh, nm_copy, true);
+        nm->make_not_used();
+      }
     }
   }
   // Do verification and logging outside CodeCache_lock.
@@ -1586,8 +1512,6 @@ nmethod* nmethod::relocate_to(nmethod* nm, CodeBlobType code_blob_type) {
     DEBUG_ONLY(nm_copy->verify();)
     nm_copy->log_new_nmethod();
   }
-
-  nm->make_not_used();
 
   return nm_copy;
 }
@@ -1614,10 +1538,6 @@ bool nmethod::is_relocatable() const {
 
 CodeBlobType nmethod::lookup_code_blob_type() {
   return CodeCache::get_code_heap_containing(this)->code_blob_type();
-}
-
-void* nmethod::operator new(size_t size, int nmethod_size, CodeBlobType code_blob_type) throw () {
-  return CodeCache::allocate(nmethod_size, code_blob_type);
 }
 
 void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) throw () {
