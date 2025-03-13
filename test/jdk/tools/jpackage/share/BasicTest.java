@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,14 +53,14 @@ import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
  * @summary jpackage basic testing
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile BasicTest.java
+ * @compile -Xlint:all -Werror BasicTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=BasicTest
  */
 
 public final class BasicTest {
 
-    public static Collection addModulesParams() {
+    public static Collection<?> addModulesParams() {
         List<Object[][]> params = new ArrayList<>();
         params.add(new Object[][] { new String[] { "--add-modules", "ALL-DEFAULT"  } });
         params.add(new Object[][] { new String[] { "--add-modules", "java.desktop" } });
@@ -108,7 +108,6 @@ public final class BasicTest {
                 .ignoreFakeRuntime();
 
         cmd.executeAndAssertImageCreated();
-        Path launcherPath = cmd.appLauncherPath();
 
         List<String> output = HelloApp.executeLauncher(cmd).getOutput();
 

@@ -233,10 +233,8 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
   // StoreLoad achieves this.
   membar(StoreLoad);
 
-  // Check if the entry lists are empty (EntryList first - by convention).
-  ld(t0, Address(tmp, ObjectMonitor::EntryList_offset()));
-  ld(tmp1Reg, Address(tmp, ObjectMonitor::cxq_offset()));
-  orr(t0, t0, tmp1Reg);
+  // Check if the entry_list is empty.
+  ld(t0, Address(tmp, ObjectMonitor::entry_list_offset()));
   beqz(t0, unlocked); // If so we are done.
 
   // Check if there is a successor.
@@ -569,10 +567,8 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box,
     // StoreLoad achieves this.
     membar(StoreLoad);
 
-    // Check if the entry lists are empty (EntryList first - by convention).
-    ld(t0, Address(tmp1_monitor, ObjectMonitor::EntryList_offset()));
-    ld(tmp3_t, Address(tmp1_monitor, ObjectMonitor::cxq_offset()));
-    orr(t0, t0, tmp3_t);
+    // Check if the entry_list is empty.
+    ld(t0, Address(tmp1_monitor, ObjectMonitor::entry_list_offset()));
     beqz(t0, unlocked); // If so we are done.
 
     // Check if there is a successor.
@@ -1382,15 +1378,182 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
   bind(DONE);
 }
 
+// Compare longwords
+void C2_MacroAssembler::string_compare_long_same_encoding(Register result, Register str1, Register str2,
+                                                  const bool isLL, Register cnt1, Register cnt2,
+                                                  Register tmp1, Register tmp2, Register tmp3,
+                                                  const int STUB_THRESHOLD, Label *STUB, Label *SHORT_STRING, Label *DONE) {
+  Label TAIL_CHECK, TAIL, NEXT_WORD, DIFFERENCE;
+
+  const int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+  assert((base_offset % (UseCompactObjectHeaders ? 4 :
+                        (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
+
+  const int minCharsInWord = isLL ? wordSize : wordSize / 2;
+
+  // load first parts of strings and finish initialization while loading
+  beq(str1, str2, *DONE);
+  // Alignment
+  if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
+    lwu(tmp1, Address(str1));
+    lwu(tmp2, Address(str2));
+    bne(tmp1, tmp2, DIFFERENCE);
+    addi(str1, str1, 4);
+    addi(str2, str2, 4);
+    subi(cnt2, cnt2, minCharsInWord / 2);
+
+    // A very short string
+    mv(t0, minCharsInWord);
+    ble(cnt2, t0, *SHORT_STRING);
+  }
+#ifdef ASSERT
+  if (AvoidUnalignedAccesses) {
+    Label align_ok;
+    orr(t0, str1, str2);
+    andi(t0, t0, 0x7);
+    beqz(t0, align_ok);
+    stop("bad alignment");
+    bind(align_ok);
+  }
+#endif
+  // load 8 bytes once to compare
+  ld(tmp1, Address(str1));
+  ld(tmp2, Address(str2));
+  mv(t0, STUB_THRESHOLD);
+  bge(cnt2, t0, *STUB);
+  subi(cnt2, cnt2, minCharsInWord);
+  beqz(cnt2, TAIL_CHECK);
+  // convert cnt2 from characters to bytes
+  if (!isLL) {
+    slli(cnt2, cnt2, 1);
+  }
+  add(str2, str2, cnt2);
+  add(str1, str1, cnt2);
+  sub(cnt2, zr, cnt2);
+  addi(cnt2, cnt2, 8);
+  bne(tmp1, tmp2, DIFFERENCE);
+  bgez(cnt2, TAIL);
+
+  // main loop
+  bind(NEXT_WORD);
+    // 8-byte aligned loads when AvoidUnalignedAccesses is enabled
+    add(t0, str1, cnt2);
+    ld(tmp1, Address(t0));
+    add(t0, str2, cnt2);
+    ld(tmp2, Address(t0));
+    addi(cnt2, cnt2, 8);
+    bne(tmp1, tmp2, DIFFERENCE);
+    bltz(cnt2, NEXT_WORD);
+
+  bind(TAIL);
+  load_long_misaligned(tmp1, Address(str1), tmp3, isLL ? 1 : 2);
+  load_long_misaligned(tmp2, Address(str2), tmp3, isLL ? 1 : 2);
+
+  bind(TAIL_CHECK);
+  beq(tmp1, tmp2, *DONE);
+
+  // Find the first different characters in the longwords and
+  // compute their difference.
+  bind(DIFFERENCE);
+  xorr(tmp3, tmp1, tmp2);
+  // count bits of trailing zero chars
+  ctzc_bits(result, tmp3, isLL);
+  srl(tmp1, tmp1, result);
+  srl(tmp2, tmp2, result);
+  if (isLL) {
+    zext(tmp1, tmp1, 8);
+    zext(tmp2, tmp2, 8);
+  } else {
+    zext(tmp1, tmp1, 16);
+    zext(tmp2, tmp2, 16);
+  }
+  sub(result, tmp1, tmp2);
+
+  j(*DONE);
+}
+
+// Compare longwords
+void C2_MacroAssembler::string_compare_long_different_encoding(Register result, Register str1, Register str2,
+                                               bool isLU, Register cnt1, Register cnt2,
+                                               Register tmp1, Register tmp2, Register tmp3,
+                                               const int STUB_THRESHOLD, Label *STUB, Label *DONE) {
+  Label TAIL, NEXT_WORD, DIFFERENCE;
+
+  const int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+  assert((base_offset % (UseCompactObjectHeaders ? 4 :
+                          (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
+
+  Register strL = isLU ? str1 : str2;
+  Register strU = isLU ? str2 : str1;
+  Register tmpL = tmp1, tmpU = tmp2;
+
+  // load first parts of strings and finish initialization while loading
+  mv(t0, STUB_THRESHOLD);
+  bge(cnt2, t0, *STUB);
+  lwu(tmpL, Address(strL));
+  load_long_misaligned(tmpU, Address(strU), tmp3, (base_offset % 8) != 0 ? 4 : 8);
+  subi(cnt2, cnt2, 4);
+  add(strL, strL, cnt2);
+  sub(cnt1, zr, cnt2);
+  slli(cnt2, cnt2, 1);
+  add(strU, strU, cnt2);
+  inflate_lo32(tmp3, tmpL);
+  mv(tmpL, tmp3);
+  sub(cnt2, zr, cnt2);
+  addi(cnt1, cnt1, 4);
+  addi(cnt2, cnt2, 8);
+  bne(tmpL, tmpU, DIFFERENCE);
+  bgez(cnt2, TAIL);
+
+  // main loop
+  bind(NEXT_WORD);
+    add(t0, strL, cnt1);
+    lwu(tmpL, Address(t0));
+    add(t0, strU, cnt2);
+    load_long_misaligned(tmpU, Address(t0), tmp3, (base_offset % 8) != 0 ? 4 : 8);
+    addi(cnt1, cnt1, 4);
+    inflate_lo32(tmp3, tmpL);
+    mv(tmpL, tmp3);
+    addi(cnt2, cnt2, 8);
+    bne(tmpL, tmpU, DIFFERENCE);
+    bltz(cnt2, NEXT_WORD);
+
+  bind(TAIL);
+  load_int_misaligned(tmpL, Address(strL), tmp3, false);
+  load_long_misaligned(tmpU, Address(strU), tmp3, 2);
+  inflate_lo32(tmp3, tmpL);
+  mv(tmpL, tmp3);
+
+  beq(tmpL, tmpU, *DONE);
+
+  // Find the first different characters in the longwords and
+  // compute their difference.
+  bind(DIFFERENCE);
+  xorr(tmp3, tmpL, tmpU);
+  // count bits of trailing zero chars
+  ctzc_bits(result, tmp3);
+  srl(tmpL, tmpL, result);
+  srl(tmpU, tmpU, result);
+  zext(tmpL, tmpL, 16);
+  zext(tmpU, tmpU, 16);
+  if (isLU) {
+    sub(result, tmpL, tmpU);
+  } else {
+    sub(result, tmpU, tmpL);
+  }
+
+  j(*DONE);
+}
+
 // Compare strings.
 void C2_MacroAssembler::string_compare(Register str1, Register str2,
                                        Register cnt1, Register cnt2, Register result,
                                        Register tmp1, Register tmp2, Register tmp3,
                                        int ae)
 {
-  Label DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, TAIL, STUB,
-        DIFFERENCE, NEXT_WORD, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT,
-        SHORT_LOOP_START, TAIL_CHECK, L;
+  Label DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, STUB,
+        SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT,
+        SHORT_LOOP_START, L;
 
   const int STUB_THRESHOLD = 64 + 8;
   bool isLL = ae == StrIntrinsicNode::LL;
@@ -1409,14 +1572,6 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   load_chr_insn str1_load_chr = str1_isL ? (load_chr_insn)&MacroAssembler::lbu : (load_chr_insn)&MacroAssembler::lhu;
   load_chr_insn str2_load_chr = str2_isL ? (load_chr_insn)&MacroAssembler::lbu : (load_chr_insn)&MacroAssembler::lhu;
 
-  int base_offset1 = arrayOopDesc::base_offset_in_bytes(T_BYTE);
-  int base_offset2 = arrayOopDesc::base_offset_in_bytes(T_CHAR);
-
-  assert((base_offset1 % (UseCompactObjectHeaders ? 4 :
-                          (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
-  assert((base_offset2 % (UseCompactObjectHeaders ? 4 :
-                          (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
-
   BLOCK_COMMENT("string_compare {");
 
   // Bizarrely, the counts are passed in bytes, regardless of whether they
@@ -1434,154 +1589,23 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   mv(cnt2, cnt1);
   bind(L);
 
-  // Load 4 bytes once to compare for alignment before main loop. Note that this
-  // is only possible for LL/UU case. We need to resort to load_long_misaligned
-  // for both LU and UL cases.
-  if (str1_isL == str2_isL) { // LL or UU
-    beq(str1, str2, DONE);
-    int base_offset = isLL ? base_offset1 : base_offset2;
-    if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
-      mv(t0, minCharsInWord / 2);
-      ble(cnt2, t0, SHORT_STRING);
-      lwu(tmp1, Address(str1));
-      lwu(tmp2, Address(str2));
-      bne(tmp1, tmp2, DIFFERENCE);
-      addi(str1, str1, 4);
-      addi(str2, str2, 4);
-      subi(cnt2, cnt2, minCharsInWord / 2);
-    }
-  }
-
   // A very short string
   mv(t0, minCharsInWord);
   ble(cnt2, t0, SHORT_STRING);
 
   // Compare longwords
-  // load first parts of strings and finish initialization while loading
   {
     if (str1_isL == str2_isL) { // LL or UU
-#ifdef ASSERT
-      if (AvoidUnalignedAccesses) {
-        Label align_ok;
-        orr(t0, str1, str2);
-        andi(t0, t0, 0x7);
-        beqz(t0, align_ok);
-        stop("bad alignment");
-        bind(align_ok);
-      }
-#endif
-      // load 8 bytes once to compare
-      ld(tmp1, Address(str1));
-      ld(tmp2, Address(str2));
-      mv(t0, STUB_THRESHOLD);
-      bge(cnt2, t0, STUB);
-      subi(cnt2, cnt2, minCharsInWord);
-      beqz(cnt2, TAIL_CHECK);
-      // convert cnt2 from characters to bytes
-      if (!str1_isL) {
-        slli(cnt2, cnt2, 1);
-      }
-      add(str2, str2, cnt2);
-      add(str1, str1, cnt2);
-      sub(cnt2, zr, cnt2);
-    } else if (isLU) { // LU case
-      lwu(tmp1, Address(str1));
-      load_long_misaligned(tmp2, Address(str2), tmp3, (base_offset2 % 8) != 0 ? 4 : 8);
-      mv(t0, STUB_THRESHOLD);
-      bge(cnt2, t0, STUB);
-      subi(cnt2, cnt2, 4);
-      add(str1, str1, cnt2);
-      sub(cnt1, zr, cnt2);
-      slli(cnt2, cnt2, 1);
-      add(str2, str2, cnt2);
-      inflate_lo32(tmp3, tmp1);
-      mv(tmp1, tmp3);
-      sub(cnt2, zr, cnt2);
-      addi(cnt1, cnt1, 4);
-    } else { // UL case
-      load_long_misaligned(tmp1, Address(str1), tmp3, (base_offset2 % 8) != 0 ? 4 : 8);
-      lwu(tmp2, Address(str2));
-      mv(t0, STUB_THRESHOLD);
-      bge(cnt2, t0, STUB);
-      subi(cnt2, cnt2, 4);
-      slli(t0, cnt2, 1);
-      sub(cnt1, zr, t0);
-      add(str1, str1, t0);
-      add(str2, str2, cnt2);
-      inflate_lo32(tmp3, tmp2);
-      mv(tmp2, tmp3);
-      sub(cnt2, zr, cnt2);
-      addi(cnt1, cnt1, 8);
+      string_compare_long_same_encoding(result,
+                                str1, str2, isLL,
+                                cnt1, cnt2, tmp1, tmp2, tmp3,
+                                STUB_THRESHOLD, &STUB, &SHORT_STRING, &DONE);
+    } else { // LU or UL
+      string_compare_long_different_encoding(result,
+                                str1, str2, isLU,
+                                cnt1, cnt2, tmp1, tmp2, tmp3,
+                                STUB_THRESHOLD, &STUB, &DONE);
     }
-    addi(cnt2, cnt2, isUL ? 4 : 8);
-    bne(tmp1, tmp2, DIFFERENCE);
-    bgez(cnt2, TAIL);
-
-    // main loop
-    bind(NEXT_WORD);
-    if (str1_isL == str2_isL) { // LL or UU
-      // 8-byte aligned loads when AvoidUnalignedAccesses is enabled
-      add(t0, str1, cnt2);
-      ld(tmp1, Address(t0));
-      add(t0, str2, cnt2);
-      ld(tmp2, Address(t0));
-      addi(cnt2, cnt2, 8);
-    } else if (isLU) { // LU case
-      add(t0, str1, cnt1);
-      lwu(tmp1, Address(t0));
-      add(t0, str2, cnt2);
-      load_long_misaligned(tmp2, Address(t0), tmp3, (base_offset2 % 8) != 0 ? 4 : 8);
-      addi(cnt1, cnt1, 4);
-      inflate_lo32(tmp3, tmp1);
-      mv(tmp1, tmp3);
-      addi(cnt2, cnt2, 8);
-    } else { // UL case
-      add(t0, str2, cnt2);
-      lwu(tmp2, Address(t0));
-      add(t0, str1, cnt1);
-      load_long_misaligned(tmp1, Address(t0), tmp3, (base_offset2 % 8) != 0 ? 4 : 8);
-      inflate_lo32(tmp3, tmp2);
-      mv(tmp2, tmp3);
-      addi(cnt1, cnt1, 8);
-      addi(cnt2, cnt2, 4);
-    }
-    bne(tmp1, tmp2, DIFFERENCE);
-    bltz(cnt2, NEXT_WORD);
-    bind(TAIL);
-    if (str1_isL == str2_isL) { // LL or UU
-      load_long_misaligned(tmp1, Address(str1), tmp3, isLL ? 1 : 2);
-      load_long_misaligned(tmp2, Address(str2), tmp3, isLL ? 1 : 2);
-    } else if (isLU) { // LU case
-      load_int_misaligned(tmp1, Address(str1), tmp3, false);
-      load_long_misaligned(tmp2, Address(str2), tmp3, 2);
-      inflate_lo32(tmp3, tmp1);
-      mv(tmp1, tmp3);
-    } else { // UL case
-      load_int_misaligned(tmp2, Address(str2), tmp3, false);
-      load_long_misaligned(tmp1, Address(str1), tmp3, 2);
-      inflate_lo32(tmp3, tmp2);
-      mv(tmp2, tmp3);
-    }
-    bind(TAIL_CHECK);
-    beq(tmp1, tmp2, DONE);
-
-    // Find the first different characters in the longwords and
-    // compute their difference.
-    bind(DIFFERENCE);
-    xorr(tmp3, tmp1, tmp2);
-    // count bits of trailing zero chars
-    ctzc_bits(result, tmp3, isLL);
-    srl(tmp1, tmp1, result);
-    srl(tmp2, tmp2, result);
-    if (isLL) {
-      zext(tmp1, tmp1, 8);
-      zext(tmp2, tmp2, 8);
-    } else {
-      zext(tmp1, tmp1, 16);
-      zext(tmp2, tmp2, 16);
-    }
-    sub(result, tmp1, tmp2);
-    j(DONE);
   }
 
   bind(STUB);
@@ -2134,29 +2158,68 @@ void C2_MacroAssembler::enc_cmove(int cmpFlag, Register op1, Register op2, Regis
 
 // Set dst to NaN if any NaN input.
 void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRegister src2,
-                                  bool is_double, bool is_min) {
-  assert_different_registers(dst, src1, src2);
+                                  FLOAT_TYPE ft, bool is_min) {
+  assert_cond((ft != FLOAT_TYPE::half_precision) || UseZfh);
 
   Label Done, Compare;
 
-  is_double ? fclass_d(t0, src1)
-            : fclass_s(t0, src1);
-  is_double ? fclass_d(t1, src2)
-            : fclass_s(t1, src2);
-  orr(t0, t0, t1);
-  andi(t0, t0, FClassBits::nan); // if src1 or src2 is quiet or signaling NaN then return NaN
-  beqz(t0, Compare);
-  is_double ? fadd_d(dst, src1, src2)
-            : fadd_s(dst, src1, src2);
-  j(Done);
+  switch (ft) {
+    case FLOAT_TYPE::half_precision:
+      fclass_h(t0, src1);
+      fclass_h(t1, src2);
 
-  bind(Compare);
-  if (is_double) {
-    is_min ? fmin_d(dst, src1, src2)
-           : fmax_d(dst, src1, src2);
-  } else {
-    is_min ? fmin_s(dst, src1, src2)
-           : fmax_s(dst, src1, src2);
+      orr(t0, t0, t1);
+      andi(t0, t0, FClassBits::nan); // if src1 or src2 is quiet or signaling NaN then return NaN
+      beqz(t0, Compare);
+
+      fadd_h(dst, src1, src2);
+      j(Done);
+
+      bind(Compare);
+      if (is_min) {
+        fmin_h(dst, src1, src2);
+      } else {
+        fmax_h(dst, src1, src2);
+      }
+      break;
+    case FLOAT_TYPE::single_precision:
+      fclass_s(t0, src1);
+      fclass_s(t1, src2);
+
+      orr(t0, t0, t1);
+      andi(t0, t0, FClassBits::nan); // if src1 or src2 is quiet or signaling NaN then return NaN
+      beqz(t0, Compare);
+
+      fadd_s(dst, src1, src2);
+      j(Done);
+
+      bind(Compare);
+      if (is_min) {
+        fmin_s(dst, src1, src2);
+      } else {
+        fmax_s(dst, src1, src2);
+      }
+      break;
+    case FLOAT_TYPE::double_precision:
+      fclass_d(t0, src1);
+      fclass_d(t1, src2);
+
+      orr(t0, t0, t1);
+      andi(t0, t0, FClassBits::nan); // if src1 or src2 is quiet or signaling NaN then return NaN
+      beqz(t0, Compare);
+
+      fadd_d(dst, src1, src2);
+      j(Done);
+
+      bind(Compare);
+      if (is_min) {
+        fmin_d(dst, src1, src2);
+      } else {
+        fmax_d(dst, src1, src2);
+      }
+      break;
+    default:
+      ShouldNotReachHere();
   }
 
   bind(Done);
@@ -2286,7 +2349,7 @@ void C2_MacroAssembler::float16_to_float(FloatRegister dst, Register src, Regist
   mv(t0, 0x7c00);
   andr(tmp, src, t0);
   // jump to stub processing NaN and Inf cases.
-  beq(t0, tmp, stub->entry());
+  beq(t0, tmp, stub->entry(), true);
 
   // non-NaN or non-Inf cases, just use built-in instructions.
   fmv_h_x(dst, src);
@@ -2329,7 +2392,7 @@ void C2_MacroAssembler::float_to_float16(Register dst, FloatRegister src, FloatR
   // replace fclass with feq as performance optimization.
   feq_s(t0, src, src);
   // jump to stub processing NaN cases.
-  beqz(t0, stub->entry());
+  beqz(t0, stub->entry(), true);
 
   // non-NaN cases, just use built-in instructions.
   fcvt_h_s(ftmp, src);
@@ -2390,7 +2453,7 @@ void C2_MacroAssembler::float16_to_float_v(VectorRegister dst, VectorRegister sr
   vfwcvt_f_f_v(dst, src);
 
   // jump to stub processing NaN and Inf cases if there is any of them in the vector-wide.
-  bnez(t0, stub->entry());
+  bnez(t0, stub->entry(), true);
 
   bind(stub->continuation());
 }
@@ -2444,7 +2507,7 @@ void C2_MacroAssembler::float_to_float16_v(VectorRegister dst, VectorRegister sr
   vfncvt_f_f_w(dst, src);
 
   // jump to stub processing NaN cases.
-  bnez(t0, stub->entry());
+  bnez(t0, stub->entry(), true);
 
   bind(stub->continuation());
 }
@@ -2591,6 +2654,9 @@ void C2_MacroAssembler::clear_array_v(Register base, Register cnt) {
 
 void C2_MacroAssembler::arrays_equals_v(Register a1, Register a2, Register result,
                                         Register cnt1, int elem_size) {
+  assert(elem_size == 1 || elem_size == 2, "must be char or byte");
+  assert_different_registers(a1, a2, result, cnt1, t0, t1);
+
   Label DONE;
   Register tmp1 = t0;
   Register tmp2 = t1;
@@ -2638,7 +2704,7 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
 
   int minCharsInWord = encLL ? wordSize : wordSize / 2;
 
-  BLOCK_COMMENT("string_compare {");
+  BLOCK_COMMENT("string_compare_v {");
 
   // for Latin strings, 1 byte for 1 character
   // for UTF16 strings, 2 bytes for 1 character
@@ -2698,6 +2764,8 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
   sub(result, tmp1, tmp2);
 
   bind(DONE);
+
+  BLOCK_COMMENT("} string_compare_v");
 }
 
 void C2_MacroAssembler::byte_array_inflate_v(Register src, Register dst, Register len, Register tmp) {
@@ -2952,6 +3020,45 @@ void C2_MacroAssembler::reduce_integral_v(Register dst, Register src1,
       ShouldNotReachHere();
   }
   vmv_x_s(dst, tmp);
+}
+
+void C2_MacroAssembler::reduce_mul_integral_v(Register dst, Register src1, VectorRegister src2,
+                                              VectorRegister vtmp1, VectorRegister vtmp2,
+                                              BasicType bt, uint vector_length, VectorMask vm) {
+  assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
+  vsetvli_helper(bt, vector_length);
+
+  vector_length /= 2;
+  if (vm != Assembler::unmasked) {
+    // This behaviour is consistent with spec requirements of vector API, for `reduceLanes`:
+    //  If no elements are selected, an operation-specific identity value is returned.
+    //    If the operation is MUL, then the identity value is one.
+    vmv_v_i(vtmp1, 1);
+    vmerge_vvm(vtmp2, vtmp1, src2); // vm == v0
+    vslidedown_vi(vtmp1, vtmp2, vector_length);
+
+    vsetvli_helper(bt, vector_length);
+    vmul_vv(vtmp1, vtmp1, vtmp2);
+  } else {
+    vslidedown_vi(vtmp1, src2, vector_length);
+
+    vsetvli_helper(bt, vector_length);
+    vmul_vv(vtmp1, vtmp1, src2);
+  }
+
+  while (vector_length > 1) {
+    vector_length /= 2;
+    vslidedown_vi(vtmp2, vtmp1, vector_length);
+    vsetvli_helper(bt, vector_length);
+    vmul_vv(vtmp1, vtmp1, vtmp2);
+  }
+
+  vmv_x_s(dst, vtmp1);
+  if (bt == T_INT) {
+    mulw(dst, dst, src1);
+  } else {
+    mul(dst, dst, src1);
+  }
 }
 
 // Set vl and vtype for full and partial vector operations.

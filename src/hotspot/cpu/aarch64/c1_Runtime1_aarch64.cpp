@@ -257,14 +257,17 @@ static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
   int frame_size_in_slots = frame_size_in_bytes / sizeof(jint);
   OopMap* oop_map = new OopMap(frame_size_in_slots, 0);
 
-  for (int i = 0; i < FrameMap::nof_cpu_regs; i++) {
-    Register r = as_Register(i);
-    if (r == rthread || (i <= 18 && i != rscratch1->encoding() && i != rscratch2->encoding())) {
-      int sp_offset = cpu_reg_save_offsets[i];
-      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset),
-                                r->as_VMReg());
-    }
+  for (int i = 0; i < FrameMap::nof_caller_save_cpu_regs(); i++) {
+    LIR_Opr opr = FrameMap::caller_save_cpu_reg_at(i);
+    Register r = opr->as_register();
+    int reg_num = r->encoding();
+    int sp_offset = cpu_reg_save_offsets[reg_num];
+    oop_map->set_callee_saved(VMRegImpl::stack2reg(cpu_reg_save_offsets[reg_num]), r->as_VMReg());
   }
+
+  Register r = rthread;
+  int reg_num = r->encoding();
+  oop_map->set_callee_saved(VMRegImpl::stack2reg(cpu_reg_save_offsets[reg_num]), r->as_VMReg());
 
   if (save_fpu_registers) {
     for (int i = 0; i < FrameMap::nof_fpu_regs; i++) {
@@ -897,6 +900,55 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, map);
         restore_live_registers(sasm, save_fpu_registers);
+      }
+      break;
+
+    case C1StubId::is_instance_of_id:
+      {
+        // Mirror: c_rarg0
+        // Object: c_rarg1
+        // Temps: r3, r4, r5, r6
+        // Result: r0
+
+        // Get the Klass* into c_rarg6
+        Register klass = c_rarg6, obj = c_rarg1, result = r0;
+        __ ldr(klass, Address(c_rarg0, java_lang_Class::klass_offset()));
+
+        Label fail, is_secondary, success;
+
+        __ cbz(klass, fail); // Klass is null
+        __ cbz(obj, fail); // obj is null
+
+        __ ldrw(r3, Address(klass, in_bytes(Klass::super_check_offset_offset())));
+        __ cmpw(r3, in_bytes(Klass::secondary_super_cache_offset()));
+        __ br(Assembler::EQ, is_secondary); // Klass is a secondary superclass
+
+        // Klass is a concrete class
+        __ load_klass(r5, obj);
+        __ ldr(rscratch1, Address(r5, r3));
+        __ cmp(klass, rscratch1);
+        __ cset(result, Assembler::EQ);
+        __ ret(lr);
+
+        __ bind(is_secondary);
+
+        __ load_klass(obj, obj);
+
+        // This is necessary because I am never in my own secondary_super list.
+        __ cmp(obj, klass);
+        __ br(Assembler::EQ, success);
+
+        __ lookup_secondary_supers_table_var(obj, klass,
+                                             /*temps*/r3, r4, r5, v0,
+                                             result,
+                                             &success);
+        __ bind(fail);
+        __ mov(result, 0);
+        __ ret(lr);
+
+        __ bind(success);
+        __ mov(result, 1);
+        __ ret(lr);
       }
       break;
 

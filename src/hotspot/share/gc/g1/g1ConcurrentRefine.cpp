@@ -268,7 +268,7 @@ public:
   size_t sampled_code_root_rs_length() const { return _sampled_code_root_rs_length; }
 };
 
-// Adjust the target length (in regions) of the young gen, based on the the
+// Adjust the target length (in regions) of the young gen, based on the
 // current length of the remembered sets.
 //
 // At the end of the GC G1 determines the length of the young gen based on

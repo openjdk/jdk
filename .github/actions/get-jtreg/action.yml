@@ -49,6 +49,6 @@ runs:
     - name: 'Export path to where JTReg is installed'
       id: path-name
       run: |
-        # Export the path
-        echo 'path=jtreg/installed' >> $GITHUB_OUTPUT
+        # Export the absolute path
+        echo "path=`pwd`/jtreg/installed" >> $GITHUB_OUTPUT
       shell: bash

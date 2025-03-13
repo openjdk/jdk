@@ -43,7 +43,6 @@
 
 # :hotspot_compiler
 
-compiler/ciReplay/TestSAServer.java 8029528 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8225370 generic-all
 
 compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
@@ -96,9 +95,9 @@ gc/TestAlwaysPreTouchBehavior.java#Shenandoah 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#G1 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#Z 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#Epsilon 8334513 generic-all
-gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
 gc/shenandoah/oom/TestAllocOutOfMemory.java#large 8344312 linux-ppc64le
 gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
+gc/TestAllocHumongousFragment.java#generational 8351464 generic-all
 
 #############################################################################
 
@@ -138,13 +137,13 @@ serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generi
 serviceability/jvmti/vthread/CarrierThreadEventNotification/CarrierThreadEventNotification.java 8333681 generic-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 generic-all
 
-serviceability/sa/ClhsdbCDSCore.java              8267433,8318754 macosx-x64,macosx-aarch64
-serviceability/sa/ClhsdbFindPC.java#xcomp-core    8267433,8318754 macosx-x64,macosx-aarch64
-serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8267433,8318754 macosx-x64,macosx-aarch64
-serviceability/sa/ClhsdbPmap.java#core            8267433,8318754 macosx-x64,macosx-aarch64
-serviceability/sa/ClhsdbPstack.java#core          8267433,8318754 macosx-x64,macosx-aarch64
-serviceability/sa/TestJmapCore.java               8267433,8318754 macosx-x64,macosx-aarch64
-serviceability/sa/TestJmapCoreMetaspace.java      8267433,8318754 macosx-x64,macosx-aarch64
+serviceability/sa/ClhsdbCDSCore.java              8318754 macosx-aarch64
+serviceability/sa/ClhsdbFindPC.java#xcomp-core    8318754 macosx-aarch64
+serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8318754 macosx-aarch64
+serviceability/sa/ClhsdbPmap.java#core            8318754 macosx-aarch64
+serviceability/sa/ClhsdbPstack.java#core          8318754 macosx-aarch64
+serviceability/sa/TestJmapCore.java               8318754 macosx-aarch64
+serviceability/sa/TestJmapCoreMetaspace.java      8318754 macosx-aarch64
 
 serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
 
@@ -169,8 +168,6 @@ vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
 vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8202971 generic-all
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8073470 linux-all
 vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-all
-
-vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8192647 generic-all
 
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening001.java 8148743 generic-all
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening002.java 8208259 generic-all

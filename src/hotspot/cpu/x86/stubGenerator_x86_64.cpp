@@ -248,12 +248,9 @@ address StubGenerator::generate_call_stub(address& return_address) {
   const Address mxcsr_save(rbp, mxcsr_off * wordSize);
   {
     Label skip_ldmx;
-    __ stmxcsr(mxcsr_save);
-    __ movl(rax, mxcsr_save);
-    __ andl(rax, 0xFFC0); // Mask out any pending exceptions (only check control and mask bits)
-    ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
-    __ cmp32(rax, mxcsr_std, rscratch1);
+    __ cmp32_mxcsr_std(mxcsr_save, rax, rscratch1);
     __ jcc(Assembler::equal, skip_ldmx);
+    ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
     __ ldmxcsr(mxcsr_std, rscratch1);
     __ bind(skip_ldmx);
   }
@@ -579,10 +576,7 @@ address StubGenerator::generate_verify_mxcsr() {
     ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
     __ push(rax);
     __ subptr(rsp, wordSize);      // allocate a temp location
-    __ stmxcsr(mxcsr_save);
-    __ movl(rax, mxcsr_save);
-    __ andl(rax, 0xFFC0); // Mask out any pending exceptions (only check control and mask bits)
-    __ cmp32(rax, mxcsr_std, rscratch1);
+    __ cmp32_mxcsr_std(mxcsr_save, rax, rscratch1);
     __ jcc(Assembler::equal, ok_ret);
 
     __ warn("MXCSR changed by native JNI code, use -XX:+RestoreMXCSROnJNICall");
@@ -4142,10 +4136,7 @@ void StubGenerator::generate_final_stubs() {
   // arraycopy stubs used by compilers
   generate_arraycopy_stubs();
 
-  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != nullptr) {
-    StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
-  }
+  StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
 
 #ifdef COMPILER2
   if (UseSecondarySupersTable) {
