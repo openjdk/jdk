@@ -368,8 +368,11 @@ final class Operations {
         //new VOP("LOG1P",                VOPType.UNARY, Type.FLOATING_TYPES),
         new VOP("LSHL",                 VOPType.BINARY, Type.INTEGRAL_TYPES),
         new VOP("LSHR",                 VOPType.BINARY, Type.INTEGRAL_TYPES),
-        new VOP("MIN",                  VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
-        new VOP("MAX",                  VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
+
+        // TODO: add back after JDK-8351950
+        //new VOP("MIN",                  VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
+        //new VOP("MAX",                  VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
+
         new VOP("MUL",                  VOPType.INTEGRAL_ASSOCIATIVE, Type.PRIMITIVE_TYPES),
         new VOP("NEG",                  VOPType.UNARY, Type.PRIMITIVE_TYPES),
         new VOP("NOT",                  VOPType.UNARY, Type.INTEGRAL_TYPES),
