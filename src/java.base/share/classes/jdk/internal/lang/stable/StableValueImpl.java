@@ -74,10 +74,14 @@ public final class StableValueImpl<T> implements StableValue<T> {
         if (wrappedValueAcquire() != null) {
             return false;
         }
+        // Prevent reentry via computeIfUnsetSlowPath
+        if (Thread.holdsLock(this)) {
+            throw new IllegalStateException("Recursing supplier detected");
+        }
         // Mutual exclusion is required here as `computeIfUnset` might also
         // attempt to modify the `wrappedValue`
         synchronized (this) {
-            return wrapAndCas(value);
+            return wrapAndSet(value);
         }
     }
 
@@ -122,14 +126,20 @@ public final class StableValueImpl<T> implements StableValue<T> {
     }
 
     @DontInline
-    private synchronized T computeIfUnsetSlowPath(Supplier<? extends T> supplier) {
-        final Object t = value;  // Plain semantics suffice here
-        if (t == null) {
-            final T newValue = supplier.get();
-            // The mutex is reentrant so we need to check if the value was actually set.
-            return wrapAndCas(newValue) ? newValue : orElseThrow();
+    private T computeIfUnsetSlowPath(Supplier<? extends T> supplier) {
+        // Prevent reentry
+        if (Thread.holdsLock(this)) {
+            throw new IllegalStateException("Recursing supplier detected: " + supplier);
         }
-        return unwrap(t);
+        synchronized (this) {
+            final Object t = value;  // Plain semantics suffice here
+            if (t == null) {
+                final T newValue = supplier.get();
+                // The mutex is reentrant so we need to check if the value was actually set.
+                return wrapAndSet(newValue) ? newValue : orElseThrow();
+            }
+            return unwrap(t);
+        }
     }
 
     // The methods equals() and hashCode() should be based on identity (defaults from Object)
@@ -156,9 +166,15 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // Private methods
 
     @ForceInline
-    private boolean wrapAndCas(Object value) {
+    private boolean wrapAndSet(Object newValue) {
+        assert Thread.holdsLock(this);
         // This upholds the invariant, a `@Stable` field is written to at most once
-        return UNSAFE.compareAndSetReference(this, UNDERLYING_DATA_OFFSET, null, wrap(value));
+        // We know we hold the monitor here so plain semantic is enough
+        if (value != null) {
+            return false;
+        }
+        UNSAFE.putReferenceRelease(this, UNDERLYING_DATA_OFFSET, wrap(newValue));
+        return true;
     }
 
     // Used to indicate a holder value is `null` (see field `value` below)

@@ -433,6 +433,8 @@ public sealed interface StableValue<T>
      * {@code supplier} throws an exception.
      *
      * @param  supplier to be used for computing the content, if not previously set
+     * @throws IllegalStateException if the provided {@code supplier} recursively
+     *                               attempts to set this stable value.
      */
     T orElseSet(Supplier<? extends T> supplier);
 
@@ -508,6 +510,9 @@ public sealed interface StableValue<T>
      * to the initial caller and no content is recorded.
      * <p>
      * The returned supplier is not {@link Serializable}.
+     * <p>
+     * If the provided {@code original} supplier recursively calls the returned
+     * supplier, an {@linkplain IllegalStateException} will be thrown.
      *
      * @param original supplier used to compute a cached value
      * @param <T>      the type of results supplied by the returned supplier
@@ -536,6 +541,10 @@ public sealed interface StableValue<T>
      * to the initial caller and no content is recorded.
      * <p>
      * The returned int function is not {@link Serializable}.
+     * <p>
+     * If the provided {@code original} int function recursively calls the returned
+     * int function for the same index, an {@linkplain IllegalStateException} will
+     * be thrown.
      *
      * @param size     the size of the allowed inputs in {@code [0, size)}
      * @param original IntFunction used to compute cached values
@@ -569,6 +578,10 @@ public sealed interface StableValue<T>
      * the initial caller and no content is recorded.
      * <p>
      * The returned function is not {@link Serializable}.
+     * <p>
+     * If the provided {@code original} function recursively calls the returned
+     * function for the same input, an {@linkplain IllegalStateException} will
+     * be thrown.
      *
      * @param inputs   the set of allowed input values
      * @param original Function used to compute cached values
@@ -604,6 +617,9 @@ public sealed interface StableValue<T>
      * The returned list is not {@link Serializable} and, as it is unmodifiable, does
      * not implement the {@linkplain Collection##optional-operation optional operations}
      * in the {@linkplain List} interface.
+     * <p>
+     * If the provided {@code mapper} recursively calls the returned list for the
+     * same index, an {@linkplain IllegalStateException} will be thrown.
      *
      * @param size   the size of the returned list
      * @param mapper to invoke whenever an element is first accessed
@@ -639,6 +655,9 @@ public sealed interface StableValue<T>
      * The returned map is not {@link Serializable} and, as it is unmodifiable, does
      * not implement the {@linkplain Collection##optional-operations optional operations}
      * in the {@linkplain Map} interface.
+     * <p>
+     * If the provided {@code mapper} recursively calls the returned map for
+     * the same key, an {@linkplain IllegalStateException} will be thrown.
      *
      * @param keys   the keys in the returned map
      * @param mapper to invoke whenever an associated value is first accessed

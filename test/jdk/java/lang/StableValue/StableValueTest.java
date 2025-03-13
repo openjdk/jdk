@@ -34,8 +34,10 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiPredicate;
+import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -166,6 +168,24 @@ final class StableValueTest {
         assertEquals("(this StableValue)", toString);
         assertDoesNotThrow(stable::hashCode);
         assertDoesNotThrow((() -> stable.equals(stable)));
+    }
+
+    @Test
+    void recursiveCall() {
+        StableValue<Integer> stable = StableValue.of();
+        AtomicReference<StableValue<Integer>> ref = new AtomicReference<>(stable);
+        assertThrows(IllegalStateException.class, () ->
+                stable.orElseSet(() -> {
+                    ref.get().trySet(1);
+                    return 1;
+                })
+        );
+        assertThrows(IllegalStateException.class, () ->
+                stable.orElseSet(() -> {
+                    ref.get().orElseSet(() -> 1);
+                    return 1;
+                })
+        );
     }
 
     private static final BiPredicate<StableValue<Integer>, Integer> TRY_SET = StableValue::trySet;

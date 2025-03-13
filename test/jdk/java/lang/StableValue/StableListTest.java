@@ -215,7 +215,7 @@ final class StableListTest {
         AtomicReference<IntFunction<Integer>> ref = new AtomicReference<>();
         var lazy = StableValue.list(SIZE, i -> ref.get().apply(i));
         ref.set(lazy::get);
-        assertThrows(StackOverflowError.class, () -> lazy.get(INDEX));
+        assertThrows(IllegalStateException.class, () -> lazy.get(INDEX));
     }
 
     // Immutability
