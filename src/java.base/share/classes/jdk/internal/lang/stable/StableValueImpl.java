@@ -165,21 +165,15 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     // Wraps `null` values into a sentinel value
     @ForceInline
-    private static <T> T wrap(T t) {
-        return (t == null) ? nullSentinel() : t;
+    private static Object wrap(Object t) {
+        return (t == null) ? NULL_SENTINEL : t;
     }
 
     // Unwraps null sentinel values into `null`
     @SuppressWarnings("unchecked")
     @ForceInline
     private static <T> T unwrap(Object t) {
-        return t != nullSentinel() ? (T) t : null;
-    }
-
-    @SuppressWarnings("unchecked")
-    @ForceInline
-    private static <T> T nullSentinel() {
-        return (T) NULL_SENTINEL;
+        return t != NULL_SENTINEL ? (T) t : null;
     }
 
     // Factory
