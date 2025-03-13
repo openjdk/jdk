@@ -1040,15 +1040,6 @@ void PhaseIterGVN::optimize() {
       return;
     }
     DEBUG_ONLY(trace_PhaseIterGVN_verbose(n, num_processed++);)
-    bool trace = !C->directive()->trace_merge_stores_tags().is_empty();
-    if (trace && C->post_loop_opts_phase()) {
-      /*
-      ttyLocker ttyl;
-      tty->print_cr("IGVN:====");
-      n->dump();
-      tty->print_cr("IGVN:====");
-      */
-    }
     if (n->outcnt() != 0) {
       NOT_PRODUCT(const Type* oldtype = type_or_null(n));
       // Do the transformation

@@ -1837,12 +1837,12 @@ AllocateNode* LoadNode::is_new_object_mark_load() const {
  *           | ((array[offset + 2] & 0xff) <<  8)
  *           | ((array[offset + 3] & 0xff)      );
  *
- * The C2 IR graph example is like:
+ * The C2 IR graph is like:
  *
  *       Mem
  *        |---------+---------+----------+
  *        |         |         |          |
- *       Ld1       Ld2       Ld3        Ld4
+ *      LoadB1    LoadB2    LoadB3     LoadB4
  *        |         |         |          |
  *        |       LShift    LShift     LShift
  *        |         |         |          |
@@ -1852,7 +1852,7 @@ AllocateNode* LoadNode::is_new_object_mark_load() const {
  *                    |                  |
  *                    +-----> Or3 <------+
  *
- * It will be transformed as a merged load and replace the Or3 node
+ * It will be transformed as a merged LoadI and replace the Or3 node
  *
  */
 class MergePrimitiveLoads;
@@ -1861,7 +1861,7 @@ class MergePrimitiveLoads;
  * LoadNode and OrNode pair which represent an item for merging,
  * And we can get some properties like shift and uncommon usage from it.
  *
- * Node: OrNode may be shared
+ * Note: OrNode may be shared
  */
 class MergeLoadInfo : ResourceObj {
   friend MergePrimitiveLoads;
