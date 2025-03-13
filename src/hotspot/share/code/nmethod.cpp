@@ -1498,9 +1498,9 @@ nmethod* nmethod::relocate_to(nmethod* nm, CodeBlobType code_blob_type) {
 
       // Update corresponding Java method to point to this nmethod
       MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
-      if (nm_copy->method() != nullptr && nm_copy->method()->code() == nm) {
+      if (nm_copy->method()->code() == nm) {
         methodHandle mh(Thread::current(), nm_copy->method());
-        nm_copy->method()->set_code(mh, nm_copy, true);
+        nm_copy->method()->set_code(mh, nm_copy);
         nm->make_not_used();
       }
     }
@@ -1525,11 +1525,7 @@ bool nmethod::is_relocatable() const {
     return false;
   }
 
-  if (method()->is_method_handle_intrinsic()) {
-    return false;
-  }
-
-  if (method()->is_continuation_native_intrinsic()) {
+  if (!is_java_method()) {
     return false;
   }
 

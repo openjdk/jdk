@@ -2209,7 +2209,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
             // Allow the code to be executed
             MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
             if (nm->make_in_use()) {
-              method->set_code(method, nm, false);
+              method->set_code(method, nm);
             } else {
               result = JVMCI::nmethod_reclaimed;
             }

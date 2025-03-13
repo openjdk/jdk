@@ -373,7 +373,7 @@ private:
   }
 
 public:
-  static void set_code(const methodHandle& mh, nmethod* code, bool isRelocation);
+  static void set_code(const methodHandle& mh, nmethod* code);
   void set_adapter_entry(AdapterHandlerEntry* adapter) {
     _adapter = adapter;
   }
