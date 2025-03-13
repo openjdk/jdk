@@ -74,13 +74,13 @@ public class TestLinkTagletPrimitive extends JavadocTester {
         checkOutput("C.html", true,
                 """
                     <div class="block">Comment.
-                     Byte:\s
+                    Byte:\s
                     <details class="invalid-tag">
                     <summary>invalid reference</summary>
                     <pre><code>byte</code></pre>
                     </details>
 
-                     Void:\s
+                    Void:\s
                     <details class="invalid-tag">
                     <summary>invalid reference</summary>
                     <pre><code>void</code></pre>
@@ -119,13 +119,13 @@ public class TestLinkTagletPrimitive extends JavadocTester {
         checkOutput("C.html", true,
                 """
                     <div class="block">Comment.
-                     Double:\s
+                    Double:\s
                     <details class="invalid-tag">
                     <summary>invalid reference</summary>
                     <pre><code>double</code></pre>
                     </details>
 
-                     Void:\s
+                    Void:\s
                     <details class="invalid-tag">
                     <summary>invalid reference</summary>
                     <pre><code>void</code></pre>
@@ -172,7 +172,7 @@ public class TestLinkTagletPrimitive extends JavadocTester {
         checkOutput("C.html", true,
                 """
                     <div class="block">Comment.
-                     Byte[]:\s
+                    Byte[]:\s
                     <details class="invalid-tag">
                     <summary>invalid reference</summary>
                     <pre><code>byte[]</code></pre>
@@ -209,7 +209,7 @@ public class TestLinkTagletPrimitive extends JavadocTester {
         checkOutput("C.html", true,
                 """
                     <div class="block">Comment.
-                     Double[]:\s
+                    Double[]:\s
                     <details class="invalid-tag">
                     <summary>invalid reference</summary>
                     <pre><code>double[]</code></pre>

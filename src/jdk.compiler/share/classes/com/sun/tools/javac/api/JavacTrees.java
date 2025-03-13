@@ -1071,6 +1071,11 @@ public class JavacTrees extends DocTrees {
             }
 
             @Override
+            public Comment stripWhitespace() {
+                return this;
+            }
+
+            @Override
             public JCDiagnostic.DiagnosticPosition getPos() {
                 return null;
             }

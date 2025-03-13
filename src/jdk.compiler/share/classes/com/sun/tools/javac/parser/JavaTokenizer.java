@@ -1265,6 +1265,10 @@ public class JavaTokenizer extends UnicodeReader {
             return null;
         }
 
+        public Comment stripWhitespace() {
+            return this;
+        }
+
         public DiagnosticPosition getPos() {
             return pos;
         }

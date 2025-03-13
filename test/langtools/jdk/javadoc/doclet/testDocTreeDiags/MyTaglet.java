@@ -155,6 +155,7 @@ public class MyTaglet implements Taglet {
                 assert (s.length() > 2 * pad + 3) : ">>>" + s + "<<<";
                 int mid = s.length() / 2;
                 String detail = s.substring(mid - pad, mid) + "[" + s.charAt(mid) + "]" + s.substring(mid + 1, mid + pad + 1);
+                assert (!detail.contains("\n")) : "Can't handle newline in details";
                 // The diagnostic is reported at a position in a range of characters
                 // in the middle of the string; the characters are encoded within the
                 // message of the diagnostic, with {@code [ ]} surrounding the character

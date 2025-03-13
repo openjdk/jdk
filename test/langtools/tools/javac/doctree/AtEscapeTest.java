@@ -41,11 +41,11 @@ class AtEscapeTest {
      */
     void escape_block_tag() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc|_]
-    Escape[ESCAPE, pos:6, @]
-    Text[TEXT, pos:8, tag|_def]
+    Text[TEXT, pos:0, abc|]
+    Escape[ESCAPE, pos:4, @]
+    Text[TEXT, pos:6, tag|def]
   body: empty
   block tags: empty
 ]
@@ -56,11 +56,11 @@ DocComment[DOC_COMMENT, pos:1
      */
     void escape_inline_tag() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_{]
-    Escape[ESCAPE, pos:6, @]
-    Text[TEXT, pos:8, tag}_def]
+    Text[TEXT, pos:0, abc_{]
+    Escape[ESCAPE, pos:5, @]
+    Text[TEXT, pos:7, tag}_def]
   body: empty
   block tags: empty
 ]
@@ -71,11 +71,11 @@ DocComment[DOC_COMMENT, pos:1
      */
     void escape_end_comment() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_/*_def_*]
-    Escape[ESCAPE, pos:13, /]
-    Text[TEXT, pos:15, _ghi]
+    Text[TEXT, pos:0, abc_/*_def_*]
+    Escape[ESCAPE, pos:12, /]
+    Text[TEXT, pos:14, _ghi]
   body: empty
   block tags: empty
 ]
@@ -87,11 +87,11 @@ DocComment[DOC_COMMENT, pos:1
      */
     void escape_asterisk() { }
 /*
-DocComment[DOC_COMMENT, pos:5
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:5, abc|_____]
-    Escape[ESCAPE, pos:14, *]
-    Text[TEXT, pos:16, _def|_____ghi]
+    Text[TEXT, pos:0, abc|]
+    Escape[ESCAPE, pos:4, *]
+    Text[TEXT, pos:6, _def|ghi]
   body: empty
   block tags: empty
 ]
@@ -104,11 +104,11 @@ DocComment[DOC_COMMENT, pos:5
      */
     void not_escaped_tag() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc.]
+    Text[TEXT, pos:0, abc.]
   body: 1
-    Text[TEXT, pos:7, not_an_escaped_tag_@@tag;|_xyz.]
+    Text[TEXT, pos:5, not_an_escaped_tag_@@tag;|xyz.]
   block tags: empty
 ]
 */
@@ -120,11 +120,11 @@ DocComment[DOC_COMMENT, pos:1
      */
     void not_escaped_asterisk() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc.]
+    Text[TEXT, pos:0, abc.]
   body: 1
-    Text[TEXT, pos:7, not_an_escaped_asterisk_@*;|_xyz.]
+    Text[TEXT, pos:5, not_an_escaped_asterisk_@*;|xyz.]
   block tags: empty
 ]
 */
@@ -136,11 +136,11 @@ DocComment[DOC_COMMENT, pos:1
      */
     void not_escaped_solidus() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Text[TEXT, pos:1, abc.]
+    Text[TEXT, pos:0, abc.]
   body: 1
-    Text[TEXT, pos:7, not_an_escaped_solidus_@/.|_xyz.]
+    Text[TEXT, pos:5, not_an_escaped_solidus_@/.|xyz.]
   block tags: empty
 ]
 */

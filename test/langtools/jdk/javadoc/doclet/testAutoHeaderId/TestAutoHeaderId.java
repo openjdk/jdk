@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,8 +133,8 @@ public class TestAutoHeaderId extends JavadocTester {
                     """,
                 """
                     <h2 id="3-0-multi-line-heading-with-extra-whitespace-heading"> 3.0 Multi-line
-                           heading   with extra
-                                     whitespace</h2>""");
+                          heading   with extra
+                                    whitespace</h2>""");
     }
 
     private void checkSearchIndex() {

@@ -27,11 +27,11 @@ package com.sun.tools.javac.parser;
 
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
-import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.Position;
 
 import java.nio.CharBuffer;
 import java.util.Arrays;
-import java.util.regex.Pattern;
 
 /**
  * An extension to the base lexical analyzer (JavaTokenizer) that
@@ -169,6 +169,11 @@ public class JavadocTokenizer extends JavaTokenizer {
                 sb = null;
                 offsetMap.trim();
             }
+        }
+
+        @Override
+        public Comment stripWhitespace() {
+            return StrippedComment.of(this);
         }
     }
 
@@ -354,4 +359,121 @@ public class JavadocTokenizer extends JavaTokenizer {
             return map[startScaled + POS_OFFSET] + (pos - map[startScaled + SB_OFFSET]);
         }
     }
+
+    static class StrippedComment implements Comment {
+        String text;
+        final OffsetMap strippedMap;
+        final OffsetMap sourceMap;
+        // Copy these fields to not hold a reference to the original comment with its text
+        final JCDiagnostic.DiagnosticPosition diagPos;
+        final CommentStyle style;
+        final boolean deprecated;
+
+        static Comment of(JavadocComment comment) {
+            if (comment.getStyle() != CommentStyle.JAVADOC_BLOCK) {
+                return comment;
+            }
+            int indent = getIndent(comment);
+            return indent > 0 ? new StrippedComment(comment, indent) : comment;
+        }
+
+        StrippedComment(JavadocComment comment, int indent) {
+            this.diagPos = comment.getPos();
+            this.style = comment.getStyle();
+            this.deprecated = comment.isDeprecated();
+            this.strippedMap = new OffsetMap();
+            this.sourceMap = comment.offsetMap;
+            stripComment(comment, indent);
+        }
+
+        static int getIndent(Comment comment) {
+            String txt = comment.getText();
+            int len = txt.length();
+            int indent = Integer.MAX_VALUE;
+
+            for (int i = 0; i < len - 1; i++) {
+                int next;
+                boolean inIndent = true;
+                for (next = i; next < len; next++) {
+                    char c = txt.charAt(next);
+                    if (inIndent && !Character.isWhitespace(c)) {
+                        indent = Math.min(indent, next - i);
+                        inIndent = false;
+                    } else if (c == '\n') {
+                        break;
+                    }
+                }
+                i = next;
+            }
+
+            return indent == Integer.MAX_VALUE ? 0 : indent;
+        }
+
+        private void stripComment(JavadocComment comment, int indent) {
+            String txt = comment.getText();
+            int len = txt.length();
+            StringBuilder sb = new StringBuilder(len);
+            int startOfLine;
+
+            for (int i = 0; i < len - 1; i++) {
+                startOfLine = i;
+                while (startOfLine < len - 1
+                        && startOfLine < i + indent
+                        && txt.charAt(startOfLine) != '\n') {
+                    assert(Character.isWhitespace(txt.charAt(startOfLine)));
+                    startOfLine++;
+                }
+                int next = startOfLine;
+                while (next < len - 1 && txt.charAt(next) != '\n') {
+                    next++;
+                }
+
+                strippedMap.add(sb.length(), startOfLine);
+                sb.append(txt, startOfLine, next + 1);
+                i = next;
+            }
+
+            text = sb.toString();
+            strippedMap.trim();
+        }
+
+        @Override
+        public String getText() {
+            return text;
+        }
+
+        @Override
+        public Comment stripWhitespace() {
+            return this;
+        }
+
+        @Override
+        public int getSourcePos(int pos) {
+            if (pos == Position.NOPOS) {
+                return Position.NOPOS;
+            }
+
+            if (pos < 0 || pos > text.length()) {
+                throw new StringIndexOutOfBoundsException(String.valueOf(pos));
+            }
+
+            return sourceMap.getSourcePos(strippedMap.getSourcePos(pos));
+        }
+
+        @Override
+        public JCDiagnostic.DiagnosticPosition getPos() {
+            return diagPos;
+        }
+
+        @Override
+        public CommentStyle getStyle() {
+            return style;
+        }
+
+        @Override
+        public boolean isDeprecated() {
+            return deprecated;
+        }
+    }
+
 }

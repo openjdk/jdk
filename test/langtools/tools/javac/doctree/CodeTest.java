@@ -76,9 +76,9 @@ DocComment[DOC_COMMENT, pos:0
      */
     void nested() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Literal[CODE, pos:1, {@code_nested}_]
+    Literal[CODE, pos:0, {@code_nested}_]
   body: empty
   block tags: empty
 ]
@@ -91,9 +91,9 @@ DocComment[DOC_COMMENT, pos:1
      */
     void embedded_newline() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Literal[CODE, pos:1, if_(a_<_b)_{|________}|_]
+    Literal[CODE, pos:0, if_(a_<_b)_{|_______}|]
   body: empty
   block tags: empty
 ]
@@ -106,9 +106,9 @@ DocComment[DOC_COMMENT, pos:1
      */
     void embedded_at() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Literal[CODE, pos:1, |_@tag|_]
+    Literal[CODE, pos:0, |@tag|]
   body: empty
   block tags: empty
 ]
@@ -122,15 +122,15 @@ DocComment[DOC_COMMENT, pos:1
      */
     void pre_at_code() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
-    StartElement[START_ELEMENT, pos:1
+    StartElement[START_ELEMENT, pos:0
       name:pre
       attributes: empty
     ]
-    Literal[CODE, pos:6, |_____@Override|_____void_m()_{_}|_]
+    Literal[CODE, pos:5, |____@Override|____void_m()_{_}|]
   body: 1
-    EndElement[END_ELEMENT, pos:48, pre]
+    EndElement[END_ELEMENT, pos:44, pre]
   block tags: empty
 ]
 */
@@ -154,11 +154,11 @@ DocComment[DOC_COMMENT, pos:0
      * @author jjg */
     void unterminated_2() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Erroneous[ERRONEOUS, pos:1, prefPos:34
+    Erroneous[ERRONEOUS, pos:0, prefPos:32
       code: compiler.err.dc.unterminated.inline.tag
-      body: {@code_if_(a_<_b)_{_}|_@author_jjg
+      body: {@code_if_(a_<_b)_{_}|@author_jjg
     ]
   body: empty
   block tags: empty

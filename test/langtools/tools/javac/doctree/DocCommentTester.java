@@ -1024,7 +1024,7 @@ public class DocCommentTester {
          * @return the normalized content
          */
         String normalize(String s, boolean isLineComment, boolean normalizeTags) {
-            String s2 = (isLineComment ? s : s.trim())
+            String s2 = (isLineComment ? s : s.stripIndent().trim())
                     .replaceFirst("\\.\\s*\\n *@(?![@*])", ".\n@"); // Between block tags
             StringBuilder sb = new StringBuilder();
             Pattern p = Pattern.compile("(?i)\\{@([a-z][a-z0-9.:-]*)( )?");
