@@ -88,6 +88,8 @@ double G1CSetCandidateGroup::predict_group_total_time_ms() const {
   double predict_code_root_scan_time_ms = 0.0;
   size_t predict_bytes_to_copy = 0.0;
 
+  size_t incoming_refs = 0;
+
   for (G1CollectionSetCandidateInfo ci : _candidates) {
     G1HeapRegion* r = ci._r;
     assert(r->rem_set()->cset_group() == this, "Must be!");
@@ -95,6 +97,8 @@ double G1CSetCandidateGroup::predict_group_total_time_ms() const {
     predict_bytes_to_copy += p->predict_bytes_to_copy(r);
     predicted_copy_time_ms += p->predict_region_copy_time_ms(r, false /* for_young_only_phase */);
     predict_code_root_scan_time_ms += p->predict_region_code_root_scan_time(r, false /* for_young_only_phase */);
+
+    incoming_refs += r->incoming_refs();
   }
 
   size_t card_rs_length = _card_set.occupied();
@@ -107,19 +111,90 @@ double G1CSetCandidateGroup::predict_group_total_time_ms() const {
                          predicted_copy_time_ms +
                          non_young_other_time_ms;
 
-  log_trace(gc, ergo, cset) ("Prediction for group %u (%u regions): total_time %.2fms card_rs_length %zu merge_scan_time %.2fms code_root_scan_time_ms %.2fms evac_time_ms %.2fms other_time %.2fms bytes_to_copy %zu",
-                             group_id(),
-                             length(),
-                             total_time_ms,
-                             card_rs_length,
-                             merge_scan_time_ms,
-                             predict_code_root_scan_time_ms,
-                             predicted_copy_time_ms,
-                             non_young_other_time_ms,
-                             predict_bytes_to_copy);
+  if (SafepointSynchronize::is_at_safepoint()) {
+    log_debug(gc, ergo, cset)("Prediction for group %u (%u regions): total_time %.2fms card_rs_length %zu merge_scan_time %.2fms code_root_scan_time_ms %.2fms evac_time_ms %.2fms other_time %.2fms bytes_to_copy %zuMB %0.2fMB/S RefCount %zuK",
+      group_id(),
+      length(),
+      total_time_ms,
+      card_rs_length,
+      merge_scan_time_ms,
+      predict_code_root_scan_time_ms,
+      predicted_copy_time_ms,
+      non_young_other_time_ms,
+      predict_bytes_to_copy / M,
+      gc_efficiency() / M,
+      incoming_refs / K
+     );
+
+     if (total_time_ms > MaxGCPauseMillis / 2) {
+      for (G1CollectionSetCandidateInfo ci : _candidates) {
+        G1HeapRegion* r = ci._r;
+        log_debug(gc, ergo, cset)("Region %u  live bytes %zu MB, reclaimable %zu MB, ref counts %zuK",
+                                  r->hrm_index(),
+                                  r->live_bytes() / M,
+                                  r->garbage_bytes() / M,
+                                  r->incoming_refs() / K
+        );
+      }
+    }
+  } else {
+    log_trace(gc, ergo, cset) ("Prediction for group %u (%u regions): total_time %.2fms card_rs_length %zu merge_scan_time %.2fms code_root_scan_time_ms %.2fms evac_time_ms %.2fms other_time %.2fms bytes_to_copy %zuMB %0.2fMB/S",
+      group_id(),
+      length(),
+      total_time_ms,
+      card_rs_length,
+      merge_scan_time_ms,
+      predict_code_root_scan_time_ms,
+      predicted_copy_time_ms,
+      non_young_other_time_ms,
+      predict_bytes_to_copy / M,
+      gc_efficiency() / M
+    );
+  }
+
 
   return total_time_ms;
 }
+
+// double G1CSetCandidateGroup::predict_group_total_time_ms() const {
+//   G1Policy* p = G1CollectedHeap::heap()->policy();
+// 
+//   double predicted_copy_time_ms = 0.0;
+//   double predict_code_root_scan_time_ms = 0.0;
+//   size_t predict_bytes_to_copy = 0.0;
+// 
+//   for (G1CollectionSetCandidateInfo ci : _candidates) {
+//     G1HeapRegion* r = ci._r;
+//     assert(r->rem_set()->cset_group() == this, "Must be!");
+// 
+//     predict_bytes_to_copy += p->predict_bytes_to_copy(r);
+//     predicted_copy_time_ms += p->predict_region_copy_time_ms(r, false /* for_young_only_phase */);
+//     predict_code_root_scan_time_ms += p->predict_region_code_root_scan_time(r, false /* for_young_only_phase */);
+//   }
+// 
+//   size_t card_rs_length = _card_set.occupied();
+// 
+//   double merge_scan_time_ms = p->predict_merge_scan_time(card_rs_length);
+//   double non_young_other_time_ms = p->predict_non_young_other_time_ms(length());
+// 
+//   double total_time_ms = merge_scan_time_ms +
+//                          predict_code_root_scan_time_ms +
+//                          predicted_copy_time_ms +
+//                          non_young_other_time_ms;
+// 
+//   log_trace(gc, ergo, cset) ("Prediction for group %u (%u regions): total_time %.2fms card_rs_length %zu merge_scan_time %.2fms code_root_scan_time_ms %.2fms evac_time_ms %.2fms other_time %.2fms bytes_to_copy %zu",
+//                              group_id(),
+//                              length(),
+//                              total_time_ms,
+//                              card_rs_length,
+//                              merge_scan_time_ms,
+//                              predict_code_root_scan_time_ms,
+//                              predicted_copy_time_ms,
+//                              non_young_other_time_ms,
+//                              predict_bytes_to_copy);
+// 
+//   return total_time_ms;
+// }
 
 int G1CSetCandidateGroup::compare_gc_efficiency(G1CSetCandidateGroup** gr1, G1CSetCandidateGroup** gr2) {
   double gc_eff1 = (*gr1)->gc_efficiency();

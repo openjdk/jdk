@@ -156,7 +156,7 @@ inline void G1HeapRegion::reset_after_full_gc_common() {
 
   _garbage_bytes = 0;
 
-  _ref_count = 0;
+  _incoming_refs = 0;
 
   // Clear unused heap memory in debug builds.
   if (ZapUnusedHeapArea) {
@@ -270,7 +270,7 @@ inline void G1HeapRegion::note_end_of_marking(HeapWord* top_at_mark_start, size_
 
   if (top_at_mark_start != bottom()) {
     _garbage_bytes = byte_size(bottom(), top_at_mark_start) - marked_bytes;
-    _ref_count = ref_count;
+    _incoming_refs = ref_count;
   }
 
   if (needs_scrubbing()) {

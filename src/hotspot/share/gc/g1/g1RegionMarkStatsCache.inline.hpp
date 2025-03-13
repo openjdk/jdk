@@ -50,8 +50,8 @@ inline void G1RegionMarkStatsCache::evict(uint idx) {
     Atomic::add(&_target[cur->_region_idx]._live_words, cur->_stats._live_words);
   }
 
-  if (cur->_stats._refs_to_region != 0) {
-    Atomic::add(&_target[cur->_region_idx]._refs_to_region, cur->_stats._refs_to_region);
+  if (cur->_stats._incoming_refs != 0) {
+    Atomic::add(&_target[cur->_region_idx]._incoming_refs, cur->_stats._incoming_refs);
   }
 
   cur->clear();

@@ -239,7 +239,7 @@ private:
 
   // Approximate number of references to this regions
   // at the end of concurrent marking.
-  size_t _ref_count;
+  size_t _incoming_refs;
 
   // Data for young region survivor prediction.
   uint  _young_index_in_cset;
@@ -343,10 +343,11 @@ public:
     return capacity() - known_live_bytes;
   }
 
-  double weighted_reclaimable_bytes() {
-    double const epsilon = 1e-6; // Boost regions with zero reference count and also avoid divide by zero checks
-    return reclaimable_bytes() / (_ref_count + epsilon);
-  }
+  double ref_count_region_total_ms();
+
+  double weighted_reclaimable_bytes();
+
+  size_t incoming_refs() { return _incoming_refs; }
 
   inline bool is_collection_set_candidate() const;
 
