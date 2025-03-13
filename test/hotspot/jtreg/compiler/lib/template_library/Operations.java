@@ -534,22 +534,22 @@ final class Operations {
                     switch(vop.type()) {
                     case VOPType.UNARY:
                         ops.add(new Operation.Unary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ")", null));
-                        // TODO: lanewise(VectorOperators.Unary op, VectorMask<Integer> m)
+                        ops.add(new Operation.Binary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.maskType, ")", null));
                         break;
                     case VOPType.ASSOCIATIVE:
                     case VOPType.INTEGRAL_ASSOCIATIVE:
                         if (vop.type() == VOPType.ASSOCIATIVE || !type.elementType.isFloating()) {
                             ops.add(new Operation.Unary(type.elementType, "", type, ".reduceLanes(VectorOperators." + vop.name() + ")", null));
-                            // TODO: reduceLanes(VectorOperators.Associative op, VectorMask<Integer> m)
+                            ops.add(new Operation.Unary(type.elementType, "", type, ".reduceLanes(VectorOperators." + vop.name() + ", ", type.maskType, ")", null));
                         }
                         // fall-through
                     case VOPType.BINARY:
                         ops.add(new Operation.Binary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ")", null));
-                        // TODO: lanewise(VectorOperators.Binary op, int e, VectorMask<Integer> m)
-                        // TODO: lanewise(VectorOperators.Binary op, long e)
-                        // TODO: lanewise(VectorOperators.Binary op, long e, VectorMask<Integer> m)
+                        ops.add(new Operation.Ternary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type.maskType, ")", null));
+                        ops.add(new Operation.Binary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", Type.longs(), ")", List.of("IllegalArgumentException")));
+                        ops.add(new Operation.Ternary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", Type.longs(), ", ", type.maskType, ")", List.of("IllegalArgumentException")));
                         ops.add(new Operation.Binary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ")", null));
-                        // TODO: lanewise(VectorOperators.Binary op, Vector<Integer> v, VectorMask<Integer> m)
+                        ops.add(new Operation.Ternary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type.maskType, ")", null));
                         break;
                     case VOPType.TERNARY:
                         ops.add(new Operation.Ternary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type.elementType, ")", null));
