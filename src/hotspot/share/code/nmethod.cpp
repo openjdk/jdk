@@ -1434,8 +1434,10 @@ nmethod* nmethod::clone(CodeBlobType code_blob_type) {
     nm_copy->_pc_desc_container = new PcDescContainer(nm_copy->scopes_pcs_begin());
   }
 
+#ifndef PRODUCT
   _asm_remarks.reuse();
   _dbg_strings.reuse();
+#endif
 
   // Fix relocation
   RelocIterator iter(nm_copy);
