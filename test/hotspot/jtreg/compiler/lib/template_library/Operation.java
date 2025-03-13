@@ -96,5 +96,4 @@ public sealed interface Operation permits Operation.Unary,
                    types.contains(t3);
         }
     }
-
 }

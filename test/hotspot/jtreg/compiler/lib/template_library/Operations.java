@@ -553,13 +553,13 @@ final class Operations {
                         break;
                     case VOPType.TERNARY:
                         ops.add(new Operation.Ternary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type.elementType, ")", null));
-                        // TODO: lanewise(VectorOperators.Ternary op, int e1, int e2, VectorMask<Integer> m)
+                        ops.add(new Operation.Quaternary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type.elementType, ", ", type.maskType, ")", null));
                         ops.add(new Operation.Ternary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type, ")", null));
-                        // TODO: lanewise(VectorOperators.Ternary op, int e1, Vector<Integer> v2, VectorMask<Integer> m)
+                        ops.add(new Operation.Quaternary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type.elementType, ", ", type, ", ", type.maskType, ")", null));
                         ops.add(new Operation.Ternary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type.elementType, ")", null));
-                        // TODO: lanewise(VectorOperators.Ternary op, Vector<Integer> v1, int e2, VectorMask<Integer> m)
+                        ops.add(new Operation.Quaternary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type.elementType, ", ", type.maskType, ")", null));
                         ops.add(new Operation.Ternary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type, ")", null));
-                        // TODO: lanewise(VectorOperators.Ternary op, Vector<Integer> v1, Vector<Integer> v2, VectorMask<Integer> m)
+                        ops.add(new Operation.Quaternary(type, "", type, ".lanewise(VectorOperators." + vop.name() + ", ", type, ", ", type, ", ", type.maskType, ")", null));
                         break;
                     }
                 }
