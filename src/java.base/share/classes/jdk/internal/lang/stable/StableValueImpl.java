@@ -54,7 +54,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
     // memory semantics rules (see `parse.hpp` and `parse(1|2|3).cpp`).
     //
-    // This field is used directly and via Unsafe using explicit memory semantics.
+    // This field is used directly and reflectively via Unsafe using explicit memory semantics.
     //
     // | Value          |  Meaning      |
     // | -------------- |  ------------ |
@@ -63,7 +63,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // | other          |  Set(other)   |
     //
     @Stable
-    private volatile Object value;
+    private Object value;
 
     // Only allow creation via the factory `StableValueImpl::newInstance`
     private StableValueImpl() {}
@@ -71,7 +71,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public boolean trySet(T value) {
-        if (this.value != null) {
+        if (wrappedValueAcquire() != null) {
             return false;
         }
         // Mutual exclusion is required here as `computeIfUnset` might also
@@ -93,7 +93,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public T orElseThrow() {
-        final Object t = value;
+        final Object t = wrappedValueAcquire();
         if (t == null) {
             throw new NoSuchElementException("No underlying data set");
         }
@@ -103,27 +103,27 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public T orElse(T other) {
-        final Object t = value;
+        final Object t = wrappedValueAcquire();
         return (t == null) ? other : unwrap(t);
     }
 
     @ForceInline
     @Override
     public boolean isSet() {
-        return value != null;
+        return wrappedValueAcquire() != null;
     }
 
     @ForceInline
     @Override
     public T orElseSet(Supplier<? extends T> supplier) {
         Objects.requireNonNull(supplier);
-        final Object t = value;
+        final Object t = wrappedValueAcquire();
         return (t == null) ? computeIfUnsetSlowPath(supplier) : unwrap(t);
     }
 
     @DontInline
     private synchronized T computeIfUnsetSlowPath(Supplier<? extends T> supplier) {
-        final Object t = value;
+        final Object t = value;  // Plain semantics suffice here
         if (t == null) {
             final T newValue = supplier.get();
             // The mutex is reentrant so we need to check if the value was actually set.
@@ -136,7 +136,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @Override
     public String toString() {
-        final Object t = value;
+        final Object t = wrappedValueAcquire();
         return t == this
                 ? "(this StableValue)"
                 : "StableValue" + renderWrapped(t);
@@ -145,8 +145,8 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // Internal methods shared with other internal classes
 
     @ForceInline
-    public Object wrappedValue() {
-        return value;
+    public Object wrappedValueAcquire() {
+        return UNSAFE.getReferenceAcquire(this, UNDERLYING_DATA_OFFSET);
     }
 
     static String renderWrapped(Object t) {
