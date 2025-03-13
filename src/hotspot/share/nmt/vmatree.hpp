@@ -101,6 +101,7 @@ private:
       type_tag[0] = static_cast<uint8_t>(type);
       type_tag[1] = static_cast<uint8_t>(data.mem_tag);
       sidx = data.stack_idx;
+      second_idx = NativeCallStackStorage::invalid;
     }
 
     StateType type() const {
