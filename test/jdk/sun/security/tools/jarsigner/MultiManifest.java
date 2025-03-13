@@ -53,15 +53,17 @@ public class MultiManifest {
                 + "-keypass changeit -alias a -dname CN=a -keyalg rsa "
                 + "-genkey -validity 300");
 
-        SecurityTools.jarsigner("-verbose -keystore ks -storepass changeit MultiManifest.jar a")
+        SecurityTools.jarsigner("-verbose -keystore ks -storepass changeit "
+                                + "MultiManifest.jar -signedjar MultiManifest.signed.jar a")
                 .shouldHaveExitValue(0)
                 .shouldContain("Duplicate manifest entries were detected")
                 .shouldContain("discarded");
 
-        SecurityTools.jarsigner("-keystore ks -storepass changeit MultiManifest.jar a")
-                     .shouldHaveExitValue(0)
-                     .shouldNotContain("Duplicate manifest entries were detected")
-                     .shouldNotContain("discarded");
+        SecurityTools.jarsigner("-keystore ks -storepass changeit "
+                                + "MultiManifest.jar -signedjar MultiManifest.signed.jar a")
+                 .shouldHaveExitValue(0)
+                 .shouldContain("Duplicate manifest entries were detected")
+                 .shouldContain("discarded");
 
     }
 
