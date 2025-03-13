@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Collectors;
 import javax.xml.XMLConstants;
+import javax.xml.catalog.Catalog;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
+import jdk.xml.internal.JdkCatalog;
 import org.testng.Assert;
 import org.testng.Assert.ThrowingRunnable;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
@@ -44,7 +47,8 @@ import org.xml.sax.helpers.DefaultHandler;
 
 /*
  * @test
- * @bug 8344800 8345353
+ * @bug 8344800 8345353 8351969
+ * @modules java.xml/jdk.xml.internal
  * @run testng/othervm common.jdkcatalog.JDKCatalogTest
  * @summary Verifies the W3C DTDs and XSDs in the JDK built-in catalog.
  */
@@ -63,6 +67,29 @@ public class JDKCatalogTest {
     static final String XSD_LOCATION = "{{SCHEMA_LOCATION}}";
     static final String TARGET_NAMESPACE = "{{targetNamespace}}";
     static final String ROOT_ELEMENT = "{{rootElement}}";
+
+    Catalog jdkCatalog;
+
+    /*
+     * DataProvider: DTDs in the JDK built-in Catalog
+     * Data provided: public and system Ids, see test testDTDsInJDKCatalog
+     */
+    @DataProvider(name = "DTDsInJDKCatalog")
+    public Object[][] getDTDsInJDKCatalog() throws Exception {
+        return new Object[][]{
+            // Schema 1.0
+            {"-//W3C//DTD XMLSCHEMA 200102//EN", "http://www.w3.org/2001/XMLSchema.dtd"},
+            {"datatypes", "http://www.w3.org/2001/datatypes.dtd"},
+            // XHTML 1.0
+            {"-//W3C//DTD XHTML 1.0 Frameset//EN", "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd"},
+            {"-//W3C//DTD XHTML 1.0 Strict//EN", "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"},
+            {"-//W3C//DTD XHTML 1.0 Transitional//EN", "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"},
+            // XHTML 1.1
+            {"-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"},
+            // DTD for W3C specifications
+            {"-//W3C//DTD Specification V2.10//EN", "http://www.w3.org/2002/xmlspec/dtd/2.10/xmlspec.dtd"},
+        };
+    }
 
     /*
      * DataProvider: for verifying DTDs in the JDKCatalog
@@ -104,6 +131,32 @@ public class JDKCatalogTest {
             {"xhtml.xml", "https://www.w3.org/2002/08/xhtml/xhtml1-transitional.xsd", "http://www.w3.org/1999/xhtml", "html", null, null},
             {"xhtml.xml", "http://www.w3.org/MarkUp/SCHEMA/xhtml11.xsd", "http://www.w3.org/1999/xhtml", "html", null, null},
         };
+    }
+
+    /*
+     * Initializing fields
+     */
+    @BeforeClass
+    public void setUpClass() throws Exception {
+        // initialize JDKCatalog
+        JdkCatalog.init("continue");
+        jdkCatalog = JdkCatalog.catalog;
+    }
+
+    /**
+     * Verifies that the JDK built-in Catalog supports both the Public and System
+     * identifiers for DTDs.
+     * @param publicId the public Id
+     * @param systemId the system Id
+     * @throws Exception if test fails unexpectedly
+     */
+    @Test(dataProvider = "DTDsInJDKCatalog")
+    public void testDTDsInJDKCatalog(String publicId, String systemId)
+            throws Exception {
+        String matchingPubId = jdkCatalog.matchPublic(publicId);
+        String matchingSysId = jdkCatalog.matchSystem(systemId);
+
+        Assert.assertEquals(matchingPubId, matchingSysId);
     }
 
     /**
