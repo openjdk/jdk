@@ -90,7 +90,7 @@ public class SystemMapTestBase {
             regexBase_shared_and_committed + "hsperfdata_.*"
         };
 
-        static final String shouldMatchUnconditionally_linux_libjvm[] = {
+        static final String shouldMatch_linux_libjvm[] = {
             // libjvm
             regexBase_committed + "/lib/.*/libjvm.so"
         };
@@ -109,10 +109,12 @@ public class SystemMapTestBase {
 
         public String[] shouldMatchUnconditionally() {
             if (WhiteBox.getWhiteBox().isStatic()) {
+                // On static JDK, libjvm is statically linked with the 'java'
+                // launcher. There is no separate mapping for libjvm.
                 return shouldMatchUnconditionally_linux;
             } else {
                 return StringArrayUtils.concat(shouldMatchUnconditionally_linux,
-                                               shouldMatchUnconditionally_linux_libjvm);
+                                               shouldMatch_linux_libjvm);
             }
         }
 
@@ -137,7 +139,7 @@ public class SystemMapTestBase {
             winimage + ".*[\\/\\\\]bin[\\/\\\\]java[.]exe",
         };
 
-        static final String shouldMatchUnconditionally_windows_libjvm[] = {
+        static final String shouldMatch_windows_libjvm[] = {
             // libjvm
             winimage + ".*[\\/\\\\]bin[\\/\\\\].*[\\/\\\\]jvm.dll"
         };
@@ -156,10 +158,12 @@ public class SystemMapTestBase {
 
         public String[] shouldMatchUnconditionally() {
             if (WhiteBox.getWhiteBox().isStatic()) {
+                // On static JDK, libjvm is statically linked with the 'java'
+                // launcher. There is no separate mapping for libjvm.
                 return shouldMatchUnconditionally_windows;
             } else {
                 return StringArrayUtils.concat(shouldMatchUnconditionally_windows,
-                                               shouldMatchUnconditionally_windows_libjvm);
+                                               shouldMatch_windows_libjvm);
             }
         }
 
@@ -187,7 +191,7 @@ public class SystemMapTestBase {
             macOSbase + macprivate + space + someNumber + space + ".*/.*/hsperfdata_.*"
         };
 
-        static final String shouldMatchUnconditionally_macOS_libjvm[] = {
+        static final String shouldMatch_macOS_libjvm[] = {
             // libjvm
             macOSbase + macow + space + someNumber + space + "/.*/lib/server/libjvm.dylib",
         };
@@ -205,10 +209,12 @@ public class SystemMapTestBase {
 
         public String[] shouldMatchUnconditionally() {
             if (WhiteBox.getWhiteBox().isStatic()) {
+                // On static JDK, libjvm is statically linked with the 'java'
+                // launcher. There is no separate mapping for libjvm.
                 return shouldMatchUnconditionally_macOS;
             } else {
                 return StringArrayUtils.concat(shouldMatchUnconditionally_macOS,
-                                               shouldMatchUnconditionally_macOS_libjvm);
+                                               shouldMatch_macOS_libjvm);
             }
         }
 

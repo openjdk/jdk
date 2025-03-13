@@ -48,6 +48,9 @@ public class DynLibsTest {
     public void run(CommandExecutor executor) {
         OutputAnalyzer output = executor.execute("VM.dynlibs");
         if (WhiteBox.getWhiteBox().isStatic()) {
+            // On static JDK, JDK/VM native libraries are statically
+            // linked with the launcher. There is no separate mapping
+            // for libjvm, libjava, etc.
             output.shouldContain("java");
             output.shouldNotContain(Platform.buildSharedLibraryName("jvm"));
             output.shouldNotContain(Platform.buildSharedLibraryName("java"));
