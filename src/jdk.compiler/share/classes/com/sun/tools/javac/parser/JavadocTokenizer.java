@@ -391,7 +391,7 @@ public class JavadocTokenizer extends JavaTokenizer {
             int len = txt.length();
             int indent = Integer.MAX_VALUE;
 
-            for (int i = 0; i < len - 1; i++) {
+            for (int i = 0; i < len; i++) {
                 int next;
                 boolean inIndent = true;
                 for (next = i; next < len; next++) {
