@@ -5551,7 +5551,7 @@ class StubGenerator: public StubCodeGenerator {
     vs_addv(vs2, __ T4S, vs2, vtmp);
 
     // mask = (twoGamma2 / 2 - r0) >> 31;
-    vs_subv(vtmp, __ T4S, g2, vs2);
+    vs_subv(vtmp, __ T4S, g2, vs3);
     vs_sshr(vs4, __ T4S, vtmp, 31);
 
     // r0 -= (mask & twoGamma2);
