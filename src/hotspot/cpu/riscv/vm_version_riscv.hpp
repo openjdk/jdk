@@ -297,6 +297,13 @@ class VM_Version : public Abstract_VM_Version {
   // RISCV64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }
   static bool supports_fencei_barrier() { return ext_Zifencei.enabled(); }
+
+  static bool supports_float16_float_conversion() {
+    return UseZfh || UseZfhmin;
+  }
+
+  // Check intrinsic support
+  static bool is_intrinsic_supported(vmIntrinsicID id);
 };
 
 #endif // CPU_RISCV_VM_VERSION_RISCV_HPP

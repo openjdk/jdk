@@ -508,6 +508,11 @@ Node *Node::clone() const {
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
     n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
   }
+  if (for_merge_stores_igvn()) {
+    // Don't add cloned node to Compile::_for_merge_stores_igvn list automatically.
+    // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
+    n->remove_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
+  }
   if (n->is_ParsePredicate()) {
     C->add_parse_predicate(n->as_ParsePredicate());
   }
@@ -614,6 +619,9 @@ void Node::destruct(PhaseValues* phase) {
   }
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);
+  }
+  if (for_merge_stores_igvn()) {
+    compile->remove_from_merge_stores_igvn(this);
   }
 
   if (is_SafePoint()) {
@@ -1452,6 +1460,8 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
             // The restriction (outcnt() <= 2) is the same as in set_req_X()
             // and remove_globally_dead_node().
             igvn->add_users_to_worklist( n );
+          } else if (dead->is_data_proj_of_pure_function(n)) {
+            igvn->_worklist.push(n);
           } else {
             BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(igvn, n);
           }
@@ -2930,6 +2940,25 @@ bool Node::is_dead_loop_safe() const {
 
 bool Node::is_div_or_mod(BasicType bt) const { return Opcode() == Op_Div(bt) || Opcode() == Op_Mod(bt) ||
                                                       Opcode() == Op_UDiv(bt) || Opcode() == Op_UMod(bt); }
+
+bool Node::is_pure_function() const {
+  switch (Opcode()) {
+  case Op_ModD:
+  case Op_ModF:
+    return true;
+  default:
+    return false;
+  }
+}
+
+// `maybe_pure_function` is assumed to be the input of `this`. This is a bit redundant,
+// but we already have and need maybe_pure_function in all the call sites, so
+// it makes it obvious that the `maybe_pure_function` is the same node as in the caller,
+// while it takes more thinking to realize that a locally computed in(0) must be equal to
+// the local in the caller.
+bool Node::is_data_proj_of_pure_function(const Node* maybe_pure_function) const {
+  return Opcode() == Op_Proj && as_Proj()->_con == TypeFunc::Parms && maybe_pure_function->is_pure_function();
+}
 
 //=============================================================================
 //------------------------------yank-------------------------------------------
