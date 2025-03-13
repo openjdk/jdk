@@ -5100,7 +5100,7 @@ class StubGenerator: public StubCodeGenerator {
     // occur singly with montmul inputs alterating with add/sub
     // inputs. Once again we can use 4-way parallelism to combine 16
     // zetas at a time. However, we have to load 8 adjacent values at
-    // 4 different offsets using an ld2 load with arrangement 2D. That
+    // 4 different offsets using an ld2 load with arrangement 4S. That
     // interleaves the the odd words of each pair into one
     // coefficients vector register and the even words of the pair
     // into the next register. We then need to montmul the 4 even
