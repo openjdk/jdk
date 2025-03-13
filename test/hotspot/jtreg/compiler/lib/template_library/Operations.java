@@ -406,10 +406,10 @@ final class Operations {
         new VOP("LE",                   VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
         new VOP("LT",                   VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
         new VOP("NE",                   VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
-        new VOP("UGE",                  VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
-        new VOP("UGT",                  VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
-        new VOP("ULE",                  VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
-        new VOP("ULT",                  VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES)
+        new VOP("UGE",                  VOPType.ASSOCIATIVE, Type.INTEGRAL_TYPES),
+        new VOP("UGT",                  VOPType.ASSOCIATIVE, Type.INTEGRAL_TYPES),
+        new VOP("ULE",                  VOPType.ASSOCIATIVE, Type.INTEGRAL_TYPES),
+        new VOP("ULT",                  VOPType.ASSOCIATIVE, Type.INTEGRAL_TYPES)
     );
 
     private static final List<Operation> generateVectorAPIOperations() {
@@ -461,8 +461,8 @@ final class Operations {
                     ops.add(new Operation.Binary(type.maskType, "", type, ".compare(VectorOperators." + cmp.name() + ", ", type, ")", null));
                 }
             }
-            // TODO: compare with VectorMask type
-            // TODO: compress with VectorMask type
+
+            ops.add(new Operation.Binary(type, "", type, ".compress(", type.maskType, ")", null));
 
             // TODO: non zero parts
             for (var type2 : Type.VECTOR_API_VECTOR_TYPES) {
@@ -515,14 +515,14 @@ final class Operations {
             }
 
             ops.add(new Operation.Binary(type, "", type, ".div(", type.elementType, ")", List.of("ArithmeticException")));
-            // TODO: div(int e, VectorMask<Integer> m)
+            ops.add(new Operation.Ternary(type, "", type, ".div(", type.elementType, ", ", type.maskType, ")", List.of("ArithmeticException")));
             ops.add(new Operation.Binary(type, "", type, ".div(", type, ")", List.of("ArithmeticException")));
-            // TODO: div(Vector<Integer> v, VectorMask<Integer> m)
+            ops.add(new Operation.Ternary(type, "", type, ".div(", type.elementType, ", ", type.maskType, ")", List.of("ArithmeticException")));
 
-            // TODO: eq(int e)   -> VectorMask
-            // TODO: eq(Vector<Integer> v) -> VectorMask
+            ops.add(new Operation.Binary(type.maskType, "", type, ".eq(", type.elementType, ")", null));
+            ops.add(new Operation.Binary(type.maskType, "", type, ".eq(", type, ")", null));
 
-            // TODO: expand(VectorMask<Integer> m)
+            ops.add(new Operation.Binary(type, "", type, ".expand(", type.maskType, ")", null));
 
             // TODO: ensure we use all variants of fromArray and fromMemorySegment, plus intoArray and intoMemorySegment. Also: toArray and type variants.
 
