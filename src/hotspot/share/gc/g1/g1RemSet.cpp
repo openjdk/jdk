@@ -1288,7 +1288,7 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
   }
 
   if (VerifyDuringGC && initial_evacuation) {
-    g1h->verifier()->verify_refinement_table_clean();
+    g1h->verifier()->verify_card_tables_clean(false /* both_card_tables */);
   }
 }
 

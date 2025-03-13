@@ -108,6 +108,7 @@
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
@@ -800,6 +801,20 @@ void G1CollectedHeap::prepare_for_mutator_after_full_collection() {
 void G1CollectedHeap::abort_refinement() {
   G1ConcurrentRefineSweepState& sweep_state = concurrent_refine()->sweep_state();
   if (sweep_state.is_in_progress()) {
+
+    if (!sweep_state.are_java_threads_synched()) {
+      // Synchronize Java threads with global card table that has already been swapped.
+      class SwapThreadCardTableClosure : public ThreadClosure {
+      public:
+
+        virtual void do_thread(Thread* t) {
+          G1BarrierSet* bs = G1BarrierSet::g1_barrier_set();
+          bs->update_card_table_base(t);
+        }
+      } cl;
+      Threads::java_threads_do(&cl);
+    }
+
     // Record any available refinement statistics.
     policy()->record_refinement_stats(sweep_state.stats());
     sweep_state.complete_work(false /* concurrent */, false /* print_log */);
@@ -816,6 +831,7 @@ void G1CollectedHeap::verify_after_full_collection() {
   }
   _hrm.verify_optional();
   _verifier->verify_region_sets_optional();
+  _verifier->verify_card_tables_clean(true /* both_card_tables */);
   _verifier->verify_after_gc();
   _verifier->verify_bitmap_clear(false /* above_tams_only */);
 

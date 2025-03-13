@@ -73,6 +73,16 @@ void G1BarrierSet::swap_global_card_table() {
   _refinement_table = temp;
 }
 
+void G1BarrierSet::update_card_table_base(Thread* thread) {
+#ifdef ASSERT
+  {
+    ResourceMark rm;
+    assert(thread->is_Java_thread(), "may only update card table base of JavaThreads, not %s", thread->name());
+  }
+#endif
+  G1ThreadLocalData::set_byte_map_base(thread, _card_table->byte_map_base());
+}
+
 template <class T> void
 G1BarrierSet::write_ref_array_pre_work(T* dst, size_t count) {
   G1SATBMarkQueueSet& queue_set = G1BarrierSet::satb_mark_queue_set();
@@ -161,7 +171,8 @@ void G1BarrierSet::on_thread_attach(Thread* thread) {
   satbq.set_active(_satb_mark_queue_set.is_active());
 
   if (thread->is_Java_thread()) {
-    G1ThreadLocalData::set_byte_map_base(thread, G1CollectedHeap::heap()->card_table_base());
+    assert(Threads_lock->is_locked(), "must be, synchronization with refinement.");
+    update_card_table_base(thread);
   }
 }
 

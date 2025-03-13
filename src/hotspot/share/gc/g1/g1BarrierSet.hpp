@@ -31,6 +31,7 @@
 #include "gc/shared/bufferNode.hpp"
 
 class G1CardTable;
+class Thread;
 
 // This barrier set is specialized to manage two card tables:
 // * one the mutator is currently working on ("card table")
@@ -80,6 +81,9 @@ class G1BarrierSet: public CardTableBarrierSet {
 
   // Swap the global card table references, without synchronization.
   void swap_global_card_table();
+
+  // Update the given thread's card table (byte map) base to the current card table's.
+  void update_card_table_base(Thread* thread);
 
   virtual bool card_mark_must_follow_store() const {
     return true;

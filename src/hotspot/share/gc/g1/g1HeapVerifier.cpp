@@ -42,6 +42,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/threads.hpp"
 
 int G1HeapVerifier::_enabled_verification_types = G1HeapVerifier::G1VerifyAll;
 
@@ -527,6 +528,7 @@ void G1HeapVerifier::verify_before_gc() {
 
 void G1HeapVerifier::verify_after_gc() {
   verify(VerifyOption::G1UseConcMarking, "After GC");
+  verify_card_tables_in_sync();
 }
 
 void G1HeapVerifier::verify_bitmap_clear(bool from_tams) {
@@ -578,23 +580,25 @@ void G1HeapVerifier::verify_card_table_cleanup() {
   }
 }
 
-class G1VerifyRefinementTableClean: public G1HeapRegionClosure {
+class G1VerifyCardTablesClean: public G1HeapRegionClosure {
   G1HeapVerifier* _verifier;
+  bool _both_card_tables;
 
 public:
-  G1VerifyRefinementTableClean(G1HeapVerifier* verifier)
-    : _verifier(verifier) { }
+  G1VerifyCardTablesClean(G1HeapVerifier* verifier, bool both_card_tables = true)
+    : _verifier(verifier), _both_card_tables(both_card_tables) { }
 
   virtual bool do_heap_region(G1HeapRegion* r) {
-    G1CardTable* ct = G1CollectedHeap::heap()->refinement_table();
-    MemRegion mr(r->bottom(), r->end());
-    ct->verify_region(mr, G1CardTable::clean_card_val(), true); // Must be all Clean from bottom -> end.
+    _verifier->verify_rt_clean_region(r);     // Must be all Clean from bottom -> end.
+    if (_both_card_tables) {
+      _verifier->verify_ct_clean_region(r);
+    }
     return false;
   }
 };
 
-void G1HeapVerifier::verify_refinement_table_clean() {
-  G1VerifyRefinementTableClean cl(this);
+void G1HeapVerifier::verify_card_tables_clean(bool both_card_tables) {
+  G1VerifyCardTablesClean cl(this, both_card_tables);
   _g1h->heap_region_iterate(&cl);
 }
 
@@ -630,6 +634,40 @@ void G1HeapVerifier::verify_rt_clean_region(G1HeapRegion* hr) {
 }
 
 #ifndef PRODUCT
+
+void G1HeapVerifier::verify_card_tables_in_sync() {
+
+    // Non-Java thread card tables must be null.
+    class AssertCardTableBaseNull : public ThreadClosure {
+    public:
+
+      void do_thread(Thread* thread) {
+        ResourceMark rm;
+        assert(G1ThreadLocalData::get_byte_map_base(thread) == nullptr, "thread " PTR_FORMAT " (%s) has non-null card table base",
+               p2i(thread), thread->name());
+      }
+    } check_null_cl;
+
+    Threads::non_java_threads_do(&check_null_cl);
+
+    // Java thread card tables must be the same as the global card table.
+    class AssertSameCardTableClosure : public ThreadClosure {
+    public:
+
+      void do_thread(Thread* thread) {
+        G1CardTable::CardValue* global_ct_base = G1CollectedHeap::heap()->card_table_base();
+        G1CardTable::CardValue* cur_ct_base = G1ThreadLocalData::get_byte_map_base(thread);
+
+        ResourceMark rm;
+        assert(cur_ct_base == global_ct_base,
+               "thread " PTR_FORMAT " (%s) has wrong card table base, should be " PTR_FORMAT " is " PTR_FORMAT,
+               p2i(thread), thread->name(), p2i(global_ct_base), p2i(cur_ct_base));
+      }
+    } check_same_cl;
+
+    Threads::java_threads_do(&check_same_cl);
+}
+
 class G1CheckRegionAttrTableClosure : public G1HeapRegionClosure {
 private:
   bool _failures;

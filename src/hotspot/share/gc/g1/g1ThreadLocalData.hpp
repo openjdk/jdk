@@ -90,7 +90,7 @@ public:
     data(thread)->_byte_map_base = new_byte_map_base;
   }
 
-#ifdef ASSERT
+#ifndef PRODUCT
   static G1CardTable::CardValue* get_byte_map_base(Thread* thread) {
     return data(thread)->_byte_map_base;
   }

@@ -217,9 +217,9 @@ bool G1ConcurrentRefineSweepState::swap_java_threads_ct() {
   public:
     G1SwapThreadCardTableClosure() : HandshakeClosure("G1 Swap JT card table") { }
 
-    virtual void do_thread(Thread* t) {
+    virtual void do_thread(Thread* thread) {
       G1BarrierSet* bs = G1BarrierSet::g1_barrier_set();
-      G1ThreadLocalData::set_byte_map_base(t, bs->card_table()->byte_map_base());
+      bs->update_card_table_base(thread);
     }
   } cl;
   Handshake::execute(&cl);
@@ -372,6 +372,10 @@ void G1ConcurrentRefineSweepState::snapshot_heap_into(G1CardTableClaimTable* swe
 
 bool G1ConcurrentRefineSweepState::is_in_progress() const {
   return _state != State::Idle;
+}
+
+bool G1ConcurrentRefineSweepState::are_java_threads_synched() const {
+  return _state > State::SwapJavaThreadsCT || !is_in_progress();
 }
 
 uint64_t G1ConcurrentRefine::adjust_threads_period_ms() const {

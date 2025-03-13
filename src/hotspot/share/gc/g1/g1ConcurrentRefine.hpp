@@ -183,6 +183,7 @@ public:
   void add_yield_duration(jlong duration);
 
   bool is_in_progress() const;
+  bool are_java_threads_synched() const;
 };
 
 // Controls concurrent refinement.

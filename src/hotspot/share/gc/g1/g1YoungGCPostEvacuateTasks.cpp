@@ -839,17 +839,6 @@ public:
     : G1AbstractSubTask(G1GCPhaseTimes::ResizeThreadLABs), _claimer(ThreadsPerWorker)
   {
     G1BarrierSet::g1_barrier_set()->swap_global_card_table();
-
-#ifdef ASSERT
-    class AssertCardTableBaseNull : public ThreadClosure {
-    public:
-
-      void do_thread(Thread* thread) {
-        assert(G1ThreadLocalData::get_byte_map_base(thread) == nullptr, "thread " PTR_FORMAT " (%s) has non-null card table base", p2i(thread), thread->name());
-      }
-    } assert_cl;
-    Threads::non_java_threads_do(&assert_cl);
-#endif
   }
 
   void do_work(uint worker_id) override {
@@ -862,9 +851,7 @@ public:
           static_cast<JavaThread*>(thread)->tlab().resize();
         }
 
-        // The global card table references have already been swapped.
-        G1CardTable::CardValue* new_card_table_base = G1CollectedHeap::heap()->card_table_base();
-        G1ThreadLocalData::set_byte_map_base(thread, new_card_table_base);
+        G1BarrierSet::g1_barrier_set()->update_card_table_base(thread);
       }
     } resize_and_swap_cl;
 
