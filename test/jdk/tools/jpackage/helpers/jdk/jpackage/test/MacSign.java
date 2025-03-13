@@ -43,6 +43,171 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
+/**
+ * Utilities to setup identities and keychains for sign testing.
+ * <p>
+ * Identity is a pair of a private key and a certificate created with this
+ * private key. It is used for signing. Keychain is a storage for identities.
+ *
+ * <ul>
+ * <li>"/usr/bin/security" command line tool manages keychains and identities.
+ * <li>"/usr/bin/codesign" command line tool uses identities to sign files and
+ * folders.
+ * <li>"Keychain Access" is GUI application to manage keychains and identities.
+ * </ul>
+ *
+ * <ol>
+ * <h1>How do you create an identity for testing?</h1>
+ * <li>Create a private RSA key.
+ * <li>Create a self-signed certificate using the key from step #1.
+ * <li>Save both the private key and the certificate from steps #1 and #2 in a
+ * keychain.
+ * <li>Trust the certificate from step #2.
+ * </ol>
+ *
+ * There are few options each above steps can be executed (applies to macOS Sequoia).
+ *
+ * <h2>1. Create a private RSA key</h2>
+ *
+ * <h3>1.1. Use openssl</h3>
+ *
+ * This is the obvious approach given openssl will be used to create a
+ * certificate from the step #2. You can create a key and a certificate with a
+ * single openssl command. However the catch is importing the private key in a
+ * keystore.
+ * <p>
+ * All private keys imported in a keychain with {@code /usr/bin/security import}
+ * command have "Imported Private Key" label. There is no other tool to change
+ * key labels but "Keychain Access".
+ * <p>
+ * On top of that the internal name of the key can NOT be changed at all. The
+ * internal name of the key is the name assigned by /usr/bin/security command
+ * when it imports it. It derives it from the name of a file from which it
+ * imports the key. E.g. say "identity.pem" file stores an identity, then
+ *
+ * <pre>
+ * /usr/bin/security identity.pem -f pemseq -k foo.keychain
+ * </pre>
+ *
+ * command will import a private key with internal name "identity" and name
+ * "Imported Private Key" in "foo.keychain" keychain. You will see "Imported
+ * Private Key" in the list of keys in "Keychain Access" app, but when you will
+ * use this key with /usr/bin/codesign it will prompt to enter keychain password
+ * to access "identity" key. Even after you give a better name to this key
+ * instead of "Imported Private Key", /usr/bin/codesign will keep referring this
+ * key as "identity".
+ *
+ * <h3>1.2. Use /usr/bin/security</h3>
+ *
+ * Use
+ *
+ * <pre>
+ * /usr/bin/security create-keypair -a rsa -s 2048 -k foo.keychain -A "My key"
+ * </pre>
+ *
+ * command to create RSA key pair in "foo.keychain" keychain. Both private and
+ * public keys will be named "My key". This way, you can get an adequately
+ * identified private key in a keychain.
+ * <p>
+ * You can extract the key to use with openssl for certificate creation with
+ * {@code /usr/bin/security export} command.
+ *
+ * <h2>2. Create a self-signed certificate</h2>
+ *
+ * No brainier, use openssl. If a private key was created with
+ * {@code /usr/bin/security create-keypair} command it needs to be extracted
+ * from the keychain in a format suitable for openssl. This can be achieved with
+ * the following command:
+ *
+ * <pre>
+ * /usr/bin/security export -f pkcs12 -k foo.keychain -t privKeys -P "" -o key.p12
+ * </pre>
+ *
+ * The above command will save all private keys in a "foo.keychain" keychain in
+ * a PKCS#12-encoded "key.p12" file with an empty passphrase. <blockquote> Note
+ * #1: Given there is no way to extract specific private key from a keystore
+ * make sure it contains a single private key. </blockquote> <blockquote> Note
+ * #2: You can't extract private key in PEM format, i.e.
+ * {@code /usr/bin/security export -f pemseq -t privKeys} command will fail.
+ * </blockquote>
+ * <p>
+ * The inferior alternative is to use the GUI "Certificate Assistant" from
+ * "Keychain Access".
+ *
+ * <h2>3. Save both private key and the certificate from steps #1 and #2 in a
+ * keychain</h2>
+ *
+ * Assume private key has been created using
+ * {@code /usr/bin/security create-keypair} command and is already in a keychain
+ * you only need to import a certificate created in step #2. If the certificate
+ * was saved in "cert.pem" file in step #2, the following command:
+ *
+ * <pre>
+ * /usr/bin/security import cert.pem -f pemseq -k foo.keychain
+ * </pre>
+ *
+ * will import a certificate from "cert.pem" file in "foo.keychain" keychain.
+ *
+ * <h2>4. Trust the certificate from step #2</h2>
+ *
+ * An untrusted certificate can NOT be used with /usr/bin/codesign. Use
+ *
+ * <pre>
+ * /usr/bin/security security add-trusted-cert -k foo.keychain cert.pem
+ * </pre>
+ *
+ * command to add trusted certificate from "cert.pem" file in "foo.keychain"
+ * keychain. If the certificate is already in the keychain it will be marked
+ * trusted.
+ * <p>
+ * This step can not be automated as there is no way to avoid entering a user
+ * password.
+ * <p>
+ * Running this command with sudo doesn't help - it will ask for password twice
+ * (unless you configure sudo not to ask a passowrd, in this case it will ask
+ * once).
+ * <p>
+ * Running this command from ssh session will fail with the following error
+ * message:
+ *
+ * <pre>
+ * SecTrustSettingsSetTrustSettings: The authorization was denied since no user interaction was possible.
+ * </pre>
+ *
+ * User interaction can NOT be avoided for this step. This is a deliberate
+ * security constrained according to <a href=
+ * "https://developer.apple.com/documentation/macos-release-notes/macos-big-sur-11_0_1-release-notes#Security"
+ * target="_blank">Big Sur Release Notes</a> and
+ * <a href="https://developer.apple.com/forums/thread/671582" target=
+ * "_blank">Apple Developer Forum</a>.
+ *
+ * <p>
+ * Another automation bottleneck is using /usr/bin/codesign with a trusted
+ * certificate. For signing /usr/bin/codesign requires trusted certificate and
+ * access to the corresponding private key. The first time it requests access to
+ * the key it will trigger authorization dialog requesting access to the private
+ * key:
+ * <p>
+ * <img src=
+ * "https://developer.apple.com/forums/content/attachment/2d8b6237-b47c-43fe-bf2e-73717bb4f421"
+ * alt="Request authorization to private key dialog">
+ * <p>
+ * Even if the private key has /usr/bin/codesign in the access control list or
+ * if the key is configured to allow access of any application the dialogue will
+ * be triggered. See <a href=
+ * "https://stackoverflow.com/questions/3864770/how-do-i-add-authorizations-to-code-sign-an-app-from-new-keychain-without-any-hu?rq=3"
+ * target="_blank">Discussion of the authorization dialog at Stackoverflow</a>.
+ * After pressing the "Always Allow" button, the dialog will not be triggered
+ * for subsequent invocations of /usr/bin/codesign with the identity.
+ * <p>
+ * If user interaction is impossible (ssh session), codesign will fail with the
+ * following cryptic error:
+ *
+ * <pre>
+ * AppImageMacSignTest.app/Contents/runtime/Contents/Home/lib/libnet.dylib: errSecInternalComponent
+ * </pre>
+ */
+
 public final class MacSign {
 
     public record KeychainWithCertsSpec(Keychain keychain, List<CertificateRequest> certificateRequests,
@@ -180,7 +345,7 @@ public final class MacSign {
             Executor.of("security", "delete-keychain", name).dumpOutput().execute();
             return this;
         }
-        
+
         public Keychain unlock() {
             createExecutor("unlock-keychain").execute();
             return this;
@@ -321,7 +486,7 @@ public final class MacSign {
 
             withTempDirectory(certsDir -> {
                 final var cfgFile = certsDir.resolve("cert.cfg");
-                final var certFile = certsDir.resolve("cert.crt");
+                final var certFile = certsDir.resolve("cert.pem");
                 final var keyFile = certsDir.resolve("key.pem");
 
                 final var key = KEY_GEN.genKeyPair().getPrivate();
@@ -336,7 +501,7 @@ public final class MacSign {
                         "CN=" + name
                 ));
 
-                final var openssl = Executor.of("openssl", "req", "-x509",
+                final var openssl = Executor.of("openssl", "req", "-x509", "-utf8",
                         "-days", Integer.toString(days), "-sha256", "-nodes",
                         "-key", keyFile.normalize().toString(),
                         "-config", cfgFile.normalize().toString(),
