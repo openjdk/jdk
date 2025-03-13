@@ -124,7 +124,7 @@ public abstract class WriteBarrier {
 
     @Setup(Level.Iteration)
     public void setupIteration() {
-        // Reallocate each iteration to ensure they are in young gen
+        // Reallocate target objects each iteration to ensure they are in young gen.
         youngArraySmall = new Object[NUM_REFERENCES_SMALL];
         youngArrayLarge = new Object[NUM_REFERENCES_LARGE];
         youngRef = new Object();
