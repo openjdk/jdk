@@ -70,11 +70,11 @@ public class RShiftLNodeIdealizationTests {
         Asserts.assertEQ((x >> 62) > 4 ? 0L : 1L, test4(x, y));
         Asserts.assertEQ((x & test5Mask) >> test5Shift, test5(x));
         Asserts.assertEQ(x, test6(x));
-        long x7 = Integer.max(Integer.min((int)x, (int)test7Max), (int)test7Min);
+        long x7 = Long.max(Long.min(x, test7Max), test7Min);
         Asserts.assertEQ(((x7 << test7Shift) >> test7Shift), test7(x));
-        long x8 = Integer.max(Integer.min((int)x, (int)(test7Max+1)), (int)test7Min);
+        long x8 = Long.max(Long.min(x, test7Max+1), test7Min);
         Asserts.assertEQ((x8 << test7Shift) >> test7Shift, test8(x));
-        long x9 = Integer.max(Integer.min((int)x, (int)test7Max), (int)(test7Min-1));
+        long x9 = Long.max(Long.min(x, test7Max), test7Min-1);
         Asserts.assertEQ((x9 << test7Shift) >> test7Shift, test9(x));
         Asserts.assertEQ(((x7 << test7Shift) >> test10Shift), test10(x));
     }
