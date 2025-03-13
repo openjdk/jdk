@@ -101,10 +101,11 @@ public interface HttpResponse<T> {
 
 
     /**
-     * {@return a label identifying the connection on which the
-     * response was received, if present.
+     * {@return if present, a label identifying the connection on which the
+     * response was received}
+     * <p>
      * The format of the string is opaque, but should
-     * be unique for the life of the {@link HttpClient} instance}
+     * be unique for the life of the {@link HttpClient} instance.
      *
      * @implSpec
      * The default implementation of this method returns {@link Optional#empty()
@@ -112,8 +113,6 @@ public interface HttpResponse<T> {
      *
      * @since TBD
      */
-    // TODO: decide if we keep that in the internal API or if we only expose
-    //       it in HttpResponseImpl
     public default Optional<String> connectionLabel() {
         return Optional.empty();
     }
@@ -840,14 +839,14 @@ public interface HttpResponse<T> {
             /**
              * Represents an HTTP/3 PushId
              * @param pushId the pushId as a long
-             * @param connectionId an hexadecimal string representing the underlying
-             *                     connection
+             * @param connectionLabel the {@link HttpResponse#connectionLabel()}
+             *                    of the HTTP/3 connection
              * @apiNote
-             * The {@code connectionId} should be considered opaque, and ensures that
+             * The {@code connectionLabel} should be considered opaque, and ensures that
              * two long pushId emitted by different connections correspond to distinct
              * instances of {@code PushId}.
              */
-            record Http3PushId(long pushId, String connectionId) implements PushId { }
+            record Http3PushId(long pushId, String connectionLabel) implements PushId { }
         }
 
         /**

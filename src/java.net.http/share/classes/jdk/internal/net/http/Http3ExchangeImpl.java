@@ -1282,7 +1282,7 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
             PushGroup<T> pushGroup = exchange.getPushGroup();
             connection.whenPushAccepted(pushId).thenAccept((accepted) -> {
                 if (accepted) {
-                    pushGroup.acceptPushPromiseId(new Http3PushId(pushId, connection().toHexString()));
+                    pushGroup.acceptPushPromiseId(connection.newPushId(pushId));
                 }
             });
         }

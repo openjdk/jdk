@@ -1508,7 +1508,7 @@ public final class Http3Connection implements AutoCloseable {
      * @param pushId the pushId
      */
     PushId newPushId(long pushId) {
-        return new Http3PushId(pushId, connection.toHexString());
+        return new Http3PushId(pushId, connection.connectionLabel());
     }
 
     /**

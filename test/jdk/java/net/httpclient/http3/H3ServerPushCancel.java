@@ -365,7 +365,7 @@ public class H3ServerPushCancel implements HttpServerAdapters {
                 uniqueIds.add(npp.pushId);
                 if (npp.pushId instanceof Http3PushId h3id) {
                     long id = h3id.pushId();
-                    cIds.add(h3id.connectionId());
+                    cIds.add(h3id.connectionLabel());
                     long mod = id % PUSH_PROMISES.size();
                     // we can't count the cancelled pushes as
                     // how many notifs we might get for those is racy.
