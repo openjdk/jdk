@@ -22,11 +22,11 @@
  */
 package compiler.c2.irTests;
 
+import compiler.lib.generators.Generators;
 import compiler.lib.ir_framework.DontCompile;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Run;
-import compiler.lib.ir_framework.RunInfo;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
 import jdk.test.lib.Asserts;
@@ -50,7 +50,7 @@ public class InvolutionIdentityTests {
         "testD1"
     })
     public void runMethod() {
-        int ai = RunInfo.getRandom().nextInt();
+        int ai = Generators.G.ints().next();
 
         int mini = Integer.MIN_VALUE;
         int maxi = Integer.MAX_VALUE;
@@ -60,7 +60,7 @@ public class InvolutionIdentityTests {
         assertResultI(mini);
         assertResultI(maxi);
 
-        long al = RunInfo.getRandom().nextLong();
+        long al = Generators.G.longs().next();
 
         long minl = Long.MIN_VALUE;
         long maxl = Long.MAX_VALUE;
@@ -70,7 +70,7 @@ public class InvolutionIdentityTests {
         assertResultL(minl);
         assertResultL(maxl);
 
-        float af = RunInfo.getRandom().nextFloat();
+        float af = Generators.G.floats().next();
         float inf = Float.POSITIVE_INFINITY;
         float nanf = Float.NaN;
 
@@ -80,7 +80,7 @@ public class InvolutionIdentityTests {
         assertResultF(inf);
         assertResultF(nanf);
 
-        double ad = RunInfo.getRandom().nextDouble();
+        double ad = Generators.G.doubles().next();
         double ind = Double.POSITIVE_INFINITY;
         double nand = Double.NaN;
 
