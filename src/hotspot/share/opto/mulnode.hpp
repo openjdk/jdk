@@ -321,7 +321,7 @@ class RotateRightNode : public TypeNode {
 
 
 class RShiftNode : public Node {
-public:
+ public:
   RShiftNode(Node* in1, Node* in2) : Node(nullptr, in1, in2) {}
   Node* IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt);
   Node* IdentityIL(PhaseGVN* phase, BasicType bt);
