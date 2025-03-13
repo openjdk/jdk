@@ -860,13 +860,17 @@ void MetaspaceShared::adjust_heap_sizes_for_dumping() {
 }
 #endif // INCLUDE_CDS_JAVA_HEAP && _LP64
 
+void MetaspaceShared::get_default_classlist(char* default_classlist, const size_t buf_size) {
+  const char* filesep = os::file_separator();
+  jio_snprintf(default_classlist, buf_size, "%s%slib%sclasslist",
+               Arguments::get_java_home(), filesep, filesep);
+}
+
 void MetaspaceShared::preload_classes(TRAPS) {
   char default_classlist[JVM_MAXPATHLEN];
   const char* classlist_path;
-  const char* filesep = os::file_separator();
 
-  jio_snprintf(default_classlist, JVM_MAXPATHLEN, "%s%slib%sclasslist",
-               Arguments::get_java_home(), filesep, filesep);
+  get_default_classlist(default_classlist, JVM_MAXPATHLEN);
   if (SharedClassListFile == nullptr) {
     classlist_path = default_classlist;
   } else {
@@ -921,9 +925,7 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
   if (CDSConfig::is_dumping_preimage_static_archive()) {
     log_info(cds)("Reading lambda form invokers from JDK default classlist ...");
     char default_classlist[JVM_MAXPATHLEN];
-    const char* filesep = os::file_separator();
-    jio_snprintf(default_classlist, JVM_MAXPATHLEN, "%s%slib%sclasslist",
-                 Arguments::get_java_home(), filesep, filesep);
+    get_default_classlist(default_classlist, JVM_MAXPATHLEN);
     struct stat statbuf;
     if (os::stat(default_classlist, &statbuf) == 0) {
       ClassListParser::parse_classlist(default_classlist,
