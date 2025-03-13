@@ -37,17 +37,7 @@ public class NSSArtifactFetcher {
 
     public static final String DEFAULT_NSS_LIBRARY =  "softokn3";
 
-    public static Path fetchNssLib(String osId, Path libraryName) {
-
-        final Class<?> nssLibClass = getNssLibClass(osId);
-        if(nssLibClass == null){
-            throw new RuntimeException("Platform not recognised"); // should never happen
-        }
-
-        return fetchNssLib(nssLibClass, libraryName);
-    }
-
-    public static Class<?> getNssLibClass(String osId){
+     private static Class<?> getNssLibClass(String osId){
         switch (osId) {
             case "Windows-amd64-64":
                 return ThirdPartyArtifacts.WINDOWS_X64.class;
@@ -85,18 +75,23 @@ public class NSSArtifactFetcher {
         return libDir;
     }
 
-    public static Path getNSSLibPath(String library) throws Exception {
-        String osid = getOsId();
-        Path libraryName = Path.of(System.mapLibraryName(library));
-        Path nssLibPath = fetchNssLib(osid, libraryName);
-        if (nssLibPath == null) {
-            throw new SkippedException("Warning: unsupported OS: " + osid
+    public static Path getNSSDirectory() throws IOException {
+        final String osId = getOsId();
+        final Class<?> clazz = getNssLibClass(osId);
+        if (clazz == null) {
+            throw new SkippedException("Warning: unsupported OS: " + osId
                                        + ", please initialize NSS library location, skipping test");
         }
-        return nssLibPath;
+        return ThirdPartyArtifacts.fetch(clazz);
     }
 
-    public static String getOsId() {
+    public static Path getNSSLibPath(String library) throws Exception {
+        Path dir = getNSSDirectory();
+
+        return findNSSLibrary(dir, Path.of(System.mapLibraryName(library)));
+    }
+
+    private static String getOsId() {
 
         final Properties props = System.getProperties();
 
@@ -110,7 +105,7 @@ public class NSSArtifactFetcher {
                + props.getProperty("sun.arch.data.model");
     }
 
-    public static Path findNSSLibrary(Path path, Path libraryName) throws IOException {
+    private static Path findNSSLibrary(Path path, Path libraryName) throws IOException {
         try(Stream<Path> files = Files.find(path, 10,
                 (tp, attr) -> tp.getFileName().equals(libraryName))) {
 
@@ -120,22 +115,4 @@ public class NSSArtifactFetcher {
         }
     }
 
-
-     public static Path fetchNssLib(Class<?> clazz, Path libraryName) {
-        try {
-            Path p = ThirdPartyArtifacts.fetch(clazz); // fetching the nss folder
-            return findNSSLibrary(p, libraryName);
-        } catch (final IOException e) {
-            Throwable cause = e.getCause();
-            if (cause == null) {
-                System.out.println("Cannot resolve artifact, "
-                                   + "please check if JIB jar is present in classpath.");
-            } else {
-                throw new RuntimeException("Fetch artifact failed: " + clazz
-                                           + "\nPlease make sure the artifact is available.", e);
-            }
-        }
-        return null;
-    }
-
-    }
+}
