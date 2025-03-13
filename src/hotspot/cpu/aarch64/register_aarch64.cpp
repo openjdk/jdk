@@ -63,18 +63,18 @@ const char* PRegister::PRegisterImpl::name() const {
 // in half -- needed because vector operations can normally only be
 // benefit from 4-way instruction parallelism
 
-VSeq<4> vs_front(VSeq<8> v) {
+VSeq<4> vs_front(const VSeq<8>& v) {
   return VSeq<4>(v.base(), v.delta());
 }
 
-VSeq<4> vs_back(VSeq<8> v) {
+VSeq<4> vs_back(const VSeq<8>& v) {
   return VSeq<4>(v.base() + 4 * v.delta(), v.delta());
 }
 
-VSeq<4> vs_even(VSeq<8> v) {
+VSeq<4> vs_even(const VSeq<8>& v) {
   return VSeq<4>(v.base(), v.delta() * 2);
 }
 
-VSeq<4> vs_odd(VSeq<8> v) {
+VSeq<4> vs_odd(const VSeq<8>& v) {
   return VSeq<4>(v.base() + 1, v.delta() * 2);
 }

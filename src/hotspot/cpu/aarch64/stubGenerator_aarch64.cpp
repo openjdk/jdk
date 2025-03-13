@@ -4649,60 +4649,60 @@ class StubGenerator: public StubCodeGenerator {
   // Implement various primitive computations across vector sequences
 
   template<int N>
-  void vs_addv(VSeq<N> v, Assembler::SIMD_Arrangement T,
-               VSeq<N> v1, VSeq<N> v2) {
+  void vs_addv(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
+               const VSeq<N>& v1, const VSeq<N>& v2) {
     for (int i = 0; i < N; i++) {
       __ addv(v[i], T, v1[i], v2[i]);
     }
   }
 
   template<int N>
-  void vs_subv(VSeq<N> v, Assembler::SIMD_Arrangement T,
-               VSeq<N> v1, VSeq<N> v2) {
+  void vs_subv(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
+               const VSeq<N>& v1, const VSeq<N>& v2) {
     for (int i = 0; i < N; i++) {
       __ subv(v[i], T, v1[i], v2[i]);
     }
   }
 
   template<int N>
-  void vs_mulv(VSeq<N> v, Assembler::SIMD_Arrangement T,
-               VSeq<N> v1, VSeq<N> v2) {
+  void vs_mulv(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
+               const VSeq<N>& v1, const VSeq<N>& v2) {
     for (int i = 0; i < N; i++) {
       __ mulv(v[i], T, v1[i], v2[i]);
     }
   }
 
   template<int N>
-  void vs_negr(VSeq<N> v, Assembler::SIMD_Arrangement T, VSeq<N> v1) {
+  void vs_negr(const VSeq<N>& v, Assembler::SIMD_Arrangement T, const VSeq<N>& v1) {
     for (int i = 0; i < N; i++) {
       __ negr(v[i], T, v1[i]);
     }
   }
 
   template<int N>
-  void vs_sshr(VSeq<N> v, Assembler::SIMD_Arrangement T,
-               VSeq<N> v1, int shift) {
+  void vs_sshr(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
+               const VSeq<N>& v1, int shift) {
     for (int i = 0; i < N; i++) {
       __ sshr(v[i], T, v1[i], shift);
     }
   }
 
   template<int N>
-  void vs_andr(VSeq<N> v, VSeq<N> v1, VSeq<N> v2) {
+  void vs_andr(const VSeq<N>& v, const VSeq<N>& v1, const VSeq<N>& v2) {
     for (int i = 0; i < N; i++) {
       __ andr(v[i], __ T16B, v1[i], v2[i]);
     }
   }
 
   template<int N>
-  void vs_orr(VSeq<N> v, VSeq<N> v1, VSeq<N> v2) {
+  void vs_orr(const VSeq<N>& v, const VSeq<N>& v1, const VSeq<N>& v2) {
     for (int i = 0; i < N; i++) {
       __ orr(v[i], __ T16B, v1[i], v2[i]);
     }
   }
 
   template<int N>
-    void vs_notr(VSeq<N> v, VSeq<N> v1) {
+    void vs_notr(const VSeq<N>& v, const VSeq<N>& v1) {
     for (int i = 0; i < N; i++) {
       __ notr(v[i], __ T16B, v1[i]);
     }
@@ -4712,7 +4712,7 @@ class StubGenerator: public StubCodeGenerator {
   // into N successive vector registers of the sequence via the
   // address supplied in base.
   template<int N>
-  void vs_ldpq(VSeq<N> v, Register base) {
+  void vs_ldpq(const VSeq<N>& v, Register base) {
     for (int i = 0; i < N; i += 2) {
       __ ldpq(v[i], v[i+1], Address(base, 32 * i));
     }
@@ -4722,7 +4722,7 @@ class StubGenerator: public StubCodeGenerator {
   // into N vector registers of the sequence via the address supplied
   // in base using post-increment addressing
   template<int N>
-  void vs_ldpq_post(VSeq<N> v, Register base) {
+  void vs_ldpq_post(const VSeq<N>& v, Register base) {
     for (int i = 0; i < N; i += 2) {
       __ ldpq(v[i], v[i+1], __ post(base, 32));
     }
@@ -4732,7 +4732,7 @@ class StubGenerator: public StubCodeGenerator {
   // successive pairs of quadword memory locations via the address
   // supplied in base using post-increment addressing
   template<int N>
-  void vs_stpq_post(VSeq<N> v, Register base) {
+  void vs_stpq_post(const VSeq<N>& v, Register base) {
     for (int i = 0; i < N; i += 2) {
       __ stpq(v[i], v[i+1], __ post(base, 32));
     }
@@ -4743,7 +4743,7 @@ class StubGenerator: public StubCodeGenerator {
   // using the the start offset plus the corresponding entry in the
   // offsets array
   template<int N>
-  void vs_ldpq_indexed(VSeq<N> v, Register base, int start, int offsets[N/2]) {
+  void vs_ldpq_indexed(const VSeq<N>& v, Register base, int start, int (&offsets)[N/2]) {
     for (int i = 0; i < N/2; i++) {
       __ ldpq(v[2*i], v[2*i+1], Address(base, start + offsets[i]));
     }
@@ -4754,7 +4754,7 @@ class StubGenerator: public StubCodeGenerator {
   // using the the start offset plus the corresponding entry in the
   // offsets array
   template<int N>
-  void vs_stpq_indexed(VSeq<N> v, Register base, int start, int offsets[N/2]) {
+  void vs_stpq_indexed(const VSeq<N>& v, Register base, int start, int offsets[N/2]) {
     for (int i = 0; i < N/2; i++) {
       __ stpq(v[2*i], v[2*i+1], Address(base, start + offsets[i]));
     }
@@ -4765,8 +4765,8 @@ class StubGenerator: public StubCodeGenerator {
   // the the start offset plus the corresponding entry in the offsets
   // array
   template<int N>
-  void vs_ldr_indexed(VSeq<N> v, Assembler::SIMD_RegVariant T, Register base,
-                      int start, int offsets[N]) {
+  void vs_ldr_indexed(const VSeq<N>& v, Assembler::SIMD_RegVariant T, Register base,
+                      int start, int (&offsets)[N]) {
     for (int i = 0; i < N; i++) {
       __ ldr(v[i], T, Address(base, start + offsets[i]));
     }
@@ -4777,8 +4777,8 @@ class StubGenerator: public StubCodeGenerator {
   // the the start offset plus the corresponding entry in the offsets
   // array
   template<int N>
-  void vs_str_indexed(VSeq<N> v, Assembler::SIMD_RegVariant T, Register base,
-                      int start, int offsets[N]) {
+  void vs_str_indexed(const VSeq<N>& v, Assembler::SIMD_RegVariant T, Register base,
+                      int start, int (&offsets)[N]) {
     for (int i = 0; i < N; i++) {
       __ str(v[i], T, Address(base, start + offsets[i]));
     }
@@ -4789,8 +4789,8 @@ class StubGenerator: public StubCodeGenerator {
   // with each pair indexed using the the start offset plus the
   // corresponding entry in the offsets array
   template<int N>
-  void vs_ld2_indexed(VSeq<N> v, Assembler::SIMD_Arrangement T, Register base,
-                      Register tmp, int start, int offsets[N/2]) {
+  void vs_ld2_indexed(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base,
+                      Register tmp, int start, int (&offsets)[N/2]) {
     for (int i = 0; i < N/2; i++) {
       __ add(tmp, base, start + offsets[i]);
       __ ld2(v[2*i], v[2*i+1], T, tmp);
@@ -4802,8 +4802,8 @@ class StubGenerator: public StubCodeGenerator {
   // with each pair indexed using the the start offset plus the
   // corresponding entry in the offsets array
   template<int N>
-  void vs_st2_indexed(VSeq<N> v, Assembler::SIMD_Arrangement T, Register base,
-                      Register tmp, int start, int offsets[N/2]) {
+  void vs_st2_indexed(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base,
+                      Register tmp, int start, int (&offsets)[N/2]) {
     for (int i = 0; i < N/2; i++) {
       __ add(tmp, base, start + offsets[i]);
       __ st2(v[2*i], v[2*i+1], T, tmp);
@@ -4825,8 +4825,8 @@ class StubGenerator: public StubCodeGenerator {
   // vb, vc, vtmp and vq must all be disjoint
   // va must be disjoint from all other inputs/temps or must equal vc
   // n.b. MONT_R_BITS is 32, so the right shift by it is implicit.
-  void dilithium_montmul16(VSeq<4> va, VSeq<4> vb, VSeq<4> vc,
-                    VSeq<4> vtmp, VSeq<2> vq) {
+  void dilithium_montmul16(const VSeq<4>& va, const VSeq<4>& vb, const VSeq<4>& vc,
+                    const VSeq<4>& vtmp, const VSeq<2>& vq) {
     assert(vs_disjoint(vb, vc), "vb and vc overlap");
     assert(vs_disjoint(vb, vq), "vb and vq overlap");
     assert(vs_disjoint(vb, vtmp), "vb and vtmp overlap");
@@ -4872,8 +4872,8 @@ class StubGenerator: public StubCodeGenerator {
   // vb, vc, vtmp and vq must all be disjoint
   // va must be disjoint from all other inputs/temps or must equal vc
   // n.b. MONT_R_BITS is 32, so the right shift by it is implicit.
-  void vs_montmul32(VSeq<8> va, VSeq<8> vb, VSeq<8> vc,
-                    VSeq<4> vtmp, VSeq<2> vq) {
+  void vs_montmul32(const VSeq<8>& va, const VSeq<8>& vb, const VSeq<8>& vc,
+                    const VSeq<4>& vtmp, const VSeq<2>& vq) {
     // vb, vc, vtmp and vq must be disjoint. va must either be
     // disjoint from all other registers or equal vc
 
@@ -4907,8 +4907,8 @@ class StubGenerator: public StubCodeGenerator {
 
   // perform combined montmul then add/sub on 4x4S vectors
 
-  void dilithium_montmul16_sub_add(VSeq<4> va0, VSeq<4> va1, VSeq<4> vc,
-                            VSeq<4> vtmp, VSeq<2> vq) {
+  void dilithium_montmul16_sub_add(const VSeq<4>& va0, const VSeq<4>& va1, const VSeq<4>& vc,
+                                   const VSeq<4>& vtmp, const VSeq<2>& vq) {
     // compute a = montmul(a1, c)
     dilithium_montmul16(vc, va1, vc, vtmp, vq);
     // ouptut a1 = a0 - a
@@ -4919,8 +4919,8 @@ class StubGenerator: public StubCodeGenerator {
 
   // perform combined add/sub then montul on 4x4S vectors
 
-  void dilithium_sub_add_montmul16(VSeq<4> va0, VSeq<4> va1, VSeq<4> vb,
-                            VSeq<4> vtmp1, VSeq<4> vtmp2, VSeq<2> vq) {
+  void dilithium_sub_add_montmul16(const VSeq<4>& va0, const VSeq<4>& va1, const VSeq<4>& vb,
+                                   const VSeq<4>& vtmp1, const VSeq<4>& vtmp2, const VSeq<2>& vq) {
     // compute c = a0 - a1
     vs_subv(vtmp1, __ T4S, va0, va1);
     // output a0 = a0 + a1

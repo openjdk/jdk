@@ -455,7 +455,7 @@ public:
     assert (0 <= i && i < N, "index out of bounds");
     return as_FloatRegister(_base + i * _delta);
   }
-  int mask() {
+  int mask() const {
     int m = 0;
     int bit = 1 << _base;
     for (int i = 0; i < N; i++) {
@@ -463,21 +463,21 @@ public:
     }
     return m;
   }
-  int base() { return _base; }
-  int delta() { return _delta; }
+  int base() const { return _base; }
+  int delta() const { return _delta; }
 };
 
 // declare convenience methods for splitting vector register sequences
 
-VSeq<4> vs_front(VSeq<8> v);
-VSeq<4> vs_back(VSeq<8> v);
-VSeq<4> vs_even(VSeq<8> v);
-VSeq<4> vs_odd(VSeq<8> v);
+VSeq<4> vs_front(const VSeq<8>& v);
+VSeq<4> vs_back(const VSeq<8>& v);
+VSeq<4> vs_even(const VSeq<8>& v);
+VSeq<4> vs_odd(const VSeq<8>& v);
 
 // methods for use in asserts to check VSeq inputs and oupts are
 // either disjoint or equal
 
-template<int N, int M> bool vs_disjoint(VSeq<N> &n, VSeq<M> &m) { return (n.mask() & m.mask()) == 0; }
-template<int N> bool vs_same(VSeq<N> &n, VSeq<N> &m) { return n.mask() == m.mask(); }
+template<int N, int M> bool vs_disjoint(const VSeq<N>& n, const VSeq<M>& m) { return (n.mask() & m.mask()) == 0; }
+template<int N> bool vs_same(const VSeq<N>& n, const VSeq<N>& m) { return n.mask() == m.mask(); }
 
 #endif // CPU_AARCH64_REGISTER_AARCH64_HPP
