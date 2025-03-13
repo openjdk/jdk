@@ -93,6 +93,8 @@ public:
 class ShenandoahPurgeSATBTask : public WorkerTask {
 private:
   ShenandoahObjToScanQueueSet* _mark_queues;
+  // Keep track of the number of oops that are not transferred to mark queues.
+  // This is volatile because workers update it, but the vm thread reads it.
   volatile size_t             _trashed_oops;
 
 public:
@@ -126,6 +128,8 @@ public:
 class ShenandoahTransferOldSATBTask : public WorkerTask {
   ShenandoahSATBMarkQueueSet&  _satb_queues;
   ShenandoahObjToScanQueueSet* _mark_queues;
+  // Keep track of the number of oops that are not transferred to mark queues.
+  // This is volatile because workers update it, but the control thread reads it.
   volatile size_t              _trashed_oops;
 
 public:
