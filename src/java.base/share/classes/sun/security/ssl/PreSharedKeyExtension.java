@@ -42,6 +42,7 @@ import sun.security.ssl.SessionTicketExtension.SessionTicketSpec;
 import sun.security.util.HexDumpEncoder;
 
 import static sun.security.ssl.SSLExtension.*;
+import static sun.security.ssl.SignatureScheme.HANDSHAKE_SCOPE;
 
 /**
  * Pack of the "pre_shared_key" extension.
@@ -447,8 +448,7 @@ final class PreSharedKeyExtension {
         if (shc.localSupportedSignAlgs == null) {
             shc.localSupportedSignAlgs =
                     SignatureScheme.getSupportedAlgorithms(
-                            shc.sslConfig,
-                            shc.algorithmConstraints, shc.activeProtocols);
+                            shc, HANDSHAKE_SCOPE);
         }
 
         // Validate the required client authentication.
