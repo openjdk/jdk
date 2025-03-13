@@ -415,6 +415,14 @@ final class Operations {
         new VOP("ULT",                  VOPType.ASSOCIATIVE, Type.INTEGRAL_TYPES)
     );
 
+    private static final List<VOP> VECTOR_API_TEST = List.of(
+        new VOP("IS_DEFAULT",           VOPType.UNARY, Type.PRIMITIVE_TYPES),
+        new VOP("IS_NEGATIVE",          VOPType.UNARY, Type.PRIMITIVE_TYPES),
+        new VOP("IS_FINITE",            VOPType.UNARY, Type.FLOATING_TYPES),
+        new VOP("IS_NAN",               VOPType.UNARY, Type.FLOATING_TYPES),
+        new VOP("IS_INFINITE",          VOPType.UNARY, Type.FLOATING_TYPES)
+    );
+
     private static final List<Operation> generateVectorAPIOperations() {
         List<Operation> ops = new ArrayList<Operation>();
 
@@ -599,8 +607,13 @@ final class Operations {
             ops.add(new Operation.Binary(type, "", type, ".sub(", type, ")", null));
             ops.add(new Operation.Ternary(type, "", type, ".sub(", type, ", ", type.maskType, ")", null));
 
-            // TODO: test(VectorOperators.Test op)
-            // TODO: test(VectorOperators.Test op, VectorMask<Integer> m)
+
+            for (VOP test : VECTOR_API_TEST) {
+                if (test.elementTypes().contains(type.elementType)) {
+                    ops.add(new Operation.Unary(type.maskType, "", type, ".test(VectorOperators." + test.name() + ")", null));
+                    ops.add(new Operation.Binary(type.maskType, "", type, ".test(VectorOperators." + test.name() + ", ", type.maskType, ")", null));
+                }
+            }
 
             ops.add(new Operation.Binary(type, "", type, ".unslice(", Type.ints(), ")", List.of("IndexOutOfBoundsException")));
             // TODO: unslice(int origin, Vector<Integer> w, int part)
