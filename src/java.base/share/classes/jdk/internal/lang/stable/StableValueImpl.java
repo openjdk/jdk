@@ -31,6 +31,7 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -115,6 +116,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public T orElseSet(Supplier<? extends T> supplier) {
+        Objects.requireNonNull(supplier);
         final Object t = value;
         return (t == null) ? computeIfUnsetSlowPath(supplier) : unwrap(t);
     }
