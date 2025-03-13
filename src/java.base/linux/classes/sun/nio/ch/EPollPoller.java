@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package sun.nio.ch;
 
 import java.io.IOException;
+import java.lang.foreign.MemorySegment;
+
 import static sun.nio.ch.EPoll.*;
 
 /**
@@ -37,13 +39,13 @@ class EPollPoller extends Poller {
     private final int epfd;
     private final int event;
     private final int maxEvents;
-    private final long address;
+    private final MemorySegment pollArray;
 
     EPollPoller(boolean subPoller, boolean read) throws IOException {
         this.epfd = EPoll.create();
         this.event = (read) ? EPOLLIN : EPOLLOUT;
         this.maxEvents = (subPoller) ? 64 : 512;
-        this.address = EPoll.allocatePollArray(maxEvents);
+        this.pollArray = EPoll.allocatePollArray(maxEvents);
     }
 
     @Override
@@ -71,11 +73,11 @@ class EPollPoller extends Poller {
 
     @Override
     int poll(int timeout) throws IOException {
-        int n = EPoll.wait(epfd, address, maxEvents, timeout);
+        int n = EPoll.wait(epfd, pollArray, maxEvents, timeout);
         int i = 0;
         while (i < n) {
-            long eventAddress = EPoll.getEvent(address, i);
-            int fdVal = EPoll.getDescriptor(eventAddress);
+            MemorySegment eventMS = EPoll.getEvent(pollArray, i);
+            int fdVal = EPoll.getDescriptor(eventMS);
             polled(fdVal);
             i++;
         }
