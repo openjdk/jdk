@@ -607,7 +607,6 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   // Properties
   const char* name() const                  { return _name; }
-  void set_name(const char* name)           { _name = name; }
   CodeBuffer* before_expand() const         { return _before_expand; }
   BufferBlob* blob() const                  { return _blob; }
   void    set_blob(BufferBlob* blob);

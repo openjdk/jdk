@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/barrierSet.hpp"

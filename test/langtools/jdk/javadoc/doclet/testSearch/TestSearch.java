@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
  *      8181622 8182263 8074407 8187521 8198522 8182765 8199278 8196201 8196202
  *      8184205 8214468 8222548 8223378 8234746 8241219 8254627 8247994 8263528
- *      8266808 8248863 8305710 8318082
+ *      8266808 8248863 8305710 8318082 8347058 8350638
  * @summary Test the search feature of javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -418,7 +418,7 @@ public class TestSearch extends JavadocTester {
         // Test for search related markup
         checkOutput(fileName, expectedOutput,
                 """
-                    <link rel="stylesheet" type="text/css" href="resource-files/jquery-ui.min.css" title="Style">
+                    <link rel="stylesheet" type="text/css" href="resource-files/jquery-ui.min.css">
                     """,
                 """
                     <script type="text/javascript" src="script-files/jquery-3.7.1.min.js"></script>
@@ -433,8 +433,8 @@ public class TestSearch extends JavadocTester {
                     <li><a href="search.html">Search</a></li>""",
                 """
                     <div class="nav-list-search">
-                    <input type="text" id="search-input" disabled placeholder="Search" aria-label="S\
-                    earch in documentation" autocomplete="off">
+                    <input type="text" id="search-input" disabled placeholder="Search documentation \
+                    (type /)" aria-label="Search in documentation" autocomplete="off" spellcheck="false">
                     <input type="reset" id="reset-search" disabled value="Reset">
                     </div>""");
     }
@@ -675,8 +675,8 @@ public class TestSearch extends JavadocTester {
                 "script-files/jquery-3.7.1.min.js",
                 "script-files/jquery-ui.min.js",
                 "resource-files/jquery-ui.min.css",
-                "resource-files/x.png",
-                "resource-files/glass.png");
+                "resource-files/x.svg",
+                "resource-files/glass.svg");
     }
 
     void checkSearchJS() {

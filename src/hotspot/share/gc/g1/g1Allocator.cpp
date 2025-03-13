@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
@@ -218,7 +217,7 @@ HeapWord* G1Allocator::par_allocate_during_gc(G1HeapRegionAttr dest,
   size_t temp = 0;
   HeapWord* result = par_allocate_during_gc(dest, word_size, word_size, &temp, node_index);
   assert(result == nullptr || temp == word_size,
-         "Requested " SIZE_FORMAT " words, but got " SIZE_FORMAT " at " PTR_FORMAT,
+         "Requested %zu words, but got %zu at " PTR_FORMAT,
          word_size, temp, p2i(result));
   return result;
 }

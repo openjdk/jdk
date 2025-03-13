@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -834,9 +834,15 @@ public final class ModuleBootstrap {
     /**
      * Grants native access to modules selected using the --enable-native-access
      * command line option, and also to JDK modules that need the access.
+     * <p>
+     * In case of being in "source" launcher mode, warnings about unknown modules are
+     * deferred to the source launcher logic in the jdk.compiler module, as those
+     * modules might be not compiled, yet.
      */
     private static void addEnableNativeAccess(ModuleLayer layer) {
-        addEnableNativeAccess(layer, USER_NATIVE_ACCESS_MODULES, true);
+        String launcherMode = getAndRemoveProperty("sun.java.launcher.mode");
+        boolean shouldWarn = !"source".equals(launcherMode);
+        addEnableNativeAccess(layer, USER_NATIVE_ACCESS_MODULES, shouldWarn);
         addEnableNativeAccess(layer, JDK_NATIVE_ACCESS_MODULES, false);
     }
 

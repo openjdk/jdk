@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ abstract class Command {
         List<Command> commands = new ArrayList<>();
         commands.add(new Print());
         // Uncomment when developing new queries for the view command
-        // commands.add(new Query());
+        commands.add(new Query());
         commands.add(new View());
         commands.add(new Configure());
         commands.add(new Metadata());

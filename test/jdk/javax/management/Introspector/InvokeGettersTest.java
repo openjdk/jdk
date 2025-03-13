@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 6317101
- * @summary Test that the jmx.invoke.getters system property works
+ * @bug 6317101 8344976
+ * @summary Test invocation after removal of the jmx.invoke.getters system property
  * @author Eamonn McManus
  *
  * @run clean InvokeGettersTest
@@ -63,10 +63,7 @@ public class InvokeGettersTest {
         ObjectName on = new ObjectName("a:b=c");
         mbs.registerMBean(new Thing(), on);
         if (test(mbs, on, false))
-            System.out.println("OK: invoke without jmx.invoke.getters");
-        System.setProperty("jmx.invoke.getters", "true");
-        if (test(mbs, on, true))
-            System.out.println("OK: invoke with jmx.invoke.getters");
+            System.out.println("OK");
         if (failure == null)
             System.out.println("TEST PASSED");
         else
@@ -117,7 +114,7 @@ public class InvokeGettersTest {
                 System.out.println("isTrue got expected exception: " + e);
         }
 
-        // Following cases should fail whether or not jmx.invoke.getters is set
+        // Following cases should fail
         final Object[][] badInvokes = {
             {"isWhatsit", null, null},
             {"getWhatsit", new Object[] {5}, new String[] {"int"}},

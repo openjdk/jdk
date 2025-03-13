@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.text.ParseException;
 import java.time.Duration;
 import java.util.HashSet;
@@ -48,8 +46,6 @@ import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.OldObjectSample;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
-import jdk.jfr.internal.SecuritySupport.SafePath;
-import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.jfc.JFC;
 import jdk.jfr.internal.jfc.model.JFCModel;
@@ -154,7 +150,7 @@ final class DCmdStart extends AbstractDCmd {
         }
 
         recording.setSettings(s);
-        SafePath safePath = null;
+        Path dumpPath = null;
 
         // Generate dump filename if user has specified a time-bound recording
         if (duration != null && path == null) {
@@ -173,10 +169,10 @@ final class DCmdStart extends AbstractDCmd {
                     // Purposely avoid generating filename in Recording#setDestination due to
                     // security concerns
                     PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
-                    pr.setDumpDirectory(new SafePath(p));
+                    pr.setDumpDirectory(p);
                 } else {
-                    safePath = resolvePath(recording, path);
-                    recording.setDestination(safePath.toPath());
+                    dumpPath = resolvePath(recording, path);
+                    recording.setDestination(dumpPath);
                 }
             } catch (IOException | InvalidPathException e) {
                 recording.close();
@@ -221,10 +217,10 @@ final class DCmdStart extends AbstractDCmd {
             recording.setMaxSize(250*1024L*1024L);
         }
 
-        if (safePath != null && duration != null) {
+        if (dumpPath != null && duration != null) {
             println(" The result will be written to:");
             println();
-            printPath(safePath);
+            printPath(dumpPath);
         } else {
             println();
             println();
@@ -256,7 +252,7 @@ final class DCmdStart extends AbstractDCmd {
         JFCModel model = new JFCModel(l -> logWarning(l));
         for (String setting : settings) {
             try {
-                model.parse(JFC.createSafePath(setting));
+                model.parse(JFC.ofPath(setting));
             } catch (InvalidPathException | IOException | JFCModelException | ParseException e) {
                 throw new DCmdException(JFC.formatException("Could not", e, setting), e);
             }
@@ -463,8 +459,8 @@ final class DCmdStart extends AbstractDCmd {
     private static String jfcOptions() {
         try {
             StringBuilder sb = new StringBuilder();
-            for (SafePath s : SecuritySupport.getPredefinedJFCFiles()) {
-                String name = JFC.nameFromPath(s.toPath());
+            for (Path s : JFC.getPredefined()) {
+                String name = JFC.nameFromPath(s);
                 JFCModel model = JFCModel.create(s, l -> {});
                 sb.append('\n');
                 sb.append("Options for ").append(name).append(":\n");

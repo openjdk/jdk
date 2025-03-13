@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-// no precompiled headers
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/vtableStubs.hpp"
@@ -538,7 +537,7 @@ int64_t ARMAtomicFuncs::cmpxchg_long_bootstrap(int64_t compare_value, int64_t ex
 
 int64_t ARMAtomicFuncs::load_long_bootstrap(const volatile int64_t* src) {
   // try to use the stub:
-  load_long_func_t func = CAST_TO_FN_PTR(load_long_func_t, StubRoutines::atomic_load_long_entry());
+  load_long_func_t func = CAST_TO_FN_PTR(load_long_func_t, StubRoutines::Arm::atomic_load_long_entry());
 
   if (func != nullptr) {
     _load_long_func = func;
@@ -552,7 +551,7 @@ int64_t ARMAtomicFuncs::load_long_bootstrap(const volatile int64_t* src) {
 
 void ARMAtomicFuncs::store_long_bootstrap(int64_t val, volatile int64_t* dest) {
   // try to use the stub:
-  store_long_func_t func = CAST_TO_FN_PTR(store_long_func_t, StubRoutines::atomic_store_long_entry());
+  store_long_func_t func = CAST_TO_FN_PTR(store_long_func_t, StubRoutines::Arm::atomic_store_long_entry());
 
   if (func != nullptr) {
     _store_long_func = func;

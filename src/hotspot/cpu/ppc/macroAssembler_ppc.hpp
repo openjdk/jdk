@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,8 +179,8 @@ class MacroAssembler: public Assembler {
   //
   // branch, jump
   //
-  // set dst to -1, 0, +1 as follows: if CCR0bi is "greater than", dst is set to 1,
-  // if CCR0bi is "equal", dst is set to 0, otherwise it's set to -1.
+  // set dst to -1, 0, +1 as follows: if CR0bi is "greater than", dst is set to 1,
+  // if CR0bi is "equal", dst is set to 0, otherwise it's set to -1.
   void inline set_cmp3(Register dst);
   // set dst to (treat_unordered_like_less ? -1 : +1)
   void inline set_cmpu3(Register dst, bool treat_unordered_like_less);
@@ -612,12 +612,45 @@ class MacroAssembler: public Assembler {
   // The temp_reg can be noreg, if no temps are available.
   // It can also be sub_klass or super_klass, meaning it's OK to kill that one.
   // Updates the sub's secondary super cache as necessary.
+  void check_klass_subtype_slow_path_linear(Register sub_klass,
+                                            Register super_klass,
+                                            Register temp1_reg,
+                                            Register temp2_reg,
+                                            Label* L_success = nullptr,
+                                            Register result_reg = noreg);
+
+  void check_klass_subtype_slow_path_table(Register sub_klass,
+                                           Register super_klass,
+                                           Register temp1_reg,
+                                           Register temp2_reg,
+                                           Label* L_success = nullptr,
+                                           Register result_reg = noreg);
+
   void check_klass_subtype_slow_path(Register sub_klass,
                                      Register super_klass,
                                      Register temp1_reg,
                                      Register temp2_reg,
                                      Label* L_success = nullptr,
                                      Register result_reg = noreg);
+
+  void lookup_secondary_supers_table_var(Register sub_klass,
+                                         Register r_super_klass,
+                                         Register temp1,
+                                         Register temp2,
+                                         Register temp3,
+                                         Register temp4,
+                                         Register result);
+
+  // If r is valid, return r.
+  // If r is invalid, remove a register r2 from available_regs, add r2
+  // to regs_to_push, then return r2.
+  Register allocate_if_noreg(const Register r,
+                             RegSetIterator<Register> &available_regs,
+                             RegSet &regs_to_push);
+
+  // Frameless register spills (negative offset from SP)
+  void push_set(RegSet set);
+  void pop_set(RegSet set);
 
   // Simplified, combined version, good for typical uses.
   // Falls through on failure.
@@ -631,14 +664,14 @@ class MacroAssembler: public Assembler {
 
   // As above, but with a constant super_klass.
   // The result is in Register result, not the condition codes.
-  void lookup_secondary_supers_table(Register r_sub_klass,
-                                     Register r_super_klass,
-                                     Register temp1,
-                                     Register temp2,
-                                     Register temp3,
-                                     Register temp4,
-                                     Register result,
-                                     u1 super_klass_slot);
+  void lookup_secondary_supers_table_const(Register r_sub_klass,
+                                           Register r_super_klass,
+                                           Register temp1,
+                                           Register temp2,
+                                           Register temp3,
+                                           Register temp4,
+                                           Register result,
+                                           u1 super_klass_slot);
 
   void verify_secondary_supers_table(Register r_sub_klass,
                                      Register r_super_klass,

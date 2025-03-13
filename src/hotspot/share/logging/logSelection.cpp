@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logSelection.hpp"
@@ -145,7 +144,7 @@ static LogSelection parse_internal(char *str, outputStream* errstream) {
     }
     if (ntags == LogTag::MaxTags) {
       if (errstream != nullptr) {
-        errstream->print_cr("Too many tags in log selection '%s' (can only have up to " SIZE_FORMAT " tags).",
+        errstream->print_cr("Too many tags in log selection '%s' (can only have up to %zu tags).",
                                str, LogTag::MaxTags);
       }
       return LogSelection::Invalid;

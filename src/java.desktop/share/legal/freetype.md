@@ -1,4 +1,4 @@
-## The FreeType Project: Freetype v2.13.2
+## The FreeType Project: Freetype v2.13.3
 
 
 ### FreeType Notice
@@ -21,23 +21,23 @@ which fits your needs best.
 ### FreeType License
 ```
 
-Copyright (C) 1996-2023 by David Turner, Robert Wilhelm, and Werner Lemberg.
-Copyright (C) 2007-2023 by Dereg Clegg and Michael Toftdal.
-Copyright (C) 1996-2023 by Just van Rossum, David Turner, Robert Wilhelm, and Werner Lemberg.
-Copyright (C) 2022-2023 by David Turner, Robert Wilhelm, Werner Lemberg, George Williams, and
-Copyright (C) 2004-2023 by Masatake YAMATO and Redhat K.K.
-Copyright (C) 2007-2023 by Derek Clegg and Michael Toftdal.
-Copyright (C) 2003-2023 by Masatake YAMATO, Red Hat K.K.,
-Copyright (C) 1996-2023 by David Turner, Robert Wilhelm, Werner Lemberg, and Dominik Röttsches.
-Copyright (C) 2007-2023 by David Turner.
-Copyright (C) 2022-2023 by David Turner, Robert Wilhelm, Werner Lemberg, and Moazin Khatti.
-Copyright (C) 2007-2023 by Rahul Bhalerao <rahul.bhalerao@redhat.com>, <b.rahul.pm@gmail.com>.
-Copyright (C) 2008-2023 by David Turner, Robert Wilhelm, Werner Lemberg, and suzuki toshiya.
-Copyright (C) 2013-2023 by Google, Inc.
-Copyright (C) 2019-2023 by Nikhil Ramakrishnan, David Turner, Robert Wilhelm, and Werner Lemberg.
-Copyright (C) 2009-2023 by Oran Agra and Mickey Gabel.
-Copyright (C) 2018-2023 by David Turner, Robert Wilhelm, Dominik Röttsches, and Werner Lemberg.
-Copyright (C) 2004-2023 by David Turner, Robert Wilhelm, Werner Lemberg, and George Williams.
+Copyright (C) 1996-2024 by David Turner, Robert Wilhelm, and Werner Lemberg.
+Copyright (C) 2007-2024 by Dereg Clegg and Michael Toftdal.
+Copyright (C) 1996-2024 by Just van Rossum, David Turner, Robert Wilhelm, and Werner Lemberg.
+Copyright (C) 2022-2024 by David Turner, Robert Wilhelm, Werner Lemberg, George Williams, and
+Copyright (C) 2004-2024 by Masatake YAMATO and Redhat K.K.
+Copyright (C) 2007-2024 by Derek Clegg and Michael Toftdal.
+Copyright (C) 2003-2024 by Masatake YAMATO, Red Hat K.K.,
+Copyright (C) 1996-2024 by David Turner, Robert Wilhelm, Werner Lemberg, and Dominik Röttsches.
+Copyright (C) 2007-2024 by David Turner.
+Copyright (C) 2022-2024 by David Turner, Robert Wilhelm, Werner Lemberg, and Moazin Khatti.
+Copyright (C) 2007-2024 by Rahul Bhalerao <rahul.bhalerao@redhat.com>, <b.rahul.pm@gmail.com>.
+Copyright (C) 2008-2024 by David Turner, Robert Wilhelm, Werner Lemberg, and suzuki toshiya.
+Copyright (C) 2013-2024 by Google, Inc.
+Copyright (C) 2019-2024 by Nikhil Ramakrishnan, David Turner, Robert Wilhelm, and Werner Lemberg.
+Copyright (C) 2009-2024 by Oran Agra and Mickey Gabel.
+Copyright (C) 2018-2024 by David Turner, Robert Wilhelm, Dominik Röttsches, and Werner Lemberg.
+Copyright (C) 2004-2024 by David Turner, Robert Wilhelm, Werner Lemberg, and George Williams.
 
 
                     The FreeType Project LICENSE
@@ -559,7 +559,7 @@ Public License instead of this License.
 ```
 
 ---------------------------------
-The below license applies to the following files:
+The below applies to the following file(s):
 libfreetype/src/psaux/psarrst.c
 libfreetype/src/psaux/psarrst.h
 libfreetype/src/psaux/psblues.c
@@ -582,7 +582,7 @@ libfreetype/src/psaux/psstack.c
 libfreetype/src/psaux/psstack.h
 libfreetype/src/psaux/pstypes.h
 
-Copyright 2006-2014 Adobe Systems Incorporated.
+Copyright (C) 2006-2014 Adobe Systems Incorporated.
 
 This software, and all works of authorship, whether in source or
 object code form as indicated by the copyright notice(s) included
@@ -618,12 +618,12 @@ and you accept them fully.
 ```
 
 ---------------------------------
-The below license applies to the following files:
+The below applies to the following file(s):
 libfreetype/include/freetype/internal/fthash.h
 libfreetype/src/base/fthash.c
 
-Copyright 2000 Computing Research Labs, New Mexico State University
-Copyright 2001-2015
+Copyright (C) 2000 Computing Research Labs, New Mexico State University
+Copyright (C) 2001-2015
 
   Francesco Zappa Nardelli
 

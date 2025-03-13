@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_Defs.hpp"
@@ -247,6 +246,7 @@ void Runtime1::generate_blob_for(BufferBlob* buffer_blob, C1StubId id) {
   case C1StubId::fpu2long_stub_id:
   case C1StubId::unwind_exception_id:
   case C1StubId::counter_overflow_id:
+  case C1StubId::is_instance_of_id:
     expect_oop_map = false;
     break;
   default:
@@ -795,7 +795,7 @@ JRT_ENTRY(void, Runtime1::deoptimize(JavaThread* current, jint trap_request))
   Deoptimization::DeoptReason reason = Deoptimization::trap_request_reason(trap_request);
 
   if (action == Deoptimization::Action_make_not_entrant) {
-    if (nm->make_not_entrant()) {
+    if (nm->make_not_entrant("C1 deoptimize")) {
       if (reason == Deoptimization::Reason_tenured) {
         MethodData* trap_mdo = Deoptimization::get_method_data(current, method, true /*create_if_missing*/);
         if (trap_mdo != nullptr) {
@@ -1087,7 +1087,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
     // safepoint, but if it's still alive then make it not_entrant.
     nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
     if (nm != nullptr) {
-      nm->make_not_entrant();
+      nm->make_not_entrant("C1 code patch");
     }
 
     Deoptimization::deoptimize_frame(current, caller_frame.id());
@@ -1335,7 +1335,7 @@ void Runtime1::patch_code(JavaThread* current, C1StubId stub_id) {
     // Make sure the nmethod is invalidated, i.e. made not entrant.
     nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
     if (nm != nullptr) {
-      nm->make_not_entrant();
+      nm->make_not_entrant("C1 deoptimize for patching");
     }
   }
 
@@ -1463,7 +1463,7 @@ JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* current))
 
   nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
   assert (nm != nullptr, "no more nmethod?");
-  nm->make_not_entrant();
+  nm->make_not_entrant("C1 predicate failed trap");
 
   methodHandle m(current, nm->method());
   MethodData* mdo = m->method_data();

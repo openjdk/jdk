@@ -28,6 +28,7 @@
 #include "gc/g1/g1CardSet.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CodeRootSet.hpp"
+#include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -35,6 +36,7 @@
 #include "utilities/bitMap.hpp"
 
 class G1CardSetMemoryManager;
+class G1CSetCandidateGroup;
 class outputStream;
 
 class G1HeapRegionRemSet : public CHeapObj<mtGC> {
@@ -44,11 +46,8 @@ class G1HeapRegionRemSet : public CHeapObj<mtGC> {
   // the region that owns this RSet.
   G1CodeRootSet _code_roots;
 
-  G1CardSetMemoryManager _card_set_mm;
-
-  // The set of cards in the Java heap
-  G1CardSet* _card_set;
-  G1CardSet* _saved_card_set;
+  // The collection set groups to which the region owning this RSet is assigned.
+  G1CSetCandidateGroup* _cset_group;
 
   G1HeapRegion* _hr;
 
@@ -57,26 +56,48 @@ class G1HeapRegionRemSet : public CHeapObj<mtGC> {
 
   void clear_fcc();
 
+  G1CardSet* card_set() {
+    assert(is_added_to_cset_group(), "pre-condition");
+    return cset_group()->card_set();
+  }
+
+  const G1CardSet* card_set() const {
+    assert(is_added_to_cset_group(), "pre-condition");
+    return cset_group()->card_set();
+  }
+
 public:
-  G1HeapRegionRemSet(G1HeapRegion* hr, G1CardSetConfiguration* config);
-  ~G1HeapRegionRemSet() { delete _card_set; }
+  G1HeapRegionRemSet(G1HeapRegion* hr);
+  ~G1HeapRegionRemSet();
 
   bool cardset_is_empty() const {
-    return _card_set->is_empty();
+    return !is_added_to_cset_group() || card_set()->is_empty();
   }
 
-  void install_group_cardset(G1CardSet* group_cardset) {
-    assert(group_cardset != nullptr, "pre-condition");
-    assert(_saved_card_set == nullptr, "pre-condition");
+  void install_cset_group(G1CSetCandidateGroup* cset_group) {
+    assert(cset_group != nullptr, "pre-condition");
+    assert(_cset_group == nullptr, "pre-condition");
 
-    _saved_card_set = _card_set;
-    _card_set = group_cardset;
+    _cset_group = cset_group;
   }
 
-  void uninstall_group_cardset();
+  void uninstall_cset_group();
 
-  bool has_group_cardset() {
-    return _saved_card_set != nullptr;
+  bool is_added_to_cset_group() const {
+    return _cset_group != nullptr;
+  }
+
+  G1CSetCandidateGroup* cset_group() {
+    return _cset_group;
+  }
+
+  const G1CSetCandidateGroup* cset_group() const {
+    return _cset_group;
+  }
+
+  uint cset_group_id() const {
+    assert(is_added_to_cset_group(), "pre-condition");
+    return cset_group()->group_id();
   }
 
   bool is_empty() const {
@@ -84,7 +105,7 @@ public:
   }
 
   bool occupancy_less_or_equal_than(size_t occ) const {
-    return (code_roots_list_length() == 0) && _card_set->occupancy_less_or_equal_to(occ);
+    return (code_roots_list_length() == 0) && card_set()->occupancy_less_or_equal_to(occ);
   }
 
   // Iterate the card based remembered set for merging them into the card table.
@@ -97,10 +118,10 @@ public:
   inline static void iterate_for_merge(G1CardSet* card_set, CardOrRangeVisitor& cl);
 
   size_t occupied() {
-    return _card_set->occupied();
+    assert(is_added_to_cset_group(), "pre-condition");
+    return card_set()->occupied();
   }
 
-  G1CardSet* card_set() { return _card_set; }
 
   static void initialize(MemRegion reserved);
 
@@ -146,13 +167,7 @@ public:
   // The actual # of bytes this hr_remset takes up. Also includes the code
   // root set.
   size_t mem_size() {
-    return _card_set->mem_size()
-           + (sizeof(G1HeapRegionRemSet) - sizeof(G1CardSet)) // Avoid double-counting G1CardSet.
-           + code_roots_mem_size();
-  }
-
-  size_t unused_mem_size() {
-    return _card_set->unused_mem_size();
+    return sizeof(G1HeapRegionRemSet) + code_roots_mem_size();
   }
 
   // Returns the memory occupancy of all static data structures associated

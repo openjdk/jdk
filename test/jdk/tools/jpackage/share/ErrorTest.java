@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import static jdk.internal.util.OperatingSystem.WINDOWS;
  * @summary Test jpackage output for erroneous input
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile ErrorTest.java
+ * @compile -Xlint:all -Werror ErrorTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ErrorTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useExecutableByDefault
@@ -52,7 +52,7 @@ import static jdk.internal.util.OperatingSystem.WINDOWS;
  * @summary Test jpackage output for erroneous input
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile ErrorTest.java
+ * @compile -Xlint:all -Werror ErrorTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ErrorTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useToolProviderByDefault
@@ -60,7 +60,7 @@ import static jdk.internal.util.OperatingSystem.WINDOWS;
 
 public final class ErrorTest {
 
-    public static Collection input() {
+    public static Collection<?> input() {
         return List.of(new Object[][]{
             // non-existent arg
             {"Hello",

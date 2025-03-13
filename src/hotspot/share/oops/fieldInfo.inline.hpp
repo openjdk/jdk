@@ -102,7 +102,7 @@ inline void FieldInfoReader::read_field_info(FieldInfo& fi) {
   fi._name_index = checked_cast<u2>(next_uint());
   fi._signature_index = checked_cast<u2>(next_uint());
   fi._offset = next_uint();
-  fi._access_flags = AccessFlags(next_uint());
+  fi._access_flags = AccessFlags(checked_cast<u2>(next_uint()));
   fi._field_flags = FieldInfo::FieldFlags(next_uint());
   if (fi._field_flags.is_initialized()) {
     fi._initializer_index = checked_cast<u2>(next_uint());

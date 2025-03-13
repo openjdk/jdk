@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,8 +105,10 @@ public class ModLNodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.MOD_L})
-    @IR(counts = {IRNode.AND_L, ">=1", IRNode.RSHIFT, ">=1", IRNode.CMP_L, "2"})
+    @IR(applyIfPlatform = {"riscv64", "false"},
+        failOn = {IRNode.MOD_L})
+    @IR(applyIfPlatform = {"riscv64", "false"},
+        counts = {IRNode.AND_L, ">=1", IRNode.RSHIFT, ">=1", IRNode.CMP_L, "2"})
     // Special optimization for the case 2^k-1 for bigger k
     public long powerOf2Minus1(long x) {
         return x % ((1L << 33) - 1);
