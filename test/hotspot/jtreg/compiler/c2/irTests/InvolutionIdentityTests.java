@@ -22,7 +22,9 @@
  */
 package compiler.c2.irTests;
 
+import compiler.lib.generators.Generator;
 import compiler.lib.generators.Generators;
+import compiler.lib.generators.RestrictableGenerator;
 import compiler.lib.ir_framework.DontCompile;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
@@ -39,6 +41,14 @@ import jdk.test.lib.Asserts;
  * @run driver compiler.c2.irTests.InvolutionIdentityTests
  */
 public class InvolutionIdentityTests {
+
+    public static final RestrictableGenerator<Integer> GEN_CHAR = Generators.G.safeRestrict(Generators.G.ints(), Character.MIN_VALUE, Character.MAX_VALUE);
+    public static final RestrictableGenerator<Integer> GEN_SHORT = Generators.G.safeRestrict(Generators.G.ints(), Short.MIN_VALUE, Short.MAX_VALUE);
+    public static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
+    public static final RestrictableGenerator<Integer> GEN_INT = Generators.G.ints();
+    public static final Generator<Float> GEN_FLOAT = Generators.G.floats();
+    public static final Generator<Double> GEN_DOUBLE = Generators.G.doubles();
+
     public static void main(String[] args) {
         TestFramework.run();
     }
@@ -46,11 +56,13 @@ public class InvolutionIdentityTests {
     @Run(test = {
         "testI1", "testI2",
         "testL1", "testL2",
+        "testS1",
+        "testUS1",
         "testF1",
         "testD1"
     })
     public void runMethod() {
-        int ai = Generators.G.ints().next();
+        int ai = GEN_INT.next();
 
         int mini = Integer.MIN_VALUE;
         int maxi = Integer.MAX_VALUE;
@@ -60,7 +72,7 @@ public class InvolutionIdentityTests {
         assertResultI(mini);
         assertResultI(maxi);
 
-        long al = Generators.G.longs().next();
+        long al = GEN_LONG.next();
 
         long minl = Long.MIN_VALUE;
         long maxl = Long.MAX_VALUE;
@@ -70,7 +82,27 @@ public class InvolutionIdentityTests {
         assertResultL(minl);
         assertResultL(maxl);
 
-        float af = Generators.G.floats().next();
+        short as = GEN_SHORT.next().shortValue();
+
+        short mins = Short.MIN_VALUE;
+        short maxs = Short.MAX_VALUE;
+
+        assertResultS((short) 0);
+        assertResultS(as);
+        assertResultS(mins);
+        assertResultS(maxs);
+
+        char ac = (char) GEN_CHAR.next().intValue();
+
+        char minc = Character.MIN_VALUE;
+        char maxc = Character.MAX_VALUE;
+
+        assertResultUS((char) 0);
+        assertResultUS(ac);
+        assertResultUS(minc);
+        assertResultUS(maxc);
+
+        float af = GEN_FLOAT.next();
         float inf = Float.POSITIVE_INFINITY;
         float nanf = Float.NaN;
 
@@ -80,7 +112,7 @@ public class InvolutionIdentityTests {
         assertResultF(inf);
         assertResultF(nanf);
 
-        double ad = Generators.G.doubles().next();
+        double ad = GEN_DOUBLE.next();
         double ind = Double.POSITIVE_INFINITY;
         double nand = Double.NaN;
 
@@ -102,6 +134,16 @@ public class InvolutionIdentityTests {
     public void assertResultL(long a) {
         Asserts.assertEQ(Long.reverseBytes(Long.reverseBytes(a)), testL1(a));
         Asserts.assertEQ(Long.reverse(Long.reverse(a))          , testL2(a));
+    }
+
+    @DontCompile
+    public void assertResultS(short a) {
+        Asserts.assertEQ(Short.reverseBytes(Short.reverseBytes(a)), testS1(a));
+    }
+
+    @DontCompile
+    public void assertResultUS(char a) {
+        Asserts.assertEQ(Character.reverseBytes(Character.reverseBytes(a)), testUS1(a));
     }
 
     @DontCompile
@@ -136,6 +178,18 @@ public class InvolutionIdentityTests {
     @IR(failOn = {IRNode.REVERSE_L})
     public long testL2(long x) {
         return Long.reverse(Long.reverse(x));
+    }
+
+    @Test
+    @IR(failOn = {IRNode.REVERSE_BYTES_S})
+    public short testS1(short x) {
+        return Short.reverseBytes(Short.reverseBytes(x));
+    }
+
+    @Test
+    @IR(failOn = {IRNode.REVERSE_BYTES_US})
+    public char testUS1(char x) {
+        return Character.reverseBytes(Character.reverseBytes(x));
     }
 
     @Test
