@@ -167,6 +167,37 @@ public abstract class ClassValue<T> {
      * between the return of {@code computeValue} in {@code T} and the installation
      * of the new value.  No user synchronization is possible during this time.
      *
+     * @apiNote
+     * A single call to {@code remove} is not sufficient to prevent ongoing
+     * computations from installing a stale value later, due to a compatibility
+     * requirement to make calls from {@code computeValue} to {@code remove} to
+     * return no-op.  In retrospect, this requirement to accommodate a niche
+     * case complicated the usages of {@code remove} unfortunately.
+     * <p>
+     * Consider threads A and B:
+     * {@snippet lang=java :
+     * AtomicInteger input = new AtomicInteger(0);
+     * ClassValue<Integer> cv = null; // @replace substring="null;" replacement="..."
+     * Thread threadA = Thread.startVirtualThread(() -> {
+     *     input.incrementAndGet(); // (a)
+     *     // Insert a "cv.get(int.class)" call here to block stale values
+     *     cv.remove(int.class); // (b) - no-op if B is computing
+     * });
+     * Thread threadB = Thread.startVirtualThread(() -> cv.get(int.class));
+     * }
+     * With this order of action:
+     * <ol>
+     * <li>B starts {@code get()} and {@code computeValue()}, but computation is slow
+     * <li>(a) A updates input value to {@code 1} for {@code computeValue()}
+     * <li>(b) A calls {@code remove} and returns, no-op as B is computing
+     * <li>B finishes {@code computeValue()} and installs the outdated value {@code 0}
+     * </ol>
+     * To prevent observing such an outdated value after the removal, thread A
+     * can call {@code get()} after it updates input and before it calls {@code
+     * remove()}, at the location as shown in the snippet.  This way, thread B
+     * will not be able to installation an outdated value that read input states
+     * from before thread A's {@code get()}.
+     *
      * @param type the type whose class value must be removed
      * @throws NullPointerException if the argument is null
      */
@@ -502,16 +533,24 @@ public abstract class ClassValue<T> {
             Entry<?> e = remove(classValue.identity);
             // e == null: Uninitialized, and no pending calls to computeValue.
             // remove(identity) didn't change anything.  No change.
-            // e.isPromise(): computeValue already used outdated values.
-            // remove(identity) discarded the outdated computation promise.
-            // finishEntry will retry when it discovers the promise is removed.
-            // No cache invalidation.  No further action needed.
-            if (e != null && !e.isPromise()) {
-                // Initialized.
-                // Bump forward to invalidate racy-read cached entries.
-                classValue.bumpVersion();
-                // Make all cache elements for this guy go stale.
-                removeStaleEntries(classValue);
+            if (e != null) {
+                if (e.isPromise()) {
+                    // Due to compatibility requirements (7153157), we have to
+                    // reinstate an outdated promise that called computeValue
+                    // with outdated values because the remove call may come
+                    // from computeValue (Why Remi!)
+                    // If users wish to avoid seeing outdated promises, they
+                    // should call CV.get(clazz) before calling CV.remove(clazz).
+                    // They may see a future value in the next get after remove,
+                    // but never an outdated value.
+                    put(classValue.identity, e);
+                } else {
+                    // Initialized.
+                    // Bump forward to invalidate racy-read cached entries.
+                    classValue.bumpVersion();
+                    // Make all cache elements for this guy go stale.
+                    removeStaleEntries(classValue);
+                }
             }
         }
 

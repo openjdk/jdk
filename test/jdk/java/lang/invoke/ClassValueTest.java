@@ -32,9 +32,13 @@ import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -161,27 +165,12 @@ final class ClassValueTest {
     private static final int RUNS = 16;
     private static final long COMPUTE_TIME_MILLIS = 100;
 
-    @Test
-    void testRemoveOnComputeCases() {
-        try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {
-            var tasks = new ArrayList<Future<?>>(RUNS);
-            for (int i = 0; i < RUNS; i++) {
-                tasks.add(exec.submit(this::testRemoveOnCompute));
-            }
-            for (var task : tasks) {
-                try {
-                    task.get();
-                } catch (InterruptedException | ExecutionException ex) {
-                    var cause = ex.getCause();
-                    if (cause instanceof AssertionError ae)
-                        throw ae;
-                    throw new RuntimeException(ex);
-                }
-            }
-        }
-    }
-
-    void testRemoveOnCompute() {
+    /**
+     * Tests that get() + remove() can prevent stale value from being installed.
+     * Uses junit to do basic stress.
+     */
+    @RepeatedTest(value = RUNS)
+    void testRemoveStale() {
         AtomicInteger input = new AtomicInteger(0);
         ClassValue<Integer> cv = new ClassValue<>() {
             @Override
@@ -199,6 +188,7 @@ final class ClassValueTest {
         var innocuous = Thread.startVirtualThread(() -> cv.get(int.class));
         var refreshInput = Thread.startVirtualThread(() -> {
             input.incrementAndGet();
+            cv.get(int.class); // Invalidates ongoing computations using outdated input
             cv.remove(int.class); // Let's recompute with updated inputs!
         });
         try {
@@ -209,5 +199,23 @@ final class ClassValueTest {
         }
         assertEquals(1, input.get(), "input not updated");
         assertEquals(1, cv.get(int.class), "CV not using up-to-date input");
+    }
+
+    /**
+     * Tests that calling remove() from computeValue() is no-op.
+     */
+    @Test
+    @Timeout(value = 4, unit = TimeUnit.SECONDS)
+    void testRemoveInCompute() {
+        ClassValue<Object> cv = new ClassValue<>() {
+            @Override
+            protected Object computeValue(Class<?> type) {
+                remove(type);
+                remove(type);
+                remove(type);
+                return Boolean.TRUE;
+            }
+        };
+        assertEquals(Boolean.TRUE, cv.get(int.class));
     }
 }
