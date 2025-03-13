@@ -4752,7 +4752,7 @@ class StubGenerator: public StubCodeGenerator {
   // store N vector registers into N/2 pairs of quadword memory
   // locations via the address supplied in base with each pair indexed
   // using the the start offset plus the corresponding entry in the
-  // offsets array 
+  // offsets array
   template<int N>
   void vs_stpq_indexed(VSeq<N> v, Register base, int start, int offsets[N/2]) {
     for (int i = 0; i < N/2; i++) {
@@ -5088,7 +5088,7 @@ class StubGenerator: public StubCodeGenerator {
       vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, i, offsets);
       // load next 16 (4x4S) inputs
       vs_ldpq_post(vs_front(vs2), zetas);
-      // mont multiply odd elements of vs1 by vs2 and add/sub into odds/evens 
+      // mont multiply odd elements of vs1 by vs2 and add/sub into odds/evens
       dilithium_montmul16_sub_add(vs_even(vs1), vs_odd(vs1),
                                   vs_front(vs2), vtmp, vq);
       // store interleaved 16 (4x2D) coefficients via offsets
@@ -5116,7 +5116,7 @@ class StubGenerator: public StubCodeGenerator {
       vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, i, offsets);
       // load next 16 (4x4S) inputs
       vs_ldpq_post(vs_front(vs2), zetas);
-      // mont multiply odd elements of vs1 by vs2 and add/sub into odds/evens 
+      // mont multiply odd elements of vs1 by vs2 and add/sub into odds/evens
       dilithium_montmul16_sub_add(vs_even(vs1), vs_odd(vs1),
                                   vs_front(vs2), vtmp, vq);
       // store interleaved 16 (4x4S) coefficients via offsets
