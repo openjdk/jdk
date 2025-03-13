@@ -1547,8 +1547,7 @@ void BoxLockNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
 uint BoxLockNode::size(PhaseRegAlloc *ra_) const
 {
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
-  int reg = ra_->get_encode(this);
-    return (offset < 0x80) ? 5 : 8; // REX
+  return (offset < 0x80) ? 5 : 8; // REX
 }
 
 //=============================================================================
@@ -4368,7 +4367,7 @@ instruct loadNKlassCompactHeaders(rRegN dst, memory mem, rFlagsReg cr)
   predicate(UseCompactObjectHeaders);
   match(Set dst (LoadNKlass mem));
   effect(KILL cr);
-  ins_cost(125); // XXX
+  ins_cost(125);
   format %{
     "movl    $dst, $mem\t# compressed klass ptr, shifted\n\t"
     "shrl    $dst, markWord::klass_shift_at_offset"
@@ -4382,7 +4381,7 @@ instruct loadNKlassCompactHeaders(rRegN dst, memory mem, rFlagsReg cr)
       __ shrl($dst$$Register, markWord::klass_shift_at_offset);
     }
   %}
-  ins_pipe(ialu_reg_mem); // XXX
+  ins_pipe(ialu_reg_mem);
 %}
 
 // Load Float
@@ -6138,7 +6137,7 @@ instruct cmovI_reg_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr, cmpOp co
   predicate(UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
 
-  ins_cost(200); // XXX
+  ins_cost(200);
   format %{ "ecmovl$cop $dst, $src1, $src2\t# signed, int ndd" %}
   ins_encode %{
     __ ecmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Register);
@@ -6176,7 +6175,7 @@ instruct cmovI_regU_ndd(rRegI dst, cmpOpU cop, rFlagsRegU cr, rRegI src1, rRegI 
   predicate(UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
 
-  ins_cost(200); // XXX
+  ins_cost(200);
   format %{ "ecmovl$cop $dst, $src1, $src2\t# unsigned, int ndd" %}
   ins_encode %{
     __ ecmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Register);
@@ -6236,7 +6235,7 @@ instruct cmovI_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI s
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
 
-  ins_cost(200); // XXX
+  ins_cost(200);
   format %{ "ecmovpl  $dst, $src1, $src2\n\t"
             "ecmovnel $dst, $src1, $src2" %}
   ins_encode %{
@@ -6266,7 +6265,7 @@ instruct cmovI_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI s
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
 
-  ins_cost(200); // XXX
+  ins_cost(200);
   format %{ "ecmovpl  $dst, $src1, $src2\n\t"
             "ecmovnel $dst, $src1, $src2" %}
   ins_encode %{
@@ -6295,7 +6294,7 @@ instruct cmovI_rReg_rReg_mem_ndd(rRegI dst, cmpOp cop, rFlagsReg cr, rRegI src1,
   predicate(UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary src1 (LoadI src2))));
 
-  ins_cost(250); // XXX
+  ins_cost(250);
   format %{ "ecmovl$cop $dst, $src1, $src2\t# signed, int ndd" %}
   ins_encode %{
     __ ecmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Address);
@@ -6331,7 +6330,7 @@ instruct cmovI_rReg_rReg_memU_ndd(rRegI dst, cmpOpU cop, rFlagsRegU cr, rRegI sr
   predicate(UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary src1 (LoadI src2))));
 
-  ins_cost(250); // XXX
+  ins_cost(250);
   format %{ "ecmovl$cop $dst, $src1, $src2\t# unsigned, int ndd" %}
   ins_encode %{
     __ ecmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Address);
@@ -6371,7 +6370,7 @@ instruct cmovN_reg_ndd(rRegN dst, rRegN src1, rRegN src2, rFlagsReg cr, cmpOp co
   predicate(UseAPX);
   match(Set dst (CMoveN (Binary cop cr) (Binary src1 src2)));
 
-  ins_cost(200); // XXX
+  ins_cost(200);
   format %{ "ecmovl$cop $dst, $src1, $src2\t# signed, compressed ptr ndd" %}
   ins_encode %{
     __ ecmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Register);
@@ -6408,7 +6407,7 @@ instruct cmovN_regU_ndd(rRegN dst, cmpOpU cop, rFlagsRegU cr, rRegN src1, rRegN 
   predicate(UseAPX);
   match(Set dst (CMoveN (Binary cop cr) (Binary src1 src2)));
 
-  ins_cost(200); // XXX
+  ins_cost(200);
   format %{ "ecmovl$cop $dst, $src1, $src2\t# unsigned, compressed ptr ndd" %}
   ins_encode %{
     __ ecmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Register);
@@ -6477,12 +6476,12 @@ instruct cmovP_reg_ndd(rRegP dst, rRegP src1, rRegP src2, rFlagsReg cr, cmpOp co
   predicate(UseAPX);
   match(Set dst (CMoveP (Binary cop cr) (Binary src1 src2)));
 
-  ins_cost(200); // XXX
+  ins_cost(200);
   format %{ "ecmovq$cop $dst, $src1, $src2\t# signed, ptr ndd" %}
   ins_encode %{
     __ ecmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Register);
   %}
-  ins_pipe(pipe_cmov_reg);  // XXX
+  ins_pipe(pipe_cmov_reg);
 %}
 
 // Conditional move
@@ -6549,7 +6548,7 @@ instruct cmovP_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP s
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveP (Binary cop cr) (Binary src1 src2)));
 
-  ins_cost(200); // XXX
+  ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
             "ecmovneq $dst, $src1, $src2" %}
   ins_encode %{
@@ -6579,7 +6578,7 @@ instruct cmovP_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP s
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveP (Binary cop cr) (Binary src1 src2)));
 
-  ins_cost(200); // XXX
+  ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
             "ecmovneq $dst, $src1, $src2" %}
   ins_encode %{
@@ -6621,12 +6620,12 @@ instruct cmovL_reg_ndd(rRegL dst, cmpOp cop, rFlagsReg cr, rRegL src1, rRegL src
   predicate(UseAPX);
   match(Set dst (CMoveL (Binary cop cr) (Binary src1 src2)));
 
-  ins_cost(200); // XXX
+  ins_cost(200);
   format %{ "ecmovq$cop $dst, $src1, $src2\t# signed, long ndd" %}
   ins_encode %{
     __ ecmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Register);
   %}
-  ins_pipe(pipe_cmov_reg);  // XXX
+  ins_pipe(pipe_cmov_reg);
 %}
 
 instruct cmovL_mem(cmpOp cop, rFlagsReg cr, rRegL dst, memory src)
@@ -6647,12 +6646,12 @@ instruct cmovL_rReg_rReg_mem_ndd(rRegL dst, cmpOp cop, rFlagsReg cr, rRegL src1,
   predicate(UseAPX);
   match(Set dst (CMoveL (Binary cop cr) (Binary src1 (LoadL src2))));
 
-  ins_cost(200); // XXX
+  ins_cost(200);
   format %{ "ecmovq$cop $dst, $src1, $src2\t# signed, long ndd" %}
   ins_encode %{
     __ ecmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Address);
   %}
-  ins_pipe(pipe_cmov_mem);  // XXX
+  ins_pipe(pipe_cmov_mem);
 %}
 
 instruct cmovL_imm_01U(rRegL dst, immL1 src, rFlagsRegU cr, cmpOpU cop)
@@ -6748,7 +6747,7 @@ instruct cmovL_regUCF2_ne_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL s
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
   match(Set dst (CMoveL (Binary cop cr) (Binary src1 src2)));
 
-  ins_cost(200); // XXX
+  ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
             "ecmovneq $dst, $src1, $src2" %}
   ins_encode %{
@@ -6778,7 +6777,7 @@ instruct cmovL_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL s
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveL (Binary cop cr) (Binary src1 src2)));
 
-  ins_cost(200); // XXX
+  ins_cost(200);
   format %{ "ecmovpq  $dst, $src1, $src2\n\t"
             "ecmovneq $dst, $src1, $src2" %}
   ins_encode %{
@@ -7017,7 +7016,7 @@ instruct addI_rReg_mem_rReg_ndd(rRegI dst, memory src1, rRegI src2, rFlagsReg cr
   effect(KILL cr);
   flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
 
-  ins_cost(150); // XXX
+  ins_cost(150);
   format %{ "eaddl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
     __ eaddl($dst$$Register, $src1$$Address, $src2$$Register, false);
@@ -7032,7 +7031,7 @@ instruct addI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2, rFlagsReg cr
   effect(KILL cr);
   flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
 
-  ins_cost(150); // XXX
+  ins_cost(150);
   format %{ "eaddl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
     __ eaddl($dst$$Register, $src1$$Register, $src2$$Address, false);
@@ -7320,7 +7319,7 @@ instruct addL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr
   effect(KILL cr);
   flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
 
-  ins_cost(150); // XXX
+  ins_cost(150);
   format %{ "eaddq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
     __ eaddq($dst$$Register, $src1$$Register, $src2$$Address, false);
@@ -7335,7 +7334,7 @@ instruct addL_rReg_mem_rReg_ndd(rRegL dst, memory src1, rRegL src2, rFlagsReg cr
   effect(KILL cr);
   flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
 
-  ins_cost(150); // XXX
+  ins_cost(150);
   format %{ "eaddq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
     __ eaddq($dst$$Register, $src1$$Address, $src2$$Register, false);
@@ -11219,7 +11218,7 @@ instruct xorL_rReg_im1_ndd(rRegL dst,rRegL src, immL_M1 imm)
 
   format %{ "enotq   $dst, $src" %}
   ins_encode %{
-     __ enotq($dst$$Register, $src$$Register);
+    __ enotq($dst$$Register, $src$$Register);
   %}
   ins_pipe(ialu_reg);
 %}
