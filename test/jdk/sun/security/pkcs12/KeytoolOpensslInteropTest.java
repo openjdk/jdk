@@ -56,7 +56,6 @@ import jdk.test.lib.SecurityTools;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.security.OpensslArtifactFetcher;
-import jtreg.SkippedException;
 
 import java.io.File;
 import java.io.FileInputStream;
