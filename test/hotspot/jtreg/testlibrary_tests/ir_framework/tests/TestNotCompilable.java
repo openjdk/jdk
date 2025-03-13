@@ -29,7 +29,7 @@ import compiler.lib.ir_framework.driver.TestVMException;
 
 /*
  * @test
- * @summary TODO: description
+ * @summary Test the functionality of allowMethodNotCompilable.
  * @library /test/lib /
  * @run driver ir_framework.tests.TestNotCompilable
  */
@@ -40,12 +40,21 @@ public class TestNotCompilable {
         TestFramework.run();
         // Forbid compilation -> should throw exception.
         try {
-            TestFramework.runWithFlags("-XX:CompileCommand=exclude,*Test*::test");
+            TestFramework.runWithFlags("-XX:CompileCommand=exclude,*Test*::test*");
             throw new RuntimeException("should have thrown TestRunException");
         } catch (TestVMException e) {
         }
+        // Forbid compilation, but allow methods not to compile -> should pass.
+        TestFramework framework = new TestFramework(TestNotCompilable.class);
+        framework.addFlags("-XX:CompileCommand=exclude,*Test*::test*");
+        framework.allowMethodNotCompilable();
+        framework.start();
     }
 
     @Test
-    public void test() {}
+    public void test1() {}
+
+    @Test
+    @IR(failOn = IRNode.LOAD)
+    public void test2() {}
 }
