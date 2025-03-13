@@ -799,7 +799,7 @@ protected:
     patch((address)&insn, 31, 20, 0b000000000000); // fm
     emit(insn);
   }
- 
+
  public:
 
 #define INSN(NAME, op, funct3, funct7)                      \
