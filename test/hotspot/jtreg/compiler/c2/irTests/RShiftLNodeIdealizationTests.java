@@ -122,35 +122,35 @@ public class RShiftLNodeIdealizationTests {
     }
 
     // See comment in RShiftINodeIdealizationTests
-    final static int test7Shift = RunInfo.getRandom().nextInt(32) + 32;
-    final static long test7Min = -1L << (64 - test7Shift -1);
+    final static int test7Shift = RunInfo.getRandom().nextInt(1, 64);
+    final static long test7Min = -1L << (64 - test7Shift - 1);
     final static long test7Max = ~test7Min;
 
     @Test
     @IR(failOn = { IRNode.RSHIFT_L, IRNode.LSHIFT_L })
     public long test7(long x) {
-        x = Integer.max(Integer.min((int)x, (int)test7Max), (int)test7Min);
+        x = Long.max(Long.min(x, test7Max), test7Min);
         return ((x << test7Shift) >> test7Shift);
     }
 
     @Test
     @IR(counts = { IRNode.RSHIFT_L, "1", IRNode.LSHIFT_L, "1" })
     public long test8(long x) {
-        x = Integer.max(Integer.min((int)x, (int)(test7Max+1)), (int)test7Min);
+        x = Long.max(Long.min(x, test7Max+1), test7Min);
         return ((x << test7Shift) >> test7Shift);
     }
 
     @Test
     @IR(counts = { IRNode.RSHIFT_L, "1", IRNode.LSHIFT_L, "1" })
     public long test9(long x) {
-        x = Integer.max(Integer.min((int)x, (int)test7Max), (int)(test7Min-1));
+        x = Long.max(Long.min(x, test7Max), test7Min-1);
         return ((x << test7Shift) >> test7Shift);
     }
 
     final static int test10Shift = RunInfo.getRandom().nextInt(64);
     @Test
     public long test10(long x) {
-        x = Integer.max(Integer.min((int)x, (int)test7Max), (int)test7Min);
+        x = Long.max(Long.min(x, test7Max), test7Min);
         return ((x << test7Shift) >> test10Shift);
     }
 }

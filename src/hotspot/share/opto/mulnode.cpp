@@ -1362,7 +1362,7 @@ Node* RShiftNode::IdentityIL(PhaseGVN* phase, BasicType bt) {
       count &= bits_per_java_integer(bt) - 1; // semantics of Java shifts
       // Compute masks for which this shifting doesn't change
       jlong lo = (-1 << (bits_per_java_integer(bt) - ((uint)count)-1)); // FFFF8000
-      jlong hi = ~lo;               // 00007FFF
+      jlong hi = ~lo;                                                   // 00007FFF
       const TypeInteger* t11 = phase->type(in(1)->in(1))->isa_integer(bt);
       if (t11 == nullptr) {
         return this;
@@ -1466,13 +1466,21 @@ const Type* RShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));
   // Either input is TOP ==> the result is TOP
-  if (t1 == Type::TOP) return Type::TOP;
-  if (t2 == Type::TOP) return Type::TOP;
+  if (t1 == Type::TOP) {
+    return Type::TOP;
+  }
+  if (t2 == Type::TOP) {
+    return Type::TOP;
+  }
 
   // Left input is ZERO ==> the result is ZERO.
-  if (t1 == TypeInteger::zero(bt)) return TypeInteger::zero(bt);
+  if (t1 == TypeInteger::zero(bt)) {
+    return TypeInteger::zero(bt);
+  }
   // Shift by zero does nothing
-  if (t2 == TypeInt::ZERO) return t1;
+  if (t2 == TypeInt::ZERO) {
+    return t1;
+  }
 
   // Either input is BOTTOM ==> the result is BOTTOM
   if (t1 == Type::BOTTOM || t2 == Type::BOTTOM) {
@@ -1488,7 +1496,9 @@ const Type* RShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
     uint shift = r2->get_con();
     shift &= bits_per_java_integer(bt) - 1;  // semantics of Java shifts
     // Shift by a multiple of 32/64 does nothing:
-    if (shift == 0)  return t1;
+    if (shift == 0) {
+      return t1;
+    }
     // Calculate reasonably aggressive bounds for the result.
     // This is necessary if we are to correctly type things
     // like (x<<24>>24) == ((byte)x).
@@ -1506,8 +1516,12 @@ const Type* RShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
 #ifdef ASSERT
     // Make sure we get the sign-capture idiom correct.
     if (shift == bits_per_java_integer(bt) - 1) {
-      if (r1->lo_as_long() >= 0) assert(ti == TypeInteger::zero(bt),    ">>31/63 of + is  0");
-      if (r1->hi_as_long() <  0) assert(ti == TypeInteger::minus_1(bt), ">>31/63 of - is -1");
+      if (r1->lo_as_long() >= 0) {
+        assert(ti == TypeInteger::zero(bt),    ">>31/63 of + is  0");
+      }
+      if (r1->hi_as_long() <  0) {
+        assert(ti == TypeInteger::minus_1(bt), ">>31/63 of - is -1");
+      }
     }
 #endif
     return ti;

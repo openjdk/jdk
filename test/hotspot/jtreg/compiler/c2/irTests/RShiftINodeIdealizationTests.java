@@ -134,7 +134,7 @@ public class RShiftINodeIdealizationTests {
     // (min-1) << shift = 7fff8000, ((min-1) << shift) >> shift = 0x0000ffff != 0xfffeffff
     // (max+1) << shift = 0x80000000, ((max+1) << shift) >> shift = 0xffff0000 != 0x00010000
     final static int test7Shift = RunInfo.getRandom().nextInt(1, 32);
-    final static int test7Min = -1 << (32 - test7Shift -1);
+    final static int test7Min = -1 << (32 - test7Shift - 1);
     final static int test7Max = ~test7Min;
 
     @Test
