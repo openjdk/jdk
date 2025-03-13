@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,10 +82,10 @@ public class JmodExcludedFiles {
                 }
                 if (OperatingSystem.isWindows() && name.endsWith(".pdb")) {
                     // on Windows we check if we should have public symbols through --with-external-symbols-in-bundles=public (JDK-8237192)
-                    String strippedpdb = javaHome + "/bin/" + name.substring(index + 1, name.length() - 4) + ".stripped.pdb";
-                    if (!Files.exists(Paths.get(strippedpdb))) {
+                    String fullpdb = javaHome + "/bin/" + name.substring(index + 1, name.length() - 4) + ".full.pdb";
+                    if (!Files.exists(Paths.get(fullpdb))) {
                         System.err.println("Found symbols in " + jmod + ": " + name +
-                                ". No stripped pdb file " + strippedpdb + " exists.");
+                                ". No full pdb file " + fullpdb + " exists.");
                         return true;
                     }
                 }
