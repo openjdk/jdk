@@ -91,10 +91,11 @@ private:
   private:
     // Store the type and mem_tag as two bytes
     uint8_t type_tag[2];
-    NativeCallStackStorage::StackIndex sidx;
+    NativeCallStackStorage::StackIndex sidx;       // call-stack of all operations
+    NativeCallStackStorage::StackIndex second_idx; // call-stack when committing/uncommitting the start-node of a reserved region
 
   public:
-    IntervalState() : type_tag{0,0}, sidx() {}
+    IntervalState() : type_tag{0,0}, sidx(), second_idx(NativeCallStackStorage::invalid) {}
     IntervalState(const StateType type, const RegionData data) {
       assert(!(type == StateType::Released) || data.mem_tag == mtNone, "Released state-type must have memory tag mtNone");
       type_tag[0] = static_cast<uint8_t>(type);
@@ -119,7 +120,19 @@ private:
     }
 
     NativeCallStackStorage::StackIndex stack() const {
-     return sidx;
+      return sidx;
+    }
+
+    NativeCallStackStorage::StackIndex second_stack() const {
+      return second_idx;
+    }
+
+    void set_stack(NativeCallStackStorage::StackIndex idx) {
+      sidx = idx;
+    }
+
+    void set_second_stack(NativeCallStackStorage::StackIndex idx) {
+      second_idx = idx;
     }
   };
 

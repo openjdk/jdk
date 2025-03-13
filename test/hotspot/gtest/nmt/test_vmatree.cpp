@@ -44,7 +44,7 @@ public:
     stacks[0] = make_stack(0xA);
     stacks[1] = make_stack(0xB);
     si[0] = ncs.push(stacks[0]);
-    si[1] = ncs.push(stacks[0]);
+    si[1] = ncs.push(stacks[1]);
   }
 
   // Utilities
@@ -294,7 +294,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
   };
 
   // Take a sorted list of testranges and check that those and only those are found in the tree.
-  auto expect_equivalent_form = [&](auto& expected, VMATree& tree) {
+  auto expect_equivalent_form = [&](auto& expected, VMATree& tree, int line_no) {
     // With auto& our arrays do not deteriorate to pointers but are kept as testrange[N]
     // so this actually works!
     int len = sizeof(expected) / sizeof(testrange);
@@ -314,8 +314,8 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
       EXPECT_EQ(expect.tag, found.start->val().out.mem_tag());
       EXPECT_EQ(expect.tag, found.end->val().in.mem_tag());
       // Same stack
-      EXPECT_EQ(expect.stack, found.start->val().out.stack());
-      EXPECT_EQ(expect.stack, found.end->val().in.stack());
+      EXPECT_EQ(expect.stack, found.start->val().out.stack()) << "Unexpected stack at test-line: " << line_no;
+      EXPECT_EQ(expect.stack, found.end->val().in.stack()) << "Unexpected stack at test-line: " << line_no;
       // Same state
       EXPECT_EQ(expect.state, found.start->val().out.type());
       EXPECT_EQ(expect.state, found.end->val().in.type());
@@ -337,7 +337,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
 
     tree.set_tag(0, 500, mtGC);
     tree.set_tag(500, 100, mtClassShared);
-    expect_equivalent_form(expected, tree);
+    expect_equivalent_form(expected, tree, __LINE__);
   }
 
   { // Now let's add in some committed data
@@ -361,7 +361,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     // OK, set tag
     tree.set_tag(0, 500, mtGC);
     tree.set_tag(500, 100, mtClassShared);
-    expect_equivalent_form(expected, tree);
+    expect_equivalent_form(expected, tree, __LINE__);
   }
 
   { // Setting the tag for adjacent regions with same stacks should merge the regions
@@ -374,7 +374,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     tree.reserve_mapping(0, 100, gc);
     tree.reserve_mapping(100, 100, compiler);
     tree.set_tag(0, 200, mtGC);
-    expect_equivalent_form(expected, tree);
+    expect_equivalent_form(expected, tree, __LINE__);
   }
 
   { // Setting the tag for adjacent regions with different stacks should NOT merge the regions
@@ -390,7 +390,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     tree.reserve_mapping(0, 100, gc);
     tree.reserve_mapping(100, 100, compiler);
     tree.set_tag(0, 200, mtGC);
-    expect_equivalent_form(expected, tree);
+    expect_equivalent_form(expected, tree, __LINE__);
   }
 
   { // Setting the tag in the middle of a range causes a split
@@ -403,7 +403,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     Tree::RegionData compiler(si, mtCompiler);
     tree.reserve_mapping(0, 200, compiler);
     tree.set_tag(100, 50, mtGC);
-    expect_equivalent_form(expected, tree);
+    expect_equivalent_form(expected, tree, __LINE__);
   }
 
   { // Setting the tag in between two ranges causes a split
@@ -418,7 +418,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     tree.reserve_mapping(0, 100, gc);
     tree.reserve_mapping(100, 100, compiler);
     tree.set_tag(75, 50, mtClass);
-    expect_equivalent_form(expected, tree);
+    expect_equivalent_form(expected, tree, __LINE__);
   }
 
   { // Holes in the address range are acceptable and untouched
@@ -433,7 +433,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     tree.reserve_mapping(0, 50, class_shared);
     tree.reserve_mapping(75, 25, class_shared);
     tree.set_tag(0, 80, mtGC);
-    expect_equivalent_form(expected, tree);
+    expect_equivalent_form(expected, tree, __LINE__);
   }
 
   { // Check that setting tag with 'hole' not consisting of any regions work
@@ -444,7 +444,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     Tree::RegionData class_shared(si, mtClassShared);
     tree.reserve_mapping(10, 10, class_shared);
     tree.set_tag(0, 100, mtCompiler);
-    expect_equivalent_form(expected, tree);
+    expect_equivalent_form(expected, tree, __LINE__);
   }
 
   { // Check that multiple holes still work
@@ -461,7 +461,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     tree.release_mapping(1, 49);
     tree.release_mapping(75, 24);
     tree.set_tag(0, 100, mtGC);
-    expect_equivalent_form(expected, tree);
+    expect_equivalent_form(expected, tree, __LINE__);
   }
 }
 
@@ -715,8 +715,19 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
 
         const NativeCallStack& start_stack = ncss.get(startn->val().out.stack());
         const NativeCallStack& end_stack = ncss.get(endn->val().in.stack());
-        ASSERT_TRUE(starti.stack.equals(start_stack));
-        ASSERT_TRUE(endi.stack.equals(end_stack));
+        // If start-node of a reserved region is committed, the stack is stored in the second_stack of the node.
+        if (!NativeCallStackStorage::is_invalid(startn->val().out.second_stack())) {
+          const NativeCallStack& start_second_stack = ncss.get(startn->val().out.second_stack());
+          ASSERT_TRUE(starti.stack.equals(start_stack) || starti.stack.equals(start_second_stack));
+        } else {
+          ASSERT_TRUE(starti.stack.equals(start_stack));
+        }
+        if (!NativeCallStackStorage::is_invalid(endn->val().in.second_stack())) {
+          const NativeCallStack& end_second_stack = ncss.get(endn->val().in.second_stack());
+          ASSERT_TRUE(endi.stack.equals(end_stack) || endi.stack.equals(end_second_stack));
+        } else {
+          ASSERT_TRUE(endi.stack.equals(end_stack));
+        }
 
         ASSERT_EQ(starti.mem_tag, startn->val().out.mem_tag());
         ASSERT_EQ(endi.mem_tag, endn->val().in.mem_tag());
@@ -739,4 +750,25 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccountingWhenUseFlagInplace) {
   diff = tree.uncommit_mapping(0, 50, rd2);
   EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
   EXPECT_EQ(-50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+}
+
+TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
+  Tree tree;
+  VMATree::RegionData call_stack_1(si[0], mtTest);
+  VMATree::RegionData call_stack_2(si[1], mtNone);
+  tree.reserve_mapping(0, 100, call_stack_1);
+
+  tree.commit_mapping(0, 50, call_stack_2, true);
+  VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(0);
+  EXPECT_EQ(r.start->val().out.stack(), si[0]);
+  EXPECT_EQ(r.end->val().in.stack(), si[0]);
+  EXPECT_EQ(r.start->val().out.second_stack(), si[1]);
+  EXPECT_EQ(r.end->val().in.second_stack(), si[1]);
+
+  tree.uncommit_mapping(0, 30, call_stack_2);
+  r = tree.tree().find_enclosing_range(0);
+  EXPECT_EQ(r.start->val().out.stack(), si[0]);
+  EXPECT_EQ(r.end->val().in.stack(), si[0]);
+  EXPECT_EQ(r.start->val().out.second_stack(), si[1]);
+  EXPECT_EQ(r.end->val().in.second_stack(), si[1]);
 }
