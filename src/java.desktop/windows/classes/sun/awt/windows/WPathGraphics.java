@@ -99,7 +99,7 @@ final class WPathGraphics extends PathGraphics {
                      "sun.java2d.print.enableGDITextLayout");
 
         if (textLayoutStr != null) {
-            useGDITextLayout = Boolean.getBoolean(textLayoutStr);
+            useGDITextLayout = Boolean.parseBoolean(textLayoutStr);
             if (!useGDITextLayout) {
                 if (textLayoutStr.equalsIgnoreCase("prefer")) {
                     useGDITextLayout = true;
