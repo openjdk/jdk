@@ -396,6 +396,19 @@ final class Operations {
         new VOP("ZOMO",                 VOPType.UNARY, Type.INTEGRAL_TYPES)
     );
 
+    private static final List<VOP> VECTOR_API_CMP = List.of(
+        new VOP("EQ",                   VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
+        new VOP("GE",                   VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
+        new VOP("GT",                   VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
+        new VOP("LE",                   VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
+        new VOP("LT",                   VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
+        new VOP("NE",                   VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
+        new VOP("UGE",                  VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
+        new VOP("UGT",                  VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
+        new VOP("ULE",                  VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
+        new VOP("ULT",                  VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES)
+    );
+
     private static final List<Operation> generateVectorAPIOperations() {
         List<Operation> ops = new ArrayList<Operation>();
 
@@ -436,6 +449,15 @@ final class Operations {
 
             // Note: check works on class / species, leaving them out.
 
+            for (VOP cmp : VECTOR_API_CMP) {
+                if (cmp.elementTypes().contains(type.elementType)) {
+                    ops.add(new Operation.Binary(type.maskType, "", type, ".compare(VectorOperators." + cmp.name() + ", ", type.elementType, ")", null));
+                    ops.add(new Operation.Ternary(type.maskType, "", type, ".compare(VectorOperators." + cmp.name() + ", ", type.elementType, ", ", type.maskType, ")", null));
+                    ops.add(new Operation.Binary(type.maskType, "", type, ".compare(VectorOperators." + cmp.name() + ", ", Type.longs(), ")", List.of("IllegalArgumentException")));
+                    ops.add(new Operation.Ternary(type.maskType, "", type, ".compare(VectorOperators." + cmp.name() + ", ", Type.longs(), ", ", type.maskType, ")", List.of("IllegalArgumentException")));
+                    ops.add(new Operation.Binary(type.maskType, "", type, ".compare(VectorOperators." + cmp.name() + ", ", type, ")", null));
+                }
+            }
             // TODO: compare with VectorMask type
             // TODO: compress with VectorMask type
 
