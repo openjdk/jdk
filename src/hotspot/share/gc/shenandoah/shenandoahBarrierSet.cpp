@@ -90,7 +90,7 @@ bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators, Basi
 void ShenandoahBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
 #if COMPILER2_OR_JVMCI
   assert(!ReduceInitialCardMarks || !ShenandoahCardBarrier || ShenandoahGenerationalHeap::heap()->is_in_young(new_obj),
-         "Error: losing card mark on initialzing store to old gen");
+         "Allocating new object outside of young generation: " INTPTR_FORMAT, p2i(new_obj));
 #endif // COMPILER2_OR_JVMCI
   assert(thread->deferred_card_mark().is_empty(), "We don't use this");
 }
@@ -113,14 +113,19 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
   assert(queue.buffer() == nullptr, "SATB queue should not have a buffer");
   assert(queue.index() == 0, "SATB queue index should be zero");
   queue.set_active(_satb_mark_queue_set.is_active());
+
+  if (ShenandoahCardBarrier) {
+    // Every thread always have a pointer to the _current_ _write_ version of the card table.
+    // The JIT'ed code will use this address (+card entry offset) to mark the card as dirty.
+    ShenandoahThreadLocalData::set_card_table(thread, _card_table->write_byte_map_base());
+  }
+  ShenandoahThreadLocalData::set_gc_state(thread, _heap->gc_state());
+
   if (thread->is_Java_thread()) {
-    ShenandoahThreadLocalData::set_gc_state(thread, _heap->gc_state());
     ShenandoahThreadLocalData::initialize_gclab(thread);
 
     BarrierSetNMethod* bs_nm = barrier_set_nmethod();
-    if (bs_nm != nullptr) {
-      thread->set_nmethod_disarmed_guard_value(bs_nm->disarmed_guard_value());
-    }
+    thread->set_nmethod_disarmed_guard_value(bs_nm->disarmed_guard_value());
 
     if (ShenandoahStackWatermarkBarrier) {
       JavaThread* const jt = JavaThread::cast(thread);

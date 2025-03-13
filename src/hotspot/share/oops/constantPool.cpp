@@ -288,7 +288,7 @@ void ConstantPool::klass_at_put(int class_index, Klass* k) {
 template <typename Function>
 void ConstantPool::iterate_archivable_resolved_references(Function function) {
   objArrayOop rr = resolved_references();
-  if (rr != nullptr && cache() != nullptr && CDSConfig::is_dumping_invokedynamic()) {
+  if (rr != nullptr && cache() != nullptr && CDSConfig::is_dumping_method_handles()) {
     Array<ResolvedIndyEntry>* indy_entries = cache()->resolved_indy_entries();
     if (indy_entries != nullptr) {
       for (int i = 0; i < indy_entries->length(); i++) {
@@ -453,6 +453,11 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
         set_resolved_references(loader_data->add_handle(refs_handle));
       }
     }
+  }
+
+  if (CDSConfig::is_dumping_final_static_archive() && resolved_references() != nullptr) {
+    objArrayOop scratch_references = oopFactory::new_objArray(vmClasses::Object_klass(), resolved_references()->length(), CHECK);
+    HeapShared::add_scratch_resolved_references(this, scratch_references);
   }
 }
 
