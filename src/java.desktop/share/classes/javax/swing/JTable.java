@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2150,15 +2150,15 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *  Selects all rows, columns, and cells in the table.
      */
     public void selectAll() {
+        int oldLead;
+        int oldAnchor;
+        ListSelectionModel selModel;
+
         // If I'm currently editing, then I should stop editing
         if (isEditing()) {
             removeEditor();
         }
         if (getRowCount() > 0 && getColumnCount() > 0) {
-            int oldLead;
-            int oldAnchor;
-            ListSelectionModel selModel;
-
             selModel = selectionModel;
             selModel.setValueIsAdjusting(true);
             oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), true);
@@ -2171,6 +2171,30 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
 
             selModel.setValueIsAdjusting(false);
 
+            selModel = columnModel.getSelectionModel();
+            selModel.setValueIsAdjusting(true);
+            oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), false);
+            oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), false);
+
+            setColumnSelectionInterval(0, getColumnCount()-1);
+
+            // this is done to restore the anchor and lead
+            SwingUtilities2.setLeadAnchorWithoutSelection(selModel, oldLead, oldAnchor);
+
+            selModel.setValueIsAdjusting(false);
+        } else if (getRowCount() > 0 && getColumnCount() == 0) {
+            selModel = selectionModel;
+            selModel.setValueIsAdjusting(true);
+            oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), true);
+            oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), true);
+
+            setRowSelectionInterval(0, getRowCount()-1);
+
+            // this is done to restore the anchor and lead
+            SwingUtilities2.setLeadAnchorWithoutSelection(selModel, oldLead, oldAnchor);
+
+            selModel.setValueIsAdjusting(false);
+        } else if (getColumnCount() > 0  && getRowCount() == 0) {
             selModel = columnModel.getSelectionModel();
             selModel.setValueIsAdjusting(true);
             oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), false);
