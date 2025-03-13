@@ -1359,7 +1359,7 @@ Node* RShiftNode::IdentityIL(PhaseGVN* phase, BasicType bt) {
     if (in(1)->Opcode() == Op_LShift(bt) &&
         in(1)->req() == 3 &&
         in(1)->in(2) == in(2)) {
-      count &= bits_per_java_integer(bt)-1; // semantics of Java shifts
+      count &= bits_per_java_integer(bt) - 1; // semantics of Java shifts
       // Compute masks for which this shifting doesn't change
       jlong lo = (-1 << (bits_per_java_integer(bt) - ((uint)count)-1)); // FFFF8000
       jlong hi = ~lo;               // 00007FFF
