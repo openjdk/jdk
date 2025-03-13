@@ -576,9 +576,9 @@ final class Operations {
             ops.add(new Operation.Binary(type, "", type, ".min(", type, ")", null));
 
             ops.add(new Operation.Binary(type, "", type, ".mul(", type.elementType, ")", null));
-            // TODO: mul(int e, VectorMask<Integer> m)
+            ops.add(new Operation.Ternary(type, "", type, ".mul(", type.elementType, ", ", type.maskType, ")", null));
             ops.add(new Operation.Binary(type, "", type, ".mul(", type, ")", null));
-            // TODO: mul(Vector<Integer> v, VectorMask<Integer> m)
+            ops.add(new Operation.Ternary(type, "", type, ".mul(", type, ", ", type.maskType, ")", null));
 
             ops.add(new Operation.Unary(type, "", type, ".neg()", null));
 
@@ -588,16 +588,16 @@ final class Operations {
 
             ops.add(new Operation.Binary(type, "", type, ".selectFrom(", type, ")", null));
             ops.add(new Operation.Ternary(type, "", type, ".selectFrom(", type, ", ", type, ")", null));
-            // TODO: selectFrom(Vector<Integer> s, VectorMask<Integer> m)
+            ops.add(new Operation.Ternary(type, "", type, ".selectFrom(", type, ", ", type.maskType, ")", null));
 
             ops.add(new Operation.Binary(type, "", type, ".slice(", Type.ints(), ")", List.of("IndexOutOfBoundsException")));
             ops.add(new Operation.Ternary(type, "", type, ".slice(", Type.ints(), ", ", type, ")", List.of("IndexOutOfBoundsException")));
-            // TODO: slice(int origin, Vector<Integer> w, VectorMask<Integer> m)
+            ops.add(new Operation.Quaternary(type, "", type, ".slice(", Type.ints(), ", ", type, ", ", type.maskType, ")", List.of("IndexOutOfBoundsException")));
 
             ops.add(new Operation.Binary(type, "", type, ".sub(", type.elementType, ")", null));
-            // TODO: sub(int e, VectorMask<Integer> m)
+            ops.add(new Operation.Ternary(type, "", type, ".sub(", type.elementType, ", ", type.maskType, ")", null));
             ops.add(new Operation.Binary(type, "", type, ".sub(", type, ")", null));
-            // TODO: sub(Vector<Integer> v, VectorMask<Integer> m)
+            ops.add(new Operation.Ternary(type, "", type, ".sub(", type, ", ", type.maskType, ")", null));
 
             // TODO: test(VectorOperators.Test op)
             // TODO: test(VectorOperators.Test op, VectorMask<Integer> m)
