@@ -24,6 +24,11 @@
 
 /* pngmem.c - stub functions for memory allocation
  *
+ * This file is available under and governed by the GNU General Public
+ * License version 2 only, as published by the Free Software Foundation.
+ * However, the following notice accompanied the original version of this
+ * file and, per its terms, should not be removed:
+ *
  * Copyright (c) 2018 Cosmin Truta
  * Copyright (c) 1998-2002,2004,2006-2014,2016 Glenn Randers-Pehrson
  * Copyright (c) 1996-1997 Andreas Dilger
