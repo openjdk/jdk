@@ -157,7 +157,7 @@ public class Resources extends java.util.ListResourceBundle {
                 "The jar will be treated as unsigned, because it is signed with a weak algorithm that is now disabled.\n\nRe-run jarsigner with the -verbose option for more details."},
         {"jar.treated.unsigned.see.weak.verbose",
                 "WARNING: The jar will be treated as unsigned, because it is signed with a weak algorithm that is now disabled by the security property:"},
-        {"multiple.manifest.warning.", "Duplicate manifest entries were detected in the jar file. JarSigner will operate on the first one found and others will be discarded."},
+        {"multiple.manifest.warning.", "Duplicate manifest entries were detected in the jar file. JarSigner will operate on only one and the others will be discarded."},
         {"jar.signed.", "jar signed."},
         {"jar.signed.with.signer.errors.", "jar signed, with signer errors."},
         {"jar.verified.", "jar verified."},

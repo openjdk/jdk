@@ -1254,7 +1254,7 @@ public class Main {
                         fullDisplayKeyName(privateKey)));
             }
 
-            if(hasMultipleManifests) {
+            if (hasMultipleManifests) {
                 warnings.add(String.format(rb.getString("multiple.manifest.warning.")));
             }
 
@@ -1980,14 +1980,14 @@ public class Main {
         }
 
         // only perform this check if the ZipFile is a JarFile
-        if(asJar != null && verbose != null) {
+        if (asJar != null && verbose != null) {
             int manifestNum = JUZFA.getManifestNum(asJar);
             try {
                 asJar.close();
             } catch (IOException ioe) {
                 // intentionally "eat" this, since we don't want to fail
             }
-            if(manifestNum > 1) {
+            if (manifestNum > 1) {
                 hasMultipleManifests = true;
             }
         }
