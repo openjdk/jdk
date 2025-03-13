@@ -52,7 +52,7 @@ import java.util.Objects;
  * algorithms, which will be determined by the implementation based on the key
  * provided to {@code init()}.
  * <li> {@link #of(int, int)} creates an instance with explicitly specified
- * KDF, and AEAD algorithm identifiers, but the KEM algorithm identifier will be
+ * KDF, and AEAD algorithm identifiers. The KEM algorithm identifier will be
  * determined by the implementation based on the key provided to {@code init()}.
  * <li> {@link #of(int, int, int)} creates an instance with explicitly
  * specified KEM, KDF, and AEAD algorithm identifiers.
@@ -63,6 +63,9 @@ import java.util.Objects;
  * defined in <a href="https://www.rfc-editor.org/rfc/rfc9180.html#section-7">Section 7</a>
  * of RFC 9180 and the
  * <a href="https://www.iana.org/assignments/hpke/hpke.xhtml">IANA HPKE page</a>.
+ * This class has defined constants for the standard algorithm identifiers.
+ * For example, {@link #KEM_DHKEM_P_256_HKDF_SHA256}, {@link #KDF_HKDF_SHA256},
+ * and {@link #AEAD_AES_128_GCM}.
  * <p>
  * Once an {@code HPKEParameterSpec} object is created, additional methods
  * are available to generate new {@code HPKEParameterSpec} objects with
@@ -116,36 +119,16 @@ import java.util.Objects;
  * <li> An attempt to use {@code authKey(key)} is made but the selected KEM
  *      does not support authentication.
  * </ul>
+ * <p>
+ * After an HPKE cipher is initialized, the {@code getParameters} method returns
+ * an {@link java.security.AlgorithmParameters} object containing the
+ * actual {@code HPKEParameterSpec} object used by the cipher. Users can call
+ * {@link #kem_id()}, {@link #kdf_id()}, and {@link #aead_id()} on the
+ * {@code HPKEParameterSpec} object to obtain the algorithm identifiers
+ * selected during initialization.
+ * <p>
  * Example:
- * {@snippet lang = java:
- * // Key pair generation
- * KeyPairGenerator g = KeyPairGenerator.getInstance("X25519");
- * KeyPair kp = g.generateKeyPair();
- *
- * // The HPKE sender side is initialized with the recipient's public key
- * Cipher sender = Cipher.getInstance("HPKE");
- * HPKEParameterSpec ps = HPKEParameterSpec.of()
- *         .info("this_info".getBytes(StandardCharsets.UTF_8));
- * sender.init(Cipher.ENCRYPT_MODE, kp.getPublic(), ps);
- *
- * // Retrieve the key encapsulation message (the KEM output) from the sender
- * byte[] kemEncap = sender.getIV();
- *
- * // The HPKE recipient side is initialized with its own private key
- * // and the key encapsulation message from the sender
- * Cipher recipient = Cipher.getInstance("HPKE");
- * HPKEParameterSpec pr = HPKEParameterSpec.of()
- *         .info("this_info".getBytes(StandardCharsets.UTF_8))
- *         .encapsulation(kemEncap);
- * recipient.init(Cipher.DECRYPT_MODE, kp.getPrivate(), pr);
- *
- * // Secure communication between the 2 sides
- * byte[] msg = "Hello World".getBytes(StandardCharsets.UTF_8);
- * byte[] ct = sender.doFinal(msg);
- * byte[] pt = recipient.doFinal(ct);
- *
- * assert Arrays.equals(msg, pt);
- * }
+ * {@snippet lang=java class="PackageSnippets" region="hpke-spec-example"}
  *
  * @implNote
  * In the HPKE implementation in the SunJCE provider included in this JDK
@@ -297,7 +280,7 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
 
     /**
      * A factory method to create a new {@code HPKEParameterSpec} object with
-     * specified KDF, and AEAD algorithm identifiers in {@code mode_base}
+     * specified KDF and AEAD algorithm identifiers in {@code mode_base}
      * mode with an empty {@code info}. The KEM algorithm identifier is not
      * specified and will be determined by the key used in cipher initialization.
      *
@@ -351,7 +334,7 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      * For interoperability, RFC 9180 Section 7.2.1 recommends limiting
      * this value to a maximum of 64 bytes.
      *
-     * @param info application-specific info. Must not be {@code null}.
+     * @param info application-supplied information. Must not be {@code null}.
      *      If set to empty, the previous info is cleared.
      *      The contents of the array are copied to protect
      *      against subsequent modification.
@@ -444,7 +427,7 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
     }
 
     /**
-     * {@return a copy of the application-specific info, empty if none}
+     * {@return a copy of the application-supplied information, empty if none}
      */
     public byte[] info() {
         return info.clone();

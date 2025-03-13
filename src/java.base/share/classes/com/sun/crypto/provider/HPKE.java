@@ -55,6 +55,7 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
+import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.NamedParameterSpec;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -122,7 +123,15 @@ public class HPKE extends CipherSpi {
 
     @Override
     protected AlgorithmParameters engineGetParameters() {
-        return null;
+        try {
+            var result = AlgorithmParameters.getInstance("HPKE");
+            result.init(impl.params);
+            return result;
+        } catch (NoSuchAlgorithmException e) {
+            throw new ProviderException("Cannot find implementations", e);
+        } catch (InvalidParameterSpecException e) {
+            throw new ProviderException("Parameters not supported", e);
+        }
     }
 
     @Override
