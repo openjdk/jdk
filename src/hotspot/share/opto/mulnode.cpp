@@ -1486,7 +1486,7 @@ const Type* RShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
   // For example, if the shift is 31/63, we just propagate sign bits.
   if (!r1->is_con() && r2->is_con()) {
     uint shift = r2->get_con();
-    shift &= bits_per_java_integer(bt)-1;  // semantics of Java shifts
+    shift &= bits_per_java_integer(bt) - 1;  // semantics of Java shifts
     // Shift by a multiple of 32/64 does nothing:
     if (shift == 0)  return t1;
     // Calculate reasonably aggressive bounds for the result.
