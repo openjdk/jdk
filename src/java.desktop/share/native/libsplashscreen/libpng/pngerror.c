@@ -24,11 +24,6 @@
 
 /* pngerror.c - stub functions for i/o and memory allocation
  *
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, the following notice accompanied the original version of this
- * file and, per its terms, should not be removed:
- *
  * Copyright (c) 2018-2024 Cosmin Truta
  * Copyright (c) 1998-2002,2004,2006-2017 Glenn Randers-Pehrson
  * Copyright (c) 1996-1997 Andreas Dilger
@@ -48,13 +43,14 @@
 
 #if defined(PNG_READ_SUPPORTED) || defined(PNG_WRITE_SUPPORTED)
 
-static PNG_FUNCTION(void, png_default_error,PNGARG((png_const_structrp png_ptr,
-    png_const_charp error_message)),PNG_NORETURN);
+static PNG_FUNCTION(void /* PRIVATE */,
+png_default_error,(png_const_structrp png_ptr, png_const_charp error_message),
+    PNG_NORETURN);
 
 #ifdef PNG_WARNINGS_SUPPORTED
 static void /* PRIVATE */
-png_default_warning PNGARG((png_const_structrp png_ptr,
-    png_const_charp warning_message));
+png_default_warning(png_const_structrp png_ptr,
+    png_const_charp warning_message);
 #endif /* WARNINGS */
 
 /* This function is called whenever there is a fatal error.  This function
@@ -963,23 +959,37 @@ png_safe_warning(png_structp png_nonconst_ptr, png_const_charp warning_message)
 int /* PRIVATE */
 png_safe_execute(png_imagep image, int (*function)(png_voidp), png_voidp arg)
 {
-   png_voidp saved_error_buf = image->opaque->error_buf;
+   const png_voidp saved_error_buf = image->opaque->error_buf;
    jmp_buf safe_jmpbuf;
-   int result;
 
    /* Safely execute function(arg), with png_error returning back here. */
    if (setjmp(safe_jmpbuf) == 0)
    {
+      int result;
+
       image->opaque->error_buf = safe_jmpbuf;
       result = function(arg);
       image->opaque->error_buf = saved_error_buf;
-      return result;
+
+      if (result)
+         return 1; /* success */
    }
 
-   /* On png_error, return via longjmp, pop the jmpbuf, and free the image. */
+   /* The function failed either because of a caught png_error and a regular
+    * return of false above or because of an uncaught png_error from the
+    * function itself.  Ensure that the error_buf is always set back to the
+    * value saved above:
+    */
    image->opaque->error_buf = saved_error_buf;
-   png_image_free(image);
-   return 0;
+
+   /* On the final false return, when about to return control to the caller, the
+    * image is freed (png_image_free does this check but it is duplicated here
+    * for clarity:
+    */
+   if (saved_error_buf == NULL)
+      png_image_free(image);
+
+   return 0; /* failure */
 }
 #endif /* SIMPLIFIED READ || SIMPLIFIED_WRITE */
 #endif /* READ || WRITE */

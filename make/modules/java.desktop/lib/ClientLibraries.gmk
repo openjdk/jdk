@@ -246,6 +246,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_clang := deprecated-non-prototype, \
       DISABLED_WARNINGS_clang_dgif_lib.c := sign-compare, \
       DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
+      DISABLED_WARNINGS_clang_png.c := unused-function, \
       DISABLED_WARNINGS_clang_splashscreen_impl.c := sign-compare \
           unused-but-set-variable unused-function, \
       DISABLED_WARNINGS_clang_splashscreen_png.c := \

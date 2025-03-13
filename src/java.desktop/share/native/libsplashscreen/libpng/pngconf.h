@@ -24,14 +24,9 @@
 
 /* pngconf.h - machine-configurable file for libpng
  *
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, the following notice accompanied the original version of this
- * file and, per its terms, should not be removed:
+ * libpng version 1.6.47
  *
- * libpng version 1.6.43
- *
- * Copyright (c) 2018-2024 Cosmin Truta
+ * Copyright (c) 2018-2025 Cosmin Truta
  * Copyright (c) 1998-2002,2004,2006-2016,2018 Glenn Randers-Pehrson
  * Copyright (c) 1996-1997 Andreas Dilger
  * Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
@@ -116,7 +111,7 @@
 
 /* The PNGARG macro was used in versions of libpng prior to 1.6.0 to protect
  * against legacy (pre ISOC90) compilers that did not understand function
- * prototypes.  It is not required for modern C compilers.
+ * prototypes.  [Deprecated.]
  */
 #ifndef PNGARG
 #  define PNGARG(arglist) arglist
@@ -326,7 +321,7 @@
 
 #ifndef PNG_EXPORTA
 #  define PNG_EXPORTA(ordinal, type, name, args, attributes) \
-      PNG_FUNCTION(PNG_EXPORT_TYPE(type), (PNGAPI name), PNGARG(args), \
+      PNG_FUNCTION(PNG_EXPORT_TYPE(type), (PNGAPI name), args, \
       PNG_LINKAGE_API attributes)
 #endif
 
@@ -344,7 +339,7 @@
 #endif
 
 #ifndef PNG_CALLBACK
-#  define PNG_CALLBACK(type, name, args) type (PNGCBAPI name) PNGARG(args)
+#  define PNG_CALLBACK(type, name, args) type (PNGCBAPI name) args
 #endif
 
 /* Support for compiler specific function attributes.  These are used
