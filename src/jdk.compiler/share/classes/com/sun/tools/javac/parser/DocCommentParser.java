@@ -34,8 +34,12 @@ import java.util.regex.Pattern;
 import com.sun.source.doctree.AttributeTree.ValueKind;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.ErroneousTree;
+import com.sun.source.doctree.LiteralTree;
+import com.sun.source.doctree.StartElementTree;
+import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.doctree.UnknownInlineTagTree;
+import com.sun.source.util.SimpleDocTreeVisitor;
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.tree.DCTree;
 import com.sun.tools.javac.tree.DCTree.DCAttribute;
@@ -125,6 +129,9 @@ public class DocCommentParser {
     private int textStart = -1;
     private int lastNonWhite = -1;
     private boolean newline = true;
+
+    /** Used for whitespace normalization in pre/code/literal tags. */
+    private boolean inPre = false;
 
     private final Map<Name, TagParser> tagParsers;
 
@@ -281,6 +288,7 @@ public class DocCommentParser {
      */
     protected List<DCTree> content(Phase phase) {
         ListBuffer<DCTree> trees = new ListBuffer<>();
+        ListBuffer<DCTree> mainTrees = null;
         textStart = -1;
 
         int depth = 1;                  // only used when phase is INLINE
@@ -348,6 +356,17 @@ public class DocCommentParser {
                             }
                             addPendingText(trees, bp - 1);
                             trees.add(html());
+
+                            if (inPre) {
+                                if (mainTrees == null) {
+                                    mainTrees = trees;
+                                    trees = new ListBuffer<>();
+                                }
+                            } else if (mainTrees != null) {
+                                mainTrees.addAll(normalizePreContent(trees));
+                                trees = mainTrees;
+                                mainTrees = null;
+                            }
 
                             if (phase == Phase.PREAMBLE || phase == Phase.POSTAMBLE) {
                                 break; // Ignore newlines after html tags, in the meta content
@@ -1054,6 +1073,9 @@ public class DocCommentParser {
                 }
                 if (ch == '>') {
                     nextChar();
+                    if ("pre".equalsIgnoreCase(name.toString())) {
+                        inPre = true;
+                    }
                     return m.at(p).newStartElementTree(name, attrs, selfClosing).setEndPos(bp);
                 }
             }
@@ -1064,6 +1086,9 @@ public class DocCommentParser {
                 skipWhitespace();
                 if (ch == '>') {
                     nextChar();
+                    if ("pre".equalsIgnoreCase(name.toString())) {
+                        inPre = false;
+                    }
                     return m.at(p).newEndElementTree(name).setEndPos(bp);
                 }
             }
@@ -1184,6 +1209,98 @@ public class DocCommentParser {
         }
 
         return attrs.toList();
+    }
+
+    /**
+     * Removes a newline character following a <code> or {@code tag at the beginning
+     * of <pre> element content, as well as any space/tabs between the pre and code tags.
+     * The operation is only performed on traditional doc comments. If conditions are
+     * not met the list is returned unchanged.
+     */
+    ListBuffer<DCTree> normalizePreContent(ListBuffer<DCTree> trees) {
+        // Do nothing if comment is not eligible for whitespace normalization.
+        if (textKind == DocTree.Kind.MARKDOWN || isHtmlFile) {
+            return trees;
+        }
+
+        enum State {
+            START, // at beginning of <pre> content, or after non-newline whitespace
+            CODE,  // after <code> start tag
+            DONE,  // normalization succeeded, add remaining trees
+            NONE;  // normalization failed, return original trees
+        }
+
+        class Context {
+            State state = State.START;
+            void doneOrNone() {
+                if (state != State.DONE) {
+                    state = State.NONE;
+                }
+            }
+        }
+
+        var visitor = new SimpleDocTreeVisitor<DCTree, Context>() {
+            @Override
+            public DCTree visitText(TextTree text, Context cx) {
+                if (cx.state == State.START && text.getBody().matches("[ \t]+")) {
+                    // <pre>  ...
+                    return null;
+                } else if (cx.state == State.CODE && text.getBody().startsWith("\n")) {
+                    // <pre><code>\n...
+                    cx.state = State.DONE;
+                    return m.at(((DCText) text).pos).newTextTree(text.getBody().substring(1));
+                }
+                cx.doneOrNone();
+                return (DCTree) text;
+            }
+
+            @Override
+            public DCTree visitLiteral(LiteralTree literal, Context cx) {
+                if (cx.state == State.START && literal.getBody().getBody().startsWith("\n")) {
+                    // <pre>{@code\n...
+                    cx.state = State.DONE;
+                    DCText oldBody = (DCText) literal.getBody();
+                    DCText newBody = m.at(oldBody.pos).newTextTree(oldBody.getBody().substring(1));
+                    m.at(((DCTree) literal).pos);
+                    return literal.getKind() == DocTree.Kind.CODE
+                            ? m.newCodeTree(newBody)
+                            : m.newLiteralTree(newBody);
+                }
+                cx.doneOrNone();
+                return (DCTree) literal;
+            }
+
+            @Override
+            public DCTree visitStartElement(StartElementTree node, Context cx) {
+                if (cx.state == State.START && node.getName().toString().equalsIgnoreCase("code")) {
+                    cx.state = State.CODE;
+                } else {
+                    cx.doneOrNone();
+                }
+                return (DCTree) node;
+            }
+
+            @Override
+            protected DCTree defaultAction(DocTree node, Context cx) {
+                cx.doneOrNone();
+                return (DCTree) node;
+            }
+        };
+
+        Context cx = new Context();
+        var normalized = new ListBuffer<DCTree>();
+
+        for (var tree : trees) {
+            var visited = visitor.visit(tree, cx);
+            if (visited != null) {
+                normalized.add(visited);
+            }
+            if (cx.state == State.NONE) {
+                return trees;
+            }
+        }
+
+        return cx.state == State.DONE ? normalized : trees;
     }
 
     protected void attrValueChar(ListBuffer<DCTree> list) {
