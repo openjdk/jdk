@@ -1970,26 +1970,14 @@ public class Main {
 
         Throwable failedCause = null;
         String failedMessage = null;
-        JarFile asJar = null;
 
-        try {
-            asJar = new JarFile(jarFile);
+        try (JarFile asJar = new JarFile(jarFile)) {
+            if (JUZFA.getManifestNum(asJar) > 1) {
+                hasMultipleManifests = true;
+            }
         } catch (IOException ioe) {
             // intentionally "eat" this, since we don't want to fail, if we
             // cannot perform the multiple manifest check to output the warning
-        }
-
-        // only perform this check if the ZipFile is a JarFile
-        if (asJar != null && verbose != null) {
-            int manifestNum = JUZFA.getManifestNum(asJar);
-            try {
-                asJar.close();
-            } catch (IOException ioe) {
-                // intentionally "eat" this, since we don't want to fail
-            }
-            if (manifestNum > 1) {
-                hasMultipleManifests = true;
-            }
         }
 
         try {
