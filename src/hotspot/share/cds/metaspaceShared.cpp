@@ -823,8 +823,10 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
 
   if (CDSConfig::new_aot_flags_used()) {
     if (CDSConfig::is_dumping_preimage_static_archive()) {
+      // We are in the JVM that runs the training run. Continue execution,
+      // so that it can finish all clean-up and return the correct exit
+      // code to the OS.
       tty->print_cr("AOTConfiguration recorded: %s", AOTConfiguration);
-      vm_exit(0);
     } else {
       // The JLI launcher only recognizes the "old" -Xshare:dump flag.
       // When the new -XX:AOTMode=create flag is used, we can't return
