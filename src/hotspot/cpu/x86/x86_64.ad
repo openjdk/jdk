@@ -6281,6 +6281,8 @@ instruct cmovI_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) 
   ins_pipe(pipe_cmov_reg);
 %}
 
+// We need this special handling for only eq / neq comparison since NaN == NaN is false,
+// and parity flag bit is set if any of the operand is a NaN.
 instruct cmovI_regUCF2_eq_ndd(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src1, rRegI src2) %{
   predicate(UseAPX && n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));

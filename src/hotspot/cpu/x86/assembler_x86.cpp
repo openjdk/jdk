@@ -335,6 +335,7 @@ void Assembler::emit_arith(int op1, int op2, Register dst, int32_t imm32) {
 void Assembler::emit_arith_ndd(int op1, int op2, Register dst, int32_t imm32) {
   assert(isByte(op1) && isByte(op2), "wrong opcode");
   assert(op1 == 0x81, "Unexpected opcode");
+  // This code cache friendly optimization saves 3 bytes per encoding, which offsets the EVEX encoding penalty.
   if (is8bit(imm32)) {
     emit_int24(op1 | 0x02,        // set sign bit
                op2 | encode(dst),
