@@ -462,7 +462,6 @@ java/awt/PopupMenu/PopupMenuLocation.java 8259913,8315878 windows-all,macosx-aar
 java/awt/GridLayout/ComponentPreferredSize/ComponentPreferredSize.java 8238720,8324782 windows-all,macosx-all
 java/awt/GridLayout/ChangeGridSize/ChangeGridSize.java   8238720,8324782 windows-all,macosx-all
 java/awt/event/MouseEvent/FrameMouseEventAbsoluteCoordsTest/FrameMouseEventAbsoluteCoordsTest.java 8238720 windows-all
-java/awt/Headless/HeadlessMalfunctionTest.java 8349099 generic-all
 
 # Several tests which fail sometimes on macos11
 java/awt/Window/MainKeyWindowTest/TestMainKeyWindow.java 8265985 macosx-all
@@ -749,7 +748,6 @@ sun/tools/jstat/jstatLineCounts4.sh                             8248691,8268211 
 
 jdk/incubator/vector/ShortMaxVectorTests.java                   8306592 generic-i586
 jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-x64
-jdk/incubator/vector/Long256VectorTests.java                    8350840 generic-x64
 
 ############################################################################
 
