@@ -74,7 +74,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
         if (wrappedValueAcquire() != null) {
             return false;
         }
-        // Prevent reentry via computeIfUnsetSlowPath
+        // Prevent reentry via orElseSet
         if (Thread.holdsLock(this)) {
             throw new IllegalStateException("Recursing supplier detected");
         }
@@ -122,11 +122,11 @@ public final class StableValueImpl<T> implements StableValue<T> {
     public T orElseSet(Supplier<? extends T> supplier) {
         Objects.requireNonNull(supplier);
         final Object t = wrappedValueAcquire();
-        return (t == null) ? computeIfUnsetSlowPath(supplier) : unwrap(t);
+        return (t == null) ? orElseSetSlowPath(supplier) : unwrap(t);
     }
 
     @DontInline
-    private T computeIfUnsetSlowPath(Supplier<? extends T> supplier) {
+    private T orElseSetSlowPath(Supplier<? extends T> supplier) {
         // Prevent reentry
         if (Thread.holdsLock(this)) {
             throw new IllegalStateException("Recursing supplier detected: " + supplier);
@@ -135,8 +135,9 @@ public final class StableValueImpl<T> implements StableValue<T> {
             final Object t = value;  // Plain semantics suffice here
             if (t == null) {
                 final T newValue = supplier.get();
-                // The mutex is reentrant so we need to check if the value was actually set.
-                return wrapAndSet(newValue) ? newValue : orElseThrow();
+                // The mutex is not reentrant so we know newValue should be returned
+                wrapAndSet(newValue);
+                return newValue;
             }
             return unwrap(t);
         }
