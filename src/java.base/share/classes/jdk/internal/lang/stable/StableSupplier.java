@@ -57,7 +57,7 @@ record StableSupplier<T>(StableValueImpl<T> delegate, Supplier<? extends T> orig
 
     @Override
     public String toString() {
-        final Object t = delegate.wrappedValueAcquire();
+        final Object t = delegate.wrappedContentAcquire();
         return "StableSupplier[value=" + (t == this ? "(this StableSupplier)" : StableValueImpl.renderWrapped(t)) + ", original=" + original + "]";
     }
 

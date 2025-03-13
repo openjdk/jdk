@@ -80,7 +80,7 @@ record StableFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
         boolean first = true;
         for (var e:values.entrySet()) {
             if (first) { first = false; } else { sb.append(", "); };
-            final Object value = e.getValue().wrappedValueAcquire();
+            final Object value = e.getValue().wrappedContentAcquire();
             sb.append(e.getKey()).append('=');
             if (value == this) {
                 sb.append("(this StableFunction)");

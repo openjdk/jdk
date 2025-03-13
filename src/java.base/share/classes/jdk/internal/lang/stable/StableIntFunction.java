@@ -83,7 +83,7 @@ record StableIntFunction<R>(@Stable StableValueImpl<R>[] delegates,
         boolean first = true;
         for (int i = 0; i < delegates.length; i++) {
             if (first) { first = false; } else { sb.append(", "); };
-            final Object value = delegates[i].wrappedValueAcquire();
+            final Object value = delegates[i].wrappedContentAcquire();
             if (value == this) {
                 sb.append("(this StableIntFunction)");
             } else {

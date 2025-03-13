@@ -96,7 +96,7 @@ record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
                 } else {
                     sb.append(", ");
                 }
-                final Object value = delegates[i].wrappedValueAcquire();
+                final Object value = delegates[i].wrappedContentAcquire();
                 sb.append(enumElements[ordinal]).append('=');
                 if (value == this) {
                     sb.append("(this StableEnumFunction)");

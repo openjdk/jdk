@@ -40,7 +40,7 @@ import java.util.function.Supplier;
  * @implNote This implementation can be used early in the boot sequence as it does not
  *           rely on reflection, MethodHandles, Streams etc.
  *
- * @param <T> type of the underlying data
+ * @param <T> type of the content
  */
 public final class StableValueImpl<T> implements StableValue<T> {
 
@@ -48,8 +48,8 @@ public final class StableValueImpl<T> implements StableValue<T> {
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     // Unsafe offsets for direct field access
-    private static final long UNDERLYING_DATA_OFFSET =
-            UNSAFE.objectFieldOffset(StableValueImpl.class, "value");
+    private static final long CONTENT_OFFSET =
+            UNSAFE.objectFieldOffset(StableValueImpl.class, "content");
 
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
     // memory semantics rules (see `parse.hpp` and `parse(1|2|3).cpp`).
@@ -63,7 +63,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // | other          |  Set(other)   |
     //
     @Stable
-    private Object value;
+    private Object content;
 
     // Only allow creation via the factory `StableValueImpl::newInstance`
     private StableValueImpl() {}
@@ -71,7 +71,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public boolean trySet(T value) {
-        if (wrappedValueAcquire() != null) {
+        if (wrappedContentAcquire() != null) {
             return false;
         }
         // Prevent reentry via orElseSet
@@ -97,7 +97,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public T orElseThrow() {
-        final Object t = wrappedValueAcquire();
+        final Object t = wrappedContentAcquire();
         if (t == null) {
             throw new NoSuchElementException("No underlying data set");
         }
@@ -107,21 +107,21 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public T orElse(T other) {
-        final Object t = wrappedValueAcquire();
+        final Object t = wrappedContentAcquire();
         return (t == null) ? other : unwrap(t);
     }
 
     @ForceInline
     @Override
     public boolean isSet() {
-        return wrappedValueAcquire() != null;
+        return wrappedContentAcquire() != null;
     }
 
     @ForceInline
     @Override
     public T orElseSet(Supplier<? extends T> supplier) {
         Objects.requireNonNull(supplier);
-        final Object t = wrappedValueAcquire();
+        final Object t = wrappedContentAcquire();
         return (t == null) ? orElseSetSlowPath(supplier) : unwrap(t);
     }
 
@@ -132,7 +132,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
             throw new IllegalStateException("Recursing supplier detected: " + supplier);
         }
         synchronized (this) {
-            final Object t = value;  // Plain semantics suffice here
+            final Object t = content;  // Plain semantics suffice here
             if (t == null) {
                 final T newValue = supplier.get();
                 // The mutex is not reentrant so we know newValue should be returned
@@ -147,7 +147,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @Override
     public String toString() {
-        final Object t = wrappedValueAcquire();
+        final Object t = wrappedContentAcquire();
         return t == this
                 ? "(this StableValue)"
                 : "StableValue" + renderWrapped(t);
@@ -156,8 +156,8 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // Internal methods shared with other internal classes
 
     @ForceInline
-    public Object wrappedValueAcquire() {
-        return UNSAFE.getReferenceAcquire(this, UNDERLYING_DATA_OFFSET);
+    public Object wrappedContentAcquire() {
+        return UNSAFE.getReferenceAcquire(this, CONTENT_OFFSET);
     }
 
     static String renderWrapped(Object t) {
@@ -171,10 +171,10 @@ public final class StableValueImpl<T> implements StableValue<T> {
         assert Thread.holdsLock(this);
         // This upholds the invariant, a `@Stable` field is written to at most once
         // We know we hold the monitor here so plain semantic is enough
-        if (value != null) {
+        if (content != null) {
             return false;
         }
-        UNSAFE.putReferenceRelease(this, UNDERLYING_DATA_OFFSET, wrap(newValue));
+        UNSAFE.putReferenceRelease(this, CONTENT_OFFSET, wrap(newValue));
         return true;
     }
 
