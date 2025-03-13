@@ -5269,7 +5269,7 @@ class StubGenerator: public StubCodeGenerator {
     // level 1
     // At level 1 we need to interleave pairs of adjacent pairs of
     // coefficients before we multiply by the next 16 zetas just as we
-    // did for level 7 in the multiply code. So we load and store the
+    // did for level 6 in the multiply code. So we load and store the
     // values an ld2/st2 with arrangement 2D
     for (int i = 0; i < 1024; i += 128) {
       // a0/a1 load interleaved 32 (8x2D) coefficients
