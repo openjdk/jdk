@@ -25,7 +25,7 @@
  * @test
  * @bug 8341775
  * @summary Print warning that duplicate manifest files are removed by jarsigner
- *  after signing when -verbose is passed
+ *  after signing whether or not -verbose is passed
  * @library /test/lib
  */
 
