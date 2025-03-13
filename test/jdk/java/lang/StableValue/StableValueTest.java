@@ -62,7 +62,10 @@ final class StableValueTest {
         assertEquals(VALUE, stable.orElse(VALUE2));
         assertEquals(VALUE, stable.orElseSet(() -> VALUE2));
         assertFalse(stable.trySet(VALUE2));
-        assertThrows(IllegalStateException.class, () -> stable.setOrThrow(VALUE2));
+        var e = assertThrows(IllegalStateException.class, () -> stable.setOrThrow(VALUE2));
+        assertEquals(
+                "Cannot set the content to " + VALUE2 + " because the content is already set: " + VALUE,
+                e.getMessage());
     }
 
     void trySet(Integer initial) {
@@ -87,7 +90,7 @@ final class StableValueTest {
     void orElseThrow() {
         StableValue<Integer> stable = StableValue.of();
         var e = assertThrows(NoSuchElementException.class, stable::orElseThrow);
-        assertEquals("No underlying data set", e.getMessage());
+        assertEquals("No content set", e.getMessage());
         stable.trySet(VALUE);
         assertEquals(VALUE, stable.orElseThrow());
     }

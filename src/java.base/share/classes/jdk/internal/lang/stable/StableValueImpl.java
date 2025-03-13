@@ -74,11 +74,11 @@ public final class StableValueImpl<T> implements StableValue<T> {
         if (wrappedContentAcquire() != null) {
             return false;
         }
-        // Prevent reentry via orElseSet
+        // Prevent reentry via an orElseSet(supplier)
         if (Thread.holdsLock(this)) {
             throw new IllegalStateException("Recursing supplier detected");
         }
-        // Mutual exclusion is required here as `computeIfUnset` might also
+        // Mutual exclusion is required here as `orElseSet` might also
         // attempt to modify the `wrappedValue`
         synchronized (this) {
             return wrapAndSet(value);
@@ -89,8 +89,8 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @Override
     public void setOrThrow(T value) {
         if (!trySet(value)) {
-            throw new IllegalStateException("Cannot set the underlying data to " + value +
-                    " because the underlying data is already set: " + this);
+            throw new IllegalStateException("Cannot set the content to " + value +
+                    " because the content is already set: " + orElseThrow());
         }
     }
 
@@ -99,7 +99,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     public T orElseThrow() {
         final Object t = wrappedContentAcquire();
         if (t == null) {
-            throw new NoSuchElementException("No underlying data set");
+            throw new NoSuchElementException("No content set");
         }
         return unwrap(t);
     }
