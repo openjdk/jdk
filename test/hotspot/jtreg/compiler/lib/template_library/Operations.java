@@ -356,7 +356,10 @@ final class Operations {
         //new VOP("EXP",                  VOPType.UNARY, Type.FLOATING_TYPES),
         new VOP("EXPAND_BITS",          VOPType.BINARY, Type.INT_LONG_TYPES),
         //new VOP("EXPM1",                VOPType.UNARY, Type.FLOATING_TYPES),
-        new VOP("FIRST_NONZERO",        VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
+
+        // TODO: add back after JDK-8351941 [Graal]
+        //new VOP("FIRST_NONZERO",        VOPType.ASSOCIATIVE, Type.PRIMITIVE_TYPES),
+
         new VOP("FMA",                  VOPType.TERNARY, Type.FLOATING_TYPES),
         //new VOP("HYPOT",                VOPType.BINARY, Type.FLOATING_TYPES),
         new VOP("LEADING_ZEROS_COUNT",  VOPType.UNARY, Type.INTEGRAL_TYPES),
