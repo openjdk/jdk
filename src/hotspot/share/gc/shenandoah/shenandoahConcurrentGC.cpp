@@ -152,11 +152,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
 
   assert(heap->is_concurrent_weak_root_in_progress(), "Must be doing weak roots now");
 
-  // Concurrent stack processing
-  if (heap->is_evacuation_in_progress()) {
-    entry_thread_roots();
-  }
-
   // Process weak roots that might still point to regions that would be broken by cleanup.
   // We cannot recycle regions because weak roots need to know what is marked in trashed regions.
   entry_weak_refs();
@@ -186,6 +181,9 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // This may be skipped if there is nothing to evacuate.
   // If so, evac_in_progress would be unset by collection set preparation code.
   if (heap->is_evacuation_in_progress()) {
+    // Concurrent stack processing
+    entry_thread_roots();
+
     // Concurrently evacuate
     entry_evacuate();
     if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
