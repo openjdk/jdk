@@ -27,6 +27,7 @@
 
 #include "runtime/objectMonitor.hpp"
 
+#include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/markWord.hpp"
@@ -284,6 +285,12 @@ inline bool ObjectMonitor::object_refers_to(oop obj) const {
     return false;
   }
   return _object.peek() == obj;
+}
+
+inline bool ObjectMonitor::is_jfr_excluded(const Klass* monitor_klass) {
+  assert(monitor_klass != nullptr, "invariant");
+  NOT_JFR_RETURN_(false);
+  JFR_ONLY(return vmSymbols::jdk_jfr_internal_management_HiddenWait() == monitor_klass->name();)
 }
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_INLINE_HPP
