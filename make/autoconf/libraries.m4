@@ -139,7 +139,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
 
   # Threading library
   if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xaix; then
-    BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lpthread"
+    BASIC_JVM_LIBS="$BASIC_JVM_LIBS $LIBPTHREAD"
   fi
 
   # librt for legacy clock_gettime
@@ -196,6 +196,14 @@ AC_DEFUN_ONCE([LIB_SETUP_MISC_LIBS],
   LIBDL="$LIBS"
   AC_SUBST(LIBDL)
   LIBS="$save_LIBS"
+
+  # Setup posix pthread support
+  if test "x$OPENJDK_TARGET_OS" != "xwindows"; then
+    LIBPTHREAD="-lpthread"
+  else
+    LIBPTHREAD=""
+  fi
+  AC_SUBST(LIBPTHREAD)
 
   # Control if libzip can use mmap. Available for purposes of overriding.
   LIBZIP_CAN_USE_MMAP=true

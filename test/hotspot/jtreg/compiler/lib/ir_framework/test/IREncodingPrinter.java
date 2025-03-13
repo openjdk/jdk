@@ -111,6 +111,7 @@ public class IREncodingPrinter {
         // Riscv64
         "rvv",
         "zbkb",
+        "zfh",
         "zvbb",
         "zvfh"
     ));
