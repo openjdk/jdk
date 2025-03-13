@@ -243,6 +243,8 @@ public class Main {
     private Throwable chainNotValidatedReason = null;
     private Throwable tsaChainNotValidatedReason = null;
 
+    private List<String> crossChkWarnings = new ArrayList<>();
+
     PKIXBuilderParameters pkixParameters;
     Set<X509Certificate> trustedCerts = new HashSet<>();
 
@@ -1104,6 +1106,7 @@ public class Main {
                 }
             }
             System.out.println();
+            crossCheckEntries(jarName);
 
             if (!anySigned) {
                 if (disabledAlgFound) {
@@ -1128,123 +1131,59 @@ public class Main {
                 jf.close();
             }
         }
-
-        System.out.println();
-        crossCheckEntries(jarName);
     }
 
     private void crossCheckEntries(String jarName) throws Exception {
+        List<String> locEntries = new ArrayList<>();
+        List<String> cenEntries;
 
         try (JarFile jarFile = new JarFile(jarName);
              JarInputStream jis = new JarInputStream(
                      Files.newInputStream(Path.of(jarName)))) {
 
-            // Validate Manifest first
             Manifest cenManifest = jarFile.getManifest();
             Manifest locManifest = jis.getManifest();
             if (!compareManifest(cenManifest, locManifest)) {
                 return;
             }
 
-            Enumeration<JarEntry> cenEntries = jarFile.entries();
             JarEntry locEntry;
+            while ((locEntry = jis.getNextJarEntry()) != null) {
+                String entryName = locEntry.getName();
+                locEntries.add(entryName);
 
-            // Skip the first entry "META-INF/MANIFEST.MF" in CEN
-            if (cenEntries.hasMoreElements()) {
-                JarEntry firstCenEntry = cenEntries.nextElement();
-                if (!"META-INF/MANIFEST.MF".equals(firstCenEntry.getName())) {
-                    System.out.println(rb.getString(
-                            "First.entry.in.CEN.is.not.MANIFEST.MF"));
-                    return;
-                }
-            }
-
-            Set<String> cenEntrySet = new HashSet<>();
-            Set<String> locEntrySet = new HashSet<>();
-
-            JarEntry cenEntry = null;
-            while (cenEntries.hasMoreElements() &&
-                    (locEntry = jis.getNextJarEntry()) != null) {
-                cenEntry = cenEntries.nextElement();
-
-                cenEntrySet.add(cenEntry.getName());
-                locEntrySet.add(locEntry.getName());
-
-                // Check if entries match in order
-                if (!cenEntry.getName().equals(locEntry.getName())) {
-                    System.out.println(rb.getString(
-                            "The.order.of.entries.in.CEN.and.LOC.does.not.match"));
-                    return;
-                }
-
-                // Compare sizes
-                long cenSize = cenEntry.getSize();
-                long locSize = locEntry.getSize() == -1 ? calculateEntrySize(jis) : locEntry.getSize();
-
-                if (cenSize != -1 && cenSize != locSize) {
-                    System.out.println(String.format(rb.getString("Size.mismatch.for.jar.entry.1"),
-                            cenEntry.getName()));
-                }
-
-                // Skip signature files in META-INF
-                if (cenEntry.getName().startsWith("META-INF/")) {
+                JarEntry cenEntry = jarFile.getJarEntry(entryName);
+                if (cenEntry == null) {
+                    crossChkWarnings.add(String.format(rb.getString(
+                            "Entry.missing.in.JarFile.1"), entryName));
                     continue;
                 }
 
-                // Read entry for signature verification
                 readEntry(jis);
-                readEntry(jarFile.getInputStream(cenEntry));
+                try (InputStream cenInputStream = jarFile.getInputStream(cenEntry)) {
+                    readEntry(cenInputStream);
+                }
 
-                // Compare signers
                 compareSigners(cenEntry, locEntry);
             }
 
-            // Remaining entries if any
-            while (cenEntries.hasMoreElements()) {
-                cenEntrySet.add(cenEntries.nextElement().getName());
-            }
-            while ((locEntry = jis.getNextJarEntry()) != null) {
-                locEntrySet.add(locEntry.getName());
+            Map<String, Integer> entryMap = new HashMap<>();
+            for (int i = 0; i < locEntries.size(); i++) {
+                entryMap.put(locEntries.get(i), i);
             }
 
-            // Find if an entry is present in LOC but missing in CEN, and vice versa.
-            if (!cenEntrySet.equals(locEntrySet)) {
-                System.out.println(rb.getString(
+            cenEntries = jarFile.stream()
+                    .map(JarEntry::getName)
+                    .sorted(Comparator.comparingInt(
+                            name -> entryMap.getOrDefault(name, Integer.MAX_VALUE)))
+                    .collect(Collectors.toList());
+
+            cenEntries.remove("META-INF/MANIFEST.MF");
+            if (!cenEntries.equals(locEntries)) {
+                crossChkWarnings.add(rb.getString(
                         "Mismatch.in.number.of.entries.between.CEN.and.LOC"));
-
-                Set<String> cenMissingEntry = new HashSet<>(locEntrySet);
-                cenMissingEntry.removeAll(cenEntrySet);
-
-                Set<String> locMissingEntry = new HashSet<>(cenEntrySet);
-                locMissingEntry.removeAll(locEntrySet);
-
-                if (!cenMissingEntry.isEmpty()) {
-                    for (String entry : cenMissingEntry) {
-                        System.out.println(String.format(rb.getString(
-                                "Jar.entry.in.LOC.but.missing.in.CEN.1"),
-                                entry));
-                    }
-                }
-
-                if (!locMissingEntry.isEmpty()) {
-                    for (String entry : locMissingEntry) {
-                        System.out.println(String.format(rb.getString(
-                                "Jar.entry.in.CEN.but.missing.in.LOC.1"),
-                                entry));
-                    }
-                }
             }
         }
-    }
-
-    private long calculateEntrySize(JarInputStream jis) throws IOException {
-        long size = 0;
-        byte[] buffer = new byte[8192];
-        int bytesRead;
-        while ((bytesRead = jis.read(buffer)) != -1) {
-            size += bytesRead;
-        }
-        return size;
     }
 
     private void readEntry(InputStream is) throws IOException {
@@ -1255,13 +1194,11 @@ public class Main {
 
     private boolean compareManifest(Manifest cenManifest, Manifest locManifest) {
         if (cenManifest == null) {
-            System.out.println(rb.getString(
-                    "CEN.manifest.is.missing"));
+            crossChkWarnings.add(rb.getString("CEN.manifest.is.missing"));
             return false;
         }
         if (locManifest == null) {
-            System.out.println(rb.getString(
-                    "LOC.manifest.is.missing"));
+            crossChkWarnings.add(rb.getString("LOC.manifest.is.missing"));
             return false;
         }
 
@@ -1273,12 +1210,12 @@ public class Main {
             Object locValue = locMainAttrs.get(key);
 
             if (locValue == null) {
-                System.out.println(String.format(
+                crossChkWarnings.add(String.format(
                         rb.getString("main.attribute.key.1.in.CEN.but.missing.in.LOC"),
                         key));
                 return false;
             } else if (!cenValue.equals(locValue)) {
-                System.out.println(String.format(
+                crossChkWarnings.add(String.format(
                         rb.getString("main.atrribute.key.1.mismatch.CEN.2.LOC.3"),
                         key, cenValue, locValue));
                 return false;
@@ -1308,7 +1245,8 @@ public class Main {
             List<CodeSigner> locSignerList = Arrays.asList(locSigners);
 
             if (!cenSignerList.equals(locSignerList)) {
-                System.out.printf(rb.getString("Signature.mismatch.for.entry.1"), cenEntry.getName());
+                crossChkWarnings.add(String.format(rb.getString(
+                        "Signature.mismatch.for.entry.1"), cenEntry.getName()));
             }
         }
     }
@@ -1539,12 +1477,17 @@ public class Main {
                 System.out.println(rb.getString("Warning."));
                 warnings.forEach(System.out::println);
             }
+            if (!crossChkWarnings.isEmpty()) {
+                System.out.println();
+                crossChkWarnings.forEach(System.out::println);
+            }
         } else {
-            if (!errors.isEmpty() || !warnings.isEmpty()) {
+            if (!errors.isEmpty() || !warnings.isEmpty() || !crossChkWarnings.isEmpty()) {
                 System.out.println();
                 System.out.println(rb.getString("Warning."));
                 errors.forEach(System.out::println);
                 warnings.forEach(System.out::println);
+                crossChkWarnings.forEach(System.out::println);
             }
         }
 
