@@ -2186,6 +2186,7 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list) {
       collected ++;
     } else {
       NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeLoads]: merge_list:wrong index or duplicate loads at same place: index:%d", index); out->dump(); array[index]->_load->dump(); tty->cr(); });
+      return;
     }
   }
 
