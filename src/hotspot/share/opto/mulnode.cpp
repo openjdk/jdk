@@ -1409,7 +1409,7 @@ Node* RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   return nullptr;
 }
 
-Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* RShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* progress = IdealIL(phase, can_reshape, T_INT);
   if (progress == NodeSentinel) {
     return nullptr;
