@@ -1828,9 +1828,6 @@ void Compile::record_for_post_loop_opts_igvn(Node* n) {
     assert(!_for_post_loop_igvn.contains(n), "duplicate");
     n->add_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
     _for_post_loop_igvn.append(n);
-  } else if (MergeLoads && n->is_Load() && n->outcnt() == 0) {
-    n->add_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
-    _for_post_loop_igvn.append(n);
   }
 }
 
@@ -1843,11 +1840,6 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
   // Verify that all previous optimizations produced a valid graph
   // at least to this point, even if no loop optimizations were done.
   PhaseIdealLoop::verify(igvn);
-  assert(igvn.delay_transform() == false, "sanity");
-  bool trace = !C->directive()->trace_merge_stores_tags().is_empty();
-  if (trace) {
-    print_ideal_ir("before post_loop_opts");
-  }
 
   if (_print_phase_loop_opts) {
     print_method(PHASE_AFTER_LOOP_OPTS, 2);
