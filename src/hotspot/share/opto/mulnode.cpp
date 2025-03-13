@@ -1505,7 +1505,7 @@ const Type* RShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
     const TypeInteger* ti = TypeInteger::make(lo, hi, MAX2(r1->_widen,r2->_widen), bt);
 #ifdef ASSERT
     // Make sure we get the sign-capture idiom correct.
-    if (shift == bits_per_java_integer(bt)-1) {
+    if (shift == bits_per_java_integer(bt) - 1) {
       if (r1->lo_as_long() >= 0) assert(ti == TypeInteger::zero(bt),    ">>31/63 of + is  0");
       if (r1->hi_as_long() <  0) assert(ti == TypeInteger::minus_1(bt), ">>31/63 of - is -1");
     }
