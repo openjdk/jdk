@@ -101,9 +101,16 @@ public interface HttpResponse<T> {
 
     /**
      * {@return if present, a label identifying the connection on which the
-     * response was received} The format of the string is opaque, but the
-     * content should be unique for the lifetime of the {@link HttpClient}
-     * instance.
+     * response was received}
+     * <p>
+     * The format of the string is opaque, but the content should be unique
+     * for the lifetime of the {@link HttpClient} instance.
+     *
+     * @implSpec
+     * The default implementation of this method returns
+     * {@link Optional#empty() Optional.empty()}.
+     *
+     * @since 25
      */
     default Optional<String> connectionLabel() {
         return Optional.empty();
