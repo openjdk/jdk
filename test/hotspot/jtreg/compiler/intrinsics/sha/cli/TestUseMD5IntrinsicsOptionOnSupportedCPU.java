@@ -27,6 +27,7 @@
  * @summary Verify UseMD5Intrinsics option processing on supported CPU.
  * @library /test/lib /
  * @requires vm.flagless
+ * @requires os.arch != "riscv64"
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
