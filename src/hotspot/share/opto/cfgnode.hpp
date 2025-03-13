@@ -490,7 +490,7 @@ class ParsePredicateNode : public IfNode {
 
   // When a Parse Predicate loses its connection to a loop head, it will be marked useless by
   // EliminateUselessPredicates and cleaned up by Value(). It can also become useless when cloning it to both loops
-  // during loop multiversioning - we no longer use the old version.
+  // during Loop Multiversioning - we no longer use the old version.
   PredicateState _predicate_state;
  public:
   ParsePredicateNode(Node* control, Deoptimization::DeoptReason deopt_reason, PhaseGVN* gvn);

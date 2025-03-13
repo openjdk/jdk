@@ -336,7 +336,7 @@ bool InitializedAssertionPredicate::has_halt(const IfTrueNode* success_proj) {
   }
   return false;
 }
-#endif
+#endif // ASSERT
 
 // Kills this Initialized Assertion Predicate by marking the associated OpaqueInitializedAssertionPredicate node useless.
 // It will then be folded away in the next IGVN round.
@@ -1174,7 +1174,7 @@ void UpdateStrideForAssertionPredicates::connect_initialized_assertion_predicate
 // Do the following to find and eliminate useless Parse and Template Assertion Predicates:
 // 1. Mark all Parse and Template Assertion Predicates "maybe useful".
 // 2. Walk through the loop tree and iterate over all Predicates above each loop head. All found Parse and Template
-//    Assertion Predicates are marked "useful"
+//    Assertion Predicates are marked "useful".
 // 3. Those Parse and Template Assertion Predicates that are still marked "maybe useful" are now marked "useless" and
 //    removed in the next round of IGVN.
 //
