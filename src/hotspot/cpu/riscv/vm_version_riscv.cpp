@@ -24,6 +24,7 @@
  *
  */
 
+#include "classfile/vmIntrinsics.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
@@ -463,4 +464,19 @@ void VM_Version::initialize_cpu_information(void) {
   snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "RISCV64");
   snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "RISCV64 %s", features_string());
   _initialized = true;
+}
+
+bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  switch (id) {
+  case vmIntrinsics::_floatToFloat16:
+  case vmIntrinsics::_float16ToFloat:
+    if (!supports_float16_float_conversion()) {
+      return false;
+    }
+    break;
+  default:
+    break;
+  }
+  return true;
 }

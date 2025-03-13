@@ -6156,6 +6156,104 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // x10 = input (float16)
+  // f10 = result (float)
+  // t1  = temporary register
+  address generate_float16ToFloat() {
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::hf2f_id;
+    StubCodeMark mark(this, stub_id);
+    address entry = __ pc();
+    BLOCK_COMMENT("float16ToFloat:");
+
+    FloatRegister dst = f10;
+    Register src = x10;
+    Label NaN_SLOW;
+
+    assert(VM_Version::supports_float16_float_conversion(), "must");
+
+    // On riscv, NaN needs a special process as fcvt does not work in that case.
+    // On riscv, Inf does not need a special process as fcvt can handle it correctly.
+    // but we consider to get the slow path to process NaN and Inf at the same time,
+    // as both of them are rare cases, and if we try to get the slow path to handle
+    // only NaN case it would sacrifise the performance for normal cases,
+    // i.e. non-NaN and non-Inf cases.
+
+    // check whether it's a NaN or +/- Inf.
+    __ mv(t0, 0x7c00);
+    __ andr(t1, src, t0);
+    // jump to stub processing NaN and Inf cases.
+    __ beq(t0, t1, NaN_SLOW);
+
+    // non-NaN or non-Inf cases, just use built-in instructions.
+    __ fmv_h_x(dst, src);
+    __ fcvt_s_h(dst, dst);
+    __ ret();
+
+    __ bind(NaN_SLOW);
+    // following instructions mainly focus on NaN, as riscv does not handle
+    // NaN well with fcvt, but the code also works for Inf at the same time.
+
+    // construct a NaN in 32 bits from the NaN in 16 bits,
+    // we need the payloads of non-canonical NaNs to be preserved.
+    __ mv(t1, 0x7f800000);
+    // sign-bit was already set via sign-extension if necessary.
+    __ slli(t0, src, 13);
+    __ orr(t1, t0, t1);
+    __ fmv_w_x(dst, t1);
+
+    __ ret();
+    return entry;
+  }
+
+  // f10 = input (float)
+  // x10 = result (float16)
+  // f11 = temporary float register
+  // t1  = temporary register
+  address generate_floatToFloat16() {
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::f2hf_id;
+    StubCodeMark mark(this, stub_id);
+    address entry = __ pc();
+    BLOCK_COMMENT("floatToFloat16:");
+
+    Register dst = x10;
+    FloatRegister src = f10, ftmp = f11;
+    Label NaN_SLOW;
+
+    assert(VM_Version::supports_float16_float_conversion(), "must");
+
+    // On riscv, NaN needs a special process as fcvt does not work in that case.
+
+    // check whether it's a NaN.
+    // replace fclass with feq as performance optimization.
+    __ feq_s(t0, src, src);
+    // jump to stub processing NaN cases.
+    __ beqz(t0, NaN_SLOW);
+
+    // non-NaN cases, just use built-in instructions.
+    __ fcvt_h_s(ftmp, src);
+    __ fmv_x_h(dst, ftmp);
+    __ ret();
+
+    __ bind(NaN_SLOW);
+    __ fmv_x_w(dst, src);
+
+    // preserve the payloads of non-canonical NaNs.
+    __ srai(dst, dst, 13);
+    // preserve the sign bit.
+    __ srai(t1, dst, 13);
+    __ slli(t1, t1, 10);
+    __ mv(t0, 0x3ff);
+    __ orr(t1, t1, t0);
+
+    // get the result by merging sign bit and payloads of preserved non-canonical NaNs.
+    __ andr(dst, dst, t1);
+
+    __ ret();
+    return entry;
+  }
+
 #endif // COMPILER2_OR_JVMCI
 
 #ifdef COMPILER2
@@ -6524,6 +6622,12 @@ static const int64_t right_3_bits = right_n_bits(3);
       // set table address before stub generation which use it
       StubRoutines::_crc_table_adr = (address)StubRoutines::riscv::_crc_table;
       StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
+    }
+
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_float16ToFloat) &&
+        vmIntrinsics::is_intrinsic_available(vmIntrinsics::_floatToFloat16)) {
+      StubRoutines::_hf2f = generate_float16ToFloat();
+      StubRoutines::_f2hf = generate_floatToFloat16();
     }
   }
 
