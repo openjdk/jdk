@@ -165,8 +165,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST scriptVariant id NMTOKEN #REQUIRED >
     <!--@MATCH:validity/script-->
 <!ATTLIST scriptVariant base NMTOKENS #REQUIRED >
-    <!--@VALUE-->
     <!--@MATCH:set/validity/script-->
+    <!--@VALUE-->
 
 <!ELEMENT territoryInfo ( territory* ) >
 <!ATTLIST territoryInfo draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >

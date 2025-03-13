@@ -2474,7 +2474,7 @@ XXX Code for transations where no currency is involved
 		<scriptVariant type="subset" id='Hans' base='Hani'/> <!-- Han (Simplified variant) -->
 		<scriptVariant type="subset" id='Hant' base='Hani'/> <!-- Han (Traditional variant) -->
 	</scriptData>
- <!-- See http://unicode.org/cldr/data/diff/supplemental/territory_language_information.html for more information on territoryInfo. -->
+	<!-- See https://www.unicode.org/cldr/charts/latest/supplemental/territory_language_information.html for more information on territoryInfo. -->
 	<territoryInfo>
 		<territory type="AC" gdp="50800000" literacyPercent="99" population="940">	<!--Ascension Island-->
 			<languagePopulation type="en" populationPercent="99" references="R1020"/>	<!--English-->
