@@ -167,6 +167,24 @@ public final class Expression {
                     tokens.add(s3);
                 };
             }
+            case Operation.Quaternary(Type r, String s0, Type t0, String s1, Type t1, String s2, Type t2, String s3, Type t3, String s4, List<String> es) -> {
+                if (es != null) { exceptions.addAll(es); }
+                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, ops, maxDepth-1, argTypes, exceptions);
+                ExpressionGeneratorStep step1 = expressionGeneratorStep(t1, ops, maxDepth-1, argTypes, exceptions);
+                ExpressionGeneratorStep step2 = expressionGeneratorStep(t2, ops, maxDepth-1, argTypes, exceptions);
+                ExpressionGeneratorStep step3 = expressionGeneratorStep(t3, ops, maxDepth-1, argTypes, exceptions);
+                return (List<Object> tokens, List<Object> args) -> {
+                    tokens.add(s0);
+                    step0.addTokens(tokens, args);
+                    tokens.add(s1);
+                    step1.addTokens(tokens, args);
+                    tokens.add(s2);
+                    step2.addTokens(tokens, args);
+                    tokens.add(s3);
+                    step3.addTokens(tokens, args);
+                    tokens.add(s4);
+                };
+            }
         }
     }
 } 

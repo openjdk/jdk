@@ -28,7 +28,8 @@ import java.util.HashSet;
 
 public sealed interface Operation permits Operation.Unary,
                                           Operation.Binary,
-                                          Operation.Ternary {
+                                          Operation.Ternary,
+                                          Operation.Quaternary {
 
     /**
      * Check if input types are in the set.
@@ -79,4 +80,21 @@ public sealed interface Operation permits Operation.Unary,
                    types.contains(t2);
         }
     }
+
+    public static record Quaternary(Type r, String s0, Type t0, String s1, Type t1, String s2, Type t2, String s3, Type t3, String s4, List<String> exceptions) implements Operation {
+        @Override
+        public boolean matchesReturnType(Type returnType) {
+            return r.isSubtypeOf(returnType);
+        }
+
+        @Override
+        public boolean matchesTypes(HashSet<Type> types) {
+            return types.contains(r) &&
+                   types.contains(t0) &&
+                   types.contains(t1) &&
+                   types.contains(t2) &&
+                   types.contains(t3);
+        }
+    }
+
 }

@@ -540,7 +540,7 @@ final class Operations {
                     case VOPType.INTEGRAL_ASSOCIATIVE:
                         if (vop.type() == VOPType.ASSOCIATIVE || !type.elementType.isFloating()) {
                             ops.add(new Operation.Unary(type.elementType, "", type, ".reduceLanes(VectorOperators." + vop.name() + ")", null));
-                            ops.add(new Operation.Unary(type.elementType, "", type, ".reduceLanes(VectorOperators." + vop.name() + ", ", type.maskType, ")", null));
+                            ops.add(new Operation.Binary(type.elementType, "", type, ".reduceLanes(VectorOperators." + vop.name() + ", ", type.maskType, ")", null));
                         }
                         // fall-through
                     case VOPType.BINARY:
