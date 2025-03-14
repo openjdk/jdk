@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,16 @@ CompiledMethodLoad(jvmtiEnv *jvmti_env, jmethodID method, jint code_size,
         const void* compile_info) {
     char *name;
     char *sig;
+    jvmtiPhase phase;
+
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetPhase(&phase))) {
+        nsk_jvmti_setFailStatus();
+        return;
+    }
+    if (phase == JVMTI_PHASE_DEAD) {
+      NSK_DISPLAY0("CompiledMethodLoad event recieved in dead phase");
+      return;
+    }
 
     NSK_DISPLAY0("CompiledMethodLoad event received for:\n");
     if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &sig, nullptr))) {
