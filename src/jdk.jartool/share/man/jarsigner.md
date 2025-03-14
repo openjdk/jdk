@@ -934,6 +934,10 @@ noTimestamp
     certificate's expiration date (`YYYY-MM-DD`) or after any future revocation
     date.
 
+hasMultipleManifests
+:   This JAR contained multiple manifest files. During signing, one of the files
+    was selected, and the others were discarded. 
+
 ## Example of Signing a JAR File
 
 Use the following command to sign `bundle.jar` with the private key of a user
