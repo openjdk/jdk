@@ -481,10 +481,13 @@ private:
   // Concurrent class unloading support
   void do_class_unloading();
   // Reference updating
-  void prepare_update_heap_references(bool concurrent);
+  void prepare_update_heap_references();
 
   // Retires LABs used for evacuation
   void concurrent_prepare_for_update_refs();
+
+  // Turn off weak roots flag, purge old satb buffers in generational mode
+  void concurrent_final_roots(HandshakeClosure* handshake_closure = nullptr);
 
   virtual void update_heap_references(bool concurrent);
   // Final update region states
