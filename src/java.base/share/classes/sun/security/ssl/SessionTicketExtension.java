@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import javax.net.ssl.SSLSessionContext;
 
 import static sun.security.ssl.SSLExtension.CH_SESSION_TICKET;
 import static sun.security.ssl.SSLExtension.SH_SESSION_TICKET;
+import static sun.security.ssl.SignatureScheme.CERTIFICATE_SCOPE;
 
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
@@ -352,11 +353,12 @@ final class SessionTicketExtension {
                 return new byte[0];
             }
 
-            if (chc.localSupportedSignAlgs == null) {
-                chc.localSupportedSignAlgs =
+            if (chc.localSupportedCertSignAlgs == null) {
+                chc.localSupportedCertSignAlgs =
                         SignatureScheme.getSupportedAlgorithms(
                                 chc.sslConfig,
-                                chc.algorithmConstraints, chc.activeProtocols);
+                                chc.algorithmConstraints, chc.activeProtocols,
+                                CERTIFICATE_SCOPE);
             }
 
             return chc.resumingSession.getPskIdentity();
