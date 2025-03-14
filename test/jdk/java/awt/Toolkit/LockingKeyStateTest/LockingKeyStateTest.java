@@ -30,14 +30,13 @@ import java.awt.event.KeyEvent;
   @summary verify LOCK buttons toogle
   @author Yuri.Nesterenko, Dmitriy.Ermashov
   @library /lib/client
-  @build ExtendedRobot
   @run main LockingKeyStateTest
 */
 
 public class LockingKeyStateTest {
 
     Frame frame;
-    ExtendedRobot robot;
+    Robot robot;
 
     // Note that Kana lock you may actually toggle only if you have one.
     static int[] lockingKeys = { KeyEvent.VK_CAPS_LOCK, KeyEvent.VK_NUM_LOCK,
@@ -49,7 +48,7 @@ public class LockingKeyStateTest {
     Toolkit toolkit = Toolkit.getDefaultToolkit();
 
     LockingKeyStateTest() throws Exception {
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeAndWait( this::createGui );
     }
 

@@ -30,17 +30,16 @@ import java.awt.*;
  * @summary Construct a jframe with some components and zoom the frame and bring it back to normal state.
  * @author Aruna Samji
  * @library /lib/client
- * @build ExtendedRobot
  * @run main TaskZoomJFrameRepaint
  */
 
 public class TaskZoomJFrameRepaint extends Task<GUIZoomFrame> {
 
     public static void main (String[] args) throws Exception {
-        new TaskZoomJFrameRepaint(GUIZoomFrame.class, new ExtendedRobot()).task();
+        new TaskZoomJFrameRepaint(GUIZoomFrame.class, new Robot()).task();
     }
 
-    TaskZoomJFrameRepaint(Class guiClass, ExtendedRobot robot) throws Exception {
+    TaskZoomJFrameRepaint(Class guiClass, Robot robot) throws Exception {
          super(guiClass, robot);
     }
 
