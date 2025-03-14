@@ -681,11 +681,11 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
   return CallNode::may_modify_arraycopy_helper(dest_t, t_oop, phase);
 }
 
-bool ArrayCopyNode::may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, ArrayCopyNode*&call) {
+bool ArrayCopyNode::may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, ArrayCopyNode*& ac) {
   if (n != nullptr &&
       n->is_ArrayCopy() &&
       n->as_ArrayCopy()->may_modify(t_oop, phase)) {
-    call = n->as_ArrayCopy();
+    ac = n->as_ArrayCopy();
     return true;
   }
   return false;
