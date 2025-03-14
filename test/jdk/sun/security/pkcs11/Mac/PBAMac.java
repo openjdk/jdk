@@ -37,7 +37,7 @@ import javax.crypto.spec.PBEParameterSpec;
 
 /*
  * @test
- * @bug 8301553
+ * @bug 8301553 8348732
  * @summary test password based authentication on SunPKCS11's Mac service
  * @library /test/lib ..
  * @run main/othervm/timeout=30 PBAMac
@@ -55,10 +55,6 @@ public final class PBAMac extends PKCS11Test {
     private enum Configuration {
         // Pass salt and iterations to a Mac through a PBEParameterSpec.
         PBEParameterSpec,
-
-        // Derive a key using SunPKCS11's SecretKeyFactory (wrapping password,
-        // salt and iterations in a PBEKeySpec), and pass it to a Mac.
-        SecretKeyFactoryDerivedKey,
 
         // Pass password, salt and iterations and iterations to
         // a Mac through an anonymous class implementing the
@@ -134,13 +130,13 @@ public final class PBAMac extends PKCS11Test {
         System.out.println("TEST PASS - OK");
     }
 
-    private static void testWith(Provider sunPKCS11, AssertionData data,
+    private static void testWith(Provider p, AssertionData data,
             boolean testPBEService, Configuration conf) throws Exception {
         String svcAlgo = testPBEService ? data.pbeHmacAlgo : data.hmacAlgo;
         System.out.println(sep + System.lineSeparator() + svcAlgo
                 + " (with " + conf.name() + ")");
 
-        BigInteger mac = computeMac(sunPKCS11, svcAlgo, data.pbeHmacAlgo, conf);
+        BigInteger mac = computeMac(p, svcAlgo, data.pbeHmacAlgo, conf);
         printHex("HMAC", mac);
 
         if (!mac.equals(data.expectedMac)) {
@@ -158,15 +154,13 @@ public final class PBAMac extends PKCS11Test {
                 SecretKey key = getPasswordOnlyPBEKey();
                 mac.init(key, new PBEParameterSpec(salt, iterations));
             }
-            case SecretKeyFactoryDerivedKey -> {
-                SecretKey key = getDerivedSecretKey(p, keyAlgo);
-                mac.init(key);
-            }
             case AnonymousPBEKey -> {
                 SecretKey key = getAnonymousPBEKey(keyAlgo);
                 mac.init(key);
             }
+            default -> throw new RuntimeException("Unsupported configuration");
         }
+
         return new BigInteger(1, mac.doFinal(
                 plainText.getBytes(StandardCharsets.UTF_8)));
     }
@@ -175,12 +169,6 @@ public final class PBAMac extends PKCS11Test {
             throws GeneralSecurityException {
         return SecretKeyFactory.getInstance("PBE")
                 .generateSecret(new PBEKeySpec(password));
-    }
-
-    private static SecretKey getDerivedSecretKey(Provider sunPKCS11,
-            String algorithm) throws GeneralSecurityException {
-        return SecretKeyFactory.getInstance(algorithm, sunPKCS11)
-                .generateSecret(new PBEKeySpec(password, salt, iterations));
     }
 
     private static SecretKey getAnonymousPBEKey(String algorithm) {
