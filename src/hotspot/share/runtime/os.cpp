@@ -702,7 +702,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
 
     if (CDSConfig::is_dumping_static_archive()) {
       // Need to deterministically fill all the alignment gaps in C++ structures.
-      ::memset(inner_ptr, 0, size);
+      ::memset((char*)rc, 0, size);
     }
 #ifdef ASSERT
     else {
