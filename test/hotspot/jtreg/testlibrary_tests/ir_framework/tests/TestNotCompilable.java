@@ -38,7 +38,7 @@ public class TestNotCompilable {
     public static void main(String[] args) throws Exception {
         // Run without any flags -> should pass.
         TestFramework.run();
-        // Forbid compilation -> should throw exception.
+        // Forbid compilation -> should throw exception, because "not compilable".
         try {
             TestFramework.runWithFlags("-XX:CompileCommand=exclude,*Test*::test*");
             throw new RuntimeException("should have thrown TestRunException");

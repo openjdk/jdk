@@ -782,7 +782,7 @@ public class TestFramework {
 
     private void runTestVM(List<String> additionalFlags) {
         TestVMProcess testVMProcess = new TestVMProcess(additionalFlags, testClass, helperClasses, defaultWarmup,
-                                                        testClassesOnBootClassPath);
+                                                        isAllowMethodNotCompilable, testClassesOnBootClassPath);
         if (shouldVerifyIR) {
             try {
                 TestClassParser testClassParser = new TestClassParser(testClass);
