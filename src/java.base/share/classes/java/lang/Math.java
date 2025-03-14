@@ -3419,4 +3419,147 @@ public final class Math {
                                      (FloatConsts.SIGNIFICAND_WIDTH-1))
                                     & FloatConsts.EXP_BIT_MASK);
     }
+    /**
+     * Returns the smallest of an unlimited number of {@code int} values.
+     *
+     * @param values the values to compare
+     * @return the smallest value among the provided {@code int} values
+     * @throws IllegalArgumentException if no values are provided
+     */
+    public static int min(int... values) {
+        if (values == null || values.length == 0) {
+            throw new IllegalArgumentException("At least one value must be provided.");
+        }
+        int minValue = values[0];
+        for (int value : values) {
+            minValue = Math.min(minValue, value);
+        }
+        return minValue;
+    }
+
+    /**
+     * Returns the smallest of an unlimited number of {@code double} values.
+     *
+     * @param values the values to compare
+     * @return the smallest value among the provided {@code double} values
+     * @throws IllegalArgumentException if no values are provided
+     */
+    public static double min(double... values) {
+        if (values == null || values.length == 0) {
+            throw new IllegalArgumentException("At least one value must be provided.");
+        }
+        double minValue = values[0];
+        for (double value : values) {
+            minValue = Math.min(minValue, value);
+        }
+        return minValue;
+    }
+
+    /**
+     * Returns the smallest of an unlimited number of {@code long} values.
+     *
+     * @param values the values to compare
+     * @return the smallest value among the provided {@code long} values
+     * @throws IllegalArgumentException if no values are provided
+     */
+    public static long min(long... values) {
+        if (values == null || values.length == 0) {
+            throw new IllegalArgumentException("At least one value must be provided.");
+        }
+        long minValue = values[0];
+        for (long value : values) {
+            minValue = Math.min(minValue, value);
+        }
+        return minValue;
+    }
+
+    /**
+     * Returns the smallest of an unlimited number of {@code float} values.
+     *
+     * @param values the values to compare
+     * @return the smallest value among the provided {@code float} values
+     * @throws IllegalArgumentException if no values are provided
+     */
+    public static float min(float... values) {
+        if (values == null || values.length == 0) {
+            throw new IllegalArgumentException("At least one value must be provided.");
+        }
+        float minValue = values[0];
+        for (float value : values) {
+            minValue = Math.min(minValue, value);
+        }
+        return minValue;
+    }
+
+    /**
+     * Returns the largest of an unlimited number of {@code int} values.
+     *
+     * @param values the values to compare
+     * @return the largest value among the provided {@code int} values
+     * @throws IllegalArgumentException if no values are provided
+     */
+    public static int max(int... values) {
+        if (values == null || values.length == 0) {
+            throw new IllegalArgumentException("At least one value must be provided.");
+        }
+        int maxValue = values[0];
+        for (int value : values) {
+            maxValue = Math.max(maxValue, value);
+        }
+        return maxValue;
+    }
+
+    /**
+     * Returns the largest of an unlimited number of {@code double} values.
+     *
+     * @param values the values to compare
+     * @return the largest value among the provided {@code double} values
+     * @throws IllegalArgumentException if no values are provided
+     */
+    public static double max(double... values) {
+        if (values == null || values.length == 0) {
+            throw new IllegalArgumentException("At least one value must be provided.");
+        }
+        double maxValue = values[0];
+        for (double value : values) {
+            maxValue = Math.max(maxValue, value);
+        }
+        return maxValue;
+    }
+
+    /**
+     * Returns the largest of an unlimited number of {@code long} values.
+     *
+     * @param values the values to compare
+     * @return the largest value among the provided {@code long} values
+     * @throws IllegalArgumentException if no values are provided
+     */
+    public static long max(long... values) {
+        if (values == null || values.length == 0) {
+            throw new IllegalArgumentException("At least one value must be provided.");
+        }
+        long maxValue = values[0];
+        for (long value : values) {
+            maxValue = Math.max(maxValue, value);
+        }
+        return maxValue;
+    }
+
+    /**
+     * Returns the largest of an unlimited number of {@code float} values.
+     *
+     * @param values the values to compare
+     * @return the largest value among the provided {@code float} values
+     * @throws IllegalArgumentException if no values are provided
+     */
+    public static float max(float... values) {
+        if (values == null || values.length == 0) {
+            throw new IllegalArgumentException("At least one value must be provided.");
+        }
+        float maxValue = values[0];
+        for (float value : values) {
+            maxValue = Math.max(maxValue, value);
+        }
+        return maxValue;
+    }
 }
