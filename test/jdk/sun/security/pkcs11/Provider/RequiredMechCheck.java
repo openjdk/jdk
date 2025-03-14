@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8335288
+ * @bug 8335288 8348732
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @summary check that if any required mech is unavailable, then the
@@ -53,11 +53,11 @@ public class RequiredMechCheck extends PKCS11Test {
         new TestData("MAC", "HmacPBESHA256", true),
         new TestData("MAC", "HmacPBESHA384", false),
         new TestData("MAC", "HmacPBESHA512", false),
-        new TestData("SKF", "PBEWithHmacSHA1AndAES_128", false),
-        new TestData("SKF", "PBEWithHmacSHA224AndAES_128", true),
-        new TestData("SKF", "PBEWithHmacSHA256AndAES_128", true),
-        new TestData("SKF", "PBEWithHmacSHA384AndAES_128", false),
-        new TestData("SKF", "PBEWithHmacSHA512AndAES_128", false),
+        new TestData("SKF", "PBKDF2WithHmacSHA1", false),
+        new TestData("SKF", "PBKDF2WithHmacSHA224", true),
+        new TestData("SKF", "PBKDF2WithHmacSHA256", true),
+        new TestData("SKF", "PBKDF2WithHmacSHA384", false),
+        new TestData("SKF", "PBKDF2WithHmacSHA512", false),
         new TestData("CIP", "PBEWithHmacSHA1AndAES_128", false),
         new TestData("CIP", "PBEWithHmacSHA224AndAES_128", true),
         new TestData("CIP", "PBEWithHmacSHA256AndAES_128", true),
