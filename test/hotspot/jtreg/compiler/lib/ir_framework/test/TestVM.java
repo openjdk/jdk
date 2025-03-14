@@ -75,7 +75,7 @@ public class TestVM {
      */
     public static final int WARMUP_ITERATIONS = Integer.parseInt(System.getProperty("Warmup", "2000"));
 
-    private static final boolean ALLOW_METHOD_NOT_COMPILABLE = Boolean.getBoolean("AllowMethodNotCompilable");
+    private static final boolean ALLOW_METHOD_NOT_COMPILABLE = Boolean.getBoolean("AllowNotCompilable");
     private static final boolean TIERED_COMPILATION = (Boolean)WHITE_BOX.getVMFlag("TieredCompilation");
     private static final CompLevel TIERED_COMPILATION_STOP_AT_LEVEL;
     private static final boolean CLIENT_VM = Platform.isClient();

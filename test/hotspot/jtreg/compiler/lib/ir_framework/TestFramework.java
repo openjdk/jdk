@@ -175,7 +175,7 @@ public class TestFramework {
     private List<String> flags;
     private int defaultWarmup = -1;
     private boolean testClassesOnBootClassPath;
-    private boolean isAllowMethodNotCompilable = false;
+    private boolean isAllowNotCompilable = false;
 
     /*
      * Public interface methods
@@ -413,8 +413,8 @@ public class TestFramework {
     /**
      * TODO: desc
      */
-    public TestFramework allowMethodNotCompilable() {
-        this.isAllowMethodNotCompilable = true;
+    public TestFramework allowNotCompilable() {
+        this.isAllowNotCompilable = true;
         return this;
     }
 
@@ -782,7 +782,7 @@ public class TestFramework {
 
     private void runTestVM(List<String> additionalFlags) {
         TestVMProcess testVMProcess = new TestVMProcess(additionalFlags, testClass, helperClasses, defaultWarmup,
-                                                        isAllowMethodNotCompilable, testClassesOnBootClassPath);
+                                                        isAllowNotCompilable, testClassesOnBootClassPath);
         if (shouldVerifyIR) {
             try {
                 TestClassParser testClassParser = new TestClassParser(testClass);

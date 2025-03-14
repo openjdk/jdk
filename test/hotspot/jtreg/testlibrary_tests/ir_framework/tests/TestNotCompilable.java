@@ -29,7 +29,7 @@ import compiler.lib.ir_framework.driver.TestVMException;
 
 /*
  * @test
- * @summary Test the functionality of allowMethodNotCompilable.
+ * @summary Test the functionality of allowNotCompilable.
  * @library /test/lib /
  * @run driver ir_framework.tests.TestNotCompilable
  */
@@ -51,7 +51,7 @@ public class TestNotCompilable {
         // Forbid compilation, but allow methods not to compile -> should pass.
         TestFramework framework3 = new TestFramework(A.class);
         framework3.addFlags("-XX:CompileCommand=exclude,*A::test*");
-        framework3.allowMethodNotCompilable();
+        framework3.allowNotCompilable();
         framework3.start();
 
         // Run without any flags -> should pass.
@@ -66,7 +66,7 @@ public class TestNotCompilable {
         // Forbid compilation, but allow methods not to compile -> should pass.
         TestFramework framework6 = new TestFramework(B.class);
         framework6.addFlags("-XX:CompileCommand=exclude,*B::test*");
-        framework6.allowMethodNotCompilable();
+        framework6.allowNotCompilable();
         framework6.start();
     }
 }

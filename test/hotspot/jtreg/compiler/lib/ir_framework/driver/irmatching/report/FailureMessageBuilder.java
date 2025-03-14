@@ -88,7 +88,6 @@ public class FailureMessageBuilder implements MatchResultVisitor {
 
     @Override
     public void visitMethodNotCompiled(Method method, int failedIRRules, boolean allowNotCompilable) {
-        // TODO: at least display warning? - or maybe we should not get here?
         if (!allowNotCompilable) {
             appendIRMethodHeader(method, failedIRRules);
             indentation.add();

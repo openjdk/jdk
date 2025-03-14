@@ -65,12 +65,12 @@ public class TestVMProcess {
     private String irEncoding;
 
     public TestVMProcess(List<String> additionalFlags, Class<?> testClass, Set<Class<?>> helperClasses, int defaultWarmup,
-                         boolean allowMethodNotCompilable, boolean testClassesOnBootClassPath) {
+                         boolean allowNotCompilable, boolean testClassesOnBootClassPath) {
         this.cmds = new ArrayList<>();
         TestFrameworkSocket socket = new TestFrameworkSocket();
         try (socket) {
             prepareTestVMFlags(additionalFlags, socket, testClass, helperClasses, defaultWarmup,
-                               allowMethodNotCompilable, testClassesOnBootClassPath);
+                               allowNotCompilable, testClassesOnBootClassPath);
             start();
         }
         processSocketOutput(socket);
@@ -94,7 +94,7 @@ public class TestVMProcess {
     }
 
     private void prepareTestVMFlags(List<String> additionalFlags, TestFrameworkSocket socket, Class<?> testClass,
-                                    Set<Class<?>> helperClasses, int defaultWarmup, boolean allowMethodNotCompilable,
+                                    Set<Class<?>> helperClasses, int defaultWarmup, boolean allowNotCompilable,
                                     boolean testClassesOnBootClassPath) {
         // Set java.library.path so JNI tests which rely on jtreg nativepath setting work
         cmds.add("-Djava.library.path=" + Utils.TEST_NATIVE_PATH);
@@ -130,8 +130,8 @@ public class TestVMProcess {
             cmds.add("-DWarmup=" + defaultWarmup);
         }
 
-        if (allowMethodNotCompilable) {
-            cmds.add("-DAllowMethodNotCompilable=true");
+        if (allowNotCompilable) {
+            cmds.add("-DAllowNotCompilable=true");
         }
 
         cmds.add(TestVM.class.getName());
