@@ -26,6 +26,7 @@
 #define SHARE_OPTO_OPAQUENODE_HPP
 
 #include "opto/node.hpp"
+#include "opto/predicates_enums.hpp"
 #include "opto/subnode.hpp"
 
 enum class PredicateState;
@@ -171,11 +172,24 @@ class OpaqueTemplateAssertionPredicateNode : public Node {
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
 
-  bool is_useless() const;
+
+  bool is_useless() const {
+    return _predicate_state == PredicateState::Useless;
+  }
+
   void mark_useless(PhaseIterGVN& igvn);
-  void mark_maybe_useful();
-  bool is_useful() const;
-  void mark_useful();
+
+  void mark_maybe_useful() {
+    _predicate_state = PredicateState::MaybeUseful;
+  }
+
+  bool is_useful() const {
+    return _predicate_state == PredicateState::Useful;
+  }
+
+  void mark_useful() {
+    _predicate_state = PredicateState::Useful;
+  }
 
   NOT_PRODUCT(void dump_spec(outputStream* st) const);
 };

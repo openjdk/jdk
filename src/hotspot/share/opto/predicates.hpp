@@ -27,6 +27,7 @@
 
 #include "opto/cfgnode.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/predicates_enums.hpp"
 
 class IdealLoopTree;
 class InitializedAssertionPredicate;
@@ -199,28 +200,6 @@ class TemplateAssertionPredicate;
  *   [For Range Check Elimination Check k: Two Templates + one Initialized Assertion Predicate]
  * Main Loop Head
  */
-
-// Assertion Predicates are either emitted to check the initial value of a range check in the first iteration or the last
-// value of a range check in the last iteration of a loop.
-enum class AssertionPredicateType {
-  None, // Not an Assertion Predicate
-  InitValue,
-  LastValue,
-  // Used for the Initialized Assertion Predicate emitted during Range Check Elimination for the final IV value.
-  FinalIv
-};
-
-enum class PredicateState {
-  // The Predicate is useless and will be cleaned up in the next round of IGVN. A useless Predicate is not visited
-  // anymore by PredicateVisitors. If a Predicate loses its connection to a loop head, it will be marked useless by
-  // EliminateUselessPredicates and cleaned up by the Value() methods of the associated Predicate IR nodes.
-  Useless,
-  // This state is used by EliminateUselessPredicates to temporarily mark a Predicate as neither useless nor useful.
-  // Outside EliminateUselessPredicates, a Predicate should never be MaybeUseful.
-  MaybeUseful,
-  // Default state: The Predicate is useful and will be visited by PredicateVisitors.
-  Useful
-};
 
 // Interface to represent a C2 predicate. A predicate is always represented by two CFG nodes:
 // - An If node (head)

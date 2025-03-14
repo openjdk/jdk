@@ -31,7 +31,7 @@
 #include "opto/connode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/phaseX.hpp"
-#include "opto/predicates.hpp"
+#include "opto/predicates_enums.hpp"
 #include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
@@ -2186,25 +2186,9 @@ ParsePredicateNode::ParsePredicateNode(Node* control, Deoptimization::DeoptReaso
 #endif // ASSERT
 }
 
-bool ParsePredicateNode::is_useless() const {
-  return _predicate_state == PredicateState::Useless;
-}
-
 void ParsePredicateNode::mark_useless(PhaseIterGVN& igvn) {
   _predicate_state = PredicateState::Useless;
   igvn._worklist.push(this);
-}
-
-void ParsePredicateNode::mark_maybe_useful() {
-  _predicate_state = PredicateState::MaybeUseful;
-}
-
-bool ParsePredicateNode::is_useful() const {
-  return _predicate_state == PredicateState::Useful;
-}
-
-void ParsePredicateNode::mark_useful() {
-  _predicate_state = PredicateState::Useful;
 }
 
 Node* ParsePredicateNode::uncommon_trap() const {

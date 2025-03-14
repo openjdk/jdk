@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "opto/multnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
+#include "opto/predicates_enums.hpp"
 #include "opto/type.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -59,10 +60,6 @@ class     SCMemProjNode;
 class PhaseIdealLoop;
 enum class AssertionPredicateType;
 enum class PredicateState;
-
-// The success projection of a Parse Predicate is always an IfTrueNode and the uncommon projection an IfFalseNode
-typedef IfTrueNode ParsePredicateSuccessProj;
-typedef IfFalseNode ParsePredicateUncommonProj;
 
 //------------------------------RegionNode-------------------------------------
 // The class of RegionNodes, which can be mapped to basic blocks in the
@@ -501,11 +498,23 @@ class ParsePredicateNode : public IfNode {
     return _deopt_reason;
   }
 
-  bool is_useless() const;
+  bool is_useless() const {
+    return _predicate_state == PredicateState::Useless;
+  }
+
   void mark_useless(PhaseIterGVN& igvn);
-  void mark_maybe_useful();
-  bool is_useful() const;
-  void mark_useful();
+
+  void mark_maybe_useful() {
+    _predicate_state = PredicateState::MaybeUseful;
+  }
+
+  bool is_useful() const {
+    return _predicate_state == PredicateState::Useful;
+  }
+
+  void mark_useful() {
+    _predicate_state = PredicateState::Useful;
+  }
 
   // Return the uncommon trap If projection of this Parse Predicate.
   ParsePredicateUncommonProj* uncommon_proj() const {

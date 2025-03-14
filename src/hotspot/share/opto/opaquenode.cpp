@@ -141,25 +141,9 @@ const Type* OpaqueTemplateAssertionPredicateNode::Value(PhaseGVN* phase) const {
   return phase->type(in(1));
 }
 
-bool OpaqueTemplateAssertionPredicateNode::is_useless() const {
-  return _predicate_state == PredicateState::Useless;
-}
-
 void OpaqueTemplateAssertionPredicateNode::mark_useless(PhaseIterGVN& igvn) {
   _predicate_state = PredicateState::Useless;
   igvn._worklist.push(this);
-}
-
-void OpaqueTemplateAssertionPredicateNode::mark_maybe_useful() {
-  _predicate_state = PredicateState::MaybeUseful;
-}
-
-bool OpaqueTemplateAssertionPredicateNode::is_useful() const {
-  return _predicate_state == PredicateState::Useful;
-}
-
-void OpaqueTemplateAssertionPredicateNode::mark_useful() {
-  _predicate_state = PredicateState::Useful;
 }
 
 #ifndef PRODUCT
