@@ -1248,7 +1248,7 @@ public class DocCommentParser {
                 } else if (cx.state == State.CODE && text.getBody().startsWith("\n")) {
                     // <pre><code>\n...
                     cx.state = State.DONE;
-                    return m.at(((DCText) text).pos).newTextTree(text.getBody().substring(1));
+                    return m.at(((DCText) text).pos + 1).newTextTree(text.getBody().substring(1));
                 }
                 cx.doneOrNone();
                 return (DCTree) text;
@@ -1260,7 +1260,7 @@ public class DocCommentParser {
                     // <pre>{@code\n...
                     cx.state = State.DONE;
                     DCText oldBody = (DCText) literal.getBody();
-                    DCText newBody = m.at(oldBody.pos).newTextTree(oldBody.getBody().substring(1));
+                    DCText newBody = m.at(oldBody.pos + 1).newTextTree(oldBody.getBody().substring(1));
                     m.at(((DCTree) literal).pos);
                     return literal.getKind() == DocTree.Kind.CODE
                             ? m.newCodeTree(newBody)
