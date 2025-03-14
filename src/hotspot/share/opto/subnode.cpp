@@ -53,8 +53,9 @@ Node* SubNode::Identity(PhaseGVN* phase) {
   assert(in(1) != this, "Must already have called Value");
   assert(in(2) != this, "Must already have called Value");
 
+  const Type* zero = add_id();
+
   // Remove double negation
-  const Type *zero = add_id();
   if( phase->type( in(1) )->higher_equal( zero ) &&
       in(2)->Opcode() == Opcode() &&
       phase->type( in(2)->in(1) )->higher_equal( zero ) ) {
