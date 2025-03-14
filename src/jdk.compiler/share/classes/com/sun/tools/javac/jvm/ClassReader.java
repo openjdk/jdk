@@ -1202,11 +1202,6 @@ public class ClassReader {
                             ModuleSymbol rsym = poolReader.getModule(nextChar());
                             Set<RequiresFlag> flags = readRequiresFlags(nextChar());
                             if (rsym == syms.java_base && majorVersion >= V54.major) {
-                                if (flags.contains(RequiresFlag.TRANSITIVE) &&
-                                    (majorVersion != Version.MAX().major || !previewClassFile) &&
-                                    !preview.participatesInPreview(syms, msym)) {
-                                    throw badClassFile("bad.requires.flag", RequiresFlag.TRANSITIVE);
-                                }
                                 if (flags.contains(RequiresFlag.STATIC_PHASE)) {
                                     throw badClassFile("bad.requires.flag", RequiresFlag.STATIC_PHASE);
                                 }
