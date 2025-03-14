@@ -83,17 +83,16 @@ ifeq ($(call isTargetOs, windows)+$(CREATING_BUILDJDK), true+false)
 endif
 
 ################################################################################
-# In jvm.cfg, the first listed KNOWN variant is the default. On most build
-# configurations, that is the server variant.
-ifeq ($(call And, $(call isTargetOs, windows) $(call isTargetCpu, x86)), true)
-  DEFAULT_CFG_VARIANT ?= client
-endif
-DEFAULT_CFG_VARIANT ?= server
+# In jvm.cfg, the first listed KNOWN variant is the default.
+DEFAULT_CFG_VARIANT := $(JVM_VARIANT_MAIN)
 
 # Change the order to put the default variant first if present.
 ORDERED_CFG_VARIANTS := \
     $(if $(filter $(DEFAULT_CFG_VARIANT), $(JVM_VARIANTS)), $(DEFAULT_CFG_VARIANT)) \
     $(filter-out $(DEFAULT_CFG_VARIANT), $(JVM_VARIANTS))
+
+# Append imported JVMs
+ORDERED_CFG_VARIANTS += $(IMPORT_JVM_NAMES)
 
 JVMCFG := $(LIB_DST_DIR)/jvm.cfg
 
@@ -117,6 +116,26 @@ $(JVMCFG): $(call DependOnVariable, ORDERED_CFG_VARIANTS)
 	)
 
 TARGETS += $(JVMCFG)
+
+################################################################################
+# Copy import JVMs into place, if any
+#
+ifneq ($(IMPORT_JVM_NAMES),)
+  rename_to_libjvm = $(LIBRARY_PREFIX)jvm$(SHARED_LIBRARY_SUFFIX)
+
+  $(foreach import_jvm, $(IMPORT_JVM_NAMES), \
+    $(eval $(import_jvm)_path := $(patsubst $(import_jvm):%,%,$(filter $(import_jvm):%, $(IMPORT_JVMS)))) \
+    $(eval $(call MakeDir, $(LIB_DST_DIR)/$(import_jvm))) \
+    $(eval $(call SetupCopyFiles, IMPORT_JVM_$(import_jvm), \
+        FILES := $($(import_jvm)_path), \
+        DEST := $(LIB_DST_DIR)/$(import_jvm), \
+        FLATTEN := true, \
+        NAME_MACRO := rename_to_libjvm, \
+        LOG_ACTION := Copying import JVM '$(import_jvm)', \
+    )) \
+    $(eval TARGETS += $(IMPORT_JVM_$(import_jvm))) \
+  )
+endif
 
 ################################################################################
 

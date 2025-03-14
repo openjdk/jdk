@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@ JDKOPT_SETUP_OPEN_OR_CUSTOM
 # These are needed to be able to create a configuration name (and thus the output directory)
 JDKOPT_SETUP_DEBUG_LEVEL
 HOTSPOT_SETUP_JVM_VARIANTS
+HOTSPOT_SETUP_IMPORT_JVMS
 
 # With basic setup done, call the custom early hook.
 CUSTOM_EARLY_HOOK
