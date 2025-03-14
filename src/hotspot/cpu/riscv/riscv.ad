@@ -1896,6 +1896,10 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_PopCountL:
       return UsePopCountInstruction;
 
+    case Op_ReverseI:
+    case Op_ReverseL:
+      return UseZbkb;
+
     case Op_ReverseBytesI:
     case Op_ReverseBytesL:
     case Op_ReverseBytesS:
