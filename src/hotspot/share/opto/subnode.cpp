@@ -55,10 +55,12 @@ Node* SubNode::Identity(PhaseGVN* phase) {
 
   const Type* zero = add_id();
 
-  // Remove double negation
-  if( phase->type( in(1) )->higher_equal( zero ) &&
+  // Remove double negation if it is not a floating point number, as it might be
+  // negative zero (`0.0 - (0.0 - (-0.0)) != -0.0`).
+  if (phase->type(in(1))->higher_equal(zero) &&
       in(2)->Opcode() == Opcode() &&
-      phase->type( in(2)->in(1) )->higher_equal( zero ) ) {
+      phase->type(in(2)->in(1))->higher_equal(zero) &&
+      !phase->type(in(2)->in(2))->is_floatingpoint()) {
     return in(2)->in(2);
   }
 
