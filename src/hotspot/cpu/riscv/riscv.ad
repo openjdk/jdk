@@ -7885,7 +7885,7 @@ instruct xorL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
 
 // ZTSO
 
-instruct no_membar_tso() %{
+instruct no_membar_rvtso() %{
   predicate(UseZtso);
   match(LoadFence);
   match(StoreFence);
@@ -7900,40 +7900,40 @@ instruct no_membar_tso() %{
 
   size(0);
 
-  format %{ "no_membar_tso elided/tso (empty encoding)" %}
+  format %{ "no_membar_rvtso elided/tso (empty encoding)" %}
   ins_encode %{
-    __ block_comment("no_membar_tso");
+    __ block_comment("no_membar_rvtso");
   %}
   ins_pipe(real_empty);
 %}
 
-instruct membar_volatile_tso() %{
+instruct membar_volatile_rvtso() %{
   predicate(UseZtso);
   match(MemBarVolatile);
   ins_cost(VOLATILE_REF_COST);
 
-  format %{ "membar_volatile_tso\n\t"
+  format %{ "membar_volatile_rvtso\n\t"
             "fence w, r"%}
 
   ins_encode %{
-    __ block_comment("membar_volatile_tso");
+    __ block_comment("membar_volatile_rvtso");
     __ membar(MacroAssembler::StoreLoad);
   %}
 
   ins_pipe(pipe_slow);
 %}
 
-instruct unnecessary_membar_volatile_tso() %{
+instruct unnecessary_membar_volatile_rvtso() %{
   predicate(UseZtso && Matcher::post_store_load_barrier(n));
   match(MemBarVolatile);
   ins_cost(0);
 
   size(0);
   
-  format %{ "unnecessary_membar_volatile_tso (unnecessary so empty encoding)" %}
+  format %{ "unnecessary_membar_volatile_rvtso (unnecessary so empty encoding)" %}
   ins_encode %{
     assert(UseZtso, "Must be");
-    __ block_comment("unnecessary_membar_volatile_tso");
+    __ block_comment("unnecessary_membar_volatile_rvtso");
   %}
   ins_pipe(real_empty);
 %}
@@ -7979,7 +7979,7 @@ instruct membar_rvwmo_storestore() %{
   ins_cost(VOLATILE_REF_COST);
 
   format %{ "membar_rvwmo_storestore\n\t"
-            "fence rw, w" %}
+            "fence w, w" %}
 
   ins_encode %{
     __ membar(MacroAssembler::StoreStore);
