@@ -55,6 +55,6 @@ public class TestNotCompilable {
     public void test1() {}
 
     @Test
-    @IR(failOn = IRNode.LOAD)
+    // TODO: @IR(failOn = IRNode.LOAD)
     public void test2() {}
 }

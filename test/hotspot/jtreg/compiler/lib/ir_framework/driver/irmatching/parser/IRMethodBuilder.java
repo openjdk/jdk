@@ -64,6 +64,7 @@ class IRMethodBuilder {
             return new IRMethod(testMethod.method(), testMethod.irRuleIds(), testMethod.irAnnos(),
                                 new Compilation(loggedMethod.compilationOutput()), vmInfo);
         } else {
+            // TODO: allow
             return new NotCompiledIRMethod(testMethod.method(), testMethod.irRuleIds().length);
         }
     }
