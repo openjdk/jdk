@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -942,13 +942,13 @@ public final class ModuleLayer {
      */
     void bindToLoader(ClassLoader loader) {
         // CLV.computeIfAbsent(loader, (cl, clv) -> new CopyOnWriteArrayList<>())
-        List<ModuleLayer> list = CLV.get(loader);
-        if (list == null) {
-            list = new CopyOnWriteArrayList<>();
-            List<ModuleLayer> previous = CLV.putIfAbsent(loader, list);
-            if (previous != null) list = previous;
+        Set<ModuleLayer> set = CLV.get(loader);
+        if (set == null) {
+            set = new CopyOnWriteArraySet<>();
+            Set<ModuleLayer> previous = CLV.putIfAbsent(loader, set);
+            if (previous != null) set = previous;
         }
-        list.add(this);
+        set.add(this);
     }
 
     /**
@@ -956,14 +956,14 @@ public final class ModuleLayer {
      * the given class loader.
      */
     static Stream<ModuleLayer> layers(ClassLoader loader) {
-        List<ModuleLayer> list = CLV.get(loader);
-        if (list != null) {
-            return list.stream();
+        Set<ModuleLayer> set = CLV.get(loader);
+        if (set != null) {
+            return set.stream();
         } else {
             return Stream.empty();
         }
     }
 
     // the list of layers with modules defined to a class loader
-    private static final ClassLoaderValue<List<ModuleLayer>> CLV = new ClassLoaderValue<>();
+    private static final ClassLoaderValue<Set<ModuleLayer>> CLV = new ClassLoaderValue<>();
 }
