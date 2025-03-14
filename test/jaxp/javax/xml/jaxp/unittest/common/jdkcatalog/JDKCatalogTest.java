@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,22 @@
  */
 package common.jdkcatalog;
 
+import static jaxp.library.JAXPTestUtilities.SRC_DIR;
+import static jaxp.library.JAXPTestUtilities.isWindows;
+
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Collectors;
 import javax.xml.XMLConstants;
+import javax.xml.catalog.Catalog;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
+import jdk.xml.internal.JdkCatalog;
 import org.testng.Assert;
 import org.testng.Assert.ThrowingRunnable;
 import org.testng.annotations.DataProvider;
@@ -44,25 +49,45 @@ import org.xml.sax.helpers.DefaultHandler;
 
 /*
  * @test
- * @bug 8344800 8345353
+ * @bug 8344800 8345353 8351969
+ * @modules java.xml/jdk.xml.internal
+ * @library /javax/xml/jaxp/libs
  * @run testng/othervm common.jdkcatalog.JDKCatalogTest
  * @summary Verifies the W3C DTDs and XSDs in the JDK built-in catalog.
  */
 public class JDKCatalogTest {
-    static String CLS_DIR = System.getProperty("test.classes");
-    static String SRC_DIR = System.getProperty("test.src");
-    public static boolean isWindows = false;
+    private static final String JDKCATALOG_RESOLVE = "jdk.xml.jdkcatalog.resolve";
+    private static final String PUBLIC_ID = "{{publicId}}";
+    private static final String SYSTEM_ID = "{{systemId}}";
+    private static final String XSD_LOCATION = "{{SCHEMA_LOCATION}}";
+    private static final String TARGET_NAMESPACE = "{{targetNamespace}}";
+    private static final String ROOT_ELEMENT = "{{rootElement}}";
+    private static final Catalog JDKCATALOG;
     static {
-        if (System.getProperty("os.name").contains("Windows")) {
-            isWindows = true;
-        }
-    };
-    public static final String JDKCATALOG_RESOLVE = "jdk.xml.jdkcatalog.resolve";
-    static final String PUBLIC_ID = "{{publicId}}";
-    static final String SYSTEM_ID = "{{systemId}}";
-    static final String XSD_LOCATION = "{{SCHEMA_LOCATION}}";
-    static final String TARGET_NAMESPACE = "{{targetNamespace}}";
-    static final String ROOT_ELEMENT = "{{rootElement}}";
+        JdkCatalog.init("continue");
+        JDKCATALOG = JdkCatalog.catalog;
+    }
+
+    /*
+     * DataProvider: DTDs in the JDK built-in Catalog
+     * Data provided: public and system Ids, see test testDTDsInJDKCatalog
+     */
+    @DataProvider(name = "DTDsInJDKCatalog")
+    public Object[][] getDTDsInJDKCatalog() {
+        return new Object[][]{
+            // Schema 1.0
+            {"-//W3C//DTD XMLSCHEMA 200102//EN", "http://www.w3.org/2001/XMLSchema.dtd"},
+            {"datatypes", "http://www.w3.org/2001/datatypes.dtd"},
+            // XHTML 1.0
+            {"-//W3C//DTD XHTML 1.0 Frameset//EN", "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd"},
+            {"-//W3C//DTD XHTML 1.0 Strict//EN", "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"},
+            {"-//W3C//DTD XHTML 1.0 Transitional//EN", "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"},
+            // XHTML 1.1
+            {"-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"},
+            // DTD for W3C specifications
+            {"-//W3C//DTD Specification V2.10//EN", "http://www.w3.org/2002/xmlspec/dtd/2.10/xmlspec.dtd"},
+        };
+    }
 
     /*
      * DataProvider: for verifying DTDs in the JDKCatalog
@@ -104,6 +129,19 @@ public class JDKCatalogTest {
             {"xhtml.xml", "https://www.w3.org/2002/08/xhtml/xhtml1-transitional.xsd", "http://www.w3.org/1999/xhtml", "html", null, null},
             {"xhtml.xml", "http://www.w3.org/MarkUp/SCHEMA/xhtml11.xsd", "http://www.w3.org/1999/xhtml", "html", null, null},
         };
+    }
+
+    /**
+     * Verifies that the JDK built-in Catalog supports both the Public and System
+     * identifiers for DTDs.
+     * @param publicId the public Id
+     * @param systemId the system Id
+     */
+    @Test(dataProvider = "DTDsInJDKCatalog")
+    public void testDTDsInJDKCatalog(String publicId, String systemId) {
+        String matchingPubId = JDKCATALOG.matchPublic(publicId);
+        String matchingSysId = JDKCATALOG.matchSystem(systemId);
+        Assert.assertEquals(matchingPubId, matchingSysId);
     }
 
     /**
