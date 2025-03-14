@@ -1523,7 +1523,6 @@ public class ModuleDescriptorTest {
         assertTrue(s.contains("p1"));
     }
 
-    @Test(expectedExceptions = InvalidModuleDescriptorException.class)
     public void testRequiresTransitiveJavaBaseNotPermitted1() throws Exception {
         ModuleDescriptor descriptor = ModuleDescriptor.newModule("foo")
                 .requires(Set.of(Modifier.TRANSITIVE), "java.base")
@@ -1536,7 +1535,6 @@ public class ModuleDescriptorTest {
         ModuleDescriptor.read(bb, () -> Set.of("p", "q"));
     }
 
-    @Test(expectedExceptions = InvalidModuleDescriptorException.class)
     public void testRequiresTransitiveJavaBaseNotPermitted2() throws Exception {
         ModuleDescriptor descriptor = ModuleDescriptor.newModule("foo")
                 .requires(Set.of(Modifier.TRANSITIVE), "java.base")

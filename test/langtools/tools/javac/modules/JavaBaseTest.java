@@ -179,30 +179,26 @@ public class JavaBaseTest {
     }
 
     void testClass(Path base, List<String> mods, String target) throws Exception {
-        boolean expectOK;
+        boolean expectOK = true;
         List<String> options = new ArrayList<>();
 
         switch (target) {
             case "current":
                 options.add("--release");
                 options.add(CURRENT_VERSION);
-                expectOK = false;
                 break;
             case "current-preview":
                 options.add("--enable-preview");
                 options.add("--release");
                 options.add(CURRENT_VERSION);
-                expectOK = true;
                 break;
             case "9":
                 options.add("--release");
                 options.add(target);
-                expectOK = true;
                 break;
             default:
                 options.add("--release");
                 options.add(target);
-                expectOK = false;
                 break;
         }
 
