@@ -125,13 +125,13 @@ public class XMLReaderManager {
                 m_readers.set(new ReaderWrapper(reader, m_overrideDefaultParser));
             }
 
-            //reader is cached, but this property might have been reset
-            JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, XMLConstants.ACCESS_EXTERNAL_DTD,
-                    _accessExternalDTD, true);
-
-            JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkConstants.CDATA_CHUNK_SIZE,
-                    _cdataChunkSize, false);
         }
+        //reader is cached, but this property might have been reset
+        JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, XMLConstants.ACCESS_EXTERNAL_DTD,
+                _accessExternalDTD, true);
+
+        JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkConstants.CDATA_CHUNK_SIZE,
+                _cdataChunkSize, false);
 
         return reader;
     }
