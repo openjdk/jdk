@@ -324,22 +324,6 @@ public class Resources extends java.util.ListResourceBundle {
         {"Cannot.find.file.", "Cannot find file: "},
         {"event.ocsp.check", "Contacting OCSP server at %s ..."},
         {"event.crl.check", "Downloading CRL from %s ..."},
-        {"CEN.manifest.is.missing",
-                "CEN manifest is missing"},
-        {"LOC.manifest.is.missing",
-                "LOC manifest is missing"},
-        {"main.attribute.key.1.in.CEN.but.missing.in.LOC",
-                "Main attribute key %s in CEN but missing in LOC"},
-        {"main.attribute.key.1.in.LOC.but.missing.in.CEN",
-                "Main attribute key %s in LOC but missing in CEN"},
-        {"main.atrribute.key.1.mismatch.CEN.2.LOC.3",
-                "Main attribute key %s mismatch: CEN= %s and LOC= %s"},
-        {"Entry.missing.in.JarFile.1",
-                "Entry missing in JarFile: %s"},
-        {"Signature.mismatch.for.entry.1",
-                "Signature mismatch between CEN and LOC for entry = %s"},
-        {"Mismatch.in.number.of.entries.between.CEN.and.LOC",
-                "Mismatch in number of entries between CEN and LOC"},
     };
 
     /**

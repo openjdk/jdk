@@ -28,8 +28,6 @@ package sun.security.tools.jarsigner;
 import java.io.*;
 import java.net.UnknownHostException;
 import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.spec.ECParameterSpec;
@@ -242,8 +240,6 @@ public class Main {
 
     private Throwable chainNotValidatedReason = null;
     private Throwable tsaChainNotValidatedReason = null;
-
-    private List<String> crossChkWarnings = new ArrayList<>();
 
     PKIXBuilderParameters pkixParameters;
     Set<X509Certificate> trustedCerts = new HashSet<>();
@@ -1106,7 +1102,6 @@ public class Main {
                 }
             }
             System.out.println();
-            crossCheckEntries(jarName);
 
             if (!anySigned) {
                 if (disabledAlgFound) {
@@ -1129,124 +1124,6 @@ public class Main {
         } finally { // close the resource
             if (jf != null) {
                 jf.close();
-            }
-        }
-    }
-
-    private void crossCheckEntries(String jarName) throws Exception {
-        List<String> locEntries = new ArrayList<>();
-        List<String> cenEntries;
-
-        try (JarFile jarFile = new JarFile(jarName);
-             JarInputStream jis = new JarInputStream(
-                     Files.newInputStream(Path.of(jarName)))) {
-
-            Manifest cenManifest = jarFile.getManifest();
-            Manifest locManifest = jis.getManifest();
-            if (!compareManifest(cenManifest, locManifest)) {
-                return;
-            }
-
-            JarEntry locEntry;
-            while ((locEntry = jis.getNextJarEntry()) != null) {
-                String entryName = locEntry.getName();
-                locEntries.add(entryName);
-
-                JarEntry cenEntry = jarFile.getJarEntry(entryName);
-                if (cenEntry == null) {
-                    crossChkWarnings.add(String.format(rb.getString(
-                            "Entry.missing.in.JarFile.1"), entryName));
-                    continue;
-                }
-
-                readEntry(jis);
-                try (InputStream cenInputStream = jarFile.getInputStream(cenEntry)) {
-                    readEntry(cenInputStream);
-                }
-
-                compareSigners(cenEntry, locEntry);
-            }
-
-            Map<String, Integer> entryMap = new HashMap<>();
-            for (int i = 0; i < locEntries.size(); i++) {
-                entryMap.put(locEntries.get(i), i);
-            }
-
-            cenEntries = jarFile.stream()
-                    .map(JarEntry::getName)
-                    .sorted(Comparator.comparingInt(
-                            name -> entryMap.getOrDefault(name, Integer.MAX_VALUE)))
-                    .collect(Collectors.toList());
-
-            cenEntries.remove("META-INF/MANIFEST.MF");
-            if (!cenEntries.equals(locEntries)) {
-                crossChkWarnings.add(rb.getString(
-                        "Mismatch.in.number.of.entries.between.CEN.and.LOC"));
-            }
-        }
-    }
-
-    private void readEntry(InputStream is) throws IOException {
-        byte[] buffer = new byte[8192];
-        while (is.read(buffer) != -1) {
-        }
-    }
-
-    private boolean compareManifest(Manifest cenManifest, Manifest locManifest) {
-        if (cenManifest == null) {
-            crossChkWarnings.add(rb.getString("CEN.manifest.is.missing"));
-            return false;
-        }
-        if (locManifest == null) {
-            crossChkWarnings.add(rb.getString("LOC.manifest.is.missing"));
-            return false;
-        }
-
-        Attributes cenMainAttrs = cenManifest.getMainAttributes();
-        Attributes locMainAttrs = locManifest.getMainAttributes();
-
-        for (Object key : cenMainAttrs.keySet()) {
-            Object cenValue = cenMainAttrs.get(key);
-            Object locValue = locMainAttrs.get(key);
-
-            if (locValue == null) {
-                crossChkWarnings.add(String.format(
-                        rb.getString("main.attribute.key.1.in.CEN.but.missing.in.LOC"),
-                        key));
-                return false;
-            } else if (!cenValue.equals(locValue)) {
-                crossChkWarnings.add(String.format(
-                        rb.getString("main.atrribute.key.1.mismatch.CEN.2.LOC.3"),
-                        key, cenValue, locValue));
-                return false;
-            }
-        }
-
-        for (Object key : locMainAttrs.keySet()) {
-            if (!cenMainAttrs.containsKey(key)) {
-                System.out.println(String.format(
-                        rb.getString("main.attribute.key.1.in.LOC.but.missing.in.CEN"),
-                        key));
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private void compareSigners(JarEntry cenEntry, JarEntry locEntry) {
-        CodeSigner[] cenSigners = cenEntry.getCodeSigners();
-        CodeSigner[] locSigners = locEntry.getCodeSigners();
-
-        boolean cenHasSigners = cenSigners != null;
-        boolean locHasSigners = locSigners != null;
-
-        if (cenHasSigners && locHasSigners) {
-            List<CodeSigner> cenSignerList = Arrays.asList(cenSigners);
-            List<CodeSigner> locSignerList = Arrays.asList(locSigners);
-
-            if (!cenSignerList.equals(locSignerList)) {
-                crossChkWarnings.add(String.format(rb.getString(
-                        "Signature.mismatch.for.entry.1"), cenEntry.getName()));
             }
         }
     }
@@ -1477,17 +1354,12 @@ public class Main {
                 System.out.println(rb.getString("Warning."));
                 warnings.forEach(System.out::println);
             }
-            if (!crossChkWarnings.isEmpty()) {
-                System.out.println();
-                crossChkWarnings.forEach(System.out::println);
-            }
         } else {
-            if (!errors.isEmpty() || !warnings.isEmpty() || !crossChkWarnings.isEmpty()) {
+            if (!errors.isEmpty() || !warnings.isEmpty()) {
                 System.out.println();
                 System.out.println(rb.getString("Warning."));
                 errors.forEach(System.out::println);
                 warnings.forEach(System.out::println);
-                crossChkWarnings.forEach(System.out::println);
             }
         }
 
