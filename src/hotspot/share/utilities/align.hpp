@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,15 @@ constexpr T align_down(T size, A alignment) {
   return result;
 }
 
+// Checks whether it is possible to align size to alignment without overflowing.
+template<typename T, typename A, ENABLE_IF(std::is_integral<T>::value)>
+constexpr bool can_align_up(T size, A alignment) {
+  return align_down(std::numeric_limits<T>::max(), alignment) >= size;
+}
+
 template<typename T, typename A, ENABLE_IF(std::is_integral<T>::value)>
 constexpr T align_up(T size, A alignment) {
+  assert(can_align_up(size, alignment), "precondition");
   T adjusted = checked_cast<T>(size + alignment_mask(alignment));
   return align_down(adjusted, alignment);
 }
@@ -84,6 +91,12 @@ constexpr T align_down_bounded(T size, A alignment) {
 }
 
 // Align pointers and check for alignment.
+
+template <typename A>
+inline bool can_align_up(void* ptr, A alignment) {
+  static_assert(sizeof(ptr) == sizeof(uintptr_t), "assumption");
+  return can_align_up((uintptr_t)ptr, alignment);
+}
 
 template <typename T, typename A>
 inline T* align_up(T* ptr, A alignment) {

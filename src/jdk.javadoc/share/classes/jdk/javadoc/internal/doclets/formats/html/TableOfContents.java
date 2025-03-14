@@ -25,6 +25,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlAttr;
@@ -47,7 +48,8 @@ public class TableOfContents {
      */
     public TableOfContents(HtmlDocletWriter writer) {
         this.writer = writer;
-        listBuilder = new ListBuilder(HtmlTree.OL(HtmlStyles.tocList));
+        listBuilder = new ListBuilder(HtmlTree.OL(HtmlStyles.tocList)
+                .put(HtmlAttr.TABINDEX, "-1"));
     }
 
     /**
@@ -96,18 +98,27 @@ public class TableOfContents {
                     .add(HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlStyles.filterInput)
                             .put(HtmlAttr.PLACEHOLDER, writer.resources.getText("doclet.filter_label"))
                             .put(HtmlAttr.ARIA_LABEL, writer.resources.getText("doclet.filter_table_of_contents"))
-                            .put(HtmlAttr.AUTOCOMPLETE, "off"))
+                            .put(HtmlAttr.AUTOCOMPLETE, "off")
+                            .put(HtmlAttr.SPELLCHECK, "false"))
                     .add(HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlStyles.resetFilter)
+                            .put(HtmlAttr.TABINDEX, "-1")
                             .put(HtmlAttr.VALUE, writer.resources.getText("doclet.filter_reset")));
         }
         content.add(header);
+        content.add(listBuilder);
         content.add(HtmlTree.BUTTON(HtmlStyles.hideSidebar)
                 .add(HtmlTree.SPAN(writer.contents.hideSidebar).add(Entity.NO_BREAK_SPACE))
-                .add(Entity.LEFT_POINTING_ANGLE));
+                .add(HtmlTree.of(HtmlTag.IMG)
+                        .put(HtmlAttr.SRC, writer.pathToRoot.resolve(DocPaths.RESOURCE_FILES)
+                                .resolve(DocPaths.LEFT_SVG).getPath())
+                        .put(HtmlAttr.ALT, writer.contents.hideSidebar.toString())));
         content.add(HtmlTree.BUTTON(HtmlStyles.showSidebar)
-                .add(Entity.RIGHT_POINTING_ANGLE)
+                .add(HtmlTree.of(HtmlTag.IMG)
+                        .put(HtmlAttr.SRC, writer.pathToRoot.resolve(DocPaths.RESOURCE_FILES)
+                                .resolve(DocPaths.RIGHT_SVG).getPath())
+                        .put(HtmlAttr.ALT, writer.contents.showSidebar.toString()))
                 .add(HtmlTree.SPAN(Entity.NO_BREAK_SPACE).add(writer.contents.showSidebar)));
-        return content.add(listBuilder);
+        return content;
     }
 
 }

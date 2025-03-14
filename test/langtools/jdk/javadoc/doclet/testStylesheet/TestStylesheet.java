@@ -119,15 +119,17 @@ public class TestStylesheet extends JavadocTester {
                 """
                     input#reset-search, input.reset-filter {
                         background-color: transparent;
-                        background-image:url('x.png');
+                        background-image:url('x.svg');
                         background-repeat:no-repeat;
                         background-size:contain;
                         border:0;
                         border-radius:0;
                         width:12px;
                         height:12px;
+                        min-width:12px;
+                        min-height:12px;
                         font-size:0;
-                        display:none;
+                        visibility:hidden;
                     }""",
                 """
                     ::placeholder {
