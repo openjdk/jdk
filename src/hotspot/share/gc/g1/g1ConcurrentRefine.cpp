@@ -213,19 +213,24 @@ bool G1ConcurrentRefineSweepState::swap_java_threads_ct() {
 
   set_state_start_time();
 
-  class G1SwapThreadCardTableClosure : public HandshakeClosure {
-  public:
-    G1SwapThreadCardTableClosure() : HandshakeClosure("G1 Swap JT card table") { }
+  {
+    // Need to leave the STS to avoid potential deadlock in the handshake.
+    SuspendibleThreadSetLeaver sts;
 
-    virtual void do_thread(Thread* thread) {
-      G1BarrierSet* bs = G1BarrierSet::g1_barrier_set();
-      bs->update_card_table_base(thread);
-    }
-  } cl;
-  Handshake::execute(&cl);
+    class G1SwapThreadCardTableClosure : public HandshakeClosure {
+    public:
+      G1SwapThreadCardTableClosure() : HandshakeClosure("G1 Swap JT card table") { }
+
+      virtual void do_thread(Thread* thread) {
+        G1BarrierSet* bs = G1BarrierSet::g1_barrier_set();
+        bs->update_card_table_base(thread);
+      }
+    } cl;
+    Handshake::execute(&cl);
+  }
 
   return advance_state(State::SynchronizeGCThreads);
-}
+  }
 
 bool G1ConcurrentRefineSweepState::swap_gc_threads_ct() {
   assert_state(State::SynchronizeGCThreads);
