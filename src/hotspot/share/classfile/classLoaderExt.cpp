@@ -100,4 +100,8 @@ void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* resu
     CDSConfig::disable_heap_dumping();
   }
 #endif // INCLUDE_CDS_JAVA_HEAP
+
+  if (CDSConfig::is_dumping_preimage_static_archive() || CDSConfig::is_dumping_dynamic_archive()) {
+    AOTClassLocationConfig::dumptime()->check_invalid_classpath_index(classpath_index, result);
+  }
 }
