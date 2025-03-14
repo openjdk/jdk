@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,6 @@ enum class C1StubId :int {
 #undef C1_STUB_ID_ENUM_DECLARE
 
 class Runtime1: public AllStatic {
-  friend class VMStructs;
   friend class ArrayCopyStub;
 
 public:

@@ -93,7 +93,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     void set(uint idx, G1HeapRegion* hr) {
       assert(idx < _max_size, "Index %u out of bounds %u", idx, _max_size);
       assert(_data[idx]._r == nullptr, "Value must not have been set.");
-      _data[idx] = CandidateInfo(hr, 0.0);
+      _data[idx] = CandidateInfo(hr);
     }
 
     void sort_by_reclaimable_bytes() {
@@ -103,7 +103,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       for (uint i = _cur_claim_idx; i < _max_size; i++) {
         assert(_data[i]._r == nullptr, "must be");
       }
-      qsort(_data, _cur_claim_idx, sizeof(_data[0]), (_sort_Fn)G1CollectionCandidateList::compare_reclaimble_bytes);
+      qsort(_data, _cur_claim_idx, sizeof(_data[0]), (_sort_Fn)G1CSetCandidateGroup::compare_reclaimble_bytes);
       for (uint i = _cur_claim_idx; i < _max_size; i++) {
         assert(_data[i]._r == nullptr, "must be");
       }

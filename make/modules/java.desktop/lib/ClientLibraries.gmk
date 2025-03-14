@@ -23,11 +23,15 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
 ################################################################################
 # This file will build all AWT/2D native libraries that does not have "awt" in
 # the name. Note that this does not imply anything about the logical ownership
 # of the code they compile.
 # This split is purely made to keep the size of the Makefiles reasonable.
+################################################################################
 
 ################################################################################
 ## Build libmlib_image
@@ -222,11 +226,13 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       EXCLUDE_SRC_PATTERNS := $(LIBSPLASHSCREEN_EXCLUDE_SRC_PATTERNS), \
       EXCLUDE_FILES := imageioJPEG.c jpegdecoder.c pngtest.c, \
       EXCLUDES := $(LIBSPLASHSCREEN_EXCLUDES), \
-      OPTIMIZATION := LOW, \
+      OPTIMIZATION := SIZE, \
       CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) \
-          $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
+          $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS) \
+          $(ICONV_CFLAGS), \
       CXXFLAGS := $(LIBSPLASHSCREEN_CFLAGS) \
-          $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
+          $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS) \
+          $(ICONV_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBSPLASHSCREEN_HEADER_DIRS), \
       DISABLED_WARNINGS_gcc_dgif_lib.c := sign-compare, \
       DISABLED_WARNINGS_gcc_jcmaster.c := implicit-fallthrough, \
@@ -252,19 +258,20 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_microsoft_splashscreen_impl.c := 4018 4267 4244, \
       DISABLED_WARNINGS_microsoft_splashscreen_png.c := 4267, \
       DISABLED_WARNINGS_microsoft_splashscreen_sys.c := 4267 4244, \
+      LDFLAGS := $(ICONV_LDFLAGS), \
       LDFLAGS_windows := -delayload:user32.dll, \
       JDK_LIBS_windows := java.base:libjava, \
       JDK_LIBS_macosx := libosxapp, \
-      LIBS := $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(LIBZ_LIBS) $(PNG_LIBS), \
-      LIBS_unix := $(LIBM) -lpthread, \
+      LIBS := $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(LIBZ_LIBS) $(PNG_LIBS) $(ICONV_LIBS), \
+      LIBS_unix := $(LIBM) $(LIBPTHREAD), \
       LIBS_linux := $(LIBDL) $(X_LIBS) -lX11 -lXext, \
-      LIBS_macosx := -liconv \
+      LIBS_macosx := \
           -framework ApplicationServices \
           -framework Cocoa \
           -framework Foundation \
           -framework Metal \
           -framework Security, \
-      LIBS_aix := $(LIBDL) -liconv $(X_LIBS) -lX11 -lXext, \
+      LIBS_aix := $(LIBDL) $(X_LIBS) -lX11 -lXext, \
       LIBS_windows := delayimp.lib gdi32.lib kernel32.lib user32.lib, \
       STATIC_LIB_EXCLUDE_OBJS := $(LIBSPLASHSCREEN_STATIC_LIB_EXCLUDE_OBJS), \
   ))
@@ -327,7 +334,7 @@ else
 
   HARFBUZZ_DISABLED_WARNINGS_gcc := missing-field-initializers \
       strict-aliasing unused-result array-bounds parentheses \
-       unused-variable
+       unused-variable dangling-pointer
   # noexcept-type required for GCC 7 builds. Not required for GCC 8+.
   # expansion-to-defined required for GCC 9 builds. Not required for GCC 10+.
   # maybe-uninitialized required for GCC 8 builds. Not required for GCC 9+.
@@ -403,6 +410,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     LDFLAGS_aix := -Wl$(COMMA)-berok, \
     JDK_LIBS := libawt java.base:libjava $(LIBFONTMANAGER_JDK_LIBS), \
     JDK_LIBS_macosx := libawt_lwawt, \
+    JDK_LIBS_unix := java.base:libjvm, \
     LIBS := $(LIBFONTMANAGER_LIBS), \
     LIBS_unix := $(LIBM), \
     LIBS_macosx := \
@@ -467,3 +475,8 @@ ifeq ($(call isTargetOs, macosx), true)
 
   $(BUILD_LIBOSXUI): $(SHADERS_LIB)
 endif
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

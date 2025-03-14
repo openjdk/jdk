@@ -1316,6 +1316,7 @@ enum operand_size { int8, int16, int32, uint32, int64 };
 
  public:
 
+  void  flh(FloatRegister Rd, Register Rs, const int32_t offset) { fp_load<0b001>(Rd, Rs, offset); }
   void  flw(FloatRegister Rd, Register Rs, const int32_t offset) { fp_load<0b010>(Rd, Rs, offset); }
   void _fld(FloatRegister Rd, Register Rs, const int32_t offset) { fp_load<0b011>(Rd, Rs, offset); }
 
@@ -1395,6 +1396,46 @@ enum operand_size { int8, int16, int32, uint32, int64 };
   void fmv_x_h(Register Rd, FloatRegister Rs1) {
     assert_cond(UseZfh || UseZfhmin);
     fp_base<H_16_hp, 0b11100>(Rd, Rs1, 0b00000, 0b000);
+  }
+
+  void fadd_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b00000>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fsub_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b00001>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fmul_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b00010>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fdiv_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b00011>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fsqrt_h(FloatRegister Rd, FloatRegister Rs1, RoundingMode rm = rne) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b01011>(Rd, Rs1, 0b00000, rm);
+  }
+
+  void fmin_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b00101>(Rd, Rs1, Rs2, 0b000);
+  }
+
+  void fmax_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b00101>(Rd, Rs1, Rs2, 0b001);
+  }
+
+  void fmadd_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, FloatRegister Rs3, RoundingMode rm = rne)  {
+    assert_cond(UseZfh);
+    fp_fm<H_16_hp, 0b1000011>(Rd, Rs1, Rs2, Rs3, rm);
   }
 
 // --------------  ZFA Instruction Definitions  --------------
