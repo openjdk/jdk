@@ -786,7 +786,8 @@ class PredicateIterator : public StackObj {
       PredicateBlockIterator loop_predicate_iterator(current_node, Deoptimization::Reason_predicate);
       current_node = loop_predicate_iterator.for_each(predicate_visitor);
     }
-    return current_node;
+    PredicateBlockIterator short_running_loop_predicate_iterator(current_node, Deoptimization::Reason_short_running_loop);
+    return short_running_loop_predicate_iterator.for_each(predicate_visitor);
   }
 };
 
@@ -953,6 +954,7 @@ class Predicates : public StackObj {
   const PredicateBlock _auto_vectorization_check_block;
   const PredicateBlock _profiled_loop_predicate_block;
   const PredicateBlock _loop_predicate_block;
+  const PredicateBlock _short_running_loop_predicate_block;
   Node* const _entry;
 
  public:
@@ -965,7 +967,9 @@ class Predicates : public StackObj {
                                        Deoptimization::Reason_profile_predicate),
         _loop_predicate_block(_profiled_loop_predicate_block.entry(),
                               Deoptimization::Reason_predicate),
-        _entry(_loop_predicate_block.entry()) {}
+        _short_running_loop_predicate_block(_loop_predicate_block.entry(),
+                                            Deoptimization::Reason_short_running_loop),
+        _entry(_short_running_loop_predicate_block.entry()) {}
   NONCOPYABLE(Predicates);
 
   // Returns the control input the first predicate if there are any predicates. If there are no predicates, the same
@@ -988,6 +992,10 @@ class Predicates : public StackObj {
 
   const PredicateBlock* loop_limit_check_predicate_block() const {
     return &_loop_limit_check_predicate_block;
+  }
+
+  const PredicateBlock* short_running_loop_predicate_block() const {
+    return &_short_running_loop_predicate_block;
   }
 
   bool has_any() const {
