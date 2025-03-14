@@ -25,7 +25,7 @@ import org.testng.annotations.Test;
 
 import java.lang.foreign.SymbolLookup;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertTrue;
 
 /*
  * @test
