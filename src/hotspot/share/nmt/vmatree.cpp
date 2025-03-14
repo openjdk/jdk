@@ -86,6 +86,19 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
 
     // Direct address match.
     if (leqA_n->key() == A) {
+      // For NMT reports in detail mode, separate stacks are required for Reserve and Commit operations.
+      // So, do not touch the stack of the node since it is for Reserve operation. Instead store the new
+      // call-stack in the second_stack of the node.
+      if ((leqA_n->val().out.mem_tag() != leqA_n->val().in.mem_tag()
+           || leqA_n->val().out.type() != leqA_n->val().in.type())          // leqA_n is the start of a reserved region
+          && !(state == StateType::Reserved && !use_tag_inplace)            // we are not reserving a new region
+          && !NativeCallStackStorage::is_invalid(leqA_n->val().out.stack()) // the primary stack is already filled
+         ) {
+        stA.out.set_stack(leqA_n->val().out.stack());
+        stB.in.set_stack(leqA_n->val().out.stack());
+        stA.out.set_second_stack(metadata.stack_idx);
+        stB.in.set_second_stack(metadata.stack_idx);
+      }
       // Take over in state from old address.
       stA.in = in_state(leqA_n);
 
