@@ -22,6 +22,9 @@
  */
 package common.jdkcatalog;
 
+import static jaxp.library.JAXPTestUtilities.SRC_DIR;
+import static jaxp.library.JAXPTestUtilities.isWindows;
+
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,7 +40,6 @@ import javax.xml.validation.Validator;
 import jdk.xml.internal.JdkCatalog;
 import org.testng.Assert;
 import org.testng.Assert.ThrowingRunnable;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
@@ -49,33 +51,29 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 8344800 8345353 8351969
  * @modules java.xml/jdk.xml.internal
+ * @library /javax/xml/jaxp/libs
  * @run testng/othervm common.jdkcatalog.JDKCatalogTest
  * @summary Verifies the W3C DTDs and XSDs in the JDK built-in catalog.
  */
 public class JDKCatalogTest {
-    static String CLS_DIR = System.getProperty("test.classes");
-    static String SRC_DIR = System.getProperty("test.src");
-    public static boolean isWindows = false;
+    private static final String JDKCATALOG_RESOLVE = "jdk.xml.jdkcatalog.resolve";
+    private static final String PUBLIC_ID = "{{publicId}}";
+    private static final String SYSTEM_ID = "{{systemId}}";
+    private static final String XSD_LOCATION = "{{SCHEMA_LOCATION}}";
+    private static final String TARGET_NAMESPACE = "{{targetNamespace}}";
+    private static final String ROOT_ELEMENT = "{{rootElement}}";
+    private static final Catalog JDKCATALOG;
     static {
-        if (System.getProperty("os.name").contains("Windows")) {
-            isWindows = true;
-        }
-    };
-    public static final String JDKCATALOG_RESOLVE = "jdk.xml.jdkcatalog.resolve";
-    static final String PUBLIC_ID = "{{publicId}}";
-    static final String SYSTEM_ID = "{{systemId}}";
-    static final String XSD_LOCATION = "{{SCHEMA_LOCATION}}";
-    static final String TARGET_NAMESPACE = "{{targetNamespace}}";
-    static final String ROOT_ELEMENT = "{{rootElement}}";
-
-    Catalog jdkCatalog;
+        JdkCatalog.init("continue");
+        JDKCATALOG = JdkCatalog.catalog;
+    }
 
     /*
      * DataProvider: DTDs in the JDK built-in Catalog
      * Data provided: public and system Ids, see test testDTDsInJDKCatalog
      */
     @DataProvider(name = "DTDsInJDKCatalog")
-    public Object[][] getDTDsInJDKCatalog() throws Exception {
+    public Object[][] getDTDsInJDKCatalog() {
         return new Object[][]{
             // Schema 1.0
             {"-//W3C//DTD XMLSCHEMA 200102//EN", "http://www.w3.org/2001/XMLSchema.dtd"},
@@ -133,29 +131,16 @@ public class JDKCatalogTest {
         };
     }
 
-    /*
-     * Initializing fields
-     */
-    @BeforeClass
-    public void setUpClass() throws Exception {
-        // initialize JDKCatalog
-        JdkCatalog.init("continue");
-        jdkCatalog = JdkCatalog.catalog;
-    }
-
     /**
      * Verifies that the JDK built-in Catalog supports both the Public and System
      * identifiers for DTDs.
      * @param publicId the public Id
      * @param systemId the system Id
-     * @throws Exception if test fails unexpectedly
      */
     @Test(dataProvider = "DTDsInJDKCatalog")
-    public void testDTDsInJDKCatalog(String publicId, String systemId)
-            throws Exception {
-        String matchingPubId = jdkCatalog.matchPublic(publicId);
-        String matchingSysId = jdkCatalog.matchSystem(systemId);
-
+    public void testDTDsInJDKCatalog(String publicId, String systemId) {
+        String matchingPubId = JDKCATALOG.matchPublic(publicId);
+        String matchingSysId = JDKCATALOG.matchSystem(systemId);
         Assert.assertEquals(matchingPubId, matchingSysId);
     }
 
