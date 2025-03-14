@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,13 +125,18 @@ public class KeyFactoryGetKeySpecForInvalidSpec {
         }
     }
 
-    public static class FakeX509Spec extends X509EncodedKeySpec {
+    public static class FakeX509Spec extends EncodedKeySpec {
         public FakeX509Spec(byte[] encodedKey) {
             super(encodedKey);
         }
 
         public FakeX509Spec(byte[] encodedKey, String algorithm) {
             super(encodedKey, algorithm);
+        }
+
+        @Override
+        public String getFormat() {
+            return null;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,8 +300,8 @@ final class KeyProtector {
         // which in turn parses the key material.
         try {
             return PKCS8Key.parseKey(plainKey);
-        } catch (IOException ioe) {
-            throw new UnrecoverableKeyException(ioe.getMessage());
+        } catch (InvalidKeyException e) {
+            throw new UnrecoverableKeyException(e.getMessage());
         } finally {
             Arrays.fill(plainKey, (byte)0);
         }
