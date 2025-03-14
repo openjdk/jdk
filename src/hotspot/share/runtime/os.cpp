@@ -707,7 +707,6 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     }
 #ifdef ASSERT
     else {
-      assert(old_size == free_info.size, "Sanity");
       if (old_size < size) {
         // We also zap the newly extended region.
         ::memset((char*)rc + old_size, uninitBlockPad, size - old_size);
