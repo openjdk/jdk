@@ -55,7 +55,11 @@ TARGETS += $(BUILD_SETUP_AOT)
 $(eval $(call SetupCopyFiles, COPY_SETUP_AOT, \
     SRC := $(SETUP_AOT_SUPPORT)/classes, \
     DEST := $(TEST_IMAGE_DIR)/setup_aot, \
-    FILES := TestSetupAOT.class, \
+    FILES := JavacBenchApp.class \
+             JavacBenchApp$$ClassFile.class \
+             JavacBenchApp$$FileManager.class \
+             JavacBenchApp$$SourceFile.class \
+             TestSetupAOT.class, \
 ))
 
 IMAGES_TARGETS += $(COPY_SETUP_AOT)

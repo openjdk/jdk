@@ -735,6 +735,7 @@ define SetupAOTBody
   $1_AOT_JDK_CONF := $$($1_TEST_SUPPORT_DIR)/aot/jdk.aotconf
   $1_AOT_JDK_CACHE := $$($1_TEST_SUPPORT_DIR)/aot/jdk.aotcache
   $1_AOT_JDK_LOG := $$($1_TEST_SUPPORT_DIR)/aot/TestSetupAOT.log
+  $1_AOT_JDK_OUTPUT_DIR := $$($1_TEST_SUPPORT_DIR)/aot
 
   # We execute the training run with $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.class
   # to touch a fair number of classes inside the JDK. Note that we can't specify a classpath,
@@ -756,7 +757,7 @@ define SetupAOTBody
 	    $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java $$($1_VM_OPTIONS) \
 	        -Xlog:cds,cds+class=debug:file=$$($1_AOT_JDK_CONF).log  -Xlog:cds*=error \
 	        -XX:AOTMode=record -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) \
-	        TestSetupAOT > $$($1_AOT_JDK_LOG) \
+	        TestSetupAOT $$($1_AOT_JDK_OUTPUT_DIR) > $$($1_AOT_JDK_LOG) \
 	))
 
 	$$(call LogWarn, AOT: Generate AOT cache $$($1_AOT_JDK_CACHE) with flags: $$($1_VM_OPTIONS))
