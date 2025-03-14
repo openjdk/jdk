@@ -718,15 +718,11 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
            NMTUtil::tag_to_name(mem_tag), NMTUtil::tag_to_name(header->mem_tag()));
     const MallocHeader::FreeInfo free_info = header->free_info();
 
-    header->mark_block_as_dead();
-
     // the real realloc
     ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc(header, new_outer_size);)
 
     if (new_outer_ptr == nullptr) {
       // realloc(3) failed and the block still exists.
-      // We have however marked it as dead, revert this change.
-      header->revive();
       return nullptr;
     }
     // realloc(3) succeeded, variable header now points to invalid memory and we need to deaccount the old block.
