@@ -100,7 +100,7 @@ class JfrCheckpointManager : public JfrCHeapObj {
   void end_epoch_shift();
 
   static void on_unloading_classes();
-  void on_rotation(bool notify_threads_only = false);
+  void on_rotation();
 
   // mspace callback
   void register_full(BufferPtr buffer, Thread* thread);

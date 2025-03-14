@@ -568,11 +568,9 @@ size_t JfrCheckpointManager::write_static_type_set_and_threads() {
   return write();
 }
 
-void JfrCheckpointManager::on_rotation(bool notify_threads_only /* false */) {
+void JfrCheckpointManager::on_rotation() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  if (!notify_threads_only) {
-    JfrTypeManager::on_rotation();
-  }
+  JfrTypeManager::on_rotation();
   notify_threads();
 }
 
