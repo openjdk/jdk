@@ -115,6 +115,14 @@ abstract class AbstractTest {
             System.out.println("Compile method " + testMethod + " after warm-up...");
         }
 
+        final boolean isCompilable = WHITE_BOX.isMethodCompilable(testMethod, test.getCompLevel().getValue(), false);
+        if (!isCompilable && test.isAllowNotCompilable()) {
+            if (TestFramework.VERBOSE) {
+                System.out.println("  -> Not compilable.");
+            }
+            return;
+        }
+
         final boolean maybeCodeBufferOverflow = (TestVM.TEST_C1 && VERIFY_OOPS);
         final long started = System.currentTimeMillis();
         long elapsed = 0;

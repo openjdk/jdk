@@ -115,10 +115,14 @@ public class CompilationOutputBuilder implements MatchResultVisitor {
     }
 
     @Override
-    public void visitMethodNotCompiled(Method method, int failedIRRules) {
+    public void visitMethodNotCompiled(Method method, int failedIRRules, boolean allowNotCompilable) {
         appendIRMethodHeader(method);
         compilePhaseCount++; // Count this as one phase
-        output.append("<empty>").append(System.lineSeparator());
+        if (allowNotCompilable) {
+            output.append("<empty: not compiled, allowed>").append(System.lineSeparator());
+        } else {
+            output.append("<empty: not compiled, failure>").append(System.lineSeparator());
+        }
     }
 
     @Override

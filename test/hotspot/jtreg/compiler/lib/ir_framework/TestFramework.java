@@ -175,6 +175,7 @@ public class TestFramework {
     private List<String> flags;
     private int defaultWarmup = -1;
     private boolean testClassesOnBootClassPath;
+    private boolean isAllowNotCompilable = false;
 
     /*
      * Public interface methods
@@ -406,6 +407,14 @@ public class TestFramework {
     public TestFramework setDefaultWarmup(int defaultWarmup) {
         TestFormat.checkAndReport(defaultWarmup >= 0, "Cannot specify a negative default warm-up");
         this.defaultWarmup = defaultWarmup;
+        return this;
+    }
+
+    /**
+     * TODO: desc
+     */
+    public TestFramework allowNotCompilable() {
+        this.isAllowNotCompilable = true;
         return this;
     }
 
@@ -773,7 +782,7 @@ public class TestFramework {
 
     private void runTestVM(List<String> additionalFlags) {
         TestVMProcess testVMProcess = new TestVMProcess(additionalFlags, testClass, helperClasses, defaultWarmup,
-                                                        testClassesOnBootClassPath);
+                                                        isAllowNotCompilable, testClassesOnBootClassPath);
         if (shouldVerifyIR) {
             try {
                 TestClassParser testClassParser = new TestClassParser(testClass);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,13 +77,11 @@ import java.lang.annotation.RetentionPolicy;
  * @see Arguments
  */
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Test {
+public @interface AllowNotCompilable {
     /**
      * Specify at which compilation level the framework should eventually compile the test method after an optional
      * warm-up period. The default {@link CompLevel#ANY} will let the framework compile the method at the highest
      * available level which is usually {@link CompLevel#C2}.
      */
     CompLevel compLevel() default CompLevel.ANY;
-
-    boolean allowNotCompilable() default false;
 }
