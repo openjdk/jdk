@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,10 @@ public class TestDocRootLink extends JavadocTester {
                 Refer <a href="../../technotes/guides/index.html">Here</a>""",
             """
                 This <a href="../pkg2/C2.html">Here</a> should not be replaced
-                 with an absolute link.""",
+                with an absolute link.""",
             """
                 Testing <a href="../technotes/guides/index.html">Link 1</a> and
-                 <a href="../pkg2/C2.html">Link 2</a>.""");
+                <a href="../pkg2/C2.html">Link 2</a>.""");
 
         checkOutput("pkg1/package-summary.html", true,
             """
@@ -102,10 +102,10 @@ public class TestDocRootLink extends JavadocTester {
                 Refer <a href="http://download.oracle.com/javase/7/docs/technotes/guides/index.html">Here</a>""",
             """
                 This <a href="../pkg1/C1.html">Here</a> should not be replaced
-                 with an absolute link.""",
+                with an absolute link.""",
             """
                 Testing <a href="../technotes/guides/index.html">Link 1</a> and
-                 <a href="../pkg1/C1.html">Link 2</a>.""");
+                <a href="../pkg1/C1.html">Link 2</a>.""");
 
         checkOutput("pkg2/package-summary.html", true,
             """

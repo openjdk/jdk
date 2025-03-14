@@ -39,13 +39,13 @@ class ExceptionTest {
      */
     void exception() throws Exception { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: empty
   body: empty
   block tags: 1
-    Throws[EXCEPTION, pos:1
+    Throws[EXCEPTION, pos:0
       exceptionName:
-        Reference[REFERENCE, pos:12, Exception]
+        Reference[REFERENCE, pos:11, Exception]
       description: empty
     ]
 ]
@@ -56,15 +56,15 @@ DocComment[DOC_COMMENT, pos:1
      */
     void exception_text() throws Exception { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: empty
   body: empty
   block tags: 1
-    Throws[EXCEPTION, pos:1
+    Throws[EXCEPTION, pos:0
       exceptionName:
-        Reference[REFERENCE, pos:12, Exception]
+        Reference[REFERENCE, pos:11, Exception]
       description: 1
-        Text[TEXT, pos:22, text]
+        Text[TEXT, pos:21, text]
     ]
 ]
 */

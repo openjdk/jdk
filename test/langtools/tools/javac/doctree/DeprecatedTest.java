@@ -39,11 +39,11 @@ class DeprecatedTest {
      */
     void deprecated() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: empty
   body: empty
   block tags: 1
-    Deprecated[DEPRECATED, pos:1
+    Deprecated[DEPRECATED, pos:0
       body: empty
     ]
 ]
@@ -54,13 +54,13 @@ DocComment[DOC_COMMENT, pos:1
      */
     void deprecated_text() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: empty
   body: empty
   block tags: 1
-    Deprecated[DEPRECATED, pos:1
+    Deprecated[DEPRECATED, pos:0
       body: 1
-        Text[TEXT, pos:13, text]
+        Text[TEXT, pos:12, text]
     ]
 ]
 */

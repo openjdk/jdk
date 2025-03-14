@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,13 +54,14 @@ public class LeadingSpaces extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("LeadingSpaces.html", true,
                   """
-                      \s       1
-                                2
-                                  3
-                                    4
-                                      5
-                                        6
-                                          7""");
+                      <pre>
+                       1
+                         2
+                           3
+                             4
+                               5
+                                 6
+                                   7""");
     }
 
     /**

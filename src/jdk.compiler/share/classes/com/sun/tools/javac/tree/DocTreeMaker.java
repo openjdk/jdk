@@ -237,6 +237,9 @@ public class DocTreeMaker implements DocTreeFactory {
             }
 
             @Override
+            public Comment stripWhitespace() { return this; }
+
+            @Override
             public CommentStyle getStyle() {
                 throw new UnsupportedOperationException(getClass() + ".getStyle");
             }

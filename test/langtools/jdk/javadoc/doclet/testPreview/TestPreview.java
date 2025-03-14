@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ public class TestPreview extends JavadocTester {
                     reRecord.html#preview-preview.CoreRecord">PREVIEW</a></sup>, <a href="CoreRecor\
                     d.html" title="class in preview"><code>core record</code></a><sup class="previe\
                     w-mark"><a href="CoreRecord.html#preview-preview.CoreRecord">PREVIEW</a></sup>,
-                     <a href="CoreRecord.html" title="class in preview">CoreRecord</a>, <a href="Co\
+                    <a href="CoreRecord.html" title="class in preview">CoreRecord</a>, <a href="Co\
                     reRecord.html" title="class in preview">core record</a>.</div>""",
                 """
                     <li><a href="CoreRecord.html" title="class in preview"><code>CoreRecord</code><\

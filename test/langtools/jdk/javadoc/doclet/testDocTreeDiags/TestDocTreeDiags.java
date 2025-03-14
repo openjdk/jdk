@@ -98,7 +98,7 @@ public class TestDocTreeDiags extends JavadocTester {
                         /**
                          * Sentence for method m(). More details for the method.
                          * Embedded {@link java.lang.Object} link.
-                         * And another <!-- unusual comment --> strange comment.
+                         * And yet another <!-- unusual comment --> strange comment.
                          * @scanMe
                          */
                          public void m() { }
