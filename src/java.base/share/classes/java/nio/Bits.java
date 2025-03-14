@@ -97,6 +97,8 @@ class Bits {                            // package-private
     private static final AtomicLong COUNT = new AtomicLong();
     private static volatile boolean MEMORY_LIMIT_SET;
 
+    private static final Object RESERVE_SLOW_LOCK = new Object();
+
     // max. number of sleeps during try-reserving with exponentially
     // increasing delay before throwing OutOfMemoryError:
     // 1, 2, 4, 8, 16, 32, 64, 128, 256 (total 511 ms ~ 0.5 s)
@@ -107,71 +109,98 @@ class Bits {                            // package-private
     // freed.  They allow the user to control the amount of direct memory
     // which a process may access.  All sizes are specified in bytes.
     static void reserveMemory(long size, long cap) {
-
         if (!MEMORY_LIMIT_SET && VM.initLevel() >= 1) {
             MAX_MEMORY = VM.maxDirectMemory();
             MEMORY_LIMIT_SET = true;
         }
 
-        // optimist!
+        // Optimistic path: enough memory to satisfy allocation.
         if (tryReserveMemory(size, cap)) {
             return;
         }
 
-        final JavaLangRefAccess jlra = SharedSecrets.getJavaLangRefAccess();
+        // Short on memory, with potentially many threads competing for it.
+        // To alleviate progress races, acquire the lock and go slow.
+        synchronized (RESERVE_SLOW_LOCK) {
+            reserveMemorySlow(size, cap);
+        }
+    }
+
+    static void reserveMemorySlow(long size, long cap) {
+        // Slow path under the lock. This code would try to trigger cleanups and
+        // sense if cleaning was performed. Since the failure mode is OOME,
+        // there is no need to rush.
+        //
+        // If this code is modified, make sure a stress test like DirectBufferAllocTest
+        // performs well.
+
+        // Semi-optimistic attempt after acquiring the slow-path lock.
+        if (tryReserveMemory(size, cap)) {
+           return;
+        }
+
+        // No free memory. We need to trigger cleanups and wait for them to make progress.
+        // This requires triggering the GC and waiting for eventual buffer cleanups
+        // or the absence of any profitable cleanups.
+        //
+        // To do this efficiently, we need to wait for several activities to run:
+        //   1. GC needs to discover dead references and hand them over to Reference
+        //      processing thread. This activity can be asynchronous and can complete after
+        //      we unblock from System.gc().
+        //   2. Reference processing thread needs to process dead references and enqueue them
+        //      to Cleaner thread. This activity is normally concurrent with the rest of
+        //      Java code, and is subject to reference processing thread having time to process.
+        //   3. Cleaner thread needs to process the enqueued references and call cleanables
+        //      on dead buffers. Like (2), this activity is also concurrent, and relies on
+        //      Cleaner getting time to act.
+        //
+        // It is somewhat simple to wait for Reference processing and Cleaner threads to be idle.
+        // However, that is not a good indicator they have processed buffers since our last
+        // System.gc() request: they may not have started yet after System.gc() unblocked,
+        // or have not yet seen that previous step ran. It is Really Hard (tm) to coordinate
+        // all these activities.
+        //
+        // Instead, we are checking directly if Cleaner have acted on since our last System.gc():
+        // install the canary, call System.gc(), wait for canary to get processed (dead). This
+        // signals that since our last call to System.gc(), steps (1) and (2) have finished, and
+        // step (3) is currently in progress.
+        //
+        // The last bit is a corner case: since canary is not ordered with other buffer cleanups,
+        // it is possible that canary gets dead before the rest of the buffers get cleaned. This
+        // corner case would be handled with a normal retry attempt, after trying to allocate.
+        // If allocation succeeds even after partial cleanup, we are done. If it does not, we get
+        // to try again, this time reliably getting the results of the first cleanup run. Not
+        // handling this case specially simplifies implementation.
+
         boolean interrupted = false;
         try {
+            BufferCleaner.Canary canary = null;
 
-            // Retry allocation until success or there are no more
-            // references (including Cleaners that might free direct
-            // buffer memory) to process and allocation still fails.
-            boolean refprocActive;
-            do {
-                try {
-                    refprocActive = jlra.waitForReferenceProcessing();
-                } catch (InterruptedException e) {
-                    // Defer interrupts and keep trying.
-                    interrupted = true;
-                    refprocActive = true;
-                }
-                if (tryReserveMemory(size, cap)) {
-                    return;
-                }
-            } while (refprocActive);
-
-            // trigger VM's Reference processing
-            System.gc();
-
-            // A retry loop with exponential back-off delays.
-            // Sometimes it would suffice to give up once reference
-            // processing is complete.  But if there are many threads
-            // competing for memory, this gives more opportunities for
-            // any given thread to make progress.  In particular, this
-            // seems to be enough for a stress test like
-            // DirectBufferAllocTest to (usually) succeed, while
-            // without it that test likely fails.  Since failure here
-            // ends in OOME, there's no need to hurry.
             long sleepTime = 1;
-            int sleeps = 0;
-            while (true) {
-                if (tryReserveMemory(size, cap)) {
-                    return;
+            for (int sleeps = 0; sleeps < MAX_SLEEPS; sleeps++) {
+                if (canary == null || canary.isDead()) {
+                    // If canary is not yet initialized, we have not triggered a cleanup.
+                    // If canary is dead, there was progress, and it was not enough.
+                    // Trigger GC -> Reference processing -> Cleaner again.
+                    canary = BufferCleaner.newCanary();
+                    System.gc();
                 }
-                if (sleeps >= MAX_SLEEPS) {
-                    break;
-                }
+
+                // Exponentially back off waiting for Cleaner to catch up.
                 try {
-                    if (!jlra.waitForReferenceProcessing()) {
-                        Thread.sleep(sleepTime);
-                        sleepTime <<= 1;
-                        sleeps++;
-                    }
+                    Thread.sleep(sleepTime);
+                    sleepTime *= 2;
                 } catch (InterruptedException e) {
                     interrupted = true;
+                }
+
+                // See if we can satisfy the allocation now.
+                if (tryReserveMemory(size, cap)) {
+                    return;
                 }
             }
 
-            // no luck
+            // No luck:
             throw new OutOfMemoryError
                 ("Cannot reserve "
                  + size + " bytes of direct buffer memory (allocated: "
