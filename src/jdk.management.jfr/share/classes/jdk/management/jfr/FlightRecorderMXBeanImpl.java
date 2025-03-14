@@ -77,14 +77,12 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
         private final NotificationFilter filter;
         private final Object handback;
 
-        @SuppressWarnings("removal")
         public MXBeanListener(NotificationListener listener, NotificationFilter filter, Object handback) {
             this.listener = listener;
             this.filter = filter;
             this.handback = handback;
         }
 
-        @SuppressWarnings("removal")
         public void recordingStateChanged(Recording recording) {
             sendNotification(createNotification(recording));
         }

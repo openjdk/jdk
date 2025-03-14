@@ -48,7 +48,6 @@ import java.lang.classfile.CodeBuilder.BlockCodeBuilder;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.Label;
 import java.lang.classfile.MethodModel;
-import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.jfr.internal.event.EventConfiguration;
