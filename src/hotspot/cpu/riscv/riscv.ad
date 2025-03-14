@@ -8401,13 +8401,12 @@ instruct min_max_HF_reg(fRegF dst, fRegF src1, fRegF src2)
   ins_pipe(pipe_class_default);
 %}
 
-instruct minHF_reg_reg_zfa(fRegF dst, fRegF src1, fRegF src2)
+instruct minHF_reg_zfa(fRegF dst, fRegF src1, fRegF src2)
 %{
   predicate(UseZfa);
-
   match(Set dst (MinHF src1 src2));
 
-  format %{ "minHF $dst, $src1, $src2" %}
+  format %{ "min_hf $dst, $src1, $src2" %}
 
   ins_encode %{
     __ fminm_h(as_FloatRegister($dst$$reg),
@@ -8417,12 +8416,12 @@ instruct minHF_reg_reg_zfa(fRegF dst, fRegF src1, fRegF src2)
   ins_pipe(pipe_class_default);
 %}
 
-instruct maxHF_reg_reg_zfa(fRegF dst, fRegF src1, fRegF src2)
+instruct maxHF_reg_zfa(fRegF dst, fRegF src1, fRegF src2)
 %{
   predicate(UseZfa);
   match(Set dst (MaxHF src1 src2));
 
-  format %{ "maxHF $dst, $src1, $src2" %}
+  format %{ "max_hf $dst, $src1, $src2" %}
 
   ins_encode %{
     __ fmaxm_h(as_FloatRegister($dst$$reg),
