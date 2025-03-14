@@ -2077,7 +2077,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         else if (deadline - System.currentTimeMillis() >= TIMEOUT_SLOP)
             stat = 0;                       // spurious wakeup
         else if (!compareAndSetCtl(
-                     c, nc = (w.stackPred & LMASK) | (UMASK & (c - TC_UNIT))))
+                     c, nc = (w.stackPred & LMASK) | (c & RC_MASK) | ((c - TC_UNIT) & TC_MASK)))
             stat = -1;                      // lost race to signaller
         else {
             stat = 1;
