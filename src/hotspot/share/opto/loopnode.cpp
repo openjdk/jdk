@@ -1170,7 +1170,7 @@ public:
     }
 
     _clone_predicate_to_loop.clone_template_assertion_predicate(template_assertion_predicate);
-    template_assertion_predicate.kill(_phase);
+    template_assertion_predicate.kill(_phase->igvn());
   }
 };
 
