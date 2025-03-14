@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Red Hat, Inc.
+ * Copyright (c) 2024, 2025, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,6 +217,14 @@ public class JRTArchive implements Archive {
 
                         // Read from the base JDK image.
                         Path path = BASE.resolve(m.resPath);
+                        // special case to handle stripped pdb files, e.g. --with-external-symbols-in-bundles=public
+                        if (m.resPath.endsWith(".pdb")) {
+                            String strippedFile = m.resPath.substring(0, m.resPath.lastIndexOf(".pdb")) + ".stripped.pdb";
+                            Path strippedPath = BASE.resolve(strippedFile);
+                            if (Files.exists(strippedPath)) {
+                                path = strippedPath;
+                            }
+                        }
                         if (shaSumMismatch(path, m.hashOrTarget, m.symlink)) {
                             if (errorOnModifiedFile) {
                                 String msg = taskHelper.getMessage("err.runtime.link.modified.file", path.toString());
@@ -425,6 +433,7 @@ public class JRTArchive implements Archive {
                           String sha,
                           boolean symlink,
                           ResourceDiff diff) implements JRTFile {
+        @Override
         public Entry toEntry() {
             return new Entry(archive,
                              String.format("/%s/%s",
