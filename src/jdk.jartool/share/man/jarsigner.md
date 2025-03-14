@@ -922,6 +922,10 @@ hasExpiringCert
 hasExpiringTsaCert
 :   The timestamp will expire within one year on `YYYY-MM-DD`.
 
+hasMultipleManifests
+:   This JAR contained multiple manifest files. During signing, one of the files
+was selected, and the others were discarded.
+
 hasNonexistentEntries
 :   This JAR contains signed entries for files that do not exist.
 
@@ -933,10 +937,6 @@ noTimestamp
     timestamp, users may not be able to validate this JAR file after the signer
     certificate's expiration date (`YYYY-MM-DD`) or after any future revocation
     date.
-
-hasMultipleManifests
-:   This JAR contained multiple manifest files. During signing, one of the files
-    was selected, and the others were discarded.
 
 ## Example of Signing a JAR File
 
