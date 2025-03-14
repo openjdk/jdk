@@ -617,8 +617,8 @@ final class Operations {
 
             // TODO: non-zero part
             ops.add(new Operation.Binary(type, "", type, ".unslice(", Type.ints(), ")", List.of("IndexOutOfBoundsException")));
-            ops.add(new Operation.Ternary(type, "", type, ".unslice(", Type.ints(), ", ", type ", 0)", List.of("IndexOutOfBoundsException")));
-            ops.add(new Operation.Quaternary(type, "", type, ".unslice(", Type.ints(), ", ", type ", 0, ", type.maskType, ")", List.of("IndexOutOfBoundsException")));
+            ops.add(new Operation.Ternary(type, "", type, ".unslice(", Type.ints(), ", ", type, ", 0)", List.of("IndexOutOfBoundsException")));
+            ops.add(new Operation.Quaternary(type, "", type, ".unslice(", Type.ints(), ", ", type, ", 0, ", type.maskType, ")", List.of("IndexOutOfBoundsException")));
 
             ops.add(new Operation.Ternary(type, "", type, ".withLane(", Type.ints(), ", ", type.elementType, ")", List.of("IllegalArgumentException")));
 
