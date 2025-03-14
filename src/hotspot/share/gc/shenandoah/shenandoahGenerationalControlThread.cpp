@@ -689,7 +689,8 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
   }
 
   if (gc_mode() == none) {
-    while (gc_mode() == none) {
+    const size_t current_gc_id = get_gc_id();
+    while (gc_mode() == none && current_gc_id == get_gc_id()) {
       if (_requested_gc_cause != GCCause::_no_gc) {
         log_debug(gc, thread)("Reject request for concurrent gc because another gc is pending: %s", GCCause::to_string(_requested_gc_cause));
         return false;
