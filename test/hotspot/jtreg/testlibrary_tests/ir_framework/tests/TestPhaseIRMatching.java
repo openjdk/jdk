@@ -393,9 +393,11 @@ class FailureBuilder implements MatchResultVisitor {
     }
 
     @Override
-    public void visitMethodNotCompiled(Method method, int failedIRRules) {
+    public void visitMethodNotCompiled(Method method, int failedIRRules, boolean allowNotCompilable) {
         methodName = method.getName();
-        failures.add(new Failure(methodName, -1, CompilePhase.DEFAULT, CheckAttributeType.FAIL_ON, -1));
+        if (!allowNotCompilable) {
+            failures.add(new Failure(methodName, -1, CompilePhase.DEFAULT, CheckAttributeType.FAIL_ON, -1));
+        }
     }
 
     @Override

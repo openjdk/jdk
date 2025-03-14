@@ -68,11 +68,8 @@ class IRMethodBuilder {
         } else {
             Test[] testAnnos = testMethod.method().getAnnotationsByType(Test.class);
             TestFramework.check(testAnnos.length == 1, "Must have at most one @Test annotation per method.");
-            if (testAnnos[0].allowNotCompilable()) {
-                return null; // TODO: something reasonable, and also the global flag?
-            } else {
-                return new NotCompiledIRMethod(testMethod.method(), testMethod.irRuleIds().length);
-            }
+            boolean allowNotCompilable  = testAnnos[0].allowNotCompilable();
+            return new NotCompiledIRMethod(testMethod.method(), testMethod.irRuleIds().length, allowNotCompilable);
         }
     }
 }
