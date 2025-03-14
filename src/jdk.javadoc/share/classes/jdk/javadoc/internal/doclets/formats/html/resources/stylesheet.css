@@ -1092,7 +1092,12 @@ input:focus::placeholder {
     color: transparent;
 }
 select#search-modules {
-    margin-right: 10px;
+    margin: 0 10px 0 2px;
+    font-size: var(--nav-font-size);
+    padding: 3px 5px;
+    border-radius: 4px;
+    background: #f0f0f0;
+    border: 1px solid #909090;
 }
 kbd {
     background-color: #eeeeee;
@@ -1167,7 +1172,6 @@ div#result-container {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-
 .page-search-info {
     background-color: var(--subnav-background-color);
     border-radius: 3px;
