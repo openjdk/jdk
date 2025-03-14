@@ -76,7 +76,7 @@ class A {
     public void test1() {}
 
     @Test
-    // TODO: @IR(failOn = IRNode.LOAD)
+    //TODO: @IR(failOn = IRNode.LOAD)
     public void test2() {}
 }
 
