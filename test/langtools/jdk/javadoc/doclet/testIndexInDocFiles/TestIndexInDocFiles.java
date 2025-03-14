@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8235414
+ * @bug 8235414 8345555
  * @summary Module level doc-files show "unnamed package" as holder
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool

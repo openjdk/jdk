@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4852280 4517115 4973608 4994589 8026567 8071982 8196202 8234746
- *           8311264
+ *           8311264 8345555
  * @summary  Perform tests on index.html file.
  *           Also test that index-all.html has the appropriate output.
  *           Test for unnamed package in index.

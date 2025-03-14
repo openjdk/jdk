@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug      8292892
+ * @bug      8292892 8345555
  * @summary  Tests that members inherited from classes with package access are
  *           documented in the index as though they were declared in the
  *           inheriting class.
