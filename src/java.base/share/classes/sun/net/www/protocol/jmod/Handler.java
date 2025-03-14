@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,9 @@ import java.net.URLStreamHandler;
 import java.net.MalformedURLException;
 import java.io.IOException;
 
+import static jdk.internal.util.Exceptions.filterJarName;
+import static jdk.internal.util.Exceptions.throwException;
+
 /**
  * Placeholder protocol handler for the jmod protocol.
  */
@@ -43,7 +46,8 @@ public class Handler extends URLStreamHandler {
         String s = url.toString();
         int index = s.indexOf("!/");
         if (index == -1)
-            throw new MalformedURLException("no !/ found in url spec:" + s);
+            throwException(MalformedURLException.class, "no !/ found in url spec%s",
+                           filterJarName(s).prefixWith(": "));
 
         throw new IOException("Can't connect to jmod URL");
     }
