@@ -114,6 +114,14 @@ inline const IntrusiveRBNode* IntrusiveRBNode::next() const {
   return node->parent();
 }
 
+inline IntrusiveRBNode* IntrusiveRBNode::prev() {
+  return const_cast<IntrusiveRBNode*>(static_cast<const IntrusiveRBNode*>(this)->prev());
+}
+
+inline IntrusiveRBNode* IntrusiveRBNode::next() {
+  return const_cast<IntrusiveRBNode*>(static_cast<const IntrusiveRBNode*>(this)->next());
+}
+
 #ifdef ASSERT
 inline void IntrusiveRBNode::verify(
     size_t& num_nodes, size_t& black_nodes_until_leaf, size_t& shortest_leaf_path, size_t& longest_leaf_path,
@@ -541,19 +549,18 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::replace_at_cursor(NodeType*
   }
 
   *node_cursor._insert_location = new_node;
-  new_node->set_parent(node_cursor._parent);
-  new_node->_color = old_node->_color;
+  new_node->_parent = old_node->_parent;
 
   new_node->_left = old_node->_left;
   new_node->_right = old_node->_right;
   if (new_node->_left != nullptr) {
     new_node->_left->set_parent(new_node);
-  } else if (new_node->_right != nullptr) {
-    new_node->_right->_parent = new_node;
+  }
+  if (new_node->_right != nullptr) {
     new_node->_right->set_parent(new_node);
   }
 
-  free_node(old_node);
+  DEBUG_ONLY(new_node->_visited = old_node->_visited);
 
 #ifdef ASSERT
   verify_self(); // Dangerous operation, should verify no tree properties were broken

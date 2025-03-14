@@ -674,6 +674,30 @@ public:
     EXPECT_EQ(rbtree_const.size(), 0UL);
   }
 
+  void test_cursor_replace() {
+    constexpr int num_nodes = 100;
+    RBTreeInt tree;
+
+    for (int i = 0; i < num_nodes * 10; i += 10) {
+      tree.upsert(i, i);
+    }
+
+    for (int i = 0; i < num_nodes * 10; i += 10) {
+      RBTreeInt::Cursor cursor = tree.cursor(tree.find_node(i));
+      RBTreeIntNode* new_node = tree.allocate_node(i + 1, i + 1);
+      tree.replace_at_cursor(new_node, cursor);
+    }
+
+    for (int i = 0; i < num_nodes * 10; i += 10) {
+      RBTreeIntNode* node = tree.find_node(i);
+      EXPECT_NULL(node);
+      node = tree.find_node(i + 1);
+      EXPECT_NOT_NULL(node);
+    }
+
+    tree.verify_self();
+  }
+
   void test_intrusive() {
     IntrusiveTreeInt intrusive_tree;
     int num_iterations = 100;
@@ -892,6 +916,10 @@ TEST_VM_F(RBTreeTest, IntrusiveTest) {
 
 TEST_VM_F(RBTreeTest, FillAndVerify) {
   this->test_fill_verify();
+}
+
+TEST_VM_F(RBTreeTest, CursorReplace) {
+  this->test_cursor_replace();
 }
 
 TEST_VM_F(RBTreeTest, NodesVisitedOnce) {

@@ -77,10 +77,12 @@ public:
   // Gets the previous in-order node in the tree.
   // nullptr is returned if there is no previous node.
   const IntrusiveRBNode* prev() const;
+  IntrusiveRBNode* prev();
 
   // Gets the next in-order node in the tree.
   // nullptr is returned if there is no next node.
   const IntrusiveRBNode* next() const;
+  IntrusiveRBNode* next();
 
   void print_on(outputStream* st, int depth = 0) const;
 
@@ -143,6 +145,8 @@ public:
 
   const RBNode<K, V>* prev() const { return (RBNode<K, V>*)IntrusiveRBNode::prev(); }
   const RBNode<K, V>* next() const { return (RBNode<K, V>*)IntrusiveRBNode::next(); }
+  RBNode<K, V>* prev() { return (RBNode<K, V>*)IntrusiveRBNode::prev(); }
+  RBNode<K, V>* next() { return (RBNode<K, V>*)IntrusiveRBNode::next(); }
 
   void print_on(outputStream* st, int depth = 0) const;
 
@@ -385,6 +389,12 @@ public:
   using BaseType::next;
   using BaseType::prev;
 
+  void replace_at_cursor(RBNode<K, V>* new_node, const Cursor& node_cursor) {
+    RBNode<K, V>* old_node = node_cursor.node();
+    BaseType::replace_at_cursor(new_node, node_cursor);
+    free_node(old_node);
+  }
+
   RBNode<K, V>* allocate_node(const K& key, const V& val) {
     void* node_place = _allocator.allocate(sizeof(RBNode<K, V>));
     assert(node_place != nullptr, "rb-tree allocator must exit on failure");
@@ -402,7 +412,6 @@ public:
     Cursor node_cursor = cursor(key, hint_node);
     RBNode<K, V>* node = node_cursor.node();
     if (node != nullptr) {
-      // node->_value = val;
       node->set_val(val);
       return;
     }
