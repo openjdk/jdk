@@ -155,6 +155,7 @@ public:
 //    - Scopes data array
 //    - Scopes pcs array
 //  - JVMCI speculations array
+//  - Nmethod reference counter
 
 #if INCLUDE_JVMCI
 class FailedSpeculation;
@@ -249,6 +250,7 @@ class nmethod : public CodeBlob {
 #if INCLUDE_JVMCI
   int      _speculations_offset;
 #endif
+  int      _immutable_data_references_offset;
 
   // location in frame (offset for sp) that deopt can store the original
   // pc during a deopt.
@@ -575,10 +577,13 @@ public:
 #if INCLUDE_JVMCI
   address scopes_data_end       () const { return           _immutable_data + _speculations_offset ; }
   address speculations_begin    () const { return           _immutable_data + _speculations_offset ; }
-  address speculations_end      () const { return            immutable_data_end(); }
+  address speculations_end      () const { return           _immutable_data + _immutable_data_references_offset   ; }
 #else
-  address scopes_data_end       () const { return            immutable_data_end(); }
+  address scopes_data_end       () const { return           _immutable_data + _immutable_data_references_offset   ; }
 #endif
+
+  address immutable_data_references_begin      () const { return           _immutable_data + _immutable_data_references_offset   ; }
+  address immutable_data_references_end        () const { return            immutable_data_end(); }
 
   // Sizes
   int immutable_data_size() const { return _immutable_data_size; }
