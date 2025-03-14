@@ -265,12 +265,12 @@ inline void G1HeapRegion::reset_parsable_bottom() {
   Atomic::release_store(&_parsable_bottom, bottom());
 }
 
-inline void G1HeapRegion::note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes, size_t ref_count) {
+inline void G1HeapRegion::note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes, size_t incomg_refs) {
   assert_at_safepoint();
 
   if (top_at_mark_start != bottom()) {
     _garbage_bytes = byte_size(bottom(), top_at_mark_start) - marked_bytes;
-    _incoming_refs = ref_count;
+    _incoming_refs = incomg_refs;
   }
 
   if (needs_scrubbing()) {
