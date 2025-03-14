@@ -535,6 +535,9 @@ public class Snippets {
          if (valid.isEmpty()) {
              return DEFAULT_VALUE;
          }
+         if (valid.size() == 1) {
+             return valid.getFirst();
+         }
          return "(" + String.join(")|(", valid) + ")";
      }
 
