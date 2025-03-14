@@ -656,12 +656,13 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
   }
 
   if (MemTracker::enabled()) {
+    size_t old_size = 0;
     if (memblock != nullptr) {
       // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3)
       // since it may invalidate the old block, including its header.
       MallocHeader* header = MallocHeader::resolve_checked(memblock);
       MallocHeader::FreeInfo free_info = header->free_info();
-      size_t old_size = free_info.size;
+      old_size = free_info.size;
       header->mark_block_as_dead();
 
       // Observe MallocLimit
