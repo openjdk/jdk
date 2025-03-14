@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,6 +36,8 @@
  * @bug 8292695
  * @summary Check that Ctrl-\ causes HotSpot VM to print a full thread dump when signal chaining is used.
  * @requires os.family != "windows" & os.family != "aix"
+ * @comment TODO: Decide libjsig support on static JDK with 8351367
+ * @requires !jdk.static
  * @library /vmTestbase
  *          /test/lib
  * @run driver TestBreakSignalThreadDump load_libjsig
