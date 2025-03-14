@@ -423,14 +423,13 @@ public class JavadocTokenizer extends JavaTokenizer {
                     assert(Character.isWhitespace(txt.charAt(startOfLine)));
                     startOfLine++;
                 }
-                int next = startOfLine;
-                while (next < len - 1 && txt.charAt(next) != '\n') {
-                    next++;
+                i = startOfLine;
+                while (i < len - 1 && txt.charAt(i) != '\n') {
+                    i++;
                 }
 
                 strippedMap.add(sb.length(), startOfLine);
-                sb.append(txt, startOfLine, next + 1);
-                i = next;
+                sb.append(txt, startOfLine, i + 1);
             }
 
             text = sb.toString();
