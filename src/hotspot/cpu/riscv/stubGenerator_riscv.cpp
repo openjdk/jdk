@@ -2431,30 +2431,12 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // code for comparing 16 bytes of strings with same encoding
-  void compare_string_16_bytes_same(Label &DIFF1, Label &DIFF2) {
-    const Register result = x10, str1 = x11, cnt1 = x12, str2 = x13, tmp1 = x28, tmp2 = x29, tmp4 = x7, tmp5 = x31;
-    __ ld(tmp5, Address(str1));
-    __ addi(str1, str1, 8);
-    __ xorr(tmp4, tmp1, tmp2);
-    __ ld(cnt1, Address(str2));
-    __ addi(str2, str2, 8);
-    __ bnez(tmp4, DIFF1);
-    __ ld(tmp1, Address(str1));
-    __ addi(str1, str1, 8);
-    __ xorr(tmp4, tmp5, cnt1);
-    __ ld(tmp2, Address(str2));
-    __ addi(str2, str2, 8);
-    __ bnez(tmp4, DIFF2);
-  }
-
   // code for comparing 8 characters of strings with Latin1 and Utf16 encoding
   void compare_string_8_x_LU(Register tmpL, Register tmpU,
                              Register strL, Register strU, Label& DIFF) {
     const Register tmp = x30, tmpLval = x12;
 
-    int base_offset = arrayOopDesc::base_offset_in_bytes(T_CHAR);
-
+    int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
     assert((base_offset % (UseCompactObjectHeaders ? 4 :
                            (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
 
@@ -2512,36 +2494,21 @@ class StubGenerator: public StubCodeGenerator {
     const Register result = x10, str1 = x11, str2 = x13, cnt2 = x14,
                    tmp1 = x28, tmp2 = x29, tmp3 = x30, tmp4 = x12;
 
-    int base_offset1 = arrayOopDesc::base_offset_in_bytes(T_BYTE);
-    int base_offset2 = arrayOopDesc::base_offset_in_bytes(T_CHAR);
-
-    assert((base_offset1 % (UseCompactObjectHeaders ? 4 :
-                            (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
-    assert((base_offset2 % (UseCompactObjectHeaders ? 4 :
-                            (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
-
-    // cnt2 == amount of characters left to compare
-    // Check already loaded first 4 symbols
-    __ inflate_lo32(tmp3, isLU ? tmp1 : tmp2);
-    __ mv(isLU ? tmp1 : tmp2, tmp3);
-    __ addi(str1, str1, isLU ? wordSize / 2 : wordSize);
-    __ addi(str2, str2, isLU ? wordSize : wordSize / 2);
-    __ subi(cnt2, cnt2, wordSize / 2); // Already loaded 4 symbols
-
-    __ xorr(tmp3, tmp1, tmp2);
-    __ bnez(tmp3, CALCULATE_DIFFERENCE);
+    int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+    assert((base_offset % (UseCompactObjectHeaders ? 4 :
+                           (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
 
     Register strU = isLU ? str2 : str1,
              strL = isLU ? str1 : str2,
              tmpU = isLU ? tmp2 : tmp1, // where to keep U for comparison
              tmpL = isLU ? tmp1 : tmp2; // where to keep L for comparison
 
-    if (AvoidUnalignedAccesses && (base_offset1 % 8) == 0) {
-      // Load another 4 bytes from strL to make sure main loop is 8-byte aligned
+    if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
+      // Load 4 bytes from strL to make sure main loop is 8-byte aligned
       // cnt2 is >= 68 here, no need to check it for >= 0
       __ lwu(tmpL, Address(strL));
       __ addi(strL, strL, wordSize / 2);
-      __ load_long_misaligned(tmpU, Address(strU), tmp4, (base_offset2 % 8) != 0 ? 4 : 8);
+      __ load_long_misaligned(tmpU, Address(strU), tmp4, (base_offset % 8) != 0 ? 4 : 8);
       __ addi(strU, strU, wordSize);
       __ inflate_lo32(tmp3, tmpL);
       __ mv(tmpL, tmp3);
@@ -2713,7 +2680,20 @@ class StubGenerator: public StubCodeGenerator {
     __ push_reg(spilled_regs, sp);
     __ bltz(cnt2, TAIL);
     __ bind(SMALL_LOOP);
-      compare_string_16_bytes_same(DIFF, DIFF2);
+      // compare 16 bytes of strings with same encoding
+      __ ld(tmp5, Address(str1));
+      __ addi(str1, str1, 8);
+      __ xorr(tmp4, tmp1, tmp2);
+      __ ld(cnt1, Address(str2));
+      __ addi(str2, str2, 8);
+      __ bnez(tmp4, DIFF);
+      __ ld(tmp1, Address(str1));
+      __ addi(str1, str1, 8);
+      __ xorr(tmp4, tmp5, cnt1);
+      __ ld(tmp2, Address(str2));
+      __ addi(str2, str2, 8);
+      __ bnez(tmp4, DIFF2);
+
       __ subi(cnt2, cnt2, isLL ? 16 : 8);
       __ bgez(cnt2, SMALL_LOOP);
     __ bind(TAIL);
@@ -6171,6 +6151,104 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // x10 = input (float16)
+  // f10 = result (float)
+  // t1  = temporary register
+  address generate_float16ToFloat() {
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::hf2f_id;
+    StubCodeMark mark(this, stub_id);
+    address entry = __ pc();
+    BLOCK_COMMENT("float16ToFloat:");
+
+    FloatRegister dst = f10;
+    Register src = x10;
+    Label NaN_SLOW;
+
+    assert(VM_Version::supports_float16_float_conversion(), "must");
+
+    // On riscv, NaN needs a special process as fcvt does not work in that case.
+    // On riscv, Inf does not need a special process as fcvt can handle it correctly.
+    // but we consider to get the slow path to process NaN and Inf at the same time,
+    // as both of them are rare cases, and if we try to get the slow path to handle
+    // only NaN case it would sacrifise the performance for normal cases,
+    // i.e. non-NaN and non-Inf cases.
+
+    // check whether it's a NaN or +/- Inf.
+    __ mv(t0, 0x7c00);
+    __ andr(t1, src, t0);
+    // jump to stub processing NaN and Inf cases.
+    __ beq(t0, t1, NaN_SLOW);
+
+    // non-NaN or non-Inf cases, just use built-in instructions.
+    __ fmv_h_x(dst, src);
+    __ fcvt_s_h(dst, dst);
+    __ ret();
+
+    __ bind(NaN_SLOW);
+    // following instructions mainly focus on NaN, as riscv does not handle
+    // NaN well with fcvt, but the code also works for Inf at the same time.
+
+    // construct a NaN in 32 bits from the NaN in 16 bits,
+    // we need the payloads of non-canonical NaNs to be preserved.
+    __ mv(t1, 0x7f800000);
+    // sign-bit was already set via sign-extension if necessary.
+    __ slli(t0, src, 13);
+    __ orr(t1, t0, t1);
+    __ fmv_w_x(dst, t1);
+
+    __ ret();
+    return entry;
+  }
+
+  // f10 = input (float)
+  // x10 = result (float16)
+  // f11 = temporary float register
+  // t1  = temporary register
+  address generate_floatToFloat16() {
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::f2hf_id;
+    StubCodeMark mark(this, stub_id);
+    address entry = __ pc();
+    BLOCK_COMMENT("floatToFloat16:");
+
+    Register dst = x10;
+    FloatRegister src = f10, ftmp = f11;
+    Label NaN_SLOW;
+
+    assert(VM_Version::supports_float16_float_conversion(), "must");
+
+    // On riscv, NaN needs a special process as fcvt does not work in that case.
+
+    // check whether it's a NaN.
+    // replace fclass with feq as performance optimization.
+    __ feq_s(t0, src, src);
+    // jump to stub processing NaN cases.
+    __ beqz(t0, NaN_SLOW);
+
+    // non-NaN cases, just use built-in instructions.
+    __ fcvt_h_s(ftmp, src);
+    __ fmv_x_h(dst, ftmp);
+    __ ret();
+
+    __ bind(NaN_SLOW);
+    __ fmv_x_w(dst, src);
+
+    // preserve the payloads of non-canonical NaNs.
+    __ srai(dst, dst, 13);
+    // preserve the sign bit.
+    __ srai(t1, dst, 13);
+    __ slli(t1, t1, 10);
+    __ mv(t0, 0x3ff);
+    __ orr(t1, t1, t0);
+
+    // get the result by merging sign bit and payloads of preserved non-canonical NaNs.
+    __ andr(dst, dst, t1);
+
+    __ ret();
+    return entry;
+  }
+
 #endif // COMPILER2_OR_JVMCI
 
 #ifdef COMPILER2
@@ -6540,6 +6618,12 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_crc_table_adr = (address)StubRoutines::riscv::_crc_table;
       StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
     }
+
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_float16ToFloat) &&
+        vmIntrinsics::is_intrinsic_available(vmIntrinsics::_floatToFloat16)) {
+      StubRoutines::_hf2f = generate_float16ToFloat();
+      StubRoutines::_f2hf = generate_floatToFloat16();
+    }
   }
 
   void generate_continuation_stubs() {
@@ -6559,10 +6643,7 @@ static const int64_t right_3_bits = right_n_bits(3);
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
-    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != nullptr) {
-      StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
-    }
+    StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
 
 #ifdef COMPILER2
     if (UseSecondarySupersTable) {

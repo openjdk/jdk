@@ -49,8 +49,8 @@ Compiler::Compiler() : AbstractCompiler(compiler_c1) {
 
 void Compiler::init_c1_runtime() {
   BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
-  Runtime1::initialize(buffer_blob);
   FrameMap::initialize();
+  Runtime1::initialize(buffer_blob);
   // initialize data structures
   ValueType::initialize();
   GraphBuilder::initialize();
@@ -155,8 +155,6 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_longBitsToDouble:
   case vmIntrinsics::_getClass:
   case vmIntrinsics::_isInstance:
-  case vmIntrinsics::_isPrimitive:
-  case vmIntrinsics::_getModifiers:
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
   case vmIntrinsics::_scopedValueCache:
@@ -224,7 +222,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
-#if defined(S390) || defined(PPC64) || defined(AARCH64)
+#if defined(S390) || defined(PPC64) || defined(AARCH64) || defined(AMD64)
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
 #endif

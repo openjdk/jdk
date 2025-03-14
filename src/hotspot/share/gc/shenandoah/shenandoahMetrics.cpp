@@ -43,10 +43,28 @@ void ShenandoahMetricsSnapshot::snap_after() {
   _ef_after = _heap->free_set()->external_fragmentation();
 }
 
-bool ShenandoahMetricsSnapshot::is_good_progress() {
+// For degenerated GC, generation is Young in generational mode, Global in non-generational mode.
+// For full GC, generation is always Global.
+//
+// Note that the size of the chosen collection set is proportional to the relevant generation's collection set.
+// Note also that the generation size may change following selection of the collection set, as a side effect
+// of evacuation.  Evacuation may promote objects, causing old to grow and young to shrink.  Or this may be a
+// mixed evacuation.  When old regions are evacuated, this typically allows young to expand.  In all of these
+// various scenarios, the purpose of asking is_good_progress() is to determine if there is enough memory available
+// within young generation to justify making an attempt to perform a concurrent collection.  For this reason, we'll
+// use the current size of the generation (which may not be different than when the collection set was chosen) to
+// assess how much free memory we require in order to consider the most recent GC to have had good progress.
+
+bool ShenandoahMetricsSnapshot::is_good_progress(ShenandoahGeneration* generation) {
   // Under the critical threshold?
-  size_t free_actual   = _heap->free_set()->available();
-  size_t free_expected = _heap->max_capacity() / 100 * ShenandoahCriticalFreeThreshold;
+  ShenandoahFreeSet* free_set = _heap->free_set();
+  size_t free_actual   = free_set->available();
+
+  // ShenandoahCriticalFreeThreshold is expressed as a percentage.  We multiple this percentage by 1/100th
+  // of the generation capacity to determine whether the available memory within the generation exceeds the
+  // critical threshold.
+  size_t free_expected = (generation->max_capacity() / 100) * ShenandoahCriticalFreeThreshold;
+
   bool prog_free = free_actual >= free_expected;
   log_info(gc, ergo)("%s progress for free space: %zu%s, need %zu%s",
                      prog_free ? "Good" : "Bad",

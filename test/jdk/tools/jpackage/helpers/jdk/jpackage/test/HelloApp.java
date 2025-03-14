@@ -393,7 +393,7 @@ public final class HelloApp {
             return addParams(v.entrySet());
         }
 
-        public AppOutputVerifier addParams(Map.Entry<String, String>... v) {
+        public AppOutputVerifier addParams(Map.Entry<String, String> v) {
             return addParams(List.of(v));
         }
 
