@@ -415,14 +415,18 @@ public class JavadocTokenizer extends JavaTokenizer {
             StringBuilder sb = new StringBuilder(len);
             int startOfLine;
 
-            for (int i = 0; i < len - 1; i++) {
+            for (int i = 0; i < len; i++) {
                 startOfLine = i;
-                while (startOfLine < len - 1
+                while (startOfLine < len
                         && startOfLine < i + indent
                         && txt.charAt(startOfLine) != '\n') {
                     assert(Character.isWhitespace(txt.charAt(startOfLine)));
                     startOfLine++;
                 }
+                if (startOfLine == len) {
+                    break;
+                }
+
                 i = startOfLine;
                 while (i < len - 1 && txt.charAt(i) != '\n') {
                     i++;
