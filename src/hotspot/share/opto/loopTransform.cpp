@@ -3841,7 +3841,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
 #endif
   }
 
-  BasicType t = store->as_Mem()->memory_type();
+  BasicType t = store->adr_type()->isa_aryptr()->elem()->array_element_basic_type();
   bool aligned = false;
   if (offset != nullptr && head->init_trip()->is_Con()) {
     int element_size = type2aelembytes(t);
