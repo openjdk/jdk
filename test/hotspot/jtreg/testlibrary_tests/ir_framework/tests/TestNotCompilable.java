@@ -37,24 +37,54 @@ import compiler.lib.ir_framework.driver.TestVMException;
 public class TestNotCompilable {
     public static void main(String[] args) throws Exception {
         // Run without any flags -> should pass.
-        TestFramework.run();
-        // Forbid compilation -> should throw exception, because "not compilable".
-        try {
-            TestFramework.runWithFlags("-XX:CompileCommand=exclude,*Test*::test*");
-            throw new RuntimeException("should have thrown TestRunException");
-        } catch (TestVMException e) {
-        }
-        // Forbid compilation, but allow methods not to compile -> should pass.
-        TestFramework framework = new TestFramework(TestNotCompilable.class);
-        framework.addFlags("-XX:CompileCommand=exclude,*Test*::test*");
-        framework.allowMethodNotCompilable();
-        framework.start();
-    }
+        TestFramework framework1 = new TestFramework(A.class);
+        framework1.start();
 
+        // Forbid compilation -> should throw exception, because "not compilable".
+        TestFramework framework2 = new TestFramework(A.class);
+        framework2.addFlags("-XX:CompileCommand=exclude,*A::test*");
+        try {
+            framework2.start();
+            throw new RuntimeException("should have thrown TestRunException");
+        } catch (TestVMException e) {}
+
+        // Forbid compilation, but allow methods not to compile -> should pass.
+        TestFramework framework3 = new TestFramework(A.class);
+        framework3.addFlags("-XX:CompileCommand=exclude,*A::test*");
+        framework3.allowMethodNotCompilable();
+        framework3.start();
+
+        // Run without any flags -> should pass.
+        TestFramework framework4 = new TestFramework(B.class);
+        framework4.start();
+
+        // Forbid compilation -> annotation allows not compilable -> should pass.
+        TestFramework framework5 = new TestFramework(B.class);
+        framework5.addFlags("-XX:CompileCommand=exclude,*B::test*");
+        framework5.start();
+
+        // Forbid compilation, but allow methods not to compile -> should pass.
+        TestFramework framework6 = new TestFramework(B.class);
+        framework6.addFlags("-XX:CompileCommand=exclude,*B::test*");
+        framework6.allowMethodNotCompilable();
+        framework6.start();
+    }
+}
+
+class A {
     @Test
     public void test1() {}
 
     @Test
     // TODO: @IR(failOn = IRNode.LOAD)
+    public void test2() {}
+}
+
+class B {
+    @Test(allowNotCompilable = true)
+    public void test1() {}
+
+    @Test(allowNotCompilable = true)
+    @IR(failOn = IRNode.LOAD)
     public void test2() {}
 }

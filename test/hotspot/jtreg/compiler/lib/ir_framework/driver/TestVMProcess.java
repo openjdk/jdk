@@ -52,7 +52,6 @@ public class TestVMProcess {
     private static final boolean VERBOSE = Boolean.getBoolean("Verbose");
     private static final boolean PREFER_COMMAND_LINE_FLAGS = Boolean.getBoolean("PreferCommandLineFlags");
     private static final int WARMUP_ITERATIONS = Integer.getInteger("Warmup", -1);
-    private static final boolean ALLOW_METHOD_NOT_COMPILABLE = Boolean.getBoolean("AllowMethodNotCompilable");
     private static final boolean VERIFY_VM = Boolean.getBoolean("VerifyVM") && Platform.isDebugBuild();
     private static final boolean REPORT_STDOUT = Boolean.getBoolean("ReportStdout");
     private static final boolean EXCLUDE_RANDOM = Boolean.getBoolean("ExcludeRandom");
