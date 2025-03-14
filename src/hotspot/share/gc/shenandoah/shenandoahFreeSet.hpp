@@ -325,7 +325,8 @@ private:
   // hold evacuated objects.  If this occurs and memory is still available in the Mutator's free set, we will flip a region from
   // the Mutator free set into the Collector or OldCollector free set.
   void flip_to_gc(ShenandoahHeapRegion* r);
-  void flip_to_old_gc(ShenandoahHeapRegion* r);
+
+  bool flip_to_old_gc(ShenandoahHeapRegion* r);
 
   // Handle allocation for mutator.
   HeapWord* allocate_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);
