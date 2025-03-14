@@ -1030,7 +1030,7 @@ public:
 
   void              identify_useful_nodes(Unique_Node_List &useful);
   void              update_dead_node_list(Unique_Node_List &useful);
-  void              disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist);
+  void disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist, const Unique_Node_List* root_and_safepoints = nullptr);
 
   void              remove_useless_node(Node* dead);
 
@@ -1241,10 +1241,13 @@ public:
   // correspondence between Use-Def edges and Def-Use edges
   // The option no_dead_code enables stronger checks that the
   // graph is strongly connected from root in both directions.
-  void verify_graph_edges(bool no_dead_code = false) PRODUCT_RETURN;
+  // root_and_safepoints is used to give the starting points to
+  // find useful nodes. If not supplied, only root is used.
+  // Giving this makes sense only if no_dead_code == true.
+  void verify_graph_edges(bool no_dead_code = false, const Unique_Node_List* root_and_safepoints = nullptr) const PRODUCT_RETURN;
 
   // Verify bi-directional correspondence of edges
-  void verify_bidirectional_edges(Unique_Node_List &visited);
+  void verify_bidirectional_edges(Unique_Node_List& visited, const Unique_Node_List* root_and_safepoints = nullptr) const;
 
   // End-of-run dumps.
   static void print_statistics() PRODUCT_RETURN;
