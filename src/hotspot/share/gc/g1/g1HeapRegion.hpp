@@ -237,8 +237,8 @@ private:
   // Amount of dead data in the region.
   size_t _garbage_bytes;
 
-  // Approximate number of references to this regions
-  // at the end of concurrent marking.
+  // Approximate number of references to this regions at the end of concurrent
+  // marking. We we do not mark through all objects, so this is an estimate.
   size_t _incoming_refs;
 
   // Data for young region survivor prediction.
@@ -343,9 +343,13 @@ public:
     return capacity() - known_live_bytes;
   }
 
-  double ref_count_region_total_ms();
+  // Total collection pause time if we use incoming references as an
+  // estimate for remembered set cards.
+  double total_based_on_inc_refs_ms();
 
-  double weighted_reclaimable_bytes();
+  // GC Efficiency for collecting this region based on the time estimate in
+  // total_based_on_inc_refs_ms.
+  double gc_efficiency();
 
   size_t incoming_refs() { return _incoming_refs; }
 
@@ -363,7 +367,7 @@ public:
 
   // Notify the region that concurrent marking has finished. Passes TAMS and the number of
   // bytes marked between bottom and TAMS.
-  inline void note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes, size_t ref_count);
+  inline void note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes, size_t incoming_refs);
 
   // Notify the region that scrubbing has completed.
   inline void note_end_of_scrubbing();

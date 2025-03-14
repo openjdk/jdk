@@ -103,7 +103,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       for (uint i = _cur_claim_idx; i < _max_size; i++) {
         assert(_data[i]._r == nullptr, "must be");
       }
-      qsort(_data, _cur_claim_idx, sizeof(_data[0]), (_sort_Fn)G1CSetCandidateGroup::compare_weighted_reclaimble_bytes);
+      qsort(_data, _cur_claim_idx, sizeof(_data[0]), (_sort_Fn)G1CollectionSetCandidateInfo::compare_reclaimble_bytes);
       for (uint i = _cur_claim_idx; i < _max_size; i++) {
         assert(_data[i]._r == nullptr, "must be");
       }
@@ -193,12 +193,14 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
   // available (for forward progress in evacuation) or the waste accumulated by the
   // removed regions is above the maximum allowed waste.
   // Updates number of candidates and reclaimable bytes given.
-  void prune(CandidateInfo* data) {
+
+  void prune(GrowableArrayFromArray<CandidateInfo>* data, size_t allowed_waste) {
+
+    uint num_candidates = data->length();
+
     G1Policy* p = G1CollectedHeap::heap()->policy();
-
-    uint num_candidates = Atomic::load(&_num_regions_added);
-
     uint min_old_cset_length = p->calc_min_old_cset_length(num_candidates);
+
     uint num_pruned = 0;
     size_t wasted_bytes = 0;
 
@@ -207,11 +209,10 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       return;
     }
 
-    size_t allowed_waste = p->allowed_waste_in_collection_set();
     uint max_to_prune = num_candidates - min_old_cset_length;
 
     while (true) {
-      G1HeapRegion* r = data[num_candidates - num_pruned - 1]._r;
+      G1HeapRegion* r = data->at(num_candidates - num_pruned - 1)._r;
       size_t const reclaimable = r->reclaimable_bytes();
       if (num_pruned >= max_to_prune ||
           wasted_bytes + reclaimable > allowed_waste) {
@@ -229,7 +230,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
                               wasted_bytes,
                               allowed_waste);
 
-    Atomic::sub(&_num_regions_added, num_pruned, memory_order_relaxed);
+    data->trunc_to((num_candidates - num_pruned));
   }
 
 public:
@@ -247,10 +248,20 @@ public:
   }
 
   void sort_and_prune_into(G1CollectionSetCandidates* candidates) {
+
     _result.sort_by_reclaimable_bytes();
-    prune(_result.array());
-    candidates->set_candidates_from_marking(_result.array(),
-                                            _num_regions_added);
+    GrowableArrayFromArray<CandidateInfo> candidate_infos(_result.array(), _num_regions_added);
+
+    size_t allowed_waste = _g1h->policy()->allowed_waste_in_collection_set();
+    prune(&candidate_infos, (allowed_waste * 0.8));
+
+    candidate_infos.sort(G1CollectionSetCandidateInfo::compare_gc_efficiency);
+
+    // We prune again after sorting by gc efficiency to remove regions that might be
+    // too expensive to collect.
+    prune(&candidate_infos, (allowed_waste * 0.2));
+
+    candidates->set_candidates_from_marking(&candidate_infos);
   }
 };
 

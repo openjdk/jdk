@@ -48,6 +48,10 @@ struct G1CollectionSetCandidateInfo {
     ++_num_unreclaimed;
     return _num_unreclaimed < G1NumCollectionsKeepPinned;
   }
+
+  static int compare_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
+
+  static int compare_gc_efficiency(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
 };
 
 using G1CSetCandidateGroupIterator = GrowableArrayIterator<G1CollectionSetCandidateInfo>;
@@ -105,8 +109,6 @@ public:
   // will cause regions with a lot of live objects and large remembered sets to end
   // up at the end of the list.
   static int compare_gc_efficiency(G1CSetCandidateGroup** gr1, G1CSetCandidateGroup** gr2);
-
-  static int compare_weighted_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
 
   double gc_efficiency() const { return _gc_efficiency; }
 
@@ -239,8 +241,7 @@ public:
 
   // Merge collection set candidates from marking into the current marking list
   // (which needs to be empty).
-  void set_candidates_from_marking(G1CollectionSetCandidateInfo* candidate_infos,
-                                   uint num_infos);
+  void set_candidates_from_marking(GrowableArrayFromArray<G1CollectionSetCandidateInfo>* candidate_infos);
   // The most recent length of the list that had been merged last via
   // set_candidates_from_marking(). Used for calculating minimum collection set
   // regions.

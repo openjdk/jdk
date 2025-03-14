@@ -88,8 +88,6 @@ double G1CSetCandidateGroup::predict_group_total_time_ms() const {
   double predict_code_root_scan_time_ms = 0.0;
   size_t predict_bytes_to_copy = 0.0;
 
-  size_t incoming_refs = 0;
-
   for (G1CollectionSetCandidateInfo ci : _candidates) {
     G1HeapRegion* r = ci._r;
     assert(r->rem_set()->cset_group() == this, "Must be!");
@@ -97,8 +95,6 @@ double G1CSetCandidateGroup::predict_group_total_time_ms() const {
     predict_bytes_to_copy += p->predict_bytes_to_copy(r);
     predicted_copy_time_ms += p->predict_region_copy_time_ms(r, false /* for_young_only_phase */);
     predict_code_root_scan_time_ms += p->predict_region_code_root_scan_time(r, false /* for_young_only_phase */);
-
-    incoming_refs += r->incoming_refs();
   }
 
   size_t card_rs_length = _card_set.occupied();
@@ -111,90 +107,19 @@ double G1CSetCandidateGroup::predict_group_total_time_ms() const {
                          predicted_copy_time_ms +
                          non_young_other_time_ms;
 
-  if (SafepointSynchronize::is_at_safepoint()) {
-    log_debug(gc, ergo, cset)("Prediction for group %u (%u regions): total_time %.2fms card_rs_length %zu merge_scan_time %.2fms code_root_scan_time_ms %.2fms evac_time_ms %.2fms other_time %.2fms bytes_to_copy %zuMB %0.2fMB/S RefCount %zuK",
-      group_id(),
-      length(),
-      total_time_ms,
-      card_rs_length,
-      merge_scan_time_ms,
-      predict_code_root_scan_time_ms,
-      predicted_copy_time_ms,
-      non_young_other_time_ms,
-      predict_bytes_to_copy / M,
-      gc_efficiency() / M,
-      incoming_refs / K
-     );
-
-     if (total_time_ms > MaxGCPauseMillis / 2) {
-      for (G1CollectionSetCandidateInfo ci : _candidates) {
-        G1HeapRegion* r = ci._r;
-        log_debug(gc, ergo, cset)("Region %u  live bytes %zu MB, reclaimable %zu MB, ref counts %zuK",
-                                  r->hrm_index(),
-                                  r->live_bytes() / M,
-                                  r->garbage_bytes() / M,
-                                  r->incoming_refs() / K
-        );
-      }
-    }
-  } else {
-    log_trace(gc, ergo, cset) ("Prediction for group %u (%u regions): total_time %.2fms card_rs_length %zu merge_scan_time %.2fms code_root_scan_time_ms %.2fms evac_time_ms %.2fms other_time %.2fms bytes_to_copy %zuMB %0.2fMB/S",
-      group_id(),
-      length(),
-      total_time_ms,
-      card_rs_length,
-      merge_scan_time_ms,
-      predict_code_root_scan_time_ms,
-      predicted_copy_time_ms,
-      non_young_other_time_ms,
-      predict_bytes_to_copy / M,
-      gc_efficiency() / M
-    );
-  }
-
+  log_trace(gc, ergo, cset) ("Prediction for group %u (%u regions): total_time %.2fms card_rs_length %zu merge_scan_time %.2fms code_root_scan_time_ms %.2fms evac_time_ms %.2fms other_time %.2fms bytes_to_copy %zu",
+                             group_id(),
+                             length(),
+                             total_time_ms,
+                             card_rs_length,
+                             merge_scan_time_ms,
+                             predict_code_root_scan_time_ms,
+                             predicted_copy_time_ms,
+                             non_young_other_time_ms,
+                             predict_bytes_to_copy);
 
   return total_time_ms;
 }
-
-// double G1CSetCandidateGroup::predict_group_total_time_ms() const {
-//   G1Policy* p = G1CollectedHeap::heap()->policy();
-// 
-//   double predicted_copy_time_ms = 0.0;
-//   double predict_code_root_scan_time_ms = 0.0;
-//   size_t predict_bytes_to_copy = 0.0;
-// 
-//   for (G1CollectionSetCandidateInfo ci : _candidates) {
-//     G1HeapRegion* r = ci._r;
-//     assert(r->rem_set()->cset_group() == this, "Must be!");
-// 
-//     predict_bytes_to_copy += p->predict_bytes_to_copy(r);
-//     predicted_copy_time_ms += p->predict_region_copy_time_ms(r, false /* for_young_only_phase */);
-//     predict_code_root_scan_time_ms += p->predict_region_code_root_scan_time(r, false /* for_young_only_phase */);
-//   }
-// 
-//   size_t card_rs_length = _card_set.occupied();
-// 
-//   double merge_scan_time_ms = p->predict_merge_scan_time(card_rs_length);
-//   double non_young_other_time_ms = p->predict_non_young_other_time_ms(length());
-// 
-//   double total_time_ms = merge_scan_time_ms +
-//                          predict_code_root_scan_time_ms +
-//                          predicted_copy_time_ms +
-//                          non_young_other_time_ms;
-// 
-//   log_trace(gc, ergo, cset) ("Prediction for group %u (%u regions): total_time %.2fms card_rs_length %zu merge_scan_time %.2fms code_root_scan_time_ms %.2fms evac_time_ms %.2fms other_time %.2fms bytes_to_copy %zu",
-//                              group_id(),
-//                              length(),
-//                              total_time_ms,
-//                              card_rs_length,
-//                              merge_scan_time_ms,
-//                              predict_code_root_scan_time_ms,
-//                              predicted_copy_time_ms,
-//                              non_young_other_time_ms,
-//                              predict_bytes_to_copy);
-// 
-//   return total_time_ms;
-// }
 
 int G1CSetCandidateGroup::compare_gc_efficiency(G1CSetCandidateGroup** gr1, G1CSetCandidateGroup** gr2) {
   double gc_eff1 = (*gr1)->gc_efficiency();
@@ -209,7 +134,7 @@ int G1CSetCandidateGroup::compare_gc_efficiency(G1CSetCandidateGroup** gr1, G1CS
   }
 }
 
-int G1CSetCandidateGroup::compare_weighted_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
+int G1CollectionSetCandidateInfo::compare_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
   // Make sure that null entries are moved to the end.
   if (ci1->_r == nullptr) {
     if (ci2->_r == nullptr) {
@@ -221,8 +146,24 @@ int G1CSetCandidateGroup::compare_weighted_reclaimble_bytes(G1CollectionSetCandi
     return -1;
   }
 
-  size_t reclaimable1 = ci1->_r->weighted_reclaimable_bytes();
-  size_t reclaimable2 = ci2->_r->weighted_reclaimable_bytes();
+  size_t reclaimable1 = ci1->_r->reclaimable_bytes();
+  size_t reclaimable2 = ci2->_r->reclaimable_bytes();
+
+  if (reclaimable1 > reclaimable2) {
+    return -1;
+  } else if (reclaimable1 < reclaimable2) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+int G1CollectionSetCandidateInfo::compare_gc_efficiency(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
+
+  assert(ci1->_r != nullptr && ci2->_r != nullptr, "Should have already filtered out nulls");
+
+  size_t reclaimable1 = ci1->_r->gc_efficiency();
+  size_t reclaimable2 = ci2->_r->gc_efficiency();
 
   if (reclaimable1 > reclaimable2) {
     return -1;
@@ -354,8 +295,8 @@ void G1CollectionSetCandidates::sort_marking_by_efficiency() {
   _from_marking_groups.verify();
 }
 
-void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandidateInfo* candidate_infos,
-                                                            uint num_infos) {
+void G1CollectionSetCandidates::set_candidates_from_marking(GrowableArrayFromArray<G1CollectionSetCandidateInfo>* candidate_infos) {
+  uint num_infos = candidate_infos->length();
   if (num_infos == 0) {
     log_debug(gc, ergo, cset) ("No regions selected from marking.");
     return;
@@ -378,8 +319,8 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandi
 
   current = new G1CSetCandidateGroup();
 
-  for (uint i = 0; i < num_infos; i++) {
-    G1HeapRegion* r = candidate_infos[i]._r;
+  for (G1CollectionSetCandidateInfo ci : *candidate_infos) {
+    G1HeapRegion* r = ci._r;
     assert(!contains(r), "must not contain region %u", r->hrm_index());
     _contains_map[r->hrm_index()] = CandidateOrigin::Marking;
 
@@ -393,7 +334,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandi
       current = new G1CSetCandidateGroup();
       num_added_to_group = 0;
     }
-    current->add(candidate_infos[i]);
+    current->add(ci);
     num_added_to_group++;
   }
 

@@ -339,11 +339,11 @@ public:
 };
 
 
-double G1HeapRegion::ref_count_region_total_ms() {
+double G1HeapRegion::total_based_on_inc_refs_ms() {
 
   G1Policy* p = G1CollectedHeap::heap()->policy();
 
-  double merge_scan_time_ms = p->predict_merge_scan_time(_incoming_refs); // Compute some ration of _ref_count / remset_num;
+  double merge_scan_time_ms = p->predict_merge_scan_time(_incoming_refs); // We use _incoming_refs as an estimate for remset cards
   double non_young_other_time_ms = p->predict_non_young_other_time_ms(1);
   double predicted_copy_time_ms = p->predict_region_copy_time_ms(this, false /* for_young_only_phase */);
 
@@ -352,13 +352,8 @@ double G1HeapRegion::ref_count_region_total_ms() {
          predicted_copy_time_ms;
 }
 
-double G1HeapRegion::weighted_reclaimable_bytes() {
-  // double alpha = 1e-6;  // Scaling factor for R
-  //double beta = 0.5;    // Decay rate
-  //return reclaimable_bytes() / pow(1 + alpha * _ref_count, beta);
-  // double const epsilon = 1e-6; // Boost regions with zero reference count and also avoid divide by zero checks
-  // return reclaimable_bytes() / (_ref_count + epsilon);
-  return reclaimable_bytes() / ref_count_region_total_ms();
+double G1HeapRegion::gc_efficiency() {
+  return reclaimable_bytes() / total_based_on_inc_refs_ms();
 }
 
 class VerifyCodeRootNMethodClosure: public NMethodClosure {
