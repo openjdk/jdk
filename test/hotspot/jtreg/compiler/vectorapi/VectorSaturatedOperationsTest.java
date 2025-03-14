@@ -632,7 +632,7 @@ public class VectorSaturatedOperationsTest {
     @Test
     @IR(counts = {IRNode.SATURATING_SUB_VL, " >0 ", "unsigned_vector_node", " >0 "},
         phase = {CompilePhase.BEFORE_MATCHING},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     @IR(counts = {IRNode.VECTOR_BLEND_L, " >0 "}, applyIfCPUFeatureAnd = {"asimd", "true", "sve2", "false"})
     @IR(failOn = IRNode.VECTOR_BLEND_L, applyIfCPUFeature = {"sve2", "true"})
     @Warmup(value = 10000)
