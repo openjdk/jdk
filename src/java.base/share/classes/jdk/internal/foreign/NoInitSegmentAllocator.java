@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,38 +27,17 @@ package jdk.internal.foreign;
 
 import jdk.internal.vm.annotation.ForceInline;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment.Scope;
+import java.lang.foreign.SegmentAllocator;
 
-public final class ArenaImpl implements Arena, NoInitSegmentAllocator {
+public interface NoInitSegmentAllocator extends SegmentAllocator {
 
-    private final MemorySessionImpl session;
-    private final boolean shouldReserveMemory;
-    ArenaImpl(MemorySessionImpl session) {
-        this.session = session;
-        shouldReserveMemory = session instanceof ImplicitSession;
-    }
-
-    @Override
-    public Scope scope() {
-        return session;
-    }
-
-    @Override
-    public void close() {
-        session.close();
-    }
+    NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment);
 
     @ForceInline
     @Override
-    public NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment) {
-        Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
-        return SegmentFactories.allocateSegment(byteSize, byteAlignment, session, shouldReserveMemory);
-    }
-
-    @ForceInline
-    @Override
-    public NativeMemorySegmentImpl allocate(long byteSize, long byteAlignment) {
-        return NoInitSegmentAllocator.super.allocate(byteSize, byteAlignment);
+    default NativeMemorySegmentImpl allocate(long byteSize, long byteAlignment) {
+        NativeMemorySegmentImpl segment = allocateNoInit(byteSize, byteAlignment);
+        segment.fill((byte)0);
+        return segment;
     }
 }
