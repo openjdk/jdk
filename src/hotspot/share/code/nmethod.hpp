@@ -908,6 +908,8 @@ public:
   void decode2(outputStream* st) const;
   void print_constant_pool(outputStream* st);
 
+  void decode_platform(outputStream* st) const;
+
   // Avoid hiding of parent's 'decode(outputStream*)' method.
   void decode(outputStream* st) const { decode2(st); } // just delegate here.
 
