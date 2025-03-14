@@ -362,7 +362,9 @@ Method* ConstantPoolCache::method_if_resolved(int method_index) const {
     if (method_entry->is_vfinal()) {
       return method_entry->method();
     } else {
-      int holder_index = constant_pool()->uncached_klass_ref_index_at(method_entry->constant_pool_index());
+      int cp_index = method_entry->constant_pool_index();
+      FMReference mref(constant_pool(), cp_index);
+      int holder_index = mref.klass_index();
       if (constant_pool()->tag_at(holder_index).is_klass()) {
         Klass* klass = constant_pool()->resolved_klass_at(holder_index);
         return klass->method_at_vtable(method_entry->table_index());
@@ -440,10 +442,10 @@ void ConstantPoolCache::remove_resolved_field_entries_if_non_deterministic() {
       LogStreamHandle(Trace, cds, resolve) log;
       if (log.is_enabled()) {
         ResourceMark rm;
-        int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
-        Symbol* klass_name = cp->klass_name_at(klass_cp_index);
-        Symbol* name = cp->uncached_name_ref_at(cp_index);
-        Symbol* signature = cp->uncached_signature_ref_at(cp_index);
+        FMReference fref(cp, cp_index);
+        Symbol* klass_name = fref.klass_name(cp);
+        Symbol* name      = fref.name(cp);
+        Symbol* signature = fref.signature(cp);
         log.print("%s field  CP entry [%3d]: %s => %s.%s:%s",
                   (archived ? "archived" : "reverted"),
                   cp_index,
@@ -480,10 +482,10 @@ void ConstantPoolCache::remove_resolved_method_entries_if_non_deterministic() {
       LogStreamHandle(Trace, cds, resolve) log;
       if (log.is_enabled()) {
         ResourceMark rm;
-        int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
-        Symbol* klass_name = cp->klass_name_at(klass_cp_index);
-        Symbol* name = cp->uncached_name_ref_at(cp_index);
-        Symbol* signature = cp->uncached_signature_ref_at(cp_index);
+        FMReference mref(cp, cp_index);
+        Symbol* klass_name = mref.klass_name(cp);
+        Symbol* name      = mref.name(cp);
+        Symbol* signature = mref.signature(cp);
         log.print("%s%s method CP entry [%3d]: %s %s.%s:%s",
                   (archived ? "archived" : "reverted"),
                   (rme->is_resolved(Bytecodes::_invokeinterface) ? " interface" : ""),
@@ -491,7 +493,7 @@ void ConstantPoolCache::remove_resolved_method_entries_if_non_deterministic() {
                   cp->pool_holder()->name()->as_C_string(),
                   klass_name->as_C_string(), name->as_C_string(), signature->as_C_string());
         if (archived) {
-          Klass* resolved_klass = cp->resolved_klass_at(klass_cp_index);
+          Klass* resolved_klass = cp->resolved_klass_at(mref.klass_index());
           log.print(" => %s%s",
                     resolved_klass->name()->as_C_string(),
                     (rme->is_resolved(Bytecodes::_invokestatic) ? " *** static" : ""));
@@ -520,11 +522,12 @@ void ConstantPoolCache::remove_resolved_indy_entries_if_non_deterministic() {
       LogStreamHandle(Trace, cds, resolve) log;
       if (log.is_enabled()) {
         ResourceMark rm;
-        int bsm = cp->bootstrap_method_ref_index_at(cp_index);
-        int bsm_ref = cp->method_handle_index_at(bsm);
-        Symbol* bsm_name = cp->uncached_name_ref_at(bsm_ref);
-        Symbol* bsm_signature = cp->uncached_signature_ref_at(bsm_ref);
-        Symbol* bsm_klass = cp->klass_name_at(cp->uncached_klass_ref_index_at(bsm_ref));
+        BootstrapReference indy(cp, cp_index);
+        BSMAttributeEntry* bsme    = indy.bsme(cp);
+        MethodHandleReference bsmh = bsme->bootstrap_method(cp);
+        Symbol* bsm_name           = bsmh.name(cp);
+        Symbol* bsm_signature      = bsmh.signature(cp);
+        Symbol* bsm_klass          = bsmh.klass_name(cp);
         log.print("%s indy   CP entry [%3d]: %s (%d)",
                   (archived ? "archived" : "reverted"),
                   cp_index, cp->pool_holder()->name()->as_C_string(), i);
@@ -809,7 +812,7 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
 
   // Populate entry with resolved information
   assert(resolved_indy_entries() != nullptr, "Invokedynamic array is empty, cannot fill with resolved information");
-  resolved_indy_entry_at(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
+  resolved_indy_entry_at(index)->fill_in(adapter, has_appendix);
 
   if (log_stream != nullptr) {
     resolved_indy_entry_at(index)->print_on(log_stream);
