@@ -30,10 +30,12 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Parameters;
@@ -121,25 +123,22 @@ public final class ModulePathTest {
         if (withGoodPath) {
             cmd.executeAndAssertHelloAppImageCreated();
         } else {
-            final String expectedErrorMessage;
+            final CannedFormattedString expectedErrorMessage;
             if (modulePathArgs.isEmpty()) {
-                expectedErrorMessage = "Error: Missing argument: --runtime-image or --module-path";
+                expectedErrorMessage = JPackageStringBundle.MAIN.cannedFormattedString(
+                        "ERR_MissingArgument", "--runtime-image or --module-path");
             } else {
-                expectedErrorMessage = String.format(
-                        "Failed to find %s module in module path", appDesc.moduleName());
+                expectedErrorMessage = JPackageStringBundle.MAIN.cannedFormattedString(
+                        "error.no-module-in-path", appDesc.moduleName());
             }
 
-            List<String> output = cmd
-                    .saveConsoleOutput(true)
-                    .execute(1)
-                    .getOutput();
-            TKit.assertTextStream(expectedErrorMessage).apply(output.stream());
+            cmd.validateOutput(expectedErrorMessage).execute(1);
         }
     }
 
     private final List<String> modulePathArgs;
 
-    private final static String GOOD_PATH = "@GoodPath@";
-    private final static String EMPTY_DIR = "@EmptyDir@";
-    private final static String NON_EXISTING_DIR = "@NonExistingDir@";
+    private static final String GOOD_PATH = "@GoodPath@";
+    private static final String EMPTY_DIR = "@EmptyDir@";
+    private static final String NON_EXISTING_DIR = "@NonExistingDir@";
 }
