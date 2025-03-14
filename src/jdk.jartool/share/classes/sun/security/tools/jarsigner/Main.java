@@ -1167,21 +1167,14 @@ public class Main {
                 compareSigners(cenEntry, locEntry);
             }
 
-            Map<String, Integer> entryMap = new HashMap<>();
-            for (int i = 0; i < locEntries.size(); i++) {
-                entryMap.put(locEntries.get(i), i);
-            }
-
             cenEntries = jarFile.stream()
                     .map(JarEntry::getName)
-                    .sorted(Comparator.comparingInt(
-                            name -> entryMap.getOrDefault(name, Integer.MAX_VALUE)))
+                    .filter(name -> !name.equals("META-INF/MANIFEST.MF"))
                     .collect(Collectors.toList());
 
-            cenEntries.remove("META-INF/MANIFEST.MF");
             if (!cenEntries.equals(locEntries)) {
                 crossChkWarnings.add(rb.getString(
-                        "Mismatch.in.number.of.entries.between.CEN.and.LOC"));
+                        "Mismatch.in.entries.between.CEN.and.LOC"));
             }
         }
     }
