@@ -2154,11 +2154,14 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         int oldAnchor;
         ListSelectionModel selModel;
 
+        int rowCount = getRowCount();
+        int columnCount = getColumnCount();
+
         // If I'm currently editing, then I should stop editing
         if (isEditing()) {
             removeEditor();
         }
-        if (getRowCount() > 0 && getColumnCount() > 0) {
+        if (rowCount > 0 && columnCount > 0) {
             selModel = selectionModel;
             selModel.setValueIsAdjusting(true);
             oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), true);
@@ -2182,7 +2185,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             SwingUtilities2.setLeadAnchorWithoutSelection(selModel, oldLead, oldAnchor);
 
             selModel.setValueIsAdjusting(false);
-        } else if (getRowCount() > 0 && getColumnCount() == 0) {
+        } else if (rowCount > 0 && columnCount == 0) {
             selModel = selectionModel;
             selModel.setValueIsAdjusting(true);
             oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), true);
@@ -2194,7 +2197,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             SwingUtilities2.setLeadAnchorWithoutSelection(selModel, oldLead, oldAnchor);
 
             selModel.setValueIsAdjusting(false);
-        } else if (getColumnCount() > 0  && getRowCount() == 0) {
+        } else if (columnCount > 0  && rowCount == 0) {
             selModel = columnModel.getSelectionModel();
             selModel.setValueIsAdjusting(true);
             oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), false);
