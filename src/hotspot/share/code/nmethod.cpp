@@ -1163,7 +1163,8 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
 #if INCLUDE_JVMCI
     + align_up(speculations_len                  , oopSize)
 #endif
-    + align_up(debug_info->data_size()           , oopSize);
+    + align_up(debug_info->data_size()           , oopSize)
+    + align_up(oopSize                           , oopSize);
 
   // First, allocate space for immutable data in C heap.
   address immutable_data = nullptr;
@@ -1389,6 +1390,149 @@ nmethod::nmethod(
   }
 }
 
+nmethod* nmethod::clone(CodeBlobType code_blob_type) {
+  debug_only(NoSafepointVerifier nsv;)
+  assert_locked_or_safepoint(CodeCache_lock);
+
+  // Allocate memory in code heap and copy data from nmethod
+  nmethod* nm_copy = (nmethod*) CodeCache::allocate(size(), code_blob_type);
+  memcpy(nm_copy, this, size());
+
+  // Increment number of references to immutable data to share it between nmethods
+  if (immutable_data_size() > 0) {
+    (*immutable_data_references_begin())++;
+  } else {
+    nm_copy->_immutable_data = nm_copy->blob_end();
+  }
+
+  // Allocate memory and copy mutable data from C heap
+  if (_mutable_data_size > 0) {
+    nm_copy->_mutable_data = (address)os::malloc(_mutable_data_size, mtCode);
+    if (_mutable_data == nullptr) {
+      vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "nmethod: no space for mutable data");
+    }
+    memcpy(nm_copy->mutable_data_begin(), mutable_data_begin(), mutable_data_size());
+  } else {
+    nm_copy->_mutable_data = nullptr;
+  }
+
+  // Fix new nmethod specific data
+  if (oop_maps() != nullptr) {
+    nm_copy->_oop_maps = oop_maps()->clone();
+  }
+
+  nm_copy->_exception_cache = nullptr;
+  nm_copy->_gc_data = nullptr;
+  nm_copy->_compiled_ic_data = nullptr;
+
+  if (_pc_desc_container != nullptr) {
+    nm_copy->_pc_desc_container = new PcDescContainer(nm_copy->scopes_pcs_begin());
+  }
+
+#ifndef PRODUCT
+  _asm_remarks.reuse();
+  _dbg_strings.reuse();
+#endif
+
+  // Fix relocation
+  RelocIterator iter(nm_copy);
+  CodeBuffer src((CodeBlob *)this);
+  CodeBuffer dst(nm_copy);
+  while (iter.next()) {
+    iter.reloc()->fix_relocation_after_move(&src, &dst);
+  }
+
+  ICache::invalidate_range(nm_copy->code_begin(), nm_copy->code_size());
+
+  nm_copy->post_init();
+
+  return nm_copy;
+}
+
+nmethod* nmethod::relocate_to(nmethod* nm, CodeBlobType code_blob_type) {
+  if (nm == nullptr || !nm->is_relocatable()) {
+    return nullptr;
+  }
+
+  // No need to relocate if already in correct code heap
+  if (nm->lookup_code_blob_type() == code_blob_type) {
+    return nm;
+  }
+
+  nmethod* nm_copy = nullptr;
+
+  {
+    // Clear inline caches before acquiring any locks
+    VM_ClearNMethodICs clear_nmethod_ics(nm);
+    VMThread::execute(&clear_nmethod_ics);
+
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    nm_copy = nm->clone(code_blob_type);
+
+    if (nm_copy != nullptr) {
+      // To make dependency checking during class loading fast, record
+      // the nmethod dependencies in the classes it is dependent on.
+      // This allows the dependency checking code to simply walk the
+      // class hierarchy above the loaded class, checking only nmethods
+      // which are dependent on those classes.  The slow way is to
+      // check every nmethod for dependencies which makes it linear in
+      // the number of methods compiled.  For applications with a lot
+      // classes the slow way is too slow.
+      for (Dependencies::DepStream deps(nm_copy); deps.next(); ) {
+        if (deps.type() == Dependencies::call_site_target_value) {
+          // CallSite dependencies are managed on per-CallSite instance basis.
+          oop call_site = deps.argument_oop(0);
+          MethodHandles::add_dependent_nmethod(call_site, nm_copy);
+        } else {
+          InstanceKlass* ik = deps.context_type();
+          if (ik == nullptr) {
+            continue;  // ignore things like evol_method
+          }
+          // record this nmethod as dependent on this klass
+          ik->add_dependent_nmethod(nm_copy);
+        }
+      }
+
+      // Update corresponding Java method to point to this nmethod
+      MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
+      if (nm_copy->method()->code() == nm) {
+        methodHandle mh(Thread::current(), nm_copy->method());
+        nm_copy->method()->set_code(mh, nm_copy);
+        nm->make_not_used();
+      }
+    }
+  }
+  // Do verification and logging outside CodeCache_lock.
+  if (nm_copy != nullptr) {
+    NOT_PRODUCT(note_java_nmethod(nm_copy));
+    // Safepoints in nmethod::verify aren't allowed because nm_copy hasn't been installed yet.
+    DEBUG_ONLY(nm_copy->verify();)
+    nm_copy->log_new_nmethod();
+  }
+
+  return nm_copy;
+}
+
+bool nmethod::is_relocatable() const {
+  if (is_not_entrant()) {
+    return false;
+  }
+
+  if (is_osr_method()) {
+    return false;
+  }
+
+  if (!is_java_method()) {
+    return false;
+  }
+
+  return true;
+}
+
+CodeBlobType nmethod::lookup_code_blob_type() {
+  return CodeCache::get_code_heap_containing(this)->code_blob_type();
+}
+
 void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) throw () {
   return CodeCache::allocate(nmethod_size, CodeCache::get_code_blob_type(comp_level));
 }
@@ -1521,9 +1665,11 @@ nmethod::nmethod(
 
 #if INCLUDE_JVMCI
     _speculations_offset  = _scopes_data_offset   + align_up(debug_info->data_size(), oopSize);
-    DEBUG_ONLY( int immutable_data_end_offset = _speculations_offset  + align_up(speculations_len, oopSize); )
+    _immutable_data_references_offset         = _speculations_offset  + align_up(speculations_len, oopSize);
+    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_references_offset  + align_up(oopSize, oopSize); )
 #else
-    DEBUG_ONLY( int immutable_data_end_offset = _scopes_data_offset + align_up(debug_info->data_size(), oopSize); )
+    _immutable_data_references_offset         =  _scopes_data_offset + align_up(debug_info->data_size(), oopSize);
+    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_references_offset + align_up(oopSize, oopSize); )
 #endif
     assert(immutable_data_end_offset <= immutable_data_size, "wrong read-only data size: %d > %d",
            immutable_data_end_offset, immutable_data_size);
@@ -1556,6 +1702,7 @@ nmethod::nmethod(
       memcpy(speculations_begin(), speculations, speculations_len);
     }
 #endif
+    memset(immutable_data_references_begin(), 1, oopSize);
 
     post_init();
 
@@ -2143,7 +2290,15 @@ void nmethod::purge(bool unregister_nmethod) {
   delete[] _compiled_ic_data;
 
   if (_immutable_data != blob_end()) {
-    os::free(_immutable_data);
+    long _immutable_data_references = *immutable_data_references_begin();
+
+    // Free memory if this is the last nmethod referencing immutable data
+    if (_immutable_data_references == 1) {
+      os::free(_immutable_data);
+    } else {
+      (*immutable_data_references_begin())--;
+    }
+
     _immutable_data = blob_end(); // Valid not null address
   }
   if (unregister_nmethod) {

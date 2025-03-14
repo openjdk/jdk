@@ -155,6 +155,7 @@ public:
 //    - Scopes data array
 //    - Scopes pcs array
 //  - JVMCI speculations array
+//  - Nmethod reference counter
 
 #if INCLUDE_JVMCI
 class FailedSpeculation;
@@ -249,6 +250,7 @@ class nmethod : public CodeBlob {
 #if INCLUDE_JVMCI
   int      _speculations_offset;
 #endif
+  int      _immutable_data_references_offset;
 
   // location in frame (offset for sp) that deopt can store the original
   // pc during a deopt.
@@ -333,6 +335,8 @@ class nmethod : public CodeBlob {
 #endif
           );
 
+  nmethod(nmethod& nm);
+
   // helper methods
   void* operator new(size_t size, int nmethod_size, int comp_level) throw();
 
@@ -340,6 +344,8 @@ class nmethod : public CodeBlob {
   // Attention: Only allow NonNMethod space for special nmethods which don't need to be
   // findable by nmethod iterators! In particular, they must not contain oops!
   void* operator new(size_t size, int nmethod_size, bool allow_NonNMethod_space) throw();
+
+  nmethod* clone(CodeBlobType code_blob_type);
 
   const char* reloc_string_for(u_char* begin, u_char* end);
 
@@ -491,6 +497,13 @@ public:
 #endif
   );
 
+
+  // Relocate the nmethod to the code heap identified by code_blob_type.
+  // Returns nullptr if the code heap does not have enough space, otherwise
+  // the relocated nmethod. The original nmethod will be invalidated.
+  // If nm is already in the needed code heap, it is not relocated and the function returns it.
+  static nmethod* relocate_to(nmethod* nm, CodeBlobType code_blob_type);
+
   static nmethod* new_native_nmethod(const methodHandle& method,
                                      int compile_id,
                                      CodeBuffer *code_buffer,
@@ -506,6 +519,10 @@ public:
   bool is_native_method() const { return _method != nullptr && _method->is_native(); }
   bool is_java_method  () const { return _method != nullptr && !_method->is_native(); }
   bool is_osr_method   () const { return _entry_bci != InvocationEntryBci; }
+
+  bool is_relocatable() const;
+
+  CodeBlobType lookup_code_blob_type();
 
   // Compiler task identification.  Note that all OSR methods
   // are numbered in an independent sequence if CICountOSR is true,
@@ -560,10 +577,13 @@ public:
 #if INCLUDE_JVMCI
   address scopes_data_end       () const { return           _immutable_data + _speculations_offset ; }
   address speculations_begin    () const { return           _immutable_data + _speculations_offset ; }
-  address speculations_end      () const { return            immutable_data_end(); }
+  address speculations_end      () const { return           _immutable_data + _immutable_data_references_offset   ; }
 #else
-  address scopes_data_end       () const { return            immutable_data_end(); }
+  address scopes_data_end       () const { return           _immutable_data + _immutable_data_references_offset   ; }
 #endif
+
+  address immutable_data_references_begin      () const { return           _immutable_data + _immutable_data_references_offset   ; }
+  address immutable_data_references_end        () const { return            immutable_data_end(); }
 
   // Sizes
   int immutable_data_size() const { return _immutable_data_size; }

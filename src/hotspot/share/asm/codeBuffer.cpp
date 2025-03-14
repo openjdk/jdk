@@ -1080,105 +1080,6 @@ void CodeBuffer::print() {
   }
 }
 
-// ----- CHeapString -----------------------------------------------------------
-
-class CHeapString : public CHeapObj<mtCode> {
- public:
-  CHeapString(const char* str) : _string(os::strdup(str)) {}
- ~CHeapString() {
-    os::free((void*)_string);
-    _string = nullptr;
-  }
-  const char* string() const { return _string; }
-
- private:
-  const char* _string;
-};
-
-// ----- AsmRemarkCollection ---------------------------------------------------
-
-class AsmRemarkCollection : public CHeapObj<mtCode> {
- public:
-  AsmRemarkCollection() : _ref_cnt(1), _remarks(nullptr), _next(nullptr) {}
- ~AsmRemarkCollection() {
-    assert(is_empty(), "Must 'clear()' before deleting!");
-    assert(_ref_cnt == 0, "No uses must remain when deleting!");
-  }
-  AsmRemarkCollection* reuse() {
-    precond(_ref_cnt > 0);
-    return _ref_cnt++, this;
-  }
-
-  const char* insert(uint offset, const char* remark);
-  const char* lookup(uint offset) const;
-  const char* next(uint offset) const;
-
-  bool is_empty() const { return _remarks == nullptr; }
-  uint clear();
-
- private:
-  struct Cell : CHeapString {
-    Cell(const char* remark, uint offset) :
-        CHeapString(remark), offset(offset), prev(nullptr), next(nullptr) {}
-    void push_back(Cell* cell) {
-      Cell* head = this;
-      Cell* tail = prev;
-      tail->next = cell;
-      cell->next = head;
-      cell->prev = tail;
-      prev = cell;
-    }
-    uint offset;
-    Cell* prev;
-    Cell* next;
-  };
-  uint  _ref_cnt;
-  Cell* _remarks;
-  // Using a 'mutable' iteration pointer to allow 'const' on lookup/next (that
-  // does not change the state of the list per se), supportig a simplistic
-  // iteration scheme.
-  mutable Cell* _next;
-};
-
-// ----- DbgStringCollection ---------------------------------------------------
-
-class DbgStringCollection : public CHeapObj<mtCode> {
- public:
-  DbgStringCollection() : _ref_cnt(1), _strings(nullptr) {}
- ~DbgStringCollection() {
-    assert(is_empty(), "Must 'clear()' before deleting!");
-    assert(_ref_cnt == 0, "No uses must remain when deleting!");
-  }
-  DbgStringCollection* reuse() {
-    precond(_ref_cnt > 0);
-    return _ref_cnt++, this;
-  }
-
-  const char* insert(const char* str);
-  const char* lookup(const char* str) const;
-
-  bool is_empty() const { return _strings == nullptr; }
-  uint clear();
-
- private:
-  struct Cell : CHeapString {
-    Cell(const char* dbgstr) :
-        CHeapString(dbgstr), prev(nullptr), next(nullptr) {}
-    void push_back(Cell* cell) {
-      Cell* head = this;
-      Cell* tail = prev;
-      tail->next = cell;
-      cell->next = head;
-      cell->prev = tail;
-      prev = cell;
-    }
-    Cell* prev;
-    Cell* next;
-  };
-  uint  _ref_cnt;
-  Cell* _strings;
-};
-
 // ----- AsmRemarks ------------------------------------------------------------
 //
 // Acting as interface to reference counted mapping [offset -> remark], where
@@ -1200,6 +1101,10 @@ const char* AsmRemarks::insert(uint offset, const char* remstr) {
 
 bool AsmRemarks::is_empty() const {
   return _remarks->is_empty();
+}
+
+void AsmRemarks::reuse() {
+  _remarks->reuse();
 }
 
 void AsmRemarks::share(const AsmRemarks &src) {
@@ -1252,6 +1157,10 @@ const char* DbgStrings::insert(const char* dbgstr) {
 
 bool DbgStrings::is_empty() const {
   return _strings->is_empty();
+}
+
+void DbgStrings::reuse() {
+  _strings->reuse();
 }
 
 void DbgStrings::share(const DbgStrings &src) {
