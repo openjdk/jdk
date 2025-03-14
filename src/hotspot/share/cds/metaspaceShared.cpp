@@ -844,37 +844,16 @@ void MetaspaceShared::adjust_heap_sizes_for_dumping() {
 #endif // INCLUDE_CDS_JAVA_HEAP && _LP64
 
 void MetaspaceShared::get_default_classlist(char* default_classlist, const size_t buf_size) {
-  // Construct the path to the class list (in jre/lib)
-  // Walk up two directories from the location of the VM and
-  // optionally tack on "lib" (depending on platform)
-  os::jvm_path(default_classlist, (jint)(buf_size));
-  for (int i = 0; i < 3; i++) {
-    char *end = strrchr(default_classlist, *os::file_separator());
-    if (end != nullptr) *end = '\0';
-  }
-  size_t classlist_path_len = strlen(default_classlist);
-  if (classlist_path_len >= 3) {
-    if (strcmp(default_classlist + classlist_path_len - 3, "lib") != 0) {
-      if (classlist_path_len < buf_size - 4) {
-        jio_snprintf(default_classlist + classlist_path_len,
-                     buf_size - classlist_path_len,
-                     "%slib", os::file_separator());
-        classlist_path_len += 4;
-      }
-    }
-  }
-  if (classlist_path_len < buf_size - 10) {
-    jio_snprintf(default_classlist + classlist_path_len,
-                 buf_size - classlist_path_len,
-                 "%sclasslist", os::file_separator());
-  }
+  const char* filesep = os::file_separator();
+  jio_snprintf(default_classlist, buf_size, "%s%slib%sclasslist",
+               Arguments::get_java_home(), filesep, filesep);
 }
 
 void MetaspaceShared::preload_classes(TRAPS) {
   char default_classlist[JVM_MAXPATHLEN];
   const char* classlist_path;
 
-  get_default_classlist(default_classlist, sizeof(default_classlist));
+  get_default_classlist(default_classlist, JVM_MAXPATHLEN);
   if (SharedClassListFile == nullptr) {
     classlist_path = default_classlist;
   } else {
@@ -929,7 +908,7 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
   if (CDSConfig::is_dumping_preimage_static_archive()) {
     log_info(cds)("Reading lambda form invokers from JDK default classlist ...");
     char default_classlist[JVM_MAXPATHLEN];
-    get_default_classlist(default_classlist, sizeof(default_classlist));
+    get_default_classlist(default_classlist, JVM_MAXPATHLEN);
     struct stat statbuf;
     if (os::stat(default_classlist, &statbuf) == 0) {
       ClassListParser::parse_classlist(default_classlist,
