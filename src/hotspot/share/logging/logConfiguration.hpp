@@ -97,6 +97,8 @@ private:
   static void describe_available(outputStream* out);
   static void describe_current_configuration(outputStream* out);
 
+  // Create a LogSelectionList given a level and a set of tags
+  static LogSelectionList create_selection_list(LogLevelType level, int exact_match, va_list ap);
 
  public:
   // Initialization and finalization of log configuration, to be run at vm startup and shutdown respectively.
@@ -108,6 +110,13 @@ private:
 
   // Disable all logging, equivalent to -Xlog:disable.
   static void disable_logging();
+
+  // Disables logging on all outputs for the given tags.
+  // If exact_match is true, only tagsets with precisely the specified tags will be disabled
+  // (exact_match=false is the same as "-Xlog:<tags>*=off", and exact_match=true is "-Xlog:<tags>=off").
+  // Tags should be specified using the LOG_TAGS macro, e.g.
+  // LogConfiguration::disable_tags(<true/false>, LOG_TAGS(<tags>));
+  static void disable_tags(int exact_match, ...);
 
   // Configures logging on stdout for the given tags and level combination.
   // Intended for mappings between -XX: flags and Unified Logging configuration.
