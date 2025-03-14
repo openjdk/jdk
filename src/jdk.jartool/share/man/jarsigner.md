@@ -936,7 +936,7 @@ noTimestamp
 
 hasMultipleManifests
 :   This JAR contained multiple manifest files. During signing, one of the files
-    was selected, and the others were discarded. 
+    was selected, and the others were discarded.
 
 ## Example of Signing a JAR File
 
