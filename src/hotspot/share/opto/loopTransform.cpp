@@ -745,10 +745,14 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
     cl->set_trip_count(cl->trip_count() - 1);
     if (cl->is_main_loop()) {
       cl->set_normal_loop();
+      if (cl->is_multiversion()) {
+        // Peeling also destroys the connection of the main loop
+        // to the multiversion_if.
+        cl->set_no_multiversion();
+      }
 #ifndef PRODUCT
-      if (PrintOpto && VerifyLoopOptimizations) {
+      if (TraceLoopOpts) {
         tty->print("Peeling a 'main' loop; resetting to 'normal' ");
-        loop->dump_head();
       }
 #endif
     }
@@ -1174,8 +1178,9 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
       if (!bol->is_Bool()) {
         assert(bol->is_OpaqueNotNull() ||
                bol->is_OpaqueTemplateAssertionPredicate() ||
-               bol->is_OpaqueInitializedAssertionPredicate(),
-               "Opaque node of a non-null-check or an Assertion Predicate");
+               bol->is_OpaqueInitializedAssertionPredicate() ||
+               bol->is_OpaqueMultiversioning(),
+               "Opaque node of a non-null-check or an Assertion Predicate or Multiversioning");
         continue;
       }
       if (bol->as_Bool()->_test._test == BoolTest::ne) {
@@ -1803,10 +1808,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   C->print_method(PHASE_BEFORE_LOOP_UNROLLING, 4, loop_head);
 
 #ifndef PRODUCT
-  if (PrintOpto && VerifyLoopOptimizations) {
-    tty->print("Unrolling ");
-    loop->dump_head();
-  } else if (TraceLoopOpts) {
+  if (TraceLoopOpts) {
     if (loop_head->trip_count() < (uint)LoopUnrollLimit) {
       tty->print("Unroll %d(%2d) ", loop_head->unrolled_count()*2, loop_head->trip_count());
     } else {
@@ -2482,10 +2484,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_extra_offset(Node* exp1, Node* offset3, N
 // Eliminate range-checks and other trip-counter vs loop-invariant tests.
 void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
 #ifndef PRODUCT
-  if (PrintOpto && VerifyLoopOptimizations) {
-    tty->print("Range Check Elimination ");
-    loop->dump_head();
-  } else if (TraceLoopOpts) {
+  if (TraceLoopOpts) {
     tty->print("RangeCheck   ");
     loop->dump_head();
   }
@@ -3354,6 +3353,23 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   // Do nothing special to pre- and post- loops
   if (cl->is_pre_loop() || cl->is_post_loop()) return true;
 
+  // With multiversioning, we create a fast_loop and a slow_loop, and a multiversion_if that
+  // decides which loop is taken at runtime. At first, the multiversion_if always takes the
+  // fast_loop, and we only optimize the fast_loop. Since we are not sure if we will ever use
+  // the slow_loop, we delay optimizations for it, so we do not waste compile time and code
+  // size. If we never change the condition of the multiversion_if, the slow_loop is eventually
+  // folded away after loop-opts. While optimizing the fast_loop, we may want to perform some
+  // speculative optimization, for which we need a runtime-check. We add this runtime-check
+  // condition to the multiversion_if. Now, it becomes possible to execute the slow_loop at
+  // runtime, and we resume optimizations for slow_loop ("un-delay" it).
+  // TLDR: If the slow_loop is still in "delay" mode, check if the multiversion_if was changed
+  //       and we should now resume optimizations for it.
+  if (cl->is_multiversion_delayed_slow_loop() &&
+      !phase->try_resume_optimizations_for_delayed_slow_loop(this)) {
+    // We are still delayed, so wait with further loop-opts.
+    return true;
+  }
+
   // Compute loop trip count from profile data
   compute_profile_trip_cnt(phase);
 
@@ -3413,6 +3429,12 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
       if (!phase->may_require_nodes(estimate)) {
         return false;
       }
+
+      // We are going to add pre-loop and post-loop.
+      // But should we also multi-version for auto-vectorization speculative
+      // checks, i.e. fast and slow-paths?
+      phase->maybe_multiversion_for_auto_vectorization_runtime_checks(this, old_new);
+
       phase->insert_pre_post_loops(this, old_new, peel_only);
     }
     // Adjust the pre- and main-loop limits to let the pre and  post loops run

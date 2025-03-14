@@ -686,6 +686,12 @@ jpackage will lookup files by specific names in the resource directory.
 
 :   A Windows Script File (WSF) to run after building embedded MSI installer for EXE installer
 
+`installer.exe`
+
+:   Executable wrapper for MSI installer
+
+    Default resource is *msiwrapper.exe*
+
 
 ### Resource directory files considered only when running on macOS:
 
