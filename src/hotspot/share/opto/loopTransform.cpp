@@ -751,9 +751,8 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
         cl->set_no_multiversion();
       }
 #ifndef PRODUCT
-      if (PrintOpto && VerifyLoopOptimizations) {
+      if (TraceLoopOpts) {
         tty->print("Peeling a 'main' loop; resetting to 'normal' ");
-        loop->dump_head();
       }
 #endif
     }
@@ -1809,10 +1808,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   C->print_method(PHASE_BEFORE_LOOP_UNROLLING, 4, loop_head);
 
 #ifndef PRODUCT
-  if (PrintOpto && VerifyLoopOptimizations) {
-    tty->print("Unrolling ");
-    loop->dump_head();
-  } else if (TraceLoopOpts) {
+  if (TraceLoopOpts) {
     if (loop_head->trip_count() < (uint)LoopUnrollLimit) {
       tty->print("Unroll %d(%2d) ", loop_head->unrolled_count()*2, loop_head->trip_count());
     } else {
@@ -2488,10 +2484,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_extra_offset(Node* exp1, Node* offset3, N
 // Eliminate range-checks and other trip-counter vs loop-invariant tests.
 void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
 #ifndef PRODUCT
-  if (PrintOpto && VerifyLoopOptimizations) {
-    tty->print("Range Check Elimination ");
-    loop->dump_head();
-  } else if (TraceLoopOpts) {
+  if (TraceLoopOpts) {
     tty->print("RangeCheck   ");
     loop->dump_head();
   }

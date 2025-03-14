@@ -188,6 +188,8 @@ public:
 
   // Deflate idle monitors:
   static size_t deflate_monitor_list(ObjectMonitorDeflationSafepointer* safepointer);
+  static size_t in_use_list_count();
+  static size_t in_use_list_max();
   static size_t in_use_list_ceiling();
   static void dec_in_use_list_ceiling();
   static void inc_in_use_list_ceiling();

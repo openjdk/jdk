@@ -675,8 +675,8 @@ public class TestSearch extends JavadocTester {
                 "script-files/jquery-3.7.1.min.js",
                 "script-files/jquery-ui.min.js",
                 "resource-files/jquery-ui.min.css",
-                "resource-files/x.png",
-                "resource-files/glass.png");
+                "resource-files/x.svg",
+                "resource-files/glass.svg");
     }
 
     void checkSearchJS() {

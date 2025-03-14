@@ -228,9 +228,11 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       EXCLUDES := $(LIBSPLASHSCREEN_EXCLUDES), \
       OPTIMIZATION := SIZE, \
       CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) \
-          $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
+          $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS) \
+          $(ICONV_CFLAGS), \
       CXXFLAGS := $(LIBSPLASHSCREEN_CFLAGS) \
-          $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
+          $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS) \
+          $(ICONV_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBSPLASHSCREEN_HEADER_DIRS), \
       DISABLED_WARNINGS_gcc_dgif_lib.c := sign-compare, \
       DISABLED_WARNINGS_gcc_jcmaster.c := implicit-fallthrough, \
@@ -256,19 +258,20 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_microsoft_splashscreen_impl.c := 4018 4267 4244, \
       DISABLED_WARNINGS_microsoft_splashscreen_png.c := 4267, \
       DISABLED_WARNINGS_microsoft_splashscreen_sys.c := 4267 4244, \
+      LDFLAGS := $(ICONV_LDFLAGS), \
       LDFLAGS_windows := -delayload:user32.dll, \
       JDK_LIBS_windows := java.base:libjava, \
       JDK_LIBS_macosx := libosxapp, \
-      LIBS := $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(LIBZ_LIBS) $(PNG_LIBS), \
+      LIBS := $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(LIBZ_LIBS) $(PNG_LIBS) $(ICONV_LIBS), \
       LIBS_unix := $(LIBM) $(LIBPTHREAD), \
       LIBS_linux := $(LIBDL) $(X_LIBS) -lX11 -lXext, \
-      LIBS_macosx := -liconv \
+      LIBS_macosx := \
           -framework ApplicationServices \
           -framework Cocoa \
           -framework Foundation \
           -framework Metal \
           -framework Security, \
-      LIBS_aix := $(LIBDL) -liconv $(X_LIBS) -lX11 -lXext, \
+      LIBS_aix := $(LIBDL) $(X_LIBS) -lX11 -lXext, \
       LIBS_windows := delayimp.lib gdi32.lib kernel32.lib user32.lib, \
       STATIC_LIB_EXCLUDE_OBJS := $(LIBSPLASHSCREEN_STATIC_LIB_EXCLUDE_OBJS), \
   ))

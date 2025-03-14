@@ -216,30 +216,9 @@ void MetaspaceShared::dump_loaded_classes(const char* file_name, TRAPS) {
   }
 }
 
-// If p is not aligned, move it up to the next address that's aligned with alignment.
-// If this is not possible (because p is too high), return nullptr. Example:
-//     p = 0xffffffffffff0000, alignment= 0x10000    => return nullptr.
-static char* align_up_or_null(char* p, size_t alignment) {
-  assert(p != nullptr, "sanity");
-  if (is_aligned(p, alignment)) {
-    return p;
-  }
-
-  char* down = align_down(p, alignment);
-  if (max_uintx - uintx(down) < uintx(alignment)) {
-    // Run out of address space to align up.
-    return nullptr;
-  }
-
-  char* aligned = align_up(p, alignment);
-  assert(aligned >= p, "sanity");
-  assert(aligned != nullptr, "sanity");
-  return aligned;
-}
-
 static bool shared_base_too_high(char* specified_base, char* aligned_base, size_t cds_max) {
-  // Caller should have checked if align_up_or_null( returns nullptr (comparing specified_base
-  // with nullptr is UB).
+  // Caller should have checked that aligned_base was successfully aligned and is not nullptr.
+  // Comparing specified_base with nullptr is UB.
   assert(aligned_base != nullptr, "sanity");
   assert(aligned_base >= specified_base, "sanity");
 
@@ -263,7 +242,9 @@ static char* compute_shared_base(size_t cds_max) {
     return specified_base;
   }
 
-  char* aligned_base = align_up_or_null(specified_base, alignment);
+  char* aligned_base = can_align_up(specified_base, alignment)
+                           ? align_up(specified_base, alignment)
+                           : nullptr;
 
   if (aligned_base != specified_base) {
     log_info(cds)("SharedBaseAddress (" INTPTR_FORMAT ") aligned up to " INTPTR_FORMAT,
@@ -823,8 +804,10 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
 
   if (CDSConfig::new_aot_flags_used()) {
     if (CDSConfig::is_dumping_preimage_static_archive()) {
+      // We are in the JVM that runs the training run. Continue execution,
+      // so that it can finish all clean-up and return the correct exit
+      // code to the OS.
       tty->print_cr("AOTConfiguration recorded: %s", AOTConfiguration);
-      vm_exit(0);
     } else {
       // The JLI launcher only recognizes the "old" -Xshare:dump flag.
       // When the new -XX:AOTMode=create flag is used, we can't return
