@@ -81,20 +81,20 @@ ParsePredicateNode* ParsePredicate::init_parse_predicate(const Node* parse_predi
   return nullptr;
 }
 
-ParsePredicate ParsePredicate::clone_to_unswitched_loop(Node* new_control, const bool is_true_path_loop,
+ParsePredicate ParsePredicate::clone_to_unswitched_loop(Node* new_control, const bool is_false_path_loop,
                                                         PhaseIdealLoop* phase) const {
   ParsePredicateSuccessProj* success_proj = phase->create_new_if_for_predicate(_success_proj, new_control,
                                                                                _parse_predicate_node->deopt_reason(),
-                                                                               Op_ParsePredicate, is_true_path_loop);
-  NOT_PRODUCT(trace_cloned_parse_predicate(is_true_path_loop, success_proj));
+                                                                               Op_ParsePredicate, is_false_path_loop);
+  NOT_PRODUCT(trace_cloned_parse_predicate(is_false_path_loop, success_proj));
   return ParsePredicate(success_proj, _parse_predicate_node->deopt_reason());
 }
 
 #ifndef PRODUCT
-void ParsePredicate::trace_cloned_parse_predicate(const bool is_true_path_loop,
+void ParsePredicate::trace_cloned_parse_predicate(const bool is_false_path_loop,
                                                   const ParsePredicateSuccessProj* success_proj) {
   if (TraceLoopPredicate) {
-    tty->print("Parse Predicate cloned to %s path loop: ", is_true_path_loop ? "true" : "false");
+    tty->print("Parse Predicate cloned to %s path loop: ", is_false_path_loop ? "false" : "true");
     success_proj->in(0)->dump();
   }
 }
@@ -120,6 +120,7 @@ bool RuntimePredicate::has_valid_uncommon_trap(const Node* success_proj) {
   assert(RegularPredicate::may_be_predicate_if(success_proj), "must have been checked before");
   const Deoptimization::DeoptReason deopt_reason = uncommon_trap_reason(success_proj->as_IfProj());
   return (deopt_reason == Deoptimization::Reason_loop_limit_check ||
+          deopt_reason == Deoptimization::Reason_auto_vectorization_check ||
           deopt_reason == Deoptimization::Reason_predicate ||
           deopt_reason == Deoptimization::Reason_profile_predicate);
 }
@@ -219,10 +220,10 @@ InitializedAssertionPredicate TemplateAssertionPredicate::initialize(PhaseIdealL
   return initialized_assertion_predicate;
 }
 
-// Kills the Template Assertion Predicate by setting the condition to true. Will be folded away in the next IGVN round.
-void TemplateAssertionPredicate::kill(PhaseIdealLoop* phase) const {
-  ConINode* true_con = phase->intcon(1);
-  phase->igvn().replace_input_of(_if_node, 1, true_con);
+// Kills this Template Assertion Predicate by marking the associated OpaqueTemplateAssertionPredicate node useless.
+// It will then be folded away in the next IGVN round.
+void TemplateAssertionPredicate::kill(PhaseIterGVN& igvn) const {
+  opaque_node()->mark_useless(igvn);
 }
 
 #ifdef ASSERT
@@ -302,9 +303,10 @@ bool InitializedAssertionPredicate::is_predicate(const Node* node) {
   return if_node->in(1)->is_OpaqueInitializedAssertionPredicate();
 }
 
-void InitializedAssertionPredicate::kill(PhaseIdealLoop* phase) const {
-  Node* true_con = phase->intcon(1);
-  phase->igvn().replace_input_of(_if_node, 1, true_con);
+// Kills this Initialized Assertion Predicate by marking the associated OpaqueInitializedAssertionPredicate node useless.
+// It will then be folded away in the next IGVN round.
+void InitializedAssertionPredicate::kill(PhaseIterGVN& igvn) const {
+  opaque_node()->mark_useless(igvn);
 }
 
 #ifdef ASSERT
@@ -893,6 +895,8 @@ void Predicates::dump() const {
     tty->print_cr("%d %s:", loop_head->_idx, loop_head->Name());
     tty->print_cr("- Loop Limit Check Predicate Block:");
     _loop_limit_check_predicate_block.dump("  ");
+    tty->print_cr("- Auto Vectorization Check Block:");
+    _auto_vectorization_check_block.dump("  ");
     tty->print_cr("- Profiled Loop Predicate Block:");
     _profiled_loop_predicate_block.dump("  ");
     tty->print_cr("- Loop Predicate Block:");
@@ -1066,8 +1070,8 @@ void CloneUnswitchedLoopPredicatesVisitor::visit(const ParsePredicate& parse_pre
     _has_hoisted_check_parse_predicates = true;
   }
 
-  _clone_predicate_to_true_path_loop.clone_parse_predicate(parse_predicate, true);
-  _clone_predicate_to_false_path_loop.clone_parse_predicate(parse_predicate, false);
+  _clone_predicate_to_true_path_loop.clone_parse_predicate(parse_predicate, false);
+  _clone_predicate_to_false_path_loop.clone_parse_predicate(parse_predicate, true);
   parse_predicate.kill(_phase->igvn());
 }
 
@@ -1081,7 +1085,7 @@ void CloneUnswitchedLoopPredicatesVisitor::visit(const TemplateAssertionPredicat
 
   _clone_predicate_to_true_path_loop.clone_template_assertion_predicate(template_assertion_predicate);
   _clone_predicate_to_false_path_loop.clone_template_assertion_predicate(template_assertion_predicate);
-  template_assertion_predicate.kill(_phase);
+  template_assertion_predicate.kill(_phase->igvn());
 }
 
 // Update the Template Assertion Predicate by setting a new input for the OpaqueLoopStrideNode. Create a new
@@ -1096,6 +1100,16 @@ void UpdateStrideForAssertionPredicates::visit(const TemplateAssertionPredicate&
   InitializedAssertionPredicate initialized_assertion_predicate =
       initialize_from_updated_template(template_assertion_predicate);
   connect_initialized_assertion_predicate(template_tail_control_out, initialized_assertion_predicate);
+}
+
+// Kill the old Initialized Assertion Predicates with old strides before unrolling. The new Initialized Assertion
+// Predicates are inserted after the Template Assertion Predicate which ensures that we are not accidentally visiting
+// and killing a newly created Initialized Assertion Predicate here.
+void UpdateStrideForAssertionPredicates::visit(const InitializedAssertionPredicate& initialized_assertion_predicate) {
+  if (initialized_assertion_predicate.is_last_value()) {
+    // Only Last Value Initialized Assertion Predicates need to be killed and updated.
+    initialized_assertion_predicate.kill(_phase->igvn());
+  }
 }
 
 // Replace the input to OpaqueLoopStrideNode with 'new_stride' and leave the other nodes unchanged.
