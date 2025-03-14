@@ -1450,6 +1450,26 @@ enum operand_size { int8, int16, int32, uint32, int64 };
     fp_base<D_64_dp, 0b11110>(Rd, Rs1, 0b00001, 0b000);
   }
 
+  void fminm_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfa);
+    fp_base<S_32_sp, 0b00101>(Rd, Rs1, Rs2, 0b010);
+  }
+
+  void fmaxm_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfa);
+    fp_base<S_32_sp, 0b00101>(Rd, Rs1, Rs2, 0b011);
+  }
+
+  void fminm_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfa);
+    fp_base<D_64_dp, 0b00101>(Rd, Rs1, Rs2, 0b010);
+  }
+
+  void fmaxm_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfa);
+    fp_base<D_64_dp, 0b00101>(Rd, Rs1, Rs2, 0b011);
+  }
+
 // ==========================
 // RISC-V Vector Extension
 // ==========================

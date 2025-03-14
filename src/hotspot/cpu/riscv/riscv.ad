@@ -7349,6 +7349,7 @@ instruct nmaddD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
 
 // Math.max(FF)F
 instruct maxF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
+  predicate(!UseZfa);
   match(Set dst (MaxF src1 src2));
   effect(KILL cr);
 
@@ -7363,8 +7364,23 @@ instruct maxF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct maxF_reg_reg_zfa(fRegF dst, fRegF src1, fRegF src2) %{
+  predicate(UseZfa);
+  match(Set dst (MaxF src1 src2));
+
+  format %{ "maxF $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ fmaxm_s(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
 // Math.min(FF)F
 instruct minF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
+  predicate(!UseZfa);
   match(Set dst (MinF src1 src2));
   effect(KILL cr);
 
@@ -7379,8 +7395,23 @@ instruct minF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct minF_reg_reg_zfa(fRegF dst, fRegF src1, fRegF src2) %{
+  predicate(UseZfa);
+  match(Set dst (MinF src1 src2));
+
+  format %{ "minF $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ fminm_s(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
 // Math.max(DD)D
 instruct maxD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
+  predicate(!UseZfa);
   match(Set dst (MaxD src1 src2));
   effect(KILL cr);
 
@@ -7395,8 +7426,23 @@ instruct maxD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct maxD_reg_reg_zfa(fRegD dst, fRegD src1, fRegD src2) %{
+  predicate(UseZfa);
+  match(Set dst (MaxD src1 src2));
+
+  format %{ "maxD $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ fmaxm_d(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
 // Math.min(DD)D
 instruct minD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
+  predicate(!UseZfa);
   match(Set dst (MinD src1 src2));
   effect(KILL cr);
 
@@ -7406,6 +7452,20 @@ instruct minD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
     __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
                  __ FLOAT_TYPE::double_precision, true /* is_min */);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct minD_reg_reg_zfa(fRegD dst, fRegD src1, fRegD src2) %{
+  predicate(UseZfa);
+  match(Set dst (MinD src1 src2));
+
+  format %{ "minD $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ fminm_d(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
   %}
 
   ins_pipe(pipe_class_default);
