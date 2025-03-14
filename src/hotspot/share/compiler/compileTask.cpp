@@ -66,14 +66,10 @@ void CompileTask::free(CompileTask* task) {
   MutexLocker locker(CompileTaskAlloc_lock);
   if (!task->is_free()) {
     assert(!task->lock()->is_locked(), "Should not be locked when freed");
-    if ((task->_method_holder != nullptr && JNIHandles::is_weak_global_handle(task->_method_holder)) ||
-        (task->_hot_method_holder != nullptr && JNIHandles::is_weak_global_handle(task->_hot_method_holder))) {
-      JNIHandles::destroy_weak_global(task->_method_holder);
-      JNIHandles::destroy_weak_global(task->_hot_method_holder);
-    } else {
-      JNIHandles::destroy_global(task->_method_holder);
-      JNIHandles::destroy_global(task->_hot_method_holder);
-    }
+    task->_method_unload_blocker.release(Universe::vm_global());
+    task->_method_unload_blocker_weak.release(Universe::vm_weak());
+    task->_hot_method_unload_blocker.release(Universe::vm_global());
+    task->_hot_method_unload_blocker_weak.release(Universe::vm_weak());
     if (task->_failure_reason_on_C_heap && task->_failure_reason != nullptr) {
       os::free((void*) task->_failure_reason);
     }
@@ -83,6 +79,20 @@ void CompileTask::free(CompileTask* task) {
     task->set_is_free(true);
     task->set_next(_task_free_list);
     _task_free_list = task;
+  }
+}
+
+oop CompileTask::get_method_unload_blocker(methodHandle method) {
+  oop klass_holder = method->method_holder()->klass_holder();
+  if (klass_holder != nullptr) {
+    // Normal class, return the holder that would block unloading.
+    // This would be either classloader oop for non-hidden classes,
+    // or Java mirror oop for hidden classes.
+    return klass_holder;
+  } else {
+    // Null holder, the relevant class would not be unloaded.
+    // To simplify the rest of the code, capture something alive.
+    return Universe::bool_mirror();
   }
 }
 
@@ -96,10 +106,9 @@ void CompileTask::initialize(int compile_id,
                              bool is_blocking) {
   assert(!_lock->is_locked(), "bad locking");
 
-  Thread* thread = Thread::current();
   _compile_id = compile_id;
   _method = method();
-  _method_holder = JNIHandles::make_weak_global(Handle(thread, method->method_holder()->klass_holder()));
+  _method_unload_blocker_weak = WeakHandle(Universe::vm_weak(), get_method_unload_blocker(method));
   _osr_bci = osr_bci;
   _is_blocking = is_blocking;
   JVMCI_ONLY(_has_waiter = CompileBroker::compiler(comp_level)->is_jvmci();)
@@ -113,7 +122,6 @@ void CompileTask::initialize(int compile_id,
   _is_success = false;
 
   _hot_method = nullptr;
-  _hot_method_holder = nullptr;
   _hot_count = hot_count;
   _time_queued = os::elapsed_counter();
   _time_started = 0;
@@ -134,7 +142,7 @@ void CompileTask::initialize(int compile_id,
       } else {
         _hot_method = hot_method();
         // only add loader or mirror if different from _method_holder
-        _hot_method_holder = JNIHandles::make_weak_global(Handle(thread, hot_method->method_holder()->klass_holder()));
+        _hot_method_unload_blocker_weak = WeakHandle(Universe::vm_weak(), get_method_unload_blocker(hot_method));
       }
     }
   }
@@ -149,21 +157,27 @@ AbstractCompiler* CompileTask::compiler() const {
   return CompileBroker::compiler(_comp_level);
 }
 
-// Replace weak handles by strong handles to avoid unloading during compilation.
 CompileTask* CompileTask::select_for_compilation() {
   if (is_unloaded()) {
     // Guard against concurrent class unloading
     return nullptr;
   }
+
+  // Capture holders by strong handles to avoid unloading during compilation.
   Thread* thread = Thread::current();
   assert(_method->method_holder()->is_loader_alive(), "should be alive");
-  Handle method_holder(thread, _method->method_holder()->klass_holder());
-  JNIHandles::destroy_weak_global(_method_holder);
-  JNIHandles::destroy_weak_global(_hot_method_holder);
-  _method_holder = JNIHandles::make_global(method_holder);
-  if (_hot_method != nullptr) {
-    _hot_method_holder = JNIHandles::make_global(Handle(thread, _hot_method->method_holder()->klass_holder()));
+  Handle method_ub(thread, _method_unload_blocker_weak.resolve());
+  assert(!method_ub.is_null(), "should not be");
+
+  _method_unload_blocker = OopHandle(Universe::vm_global(), method_ub());
+  _method_unload_blocker_weak.release(Universe::vm_weak());
+
+  if (!_hot_method_unload_blocker_weak.is_empty()) {
+    Handle hot_method_ub(thread, _hot_method_unload_blocker_weak.resolve());
+    _hot_method_unload_blocker = OopHandle(Universe::vm_global(), hot_method_ub());
+    _hot_method_unload_blocker_weak.release(Universe::vm_weak());
   }
+
   return this;
 }
 
@@ -179,7 +193,8 @@ void CompileTask::mark_on_stack() {
 }
 
 bool CompileTask::is_unloaded() const {
-  return _method_holder != nullptr && JNIHandles::is_weak_global_handle(_method_holder) && JNIHandles::is_weak_global_cleared(_method_holder);
+  // Unloaded if weakly referenced blocker disappeared by itself, without us clearing it.
+  return _method_unload_blocker_weak.is_empty() && _method_unload_blocker.is_empty();
 }
 
 // RedefineClasses support
