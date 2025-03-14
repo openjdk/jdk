@@ -248,7 +248,7 @@ class MessageDecoder implements Frame.Consumer {
         int pos = src.position();
         int size = src.remaining();
         ByteBuffer temp = ByteBuffer.allocate(size);
-        Frame.Masker.mask(src, temp, maskingKey);
+        Frame.Masker.applyMask(src, temp, maskingKey);
         temp.flip();
         src.position(pos);
         src.put(temp);

@@ -102,11 +102,11 @@ public final class Frame {
          *
          * The source and the destination buffers may be the same instance.
          */
-        static void mask(ByteBuffer src, ByteBuffer dst, int mask) {
+        static void applyMask(ByteBuffer src, ByteBuffer dst, int mask) {
             if (src.remaining() > dst.remaining()) {
                 throw new IllegalArgumentException(dump(src, dst));
             }
-            new Masker().reset(mask).mask(src, dst);
+            new Masker().reset(mask).applyMask(src, dst);
         }
 
         /*
@@ -133,18 +133,18 @@ public final class Frame {
          * The source and the destination buffers may be the same instance. If
          * the mask hasn't been previously set it is assumed to be 0.
          */
-        public void mask(ByteBuffer src, ByteBuffer dst) {
+        public void applyMask(ByteBuffer src, ByteBuffer dst) {
             if (src.order() == dst.order()) {
-                initGallopingMasking(src, dst);
-                doGallopingMasking(src, dst);
+                initGallopingMask(src, dst);
+                applyGallopingMask(src, dst);
             }
-            doPlainMasking(src, dst);
+            applyPlainMask(src, dst);
         }
 
         /**
          * Positions the {@link #offset} at 0, which is needed for galloping, by masking necessary amount of bytes.
          */
-        private void initGallopingMasking(ByteBuffer src, ByteBuffer dst) {
+        private void initGallopingMask(ByteBuffer src, ByteBuffer dst) {
             assert src.order() == dst.order() : "galloping is only allowed on matching byte orders";
             if (offset == 0) {
                 return;
@@ -163,7 +163,7 @@ public final class Frame {
         /*
          * Masks one {@code long} at a time.
          */
-        private void doGallopingMasking(ByteBuffer src, ByteBuffer dst) {
+        private void applyGallopingMask(ByteBuffer src, ByteBuffer dst) {
             assert src.order() == dst.order() : "galloping is only allowed on matching byte orders";
             long maskLong = ByteOrder.LITTLE_ENDIAN == src.order() ? maskLongLe : maskLongBe;
             int i = src.position();
@@ -189,7 +189,7 @@ public final class Frame {
         /*
          * Masks one {@code byte} at a time.
          */
-        private void doPlainMasking(ByteBuffer src, ByteBuffer dst) {
+        private void applyPlainMask(ByteBuffer src, ByteBuffer dst) {
             final int srcLim = src.limit(), dstLim = dst.limit();
             int i = src.position(), j = dst.position();
             for (; i < srcLim && j < dstLim;

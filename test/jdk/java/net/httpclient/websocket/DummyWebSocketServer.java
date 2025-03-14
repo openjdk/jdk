@@ -291,7 +291,7 @@ public class DummyWebSocketServer implements Closeable {
 
         @Override
         public void payloadData(ByteBuffer data) {
-            masker.mask(data, this.data);
+            masker.applyMask(data, this.data);
         }
 
         @Override

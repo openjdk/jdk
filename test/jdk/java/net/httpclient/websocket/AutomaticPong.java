@@ -193,7 +193,7 @@ public class AutomaticPong {
 
                     @Override
                     public void payloadData(ByteBuffer src) {
-                        masker.mask(src, number);
+                        masker.applyMask(src, number);
                         if (closed) {
                             return;
                         }

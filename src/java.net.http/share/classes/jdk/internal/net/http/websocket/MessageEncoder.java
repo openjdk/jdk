@@ -257,7 +257,7 @@ public class MessageEncoder {
 
     private int maskAvailable(ByteBuffer src, ByteBuffer dst) {
         int r0 = dst.remaining();
-        payloadMasker.mask(src, dst);
+        payloadMasker.applyMask(src, dst);
         int masked = r0 - dst.remaining();
         return src.hasRemaining() ? -masked : masked;
     }

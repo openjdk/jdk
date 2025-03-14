@@ -30,7 +30,7 @@ import java.security.SecureRandom;
 import java.util.stream.IntStream;
 
 import static org.testng.Assert.assertEquals;
-import static jdk.internal.net.http.websocket.Frame.Masker.mask;
+import static jdk.internal.net.http.websocket.Frame.Masker.applyMask;
 import static jdk.internal.net.http.websocket.TestSupport.forEachBufferPartition;
 import static jdk.internal.net.http.websocket.TestSupport.fullCopy;
 
@@ -46,7 +46,7 @@ public class MaskerTest {
                     ByteBuffer src = createSourceBuffer(r);
                     ByteBuffer dst = createDestinationBuffer(r);
                     verify(src, dst, maskArray(m), 0,
-                            () -> mask(src, dst, m));
+                            () -> applyMask(src, dst, m));
                 });
     }
 
@@ -71,7 +71,7 @@ public class MaskerTest {
                     int[] maskBytes = maskArray(mask);
                     for (ByteBuffer s : buffers) {
                         offset = verify(s, dst, maskBytes, offset,
-                                () -> masker.mask(s, dst));
+                                () -> masker.applyMask(s, dst));
                     }
                 });
     }
@@ -83,7 +83,7 @@ public class MaskerTest {
         ByteBuffer src = ByteBuffer.allocate(0);
         ByteBuffer dst = ByteBuffer.allocate(16);
         verify(src, dst, maskArray(m), 0,
-                () -> masker.mask(src, dst));
+                () -> masker.applyMask(src, dst));
     }
 
     private static int verify(ByteBuffer src,
