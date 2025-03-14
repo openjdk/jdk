@@ -22,11 +22,18 @@
  */
 
 import java.io.Closeable;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
@@ -38,7 +45,6 @@ import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.MacSign.CertificateRequest;
 import jdk.jpackage.test.MacSign.Keychain;
 import jdk.jpackage.test.MacSign.KeychainWithCertsSpec;
-import jdk.jpackage.test.MacSign.PemData;
 import jdk.jpackage.test.TKit;
 
 /*
@@ -79,6 +85,13 @@ public class MacSignTest {
             return new CertificateRequest.Builder();
         }
 
+        static Stream<Keychain> findKeychains(CertificateRequest certificateRequest) {
+            Objects.requireNonNull(certificateRequest);
+            return Stream.of(values()).filter(v -> {
+                return v.spec.certificateRequests().contains(certificateRequest);
+            }).map(StandardKeychain::keychain);
+        }
+
         final KeychainWithCertsSpec spec;
     }
 
@@ -90,36 +103,49 @@ public class MacSignTest {
             TKit.trace(String.format("[%d/%d] %s", i + 1, keychainSpecs.size(), keychainSpecs.get(i)));
         }
 
-        keychainSpecs.forEach(keychainSpec -> {
-            keychainSpec.setUp(true);
-        });
-        
-        final var keychains = keychainSpecs.stream().map(KeychainWithCertsSpec::keychain).toList();
+        // Reset keychain search list to defaults.
+        Keychain.addToSearchList(List.of());
 
-        Keychain.addToSearchList(keychains);
+        // Init basic keychain from scratch.
+        // This will create the keychain file and the key pair.
+        StandardKeychain.BASIC.keychain().create().createKeyPair("jpackage test key");
+
+        // Use the same private key to create certificates in additional keychains.
+        for (final var keychainSpec : Stream.of(StandardKeychain.values()).filter(Predicate.isEqual(StandardKeychain.BASIC).negate()).map(StandardKeychain::spec).toList()) {
+            final var keychainFile = keychainSpec.keychain().path();
+            TKit.trace(String.format("Copy basic keychain in [%s] file", keychainFile));
+            try {
+                Files.copy(StandardKeychain.BASIC.keychain().path(), keychainFile);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
 
         MacSign.withTempDirectory(dir -> {
-            final List<String> cmdlines = new ArrayList<>();
-            cmdlines.add("#!/bin/sh");
-            int i = 1;
-            for (final var keychainSpec : keychainSpecs) {
-                for (final var cert : keychainSpec.certificates()) {
-                    final var certFile = dir.resolve("cert" + (i++) + ".pem");
-                    PemData.of(cert.cert()).save(certFile);
-                    cmdlines.add(String.join(" ", "security", "add-trusted-cert",
-                            "-k", keychainSpec.keychain().name(),
-                            certFile.toAbsolutePath().toString()));
-                }
+            // Create certificates.
+            final var certPemFiles = MacSign.createCertificates(StandardKeychain.BASIC.keychain(), keychainSpecs, dir);
+
+            final Map<Path, Keychain> trustConfig = new HashMap<>();
+
+            for (final var certPemFile : certPemFiles.entrySet()) {
+                // Import the certificate in all keychains it belongs to.
+                final var keychains = StandardKeychain.findKeychains(certPemFile.getKey()).toList();
+                keychains.forEach(keychain -> {
+                    MacSign.security("import", certPemFile.getValue().normalize().toString(),
+                            "-k", keychain.name(),
+                            "-f", "pemseq",
+                            "-t", "agg",
+                            "-A").execute();
+                });
+
+                trustConfig.put(certPemFile.getValue(), keychains.getFirst());
             }
 
-            final var shellScript= dir.resolve("add-trusted-certs.sh");
-            TKit.createTextFile(shellScript, cmdlines);
-            shellScript.toFile().setExecutable(true);
-
-            final var osascript= TKit.TEST_SRC_ROOT.resolve("resources/run-shell-script-in-terminal.applescript");
-
-            Executor.of("osascript", osascript.normalize().toString(), shellScript.toAbsolutePath().toString()).dumpOutput().execute();
+            // Trust certificates.
+            MacSign.trustCertificates(trustConfig);
         });
+
+        Keychain.addToSearchList(keychainSpecs.stream().map(KeychainWithCertsSpec::keychain).toList());
     }
 
     public static void tearDown() {
@@ -255,7 +281,7 @@ public class MacSignTest {
 
             @Override
             public void close() {
-//                Keychain.addToSearchList(List.of());
+                Keychain.addToSearchList(List.of());
             }
         }
     }
@@ -279,9 +305,5 @@ public class MacSignTest {
 
     private static SignTestSpec.Builder testSpec() {
         return new SignTestSpec.Builder();
-    }
-
-    private static CertificateRequest.Builder cert() {
-        return new CertificateRequest.Builder();
     }
 }

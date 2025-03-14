@@ -22,17 +22,35 @@
  *)
 
 on run argv
-  set pid to do shell script "echo $PPID"
-  set userScript to quoted form of (item 1 of argv)
-  set runningFile to quoted form of (do shell script "mktemp")
+  set action to (item 1 of argv)
 
+  if action is "run-shell-cmd" then
+    runShellCommandInTerminal(item 2 of argv)
+  else
+    error "Unrecognized command: [" & action & "]"
+  end if
+end run
+
+
+on runShellCommandInTerminal(shellCommand)
+  waitShellCommandAndCloseTerminalWindow(startShellCommandInTerminal(shellCommand))
+end runShellCommandInTerminal
+
+
+on startShellCommandInTerminal(shellCommand)
+  set runningFile to do shell script "mktemp"
   tell application "Terminal"
-    do script userScript & "; rm -f " & runningFile
+    set theTab to do script shellCommand & "; rm -f " & quoted form of runningFile & "; exit"
+    log theTab
+    return {terminalTab: theTab, file: runningFile}
   end tell
+end startShellCommandInTerminal
 
+
+on waitShellCommandAndCloseTerminalWindow(tabWithRunningFile)
   repeat
     try
-      do shell script "test -f " & runningFile
+      do shell script "test -f " & quoted form of file of tabWithRunningFile
       -- shell script is still running
       delay 2
     on error
@@ -40,4 +58,21 @@ on run argv
       exit repeat
     end try
   end repeat
-end run
+  closeTerminalTab(terminalTab of tabWithRunningFile)
+end waitShellCommandAndCloseTerminalWindow
+
+
+on closeTerminalTab(theTab)
+  -- Find the window owning "theTab" tab and close it
+  tell application "Terminal"
+    repeat with w in windows
+      repeat with t in tabs of w
+        if theTab is contents of t then
+          log "Closing window " & (id of w)
+          close w
+          return
+        end if
+      end repeat
+    end repeat
+  end tell
+end closeTerminalTab
