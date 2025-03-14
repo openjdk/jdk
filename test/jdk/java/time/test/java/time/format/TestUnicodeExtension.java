@@ -345,7 +345,7 @@ public class TestUnicodeExtension {
     Object[][] shortTZID() {
         return new Object[][] {
             // LDML's short ID, Expected Zone,
-            // Based on timezone.xml from CLDR v46
+            // Based on timezone.xml from CLDR v47
             {"adalv", "Europe/Andorra"},
             {"aedxb", "Asia/Dubai"},
             {"afkbl", "Asia/Kabul"},
