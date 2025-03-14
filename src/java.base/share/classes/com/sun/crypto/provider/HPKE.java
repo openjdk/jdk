@@ -52,14 +52,11 @@ import java.security.PrivateKey;
 import java.security.ProviderException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.NamedParameterSpec;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 public class HPKE extends CipherSpi {
 
