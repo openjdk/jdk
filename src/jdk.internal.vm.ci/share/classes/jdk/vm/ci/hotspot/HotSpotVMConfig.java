@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import jdk.internal.util.Architecture;
  *
  * All non-static, public fields in this class are so that they can be compiled as constants.
  */
-class HotSpotVMConfig extends HotSpotVMConfigAccess {
+public class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     /**
      * Gets the configuration associated with the singleton {@link HotSpotJVMCIRuntime}.
@@ -65,7 +65,8 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     final boolean useDeferredInitBarriers = getFlag("ReduceInitialCardMarks", Boolean.class);
 
-    final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
+    public final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
+    public final long vmVersionFeatures = getFieldValue("Abstract_VM_Version::_features", Long.class, "uint64_t");
 
     final int objectAlignment = getFlag("ObjectAlignmentInBytes", Integer.class);
 
