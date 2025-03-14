@@ -32,14 +32,9 @@ ifeq ($(INCLUDE), true)
 ## Build libverify
 ################################################################################
 
-LIBVERIFY_OPTIMIZATION := HIGH
-ifeq ($(call isTargetOs, linux)+$(COMPILE_WITH_DEBUG_SYMBOLS), true+true)
-  LIBVERIFY_OPTIMIZATION := LOW
-endif
-
 $(eval $(call SetupJdkLibrary, BUILD_LIBVERIFY, \
     NAME := verify, \
-    OPTIMIZATION := $(LIBVERIFY_OPTIMIZATION), \
+    OPTIMIZATION := HIGH, \
     DISABLED_WARNINGS_gcc_check_code.c := unused-variable, \
     DISABLED_WARNINGS_clang_check_code.c := unused-variable, \
     EXTRA_HEADER_DIRS := libjava, \
