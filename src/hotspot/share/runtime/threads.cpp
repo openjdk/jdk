@@ -713,8 +713,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     JvmtiAgentList::load_xrun_agents();
   }
 
-  Arena::start_chunk_pool_cleaner_task();
-
   // Start the service thread
   // The service thread enqueues JVMTI deferred events and does various hashtable
   // and other cleanups.  Needs to start before the compilers start posting events.
