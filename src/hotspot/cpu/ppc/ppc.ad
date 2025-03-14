@@ -1926,12 +1926,12 @@ static enum RC rc_class(OptoReg::Name reg) {
   // We have 64 floating-point register halves, starting at index 64.
   if (reg < 64+64) return rc_float;
 
-  // We have 64 vector-scalar registers, starting at index 128.
-  if (reg < 128+256) return rc_vs;
+  assert(OptoReg::is_stack(reg) || reg >= 128+8, "flags are not expected");
 
-  // Between float regs & stack are the flags regs.
-  assert(OptoReg::is_stack(reg) || reg < 128+256, "blow up if spilling flags");
+  // We have 64 vector-scalar registers, starting at index 136.
+  if (reg < 136+256) return rc_vs;
 
+  assert(OptoReg::is_stack(reg), "what else is it?");
   return rc_stack;
 }
 
