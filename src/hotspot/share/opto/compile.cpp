@@ -67,6 +67,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/node.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/output.hpp"
 #include "opto/parse.hpp"
@@ -394,7 +395,7 @@ void Compile::remove_useless_node(Node* dead) {
     remove_expensive_node(dead);
   }
   if (dead->is_OpaqueTemplateAssertionPredicate()) {
-    remove_template_assertion_predicate_opaq(dead);
+    remove_template_assertion_predicate_opaque(dead->as_OpaqueTemplateAssertionPredicate());
   }
   if (dead->is_ParsePredicate()) {
     remove_parse_predicate(dead->as_ParsePredicate());
@@ -453,7 +454,8 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
 
   remove_useless_nodes(_macro_nodes,        useful); // remove useless macro nodes
   remove_useless_nodes(_parse_predicates,   useful); // remove useless Parse Predicate nodes
-  remove_useless_nodes(_template_assertion_predicate_opaqs, useful); // remove useless Assertion Predicate opaque nodes
+  // Remove useless Template Assertion Predicate opaque nodes
+  remove_useless_nodes(_template_assertion_predicate_opaques, useful);
   remove_useless_nodes(_expensive_nodes,    useful); // remove useless expensive nodes
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_nodes(_for_merge_stores_igvn, useful); // remove useless node recorded for merge stores IGVN pass
@@ -653,7 +655,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _intrinsics(comp_arena(), 0, 0, nullptr),
       _macro_nodes(comp_arena(), 8, 0, nullptr),
       _parse_predicates(comp_arena(), 8, 0, nullptr),
-      _template_assertion_predicate_opaqs(comp_arena(), 8, 0, nullptr),
+      _template_assertion_predicate_opaques(comp_arena(), 8, 0, nullptr),
       _expensive_nodes(comp_arena(), 8, 0, nullptr),
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
       _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
@@ -1832,8 +1834,7 @@ void Compile::mark_parse_predicate_nodes_useless(PhaseIterGVN& igvn) {
   }
   for (int i = 0; i < parse_predicate_count(); i++) {
     ParsePredicateNode* parse_predicate = _parse_predicates.at(i);
-    parse_predicate->mark_useless();
-    igvn._worklist.push(parse_predicate);
+    parse_predicate->mark_useless(igvn);
   }
   _parse_predicates.clear();
 }

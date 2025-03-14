@@ -1442,18 +1442,7 @@ public:
   void eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
 
   // Helper function to collect predicate for eliminating the useless ones
-  void eliminate_useless_predicates();
-
-  void eliminate_useless_parse_predicates();
-  void mark_all_parse_predicates_useless() const;
-  void mark_loop_associated_parse_predicates_useful();
-  static void mark_useful_parse_predicates_for_loop(IdealLoopTree* loop);
-  void add_useless_parse_predicates_to_igvn_worklist();
-
-  void eliminate_useless_template_assertion_predicates();
-  void collect_useful_template_assertion_predicates(Unique_Node_List& useful_predicates);
-  static void collect_useful_template_assertion_predicates_for_loop(IdealLoopTree* loop, Unique_Node_List& useful_predicates);
-  void eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates) const;
+  void eliminate_useless_predicates() const;
 
   void eliminate_useless_zero_trip_guard();
   void eliminate_useless_multiversion_if();
