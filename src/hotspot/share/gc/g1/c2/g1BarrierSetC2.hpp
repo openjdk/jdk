@@ -122,6 +122,7 @@ public:
   virtual void emit_stubs(CodeBuffer& cb) const;
   virtual void elide_dominated_barrier(MachNode* mach) const;
   virtual void late_barrier_analysis() const;
+  virtual int estimate_stub_size() const;
 
 #ifndef PRODUCT
   virtual void dump_barrier_data(const MachNode* mach, outputStream* st) const;
