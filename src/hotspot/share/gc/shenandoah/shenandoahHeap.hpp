@@ -186,7 +186,9 @@ public:
 
   ShenandoahHeuristics* heuristics();
 
-// ---------- Initialization, termination, identification, printing routines
+  bool is_forwarded(oop oop) const;
+
+  // ---------- Initialization, termination, identification, printing routines
 //
 public:
   static ShenandoahHeap* heap();
@@ -471,6 +473,7 @@ protected:
   // also used in shGenerationalHeap, which uses a different closure for update refs.
   ShenandoahRegionIterator _update_refs_iterator;
 
+  bool _has_self_forwarded_objects;
 private:
   // GC support
   // Evacuation

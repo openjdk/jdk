@@ -555,6 +555,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _gc_no_progress_count(0),
   _cancel_requested_time(0),
   _update_refs_iterator(this),
+  _has_self_forwarded_objects(false),
   _global_generation(nullptr),
   _control_thread(nullptr),
   _uncommit_thread(nullptr),
@@ -1338,24 +1339,21 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
 #endif
 
   if (copy == nullptr) {
-    control_thread()->handle_alloc_failure_evac(size);
-
+    // control_thread()->handle_alloc_failure_evac(size);
     // _oom_evac_handler.handle_out_of_memory_during_evacuation();
-    ShenandoahForwarding::try_forward_to_self(p);
 
-    // Leave the region in the collection set. Other threads may still be able to evacuate
-    // objects (and we may yet still be able to allocate from this region). Update references
-    // looks for objects in the collection set to find forwarding pointers. Some objects in
-    // this region may still be evacuated and still need to have references to them updated.
+
+    // Take regions with self-forwarded oops out of the collection set. We'd rather have
+    // evacuating threads work on regions that haven't failed evacuation yet (on the hope
+    // that they may succeed evacuating other regions - this region is already failed).
     //
-    // However, we must still indicate that this region contains objects that were not evacuated
-    // because we cannot simply obliterate this region now.
+    // We still indicate that this region contains objects that were not evacuated.
     ShenandoahHeapRegion* r = heap_region_containing(p);
     r->set_has_evacuation_failures(true);
+    _has_self_forwarded_objects = true;
+    collection_set()->remove_region(r);
 
-    // collection_set()->remove_region(heap_region_containing(p));
-
-    return ShenandoahBarrierSet::resolve_forwarded(p);
+    return ShenandoahForwarding::try_forward_to_self(p);
   }
 
   // Copy the object:
@@ -1401,13 +1399,9 @@ void ShenandoahHeap::trash_cset_regions() {
   ShenandoahHeapRegion* r;
   set->clear_current_index();
   while ((r = set->next()) != nullptr) {
-    if (r->has_evacuation_failures()) {
-      r->make_regular_allocation(r->affiliation());
-    } else {
-      r->make_trash();
-    }
+    r->make_trash();
   }
-  collection_set()->clear();
+  set->clear();
 }
 
 void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
@@ -2389,6 +2383,25 @@ void ShenandoahHeap::finish_concurrent_roots() {
   if (unload_classes()) {
     _unloader.finish();
   }
+
+  if (_has_self_forwarded_objects) {
+    uint nworkers = workers()->active_workers();
+    ShenandoahRootUpdater root_updater(nworkers, ShenandoahPhaseTimings::degen_gc_update_roots);
+    ShenandoahUpdateRootsTask update_roots(&root_updater, true);
+    workers()->run_task(&update_roots);
+    _has_self_forwarded_objects = false;
+
+    size_t free_bytes_in_evac_failed_regions = 0;
+    for (size_t i = 0, n = num_regions(); i < n; ++i) {
+      const auto region = get_region(i);
+      if (region->has_evacuation_failures()) {
+        free_bytes_in_evac_failed_regions += region->free();
+        region->set_has_evacuation_failures(false);
+      }
+    }
+    log_info(gc)("Memory available in regions that failed evacuation: " EXACTFMT,
+                 EXACTFMTARGS(free_bytes_in_evac_failed_regions));
+  }
 }
 
 #ifdef ASSERT
@@ -2454,9 +2467,9 @@ private:
     T cl;
     ShenandoahHeapRegion* r = _regions->next();
     while (r != nullptr) {
-      HeapWord* update_watermark = r->get_update_watermark();
+      HeapWord* update_watermark = r->has_evacuation_failures() ? r->top() : r->get_update_watermark();
       assert (update_watermark >= r->bottom(), "sanity");
-      if (r->is_active() || r->is_cset()) {
+      if (r->is_active() && !r->is_cset()) {
         _heap->marked_object_oop_iterate(r, &cl, update_watermark);
         if (ShenandoahPacing) {
           _heap->pacer()->report_update_refs(pointer_delta(update_watermark, r->bottom()));

@@ -1132,7 +1132,7 @@ void ShenandoahVerifier::verify_after_update_refs() {
   verify_at_safepoint(
           "After Updating References",
           _verify_remembered_disable,  // do not verify remembered set
-          _verify_forwarded_none,      // no forwarded references
+          _verify_forwarded_allow,     // failed evac regions may contain forwarded refs
           _verify_marked_complete,     // bitmaps might be stale, but alloc-after-mark should be well
           _verify_cset_none,           // no cset references, all updated
           _verify_liveness_disable,    // no reliable liveness data anymore

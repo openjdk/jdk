@@ -85,9 +85,13 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
   if (!ShenandoahLoadRefBarrier) {
     return obj;
   }
-  if (_heap->has_forwarded_objects() && _heap->in_collection_set(obj)) {
+  if (_heap->has_forwarded_objects() && (_heap->in_collection_set(obj) || _heap->is_forwarded(obj))) {
     // Subsumes null-check
     assert(obj != nullptr, "cset check must have subsumed null-check");
+    if (obj->is_self_forwarded()) {
+      return obj;
+    }
+
     oop fwd = resolve_forwarded_not_null(obj);
     if (obj == fwd && _heap->is_evacuation_in_progress()) {
       Thread* t = Thread::current();

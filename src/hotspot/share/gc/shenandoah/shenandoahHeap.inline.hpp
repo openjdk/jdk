@@ -55,6 +55,10 @@
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+inline bool ShenandoahHeap::is_forwarded(oop oop) const {
+  return oop != nullptr && oop->is_forwarded();
+}
+
 inline ShenandoahHeap* ShenandoahHeap::heap() {
   return named_heap<ShenandoahHeap>(CollectedHeap::Shenandoah);
 }
@@ -112,7 +116,7 @@ inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
-    if (in_collection_set(obj) && obj->is_forwarded()) {
+    if (in_collection_set(obj) || obj->is_forwarded()) {
       if (obj->is_self_forwarded()) {
         obj->unset_self_forwarded();
       } else {
@@ -135,7 +139,7 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
-    if (in_collection_set(obj) && obj->is_forwarded()) {
+    if (in_collection_set(obj) || obj->is_forwarded()) {
       if (obj->is_self_forwarded()) {
         // Everything in the collection set should be forwarded (either to itself,
         // or to somewhere else). Not sure if we want to clear self-forwarded headers

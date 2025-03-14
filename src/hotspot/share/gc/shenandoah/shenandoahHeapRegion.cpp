@@ -112,7 +112,6 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affilia
       return;
     case _cset:
       assert(has_evacuation_failures(), "Can only become regular region if there were evacuation failures");
-      set_has_evacuation_failures(false);
       set_state(_regular);
       return;
     default:
