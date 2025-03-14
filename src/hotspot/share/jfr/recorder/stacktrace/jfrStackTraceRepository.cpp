@@ -92,13 +92,9 @@ void JfrStackTraceRepository::destroy() {
   _leak_profiler_instance = nullptr;
 }
 
-bool JfrStackTraceRepository::is_modified() const {
-  return _last_entries != _entries;
-}
-
 size_t JfrStackTraceRepository::write(JfrChunkWriter& sw, bool clear) {
   MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
-  if (_entries == 0) {
+  if ((_entries == _last_entries) && !clear) {
     return 0;
   }
   int count = 0;

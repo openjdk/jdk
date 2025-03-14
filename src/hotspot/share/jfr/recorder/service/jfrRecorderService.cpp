@@ -486,6 +486,7 @@ void JfrRecorderService::safepoint_clear() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   _checkpoint_manager.begin_epoch_shift();
   _storage.clear();
+  _checkpoint_manager.notify_threads();
   _chunkwriter.set_time_stamp();
   JfrDeprecationManager::on_safepoint_clear();
   JfrStackTraceRepository::clear();
@@ -650,9 +651,7 @@ size_t JfrRecorderService::flush() {
   if (_string_pool.is_modified()) {
     total_elements += flush_stringpool(_string_pool, _chunkwriter);
   }
-  if (_stack_trace_repository.is_modified()) {
-    total_elements += flush_stacktrace(_stack_trace_repository, _chunkwriter);
-  }
+  total_elements += flush_stacktrace(_stack_trace_repository, _chunkwriter);
   return flush_typeset(_checkpoint_manager, _chunkwriter) + total_elements;
 }
 
