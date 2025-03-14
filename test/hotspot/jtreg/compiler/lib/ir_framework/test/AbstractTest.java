@@ -40,7 +40,6 @@ abstract class AbstractTest {
     protected static final int TEST_COMPILATION_TIMEOUT_MS = Integer.parseInt(System.getProperty("TestCompilationTimeout", "10")) * 1000;
     protected static final int WAIT_FOR_COMPILATION_TIMEOUT_MS = Integer.parseInt(System.getProperty("WaitForCompilationTimeout", "10")) * 1000;
     protected static final boolean VERIFY_OOPS = (Boolean)WHITE_BOX.getVMFlag("VerifyOops");
-    private static final boolean ALLOW_METHOD_NOT_COMPILABLE = Boolean.getBoolean("AllowMethodNotCompilable");
 
     protected final int warmupIterations;
     protected final boolean skip;
@@ -117,7 +116,7 @@ abstract class AbstractTest {
         }
 
         final boolean isCompilable = WHITE_BOX.isMethodCompilable(testMethod, test.getCompLevel().getValue(), false);
-        if (!isCompilable && ALLOW_METHOD_NOT_COMPILABLE) {
+        if (!isCompilable && test.isAllowNotCompilable()) {
             if (TestFramework.VERBOSE) {
                 System.out.println("  -> Not compilable.");
             }
