@@ -519,65 +519,65 @@ register %{
   reg_def VSR51_J(SOC, SOC, Op_VecX, 51, VSR51->as_VMReg()->next(2));
   reg_def VSR51_K(SOC, SOC, Op_VecX, 51, VSR51->as_VMReg()->next(3));
 
-  reg_def VSR52  (SOC, SOC, Op_VecX, 52, VSR52->as_VMReg()         );
-  reg_def VSR52_H(SOC, SOC, Op_VecX, 52, VSR52->as_VMReg()->next() );
-  reg_def VSR52_J(SOC, SOC, Op_VecX, 52, VSR52->as_VMReg()->next(2));
-  reg_def VSR52_K(SOC, SOC, Op_VecX, 52, VSR52->as_VMReg()->next(3));
+  reg_def VSR52  (SOC, SOE, Op_VecX, 52, VSR52->as_VMReg()         );
+  reg_def VSR52_H(SOC, SOE, Op_VecX, 52, VSR52->as_VMReg()->next() );
+  reg_def VSR52_J(SOC, SOE, Op_VecX, 52, VSR52->as_VMReg()->next(2));
+  reg_def VSR52_K(SOC, SOE, Op_VecX, 52, VSR52->as_VMReg()->next(3));
 
-  reg_def VSR53  (SOC, SOC, Op_VecX, 53, VSR53->as_VMReg()         );
-  reg_def VSR53_H(SOC, SOC, Op_VecX, 53, VSR53->as_VMReg()->next() );
-  reg_def VSR53_J(SOC, SOC, Op_VecX, 53, VSR53->as_VMReg()->next(2));
-  reg_def VSR53_K(SOC, SOC, Op_VecX, 53, VSR53->as_VMReg()->next(3));
+  reg_def VSR53  (SOC, SOE, Op_VecX, 53, VSR53->as_VMReg()         );
+  reg_def VSR53_H(SOC, SOE, Op_VecX, 53, VSR53->as_VMReg()->next() );
+  reg_def VSR53_J(SOC, SOE, Op_VecX, 53, VSR53->as_VMReg()->next(2));
+  reg_def VSR53_K(SOC, SOE, Op_VecX, 53, VSR53->as_VMReg()->next(3));
 
-  reg_def VSR54  (SOC, SOC, Op_VecX, 54, VSR54->as_VMReg()         );
-  reg_def VSR54_H(SOC, SOC, Op_VecX, 54, VSR54->as_VMReg()->next() );
-  reg_def VSR54_J(SOC, SOC, Op_VecX, 54, VSR54->as_VMReg()->next(2));
-  reg_def VSR54_K(SOC, SOC, Op_VecX, 54, VSR54->as_VMReg()->next(3));
+  reg_def VSR54  (SOC, SOE, Op_VecX, 54, VSR54->as_VMReg()         );
+  reg_def VSR54_H(SOC, SOE, Op_VecX, 54, VSR54->as_VMReg()->next() );
+  reg_def VSR54_J(SOC, SOE, Op_VecX, 54, VSR54->as_VMReg()->next(2));
+  reg_def VSR54_K(SOC, SOE, Op_VecX, 54, VSR54->as_VMReg()->next(3));
 
-  reg_def VSR55  (SOC, SOC, Op_VecX, 55, VSR55->as_VMReg()         );
-  reg_def VSR55_H(SOC, SOC, Op_VecX, 55, VSR55->as_VMReg()->next() );
-  reg_def VSR55_J(SOC, SOC, Op_VecX, 55, VSR55->as_VMReg()->next(2));
-  reg_def VSR55_K(SOC, SOC, Op_VecX, 55, VSR55->as_VMReg()->next(3));
+  reg_def VSR55  (SOC, SOE, Op_VecX, 55, VSR55->as_VMReg()         );
+  reg_def VSR55_H(SOC, SOE, Op_VecX, 55, VSR55->as_VMReg()->next() );
+  reg_def VSR55_J(SOC, SOE, Op_VecX, 55, VSR55->as_VMReg()->next(2));
+  reg_def VSR55_K(SOC, SOE, Op_VecX, 55, VSR55->as_VMReg()->next(3));
 
-  reg_def VSR56  (SOC, SOC, Op_VecX, 56, VSR56->as_VMReg()         );
-  reg_def VSR56_H(SOC, SOC, Op_VecX, 56, VSR56->as_VMReg()->next() );
-  reg_def VSR56_J(SOC, SOC, Op_VecX, 56, VSR56->as_VMReg()->next(2));
-  reg_def VSR56_K(SOC, SOC, Op_VecX, 56, VSR56->as_VMReg()->next(3));
+  reg_def VSR56  (SOC, SOE, Op_VecX, 56, VSR56->as_VMReg()         );
+  reg_def VSR56_H(SOC, SOE, Op_VecX, 56, VSR56->as_VMReg()->next() );
+  reg_def VSR56_J(SOC, SOE, Op_VecX, 56, VSR56->as_VMReg()->next(2));
+  reg_def VSR56_K(SOC, SOE, Op_VecX, 56, VSR56->as_VMReg()->next(3));
 
-  reg_def VSR57  (SOC, SOC, Op_VecX, 57, VSR57->as_VMReg()         );
-  reg_def VSR57_H(SOC, SOC, Op_VecX, 57, VSR57->as_VMReg()->next() );
-  reg_def VSR57_J(SOC, SOC, Op_VecX, 57, VSR57->as_VMReg()->next(2));
-  reg_def VSR57_K(SOC, SOC, Op_VecX, 57, VSR57->as_VMReg()->next(3));
+  reg_def VSR57  (SOC, SOE, Op_VecX, 57, VSR57->as_VMReg()         );
+  reg_def VSR57_H(SOC, SOE, Op_VecX, 57, VSR57->as_VMReg()->next() );
+  reg_def VSR57_J(SOC, SOE, Op_VecX, 57, VSR57->as_VMReg()->next(2));
+  reg_def VSR57_K(SOC, SOE, Op_VecX, 57, VSR57->as_VMReg()->next(3));
 
-  reg_def VSR58  (SOC, SOC, Op_VecX, 58, VSR58->as_VMReg()         );
-  reg_def VSR58_H(SOC, SOC, Op_VecX, 58, VSR58->as_VMReg()->next() );
-  reg_def VSR58_J(SOC, SOC, Op_VecX, 58, VSR58->as_VMReg()->next(2));
-  reg_def VSR58_K(SOC, SOC, Op_VecX, 58, VSR58->as_VMReg()->next(3));
+  reg_def VSR58  (SOC, SOE, Op_VecX, 58, VSR58->as_VMReg()         );
+  reg_def VSR58_H(SOC, SOE, Op_VecX, 58, VSR58->as_VMReg()->next() );
+  reg_def VSR58_J(SOC, SOE, Op_VecX, 58, VSR58->as_VMReg()->next(2));
+  reg_def VSR58_K(SOC, SOE, Op_VecX, 58, VSR58->as_VMReg()->next(3));
 
-  reg_def VSR59  (SOC, SOC, Op_VecX, 59, VSR59->as_VMReg()         );
-  reg_def VSR59_H(SOC, SOC, Op_VecX, 59, VSR59->as_VMReg()->next() );
-  reg_def VSR59_J(SOC, SOC, Op_VecX, 59, VSR59->as_VMReg()->next(2));
-  reg_def VSR59_K(SOC, SOC, Op_VecX, 59, VSR59->as_VMReg()->next(3));
+  reg_def VSR59  (SOC, SOE, Op_VecX, 59, VSR59->as_VMReg()         );
+  reg_def VSR59_H(SOC, SOE, Op_VecX, 59, VSR59->as_VMReg()->next() );
+  reg_def VSR59_J(SOC, SOE, Op_VecX, 59, VSR59->as_VMReg()->next(2));
+  reg_def VSR59_K(SOC, SOE, Op_VecX, 59, VSR59->as_VMReg()->next(3));
 
-  reg_def VSR60  (SOC, SOC, Op_VecX, 60, VSR60->as_VMReg()         );
-  reg_def VSR60_H(SOC, SOC, Op_VecX, 60, VSR60->as_VMReg()->next() );
-  reg_def VSR60_J(SOC, SOC, Op_VecX, 60, VSR60->as_VMReg()->next(2));
-  reg_def VSR60_K(SOC, SOC, Op_VecX, 60, VSR60->as_VMReg()->next(3));
+  reg_def VSR60  (SOC, SOE, Op_VecX, 60, VSR60->as_VMReg()         );
+  reg_def VSR60_H(SOC, SOE, Op_VecX, 60, VSR60->as_VMReg()->next() );
+  reg_def VSR60_J(SOC, SOE, Op_VecX, 60, VSR60->as_VMReg()->next(2));
+  reg_def VSR60_K(SOC, SOE, Op_VecX, 60, VSR60->as_VMReg()->next(3));
 
-  reg_def VSR61  (SOC, SOC, Op_VecX, 61, VSR61->as_VMReg()         );
-  reg_def VSR61_H(SOC, SOC, Op_VecX, 61, VSR61->as_VMReg()->next() );
-  reg_def VSR61_J(SOC, SOC, Op_VecX, 61, VSR61->as_VMReg()->next(2));
-  reg_def VSR61_K(SOC, SOC, Op_VecX, 61, VSR61->as_VMReg()->next(3));
+  reg_def VSR61  (SOC, SOE, Op_VecX, 61, VSR61->as_VMReg()         );
+  reg_def VSR61_H(SOC, SOE, Op_VecX, 61, VSR61->as_VMReg()->next() );
+  reg_def VSR61_J(SOC, SOE, Op_VecX, 61, VSR61->as_VMReg()->next(2));
+  reg_def VSR61_K(SOC, SOE, Op_VecX, 61, VSR61->as_VMReg()->next(3));
 
-  reg_def VSR62  (SOC, SOC, Op_VecX, 62, VSR62->as_VMReg()         );
-  reg_def VSR62_H(SOC, SOC, Op_VecX, 62, VSR62->as_VMReg()->next() );
-  reg_def VSR62_J(SOC, SOC, Op_VecX, 62, VSR62->as_VMReg()->next(2));
-  reg_def VSR62_K(SOC, SOC, Op_VecX, 62, VSR62->as_VMReg()->next(3));
+  reg_def VSR62  (SOC, SOE, Op_VecX, 62, VSR62->as_VMReg()         );
+  reg_def VSR62_H(SOC, SOE, Op_VecX, 62, VSR62->as_VMReg()->next() );
+  reg_def VSR62_J(SOC, SOE, Op_VecX, 62, VSR62->as_VMReg()->next(2));
+  reg_def VSR62_K(SOC, SOE, Op_VecX, 62, VSR62->as_VMReg()->next(3));
 
-  reg_def VSR63  (SOC, SOC, Op_VecX, 63, VSR63->as_VMReg()         );
-  reg_def VSR63_H(SOC, SOC, Op_VecX, 63, VSR63->as_VMReg()->next() );
-  reg_def VSR63_J(SOC, SOC, Op_VecX, 63, VSR63->as_VMReg()->next(2));
-  reg_def VSR63_K(SOC, SOC, Op_VecX, 63, VSR63->as_VMReg()->next(3));
+  reg_def VSR63  (SOC, SOE, Op_VecX, 63, VSR63->as_VMReg()         );
+  reg_def VSR63_H(SOC, SOE, Op_VecX, 63, VSR63->as_VMReg()->next() );
+  reg_def VSR63_J(SOC, SOE, Op_VecX, 63, VSR63->as_VMReg()->next(2));
+  reg_def VSR63_K(SOC, SOE, Op_VecX, 63, VSR63->as_VMReg()->next(3));
 
 // ----------------------------
 // Specify priority of register selection within phases of register
