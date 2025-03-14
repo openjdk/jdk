@@ -33,22 +33,15 @@ class Symbol;
 
 class UnregisteredClasses: AllStatic {
 public:
-  static InstanceKlass* load_class(Symbol* h_name, const char* path,
-                                   Handle super_class, objArrayHandle interfaces,
-                                   TRAPS);
+  static InstanceKlass* load_class(Symbol* name, const char* path, TRAPS);
   static void initialize(TRAPS);
   static InstanceKlass* UnregisteredClassLoader_klass() {
     return _UnregisteredClassLoader_klass;
   }
 
-  class ClassLoaderTable;
-
 private:
   // Don't put this in vmClasses as it's used only with CDS dumping.
   static InstanceKlass* _UnregisteredClassLoader_klass;
-
-  static Handle create_classloader(Symbol* path, TRAPS);
-  static Handle get_classloader(Symbol* path, TRAPS);
 };
 
 #endif // SHARE_CDS_UNREGISTEREDCLASSES_HPP

@@ -31,9 +31,10 @@ import java.io.InputStreamReader;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -43,6 +44,8 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.loader.Resource;
+import jdk.internal.loader.URLClassPath;
 import jdk.internal.util.StaticProperty;
 
 public class CDS {
@@ -349,103 +352,98 @@ public class CDS {
      * See src/hotspot/share/cds/unregisteredClasses.cpp.
      */
     private static class UnregisteredClassLoader extends URLClassLoader {
-        private String currentClassName;
-        private Class<?> currentSuperClass;
-        private Class<?>[] currentInterfaces;
+        /** Class<?> URLClassLoader::defineClass(String name, Resource res) */
+        private static final Method DEFINE_CLASS;
+        static {
+            try {
+                DEFINE_CLASS = URLClassLoader.class.getDeclaredMethod(
+                    "defineClass", String.class, Resource.class
+                );
+            } catch (NoSuchMethodException e) {
+                throw new InternalError(e);
+            }
+            assert DEFINE_CLASS.getReturnType() == Class.class;
+            DEFINE_CLASS.setAccessible(true);
+        }
+
+        /**
+         * Collection of all sources used so far.
+         * <p>
+         * URLClassLoader also has this but we use it in a different way: we
+         * request resources from specific sources rather than from the first
+         * source in the list that has a resource with the requested name.
+         */
+        private final URLClassPath ucp = new URLClassPath(new URL[0]);
 
         /**
          * Used only by native code. Construct an UnregisteredClassLoader for loading
-         * unregistered classes from the specified file. If the file doesn't exist,
-         * the exception will be caughted by native code which will print a warning message and continue.
-         *
-         * @param fileName path of the the JAR file to load unregistered classes from.
+         * unregistered classes.
          */
-        private UnregisteredClassLoader(String fileName) throws InvalidPathException, IOException {
-            super(toURLArray(fileName), /*parent*/null);
-            currentClassName = null;
-            currentSuperClass = null;
-            currentInterfaces = null;
+        private UnregisteredClassLoader() {
+            // Parent is not set to null: we will delegate to system class loader to load registered
+            // supers and interfaces of unregistered classes
+            super(new URL[0]);
         }
-
-        private static URL[] toURLArray(String fileName) throws InvalidPathException, IOException {
-            if (!((new File(fileName)).exists())) {
-                throw new IOException("No such file: " + fileName);
-            }
-            return new URL[] {
-                // Use an intermediate File object to construct a URI/URL without
-                // authority component as URLClassPath can't handle URLs with a UNC
-                // server name in the authority component.
-                Path.of(fileName).toRealPath().toFile().toURI().toURL()
-            };
-        }
-
 
         /**
-         * Load the class of the given <code>/name<code> from the JAR file that was given to
-         * the constructor of the current UnregisteredClassLoader instance. This class must be
-         * a direct subclass of <code>superClass</code>. This class must be declared to implement
-         * the specified <code>interfaces</code>.
+         * Load the class of the given <code>name</code> from the given <code>source</code>.
          * <p>
-         * This method must be called in a single threaded context. It will never be recursed (thus
-         * the asserts)
+         * All unregistered super classes and interfaces of the named class must already be loaded
+         * by this class loader instance.
          *
          * @param name the name of the class to be loaded.
-         * @param superClass must not be null. The named class must have a super class.
-         * @param interfaces could be null if the named class does not implement any interfaces.
+         * @param source path to a directory or a JAR file from which the named class should be
+         *               loaded.
          */
-        private Class<?> load(String name, Class<?> superClass, Class<?>[] interfaces)
-            throws ClassNotFoundException
-        {
-            assert currentClassName == null;
-            assert currentSuperClass == null;
-            assert currentInterfaces == null;
-
+        private Class<?> load(String name, String source) throws ClassNotFoundException {
+            final URL sourceUrl;
             try {
-                currentClassName = name;
-                currentSuperClass = superClass;
-                currentInterfaces = interfaces;
+                sourceUrl = Path.of(source).toRealPath().toUri().toURL(); // toRealPath also checks existance
+            } catch (IOException e) {
+                throw new IllegalArgumentException("Invalid class source: " + source, e);
+            }
+            ucp.addURL(sourceUrl);
 
-                return findClass(name);
-            } finally {
-                currentClassName = null;
-                currentSuperClass = null;
-                currentInterfaces = null;
+            // Almost like URLClassLoader.findClass(...), the main difference is that we request
+            // .class file from the specific source
+            final String path = name.replace('.', '/').concat(".class");
+            final Resource res = ucp.getResource(path, sourceUrl);
+            if (res == null) {
+                throw new ClassNotFoundException(name + ": cannot get " + path + " from " + source);
+            }
+            try {
+                // While executing this VM may invoke loadClass() to load supers and interfaces of
+                // this unregistered class. This should only happen for registered supers and
+                // interfaces because all unregistered ones should have already been loaded by this
+                // class loader. Thus it is safe to delegate their loading to system class loader
+                // (our parent) - this is what the default implementation of loadClass() will do.
+                return (Class<?>) DEFINE_CLASS.invoke(this, name, res);
+            } catch (IllegalAccessException e) {
+                throw new AssertionError("defineClass not accessible", e); // Should not happen
+            } catch (InvocationTargetException ite) {
+                final Throwable cause = ite.getCause();
+                switch (cause) {
+                    // Special handling as in URLClassLoader.findClass(...)
+                    case IOException e -> throw new ClassNotFoundException(name, e);
+                    case ClassFormatError e -> {
+                        if (res.getDataError() != null) {
+                            e.addSuppressed(res.getDataError());
+                        }
+                        throw e;
+                    }
+                    // Other
+                    case Error e -> throw e;
+                    case RuntimeException e -> throw e;
+                    case null -> throw new ClassNotFoundException(name, ite);
+                    default -> throw new ClassNotFoundException(name, cause);
+                }
             }
         }
 
-        /**
-         * This method must be called from inside the <code>load()</code> method. The <code>/name<code>
-         * can be only:
-         * <ul>
-         * <li> the <code>name</code> parameter for <code>load()</code>
-         * <li> the name of the <code>superClass</code> parameter for <code>load()</code>
-         * <li> the name of one of the interfaces in <code>interfaces</code> parameter for <code>load()</code>
-         * <ul>
-         *
-         * For all other cases, a <code>ClassNotFoundException</code> will be thrown.
-         */
-        protected Class<?> findClass(final String name)
-            throws ClassNotFoundException
-        {
-            Objects.requireNonNull(currentClassName);
-            Objects.requireNonNull(currentSuperClass);
-
-            if (name.equals(currentClassName)) {
-                // Note: the following call will call back to <code>this.findClass(name)</code> to
-                // resolve the super types of the named class.
-                return super.findClass(name);
-            }
-            if (name.equals(currentSuperClass.getName())) {
-                return currentSuperClass;
-            }
-            if (currentInterfaces != null) {
-                for (Class<?> c : currentInterfaces) {
-                    if (name.equals(c.getName())) {
-                        return c;
-                    }
-                }
-            }
-
+        @Override
+        protected Class<?> findClass(String name) throws ClassNotFoundException {
+            // Unregistered classes should be found in load(...), registered classes should be
+            // handeled by parent loaders
             throw new ClassNotFoundException(name);
         }
     }

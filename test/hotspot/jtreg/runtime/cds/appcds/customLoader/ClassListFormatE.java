@@ -111,6 +111,7 @@ public class ClassListFormatE extends ClassListFormatBase {
                 "NoSuchClass id: 2 super: 1 source: no_such_file.jar"
             ),
             "Cannot find NoSuchClass",
-            "java.io.IOException: No such file: no_such_file.jar");
+            "java.lang.IllegalArgumentException: Invalid class source: no_such_file.jar",
+            "Caused by: java.nio.file.NoSuchFileException");
     }
 }
