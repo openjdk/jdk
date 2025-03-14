@@ -87,7 +87,7 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
                                   "card marking array");
   }
 
-  MemTracker::record_virtual_memory_tag((address)rs.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(rs, mtGC);
 
   os::trace_page_sizes("Card Table", num_bytes, num_bytes,
                        rs.base(), rs.size(), _page_size);
