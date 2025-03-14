@@ -700,24 +700,26 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     // to NMT.
     rc = MemTracker::record_malloc(rc, size, mem_tag, stack);
 
+    if (CDSConfig::is_dumping_static_archive()) {
+      // Need to deterministically fill all the alignment gaps in C++ structures.
+      ::memset(inner_ptr, 0, size);
+    }
 #ifdef ASSERT
-    assert(old_size == free_info.size, "Sanity");
-    if (old_size < size) {
-      // We also zap the newly extended region.
-      ::memset((char*)rc + old_size, uninitBlockPad, size - old_size);
+    else {
+      assert(old_size == free_info.size, "Sanity");
+      if (old_size < size) {
+        // We also zap the newly extended region.
+        ::memset((char*)rc + old_size, uninitBlockPad, size - old_size);
+      }
     }
 #endif
-
   } else {
-
     // NMT disabled.
     ALLOW_C_FUNCTION(::realloc, rc = ::realloc(memblock, size);)
     if (rc == nullptr) {
       return nullptr;
     }
-
   }
-
 
   DEBUG_ONLY(break_if_ptr_caught(rc);)
 

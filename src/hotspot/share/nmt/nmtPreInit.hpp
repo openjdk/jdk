@@ -263,13 +263,6 @@ public:
   //  in post-init, no modifications to the lookup table are possible.
   static void pre_to_post(bool nmt_off);
 
-  // Called from os::malloc.
-  // Returns true if allocation was handled here; in that case,
-  // *rc contains the return address.
-  static bool handle_malloc(void** rc, size_t size) {
-    return handle_realloc(rc, nullptr, size, mtNone);
-  }
-
   // Called from os::realloc.
   // Returns true if reallocation was handled here; in that case,
   // *rc contains the return address.
@@ -335,7 +328,7 @@ public:
       case NMT_unknown: {
         // pre-NMT-init:
         // - the allocation must be in the hash map, since all allocations went through
-        //   NMTPreInit::handle_malloc()
+        //   NMTPreInit::handle_realloc()
         // - find the old entry, unhang from map, free it
         NMTPreInitAllocation* a = find_and_remove_in_map(p);
         NMTPreInitAllocation::do_free(a);
