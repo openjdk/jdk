@@ -704,7 +704,7 @@ private:
         // No need to clear bitmaps for empty regions (which includes regions we
         // did not mark through).
         if (!_cm->contains_live_object(r->hrm_index())) {
-          assert(_bitmap->get_next_marked_addr(r->bottom(), r->end()) == r->end(), "Should not have marked bits");
+          assert(_bitmap->get_next_marked_addr(r->bottom(), r->end()) == r->end(), "Should not have marked bits r %u %s", r->hrm_index(), r->get_short_type_str());
           return r->bottom();
         }
         assert(_bitmap->get_next_marked_addr(_cm->top_at_mark_start(r), r->end()) == r->end(), "Should not have marked bits above tams");
