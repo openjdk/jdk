@@ -75,6 +75,7 @@ class vframe: public ResourceObj {
 // ???? Does this need to be a copy?
   frame*             frame_pointer() { return &_fr;       }
   const RegisterMap* register_map() const { return &_reg_map; }
+  const RegisterMap register_map_actual() const { return _reg_map; }
   JavaThread*        thread()       const { return _thread;   }
   stackChunkOop      stack_chunk()  const { return _chunk(); /*_reg_map.stack_chunk();*/ }
 
