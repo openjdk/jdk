@@ -93,6 +93,25 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
 
 void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Register member_reg, Register temp) {  }
 
+void MethodHandles::verify_method(MacroAssembler* _masm, Register method) {
+  BLOCK_COMMENT("verify_method {");
+  __ verify_method_ptr(method);
+  if (VerifyMethodHandles) {
+    Label L_ok;
+    assert_different_registers(method, rscratch1, rscratch2);
+    __ load_method_holder(rscratch1, method);
+    __ clinit_barrier(rscratch1, rscratch2, &L_ok);
+
+    // clinit check failed
+    __ ldrh(rscratch2, Address(method, Method::access_flags_offset())); // keep holder klass in rscratch1 for diagnostic purporse
+    __ tbnz(rscratch2, exact_log2(JVM_ACC_ABSTRACT), L_ok);
+
+    // clinit check failed for a concrete method
+    __ stop("Method holder klass is not initialized");
+    __ bind(L_ok);
+  }
+  BLOCK_COMMENT("} verify_method");
+}
 #endif //ASSERT
 
 void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register method, Register temp,
@@ -100,7 +119,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   assert(method == rmethod, "interpreter calling convention");
   Label L_no_such_method;
   __ cbz(rmethod, L_no_such_method);
-  __ verify_method_ptr(method);
+  verify_method(_masm, method);
 
   if (!for_compiler_entry && JvmtiExport::can_post_interpreter_events()) {
     Label run_compiled_code;
@@ -447,7 +466,6 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     // After figuring out which concrete method to call, jump into it.
     // Note that this works in the interpreter with no data motion.
     // But the compiled version will require that r2_recv be shifted out.
-    __ verify_method_ptr(rmethod);
     jump_from_method_handle(_masm, rmethod, temp1, for_compiler_entry);
     if (iid == vmIntrinsics::_linkToInterface) {
       __ bind(L_incompatible_class_change_error);
