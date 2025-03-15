@@ -944,15 +944,15 @@ main, nav, header, footer, section {
 .ui-autocomplete-category {
     font-weight:bold;
     font-size:15px;
-    padding:7px 3px;
+    padding:7px 8px;
     background-color:var(--navbar-background-color);
     color:var(--navbar-text-color);
     box-sizing: border-box;
 }
 .ui-autocomplete {
-    max-height:85%;
-    max-width:65%;
-    overflow:auto;
+    max-height:calc(98vh - var(--nav-height));
+    max-width:min(75vw, calc(var(--max-content-width) * 0.748));
+    overflow-y:auto;
     white-space:nowrap;
     box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
     overscroll-behavior: contain;
@@ -1010,11 +1010,13 @@ li.ui-static-link a, li.ui-static-link a:visited {
     line-height: 1.7;
 }
 .ui-autocomplete .search-result-label {
+    padding: 1px 4px;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 .ui-autocomplete .search-result-desc {
     font-size: var(--nav-font-size);
+    padding: 2px 4px;
     color: #404040;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1026,7 +1028,7 @@ li.ui-static-link a, li.ui-static-link a:visited {
     color: #383838;
 }
 .ui-menu .ui-menu-item-wrapper {
-    padding: 3px 6px;
+    padding: 3px 4px;
 }
 input[type="text"] {
     background-image:url('glass.png');
