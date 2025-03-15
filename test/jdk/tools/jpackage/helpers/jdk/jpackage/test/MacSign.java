@@ -22,12 +22,15 @@
  */
 package jdk.jpackage.test;
 
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -41,7 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
+import java.util.stream.Stream;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
 /**
@@ -103,7 +106,7 @@ import jdk.jpackage.internal.util.function.ThrowingConsumer;
  * Use
  *
  * <pre>
- * /usr/bin/security create-keypair -a rsa -s 2048 -k foo.keychain -T /usr/bin/security -T /usr/bin/codesign "My key"
+ * /usr/bin/security create-keypair -a rsa -s 2048 -k foo.keychain -T /usr/bin/security -T /usr/bin/codesign -T /usr/bin/productbuild "My key"
  * </pre>
  *
  * command to create RSA key pair in "foo.keychain" keychain. Both private and
@@ -111,7 +114,7 @@ import jdk.jpackage.internal.util.function.ThrowingConsumer;
  * identified private key in a keychain.
  * <p>
  * You will need to run an additional command to allow access to the private key
- * without asking keychain password:
+ * without being asked for the keychain password:
  *
  * <pre>
  * /usr/bin/security set-key-partition-list -S apple-tool:,apple: -s -k ${KEYCHAIN-PASSWORD} foo.keychain
@@ -119,19 +122,21 @@ import jdk.jpackage.internal.util.function.ThrowingConsumer;
  *
  * The only combination that suppresses popping up authorization dialog asking
  * for keychain password to access a private key when signing files with
- * /usr/bin/codesign command is the above command and
- * {@code -T /usr/bin/security -T /usr/bin/codesign} arguments in
- * {@code /usr/bin/security create-keypair} command.
+ * /usr/bin/codesign and /usr/bin/productbuild commands is the above command and
+ * {@code -T /usr/bin/security -T /usr/bin/codesign -T /usr/bin/productbuild}
+ * arguments in {@code /usr/bin/security create-keypair} command.
  *
  * If you use {@code -A} instead of
- * {@code -T /usr/bin/security -T /usr/bin/codesign} hoping it will grant blank
- * permission to any app to use the key it will not work.
+ * {@code -T /usr/bin/security -T /usr/bin/codesign -T /usr/bin/productbuild}
+ * hoping it will grant blank permission to any app to use the key it will not
+ * work.
  *
  * Running the subsequent {@code /usr/bin/security set-key-partition-list...}
  * command will not help to suppress popping up the authorization dialog.
  *
  * <p>
- * The correlation between {@code -T /usr/bin/security -T /usr/bin/codesign}
+ * The correlation between
+ * {@code -T /usr/bin/security -T /usr/bin/codesign -T /usr/bin/productbuild}
  * arguments of {@code /usr/bin/security create-keypair} or
  * {@code /usr/bin/security import} command and
  * {@code /usr/bin/security set-key-partition-list...} command is not explicitly
@@ -141,15 +146,21 @@ import jdk.jpackage.internal.util.function.ThrowingConsumer;
  * <a href="https://developer.apple.com/forums/thread/666107" target=
  * "_blank">Apple Developer Forum</a>.
  *
- * <blockquote> Note: If user interaction is impossible (ssh session) and
- * codesign is not correctly configured in the access control list of a private
- * key it attempts to use it will fail with the following cryptic error:
+ * <p>
+ * Note #1: If user interaction is impossible (ssh session) and
+ * /usr/bin/codesign is not correctly configured in the access control list of a
+ * private key it attempts to use it will fail with the following cryptic error:
  *
  * <pre>
  * AppImageMacSignTest.app/Contents/runtime/Contents/Home/lib/libnet.dylib: errSecInternalComponent
  * </pre>
  *
- * </blockquote>
+ * <p>
+ * Note #2: For the same cause /usr/bin/product build fails with a better error message:
+ *
+ * <pre>
+ * SignData failed: Error Domain=NSOSStatusErrorDomain Code=-25308 ... (errKCInteractionNotAllowed / errSecInteractionNotAllowed: / Interaction is not allowed with the Security Server.)
+ * </pre>
  *
  * <p>
  * You can extract the key to use with openssl for certificate creation with
@@ -167,12 +178,13 @@ import jdk.jpackage.internal.util.function.ThrowingConsumer;
  * </pre>
  *
  * The above command will save all private keys in a "foo.keychain" keychain in
- * a PKCS#12-encoded "key.p12" file with an empty passphrase. <blockquote> Note
- * #1: Given there is no way to extract specific private key from a keystore
- * make sure it contains a single private key. </blockquote> <blockquote> Note
- * #2: You can't extract private key in PEM format, i.e.
+ * a PKCS#12-encoded "key.p12" file with an empty passphrase.
+ * <p>
+ * Note #1: Given there is no way to extract specific private key from a
+ * keystore make sure it contains a single private key.
+ * <p>
+ * Note #2: You can't extract private key in PEM format, i.e.
  * {@code /usr/bin/security export -f pemseq -t privKeys} command will fail.
- * </blockquote>
  * <p>
  * The inferior alternative is to use the GUI "Certificate Assistant" from
  * "Keychain Access".
@@ -228,28 +240,20 @@ import jdk.jpackage.internal.util.function.ThrowingConsumer;
 public final class MacSign {
 
     public record KeychainWithCertsSpec(Keychain keychain, List<CertificateRequest> certificateRequests,
-            List<CertificateHash> certificateHashes) {
+            List<X509Certificate> certificates) {
 
         public KeychainWithCertsSpec {
             Objects.requireNonNull(keychain);
-            Objects.requireNonNull(certificateHashes);
+            Objects.requireNonNull(certificates);
             Objects.requireNonNull(certificateRequests);
             certificateRequests.forEach(Objects::requireNonNull);
-            if (!certificateHashes.isEmpty()) {
+            if (!certificates.isEmpty()) {
                 throw new IllegalArgumentException();
             }
         }
 
         public KeychainWithCertsSpec(Keychain keychain, List<CertificateRequest> certificateRequests) {
             this(keychain, certificateRequests, new ArrayList<>());
-        }
-
-        public void setUp() {
-            keychain.create();
-        }
-
-        public void tearDown() {
-            keychain.delete();
         }
 
         @Override
@@ -259,8 +263,8 @@ public final class MacSign {
             if (!certificateRequests.isEmpty()) {
                 sb.append("; certs=").append(certificateRequests);
             }
-            if (!certificateHashes.isEmpty()) {
-                sb.append("; cert-hashes=").append(certificateHashes);
+            if (!certificates.isEmpty()) {
+                sb.append("; certs=").append(certificates.stream().map(CertificateHash::of).toList());
             }
             return sb.toString();
         }
@@ -339,7 +343,7 @@ public final class MacSign {
             private String password;
         }
 
-        public Keychain create() {
+        Keychain create() {
             final var exec = createExecutor("create-keychain");
             final var result = exec.saveOutput().executeWithoutExitCodeCheck();
             if (result.getExitCode() == 48 && result.getFirstLineOfOutput().endsWith("A keychain with the same name already exists.")) {
@@ -357,48 +361,38 @@ public final class MacSign {
             return this;
         }
 
-        public Keychain delete() {
+        Keychain delete() {
             security("delete-keychain", name).execute();
             return this;
         }
 
-        public Keychain unlock() {
+        Keychain unlock() {
             createExecutor("unlock-keychain").execute();
             return this;
+        }
+
+        Keychain createKeyPair(String name) {
+            security("create-keypair",
+                    "-a", "rsa",
+                    "-s", "2048",
+                    "-k", this.name,
+                    "-T", "/usr/bin/security",
+                    "-T", "/usr/bin/codesign",
+                    "-T", "/usr/bin/productbuild").execute();
+            security("set-key-partition-list", "-S", "apple-tool:,apple:", "-s", "-k", password, this.name).execute();
+            return this;
+        }
+
+        public List<X509Certificate> findCertificates() {
+            final var in = new ByteArrayInputStream(
+                    security("find-certificate", "-ap", name).saveOutput().execute().getOutput().stream().collect(joining("\n")).getBytes(StandardCharsets.UTF_8));
+            return toFunction(CERT_FACTORY::generateCertificates).apply(in).stream().map(X509Certificate.class::cast).toList();
         }
 
         public static void addToSearchList(Collection<Keychain> keychains) {
             security("list-keychains", "-d", "user", "-s", "login.keychain")
             .addArguments(keychains.stream().map(Keychain::name).toList())
             .execute();
-        }
-
-        public Keychain createKeyPair(String name) {
-            security("create-keypair",
-                    "-a", "rsa",
-                    "-s", "2048",
-                    "-k", this.name,
-                    "-T", "/usr/bin/security",
-                    "-T", "/usr/bin/codesign").execute();
-            security("set-key-partition-list", "-S", "apple-tool:,apple:", "-s", "-k", password, this.name).execute();
-            return this;
-        }
-
-        public Set<CertificateHash> findCertificates() {
-            // Get the list of certificates in the copied keychain and delete them.
-            final var sha1Prefix = "SHA-1 hash:";
-            return security("find-certificate", "-Z", name).saveOutput().execute().getOutput().stream().filter(line -> {
-                return line.startsWith(sha1Prefix);
-            }).map(line -> {
-                return line.substring(sha1Prefix.length()).strip();
-            }).map(CertificateHash::fromHexString).collect(toSet());
-        }
-
-        public Keychain deleteCertificates(CertificateHash... certHashes) {
-            for (final var certHash : certHashes.length == 0 ? findCertificates() : Set.of(certHashes)) {
-                security("delete-certificate", "-Z", certHash.toString(), name);
-            }
-            return this;
         }
 
         private Executor createExecutor(String command) {
@@ -517,11 +511,105 @@ public final class MacSign {
             private String userName;
             private String commonName; // CN
             private CertificateType type = CertificateType.CODE_SIGN;
-            private int days = 3650;
+            private int days = 365;
         }
     }
 
-    public static void withTempDirectory(ThrowingConsumer<Path> callback) {
+    /**
+     * Creates keychains and signing identities from the given configuration.
+     * <p>
+     * It will create a single private key and unique certificate using this key for
+     * every unique {@linkplain CertificateRequest} instance.
+     * <p>
+     * Created certificates will be imported into the keychains, and every
+     * certificate will be marked as trusted.
+     * <p>
+     * The user will be prompted to enter the user login password as
+     * many times as the number of unique certificates this function will create.
+     *
+     * @param specs the keychains and signing identities configuration
+     */
+    public static void setUp(List<KeychainWithCertsSpec> specs) {
+        specs.stream().map(KeychainWithCertsSpec::keychain).map(Keychain::name).collect(toMap(x -> x, x -> x, (x, y) -> {
+            throw new IllegalArgumentException(String.format("Multiple keychains with the same name [%s]", x));
+        }));
+
+        TKit.trace("Signing environment:");
+        for (int i = 0; i != specs.size(); ++i) {
+            TKit.trace(String.format("[%d/%d] %s", i + 1, specs.size(), specs.get(i)));
+        }
+
+        // Reset keychain search list to defaults.
+        Keychain.addToSearchList(List.of());
+
+        final var mainKeychain = specs.getFirst().keychain();
+
+        // Init basic keychain from scratch.
+        // This will create the keychain file and the key pair.
+        mainKeychain.create().createKeyPair("jpackage test key");
+
+        // Use the same private key to create certificates in additional keychains.
+        for (final var keychainSpec : specs.subList(1, specs.size())) {
+            final var keychainFile = keychainSpec.keychain().path();
+            TKit.trace(String.format("Copy basic keychain in [%s] file", keychainFile));
+            try {
+                Files.copy(mainKeychain.path(), keychainFile);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
+
+        withTempDirectory(dir -> {
+            // Create certificates.
+            final var certPemFiles = createCertificates(mainKeychain, specs, dir);
+
+            final Map<Path, Keychain> trustConfig = new HashMap<>();
+
+            for (final var certPemFile : certPemFiles.entrySet()) {
+                // Import the certificate in all keychains it belongs to.
+                final var keychains = findKeychains(certPemFile.getKey(), specs).toList();
+                keychains.forEach(keychain -> {
+                    MacSign.security("import", certPemFile.getValue().normalize().toString(),
+                            "-k", keychain.name(),
+                            "-f", "pemseq",
+                            "-t", "agg",
+                            "-A").execute();
+                });
+
+                trustConfig.put(certPemFile.getValue(), keychains.getFirst());
+            }
+
+            // Trust certificates.
+            MacSign.trustCertificates(trustConfig);
+        });
+
+        Keychain.addToSearchList(specs.stream().map(KeychainWithCertsSpec::keychain).toList());
+    }
+
+    /**
+     * Destroys the given signing configuration.
+     * <p>
+     * It will remove specified keychains from the keychain search list and delete
+     * the keychain files.
+     *
+     * @param specs the keychains and signing identities configuration
+     */
+    public static void tearDown(List<KeychainWithCertsSpec> specs) {
+        Keychain.addToSearchList(List.of());
+        specs.forEach(spec -> {
+            spec.keychain().delete();
+        });
+    }
+
+    private static Stream<Keychain> findKeychains(CertificateRequest certificateRequest,
+            Collection<KeychainWithCertsSpec> specs) {
+        Objects.requireNonNull(certificateRequest);
+        return specs.stream().filter(spec -> {
+            return spec.certificateRequests().contains(certificateRequest);
+        }).map(KeychainWithCertsSpec::keychain);
+    }
+
+    private static void withTempDirectory(ThrowingConsumer<Path> callback) {
         try {
             final var dir = Files.createTempDirectory("jdk.jpackage.test");
             try {
@@ -534,7 +622,7 @@ public final class MacSign {
         }
     }
 
-    public static Map<CertificateRequest, Path> createCertificates(Keychain privateKeySource,
+    private static Map<CertificateRequest, Path> createCertificates(Keychain privateKeySource,
             Collection<KeychainWithCertsSpec> specs, Path outputPemDir) {
 
         Objects.requireNonNull(privateKeySource);
@@ -542,7 +630,7 @@ public final class MacSign {
         specs.forEach(Objects::requireNonNull);
         Objects.requireNonNull(outputPemDir);
 
-        final Map<CertificateRequest, CertificateHash> createdCertificates = new HashMap<>();
+        final Map<CertificateRequest, X509Certificate> createdCertificates = new HashMap<>();
 
         withTempDirectory(tmpDir -> {
             final var cfgFile = tmpDir.resolve("cert.cfg");
@@ -558,9 +646,9 @@ public final class MacSign {
 
             for (final var spec : specs) {
                 for (final var certificateRequest : spec.certificateRequests()) {
-                    var certHash = createdCertificates.get(certificateRequest);
-                    if (certHash != null) {
-                        spec.certificateHashes.add(certHash);
+                    var cert = createdCertificates.get(certificateRequest);
+                    if (cert != null) {
+                        spec.certificates().add(cert);
                     } else {
                         Files.write(cfgFile, List.of(
                                 "[ req ]",
@@ -584,14 +672,13 @@ public final class MacSign {
                         openssl.dumpOutput().execute();
 
                         try (final var in = Files.newInputStream(certFile)) {
-                            final var cert = (X509Certificate)CERT_FACTORY.generateCertificate(in);
+                            cert = (X509Certificate)CERT_FACTORY.generateCertificate(in);
+                            createdCertificates.put(certificateRequest, cert);
 
-                            certHash = CertificateHash.of(cert);
-                            createdCertificates.put(certificateRequest, certHash);
+                            spec.certificates().add(cert);
 
-                            spec.certificateHashes.add(certHash);
-
-                            final var certPemFile = outputPemDir.resolve(certHash.toString() + ".pem");
+                            final var certHash = CertificateHash.of(cert);
+                            final var certPemFile = outputPemDir.resolve(CertificateHash.of(cert).toString() + ".pem");
                             Files.copy(certFile, certPemFile);
                         }
                     }
@@ -600,12 +687,12 @@ public final class MacSign {
         });
 
         return createdCertificates.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> {
-            final var certHash = e.getValue();
+            final var certHash = CertificateHash.of(e.getValue());
             return outputPemDir.resolve(certHash.toString() + ".pem");
         }));
     }
 
-    public static void trustCertificates(Map<Path, Keychain> config) {
+    private static void trustCertificates(Map<Path, Keychain> config) {
         final List<String> cmdlines = new ArrayList<>();
         cmdlines.add("#!/bin/sh");
         cmdlines.addAll(config.entrySet().stream().map(e -> {
@@ -624,7 +711,7 @@ public final class MacSign {
         });
     }
 
-    public static Executor security(String... args) {
+    static Executor security(String... args) {
         return Executor.of("security").dumpOutput().addArguments(args);
     }
 
