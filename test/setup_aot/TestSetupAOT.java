@@ -56,7 +56,7 @@ public class TestSetupAOT {
 
     public static void main(String[] args) throws Throwable {
         runJDKTools(args);
-        streamOps(args);
+        invokedynamicTests(args);
         LOGGER.log(Level.FINE, "Done");
     }
 
@@ -144,7 +144,9 @@ public class TestSetupAOT {
     }
 
 
-    static void streamOps(String args[]) {
+    // Run some operations with java.util.stream, lambda expressions and string concatenation. This
+    // will lead to AOT resolution of invokedynamic call sites.
+    static void invokedynamicTests(String args[]) {
         List<String> strings = Arrays.asList("Hello", "World!");
 
         String helloWorld = strings.parallelStream()
@@ -157,7 +159,7 @@ public class TestSetupAOT {
                 .forEach(System.out::println);
 
         // Common concatenation patterns
-        int i = args.length;
+        int i = args.length * 12357; // Seed with this so javac will not perform constant folding.
         String s = String.valueOf(i);
 
         String SS     = s + s;
@@ -198,7 +200,7 @@ public class TestSetupAOT {
         String CCS    = "string" + c + s;
         String CSCC   = "string" + s + "string" + c;
 
-        long l = System.currentTimeMillis();
+        long l = i + 12345678;
         String CJ     = "string" + l;
         String JC     = l + "string";
         String CJC    = "string" + l + "string";
