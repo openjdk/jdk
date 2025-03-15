@@ -27,7 +27,7 @@
 * @bug 8350835
 * @summary Test bug fix for JDK-8350835 discovered through Template Framework
 * @library /test/lib /
-* @run main/othervm compiler.vectorization.TestFloat16ToFloatConv
+* @run driver compiler.vectorization.TestFloat16ToFloatConv
 */
 
 package compiler.vectorization;
@@ -35,6 +35,8 @@ package compiler.vectorization;
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Utils;
 import java.util.Random;
+
+import static compiler.lib.generators.Generators.G;
 
 public class TestFloat16ToFloatConv {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -47,12 +49,14 @@ public class TestFloat16ToFloatConv {
     private static float[] goldB, goldC, goldS, goldI, goldL;
 
     static {
+        // Fill int and long array using Generators
+        G.fill(G.ints(), aI);
+        G.fill(G.longs(), aL);
+        // Generators do not support byte, char, short array currently so perform manual random fill
         for (int i = 0; i < aB.length; i++) {
             aB[i] = (byte)RANDOM.nextInt();
             aC[i] = (char)RANDOM.nextInt();
             aS[i] = (short)RANDOM.nextInt();
-            aI[i] = RANDOM.nextInt();
-            aL[i] = RANDOM.nextLong();
         }
         goldB = testByteKernel(aB);
         goldC = testCharKernel(aC);
@@ -62,7 +66,11 @@ public class TestFloat16ToFloatConv {
     }
 
     @Test
-    // Not vectorized due to JDK-8350835
+    // Scalar IR for loop body: LoadB, ConvHF2F, StoreF
+    // Vectorized IR: LoadVector, VectorCastHF2F , StoreVector
+    // Vectorization disabled as input to VectorCastHF2F would have been a byte vector instead of short vector
+    // but the VectorCastHF2F expects short vector as input
+    // See JDK-8352093 for details
     @IR(failOn = { IRNode.VECTOR_CAST_HF2F })
     public static float[] testByteKernel(byte[] barr) {
         float[] res = new float[barr.length];
@@ -99,7 +107,11 @@ public class TestFloat16ToFloatConv {
     }
 
     @Test
-    // Not vectorized due to JDK-8350835
+    // Scalar IR for loop body: LoadI, LShiftI by 16, RShiftI by 16, ConvHF2F, StoreF
+    // Vectorized IR: LoadVector, LShiftVI, RShiftVI, VectorCastHF2F, StoreVector
+    // Vectorization disabled as input to VectorCastHF2F would have been an int vector instead of short vector
+    // but the VectorCastHF2F expects short vector as input
+    // See JDK-8352093 for details
     @IR(failOn = { IRNode.VECTOR_CAST_HF2F })
     public static float[] testIntKernel(int[] iarr) {
         float[] res = new float[iarr.length];
@@ -110,7 +122,11 @@ public class TestFloat16ToFloatConv {
     }
 
     @Test
-    // Not vectorized due to JDK-8350835
+    // Scalar IR for loop body: ConvL2I, LoadI, LShiftI by 16, RShiftI by 16, ConvHF2F, StoreF
+    // Vectorized IR: VectorCastL2X, LoadVector, LShiftVI, RShiftVI, VectorCastHF2F, StoreVector
+    // Vectorization disabled as input to VectorCastHF2F would have been an int vector instead of short vector
+    // but the VectorCastHF2F expects short vector as input
+    // See JDK-8352093 for details
     @IR(failOn = { IRNode.VECTOR_CAST_HF2F })
     public static float[] testLongKernel(long[] larr) {
         float[] res = new float[larr.length];
