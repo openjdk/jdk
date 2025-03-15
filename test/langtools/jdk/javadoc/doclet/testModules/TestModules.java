@@ -1437,10 +1437,10 @@ public class TestModules extends JavadocTester {
                     <table summary="Package Summary table, listing packages, and an explanation">""");
         checkOutput("type-search-index.js", true,
                 """
-                    {"l":"All Classes and Interfaces","u":"allclasses-index.html"}""");
+                    {"l":"All Classes and Interfaces","u":"allclasses-index.html","k":"18"}""");
         checkOutput("package-search-index.js", true,
                 """
-                    {"l":"All Packages","u":"allpackages-index.html"}""");
+                    {"l":"All Packages","u":"allpackages-index.html","k":"18"}""");
         checkOutput("index-all.html", true,
                 """
                     <br><a href="allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interfaces</a\
