@@ -30,7 +30,6 @@
  */
 
 
-import java.net.URL;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -94,16 +93,5 @@ public class PackageVersionTest {
                                          null, "ImplVendor", null);
         Assert.assertEquals(p.getImplementationVendor(), "ImplVendor",
                             "Package implementation vendors do not match!");
-    }
-}
-
-class TestClassLoader extends ClassLoader {
-    @Override
-    protected Package definePackage(String name, String specTitle,
-                                    String specVersion, String specVendor,
-                                    String implTitle, String implVersion,
-                                    String implVendor, URL sealBase) {
-        return super.definePackage(name, specTitle, specVersion, specVendor,
-                                   implTitle, implVersion, implVendor, sealBase);
     }
 }
