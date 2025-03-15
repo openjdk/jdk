@@ -24,13 +24,53 @@
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
-
-import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.TKit;
+import java.util.stream.Stream;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.Executor.Result;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.MacSign;
+import jdk.jpackage.test.MacSign.CertificateType;
+import jdk.jpackage.test.MacSign.CertificateRequest;
+import jdk.jpackage.test.MacSign.KeychainWithCertsSpec;
+import jdk.jpackage.test.TKit;
 
 public class SigningBase {
+
+    enum StandardKeychain {
+        MAIN(DEFAULT_KEYCHAIN,
+                cert().userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()]).create(), 
+                cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()]).create(), 
+                cert().userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()]).create(),
+                cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()]).create());
+
+        StandardKeychain(String keychainName, CertificateRequest cert, CertificateRequest... otherCerts) {
+            final var builder = keychain(keychainName).addCert(cert);
+            List.of(otherCerts).forEach(builder::addCert);
+            this.spec = builder.create();
+        }
+
+        KeychainWithCertsSpec spec() {
+            return spec;
+        }
+
+        private static KeychainWithCertsSpec.Builder keychain(String name) {
+            return new KeychainWithCertsSpec.Builder().name(name);
+        }
+
+        private static CertificateRequest.Builder cert() {
+            return new CertificateRequest.Builder();
+        }
+
+        final KeychainWithCertsSpec spec;
+    }
+
+    public static void setUp() {
+        MacSign.setUp(Stream.of(StandardKeychain.values()).map(StandardKeychain::spec).toList());
+    }
+
+    public static void tearDown() {
+        MacSign.tearDown(Stream.of(StandardKeychain.values()).map(StandardKeychain::spec).toList());
+    }
 
     enum CertIndex {
         ASCII_INDEX(0),
