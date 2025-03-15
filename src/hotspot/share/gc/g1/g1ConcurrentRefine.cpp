@@ -254,7 +254,13 @@ bool G1ConcurrentRefineSweepState::swap_gc_threads_ct() {
       }
 
       void doit() {
-        // Light weight "handshake" of the GC threads for memory synchronization.
+        // Light weight "handshake" of the GC threads for memory synchronization;
+        // both changes to the Java heap need to be synchronized as well as the
+        // previous global card table reference change, so that no GC thread
+        // accesses the wrong card table.
+        // For example in the rebuild remset process the marking threads write
+        // marks into the card table, and that card table reference must be the
+        // correct one.
         SuspendibleThreadSet::synchronize();
         SuspendibleThreadSet::desynchronize();
       };
