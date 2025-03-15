@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.CDS;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
@@ -367,9 +368,9 @@ sealed class DirectMethodHandle extends MethodHandle {
             // It is a system class.  It is probably in the process of
             // being initialized, but we will help it along just to be safe.
             UNSAFE.ensureClassInitialized(cls);
-            return false;
+            return CDS.isDumpingStaticArchive();
         }
-        return UNSAFE.shouldBeInitialized(cls);
+        return UNSAFE.shouldBeInitialized(cls) || CDS.isDumpingStaticArchive();
     }
 
     private void ensureInitialized() {
@@ -390,7 +391,7 @@ sealed class DirectMethodHandle extends MethodHandle {
         // defc was already being initialized by the current thread. In the latter case
         // the barrier must remain. We can detect this simply by checking if initialization
         // is still needed.
-        return !UNSAFE.shouldBeInitialized(defc);
+        return !UNSAFE.shouldBeInitialized(defc) && !CDS.isDumpingStaticArchive();
     }
 
     /*non-public*/

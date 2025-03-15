@@ -282,6 +282,10 @@ private:
 
   static GrowableArrayCHeap<oop, mtClassShared>* _pending_roots;
   static GrowableArrayCHeap<OopHandle, mtClassShared>* _root_segments;
+
+  // Methods that are stored inside java_lang_invoke_ResolvedMethodName objects.
+  static GrowableArrayCHeap<Method*, mtClassShared>* _resolved_method_name_vmtargets;
+
   static int _root_segment_max_size_elems;
   static OopHandle _scratch_basic_type_mirrors[T_VOID+1];
   static MetaspaceObjToOopHandleTable* _scratch_objects_table;

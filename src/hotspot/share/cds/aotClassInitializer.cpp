@@ -26,10 +26,15 @@
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/symbol.hpp"
+#include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+
+DEBUG_ONLY(InstanceKlass* _aot_init_class = nullptr;)
 
 // Detector for class names we wish to handle specially.
 // It is either an exact string match or a string prefix match.
@@ -315,6 +320,12 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     }
   }
 
+#ifdef ASSERT
+  if (ik == _aot_init_class) {
+    return true;
+  }
+#endif
+
   return false;
 }
 
@@ -345,3 +356,33 @@ void AOTClassInitializer::call_runtime_setup(JavaThread* current, InstanceKlass*
     }
   }
 }
+
+#ifdef ASSERT
+void AOTClassInitializer::init_test_class(TRAPS) {
+  // -XX:AOTInitTestClass is used in regression tests for adding additional AOT-initialized classes
+  // and heap objects into the AOT cache. The tests must be carefully written to avoid including
+  // any classes that cannot be AOT-initialized.
+  //
+  // -XX:AOTInitTestClass is NOT a general mechanism for including user-defined objects into
+  // the AOT cache. Therefore, this option is NOT available in product JVM.
+  if (AOTInitTestClass != nullptr && CDSConfig::is_initing_classes_at_dump_time()) {
+    log_info(cds)("Debug build only: force initialization of AOTInitTestClass %s", AOTInitTestClass);
+    TempNewSymbol class_name = SymbolTable::new_symbol(AOTInitTestClass);
+    Handle app_loader(THREAD, SystemDictionary::java_system_loader());
+    Klass* k = SystemDictionary::resolve_or_null(class_name, app_loader, CHECK);
+    if (k == nullptr) {
+      vm_exit_during_initialization("AOTInitTestClass not found", AOTInitTestClass);
+    }
+    if (!k->is_instance_klass()) {
+      vm_exit_during_initialization("Invalid name for AOTInitTestClass", AOTInitTestClass);
+    }
+
+    _aot_init_class = InstanceKlass::cast(k);
+    _aot_init_class->initialize(CHECK);
+  }
+}
+
+bool AOTClassInitializer::has_test_class() {
+  return _aot_init_class != nullptr;
+}
+#endif

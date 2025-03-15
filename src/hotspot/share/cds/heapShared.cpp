@@ -138,7 +138,8 @@ static ArchivableStaticFieldInfo fmg_archive_subgraph_entry_fields[] = {
 KlassSubGraphInfo* HeapShared::_dump_time_special_subgraph;
 ArchivedKlassSubGraphInfoRecord* HeapShared::_run_time_special_subgraph;
 GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = nullptr;
-GrowableArrayCHeap<OopHandle, mtClassShared>* HeapShared::_root_segments;
+GrowableArrayCHeap<OopHandle, mtClassShared>* HeapShared::_root_segments = nullptr;
+GrowableArrayCHeap<Method*, mtClassShared>* HeapShared::_resolved_method_name_vmtargets = nullptr;
 int HeapShared::_root_segment_max_size_elems;
 OopHandle HeapShared::_scratch_basic_type_mirrors[T_VOID+1];
 MetaspaceObjToOopHandleTable* HeapShared::_scratch_objects_table = nullptr;
@@ -224,10 +225,6 @@ int HeapShared::append_root(oop obj) {
   }
   // No GC should happen since we aren't scanning _pending_roots.
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
-
-  if (_pending_roots == nullptr) {
-    _pending_roots = new GrowableArrayCHeap<oop, mtClassShared>(500);
-  }
 
   return _pending_roots->append(obj);
 }
@@ -341,12 +338,11 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
         if (m != nullptr) {
           InstanceKlass* method_holder = m->method_holder();
           AOTArtifactFinder::add_cached_class(method_holder);
-          AOTArtifactFinder::add_aot_inited_class(method_holder);
+          //AOTArtifactFinder::add_aot_inited_class(method_holder);
+          _resolved_method_name_vmtargets->append(m);
 
-          if (log_is_enabled(Debug, cds, init)) {
-            ResourceMark rm;
-            log_debug(cds, init)("%s should be aot-initialized (referenced by MethodHandle)", method_holder->external_name());
-          }
+          ResourceMark rm;
+          log_info(cds)("ResolvedMethodName::target = %s", m->external_name());
         }
       }
     }
@@ -414,6 +410,8 @@ objArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
 
 void HeapShared::init_dumping() {
   _scratch_objects_table = new (mtClass)MetaspaceObjToOopHandleTable();
+  _pending_roots = new GrowableArrayCHeap<oop, mtClassShared>(500);
+  _resolved_method_name_vmtargets = new GrowableArrayCHeap<Method*, mtClassShared>(50);
 }
 
 void HeapShared::init_scratch_objects_for_basic_type_mirrors(TRAPS) {
@@ -689,6 +687,20 @@ void HeapShared::write_heap(ArchiveHeapInfo *heap_info) {
     NoSafepointVerifier nsv;
     CDSHeapVerifier::verify();
     check_special_subgraph_classes();
+
+    bool found = false;
+    for (int i = 0; i < _resolved_method_name_vmtargets->length(); i++) {
+      Method* m = _resolved_method_name_vmtargets->at(i);
+      InstanceKlass* holder = m->method_holder();
+      if (m->is_static() && !holder->has_aot_initialized_mirror()) {
+        found = true;
+        ResourceMark rm;
+        log_error(cds, heap)("MethodHandle cannot be cached for %s", m->external_name());
+      }
+    }
+    if (found) {
+      //MetaspaceShared::unrecoverable_writing_error();
+    }
   }
 
   StringTable::write_shared_table(_dumped_interned_strings);
@@ -793,8 +805,11 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
 #ifdef ASSERT
     InstanceKlass* ik = InstanceKlass::cast(orig_k);
     if (CDSConfig::is_dumping_method_handles()) {
+      // -XX:AOTInitTestClass must be used carefully in regression tests to
+      // include only classes that are safe to aot-initialize.
       assert(ik->class_loader() == nullptr ||
-             HeapShared::is_lambda_proxy_klass(ik),
+             HeapShared::is_lambda_proxy_klass(ik) ||
+             AOTClassInitializer::has_test_class(),
             "we can archive only instances of boot classes or lambda proxy classes");
     } else {
       assert(ik->class_loader() == nullptr, "must be boot class");
