@@ -26,7 +26,7 @@
  * @test id=static
  * @summary Run JavacBenchApp with the classic static archive workflow
  * @requires vm.cds
- * @library /test/lib
+ * @library /test/lib /test/setup_aot
  * @run driver JavacBench STATIC
  */
 
@@ -34,7 +34,7 @@
  * @test id=dynamic
  * @summary Run JavacBenchApp with the classic dynamic archive workflow
  * @requires vm.cds
- * @library /test/lib
+ * @library /test/lib /test/setup_aot
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. JavacBench DYNAMIC
@@ -45,7 +45,7 @@
  * @requires vm.cds.supports.aot.class.linking
  * @summary Run JavacBenchApp with AOT cache (JEP 483)
  * @requires vm.cds
- * @library /test/lib
+ * @library /test/lib /test/setup_aot
  * @run driver JavacBench AOT
  */
 
