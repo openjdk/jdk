@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,9 @@ import java.security.CryptoPrimitive;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
 import java.util.*;
+import javax.crypto.KDF;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
@@ -1201,9 +1203,15 @@ final class ServerHello {
 
         try {
             CipherSuite.HashAlg hashAlg = hc.negotiatedCipherSuite.hashAlg;
-            HKDF hkdf = new HKDF(hashAlg.name);
+//            HKDF hkdf = new HKDF(hashAlg.name);
+            KDF hkdf = KDF.getInstance(Utilities.digestAlgToKDFAlg(hashAlg.name));
             byte[] zeros = new byte[hashAlg.hashLength];
-            SecretKey earlySecret = hkdf.extract(zeros, psk, "TlsEarlySecret");
+//            SecretKey earlySecret = hkdf.extract(zeros, psk, "TlsEarlySecret");
+            HKDFParameterSpec hkdfParameterSpec =
+                    HKDFParameterSpec.ofExtract()
+                                     .addSalt(zeros)
+                                     .addIKM(psk).extractOnly();
+            SecretKey earlySecret = hkdf.deriveKey("TlsEarlySecret", hkdfParameterSpec);
             hc.handshakeKeyDerivation =
                     new SSLSecretDerivation(hc, earlySecret);
         } catch  (GeneralSecurityException gse) {
