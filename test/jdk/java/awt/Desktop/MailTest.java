@@ -52,12 +52,14 @@ public class MailTest extends JPanel {
             PassFailJFrame.log("Class java.awt.Desktop is not supported on " +
                     "current platform. Farther testing will not be performed");
             PassFailJFrame.forcePass();
+            return;
         }
 
         Desktop desktop = Desktop.getDesktop();
         if (!desktop.isSupported(Desktop.Action.MAIL)) {
             PassFailJFrame.log("Action.MAIL is not supported.");
             PassFailJFrame.forcePass();
+            return;
         }
 
         /*
