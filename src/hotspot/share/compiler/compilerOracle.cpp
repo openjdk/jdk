@@ -334,6 +334,10 @@ static void register_command(TypedMethodOptionMatcher* matcher,
     return;
   }
 
+  if (option == CompileCommandEnum::PrintCompilation) {
+    PrintCompilation = true;
+  }
+
   matcher->init(option, option_list);
   matcher->set_value<T>(value);
   option_list = matcher;
