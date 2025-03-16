@@ -25,6 +25,7 @@ package requires;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.File;
@@ -123,6 +124,7 @@ public class VMProps implements Callable<Map<String, String>> {
         // vm.cds is true if the VM is compiled with cds support.
         map.put("vm.cds", this::vmCDS);
         map.put("vm.cds.custom.loaders", this::vmCDSForCustomLoaders);
+        map.put("vm.cds.sharing.enabled", this::vmCDSSharingEnabled);
         map.put("vm.cds.supports.aot.class.linking", this::vmCDSSupportsAOTClassLinking);
         map.put("vm.cds.write.archived.java.heap", this::vmCDSCanWriteArchivedJavaHeap);
         map.put("vm.continuations", this::vmContinuations);
@@ -147,6 +149,7 @@ public class VMProps implements Callable<Map<String, String>> {
         vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
 
+        export(map.map);
         dump(map.map);
         log("Leaving call()");
         return map.map;
@@ -443,6 +446,16 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmCDS() {
         return "" + WB.isCDSIncluded();
+    }
+
+    /**
+     * Check if the current JVM process has loaded a CDS archive. If so, that means
+     * the JDK contains a default CDS archive that's compatible with the current set of
+     * VM options. This property is used by jdk.test.lib.cds.CDSAppTester to determine if
+     * a custom base archive needs to be created for running dynamic CDS tests.
+     */
+    protected String vmCDSSharingEnabled() {
+        return "" + WB.isSharingEnabled();
     }
 
     /**
@@ -828,6 +841,46 @@ public class VMProps implements Callable<Map<String, String>> {
 
     private String isStatic() {
         return Boolean.toString(WB.isStatic());
+    }
+
+    /**
+     * @return the directory specified with 'jtreg -workDir:<dir>'
+     */
+    private static Path getJtregWorkDir() {
+        Path pwd = Paths.get("").toAbsolutePath();
+        Path dir = pwd;
+        if (dir.getFileName().toString().matches("^[0-9]+$")) {
+            dir = dir.getParent();
+        }
+
+        if (dir.getFileName().toString().equals("scratch")) {
+            return dir.getParent();
+        }
+        throw new RuntimeException("The current directory '" + pwd +
+                                   "' does not end with /scratch((/[0-9]+)|)");
+    }
+
+    /**
+     * Writes the VM properties to a well-known location (workDir/vm.properties)
+     * so that the properties can be easily queried from the test cases using
+     * the jdk.test.lib.VMPropsGetter class. This avoids the needs for using
+     * WhiteBox in individual test cases.
+     *
+     * @param map the set of VM properties to be exported to the test cases.
+     */
+    protected static void export(Map<String, String> map) {
+        Path workDir = getJtregWorkDir();
+        Path output = workDir.resolve("vm.properties");
+        Properties props = new Properties();
+        map.forEach((k, v) -> props.put(k, v));
+
+        try (FileOutputStream out = new FileOutputStream(output.toFile())) {
+            props.store(out, "VM properties computed by " + VMProps.class.getName());
+        } catch (IOException e) {
+            e.printStackTrace(System.err);
+            throw new RuntimeException("Failed to export properties into '"
+                    + output + "'", e);
+        }
     }
 
     /**

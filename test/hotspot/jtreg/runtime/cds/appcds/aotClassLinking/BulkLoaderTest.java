@@ -46,11 +46,10 @@
  * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib
  * @build InitiatingLoaderTester BadOldClassA BadOldClassB
- * @build jdk.test.whitebox.WhiteBox BulkLoaderTest
+ * @build BulkLoaderTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar BulkLoaderTestApp.jar BulkLoaderTestApp MyUtil InitiatingLoaderTester
  *                 BadOldClassA BadOldClassB
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. BulkLoaderTest DYNAMIC
+ * @run driver BulkLoaderTest DYNAMIC
  */
 
 /*

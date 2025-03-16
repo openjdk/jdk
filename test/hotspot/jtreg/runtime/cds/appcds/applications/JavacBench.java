@@ -35,9 +35,7 @@
  * @summary Run JavacBenchApp with the classic dynamic archive workflow
  * @requires vm.cds
  * @library /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. JavacBench DYNAMIC
+ * @run driver JavacBench DYNAMIC
  */
 
 /*

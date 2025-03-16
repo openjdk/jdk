@@ -28,7 +28,7 @@ import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.StringArrayUtils;
-import jdk.test.whitebox.WhiteBox;
+import jdk.test.lib.VMPropsGetter;
 import jtreg.SkippedException;
 
 /*
@@ -257,10 +257,9 @@ abstract public class CDSAppTester {
     // Creating a dynamic CDS archive (with -XX:ArchiveClassesAtExit=<foo>.jsa) requires that the current
     // JVM process is using a static archive (which is usually the default CDS archive included in the JDK).
     // However, if the JDK doesn't include a default CDS archive that's compatible with the set of
-    // VM options used by this test, we need to create a temporary static archive to be used with -XX:ArchiveClassesAtExit.
+    // VM options used by this test, we need to create a temporary static archive.
     private String getBaseArchiveForDynamicArchive() throws Exception {
-        WhiteBox wb = WhiteBox.getWhiteBox();
-        if (wb.isSharingEnabled()) {
+        if ("true".equals(VMPropsGetter.get("vm.cds.sharing.enabled"))) {
             // This current JVM is able to use a default CDS archive included by the JDK, so
             // if we launch a JVM child process (with the same set of options as the current JVM),
             // that process is also able to use the same default CDS archive for creating

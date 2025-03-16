@@ -36,3 +36,26 @@ requiredVersion=7.5.1+1
 external.lib.roots = ../../
 
 groups=TEST.groups
+
+# Allow querying of various System properties in @requires clauses
+#
+# Source files for classes that will be used at the beginning of each test suite run,
+# to determine additional characteristics of the system for use with the @requires tag.
+# Note: compiled bootlibs classes will be added to BCP.
+requires.extraPropDefns = ../jtreg-ext/requires/VMProps.java
+requires.extraPropDefns.bootlibs = ../lib/jdk/test/whitebox
+requires.extraPropDefns.libs = \
+    ../lib/jdk/test/lib/Platform.java \
+    ../lib/jdk/test/lib/Container.java
+requires.extraPropDefns.javacOpts = \
+    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
+requires.extraPropDefns.vmOpts = \
+    -XX:+UnlockDiagnosticVMOptions \
+    -XX:+LogVMOutput -XX:-DisplayVMOutput -XX:LogFile=vmprops.flags.final.vm.log \
+    -XX:+PrintFlagsFinal \
+    -XX:+WhiteBoxAPI \
+    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
+requires.properties= \
+    vm.flagless
