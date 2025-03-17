@@ -2619,12 +2619,12 @@ bool MacroAssembler::can_dp_imm_load(double imm) {
 }
 
 void MacroAssembler::fli_h(FloatRegister Rd, short imm) {
-  jint f_bits = jint_cast(imm);
-  if (f_bits == 0) {
-    fmv_w_x(Rd, zr);
+  jshort h_bits = (jshort)imm;
+  if (h_bits == 0) {
+    fmv_h_x(Rd, zr);
     return;
   }
-  int Rs = zfa_zli_lookup_half_float(f_bits);
+  int Rs = zfa_zli_lookup_half_float(h_bits);
   assert(Rs != -1, "Must be");
   _fli_h(Rd, Rs);
 }
