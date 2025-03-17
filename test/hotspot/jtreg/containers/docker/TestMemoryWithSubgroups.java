@@ -49,23 +49,12 @@ public class TestMemoryWithSubgroups {
 
     static String getEngineInfo(String format) throws Exception {
         return DockerTestUtils.execute(Container.ENGINE_COMMAND, "info", "-f", format)
-            .shouldHaveExitValue(0)
             .getStdout();
     }
 
-    static boolean isPodman() {
-        return Container.ENGINE_COMMAND.endsWith("podman");
-    }
-
-    static boolean isDocker() {
-        return Container.ENGINE_COMMAND.endsWith("docker");
-    }
-
     static boolean isRootless() throws Exception {
-        return (isDocker() &&
-                getEngineInfo("{{.SecurityOptions}}").contains("name=rootless")) || (
-                isPodman() &&
-                getEngineInfo("{{.Host.Security.Rootless}}").contains("true"));
+        return (getEngineInfo("{{.Host.Security.Rootless}}").contains("true") ||
+                getEngineInfo("{{.SecurityOptions}}").contains("name=rootless"));
     }
 
     public static void main(String[] args) throws Exception {
