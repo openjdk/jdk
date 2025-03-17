@@ -106,7 +106,7 @@ public class PacketLossRetransmission extends DTLSOverDatagram {
             if (packet != null) {
                 needPacketLoss = false;
 
-                System.out.println("Loss a packet of handshake messahe");
+                System.out.println("Loss a packet of handshake message");
                 packets.remove(packet);
             }
         }
