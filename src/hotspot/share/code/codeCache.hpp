@@ -144,6 +144,7 @@ class CodeCache : AllStatic {
   static int code_heap_compare(CodeHeap* const &lhs, CodeHeap* const &rhs);
 
   static void add_heap(CodeHeap* heap);
+  static CodeHeap* get_code_heap_containing(void* p);   // Returns the CodeHeap containing the given pointer, or nullptr
   static const GrowableArray<CodeHeap*>* heaps() { return _heaps; }
   static const GrowableArray<CodeHeap*>* nmethod_heaps() { return _nmethod_heaps; }
 
@@ -160,7 +161,6 @@ class CodeCache : AllStatic {
   static void metadata_do(MetadataClosure* f);             // iterates over metadata in alive nmethods
 
   // Lookup
-  static CodeHeap* get_code_heap_containing(void* p);   // Returns the CodeHeap containing the given pointer, or nullptr
   static CodeBlob* find_blob(void* start);              // Returns the CodeBlob containing the given address
   static CodeBlob* find_blob_fast(void* start);         // Returns the CodeBlob containing the given address
   static CodeBlob* find_blob_and_oopmap(void* start, int& slot);         // Returns the CodeBlob containing the given address
