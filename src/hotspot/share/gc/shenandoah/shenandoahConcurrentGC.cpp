@@ -645,10 +645,8 @@ void ShenandoahConcurrentGC::op_init_mark() {
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
   if (heap->mode()->is_generational()) {
-    if (_generation->is_young()) {
-      ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_swap_rset);
-      _generation->swap_card_tables();
-    }
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_swap_rset);
+    _generation->swap_card_tables();
 
     if (_generation->is_global()) {
       heap->old_generation()->cancel_gc();
