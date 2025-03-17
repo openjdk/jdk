@@ -29,7 +29,7 @@
 
 class JavaThread;
 class NonJavaThread;
-class MetadataClosure;
+class KlassClosure;
 
 #if defined(LINUX)
 
@@ -60,7 +60,7 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static void on_javathread_create(JavaThread* thread);
   static void on_javathread_terminate(JavaThread* thread);
   void handle_timer_signal(siginfo_t* info, void* context);
-  void metadata_do(MetadataClosure* f);
+  void classes_do(KlassClosure* cl);
 
 #ifdef ASSERT
   static void set_process_queue(bool process_queue);

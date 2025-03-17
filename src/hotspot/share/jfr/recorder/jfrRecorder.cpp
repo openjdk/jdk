@@ -478,8 +478,8 @@ void JfrRecorder::stop_recording() {
   _post_box->post(MSG_STOP);
 }
 
-void JfrRecorder::metadata_do(MetadataClosure* f) {
+void JfrRecorder::classes_do(KlassClosure* cl) {
   if (_cpu_time_thread_sampling != nullptr) {
-    _cpu_time_thread_sampling->metadata_do(f);
+    _cpu_time_thread_sampling->classes_do(cl);
   }
 }

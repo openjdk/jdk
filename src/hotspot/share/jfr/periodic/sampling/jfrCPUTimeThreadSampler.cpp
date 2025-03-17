@@ -166,14 +166,14 @@ public:
   };
 
   // Record a trace of the current thread
-  void record_trace(JavaThread* jt, void* ucontext, int64_t sampling_period, bool should_pause) {
+  void record_trace(JavaThread* jt, void* ucontext, int64_t sampling_period) {
     _stacktrace = JfrAsyncStackTrace(_frames, _max_frames);
     set_sampled_thread(jt);
     _type = NO_SAMPLE;
     _error = ERROR_NO_TRACE;
     _start_time = _end_time = JfrTicks::now();
     _sampling_period = sampling_period;
-    if (!should_pause && !jt->in_deopt_handler() && !Universe::heap()->is_stw_gc_active())  {
+    if (!jt->in_deopt_handler() && !Universe::heap()->is_stw_gc_active())  {
       ThreadInAsgct tia(jt);
       Atomic::inc(&active_recordings);
       if (thread_state_in_java(jt)) {
@@ -186,8 +186,11 @@ public:
     _end_time = JfrTicks::now();
   }
 
-  void metadata_do(MetadataClosure* f) const {
-    _stacktrace.metadata_do(f);
+  void classes_do(KlassClosure* cl) const {
+    if (_error != NO_ERROR) {
+      return;
+    }
+    _stacktrace.classes_do(cl);
   }
 
 private:
@@ -346,32 +349,31 @@ public:
     OrderAccess::release();
   }
 
-  void metadata_do(MetadataClosure* f) {
+  void classes_do(KlassClosure* cl) {
     if (Atomic::load(&_head) == Atomic::load(&_tail)) {
       return;
     }
     // iterate over all elements between head and tail
     uint32_t head = Atomic::load(&_head);
     uint32_t tail = Atomic::load(&_tail);
-    printf("head: %d, tail: %d\n", head, tail);
     if (tail > head) {
       for (u4 i = head; i < tail; i++) {
         Element* e = element(i);
         if (e->_state == state_full(i)) {
-          e->_trace->metadata_do(f);
+          e->_trace->classes_do(cl);
         }
       }
     } else {
       for (u4 i = _head; i < _capacity; i++) {
         Element* e = element(i);
         if (e->_state == state_full(i)) {
-          e->_trace->metadata_do(f);
+          e->_trace->classes_do(cl);
         }
       }
       for (u4 i = 0; i < _tail; i++) {
         Element* e = element(i);
         if (e->_state == state_full(i)) {
-          e->_trace->metadata_do(f);
+          e->_trace->classes_do(cl);
         }
       }
     }
@@ -423,8 +425,8 @@ public:
     _filled.reset();
   }
 
-  void metadata_do(MetadataClosure* f) {
-    _filled.metadata_do(f);
+  void classes_do(KlassClosure* cl) {
+    _filled.classes_do(cl);
   }
 };
 
@@ -476,7 +478,7 @@ class JfrCPUTimeThreadSampler : public NonJavaThread {
   void set_rate(double rate, bool autoadapt);
   int64_t get_sampling_period() const { return Atomic::load(&_current_sampling_period_ns); };
 
-  void metadata_do(MetadataClosure* f);
+  void classes_do(KlassClosure* cl);
 
 protected:
   virtual void post_run();
@@ -712,7 +714,7 @@ bool JfrCPUTimeThreadSampler::process_trace_queue() {
         // this doesn't happen often, but it can happen
         //
         // without this weak locking, we can cause a deadlock
-        // this might happen because running this loop prevents the GC from progressing in the metadata_do method.
+        // this might happen because running this loop prevents the GC from progressing in the classes_do method.
         // when the GC runs at the safepoint induced by the JFR recorder (which obtains the lock we're waiting for)
         Atomic::inc(&_ignore_because_queue_full);
         stop = true;
@@ -860,7 +862,6 @@ void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context
     return;
   }
   if (Atomic::load_acquire(&_should_pause)) {
-    // TODO: needed?
     return;
   }
   NoResourceMark rm;
@@ -869,7 +870,7 @@ void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context
     // the sampling period might be too low for the current Linux configuration
     // so samples might be skipped and we have to compute the actual period
     int64_t period = get_sampling_period() * (info->si_overrun + 1);
-    trace->record_trace(jt, context, period, Atomic::load_acquire(&_should_pause));
+    trace->record_trace(jt, context, period);
     this->_queues.filled().enqueue(trace);
   } else {
     Atomic::inc(&_ignore_because_queue_full);
@@ -877,9 +878,9 @@ void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context
   }
 }
 
-void JfrCPUTimeThreadSampling::metadata_do(MetadataClosure* f) {
+void JfrCPUTimeThreadSampling::classes_do(KlassClosure* cl) {
   if (_sampler != nullptr) {
-    _sampler->metadata_do(f);
+    _sampler->classes_do(cl);
   }
 }
 
@@ -1007,14 +1008,14 @@ void JfrCPUTimeThreadSampler::set_rate(double rate, bool autoadapt) {
   }
 }
 
-void JfrCPUTimeThreadSampler::metadata_do(MetadataClosure* f) {
+void JfrCPUTimeThreadSampler::classes_do(KlassClosure* cl) {
   Atomic::release_store(&_should_pause, true);
   while (Atomic::load_acquire(&active_recordings) > 0) {
   }
   while (Atomic::load_acquire(&_enqueue_loop_active)) {
   }
   OrderAccess::loadload();
-  _queues.metadata_do(f);
+  _queues.classes_do(cl);
   Atomic::release_store(&_should_pause, false);
 }
 
@@ -1078,7 +1079,7 @@ void JfrCPUTimeThreadSampling::on_javathread_create(JavaThread* thread) {
 void JfrCPUTimeThreadSampling::on_javathread_terminate(JavaThread* thread) {
 }
 
-void JfrCPUTimeThreadSampling::metadata_do(MetadataClosure* f) {
+void JfrCPUTimeThreadSampling::classes_do(KlassClosure* cl) {
 }
 
 #ifdef ASSERT

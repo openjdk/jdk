@@ -35,7 +35,7 @@ class frame;
 class InstanceKlass;
 class JavaThread;
 class JfrStackTrace;
-class MetadataClosure;
+class KlassClosure;
 
 class JfrAsyncStackFrame {
  private:
@@ -87,7 +87,7 @@ class JfrAsyncStackTrace {
 
   JfrAsyncStackTrace(JfrAsyncStackFrame* frames, u4 max_frames);
 
-  void metadata_do(MetadataClosure* f) const;
+  void classes_do(KlassClosure* cl) const;
 
  public:
 

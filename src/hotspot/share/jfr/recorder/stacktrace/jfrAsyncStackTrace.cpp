@@ -55,12 +55,12 @@ JfrAsyncStackTrace::JfrAsyncStackTrace(JfrAsyncStackFrame* frames, u4 max_frames
   _reached_root(false)
   {}
 
-void JfrAsyncStackTrace::metadata_do(MetadataClosure* f) const {
+void JfrAsyncStackTrace::classes_do(KlassClosure* cl) const {
   if (_nr_of_frames == 0) {
     return;
   }
   for (u4 i = 0; i < _nr_of_frames; i++) {
-    f->do_metadata(_frames[i].klass());
+    cl->do_klass(_frames[i].klass());
   }
 }
 
