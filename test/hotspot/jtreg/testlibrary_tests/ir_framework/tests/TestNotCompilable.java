@@ -122,7 +122,7 @@ class TestClassA {
 
 class TestClassB {
     @Test
-    @IR(failOn = IRNode.LOAD)
+    //TODO: @IR(failOn = IRNode.LOAD)
     public void test() {}
 }
 

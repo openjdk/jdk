@@ -27,7 +27,6 @@ import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.shared.TestRunException;
 
 import java.lang.reflect.Method;
-import java.util.function.Consumer;
 
 /**
  * A base test only consists of a single @Test method. See {@link Test} for more details and its precise definition.
@@ -60,11 +59,6 @@ class BaseTest extends AbstractTest {
     @Override
     public String getName() {
         return testMethod.getName();
-    }
-
-    @Override
-    public void forEachTestMethod(Consumer<Method> callback) {
-        callback.accept(testMethod);
     }
 
     @Override

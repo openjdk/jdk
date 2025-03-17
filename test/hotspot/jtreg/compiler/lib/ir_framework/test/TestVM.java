@@ -292,10 +292,9 @@ public class TestVM {
                     TestFormat.check(argumentsAnno != null || m.getParameterCount() == 0, "Missing @Arguments annotation to define arguments of " + m);
                     BaseTest baseTest = new BaseTest(test, shouldExcludeTest(m.getName()));
                     allTests.add(baseTest);
-                    // FIXME: rm
-                    // if (PRINT_VALID_IR_RULES) {
-                    //     irMatchRulePrinter.emitRuleEncoding(m, baseTest.isSkipped());
-                    // }
+                    if (PRINT_VALID_IR_RULES) {
+                        irMatchRulePrinter.emitRuleEncoding(m, baseTest.isSkipped());
+                    }
                 } catch (TestFormatException e) {
                     // Failure logged. Continue and report later.
                 }
@@ -686,11 +685,10 @@ public class TestVM {
         dontCompileAndDontInlineMethod(m);
         CheckedTest checkedTest = new CheckedTest(test, m, checkAnno, parameter, shouldExcludeTest(testMethod.getName()));
         allTests.add(checkedTest);
-        // FIXME: rm
-        // if (PRINT_VALID_IR_RULES) {
-        //     // Only need to emit IR verification information if IR verification is actually performed.
-        //     irMatchRulePrinter.emitRuleEncoding(testMethod, checkedTest.isSkipped());
-        // }
+        if (PRINT_VALID_IR_RULES) {
+            // Only need to emit IR verification information if IR verification is actually performed.
+            irMatchRulePrinter.emitRuleEncoding(testMethod, checkedTest.isSkipped());
+        }
     }
 
     private void checkCheckedTest(Method m, Check checkAnno, Run runAnno, Method testMethod, DeclaredTest test) {
@@ -756,10 +754,9 @@ public class TestVM {
         dontCompileAndDontInlineMethod(m);
         CustomRunTest customRunTest = new CustomRunTest(m, getAnnotation(m, Warmup.class), runAnno, tests, shouldExcludeTest);
         allTests.add(customRunTest);
-        // FIXME: rm
-        // if (PRINT_VALID_IR_RULES) {
-        //     tests.forEach(test -> irMatchRulePrinter.emitRuleEncoding(test.getTestMethod(), customRunTest.isSkipped()));
-        // }
+        if (PRINT_VALID_IR_RULES) {
+            tests.forEach(test -> irMatchRulePrinter.emitRuleEncoding(test.getTestMethod(), customRunTest.isSkipped()));
+        }
     }
 
     /**
@@ -866,9 +863,6 @@ public class TestVM {
             }
             try {
                 test.run();
-                if (PRINT_VALID_IR_RULES) {
-                    test.forEachTestMethod((Method m) -> irMatchRulePrinter.emitRuleEncoding(m, test.isSkipped()));
-                }
             } catch (TestRunException e) {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);
