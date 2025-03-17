@@ -785,7 +785,7 @@ public class TestFramework {
                                                         isAllowNotCompilable, testClassesOnBootClassPath);
         if (shouldVerifyIR) {
             try {
-                TestClassParser testClassParser = new TestClassParser(testClass);
+                TestClassParser testClassParser = new TestClassParser(testClass, isAllowNotCompilable);
                 Matchable testClassMatchable = testClassParser.parse(testVMProcess.getHotspotPidFileName(),
                                                                      testVMProcess.getIrEncoding());
                 IRMatcher matcher = new IRMatcher(testClassMatchable);
