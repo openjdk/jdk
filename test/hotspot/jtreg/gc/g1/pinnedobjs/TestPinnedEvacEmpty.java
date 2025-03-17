@@ -58,7 +58,6 @@ public class TestPinnedEvacEmpty {
     private static final long numAllocations = 1024 * 1024 * 3 / objSize;
 
     public static void main(String[] args) throws Exception {
-        System.out.println("foobar");
         // Remove garbage from VM initialization.
         wb.fullGC();
 
