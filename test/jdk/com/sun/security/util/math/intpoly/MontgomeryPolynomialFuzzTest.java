@@ -47,7 +47,7 @@ import sun.security.util.math.intpoly.*;
  * @summary Unit test MontgomeryPolynomialFuzzTest with intrinsic enabled
  */
 
-// This test case is NOT entirely deterministic, it uses a random seed for 
+// This test case is NOT entirely deterministic, it uses a random seed for
 // pseudo-random number generator
 // If a failure occurs, hardcode the seed to make the test case deterministic
 public class MontgomeryPolynomialFuzzTest {
