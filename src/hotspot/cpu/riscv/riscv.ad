@@ -7947,9 +7947,9 @@ instruct xorL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
 // ============================================================================
 // MemBar Instruction
 
-// ZTSO
+// RVTSO
 
-instruct no_membar_rvtso() %{
+instruct unnecessary_membar_rvtso() %{
   predicate(UseZtso);
   match(LoadFence);
   match(StoreFence);
@@ -7964,9 +7964,9 @@ instruct no_membar_rvtso() %{
 
   size(0);
 
-  format %{ "no_membar_rvtso elided/tso (empty encoding)" %}
+  format %{ "unnecessary_membar_rvtso elided/tso (empty encoding)" %}
   ins_encode %{
-    __ block_comment("no_membar_rvtso");
+    __ block_comment("unnecessary_membar_rvtso");
   %}
   ins_pipe(real_empty);
 %}
@@ -7996,7 +7996,6 @@ instruct unnecessary_membar_volatile_rvtso() %{
   
   format %{ "unnecessary_membar_volatile_rvtso (unnecessary so empty encoding)" %}
   ins_encode %{
-    assert(UseZtso, "Must be");
     __ block_comment("unnecessary_membar_volatile_rvtso");
   %}
   ins_pipe(real_empty);
@@ -8004,45 +8003,45 @@ instruct unnecessary_membar_volatile_rvtso() %{
 
 // RVWMO
 
-instruct membar_rvwmo_aqcuire() %{
+instruct membar_aqcuire_rvwmo() %{
   predicate(!UseZtso);
   match(LoadFence);
   match(MemBarAcquire);
   ins_cost(VOLATILE_REF_COST);
 
-  format %{ "membar_rvwmo_aqcuire\n\t"
+  format %{ "membar_aqcuire_rvwmo\n\t"
             "fence r, rw" %}
 
   ins_encode %{
-    __ block_comment("membar_rvwmo_aqcuire");
+    __ block_comment("membar_aqcuire_rvwmo");
     __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   %}
   ins_pipe(pipe_serial);
 %}
 
-instruct membar_rvwmo_release() %{
+instruct membar_release_rvwmo() %{
   predicate(!UseZtso);
   match(StoreFence);
   match(MemBarRelease);
   ins_cost(VOLATILE_REF_COST);
 
-  format %{ "membar_rvwmo_release\n\t"
+  format %{ "membar_release_rvwmo\n\t"
             "fence rw, w" %}
 
   ins_encode %{
-    __ block_comment("membar_rvwmo_release");
+    __ block_comment("membar_release_rvwmo");
     __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
   %}
   ins_pipe(pipe_serial);
 %}
 
-instruct membar_rvwmo_storestore() %{
+instruct membar_storestore_rvwmo() %{
   predicate(!UseZtso);
   match(MemBarStoreStore);
   match(StoreStoreFence);
   ins_cost(VOLATILE_REF_COST);
 
-  format %{ "membar_rvwmo_storestore\n\t"
+  format %{ "membar_storestore_rvwmo\n\t"
             "fence w, w" %}
 
   ins_encode %{
@@ -8051,32 +8050,32 @@ instruct membar_rvwmo_storestore() %{
   ins_pipe(pipe_serial);
 %}
 
-instruct membar_rvwmo_volatile() %{
+instruct membar_volatile_rvwmo() %{
   predicate(!UseZtso);
   match(MemBarVolatile);
   ins_cost(VOLATILE_REF_COST);
 
-  format %{ "membar_rvwmo_volatile\n\t"
+  format %{ "membar_volatile_rvwmo\n\t"
              "fence w, r"%}
 
   ins_encode %{
-    __ block_comment("membar_rvwmo_volatile");
+    __ block_comment("membar_volatile_rvwmo");
     __ membar(MacroAssembler::StoreLoad);
   %}
 
   ins_pipe(pipe_serial);
 %}
 
-instruct membar_rvwmo_lock() %{
+instruct membar_lock_rvwmo() %{
   predicate(!UseZtso);
   match(MemBarAcquireLock);
   match(MemBarReleaseLock);
   ins_cost(0);
 
-  format %{ "membar_rvwmo_lock (elided)" %}
+  format %{ "membar_lock_rvwmo (elided)" %}
 
   ins_encode %{
-    __ block_comment("membar_rvwmo_lock (elided)");
+    __ block_comment("membar_lock_rvwmo (elided)");
   %}
 
   ins_pipe(pipe_serial);
