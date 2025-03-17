@@ -1400,7 +1400,7 @@ nmethod* nmethod::clone(CodeBlobType code_blob_type) {
 
   // Allocate memory in code heap and copy data from nmethod
   nmethod* nm_copy = (nmethod*) CodeCache::allocate(size(), code_blob_type);
-  memcpy(nm_copy, this, size());
+  memcpy((void*) nm_copy, this, size());
 
   // Increment number of references to immutable data to share it between nmethods
   if (immutable_data_size() > 0) {
