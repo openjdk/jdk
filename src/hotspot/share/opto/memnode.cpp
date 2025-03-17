@@ -1928,9 +1928,14 @@ private:
   MergeLoadInfo* merge_load_info(LoadNode* load) const;
   // Make the merged load from list
   LoadNode* make_merged_load(const MergeLoadInfoList& merge_list);
+  // Extract value from merged load or value for uncommon trap
+  template <typename TypeClass>
+  void extract_value_for_uncommon_trap(Node* merged, MergeLoadInfo* info);
 
   // Helper methods for merge loads optimization
   static bool is_supported_opcode(int opcode);
+  // Check the two Or Nodes can be reachable from one to another, and intermediate nodes are all Or Nodes
+  static bool is_reachable_Or_nodes(const Node* from, const Node* to);
   MemoryAdjacentStatus get_adjacent_load_status(const LoadNode* first, const LoadNode* second) const;
   // Go through ConvI2L which is unique output of the load
   static Node* by_pass_i2l(const LoadNode* load);
@@ -2105,7 +2110,7 @@ LoadNode* MergePrimitiveLoads::run() {
   collect_merge_list(merge_list);
 
   LoadNode* merged_load = make_merged_load(merge_list);
-  NOT_PRODUCT( if (is_trace_success()) { tty->print("[TraceMergeLoads] merged load is:"); merged_load->dump(); tty->cr(); })
+  NOT_PRODUCT( if (is_trace_success() && merged_load != nullptr) { tty->print("[TraceMergeLoads] merged load is:"); merged_load->dump(); tty->cr(); })
 
   return merged_load;
 }
@@ -2138,6 +2143,47 @@ bool MergePrimitiveLoads::is_compatible_load(const LoadNode* other_load) const {
 
   NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeLoads]: compatible_load:"); other_load->dump(); tty->cr(); })
   return true;
+}
+
+bool MergePrimitiveLoads::is_reachable_Or_nodes(const Node* from, const Node* to) {
+  assert(from != nullptr && (from->Opcode() == Op_OrI || from->Opcode() == Op_OrL), "sanity");
+  assert(to != nullptr && (to->Opcode() == Op_OrI || to->Opcode() == Op_OrL), "sanity");
+  if (from == to) {
+    return true;
+  }
+
+  const int max_search_steps = 8;
+  int step = 0;
+  const Node* check = from;
+  while (step < max_search_steps) {
+    Node* next = nullptr;
+    for (DUIterator_Fast imax, iter = check->fast_outs(imax); iter < imax; iter++) {
+      Node* out = check->fast_out(iter);
+      if (out == to) {
+        return true;
+      }
+      if (out == nullptr || (out->Opcode() == Op_CallStaticJava && out->as_CallStaticJava()->is_uncommon_trap())) {
+        // Skip null or uncommon trap
+        continue;
+      } else if (out->Opcode() == Op_OrI || out->Opcode() == Op_OrL){
+        if (next != nullptr) {
+          // Multiple Or usages
+          return false;
+        } else {
+          next = out;
+        }
+      } else {
+        // Other usage
+        return false;
+      }
+    }
+    if (next == nullptr) {
+      return false;
+    }
+    check = next;
+    step++;
+  }
+  return false;
 }
 
 MergePrimitiveLoads::MemoryAdjacentStatus MergePrimitiveLoads::get_adjacent_load_status(const LoadNode* first, const LoadNode* second) const {
@@ -2173,15 +2219,23 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list) {
 #endif
   // collect load nodes info from the same memory input
   Node* mem = _load->in(MemNode::Memory);
+  MergeLoadInfo* base = merge_load_info(_load);
+  assert(base != nullptr, "The candidate _load must be checked");
   int collected = 0;
   for (DUIterator_Fast imax, iter = mem->fast_outs(imax); iter < imax; iter++) {
     LoadNode* out = mem->fast_out(iter)->isa_Load();
     if (out == nullptr || !is_compatible_load(out)) continue;
 
     MergeLoadInfo* info = merge_load_info(out);
-    if (info == nullptr) continue;
+    if (info == nullptr ||
+        (!is_reachable_Or_nodes(info->_or, base->_or) &&
+         !is_reachable_Or_nodes(base->_or, info->_or))) {
+      NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeLoads]: merge_list:unreachable or nodes"); base->_or->dump(); info->_or->dump(); tty->cr(); });
+      continue;
+    }
+
     int index = info->_shift / (_load->memory_size() * BitsPerByte);
-    if ( index < max_merged_nodes && array[index] == nullptr ) {
+    if (index < max_merged_nodes && array[index] == nullptr) {
       array[index] = info;
       collected ++;
     } else {
@@ -2202,7 +2256,7 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list) {
 #endif
 
   int bytes = collected * _load->memory_size();
-  if (collected < 2 || !is_power_of_2(bytes)) {
+  if (collected < 2 || bytes < 4 || !is_power_of_2(bytes)) {
     // too few or not aligned
     return;
   }
@@ -2234,6 +2288,11 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list) {
         return;
       } else {
         last_op_index = i;
+        if ((info->_or->Opcode() == Op_OrI && bytes != 4) ||
+            (info->_or->Opcode() == Op_OrL && bytes != 8)) {
+          // The merged load can not cover all bits of result value
+          return;
+        }
       }
     }
     // Check sign bit of load
@@ -2311,9 +2370,9 @@ LoadNode* MergePrimitiveLoads::make_merged_load(const MergeLoadInfoList& merge_l
   int merge_size = merge_list.length() * _load->memory_size();
   BasicType bt = T_ILLEGAL;
   switch (merge_size) {
-    case 2: bt = T_SHORT; rt = TypeInt::SHORT; break;
     case 4: bt = T_INT;   rt = TypeInt::INT;   break;
     case 8: bt = T_LONG;  rt = TypeLong::LONG; break;
+    case 2: // Not merged as LoadS
     default: {
       ShouldNotReachHere();
       break;
@@ -2328,27 +2387,88 @@ LoadNode* MergePrimitiveLoads::make_merged_load(const MergeLoadInfoList& merge_l
   }
 
   merged_load->set_unaligned_access();
+  merged_load->set_mismatched_access();
 
-  // TODO: extract value for uncommon path
   Node* replace = merged_load;
   if (_require_reverse_bytes) {
     assert(_load->memory_size() == 1, "only implemented for bytes");
     if (merge_size == 8) {
       replace = _phase->transform(new ReverseBytesLNode(merged_load));
-    } else if (merge_size == 4) {
-      replace = _phase->transform(new ReverseBytesINode(merged_load));
     } else {
-      assert(merge_size == 2, "sanity check");
-      replace = _phase->transform(new ReverseBytesSNode(merged_load));
+      assert(merge_size == 4, "sanity");
+      replace = _phase->transform(new ReverseBytesINode(merged_load));
     }
     NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeLoads] new ReverseBytes node:"); replace->dump(); tty->cr(); })
     _phase->is_IterGVN()->_worklist.push(replace);
+  }
+
+  // extract value for uncommon path
+  for (int i=0; i<merge_list.length(); i++) {
+    if (merge_list.at(i)->has_uncommon_usage()) {
+      if (merge_size == 8) {
+        extract_value_for_uncommon_trap<TypeLong>(replace, merge_list.at(i));
+      } else {
+        extract_value_for_uncommon_trap<TypeInt>(replace, merge_list.at(i));
+      }
+    }
   }
   assert(last_op != nullptr && (last_op->Opcode() == Op_OrI || last_op->Opcode() == Op_OrL), "sanity");
   _phase->is_IterGVN()->replace_node(last_op, replace);
   _phase->is_IterGVN()->_worklist.push(merged_load);
 
   return merged_load;
+}
+
+template <typename TypeClass>
+void MergePrimitiveLoads::extract_value_for_uncommon_trap(Node* merged, MergeLoadInfo* info) {
+  assert(merged->bottom_type()->is_int() || merged->bottom_type()->is_long(), "sanity");
+  int merged_bits = merged->bottom_type()->is_int() ? 32 : 64;
+  int load_bits = info->_load->memory_size() * BitsPerByte;
+  Node* value = merged;
+  if (info->_load->is_unsigned()) {
+    // RShift and Mask
+    // merged value: |.........|value|........|
+    //                  l1      _load   l2
+    //  value is unsianged value from _load, _shift is l2
+    //  extract:  (merged >> l2) & ((1 << load_bits) - 1)
+    //
+    if (info->_shift > 0) {
+      value = make_urshift<TypeClass>(value, _phase->intcon(info->_shift));
+    }
+    if ((load_bits + info->_shift) < merged_bits) {
+      assert(load_bits < 32, "sanity");
+      int mask = (1 << load_bits) - 1;
+      value = make_and<TypeClass>(value, _phase->intcon(mask));
+    }
+  } else {
+    // LShift and RShift
+    //
+    // merged value: |.........|value|........|
+    //                  l1      _load   l2
+    //  value is igned value from _load, _shift is l2
+    //  extract:  (merged << l1) >> (merged_bits - load_bits)
+    //
+    if ((info->_load->memory_size() + info->_shift) < merged_bits) {
+      value = LShiftNode::make(value, _phase->intcon(merged_bits - info->_shift - info->_load->memory_size()),
+                               merged_bits == 32 ? T_INT: T_LONG);
+    }
+    value = make_rshift<TypeClass>(value, _phase->intcon(merged_bits - load_bits));
+  }
+  if (merged_bits == 64) {
+    // need L2I
+    value = new ConvL2INode(value);
+  }
+  assert(value != nullptr, "sanity");
+
+  // Replace the edge of uncommon trap
+  Node * loaded = by_pass_i2l(info->_load);
+  for (DUIterator_Last imin, i = loaded->last_outs(imin); i >= imin; --i) {
+    Node* out = loaded->last_out(i);
+    if (out->is_CallStaticJava()) {
+      out->replace_edge(loaded, value, _phase);
+    }
+  }
+  NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeLoads] extract value for uncommon trap:"); _load->dump(); value->dump(); tty->cr(); })
 }
 
 //------------------------------Ideal------------------------------------------
