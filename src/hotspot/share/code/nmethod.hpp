@@ -250,7 +250,6 @@ class nmethod : public CodeBlob {
 #if INCLUDE_JVMCI
   int      _speculations_offset;
 #endif
-  int      _immutable_data_references_offset;
 
   // location in frame (offset for sp) that deopt can store the original
   // pc during a deopt.
@@ -572,13 +571,12 @@ public:
 #if INCLUDE_JVMCI
   address scopes_data_end       () const { return           _immutable_data + _speculations_offset ; }
   address speculations_begin    () const { return           _immutable_data + _speculations_offset ; }
-  address speculations_end      () const { return           _immutable_data + _immutable_data_references_offset   ; }
+  address speculations_end      () const { return           immutable_data_end() - sizeof(int)     ; }
 #else
-  address scopes_data_end       () const { return           _immutable_data + _immutable_data_references_offset   ; }
+  address scopes_data_end       () const { return           immutable_data_end() - sizeof(int)     ; }
 #endif
 
-  address immutable_data_references_begin      () const { return           _immutable_data + _immutable_data_references_offset   ; }
-  address immutable_data_references_end        () const { return            immutable_data_end(); }
+  address immutable_data_references_begin () const { return immutable_data_end() - sizeof(int)     ; }
 
   // Sizes
   int immutable_data_size() const { return _immutable_data_size; }
@@ -891,6 +889,9 @@ public:
   // used by jvmti to track if the load events has been reported
   bool  load_reported() const                     { return _load_reported; }
   void  set_load_reported()                       { _load_reported = true; }
+
+  inline int  get_immutable_data_references()           { return *immutable_data_references_begin();    }
+  inline void set_immutable_data_references(int count)  { (*immutable_data_references_begin()) = count; }
 
  public:
   // ScopeDesc retrieval operation

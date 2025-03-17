@@ -1168,7 +1168,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
     + align_up(speculations_len                  , oopSize)
 #endif
     + align_up(debug_info->data_size()           , oopSize)
-    + align_up(oopSize                           , oopSize);
+    + align_up(sizeof(int)                       , oopSize);
 
   // First, allocate space for immutable data in C heap.
   address immutable_data = nullptr;
@@ -1404,7 +1404,7 @@ nmethod* nmethod::clone(CodeBlobType code_blob_type) {
 
   // Increment number of references to immutable data to share it between nmethods
   if (immutable_data_size() > 0) {
-    (*immutable_data_references_begin())++;
+    set_immutable_data_references(get_immutable_data_references() + 1);
   } else {
     nm_copy->_immutable_data = nm_copy->blob_end();
   }
@@ -1660,11 +1660,9 @@ nmethod::nmethod(
 
 #if INCLUDE_JVMCI
     _speculations_offset  = _scopes_data_offset   + align_up(debug_info->data_size(), oopSize);
-    _immutable_data_references_offset         = _speculations_offset  + align_up(speculations_len, oopSize);
-    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_references_offset  + align_up(oopSize, oopSize); )
+    DEBUG_ONLY( int immutable_data_end_offset = _speculations_offset + align_up(speculations_len, oopSize) + align_up(sizeof(int), oopSize); )
 #else
-    _immutable_data_references_offset         =  _scopes_data_offset + align_up(debug_info->data_size(), oopSize);
-    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_references_offset + align_up(oopSize, oopSize); )
+    DEBUG_ONLY( int immutable_data_end_offset = _scopes_data_offset + align_up(debug_info->data_size(), oopSize) + align_up(sizeof(int), oopSize); )
 #endif
     assert(immutable_data_end_offset <= immutable_data_size, "wrong read-only data size: %d > %d",
            immutable_data_end_offset, immutable_data_size);
@@ -1697,7 +1695,7 @@ nmethod::nmethod(
       memcpy(speculations_begin(), speculations, speculations_len);
     }
 #endif
-    memset(immutable_data_references_begin(), 1, oopSize);
+    set_immutable_data_references(1);
 
     post_init();
 
@@ -2277,13 +2275,11 @@ void nmethod::purge(bool unregister_nmethod) {
   delete[] _compiled_ic_data;
 
   if (_immutable_data != blob_end()) {
-    long _immutable_data_references = *immutable_data_references_begin();
-
     // Free memory if this is the last nmethod referencing immutable data
-    if (_immutable_data_references == 1) {
+    if (get_immutable_data_references() == 1) {
       os::free(_immutable_data);
     } else {
-      (*immutable_data_references_begin())--;
+      set_immutable_data_references(get_immutable_data_references() - 1);
     }
 
     _immutable_data = blob_end(); // Valid not null address
