@@ -109,18 +109,20 @@ abstract class AbstractTest {
 
     abstract protected void compileTest();
 
+    private class MethodNotCompilableException extends Exception {}
+
     protected void compileMethod(DeclaredTest test) {
+        try {
+            tryCompileMethod(test);
+        } catch (MethodNotCompilableException e) {
+            TestRun.check(test.isAllowNotCompilable(), "Only allowNotCompilable methods should throw MethodNotCompilableException.");
+        }
+    }
+
+    private void tryCompileMethod(DeclaredTest test) throws MethodNotCompilableException {
         final Method testMethod = test.getTestMethod();
         if (TestFramework.VERBOSE) {
             System.out.println("Compile method " + testMethod + " after warm-up...");
-        }
-
-        final boolean isCompilable = WHITE_BOX.isMethodCompilable(testMethod, test.getCompLevel().getValue(), false);
-        if (!isCompilable && test.isAllowNotCompilable()) {
-            if (TestFramework.VERBOSE) {
-                System.out.println("  -> Not compilable.");
-            }
-            return;
         }
 
         final boolean maybeCodeBufferOverflow = (TestVM.TEST_C1 && VERIFY_OOPS);
@@ -159,8 +161,12 @@ abstract class AbstractTest {
         checkCompilationLevel(test);
     }
 
-    private void enqueueMethodForCompilation(DeclaredTest test) {
+    private void enqueueMethodForCompilation(DeclaredTest test) throws MethodNotCompilableException {
         final Method testMethod = test.getTestMethod();
+        final boolean isCompilable = WHITE_BOX.isMethodCompilable(testMethod, test.getCompLevel().getValue(), false);
+        if (!isCompilable && test.isAllowNotCompilable()) {
+            throw new MethodNotCompilableException();
+        }
         TestRun.check(WHITE_BOX.isMethodCompilable(testMethod, test.getCompLevel().getValue(), false),
                       "Method " + testMethod + " not compilable (anymore) at level " + test.getCompLevel());
         TestVM.enqueueForCompilation(testMethod, test.getCompLevel());

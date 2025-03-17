@@ -36,80 +36,92 @@ import compiler.lib.ir_framework.driver.TestVMException;
 
 public class TestNotCompilable {
     public static void main(String[] args) throws Exception {
+        runTests(false);
+        runTests(true);
+    }
+
+    private static void runTests(boolean noWarmup) {
         // Run without any flags -> should pass.
-        runNormal(TestClassA.class);
-        runNormal(TestClassB.class);
-        runNormal(TestClassC.class);
-        runNormal(TestClassD.class);
+        runNormal(TestClassA.class, noWarmup);
+        runNormal(TestClassB.class, noWarmup);
+        runNormal(TestClassC.class, noWarmup);
+        runNormal(TestClassD.class, noWarmup);
 
         // Forbid compilation -> should throw exception, because "not compilable".
-        runWithExcludeExpectFailure(TestClassA.class);
-        runWithExcludeExpectFailure(TestClassB.class);
-        runOptoNoExecuteExpectFailure(TestClassA.class);
-        runOptoNoExecuteExpectFailure(TestClassB.class);
+        runWithExcludeExpectFailure(TestClassA.class, noWarmup);
+        runWithExcludeExpectFailure(TestClassB.class, noWarmup);
+        runOptoNoExecuteExpectFailure(TestClassA.class, noWarmup);
+        runOptoNoExecuteExpectFailure(TestClassB.class, noWarmup);
 
         // Forbid compilation -> annotation allows not compilable -> should pass.
-        runWithExcludeExpectSuccess(TestClassC.class);
-        runWithExcludeExpectSuccess(TestClassD.class);
-        runOptoNoExecuteExpectSuccess(TestClassC.class);
-        runOptoNoExecuteExpectSuccess(TestClassD.class);
+        runWithExcludeExpectSuccess(TestClassC.class, noWarmup);
+        runWithExcludeExpectSuccess(TestClassD.class, noWarmup);
+        runOptoNoExecuteExpectSuccess(TestClassC.class, noWarmup);
+        runOptoNoExecuteExpectSuccess(TestClassD.class, noWarmup);
 
         // Forbid compilation, but allow methods not to compile -> should pass.
-        runWithExcludeAndGlobalAllowNotCompilable(TestClassA.class);
-        runWithExcludeAndGlobalAllowNotCompilable(TestClassB.class);
-        runWithExcludeAndGlobalAllowNotCompilable(TestClassC.class);
-        runWithExcludeAndGlobalAllowNotCompilable(TestClassD.class);
-        runOptoNoExecuteAndGlobalAllowNotCompilable(TestClassA.class);
-        runOptoNoExecuteAndGlobalAllowNotCompilable(TestClassB.class);
-        runOptoNoExecuteAndGlobalAllowNotCompilable(TestClassC.class);
-        runOptoNoExecuteAndGlobalAllowNotCompilable(TestClassD.class);
+        runWithExcludeAndGlobalAllowNotCompilable(TestClassA.class, noWarmup);
+        runWithExcludeAndGlobalAllowNotCompilable(TestClassB.class, noWarmup);
+        runWithExcludeAndGlobalAllowNotCompilable(TestClassC.class, noWarmup);
+        runWithExcludeAndGlobalAllowNotCompilable(TestClassD.class, noWarmup);
+        runOptoNoExecuteAndGlobalAllowNotCompilable(TestClassA.class, noWarmup);
+        runOptoNoExecuteAndGlobalAllowNotCompilable(TestClassB.class, noWarmup);
+        runOptoNoExecuteAndGlobalAllowNotCompilable(TestClassC.class, noWarmup);
+        runOptoNoExecuteAndGlobalAllowNotCompilable(TestClassD.class, noWarmup);
     }
 
-    private static void runNormal(Class c) {
+    private static void runNormal(Class c, boolean noWarmup) {
         TestFramework framework = new TestFramework(c);
+        if (noWarmup) { framework.setDefaultWarmup(0); }
         framework.start();
     }
 
-    private static void runWithExcludeExpectFailure(Class c) {
+    private static void runWithExcludeExpectFailure(Class c, boolean noWarmup) {
         TestFramework framework = new TestFramework(c);
         framework.addFlags("-XX:CompileCommand=exclude,*TestClass*::test");
+        if (noWarmup) { framework.setDefaultWarmup(0); }
         try {
             framework.start();
             throw new RuntimeException("should have thrown TestRunException");
         } catch (TestVMException e) {}
     }
 
-    private static void runWithExcludeExpectSuccess(Class c) {
+    private static void runWithExcludeExpectSuccess(Class c, boolean noWarmup) {
         TestFramework framework = new TestFramework(c);
         framework.addFlags("-XX:CompileCommand=exclude,*TestClass*::test");
+        if (noWarmup) { framework.setDefaultWarmup(0); }
         framework.start();
     }
 
-    private static void runOptoNoExecuteExpectFailure(Class c) {
+    private static void runOptoNoExecuteExpectFailure(Class c, boolean noWarmup) {
         TestFramework framework = new TestFramework(c);
         framework.addFlags("-XX:CompileCommand=compileonly,*TestClass*::test", "-XX:+OptoNoExecute");
+        if (noWarmup) { framework.setDefaultWarmup(0); }
         try {
             framework.start();
             throw new RuntimeException("should have thrown TestRunException");
         } catch (TestVMException e) {}
     }
 
-    private static void runOptoNoExecuteExpectSuccess(Class c) {
+    private static void runOptoNoExecuteExpectSuccess(Class c, boolean noWarmup) {
         TestFramework framework = new TestFramework(c);
         framework.addFlags("-XX:CompileCommand=compileonly,*TestClass*::test", "-XX:+OptoNoExecute");
+        if (noWarmup) { framework.setDefaultWarmup(0); }
         framework.start();
     }
 
-    private static void runWithExcludeAndGlobalAllowNotCompilable(Class c) {
+    private static void runWithExcludeAndGlobalAllowNotCompilable(Class c, boolean noWarmup) {
         TestFramework framework = new TestFramework(c);
         framework.addFlags("-XX:CompileCommand=exclude,*TestClass*::test");
+        if (noWarmup) { framework.setDefaultWarmup(0); }
         framework.allowNotCompilable();
         framework.start();
     }
 
-    private static void runOptoNoExecuteAndGlobalAllowNotCompilable(Class c) {
+    private static void runOptoNoExecuteAndGlobalAllowNotCompilable(Class c, boolean noWarmup) {
         TestFramework framework = new TestFramework(c);
         framework.addFlags("-XX:CompileCommand=compileonly,*TestClass*::test", "-XX:+OptoNoExecute");
+        if (noWarmup) { framework.setDefaultWarmup(0); }
         framework.allowNotCompilable();
         framework.start();
     }
