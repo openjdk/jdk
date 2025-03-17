@@ -28,6 +28,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/syslimits.h>
+#include <sys/sysctl.h>
 #include <sys/types.h>
 #include <sys/un.h>
 #include <errno.h>
@@ -110,15 +111,55 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_connect
 
 /*
  * Class:     sun_tools_attach_VirtualMachineImpl
- * Method:    sendQuitTo
+ * Method:    checkCatchesAndSentQuitTo
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_sendQuitTo
-  (JNIEnv *env, jclass cls, jint pid)
+JNIEXPORT jboolean JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkCatchesAndSendQuitTo
+  (JNIEnv *env, jclass cls, jint pid, jboolean throwIfNotReady)
 {
-    if (kill((pid_t)pid, SIGQUIT)) {
-        JNU_ThrowIOExceptionWithLastError(env, "kill");
+    int mib[] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, (int)pid };
+
+    struct kinfo_proc kiproc;
+    size_t            kipsz = sizeof(struct kinfo_proc);
+
+   /*
+    * early in the lifetime of a JVM it has not yet initialized its signal handlers, in particular the QUIT
+    * handler, note that the default behavior of QUIT is to terminate the receiving process, if unhandled.
+    *
+    * since we use QUIT to initiate an attach operation, if we signal a JVM during this period early in its
+    * lifetime before it has initialized its QUIT handler, such a signal delivery will terminate the JVM we
+    * are attempting to attach to!
+    *
+    * the following code guards the QUIT delivery by testing the current signal masks
+    */
+
+    if (sysctl(mib, sizeof(mib) / sizeof(int), &kiproc, &kipsz, NULL, 0) == 0) {
+        const int ignored = (kiproc.kp_proc.p_sigignore & sigmask(SIGQUIT)) != 0;
+        const int caught  = (kiproc.kp_proc.p_sigcatch & sigmask(SIGQUIT))  != 0;
+
+        // *only* send QUIT if the target is ready to catch and handle the signal to avoid default "death" if not
+
+        // note: obviously the masks could change between testing and signalling however this is not the
+        // observed behavior of the current JVM implementation.
+
+        if (caught && !ignored) {
+    	    if (kill((pid_t)pid, SIGQUIT)) {
+                JNU_ThrowIOExceptionWithLastError(env, "kill");
+            } else {
+                return JNI_TRUE;
+            }
+        } else if (throwIfNotReady) {
+	    char msg[100];
+ 
+	    snprintf(msg, sizeof(msg), "%d: state is not ready to participate in attach handshake!", (int)pid);
+
+            JNU_ThrowByName(env, "com/sun/tools/attach/AttachNotSupportedException", msg);
+        } 
+    } else {
+        JNU_ThrowIOExceptionWithLastError(env, "sysctl");
     }
+
+    return JNI_FALSE;
 }
 
 /*
