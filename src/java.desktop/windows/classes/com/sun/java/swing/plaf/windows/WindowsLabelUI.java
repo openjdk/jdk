@@ -59,6 +59,7 @@ public class WindowsLabelUI extends BasicLabelUI {
         return windowsLabelUI;
     }
 
+    @Override
     protected void paintEnabledText(JLabel l, Graphics g, String s,
                                     int textX, int textY) {
         int mnemonicIndex = l.getDisplayedMnemonicIndex();
@@ -72,6 +73,7 @@ public class WindowsLabelUI extends BasicLabelUI {
                                                      textX, textY);
     }
 
+    @Override
     protected void paintDisabledText(JLabel l, Graphics g, String s,
                                      int textX, int textY) {
         int mnemonicIndex = l.getDisplayedMnemonicIndex();

@@ -76,6 +76,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         sun.awt.windows.WToolkit.loadLibraries();
     }
 
+    @Override
     public ShellFolder createShellFolder(File file) throws FileNotFoundException {
         try {
             return createShellFolder(getDesktop(), file);
@@ -265,6 +266,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
      *
      * @return An Object matching the key string.
      */
+    @Override
     public Object get(String key) {
         if (key.equals("fileChooserDefaultFolder")) {
             File file = getPersonal();
@@ -409,6 +411,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
      * Does {@code dir} represent a "computer" such as a node on the network, or
      * "My Computer" on the desktop.
      */
+    @Override
     public boolean isComputerNode(final File dir) {
         if (dir != null && dir == getDrives()) {
             return true;
@@ -419,6 +422,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         }
     }
 
+    @Override
     public boolean isFileSystemRoot(File dir) {
         //Note: Removable drives don't "exist" but are listed in "My Computer"
         if (dir != null) {
@@ -513,6 +517,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
             Runtime.getRuntime().addShutdownHook(t);
         }
 
+        @Override
         public synchronized Thread newThread(final Runnable task) {
             final Runnable comRun = new Runnable() {
                 public void run() {
@@ -540,6 +545,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
             return comThread;
         }
 
+        @Override
         public <T> T invoke(Callable<T> task) throws Exception {
             if (Thread.currentThread() == comThread) {
                 // if it's already called from the COM

@@ -73,6 +73,7 @@ public class WindowsRadioButtonUI extends BasicRadioButtonUI
     // ********************************
     //           Defaults
     // ********************************
+    @Override
     public void installDefaults(AbstractButton b) {
         super.installDefaults(b);
         if(!initialized) {
@@ -88,6 +89,7 @@ public class WindowsRadioButtonUI extends BasicRadioButtonUI
         }
     }
 
+    @Override
     protected void uninstallDefaults(AbstractButton b) {
         super.uninstallDefaults(b);
         initialized = false;
@@ -104,11 +106,13 @@ public class WindowsRadioButtonUI extends BasicRadioButtonUI
     /**
      * Overridden method to render the text without the mnemonic
      */
+    @Override
     protected void paintText(Graphics g, AbstractButton b, Rectangle textRect, String text) {
         WindowsGraphicsUtils.paintText(g, b, textRect, text, getTextShiftOffset());
     }
 
 
+    @Override
     protected void paintFocus(Graphics g, Rectangle textRect, Dimension d){
         g.setColor(getFocusColor());
         BasicGraphicsUtils.drawDashedRect(g, textRect.x, textRect.y, textRect.width, textRect.height);
@@ -117,6 +121,7 @@ public class WindowsRadioButtonUI extends BasicRadioButtonUI
     // ********************************
     //          Layout Methods
     // ********************************
+    @Override
     public Dimension getPreferredSize(JComponent c) {
         Dimension d = super.getPreferredSize(c);
 

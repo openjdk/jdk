@@ -48,6 +48,7 @@ public class WindowsPopupMenuSeparatorUI extends BasicPopupMenuSeparatorUI {
         return new WindowsPopupMenuSeparatorUI();
     }
 
+    @Override
     public void paint(Graphics g, JComponent c) {
         Dimension s = c.getSize();
         XPStyle xp = XPStyle.getXP();
@@ -82,6 +83,7 @@ public class WindowsPopupMenuSeparatorUI extends BasicPopupMenuSeparatorUI {
         }
     }
 
+    @Override
     public Dimension getPreferredSize(JComponent c) {
         int fontHeight = 0;
         Font font = c.getFont();

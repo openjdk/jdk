@@ -401,6 +401,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
         }
     }
 
+    @Override
     public void run() {
         while (!done) {
             synchronized (runLock) {

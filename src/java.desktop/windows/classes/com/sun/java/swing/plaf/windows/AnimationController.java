@@ -253,6 +253,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         }
     }
 
+    @Override
     public synchronized void propertyChange(PropertyChangeEvent e) {
         if ("lookAndFeel" == e.getPropertyName()
             && ! (e.getNewValue() instanceof WindowsLookAndFeel) ) {
@@ -260,6 +261,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         }
     }
 
+    @Override
     public synchronized void actionPerformed(ActionEvent e) {
         java.util.List<JComponent> componentsToRemove = null;
         java.util.List<Part> partsToRemove = null;

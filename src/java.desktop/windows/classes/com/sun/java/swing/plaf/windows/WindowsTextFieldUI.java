@@ -82,6 +82,7 @@ public class WindowsTextFieldUI extends BasicTextFieldUI
      *
      * @param g the graphics context
      */
+    @Override
     protected void paintBackground(Graphics g) {
         super.paintBackground(g);
     }
@@ -91,6 +92,7 @@ public class WindowsTextFieldUI extends BasicTextFieldUI
      *
      * @return the caret
      */
+    @Override
     protected Caret createCaret() {
         return new WindowsFieldCaret();
     }
@@ -112,6 +114,7 @@ public class WindowsTextFieldUI extends BasicTextFieldUI
          * caret out into the field by about a quarter of
          * a field length if not visible.
          */
+        @Override
         protected void adjustVisibility(Rectangle r) {
             SwingUtilities.invokeLater(new SafeScroller(r));
         }
@@ -121,6 +124,7 @@ public class WindowsTextFieldUI extends BasicTextFieldUI
          *
          * @return the painter
          */
+        @Override
         protected Highlighter.HighlightPainter getSelectionPainter() {
             return WindowsTextUI.WindowsPainter;
         }
@@ -131,6 +135,7 @@ public class WindowsTextFieldUI extends BasicTextFieldUI
                 this.r = r;
             }
 
+            @Override
             @SuppressWarnings("deprecation")
             public void run() {
                 JTextField field = (JTextField) getComponent();

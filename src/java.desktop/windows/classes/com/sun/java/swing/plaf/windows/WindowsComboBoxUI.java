@@ -162,6 +162,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
         return new WindowsComboBoxUI();
     }
 
+    @Override
     public void installUI( JComponent c ) {
         super.installUI( c );
         isRollover = false;
@@ -176,6 +177,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
         }
     }
 
+    @Override
     public void uninstallUI(JComponent c ) {
         comboBox.removeMouseListener(rolloverListener);
         if(arrowButton != null) {
@@ -215,6 +217,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      * {@inheritDoc}
      * @since 1.6
      */
+    @Override
     protected void configureEditor() {
         super.configureEditor();
         if (XPStyle.getXP() != null) {
@@ -226,6 +229,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      * {@inheritDoc}
      * @since 1.6
      */
+    @Override
     protected void unconfigureEditor() {
         super.unconfigureEditor();
         editor.removeMouseListener(rolloverListener);
@@ -235,6 +239,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      * {@inheritDoc}
      * @since 1.6
      */
+    @Override
     public void paint(Graphics g, JComponent c) {
         if (XPStyle.getXP() != null) {
             paintXPComboBoxBackground(g, c);
@@ -283,6 +288,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      * @throws NullPointerException if any of the arguments are null.
      * @since 1.5
      */
+    @Override
     public void paintCurrentValue(Graphics g, Rectangle bounds,
                                   boolean hasFocus) {
         XPStyle xp = XPStyle.getXP();
@@ -347,6 +353,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      * {@inheritDoc}
      * @since 1.6
      */
+    @Override
     public void paintCurrentValueBackground(Graphics g, Rectangle bounds,
                                             boolean hasFocus) {
         if (XPStyle.getXP() == null) {
@@ -354,6 +361,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
         }
     }
 
+    @Override
     public Dimension getMinimumSize( JComponent c ) {
         Dimension d = super.getMinimumSize(c);
         if (XPStyle.getXP() != null) {
@@ -380,6 +388,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      *
      * @return an instance of a layout manager
      */
+    @Override
     protected LayoutManager createLayoutManager() {
         return new BasicComboBoxUI.ComboBoxLayoutManager() {
             public void layoutContainer(Container parent) {
@@ -407,10 +416,12 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
         };
     }
 
+    @Override
     protected void installKeyboardActions() {
         super.installKeyboardActions();
     }
 
+    @Override
     protected ComboPopup createPopup() {
         return new WinComboPopUp(comboBox);
     }
@@ -423,6 +434,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      * @return a <code>ComboBoxEditor</code> used for the combo box
      * @see javax.swing.JComboBox#setEditor
      */
+    @Override
     protected ComboBoxEditor createEditor() {
         return new WindowsComboBoxEditor();
     }
@@ -447,6 +459,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      *
      * @return a button which represents the popup control
      */
+    @Override
     protected JButton createArrowButton() {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {
@@ -504,6 +517,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
             return rv;
         }
 
+        @Override
         public Dimension getPreferredSize() {
             return new Dimension(17, 21);
         }
@@ -531,6 +545,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
             }
         }
 
+        @Override
         protected KeyListener createKeyListener() {
             return new InvocationKeyHandler();
         }
@@ -541,6 +556,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
             }
         }
 
+        @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             if (this.listBoxBorder != null) {
@@ -561,6 +577,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
          * {@inheritDoc}
          * @since 1.6
          */
+        @Override
         protected JTextField createEditorComponent() {
             JTextField editor = super.createEditorComponent();
             Border border = (Border)UIManager.get("ComboBox.editorBorder");
@@ -572,6 +589,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
             return editor;
         }
 
+        @Override
         public void setItem(Object item) {
             super.setItem(item);
             Object focus = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();

@@ -331,6 +331,7 @@ class XPStyle {
             super(color, thickness);
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets)       {
             Insets margin = null;
             //
@@ -364,6 +365,7 @@ class XPStyle {
             this.prop = prop;
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             State state = State.NORMAL;
             // special casing for comboboxes.
@@ -390,11 +392,13 @@ class XPStyle {
             this.skin = getSkin(c, part);
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g,
                                 int x, int y, int width, int height) {
             skin.paintSkin(g, x, y, width, height, null);
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets)       {
             Insets margin = null;
             Insets borderInsets = skin.getContentMargin();
@@ -428,6 +432,7 @@ class XPStyle {
             super(m.top+2, m.left+2, m.bottom+2, m.right+2);
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets)       {
             insets = super.getBorderInsets(c, insets);
 
@@ -681,10 +686,12 @@ class XPStyle {
             flush();
         }
 
+        @Override
         public void flush() {
             super.flush();
         }
 
+        @Override
         protected void paintToImage(Component c, Image image, Graphics g,
                                     int w, int h, Object[] args) {
             Skin skin = (Skin)args[0];
@@ -717,6 +724,7 @@ class XPStyle {
             SunWritableRaster.markDirty(dbi);
         }
 
+        @Override
         protected Image createImage(Component c, int w, int h,
                                     GraphicsConfiguration config, Object[] args) {
             return new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
@@ -737,6 +745,7 @@ class XPStyle {
             setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
         }
 
+        @Override
         @SuppressWarnings("deprecation")
         public boolean isFocusTraversable() {
             return false;
@@ -754,6 +763,7 @@ class XPStyle {
             return state;
         }
 
+        @Override
         public void paintComponent(Graphics g) {
             if (XPStyle.getXP() == null || skin == null) {
                 return;
@@ -769,6 +779,7 @@ class XPStyle {
             repaint();
         }
 
+        @Override
         protected void paintBorder(Graphics g) {
         }
 

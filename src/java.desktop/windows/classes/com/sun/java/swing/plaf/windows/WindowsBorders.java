@@ -124,6 +124,7 @@ public class WindowsBorders {
             this.shadow = shadow;
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {
             g.setColor(shadow);
@@ -134,6 +135,7 @@ public class WindowsBorders {
             g.drawLine(width-1,y, width-1,height-1); // draw right
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets) {
             insets.set(1,1,1,1);
             return insets;
@@ -155,6 +157,7 @@ public class WindowsBorders {
             this.shadow = shadow;
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {
             if (!(c instanceof JToolBar)) {
@@ -224,6 +227,7 @@ public class WindowsBorders {
             g.translate(-x, -y);
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets insets) {
             insets.set(1,1,1,1);
             if (!(c instanceof JToolBar)) {
@@ -259,6 +263,7 @@ public class WindowsBorders {
             super(color, thickness);
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             Color oldColor = g.getColor();
             int i;
@@ -284,6 +289,7 @@ public class WindowsBorders {
             super(null);
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             Color color = c.getBackground();
 
@@ -315,6 +321,7 @@ public class WindowsBorders {
             inactiveColor = inactiveBorderColor;
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y,
                 int width, int height) {
 

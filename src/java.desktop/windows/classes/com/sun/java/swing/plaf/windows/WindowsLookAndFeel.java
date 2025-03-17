@@ -145,26 +145,32 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      */
     private int baseUnitY;
 
+    @Override
     public String getName() {
         return "Windows";
     }
 
+    @Override
     public String getDescription() {
         return "The Microsoft Windows Look and Feel";
     }
 
+    @Override
     public String getID() {
         return "Windows";
     }
 
+    @Override
     public boolean isNativeLookAndFeel() {
         return OSInfo.getOSType() == OSInfo.OSType.WINDOWS;
     }
 
+    @Override
     public boolean isSupportedLookAndFeel() {
         return isNativeLookAndFeel();
     }
 
+    @Override
     public void initialize() {
         super.initialize();
 
@@ -206,6 +212,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      *
      * @see BasicLookAndFeel#getDefaults
      */
+    @Override
     protected void initClassDefaults(UIDefaults table)
     {
         super.initClassDefaults(table);
@@ -260,6 +267,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * values, otherwise we create color objects whose values match
      * the defaults Windows95 colors.
      */
+    @Override
     protected void initSystemColorDefaults(UIDefaults table)
     {
         String[] defaultSystemColors = {
@@ -310,6 +318,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
     // XXX - there are probably a lot of redundant values that could be removed.
     // ie. Take a look at RadioButtonBorder, etc...
+    @Override
     protected void initComponentDefaults(UIDefaults table)
     {
         super.initComponentDefaults( table );
@@ -1893,6 +1902,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         return lazyDefaults;
     }
 
+    @Override
     public void uninitialize() {
         super.uninitialize();
 
@@ -1944,6 +1954,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      *
      * @see javax.swing.LookAndFeel#provideErrorFeedback
      */
+     @Override
      public void provideErrorFeedback(Component component) {
          super.provideErrorFeedback(component);
      }
@@ -1951,6 +1962,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
     /**
      * {@inheritDoc}
      */
+    @Override
     public LayoutStyle getLayoutStyle() {
         LayoutStyle style = this.style;
         if (style == null) {
@@ -1981,6 +1993,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * @see #playSound(Action)
      * @since 1.4
      */
+    @Override
     protected Action createAudioAction(Object key) {
         if (key != null) {
             String audioKey = (String)key;
@@ -2029,6 +2042,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             super(name);
             audioResource = resource;
         }
+        @Override
         public void actionPerformed(ActionEvent e) {
             if (audioRunnable == null) {
                 audioRunnable = (Runnable)Toolkit.getDefaultToolkit().getDesktopProperty(audioResource);
@@ -2054,6 +2068,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             this.resource = resource;
         }
 
+        @Override
         public Object createValue(UIDefaults table) {
             if (nativeImage != null) {
                 Image image = (Image)ShellFolder.get(nativeImage);
@@ -2130,6 +2145,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
          * may use the Component argument to get properties useful for
          * painting, e.g. the foreground or background color.
          */
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             XPStyle xp = XPStyle.getXP();
             assert xp != null;
@@ -2144,6 +2160,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
          *
          * @return an int specifying the fixed width of the icon.
          */
+        @Override
         public int getIconWidth() {
             int width = 0;
             XPStyle xp = XPStyle.getXP();
@@ -2160,6 +2177,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
          *
          * @return an int specifying the fixed height of the icon.
          */
+        @Override
         public int getIconHeight() {
             int height = 0;
             XPStyle xp = XPStyle.getXP();
@@ -2181,6 +2199,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             super(key, backup);
         }
 
+        @Override
         public void invalidate(LookAndFeel laf) {
             if ("win.defaultGUI.font.height".equals(getKey())) {
                 ((WindowsLookAndFeel)laf).style = null;
@@ -2188,6 +2207,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             super.invalidate(laf);
         }
 
+        @Override
         protected Object configureValue(Object value) {
             if (value instanceof Font) {
                 Font font = (Font)value;
@@ -2250,6 +2270,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             this.fontStyle = fontStyle;
         }
 
+        @Override
         protected Object configureValue(Object value) {
             if (value == null) {
                 value = new FontUIResource(fontName, fontStyle, fontSize);
@@ -2278,6 +2299,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             this.classicValue = classicValue;
         }
 
+        @Override
         public Object createValue(UIDefaults table) {
             Object value = null;
             if (XPStyle.getXP() != null) {
@@ -2325,6 +2347,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             this.extraMargin = extraMargin;
         }
 
+        @Override
         public Object getXPValue(UIDefaults table) {
             XPStyle xp = XPStyle.getXP();
             Border xpBorder = xp != null ? xp.getBorder(null, (Part)xpValue) : null;
@@ -2342,6 +2365,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             super(new XPColorValueKey(part, state, prop), classicValue);
         }
 
+        @Override
         public Object getXPValue(UIDefaults table) {
             XPColorValueKey key = (XPColorValueKey)xpValue;
             XPStyle xp = XPStyle.getXP();
@@ -2367,11 +2391,13 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             this.direction = direction;
         }
 
+        @Override
         public Object getXPValue(UIDefaults table) {
             int px = dluToPixels(((Integer)xpValue).intValue(), direction);
             return Integer.valueOf(px);
         }
 
+        @Override
         public Object getClassicValue(UIDefaults table) {
             int px = dluToPixels(((Integer)classicValue).intValue(), direction);
             return Integer.valueOf(px);
@@ -2387,6 +2413,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             getValueFromDesktop();
         }
 
+        @Override
         protected void updateUI() {
             super.updateUI();
 
@@ -2400,6 +2427,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             super(key);
         }
 
+        @Override
         protected void updateUI() {
             UIDefaults defaults = UIManager.getLookAndFeelDefaults();
             SwingUtilities2.putAATextInfo(true, defaults);
@@ -2504,6 +2532,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      *
      * @since 1.6
      */
+    @Override
     public Icon getDisabledIcon(JComponent component, Icon icon) {
         // if the component has a HI_RES_DISABLED_ICON_CLIENT_KEY
         // client property set to Boolean.TRUE, then use the new
@@ -2529,6 +2558,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         public RGBGrayFilter() {
             canFilterIndexColorModel = true;
         }
+        @Override
         public int filterRGB(int x, int y, int rgb) {
             // find the average of red, green, and blue
             float avg = (((rgb >> 16) & 0xff) / 255f +

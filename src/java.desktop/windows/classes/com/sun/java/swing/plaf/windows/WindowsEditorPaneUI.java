@@ -54,6 +54,7 @@ public class WindowsEditorPaneUI extends BasicEditorPaneUI
      *
      * @return the caret object
      */
+    @Override
     protected Caret createCaret() {
         return new WindowsTextUI.WindowsCaret();
     }

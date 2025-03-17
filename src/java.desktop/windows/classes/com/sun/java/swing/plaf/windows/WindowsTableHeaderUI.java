@@ -57,6 +57,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
         return new WindowsTableHeaderUI();
     }
 
+    @Override
     public void installUI(JComponent c) {
         super.installUI(c);
 
@@ -68,6 +69,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
         }
     }
 
+    @Override
     public void uninstallUI(JComponent c) {
         if (header.getDefaultRenderer() instanceof XPDefaultRenderer) {
             header.setDefaultRenderer(originalHeaderRenderer);
@@ -93,6 +95,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
             setHorizontalAlignment(LEADING);
         }
 
+        @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus,
                                                        int row, int column) {
@@ -181,6 +184,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
             return this;
         }
 
+        @Override
         public void paint(Graphics g) {
             Dimension size = getSize();
             State state = State.NORMAL;
@@ -246,12 +250,15 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
             this.bottom = bottom;
             this.right = right;
         }
+        @Override
         public Insets getBorderInsets(Component c) {
             return new Insets(icon.getIconHeight() + top, left, bottom, right);
         }
+        @Override
         public boolean isBorderOpaque() {
             return false;
         }
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {
             icon.paintIcon(c, g,

@@ -45,6 +45,7 @@ public class ClassicSortArrowIcon implements Icon, UIResource, Serializable{
         this.ascending = ascending;
     }
 
+    @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         x += X_OFFSET;
         if (ascending) {
@@ -89,9 +90,11 @@ public class ClassicSortArrowIcon implements Icon, UIResource, Serializable{
         g.fillRect(x, y, 1, 2);
     }
 
+    @Override
     public int getIconWidth() {
         return X_OFFSET + 8;
     }
+    @Override
     public int getIconHeight() {
         return 9;
     }

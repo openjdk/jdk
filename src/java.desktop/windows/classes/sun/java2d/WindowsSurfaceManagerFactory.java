@@ -49,6 +49,7 @@ public class WindowsSurfaceManagerFactory extends SurfaceManagerFactory {
      * For Windows platforms, this method returns a Windows-specific
      * VolatileSurfaceManager.
      */
+    @Override
     public VolatileSurfaceManager createVolatileManager(SunVolatileImage vImg,
                                                         Object context)
     {

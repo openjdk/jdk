@@ -134,6 +134,7 @@ public class GDIBlitLoops extends Blit {
      * Composite data because we only register these loops for
      * SrcNoEa composite operations.
      */
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst,
                      Composite comp, Region clip,
                      int sx, int sy, int dx, int dy, int w, int h)

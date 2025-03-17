@@ -100,6 +100,7 @@ public class WLightweightFramePeer extends WFramePeer implements OverrideNativeW
         SwingAccessor.getJLightweightFrameAccessor().updateCursor((JLightweightFrame)getLwTarget());
     }
 
+    @Override
     public boolean isLightweightFramePeer() {
         return true;
     }

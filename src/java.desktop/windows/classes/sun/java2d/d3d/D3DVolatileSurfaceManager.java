@@ -75,6 +75,7 @@ public class D3DVolatileSurfaceManager
               gd.isCapPresent(CAPS_RT_TEXTURE_ALPHA)));
     }
 
+    @Override
     protected boolean isAccelerationEnabled() {
         return accelerationEnabled;
     }
@@ -86,6 +87,7 @@ public class D3DVolatileSurfaceManager
      * Create a pbuffer-based SurfaceData object (or init the backbuffer
      * of an existing window if this is a double buffered GraphicsConfig).
      */
+    @Override
     protected SurfaceData initAcceleratedSurface() {
         SurfaceData sData;
         Component comp = vImg.getComponent();
@@ -124,6 +126,7 @@ public class D3DVolatileSurfaceManager
         return sData;
     }
 
+    @Override
     protected boolean isConfigValid(GraphicsConfiguration gc) {
         return ((gc == null) || (gc == vImg.getGraphicsConfig()));
     }

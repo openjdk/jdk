@@ -71,6 +71,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
         return new WindowsScrollBarUI();
     }
 
+    @Override
     protected void installDefaults() {
         super.installDefaults();
 
@@ -100,11 +101,13 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
                 : verticalThumbSize;
     }
 
+    @Override
     public void uninstallUI(JComponent c) {
         super.uninstallUI(c);
         thumbGrid = highlightGrid = null;
     }
 
+    @Override
     protected void configureScrollBarColors() {
         super.configureScrollBarColors();
         Color color = UIManager.getColor("ScrollBar.trackForeground");
@@ -118,6 +121,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
         }
     }
 
+    @Override
     protected JButton createDecreaseButton(int orientation)  {
         return new WindowsArrowButton(orientation,
                                     UIManager.getColor("ScrollBar.thumb"),
@@ -126,6 +130,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
                                     UIManager.getColor("ScrollBar.thumbHighlight"));
     }
 
+    @Override
     protected JButton createIncreaseButton(int orientation)  {
         return new WindowsArrowButton(orientation,
                                     UIManager.getColor("ScrollBar.thumb"),
@@ -161,6 +166,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
         }
     }
 
+    @Override
     protected void paintTrack(Graphics g, JComponent c, Rectangle trackBounds){
         boolean v = (scrollbar.getOrientation() == JScrollBar.VERTICAL);
 
@@ -189,6 +195,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
         }
     }
 
+    @Override
     protected void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds) {
         boolean v = (scrollbar.getOrientation() == JScrollBar.VERTICAL);
 
@@ -231,6 +238,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
     }
 
 
+    @Override
     protected void paintDecreaseHighlight(Graphics g) {
         if (highlightGrid == null) {
             super.paintDecreaseHighlight(g);
@@ -257,6 +265,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
     }
 
 
+    @Override
     protected void paintIncreaseHighlight(Graphics g) {
         if (highlightGrid == null) {
             super.paintDecreaseHighlight(g);
@@ -315,6 +324,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
             super(direction);
         }
 
+        @Override
         public void paint(Graphics g) {
             XPStyle xp = XPStyle.getXP();
             if (xp != null) {
@@ -370,6 +380,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
             }
         }
 
+        @Override
         public Dimension getPreferredSize() {
             int size = 16;
             if (scrollbar != null) {

@@ -125,6 +125,7 @@ public class WindowsMenuBarUI extends BasicMenuBarUI
         super.installListeners();
     }
 
+    @Override
     protected void installKeyboardActions() {
         super.installKeyboardActions();
         ActionMap map = SwingUtilities.getUIActionMap(menuBar);

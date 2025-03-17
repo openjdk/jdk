@@ -60,6 +60,7 @@ public class WindowsDesktopManager extends DefaultDesktopManager
      */
     private WeakReference<JInternalFrame> currentFrameRef;
 
+    @Override
     public void activateFrame(JInternalFrame f) {
         JInternalFrame currentFrame = currentFrameRef != null ?
             currentFrameRef.get() : null;

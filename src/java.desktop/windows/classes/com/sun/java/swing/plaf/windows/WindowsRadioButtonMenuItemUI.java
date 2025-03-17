@@ -46,6 +46,7 @@ public class WindowsRadioButtonMenuItemUI extends BasicRadioButtonMenuItemUI {
     final WindowsMenuItemUIAccessor accessor =
         new WindowsMenuItemUIAccessor() {
 
+           @Override
            public JMenuItem getMenuItem() {
                return menuItem;
            }
@@ -54,6 +55,7 @@ public class WindowsRadioButtonMenuItemUI extends BasicRadioButtonMenuItemUI {
                return WindowsMenuItemUI.getState(this, menuItem);
            }
 
+           @Override
            public Part getPart(JMenuItem menuItem) {
                return WindowsMenuItemUI.getPart(this, menuItem);
            }
@@ -81,6 +83,7 @@ public class WindowsRadioButtonMenuItemUI extends BasicRadioButtonMenuItemUI {
      * @param text String to render
      * @since 1.4
      */
+    @Override
     protected void paintText(Graphics g, JMenuItem menuItem,
             Rectangle textRect, String text) {
         if (WindowsMenuItemUI.isVistaPainting()) {

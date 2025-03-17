@@ -132,11 +132,13 @@ public class D3DRenderQueue extends RenderQueue {
         }
     }
 
+    @Override
     public void flushNow() {
         // assert lock.isHeldByCurrentThread();
         flushBuffer(null);
     }
 
+    @Override
     public void flushAndInvokeNow(Runnable r) {
         // assert lock.isHeldByCurrentThread();
         flushBuffer(r);

@@ -166,6 +166,7 @@ public class WindowsRootPaneUI extends BasicRootPaneUI {
 
         }
 
+        @Override
         public boolean postProcessKeyEvent(KeyEvent ev) {
             if (ev.isConsumed()) {
                 if (ev.getKeyCode() != KeyEvent.VK_ALT) {

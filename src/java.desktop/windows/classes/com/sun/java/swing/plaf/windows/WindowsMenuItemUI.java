@@ -63,6 +63,7 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
     final WindowsMenuItemUIAccessor accessor =
         new  WindowsMenuItemUIAccessor() {
 
+            @Override
             public JMenuItem getMenuItem() {
                 return menuItem;
             }
@@ -71,6 +72,7 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
                 return WindowsMenuItemUI.getState(this, menuItem);
             }
 
+            @Override
             public Part getPart(JMenuItem menuItem) {
                 return WindowsMenuItemUI.getPart(this, menuItem);
             }
@@ -141,6 +143,7 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
      * @param textRect Bounding rectangle to render the text.
      * @param text String to render
      */
+    @Override
     protected void paintText(Graphics g, JMenuItem menuItem,
                              Rectangle textRect, String text) {
         if (WindowsMenuItemUI.isVistaPainting()) {

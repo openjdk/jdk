@@ -53,6 +53,7 @@ public class Win32ColorModel24 extends ComponentColorModel {
      * @see WritableRaster
      * @see SampleModel
      */
+    @Override
     public WritableRaster createCompatibleWritableRaster (int w, int h) {
         int[] bOffs = {2, 1, 0};
         return Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
@@ -65,6 +66,7 @@ public class Win32ColorModel24 extends ComponentColorModel {
      * has a data layout compatible with this ColorModel.
      * @see SampleModel
      */
+    @Override
     public SampleModel createCompatibleSampleModel(int w, int h) {
         int[] bOffs = {2, 1, 0};
         return new PixelInterleavedSampleModel(DataBuffer.TYPE_BYTE,

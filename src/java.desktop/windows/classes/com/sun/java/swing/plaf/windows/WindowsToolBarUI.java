@@ -51,6 +51,7 @@ public class WindowsToolBarUI extends BasicToolBarUI {
         return new WindowsToolBarUI();
     }
 
+    @Override
     protected void installDefaults() {
         if (XPStyle.getXP() != null) {
             setRolloverBorders(true);
@@ -58,6 +59,7 @@ public class WindowsToolBarUI extends BasicToolBarUI {
         super.installDefaults();
     }
 
+    @Override
     protected Border createRolloverBorder() {
         if (XPStyle.getXP() != null) {
             return new EmptyBorder(3, 3, 3, 3);
@@ -66,6 +68,7 @@ public class WindowsToolBarUI extends BasicToolBarUI {
         }
     }
 
+    @Override
     protected Border createNonRolloverBorder() {
         if (XPStyle.getXP() != null) {
             return new EmptyBorder(3, 3, 3, 3);
@@ -74,6 +77,7 @@ public class WindowsToolBarUI extends BasicToolBarUI {
         }
     }
 
+    @Override
     public void paint(Graphics g, JComponent c) {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {
@@ -88,6 +92,7 @@ public class WindowsToolBarUI extends BasicToolBarUI {
      * {@inheritDoc}
      * @since 1.6
      */
+    @Override
     protected Border getRolloverBorder(AbstractButton b) {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {

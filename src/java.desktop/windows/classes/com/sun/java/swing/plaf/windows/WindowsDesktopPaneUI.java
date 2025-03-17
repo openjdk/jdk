@@ -40,6 +40,7 @@ public class WindowsDesktopPaneUI extends BasicDesktopPaneUI
         return new WindowsDesktopPaneUI();
     }
 
+    @Override
     protected void installDesktopManager() {
         desktopManager = desktop.getDesktopManager();
         if(desktopManager == null) {
@@ -48,10 +49,12 @@ public class WindowsDesktopPaneUI extends BasicDesktopPaneUI
         }
     }
 
+    @Override
     protected void installDefaults() {
         super.installDefaults();
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     protected void installKeyboardActions() {
         super.installKeyboardActions();

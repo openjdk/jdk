@@ -63,6 +63,7 @@ class D3DTextRenderer extends BufferedTextPipe {
         Tracer(D3DTextRenderer d3dtr) {
             super(d3dtr.rq);
         }
+        @Override
         protected void drawGlyphList(SunGraphics2D sg2d, GlyphList gl) {
             GraphicsPrimitive.tracePrimitive("D3DDrawGlyphs");
             super.drawGlyphList(sg2d, gl);

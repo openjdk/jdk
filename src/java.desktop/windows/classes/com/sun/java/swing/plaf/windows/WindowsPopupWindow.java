@@ -69,10 +69,12 @@ class WindowsPopupWindow extends JWindow {
         return windowType;
     }
 
+    @Override
     public void update(Graphics g) {
         paint(g);
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     public void hide() {
         super.hide();
@@ -85,6 +87,7 @@ class WindowsPopupWindow extends JWindow {
         removeNotify();
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     public void show() {
         super.show();

@@ -46,6 +46,7 @@ public class WindowsToolBarSeparatorUI extends BasicToolBarSeparatorUI {
         return new WindowsToolBarSeparatorUI();
     }
 
+    @Override
     public Dimension getPreferredSize(JComponent c) {
         Dimension size = ((JToolBar.Separator)c).getSeparatorSize();
 
@@ -71,6 +72,7 @@ public class WindowsToolBarSeparatorUI extends BasicToolBarSeparatorUI {
         return size;
     }
 
+    @Override
     public Dimension getMaximumSize(JComponent c) {
         Dimension pref = getPreferredSize(c);
         if (((JSeparator)c).getOrientation() == SwingConstants.VERTICAL) {
@@ -80,6 +82,7 @@ public class WindowsToolBarSeparatorUI extends BasicToolBarSeparatorUI {
         }
     }
 
+    @Override
     public void paint( Graphics g, JComponent c ) {
         boolean vertical = ((JSeparator)c).getOrientation() == SwingConstants.VERTICAL;
         Dimension size = c.getSize();

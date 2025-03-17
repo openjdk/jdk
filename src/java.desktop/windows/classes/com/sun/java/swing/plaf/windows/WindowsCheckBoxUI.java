@@ -64,6 +64,7 @@ public class WindowsCheckBoxUI extends WindowsRadioButtonUI
     }
 
 
+    @Override
     public String getPropertyPrefix() {
         return propertyPrefix;
     }
@@ -71,6 +72,7 @@ public class WindowsCheckBoxUI extends WindowsRadioButtonUI
     // ********************************
     //          Defaults
     // ********************************
+    @Override
     public void installDefaults(AbstractButton b) {
         super.installDefaults(b);
         if(!defaults_initialized) {
@@ -79,6 +81,7 @@ public class WindowsCheckBoxUI extends WindowsRadioButtonUI
         }
     }
 
+    @Override
     public void uninstallDefaults(AbstractButton b) {
         super.uninstallDefaults(b);
         defaults_initialized = false;

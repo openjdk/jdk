@@ -441,6 +441,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
      * Returns the D3DContext for the GraphicsConfig associated with this
      * surface.
      */
+    @Override
     public final D3DContext getContext() {
         return graphicsDevice.getContext();
     }
@@ -448,6 +449,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
     /**
      * Returns one of the surface type constants defined above.
      */
+    @Override
     public final int getType() {
         return type;
     }
@@ -463,6 +465,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
             super(sData, type, w, h);
         }
 
+        @Override
         protected int getElem(final int x, final int y,
                               final SurfaceData sData)
         {
@@ -486,6 +489,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
             return retPixel;
         }
 
+        @Override
         protected void setElem(final int x, final int y, final int pixel,
                                final SurfaceData sData)
         {
@@ -508,6 +512,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
         }
     }
 
+    @Override
     public synchronized Raster getRaster(int x, int y, int w, int h) {
         if (wrn == null) {
             DirectColorModel dcm = (DirectColorModel)getColorModel();
@@ -541,6 +546,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
      *   - the source color is opaque
      *   - and the destination is opaque
      */
+    @Override
     public boolean canRenderLCDText(SunGraphics2D sg2d) {
         return
             graphicsDevice.isCapPresent(CAPS_LCD_SHADER) &&
@@ -564,6 +570,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
         }
     }
 
+    @Override
     public void validatePipe(SunGraphics2D sg2d) {
         TextPipe textpipe;
         boolean validated = false;
@@ -803,10 +810,12 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
     /**
      * Returns destination Image associated with this SurfaceData.
      */
+    @Override
     public Object getDestination() {
         return offscreenImage;
     }
 
+    @Override
     public Rectangle getBounds() {
         if (type == FLIP_BACKBUFFER || type == WINDOW) {
             double scaleX = getDefaultScaleX();
@@ -821,6 +830,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
         }
     }
 
+    @Override
     public Rectangle getNativeBounds() {
         D3DRenderQueue rq = D3DRenderQueue.getInstance();
         // need to lock to make sure nativeWidth and Height are consistent
@@ -836,10 +846,12 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
     }
 
 
+    @Override
     public GraphicsConfiguration getDeviceConfiguration() {
         return graphicsDevice.getDefaultConfiguration();
     }
 
+    @Override
     public SurfaceData getReplacement() {
         return restoreContents(offscreenImage);
     }
@@ -909,6 +921,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
      * such resource doesn't exist or can not be retrieved.
      * @see sun.java2d.pipe.hw.AccelSurface#getNativeResource
      */
+    @Override
     public long getNativeResource(int resType) {
         return getNativeResourceNative(getNativeOps(), resType);
     }
