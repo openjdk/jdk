@@ -71,17 +71,33 @@ public class TestMergeLoads {
     }
 
     public TestMergeLoads() {
+        // Get int in little endian
         testGroups.put("test1", new HashMap<String,TestFunction>());
         testGroups.get("test1").put("test1R", (_,_) -> { return test1R(aB.clone()); });
         testGroups.get("test1").put("test1a", (_,_) -> { return test1a(aB.clone()); });
         testGroups.get("test1").put("test1b", (_,_) -> { return test1b(aB.clone()); });
         testGroups.get("test1").put("test1c", (_,_) -> { return test1c(aB.clone()); });
 
+        // Get long in little endian
         testGroups.put("test2", new HashMap<String,TestFunction>());
         testGroups.get("test2").put("test2R", (_,_) -> { return test2R(aB.clone()); });
         testGroups.get("test2").put("test2a", (_,_) -> { return test2a(aB.clone()); });
         testGroups.get("test2").put("test2b", (_,_) -> { return test2b(aB.clone()); });
         testGroups.get("test2").put("test2c", (_,_) -> { return test2c(aB.clone()); });
+
+        // Get int in big endian
+        testGroups.put("test3", new HashMap<String,TestFunction>());
+        testGroups.get("test3").put("test3R", (_,_) -> { return test3R(aB.clone()); });
+        testGroups.get("test3").put("test3a", (_,_) -> { return test3a(aB.clone()); });
+        testGroups.get("test3").put("test3b", (_,_) -> { return test3b(aB.clone()); });
+        testGroups.get("test3").put("test3c", (_,_) -> { return test3c(aB.clone()); });
+
+        // Get long in big endian
+        testGroups.put("test4", new HashMap<String,TestFunction>());
+        testGroups.get("test4").put("test4R", (_,_) -> { return test4R(aB.clone()); });
+        testGroups.get("test4").put("test4a", (_,_) -> { return test4a(aB.clone()); });
+        testGroups.get("test4").put("test4b", (_,_) -> { return test4b(aB.clone()); });
+        testGroups.get("test4").put("test4c", (_,_) -> { return test4c(aB.clone()); });
     }
 
     static void set_random(byte[] a) {
@@ -96,7 +112,14 @@ public class TestMergeLoads {
                  "test1c",
                  "test2a",
                  "test2b",
-                 "test2c"})
+                 "test2c",
+                 "test3a",
+                 "test3b",
+                 "test3c",
+                 "test4a",
+                 "test4b",
+                 "test4c"
+                })
     public void runTests(RunInfo info) {
         // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
         int iters = info.isWarmUp() ? 1_000 : 50_000;
@@ -206,6 +229,10 @@ public class TestMergeLoads {
         }
     }
 
+    /**
+     * Group 1
+     *   get int in little endian mode
+     */
     @DontCompile
     static Object[] test1R(byte[] a) {
       int i1 = (a[0] & 0xff)         |
@@ -259,6 +286,10 @@ public class TestMergeLoads {
       return new Object[]{ret};
     }
 
+    /**
+     * Group 2
+     *   get long in little endian mode
+     */
     @DontCompile
     static Object[] test2R(byte[] a) {
       long i1 =  ((long)(a[0] & 0xff)       )|
@@ -320,6 +351,132 @@ public class TestMergeLoads {
                (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 5) & 0xff)) << 40)|
                (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6) & 0xff)) << 48)|
                (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 7) & 0xff)) << 56);
+      long[] ret = {i1};
+      return new Object[]{ret};
+    }
+
+    /**
+     * Group 3
+     *   get int in big endian mode
+     */
+    @DontCompile
+    static Object[] test3R(byte[] a) {
+      int i1 = ((a[0] & 0xff) << 24) |
+               ((a[1] & 0xff) << 16) |
+               ((a[2] & 0xff) <<  8) |
+                (a[3] & 0xff);
+      int[] ret = {i1};
+      return new Object[]{ret};
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+                  IRNode.REVERSE_BYTES_I, "1"},
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatformAnd = {"little-endian", "true"})
+    @IR(counts = {IRNode.LOAD_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"big-endian", "true"})
+    static Object[] test3a(byte[] a) {
+      int i1 = ((a[0] & 0xff) << 24) |
+               ((a[1] & 0xff) << 16) |
+               ((a[2] & 0xff) <<  8) |
+                (a[3] & 0xff);
+      int[] ret = {i1};
+      return new Object[]{ret};
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static Object[] test3b(byte[] a) {
+      int i1 = UNSAFE.getIntUnaligned(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET, /* big-endian */ true);
+      int[] ret = {i1};
+      return new Object[]{ret};
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+                  IRNode.REVERSE_BYTES_I, "1"},
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatformAnd = {"little-endian", "true"})
+    @IR(counts = {IRNode.LOAD_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"big-endian", "true"})
+    static Object[] test3c(byte[] a) {
+      int i1 = ((UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0) & 0xff) << 24) |
+               ((UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1) & 0xff) << 16) |
+               ((UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2) & 0xff) <<  8) |
+                (UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3) & 0xff);
+      int[] ret = {i1};
+      return new Object[]{ret};
+    }
+
+    /**
+     * Group 4
+     *   get long in big endian mode
+     */
+    @DontCompile
+    static Object[] test4R(byte[] a) {
+      long i1 = (((long)(a[0] & 0xff)) << 56)|
+                (((long)(a[1] & 0xff)) << 48)|
+                (((long)(a[2] & 0xff)) << 40)|
+                (((long)(a[3] & 0xff)) << 32)|
+                (((long)(a[4] & 0xff)) << 24)|
+                (((long)(a[5] & 0xff)) << 16)|
+                (((long)(a[6] & 0xff)) <<  8)|
+                 ((long)(a[7] & 0xff));
+      long[] ret = {i1};
+      return new Object[]{ret};
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+                  IRNode.REVERSE_BYTES_L, "1"},
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatformAnd = {"little-endian", "true"})
+    @IR(counts = {IRNode.LOAD_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatformAnd = {"big-endian", "true"})
+    static Object[] test4a(byte[] a) {
+      long i1 = (((long)(a[0] & 0xff)) << 56)|
+                (((long)(a[1] & 0xff)) << 48)|
+                (((long)(a[2] & 0xff)) << 40)|
+                (((long)(a[3] & 0xff)) << 32)|
+                (((long)(a[4] & 0xff)) << 24)|
+                (((long)(a[5] & 0xff)) << 16)|
+                (((long)(a[6] & 0xff)) <<  8)|
+                 ((long)(a[7] & 0xff));
+      long[] ret = {i1};
+      return new Object[]{ret};
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static Object[] test4b(byte[] a) {
+      long i1 = UNSAFE.getLongUnaligned(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET, /* big-endian */ true);
+      long[] ret = {i1};
+      return new Object[]{ret};
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+                  IRNode.REVERSE_BYTES_L, "1"},
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatformAnd = {"little-endian", "true"})
+    @IR(counts = {IRNode.LOAD_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"big-endian", "true"})
+    static Object[] test4c(byte[] a) {
+      long i1 = (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0) & 0xff)) << 56)|
+                (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1) & 0xff)) << 48)|
+                (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2) & 0xff)) << 40)|
+                (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3) & 0xff)) << 32)|
+                (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4) & 0xff)) << 24)|
+                (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 5) & 0xff)) << 16)|
+                (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6) & 0xff)) <<  8)|
+                 ((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 7) & 0xff));
       long[] ret = {i1};
       return new Object[]{ret};
     }
