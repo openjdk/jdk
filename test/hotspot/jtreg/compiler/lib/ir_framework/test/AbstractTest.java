@@ -109,6 +109,10 @@ abstract class AbstractTest {
 
     abstract protected void compileTest();
 
+    /**
+     * Exception thrown when a test method is compiled that is not compilable, and this is
+     * explicitly allowed with "allowNotCompilable".
+     */
     private class MethodNotCompilableException extends Exception {}
 
     protected void compileMethod(DeclaredTest test) {
