@@ -22,11 +22,11 @@
  */
 
 /* @test
- * @summary Test that pinned objects we lost all Java references to keep
- *          do not make the garbage collector not reclaim that region.
+ * @summary Test that pinned regions with no Java references into them
+ *          do not make the garbage collector reclaim that region.
  *          This test simulates this behavior using Whitebox/Unsafe methods
  *          to pin a Java object in a region with no other pinnable objects and
-*           loose the reference to it before the garbage collection.
+*           lose the reference to it before the garbage collection.
  * @requires vm.gc.G1
  * @requires vm.debug
  * @library /test/lib
