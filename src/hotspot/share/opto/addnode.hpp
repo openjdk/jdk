@@ -43,11 +43,17 @@ typedef const Pair<Node*, jint> ConstAddOperands;
 class AddNode : public Node {
   virtual uint hash() const;
 
+  struct Multiplication {
+    bool valid = false;
+    Node* variable = nullptr;
+    jlong multiplier = 0;
+  };
+
   Node* convert_serial_additions(PhaseGVN* phase, BasicType bt);
-  static Node* find_simple_addition_pattern(Node* n, BasicType bt, jlong* multiplier);
-  static Node* find_simple_lshift_pattern(Node* n, BasicType bt, jlong* multiplier);
-  static Node* find_simple_multiplication_pattern(Node* n, BasicType bt, jlong* multiplier);
-  static Node* find_power_of_two_addition_pattern(Node* n, BasicType bt, jlong* multiplier);
+  static Multiplication find_simple_addition_pattern(Node* n, BasicType bt);
+  static Multiplication find_simple_lshift_pattern(Node* n, BasicType bt);
+  static Multiplication find_simple_multiplication_pattern(Node* n, BasicType bt);
+  static Multiplication find_power_of_two_addition_pattern(Node* n, BasicType bt);
 
 public:
   AddNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {

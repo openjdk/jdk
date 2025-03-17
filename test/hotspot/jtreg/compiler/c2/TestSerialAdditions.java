@@ -40,7 +40,8 @@ import java.util.Random;
  * @run driver compiler.c2.TestSerialAdditions
  */
 public class TestSerialAdditions {
-    private static final Random RNG = Utils.getRandomInstance();
+    private static final RestrictableGenerator<Integer> GEN_INT = Generators.G.ints();
+    private static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
 
     public static void main(String[] args) {
         TestFramework.run();
@@ -67,7 +68,7 @@ public class TestSerialAdditions {
             "mulAndAddToMinus42"
     })
     private void runIntTests() {
-        for (int a : new int[] { 0, 1, Integer.MIN_VALUE, Integer.MAX_VALUE, RNG.nextInt() }) {
+        for (int a : new int[] { 0, 1, Integer.MIN_VALUE, Integer.MAX_VALUE, GEN_INT.next() }) {
             Asserts.assertEQ(a * 2, addTo2(a));
             Asserts.assertEQ(a * 3, addTo3(a));
             Asserts.assertEQ(a * 4, addTo4(a));
@@ -95,7 +96,7 @@ public class TestSerialAdditions {
             "mulAndAddToOverflowL"
     })
     private void runLongTests() {
-        for (long a : new long[] { 0, 1, Long.MIN_VALUE, Long.MAX_VALUE, RNG.nextLong() }) {
+        for (long a : new long[] { 0, 1, Long.MIN_VALUE, Long.MAX_VALUE, GEN_LONG.next() }) {
             Asserts.assertEQ(a * (Integer.MAX_VALUE + 1L), mulAndAddToIntOverflowL(a));
             Asserts.assertEQ(a * Long.MAX_VALUE, mulAndAddToMaxL(a));
             Asserts.assertEQ(a * Long.MIN_VALUE, mulAndAddToOverflowL(a));
@@ -296,17 +297,15 @@ public class TestSerialAdditions {
     private static final long CON1_L, CON2_L, CON3_L, CON4_L;
 
     static {
-        RestrictableGenerator<Integer> genI = Generators.G.powerOfTwoInts(16);
-        CON1_I = genI.next();
-        CON2_I = genI.next();
-        CON3_I = genI.next();
-        CON4_I = genI.next();
+        CON1_I = GEN_INT.next();
+        CON2_I = GEN_INT.next();
+        CON3_I = GEN_INT.next();
+        CON4_I = GEN_INT.next();
 
-        RestrictableGenerator<Long> genL = Generators.G.powerOfTwoLongs(16);
-        CON1_L = genL.next();
-        CON2_L = genL.next();
-        CON3_L = genL.next();
-        CON4_L = genL.next();
+        CON1_L = GEN_LONG.next();
+        CON2_L = GEN_LONG.next();
+        CON3_L = GEN_LONG.next();
+        CON4_L = GEN_LONG.next();
     }
 
     @Run(test = {
@@ -314,11 +313,11 @@ public class TestSerialAdditions {
             "randomPowerOfTwoAdditionL"
     })
     private void runRandomPowerOfTwoAddition() {
-        for (int a : new int[] { 0, 1, Integer.MIN_VALUE, Integer.MAX_VALUE, RNG.nextInt() }) {
+        for (int a : new int[] { 0, 1, Integer.MIN_VALUE, Integer.MAX_VALUE, GEN_INT.next() }) {
             Asserts.assertEQ(a * (CON1_I + CON2_I + CON3_I + CON4_I), randomPowerOfTwoAddition(a));
         }
 
-        for (long a : new long[] { 0, 1, Long.MIN_VALUE, Long.MAX_VALUE, RNG.nextLong() }) {
+        for (long a : new long[] { 0, 1, Long.MIN_VALUE, Long.MAX_VALUE, GEN_LONG.next() }) {
             Asserts.assertEQ(a * (CON1_L + CON2_L + CON3_L + CON4_L), randomPowerOfTwoAdditionL(a));
         }
     }
