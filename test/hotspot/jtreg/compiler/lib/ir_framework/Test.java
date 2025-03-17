@@ -85,5 +85,11 @@ public @interface Test {
      */
     CompLevel compLevel() default CompLevel.ANY;
 
+    /**
+     * In rare cases, methods may not be compilable because of a compilation bailout. By default, this leads to a
+     * test failure. However, if such cases are expected in a specific test, this flag can be set to true, which
+     * allows the test to pass even if there is no compilation. Any associated {@link IR} rule is only executed
+     * if the test method was compiled, and else it is ignored silently.
+     */
     boolean allowNotCompilable() default false;
 }
