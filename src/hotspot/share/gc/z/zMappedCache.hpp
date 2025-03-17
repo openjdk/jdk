@@ -27,9 +27,9 @@
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zArray.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "gc/z/zIntrusiveRBTree.hpp"
 #include "gc/z/zList.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/rbTree.hpp"
 #include "utilities/ostream.hpp"
 
 class ZMappedCacheEntry;
@@ -40,16 +40,16 @@ class ZMappedCache {
 
 private:
   struct EntryCompare {
-    int operator()(ZIntrusiveRBTreeNode* a, ZIntrusiveRBTreeNode* b);
-    int operator()(zoffset key, ZIntrusiveRBTreeNode* node);
+    static int cmp(zoffset a, const IntrusiveRBNode* b);
+    static int cmp(const IntrusiveRBNode*  a, const IntrusiveRBNode* b);
   };
 
   struct ZSizeClassListNode {
     ZListNode<ZSizeClassListNode> _node;
   };
 
-  using Tree              = ZIntrusiveRBTree<zoffset, EntryCompare>;
-  using TreeNode          = ZIntrusiveRBTreeNode;
+  using Tree              = IntrusiveRBTree<zoffset, EntryCompare>;
+  using TreeNode          = IntrusiveRBNode;
   using SizeClassList     = ZList<ZSizeClassListNode>;
   using SizeClassListNode = ZSizeClassListNode;
 
@@ -60,7 +60,8 @@ private:
   static constexpr int NumSizeClasses = MaxSizeClassShift - MinSizeClassShift + 1;
 
   Tree          _tree;
-  size_t        _entry_count;
+  TreeNode*     _left_most;
+  TreeNode*     _right_most;
   SizeClassList _size_class_lists[NumSizeClasses];
   size_t        _size;
   size_t        _min;
@@ -68,10 +69,20 @@ private:
   static int size_class_index(size_t size);
   static int guaranteed_size_class_index(size_t size);
 
-  void tree_insert(const Tree::FindCursor& cursor, const ZVirtualMemory& vmem);
-  void tree_remove(const Tree::FindCursor& cursor, const ZVirtualMemory& vmem);
-  void tree_replace(const Tree::FindCursor& cursor, const ZVirtualMemory& vmem);
+  void tree_insert(const Tree::Cursor& cursor, const ZVirtualMemory& vmem);
+  void tree_remove(const Tree::Cursor& cursor, const ZVirtualMemory& vmem);
+  void tree_replace(const Tree::Cursor& cursor, const ZVirtualMemory& vmem);
   void tree_update(ZMappedCacheEntry* entry, const ZVirtualMemory& vmem);
+
+  void verify() const;
+
+  void verify_left_most() const;
+  const TreeNode* left_most() const;
+  TreeNode* left_most();
+
+  void verify_right_most() const;
+  const TreeNode* right_most() const;
+  TreeNode* right_most();
 
   enum class RemovalStrategy {
     LowestAddress,
