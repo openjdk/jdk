@@ -713,6 +713,15 @@ void CallNode::dump_spec(outputStream *st) const {
   if (_cnt != COUNT_UNKNOWN)  st->print(" C=%f",_cnt);
   if (jvms() != nullptr)  jvms()->dump_spec(st);
 }
+
+void AllocateNode::dump_spec(outputStream* st) const {
+  const Node* const klass_node = in(KlassNode);
+  if (klass_node != nullptr && klass_node->is_ConP()) {
+    st->print(" ");
+    klass_node->as_ConP()->type()->dump_on(st);
+  }
+  CallNode::dump_spec(st);
+}
 #endif
 
 const Type *CallNode::bottom_type() const { return tf()->range(); }

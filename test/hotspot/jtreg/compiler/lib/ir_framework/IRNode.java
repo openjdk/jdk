@@ -342,26 +342,26 @@ public class IRNode {
 
     public static final String ALLOC = PREFIX + "ALLOC" + POSTFIX;
     static {
-        String optoRegex = "(.*precise .*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: C2 Runtime new_instance" + END;
-        allocNodes(ALLOC, "Allocate", optoRegex);
+        String regex = START + "Allocate\\b" + MID + END;
+        macroNodes(ALLOC, regex);
     }
 
     public static final String ALLOC_OF = COMPOSITE_PREFIX + "ALLOC_OF" + POSTFIX;
     static {
-        String regex = "(.*precise .*" + IS_REPLACED + ":.*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: C2 Runtime new_instance" + END;
-        optoOnly(ALLOC_OF, regex);
+        String regex = START + "Allocate\\b" + MID + "precise .*\\b" + IS_REPLACED + ":.*" + END;
+        macroNodes(ALLOC_OF, regex);
     }
 
     public static final String ALLOC_ARRAY = PREFIX + "ALLOC_ARRAY" + POSTFIX;
     static {
-        String optoRegex = "(.*precise \\[.*\\R((.*(?i:mov|mv|xor|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: C2 Runtime new_array" + END;
-        allocNodes(ALLOC_ARRAY, "AllocateArray", optoRegex);
+        String regex = START + "AllocateArray\\b" + MID + END;
+        macroNodes(ALLOC_ARRAY,  regex);
     }
 
     public static final String ALLOC_ARRAY_OF = COMPOSITE_PREFIX + "ALLOC_ARRAY_OF" + POSTFIX;
     static {
-        String regex = "(.*precise \\[.*" + IS_REPLACED + ":.*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: C2 Runtime new_array" + END;
-        optoOnly(ALLOC_ARRAY_OF, regex);
+        String regex = START + "AllocateArray\\b" + MID + "precise \\[.*\\b" + IS_REPLACED + ":.*" + END;
+        macroNodes(ALLOC_ARRAY_OF, regex);
     }
 
     public static final String OR = PREFIX + "OR" + POSTFIX;
@@ -2558,12 +2558,14 @@ public class IRNode {
 
     public static final String MOD_F = PREFIX + "MOD_F" + POSTFIX;
     static {
-        macroNodes(MOD_F, "ModF");
+        String regex = START + "ModF" + MID + END;
+        macroNodes(MOD_F, regex);
     }
 
     public static final String MOD_D = PREFIX + "MOD_D" + POSTFIX;
     static {
-        macroNodes(MOD_D, "ModD");
+        String regex = START + "ModD" + MID + END;
+        macroNodes(MOD_D, regex);
     }
 
     /*
@@ -2601,21 +2603,10 @@ public class IRNode {
         VECTOR_NODE_TYPE.put(irNodePlaceholder, typeString);
     }
 
-    private static void allocNodes(String irNode, String irNodeName, String optoRegex) {
-        String idealIndependentRegex = START + irNodeName + "\\b" + MID + END;
-        Map<PhaseInterval, String> intervalToRegexMap = new HashMap<>();
-        intervalToRegexMap.put(new PhaseInterval(CompilePhase.BEFORE_REMOVEUSELESS, CompilePhase.PHASEIDEALLOOP_ITERATIONS),
-                               idealIndependentRegex);
-        intervalToRegexMap.put(new PhaseInterval(CompilePhase.PRINT_OPTO_ASSEMBLY), optoRegex);
-        MultiPhaseRangeEntry entry = new MultiPhaseRangeEntry(CompilePhase.PRINT_OPTO_ASSEMBLY, intervalToRegexMap);
-        IR_NODE_MAPPINGS.put(irNode, entry);
-    }
-
     /**
      * Apply {@code regex} on all ideal graph phases up to and including {@link CompilePhase#BEFORE_MACRO_EXPANSION}.
      */
-    private static void macroNodes(String irNodePlaceholder, String irNodeRegex) {
-        String regex = START + irNodeRegex + MID + END;
+    private static void macroNodes(String irNodePlaceholder, String regex) {
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.BEFORE_MACRO_EXPANSION, regex,
                                                                           CompilePhase.BEFORE_STRINGOPTS,
                                                                           CompilePhase.BEFORE_MACRO_EXPANSION));
