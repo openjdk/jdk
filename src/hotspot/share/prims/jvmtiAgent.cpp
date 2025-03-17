@@ -374,6 +374,7 @@ static bool invoke_JVM_OnLoad(JvmtiAgent* agent) {
   assert(agent->is_xrun(), "invariant");
   assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_PRIMORDIAL, "invalid init sequence");
   OnLoadEntry_t on_load_entry = lookup_JVM_OnLoad_entry_point(agent, /* vm exit on error */ true);
+  assert(on_load_entry != nullptr, "invariant");
   // Invoke the JVM_OnLoad function
   JavaThread* thread = JavaThread::current();
   ThreadToNativeFromVM ttn(thread);
