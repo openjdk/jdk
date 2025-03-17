@@ -114,11 +114,10 @@ private:
   // Returns left child (now parent)
   IntrusiveRBNode* rotate_right();
 
-#ifdef ASSERT
+  template <typename NodeType, typename NodeVerifier>
   void verify(size_t& num_nodes, size_t& black_nodes_until_leaf,
               size_t& shortest_leaf_path, size_t& longest_leaf_path,
-              size_t& tree_depth, bool expect_visited) const;
-#endif // ASSERT
+              size_t& tree_depth, bool expect_visited, NodeVerifier verifier) const;
 
 };
 
@@ -185,12 +184,17 @@ protected:
   DEBUG_ONLY(mutable bool _expected_visited);
 
 private:
-  template <typename CMP = decltype(COMPARATOR::cmp), ENABLE_IF(std::is_same<CMP, int (K, K)>::value)>
+  template <typename CMP>
+  static constexpr bool IsKeyComparator = std::is_same<decltype(CMP::cmp), int (K, K)>::value;
+  template <typename CMP>
+  static constexpr bool IsNodeComparator = std::is_same<decltype(CMP::cmp), int (K, const NodeType*)>::value;
+
+  template <typename CMP = COMPARATOR, ENABLE_IF(IsKeyComparator<CMP>)>
   int cmp(const K& a, const NodeType* b) const {
     return COMPARATOR::cmp(a, b->key());
   }
 
-  template <typename CMP = decltype(COMPARATOR::cmp), ENABLE_IF(std::is_same<CMP, int (K, const NodeType*)>::value)>
+  template <typename CMP = COMPARATOR, ENABLE_IF(IsNodeComparator<CMP>)>
   int cmp(const K& a, const NodeType* b) const {
     return COMPARATOR::cmp(a, b);
   }
@@ -218,8 +222,7 @@ public:
 
   AbstractRBTree() : _num_nodes(0), _root(nullptr) DEBUG_ONLY(COMMA _expected_visited(false)) {
     static_assert(std::is_trivially_destructible<K>::value, "key type must be trivially destructable");
-    static_assert(std::is_same<decltype(COMPARATOR::cmp), int(K, K)>::value ||
-                  std::is_same<decltype(COMPARATOR::cmp), int(K, const NodeType*)>::value,
+    static_assert(IsKeyComparator<COMPARATOR> || IsNodeComparator<COMPARATOR>,
                   "comparator must be of correct type");
   }
 
@@ -365,7 +368,22 @@ public:
   void visit_range_in_order(const K& from, const K& to, F f) const;
 
   // Verifies that the tree is correct and holds rb-properties
-  void verify_self() const NOT_DEBUG({});
+  // If not using a key comparator (when using IntrusiveRBTree for example),
+  // A NodeVerifier function must be provided with signature:
+  // bool (const NodeType* a, const NodeType* b)
+  // Which returns true if a < b, and false otherwise.
+  template <typename NodeVerifier>
+  void verify_self(NodeVerifier verifier) const;
+
+  template <typename CMP = COMPARATOR, ENABLE_IF(IsKeyComparator<CMP>)>
+  void verify_self() const {
+    verify_self([](const NodeType* a, const NodeType* b){ return COMPARATOR::cmp(a->key(), b->key()) < 0; });
+  }
+
+  template <typename CMP = COMPARATOR, ENABLE_IF(IsNodeComparator<CMP>)>
+  void verify_self() const {
+    verify_self([](const NodeType*, const NodeType*){ return true;});
+  }
 
   void print_on(outputStream* st) const;
 

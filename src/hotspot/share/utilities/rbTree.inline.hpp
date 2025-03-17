@@ -122,12 +122,12 @@ inline IntrusiveRBNode* IntrusiveRBNode::next() {
   return const_cast<IntrusiveRBNode*>(static_cast<const IntrusiveRBNode*>(this)->next());
 }
 
-#ifdef ASSERT
+template <typename NodeType, typename NodeVerifier>
 inline void IntrusiveRBNode::verify(
     size_t& num_nodes, size_t& black_nodes_until_leaf, size_t& shortest_leaf_path, size_t& longest_leaf_path,
-    size_t& tree_depth, bool expect_visited) const {
+    size_t& tree_depth, bool expect_visited, NodeVerifier verifier) const {
   assert(expect_visited != _visited, "node already visited");
-  _visited = !_visited;
+  DEBUG_ONLY(_visited = !_visited);
 
   size_t num_black_nodes_left = 0;
   size_t shortest_leaf_path_left = 0;
@@ -135,13 +135,14 @@ inline void IntrusiveRBNode::verify(
   size_t tree_depth_left = 0;
 
   if (_left != nullptr) {
+    assert(verifier((NodeType*)_left, (NodeType*)this), "left child must compare strictly less than parent");
     if (_right == nullptr) {
       assert(is_black() && _left->is_red(), "if one child it must be red and node black");
     }
     assert(is_black() || _left->is_black(), "2 red nodes in a row");
     assert(_left->parent() == this, "pointer mismatch");
-    _left->verify(num_nodes, num_black_nodes_left, shortest_leaf_path_left,
-                  longest_leaf_path_left, tree_depth_left, expect_visited);
+    _left->verify<NodeType>(num_nodes, num_black_nodes_left, shortest_leaf_path_left,
+                  longest_leaf_path_left, tree_depth_left, expect_visited, verifier);
   }
 
   size_t num_black_nodes_right = 0;
@@ -150,13 +151,14 @@ inline void IntrusiveRBNode::verify(
   size_t tree_depth_right = 0;
 
   if (_right != nullptr) {
+    assert(verifier((NodeType*)this, (NodeType*)_right), "right child must compare strictly greater than parent");
     if (_left == nullptr) {
       assert(is_black() && _right->is_red(), "if one child it must be red and node black");
     }
     assert(is_black() || _left->is_black(), "2 red nodes in a row");
     assert(_right->parent() == this, "pointer mismatch");
-    _right->verify(num_nodes, num_black_nodes_right, shortest_leaf_path_right,
-                   longest_leaf_path_right, tree_depth_right, expect_visited);
+    _right->verify<NodeType>(num_nodes, num_black_nodes_right, shortest_leaf_path_right,
+                   longest_leaf_path_right, tree_depth_right, expect_visited, verifier);
   }
 
   shortest_leaf_path = MAX2(longest_leaf_path_left, longest_leaf_path_right);
@@ -179,8 +181,6 @@ inline void IntrusiveRBNode::verify(
   }
 
 }
-
-#endif // ASSERT
 
 template <typename K, typename NodeType, typename COMPARATOR>
 inline const typename AbstractRBTree<K, NodeType, COMPARATOR>::Cursor
@@ -240,9 +240,7 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::insert_at_cursor(NodeType* 
   node->_left = nullptr;
   node->_right = nullptr;
 
-#ifdef ASSERT
-  node->_visited = _expected_visited;
-#endif // ASSERT
+  DEBUG_ONLY(node->_visited = _expected_visited);
 
   if (node_cursor._parent == nullptr) {
     return;
@@ -561,10 +559,6 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::replace_at_cursor(NodeType*
   }
 
   DEBUG_ONLY(new_node->_visited = old_node->_visited);
-
-#ifdef ASSERT
-  verify_self(); // Dangerous operation, should verify no tree properties were broken
-#endif // ASSERT
 }
 
 template <typename K, typename NodeType, typename COMPARATOR>
@@ -604,7 +598,6 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_in_order(F f) const {
 template <typename K, typename NodeType, typename COMPARATOR>
 template <typename F>
 inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_range_in_order(const K& from, const K& to, F f) const {
-  // assert(COMPARATOR::cmp(from, to) <= 0, "from must be less or equal to to");
   if (_root == nullptr) {
     return;
   }
@@ -620,9 +613,9 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_range_in_order(const 
   }
 }
 
-#ifdef ASSERT
 template <typename K, typename NodeType, typename COMPARATOR>
-inline void AbstractRBTree<K, NodeType, COMPARATOR>::verify_self() const {
+template <typename NodeVerifier>
+inline void AbstractRBTree<K, NodeType, COMPARATOR>::verify_self(NodeVerifier verifier) const {
   if (_root == nullptr) {
     assert(_num_nodes == 0, "rbtree has %zu nodes but no root", _num_nodes);
     return;
@@ -635,9 +628,11 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::verify_self() const {
   size_t tree_depth = 0;
   size_t shortest_leaf_path = 0;
   size_t longest_leaf_path = 0;
-  _expected_visited = !_expected_visited;
+  DEBUG_ONLY(_expected_visited = !_expected_visited);
+  bool expected_visited = DEBUG_ONLY(_expected_visited) NOT_DEBUG(false);
 
-  _root->verify(num_nodes, black_depth, shortest_leaf_path, longest_leaf_path, tree_depth, _expected_visited);
+  _root->verify<NodeType>(num_nodes, black_depth, shortest_leaf_path, longest_leaf_path,
+                tree_depth, expected_visited, verifier);
 
   const unsigned int maximum_depth = log2i(size() + 1) * 2;
 
@@ -649,7 +644,6 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::verify_self() const {
          "unexpected number of nodes in rbtree. expected: %zu"
          ", actual: %zu", size(), num_nodes);
 }
-#endif // ASSERT
 
 template <typename T,
           ENABLE_IF(std::is_integral<T>::value),

@@ -94,6 +94,12 @@ struct ArrayAllocator {
     }
   };
 
+  // true if a < b
+  static bool IntrusiveVerifier(IntrusiveTreeNode* a, IntrusiveTreeNode* b) {
+    return (IntrusiveHolder::cast_to_self(a)->key -
+            IntrusiveHolder::cast_to_self(b)->key) < 0;
+  }
+
   using IntrusiveTreeInt = IntrusiveRBTree<int, IntrusiveCmp>;
   using IntrusiveCursor = IntrusiveTreeInt::Cursor;
 
@@ -627,7 +633,6 @@ public:
     }
   }
 
-#ifdef ASSERT
   void test_fill_verify() {
     RBTreeInt rbtree;
     const RBTreeInt& rbtree_const = rbtree;
@@ -716,7 +721,7 @@ public:
 
       EXPECT_NOT_NULL(cursor2.node());
 
-      intrusive_tree.verify_self();
+      intrusive_tree.verify_self(IntrusiveVerifier);
     }
 
     // Check inserted values
@@ -736,7 +741,7 @@ public:
 
       EXPECT_NULL(cursor2.node());
 
-      intrusive_tree.verify_self();
+      intrusive_tree.verify_self(IntrusiveVerifier);
     }
 
     // Check removed values
@@ -746,6 +751,7 @@ public:
     }
   }
 
+  #ifdef ASSERT
   void test_nodes_visited_once() {
     constexpr size_t memory_size = 65536;
     using Tree = RBTree<int, int, Cmp, ArrayAllocator<memory_size>>;
@@ -909,7 +915,6 @@ TEST_VM(RBTreeTestNonFixture, TestPrintIntegerTree) {
     ASSERT_NE(strstr(ss.base(), s3), N);
 }
 
-#ifdef ASSERT
 TEST_VM_F(RBTreeTest, IntrusiveTest) {
   this->test_intrusive();
 }
@@ -922,9 +927,11 @@ TEST_VM_F(RBTreeTest, CursorReplace) {
   this->test_cursor_replace();
 }
 
+#ifdef ASSERT
 TEST_VM_F(RBTreeTest, NodesVisitedOnce) {
   this->test_nodes_visited_once();
 }
+#endif // ASSERT
 
 TEST_VM_F(RBTreeTest, InsertRemoveVerify) {
   constexpr int num_nodes = 100;
@@ -982,4 +989,3 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
   }
 }
 
-#endif // ASSERT
