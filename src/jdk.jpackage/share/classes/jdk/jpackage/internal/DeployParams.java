@@ -166,8 +166,7 @@ public class DeployParams {
                 }
             } else {
                 if (!hasInput && !hasAppImage) {
-                    throw new PackagerException(
-                           "ERR_MissingArgument", "--input");
+                    throw new PackagerException("error.no-input-parameter");
                 }
             }
         } else {

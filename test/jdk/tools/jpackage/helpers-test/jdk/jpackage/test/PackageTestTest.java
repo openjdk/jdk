@@ -376,7 +376,7 @@ public class PackageTestTest extends JUnitAdapter {
                 };
             }).setExpectedExitCode(expectedJPackageExitCode)
                     .setExpectedInstallExitCode(handlersSpec.installExitCode)
-                    .isPackageTypeSupported(type -> true)
+                    .isPackageTypeEnabled(type -> true)
                     .forTypes().packageHandlers(handlers);
         }
 

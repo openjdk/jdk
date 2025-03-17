@@ -685,6 +685,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
     }
 
     private static boolean isValidBundleIdentifier(String id) {
+        Objects.requireNonNull(id);
         for (int i = 0; i < id.length(); i++) {
             char a = id.charAt(i);
             // We check for ASCII codes first which we accept. If check fails,
@@ -709,12 +710,6 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             validateAppImageAndBundeler(params);
 
             String identifier = MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params);
-            if (identifier == null) {
-                throw new ConfigException(
-                        I18N.getString("message.app-image-requires-identifier"),
-                        I18N.getString(
-                            "message.app-image-requires-identifier.advice"));
-            }
             if (!isValidBundleIdentifier(identifier)) {
                 throw new ConfigException(
                         MessageFormat.format(I18N.getString(

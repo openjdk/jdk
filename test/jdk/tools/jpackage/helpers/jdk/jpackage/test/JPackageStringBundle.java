@@ -64,7 +64,7 @@ public enum JPackageStringBundle {
         }
     }
 
-    public CannedFormattedString cannedFormattedString(String key, String ... args) {
+    public CannedFormattedString cannedFormattedString(String key, Object ... args) {
         return new CannedFormattedString(this::getFormattedString, key, args);
     }
 
