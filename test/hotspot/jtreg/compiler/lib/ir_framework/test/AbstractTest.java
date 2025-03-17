@@ -31,6 +31,7 @@ import jdk.test.whitebox.WhiteBox;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.function.Consumer;
 
 /**
  * Abstract super class for base, checked and custom run tests.
@@ -61,6 +62,8 @@ abstract class AbstractTest {
     public boolean isSkipped() {
         return skip;
     }
+
+    abstract public void forEachTestMethod(Consumer<Method> callback);
 
     /**
      * See {@link CompLevel#WAIT_FOR_COMPILATION}.

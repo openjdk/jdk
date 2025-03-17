@@ -30,6 +30,7 @@ import compiler.lib.ir_framework.shared.TestRunException;
 import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Method;
+import java.util.function.Consumer;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -74,6 +75,13 @@ class CustomRunTest extends AbstractTest {
     @Override
     String getName() {
         return runMethod.getName();
+    }
+
+    @Override
+    public void forEachTestMethod(Consumer<Method> callback) {
+        for (DeclaredTest test : tests) {
+            callback.accept(test.getTestMethod());
+        }
     }
 
     @Override
