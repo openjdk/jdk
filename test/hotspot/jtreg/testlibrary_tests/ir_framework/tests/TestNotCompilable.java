@@ -37,54 +37,102 @@ import compiler.lib.ir_framework.driver.TestVMException;
 public class TestNotCompilable {
     public static void main(String[] args) throws Exception {
         // Run without any flags -> should pass.
-        TestFramework framework1 = new TestFramework(A.class);
-        framework1.start();
+        runNormal(TestClassA.class);
+        runNormal(TestClassB.class);
+        runNormal(TestClassC.class);
+        runNormal(TestClassD.class);
 
         // Forbid compilation -> should throw exception, because "not compilable".
-        TestFramework framework2 = new TestFramework(A.class);
-        framework2.addFlags("-XX:CompileCommand=exclude,*A::test*");
-        try {
-            framework2.start();
-            throw new RuntimeException("should have thrown TestRunException");
-        } catch (TestVMException e) {}
-
-        // Forbid compilation, but allow methods not to compile -> should pass.
-        TestFramework framework3 = new TestFramework(A.class);
-        framework3.addFlags("-XX:CompileCommand=exclude,*A::test*");
-        framework3.allowNotCompilable();
-        framework3.start();
-
-        // Run without any flags -> should pass.
-        TestFramework framework4 = new TestFramework(B.class);
-        framework4.start();
+        runWithExcludeExpectFailure(TestClassA.class);
+        runWithExcludeExpectFailure(TestClassB.class);
+        runOptoNoExecuteExpectFailure(TestClassA.class);
+        runOptoNoExecuteExpectFailure(TestClassB.class);
 
         // Forbid compilation -> annotation allows not compilable -> should pass.
-        TestFramework framework5 = new TestFramework(B.class);
-        framework5.addFlags("-XX:CompileCommand=exclude,*B::test*");
-        framework5.start();
+        runWithExcludeExpectSuccess(TestClassC.class);
+        runWithExcludeExpectSuccess(TestClassD.class);
+        runOptoNoExecuteExpectSuccess(TestClassC.class);
+        runOptoNoExecuteExpectSuccess(TestClassD.class);
 
         // Forbid compilation, but allow methods not to compile -> should pass.
-        TestFramework framework6 = new TestFramework(B.class);
-        framework6.addFlags("-XX:CompileCommand=exclude,*B::test*");
-        framework6.allowNotCompilable();
-        framework6.start();
+        runWithExcludeAndGlobalAllowNotCompilable(TestClassA.class);
+        runWithExcludeAndGlobalAllowNotCompilable(TestClassB.class);
+        runWithExcludeAndGlobalAllowNotCompilable(TestClassC.class);
+        runWithExcludeAndGlobalAllowNotCompilable(TestClassD.class);
+        runOptoNoExecuteAndGlobalAllowNotCompilable(TestClassA.class);
+        runOptoNoExecuteAndGlobalAllowNotCompilable(TestClassB.class);
+        runOptoNoExecuteAndGlobalAllowNotCompilable(TestClassC.class);
+        runOptoNoExecuteAndGlobalAllowNotCompilable(TestClassD.class);
+    }
+
+    private static void runNormal(Class c) {
+        TestFramework framework = new TestFramework(c);
+        framework.start();
+    }
+
+    private static void runWithExcludeExpectFailure(Class c) {
+        TestFramework framework = new TestFramework(c);
+        framework.addFlags("-XX:CompileCommand=exclude,*TestClass*::test");
+        try {
+            framework.start();
+            throw new RuntimeException("should have thrown TestRunException");
+        } catch (TestVMException e) {}
+    }
+
+    private static void runWithExcludeExpectSuccess(Class c) {
+        TestFramework framework = new TestFramework(c);
+        framework.addFlags("-XX:CompileCommand=exclude,*TestClass*::test");
+        framework.start();
+    }
+
+    private static void runOptoNoExecuteExpectFailure(Class c) {
+        TestFramework framework = new TestFramework(c);
+        framework.addFlags("-XX:CompileCommand=compileonly,*TestClass*::test", "-XX:+OptoNoExecute");
+        try {
+            framework.start();
+            throw new RuntimeException("should have thrown TestRunException");
+        } catch (TestVMException e) {}
+    }
+
+    private static void runOptoNoExecuteExpectSuccess(Class c) {
+        TestFramework framework = new TestFramework(c);
+        framework.addFlags("-XX:CompileCommand=compileonly,*TestClass*::test", "-XX:+OptoNoExecute");
+        framework.start();
+    }
+
+    private static void runWithExcludeAndGlobalAllowNotCompilable(Class c) {
+        TestFramework framework = new TestFramework(c);
+        framework.addFlags("-XX:CompileCommand=exclude,*TestClass*::test");
+        framework.allowNotCompilable();
+        framework.start();
+    }
+
+    private static void runOptoNoExecuteAndGlobalAllowNotCompilable(Class c) {
+        TestFramework framework = new TestFramework(c);
+        framework.addFlags("-XX:CompileCommand=compileonly,*TestClass*::test", "-XX:+OptoNoExecute");
+        framework.allowNotCompilable();
+        framework.start();
     }
 }
 
-class A {
+class TestClassA {
     @Test
-    public void test1() {}
-
-    @Test
-    //TODO: @IR(failOn = IRNode.LOAD)
-    public void test2() {}
+    public void test() {}
 }
 
-class B {
-    @Test(allowNotCompilable = true)
-    public void test1() {}
+class TestClassB {
+    @Test
+    //TODO: @IR(failOn = IRNode.LOAD)
+    public void test() {}
+}
 
+class TestClassC {
+    @Test(allowNotCompilable = true)
+    public void test() {}
+}
+
+class TestClassD {
     @Test(allowNotCompilable = true)
     @IR(failOn = IRNode.LOAD)
-    public void test2() {}
+    public void test() {}
 }
