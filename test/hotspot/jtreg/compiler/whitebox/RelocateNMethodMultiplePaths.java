@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,10 +19,11 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
 /*
- * @test id=Serial
+ * @test id=SerialC1
  * @bug 8316694
  * @requires vm.debug == true
  * @summary test that relocated nmethod is correctly deoptimized
@@ -31,12 +32,12 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache
- * -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseSerialGC compiler.whitebox.RelocateNMethodMultiplePaths
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseSerialGC compiler.whitebox.RelocateNMethodMultiplePaths
  */
 
 /*
- * @test id=Parallel
+ * @test id=SerialC2
  * @bug 8316694
  * @requires vm.debug == true
  * @summary test that relocated nmethod is correctly deoptimized
@@ -45,12 +46,12 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache
- * -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseParallelGC compiler.whitebox.RelocateNMethodMultiplePaths
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseSerialGC compiler.whitebox.RelocateNMethodMultiplePaths
  */
 
 /*
- * @test id=G1
+ * @test id=ParallelC1
  * @bug 8316694
  * @requires vm.debug == true
  * @summary test that relocated nmethod is correctly deoptimized
@@ -59,12 +60,12 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache
- * -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseG1GC compiler.whitebox.RelocateNMethodMultiplePaths
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseParallelGC compiler.whitebox.RelocateNMethodMultiplePaths
  */
 
 /*
- * @test id=Shenandoah
+ * @test id=ParallelC2
  * @bug 8316694
  * @requires vm.debug == true
  * @summary test that relocated nmethod is correctly deoptimized
@@ -73,12 +74,12 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache
- * -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseShenandoahGC compiler.whitebox.RelocateNMethodMultiplePaths
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseParallelGC compiler.whitebox.RelocateNMethodMultiplePaths
  */
 
 /*
- * @test id=ZGC
+ * @test id=G1C1
  * @bug 8316694
  * @requires vm.debug == true
  * @summary test that relocated nmethod is correctly deoptimized
@@ -87,8 +88,78 @@
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache
- * -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseZGC compiler.whitebox.RelocateNMethodMultiplePaths
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseG1GC compiler.whitebox.RelocateNMethodMultiplePaths
+ */
+
+/*
+ * @test id=G1C2
+ * @bug 8316694
+ * @requires vm.debug == true
+ * @summary test that relocated nmethod is correctly deoptimized
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc java.management
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseG1GC compiler.whitebox.RelocateNMethodMultiplePaths
+ */
+
+/*
+ * @test id=ShenandoahC1
+ * @bug 8316694
+ * @requires vm.debug == true
+ * @summary test that relocated nmethod is correctly deoptimized
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc java.management
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseShenandoahGC compiler.whitebox.RelocateNMethodMultiplePaths
+ */
+
+/*
+ * @test id=ShenandoahC2
+ * @bug 8316694
+ * @requires vm.debug == true
+ * @summary test that relocated nmethod is correctly deoptimized
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc java.management
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseShenandoahGC compiler.whitebox.RelocateNMethodMultiplePaths
+ */
+
+/*
+ * @test id=ZGCC1
+ * @bug 8316694
+ * @requires vm.debug == true
+ * @summary test that relocated nmethod is correctly deoptimized
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc java.management
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseZGC compiler.whitebox.RelocateNMethodMultiplePaths
+ */
+
+/*
+ * @test id=ZGCC2
+ * @bug 8316694
+ * @requires vm.debug == true
+ * @summary test that relocated nmethod is correctly deoptimized
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc java.management
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+TieredCompilation
+ * -XX:+SegmentedCodeCache -XX:-DeoptimizeRandom -XX:+DeoptimizeALot -XX:+UseZGC compiler.whitebox.RelocateNMethodMultiplePaths
  */
 
 package compiler.whitebox;
@@ -102,7 +173,9 @@ import jdk.test.whitebox.code.NMethod;
 public class RelocateNMethodMultiplePaths {
 
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
-    public static double FUNCTION_RESULT = 0;
+
+    private static final int PATH_ONE_RESULT = 1;
+    private static final int PATH_TWO_RESULT = 2;
 
     public static void main(String [] args) throws Exception {
         // Get method that will be relocated
@@ -122,7 +195,7 @@ public class RelocateNMethodMultiplePaths {
         NMethod origNmethod = NMethod.get(method, false);
 
         // Relocate nmethod and mark old for cleanup
-        WHITE_BOX.relocateNMethodTo(method, BlobType.MethodProfiled.id);
+        WHITE_BOX.relocateNMethodTo(method, BlobType.MethodNonProfiled.id);
 
         // Trigger GC to clean up old nmethod
         WHITE_BOX.fullGC();
@@ -136,14 +209,19 @@ public class RelocateNMethodMultiplePaths {
             throw new RuntimeException("Did not create new nmethod");
         }
 
-        // Call function again with different path so it gets deoptimized
-        function(false);
+        // Verify function still produces correct result
+        if (function(true) != PATH_ONE_RESULT) {
+            throw new RuntimeException("Relocated function produced incorrect result in path one");
+        }
 
+        // Call function again with different path and verify result
+        if (function(false) != PATH_TWO_RESULT) {
+            throw new RuntimeException("Relocated function produced incorrect result in path two");
+        }
+
+        // Verify function can be correctly deoptimized
+        WHITE_BOX.deoptimizeMethod(method);
         CompilerWhiteBoxTest.checkNotCompiled(method, false);
-
-        // Call both paths to verify everything still works
-        function(true);
-        function(false);
     }
 
     // Call function multiple times to trigger compilation
@@ -153,11 +231,11 @@ public class RelocateNMethodMultiplePaths {
         }
     }
 
-    public static void function(boolean pathOne) {
+    public static int function(boolean pathOne) {
         if (pathOne) {
-            FUNCTION_RESULT = 1;
+            return PATH_ONE_RESULT;
         } else {
-            FUNCTION_RESULT = 2;
+            return PATH_TWO_RESULT;
         }
     }
 }
