@@ -580,7 +580,7 @@ public final class MacSign {
             }
 
             // Trust certificates.
-            MacSign.trustCertificates(trustConfig);
+            trustCertificates(trustConfig);
         });
 
         Keychain.addToSearchList(specs.stream().map(KeychainWithCertsSpec::keychain).toList());
@@ -693,22 +693,18 @@ public final class MacSign {
     }
 
     private static void trustCertificates(Map<Path, Keychain> config) {
-        final List<String> cmdlines = new ArrayList<>();
-        cmdlines.add("#!/bin/sh");
-        cmdlines.addAll(config.entrySet().stream().map(e -> {
-            final var certPemFile = e.getKey();
-            final var keychainName = e.getValue().name();
-            return String.join(" ", "security", "add-trusted-cert", "-k", keychainName, certPemFile.toAbsolutePath().toString());
-        }).toList());
+        if (config.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
 
-        withTempDirectory(dir -> {
-            final var shellScript= dir.resolve("add-trusted-certs.sh");
-            TKit.createTextFile(shellScript, cmdlines);
-            shellScript.toFile().setExecutable(true);
+        final var exec = Executor.of("osascript", SIGN_UTILS_SCRIPT.toString(), "trust-certs",
+                config.keySet().iterator().next().getParent().toAbsolutePath().toString());
 
-            Executor.of("osascript", SIGN_UTILS_SCRIPT.toString(),
-                    "run-shell-cmd", "'" + shellScript.toAbsolutePath().toString() + "'").dumpOutput().execute();
-        });
+        exec.addArguments(config.entrySet().stream().map(e -> {
+            return Stream.of(e.getValue().name(), e.getKey().getFileName().toString());
+        }).flatMap(x -> x).toList());
+
+        exec.dumpOutput().execute();
     }
 
     static Executor security(String... args) {

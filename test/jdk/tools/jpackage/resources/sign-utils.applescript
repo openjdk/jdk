@@ -24,12 +24,45 @@
 on run argv
   set action to (item 1 of argv)
 
-  if action is "run-shell-cmd" then
-    runShellCommandInTerminal(item 2 of argv)
+  if action is "run-shell-script" then
+    runShellCommandInTerminal (item 2 of argv)
+  else if action is "trust-certs" then
+    set certs to {}
+    set certFileDir to (item 2 of argv)
+    repeat with i from 3 to (length of argv) by 2
+      set end of certs to {keychain: item i of argv, cert: certFileDir & "/" & item (i + 1) of argv}
+    end repeat
+    trustCerts(certs)
   else
     error "Unrecognized command: [" & action & "]"
   end if
 end run
+
+
+on trustCerts(certs)
+  set runShellScriptInTerminal to "osascript " & quoted form of (POSIX path of (path to me)) & " run-shell-script "
+  repeat with i from 1 to count of certs
+    set cert to item i of certs
+    set label to "certificate [" & i & "/" & count of certs & "]"
+    repeat
+      display dialog ("Trust " & label) giving up after 60
+      if button returned of result = "OK" then
+        try
+          set theScript to "/usr/bin/security add-trusted-cert -k " & quoted form of (keychain of cert) & " " & quoted form of (cert of cert)
+          set theCmdline to runShellScriptInTerminal & quoted form of theScript
+          log "Execute: " & theCmdline
+          do shell script theCmdline
+          log "Trusted " & label
+          exit repeat
+        on error errMsg number errNum
+          log "Error occurred: " & errMsg & " (Error Code: " & errNum & ")"
+        end try
+      else if gave up of result then
+        error "Timeout of a request to trust " & label
+      end if
+    end repeat
+  end repeat
+end trustCerts
 
 
 on runShellCommandInTerminal(shellCommand)
