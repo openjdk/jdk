@@ -54,7 +54,6 @@ TARGETS += $(BUILD_SETUP_AOT)
 
 # Copy to hotspot jtreg test image
 $(eval $(call SetupCopyFiles, COPY_SETUP_AOT, \
-    SRC := $(SETUP_AOT_SUPPORT), \
     DEST := $(TEST_IMAGE_DIR)/setup_aot, \
     FILES := $(SETUP_AOT_JAR), \
 ))

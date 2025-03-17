@@ -755,7 +755,7 @@ define SetupAOTBody
 	$$(call LogWarn, AOT: Create cache configuration) \
 	$$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), ( \
             cd $$($1_AOT_JDK_OUTPUT_DIR); \
-	    $$(FIXPATH) $(JAR_CMD) --extract --file $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.jar; \
+	    $(JAR) --extract --file $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.jar; \
 	    $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java $$($1_VM_OPTIONS) \
 	        -Xlog:class+load,cds,cds+class=debug:file=$$($1_AOT_JDK_CONF).log  -Xlog:cds*=error \
 	        -XX:AOTMode=record -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) \
