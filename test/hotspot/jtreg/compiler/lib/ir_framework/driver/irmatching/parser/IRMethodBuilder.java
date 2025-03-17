@@ -23,6 +23,8 @@
 
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
+import compiler.lib.ir_framework.Test;
+import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.Compilation;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchable;
@@ -64,7 +66,10 @@ class IRMethodBuilder {
             return new IRMethod(testMethod.method(), testMethod.irRuleIds(), testMethod.irAnnos(),
                                 new Compilation(loggedMethod.compilationOutput()), vmInfo);
         } else {
-            return new NotCompiledIRMethod(testMethod.method(), testMethod.irRuleIds().length);
+            Test[] testAnnos = testMethod.method().getAnnotationsByType(Test.class);
+            TestFramework.check(testAnnos.length == 1, "Must have at most one @Test annotation per method.");
+            boolean allowNotCompilable  = testAnnos[0].allowNotCompilable();
+            return new NotCompiledIRMethod(testMethod.method(), testMethod.irRuleIds().length, allowNotCompilable);
         }
     }
 }
