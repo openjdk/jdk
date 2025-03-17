@@ -8387,50 +8387,51 @@ instruct binOps_HF_reg(fRegF dst, fRegF src1, fRegF src2)
   ins_pipe(fp_dop_reg_reg_s);
 %}
 
-instruct min_max_HF_reg(fRegF dst, fRegF src1, fRegF src2)
+instruct min_HF_reg(fRegF dst, fRegF src1, fRegF src2)
 %{
   predicate(!UseZfa);
   match(Set dst (MinHF src1 src2));
-  match(Set dst (MaxHF src1 src2));
-  format %{ "min_max_hf $dst, $src1, $src2" %}
+  format %{ "min_hf $dst, $src1, $src2" %}
   ins_encode %{
-    int opcode = this->ideal_Opcode();
-    switch(opcode) {
-      case Op_MinHF: __ minmax_fp($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
-                                  __ FLOAT_TYPE::half_precision, true);
-                     break;
-      case Op_MaxHF: __ minmax_fp($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
-                                  __ FLOAT_TYPE::half_precision, false);
-                     break;
-      default: assert(false, "%s is not supported here", NodeClassNames[opcode]); break;
-    }
+    __ minmax_fp($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
+                 __ FLOAT_TYPE::half_precision, true /* is_min */);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct minHF_reg_reg_zfa(fRegF dst, fRegF src1, fRegF src2) %{
+instruct min_HF_reg_zfa(fRegF dst, fRegF src1, fRegF src2) %{
   predicate(UseZfa);
   match(Set dst (MinHF src1 src2));
 
-  format %{ "minHF $dst, $src1, $src2" %}
+  format %{ "min_hf $dst, $src1, $src2" %}
 
   ins_encode %{
-    __ fminm_h(as_FloatRegister($dst$$reg),
-               as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+    __ fminm_h(as_FloatRegister($dst$$reg), as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
   %}
 
   ins_pipe(pipe_class_default);
 %}
 
-instruct maxHF_reg_reg_zfa(fRegF dst, fRegF src1, fRegF src2) %{
+instruct max_HF_reg(fRegF dst, fRegF src1, fRegF src2)
+%{
+  predicate(!UseZfa);
+  match(Set dst (MaxHF src1 src2));
+  format %{ "max_hf $dst, $src1, $src2" %}
+  ins_encode %{
+      __ minmax_fp($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
+                   __ FLOAT_TYPE::half_precision, false /* is_min */);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct max_HF_reg_zfa(fRegF dst, fRegF src1, fRegF src2) %{
   predicate(UseZfa);
   match(Set dst (MaxHF src1 src2));
 
-  format %{ "maxHF $dst, $src1, $src2" %}
+  format %{ "max_hf $dst, $src1, $src2" %}
 
   ins_encode %{
-    __ fmaxm_h(as_FloatRegister($dst$$reg),
-               as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+    __ fmaxm_h(as_FloatRegister($dst$$reg), as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
   %}
 
   ins_pipe(pipe_class_default);
