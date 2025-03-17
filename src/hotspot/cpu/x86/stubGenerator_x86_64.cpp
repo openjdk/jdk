@@ -4326,14 +4326,10 @@ void StubGenerator::generate_compiler_stubs() {
     if (libsimdsort != nullptr) {
       log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "simdsort" JNI_LIB_SUFFIX, p2i(libsimdsort));
 
-      snprintf(ebuf_, sizeof(ebuf_),
-               ((VM_Version::is_intel() || (VM_Version::is_amd() && (VM_Version::cpu_family() > 0x19)))
-                && VM_Version::supports_avx512dq()) ? "avx512_sort" : "avx2_sort");
+      snprintf(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512_simd_sort() ? "avx512_sort" : "avx2_sort");
       StubRoutines::_array_sort = (address)os::dll_lookup(libsimdsort, ebuf_);
 
-      snprintf(ebuf_, sizeof(ebuf_),
-               ((VM_Version::is_intel() || (VM_Version::is_amd() && (VM_Version::cpu_family() > 0x19)))
-                && VM_Version::supports_avx512dq()) ? "avx512_partition" : "avx2_partition");
+      snprintf(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512_simd_sort() ? "avx512_partition" : "avx2_partition");
       StubRoutines::_array_partition = (address)os::dll_lookup(libsimdsort, ebuf_);
     }
   }
