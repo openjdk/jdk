@@ -328,10 +328,14 @@ static OnLoadEntry_t lookup_On_Load_entry_point(JvmtiAgent* agent, const char* o
       if (library != nullptr) {
         agent->set_os_lib(library);
         agent->set_loaded();
+      } else {
+        // Did not load agent from the executable or library.
+        assert(!vm_exit_on_error, "invariant");
+        return nullptr;
       }
     }
   }
-  assert(agent->is_loaded() || !vm_exit_on_error, "invariant");
+  assert(agent->is_loaded(), "invariant");
   // Find the OnLoad function.
   return CAST_TO_FN_PTR(OnLoadEntry_t, os::find_agent_function(agent, false, on_load_symbol));
 }
