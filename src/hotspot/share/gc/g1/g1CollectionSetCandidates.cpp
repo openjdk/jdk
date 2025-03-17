@@ -134,7 +134,7 @@ int G1CSetCandidateGroup::compare_gc_efficiency(G1CSetCandidateGroup** gr1, G1CS
   }
 }
 
-int G1CollectionSetCandidateInfo::compare_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
+int G1CollectionSetCandidateInfo::compare_gc_efficiency(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
   // Make sure that null entries are moved to the end.
   if (ci1->_r == nullptr) {
     if (ci2->_r == nullptr) {
@@ -145,22 +145,6 @@ int G1CollectionSetCandidateInfo::compare_reclaimble_bytes(G1CollectionSetCandid
   } else if (ci2->_r == nullptr) {
     return -1;
   }
-
-  size_t reclaimable1 = ci1->_r->reclaimable_bytes();
-  size_t reclaimable2 = ci2->_r->reclaimable_bytes();
-
-  if (reclaimable1 > reclaimable2) {
-    return -1;
-  } else if (reclaimable1 < reclaimable2) {
-    return 1;
-  } else {
-    return 0;
-  }
-}
-
-int G1CollectionSetCandidateInfo::compare_gc_efficiency(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
-
-  assert(ci1->_r != nullptr && ci2->_r != nullptr, "Should have already filtered out nulls");
 
   size_t reclaimable1 = ci1->_r->gc_efficiency();
   size_t reclaimable2 = ci2->_r->gc_efficiency();
@@ -295,8 +279,8 @@ void G1CollectionSetCandidates::sort_marking_by_efficiency() {
   _from_marking_groups.verify();
 }
 
-void G1CollectionSetCandidates::set_candidates_from_marking(GrowableArrayFromArray<G1CollectionSetCandidateInfo>* candidate_infos) {
-  uint num_infos = candidate_infos->length();
+void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandidateInfo* candidate_infos,
+                                                            uint num_infos) {
   if (num_infos == 0) {
     log_debug(gc, ergo, cset) ("No regions selected from marking.");
     return;
@@ -319,8 +303,8 @@ void G1CollectionSetCandidates::set_candidates_from_marking(GrowableArrayFromArr
 
   current = new G1CSetCandidateGroup();
 
-  for (G1CollectionSetCandidateInfo ci : *candidate_infos) {
-    G1HeapRegion* r = ci._r;
+  for (uint i = 0; i < num_infos; i++) {
+    G1HeapRegion* r = candidate_infos[i]._r;
     assert(!contains(r), "must not contain region %u", r->hrm_index());
     _contains_map[r->hrm_index()] = CandidateOrigin::Marking;
 
@@ -334,7 +318,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(GrowableArrayFromArr
       current = new G1CSetCandidateGroup();
       num_added_to_group = 0;
     }
-    current->add(ci);
+    current->add(candidate_infos[i]);
     num_added_to_group++;
   }
 

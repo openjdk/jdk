@@ -111,7 +111,7 @@ public:
     cur->_stats._live_words += live_words;
   }
 
-  void incr_incoming_refs(uint region_idx) {
+  void inc_incoming_refs(uint region_idx) {
     G1RegionMarkStatsCacheEntry* const cur = find_for_add(region_idx);
     cur->_stats._incoming_refs++;
   }

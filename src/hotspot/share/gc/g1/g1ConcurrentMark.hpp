@@ -954,7 +954,7 @@ public:
 
   inline void update_liveness(oop const obj, size_t const obj_size);
 
-  inline void incr_incoming_refs(oop const obj);
+  inline void inc_incoming_refs(oop const obj);
 
   // Clear (without flushing) the mark cache entry for the given region.
   void clear_mark_stats_cache(uint region_idx);

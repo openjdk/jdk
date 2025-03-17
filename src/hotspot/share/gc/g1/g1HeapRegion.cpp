@@ -339,7 +339,7 @@ public:
 };
 
 
-double G1HeapRegion::total_based_on_inc_refs_ms() {
+double G1HeapRegion::total_based_on_incoming_refs_ms() {
 
   G1Policy* p = G1CollectedHeap::heap()->policy();
 
@@ -353,7 +353,7 @@ double G1HeapRegion::total_based_on_inc_refs_ms() {
 }
 
 double G1HeapRegion::gc_efficiency() {
-  return reclaimable_bytes() / total_based_on_inc_refs_ms();
+  return reclaimable_bytes() / total_based_on_incoming_refs_ms();
 }
 
 class VerifyCodeRootNMethodClosure: public NMethodClosure {

@@ -345,10 +345,10 @@ public:
 
   // Total collection pause time if we use incoming references as an
   // estimate for remembered set cards.
-  double total_based_on_inc_refs_ms();
+  double total_based_on_incoming_refs_ms();
 
   // GC Efficiency for collecting this region based on the time estimate in
-  // total_based_on_inc_refs_ms.
+  // total_based_on_incoming_refs_ms.
   double gc_efficiency();
 
   size_t incoming_refs() { return _incoming_refs; }
