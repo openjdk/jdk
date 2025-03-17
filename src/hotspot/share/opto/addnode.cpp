@@ -500,11 +500,11 @@ AddNode::Multiplication AddNode::find_power_of_two_addition_pattern(Node* n, Bas
       return Multiplication{true, lhs.variable, lhs.multiplier + rhs.multiplier};
     }
 
-    if (lhs.valid && !rhs.valid && lhs.variable == n->in(2)) {
+    if (lhs.valid && lhs.variable == n->in(2)) {
       return Multiplication{true, lhs.variable, lhs.multiplier + 1};
     }
 
-    if (!lhs.valid && rhs.valid && rhs.variable == n->in(1)) {
+    if (rhs.valid && rhs.variable == n->in(1)) {
       return Multiplication{true, rhs.variable, rhs.multiplier + 1};
     }
   }
