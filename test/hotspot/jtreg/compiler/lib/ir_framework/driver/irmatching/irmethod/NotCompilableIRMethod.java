@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,37 +23,38 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
+import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.Run;
 import compiler.lib.ir_framework.RunMode;
-import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 
 import java.lang.reflect.Method;
 
 /**
- * This class represents a special matching result of an IR method where the compilation output was completely empty.
- * This could happen when using {@link RunMode#STANDALONE} in a {@link Run @Run} method.
+ * This class represents a special IR method which was not compiled by the IR framework, but this was explicitly allowed
+ * by "allowNotCompilable".
  *
- * @see NotCompiledIRMethod
- * @see Run
+ * @see IR
+ * @see Test
  */
-public class NotCompiledIRMethodMatchResult implements MatchResult {
+public class NotCompilableIRMethod implements IRMethodMatchable {
     private final Method method;
-    private final int failedIRRules;
+    private final int ruleCount;
 
-    public NotCompiledIRMethodMatchResult(Method method, int failedIRRules) {
+    public NotCompilableIRMethod(Method method, int ruleCount) {
         this.method = method;
-        this.failedIRRules = failedIRRules;
+        this.ruleCount = ruleCount;
     }
 
     @Override
-    public boolean fail() {
-        return true;
+    public String name() {
+        return method.getName();
     }
 
+    /**
+     * Directly return a {@link NotCompilableIRMethodMatchResult} as we do not need to match IR rules individually.
+     */
     @Override
-    public void accept(MatchResultVisitor visitor) {
-        visitor.visitMethodNotCompiled(method, failedIRRules);
+    public NotCompilableIRMethodMatchResult match() {
+        return new NotCompilableIRMethodMatchResult(method, ruleCount);
     }
 }
-

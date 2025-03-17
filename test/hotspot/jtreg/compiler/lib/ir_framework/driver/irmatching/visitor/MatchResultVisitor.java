@@ -38,7 +38,8 @@ import java.lang.reflect.Method;
 public interface MatchResultVisitor {
     void visitTestClass(AcceptChildren acceptChildren);
     void visitIRMethod(AcceptChildren acceptChildren, Method method, int failedIRRules);
-    void visitMethodNotCompiled(Method method, int failedIRRules, boolean allowNotCompilable);
+    void visitMethodNotCompiled(Method method, int failedIRRules);
+    void visitMethodNotCompilable(Method method, int failedIRRules);
     void visitIRRule(AcceptChildren acceptChildren, int irRuleId, IR irAnno);
     void visitCompilePhaseIRRule(AcceptChildren acceptChildren, CompilePhase compilePhase, String compilationOutput);
     void visitNoCompilePhaseCompilation(CompilePhase compilePhase);

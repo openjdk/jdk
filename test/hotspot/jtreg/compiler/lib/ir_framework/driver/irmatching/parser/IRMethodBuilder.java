@@ -29,6 +29,7 @@ import compiler.lib.ir_framework.driver.irmatching.Compilation;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchable;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledIRMethod;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompilableIRMethod;
 import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.HotSpotPidFileParser;
 import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.LoggedMethod;
 import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.LoggedMethods;
@@ -71,7 +72,11 @@ class IRMethodBuilder {
             Test[] testAnnos = testMethod.method().getAnnotationsByType(Test.class);
             TestFramework.check(testAnnos.length == 1, "Must have at most one @Test annotation per method.");
             boolean allowMethodNotCompilable = allowNotCompilable || testAnnos[0].allowNotCompilable();
-            return new NotCompiledIRMethod(testMethod.method(), testMethod.irRuleIds().length, allowMethodNotCompilable);
+            if (allowMethodNotCompilable) {
+                return new NotCompilableIRMethod(testMethod.method(), testMethod.irRuleIds().length);
+            } else {
+                return new NotCompiledIRMethod(testMethod.method(), testMethod.irRuleIds().length);
+            }
         }
     }
 }

@@ -31,29 +31,29 @@ import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
 import java.lang.reflect.Method;
 
 /**
- * This class represents a special matching result of an IR method where the compilation output was completely empty.
- * This could happen when using {@link RunMode#STANDALONE} in a {@link Run @Run} method.
+ * This class represents a special matching result of an IR method where the compilation output was completely empty,
+ * but this was exlicitly allowed by "allowNotCompilable".
  *
- * @see NotCompiledIRMethod
- * @see Run
+ * @see NotCompilableIRMethod
+ * @see Test
  */
-public class NotCompiledIRMethodMatchResult implements MatchResult {
+public class NotCompilableIRMethodMatchResult implements MatchResult {
     private final Method method;
     private final int failedIRRules;
 
-    public NotCompiledIRMethodMatchResult(Method method, int failedIRRules) {
+    public NotCompilableIRMethodMatchResult(Method method, int failedIRRules) {
         this.method = method;
         this.failedIRRules = failedIRRules;
     }
 
     @Override
     public boolean fail() {
-        return true;
+        return false;
     }
 
     @Override
     public void accept(MatchResultVisitor visitor) {
-        visitor.visitMethodNotCompiled(method, failedIRRules);
+        visitor.visitMethodNotCompilable(method, failedIRRules);
     }
 }
 

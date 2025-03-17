@@ -87,16 +87,18 @@ public class FailureMessageBuilder implements MatchResultVisitor {
     }
 
     @Override
-    public void visitMethodNotCompiled(Method method, int failedIRRules, boolean allowNotCompilable) {
-        if (!allowNotCompilable) {
-            appendIRMethodHeader(method, failedIRRules);
-            indentation.add();
-            msg.append(indentation)
-               .append("* Method was not compiled. Did you specify a @Run method in STANDALONE mode? In this case, make " +
-                       "sure to always trigger a C2 compilation by invoking the test enough times.")
-               .append(System.lineSeparator());
-            indentation.sub();
-        }
+    public void visitMethodNotCompiled(Method method, int failedIRRules) {
+        appendIRMethodHeader(method, failedIRRules);
+        indentation.add();
+        msg.append(indentation)
+           .append("* Method was not compiled. Did you specify a @Run method in STANDALONE mode? In this case, make " +
+                   "sure to always trigger a C2 compilation by invoking the test enough times.")
+           .append(System.lineSeparator());
+        indentation.sub();
+    }
+
+    public void visitMethodNotCompilable(Method method, int failedIRRules) {
+        // TODO: what?
     }
 
     @Override
