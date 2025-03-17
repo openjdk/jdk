@@ -159,16 +159,22 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     size_t live_young_words_after_mark = young_heuristics->get_young_live_words_after_most_recent_mark();
     young_heuristics->record_mark_end(start_evac_or_final_roots_time, live_young_words_after_mark);
   }
+  assert(heap->is_concurrent_weak_root_in_progress(), "Must be doing weak roots now");
 
   // Concurrent stack processing
   if (heap->is_evacuation_in_progress()) {
     entry_thread_roots();
   }
 
-  // Process weak roots that might still point to regions that would be broken by cleanup
-  if (heap->is_concurrent_weak_root_in_progress()) {
-    entry_weak_refs();
-    entry_weak_roots();
+  // Process weak roots that might still point to regions that would be broken by cleanup.
+  // We cannot recycle regions because weak roots need to know what is marked in trashed regions.
+  entry_weak_refs();
+  entry_weak_roots();
+
+  // Perform concurrent class unloading before any regions get recycled. Class unloading may
+  // need to inspect unmarked objects in trashed regions.
+  if (heap->unload_classes()) {
+    entry_class_unloading();
   }
 
   // Final mark might have reclaimed some immediate garbage, kick cleanup to reclaim
@@ -177,12 +183,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   entry_cleanup_early();
 
   heap->free_set()->log_status_under_lock();
-
-  // Perform concurrent class unloading
-  if (heap->unload_classes() &&
-      heap->is_concurrent_weak_root_in_progress()) {
-    entry_class_unloading();
-  }
 
   // Processing strong roots
   // This may be skipped if there is nothing to update/evacuate.
@@ -415,6 +415,10 @@ void ShenandoahConcurrentGC::entry_reset() {
                                 ShenandoahWorkerPolicy::calc_workers_for_conc_reset(),
                                 msg);
     op_reset();
+  }
+
+  if (heap->mode()->is_generational()) {
+    heap->old_generation()->card_scan()->mark_read_table_as_clean();
   }
 }
 
@@ -687,12 +691,10 @@ void ShenandoahConcurrentGC::op_init_mark() {
   assert(!_generation->is_mark_complete(), "should not be complete");
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
-
   if (heap->mode()->is_generational()) {
     if (_generation->is_young()) {
-      // The current implementation of swap_remembered_set() copies the write-card-table to the read-card-table.
       ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_swap_rset);
-      _generation->swap_remembered_set();
+      _generation->swap_card_tables();
     }
 
     if (_generation->is_global()) {

@@ -129,10 +129,10 @@ class BytecodePrinter {
       int bci = (int)(bcp - method->code_base());
       st->print("[%zu] ", Thread::current()->osthread()->thread_id_for_printing());
       if (Verbose) {
-        st->print("%8d  %4d  " INTPTR_FORMAT " " INTPTR_FORMAT " %s",
+        st->print("%8zu  %4d  " INTPTR_FORMAT " " INTPTR_FORMAT " %s",
             BytecodeCounter::counter_value(), bci, tos, tos2, Bytecodes::name(code));
       } else {
-        st->print("%8d  %4d  %s",
+        st->print("%8zu  %4d  %s",
             BytecodeCounter::counter_value(), bci, Bytecodes::name(code));
       }
       print_attributes(bci, st);
