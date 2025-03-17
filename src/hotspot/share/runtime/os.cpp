@@ -634,7 +634,7 @@ size_t os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, MemTag mem_tag,
   DEBUG_ONLY(check_crash_protection());
 
   // On malloc(0), implementations of malloc(3) have the choice to return either
-  // null or a unique non  null pointer. To unify libc behavior across our platforms
+  // null or a unique non-null pointer. To unify libc behavior across our platforms
   // we chose the latter.
   size = MAX2((size_t)1, size);
   // Observe MallocLimit
