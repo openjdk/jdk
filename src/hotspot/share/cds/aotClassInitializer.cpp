@@ -98,12 +98,12 @@ bool AOTClassInitializer::is_allowed(AllowedSpec* specs, InstanceKlass* ik) {
 
 
 bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
-  assert(!ArchiveBuilder::current()->is_in_buffer_space(ik), "must be source klass");
+  assert(!ArchiveBuilder::is_active() || !ArchiveBuilder::current()->is_in_buffer_space(ik), "must be source klass");
   if (!CDSConfig::is_initing_classes_at_dump_time()) {
     return false;
   }
 
-  if (!ik->is_initialized()) {
+  if (!ik->is_initialized() && !ik->is_being_initialized()) {
     return false;
   }
 
@@ -298,9 +298,11 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
       {"java/lang/invoke/LambdaForm"},
       {"java/lang/invoke/LambdaForm$Holder"},                 // UNSAFE.ensureClassInitialized()
       {"java/lang/invoke/LambdaForm$NamedFunction"},
+      {"java/lang/invoke/LambdaMetafactory"},
       {"java/lang/invoke/MethodHandle"},
       {"java/lang/invoke/MethodHandles"},
       {"java/lang/invoke/SimpleMethodHandle"},
+      {"java/lang/invoke/StringConcatFactory"},
       {"java/util/Collections"},
       {"java/util/stream/Collectors"},
       {"jdk/internal/constant/ConstantUtils"},

@@ -687,20 +687,6 @@ void HeapShared::write_heap(ArchiveHeapInfo *heap_info) {
     NoSafepointVerifier nsv;
     CDSHeapVerifier::verify();
     check_special_subgraph_classes();
-
-    bool found = false;
-    for (int i = 0; i < _resolved_method_name_vmtargets->length(); i++) {
-      Method* m = _resolved_method_name_vmtargets->at(i);
-      InstanceKlass* holder = m->method_holder();
-      if (m->is_static() && !holder->has_aot_initialized_mirror()) {
-        found = true;
-        ResourceMark rm;
-        log_error(cds, heap)("MethodHandle cannot be cached for %s", m->external_name());
-      }
-    }
-    if (found) {
-      //MetaspaceShared::unrecoverable_writing_error();
-    }
   }
 
   StringTable::write_shared_table(_dumped_interned_strings);
@@ -854,6 +840,13 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
 }
 
 void KlassSubGraphInfo::check_allowed_klass(InstanceKlass* ik) {
+#ifndef PRODUCT
+  if (AOTClassInitializer::has_test_class()) {
+    // The tests can cache arbitrary types of objects.
+    return;
+  }
+#endif
+
   if (ik->module()->name() == vmSymbols::java_base()) {
     assert(ik->package() != nullptr, "classes in java.base cannot be in unnamed package");
     return;

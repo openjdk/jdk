@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -368,9 +368,9 @@ sealed class DirectMethodHandle extends MethodHandle {
             // It is a system class.  It is probably in the process of
             // being initialized, but we will help it along just to be safe.
             UNSAFE.ensureClassInitialized(cls);
-            return CDS.isDumpingStaticArchive();
+            return CDS.needsClassInitBarrier(cls);
         }
-        return UNSAFE.shouldBeInitialized(cls) || CDS.isDumpingStaticArchive();
+        return UNSAFE.shouldBeInitialized(cls) || CDS.needsClassInitBarrier(cls);
     }
 
     private void ensureInitialized() {
@@ -391,7 +391,7 @@ sealed class DirectMethodHandle extends MethodHandle {
         // defc was already being initialized by the current thread. In the latter case
         // the barrier must remain. We can detect this simply by checking if initialization
         // is still needed.
-        return !UNSAFE.shouldBeInitialized(defc) && !CDS.isDumpingStaticArchive();
+        return !UNSAFE.shouldBeInitialized(defc);
     }
 
     /*non-public*/

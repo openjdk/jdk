@@ -102,7 +102,7 @@ final class VarHandles {
         else {
             Class<?> decl = f.getDeclaringClass();
             var vh = makeStaticFieldVarHandle(decl, f, isWriteAllowedOnFinalFields);
-            return maybeAdapt(UNSAFE.shouldBeInitialized(decl) || CDS.isDumpingStaticArchive()
+            return maybeAdapt((UNSAFE.shouldBeInitialized(decl) || CDS.needsClassInitBarrier(decl))
                     ? new LazyInitializingVarHandle(vh, decl)
                     : vh);
         }
