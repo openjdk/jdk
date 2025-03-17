@@ -88,5 +88,3 @@ public class IRFrameworkWithVectorAPIExample {
                """, comp.getEscapedClassPathOfCompiledClasses());
     }
 }
-
- 
