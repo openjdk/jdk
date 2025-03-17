@@ -53,6 +53,9 @@ public class TestMemoryWithSubgroups {
     }
 
     static boolean isRootless() throws Exception {
+        // Docker and Podman have different INFO structures.
+        // The node path for Podman is .Host.Security.Rootless, that also holds for
+        // Podman emulating Docker CLI. The node path for Docker is .SecurityOptions.
         return (getEngineInfo("{{.Host.Security.Rootless}}").contains("true") ||
                 getEngineInfo("{{.SecurityOptions}}").contains("name=rootless"));
     }
