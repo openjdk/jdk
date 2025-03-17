@@ -33,7 +33,7 @@
 /*
  * The next test stresses the interaction between (mostly) full garbage collections and refinement.
  */
-/* @test @key stress randomness @library /vmTestbase /test/lib @run main/othervm -XX:-G1UseAdaptiveIHOP -XX:InitiatingHeapOccupancyPercent=0 -XX:G1HeapRegionSize=1m -XX:G1RSetUpdatingPauseTimePercent=0 -XX:G1UpdateBufferSize=1 -XX:+UnlockDiagnosticVMOptions -XX:+VerifyAfterGC -Xlog:gc=debug,gc+refine=debug:gc.log gc.ArrayJuggle.Juggle2 -tg */
+/* @test @key stress randomness @library /vmTestbase /test/lib @run main/othervm -XX:-G1UseAdaptiveIHOP -XX:InitiatingHeapOccupancyPercent=0 -XX:G1HeapRegionSize=1m -XX:G1RSetUpdatingPauseTimePercent=0 -XX:+UnlockDiagnosticVMOptions -XX:G1PerThreadPendingCardThreshold=0 -XX:+VerifyAfterGC -Xlog:gc=debug,gc+refine=debug:gc.log gc.ArrayJuggle.Juggle2 -tg */
 
 package gc.ArrayJuggle;
 

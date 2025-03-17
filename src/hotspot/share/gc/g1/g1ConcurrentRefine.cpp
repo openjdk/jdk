@@ -396,8 +396,7 @@ uint64_t G1ConcurrentRefine::adjust_threads_period_ms() const {
 }
 
 static size_t minimum_pending_cards_target() {
-  // One buffer per thread.
-  return ParallelGCThreads * G1UpdateBufferSize;
+  return ParallelGCThreads * G1PerThreadPendingCardThreshold;
 }
 
 G1ConcurrentRefine::G1ConcurrentRefine(G1CollectedHeap* g1h) :
