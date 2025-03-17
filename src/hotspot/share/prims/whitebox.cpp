@@ -1637,41 +1637,6 @@ WB_ENTRY(void, WB_RelocateNMethodTo(JNIEnv* env, jobject o, jobject method, jint
   nmethod::relocate_to(code, static_cast<CodeBlobType>(blob_type));
 WB_END
 
-WB_ENTRY(void, WB_RelocateAllNMethods(JNIEnv* env))
-  ResourceMark rm(THREAD);
-
-  // Get all nmethods in heap
-  GrowableArray<nmethod*> nmethods;
-  for (int codeBlobTypeIndex = 0; codeBlobTypeIndex < (int) CodeBlobType::NumTypes; codeBlobTypeIndex++) {
-    CodeHeap* heap;
-    {
-      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      heap = WhiteBox::get_code_heap(static_cast<CodeBlobType>(codeBlobTypeIndex));
-      if (heap == nullptr) {
-        continue;
-      }
-    }
-
-    for (CodeBlob* cb = (CodeBlob*) heap->first(); cb != nullptr; cb = (CodeBlob*) heap->next(cb)) {
-      if (cb->is_nmethod()) {
-        nmethods.append(cb->as_nmethod());
-      }
-    }
-
-    if (!SegmentedCodeCache) {
-      break;
-    }
-  }
-
-  // Replace all
-  for (GrowableArrayIterator<nmethod*> it = nmethods.begin(); it != nmethods.end(); ++it) {
-    // Destination should be different than current location
-    CodeBlobType code_cache_dest = (*it)->lookup_code_blob_type() == CodeBlobType::MethodNonProfiled ? CodeBlobType::MethodProfiled : CodeBlobType::MethodNonProfiled;
-    nmethod::relocate_to(*it, code_cache_dest);
-  }
-
-WB_END
-
 CodeBlob* WhiteBox::allocate_code_blob(int size, CodeBlobType blob_type) {
   guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to be enabled");
   BufferBlob* blob;
@@ -2917,7 +2882,6 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_GetNMethod         },
   {CC"relocateNMethodTo0", CC"(Ljava/lang/reflect/Executable;I)V",
                                                       (void*)&WB_RelocateNMethodTo  },
-  {CC"relocateAllNMethods", CC"()V",                  (void*)&WB_RelocateAllNMethods},
   {CC"allocateCodeBlob",   CC"(II)J",                 (void*)&WB_AllocateCodeBlob   },
   {CC"freeCodeBlob",       CC"(J)V",                  (void*)&WB_FreeCodeBlob       },
   {CC"getCodeHeapEntries", CC"(I)[Ljava/lang/Object;",(void*)&WB_GetCodeHeapEntries },

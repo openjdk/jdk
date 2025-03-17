@@ -491,7 +491,6 @@ public class WhiteBox {
     Objects.requireNonNull(method);
     relocateNMethodTo0(method, type);
   }
-  public native void    relocateAllNMethods();
   public native long    allocateCodeBlob(int size, int type);
   public        long    allocateCodeBlob(long size, int type) {
       int intSize = (int) size;
