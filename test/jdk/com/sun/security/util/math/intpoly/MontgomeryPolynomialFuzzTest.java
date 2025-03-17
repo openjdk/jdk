@@ -34,7 +34,7 @@ import sun.security.util.math.intpoly.*;
  *          java.base/sun.security.util.math.intpoly
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-UseIntPolyIntrinsics
  *      MontgomeryPolynomialFuzzTest
- * @summary Unit test MontgomeryPolynomialFuzzTest.
+ * @summary Unit test MontgomeryPolynomialFuzzTest without intrinsic, plain java
  */
 
 /*
@@ -44,10 +44,11 @@ import sun.security.util.math.intpoly.*;
  *          java.base/sun.security.util.math.intpoly
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UseIntPolyIntrinsics
  *      MontgomeryPolynomialFuzzTest
- * @summary Unit test MontgomeryPolynomialFuzzTest.
+ * @summary Unit test MontgomeryPolynomialFuzzTest with intrinsic enabled
  */
 
-// This test case is NOT entirely deterministic, it uses a random seed for pseudo-random number generator
+// This test case is NOT entirely deterministic, it uses a random seed for 
+// pseudo-random number generator
 // If a failure occurs, hardcode the seed to make the test case deterministic
 public class MontgomeryPolynomialFuzzTest {
     public static void main(String[] args) throws Exception {
