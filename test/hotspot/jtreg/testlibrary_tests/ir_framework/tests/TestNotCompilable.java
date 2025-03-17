@@ -26,6 +26,7 @@ package ir_framework.tests;
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.shared.TestRunException;
 import compiler.lib.ir_framework.driver.TestVMException;
+import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 
 /*
  * @test
@@ -46,28 +47,41 @@ public class TestNotCompilable {
         runNormal(TestClassB.class, noWarmup);
         runNormal(TestClassC.class, noWarmup);
         runNormal(TestClassD.class, noWarmup);
+        runNormal(TestClassE.class, noWarmup);
+        runNormal(TestClassF.class, noWarmup);
 
         // Forbid compilation -> should throw exception, because "not compilable".
         runWithExcludeExpectFailure(TestClassA.class, noWarmup);
         runWithExcludeExpectFailure(TestClassB.class, noWarmup);
+        // Note: @Run does not fail, but the @IR detects that there is no compilation, and fails.
+        runWithExcludeExpectFailure(TestClassE.class, noWarmup);
         runOptoNoExecuteExpectFailure(TestClassA.class, noWarmup);
         runOptoNoExecuteExpectFailure(TestClassB.class, noWarmup);
 
         // Forbid compilation -> annotation allows not compilable -> should pass.
         runWithExcludeExpectSuccess(TestClassC.class, noWarmup);
         runWithExcludeExpectSuccess(TestClassD.class, noWarmup);
+        runWithExcludeExpectSuccess(TestClassF.class, noWarmup);
         runOptoNoExecuteExpectSuccess(TestClassC.class, noWarmup);
         runOptoNoExecuteExpectSuccess(TestClassD.class, noWarmup);
+        // Note: @Run does not fail because of missing compilation. And OptoNoExecute does still
+        //       print IR before it bails out, and we can successfully match it.
+        runOptoNoExecuteExpectSuccess(TestClassE.class, noWarmup);
+        runOptoNoExecuteExpectSuccess(TestClassF.class, noWarmup);
 
         // Forbid compilation, but allow methods not to compile -> should pass.
         runWithExcludeAndGlobalAllowNotCompilable(TestClassA.class, noWarmup);
         runWithExcludeAndGlobalAllowNotCompilable(TestClassB.class, noWarmup);
         runWithExcludeAndGlobalAllowNotCompilable(TestClassC.class, noWarmup);
         runWithExcludeAndGlobalAllowNotCompilable(TestClassD.class, noWarmup);
+        runWithExcludeAndGlobalAllowNotCompilable(TestClassE.class, noWarmup);
+        runWithExcludeAndGlobalAllowNotCompilable(TestClassF.class, noWarmup);
         runOptoNoExecuteAndGlobalAllowNotCompilable(TestClassA.class, noWarmup);
         runOptoNoExecuteAndGlobalAllowNotCompilable(TestClassB.class, noWarmup);
         runOptoNoExecuteAndGlobalAllowNotCompilable(TestClassC.class, noWarmup);
         runOptoNoExecuteAndGlobalAllowNotCompilable(TestClassD.class, noWarmup);
+        runOptoNoExecuteAndGlobalAllowNotCompilable(TestClassE.class, noWarmup);
+        runOptoNoExecuteAndGlobalAllowNotCompilable(TestClassF.class, noWarmup);
     }
 
     private static void runNormal(Class c, boolean noWarmup) {
@@ -78,41 +92,44 @@ public class TestNotCompilable {
 
     private static void runWithExcludeExpectFailure(Class c, boolean noWarmup) {
         TestFramework framework = new TestFramework(c);
-        framework.addFlags("-XX:CompileCommand=exclude,*TestClass*::test");
+        framework.addFlags("-XX:CompileCommand=exclude,*TestClass*::test*");
         if (noWarmup) { framework.setDefaultWarmup(0); }
         try {
             framework.start();
             throw new RuntimeException("should have thrown TestRunException");
-        } catch (TestVMException e) {}
+        } catch (TestVMException e) {
+        } catch (IRViolationException e) {}
     }
 
     private static void runWithExcludeExpectSuccess(Class c, boolean noWarmup) {
         TestFramework framework = new TestFramework(c);
-        framework.addFlags("-XX:CompileCommand=exclude,*TestClass*::test");
+        framework.addFlags("-XX:CompileCommand=exclude,*TestClass*::test*");
         if (noWarmup) { framework.setDefaultWarmup(0); }
         framework.start();
     }
 
     private static void runOptoNoExecuteExpectFailure(Class c, boolean noWarmup) {
+        System.out.println("runOptoNoExecuteExpectFailure: " + c + ", noWarmup: " + noWarmup);
         TestFramework framework = new TestFramework(c);
-        framework.addFlags("-XX:CompileCommand=compileonly,*TestClass*::test", "-XX:+OptoNoExecute");
+        framework.addFlags("-XX:CompileCommand=compileonly,*TestClass*::test*", "-XX:+OptoNoExecute");
         if (noWarmup) { framework.setDefaultWarmup(0); }
         try {
             framework.start();
             throw new RuntimeException("should have thrown TestRunException");
-        } catch (TestVMException e) {}
+        } catch (TestVMException e) {
+        } catch (IRViolationException e) {}
     }
 
     private static void runOptoNoExecuteExpectSuccess(Class c, boolean noWarmup) {
         TestFramework framework = new TestFramework(c);
-        framework.addFlags("-XX:CompileCommand=compileonly,*TestClass*::test", "-XX:+OptoNoExecute");
+        framework.addFlags("-XX:CompileCommand=compileonly,*TestClass*::test*", "-XX:+OptoNoExecute");
         if (noWarmup) { framework.setDefaultWarmup(0); }
         framework.start();
     }
 
     private static void runWithExcludeAndGlobalAllowNotCompilable(Class c, boolean noWarmup) {
         TestFramework framework = new TestFramework(c);
-        framework.addFlags("-XX:CompileCommand=exclude,*TestClass*::test");
+        framework.addFlags("-XX:CompileCommand=exclude,*TestClass*::test*");
         if (noWarmup) { framework.setDefaultWarmup(0); }
         framework.allowNotCompilable();
         framework.start();
@@ -120,7 +137,7 @@ public class TestNotCompilable {
 
     private static void runOptoNoExecuteAndGlobalAllowNotCompilable(Class c, boolean noWarmup) {
         TestFramework framework = new TestFramework(c);
-        framework.addFlags("-XX:CompileCommand=compileonly,*TestClass*::test", "-XX:+OptoNoExecute");
+        framework.addFlags("-XX:CompileCommand=compileonly,*TestClass*::test*", "-XX:+OptoNoExecute");
         if (noWarmup) { framework.setDefaultWarmup(0); }
         framework.allowNotCompilable();
         framework.start();
@@ -147,4 +164,38 @@ class TestClassD {
     @Test(allowNotCompilable = true)
     @IR(failOn = IRNode.LOAD)
     public void test() {}
+}
+
+class TestClassE {
+    @Run(test = {"test1", "test2"}, mode = RunMode.STANDALONE)
+    public void run() {
+        for (int i = 0; i < 10_000; i++) {
+            test1(i);
+            test2(i);
+        }
+    }
+
+    @Test
+    public void test1(int i) {}
+
+    @Test
+    @IR(failOn = IRNode.LOAD)
+    public void test2(int i) {}
+}
+
+class TestClassF {
+    @Run(test = {"test1", "test2"}, mode = RunMode.STANDALONE)
+    public void run() {
+        for (int i = 0; i < 10_000; i++) {
+            test1(i);
+            test2(i);
+        }
+    }
+
+    @Test(allowNotCompilable = true)
+    public void test1(int i) {}
+
+    @Test(allowNotCompilable = true)
+    @IR(failOn = IRNode.LOAD)
+    public void test2(int i) {}
 }
