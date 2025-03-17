@@ -552,7 +552,8 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
   const size_t old_garbage_threshold = (ShenandoahHeapRegion::region_size_bytes() * ShenandoahOldGarbageThreshold) / 100;
 
   size_t old_consumed = 0;
-  size_t promo_potential = 0;
+  size_t promo_potential = 0;           // Bytes to potentiall promote by evacuation
+  size_t pip_potential = 0;		// Bytes to potentially promote in place
   size_t candidates = 0;
 
   // Tracks the padding of space above top in regions eligible for promotion in place
@@ -628,8 +629,11 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
       // in the current cycle and we will anticipate that they will be promoted in the next cycle.  This will cause
       // us to reserve more old-gen memory so that these objects can be promoted in the subsequent cycle.
       if (heap->is_aging_cycle() && (r->age() + 1 == tenuring_threshold)) {
-        if (r->garbage() >= old_garbage_threshold) {
-          promo_potential += r->get_live_data_bytes();
+	size_t live_data_bytes = r->get_live_data_bytes();
+	if (r->garbage() >= old_garbage_threshold) {
+	  promo_potential += live_data_bytes;
+	} else {
+	  pip_potential += live_data_bytes;
         }
       }
     }
@@ -667,6 +671,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
 
   heap->old_generation()->set_pad_for_promote_in_place(promote_in_place_pad);
   heap->old_generation()->set_promotion_potential(promo_potential);
+  heap->old_generation()->set_pip_potential(pip_potential);
   return old_consumed;
 }
 
@@ -848,12 +853,15 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
   ShenandoahGenerationalHeap* const heap = ShenandoahGenerationalHeap::heap();
   uint nworkers = heap->workers()->active_workers();
   reserve_task_queues(nworkers);
+  size_t accumulators[nworkers];
 
   ShenandoahReferenceProcessor* rp = ref_processor();
   ShenandoahRegionChunkIterator work_list(nworkers);
-  ShenandoahScanRememberedTask task(task_queues(), old_gen_task_queues(), rp, &work_list, is_concurrent);
+  ShenandoahScanRememberedTask task(task_queues(), old_gen_task_queues(), rp, &work_list, is_concurrent, nworkers, accumulators);
   heap->assert_gc_workers(nworkers);
   heap->workers()->run_task(&task);
+  ShenandoahYoungHeuristics* young_heuristics = heap->young_generation()->heuristics();
+  young_heuristics->set_remset_words_in_most_recent_mark_scan(task.get_words_examined());
   if (ShenandoahEnableCardStats) {
     ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
     assert(scanner != nullptr, "Not generational");

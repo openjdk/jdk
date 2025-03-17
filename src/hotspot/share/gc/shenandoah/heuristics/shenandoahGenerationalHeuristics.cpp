@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/shenandoahEvacInfo.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
 
@@ -59,6 +60,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
   size_t preselected_candidates = 0;
 
   size_t total_garbage = 0;
+  size_t live_words_in_young = 0;
 
   size_t immediate_garbage = 0;
   size_t immediate_regions = 0;
@@ -70,8 +72,11 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
 
   // This counts number of humongous regions that we intend to promote in this cycle.
   size_t humongous_regions_promoted = 0;
+  size_t humongous_live_words_promoted = 0;
   // This counts number of regular regions that will be promoted in place.
   size_t regular_regions_promoted_in_place = 0;
+  // This counts bytes of live memory within regular regions to be promoted in place.
+  size_t regular_regions_promoted_live = 0;
   // This counts bytes of memory used by regular regions to be promoted in place.
   size_t regular_regions_promoted_usage = 0;
   // This counts bytes of memory free in regular regions to be promoted in place.
@@ -86,6 +91,9 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
     }
     size_t garbage = region->garbage();
     total_garbage += garbage;
+    if (region->is_young()) {
+      live_words_in_young += region->get_live_data_words();
+    }
     if (region->is_empty()) {
       free_regions++;
       free += region_size_bytes;
@@ -114,6 +122,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
           if (region->get_top_before_promote() != nullptr) {
             // Region was included for promotion-in-place
             regular_regions_promoted_in_place++;
+	    regular_regions_promoted_live += region->get_live_data_words();
             regular_regions_promoted_usage += region->used_before_promote();
             regular_regions_promoted_free += region->free();
             regular_regions_promoted_garbage += region->garbage();
@@ -145,8 +154,10 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
       } else {
         if (region->is_young() && region->age() >= tenuring_threshold) {
           oop obj = cast_to_oop(region->bottom());
-          size_t humongous_regions = ShenandoahHeapRegion::required_regions(obj->size() * HeapWordSize);
+	  size_t humongous_object_size = obj->size();
+          size_t humongous_regions = ShenandoahHeapRegion::required_regions(humongous_object_size * HeapWordSize);
           humongous_regions_promoted += humongous_regions;
+	  humongous_live_words_promoted += humongous_object_size;
         }
       }
     } else if (region->is_trash()) {
@@ -156,7 +167,13 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
     }
   }
   heap->old_generation()->set_expected_humongous_region_promotions(humongous_regions_promoted);
+  heap->old_generation()->set_expected_promotable_humongous_region_live_data(humongous_live_words_promoted);
   heap->old_generation()->set_expected_regular_region_promotions(regular_regions_promoted_in_place);
+  heap->old_generation()->set_expected_promotable_regular_region_live_data(regular_regions_promoted_live);
+
+  ShenandoahYoungHeuristics* young_heuristics = heap->young_generation()->heuristics();
+  young_heuristics->set_young_live_words_after_most_recent_mark(live_words_in_young);
+  
   log_info(gc, ergo)("Planning to promote in place %zu humongous regions and %zu"
                      " regular regions, spanning a total of %zu used bytes",
                      humongous_regions_promoted, regular_regions_promoted_in_place,
@@ -253,6 +270,51 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
 
     ShenandoahTracer().report_evacuation_info(&evacInfo);
   }
+
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+  log_info(gc)("Finished choosing collection set. Here is what we know:");
+
+  size_t young_bytes_evacuated = collection_set->get_young_bytes_reserved_for_evacuation();
+  log_info(gc)(" Bytes to be evacuated from young: %zu", young_bytes_evacuated);
+
+  size_t young_evac_garbage = collection_set->garbage() - collection_set->get_old_garbage();
+  log_info(gc)("  reclaiming %zu bytes of young garbage", young_evac_garbage);
+
+  log_info(gc)(" Bytes to be promoted in place from regular young: %zu in %zu regions",
+	       regular_regions_promoted_usage, regular_regions_promoted_in_place);
+  log_info(gc)("  of which %zu is live, %zu is garbage, and %zu was already free",
+	       regular_regions_promoted_usage - regular_regions_promoted_garbage, regular_regions_promoted_garbage,
+	       regular_regions_promoted_free);
+
+  log_info(gc)(" Bytes to be promoted in place from humongus young including waste: %zu in %zu regions",
+	       humongous_regions_promoted * region_size_bytes, humongous_regions_promoted);
+  log_info(gc)(" young_generation used including waste: %zu", heap->young_generation()->used_including_humongous_waste());
+
+  size_t young_update = heap->young_generation()->used_including_humongous_waste() - 
+    (regular_regions_promoted_usage + humongous_regions_promoted * region_size_bytes + young_evac_garbage + young_bytes_evacuated);
+  log_info(gc)(" Young bytes to be updated is young used minus (evacuated and promoted in place and reclaimed garbage: %zu",
+	       young_update);
+
+  if (collection_set->has_old_regions()) {
+    log_info(gc)(" This is a mixed evacuation, so we'll need to update all of old that is not in cset");
+
+    size_t old_bytes_evacuated = collection_set->get_old_bytes_reserved_for_evacuation();
+    log_info(gc)(" Bytes to be evacuated from old: %zu", old_bytes_evacuated);
+
+    size_t old_evac_garbage = collection_set->get_old_garbage();
+    log_info(gc)("  reclaiming %zu bytes of old garbage", young_evac_garbage);
+
+    size_t old_usage = heap->old_generation()->used_including_humongous_waste() +
+      (regular_regions_promoted_usage + humongous_regions_promoted * region_size_bytes);
+    size_t old_update = old_usage - (old_bytes_evacuated + old_evac_garbage);
+
+    log_info(gc)(" Bytes to be updated from old: %zu", old_update);
+
+  } else {
+    log_info(gc)(" This is not a mixed evacuation.  Assume old update is same as words scanned for mark remset scan");
+  }
+#endif
 }
 
 

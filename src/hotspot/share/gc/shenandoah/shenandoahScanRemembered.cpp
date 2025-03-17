@@ -649,27 +649,34 @@ void ShenandoahDirectCardMarkRememberedSet::reset_remset(HeapWord* start, size_t
 ShenandoahScanRememberedTask::ShenandoahScanRememberedTask(ShenandoahObjToScanQueueSet* queue_set,
                                                            ShenandoahObjToScanQueueSet* old_queue_set,
                                                            ShenandoahReferenceProcessor* rp,
-                                                           ShenandoahRegionChunkIterator* work_list, bool is_concurrent) :
+                                                           ShenandoahRegionChunkIterator* work_list, bool is_concurrent,
+							   size_t nworkers, size_t* accumulators) :
   WorkerTask("Scan Remembered Set"),
-  _queue_set(queue_set), _old_queue_set(old_queue_set), _rp(rp), _work_list(work_list), _is_concurrent(is_concurrent) {
+  _queue_set(queue_set), _old_queue_set(old_queue_set), _rp(rp), _work_list(work_list), _is_concurrent(is_concurrent),
+  _nworkers(nworkers), _words_examined(accumulators) {
   bool old_bitmap_stable = ShenandoahHeap::heap()->old_generation()->is_mark_complete();
+  for (uint i = 0; i < nworkers; i++) {
+    accumulators[i] = 0;
+  }
   log_debug(gc, remset)("Scan remembered set using bitmap: %s", BOOL_TO_STR(old_bitmap_stable));
 }
 
 void ShenandoahScanRememberedTask::work(uint worker_id) {
+  size_t words_examined = 0;
   if (_is_concurrent) {
     // This sets up a thread local reference to the worker_id which is needed by the weak reference processor.
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     ShenandoahSuspendibleThreadSetJoiner stsj;
-    do_work(worker_id);
+    words_examined += do_work(worker_id);
   } else {
     // This sets up a thread local reference to the worker_id which is needed by the weak reference processor.
     ShenandoahParallelWorkerSession worker_session(worker_id);
-    do_work(worker_id);
+    words_examined += do_work(worker_id);
   }
+  _words_examined[worker_id] = words_examined;
 }
 
-void ShenandoahScanRememberedTask::do_work(uint worker_id) {
+size_t ShenandoahScanRememberedTask::do_work(uint worker_id) {
   ShenandoahWorkerTimingsTracker x(ShenandoahPhaseTimings::init_scan_rset, ShenandoahPhaseTimings::ScanClusters, worker_id);
 
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
@@ -677,6 +684,8 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
   ShenandoahMarkRefsClosure<YOUNG> cl(q, _rp, old);
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
+
+  size_t words_examined = 0;
 
   // set up thread local closure for shen ref processor
   _rp->set_mark_closure(worker_id, &cl);
@@ -697,7 +706,8 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
       if (end_of_range > region->top()) {
         end_of_range = region->top();
       }
-      scanner->process_region_slice(region, assignment._chunk_offset, clusters, end_of_range, &cl, false, worker_id);
+      words_examined += 
+	scanner->process_region_slice(region, assignment._chunk_offset, clusters, end_of_range, &cl, false, worker_id);
     }
 #ifdef ENABLE_REMEMBERED_SET_CANCELLATION
     // This check is currently disabled to avoid crashes that occur
@@ -706,10 +716,11 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
     // transition to degenerated / full GCs. Note that work that has been assigned/
     // claimed above must be completed before we return here upon cancellation.
     if (heap->check_cancelled_gc_and_yield(_is_concurrent)) {
-      return;
+      return words_examined;
     }
 #endif
   }
+  return words_examined;
 }
 
 size_t ShenandoahRegionChunkIterator::calc_regular_group_size() {
