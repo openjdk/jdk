@@ -8387,11 +8387,14 @@ instruct binOps_HF_reg(fRegF dst, fRegF src1, fRegF src2)
   ins_pipe(fp_dop_reg_reg_s);
 %}
 
-instruct min_HF_reg(fRegF dst, fRegF src1, fRegF src2)
+instruct min_HF_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr)
 %{
   predicate(!UseZfa);
   match(Set dst (MinHF src1 src2));
+  effect(KILL cr);
+
   format %{ "min_hf $dst, $src1, $src2" %}
+
   ins_encode %{
     __ minmax_fp($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
                  __ FLOAT_TYPE::half_precision, true /* is_min */);
@@ -8412,11 +8415,14 @@ instruct min_HF_reg_zfa(fRegF dst, fRegF src1, fRegF src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct max_HF_reg(fRegF dst, fRegF src1, fRegF src2)
+instruct max_HF_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr)
 %{
   predicate(!UseZfa);
   match(Set dst (MaxHF src1 src2));
+  effect(KILL cr);
+
   format %{ "max_hf $dst, $src1, $src2" %}
+
   ins_encode %{
       __ minmax_fp($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
                    __ FLOAT_TYPE::half_precision, false /* is_min */);
