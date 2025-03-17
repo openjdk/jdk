@@ -40,22 +40,20 @@ import java.lang.reflect.Method;
 public class NotCompiledIRMethodMatchResult implements MatchResult {
     private final Method method;
     private final int failedIRRules;
-    private final boolean allowNotCompilable;
 
-    public NotCompiledIRMethodMatchResult(Method method, int failedIRRules, boolean allowNotCompilable) {
+    public NotCompiledIRMethodMatchResult(Method method, int failedIRRules) {
         this.method = method;
         this.failedIRRules = failedIRRules;
-        this.allowNotCompilable = allowNotCompilable;
     }
 
     @Override
     public boolean fail() {
-        return !allowNotCompilable;
+        return true;
     }
 
     @Override
     public void accept(MatchResultVisitor visitor) {
-        visitor.visitMethodNotCompiled(method, failedIRRules, allowNotCompilable);
+        visitor.visitMethodNotCompiled(method, failedIRRules);
     }
 }
 
