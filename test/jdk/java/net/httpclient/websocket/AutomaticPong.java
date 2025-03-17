@@ -188,7 +188,7 @@ public class AutomaticPong {
 
                     @Override
                     public void maskingKey(int value) {
-                        masker.reset(value);
+                        masker.setMask(value);
                     }
 
                     @Override

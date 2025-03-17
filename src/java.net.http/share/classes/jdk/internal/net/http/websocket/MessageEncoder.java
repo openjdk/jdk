@@ -393,6 +393,6 @@ public class MessageEncoder {
                     .write(headerBuffer);
         }
         headerBuffer.flip();
-        payloadMasker.reset(mask);
+        payloadMasker.setMask(mask);
     }
 }

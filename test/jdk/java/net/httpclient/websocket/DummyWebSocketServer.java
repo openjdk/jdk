@@ -286,7 +286,7 @@ public class DummyWebSocketServer implements Closeable {
 
         @Override
         public void maskingKey(int value) {
-            masker.reset(value);
+            masker.setMask(value);
         }
 
         @Override

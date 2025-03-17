@@ -67,7 +67,7 @@ public class MaskerTest {
         forEachBufferPartition(src,
                 buffers -> {
                     int offset = 0;
-                    masker.reset(mask);
+                    masker.setMask(mask);
                     int[] maskBytes = maskArray(mask);
                     for (ByteBuffer s : buffers) {
                         offset = verify(s, dst, maskBytes, offset,
@@ -79,7 +79,7 @@ public class MaskerTest {
     @Test
     public void stateful1() {
         int m = random.nextInt();
-        masker.reset(m);
+        masker.setMask(m);
         ByteBuffer src = ByteBuffer.allocate(0);
         ByteBuffer dst = ByteBuffer.allocate(16);
         verify(src, dst, maskArray(m), 0,

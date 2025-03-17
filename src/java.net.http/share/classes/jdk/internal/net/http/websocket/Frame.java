@@ -106,7 +106,7 @@ public final class Frame {
             if (src.remaining() > dst.remaining()) {
                 throw new IllegalArgumentException(dump(src, dst));
             }
-            new Masker().reset(mask).applyMask(src, dst);
+            new Masker().setMask(mask).applyMask(src, dst);
         }
 
         /*
@@ -114,7 +114,7 @@ public final class Frame {
          *
          * The behaviour is as if the mask was set on a newly created instance.
          */
-        public Masker reset(int mask) {
+        public Masker setMask(int mask) {
             ByteBuffer acc = ByteBuffer.allocate(8).putInt(mask).putInt(mask).flip();
             for (int i = 0; i < maskBytes.length; i++) {
                 maskBytes[i] = acc.get(i);
@@ -135,17 +135,17 @@ public final class Frame {
          */
         public void applyMask(ByteBuffer src, ByteBuffer dst) {
             if (src.order() == dst.order()) {
-                initGallopingMask(src, dst);
-                applyGallopingMask(src, dst);
+                initVectorMask(src, dst);
+                applyVectorMask(src, dst);
             }
             applyPlainMask(src, dst);
         }
 
         /**
-         * Positions the {@link #offset} at 0, which is needed for galloping, by masking necessary amount of bytes.
+         * Positions the {@link #offset} at 0, which is needed for vectorized masking, by masking necessary amount of bytes.
          */
-        private void initGallopingMask(ByteBuffer src, ByteBuffer dst) {
-            assert src.order() == dst.order() : "galloping is only allowed on matching byte orders";
+        private void initVectorMask(ByteBuffer src, ByteBuffer dst) {
+            assert src.order() == dst.order() : "vectorized masking is only allowed on matching byte orders";
             if (offset == 0) {
                 return;
             }
@@ -163,8 +163,8 @@ public final class Frame {
         /*
          * Masks one {@code long} at a time.
          */
-        private void applyGallopingMask(ByteBuffer src, ByteBuffer dst) {
-            assert src.order() == dst.order() : "galloping is only allowed on matching byte orders";
+        private void applyVectorMask(ByteBuffer src, ByteBuffer dst) {
+            assert src.order() == dst.order() : "vectorized masking is only allowed on matching byte orders";
             long maskLong = ByteOrder.LITTLE_ENDIAN == src.order() ? maskLongLe : maskLongBe;
             int i = src.position();
             int j = dst.position();
