@@ -2594,6 +2594,14 @@ void MacroAssembler::movptr2(Register Rd, uint64_t addr, int32_t &offset, Regist
 }
 
 // floating point imm move
+bool MacroAssembler::can_hf_imm_load(short imm) {
+  jshort h_bits = (jshort)imm;
+  if (h_bits == 0) {
+    return true;
+  }
+  return can_zfa_zli_half_float(imm);
+}
+
 bool MacroAssembler::can_fp_imm_load(float imm) {
   jint f_bits = jint_cast(imm);
   if (f_bits == 0) {
@@ -2608,6 +2616,17 @@ bool MacroAssembler::can_dp_imm_load(double imm) {
     return true;
   }
   return can_zfa_zli_double(imm);
+}
+
+void MacroAssembler::fli_h(FloatRegister Rd, short imm) {
+  jint f_bits = jint_cast(imm);
+  if (f_bits == 0) {
+    fmv_w_x(Rd, zr);
+    return;
+  }
+  int Rs = zfa_zli_lookup_half_float(f_bits);
+  assert(Rs != -1, "Must be");
+  _fli_h(Rd, Rs);
 }
 
 void MacroAssembler::fli_s(FloatRegister Rd, float imm) {

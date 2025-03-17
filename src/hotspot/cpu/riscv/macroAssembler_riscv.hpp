@@ -921,8 +921,10 @@ public:
   void movptr2(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
  public:
   // float imm move
+  static bool can_hf_imm_load(short imm);
   static bool can_fp_imm_load(float imm);
   static bool can_dp_imm_load(double imm);
+  void fli_h(FloatRegister Rd, short imm);
   void fli_s(FloatRegister Rd, float imm);
   void fli_d(FloatRegister Rd, double imm);
 
