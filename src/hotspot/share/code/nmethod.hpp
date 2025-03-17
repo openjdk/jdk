@@ -335,8 +335,6 @@ class nmethod : public CodeBlob {
 #endif
           );
 
-  nmethod(nmethod& nm);
-
   // helper methods
   void* operator new(size_t size, int nmethod_size, int comp_level) throw();
 
