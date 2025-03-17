@@ -135,14 +135,6 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
     }
   }
 
-  // Found some other Node; must clone it up
-#ifndef PRODUCT
-  if( PrintOpto && VerifyLoopOptimizations ) {
-    tty->print("Cloning up: ");
-    n->dump();
-  }
-#endif
-
   // ConvI2L may have type information on it which becomes invalid if
   // it moves up in the graph so change any clones so widen the type
   // to TypeLong::INT when pushing it up.
@@ -308,12 +300,6 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
            at_relevant_ctrl(cmov, blk1, blk2)))) {
 
       // Must clone down
-#ifndef PRODUCT
-      if( PrintOpto && VerifyLoopOptimizations ) {
-        tty->print("Cloning down: ");
-        n->dump();
-      }
-#endif
       if (!n->is_FastLock()) {
         // Clone down any block-local BoolNode uses of this CmpNode
         for (DUIterator i = n->outs(); n->has_out(i); i++) {
@@ -343,12 +329,6 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
           }
           if (at_relevant_ctrl(bol, blk1, blk2)) {
             // Recursively sink any BoolNode
-#ifndef PRODUCT
-            if( PrintOpto && VerifyLoopOptimizations ) {
-              tty->print("Cloning down: ");
-              bol->dump();
-            }
-#endif
             for (DUIterator j = bol->outs(); bol->has_out(j); j++) {
               Node* u = bol->out(j);
               // Uses are either IfNodes, CMoves, OpaqueNotNull, or Opaque*AssertionPredicate

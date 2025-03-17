@@ -757,6 +757,9 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8338127 generic-
 jdk/jfr/event/oldobject/TestShenandoah.java                     8342951 generic-all
 jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
+jdk/jfr/api/consumer/streaming/TestJVMCrash.java                8344671 macosx-all
+jdk/jfr/api/consumer/streaming/TestJVMExit.java                 8344671 macosx-all
+jdk/jfr/api/consumer/streaming/TestOutOfProcessMigration.java   8344671 macosx-all
 
 ############################################################################
 
