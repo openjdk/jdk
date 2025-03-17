@@ -56,7 +56,7 @@ bool G1RemSetTrackingPolicy::update_humongous_before_rebuild(G1HeapRegion* r) {
   // Humongous regions containing type-array objs are remset-tracked to
   // support eager-reclaim. However, their remset state can be reset after
   // Full-GC. Try to re-enable remset-tracking for them if possible.
-  if (cast_to_oop(r->bottom())->is_typeArray() && !r->rem_set()->is_tracked()) {
+  if ((G1EagerReclaimWithRefs || cast_to_oop(r->bottom())->is_typeArray()) && !r->rem_set()->is_tracked()) {
     auto on_humongous_region = [] (G1HeapRegion* r) {
       r->rem_set()->set_state_updating();
     };
