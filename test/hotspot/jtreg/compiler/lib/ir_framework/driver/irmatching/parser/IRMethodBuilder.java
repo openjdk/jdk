@@ -70,7 +70,6 @@ class IRMethodBuilder {
                                 new Compilation(loggedMethod.compilationOutput()), vmInfo);
         } else {
             Test[] testAnnos = testMethod.method().getAnnotationsByType(Test.class);
-            TestFramework.check(testAnnos.length == 1, "Must have at most one @Test annotation per method.");
             boolean allowMethodNotCompilable = allowNotCompilable || testAnnos[0].allowNotCompilable();
             if (allowMethodNotCompilable) {
                 return new NotCompilableIRMethod(testMethod.method(), testMethod.irRuleIds().length);

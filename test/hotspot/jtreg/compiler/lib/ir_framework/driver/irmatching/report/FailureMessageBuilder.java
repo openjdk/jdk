@@ -25,6 +25,7 @@ package compiler.lib.ir_framework.driver.irmatching.report;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.shared.TestFrameworkException;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeType;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
@@ -98,7 +99,7 @@ public class FailureMessageBuilder implements MatchResultVisitor {
     }
 
     public void visitMethodNotCompilable(Method method, int failedIRRules) {
-        // TODO: what?
+        throw new TestFrameworkException("Sould not reach here");
     }
 
     @Override

@@ -400,7 +400,7 @@ class FailureBuilder implements MatchResultVisitor {
 
     @Override
     public void visitMethodNotCompilable(Method method, int failedIRRules) {
-        // TODO: what?
+        throw new RuntimeException("Should not reach here");
     }
 
     @Override
