@@ -117,6 +117,7 @@ class CodeCache : AllStatic {
 
   // Creates a new heap with the given name and size, containing CodeBlobs of the given type
   static void add_heap(ReservedSpace rs, const char* name, CodeBlobType code_blob_type);
+  static CodeHeap* get_code_heap_containing(void* p);         // Returns the CodeHeap containing the given pointer, or nullptr
   static CodeHeap* get_code_heap(const void* cb);             // Returns the CodeHeap for the given CodeBlob
   static CodeHeap* get_code_heap(CodeBlobType code_blob_type);         // Returns the CodeHeap for the given CodeBlobType
   // Returns the name of the VM option to set the size of the corresponding CodeHeap
@@ -144,7 +145,6 @@ class CodeCache : AllStatic {
   static int code_heap_compare(CodeHeap* const &lhs, CodeHeap* const &rhs);
 
   static void add_heap(CodeHeap* heap);
-  static CodeHeap* get_code_heap_containing(void* p);   // Returns the CodeHeap containing the given pointer, or nullptr
   static const GrowableArray<CodeHeap*>* heaps() { return _heaps; }
   static const GrowableArray<CodeHeap*>* nmethod_heaps() { return _nmethod_heaps; }
 
