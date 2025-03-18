@@ -475,6 +475,8 @@ public:
   void clear_card_table();
   void clear_refinement_table();
 
+  void clear_both_card_tables();
+
   // Notify the region that an evacuation failure occurred for an object within this
   // region.
   void note_evacuation_failure();

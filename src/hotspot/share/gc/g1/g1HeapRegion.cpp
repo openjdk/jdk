@@ -143,6 +143,11 @@ void G1HeapRegion::clear_refinement_table() {
   ct->clear_MemRegion(MemRegion(bottom(), end()));
 }
 
+void G1HeapRegion::clear_both_card_tables() {
+  clear_card_table();
+  clear_refinement_table();
+}
+
 void G1HeapRegion::set_free() {
   if (!is_free()) {
     report_region_type_change(G1HeapRegionTraceType::Free);
