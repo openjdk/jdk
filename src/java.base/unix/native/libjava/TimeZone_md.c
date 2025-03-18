@@ -258,6 +258,8 @@ getPlatformTimeZoneID()
     int res;
 
 #if defined(__linux__) || defined(_BSDONLY_SOURCE)
+    FILE *fp;
+
     /*
      * Try reading the /etc/timezone file for Debian distros. There's
      * no spec of the file format available. This parsing assumes that
