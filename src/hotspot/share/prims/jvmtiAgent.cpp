@@ -360,8 +360,7 @@ void JvmtiAgent::convert_xrun_agent() {
   // If there is an JVM_OnLoad function it will get called later,
   // otherwise see if there is an Agent_OnLoad.
   if (on_load_entry == nullptr) {
-    on_load_entry = lookup_Agent_OnLoad_entry_point(
-      this, /* vm exit on error */ true);
+    on_load_entry = lookup_Agent_OnLoad_entry_point(this, /* vm exit on error */ true);
     assert(on_load_entry != nullptr, "invariant");
     _xrun = false; // converted
   }
