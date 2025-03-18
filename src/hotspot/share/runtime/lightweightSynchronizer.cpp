@@ -509,7 +509,6 @@ class LightweightSynchronizer::CacheSetter : StackObj {
   JavaThread* const _thread;
   BasicLock* const _lock;
   ObjectMonitor* _monitor;
-  bool _hit;
 
   NONCOPYABLE(CacheSetter);
 
@@ -517,15 +516,13 @@ class LightweightSynchronizer::CacheSetter : StackObj {
   CacheSetter(JavaThread* thread, BasicLock* lock) :
     _thread(thread),
     _lock(lock),
-    _monitor(nullptr), _hit(false) {}
+    _monitor(nullptr) {}
 
   ~CacheSetter() {
     // Only use the cache if using the table.
     if (UseObjectMonitorTable) {
       if (_monitor != nullptr) {
-        if (!_hit) {
-          _thread->om_set_monitor_cache(_monitor);
-        }
+        _thread->om_set_monitor_cache(_monitor);
         _lock->set_object_monitor_cache(_monitor);
       } else {
         _lock->clear_object_monitor_cache();
@@ -533,9 +530,8 @@ class LightweightSynchronizer::CacheSetter : StackObj {
     }
   }
 
-  void set_monitor(ObjectMonitor* monitor, bool hit = false) {
+  void set_monitor(ObjectMonitor* monitor) {
     assert(_monitor == nullptr, "only set once");
-    _hit = hit;
     _monitor = monitor;
   }
 
