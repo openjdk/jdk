@@ -400,7 +400,7 @@ class FailureBuilder implements MatchResultVisitor {
 
     @Override
     public void visitMethodNotCompilable(Method method, int failedIRRules) {
-        throw new RuntimeException("Should not reach here");
+        throw new RuntimeException("No test should bailout from compilation");
     }
 
     @Override
