@@ -1169,10 +1169,12 @@ public class Main {
 
             cenEntries = jarFile.stream()
                     .map(JarEntry::getName)
-                    .filter(name -> !name.equals("META-INF/MANIFEST.MF"))
                     .collect(Collectors.toList());
 
-            if (!cenEntries.equals(locEntries)) {
+            var cenEntries2 = cenEntries.getFirst().equals(JarFile.MANIFEST_NAME)
+                    ? cenEntries.subList(1, cenEntries.size()) : cenEntries;
+
+            if (!cenEntries2.equals(locEntries)) {
                 crossChkWarnings.add(rb.getString(
                         "Mismatch.in.entries.between.CEN.and.LOC"));
             }
