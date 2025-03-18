@@ -42,7 +42,8 @@ public class TestTableSelectAll {
     }
 
     private static void testColumnSelect() {
-        boolean colSelNoRow, colSelWithRow;
+        boolean colSelNoRow;
+        boolean colSelWithRow;
 
         // TableModel with no rows, but 10 columns
         DefaultTableModel data = new DefaultTableModel(0, 10);
@@ -59,14 +60,14 @@ public class TestTableSelectAll {
 
         // After selectAll(), I would expect all columns to be selected, no matter
         // whether there are rows or not.
-        System.out.println("Column 0 is selected: "+ colSelNoRow);
+        System.out.println("Column 0 is selected: " + colSelNoRow);
 
         data.addRow(new Object[0]);
 
         table.selectAll();
 
         colSelWithRow = table.isColumnSelected(0);
-        System.out.println("Column 0 is selected: "+ colSelWithRow);
+        System.out.println("Column 0 is selected: " + colSelWithRow);
 
         if (!(colSelNoRow && colSelWithRow)) {
             throw new RuntimeException("selectAll did not select column");
@@ -74,14 +75,15 @@ public class TestTableSelectAll {
     }
 
     private static void testRowSelect() {
-        boolean rowSelNoColumn, rowSelWithColumn;
+        boolean rowSelNoColumn;
+        boolean rowSelWithColumn;
 
         // TableModel with 10 rows, but no columns
         DefaultTableModel data = new DefaultTableModel(10, 0);
 
         JTable table = new JTable(data);
 
-        // columns can be selected
+        // rows can be selected
         table.setRowSelectionAllowed(true);
         table.setColumnSelectionAllowed(false);
 
@@ -91,13 +93,13 @@ public class TestTableSelectAll {
 
         // After selectAll(), I would expect all rows to be selected, no matter
         // whether there are columns or not.
-        System.out.println("Row 0 is selected: "+ rowSelNoColumn);
+        System.out.println("Row 0 is selected: " + rowSelNoColumn);
 
         data.addColumn(new Object[0]);
         table.selectAll();
 
         rowSelWithColumn = table.isRowSelected(0);
-        System.out.println("Row 0 is selected: "+ rowSelWithColumn);
+        System.out.println("Row 0 is selected: " + rowSelWithColumn);
 
         if (!(rowSelNoColumn && rowSelWithColumn)) {
             throw new RuntimeException("selectAll did not select row");

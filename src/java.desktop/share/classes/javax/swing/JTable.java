@@ -2151,7 +2151,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         int oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), true);
         int oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), true);
 
-        setRowSelectionInterval(0, rowCount-1);
+        setRowSelectionInterval(0, rowCount - 1);
 
         // this is done to restore the anchor and lead
         SwingUtilities2.setLeadAnchorWithoutSelection(selModel, oldLead, oldAnchor);
@@ -2165,7 +2165,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         int oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), false);
         int oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), false);
 
-        setColumnSelectionInterval(0, columnCount-1);
+        setColumnSelectionInterval(0, columnCount - 1);
 
         // this is done to restore the anchor and lead
         SwingUtilities2.setLeadAnchorWithoutSelection(selModel, oldLead, oldAnchor);
@@ -2177,10 +2177,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *  Selects all rows, columns, and cells in the table.
      */
     public void selectAll() {
-        int oldLead;
-        int oldAnchor;
-        ListSelectionModel selModel;
-
         int rowCount = getRowCount();
         int columnCount = getColumnCount();
 
