@@ -37,6 +37,11 @@ public class TestTableSelectAll {
 
     public static void main(String[] args) throws Exception {
 
+        testColumnSelect();
+        testRowSelect();
+    }
+
+    private static void testColumnSelect() {
         boolean colSelNoRow, colSelWithRow;
 
         // TableModel with no rows, but 10 columns
@@ -65,6 +70,37 @@ public class TestTableSelectAll {
 
         if (!(colSelNoRow && colSelWithRow)) {
             throw new RuntimeException("selectAll did not select column");
+        }
+    }
+
+    private static void testRowSelect() {
+        boolean rowSelNoColumn, rowSelWithColumn;
+
+        // TableModel with 10 rows, but no columns
+        DefaultTableModel data = new DefaultTableModel(10, 0);
+
+        JTable table = new JTable(data);
+
+        // columns can be selected
+        table.setRowSelectionAllowed(true);
+        table.setColumnSelectionAllowed(false);
+
+        table.selectAll();
+
+        rowSelNoColumn = table.isRowSelected(0);
+
+        // After selectAll(), I would expect all rows to be selected, no matter
+        // whether there are columns or not.
+        System.out.println("Row 0 is selected: "+ rowSelNoColumn);
+
+        data.addColumn(new Object[0]);
+        table.selectAll();
+
+        rowSelWithColumn = table.isRowSelected(0);
+        System.out.println("Row 0 is selected: "+ rowSelWithColumn);
+
+        if (!(rowSelNoColumn && rowSelWithColumn)) {
+            throw new RuntimeException("selectAll did not select row");
         }
     }
 }
