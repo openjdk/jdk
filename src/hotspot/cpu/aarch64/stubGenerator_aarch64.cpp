@@ -9900,10 +9900,7 @@ class StubGenerator: public StubCodeGenerator {
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
-    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != nullptr) {
-      StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
-    }
+    StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
 
     StubRoutines::aarch64::_spin_wait = generate_spin_wait();
 
