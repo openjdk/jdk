@@ -76,10 +76,14 @@ void MonitorList::add(ObjectMonitor* m) {
     m->set_next_om(head);
   } while (Atomic::cmpxchg(&_head, head, m) != head);
 
-  size_t count = Atomic::add(&_count, 1u);
-  if (count > max()) {
-    Atomic::inc(&_max);
-  }
+  size_t count = Atomic::add(&_count, 1u, memory_order_relaxed);
+  size_t old_max;
+  do {
+    old_max = Atomic::load(&_max);
+    if (count <= old_max) {
+      break;
+    }
+  } while (Atomic::cmpxchg(&_max, old_max, count, memory_order_relaxed) != old_max);
 }
 
 size_t MonitorList::count() const {
@@ -405,10 +409,6 @@ bool ObjectSynchronizer::quick_enter_legacy(oop obj, BasicLock* lock, JavaThread
 
   if (useHeavyMonitors()) {
     return false;  // Slow path
-  }
-
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    return LightweightSynchronizer::quick_enter(obj, lock, current);
   }
 
   assert(LockingMode == LM_LEGACY, "legacy mode below");
@@ -1312,6 +1312,14 @@ static bool monitors_used_above_threshold(MonitorList* list) {
   return false;
 }
 
+size_t ObjectSynchronizer::in_use_list_count() {
+  return _in_use_list.count();
+}
+
+size_t ObjectSynchronizer::in_use_list_max() {
+  return _in_use_list.max();
+}
+
 size_t ObjectSynchronizer::in_use_list_ceiling() {
   return _in_use_list_ceiling;
 }
@@ -1419,7 +1427,11 @@ static void post_monitor_inflate_event(EventJavaMonitorInflate* event,
                                        const oop obj,
                                        ObjectSynchronizer::InflateCause cause) {
   assert(event != nullptr, "invariant");
-  event->set_monitorClass(obj->klass());
+  const Klass* monitor_klass = obj->klass();
+  if (ObjectMonitor::is_jfr_excluded(monitor_klass)) {
+    return;
+  }
+  event->set_monitorClass(monitor_klass);
   event->set_address((uintptr_t)(void*)obj);
   event->set_cause((u1)cause);
   event->commit();
@@ -1710,8 +1722,8 @@ class ObjectMonitorDeflationLogging: public StackObj {
   elapsedTimer                             _timer;
 
   size_t ceiling() const { return ObjectSynchronizer::in_use_list_ceiling(); }
-  size_t count() const   { return ObjectSynchronizer::_in_use_list.count(); }
-  size_t max() const     { return ObjectSynchronizer::_in_use_list.max(); }
+  size_t count() const   { return ObjectSynchronizer::in_use_list_count(); }
+  size_t max() const     { return ObjectSynchronizer::in_use_list_max(); }
 
 public:
   ObjectMonitorDeflationLogging()
