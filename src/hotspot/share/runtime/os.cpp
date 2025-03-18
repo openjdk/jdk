@@ -734,14 +734,12 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     return nullptr;
   }
 
+  long offset = 0;
   if (free_info != nullptr) {
     MemTracker::deaccount(*free_info);
-  }
-
-  long offset = 0;
-  if (true) {
     offset = size - free_info->size;
   }
+
   return os::post_alloc(rc, size, offset, mem_tag, stack);
 }
 
