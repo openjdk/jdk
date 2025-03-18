@@ -34,12 +34,39 @@ import jdk.jpackage.test.MacSign.CertificateRequest;
 import jdk.jpackage.test.MacSign.KeychainWithCertsSpec;
 import jdk.jpackage.test.TKit;
 
+
+/*
+ * @test
+ * @summary Setup the environment for jpackage macos signing tests.
+ *          Creates required keychains and signing identities.
+ *          Does NOT run any jpackag tests.
+ * @library /test/jdk/tools/jpackage/helpers
+ * @build jdk.jpackage.test.*
+ * @compile -Xlint:all -Werror SigningBase.java
+ * @requires (jpackage.test.SignEnv == "setup")
+ * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=SigningBase.setUp
+ */
+
+/*
+ * @test
+ * @summary Tear down the environment for jpackage macos signing tests.
+ *          Deletes required keychains and signing identities.
+ *          Does NOT run any jpackag tests.
+ * @library /test/jdk/tools/jpackage/helpers
+ * @build jdk.jpackage.test.*
+ * @compile -Xlint:all -Werror SigningBase.java
+ * @requires (jpackage.test.SignEnv == "teardown")
+ * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=SigningBase.tearDown
+ */
+
 public class SigningBase {
 
     enum StandardKeychain {
         MAIN(DEFAULT_KEYCHAIN,
-                cert().userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()]).create(), 
-                cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()]).create(), 
+                cert().userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()]).create(),
+                cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()]).create(),
                 cert().userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()]).create(),
                 cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()]).create());
 
