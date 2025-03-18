@@ -2143,18 +2143,25 @@ public abstract class FloatVector extends AbstractVector<Float> {
     public abstract
     FloatVector slice(int origin, Vector<Float> v1);
 
+
     /*package-private*/
     final
     @ForceInline
-    FloatVector sliceTemplate(int origin, Vector<Float> v1) {
+    <V extends Vector<Float>>
+    FloatVector sliceTemplate(int origin, V v1) {
         FloatVector that = (FloatVector) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        IntVector iotaVector = (IntVector) iotaShuffle().toBitsVector();
-        IntVector filter = IntVector.broadcast((IntVector.IntSpecies) vspecies().asIntegral(), (int)(length() - origin));
-        VectorMask<Float> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
-        AbstractShuffle<Float> iota = iotaShuffle(origin, 1, true);
-        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
+        return (FloatVector)VectorSupport.sliceOp(origin, getClass(), float.class, length(), this, that,
+            (index, vec1, vec2) ->  {
+                IntVector iotaVector = (IntVector) vec1.iotaShuffle().toBitsVector();
+                IntVector filter = IntVector.broadcast((IntVector.IntSpecies) vec1.vspecies().asIntegral(),
+                                                                     (int)(vec1.length() - index));
+                VectorMask<Float> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vec1.vspecies());
+                AbstractShuffle<Float> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.rearrange(iota).blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**
@@ -2181,11 +2188,17 @@ public abstract class FloatVector extends AbstractVector<Float> {
     @ForceInline
     FloatVector sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        IntVector iotaVector = (IntVector) iotaShuffle().toBitsVector();
-        IntVector filter = IntVector.broadcast((IntVector.IntSpecies) vspecies().asIntegral(), (int)(length() - origin));
-        VectorMask<Float> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
-        AbstractShuffle<Float> iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+        FloatVector that = (FloatVector) vspecies().zero();
+        return (FloatVector)VectorSupport.sliceOp(origin, getClass(), float.class, length(), this, that,
+            (index, vec1, vec2) ->  {
+                IntVector iotaVector = (IntVector) vec1.iotaShuffle().toBitsVector();
+                IntVector filter = IntVector.broadcast((IntVector.IntSpecies) vec1.vspecies().asIntegral(),
+                                                                     (int)(vec1.length() - index));
+                VectorMask<Float> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vec1.vspecies());
+                AbstractShuffle<Float> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**
