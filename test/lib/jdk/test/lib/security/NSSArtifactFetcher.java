@@ -23,6 +23,7 @@
 package jdk.test.lib.security;
 
 import jdk.test.lib.Platform;
+import jdk.test.lib.artifacts.ArtifactResolver;
 import jdk.test.lib.security.artifacts.ThirdPartyArtifacts;
 import jtreg.SkippedException;
 
@@ -66,27 +67,41 @@ public class NSSArtifactFetcher {
         }
     }
 
+    /**
+     * This method returns the path to the directory containing library
+     * (.so/.dll/.dylib) files, not the parent directory.
+     *
+     * @param library library name
+     * @return NSS lib path
+     */
     public static String getNSSLibDir(String library) throws Exception {
-        Path libPath = getNSSLibPath(library);
+        final Path libPath = getNSSLibPath(library);
 
-        String libDir = String.valueOf(libPath.getParent()) + File.separatorChar;
+        final String libDir = String.valueOf(libPath.getParent()) + File.separatorChar;
         System.out.println("nssLibDir: " + libDir);
         System.setProperty("pkcs11test.nss.libdir", libDir);
         return libDir;
     }
 
-    public static Path getNSSDirectory() throws IOException {
+    /**
+     * This method returns the NSS parent folder path containing all NSS Libraries
+     * that might be installed.
+     * Automatically detects the architecture, hence no parameter needed.
+     *
+     * @return NSS parent dir path
+     */
+    public static Path getNSSDirectory() {
         final String osId = getOsId();
         final Class<?> clazz = getNssLibClass(osId);
         if (clazz == null) {
             throw new SkippedException("Warning: unsupported OS: " + osId
                                        + ", please initialize NSS library location, skipping test");
         }
-        return ThirdPartyArtifacts.fetch(clazz);
+        return ArtifactResolver.fetchOne(clazz);
     }
 
     public static Path getNSSLibPath(String library) throws Exception {
-        Path dir = getNSSDirectory();
+        final Path dir = getNSSDirectory();
 
         return findNSSLibrary(dir, Path.of(System.mapLibraryName(library)));
     }

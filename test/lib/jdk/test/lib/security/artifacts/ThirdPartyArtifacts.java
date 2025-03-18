@@ -32,48 +32,6 @@ import java.nio.file.Path;
 
 public class ThirdPartyArtifacts {
 
-    /**
-     * Retrieve an artifact/library/file from a repository or local file system.
-     * <p>
-     * Artifacts are defined with the {@link jdk.test.lib.artifacts.Artifact}
-     * annotation. The file name should have the format ARTIFACT_NAME-VERSION.EXT
-     * <p>
-     * If you have a local version of a dependency that you want to use, you can
-     * specify that by setting the System property:
-     * <code>jdk.test.lib.artifacts.ARTIFACT_NAME</code>
-     * <p>
-     * Generally, tests that use this method should be run with <code>make test</code>.
-     * However, tests can also be run with <code>jtreg</code> but you must have a
-     * local copy of the artifact and the system property must be set as specified
-     * above.
-     *
-     * @param clazz a class annotated with {@link jdk.test.lib.artifacts.Artifact}
-     * @return the local path to the artifact. If the artifact is a compressed
-     * file that gets unpacked, this path will point to the root
-     * directory of the uncompressed file.
-     * @throws IOException thrown if the artifact cannot be found
-     */
-    public static Path fetch(Class<?> clazz) throws IOException {
-        try {
-            var entry = ArtifactResolver
-                    .resolve(clazz)
-                    .entrySet()
-                    .stream()
-                    .findAny()
-                    .orElseThrow();
-            return entry.getValue();
-        } catch (ArtifactResolverException exc) {
-            Artifact artifact = clazz.getAnnotation(Artifact.class);
-            String message;
-            if (artifact != null) {
-                message = "Cannot find the artifact " + artifact.name();
-            } else {
-                message = "Class " + clazz.getName() + " missing @Artifact annotation.";
-            }
-            throw new IOException(message, exc);
-        }
-    }
-
     public static final String ACVP_BUNDLE_LOC = "jpg.tests.jdk";
     public static final String ACVP_BUNDLE_NAME = "ACVP-Server";
     public static final String ACVP_BUNDLE_VERSION = "1.1.0.38";
