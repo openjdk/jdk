@@ -172,7 +172,7 @@ public class JavadocTokenizer extends JavaTokenizer {
         }
 
         @Override
-        public Comment stripWhitespace() {
+        public Comment stripIndent() {
             return StrippedComment.of(this);
         }
     }
@@ -476,7 +476,7 @@ public class JavadocTokenizer extends JavaTokenizer {
         }
 
         @Override
-        public Comment stripWhitespace() {
+        public Comment stripIndent() {
             return this;
         }
 

@@ -1071,7 +1071,7 @@ public class JavacTrees extends DocTrees {
             }
 
             @Override
-            public Comment stripWhitespace() {
+            public Comment stripIndent() {
                 return this;
             }
 

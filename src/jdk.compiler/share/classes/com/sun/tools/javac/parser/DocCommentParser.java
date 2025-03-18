@@ -158,7 +158,7 @@ public class DocCommentParser {
         this.fac = fac;
         this.diags = fac.log.diags;
         this.diagSource = diagSource;
-        this.comment = comment.stripWhitespace();
+        this.comment = comment.stripIndent();
         names = fac.names;
         this.isHtmlFile = isHtmlFile;
         textKind = isHtmlFile ? DocTree.Kind.TEXT : getTextKind(comment);

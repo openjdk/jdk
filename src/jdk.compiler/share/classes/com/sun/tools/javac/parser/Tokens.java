@@ -281,7 +281,7 @@ public class Tokens {
         }
 
         String getText();
-        Comment stripWhitespace();
+        Comment stripIndent();
         JCDiagnostic.DiagnosticPosition getPos();
         int getSourcePos(int index);
         CommentStyle getStyle();

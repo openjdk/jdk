@@ -1271,7 +1271,7 @@ public class JavaTokenizer extends UnicodeReader {
          *
          * @return comment with removed whitespace or this comment
          */
-        public Comment stripWhitespace() {
+        public Comment stripIndent() {
             return this;
         }
 

@@ -237,7 +237,7 @@ public class DocTreeMaker implements DocTreeFactory {
             }
 
             @Override
-            public Comment stripWhitespace() { return this; }
+            public Comment stripIndent() { return this; }
 
             @Override
             public CommentStyle getStyle() {
