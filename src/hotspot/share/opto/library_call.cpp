@@ -516,9 +516,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_isAssignableFrom:         return inline_native_subtype_check();
 
   case vmIntrinsics::_isInstance:
-  case vmIntrinsics::_isInterface:
-  case vmIntrinsics::_isArray:
-  case vmIntrinsics::_isPrimitive:
   case vmIntrinsics::_isHidden:
   case vmIntrinsics::_getSuperclass:
   case vmIntrinsics::_getClassAccessFlags:      return inline_native_Class_query(intrinsic_id());
@@ -597,6 +594,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_sha5_implCompress:
   case vmIntrinsics::_sha3_implCompress:
     return inline_digestBase_implCompress(intrinsic_id());
+  case vmIntrinsics::_double_keccak:
+    return inline_double_keccak();
 
   case vmIntrinsics::_digestBase_implCompressMB:
     return inline_digestBase_implCompressMB(predicate);
@@ -627,6 +626,16 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_ghash_processBlocks();
   case vmIntrinsics::_chacha20Block:
     return inline_chacha20Block();
+  case vmIntrinsics::_dilithiumAlmostNtt:
+    return inline_dilithiumAlmostNtt();
+  case vmIntrinsics::_dilithiumAlmostInverseNtt:
+    return inline_dilithiumAlmostInverseNtt();
+  case vmIntrinsics::_dilithiumNttMult:
+    return inline_dilithiumNttMult();
+  case vmIntrinsics::_dilithiumMontMulByConstant:
+    return inline_dilithiumMontMulByConstant();
+  case vmIntrinsics::_dilithiumDecomposePoly:
+    return inline_dilithiumDecomposePoly();
   case vmIntrinsics::_base64_encodeBlock:
     return inline_base64_encodeBlock();
   case vmIntrinsics::_base64_decodeBlock:
@@ -682,17 +691,17 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_max:
   case vmIntrinsics::_min_strict:
   case vmIntrinsics::_max_strict:
-    return inline_min_max(intrinsic_id());
-
-  case vmIntrinsics::_maxF:
+  case vmIntrinsics::_minL:
+  case vmIntrinsics::_maxL:
   case vmIntrinsics::_minF:
-  case vmIntrinsics::_maxD:
+  case vmIntrinsics::_maxF:
   case vmIntrinsics::_minD:
-  case vmIntrinsics::_maxF_strict:
+  case vmIntrinsics::_maxD:
   case vmIntrinsics::_minF_strict:
-  case vmIntrinsics::_maxD_strict:
+  case vmIntrinsics::_maxF_strict:
   case vmIntrinsics::_minD_strict:
-      return inline_fp_min_max(intrinsic_id());
+  case vmIntrinsics::_maxD_strict:
+    return inline_min_max(intrinsic_id());
 
   case vmIntrinsics::_VectorUnaryOp:
     return inline_vector_nary_operation(1);
@@ -1933,7 +1942,78 @@ bool LibraryCallKit::inline_notify(vmIntrinsics::ID id) {
 
 //----------------------------inline_min_max-----------------------------------
 bool LibraryCallKit::inline_min_max(vmIntrinsics::ID id) {
-  set_result(generate_min_max(id, argument(0), argument(1)));
+  Node* a = nullptr;
+  Node* b = nullptr;
+  Node* n = nullptr;
+  switch (id) {
+    case vmIntrinsics::_min:
+    case vmIntrinsics::_max:
+    case vmIntrinsics::_minF:
+    case vmIntrinsics::_maxF:
+    case vmIntrinsics::_minF_strict:
+    case vmIntrinsics::_maxF_strict:
+    case vmIntrinsics::_min_strict:
+    case vmIntrinsics::_max_strict:
+      assert(callee()->signature()->size() == 2, "minF/maxF has 2 parameters of size 1 each.");
+      a = argument(0);
+      b = argument(1);
+      break;
+    case vmIntrinsics::_minD:
+    case vmIntrinsics::_maxD:
+    case vmIntrinsics::_minD_strict:
+    case vmIntrinsics::_maxD_strict:
+      assert(callee()->signature()->size() == 4, "minD/maxD has 2 parameters of size 2 each.");
+      a = round_double_node(argument(0));
+      b = round_double_node(argument(2));
+      break;
+    case vmIntrinsics::_minL:
+    case vmIntrinsics::_maxL:
+      assert(callee()->signature()->size() == 4, "minL/maxL has 2 parameters of size 2 each.");
+      a = argument(0);
+      b = argument(2);
+      break;
+    default:
+      fatal_unexpected_iid(id);
+      break;
+  }
+
+  switch (id) {
+    case vmIntrinsics::_min:
+    case vmIntrinsics::_min_strict:
+      n = new MinINode(a, b);
+      break;
+    case vmIntrinsics::_max:
+    case vmIntrinsics::_max_strict:
+      n = new MaxINode(a, b);
+      break;
+    case vmIntrinsics::_minF:
+    case vmIntrinsics::_minF_strict:
+      n = new MinFNode(a, b);
+      break;
+    case vmIntrinsics::_maxF:
+    case vmIntrinsics::_maxF_strict:
+      n = new MaxFNode(a, b);
+      break;
+    case vmIntrinsics::_minD:
+    case vmIntrinsics::_minD_strict:
+      n = new MinDNode(a, b);
+      break;
+    case vmIntrinsics::_maxD:
+    case vmIntrinsics::_maxD_strict:
+      n = new MaxDNode(a, b);
+      break;
+    case vmIntrinsics::_minL:
+      n = new MinLNode(_gvn.C, a, b);
+      break;
+    case vmIntrinsics::_maxL:
+      n = new MaxLNode(_gvn.C, a, b);
+      break;
+    default:
+      fatal_unexpected_iid(id);
+      break;
+  }
+
+  set_result(_gvn.transform(n));
   return true;
 }
 
@@ -2010,25 +2090,6 @@ bool LibraryCallKit::inline_math_multiplyHigh() {
 bool LibraryCallKit::inline_math_unsignedMultiplyHigh() {
   set_result(_gvn.transform(new UMulHiLNode(argument(0), argument(2))));
   return true;
-}
-
-Node*
-LibraryCallKit::generate_min_max(vmIntrinsics::ID id, Node* x0, Node* y0) {
-  Node* result_val = nullptr;
-  switch (id) {
-  case vmIntrinsics::_min:
-  case vmIntrinsics::_min_strict:
-    result_val = _gvn.transform(new MinINode(x0, y0));
-    break;
-  case vmIntrinsics::_max:
-  case vmIntrinsics::_max_strict:
-    result_val = _gvn.transform(new MaxINode(x0, y0));
-    break;
-  default:
-    fatal_unexpected_iid(id);
-    break;
-  }
-  return result_val;
 }
 
 inline int
@@ -3892,17 +3953,6 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     prim_return_value = intcon(0);
     obj = argument(1);
     break;
-  case vmIntrinsics::_isInterface:
-    prim_return_value = intcon(0);
-    break;
-  case vmIntrinsics::_isArray:
-    prim_return_value = intcon(0);
-    expect_prim = true;  // cf. ObjectStreamClass.getClassSignature
-    break;
-  case vmIntrinsics::_isPrimitive:
-    prim_return_value = intcon(1);
-    expect_prim = true;  // obviously
-    break;
   case vmIntrinsics::_isHidden:
     prim_return_value = intcon(0);
     break;
@@ -3969,28 +4019,6 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
   case vmIntrinsics::_isInstance:
     // nothing is an instance of a primitive type
     query_value = gen_instanceof(obj, kls, safe_for_replace);
-    break;
-
-  case vmIntrinsics::_isInterface:
-    // (To verify this code sequence, check the asserts in JVM_IsInterface.)
-    if (generate_interface_guard(kls, region) != nullptr)
-      // A guard was added.  If the guard is taken, it was an interface.
-      phi->add_req(intcon(1));
-    // If we fall through, it's a plain class.
-    query_value = intcon(0);
-    break;
-
-  case vmIntrinsics::_isArray:
-    // (To verify this code sequence, check the asserts in JVM_IsArrayClass.)
-    if (generate_array_guard(kls, region) != nullptr)
-      // A guard was added.  If the guard is taken, it was an array.
-      phi->add_req(intcon(1));
-    // If we fall through, it's a plain class.
-    query_value = intcon(0);
-    break;
-
-  case vmIntrinsics::_isPrimitive:
-    query_value = intcon(0); // "normal" path produces false
     break;
 
   case vmIntrinsics::_isHidden:
@@ -4480,7 +4508,7 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
     if (!stopped()) {
       // How many elements will we copy from the original?
       // The answer is MinI(orig_tail, length).
-      Node* moved = generate_min_max(vmIntrinsics::_min, orig_tail, length);
+      Node* moved = _gvn.transform(new MinINode(orig_tail, length));
 
       // Generate a direct call to the right arraycopy function(s).
       // We know the copy is disjoint but we might not know if the
@@ -6588,7 +6616,7 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
  * int java.util.zip.CRC32.update(int crc, int b)
  */
 bool LibraryCallKit::inline_updateCRC32() {
-  assert(UseCRC32Intrinsics, "need AVX and LCMUL instructions support");
+  assert(UseCRC32Intrinsics, "need AVX and CLMUL instructions support");
   assert(callee()->signature()->size() == 2, "update has 2 parameters");
   // no receiver since it is static method
   Node* crc  = argument(0); // type: int
@@ -6623,7 +6651,7 @@ bool LibraryCallKit::inline_updateCRC32() {
  * int java.util.zip.CRC32.updateBytes(int crc, byte[] buf, int off, int len)
  */
 bool LibraryCallKit::inline_updateBytesCRC32() {
-  assert(UseCRC32Intrinsics, "need AVX and LCMUL instructions support");
+  assert(UseCRC32Intrinsics, "need AVX and CLMUL instructions support");
   assert(callee()->signature()->size() == 4, "updateBytes has 4 parameters");
   // no receiver since it is static method
   Node* crc     = argument(0); // type: int
@@ -6667,7 +6695,7 @@ bool LibraryCallKit::inline_updateBytesCRC32() {
  * int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
  */
 bool LibraryCallKit::inline_updateByteBufferCRC32() {
-  assert(UseCRC32Intrinsics, "need AVX and LCMUL instructions support");
+  assert(UseCRC32Intrinsics, "need AVX and CLMUL instructions support");
   assert(callee()->signature()->size() == 5, "updateByteBuffer has 4 parameters and one is long");
   // no receiver since it is static method
   Node* crc     = argument(0); // type: int
@@ -7624,6 +7652,176 @@ bool LibraryCallKit::inline_chacha20Block() {
   return true;
 }
 
+//------------------------------inline_dilithiumAlmostNtt
+bool LibraryCallKit::inline_dilithiumAlmostNtt() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseDilithiumIntrinsics, "need Dilithium intrinsics support");
+  assert(callee()->signature()->size() == 2, "dilithiumAlmostNtt has 2 parameters");
+
+  stubAddr = StubRoutines::dilithiumAlmostNtt();
+  stubName = "dilithiumAlmostNtt";
+  if (!stubAddr) return false;
+
+  Node* coeffs          = argument(0);
+  Node* ntt_zetas        = argument(1);
+
+  coeffs = must_be_not_null(coeffs, true);
+  ntt_zetas = must_be_not_null(ntt_zetas, true);
+
+  Node* coeffs_start  = array_element_address(coeffs, intcon(0), T_INT);
+  assert(coeffs_start, "coeffs is null");
+  Node* ntt_zetas_start  = array_element_address(ntt_zetas, intcon(0), T_INT);
+  assert(ntt_zetas_start, "ntt_zetas is null");
+  Node* dilithiumAlmostNtt = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::dilithiumAlmostNtt_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  coeffs_start, ntt_zetas_start);
+  // return an int
+  Node* retvalue = _gvn.transform(new ProjNode(dilithiumAlmostNtt, TypeFunc::Parms));
+  set_result(retvalue);
+  return true;
+}
+
+//------------------------------inline_dilithiumAlmostInverseNtt
+bool LibraryCallKit::inline_dilithiumAlmostInverseNtt() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseDilithiumIntrinsics, "need Dilithium intrinsics support");
+  assert(callee()->signature()->size() == 2, "dilithiumAlmostInverseNtt has 2 parameters");
+
+  stubAddr = StubRoutines::dilithiumAlmostInverseNtt();
+  stubName = "dilithiumAlmostInverseNtt";
+  if (!stubAddr) return false;
+
+  Node* coeffs          = argument(0);
+  Node* zetas           = argument(1);
+
+  coeffs = must_be_not_null(coeffs, true);
+  zetas = must_be_not_null(zetas, true);
+
+  Node* coeffs_start  = array_element_address(coeffs, intcon(0), T_INT);
+  assert(coeffs_start, "coeffs is null");
+  Node* zetas_start  = array_element_address(zetas, intcon(0), T_INT);
+  assert(zetas_start, "inverseNtt_zetas is null");
+  Node* dilithiumAlmostInverseNtt = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::dilithiumAlmostInverseNtt_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  coeffs_start, zetas_start);
+
+  // return an int
+  Node* retvalue = _gvn.transform(new ProjNode(dilithiumAlmostInverseNtt, TypeFunc::Parms));
+  set_result(retvalue);
+  return true;
+}
+
+//------------------------------inline_dilithiumNttMult
+bool LibraryCallKit::inline_dilithiumNttMult() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseDilithiumIntrinsics, "need Dilithium intrinsics support");
+  assert(callee()->signature()->size() == 3, "dilithiumNttMult has 3 parameters");
+
+  stubAddr = StubRoutines::dilithiumNttMult();
+  stubName = "dilithiumNttMult";
+  if (!stubAddr) return false;
+
+  Node* result          = argument(0);
+  Node* ntta            = argument(1);
+  Node* nttb            = argument(2);
+
+  result = must_be_not_null(result, true);
+  ntta = must_be_not_null(ntta, true);
+  nttb = must_be_not_null(nttb, true);
+
+  Node* result_start  = array_element_address(result, intcon(0), T_INT);
+  assert(result_start, "result is null");
+  Node* ntta_start  = array_element_address(ntta, intcon(0), T_INT);
+  assert(ntta_start, "ntta is null");
+  Node* nttb_start  = array_element_address(nttb, intcon(0), T_INT);
+  assert(nttb_start, "nttb is null");
+  Node* dilithiumNttMult = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::dilithiumNttMult_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  result_start, ntta_start, nttb_start);
+
+  // return an int
+  Node* retvalue = _gvn.transform(new ProjNode(dilithiumNttMult, TypeFunc::Parms));
+  set_result(retvalue);
+
+  return true;
+}
+
+//------------------------------inline_dilithiumMontMulByConstant
+bool LibraryCallKit::inline_dilithiumMontMulByConstant() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseDilithiumIntrinsics, "need Dilithium intrinsics support");
+  assert(callee()->signature()->size() == 2, "dilithiumMontMulByConstant has 2 parameters");
+
+  stubAddr = StubRoutines::dilithiumMontMulByConstant();
+  stubName = "dilithiumMontMulByConstant";
+  if (!stubAddr) return false;
+
+  Node* coeffs          = argument(0);
+  Node* constant        = argument(1);
+
+  coeffs = must_be_not_null(coeffs, true);
+
+  Node* coeffs_start  = array_element_address(coeffs, intcon(0), T_INT);
+  assert(coeffs_start, "coeffs is null");
+  Node* dilithiumMontMulByConstant = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::dilithiumMontMulByConstant_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  coeffs_start, constant);
+
+  // return an int
+  Node* retvalue = _gvn.transform(new ProjNode(dilithiumMontMulByConstant, TypeFunc::Parms));
+  set_result(retvalue);
+  return true;
+}
+
+
+//------------------------------inline_dilithiumDecomposePoly
+bool LibraryCallKit::inline_dilithiumDecomposePoly() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseDilithiumIntrinsics, "need Dilithium intrinsics support");
+  assert(callee()->signature()->size() == 5, "dilithiumDecomposePoly has 5 parameters");
+
+  stubAddr = StubRoutines::dilithiumDecomposePoly();
+  stubName = "dilithiumDecomposePoly";
+  if (!stubAddr) return false;
+
+  Node* input          = argument(0);
+  Node* lowPart        = argument(1);
+  Node* highPart       = argument(2);
+  Node* twoGamma2      = argument(3);
+  Node* multiplier     = argument(4);
+
+  input = must_be_not_null(input, true);
+  lowPart = must_be_not_null(lowPart, true);
+  highPart = must_be_not_null(highPart, true);
+
+  Node* input_start  = array_element_address(input, intcon(0), T_INT);
+  assert(input_start, "input is null");
+  Node* lowPart_start  = array_element_address(lowPart, intcon(0), T_INT);
+  assert(lowPart_start, "lowPart is null");
+  Node* highPart_start  = array_element_address(highPart, intcon(0), T_INT);
+  assert(highPart_start, "highPart is null");
+
+  Node* dilithiumDecomposePoly = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::dilithiumDecomposePoly_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  input_start, lowPart_start, highPart_start,
+                                  twoGamma2, multiplier);
+
+  // return an int
+  Node* retvalue = _gvn.transform(new ProjNode(dilithiumDecomposePoly, TypeFunc::Parms));
+  set_result(retvalue);
+  return true;
+}
+
 bool LibraryCallKit::inline_base64_encodeBlock() {
   address stubAddr;
   const char *stubName;
@@ -7886,6 +8084,38 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
 
   return true;
 }
+
+//------------------------------inline_double_keccak
+bool LibraryCallKit::inline_double_keccak() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseSHA3Intrinsics, "need SHA3 intrinsics support");
+  assert(callee()->signature()->size() == 2, "double_keccak has 2 parameters");
+
+  stubAddr = StubRoutines::double_keccak();
+  stubName = "double_keccak";
+  if (!stubAddr) return false;
+
+  Node* status0        = argument(0);
+  Node* status1        = argument(1);
+
+  status0 = must_be_not_null(status0, true);
+  status1 = must_be_not_null(status1, true);
+
+  Node* status0_start  = array_element_address(status0, intcon(0), T_LONG);
+  assert(status0_start, "status0 is null");
+  Node* status1_start  = array_element_address(status1, intcon(0), T_LONG);
+  assert(status1_start, "status1 is null");
+  Node* double_keccak = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::double_keccak_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  status0_start, status1_start);
+  // return an int
+  Node* retvalue = _gvn.transform(new ProjNode(double_keccak, TypeFunc::Parms));
+  set_result(retvalue);
+  return true;
+}
+
 
 //------------------------------inline_digestBase_implCompressMB-----------------------
 //
@@ -8295,91 +8525,6 @@ bool LibraryCallKit::inline_character_compare(vmIntrinsics::ID id) {
       fatal_unexpected_iid(id);
   }
 
-  set_result(_gvn.transform(n));
-  return true;
-}
-
-//------------------------------inline_fp_min_max------------------------------
-bool LibraryCallKit::inline_fp_min_max(vmIntrinsics::ID id) {
-/* DISABLED BECAUSE METHOD DATA ISN'T COLLECTED PER CALL-SITE, SEE JDK-8015416.
-
-  // The intrinsic should be used only when the API branches aren't predictable,
-  // the last one performing the most important comparison. The following heuristic
-  // uses the branch statistics to eventually bail out if necessary.
-
-  ciMethodData *md = callee()->method_data();
-
-  if ( md != nullptr && md->is_mature() && md->invocation_count() > 0 ) {
-    ciCallProfile cp = caller()->call_profile_at_bci(bci());
-
-    if ( ((double)cp.count()) / ((double)md->invocation_count()) < 0.8 ) {
-      // Bail out if the call-site didn't contribute enough to the statistics.
-      return false;
-    }
-
-    uint taken = 0, not_taken = 0;
-
-    for (ciProfileData *p = md->first_data(); md->is_valid(p); p = md->next_data(p)) {
-      if (p->is_BranchData()) {
-        taken = ((ciBranchData*)p)->taken();
-        not_taken = ((ciBranchData*)p)->not_taken();
-      }
-    }
-
-    double balance = (((double)taken) - ((double)not_taken)) / ((double)md->invocation_count());
-    balance = balance < 0 ? -balance : balance;
-    if ( balance > 0.2 ) {
-      // Bail out if the most important branch is predictable enough.
-      return false;
-    }
-  }
-*/
-
-  Node *a = nullptr;
-  Node *b = nullptr;
-  Node *n = nullptr;
-  switch (id) {
-  case vmIntrinsics::_maxF:
-  case vmIntrinsics::_minF:
-  case vmIntrinsics::_maxF_strict:
-  case vmIntrinsics::_minF_strict:
-    assert(callee()->signature()->size() == 2, "minF/maxF has 2 parameters of size 1 each.");
-    a = argument(0);
-    b = argument(1);
-    break;
-  case vmIntrinsics::_maxD:
-  case vmIntrinsics::_minD:
-  case vmIntrinsics::_maxD_strict:
-  case vmIntrinsics::_minD_strict:
-    assert(callee()->signature()->size() == 4, "minD/maxD has 2 parameters of size 2 each.");
-    a = round_double_node(argument(0));
-    b = round_double_node(argument(2));
-    break;
-  default:
-    fatal_unexpected_iid(id);
-    break;
-  }
-  switch (id) {
-  case vmIntrinsics::_maxF:
-  case vmIntrinsics::_maxF_strict:
-    n = new MaxFNode(a, b);
-    break;
-  case vmIntrinsics::_minF:
-  case vmIntrinsics::_minF_strict:
-    n = new MinFNode(a, b);
-    break;
-  case vmIntrinsics::_maxD:
-  case vmIntrinsics::_maxD_strict:
-    n = new MaxDNode(a, b);
-    break;
-  case vmIntrinsics::_minD:
-  case vmIntrinsics::_minD_strict:
-    n = new MinDNode(a, b);
-    break;
-  default:
-    fatal_unexpected_iid(id);
-    break;
-  }
   set_result(_gvn.transform(n));
   return true;
 }

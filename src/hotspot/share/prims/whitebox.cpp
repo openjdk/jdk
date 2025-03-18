@@ -45,8 +45,8 @@
 #include "compiler/methodMatcher.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcConfig.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/genArguments.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
@@ -783,7 +783,7 @@ class VM_WhiteBoxDeoptimizeFrames : public VM_WhiteBoxOperation {
             if (_make_not_entrant) {
                 nmethod* nm = CodeCache::find_nmethod(f->pc());
                 assert(nm != nullptr, "did not find nmethod");
-                nm->make_not_entrant();
+                nm->make_not_entrant("Whitebox deoptimization");
             }
             ++_result;
           }
@@ -1804,6 +1804,10 @@ WB_ENTRY(jlong, WB_RootChunkWordSize(JNIEnv* env))
   return (jlong)Metaspace::reserve_alignment_words();
 WB_END
 
+WB_ENTRY(jboolean, WB_IsStaticallyLinked(JNIEnv* env, jobject wb))
+  return JVM_IsStaticallyLinked();
+WB_END
+
 //////////////
 
 WB_ENTRY(jlong, WB_AllocateMetaspace(JNIEnv* env, jobject wb, jobject class_loader, jlong size))
@@ -2644,14 +2648,6 @@ WB_ENTRY(jstring, WB_GetLibcName(JNIEnv* env, jobject o))
   return info_string;
 WB_END
 
-WB_ENTRY(void, WB_LockCritical(JNIEnv* env, jobject wb))
-  GCLocker::lock_critical(thread);
-WB_END
-
-WB_ENTRY(void, WB_UnlockCritical(JNIEnv* env, jobject wb))
-  GCLocker::unlock_critical(thread);
-WB_END
-
 WB_ENTRY(void, WB_PinObject(JNIEnv* env, jobject wb, jobject o))
 #if INCLUDE_G1GC
   if (!UseG1GC) {
@@ -2992,8 +2988,6 @@ static JNINativeMethod methods[] = {
   {CC"waitUnsafe", CC"(I)V",                          (void*)&WB_WaitUnsafe},
   {CC"getLibcName",     CC"()Ljava/lang/String;",     (void*)&WB_GetLibcName},
 
-  {CC"lockCritical",    CC"()V",                      (void*)&WB_LockCritical},
-  {CC"unlockCritical",  CC"()V",                      (void*)&WB_UnlockCritical},
   {CC"pinObject",       CC"(Ljava/lang/Object;)V",    (void*)&WB_PinObject},
   {CC"unpinObject",     CC"(Ljava/lang/Object;)V",    (void*)&WB_UnpinObject},
   {CC"setVirtualThreadsNotifyJvmtiMode", CC"(Z)Z",    (void*)&WB_SetVirtualThreadsNotifyJvmtiMode},
@@ -3003,7 +2997,8 @@ static JNINativeMethod methods[] = {
   {CC"printString", CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_PrintString},
   {CC"lockAndStuckInSafepoint", CC"()V", (void*)&WB_TakeLockAndHangInSafepoint},
   {CC"wordSize", CC"()J",                             (void*)&WB_WordSize},
-  {CC"rootChunkWordSize", CC"()J",                    (void*)&WB_RootChunkWordSize}
+  {CC"rootChunkWordSize", CC"()J",                    (void*)&WB_RootChunkWordSize},
+  {CC"isStatic", CC"()Z",                             (void*)&WB_IsStaticallyLinked}
 };
 
 

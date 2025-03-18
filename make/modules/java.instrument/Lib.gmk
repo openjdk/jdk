@@ -43,18 +43,20 @@ endif
 $(eval $(call SetupJdkLibrary, BUILD_LIBINSTRUMENT, \
     NAME := instrument, \
     OPTIMIZATION := LOW, \
-    CFLAGS_bsd := $(ICONV_CFLAGS), \
+    CFLAGS := $(ICONV_CFLAGS), \
     CFLAGS_windows := -Dstrcasecmp=stricmp, \
     CFLAGS_debug := -DJPLIS_LOGGING, \
     CFLAGS_release := -DNO_JPLIS_LOGGING, \
-    JDK_LIBS := java.base:libjava java.base:libjli java.base:libjvm, \
-    LIBS_unix := $(LIBZ_LIBS), \
-    LIBS_linux := $(LIBDL), \
-    LIBS_bsd := $(ICONV_LIBS) $(LIBDL), \
-    LIBS_aix := $(LIBDL) -liconv, \
+    LDFLAGS := $(ICONV_LDFLAGS), \
     LDFLAGS_bsd := -L$(SUPPORT_OUTPUTDIR)/native/java.base \
         $(ICONV_LDFLAGS), \
-    LIBS_macosx := -liconv \
+    JDK_LIBS := java.base:libjava java.base:libjli java.base:libjvm, \
+    LIBS := $(ICONV_LIBS), \
+    LIBS_unix := $(LIBZ_LIBS), \
+    LIBS_linux := $(LIBDL), \
+    LIBS_aix := $(LIBDL), \
+    LIBS_bsd := $(ICONV_LIBS) $(LIBDL), \
+    LIBS_macosx := \
         -framework ApplicationServices \
         -framework Cocoa \
         -framework Security, \

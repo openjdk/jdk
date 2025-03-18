@@ -298,7 +298,9 @@ void JfrThreadLocal::exclude_vthread(const JavaThread* jt) {
 }
 
 void JfrThreadLocal::include_vthread(const JavaThread* jt) {
-  set(&jt->jfr_thread_local()->_vthread_excluded, false);
+  JfrThreadLocal* const tl = jt->jfr_thread_local();
+  Atomic::store(&tl->_vthread_epoch, static_cast<u2>(0));
+  set(&tl->_vthread_excluded, false);
   JfrJavaEventWriter::include(vthread_id(jt), jt);
 }
 

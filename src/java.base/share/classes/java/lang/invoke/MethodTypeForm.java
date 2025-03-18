@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ final class MethodTypeForm {
         return basicType;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("unchecked")
     public MethodHandle cachedMethodHandle(int which) {
         Object entry = methodHandles[which];
         if (entry == null) {
@@ -136,7 +136,7 @@ final class MethodTypeForm {
         return mh;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("unchecked")
     public LambdaForm cachedLambdaForm(int which) {
         Object entry = lambdaForms[which];
         if (entry == null) {
@@ -167,7 +167,6 @@ final class MethodTypeForm {
      * This MTF will stand for that type and all un-erased variations.
      * Eagerly compute some basic properties of the type, common to all variations.
      */
-    @SuppressWarnings({"rawtypes", "unchecked"})
     protected MethodTypeForm(MethodType erasedType) {
         this.erasedType = erasedType;
 

@@ -138,10 +138,8 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   fi
 
   # Threading library
-  if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xaix; then
-    BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lpthread"
-  elif test "x$OPENJDK_TARGET_OS" = xbsd; then
-    BASIC_JVM_LIBS="$BASIC_JVM_LIBS -pthread"
+  if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xaix || test "x$OPENJDK_TARGET_OS" = xbsd; then
+    BASIC_JVM_LIBS="$BASIC_JVM_LIBS $LIBPTHREAD"
   fi
 
   # librt for legacy clock_gettime
@@ -199,7 +197,24 @@ AC_DEFUN_ONCE([LIB_SETUP_MISC_LIBS],
   AC_SUBST(LIBDL)
   LIBS="$save_LIBS"
 
-  if test "x$OPENJDK_TARGET_OS" = "xbsd"; then
+  # Setup posix pthread support
+  if test "x$OPENJDK_TARGET_OS" != "xwindows"; then
+    LIBPTHREAD="-lpthread"
+  else
+    LIBPTHREAD=""
+  fi
+  AC_SUBST(LIBPTHREAD)
+
+  # Setup libiconv flags and library
+  ICONV_CFLAGS=
+  ICONV_LDFLAGS=
+  ICONV_LIBS=
+
+  if test "x$OPENJDK_TARGET_OS" == "xaix" || test "x$OPENJDK_TARGET_OS" == "xmacosx"; then
+    ICONV_CFLAGS=
+    ICONV_LDFLAGS=
+    ICONV_LIBS=-liconv
+  elif test "x$OPENJDK_TARGET_OS" = "xbsd"; then
     if test "x$OPENJDK_TARGET_OS_ENV" = "xbsd.openbsd"; then
       ICONV_CFLAGS="-I/usr/local/include"
       ICONV_LDFLAGS="-L/usr/local/lib"
@@ -208,17 +223,8 @@ AC_DEFUN_ONCE([LIB_SETUP_MISC_LIBS],
       ICONV_CFLAGS=-DLIBICONV_PLUG
       ICONV_LDFLAGS=
       ICONV_LIBS=
-    else
-      ICONV_CFLAGS=
-      ICONV_LDFLAGS=
-      ICONV_LIBS=
     fi
-  else
-    ICONV_CFLAGS=
-    ICONV_LDFLAGS=
-    ICONV_LIBS=-liconv
   fi
-
   AC_SUBST(ICONV_CFLAGS)
   AC_SUBST(ICONV_LDFLAGS)
   AC_SUBST(ICONV_LIBS)

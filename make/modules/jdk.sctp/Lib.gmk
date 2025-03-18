@@ -49,8 +49,8 @@ ifeq ($(SCTP_SUPPORTED), true)
           java.base:libnio \
           java.base:libnio/ch, \
       JDK_LIBS := java.base:libjava java.base:libnet, \
-      LIBS_linux := $(LIBDL) -lpthread, \
-      LIBS_bsd := -pthread $(LIBDL), \
+      LIBS_linux := $(LIBDL) $(LIBPTHREAD), \
+      LIBS_bsd := $(LIBDL) $(LIBPTHREAD), \
   ))
 
   TARGETS += $(BUILD_LIBSCTP)

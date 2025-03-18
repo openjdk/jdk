@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,11 +46,11 @@
 #define fileclose       fclose
 
 #if defined(__linux__) || defined(_ALLBSD_SOURCE)
-#ifdef __FreeBSD__
+#  ifdef __FreeBSD__
 static const char *ETC_TIMEZONE_FILE = "/var/db/zoneinfo";
-#else
+#  else
 static const char *ETC_TIMEZONE_FILE = "/etc/timezone";
-#endif
+#  endif
 static const char *ZONEINFO_DIR = "/usr/share/zoneinfo";
 static const char *DEFAULT_ZONEINFO_FILE = "/etc/localtime";
 #else
@@ -252,7 +252,6 @@ getPlatformTimeZoneID()
 {
     struct stat statbuf;
     char *tz = NULL;
-    FILE *fp;
     int fd;
     char *buf;
     size_t size;
