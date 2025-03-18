@@ -208,11 +208,11 @@ public class IPIdentities {
         KeyIdentifier kid = new KeyIdentifier(caKeys.getPublic());
         GeneralNames gns = new GeneralNames();
         GeneralName name = new GeneralName(new X500Name(
-                "C=US, ST=Some-State, L=Some-City, O=Some-Org"));
+                "O=Some-Org, L=Some-City, ST=Some-State, C=US"));
         gns.add(name);
         BigInteger serialNumber = BigInteger.valueOf(random.nextLong(1000000)+1);
         return CertificateBuilder.newCertificateBuilder(
-                "C=US, ST=Some-State, L=Some-City, O=Some-Org",
+                "O=Some-Org, L=Some-City, ST=Some-State, C=US",
                 caKeys.getPublic(), caKeys.getPublic())
                 .setSerialNumber(serialNumber)
                 .addExtension(new AuthorityKeyIdentifierExtension(kid, gns,
@@ -235,7 +235,7 @@ public class IPIdentities {
         }
 
         serverCert = CertificateBuilder.newCertificateBuilder(
-                "C=US, ST=Some-State, L=Some-City, O=Some-Org",
+                "O=Some-Org, L=Some-City, ST=Some-State, C=US",
                 serverKeys.getPublic(), caKeys.getPublic(),
                 KeyUsage.DIGITAL_SIGNATURE, KeyUsage.NONREPUDIATION, KeyUsage.KEY_ENCIPHERMENT)
                 .addBasicConstraintsExt(false, false, -1)
