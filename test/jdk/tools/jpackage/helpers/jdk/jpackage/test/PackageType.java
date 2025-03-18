@@ -26,6 +26,7 @@ import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -48,19 +49,23 @@ public enum PackageType {
             TKit.isLinux() ? "jdk.jpackage.internal.LinuxRpmBundler" : null),
     MAC_DMG(".dmg", TKit.isOSX() ? "jdk.jpackage.internal.MacDmgBundler" : null),
     MAC_PKG(".pkg", TKit.isOSX() ? "jdk.jpackage.internal.MacPkgBundler" : null),
-    IMAGE("app-image", null, null);
+    IMAGE;
+
+    PackageType() {
+        type  = "app-image";
+        suffix = null;
+        supported = true;
+        enabled = true;
+    }
 
     PackageType(String packageName, String bundleSuffix, String bundlerClass) {
-        name  = packageName;
-        suffix = bundleSuffix;
-        if (bundlerClass != null && !Inner.DISABLED_PACKAGERS.contains(getName())) {
-            supported = isBundlerSupported(bundlerClass);
-        } else {
-            supported = false;
-        }
+        type  = Objects.requireNonNull(packageName);
+        suffix = Objects.requireNonNull(bundleSuffix);
+        supported = Optional.ofNullable(bundlerClass).map(PackageType::isBundlerSupported).orElse(false);
+        enabled = supported && !Inner.DISABLED_PACKAGERS.contains(getType());
 
-        if (suffix != null && supported) {
-            TKit.trace(String.format("Bundler %s supported", getName()));
+        if (suffix != null && enabled) {
+            TKit.trace(String.format("Bundler %s enabled", getType()));
         }
     }
 
@@ -69,30 +74,23 @@ public enum PackageType {
     }
 
     void applyTo(JPackageCommand cmd) {
-        cmd.setArgumentValue("--type", getName());
+        cmd.setArgumentValue("--type", getType());
     }
 
     String getSuffix() {
-        return suffix;
+        return Optional.ofNullable(suffix).orElseThrow(UnsupportedOperationException::new);
     }
 
-    boolean isSupported() {
+    public boolean isSupported() {
         return supported;
     }
 
-    String getName() {
-        return name;
+    public boolean isEnabled() {
+        return supported;
     }
 
-    static PackageType fromSuffix(String packageFilename) {
-        if (packageFilename != null) {
-            for (PackageType v : values()) {
-                if (packageFilename.endsWith(v.getSuffix())) {
-                    return v;
-                }
-            }
-        }
-        return null;
+    public String getType() {
+        return type;
     }
 
     private static boolean isBundlerSupportedImpl(String bundlerClass) {
@@ -133,8 +131,9 @@ public enum PackageType {
         return reply.get();
     }
 
-    private final String name;
+    private final String type;
     private final String suffix;
+    private final boolean enabled;
     private final boolean supported;
 
     public static final Set<PackageType> LINUX = Set.of(LINUX_DEB, LINUX_RPM);

@@ -33,8 +33,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -92,6 +94,13 @@ public final class Executor extends CommandArguments<Executor> {
 
     public Executor removeEnvVar(String envVarName) {
         removeEnvVars.add(Objects.requireNonNull(envVarName));
+        setEnvVars.remove(envVarName);
+        return this;
+    }
+
+    public Executor setEnvVar(String envVarName, String envVarValue) {
+        setEnvVars.put(Objects.requireNonNull(envVarName), Objects.requireNonNull(envVarValue));
+        removeEnvVars.remove(envVarName);
         return this;
     }
 
@@ -370,11 +379,27 @@ public final class Executor extends CommandArguments<Executor> {
             builder.directory(directory.toFile());
             sb.append(String.format("; in directory [%s]", directory));
         }
-        if (!removeEnvVars.isEmpty()) {
-            final var envComm = Comm.compare(builder.environment().keySet(), removeEnvVars);
-            builder.environment().keySet().removeAll(envComm.common());
+        if (!setEnvVars.isEmpty()) {
+            final var defaultEnv = builder.environment();
+            final var envComm = Comm.compare(defaultEnv.keySet(), setEnvVars.keySet());
+            envComm.unique2().forEach(envVar -> {
+                trace(String.format("Adding %s=[%s] to environment", envVar, setEnvVars.get(envVar)));
+            });
             envComm.common().forEach(envVar -> {
-                TKit.trace(String.format("Clearing %s in environment", envVar));
+                final var curValue = defaultEnv.get(envVar);
+                final var newValue = setEnvVars.get(envVar);
+                if (!curValue.equals(newValue)) {
+                    trace(String.format("Setting %s=[%s] in environment", envVar, setEnvVars.get(envVar)));
+                }
+            });
+            defaultEnv.putAll(setEnvVars);
+        }
+        if (!removeEnvVars.isEmpty()) {
+            final var defaultEnv = builder.environment().keySet();
+            final var envComm = Comm.compare(defaultEnv, removeEnvVars);
+            defaultEnv.removeAll(envComm.common());
+            envComm.common().forEach(envVar -> {
+                trace(String.format("Clearing %s in environment", envVar));
             });
         }
 
@@ -515,6 +540,7 @@ public final class Executor extends CommandArguments<Executor> {
     private Set<SaveOutputType> saveOutputType;
     private Path directory;
     private Set<String> removeEnvVars = new HashSet<>();
+    private Map<String, String> setEnvVars = new HashMap<>();
     private boolean winEnglishOutput;
     private String winTmpDir = null;
 
