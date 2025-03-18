@@ -25,7 +25,6 @@
  * @test
  * @bug 8350463
  * @summary AArch64: Add vector rearrange support for small lane count vectors
- * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx.*") | os.arch=="aarch64"
  * @modules jdk.incubator.vector
  * @library /test/lib /
  *
@@ -34,14 +33,14 @@
 
 package compiler.vectorapi;
 
-import jdk.incubator.vector.*;
+import compiler.lib.generators.*;
 import compiler.lib.ir_framework.*;
-import java.util.Random;
-import jdk.test.lib.Utils;
+import jdk.incubator.vector.*;
+import jdk.test.lib.Asserts;
 
 public class VectorRearrangeTest {
     private static final int LENGTH = 2048;
-    private static final Random random = Utils.getRandomInstance();
+    private static final Generators random = Generators.G;
 
     private static final VectorSpecies<Byte> bspec128    = ByteVector.SPECIES_128;
     private static final VectorSpecies<Short> sspec128   = ShortVector.SPECIES_128;
@@ -84,27 +83,27 @@ public class VectorRearrangeTest {
         fdst = new float[LENGTH];
         ddst = new double[LENGTH];
 
-        for (int i = 0; i < LENGTH; ++i) {
-            bsrc[i] = (byte)random.nextInt();
-            ssrc[i] = (short)random.nextInt();
-            isrc[i] = random.nextInt();
-            lsrc[i] = random.nextLong();
-            fsrc[i] = random.nextFloat();
-            dsrc[i] = random.nextDouble();
+        Generator<Integer> byteGen = random.uniformInts(Byte.MIN_VALUE, Byte.MAX_VALUE);
+        Generator<Integer> shortGen = random.uniformInts(Short.MIN_VALUE, Short.MAX_VALUE);
+        for (int i = 0; i < LENGTH; i++) {
+            bsrc[i] = byteGen.next().byteValue();
+            ssrc[i] = shortGen.next().shortValue();
         }
+        random.fill(random.ints(), isrc);
+        random.fill(random.longs(), lsrc);
+        random.fill(random.floats(), fsrc);
+        random.fill(random.doubles(), dsrc);
 
         int[] nums = {2, 4, 8, 16};
         indexes = new int[4][];
         for (int i = 0; i < 4; i++) {
             indexes[i] = new int[nums[i]];
-            for (int j = 0; j < nums[i]; j++) {
-                indexes[i][j] = random.nextInt() & (nums[i] - 1);
-            }
+            random.fill(random.uniformInts(0, nums[i] - 1), indexes[i]);
         }
     }
 
     @Test
-    @IR(counts = {IRNode.REARRANGE_VB, IRNode.VECTOR_SIZE_8, " >0 "})
+    @IR(counts = {IRNode.REARRANGE_VB, IRNode.VECTOR_SIZE_8, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     public void rearrange_byte64() {
         VectorShuffle<Byte> shuffle = VectorShuffle.fromArray(bspec64, indexes[2], 0);
         for (int i = 0; i < LENGTH; i += bspec64.length()) {
@@ -114,8 +113,17 @@ public class VectorRearrangeTest {
         }
     }
 
+    @Check(test = "rearrange_byte64")
+    public void rearrange_byte64_verify() {
+        for (int i = 0; i < LENGTH; i += bspec64.length()) {
+            for (int j = 0; j < bspec64.length(); j++) {
+                Asserts.assertEquals(bsrc[indexes[2][j] + i], bdst[i + j]);
+            }
+        }
+    }
+
     @Test
-    @IR(counts = {IRNode.REARRANGE_VB, IRNode.VECTOR_SIZE_16, " >0 "})
+    @IR(counts = {IRNode.REARRANGE_VB, IRNode.VECTOR_SIZE_16, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     public void rearrange_byte128() {
         VectorShuffle<Byte> shuffle = VectorShuffle.fromArray(bspec128, indexes[3], 0);
         for (int i = 0; i < LENGTH; i += bspec128.length()) {
@@ -125,8 +133,17 @@ public class VectorRearrangeTest {
         }
     }
 
+    @Check(test = "rearrange_byte128")
+    public void rearrange_byte128_verify() {
+        for (int i = 0; i < LENGTH; i += bspec128.length()) {
+            for (int j = 0; j < bspec128.length(); j++) {
+                Asserts.assertEquals(bsrc[indexes[3][j] + i], bdst[i + j]);
+            }
+        }
+    }
+
     @Test
-    @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_4, " >0 "})
+    @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_4, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     public void rearrange_short64() {
         VectorShuffle<Short> shuffle = VectorShuffle.fromArray(sspec64, indexes[1], 0);
         for (int i = 0; i < LENGTH; i += sspec64.length()) {
@@ -136,14 +153,32 @@ public class VectorRearrangeTest {
         }
     }
 
+    @Check(test = "rearrange_short64")
+    public void rearrange_short64_verify() {
+        for (int i = 0; i < LENGTH; i += sspec64.length()) {
+            for (int j = 0; j < sspec64.length(); j++) {
+                Asserts.assertEquals(ssrc[indexes[1][j] + i], sdst[i + j]);
+            }
+        }
+    }
+
     @Test
-    @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_8, " >0 "})
+    @IR(counts = {IRNode.REARRANGE_VS, IRNode.VECTOR_SIZE_8, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     public void rearrange_short128() {
         VectorShuffle<Short> shuffle = VectorShuffle.fromArray(sspec128, indexes[2], 0);
         for (int i = 0; i < LENGTH; i += sspec128.length()) {
             ShortVector.fromArray(sspec128, ssrc, i)
                        .rearrange(shuffle)
                        .intoArray(sdst, i);
+        }
+    }
+
+    @Check(test = "rearrange_short128")
+    public void rearrange_short128_verify() {
+        for (int i = 0; i < LENGTH; i += sspec128.length()) {
+            for (int j = 0; j < sspec128.length(); j++) {
+                Asserts.assertEquals(ssrc[indexes[2][j] + i], sdst[i + j]);
+            }
         }
     }
 
@@ -158,14 +193,32 @@ public class VectorRearrangeTest {
         }
     }
 
+    @Check(test = "rearrange_int64")
+    public void rearrange_int64_verify() {
+        for (int i = 0; i < LENGTH; i += ispec64.length()) {
+            for (int j = 0; j < ispec64.length(); j++) {
+                Asserts.assertEquals(isrc[indexes[0][j] + i], idst[i + j]);
+            }
+        }
+    }
+
     @Test
-    @IR(counts = {IRNode.REARRANGE_VI, IRNode.VECTOR_SIZE_4, " >0 "})
+    @IR(counts = {IRNode.REARRANGE_VI, IRNode.VECTOR_SIZE_4, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     public void rearrange_int128() {
         VectorShuffle<Integer> shuffle = VectorShuffle.fromArray(ispec128, indexes[1], 0);
         for (int i = 0; i < LENGTH; i += ispec128.length()) {
             IntVector.fromArray(ispec128, isrc, i)
                      .rearrange(shuffle)
                      .intoArray(idst, i);
+        }
+    }
+
+    @Check(test = "rearrange_int128")
+    public void rearrange_int128_verify() {
+        for (int i = 0; i < LENGTH; i += ispec128.length()) {
+            for (int j = 0; j < ispec128.length(); j++) {
+                Asserts.assertEquals(isrc[indexes[1][j] + i], idst[i + j]);
+            }
         }
     }
 
@@ -180,6 +233,15 @@ public class VectorRearrangeTest {
         }
     }
 
+    @Check(test = "rearrange_long128")
+    public void rearrange_long128_verify() {
+        for (int i = 0; i < LENGTH; i += lspec128.length()) {
+            for (int j = 0; j < lspec128.length(); j++) {
+                Asserts.assertEquals(lsrc[indexes[0][j] + i], ldst[i + j]);
+            }
+        }
+    }
+
     @Test
     @IR(counts = {IRNode.REARRANGE_VF, IRNode.VECTOR_SIZE_2, " >0 "}, applyIfCPUFeature = {"asimd", "true"})
     public void rearrange_float64() {
@@ -191,14 +253,32 @@ public class VectorRearrangeTest {
         }
     }
 
+    @Check(test = "rearrange_float64")
+    public void rearrange_float64_verify() {
+        for (int i = 0; i < LENGTH; i += fspec64.length()) {
+            for (int j = 0; j < fspec64.length(); j++) {
+                Asserts.assertEquals(fsrc[indexes[0][j] + i], fdst[i + j]);
+            }
+        }
+    }
+
     @Test
-    @IR(counts = {IRNode.REARRANGE_VF, IRNode.VECTOR_SIZE_4, " >0 "})
+    @IR(counts = {IRNode.REARRANGE_VF, IRNode.VECTOR_SIZE_4, " >0 "}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     public void rearrange_float128() {
         VectorShuffle<Float> shuffle = VectorShuffle.fromArray(fspec128, indexes[1], 0);
         for (int i = 0; i < LENGTH; i += fspec128.length()) {
             FloatVector.fromArray(fspec128, fsrc, i)
                        .rearrange(shuffle)
                        .intoArray(fdst, i);
+        }
+    }
+
+    @Check(test = "rearrange_float128")
+    public void rearrange_float128_verify() {
+        for (int i = 0; i < LENGTH; i += fspec128.length()) {
+            for (int j = 0; j < fspec128.length(); j++) {
+                Asserts.assertEquals(fsrc[indexes[1][j] + i], fdst[i + j]);
+            }
         }
     }
 
@@ -213,10 +293,19 @@ public class VectorRearrangeTest {
         }
     }
 
+    @Check(test = "rearrange_double128")
+    public void rearrange_double128_verify() {
+        for (int i = 0; i < LENGTH; i += dspec128.length()) {
+            for (int j = 0; j < dspec128.length(); j++) {
+                Asserts.assertEquals(dsrc[indexes[0][j] + i], ddst[i + j]);
+            }
+        }
+    }
+
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
         testFramework.setDefaultWarmup(10000)
-                     .addFlags("--add-modules=jdk.incubator.vector", "-XX:-TieredCompilation")
+                     .addFlags("--add-modules=jdk.incubator.vector")
                      .start();
     }
 }
