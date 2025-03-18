@@ -347,8 +347,10 @@ void VM_Version::c2_initialize() {
 
   // UseZvbb (depends on RVV).
   if (UseZvbb && !UseRVV) {
+    if (!FLAG_IS_DEFAULT(UseZvbb)) {
+      warning("Cannot enable UseZvbb on cpu without RVV support.");
+    }
     FLAG_SET_DEFAULT(UseZvbb, false);
-    warning("Cannot enable UseZvbb on cpu without RVV support.");
   }
 
   // UseZvbc (depends on RVV).
@@ -357,6 +359,22 @@ void VM_Version::c2_initialize() {
       warning("Cannot enable UseZvbc on cpu without RVV support.");
     }
     FLAG_SET_DEFAULT(UseZvbc, false);
+  }
+
+  // UseZvkn (depends on RVV).
+  if (UseZvkn && !UseRVV) {
+    if (!FLAG_IS_DEFAULT(UseZvkn)) {
+      warning("Cannot enable UseZvkn on cpu without RVV support.");
+    }
+    FLAG_SET_DEFAULT(UseZvkn, false);
+  }
+
+  // UseZvfh (depends on RVV)
+  if (UseZvfh && !UseRVV) {
+    if (!FLAG_IS_DEFAULT(UseZvfh)) {
+      warning("Cannot enable UseZvfh on cpu without RVV support.");
+    }
+    FLAG_SET_DEFAULT(UseZvfh, false);
   }
 
   // SHA's
@@ -374,11 +392,6 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
   }
 
-  // UseZvkn (depends on RVV) and SHA-2.
-  if (UseZvkn && !UseRVV) {
-    FLAG_SET_DEFAULT(UseZvkn, false);
-    warning("Cannot enable Zvkn on cpu without RVV support.");
-  }
   // SHA-2, depends on Zvkn.
   if (UseSHA) {
     if (UseZvkn) {
