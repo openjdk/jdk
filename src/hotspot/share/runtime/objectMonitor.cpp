@@ -2001,8 +2001,8 @@ bool ObjectMonitor::notify_internal(JavaThread* current) {
 }
 
 static void post_monitor_notify_event(EventJavaMonitorNotify* event,
-                                    ObjectMonitor* monitor,
-                                    int notified_count) {
+                                      ObjectMonitor* monitor,
+                                      int notified_count) {
   assert(event != nullptr, "invariant");
   assert(monitor != nullptr, "invariant");
   const Klass* monitor_klass = monitor->object()->klass();
