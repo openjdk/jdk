@@ -151,7 +151,7 @@ static bool shared_base_valid(char* shared_base) {
   // We check user input for SharedBaseAddress at dump time.
 
   // At CDS runtime, "shared_base" will be the (attempted) mapping start. It will also
-  // be the encoding base, since the the headers of archived base objects (and with Lilliput,
+  // be the encoding base, since the headers of archived base objects (and with Lilliput,
   // the prototype mark words) carry pre-computed narrow Klass IDs that refer to the mapping
   // start as base.
   //
@@ -216,30 +216,9 @@ void MetaspaceShared::dump_loaded_classes(const char* file_name, TRAPS) {
   }
 }
 
-// If p is not aligned, move it up to the next address that's aligned with alignment.
-// If this is not possible (because p is too high), return nullptr. Example:
-//     p = 0xffffffffffff0000, alignment= 0x10000    => return nullptr.
-static char* align_up_or_null(char* p, size_t alignment) {
-  assert(p != nullptr, "sanity");
-  if (is_aligned(p, alignment)) {
-    return p;
-  }
-
-  char* down = align_down(p, alignment);
-  if (max_uintx - uintx(down) < uintx(alignment)) {
-    // Run out of address space to align up.
-    return nullptr;
-  }
-
-  char* aligned = align_up(p, alignment);
-  assert(aligned >= p, "sanity");
-  assert(aligned != nullptr, "sanity");
-  return aligned;
-}
-
 static bool shared_base_too_high(char* specified_base, char* aligned_base, size_t cds_max) {
-  // Caller should have checked if align_up_or_null( returns nullptr (comparing specified_base
-  // with nullptr is UB).
+  // Caller should have checked that aligned_base was successfully aligned and is not nullptr.
+  // Comparing specified_base with nullptr is UB.
   assert(aligned_base != nullptr, "sanity");
   assert(aligned_base >= specified_base, "sanity");
 
@@ -263,7 +242,9 @@ static char* compute_shared_base(size_t cds_max) {
     return specified_base;
   }
 
-  char* aligned_base = align_up_or_null(specified_base, alignment);
+  char* aligned_base = can_align_up(specified_base, alignment)
+                           ? align_up(specified_base, alignment)
+                           : nullptr;
 
   if (aligned_base != specified_base) {
     log_info(cds)("SharedBaseAddress (" INTPTR_FORMAT ") aligned up to " INTPTR_FORMAT,
@@ -636,7 +617,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
 
   _pending_method_handle_intrinsics = new (mtClassShared) GrowableArray<Method*>(256, mtClassShared);
-  if (CDSConfig::is_dumping_aot_linked_classes()) {
+  if (CDSConfig::is_dumping_method_handles()) {
     // When dumping AOT-linked classes, some classes may have direct references to a method handle
     // intrinsic. The easiest thing is to save all of them into the AOT cache.
     SystemDictionary::get_all_method_handle_intrinsics(_pending_method_handle_intrinsics);
@@ -823,8 +804,10 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
 
   if (CDSConfig::new_aot_flags_used()) {
     if (CDSConfig::is_dumping_preimage_static_archive()) {
+      // We are in the JVM that runs the training run. Continue execution,
+      // so that it can finish all clean-up and return the correct exit
+      // code to the OS.
       tty->print_cr("AOTConfiguration recorded: %s", AOTConfiguration);
-      vm_exit(0);
     } else {
       // The JLI launcher only recognizes the "old" -Xshare:dump flag.
       // When the new -XX:AOTMode=create flag is used, we can't return
@@ -861,37 +844,16 @@ void MetaspaceShared::adjust_heap_sizes_for_dumping() {
 #endif // INCLUDE_CDS_JAVA_HEAP && _LP64
 
 void MetaspaceShared::get_default_classlist(char* default_classlist, const size_t buf_size) {
-  // Construct the path to the class list (in jre/lib)
-  // Walk up two directories from the location of the VM and
-  // optionally tack on "lib" (depending on platform)
-  os::jvm_path(default_classlist, (jint)(buf_size));
-  for (int i = 0; i < 3; i++) {
-    char *end = strrchr(default_classlist, *os::file_separator());
-    if (end != nullptr) *end = '\0';
-  }
-  size_t classlist_path_len = strlen(default_classlist);
-  if (classlist_path_len >= 3) {
-    if (strcmp(default_classlist + classlist_path_len - 3, "lib") != 0) {
-      if (classlist_path_len < buf_size - 4) {
-        jio_snprintf(default_classlist + classlist_path_len,
-                     buf_size - classlist_path_len,
-                     "%slib", os::file_separator());
-        classlist_path_len += 4;
-      }
-    }
-  }
-  if (classlist_path_len < buf_size - 10) {
-    jio_snprintf(default_classlist + classlist_path_len,
-                 buf_size - classlist_path_len,
-                 "%sclasslist", os::file_separator());
-  }
+  const char* filesep = os::file_separator();
+  jio_snprintf(default_classlist, buf_size, "%s%slib%sclasslist",
+               Arguments::get_java_home(), filesep, filesep);
 }
 
 void MetaspaceShared::preload_classes(TRAPS) {
   char default_classlist[JVM_MAXPATHLEN];
   const char* classlist_path;
 
-  get_default_classlist(default_classlist, sizeof(default_classlist));
+  get_default_classlist(default_classlist, JVM_MAXPATHLEN);
   if (SharedClassListFile == nullptr) {
     classlist_path = default_classlist;
   } else {
@@ -946,7 +908,7 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
   if (CDSConfig::is_dumping_preimage_static_archive()) {
     log_info(cds)("Reading lambda form invokers from JDK default classlist ...");
     char default_classlist[JVM_MAXPATHLEN];
-    get_default_classlist(default_classlist, sizeof(default_classlist));
+    get_default_classlist(default_classlist, JVM_MAXPATHLEN);
     struct stat statbuf;
     if (os::stat(default_classlist, &statbuf) == 0) {
       ClassListParser::parse_classlist(default_classlist,
@@ -985,7 +947,7 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
       HeapShared::reset_archived_object_states(CHECK);
     }
 
-    if (CDSConfig::is_dumping_invokedynamic()) {
+    if (CDSConfig::is_dumping_method_handles()) {
       // This assert means that the MethodType and MethodTypeForm tables won't be
       // updated concurrently when we are saving their contents into a side table.
       assert(CDSConfig::allow_only_single_java_thread(), "Required");
@@ -995,12 +957,15 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
                              vmSymbols::createArchivedObjects(),
                              vmSymbols::void_method_signature(),
                              CHECK);
+    }
 
+    if (CDSConfig::is_initing_classes_at_dump_time()) {
       // java.lang.Class::reflectionFactory cannot be archived yet. We set this field
       // to null, and it will be initialized again at runtime.
       log_debug(cds)("Resetting Class::reflectionFactory");
       TempNewSymbol method_name = SymbolTable::new_symbol("resetArchivedStates");
       Symbol* method_sig = vmSymbols::void_method_signature();
+      JavaValue result(T_VOID);
       JavaCalls::call_static(&result, vmClasses::Class_klass(),
                              method_name, method_sig, CHECK);
 

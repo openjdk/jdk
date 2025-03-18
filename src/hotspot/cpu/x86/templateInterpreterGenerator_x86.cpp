@@ -1874,7 +1874,11 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 }
 
 void TemplateInterpreterGenerator::count_bytecode() {
+  #ifndef _LP64
   __ incrementl(ExternalAddress((address) &BytecodeCounter::_counter_value), rscratch1);
+  #else
+  __ incrementq(ExternalAddress((address) &BytecodeCounter::_counter_value), rscratch1);
+  #endif
 }
 
 void TemplateInterpreterGenerator::histogram_bytecode(Template* t) {
@@ -1914,9 +1918,14 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
 
 void TemplateInterpreterGenerator::stop_interpreter_at() {
   Label L;
+  #ifndef _LP64
   __ cmp32(ExternalAddress((address) &BytecodeCounter::_counter_value),
            StopInterpreterAt,
            rscratch1);
+  #else
+  __ mov64(rscratch1, StopInterpreterAt);
+  __ cmp64(rscratch1, ExternalAddress((address) &BytecodeCounter::_counter_value), rscratch2);
+  #endif
   __ jcc(Assembler::notEqual, L);
   __ int3();
   __ bind(L);
