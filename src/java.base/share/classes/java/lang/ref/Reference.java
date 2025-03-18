@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -354,8 +354,15 @@ public abstract sealed class Reference<T>
      */
     @IntrinsicCandidate
     public T get() {
-        return this.referent;
+        @SuppressWarnings("unchecked")
+        T result = (T) get0();
+        return result;
     }
+
+    /* Implementation of unintrinsified get().  Making get() native may lead
+     * C2 to sometimes prefer the native implementation over the intrinsic.
+     */
+    private native Object get0();
 
     /**
      * Tests if the referent of this reference object is {@code obj}.
