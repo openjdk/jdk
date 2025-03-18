@@ -576,7 +576,8 @@ final class Operations {
                 }
             }
 
-            // TODO: lt, maskAll -> VectorMask
+            ops.add(new Operation.Binary(type.maskType, "", type, ".lt(", type.elementType, ")", null));
+            ops.add(new Operation.Binary(type.maskType, "", type, ".lt(", type, ")", null));
 
             ops.add(new Operation.Binary(type, "", type, ".max(", type.elementType, ")", null));
             ops.add(new Operation.Binary(type, "", type, ".max(", type, ")", null));
@@ -632,7 +633,9 @@ final class Operations {
                 // ops.add(new Operation.Unary(type, "", type, ".sqrt(", type, ")", null));
             }
 
-            // TODO: toShuffle - VectorShuffle
+            ops.add(new Operation.Unary(type.shuffleType, "", type, ".toShuffle()", null));
+
+            // TODO: rest of the ops from ShuffleVector.
         }
 
         // Ensure the list is immutable.

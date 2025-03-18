@@ -81,7 +81,6 @@ public final class VectorAPIType extends Type {
 
     @Override
     public boolean isSubtypeOf(Name.Type other) {
-        // TODO: re-evaluate
         return this == other;
     }
 
@@ -108,7 +107,6 @@ public final class VectorAPIType extends Type {
 
         @Override
         public boolean isSubtypeOf(Name.Type other) {
-            // TODO: re-evaluate
             return this == other;
         }
 
@@ -117,7 +115,7 @@ public final class VectorAPIType extends Type {
 
         @Override
         public final Object con() {
-            // TODO:
+            // TODO: more options?
             return List.of("VectorMask.fromLong(", vectorType.species, ", ", longs().con(), ")");
         }
 
@@ -135,7 +133,6 @@ public final class VectorAPIType extends Type {
 
         @Override
         public boolean isSubtypeOf(Name.Type other) {
-            // TODO: re-evaluate
             return this == other;
         }
 
@@ -144,7 +141,7 @@ public final class VectorAPIType extends Type {
 
         @Override
         public final Object con() {
-            // TODO:
+            // TODO:: more options?
             return List.of("VectorShuffle.iota(", vectorType.species, ", ", ints().con(), ", ", ints().con(), ", true)");
         }
 
