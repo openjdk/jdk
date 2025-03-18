@@ -51,6 +51,8 @@ public class TestMergeLoads {
 
     // Inputs
     byte[] aB = new byte[RANGE];
+    char[] aC = new char[RANGE];
+    short[] aS = new short[RANGE];
 
     interface TestFunction {
         Object[] run(boolean isWarmUp, int rnd);
@@ -98,6 +100,30 @@ public class TestMergeLoads {
         testGroups.get("test4").put("test4a", (_,_) -> { return test4a(aB.clone()); });
         testGroups.get("test4").put("test4b", (_,_) -> { return test4b(aB.clone()); });
         testGroups.get("test4").put("test4c", (_,_) -> { return test4c(aB.clone()); });
+
+        // Merge char as int
+        testGroups.put("test5", new HashMap<String,TestFunction>());
+        testGroups.get("test5").put("test5R", (_,_) -> { return test5R(aC.clone()); });
+        testGroups.get("test5").put("test5a", (_,_) -> { return test5a(aC.clone()); });
+        testGroups.get("test5").put("test5b", (_,_) -> { return test5b(aC.clone()); });
+
+        // Merge char as long
+        testGroups.put("test6", new HashMap<String,TestFunction>());
+        testGroups.get("test6").put("test6R", (_,_) -> { return test6R(aC.clone()); });
+        testGroups.get("test6").put("test6a", (_,_) -> { return test6a(aC.clone()); });
+        testGroups.get("test6").put("test6b", (_,_) -> { return test6b(aC.clone()); });
+
+        // Merge short as int
+        testGroups.put("test7", new HashMap<String,TestFunction>());
+        testGroups.get("test7").put("test7R", (_,_) -> { return test7R(aS.clone()); });
+        testGroups.get("test7").put("test7a", (_,_) -> { return test7a(aS.clone()); });
+        testGroups.get("test7").put("test7b", (_,_) -> { return test7b(aS.clone()); });
+
+        // Merge short as long
+        testGroups.put("test8", new HashMap<String,TestFunction>());
+        testGroups.get("test8").put("test8R", (_,_) -> { return test8R(aS.clone()); });
+        testGroups.get("test8").put("test8a", (_,_) -> { return test8a(aS.clone()); });
+        testGroups.get("test8").put("test8b", (_,_) -> { return test8b(aS.clone()); });
     }
 
     static void set_random(byte[] a) {
@@ -106,6 +132,17 @@ public class TestMergeLoads {
         }
     }
 
+    static void set_random(char[] a) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = (char)RANDOM.nextInt();
+        }
+    }
+
+    static void set_random(short[] a) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = (short)RANDOM.nextInt();
+        }
+    }
     @Warmup(100)
     @Run(test = {"test1a",
                  "test1b",
@@ -118,7 +155,15 @@ public class TestMergeLoads {
                  "test3c",
                  "test4a",
                  "test4b",
-                 "test4c"
+                 "test4c",
+                 "test5a",
+                 "test5b",
+                 "test6a",
+                 "test6b",
+                 "test7a",
+                 "test7b",
+                 "test8a",
+                 "test8b",
                 })
     public void runTests(RunInfo info) {
         // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
@@ -126,6 +171,8 @@ public class TestMergeLoads {
         for (int iter = 0; iter < iters; iter++) {
             // Write random values to inputs
             set_random(aB);
+            set_random(aC);
+            set_random(aS);
 
             // Run all tests
             for (Map.Entry<String, Map<String,TestFunction>> group_entry : testGroups.entrySet()) {
@@ -230,8 +277,7 @@ public class TestMergeLoads {
     }
 
     /**
-     * Group 1
-     *   get int in little endian mode
+     * Group 1: get int in little endian mode
      */
     @DontCompile
     static Object[] test1R(byte[] a) {
@@ -287,8 +333,7 @@ public class TestMergeLoads {
     }
 
     /**
-     * Group 2
-     *   get long in little endian mode
+     * Group 2: get long in little endian mode
      */
     @DontCompile
     static Object[] test2R(byte[] a) {
@@ -356,8 +401,7 @@ public class TestMergeLoads {
     }
 
     /**
-     * Group 3
-     *   get int in big endian mode
+     * Group 3: get int in big endian mode
      */
     @DontCompile
     static Object[] test3R(byte[] a) {
@@ -413,8 +457,7 @@ public class TestMergeLoads {
     }
 
     /**
-     * Group 4
-     *   get long in big endian mode
+     * Group 4: get long in big endian mode
      */
     @DontCompile
     static Object[] test4R(byte[] a) {
@@ -478,6 +521,186 @@ public class TestMergeLoads {
                 (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6) & 0xff)) <<  8)|
                  ((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 7) & 0xff));
       long[] ret = {i1};
+      return new Object[]{ret};
+    }
+
+    /**
+     * Group 5: merge char as int
+     */
+    @DontCompile
+    static Object[] test5R(char[] a) {
+      int i1 = (((int)(a[0] & 0xffff)) << 16)|
+                ((int)(a[1] & 0xffff));
+      int i2 =  ((int)(a[2] & 0xffff))       |
+               (((int)(a[3] & 0xffff)) << 16);
+      int[] ret = {i1, i2};
+      return new Object[]{ret};
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_I_OF_CLASS, "char\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static Object[] test5a(char[] a) {
+      /* only one group which access array in platform order can be merged */
+      int i1 = (((int)(a[0] & 0xffff)) << 16)|
+                ((int)(a[1] & 0xffff));
+      int i2 =  ((int)(a[2] & 0xffff))       |
+               (((int)(a[3] & 0xffff)) << 16);
+      int[] ret = {i1, i2};
+      return new Object[]{ret};
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_I_OF_CLASS, "char\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static Object[] test5b(char[] a) {
+      /* only one group which access array in platform order can be merged */
+      int i1 = (((int)(UNSAFE.getChar(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0) & 0xffff)) << 16)|
+                ((int)(UNSAFE.getChar(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2) & 0xffff));
+      int i2 =  ((int)(UNSAFE.getChar(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4) & 0xffff))       |
+               (((int)(UNSAFE.getChar(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6) & 0xffff)) << 16);
+      int[] ret = {i1,i2};
+      return new Object[]{ret};
+    }
+
+    /**
+     * Group 6: merge char as long
+     */
+    @DontCompile
+    static Object[] test6R(char[] a) {
+      long i1 = (((long)(a[0] & 0xffff)) << 48)|
+                (((long)(a[1] & 0xffff)) << 32)|
+                (((long)(a[2] & 0xffff)) << 16)|
+                 ((long)(a[3] & 0xffff));
+      long i2 =  ((long)(a[4] & 0xffff))       |
+                (((long)(a[5] & 0xffff)) << 16)|
+                (((long)(a[6] & 0xffff)) << 32)|
+                (((long)(a[7] & 0xffff)) << 48);
+      long[] ret = {i1, i2};
+      return new Object[]{ret};
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_L_OF_CLASS, "char\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static Object[] test6a(char[] a) {
+      /* only one group which access array in platform order can be merged */
+      long i1 = (((long)(a[0] & 0xffff)) << 48)|
+                (((long)(a[1] & 0xffff)) << 32)|
+                (((long)(a[2] & 0xffff)) << 16)|
+                 ((long)(a[3] & 0xffff));
+      long i2 =  ((long)(a[4] & 0xffff))       |
+                (((long)(a[5] & 0xffff)) << 16)|
+                (((long)(a[6] & 0xffff)) << 32)|
+                (((long)(a[7] & 0xffff)) << 48);
+      long[] ret = {i1, i2};
+      return new Object[]{ret};
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_L_OF_CLASS, "char\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static Object[] test6b(char[] a) {
+      /* only one group which access array in platform order can be merged */
+      long i1 = (((long)(UNSAFE.getChar(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0 ) & 0xffff)) << 48)|
+                (((long)(UNSAFE.getChar(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2 ) & 0xffff)) << 32)|
+                (((long)(UNSAFE.getChar(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4 ) & 0xffff)) << 16)|
+                 ((long)(UNSAFE.getChar(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6 ) & 0xffff));
+      long i2 =  ((long)(UNSAFE.getChar(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 ) & 0xffff))       |
+                (((long)(UNSAFE.getChar(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 10) & 0xffff)) << 16)|
+                (((long)(UNSAFE.getChar(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 12) & 0xffff)) << 32)|
+                (((long)(UNSAFE.getChar(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 14) & 0xffff)) << 48);
+      long[] ret = {i1,i2};
+      return new Object[]{ret};
+    }
+
+    /**
+     * Group 7: merge shorts as int
+     */
+    @DontCompile
+    static Object[] test7R(short[] a) {
+      int i1 = (((int)(a[0] & 0xffff)) << 16)|
+                ((int)(a[1] & 0xffff));
+      int i2 =  ((int)(a[2] & 0xffff))       |
+               (((int)(a[3] & 0xffff)) << 16);
+      int[] ret = {i1, i2};
+      return new Object[]{ret};
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_I_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static Object[] test7a(short[] a) {
+      /* only one group which access array in platform order can be merged */
+      int i1 = (((int)(a[0] & 0xffff)) << 16)|
+                ((int)(a[1] & 0xffff));
+      int i2 =  ((int)(a[2] & 0xffff))       |
+               (((int)(a[3] & 0xffff)) << 16);
+      int[] ret = {i1, i2};
+      return new Object[]{ret};
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_I_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static Object[] test7b(short[] a) {
+      /* only one group which access array in platform order can be merged */
+      int i1 = (((int)(UNSAFE.getShort(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0) & 0xffff)) << 16)|
+                ((int)(UNSAFE.getShort(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2) & 0xffff));
+      int i2 =  ((int)(UNSAFE.getShort(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4) & 0xffff))       |
+               (((int)(UNSAFE.getShort(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6) & 0xffff)) << 16);
+      int[] ret = {i1,i2};
+      return new Object[]{ret};
+    }
+
+    /**
+     * Group 8: merge short as long
+     */
+    @DontCompile
+    static Object[] test8R(short[] a) {
+      long i1 = (((long)(a[0] & 0xffff)) << 48)|
+                (((long)(a[1] & 0xffff)) << 32)|
+                (((long)(a[2] & 0xffff)) << 16)|
+                 ((long)(a[3] & 0xffff));
+      long i2 =  ((long)(a[4] & 0xffff))       |
+                (((long)(a[5] & 0xffff)) << 16)|
+                (((long)(a[6] & 0xffff)) << 32)|
+                (((long)(a[7] & 0xffff)) << 48);
+      long[] ret = {i1, i2};
+      return new Object[]{ret};
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_L_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static Object[] test8a(short[] a) {
+      /* only one group which access array in platform order can be merged */
+      long i1 = (((long)(a[0] & 0xffff)) << 48)|
+                (((long)(a[1] & 0xffff)) << 32)|
+                (((long)(a[2] & 0xffff)) << 16)|
+                 ((long)(a[3] & 0xffff));
+      long i2 =  ((long)(a[4] & 0xffff))       |
+                (((long)(a[5] & 0xffff)) << 16)|
+                (((long)(a[6] & 0xffff)) << 32)|
+                (((long)(a[7] & 0xffff)) << 48);
+      long[] ret = {i1, i2};
+      return new Object[]{ret};
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_L_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static Object[] test8b(short[] a) {
+      /* only one group which access array in platform order can be merged */
+      long i1 = (((long)(UNSAFE.getShort(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0 ) & 0xffff)) << 48)|
+                (((long)(UNSAFE.getShort(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2 ) & 0xffff)) << 32)|
+                (((long)(UNSAFE.getShort(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4 ) & 0xffff)) << 16)|
+                 ((long)(UNSAFE.getShort(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6 ) & 0xffff));
+      long i2 =  ((long)(UNSAFE.getShort(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 ) & 0xffff))       |
+                (((long)(UNSAFE.getShort(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 10) & 0xffff)) << 16)|
+                (((long)(UNSAFE.getShort(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 12) & 0xffff)) << 32)|
+                (((long)(UNSAFE.getShort(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 14) & 0xffff)) << 48);
+      long[] ret = {i1,i2};
       return new Object[]{ret};
     }
 }
