@@ -50,7 +50,7 @@ public:
   }
 
   static bool is_invalid(StackIndex a) {
-    return a == invalid || a < 0;
+    return a == invalid;
   }
 
 private:

@@ -88,16 +88,25 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     if (leqA_n->key() == A) {
       // For NMT reports in detail mode, separate stacks are required for Reserve and Commit operations.
       // So, do not touch the stack of the node since it is for Reserve operation. Instead store the new
-      // call-stack in the second_stack of the node.
-      if ((leqA_n->val().out.mem_tag() != leqA_n->val().in.mem_tag()
-           || leqA_n->val().out.type() != leqA_n->val().in.type())          // leqA_n is the start of a reserved region
-          && !(state == StateType::Reserved && !use_tag_inplace)            // we are not reserving a new region
-          && !NativeCallStackStorage::is_invalid(leqA_n->val().out.stack()) // the primary stack is already filled
-         ) {
-        stA.out.set_stack(leqA_n->val().out.stack());
-        stB.in.set_stack(leqA_n->val().out.stack());
-        stA.out.set_second_stack(metadata.stack_idx);
-        stB.in.set_second_stack(metadata.stack_idx);
+      // call-stack in the secondary_stack of the node.
+      bool memtag_changed_at_A = leqA_n->val().out.mem_tag() != leqA_n->val().in.mem_tag();
+      bool state_changed_at_A = leqA_n->val().out.type() != leqA_n->val().in.type();
+      bool reserved_rgn_starts_at_A = memtag_changed_at_A || state_changed_at_A;
+      bool is_reserve_operation = state == StateType::Reserved && !use_tag_inplace;
+      bool is_reserved_stack_filled = leqA_n->val().out.has_reserved_stack();
+
+      if (reserved_rgn_starts_at_A && is_reserved_stack_filled ) {
+        if (is_reserve_operation) {    // we are not reserving a new region
+          stA.out.set_stack(metadata.stack_idx);
+          stB.in.set_stack(metadata.stack_idx);
+          stA.out.set_secondary_stack(leqA_n->val().out.reserved_stack());
+          stB.in.set_secondary_stack(leqA_n->val().out.reserved_stack());
+        } else {
+          stA.out.set_stack(leqA_n->val().out.reserved_stack());
+          stB.in.set_stack(leqA_n->val().out.reserved_stack());
+          stA.out.set_secondary_stack(metadata.stack_idx);
+          stB.in.set_secondary_stack(metadata.stack_idx);
+        }
       }
       // Take over in state from old address.
       stA.in = in_state(leqA_n);
@@ -281,7 +290,7 @@ VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, con
   SummaryDiff diff;
   // Ignore any released ranges, these must be mtNone and have no stack
   if (type != StateType::Released) {
-    RegionData new_data = RegionData(out.stack(), tag);
+    RegionData new_data = RegionData(out.reserved_stack(), tag);
     SummaryDiff result = register_mapping(from, end, type, new_data);
     diff.add(result);
   }
@@ -302,7 +311,7 @@ VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, con
     StateType type = out.type();
 
     if (type != StateType::Released) {
-      RegionData new_data = RegionData(out.stack(), tag);
+      RegionData new_data = RegionData(out.reserved_stack(), tag);
       SummaryDiff result = register_mapping(from, end, type, new_data);
       diff.add(result);
     }

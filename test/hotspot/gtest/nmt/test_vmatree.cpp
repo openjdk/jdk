@@ -314,8 +314,8 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
       EXPECT_EQ(expect.tag, found.start->val().out.mem_tag());
       EXPECT_EQ(expect.tag, found.end->val().in.mem_tag());
       // Same stack
-      EXPECT_EQ(expect.stack, found.start->val().out.stack()) << "Unexpected stack at test-line: " << line_no;
-      EXPECT_EQ(expect.stack, found.end->val().in.stack()) << "Unexpected stack at test-line: " << line_no;
+      EXPECT_EQ(expect.stack, found.start->val().out.reserved_stack()) << "Unexpected stack at test-line: " << line_no;
+      EXPECT_EQ(expect.stack, found.end->val().in.reserved_stack()) << "Unexpected stack at test-line: " << line_no;
       // Same state
       EXPECT_EQ(expect.state, found.start->val().out.type());
       EXPECT_EQ(expect.state, found.end->val().in.type());
@@ -713,17 +713,17 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
         VMATree::TreapNode* endn = find(treap, (end * page_size) + page_size);
         ASSERT_NE(nullptr, endn);
 
-        const NativeCallStack& start_stack = ncss.get(startn->val().out.stack());
-        const NativeCallStack& end_stack = ncss.get(endn->val().in.stack());
+        const NativeCallStack& start_stack = ncss.get(startn->val().out.reserved_stack());
+        const NativeCallStack& end_stack = ncss.get(endn->val().in.reserved_stack());
         // If start-node of a reserved region is committed, the stack is stored in the second_stack of the node.
-        if (!NativeCallStackStorage::is_invalid(startn->val().out.second_stack())) {
-          const NativeCallStack& start_second_stack = ncss.get(startn->val().out.second_stack());
+        if (!NativeCallStackStorage::is_invalid(startn->val().out.committed_stack())) {
+          const NativeCallStack& start_second_stack = ncss.get(startn->val().out.committed_stack());
           ASSERT_TRUE(starti.stack.equals(start_stack) || starti.stack.equals(start_second_stack));
         } else {
           ASSERT_TRUE(starti.stack.equals(start_stack));
         }
-        if (!NativeCallStackStorage::is_invalid(endn->val().in.second_stack())) {
-          const NativeCallStack& end_second_stack = ncss.get(endn->val().in.second_stack());
+        if (!NativeCallStackStorage::is_invalid(endn->val().in.committed_stack())) {
+          const NativeCallStack& end_second_stack = ncss.get(endn->val().in.committed_stack());
           ASSERT_TRUE(endi.stack.equals(end_stack) || endi.stack.equals(end_second_stack));
         } else {
           ASSERT_TRUE(endi.stack.equals(end_stack));
@@ -753,22 +753,40 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccountingWhenUseFlagInplace) {
 }
 
 TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
-  Tree tree;
   VMATree::RegionData call_stack_1(si[0], mtTest);
   VMATree::RegionData call_stack_2(si[1], mtNone);
-  tree.reserve_mapping(0, 100, call_stack_1);
 
-  tree.commit_mapping(0, 50, call_stack_2, true);
-  VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(0);
-  EXPECT_EQ(r.start->val().out.stack(), si[0]);
-  EXPECT_EQ(r.end->val().in.stack(), si[0]);
-  EXPECT_EQ(r.start->val().out.second_stack(), si[1]);
-  EXPECT_EQ(r.end->val().in.second_stack(), si[1]);
+  {
+    Tree tree;
+    tree.reserve_mapping(0, 100, call_stack_1);
+    tree.commit_mapping(25, 25, call_stack_2, true);
+    VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(0);
+    EXPECT_EQ(r.start->val().out.reserved_stack(), si[0]);
+    EXPECT_FALSE(r.start->val().out.has_committed_stack());
+  }
+  {
+    Tree tree;
+    tree.reserve_mapping(0, 100, call_stack_1);
+    tree.reserve_mapping(10, 10, call_stack_2);
+    VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(0);
+    EXPECT_EQ(r.start->val().out.reserved_stack(), si[0]);
+    EXPECT_EQ(r.end->val().in.reserved_stack(), si[0]);
+  }
 
-  tree.uncommit_mapping(0, 30, call_stack_2);
-  r = tree.tree().find_enclosing_range(0);
-  EXPECT_EQ(r.start->val().out.stack(), si[0]);
-  EXPECT_EQ(r.end->val().in.stack(), si[0]);
-  EXPECT_EQ(r.start->val().out.second_stack(), si[1]);
-  EXPECT_EQ(r.end->val().in.second_stack(), si[1]);
+  {
+    Tree tree;
+    tree.commit_mapping(0, 100, call_stack_1);
+    VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(0);
+    EXPECT_EQ(r.start->val().out.reserved_stack(), si[0]);
+    EXPECT_FALSE(r.start->val().out.has_committed_stack());
+  }
+  {
+    Tree tree;
+    tree.commit_mapping(0, 100, call_stack_1);
+    tree.reserve_mapping(0, 100, call_stack_2);
+    VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(0);
+    EXPECT_EQ(r.start->val().out.reserved_stack(), si[1]);
+    EXPECT_EQ(r.end->val().in.reserved_stack(), si[1]);
+    EXPECT_EQ(r.start->val().out.committed_stack(), si[0]);
+  }
 }

@@ -91,17 +91,17 @@ private:
   private:
     // Store the type and mem_tag as two bytes
     uint8_t type_tag[2];
-    NativeCallStackStorage::StackIndex sidx;       // call-stack of all operations
-    NativeCallStackStorage::StackIndex second_idx; // call-stack when committing/uncommitting the start-node of a reserved region
+    NativeCallStackStorage::StackIndex primary_stack;   // call-stack of all operations
+    NativeCallStackStorage::StackIndex secondary_stack; // call-stack when committing/uncommitting the start-node of a reserved region
 
   public:
-    IntervalState() : type_tag{0,0}, sidx(), second_idx(NativeCallStackStorage::invalid) {}
+    IntervalState() : type_tag{0,0}, primary_stack(NativeCallStackStorage::invalid), secondary_stack(NativeCallStackStorage::invalid) {}
     IntervalState(const StateType type, const RegionData data) {
       assert(!(type == StateType::Released) || data.mem_tag == mtNone, "Released state-type must have memory tag mtNone");
       type_tag[0] = static_cast<uint8_t>(type);
       type_tag[1] = static_cast<uint8_t>(data.mem_tag);
-      sidx = data.stack_idx;
-      second_idx = NativeCallStackStorage::invalid;
+      primary_stack = data.stack_idx;
+      secondary_stack = NativeCallStackStorage::invalid;
     }
 
     StateType type() const {
@@ -113,27 +113,35 @@ private:
     }
 
     RegionData regiondata() const {
-      return RegionData{sidx, mem_tag()};
+      return RegionData{primary_stack, mem_tag()};
     }
 
     void set_tag(MemTag tag) {
       type_tag[1] = static_cast<uint8_t>(tag);
     }
 
-    NativeCallStackStorage::StackIndex stack() const {
-      return sidx;
+    NativeCallStackStorage::StackIndex reserved_stack() const {
+      return primary_stack;
     }
 
-    NativeCallStackStorage::StackIndex second_stack() const {
-      return second_idx;
+    NativeCallStackStorage::StackIndex committed_stack() const {
+      return secondary_stack;
     }
 
     void set_stack(NativeCallStackStorage::StackIndex idx) {
-      sidx = idx;
+      primary_stack = idx;
     }
 
-    void set_second_stack(NativeCallStackStorage::StackIndex idx) {
-      second_idx = idx;
+    void set_secondary_stack(NativeCallStackStorage::StackIndex idx) {
+      secondary_stack = idx;
+    }
+
+    bool has_reserved_stack() {
+      return primary_stack != NativeCallStackStorage::invalid;
+    }
+
+    bool has_committed_stack() {
+      return secondary_stack != NativeCallStackStorage::invalid;
     }
   };
 
