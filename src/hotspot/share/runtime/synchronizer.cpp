@@ -369,19 +369,12 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
 
     if (mon->first_waiter() != nullptr) {
       // We have one or more waiters. Since this is an inflated monitor
-      // that we own, we can transfer one or more threads from the waitset
-      // to the entry_list here and now, avoiding the slow-path.
+      // that we own, we quickly notify it here and now, avoiding the slow-path.
       if (all) {
-        DTRACE_MONITOR_PROBE(notifyAll, mon, obj, current);
+        mon->quick_notifyAll(current);
       } else {
-        DTRACE_MONITOR_PROBE(notify, mon, obj, current);
+        mon->quick_notify(current);
       }
-      int free_count = 0;
-      do {
-        mon->notify_internal(current);
-        ++free_count;
-      } while (mon->first_waiter() != nullptr && all);
-      OM_PERFDATA_OP(Notifications, inc(free_count));
     }
     return true;
   }

@@ -2035,6 +2035,13 @@ void ObjectMonitor::notify(TRAPS) {
     return;
   }
 
+  quick_notify(current);
+}
+
+void ObjectMonitor::quick_notify(TRAPS) {
+  JavaThread* current = THREAD;
+  assert(has_owner(current), "Precondition");
+
   EventJavaMonitorNotify event;
   DTRACE_MONITOR_PROBE(notify, this, object(), current);
   int tally = notify_internal(current) ? 1 : 0;
@@ -2057,6 +2064,13 @@ void ObjectMonitor::notifyAll(TRAPS) {
   if (_wait_set == nullptr) {
     return;
   }
+
+  quick_notifyAll(current);
+}
+
+void ObjectMonitor::quick_notifyAll(TRAPS) {
+  JavaThread* current = THREAD;
+  assert(has_owner(current), "Precondition");
 
   EventJavaMonitorNotify event;
   DTRACE_MONITOR_PROBE(notifyAll, this, object(), current);
