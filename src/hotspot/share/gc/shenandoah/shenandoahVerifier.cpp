@@ -1055,15 +1055,9 @@ void ShenandoahVerifier::verify_generic(VerifyOption vo) {
 }
 
 void ShenandoahVerifier::verify_before_concmark() {
-  VerifyRememberedSet verify_remembered_set = _verify_remembered_before_marking;
-  if (_heap->mode()->is_generational() && _heap->gc_generation()->is_global()) {
-    // The remembered set tables won't be swapped for the latest snapshot for remembered set,
-    //  remembered set validation will be disabled for such case.
-    verify_remembered_set = _verify_remembered_disable;
-  }
   verify_at_safepoint(
           "Before Mark",
-          verify_remembered_set,
+          _verify_remembered_before_marking,
                                        // verify read-only remembered set from bottom() to top()
           _verify_forwarded_none,      // UR should have fixed up
           _verify_marked_disable,      // do not verify marked: lots ot time wasted checking dead allocations
@@ -1120,12 +1114,6 @@ void ShenandoahVerifier::verify_before_evacuation() {
 }
 
 void ShenandoahVerifier::verify_before_update_refs() {
-  VerifyRememberedSet verify_remembered_set = _verify_remembered_before_updating_references;
-  if (_heap->mode()->is_generational() && _heap->gc_generation()->is_global()) {
-    // The remembered set tables won't be swapped for the latest snapshot for remembered set,
-    //  remembered set validation will be disabled for such case.
-    verify_remembered_set = _verify_remembered_disable;
-  }
   verify_at_safepoint(
           "Before Updating References",
           _verify_remembered_before_updating_references,  // verify read-write remembered set
@@ -1288,17 +1276,13 @@ public:
   void do_oop(oop* p)       override { work(p); }
 };
 
-ShenandoahMarkingContext* ShenandoahVerifier::get_marking_context_for_old() {
-  shenandoah_assert_generations_reconciled();
-  if (_heap->old_generation()->is_mark_complete()) {
-    return _heap->old_generation()->complete_marking_context();
-  }
-  return nullptr;
-}
-
 template<typename Scanner>
-void ShenandoahVerifier::help_verify_region_rem_set(Scanner* scanner, ShenandoahHeapRegion* r, ShenandoahMarkingContext* ctx,
+void ShenandoahVerifier::help_verify_region_rem_set(Scanner* scanner, ShenandoahHeapRegion* r,
                                                     HeapWord* registration_watermark, const char* message) {
+  shenandoah_assert_generations_reconciled();
+  ShenandoahMarkingContext* ctx = _heap->old_generation()->is_mark_complete() ?
+    _heap->old_generation()->complete_marking_context() : nullptr;
+
   ShenandoahVerifyRemSetClosure<Scanner> check_interesting_pointers(scanner, message);
   HeapWord* from = r->bottom();
   HeapWord* obj_addr = from;
@@ -1369,16 +1353,15 @@ void ShenandoahVerifier::verify_rem_set_before_mark() {
   shenandoah_assert_safepoint();
   shenandoah_assert_generational();
 
-  ShenandoahMarkingContext* ctx = get_marking_context_for_old();
   ShenandoahOldGeneration* old_generation = _heap->old_generation();
 
   log_debug(gc)("Verifying remembered set at %s mark", old_generation->is_doing_mixed_evacuations() ? "mixed" : "young");
 
-  ShenandoahScanRemembered* scanner = old_generation->card_scan();
+  ShenandoahWriteTableScanner scanner(ShenandoahGenerationalHeap::heap()->old_generation()->card_scan());
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_old() && r->is_active()) {
-      help_verify_region_rem_set(scanner, r, ctx, r->end(), "Verify init-mark remembered set violation");
+      help_verify_region_rem_set(&scanner, r, r->end(), "Verify init-mark remembered set violation");
     }
   }
 }
@@ -1386,13 +1369,12 @@ void ShenandoahVerifier::verify_rem_set_before_mark() {
 void ShenandoahVerifier::verify_rem_set_after_full_gc() {
   shenandoah_assert_safepoint();
   shenandoah_assert_generational();
-  ShenandoahMarkingContext* ctx = get_marking_context_for_old();
 
   ShenandoahWriteTableScanner scanner(ShenandoahGenerationalHeap::heap()->old_generation()->card_scan());
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_old() && !r->is_cset()) {
-      help_verify_region_rem_set(&scanner, r, ctx, r->top(), "Remembered set violation at end of Full GC");
+      help_verify_region_rem_set(&scanner, r, r->top(), "Remembered set violation at end of Full GC");
     }
   }
 }
@@ -1405,12 +1387,11 @@ void ShenandoahVerifier::verify_rem_set_before_update_ref() {
   shenandoah_assert_safepoint();
   shenandoah_assert_generational();
 
-  ShenandoahMarkingContext* ctx = get_marking_context_for_old();
   ShenandoahWriteTableScanner scanner(_heap->old_generation()->card_scan());
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_old() && !r->is_cset()) {
-      help_verify_region_rem_set(&scanner, r, ctx, r->get_update_watermark(), "Remembered set violation at init-update-references");
+      help_verify_region_rem_set(&scanner, r, r->get_update_watermark(), "Remembered set violation at init-update-references");
     }
   }
 }

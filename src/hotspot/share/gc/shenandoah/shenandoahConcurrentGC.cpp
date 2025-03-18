@@ -370,7 +370,7 @@ void ShenandoahConcurrentGC::entry_reset() {
     op_reset();
   }
 
-  if (heap->mode()->is_generational() && _generation->is_young()) {
+  if (heap->mode()->is_generational()) {
     heap->old_generation()->card_scan()->mark_read_table_as_clean();
   }
 }
@@ -645,10 +645,6 @@ void ShenandoahConcurrentGC::op_init_mark() {
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
   if (heap->mode()->is_generational()) {
-    if (_generation->is_young()) {
-      ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_swap_rset);
-      _generation->swap_card_tables();
-    }
 
     if (_generation->is_global()) {
       heap->old_generation()->cancel_gc();
@@ -659,9 +655,20 @@ void ShenandoahConcurrentGC::op_init_mark() {
       ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_transfer_satb);
       heap->old_generation()->transfer_pointers_from_satb();
     }
+
+    // Verify before mark is done before swapping card tables,
+    // therefore the write card table will be verified before being taken snapshot.
+    if (ShenandoahVerify) {
+      heap->verifier()->verify_before_concmark();
+    }
+
+    {
+      ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_swap_rset);
+      _generation->swap_card_tables();
+    }
   }
 
-  if (ShenandoahVerify) {
+  if (ShenandoahVerify && !heap->mode()->is_generational()) {
     heap->verifier()->verify_before_concmark();
   }
 
