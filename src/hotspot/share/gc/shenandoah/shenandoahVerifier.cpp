@@ -1055,9 +1055,15 @@ void ShenandoahVerifier::verify_generic(VerifyOption vo) {
 }
 
 void ShenandoahVerifier::verify_before_concmark() {
-    verify_at_safepoint(
+  VerifyRememberedSet verify_remembered_set = _verify_remembered_before_marking;
+  if (_heap->mode()->is_generational() && _heap->gc_generation()->is_global()) {
+    // The remembered set tables won't be swapped for the latest snapshot for remembered set,
+    //  remembered set validation will be disabled for such case.
+    verify_remembered_set = _verify_remembered_disable;
+  }
+  verify_at_safepoint(
           "Before Mark",
-          _verify_remembered_before_marking,
+          verify_remembered_set,
                                        // verify read-only remembered set from bottom() to top()
           _verify_forwarded_none,      // UR should have fixed up
           _verify_marked_disable,      // do not verify marked: lots ot time wasted checking dead allocations
@@ -1114,6 +1120,12 @@ void ShenandoahVerifier::verify_before_evacuation() {
 }
 
 void ShenandoahVerifier::verify_before_update_refs() {
+  VerifyRememberedSet verify_remembered_set = _verify_remembered_before_updating_references;
+  if (_heap->mode()->is_generational() && _heap->gc_generation()->is_global()) {
+    // The remembered set tables won't be swapped for the latest snapshot for remembered set,
+    //  remembered set validation will be disabled for such case.
+    verify_remembered_set = _verify_remembered_disable;
+  }
   verify_at_safepoint(
           "Before Updating References",
           _verify_remembered_before_updating_references,  // verify read-write remembered set
