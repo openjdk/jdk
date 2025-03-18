@@ -32,6 +32,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+import compiler.lib.ir_framework.shared.TestFrameworkSocket;
+
 /**
  * Abstract super class for base, checked and custom run tests.
  */
@@ -109,17 +111,17 @@ abstract class AbstractTest {
 
     abstract protected void compileTest();
 
-    /**
-     * Exception thrown when a test method is compiled that is not compilable, and this is
-     * explicitly allowed with "allowNotCompilable".
-     */
     private class MethodNotCompilableException extends Exception {}
 
     protected void compileMethod(DeclaredTest test) {
         try {
             tryCompileMethod(test);
         } catch (MethodNotCompilableException e) {
-            TestRun.check(test.isAllowNotCompilable(), "Only allowNotCompilable methods should throw MethodNotCompilableException.");
+            final Method testMethod = test.getTestMethod();
+            TestFrameworkSocket.write("Method not compilable: " + testMethod, TestFrameworkSocket.NOT_COMPILABLE_TAG, true);
+            TestRun.check(test.isAllowNotCompilable(),
+                          "Method " + testMethod + " not compilable (anymore) at level " + test.getCompLevel() +
+                          ". Most likely, this is not expected, but if it is, you can use 'allowNotCompilable'.");
         }
     }
 
@@ -167,12 +169,9 @@ abstract class AbstractTest {
 
     private void enqueueMethodForCompilation(DeclaredTest test) throws MethodNotCompilableException {
         final Method testMethod = test.getTestMethod();
-        final boolean isCompilable = WHITE_BOX.isMethodCompilable(testMethod, test.getCompLevel().getValue(), false);
-        if (!isCompilable && test.isAllowNotCompilable()) {
+        if (!WHITE_BOX.isMethodCompilable(testMethod, test.getCompLevel().getValue(), false)) {
             throw new MethodNotCompilableException();
         }
-        TestRun.check(WHITE_BOX.isMethodCompilable(testMethod, test.getCompLevel().getValue(), false),
-                      "Method " + testMethod + " not compilable (anymore) at level " + test.getCompLevel());
         TestVM.enqueueForCompilation(testMethod, test.getCompLevel());
     }
 

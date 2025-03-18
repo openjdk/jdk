@@ -415,7 +415,7 @@ public class TestFramework {
      * test failure. However, if such cases are expected in multiple methods in a test class, this flag can be set to
      * true, which allows any test to pass even if there is a compilation bailout. If only selected methods are prone
      * to bail out, it is preferred to use {@link Test#allowNotCompilable()} instead for more fine-grained control.
-     * By setting this flag, any associated {@link IR} rule of a test is only executed if the test method was compiled, 
+     * By setting this flag, any associated {@link IR} rule of a test is only executed if the test method was compiled,
      * and else it is ignored silently.
      */
     public TestFramework allowNotCompilable() {

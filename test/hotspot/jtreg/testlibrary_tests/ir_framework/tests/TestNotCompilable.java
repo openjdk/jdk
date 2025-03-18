@@ -97,9 +97,13 @@ public class TestNotCompilable {
         if (noWarmup) { framework.setDefaultWarmup(0); }
         try {
             framework.start();
-            throw new RuntimeException("should have thrown TestRunException");
+            throw new RuntimeException("should have thrown TestRunException or IRViolationException");
         } catch (TestVMException e) {
-        } catch (IRViolationException e) {}
+            // Happens when we hit the issue during explicit compilabion by the Framework.
+        } catch (IRViolationException e) {
+            // Happens in STANDALONE Run case, where the user is responsible for ensuring
+            // compilation. The failure happens during IR matching.
+        }
     }
 
     private static void runWithExcludeExpectSuccess(Class c, boolean noWarmup) {
@@ -117,8 +121,7 @@ public class TestNotCompilable {
         try {
             framework.start();
             throw new RuntimeException("should have thrown TestRunException");
-        } catch (TestVMException e) {
-        } catch (IRViolationException e) {}
+        } catch (TestVMException e) {}
     }
 
     private static void runOptoNoExecuteExpectSuccess(Class c, boolean noWarmup) {
