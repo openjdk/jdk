@@ -121,15 +121,14 @@ public abstract class Type implements Name.Type {
         VectorAPIType.DOUBLE_512
     );
 
-    // TODO: concat?
-    public static final List<VectorAPIType> VECTOR_API_VECTOR_TYPES = Stream.of(
+    public static final List<VectorAPIType> VECTOR_API_VECTOR_TYPES = Library.concat(
         VECTOR_API_BYTE_VECTOR_TYPES,
         VECTOR_API_SHORT_VECTOR_TYPES,
         VECTOR_API_INT_VECTOR_TYPES,
         VECTOR_API_LONG_VECTOR_TYPES,
         VECTOR_API_FLOAT_VECTOR_TYPES,
         VECTOR_API_DOUBLE_VECTOR_TYPES
-    ).flatMap((List<VectorAPIType> l) -> l.stream()).toList();
+    );
 
     public static final List<VectorAPIType.MaskType> VECTOR_API_MASK_TYPES =
         VECTOR_API_VECTOR_TYPES.stream().map(t -> t.maskType).toList();
