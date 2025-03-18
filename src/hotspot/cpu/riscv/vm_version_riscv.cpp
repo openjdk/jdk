@@ -216,6 +216,38 @@ void VM_Version::common_initialize() {
     warning("CRC32C intrinsics are not available on this CPU.");
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
+
+  // UseZvbb (depends on RVV).
+  if (UseZvbb && !UseRVV) {
+    if (!FLAG_IS_DEFAULT(UseZvbb)) {
+      warning("Cannot enable UseZvbb on cpu without RVV support.");
+    }
+    FLAG_SET_DEFAULT(UseZvbb, false);
+  }
+
+  // UseZvbc (depends on RVV).
+  if (UseZvbc && !UseRVV) {
+    if (!FLAG_IS_DEFAULT(UseZvbc)) {
+      warning("Cannot enable UseZvbc on cpu without RVV support.");
+    }
+    FLAG_SET_DEFAULT(UseZvbc, false);
+  }
+
+  // UseZvkn (depends on RVV).
+  if (UseZvkn && !UseRVV) {
+    if (!FLAG_IS_DEFAULT(UseZvkn)) {
+      warning("Cannot enable UseZvkn on cpu without RVV support.");
+    }
+    FLAG_SET_DEFAULT(UseZvkn, false);
+  }
+
+  // UseZvfh (depends on RVV)
+  if (UseZvfh && !UseRVV) {
+    if (!FLAG_IS_DEFAULT(UseZvfh)) {
+      warning("Cannot enable UseZvfh on cpu without RVV support.");
+    }
+    FLAG_SET_DEFAULT(UseZvfh, false);
+  }
 }
 
 #ifdef COMPILER2
@@ -343,38 +375,6 @@ void VM_Version::c2_initialize() {
       warning("Chacha20 intrinsic requires RVV instructions (not available on this CPU)");
     }
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
-  }
-
-  // UseZvbb (depends on RVV).
-  if (UseZvbb && !UseRVV) {
-    if (!FLAG_IS_DEFAULT(UseZvbb)) {
-      warning("Cannot enable UseZvbb on cpu without RVV support.");
-    }
-    FLAG_SET_DEFAULT(UseZvbb, false);
-  }
-
-  // UseZvbc (depends on RVV).
-  if (UseZvbc && !UseRVV) {
-    if (!FLAG_IS_DEFAULT(UseZvbc)) {
-      warning("Cannot enable UseZvbc on cpu without RVV support.");
-    }
-    FLAG_SET_DEFAULT(UseZvbc, false);
-  }
-
-  // UseZvkn (depends on RVV).
-  if (UseZvkn && !UseRVV) {
-    if (!FLAG_IS_DEFAULT(UseZvkn)) {
-      warning("Cannot enable UseZvkn on cpu without RVV support.");
-    }
-    FLAG_SET_DEFAULT(UseZvkn, false);
-  }
-
-  // UseZvfh (depends on RVV)
-  if (UseZvfh && !UseRVV) {
-    if (!FLAG_IS_DEFAULT(UseZvfh)) {
-      warning("Cannot enable UseZvfh on cpu without RVV support.");
-    }
-    FLAG_SET_DEFAULT(UseZvfh, false);
   }
 
   // SHA's
