@@ -566,12 +566,12 @@ class StubGenerator: public StubCodeGenerator {
     masm->vpmsumd(vReducedLow, vLowProduct, vConstC2);                // Reduction
     masm->vsldoi(vTmp8, vMidProduct, vZero, 8);                       // mL : Extract the lower 64 bits of M
     masm->vsldoi(vTmp9, vZero, vMidProduct, 8);                       // mH : Extract the higher 64 bits of M
-    masm->vxor(vLowProduct, vLowProduct, vTmp8);                      // LL + LL : Partial result for lower half
-    masm->vxor(vHighProduct, vHighProduct, vTmp9);                    // HH + HH : Partial result for upper half
+    masm->vxor(vLowProduct, vLowProduct, vTmp8);                      // LL + mL : Partial result for lower half
+    masm->vxor(vHighProduct, vHighProduct, vTmp9);                    // HH + mH : Partial result for upper half
     masm->vsldoi(vLowProduct, vLowProduct, vLowProduct, 8);           // Swap
-    masm->vxor(vLowProduct, vLowProduct, vReducedLow);                // Reduction using constant
+    masm->vxor(vLowProduct, vLowProduct, vReducedLow);                
     masm->vsldoi(vCombinedResult, vLowProduct, vLowProduct, 8);       // Swap
-    masm->vpmsumd(vLowProduct, vLowProduct, vConstC2);                // Reduction
+    masm->vpmsumd(vLowProduct, vLowProduct, vConstC2);                // Reduction using constant
     masm->vxor(vCombinedResult, vCombinedResult, vHighProduct);       // Combine reduced Low & High products
     masm->vxor(vState, vLowProduct, vCombinedResult);
   }
