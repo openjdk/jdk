@@ -402,18 +402,6 @@ inline Node* make_urshift<TypeInt>(Node* a, Node* b) {
   return new URShiftINode(a, b);
 }
 
-template <typename TypeClass>
-Node* make_rshift(Node* a, Node* b);
-
-template <>
-inline Node* make_rshift<TypeLong>(Node* a, Node* b) {
-  return new RShiftLNode(a, b);
-}
-
-template <>
-inline Node* make_rshift<TypeInt>(Node* a, Node* b) {
-  return new RShiftINode(a, b);
-}
 //------------------------------FmaNode--------------------------------------
 // fused-multiply-add
 class FmaNode : public Node {

@@ -1859,9 +1859,9 @@ class MergePrimitiveLoads;
 
 /*
  * LoadNode and OrNode pair which represent an item for merging,
- * And we can get some properties like shift and uncommon usage from it.
+ * And we can get some properties like shift and last_op from it.
  *
- * Note: OrNode may be shared
+ * Note: OrNode can be shared in different MergeLoadInfo
  */
 class MergeLoadInfo : ResourceObj {
   friend MergePrimitiveLoads;
@@ -1869,21 +1869,17 @@ private:
   LoadNode*          _load;
   Node*                _or;
   int               _shift;
-  bool _has_uncommon_usage;
   bool            _last_op; // Indicate it's the last item of group, the _or node will be replaced by merged load
 public:
   MergeLoadInfo(LoadNode* load, Node* orNode, int shift) : _load(load), _or(orNode), _shift(shift),
-                                                           _has_uncommon_usage(false), _last_op(false) {}
-  void set_has_uncommon_usage(bool v) { _has_uncommon_usage = v; }
-  bool has_uncommon_usage()     const { return _has_uncommon_usage; }
+                                                           _last_op(false) {}
   void set_last_op(bool v)            { _last_op = v; }
   bool last_op()                const { return _last_op; }
 
 #ifdef ASSERT
   void dump() {
-    tty->print_cr("MergeLoadInfo: load: %d, or: %d, shift: %d, has_uncommon_usage: %s, last_op: %s",
+    tty->print_cr("MergeLoadInfo: load: %d, or: %d, shift: %d, last_op: %s",
                         _load->_idx, _or->_idx, _shift,
-                        _has_uncommon_usage ? "true" : "false",
                         _last_op ? "true" : "false");
   }
 #endif
@@ -1928,9 +1924,6 @@ private:
   MergeLoadInfo* merge_load_info(LoadNode* load) const;
   // Make the merged load from list
   LoadNode* make_merged_load(const MergeLoadInfoList& merge_list);
-  // Extract value from merged load or value for uncommon trap
-  template <typename TypeClass>
-  void extract_value_for_uncommon_trap(Node* merged, MergeLoadInfo* info);
 
   // Helper methods for merge loads optimization
   static bool is_supported_opcode(int opcode);
@@ -2011,22 +2004,9 @@ bool MergePrimitiveLoads::is_merged_load_candidate() const {
     return false;
   }
   Node* check = by_pass_i2l(_load);
-  switch(check->outcnt()) {
-    case 1: {
-      int opc = check->unique_out()->Opcode();
-      return opc == Op_OrI || opc == Op_OrL;
-    }
-    case 2: {
-      // It can has an optional output to uncommon trap
-      Node *call = check->find_out_with(Op_CallStaticJava);
-      if (call == nullptr || !call->as_CallStaticJava()->is_uncommon_trap()) {
-        return false;
-      }
-      return check->find_out_with(Op_OrI, Op_OrL) != nullptr;
-    }
-    default:
-      return false;
-  }
+  // The candidate load has unique out which is OrI/OrL node
+  return check->outcnt() == 1 &&
+         check->find_out_with(Op_OrI, Op_OrL) != nullptr;
 }
 
 // Construct merge information item from input load
@@ -2034,7 +2014,6 @@ MergeLoadInfo* MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
   Node* check = by_pass_i2l(load);
   Node* or_oper = nullptr;
   int shift = -1;
-  bool has_uncommon_trap_usage = false;
   auto is_or_oper = [&](Node* n) { return n != nullptr && (n->Opcode() == Op_OrI || n->Opcode() == Op_OrL); };
 
   // Check the Load node has the pattern "(Or (LShift (Load .. ) ConI) ..)" or "(Or (Load ..) ..)"
@@ -2043,6 +2022,7 @@ MergeLoadInfo* MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
     switch (out->Opcode()) {
       case Op_OrI:
       case Op_OrL:
+        // match pattern: (Or (Load ..) ..)
         if (or_oper == nullptr) {
           or_oper = out;
           shift = 0;
@@ -2051,18 +2031,12 @@ MergeLoadInfo* MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
           return nullptr;
         }
         break;
-      case Op_CallStaticJava:
-        if (!out->as_CallStaticJava()->is_uncommon_trap()) {
-          // Only uncommon trap usage is accepted
-          return nullptr;
-        }
-        has_uncommon_trap_usage = true;
-        break;
       case Op_LShiftI:
       case Op_LShiftL:
         {
+          // match pattern: (Or (LShift (Load ..) ConI) ..)
           Node* shift_oper = out->isa_LShift();
-          if (shift_oper->outcnt() != 1 ||                    // Expect only one usage to Or node
+          if (shift_oper->outcnt() != 1 ||                  // Expect only one usage to Or node
               !is_or_oper(shift_oper->unique_out()) ||      // Not used by Or node
               !shift_oper->in(2)->is_ConI()) {              // Not shift by constant
             return nullptr;
@@ -2094,7 +2068,6 @@ MergeLoadInfo* MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
   // otherwise we reach the end of merge list
   bool last_op =  or_oper->outcnt() != 1 || !is_or_oper(or_oper->unique_out());
   MergeLoadInfo* info = new MergeLoadInfo(load, or_oper, shift);
-  info->set_has_uncommon_usage(has_uncommon_trap_usage);
   info->set_last_op(last_op);
   return info;
 }
@@ -2161,10 +2134,6 @@ bool MergePrimitiveLoads::is_reachable_Or_nodes(const Node* from, const Node* to
       Node* out = check->fast_out(iter);
       if (out == to) {
         return true;
-      }
-      if (out == nullptr || (out->Opcode() == Op_CallStaticJava && out->as_CallStaticJava()->is_uncommon_trap())) {
-        // Skip null or uncommon trap
-        continue;
       } else if (out->Opcode() == Op_OrI || out->Opcode() == Op_OrL){
         if (next != nullptr) {
           // Multiple Or usages
@@ -2283,7 +2252,7 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list) {
     }
 
     if (info->last_op()) {
-      if (last_op_index >= 0) {
+      if (last_op_index >= 0 && array[last_op_index]->_or != info->_or) {
         // Found multiple ends of list
         return;
       } else {
@@ -2339,6 +2308,7 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list) {
   // All checks are passed
   _last_op_index = last_op_index;
   _order = order;
+
   for (int i=0; i<collected; i++) {
     merge_list.push(array[i]);
   }
@@ -2402,73 +2372,11 @@ LoadNode* MergePrimitiveLoads::make_merged_load(const MergeLoadInfoList& merge_l
     _phase->is_IterGVN()->_worklist.push(replace);
   }
 
-  // extract value for uncommon path
-  for (int i=0; i<merge_list.length(); i++) {
-    if (merge_list.at(i)->has_uncommon_usage()) {
-      if (merge_size == 8) {
-        extract_value_for_uncommon_trap<TypeLong>(replace, merge_list.at(i));
-      } else {
-        extract_value_for_uncommon_trap<TypeInt>(replace, merge_list.at(i));
-      }
-    }
-  }
   assert(last_op != nullptr && (last_op->Opcode() == Op_OrI || last_op->Opcode() == Op_OrL), "sanity");
   _phase->is_IterGVN()->replace_node(last_op, replace);
   _phase->is_IterGVN()->_worklist.push(merged_load);
 
   return merged_load;
-}
-
-template <typename TypeClass>
-void MergePrimitiveLoads::extract_value_for_uncommon_trap(Node* merged, MergeLoadInfo* info) {
-  assert(merged->bottom_type()->is_int() || merged->bottom_type()->is_long(), "sanity");
-  int merged_bits = merged->bottom_type()->is_int() ? 32 : 64;
-  int load_bits = info->_load->memory_size() * BitsPerByte;
-  Node* value = merged;
-  if (info->_load->is_unsigned()) {
-    // RShift and Mask
-    // merged value: |.........|value|........|
-    //                  l1      _load   l2
-    //  value is unsianged value from _load, _shift is l2
-    //  extract:  (merged >> l2) & ((1 << load_bits) - 1)
-    //
-    if (info->_shift > 0) {
-      value = make_urshift<TypeClass>(value, _phase->intcon(info->_shift));
-    }
-    if ((load_bits + info->_shift) < merged_bits) {
-      assert(load_bits < 32, "sanity");
-      int mask = (1 << load_bits) - 1;
-      value = make_and<TypeClass>(value, _phase->intcon(mask));
-    }
-  } else {
-    // LShift and RShift
-    //
-    // merged value: |.........|value|........|
-    //                  l1      _load   l2
-    //  value is igned value from _load, _shift is l2
-    //  extract:  (merged << l1) >> (merged_bits - load_bits)
-    //
-    if ((info->_load->memory_size() + info->_shift) < merged_bits) {
-      value = LShiftNode::make(value, _phase->intcon(merged_bits - info->_shift - info->_load->memory_size()),
-                               merged_bits == 32 ? T_INT: T_LONG);
-    }
-    value = make_rshift<TypeClass>(value, _phase->intcon(merged_bits - load_bits));
-  }
-  if (merged_bits == 64) {
-    // need L2I
-    value = new ConvL2INode(value);
-  }
-  assert(value != nullptr, "sanity");
-
-  // Replace the edge of uncommon trap
-  Node * loaded = by_pass_i2l(info->_load);
-  for (DUIterator_Last imin, i = loaded->last_outs(imin); i >= imin; --i) {
-    Node* out = loaded->last_out(i);
-    if (out->is_CallStaticJava()) {
-      out->replace_edge(loaded, value, _phase);
-    }
-  }
-  NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeLoads] extract value for uncommon trap:"); _load->dump(); value->dump(); tty->cr(); })
 }
 
 //------------------------------Ideal------------------------------------------
