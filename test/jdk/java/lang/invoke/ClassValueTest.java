@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8351045
+ * @bug 8351045 8351996
  * @summary tests for class-specific values
  * @run junit ClassValueTest
  */
@@ -188,7 +188,6 @@ final class ClassValueTest {
         var innocuous = Thread.startVirtualThread(() -> cv.get(int.class));
         var refreshInput = Thread.startVirtualThread(() -> {
             input.incrementAndGet();
-            cv.get(int.class); // Invalidates ongoing computations using outdated input
             cv.remove(int.class); // Let's recompute with updated inputs!
         });
         try {
@@ -216,6 +215,10 @@ final class ClassValueTest {
                 return Boolean.TRUE;
             }
         };
-        assertEquals(Boolean.TRUE, cv.get(int.class));
+        try {
+            cv.get(int.class);
+        } catch (Throwable ex) {
+            // swallow if any
+        }
     }
 }
