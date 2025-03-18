@@ -658,9 +658,9 @@ void* os::post_alloc(void* raw_ptr, size_t size, long offset, MemTag mem_tag, co
 
     if (CDSConfig::is_dumping_static_archive()) {
       // Need to deterministically fill all the alignment gaps in C++ structures.
-      ::memset((char*)client_ptr + offset, 0, size - offset);
+      ::memset((char*)client_ptr + offset, 0, offset);
     } else {
-      DEBUG_ONLY(::memset((char*)client_ptr + offset, uninitBlockPad, size - offset);)
+      DEBUG_ONLY(::memset((char*)client_ptr + offset, uninitBlockPad, offset);)
     }
 
     DEBUG_ONLY(break_if_ptr_caught(client_ptr);)
