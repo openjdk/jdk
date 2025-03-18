@@ -651,16 +651,16 @@ size_t os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, MemTag mem_tag,
   return outer_size;
 }
 
-void* os::post_alloc(void* raw_ptr, size_t size, long offset, MemTag mem_tag, const NativeCallStack& stack) {
+void* os::post_alloc(void* raw_ptr, size_t size, long chunk, MemTag mem_tag, const NativeCallStack& stack) {
   if (MemTracker::enabled()) {
     // Register alloc with NMT
     void* const client_ptr = MemTracker::record_malloc((address)raw_ptr, size, mem_tag, stack);
 
     if (CDSConfig::is_dumping_static_archive()) {
       // Need to deterministically fill all the alignment gaps in C++ structures.
-      ::memset((char*)client_ptr + offset, 0, offset);
+      ::memset((char*)client_ptr + chunk, 0, chunk);
     } else {
-      DEBUG_ONLY(::memset((char*)client_ptr + offset, uninitBlockPad, offset);)
+      DEBUG_ONLY(::memset((char*)client_ptr + chunk, uninitBlockPad, chunk);)
     }
 
     DEBUG_ONLY(break_if_ptr_caught(client_ptr);)
@@ -702,16 +702,18 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
   MallocHeader::FreeInfo* free_info = nullptr;
   MallocHeader* header = nullptr;
   void* old_ptr = memblock;
+  long chunk = 0;
   if (MemTracker::enabled()) {
     // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3)
     // since it may invalidate the old block, including its header.
     header = MallocHeader::resolve_checked(memblock);
     MallocHeader::FreeInfo free_info_local = header->free_info();
     free_info = &free_info_local;
+    chunk = size - free_info->size;
     header->mark_block_as_dead();
 
     // Observe MallocLimit
-    if ((size > free_info->size) && MemTracker::check_exceeds_limit(size - free_info->size, mem_tag)) {
+    if ((size > free_info->size) && MemTracker::check_exceeds_limit(chunk, mem_tag)) {
       return nullptr;
     }
 
@@ -728,19 +730,17 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
   if (rc == nullptr) {
     // realloc(3) failed and the block still exists.
     // We have however marked it as dead, revert this change.
-    if (header != nullptr) {
+    if (MemTracker::enabled()) {
       header->revive();
     }
     return nullptr;
   }
 
-  long offset = 0;
-  if (free_info != nullptr) {
+  if (MemTracker::enabled()) {
     MemTracker::deaccount(*free_info);
-    offset = size - free_info->size;
   }
 
-  return os::post_alloc(rc, size, offset, mem_tag, stack);
+  return os::post_alloc(rc, size, chunk, mem_tag, stack);
 }
 
 void  os::free(void *memblock) {

@@ -258,7 +258,7 @@ class os: AllStatic {
   LINUX_ONLY(static void pd_init_container_support();)
 
   static size_t pre_alloc(void** raw_ptr, void* old_ptr, size_t size, MemTag mem_tag, const NativeCallStack& stack);
-  static void* post_alloc(void* raw_ptr, size_t size, MemTag mem_tag, const NativeCallStack& stack);
+  static void* post_alloc(void* raw_ptr, size_t size, long chunk, MemTag mem_tag, const NativeCallStack& stack);
 
  public:
   static void init(void);                      // Called before command line parsing
