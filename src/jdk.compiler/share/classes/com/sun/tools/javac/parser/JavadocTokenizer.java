@@ -362,8 +362,8 @@ public class JavadocTokenizer extends JavaTokenizer {
 
     /**
      * A Comment derived from a JavadocComment with leading whitespace removed from all lines.
-     * The original comment's offsetMap is used to translate comment locations to positions
-     * in the source file.
+     * A new OffsetMap is used in combination with the OffsetMap of the original comment to
+     * translate comment locations to positions in the source file.
      *
      * Note: This class assumes new lines are encoded as {@code '\n'}, which is the case
      * for comments created by {@code JavadocTokenizer}.
