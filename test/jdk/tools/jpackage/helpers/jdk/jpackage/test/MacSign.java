@@ -33,6 +33,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -551,9 +552,9 @@ public final class MacSign {
         // Use the same private key to create certificates in additional keychains.
         for (final var keychainSpec : specs.subList(1, specs.size())) {
             final var keychainFile = keychainSpec.keychain().path();
-            TKit.trace(String.format("Copy basic keychain in [%s] file", keychainFile));
+            TKit.trace(String.format("Create keychain in [%s] file from [%s] keychain", keychainFile, mainKeychain.name()));
             try {
-                Files.copy(mainKeychain.path(), keychainFile);
+                Files.copy(mainKeychain.path(), keychainFile, StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }
