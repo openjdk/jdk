@@ -62,7 +62,7 @@ import sun.awt.AppContext;
  *
  * @author Igor Kushnirskiy
  */
-class AnimationController implements ActionListener, PropertyChangeListener {
+final class AnimationController implements ActionListener, PropertyChangeListener {
 
     private static final boolean VISTA_ANIMATION_DISABLED =
                         Boolean.getBoolean("swing.disablevistaanimation");
@@ -321,7 +321,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         }
     }
 
-    private static class AnimationState {
+    private static final class AnimationState {
         private final State startState;
 
         //animation duration in nanoseconds
@@ -409,7 +409,7 @@ class AnimationController implements ActionListener, PropertyChangeListener {
         }
     }
 
-    private static class PartUIClientPropertyKey
+    private static final class PartUIClientPropertyKey
           implements UIClientPropertyKey {
 
         private static final Map<Part, PartUIClientPropertyKey> map =

@@ -44,7 +44,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 /**
  * Windows rendition of the component.
  */
-public class WindowsSliderUI extends BasicSliderUI
+public final class WindowsSliderUI extends BasicSliderUI
 {
     private boolean rollover = false;
     private boolean pressed = false;
@@ -68,7 +68,7 @@ public class WindowsSliderUI extends BasicSliderUI
         return new WindowsTrackListener();
     }
 
-    private class WindowsTrackListener extends TrackListener {
+    private final class WindowsTrackListener extends TrackListener {
 
         @Override
         public void mouseMoved(MouseEvent e) {

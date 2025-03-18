@@ -48,7 +48,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 /**
  * Windows rendition of the component.
  */
-public class WindowsTabbedPaneUI extends BasicTabbedPaneUI {
+public final class WindowsTabbedPaneUI extends BasicTabbedPaneUI {
     /**
      * Keys to use for forward focus traversal when the JComponent is
      * managing focus.

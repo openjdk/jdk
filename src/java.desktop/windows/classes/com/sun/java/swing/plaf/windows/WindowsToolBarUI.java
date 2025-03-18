@@ -45,7 +45,7 @@ import javax.swing.plaf.basic.BasicToolBarUI;
 import static com.sun.java.swing.plaf.windows.TMSchema.Part;
 
 
-public class WindowsToolBarUI extends BasicToolBarUI {
+public final class WindowsToolBarUI extends BasicToolBarUI {
 
     public static ComponentUI createUI(JComponent c) {
         return new WindowsToolBarUI();

@@ -43,7 +43,7 @@ import javax.print.attribute.standard.PrinterName;
 
 import sun.awt.util.ThreadGroupUtils;
 
-public class PrintServiceLookupProvider extends PrintServiceLookup {
+public final class PrintServiceLookupProvider extends PrintServiceLookup {
 
     private PrintService defaultPrintService;
     private PrintService[] printServices; /* includes the default printer */

@@ -41,7 +41,7 @@ import com.sun.java.swing.plaf.windows.TMSchema.State;
 /**
  * Windows rendition of the component.
  */
-public class WindowsRadioButtonMenuItemUI extends BasicRadioButtonMenuItemUI {
+public final class WindowsRadioButtonMenuItemUI extends BasicRadioButtonMenuItemUI {
 
     final WindowsMenuItemUIAccessor accessor =
         new WindowsMenuItemUIAccessor() {

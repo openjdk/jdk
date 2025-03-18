@@ -40,7 +40,7 @@ import java.awt.Transparency;
  * in the reverse order from the base ComponentColorModel to match
  * the ordering on a Windows 24-bit display.
  */
-public class Win32ColorModel24 extends ComponentColorModel {
+public final class Win32ColorModel24 extends ComponentColorModel {
     public Win32ColorModel24() {
         super(ColorSpace.getInstance(ColorSpace.CS_sRGB),
               new int[] {8, 8, 8}, false, false,

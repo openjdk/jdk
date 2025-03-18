@@ -55,7 +55,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 /**
  * Windows rendition of the component.
  */
-public class WindowsScrollBarUI extends BasicScrollBarUI {
+public final class WindowsScrollBarUI extends BasicScrollBarUI {
     private Grid thumbGrid;
     private Grid highlightGrid;
     private Dimension horizontalThumbSize;
@@ -313,7 +313,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
      * preferred size is always a square.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class WindowsArrowButton extends BasicArrowButton {
+    private final class WindowsArrowButton extends BasicArrowButton {
 
         public WindowsArrowButton(int direction, Color background, Color shadow,
                          Color darkShadow, Color highlight) {
@@ -409,7 +409,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
      * a WeakRef so that it can be freed when no longer needed. As the
      * Grid is rather expensive to draw, it is drawn in a BufferedImage.
      */
-    private static class Grid {
+    private static final class Grid {
         private static final int BUFFER_SIZE = 64;
         private static HashMap<String, WeakReference<Grid>> map;
 

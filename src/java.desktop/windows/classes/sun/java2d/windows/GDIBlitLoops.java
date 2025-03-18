@@ -43,7 +43,7 @@ import sun.java2d.SurfaceData;
  * that is faster than our current fallback (which creates
  * a temporary GDI DIB)
  */
-public class GDIBlitLoops extends Blit {
+public final class GDIBlitLoops extends Blit {
 
     // Store these values to be passed to native code
     int rmask, gmask, bmask;

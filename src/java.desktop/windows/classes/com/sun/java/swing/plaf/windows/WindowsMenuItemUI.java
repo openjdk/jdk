@@ -54,7 +54,7 @@ import sun.swing.SwingUtilities2;
  *
  * @author Igor Kushnirskiy
  */
-public class WindowsMenuItemUI extends BasicMenuItemUI {
+public final class WindowsMenuItemUI extends BasicMenuItemUI {
     /**
      * The instance of {@code PropertyChangeListener}.
      */

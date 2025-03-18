@@ -78,7 +78,7 @@ import javax.print.attribute.standard.SheetCollate;
 import javax.print.event.PrintServiceAttributeListener;
 import sun.awt.windows.WPrinterJob;
 
-public class Win32PrintService implements PrintService, AttributeUpdater,
+public final class Win32PrintService implements PrintService, AttributeUpdater,
                                           SunPrinterJobService {
 
     public static MediaSize[] predefMedia = Win32MediaSize.getPredefMedia();
@@ -1637,7 +1637,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
 
     private Win32DocumentPropertiesUI docPropertiesUI = null;
 
-    private static class Win32DocumentPropertiesUI
+    private static final class Win32DocumentPropertiesUI
         extends DocumentPropertiesUI {
 
         Win32PrintService service;
@@ -1665,7 +1665,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
         return new Win32DocumentPropertiesUI(this);
     }
 
-    private static class Win32ServiceUIFactory extends ServiceUIFactory {
+    private static final class Win32ServiceUIFactory extends ServiceUIFactory {
 
         Win32PrintService service;
 
@@ -1747,7 +1747,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
 }
 
 @SuppressWarnings("serial") // JDK implementation class
-class Win32MediaSize extends MediaSizeName {
+final class Win32MediaSize extends MediaSizeName {
     private static ArrayList<String> winStringTable = new ArrayList<>();
     private static ArrayList<Win32MediaSize> winEnumTable = new ArrayList<>();
     private static MediaSize[] predefMedia;

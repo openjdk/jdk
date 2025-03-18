@@ -50,7 +50,7 @@ import static com.sun.java.swing.plaf.windows.TMSchema.Part;
 import static com.sun.java.swing.plaf.windows.TMSchema.State;
 import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 
-public class WindowsTableHeaderUI extends BasicTableHeaderUI {
+public final class WindowsTableHeaderUI extends BasicTableHeaderUI {
     private TableCellRenderer originalHeaderRenderer;
 
     public static ComponentUI createUI(JComponent h) {
@@ -86,7 +86,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
     }
 
     @SuppressWarnings("serial") // JDK-implementation class
-    private class XPDefaultRenderer extends DefaultTableCellHeaderRenderer {
+    private final class XPDefaultRenderer extends DefaultTableCellHeaderRenderer {
         Skin skin;
         boolean isSelected, hasFocus, hasRollover;
         int column;
@@ -231,7 +231,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
      * A border with an Icon at the middle of the top side.
      * Outer insets can be provided for this border.
      */
-    private static class IconBorder implements Border, UIResource{
+    private static final class IconBorder implements Border, UIResource{
         private final Icon icon;
         private final int top;
         private final int left;

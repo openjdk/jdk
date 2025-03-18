@@ -65,7 +65,7 @@ public abstract class WindowsTextUI extends BasicTextUI {
 
     /* public */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class WindowsCaret extends DefaultCaret
+    static final class WindowsCaret extends DefaultCaret
                      implements UIResource {
         /**
          * Gets the painter for the Highlighter.
@@ -79,7 +79,7 @@ public abstract class WindowsTextUI extends BasicTextUI {
     }
 
     /* public */
-    static class WindowsHighlightPainter extends
+    static final class WindowsHighlightPainter extends
                      DefaultHighlighter.DefaultHighlightPainter {
         WindowsHighlightPainter(Color c) {
             super(c);

@@ -167,7 +167,7 @@ public class WindowsTreeUI extends BasicTreeUI {
      * The plus sign button icon
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public static class CollapsedIcon extends ExpandedIcon {
+    public static final class CollapsedIcon extends ExpandedIcon {
         public static Icon createCollapsedIcon() {
             return new CollapsedIcon();
         }
@@ -185,7 +185,7 @@ public class WindowsTreeUI extends BasicTreeUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public class WindowsTreeCellRenderer extends DefaultTreeCellRenderer {
+    public final class WindowsTreeCellRenderer extends DefaultTreeCellRenderer {
 
         /**
          * Configures the renderer based on the passed in components.

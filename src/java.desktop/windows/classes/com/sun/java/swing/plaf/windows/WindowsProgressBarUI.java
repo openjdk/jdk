@@ -51,7 +51,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
  *
  * @author Michael C. Albers
  */
-public class WindowsProgressBarUI extends BasicProgressBarUI
+public final class WindowsProgressBarUI extends BasicProgressBarUI
 {
 
     private Rectangle previousFullBox;

@@ -503,7 +503,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         return new ComInvoker();
     }
 
-    private static class ComInvoker extends ThreadPoolExecutor implements ThreadFactory, ShellFolder.Invoker {
+    private static final class ComInvoker extends ThreadPoolExecutor implements ThreadFactory, ShellFolder.Invoker {
         private static Thread comThread;
 
         private ComInvoker() {

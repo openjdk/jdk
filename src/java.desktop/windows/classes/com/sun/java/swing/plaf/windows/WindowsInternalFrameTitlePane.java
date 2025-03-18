@@ -418,7 +418,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
         return new WindowsTitlePaneLayout();
     }
 
-    public class WindowsTitlePaneLayout extends BasicInternalFrameTitlePane.TitlePaneLayout {
+    public final class WindowsTitlePaneLayout extends BasicInternalFrameTitlePane.TitlePaneLayout {
         private Insets captionMargin = null;
         private Insets contentMargin = null;
         private XPStyle xp = XPStyle.getXP();
@@ -506,7 +506,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
         }
     } // end WindowsTitlePaneLayout
 
-    public class WindowsPropertyChangeHandler extends PropertyChangeHandler {
+    public final class WindowsPropertyChangeHandler extends PropertyChangeHandler {
         @Override
         public void propertyChange(PropertyChangeEvent evt) {
             String prop = evt.getPropertyName();
@@ -530,7 +530,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
      * <p>
      * Note: We assume here that icons are square.
      */
-    public static class ScalableIconUIResource implements Icon, UIResource {
+    public static final class ScalableIconUIResource implements Icon, UIResource {
         // We can use an arbitrary size here because we scale to it in paintIcon()
         private static final int SIZE = 16;
 

@@ -28,7 +28,7 @@ package sun.java2d.windows;
 import sun.awt.windows.WToolkit;
 import sun.java2d.opengl.WGLGraphicsConfig;
 
-public class WindowsFlags {
+public final class WindowsFlags {
 
     /**
      * Description of command-line flags.  All flags with [true|false]

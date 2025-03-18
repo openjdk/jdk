@@ -37,7 +37,7 @@ import javax.swing.plaf.UIResource;
  *
  */
 @SuppressWarnings("serial") // JDK-implementation class
-public class ClassicSortArrowIcon implements Icon, UIResource, Serializable{
+public final class ClassicSortArrowIcon implements Icon, UIResource, Serializable{
     private static final int X_OFFSET = 9;
     private boolean ascending;
 

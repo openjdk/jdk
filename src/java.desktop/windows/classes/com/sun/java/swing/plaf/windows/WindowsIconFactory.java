@@ -63,7 +63,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
  * @author Rich Schiavi
  */
 @SuppressWarnings("serial") // Same-version serialization only
-public class WindowsIconFactory implements Serializable
+public final class WindowsIconFactory implements Serializable
 {
     private static Icon frame_closeIcon;
     private static Icon frame_iconifyIcon;
@@ -173,7 +173,7 @@ public class WindowsIconFactory implements Serializable
 
 
     @SuppressWarnings("serial") // Same-version serialization only
-    private static class FrameButtonIcon implements Icon, Serializable {
+    private static final class FrameButtonIcon implements Icon, Serializable {
         private final Part part;
 
         private FrameButtonIcon(Part part) {
@@ -305,7 +305,7 @@ public class WindowsIconFactory implements Serializable
 
 
         @SuppressWarnings("serial") // Same-version serialization only
-        private static class ResizeIcon implements Icon, Serializable {
+        private static final class ResizeIcon implements Icon, Serializable {
             @Override
             public void paintIcon(Component c, Graphics g, int x, int y) {
                 g.setColor(UIManager.getColor("InternalFrame.resizeIconHighlight"));
@@ -328,7 +328,7 @@ public class WindowsIconFactory implements Serializable
         }
 
     @SuppressWarnings("serial") // Same-version serialization only
-    private static class CheckBoxIcon implements Icon, Serializable
+    private static final class CheckBoxIcon implements Icon, Serializable
     {
         static final int csize = 13;
         @Override
@@ -454,7 +454,7 @@ public class WindowsIconFactory implements Serializable
     }
 
     @SuppressWarnings("serial") // Same-version serialization only
-    private static class RadioButtonIcon implements Icon, UIResource, Serializable
+    private static final class RadioButtonIcon implements Icon, UIResource, Serializable
     {
         @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
@@ -612,7 +612,7 @@ public class WindowsIconFactory implements Serializable
 
 
     @SuppressWarnings("serial") // Same-version serialization only
-    private static class CheckBoxMenuItemIcon implements Icon, UIResource, Serializable
+    private static final class CheckBoxMenuItemIcon implements Icon, UIResource, Serializable
     {
         @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
@@ -641,7 +641,7 @@ public class WindowsIconFactory implements Serializable
 
 
     @SuppressWarnings("serial") // Same-version serialization only
-    private static class RadioButtonMenuItemIcon implements Icon, UIResource, Serializable
+    private static final class RadioButtonMenuItemIcon implements Icon, UIResource, Serializable
     {
         @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
@@ -661,7 +661,7 @@ public class WindowsIconFactory implements Serializable
 
 
     @SuppressWarnings("serial") // Same-version serialization only
-    private static class MenuItemCheckIcon implements Icon, UIResource, Serializable{
+    private static final class MenuItemCheckIcon implements Icon, UIResource, Serializable{
         @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             /* For debugging:
@@ -679,7 +679,7 @@ public class WindowsIconFactory implements Serializable
     } // End class MenuItemCheckIcon
 
     @SuppressWarnings("serial") // Same-version serialization only
-    private static class MenuItemArrowIcon implements Icon, UIResource, Serializable {
+    private static final class MenuItemArrowIcon implements Icon, UIResource, Serializable {
         @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             /* For debugging:
@@ -697,7 +697,7 @@ public class WindowsIconFactory implements Serializable
     } // End class MenuItemArrowIcon
 
     @SuppressWarnings("serial") // Same-version serialization only
-    private static class MenuArrowIcon implements Icon, UIResource, Serializable {
+    private static final class MenuArrowIcon implements Icon, UIResource, Serializable {
         @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             XPStyle xp = XPStyle.getXP();
@@ -755,7 +755,7 @@ public class WindowsIconFactory implements Serializable
         }
     } // End class MenuArrowIcon
 
-    static class VistaMenuItemCheckIconFactory
+    static final class VistaMenuItemCheckIconFactory
            implements MenuItemCheckIconFactory {
         private static final int OFFSET = 3;
 
@@ -817,7 +817,7 @@ public class WindowsIconFactory implements Serializable
          * Note: to be used on Vista only.
          */
         @SuppressWarnings("serial") // Same-version serialization only
-        private static class VistaMenuItemCheckIcon
+        private static final class VistaMenuItemCheckIcon
               implements Icon, UIResource, Serializable {
 
             private final JMenuItem menuItem;

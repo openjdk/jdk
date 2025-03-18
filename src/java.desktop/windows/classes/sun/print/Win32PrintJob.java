@@ -73,7 +73,7 @@ import javax.print.attribute.standard.PrinterStateReasons;
 
 import java.awt.print.*;
 
-public class Win32PrintJob implements CancelablePrintJob {
+public final class Win32PrintJob implements CancelablePrintJob {
 
     private transient ArrayList<PrintJobListener> jobListeners;
     private transient ArrayList<PrintJobAttributeListener> attrListeners;

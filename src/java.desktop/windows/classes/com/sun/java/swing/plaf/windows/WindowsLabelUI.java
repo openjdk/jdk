@@ -41,7 +41,7 @@ import sun.swing.SwingUtilities2;
 /**
  * Windows rendition of the component.
  */
-public class WindowsLabelUI extends BasicLabelUI {
+public final class WindowsLabelUI extends BasicLabelUI {
 
     private static final Object WINDOWS_LABEL_UI_KEY = new Object();
 

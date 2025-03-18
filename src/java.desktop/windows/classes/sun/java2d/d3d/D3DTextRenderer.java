@@ -59,7 +59,7 @@ class D3DTextRenderer extends BufferedTextPipe {
         return new Tracer(this);
     }
 
-    private static class Tracer extends D3DTextRenderer {
+    private static final class Tracer extends D3DTextRenderer {
         Tracer(D3DTextRenderer d3dtr) {
             super(d3dtr.rq);
         }

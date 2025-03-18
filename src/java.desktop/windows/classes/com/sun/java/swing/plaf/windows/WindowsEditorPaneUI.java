@@ -33,7 +33,7 @@ import javax.swing.text.Caret;
 /**
  * Windows rendition of the component.
  */
-public class WindowsEditorPaneUI extends BasicEditorPaneUI
+public final class WindowsEditorPaneUI extends BasicEditorPaneUI
 {
 
     /**

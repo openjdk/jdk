@@ -43,7 +43,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
  * @author Rich Schiavi
  */
 
-public class WindowsBorders {
+public final class WindowsBorders {
 
     /**
      * Returns a  border instance for a Windows Progress Bar
@@ -115,7 +115,7 @@ public class WindowsBorders {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public static class ProgressBarBorder extends AbstractBorder implements UIResource {
+    public static final class ProgressBarBorder extends AbstractBorder implements UIResource {
         protected Color shadow;
         protected Color highlight;
 
@@ -148,7 +148,7 @@ public class WindowsBorders {
      * @since 1.4
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public static class ToolBarBorder extends AbstractBorder implements UIResource, SwingConstants {
+    public static final class ToolBarBorder extends AbstractBorder implements UIResource, SwingConstants {
         protected Color shadow;
         protected Color highlight;
 
@@ -281,7 +281,7 @@ public class WindowsBorders {
      * of the component's background color.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class ComplementDashedBorder extends LineBorder implements UIResource {
+    static final class ComplementDashedBorder extends LineBorder implements UIResource {
         private Color origColor;
         private Color paintColor;
 
@@ -308,7 +308,7 @@ public class WindowsBorders {
      * @since 1.4
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public static class InternalFrameLineBorder extends LineBorder implements
+    public static final class InternalFrameLineBorder extends LineBorder implements
             UIResource {
         protected Color activeColor;
         protected Color inactiveColor;

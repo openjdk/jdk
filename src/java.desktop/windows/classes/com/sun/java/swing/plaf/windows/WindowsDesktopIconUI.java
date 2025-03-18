@@ -36,7 +36,7 @@ import javax.swing.plaf.basic.BasicDesktopIconUI;
 /**
  * Windows icon for a minimized window on the desktop.
  */
-public class WindowsDesktopIconUI extends BasicDesktopIconUI {
+public final class WindowsDesktopIconUI extends BasicDesktopIconUI {
     private int width;
 
     public static ComponentUI createUI(JComponent c) {

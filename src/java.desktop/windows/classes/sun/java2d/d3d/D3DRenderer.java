@@ -96,7 +96,7 @@ class D3DRenderer extends BufferedRenderPipe {
         return new Tracer(this);
     }
 
-    private static class Tracer extends D3DRenderer {
+    private static final class Tracer extends D3DRenderer {
         private D3DRenderer d3dr;
         Tracer(D3DRenderer d3dr) {
             super(d3dr.rq);

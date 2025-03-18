@@ -43,7 +43,7 @@ import static sun.java2d.pipe.hw.AccelSurface.*;
 import sun.java2d.pipe.hw.ExtendedBufferCapabilities;
 import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.*;
 
-public class WGLVolatileSurfaceManager extends VolatileSurfaceManager {
+public final class WGLVolatileSurfaceManager extends VolatileSurfaceManager {
 
     private final boolean accelerationEnabled;
 

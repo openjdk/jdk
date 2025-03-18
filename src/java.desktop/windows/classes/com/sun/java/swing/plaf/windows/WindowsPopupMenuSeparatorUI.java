@@ -42,7 +42,7 @@ import com.sun.java.swing.plaf.windows.XPStyle.Skin;
  * @author Igor Kushnirskiy
  */
 
-public class WindowsPopupMenuSeparatorUI extends BasicPopupMenuSeparatorUI {
+public final class WindowsPopupMenuSeparatorUI extends BasicPopupMenuSeparatorUI {
 
     public static ComponentUI createUI(JComponent c) {
         return new WindowsPopupMenuSeparatorUI();

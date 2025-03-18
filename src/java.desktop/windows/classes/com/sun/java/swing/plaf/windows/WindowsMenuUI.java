@@ -50,7 +50,7 @@ import com.sun.java.swing.plaf.windows.TMSchema.State;
 /**
  * Windows rendition of the component.
  */
-public class WindowsMenuUI extends BasicMenuUI {
+public final class WindowsMenuUI extends BasicMenuUI {
     protected Integer menuBarHeight;
     protected boolean hotTrackingOn;
 
@@ -260,7 +260,7 @@ public class WindowsMenuUI extends BasicMenuUI {
      * true when the mouse enters the menu and false when it exits.
      * @since 1.4
      */
-    protected class WindowsMouseInputHandler extends BasicMenuUI.MouseInputHandler {
+    protected final class WindowsMouseInputHandler extends BasicMenuUI.MouseInputHandler {
         @Override
         public void mouseEntered(MouseEvent evt) {
             super.mouseEntered(evt);

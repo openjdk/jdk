@@ -457,7 +457,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
     private static native int  dbGetPixelNative(long pData, int x, int y);
     private static native void dbSetPixelNative(long pData, int x, int y,
                                                 int pixel);
-    static class D3DDataBufferNative extends DataBufferNative {
+    static final class D3DDataBufferNative extends DataBufferNative {
         int pixel;
         protected D3DDataBufferNative(SurfaceData sData,
                                       int type, int w, int h)
@@ -933,7 +933,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
      *
      * @see D3DScreenUpdateManager
      */
-    public static class D3DWindowSurfaceData extends D3DSurfaceData {
+    public static final class D3DWindowSurfaceData extends D3DSurfaceData {
         StateTracker dirtyTracker;
 
         public D3DWindowSurfaceData(WComponentPeer peer,

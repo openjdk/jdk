@@ -101,7 +101,7 @@ import sun.swing.WindowsPlacesBar;
  *
  * @author Jeff Dinkins
  */
-public class WindowsFileChooserUI extends BasicFileChooserUI {
+public final class WindowsFileChooserUI extends BasicFileChooserUI {
 
     // The following are private because the implementation of the
     // Windows FileChooser L&F is not complete yet.
@@ -204,7 +204,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
         fc.removeAll();
     }
 
-    private class WindowsFileChooserUIAccessor implements FilePane.FileChooserUIAccessor {
+    private final class WindowsFileChooserUIAccessor implements FilePane.FileChooserUIAccessor {
         @Override
         public JFileChooser getFileChooser() {
             return WindowsFileChooserUI.this.getFileChooser();
@@ -1058,7 +1058,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
     // Renderer for DirectoryComboBox
     //
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    class DirectoryComboBoxRenderer extends DefaultListCellRenderer  {
+    final class DirectoryComboBoxRenderer extends DefaultListCellRenderer  {
         IndentIcon ii = new IndentIcon();
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value,
@@ -1083,7 +1083,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
     }
 
     static final int space = 10;
-    static class IndentIcon implements Icon {
+    static final class IndentIcon implements Icon {
 
         Icon icon = null;
         int depth = 0;
@@ -1120,7 +1120,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
      * Data model for a type-face selection combo-box.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class DirectoryComboBoxModel extends AbstractListModel<File> implements ComboBoxModel<File> {
+    protected final class DirectoryComboBoxModel extends AbstractListModel<File> implements ComboBoxModel<File> {
         Vector<File> directories = new Vector<File>();
         int[] depths = null;
         File selectedDirectory = null;
@@ -1250,7 +1250,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
      * Render different type sizes and styles.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public class FilterComboBoxRenderer extends DefaultListCellRenderer {
+    public final class FilterComboBoxRenderer extends DefaultListCellRenderer {
         @Override
         public Component getListCellRendererComponent(JList<?> list,
             Object value, int index, boolean isSelected,
@@ -1277,7 +1277,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
      * Data model for a type-face selection combo-box.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class FilterComboBoxModel extends AbstractListModel<FileFilter> implements ComboBoxModel<FileFilter>,
+    protected final class FilterComboBoxModel extends AbstractListModel<FileFilter> implements ComboBoxModel<FileFilter>,
             PropertyChangeListener {
         protected FileFilter[] filters;
         protected FilterComboBoxModel() {
@@ -1360,7 +1360,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
     /**
      * Acts when DirectoryComboBox has changed the selected item.
      */
-    protected class DirectoryComboBoxAction implements ActionListener {
+    protected final class DirectoryComboBoxAction implements ActionListener {
 
 
 
@@ -1385,7 +1385,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
     // ***********************
     // * FileView operations *
     // ***********************
-    protected class WindowsFileView extends BasicFileView {
+    protected final class WindowsFileView extends BasicFileView {
         /* FileView type descriptions */
 
         @Override

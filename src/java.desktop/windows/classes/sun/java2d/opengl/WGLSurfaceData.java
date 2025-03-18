@@ -152,7 +152,7 @@ public abstract class WGLSurfaceData extends OGLSurfaceData {
         }
     }
 
-    public static class WGLWindowSurfaceData extends WGLSurfaceData {
+    public static final class WGLWindowSurfaceData extends WGLSurfaceData {
 
         public WGLWindowSurfaceData(WComponentPeer peer,
                                     WGLGraphicsConfig gc)
@@ -192,7 +192,7 @@ public abstract class WGLSurfaceData extends OGLSurfaceData {
      * belongs to is showed, it is first copied to the real private
      * FLIP_BACKBUFFER, which is then flipped.
      */
-    public static class WGLVSyncOffScreenSurfaceData extends
+    public static final class WGLVSyncOffScreenSurfaceData extends
         WGLOffScreenSurfaceData
     {
         private WGLOffScreenSurfaceData flipSurface;

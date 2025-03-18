@@ -48,7 +48,7 @@ import static sun.java2d.pipe.hw.AccelSurface.RT_TEXTURE;
 import static sun.java2d.pipe.hw.AccelSurface.TEXTURE;
 import static sun.java2d.pipe.hw.AccelSurface.UNDEFINED;
 
-public class D3DVolatileSurfaceManager
+public final class D3DVolatileSurfaceManager
     extends VolatileSurfaceManager
 {
     private boolean accelerationEnabled;

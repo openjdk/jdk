@@ -36,7 +36,7 @@ import sun.awt.image.ByteInterleavedRaster;
 import java.awt.peer.FramePeer;
 
 @SuppressWarnings("serial") // JDK-implementation class
-public class WEmbeddedFrame extends EmbeddedFrame {
+public final class WEmbeddedFrame extends EmbeddedFrame {
 
     static {
         initIDs();

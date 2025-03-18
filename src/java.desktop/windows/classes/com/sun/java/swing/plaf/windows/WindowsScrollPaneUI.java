@@ -30,5 +30,5 @@ import javax.swing.plaf.basic.BasicScrollPaneUI;
 /**
  * Windows rendition of the component.
  */
-public class WindowsScrollPaneUI extends BasicScrollPaneUI
+public final class WindowsScrollPaneUI extends BasicScrollPaneUI
 {}

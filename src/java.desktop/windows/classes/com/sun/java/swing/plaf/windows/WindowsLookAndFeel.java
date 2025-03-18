@@ -2031,7 +2031,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * @since 1.4
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private static class AudioAction extends AbstractAction {
+    private static final class AudioAction extends AbstractAction {
         private Runnable audioRunnable;
         private String audioResource;
         /**
@@ -2059,7 +2059,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * Gets an <code>Icon</code> from the native libraries if available,
      * otherwise gets it from an image resource file.
      */
-    private static class LazyWindowsIcon implements UIDefaults.LazyValue {
+    private static final class LazyWindowsIcon implements UIDefaults.LazyValue {
         private String nativeImage;
         private String resource;
 
@@ -2087,7 +2087,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * Gets an <code>Icon</code> from the native libraries if available.
      * A desktop property is used to trigger reloading the icon when needed.
      */
-    private static class ActiveWindowsIcon implements UIDefaults.ActiveValue {
+    private static final class ActiveWindowsIcon implements UIDefaults.ActiveValue {
         private Icon icon;
         private String nativeImageName;
         private String fallbackName;
@@ -2132,7 +2132,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
     /**
      * Icon backed-up by XP Skin.
      */
-    private static class SkinIcon implements Icon, UIResource {
+    private static final class SkinIcon implements Icon, UIResource {
         private final Part part;
         private final State state;
         SkinIcon(Part part, State state) {
@@ -2194,7 +2194,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * WindowsDesktopProperty for fonts. If a font with the name 'MS Sans Serif'
      * is returned, it is mapped to 'Microsoft Sans Serif'.
      */
-    private static class WindowsFontProperty extends WindowsDesktopProperty {
+    private static final class WindowsFontProperty extends WindowsDesktopProperty {
         WindowsFontProperty(String key, Object backup) {
             super(key, backup);
         }
@@ -2256,7 +2256,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * WindowsDesktopProperty for fonts that only gets sizes from the desktop,
      * font name and style are passed into the constructor
      */
-    private static class WindowsFontSizeProperty extends
+    private static final class WindowsFontSizeProperty extends
                                                  WindowsDesktopProperty {
         private String fontName;
         private int fontSize;
@@ -2335,7 +2335,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
     }
 
-    private static class XPBorderValue extends XPValue {
+    private static final class XPBorderValue extends XPValue {
         private final Border extraMargin;
 
         XPBorderValue(Part xpValue, Object classicValue) {
@@ -2360,7 +2360,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
     }
 
-    private static class XPColorValue extends XPValue {
+    private static final class XPColorValue extends XPValue {
         XPColorValue(Part part, State state, Prop prop, Object classicValue) {
             super(new XPColorValueKey(part, state, prop), classicValue);
         }
@@ -2372,7 +2372,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             return xp != null ? xp.getColor(key.skin, key.prop, null) : null;
         }
 
-        private static class XPColorValueKey {
+        private static final class XPColorValueKey {
             Skin skin;
             Prop prop;
 
@@ -2383,7 +2383,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
     }
 
-    private class XPDLUValue extends XPValue {
+    private final class XPDLUValue extends XPValue {
         private int direction;
 
         XPDLUValue(int xpdlu, int classicdlu, int direction) {
@@ -2422,7 +2422,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
     }
 
-    private static class FontDesktopProperty extends TriggerDesktopProperty {
+    private static final class FontDesktopProperty extends TriggerDesktopProperty {
         FontDesktopProperty(String key) {
             super(key);
         }
@@ -2438,7 +2438,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
     // Windows LayoutStyle.  From:
     // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dnwue/html/ch14e.asp
     @SuppressWarnings("fallthrough")
-    private class WindowsLayoutStyle extends DefaultLayoutStyle {
+    private final class WindowsLayoutStyle extends DefaultLayoutStyle {
         @Override
         public int getPreferredGap(JComponent component1,
                 JComponent component2, ComponentPlacement type, int position,
@@ -2554,7 +2554,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         return super.getDisabledIcon(component, icon);
     }
 
-    private static class RGBGrayFilter extends RGBImageFilter {
+    private static final class RGBGrayFilter extends RGBImageFilter {
         public RGBGrayFilter() {
             canFilterIndexColorModel = true;
         }
@@ -2577,7 +2577,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
     }
 
-    private static class FocusColorProperty extends WindowsDesktopProperty {
+    private static final class FocusColorProperty extends WindowsDesktopProperty {
         public FocusColorProperty () {
             // Fallback value is never used because of the configureValue method doesn't return null
             super("win.3d.backgroundColor", Color.BLACK);

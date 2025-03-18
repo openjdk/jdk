@@ -57,7 +57,7 @@ import static sun.swing.SwingUtilities2.BASICMENUITEMUI_MAX_TEXT_OFFSET;
  *
  * @author Igor Kushnirskiy
  */
-public class WindowsPopupMenuUI extends BasicPopupMenuUI {
+public final class WindowsPopupMenuUI extends BasicPopupMenuUI {
 
     static MnemonicListener mnemonicListener = null;
     static final Object GUTTER_OFFSET_KEY =
@@ -95,7 +95,7 @@ public class WindowsPopupMenuUI extends BasicPopupMenuUI {
         return popupFactory.getPopup(popupMenu.getInvoker(), popupMenu, x, y);
     }
 
-    static class MnemonicListener implements ChangeListener {
+    static final class MnemonicListener implements ChangeListener {
         JRootPane repaintRoot = null;
 
         @Override

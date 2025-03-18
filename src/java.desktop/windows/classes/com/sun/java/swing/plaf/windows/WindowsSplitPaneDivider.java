@@ -39,7 +39,7 @@ import javax.swing.plaf.basic.BasicSplitPaneUI;
  * @author Jeff Dinkins
  */
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-public class WindowsSplitPaneDivider extends BasicSplitPaneDivider
+public final class WindowsSplitPaneDivider extends BasicSplitPaneDivider
 {
 
     /**

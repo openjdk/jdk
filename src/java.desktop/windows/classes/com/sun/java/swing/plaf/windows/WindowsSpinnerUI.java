@@ -37,7 +37,7 @@ import static com.sun.java.swing.plaf.windows.TMSchema.State;
 import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 
 
-public class WindowsSpinnerUI extends BasicSpinnerUI {
+public final class WindowsSpinnerUI extends BasicSpinnerUI {
     public static ComponentUI createUI(JComponent c) {
         return new WindowsSpinnerUI();
     }

@@ -345,7 +345,7 @@ public class GDIRenderer implements
         return new Tracer();
     }
 
-    public static class Tracer extends GDIRenderer {
+    public static final class Tracer extends GDIRenderer {
         @Override
         void doDrawLine(GDIWindowSurfaceData sData,
                         Region clip, Composite comp, int color,

@@ -51,7 +51,7 @@ import sun.java2d.loops.CompositeType;
 import sun.java2d.loops.RenderLoops;
 import sun.java2d.loops.XORComposite;
 
-public class GDIWindowSurfaceData extends SurfaceData {
+public final class GDIWindowSurfaceData extends SurfaceData {
     private WComponentPeer peer;
     private Win32GraphicsConfig graphicsConfig;
     private RenderLoops solidloops;

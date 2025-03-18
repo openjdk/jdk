@@ -40,7 +40,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
  *
  * @author Mark Davidson
  */
-public class WindowsToolBarSeparatorUI extends BasicToolBarSeparatorUI {
+public final class WindowsToolBarSeparatorUI extends BasicToolBarSeparatorUI {
 
     public static ComponentUI createUI( JComponent c ) {
         return new WindowsToolBarSeparatorUI();

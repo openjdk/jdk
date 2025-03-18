@@ -45,7 +45,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 /**
  * Windows rendition of the component.
  */
-public class WindowsInternalFrameUI extends BasicInternalFrameUI
+public final class WindowsInternalFrameUI extends BasicInternalFrameUI
 {
     XPStyle xp = XPStyle.getXP();
 
@@ -94,7 +94,7 @@ public class WindowsInternalFrameUI extends BasicInternalFrameUI
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class XPBorder extends AbstractBorder {
+    private final class XPBorder extends AbstractBorder {
         private Skin leftSkin   = xp.getSkin(frame, Part.WP_FRAMELEFT);
         private Skin rightSkin  = xp.getSkin(frame, Part.WP_FRAMERIGHT);
         private Skin bottomSkin = xp.getSkin(frame, Part.WP_FRAMEBOTTOM);

@@ -45,7 +45,7 @@ import sun.awt.AppContext;
  *
  * @author Jeff Dinkins
  */
-public class WindowsToggleButtonUI extends BasicToggleButtonUI
+public final class WindowsToggleButtonUI extends BasicToggleButtonUI
 {
     protected int dashedRectGapX;
     protected int dashedRectGapY;

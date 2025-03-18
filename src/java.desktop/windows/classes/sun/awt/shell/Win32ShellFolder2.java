@@ -212,7 +212,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         static final List<KnownFolderDefinition> INSTANCE = getLibraries();
     }
 
-    static class FolderDisposer implements sun.java2d.DisposerRecord {
+    static final class FolderDisposer implements sun.java2d.DisposerRecord {
         /*
          * This is cached as a concession to getFolderType(), which needs
          * an absolute PIDL.
@@ -1373,7 +1373,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         });
     }
 
-    private static class ColumnComparator implements Comparator<File> {
+    private static final class ColumnComparator implements Comparator<File> {
         private final Win32ShellFolder2 shellFolder;
 
         private final int columnIdx;
@@ -1425,7 +1425,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         });
     }
 
-    static class MultiResolutionIconImage extends AbstractMultiResolutionImage {
+    static final class MultiResolutionIconImage extends AbstractMultiResolutionImage {
         final int baseSize;
         final Map<Integer, Image> resolutionVariants = new HashMap<>();
 

@@ -90,7 +90,7 @@ import static com.sun.java.swing.plaf.windows.TMSchema.TypeEnum;
  *
  * @author Leif Samuelsson
  */
-class XPStyle {
+final class XPStyle {
     // Singleton instance of this class
     private static XPStyle xp;
 
@@ -356,7 +356,7 @@ class XPStyle {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class XPStatefulFillBorder extends XPFillBorder {
+    private final class XPStatefulFillBorder extends XPFillBorder {
         private final Part part;
         private final Prop prop;
         XPStatefulFillBorder(Color color, int thickness, Part part, Prop prop) {
@@ -385,7 +385,7 @@ class XPStyle {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class XPImageBorder extends AbstractBorder implements UIResource {
+    private final class XPImageBorder extends AbstractBorder implements UIResource {
         Skin skin;
 
         XPImageBorder(Component c, Part part) {
@@ -427,7 +427,7 @@ class XPStyle {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private static class XPEmptyBorder extends EmptyBorder implements UIResource {
+    private static final class XPEmptyBorder extends EmptyBorder implements UIResource {
         XPEmptyBorder(Insets m) {
             super(m.top+2, m.left+2, m.bottom+2, m.right+2);
         }
@@ -499,7 +499,7 @@ class XPStyle {
      * (component type) and which provides methods for painting backgrounds
      * and glyphs
      */
-    static class Skin {
+    static final class Skin {
         final Component component;
         final Part part;
         final State state;
@@ -680,7 +680,7 @@ class XPStyle {
         }
     }
 
-    private static class SkinPainter extends CachedPainter {
+    private static final class SkinPainter extends CachedPainter {
         SkinPainter() {
             super(30);
             flush();

@@ -223,7 +223,7 @@ public final class D3DGraphicsConfig
         }
     }
 
-    private static class D3DBufferCaps extends BufferCapabilities {
+    private static final class D3DBufferCaps extends BufferCapabilities {
         public D3DBufferCaps() {
             // REMIND: should we indicate that the front-buffer
             // (the on-screen rendering) is not accelerated?
@@ -244,7 +244,7 @@ public final class D3DGraphicsConfig
         return bufferCaps;
     }
 
-    private static class D3DImageCaps extends ImageCapabilities {
+    private static final class D3DImageCaps extends ImageCapabilities {
         private D3DImageCaps() {
             super(true);
         }

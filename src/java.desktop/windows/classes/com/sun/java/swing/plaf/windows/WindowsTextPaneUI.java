@@ -33,7 +33,7 @@ import javax.swing.text.Caret;
 /**
  * Windows rendition of the component.
  */
-public class WindowsTextPaneUI extends BasicTextPaneUI
+public final class WindowsTextPaneUI extends BasicTextPaneUI
 {
     /**
      * Creates a UI for a JTextPane.

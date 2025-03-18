@@ -52,7 +52,7 @@ public final class WingDings extends Charset {
         return cs instanceof WingDings;
     }
 
-    private static class Encoder extends CharsetEncoder {
+    private static final class Encoder extends CharsetEncoder {
         public Encoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
         }

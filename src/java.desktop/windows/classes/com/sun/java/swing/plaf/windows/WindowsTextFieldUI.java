@@ -62,7 +62,7 @@ import javax.swing.text.Position;
  *
  * @author  Timothy Prinzing
  */
-public class WindowsTextFieldUI extends BasicTextFieldUI
+public final class WindowsTextFieldUI extends BasicTextFieldUI
 {
     /**
      * Creates a UI for a JTextField.
@@ -102,7 +102,7 @@ public class WindowsTextFieldUI extends BasicTextFieldUI
      * DefaultCaret.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class WindowsFieldCaret extends DefaultCaret implements UIResource {
+    static final class WindowsFieldCaret extends DefaultCaret implements UIResource {
 
         public WindowsFieldCaret() {
             super();
@@ -130,7 +130,7 @@ public class WindowsTextFieldUI extends BasicTextFieldUI
         }
 
 
-        private class SafeScroller implements Runnable {
+        private final class SafeScroller implements Runnable {
             SafeScroller(Rectangle r) {
                 this.r = r;
             }

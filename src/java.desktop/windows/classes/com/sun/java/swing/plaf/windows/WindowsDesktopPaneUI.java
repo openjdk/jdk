@@ -34,7 +34,7 @@ import javax.swing.plaf.basic.BasicDesktopPaneUI;
  *
  * @author David Kloba
  */
-public class WindowsDesktopPaneUI extends BasicDesktopPaneUI
+public final class WindowsDesktopPaneUI extends BasicDesktopPaneUI
 {
     public static ComponentUI createUI(JComponent c) {
         return new WindowsDesktopPaneUI();

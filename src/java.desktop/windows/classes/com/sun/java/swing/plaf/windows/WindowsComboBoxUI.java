@@ -75,7 +75,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
  * @author Tom Santos
  * @author Igor Kushnirskiy
  */
-public class WindowsComboBoxUI extends BasicComboBoxUI {
+public final class WindowsComboBoxUI extends BasicComboBoxUI {
 
     private static final MouseListener rolloverListener =
         new MouseAdapter() {
@@ -470,7 +470,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class XPComboBoxButton extends XPStyle.GlyphButton {
+    private final class XPComboBoxButton extends XPStyle.GlyphButton {
         private State prevState = null;
 
         public XPComboBoxButton(XPStyle xp) {
@@ -532,7 +532,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
     }
 
     @SuppressWarnings("serial") // Same-version serialization only
-    protected class WinComboPopUp extends BasicComboPopup {
+    protected final class WinComboPopUp extends BasicComboPopup {
         private Skin listBoxBorder = null;
         private XPStyle xp;
 
@@ -550,7 +550,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
             return new InvocationKeyHandler();
         }
 
-        protected class InvocationKeyHandler extends BasicComboPopup.InvocationKeyHandler {
+        protected final class InvocationKeyHandler extends BasicComboPopup.InvocationKeyHandler {
             protected InvocationKeyHandler() {
                 WinComboPopUp.this.super();
             }
@@ -570,7 +570,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
     /**
      * Subclassed to highlight selected item in an editable combo box.
      */
-    public static class WindowsComboBoxEditor
+    public static final class WindowsComboBoxEditor
         extends BasicComboBoxEditor.UIResource {
 
         /**
@@ -604,14 +604,14 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      * and to show border for focused cells.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private static class WindowsComboBoxRenderer
+    private static final class WindowsComboBoxRenderer
           extends BasicComboBoxRenderer.UIResource {
         private static final Object BORDER_KEY
             = new StringUIClientPropertyKey("BORDER_KEY");
         private static final Border NULL_BORDER = new EmptyBorder(0, 0, 0, 0);
 
         // Create own version of DashedBorder with more space on left side
-        private static class WindowsComboBoxDashedBorder extends DashedBorder {
+        private static final class WindowsComboBoxDashedBorder extends DashedBorder {
 
             public WindowsComboBoxDashedBorder(Color color, int thickness) {
                 super(color, thickness);

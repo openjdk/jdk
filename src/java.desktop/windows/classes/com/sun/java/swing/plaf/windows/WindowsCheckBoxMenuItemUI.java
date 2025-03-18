@@ -41,7 +41,7 @@ import com.sun.java.swing.plaf.windows.TMSchema.State;
 /**
  * Windows check box menu item.
  */
-public class WindowsCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI {
+public final class WindowsCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI {
 
     final WindowsMenuItemUIAccessor accessor =
         new WindowsMenuItemUIAccessor() {
