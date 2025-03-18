@@ -583,6 +583,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
 {
   // Initialize GC mode early, many subsequent initialization procedures depend on it
   initialize_mode();
+  _cancelled_gc.set(GCCause::_no_gc);
 }
 
 #ifdef _MSC_VER
@@ -817,18 +818,31 @@ size_t ShenandoahHeap::initial_capacity() const {
 }
 
 bool ShenandoahHeap::is_in(const void* p) const {
-  if (is_in_reserved(p)) {
-    if (is_full_gc_move_in_progress()) {
-      // Full GC move is running, we do not have a consistent region
-      // information yet. But we know the pointer is in heap.
-      return true;
-    }
-    // Now check if we point to a live section in active region.
-    ShenandoahHeapRegion* r = heap_region_containing(p);
-    return (r->is_active() && p < r->top());
-  } else {
+  if (!is_in_reserved(p)) {
     return false;
   }
+
+  if (is_full_gc_move_in_progress()) {
+    // Full GC move is running, we do not have a consistent region
+    // information yet. But we know the pointer is in heap.
+    return true;
+  }
+
+  // Now check if we point to a live section in active region.
+  const ShenandoahHeapRegion* r = heap_region_containing(p);
+  if (p >= r->top()) {
+    return false;
+  }
+
+  if (r->is_active()) {
+    return true;
+  }
+
+  // The region is trash, but won't be recycled until after concurrent weak
+  // roots. We also don't allow mutators to allocate from trash regions
+  // during weak roots. Concurrent class unloading may access unmarked oops
+  // in trash regions.
+  return r->is_trash() && is_concurrent_weak_root_in_progress();
 }
 
 void ShenandoahHeap::notify_soft_max_changed() {
@@ -993,13 +1007,13 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       //   a) We experienced a GC that had good progress, or
       //   b) We experienced at least one Full GC (whether or not it had good progress)
 
-      size_t original_count = shenandoah_policy()->full_gc_count();
-      while ((result == nullptr) && (original_count == shenandoah_policy()->full_gc_count())) {
+      const size_t original_count = shenandoah_policy()->full_gc_count();
+      while (result == nullptr && should_retry_allocation(original_count)) {
         control_thread()->handle_alloc_failure(req, true);
         result = allocate_memory_under_lock(req, in_new_region);
       }
       if (result != nullptr) {
-        // If our allocation request has been satisifed after it initially failed, we count this as good gc progress
+        // If our allocation request has been satisfied after it initially failed, we count this as good gc progress
         notify_gc_progress();
       }
       if (log_develop_is_enabled(Debug, gc, alloc)) {
@@ -1048,6 +1062,11 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
   }
 
   return result;
+}
+
+inline bool ShenandoahHeap::should_retry_allocation(size_t original_full_gc_count) const {
+  return shenandoah_policy()->full_gc_count() == original_full_gc_count
+      && !shenandoah_policy()->is_at_shutdown();
 }
 
 HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req, bool& in_new_region) {
@@ -2120,9 +2139,9 @@ size_t ShenandoahHeap::tlab_used(Thread* thread) const {
   return _free_set->used();
 }
 
-bool ShenandoahHeap::try_cancel_gc() {
-  jbyte prev = _cancelled_gc.cmpxchg(CANCELLED, CANCELLABLE);
-  return prev == CANCELLABLE;
+bool ShenandoahHeap::try_cancel_gc(GCCause::Cause cause) {
+  jbyte prev = _cancelled_gc.cmpxchg(cause, GCCause::_no_gc);
+  return prev == GCCause::_no_gc;
 }
 
 void ShenandoahHeap::cancel_concurrent_mark() {
@@ -2136,13 +2155,15 @@ void ShenandoahHeap::cancel_concurrent_mark() {
   ShenandoahBarrierSet::satb_mark_queue_set().abandon_partial_marking();
 }
 
-void ShenandoahHeap::cancel_gc(GCCause::Cause cause) {
-  if (try_cancel_gc()) {
+bool ShenandoahHeap::cancel_gc(GCCause::Cause cause) {
+  if (try_cancel_gc(cause)) {
     FormatBuffer<> msg("Cancelling GC: %s", GCCause::to_string(cause));
-    log_info(gc)("%s", msg.buffer());
+    log_info(gc,thread)("%s", msg.buffer());
     Events::log(Thread::current(), "%s", msg.buffer());
     _cancel_requested_time = os::elapsedTime();
+    return true;
   }
+  return false;
 }
 
 uint ShenandoahHeap::max_workers() {
@@ -2155,18 +2176,10 @@ void ShenandoahHeap::stop() {
   // Step 0. Notify policy to disable event recording and prevent visiting gc threads during shutdown
   _shenandoah_policy->record_shutdown();
 
-  // Step 0a. Stop reporting on gc thread cpu utilization
+  // Step 1. Stop reporting on gc thread cpu utilization
   mmu_tracker()->stop();
 
-  // Step 1. Notify control thread that we are in shutdown.
-  // Note that we cannot do that with stop(), because stop() is blocking and waits for the actual shutdown.
-  // Doing stop() here would wait for the normal GC cycle to complete, never falling through to cancel below.
-  control_thread()->prepare_for_graceful_shutdown();
-
-  // Step 2. Notify GC workers that we are cancelling GC.
-  cancel_gc(GCCause::_shenandoah_stop_vm);
-
-  // Step 3. Wait until GC worker exits normally.
+  // Step 2. Wait until GC worker exits normally (this will cancel any ongoing GC).
   control_thread()->stop();
 
   // Stop 4. Shutdown uncommit thread.
