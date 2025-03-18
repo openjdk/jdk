@@ -74,7 +74,7 @@ public class IRFrameworkWithVectorAPIExample {
 
                public class InnerTest {
                    public static void main(String args[]) {
-                       TestFramework framework = new TestFramework(X1.class);
+                       TestFramework framework = new TestFramework(InnerTest.class);
                        // Also the TestFramework must allow the test VM to see the VectorAPI module.
                        framework.addFlags("-classpath", "%s", "--add-modules=jdk.incubator.vector");
                        framework.start();
