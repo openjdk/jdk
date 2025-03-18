@@ -651,16 +651,16 @@ size_t os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, MemTag mem_tag,
   return outer_size;
 }
 
-void* os::post_alloc(void* raw_ptr, size_t size, MemTag mem_tag, const NativeCallStack& stack) {
+void* os::post_alloc(void* raw_ptr, size_t size, long offset, MemTag mem_tag, const NativeCallStack& stack) {
   if (MemTracker::enabled()) {
     // Register alloc with NMT
     void* const client_ptr = MemTracker::record_malloc((address)raw_ptr, size, mem_tag, stack);
 
     if (CDSConfig::is_dumping_static_archive()) {
       // Need to deterministically fill all the alignment gaps in C++ structures.
-      ::memset(client_ptr, 0, size);
+      ::memset((char*)client_ptr + offset, 0, size - offset);
     } else {
-      DEBUG_ONLY(::memset(client_ptr, uninitBlockPad, size);)
+      DEBUG_ONLY(::memset((char*)client_ptr + offset, uninitBlockPad, size - offset);)
     }
 
     DEBUG_ONLY(break_if_ptr_caught(client_ptr);)
@@ -681,7 +681,7 @@ void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
     return rc;
   }
   ALLOW_C_FUNCTION(::malloc, rc = ::malloc(outer_size);)
-  return os::post_alloc(rc, size, mem_tag, stack);
+  return os::post_alloc(rc, size, 0, mem_tag, stack);
 }
 
 void* os::realloc(void *memblock, size_t size, MemTag mem_tag) {
@@ -738,7 +738,11 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     MemTracker::deaccount(*free_info);
   }
 
-  return os::post_alloc(rc, size, mem_tag, stack);
+  long offset = 0;
+  if (true) {
+    offset = size - free_info->size;
+  }
+  return os::post_alloc(rc, size, offset, mem_tag, stack);
 }
 
 void  os::free(void *memblock) {
