@@ -554,12 +554,11 @@ class StubGenerator: public StubCodeGenerator {
   // The multiplication results are reduced using `vConstC2` to stay within GF(2^128).
   // The final computed value is stored back into `vState`.
   static void computeGCMProduct(MacroAssembler* masm,
-                              VectorRegister vLowerH, VectorRegister vH, VectorRegister vHigherH,
-                              VectorRegister vConstC2, VectorRegister vZero, VectorRegister vState,
-                              VectorRegister vLowProduct, VectorRegister vMidProduct, VectorRegister vHighProduct,
-                              VectorRegister vReducedLow, VectorRegister vTmp8, VectorRegister vTmp9,
-                              VectorRegister vCombinedResult, VectorRegister vSwappedH) {
-    assert(masm != nullptr, "MacroAssembler pointer is null");
+                                VectorRegister vLowerH, VectorRegister vH, VectorRegister vHigherH,
+                                VectorRegister vConstC2, VectorRegister vZero, VectorRegister vState,
+                                VectorRegister vLowProduct, VectorRegister vMidProduct, VectorRegister vHighProduct,
+                                VectorRegister vReducedLow, VectorRegister vTmp8, VectorRegister vTmp9,
+                                VectorRegister vCombinedResult, VectorRegister vSwappedH) {
     masm->vxor(vH, vH, vState);
     masm->vpmsumd(vLowProduct, vLowerH, vH);                          // L : Lower Half of subkey H
     masm->vpmsumd(vMidProduct, vSwappedH, vH);                        // M : Combined halves of subkey H
@@ -696,7 +695,7 @@ class StubGenerator: public StubCodeGenerator {
     __ b(L_store);
 
     __ bind(L_initialize_unaligned_loop);
-    __ li(temp1,0);
+    __ li(temp1, 0);
     __ lvsl(vPerm, temp1, data);
     __ lvx(vHigh, temp1, data);
 #ifdef VM_LITTLE_ENDIAN
