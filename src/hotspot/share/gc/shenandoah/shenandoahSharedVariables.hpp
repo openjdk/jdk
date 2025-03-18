@@ -236,6 +236,13 @@ struct ShenandoahSharedEnumFlag {
     return (T)Atomic::cmpxchg(&value, (ShenandoahSharedValue)expected, (ShenandoahSharedValue)new_value);
   }
 
+  T xchg(T new_value) {
+    assert (new_value >= 0, "sanity");
+    assert (new_value < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
+    // Hmm, no platform template specialization defined for exchanging one byte... (up cast to intptr is workaround).
+    return (T)Atomic::xchg((intptr_t*)&value, (intptr_t)new_value);
+  }
+
   volatile ShenandoahSharedValue* addr_of() {
     return &value;
   }
