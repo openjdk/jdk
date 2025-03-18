@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8002387 8014636 8078320 8175200 8186332
+ * @bug      8002387 8014636 8078320 8175200 8186332 8352249
  * @summary  Improve rendered HTML formatting for {@code}
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool

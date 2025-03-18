@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8078320 8132096 8273244
+ * @bug 7021614 8078320 8132096 8273244 8352249
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -140,6 +140,30 @@ DocComment[DOC_COMMENT, pos:0
 ]
 */
     /**
+     * abc def ghi.
+     * Jkl mno pqr
+     */
+    void dot_newline_upper() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    Text[TEXT, pos:0, abc_def_ghi.]
+  body: 1
+    Text[TEXT, pos:13, Jkl_mno_pqr]
+  block tags: empty
+]
+*/
+/*
+BREAK_ITERATOR
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    Text[TEXT, pos:0, abc_def_ghi.]
+  body: 1
+    Text[TEXT, pos:13, Jkl_mno_pqr]
+  block tags: empty
+]
+*/
+    /**
      * abc def ghi
      * <p>jkl mno pqr
      */
@@ -200,6 +224,39 @@ DocComment[DOC_COMMENT, pos:1
     ]
     Text[TEXT, pos:4, abc_def_ghi.|jdl_mno_pqf]
   body: empty
+  block tags: empty
+]
+*/
+    /**
+     *
+     * <p>abc def ghi.
+     * Jdl mno pqf
+     */
+    void newline_p_upper() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:1
+      name:p
+      attributes: empty
+    ]
+    Text[TEXT, pos:4, abc_def_ghi.]
+  body: 1
+    Text[TEXT, pos:17, Jdl_mno_pqf]
+  block tags: empty
+]
+*/
+/*
+BREAK_ITERATOR
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:1
+      name:p
+      attributes: empty
+    ]
+    Text[TEXT, pos:4, abc_def_ghi.]
+  body: 1
+    Text[TEXT, pos:17, Jdl_mno_pqf]
   block tags: empty
 ]
 */
@@ -366,6 +423,38 @@ DocComment[DOC_COMMENT, pos:0
     ]
     Text[TEXT, pos:3, _abc_def.|ghi_jkl]
   body: empty
+  block tags: empty
+]
+*/
+    /**
+     * <p> abc def.
+     * Ghi jkl
+     */
+    void p_at_zero_upper() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:0
+      name:p
+      attributes: empty
+    ]
+    Text[TEXT, pos:3, _abc_def.]
+  body: 1
+    Text[TEXT, pos:13, Ghi_jkl]
+  block tags: empty
+]
+*/
+/*
+BREAK_ITERATOR
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:0
+      name:p
+      attributes: empty
+    ]
+    Text[TEXT, pos:3, _abc_def.]
+  body: 1
+    Text[TEXT, pos:13, Ghi_jkl]
   block tags: empty
 ]
 */

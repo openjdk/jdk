@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6786682 4649116 8182765 8261976
+ * @bug 6786682 4649116 8182765 8261976 8352249
  * @summary This test verifies the use of lang attribute by <HTML>.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool

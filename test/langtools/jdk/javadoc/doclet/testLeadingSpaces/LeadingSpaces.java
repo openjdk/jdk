@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4232882 8014636
+ * @bug 4232882 8014636 8352249
  * @summary Javadoc strips all of the leading spaces when the comment
  *    does not begin with a star.  This RFE allows users to
  *    begin their comment without a leading star without leading

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8284037
+ * @bug 8284037 8352249
  * @summary Snippet-files subdirectory not automatically detected when in unnamed package
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api

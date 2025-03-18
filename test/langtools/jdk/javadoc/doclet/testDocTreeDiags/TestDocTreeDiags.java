@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8268420
+ * @bug      8268420 8352249
  * @summary  new Reporter method to report a diagnostic within a DocTree node
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool

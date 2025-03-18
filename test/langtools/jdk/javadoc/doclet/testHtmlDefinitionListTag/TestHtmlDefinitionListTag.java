@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 6786690 6820360 8025633 8026567 8175200 8183511 8186332 8074407 8182765
- *      8230136
+ *      8230136 8352249
  * @summary This test verifies the nesting of definition list tags.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool

@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4732864 6280605 7064544 8014636 8016328 8025633 8071982 8182765
- *           8274781 8345664
+ *           8274781 8345664 8352249
  * @summary  Make sure that you can link from one member to another using
  *           non-qualified name, furthermore, ensure the right one is linked.
  * @library  ../../lib

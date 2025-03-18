@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6251738 8226279
+ * @bug 6251738 8226279 8352249
  * @summary javadoc should support a new at-spec tag
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file

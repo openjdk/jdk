@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8073100 8273244
+ * @bug 8073100 8273244 8352249
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file

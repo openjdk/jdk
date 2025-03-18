@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5076751 8273244 8284908
+ * @bug 5076751 8273244 8284908 8352249
  * @summary System properties documentation needed in javadocs
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file

@@ -360,6 +360,14 @@ public class JavadocTokenizer extends JavaTokenizer {
         }
     }
 
+    /**
+     * A Comment derived from a JavadocComment with leading whitespace removed from all lines.
+     * The original comment's offsetMap is used to translate comment locations to positions
+     * in the source file.
+     *
+     * Note: This class assumes new lines are encoded as {@code '\n'}, which is the case
+     * for comments created by {@code JavadocTokenizer}.
+     */
     static class StrippedComment implements Comment {
         String text;
         final OffsetMap strippedMap;
@@ -369,6 +377,13 @@ public class JavadocTokenizer extends JavaTokenizer {
         final CommentStyle style;
         final boolean deprecated;
 
+        /**
+         * Returns a stripped version of the comment, or the comment itself if there is no
+         * whitespace that can be stripped.
+         *
+         * @param comment the original comment
+         * @return stripped or original comment
+         */
         static Comment of(JavadocComment comment) {
             if (comment.getStyle() != CommentStyle.JAVADOC_BLOCK) {
                 return comment;
@@ -377,7 +392,7 @@ public class JavadocTokenizer extends JavaTokenizer {
             return indent > 0 ? new StrippedComment(comment, indent) : comment;
         }
 
-        StrippedComment(JavadocComment comment, int indent) {
+        private StrippedComment(JavadocComment comment, int indent) {
             this.diagPos = comment.getPos();
             this.style = comment.getStyle();
             this.deprecated = comment.isDeprecated();
@@ -386,37 +401,51 @@ public class JavadocTokenizer extends JavaTokenizer {
             stripComment(comment, indent);
         }
 
+        /**
+         * Determines the number of leading whitespace characters that can be removed from
+         * all non-blank lines of the original comment.
+         *
+         * @param comment the original comment
+         * @return number of leading whitespace characters that can be reomved
+         */
         static int getIndent(Comment comment) {
             String txt = comment.getText();
             int len = txt.length();
             int indent = Integer.MAX_VALUE;
 
-            for (int i = 0; i < len; i++) {
+            for (int i = 0; i < len; ) {
                 int next;
                 boolean inIndent = true;
-                for (next = i; next < len; next++) {
-                    char c = txt.charAt(next);
-                    if (inIndent && !Character.isWhitespace(c)) {
+                for (next = i; next < len && txt.charAt(next) != '\n'; next++) {
+                    if (inIndent && !Character.isWhitespace(txt.charAt(next))) {
                         indent = Math.min(indent, next - i);
                         inIndent = false;
-                    } else if (c == '\n') {
-                        break;
                     }
                 }
-                i = next;
+                i = next + 1;
             }
 
             return indent == Integer.MAX_VALUE ? 0 : indent;
         }
 
+        /**
+         * Strips {@code indent} whitespace characters from every line of the original comment
+         * and initializes an OffsetMap to translate positions to the original comment's OffsetMap.
+         * This method does not distinguish between blank and non-blank lines except for the fact
+         * that blank lines are not required to contain the number of leading whitespace indicated
+         * by {@indent}.
+         *
+         * @param comment the original comment
+         * @param indent number of whitespace characters to remove from each non-blank line
+         */
         private void stripComment(JavadocComment comment, int indent) {
             String txt = comment.getText();
             int len = txt.length();
             StringBuilder sb = new StringBuilder(len);
-            int startOfLine;
 
-            for (int i = 0; i < len; i++) {
-                startOfLine = i;
+            for (int i = 0; i < len; ) {
+                int startOfLine = i;
+                // Advance till start of stripped line, or \n if line is blank
                 while (startOfLine < len
                         && startOfLine < i + indent
                         && txt.charAt(startOfLine) != '\n') {
@@ -427,13 +456,14 @@ public class JavadocTokenizer extends JavaTokenizer {
                     break;
                 }
 
-                i = startOfLine;
-                while (i < len - 1 && txt.charAt(i) != '\n') {
+                // Copy stripped line (terminated by \n or end of input)
+                i = startOfLine + 1;
+                while (i < len && txt.charAt(i - 1) != '\n') {
                     i++;
                 }
-
+                // Add new offset if necessary
                 strippedMap.add(sb.length(), startOfLine);
-                sb.append(txt, startOfLine, i + 1);
+                sb.append(txt, startOfLine, i);
             }
 
             text = sb.toString();

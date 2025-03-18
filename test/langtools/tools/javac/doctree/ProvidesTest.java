@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8160196 8273244
+ * @bug 8160196 8273244 8352249
  * @summary Module summary page should display information based on "api" or "detail" mode.
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file

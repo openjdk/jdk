@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266666
+ * @bug 8266666 8352249
  * @summary Implementation for snippets
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file

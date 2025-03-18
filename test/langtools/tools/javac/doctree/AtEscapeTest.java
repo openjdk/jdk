@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8300914
+ * @bug 8300914 8352249
  * @summary Allow `@` as an escape in documentation comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
