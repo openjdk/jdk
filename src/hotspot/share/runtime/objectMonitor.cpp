@@ -1257,7 +1257,7 @@ void ObjectMonitor::vthread_epilog(JavaThread* current, ObjectWaiter* node) {
 //   1. Empty.
 //   2. Only singly linked.
 //   3. Only doubly linked.
-//   4. Starting as sigly linked (from the head), but ending as doubly
+//   4. Starting as singly linked (from the head), but ending as doubly
 //      linked (at the tail).
 // Number four is because new threads has pushed themself to the
 // entry_list head after the entry_list was last converted into a
@@ -1290,7 +1290,7 @@ void ObjectMonitor::entry_list_build_dll(JavaThread* current) {
     // node that had its prev pointer set. I.e. we converted the first
     // part of the entry_list from a singly linked list into a doubly
     // linked list. Now we just want to make sure the rest of the list
-    // is doubly liked. But first we check that we have a tail
+    // is doubly linked. But first we check that we have a tail
     // pointer, because if the end of the entry_list is doubly linked
     // and we don't have the tail pointer, something is broken.
     assert(_entry_list_tail != nullptr, "should be");
@@ -1301,9 +1301,9 @@ void ObjectMonitor::entry_list_build_dll(JavaThread* current) {
       prev = w;
       w = w->next();
     }
+    assert(_entry_list_tail == prev, "should be");
 #endif
   }
-  assert(_entry_list_tail == prev, "should be");
 }
 
 // Return the tail of the _entry_list. If the tail is currently not
