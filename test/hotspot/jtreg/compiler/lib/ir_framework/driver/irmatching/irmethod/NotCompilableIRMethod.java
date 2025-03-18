@@ -31,7 +31,8 @@ import java.lang.reflect.Method;
 
 /**
  * This class represents a special IR method which was not compiled by the IR framework, but this was explicitly allowed
- * by "allowNotCompilable".
+ * by "allowNotCompilable". This happens when the compiler bails out of a compilation (i.e. no compilation) but we treat
+ * this as valid case. Any associated IR rules pass silently.
  *
  * @see IR
  * @see Test

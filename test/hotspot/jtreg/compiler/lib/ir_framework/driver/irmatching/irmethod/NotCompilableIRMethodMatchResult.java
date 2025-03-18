@@ -32,7 +32,8 @@ import java.lang.reflect.Method;
 
 /**
  * This class represents a special matching result of an IR method where the compilation output was completely empty,
- * but this was exlicitly allowed by "allowNotCompilable".
+ * but this was exlicitly allowed by "allowNotCompilable". This happens when the compiler bails out of a compilation
+ * (i.e. no compilation) but we treat this as valid case. Any associated IR rules pass silently.
  *
  * @see NotCompilableIRMethod
  * @see Test
