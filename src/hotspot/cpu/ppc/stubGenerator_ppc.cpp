@@ -569,7 +569,7 @@ class StubGenerator: public StubCodeGenerator {
     masm->vxor(vLowProduct, vLowProduct, vTmp8);                      // LL + mL : Partial result for lower half
     masm->vxor(vHighProduct, vHighProduct, vTmp9);                    // HH + mH : Partial result for upper half
     masm->vsldoi(vLowProduct, vLowProduct, vLowProduct, 8);           // Swap
-    masm->vxor(vLowProduct, vLowProduct, vReducedLow);                
+    masm->vxor(vLowProduct, vLowProduct, vReducedLow);
     masm->vsldoi(vCombinedResult, vLowProduct, vLowProduct, 8);       // Swap
     masm->vpmsumd(vLowProduct, vLowProduct, vConstC2);                // Reduction using constant
     masm->vxor(vCombinedResult, vCombinedResult, vHighProduct);       // Combine reduced Low & High products
