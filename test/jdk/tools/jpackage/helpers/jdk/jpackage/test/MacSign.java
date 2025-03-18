@@ -270,7 +270,7 @@ public final class MacSign {
             return sb.toString();
         }
 
-        public final static class Builder {
+        public static final class Builder {
 
             public Builder name(String v) {
                 keychainBuilder.name(v);
@@ -316,7 +316,7 @@ public final class MacSign {
             }
         }
 
-        public final static class Builder {
+        public static final class Builder {
 
             public Builder name(String v) {
                 name = v;
@@ -426,7 +426,7 @@ public final class MacSign {
             return FORMAT.formatHex(value);
         }
 
-        private final static HexFormat FORMAT = HexFormat.of().withUpperCase();
+        private static final HexFormat FORMAT = HexFormat.of().withUpperCase();
     }
 
     public enum CertificateType {
@@ -463,7 +463,7 @@ public final class MacSign {
             Objects.requireNonNull(type);
         }
 
-        public final static class Builder {
+        public static final class Builder {
 
             public Builder userName(String v) {
                 userName = v;
@@ -712,9 +712,9 @@ public final class MacSign {
         return Executor.of("security").dumpOutput().addArguments(args);
     }
 
-    private final static CertificateFactory CERT_FACTORY = toSupplier(() -> {
+    private static final CertificateFactory CERT_FACTORY = toSupplier(() -> {
         return CertificateFactory.getInstance("X.509");
     }).get();
 
-    private final static Path SIGN_UTILS_SCRIPT = TKit.TEST_SRC_ROOT.resolve("resources/sign-utils.applescript").normalize();
+    private static final Path SIGN_UTILS_SCRIPT = TKit.TEST_SRC_ROOT.resolve("resources/sign-utils.applescript").normalize();
 }

@@ -95,7 +95,7 @@ public class MacSignTest {
     public record SignTestSpec(List<StandardKeychain> searchList, Optional<String> keychainName,
             Optional<String> signIdentity, Optional<String> keyUserName, List<CannedFormattedString> expectedErrors) {
 
-        final static class Builder {
+        static final class Builder {
 
             Builder withKeychainName(String v) {
                 keychainName = v;
