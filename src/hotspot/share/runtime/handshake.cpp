@@ -353,7 +353,7 @@ void Handshake::execute(HandshakeClosure* hs_cl) {
 
   // The current thread must not belong to the SuspendibleThreadSet, because an
   // on-the-fly safepoint can be waiting for the current thread, and the
-  // current thread will be blocked in VMThread::execute, resulting into
+  // current thread will be blocked in VMThread::execute, resulting in
   // deadlock.
   assert(!current_thread->is_suspendible_thread(), "precondition");
   assert(!current_thread->is_indirectly_suspendible_thread(), "precondition");
