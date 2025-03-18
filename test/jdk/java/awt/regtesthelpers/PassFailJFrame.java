@@ -633,6 +633,8 @@ public final class PassFailJFrame {
                               ? configureHTML(instructions, rows, columns)
                               : configurePlainText(instructions, rows, columns);
         text.setEditable(false);
+        text.setBorder(createTextBorder());
+        text.setCaretPosition(0);
 
         JPanel textPanel = new JPanel(new BorderLayout());
         textPanel.setBorder(createEmptyBorder(GAP, 0, GAP, 0));
@@ -687,7 +689,6 @@ public final class PassFailJFrame {
         JTextArea text = new JTextArea(instructions, rows, columns);
         text.setLineWrap(true);
         text.setWrapStyleWord(true);
-        text.setBorder(createTextBorder());
         return text;
     }
 
@@ -701,10 +702,10 @@ public final class PassFailJFrame {
 
         HTMLEditorKit kit = (HTMLEditorKit) text.getEditorKit();
         StyleSheet styles = kit.getStyleSheet();
-        // Reduce the default margins
-        styles.addRule("ol, ul { margin-left-ltr: 20; margin-left-rtl: 20 }");
-        // Make the size of code blocks the same as other text
-        styles.addRule("code { font-size: inherit }");
+        // Reduce the list default margins
+        styles.addRule("ol, ul { margin-left-ltr: 30; margin-left-rtl: 30 }");
+        // Make the size of code (and other elements) the same as other text
+        styles.addRule("code, kbd, samp, pre { font-size: inherit }");
 
         return text;
     }
