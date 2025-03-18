@@ -86,7 +86,7 @@ public enum PackageType {
     }
 
     public boolean isEnabled() {
-        return supported;
+        return enabled;
     }
 
     public String getType() {
