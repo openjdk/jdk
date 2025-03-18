@@ -21,30 +21,29 @@
  * questions.
  */
 
- package compiler.vectorapi;
+package compiler.vectorapi;
 
- import java.util.Random;
- import jdk.incubator.vector.IntVector;
- import jdk.incubator.vector.ShortVector;
- import jdk.incubator.vector.VectorOperators;
- import jdk.incubator.vector.VectorSpecies;
- import jdk.test.lib.Asserts;
- import jdk.test.lib.Utils;
+import compiler.lib.generators.*;
+import jdk.incubator.vector.IntVector;
+import jdk.incubator.vector.ShortVector;
+import jdk.incubator.vector.VectorOperators;
+import jdk.incubator.vector.VectorSpecies;
+import jdk.test.lib.Asserts;
 
- /*
-  * @test
-  * @bug 8351627
-  * @summary C2 AArch64 ROR/ROL: assert((1 << ((T>>1)+3)) > shift) failed: Invalid Shift value
-  * @modules jdk.incubator.vector
-  * @library /test/lib
-  * @run main/othervm -XX:-TieredCompilation compiler.vectorapi.TestRotateWithZero
-  */
+/*
+ * @test
+ * @bug 8351627
+ * @summary C2 AArch64 ROR/ROL: assert((1 << ((T>>1)+3)) > shift) failed: Invalid Shift value
+ * @modules jdk.incubator.vector
+ * @library /test/lib /
+ * @run main/othervm -XX:-TieredCompilation compiler.vectorapi.TestRotateWithZero
+ */
 public class TestRotateWithZero {
     private static final int INVOCATIONS = 10000;
     private static final int LENGTH = 2048;
+    private static final Generators random = Generators.G;
     private static final VectorSpecies<Integer> I_SPECIES = IntVector.SPECIES_PREFERRED;
     private static final VectorSpecies<Short> S_SPECIES = ShortVector.SPECIES_PREFERRED;
-    private static final Random random = Utils.getRandomInstance();
 
     private static int[] arr1;
     private static int[] arr2;
@@ -61,11 +60,12 @@ public class TestRotateWithZero {
         sarr2 = new short[LENGTH];
         sres = new short[LENGTH];
 
+        random.fill(random.ints(), arr1);
+        Generator<Integer> shortGen = random.uniformInts(Short.MIN_VALUE, Short.MAX_VALUE);
         for (int i = 0; i < LENGTH; i++) {
-            arr1[i] = random.nextInt();
-            arr2[i] = 0;
-            sarr1[i] = (short)random.nextInt();
+            sarr1[i] = shortGen.next().shortValue();
             sarr2[i] = (short)0;
+            arr2[i] = 0;
         }
     }
 
@@ -77,7 +77,6 @@ public class TestRotateWithZero {
     }
 
     private static void rotateLeftWithZero() {
-        IntVector vzero = IntVector.zero(I_SPECIES);
         for (int i = 0; i < LENGTH; i += I_SPECIES.length()) {
             IntVector v = IntVector.fromArray(I_SPECIES, arr1, i);
             v.lanewise(VectorOperators.ROL, 0).intoArray(res, i);
@@ -138,7 +137,6 @@ public class TestRotateWithZero {
     }
 
     private static void rotateLeftWithZero_subword() {
-        ShortVector vzero = ShortVector.zero(S_SPECIES);
         for (int i = 0; i < LENGTH; i += S_SPECIES.length()) {
             ShortVector v = ShortVector.fromArray(S_SPECIES, sarr1, i);
             v.lanewise(VectorOperators.ROL, 0).intoArray(sres, i);
