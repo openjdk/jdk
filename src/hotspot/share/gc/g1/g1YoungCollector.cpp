@@ -286,6 +286,8 @@ class G1PrepareEvacuationTask : public WorkerTask {
   class G1PrepareRegionsClosure : public G1HeapRegionClosure {
     G1CollectedHeap* _g1h;
     G1PrepareEvacuationTask* _parent_task;
+    G1EvacFailureRegions* _evac_failure_regions;
+    uint _worker_id;
     uint _worker_humongous_total;
     uint _worker_humongous_candidates;
 
@@ -360,9 +362,14 @@ class G1PrepareEvacuationTask : public WorkerTask {
     }
 
   public:
-    G1PrepareRegionsClosure(G1CollectedHeap* g1h, G1PrepareEvacuationTask* parent_task) :
+    G1PrepareRegionsClosure(G1CollectedHeap* g1h,
+                            G1PrepareEvacuationTask* parent_task,
+                            G1EvacFailureRegions* evac_failure_regions,
+                            uint worker_id) :
       _g1h(g1h),
       _parent_task(parent_task),
+      _evac_failure_regions(evac_failure_regions),
+      _worker_id(worker_id),
       _worker_humongous_total(0),
       _worker_humongous_candidates(0) { }
 
@@ -372,6 +379,13 @@ class G1PrepareEvacuationTask : public WorkerTask {
     }
 
     virtual bool do_heap_region(G1HeapRegion* hr) {
+      // All pinned regions in the collection set must be registered as failed
+      // regions here as there is no guarantee that there is a reference
+      // reachable by Java code (i.e. only by native code).
+      if (hr->in_collection_set() && hr->has_pinned_objects()) {
+        _evac_failure_regions->record(_worker_id, hr->hrm_index(), true /* cause_pinned */);
+      }
+
       // First prepare the region for scanning
       _g1h->rem_set()->prepare_region_for_scan(hr);
 
@@ -414,6 +428,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
   };
 
   G1CollectedHeap* _g1h;
+  G1EvacFailureRegions* _evac_failure_regions;
   G1HeapRegionClaimer _claimer;
   volatile uint _humongous_total;
   volatile uint _humongous_candidates;
@@ -421,15 +436,17 @@ class G1PrepareEvacuationTask : public WorkerTask {
   G1MonotonicArenaMemoryStats _all_card_set_stats;
 
 public:
-  G1PrepareEvacuationTask(G1CollectedHeap* g1h) :
+  G1PrepareEvacuationTask(G1CollectedHeap* g1h, G1EvacFailureRegions* evac_failure_regions) :
     WorkerTask("Prepare Evacuation"),
     _g1h(g1h),
+    _evac_failure_regions(evac_failure_regions),
     _claimer(_g1h->workers()->active_workers()),
     _humongous_total(0),
-    _humongous_candidates(0) { }
+    _humongous_candidates(0),
+    _all_card_set_stats() { }
 
   void work(uint worker_id) {
-    G1PrepareRegionsClosure cl(_g1h, this);
+    G1PrepareRegionsClosure cl(_g1h, this, _evac_failure_regions, worker_id);
     _g1h->heap_region_par_iterate_from_worker_offset(&cl, &_claimer, worker_id);
 
     MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
@@ -471,7 +488,8 @@ void G1YoungCollector::set_young_collection_default_active_worker_threads(){
   log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->max_workers());
 }
 
-void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) {
+void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info,
+                                                   G1EvacFailureRegions* evac_failure_regions) {
   // Flush various data in thread-local buffers to be able to determine the collection
   // set
   {
@@ -510,7 +528,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
   }
 
   {
-    G1PrepareEvacuationTask g1_prep_task(_g1h);
+    G1PrepareEvacuationTask g1_prep_task(_g1h, evac_failure_regions);
     Tickspan task_time = run_task_timed(&g1_prep_task);
 
     G1MonotonicArenaMemoryStats sampled_card_set_stats = g1_prep_task.all_card_set_stats();
@@ -1098,7 +1116,7 @@ void G1YoungCollector::collect() {
     // other trivial setup above).
     policy()->record_young_collection_start();
 
-    pre_evacuate_collection_set(jtm.evacuation_info());
+    pre_evacuate_collection_set(jtm.evacuation_info(), &_evac_failure_regions);
 
     G1ParScanThreadStateSet per_thread_states(_g1h,
                                               workers()->active_workers(),
