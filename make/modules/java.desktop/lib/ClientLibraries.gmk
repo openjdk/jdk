@@ -237,7 +237,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_gcc_dgif_lib.c := sign-compare, \
       DISABLED_WARNINGS_gcc_jcmaster.c := implicit-fallthrough, \
       DISABLED_WARNINGS_gcc_jdphuff.c := shift-negative-value, \
-      DISABLED_WARNINGS_gcc_png.c := maybe-uninitialized, \
+      DISABLED_WARNINGS_gcc_png.c := maybe-uninitialized unused-function, \
       DISABLED_WARNINGS_gcc_pngerror.c := maybe-uninitialized, \
       DISABLED_WARNINGS_gcc_splashscreen_gfx_impl.c := implicit-fallthrough \
           maybe-uninitialized, \
@@ -248,6 +248,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_clang := deprecated-non-prototype, \
       DISABLED_WARNINGS_clang_dgif_lib.c := sign-compare, \
       DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
+      DISABLED_WARNINGS_clang_png.c := unused-function, \
       DISABLED_WARNINGS_clang_splashscreen_impl.c := sign-compare \
           unused-but-set-variable unused-function, \
       DISABLED_WARNINGS_clang_splashscreen_png.c := \
