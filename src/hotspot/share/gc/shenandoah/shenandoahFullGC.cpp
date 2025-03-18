@@ -1091,7 +1091,7 @@ public:
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahHeapRegion* region = _regions.next();
     ShenandoahHeap* heap = ShenandoahHeap::heap();
-    ShenandoahMarkingContext* const ctx = heap->marking_context();
+    ShenandoahMarkingContext* const ctx = heap->complete_marking_context();
     while (region != nullptr) {
       if (heap->is_bitmap_slice_committed(region) && !region->is_pinned() && region->has_live()) {
         ctx->clear_bitmap(region);
@@ -1130,9 +1130,9 @@ void ShenandoahFullGC::phase5_epilog() {
   {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_copy_objects_reset_complete);
     ShenandoahMCResetCompleteBitmapTask task;
-    // Set mark incomplete before resetting bitmaps.
-    heap->global_generation()->set_mark_incomplete();
     heap->workers()->run_task(&task);
+    // Set mark incomplete after resetting bitmaps.
+    heap->global_generation()->set_mark_incomplete();
   }
 
   // Bring regions in proper states after the collection, and set heap properties.
