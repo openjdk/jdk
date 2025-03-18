@@ -22,6 +22,7 @@
  */
 
 import jdk.test.lib.security.artifacts.ThirdPartyArtifacts;
+import jdk.test.lib.artifacts.ArtifactResolver;
 import jdk.test.lib.json.JSONValue;
 
 import java.io.InputStream;
@@ -71,6 +72,9 @@ public class Launcher {
 
     private static final Provider PROVIDER;
 
+    private static final String ACVP_BUNDLE_LOC = "jpg.tests.jdk";
+    private static final String ACVP_BUNDLE_NAME = "ACVP-Server";
+    private static final String ACVP_BUNDLE_VERSION = "1.1.0.38";
     // Zip archive entry name, do not update to use File.separator
     private static final String[] TEST_FILES = {
             "gen-val/json-files/ML-DSA-keyGen-FIPS204/internalProjection.json",
@@ -100,7 +104,7 @@ public class Launcher {
 
     public static void main(String[] args) throws Exception {
 
-        Path archivePath = ThirdPartyArtifacts.fetch(ThirdPartyArtifacts.ACVP_SERVER_TESTS.class);
+        Path archivePath = ArtifactResolver.fetchOne(ThirdPartyArtifacts.ACVP_SERVER_TESTS.class);
         System.out.println("Data path: " + archivePath);
 
         if (PROVIDER != null) {
