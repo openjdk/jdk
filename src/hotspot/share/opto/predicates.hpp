@@ -1239,16 +1239,16 @@ class EliminateUselessPredicates : public StackObj {
   PhaseIterGVN& _igvn;
   IdealLoopTree* const _ltree_root;
 
-  void mark_all_predicates_non_useful() const;
+  void mark_all_predicates_maybe_useful() const;
   template <class PredicateList>
   static void mark_predicates_on_list_maybe_useful(const PredicateList& predicate_list);
 
   void mark_loop_associated_predicates_useful() const;
   static void mark_useful_predicates_for_loop(IdealLoopTree* loop);
 
-  void mark_non_useful_predicates_useless() const;
+  void mark_maybe_useful_predicates_useless() const;
   template <class PredicateList>
-  void mark_non_useful_predicates_on_list_useless(const PredicateList& predicate_list) const;
+  void mark_maybe_useful_predicates_on_list_useless(const PredicateList& predicate_list) const;
 
  public:
   EliminateUselessPredicates(PhaseIterGVN& igvn, IdealLoopTree* ltree_root)

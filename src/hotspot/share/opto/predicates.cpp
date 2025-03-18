@@ -1182,14 +1182,14 @@ void UpdateStrideForAssertionPredicates::connect_initialized_assertion_predicate
 // better suited for this kind of graph surgery. We also not want to replace conditions with a constant to avoid
 // interference with Predicate matching code when iterating through them.
 void EliminateUselessPredicates::eliminate() const {
-  mark_all_predicates_non_useful();
+  mark_all_predicates_maybe_useful();
   if (C->has_loops()) {
     mark_loop_associated_predicates_useful();
   }
-  mark_non_useful_predicates_useless();
+  mark_maybe_useful_predicates_useless();
 }
 
-void EliminateUselessPredicates::mark_all_predicates_non_useful() const {
+void EliminateUselessPredicates::mark_all_predicates_maybe_useful() const {
   mark_predicates_on_list_maybe_useful(_parse_predicates);
   mark_predicates_on_list_maybe_useful(_template_assertion_predicate_opaques);
 }
@@ -1232,13 +1232,14 @@ void EliminateUselessPredicates::mark_useful_predicates_for_loop(IdealLoopTree* 
   predicate_iterator.for_each(predicate_useful_marker_visitor);
 }
 
-void EliminateUselessPredicates::mark_non_useful_predicates_useless() const {
-  mark_non_useful_predicates_on_list_useless(_parse_predicates);
-  mark_non_useful_predicates_on_list_useless(_template_assertion_predicate_opaques);
+// All Predicates still being marked MaybeUseful could not be found and thus are now marked useless.
+void EliminateUselessPredicates::mark_maybe_useful_predicates_useless() const {
+  mark_maybe_useful_predicates_on_list_useless(_parse_predicates);
+  mark_maybe_useful_predicates_on_list_useless(_template_assertion_predicate_opaques);
 }
 
 template<class PredicateList>
-void EliminateUselessPredicates::mark_non_useful_predicates_on_list_useless(
+void EliminateUselessPredicates::mark_maybe_useful_predicates_on_list_useless(
     const PredicateList& predicate_list) const {
   for (int i = 0; i < predicate_list.length(); i++) {
     auto predicate_node = predicate_list.at(i);
