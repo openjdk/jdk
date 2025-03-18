@@ -27,8 +27,12 @@ import java.util.Optional;
 import java.lang.foreign.*;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.ArrayList;
+
 
 /**
+ * TODO: update description
  * The {@link Verify} class provides a single {@link Verify#checkEQ} static method, which recursively
  * compares the two {@link Object}s by value. It deconstructs {@link Object[]}, compares boxed primitive
  * types, compares the content of arrays and {@link MemorySegment}s, and checks that the messages of two
@@ -39,7 +43,27 @@ import java.lang.reflect.InvocationTargetException;
  */
 public final class Verify {
 
-    private Verify() {}
+    // TODO: fields for float exactness, maps, etc.
+    private final boolean isFloatCheckWithRawBits;
+    private final boolean isCheckWithArbitraryClasses;
+    private final HashMap<Object, Object> a2b = new HashMap<>();
+    private final HashMap<Object, Integer> a2id = new HashMap<>();
+    private final ArrayList<Object> id2a = new ArrayList<>(); // TODO: remove?
+
+    private Verify(boolean isFloatCheckWithRawBits, boolean isCheckWithArbitraryClasses) {
+        this.isFloatCheckWithRawBits = isFloatCheckWithRawBits;
+        this.isCheckWithArbitraryClasses = isCheckWithArbitraryClasses;
+    }
+
+    // TODO: desc
+    public static void checkEQ(Object a, Object b, boolean isFloatCheckWithRawBits, boolean isCheckWithArbitraryClasses) {
+        Verify v = new Verify(isFloatCheckWithRawBits, isCheckWithArbitraryClasses);
+        v.checkX(a, b, "root", null, null);
+    }
+
+    // recursive, so that we have nicer stack trace? - no need for map!
+    // queue: allows deeper structures
+    // We need to think about "edges": (a, b) -field-> (c, d)
 
     /**
      * Verify the content of two Objects, possibly recursively. Only limited types are implemented.
@@ -49,7 +73,87 @@ public final class Verify {
      * @throws VerifyException If the comparison fails.
      */
     public static void checkEQ(Object a, Object b) {
-        checkEQ(a, b, "");
+        checkEQ(a, b, false, false);
+    }
+
+    private void checkX(Object a, Object b, String field, Object aParent, Object bParent) {
+        // Both null
+        if (a == null && b == null) {
+            return;
+        }
+
+        // Null mismatch
+        if (a == null || b == null) {
+            System.err.println("ERROR: Verify.checkEQ failed: null mismatch");
+            printX(a, b, field, aParent, bParent);
+            throw new VerifyException("Object array null mismatch.");
+        }
+
+        // Class mismatch
+        Class ca = a.getClass();
+        Class cb = b.getClass();
+        if (ca != cb) {
+            System.err.println("ERROR: Verify.checkEQ failed: class mismatch.");
+            System.err.println("       " + ca.getName() + " vs " + cb.getName());
+            printX(a, b, field, aParent, bParent);
+            throw new VerifyException("Object class mismatch.");
+        }
+
+        // Already visited?
+        if (checkAlreadyVisited(a, b, field, aParent, bParent)) {
+            return;
+        }
+        // FIXME: continue here!
+
+        String context = "TODO rm";
+
+        switch (a) {
+            case Object[]  x -> checkEQimpl(x, (Object[])b,                context);
+            case Byte      x -> checkEQimpl(x, ((Byte)b).byteValue(),      context);
+            case Character x -> checkEQimpl(x, ((Character)b).charValue(), context);
+            case Short     x -> checkEQimpl(x, ((Short)b).shortValue(),    context);
+            case Integer   x -> checkEQimpl(x, ((Integer)b).intValue(),    context);
+            case Long      x -> checkEQimpl(x, ((Long)b).longValue(),      context);
+            case Float     x -> checkEQimpl(x, ((Float)b).floatValue(),    context);
+            case Double    x -> checkEQimpl(x, ((Double)b).doubleValue(),  context);
+            case Boolean   x -> checkEQimpl(x, ((Boolean)b).booleanValue(),context);
+            case byte[]    x -> checkEQimpl(x, (byte[])b,                  context);
+            case char[]    x -> checkEQimpl(x, (char[])b,                  context);
+            case short[]   x -> checkEQimpl(x, (short[])b,                 context);
+            case int[]     x -> checkEQimpl(x, (int[])b,                   context);
+            case long[]    x -> checkEQimpl(x, (long[])b,                  context);
+            case float[]   x -> checkEQimpl(x, (float[])b,                 context);
+            case double[]  x -> checkEQimpl(x, (double[])b,                context);
+            case boolean[] x -> checkEQimpl(x, (boolean[])b,               context);
+            case MemorySegment x -> checkEQimpl(x, (MemorySegment) b,      context);
+            case Exception x -> checkEQimpl(x, (Exception) b,              context);
+            default -> {
+                if (ca.getName().startsWith("jdk.incubator.vector") && ca.getName().contains("Vector")) {
+                    // We do not want to import jdk.incubator.vector explicitly, because it would mean we would also have
+                    // to add "--add-modules=jdk.incubator.vector" to the command-line of every test that uses the Verify
+                    // class. So we hack this via reflection.
+                    Object va = null;
+                    Object vb = null;
+                    try {
+                        Method m = ca.getMethod("toArray");
+                        va = m.invoke(a);
+                        vb = m.invoke(b);
+                    } catch (NoSuchMethodException e) {
+                        throw new RuntimeException("Could not invoke toArray on " + ca.getName(), e);
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException("Could not invoke toArray on " + ca.getName(), e);
+                    } catch (InvocationTargetException e) {
+                        throw new RuntimeException("Could not invoke toArray on " + ca.getName(), e);
+                    }
+                    checkEQ(va, vb, context);
+                    return;
+                }
+
+                System.err.println("ERROR: Verify.checkEQ failed: type not supported: " + ca.getName());
+                printX(a, b, field, aParent, bParent);
+                throw new VerifyException("Object type not supported: " + ca.getName());
+            }
+        }
     }
 
     /**
@@ -378,6 +482,35 @@ public final class Verify {
             System.err.println("  " + context + ": null");
         } else {
             System.err.println("  " + context + ": " + a);
+        }
+    }
+
+    private void printX(Object a, Object b, String field, Object aParent, Object bParent) {
+        System.err.println("  aParent: " + aParent);
+        System.err.println("  bParent: " + bParent);
+        System.err.println("  field:   " + field);
+        System.err.println("  a:       " + a);
+        System.err.println("  b:       " + b);
+    }
+
+    private boolean checkAlreadyVisited(Object a, Object b, String field, Object aParent, Object bParent) {
+        Integer id = a2id.get(a);
+        if (id == null) {
+            // Record for next time.
+            id = id2a.size();
+            a2id.put(a, id);
+            a2b.put(a, b);
+            id2a.add(a);
+            return false;
+        } else {
+            Object bPrevious = a2b.get(a);
+            if (b != bPrevious) {
+                System.err.println("ERROR: Verify.checkEQ failed:");
+                printX(a, b, field, aParent, bParent);
+                System.err.println("  bPrevious: " + bPrevious);
+                throw new VerifyException("Mismatch with previous pair.");
+            }
+            return true;
         }
     }
 
