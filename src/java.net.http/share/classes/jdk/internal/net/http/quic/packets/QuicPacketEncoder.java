@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
@@ -164,7 +164,7 @@ public class QuicPacketEncoder {
         writer.writePayload(packet.frames);
         writer.encryptPayload(packet.packetNumber, payloadStart);
         assert writer.bytesWritten() == packet.size : writer.bytesWritten() - packet.size;
-        writer.protectShort(packetNumberStart, packet.encodedPacketNumber.length);
+        writer.protectHeaderShort(packetNumberStart, packet.encodedPacketNumber.length);
     }
 
     /**
@@ -222,7 +222,7 @@ public class QuicPacketEncoder {
         writer.writePayload(packet.frames);
         writer.encryptPayload(packet.packetNumber, payloadStart);
         assert writer.bytesWritten() == packet.size : writer.bytesWritten() - packet.size;
-        writer.protectLong(packetNumberStart, packet.encodedPacketNumber.length);
+        writer.protectHeaderLong(packetNumberStart, packet.encodedPacketNumber.length);
     }
 
     /**
@@ -351,7 +351,7 @@ public class QuicPacketEncoder {
         writer.writePayload(packet.frames);
         writer.encryptPayload(packet.packetNumber, payloadStart);
         assert writer.bytesWritten() == packet.size : writer.bytesWritten() - packet.size;
-        writer.protectLong(packetNumberStart, packet.encodedPacketNumber.length);
+        writer.protectHeaderLong(packetNumberStart, packet.encodedPacketNumber.length);
     }
 
     /**
@@ -412,7 +412,7 @@ public class QuicPacketEncoder {
         writer.writePayload(packet.frames);
         writer.encryptPayload(packet.packetNumber, payloadStart);
         assert writer.bytesWritten() == packet.size : writer.bytesWritten() - packet.size;
-        writer.protectLong(packetNumberStart, packet.encodedPacketNumber.length);
+        writer.protectHeaderLong(packetNumberStart, packet.encodedPacketNumber.length);
     }
 
     /**
@@ -1688,26 +1688,17 @@ public class QuicPacketEncoder {
             buffer.put(packetNumber);
         }
 
-        private void setKeyPhase(int kp) {
-            if (kp != 0 && kp != 1) {
-                throw new IllegalArgumentException("Invalid key phase: " + kp);
-            }
-            final byte headers = headers();
-            final byte updated = (byte) (headers | (kp << 2));
-            headers(updated);
-        }
-
         public void encryptPayload(final long packetNumber, final int payloadstart)
                 throws QuicTransportException, QuicKeyUnavailableException {
-            int payloadend = buffer.position();
-            ByteBuffer temp = buffer.asReadOnlyBuffer();
-            temp.position(offset);
-            temp.limit(payloadend);
-            buffer.position(payloadstart);
-            final Consumer<Integer> keyPhaseConsumer = (kp) -> setKeyPhase(kp); /* update the headers to set the key phase
-                                                                                   used by the TLS engine */
-            context.getTLSEngine().encryptPacket(packetType.keySpace().get(), packetNumber, temp,
-                    payloadstart - offset, buffer, keyPhaseConsumer);
+            final int payloadend = buffer.position();
+            buffer.position(payloadstart); // position the output buffer
+            final int payloadLength = payloadend - payloadstart;
+            final int headersLength = payloadstart - offset;
+            final ByteBuffer packetHeader = buffer.slice(offset, headersLength);
+            final ByteBuffer packetPayload = buffer.slice(payloadstart, payloadLength)
+                    .asReadOnlyBuffer();
+            context.getTLSEngine().encryptPacket(packetType.keySpace().get(), packetNumber,
+                    new HeaderGenerator(this.packetType, packetHeader), packetPayload, buffer);
         }
 
         public void writePayload(List<QuicFrame> frames) {
@@ -1737,17 +1728,17 @@ public class QuicPacketEncoder {
                     .formatted(offset, position(), remaining());
         }
 
-        public void protectLong(int packetNumberStart, int packetNumberLength)
+        public void protectHeaderLong(int packetNumberStart, int packetNumberLength)
                 throws QuicKeyUnavailableException {
-            protect(packetNumberStart, packetNumberLength, (byte) 0x0f);
+            protectHeader(packetNumberStart, packetNumberLength, (byte) 0x0f);
         }
 
-        public void protectShort(int packetNumberStart, int packetNumberLength)
+        public void protectHeaderShort(int packetNumberStart, int packetNumberLength)
                 throws QuicKeyUnavailableException {
-            protect(packetNumberStart, packetNumberLength, (byte) 0x1f);
+            protectHeader(packetNumberStart, packetNumberLength, (byte) 0x1f);
         }
 
-        private void protect(int packetNumberStart, int packetNumberLength, byte headerMask)
+        private void protectHeader(int packetNumberStart, int packetNumberLength, byte headerMask)
                 throws QuicKeyUnavailableException {
             // expect position at the end of packet
             QuicTLSEngine tlsEngine = context.getTLSEngine();
@@ -1775,6 +1766,41 @@ public class QuicPacketEncoder {
                         context.originalServerConnId().asReadOnlyBuffer(), temp, buffer);
             } catch (ShortBufferException e) {
                 throw new AssertionError("Should not happen", e);
+            }
+        }
+
+        // generates packet header and is capable of inserting a key phase into the header
+        // when appropriate
+        private static final class HeaderGenerator implements Function<Integer, ByteBuffer> {
+            private final PacketType packetType;
+            private final ByteBuffer header;
+
+            private HeaderGenerator(final PacketType packetType, final ByteBuffer header) {
+                this.packetType = packetType;
+                this.header = header;
+            }
+
+            @Override
+            public ByteBuffer apply(final Integer keyPhase) {
+                // we use key phase only in 1-RTT packet header
+                if (packetType != PacketType.ONERTT) {
+                    assert keyPhase == 0 : "unexpected key phase " + keyPhase
+                            + " for packet type " + packetType;
+                    // return the packet header without setting any key phase bit
+                    return header;
+                }
+                // update the key phase bit in the packet header
+                setKeyPhase(keyPhase);
+                return header.position(0).asReadOnlyBuffer();
+            }
+
+            private void setKeyPhase(final int kp) {
+                if (kp != 0 && kp != 1) {
+                    throw new IllegalArgumentException("Invalid key phase: " + kp);
+                }
+                final byte headerFirstByte = this.header.get();
+                final byte updated = (byte) (headerFirstByte | (kp << 2));
+                this.header.put(0, updated);
             }
         }
     }

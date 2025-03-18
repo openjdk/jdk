@@ -259,7 +259,8 @@ abstract class QuicCipher {
         }
 
         final void encryptPacket(final long packetNumber,
-                final ByteBuffer packet, final int headerLength,
+                final ByteBuffer packetHeader,
+                final ByteBuffer packetPayload,
                 final ByteBuffer output) throws QuicTransportException {
             final long confidentialityLimit = confidentialityLimit();
             final long numEncrypted = this.numPacketsEncrypted.get();
@@ -284,7 +285,7 @@ abstract class QuicCipher {
                         QuicTransportErrors.AEAD_LIMIT_REACHED);
             }
             this.numPacketsEncrypted.incrementAndGet();
-            doEncryptPacket(packetNumber, packet, headerLength, output);
+            doEncryptPacket(packetNumber, packetHeader, packetPayload, output);
             boolean updated;
             do {
                 final long current = lowestEncryptedPktNum.get();
@@ -326,8 +327,8 @@ abstract class QuicCipher {
             return this.numPacketsEncrypted.get();
         }
 
-        abstract void doEncryptPacket(long packetNumber, ByteBuffer packet,
-                                      int headerLength, ByteBuffer output);
+        abstract void doEncryptPacket(long packetNumber, ByteBuffer packetHeader,
+                                      ByteBuffer packetPayload, ByteBuffer output);
 
         /**
          * Returns the maximum limit on the number of packets that are allowed
@@ -460,8 +461,8 @@ abstract class QuicCipher {
         }
 
         @Override
-        void doEncryptPacket(long packetNumber, ByteBuffer packet,
-                             int headerLength, ByteBuffer output) {
+        void doEncryptPacket(long packetNumber, ByteBuffer packetHeader,
+                             ByteBuffer packetPayload, ByteBuffer output) {
             byte[] iv = this.iv.clone();
 
             // apply packet number to IV
@@ -480,11 +481,8 @@ abstract class QuicCipher {
                     throw new AssertionError("Should never happen", e);
                 }
                 try {
-                    int limit = packet.limit();
-                    packet.limit(packet.position() + headerLength);
-                    cipher.updateAAD(packet);
-                    packet.limit(limit);
-                    cipher.doFinal(packet, output);
+                    cipher.updateAAD(packetHeader);
+                    cipher.doFinal(packetPayload, output);
                 } catch (IllegalBlockSizeException | BadPaddingException |
                          ShortBufferException e) {
                     throw new AssertionError("Should never happen", e);
@@ -631,8 +629,8 @@ abstract class QuicCipher {
         }
 
         @Override
-        void doEncryptPacket(final long packetNumber, final ByteBuffer packet,
-                             final int headerLength, final ByteBuffer output) {
+        void doEncryptPacket(final long packetNumber, final ByteBuffer packetHeader,
+                             final ByteBuffer packetPayload, final ByteBuffer output) {
             byte[] iv = this.iv.clone();
 
             // apply packet number to IV
@@ -652,11 +650,8 @@ abstract class QuicCipher {
                     throw new AssertionError("Should never happen", e);
                 }
                 try {
-                    int limit = packet.limit();
-                    packet.limit(packet.position() + headerLength);
-                    cipher.updateAAD(packet);
-                    packet.limit(limit);
-                    cipher.doFinal(packet, output);
+                    cipher.updateAAD(packetHeader);
+                    cipher.doFinal(packetPayload, output);
                 } catch (IllegalBlockSizeException | BadPaddingException |
                          ShortBufferException e) {
                     throw new AssertionError("Should never happen", e);

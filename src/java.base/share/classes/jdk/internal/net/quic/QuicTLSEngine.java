@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * One instance of these per QUIC connection. Configuration methods not shown
@@ -256,16 +257,23 @@ public interface QuicTLSEngine {
     int getAuthTagSize();
 
     /**
-     * Encrypt the given packet bytes using keys for the given packet key space.
+     * Encrypt into {@code output}, the given {@code packetPayload} bytes using the
+     * keys for the given {@code keySpace}.
      * <p>
-     * The input buffer contains the packet header and the unencrypted packet payload.
-     * The packet header (first {@code headerLength} bytes of the input buffer)
-     * is consumed by this method, but is not encrypted.
-     * The packet payload (bytes following the packet header) is encrypted
-     * by this method. This method consumes the entire input buffer.
+     * Before encrypting the {@code packetPayload}, this method invokes the {@code headerGenerator}
+     * passing it the key phase corresponding to the encryption key that's in use.
+     * For {@code KeySpace}s where key phase isn't applicable, the {@code headerGenerator} will
+     * be invoked with a value of {@code 0} for the key phase.
      * <p>
-     * The encrypted payload bytes and the authentication tag are written
-     * to the output buffer.
+     * The {@code headerGenerator} is expected to return a {@code ByteBuffer} representing the
+     * packet header and where applicable, the returned header must contain the key phase
+     * that was passed to the {@code headerGenerator}. The packet header will be used as
+     * the Additional Authentication Data (AAD) for encrypting the {@code packetPayload}.
+     * <p>
+     * Upon return, the {@code output} will contain the encrypted packet payload bytes
+     * and the authentication tag. The {@code packetPayload} and the packet header, returned
+     * by the {@code headerGenerator}, will have their {@code position} equal to their
+     * {@code limit}. The limit of either of those buffers will not have changed.
      * <p>
      * It is recommended to do the encryption in place by using slices of a bigger
      * buffer as the input and output buffer:
@@ -279,21 +287,19 @@ public interface QuicTLSEngine {
      *
      * @param keySpace Packet key space
      * @param packetNumber full packet number
-     * @param packet buffer containing unencrypted packet bytes
-     * @param headerLength length of the packet header
-     * @param output buffer where encrypted packet bytes will be stored
-     * @param keyPhaseConsumer a {@code Consumer} which will be invoked
-     *         by this engine and will be passed the key phase bit (0 or 1)
-     *         that was used to encrypt the packet
+     * @param headerGenerator a {@link Function} which takes a key phase and returns
+     *                        the packet header
+     * @param packetPayload buffer containing unencrypted packet payload
+     * @param output buffer into which the encrypted packet payload will be written
      * @throws QuicKeyUnavailableException if keys are not available
      * @throws QuicTransportException if encrypting the packet would result
      *          in exceeding the AEAD cipher confidentiality limit
      */
     void encryptPacket(KeySpace keySpace, long packetNumber,
-            ByteBuffer packet, int headerLength, ByteBuffer output,
-            Consumer<Integer> keyPhaseConsumer)
-            throws QuicKeyUnavailableException,
-            QuicTransportException;
+                       Function<Integer, ByteBuffer> headerGenerator,
+                       ByteBuffer packetPayload,
+                       ByteBuffer output)
+            throws QuicKeyUnavailableException, QuicTransportException;
 
     /**
      * Decrypt the given packet bytes using keys for the given packet key space.

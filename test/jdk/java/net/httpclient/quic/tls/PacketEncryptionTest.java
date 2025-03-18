@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.net.ssl.SSLContext;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.function.Function;
 
 import static jdk.internal.net.quic.QuicVersion.QUIC_V1;
 import static org.testng.Assert.assertEquals;
@@ -150,21 +151,35 @@ public class PacketEncryptionTest {
     private static final String ENCRYPTED_ONERTT_PAYLOAD =
             "4cfe4189655e5cd55c41f69080575d7999c25a5bfb";
 
+    private static final class FixedHeaderContent implements Function<Integer, ByteBuffer> {
+        private final ByteBuffer header;
+        private FixedHeaderContent(ByteBuffer header) {
+            this.header = header;
+        }
+
+        @Override
+        public ByteBuffer apply(final Integer keyphase) {
+            // ignore keyphase
+            return this.header;
+        }
+    }
+
     @Test
     public void testEncryptClientInitialPacket() throws Exception {
         QuicTLSEngine clientEngine = getQuicV1Engine(SSLContext.getDefault(), true);
         ByteBuffer dcid = ByteBuffer.wrap(HexFormat.of().parseHex(INITIAL_DCID));
         clientEngine.deriveInitialKeys(QUIC_V1, dcid);
 
-        ByteBuffer packet = ByteBuffer.allocate(INITIAL_C_PAYLOAD_OFFSET + INITIAL_C_PAYLOAD_LENGTH + 16);
+        final int packetLen = INITIAL_C_PAYLOAD_OFFSET + INITIAL_C_PAYLOAD_LENGTH + 16;
+        final ByteBuffer packet = ByteBuffer.allocate(packetLen);
         packet.put(HexFormat.of().parseHex(INITIAL_C_HEADER));
         packet.put(HexFormat.of().parseHex(INITIAL_C_PAYLOAD));
-        ByteBuffer src = packet.asReadOnlyBuffer();
 
-        src.position(0);
-        src.limit(INITIAL_C_PAYLOAD_OFFSET + INITIAL_C_PAYLOAD_LENGTH);
+        final ByteBuffer header = packet.slice(0, INITIAL_C_PAYLOAD_OFFSET).asReadOnlyBuffer();
+        final ByteBuffer payload = packet.slice(INITIAL_C_PAYLOAD_OFFSET, INITIAL_C_PAYLOAD_LENGTH).asReadOnlyBuffer();
+
         packet.position(INITIAL_C_PAYLOAD_OFFSET);
-        clientEngine.encryptPacket(QuicTLSEngine.KeySpace.INITIAL, INITIAL_C_PN, src, INITIAL_C_PAYLOAD_OFFSET, packet, (ignore) -> {});
+        clientEngine.encryptPacket(QuicTLSEngine.KeySpace.INITIAL, INITIAL_C_PN, new FixedHeaderContent(header), payload, packet);
         protect(QuicTLSEngine.KeySpace.INITIAL, packet, INITIAL_C_PN_OFFSET, INITIAL_C_PAYLOAD_OFFSET - INITIAL_C_PN_OFFSET, clientEngine, 0x0f);
 
         assertEquals(HexFormat.of().formatHex(packet.array()), ENCRYPTED_C_PAYLOAD);
@@ -214,15 +229,16 @@ public class PacketEncryptionTest {
         ByteBuffer dcid = ByteBuffer.wrap(HexFormat.of().parseHex(INITIAL_DCID));
         serverEngine.deriveInitialKeys(QUIC_V1, dcid);
 
-        ByteBuffer packet = ByteBuffer.allocate(INITIAL_S_PAYLOAD_OFFSET + INITIAL_S_PAYLOAD_LENGTH + 16);
+        final int packetLen = INITIAL_S_PAYLOAD_OFFSET + INITIAL_S_PAYLOAD_LENGTH + 16;
+        final ByteBuffer packet = ByteBuffer.allocate(packetLen);
         packet.put(HexFormat.of().parseHex(INITIAL_S_HEADER));
         packet.put(HexFormat.of().parseHex(INITIAL_S_PAYLOAD));
-        ByteBuffer src = packet.asReadOnlyBuffer();
 
-        src.position(0);
-        src.limit(INITIAL_S_PAYLOAD_OFFSET + INITIAL_S_PAYLOAD_LENGTH);
+        final ByteBuffer header = packet.slice(0, INITIAL_S_PAYLOAD_OFFSET).asReadOnlyBuffer();
+        final ByteBuffer payload = packet.slice(INITIAL_S_PAYLOAD_OFFSET, INITIAL_S_PAYLOAD_LENGTH).asReadOnlyBuffer();
+
         packet.position(INITIAL_S_PAYLOAD_OFFSET);
-        serverEngine.encryptPacket(QuicTLSEngine.KeySpace.INITIAL, INITIAL_S_PN, src, INITIAL_S_PAYLOAD_OFFSET, packet, (ignore) -> {});
+        serverEngine.encryptPacket(QuicTLSEngine.KeySpace.INITIAL, INITIAL_S_PN, new FixedHeaderContent(header), payload, packet);
         protect(QuicTLSEngine.KeySpace.INITIAL, packet, INITIAL_S_PN_OFFSET, INITIAL_S_PAYLOAD_OFFSET - INITIAL_S_PN_OFFSET, serverEngine, 0x0f);
 
         assertEquals(HexFormat.of().formatHex(packet.array()), ENCRYPTED_S_PAYLOAD);
@@ -317,15 +333,16 @@ public class PacketEncryptionTest {
         SecretKey key = new SecretKeySpec(HexFormat.of().parseHex(ONERTT_SECRET), 0, 32, "ChaCha20-Poly1305");
         QuicTLSEngineImplAccessor.testDeriveOneRttKeys(QUIC_V1, clientEngine, key, key, "TLS_CHACHA20_POLY1305_SHA256", true);
 
-        ByteBuffer packet = ByteBuffer.allocate(ONERTT_PAYLOAD_OFFSET + ONERTT_PAYLOAD_LENGTH + 16);
+        final int packetLen = ONERTT_PAYLOAD_OFFSET + ONERTT_PAYLOAD_LENGTH + 16;
+        final ByteBuffer packet = ByteBuffer.allocate(packetLen);
         packet.put(HexFormat.of().parseHex(ONERTT_HEADER));
         packet.put(HexFormat.of().parseHex(ONERTT_PAYLOAD));
-        ByteBuffer src = packet.asReadOnlyBuffer();
 
-        src.position(0);
-        src.limit(ONERTT_PAYLOAD_OFFSET + ONERTT_PAYLOAD_LENGTH);
+        final ByteBuffer header = packet.slice(0, ONERTT_PAYLOAD_OFFSET).asReadOnlyBuffer();
+        final ByteBuffer payload = packet.slice(ONERTT_PAYLOAD_OFFSET, ONERTT_PAYLOAD_LENGTH).asReadOnlyBuffer();
+
         packet.position(ONERTT_PAYLOAD_OFFSET);
-        clientEngine.encryptPacket(QuicTLSEngine.KeySpace.ONE_RTT, ONERTT_PN , src, ONERTT_PAYLOAD_OFFSET, packet, (ignore) -> {});
+        clientEngine.encryptPacket(QuicTLSEngine.KeySpace.ONE_RTT, ONERTT_PN , new FixedHeaderContent(header), payload, packet);
         protect(QuicTLSEngine.KeySpace.ONE_RTT, packet, ONERTT_PN_OFFSET, ONERTT_PAYLOAD_OFFSET - ONERTT_PN_OFFSET, clientEngine, 0x1f);
 
         assertEquals(HexFormat.of().formatHex(packet.array()), ENCRYPTED_ONERTT_PAYLOAD);

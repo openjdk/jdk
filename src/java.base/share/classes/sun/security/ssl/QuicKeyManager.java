@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 import javax.crypto.AEADBadTagException;
 import javax.crypto.Cipher;
@@ -133,16 +133,14 @@ sealed abstract class QuicKeyManager
         }
     }
 
-    void encryptPacket(final long packetNumber, final ByteBuffer packet,
-            final int headerLength, final ByteBuffer output,
-            final Consumer<Integer> keyPhaseConsumer)
+    void encryptPacket(final long packetNumber,
+                       final Function<Integer, ByteBuffer> headerGenerator,
+                       final ByteBuffer packetPayload,
+                       final ByteBuffer output)
             throws QuicKeyUnavailableException, QuicTransportException {
-        // first let the consumer know the key phase that will be used to
-        // encrypt the packet to allow for the consumer to update the
-        // packet (header) appropriately
-        keyPhaseConsumer.accept(0); // key phase is always 0 for non-ONE_RTT
-        // packets
-        getWriteCipher().encryptPacket(packetNumber, packet, headerLength, output);
+        // generate the packet header passing the generator the key phase
+        final ByteBuffer header = headerGenerator.apply(0); // key phase is always 0 for non-ONE_RTT
+        getWriteCipher().encryptPacket(packetNumber, header, packetPayload, output);
     }
 
     private static QuicKeys deriveQuicKeys(final QuicVersion quicVersion,
@@ -642,9 +640,10 @@ sealed abstract class QuicKeyManager
         }
 
         @Override
-        void encryptPacket(final long packetNumber, final ByteBuffer packet,
-                           final int headerLength, final ByteBuffer output,
-                           final Consumer<Integer> keyPhaseConsumer)
+        void encryptPacket(final long packetNumber,
+                           final Function<Integer, ByteBuffer> headerGenerator,
+                           final ByteBuffer packetPayload,
+                           final ByteBuffer output)
                 throws QuicKeyUnavailableException, QuicTransportException {
             KeySeries currentSeries = requireKeySeries();
             if (currentSeries.next == null) {
@@ -658,13 +657,10 @@ sealed abstract class QuicKeyManager
             // the new keyseries if at all the key update was
             // initiated
             final QuicWriteCipher writeCipher = getWriteCipher();
-            // first let the consumer know the key phase that will be used to
-            // encrypt the packet
-            // to allow for the consumer to update the packet (header)
-            // appropriately
             final int keyPhase = writeCipher.getKeyPhase();
-            keyPhaseConsumer.accept(keyPhase);
-            writeCipher.encryptPacket(packetNumber, packet, headerLength, output);
+            // generate the packet header passing the generator the key phase
+            final ByteBuffer header = headerGenerator.apply(keyPhase);
+            writeCipher.encryptPacket(packetNumber, header, packetPayload, output);
         }
 
         void setOneRttContext(final QuicOneRttContext ctx) {

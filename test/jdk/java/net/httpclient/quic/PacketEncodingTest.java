@@ -26,7 +26,9 @@ import jdk.internal.net.http.quic.CodingContext;
 import jdk.internal.net.http.quic.PeerConnectionId;
 import jdk.internal.net.http.quic.QuicConnectionIdFactory;
 import jdk.internal.net.http.quic.packets.LongHeader;
+import jdk.internal.net.quic.QuicKeyUnavailableException;
 import jdk.internal.net.quic.QuicOneRttContext;
+import jdk.internal.net.quic.QuicTransportException;
 import jdk.internal.net.quic.QuicVersion;
 import jdk.internal.net.http.quic.frames.CryptoFrame;
 import jdk.internal.net.http.quic.frames.PaddingFrame;
@@ -67,6 +69,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.testng.Assert.*;
@@ -222,10 +225,13 @@ public class PacketEncodingTest {
         }
 
         @Override
-        public void encryptPacket(KeySpace keySpace, long packetNumber, ByteBuffer packet, int headerLength, ByteBuffer output,
-                                  Consumer<Integer> keyPhaseConsumer) {
-            packet.position(packet.position() + headerLength);
-            output.put(packet);
+        public void encryptPacket(KeySpace keySpace, long packetNumber,
+                                  Function<Integer, ByteBuffer> headerGenerator,
+                                  ByteBuffer packetPayload, ByteBuffer output)
+                throws QuicKeyUnavailableException, QuicTransportException {
+            // this dummy QUIC TLS engine doesn't do any encryption.
+            // we just copy over the raw packet payload into the output buffer
+            output.put(packetPayload);
         }
 
         @Override
