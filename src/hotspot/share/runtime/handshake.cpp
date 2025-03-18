@@ -349,16 +349,7 @@ void HandshakeOperation::do_handshake(JavaThread* thread) {
 }
 
 void Handshake::execute(HandshakeClosure* hs_cl) {
-  Thread* current_thread = Thread::current();
-
-  // The current thread must not belong to the SuspendibleThreadSet, because an
-  // on-the-fly safepoint can be waiting for the current thread, and the
-  // current thread will be blocked in VMThread::execute, resulting in
-  // deadlock.
-  assert(!current_thread->is_suspendible_thread(), "precondition");
-  assert(!current_thread->is_indirectly_suspendible_thread(), "precondition");
-
-  HandshakeOperation cto(hs_cl, nullptr, current_thread);
+  HandshakeOperation cto(hs_cl, nullptr, Thread::current());
   VM_HandshakeAllThreads handshake(&cto);
   VMThread::execute(&handshake);
 }
