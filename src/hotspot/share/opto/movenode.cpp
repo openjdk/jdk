@@ -200,6 +200,21 @@ CMoveNode* CMoveNode::make(Node* bol, Node* left, Node* right, const Type* t) {
   }
 }
 
+bool CMoveNode::supported(const Type* t) {
+  switch( t->basic_type() ) {
+    case T_INT:     return Matcher::match_rule_supported(Op_CMoveI);
+    case T_FLOAT:   return Matcher::match_rule_supported(Op_CMoveF);
+    case T_DOUBLE:  return Matcher::match_rule_supported(Op_CMoveD);
+    case T_LONG:    return Matcher::match_rule_supported(Op_CMoveL);
+    case T_OBJECT:  return Matcher::match_rule_supported(Op_CMoveP);
+    case T_ADDRESS: return Matcher::match_rule_supported(Op_CMoveP);
+    case T_NARROWOOP: return Matcher::match_rule_supported(Op_CMoveN);
+    default:
+    ShouldNotReachHere();
+    return false;
+  }
+}
+
 // Try to identify min/max patterns in CMoves
 Node* CMoveNode::Ideal_minmax(PhaseGVN* phase, CMoveNode* cmove) {
   // Only create MinL/MaxL if we are allowed to create macro nodes.
