@@ -29,8 +29,6 @@
  * @requires vm.debug
  * @comment work around JDK-8345635
  * @requires !vm.jvmci.enabled
- * @comment TODO ...tested only against G1
- * @requires vm.gc.G1
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build MethodHandleTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar mh.jar

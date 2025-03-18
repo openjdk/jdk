@@ -139,7 +139,6 @@ KlassSubGraphInfo* HeapShared::_dump_time_special_subgraph;
 ArchivedKlassSubGraphInfoRecord* HeapShared::_run_time_special_subgraph;
 GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = nullptr;
 GrowableArrayCHeap<OopHandle, mtClassShared>* HeapShared::_root_segments = nullptr;
-GrowableArrayCHeap<Method*, mtClassShared>* HeapShared::_resolved_method_name_vmtargets = nullptr;
 int HeapShared::_root_segment_max_size_elems;
 OopHandle HeapShared::_scratch_basic_type_mirrors[T_VOID+1];
 MetaspaceObjToOopHandleTable* HeapShared::_scratch_objects_table = nullptr;
@@ -338,11 +337,6 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
         if (m != nullptr) {
           InstanceKlass* method_holder = m->method_holder();
           AOTArtifactFinder::add_cached_class(method_holder);
-          //AOTArtifactFinder::add_aot_inited_class(method_holder);
-          _resolved_method_name_vmtargets->append(m);
-
-          ResourceMark rm;
-          log_info(cds)("ResolvedMethodName::target = %s", m->external_name());
         }
       }
     }
@@ -411,7 +405,6 @@ objArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
 void HeapShared::init_dumping() {
   _scratch_objects_table = new (mtClass)MetaspaceObjToOopHandleTable();
   _pending_roots = new GrowableArrayCHeap<oop, mtClassShared>(500);
-  _resolved_method_name_vmtargets = new GrowableArrayCHeap<Method*, mtClassShared>(50);
 }
 
 void HeapShared::init_scratch_objects_for_basic_type_mirrors(TRAPS) {
