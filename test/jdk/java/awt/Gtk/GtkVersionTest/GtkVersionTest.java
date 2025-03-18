@@ -26,7 +26,7 @@
  * @bug 8156121 8200313
  * @summary "Fail forward" fails for GTK3 if no GTK2 available
  * @modules java.desktop/sun.awt
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @run main GtkVersionTest
  */
 

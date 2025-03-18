@@ -34,7 +34,7 @@ import javax.swing.UIManager;
  * @bug 8137571
  * @summary Linux HiDPI Graphics support
  * @author Alexander Scherbatiy
- * @requires (os.family == "linux" | os.family == "mac")
+ * @requires (os.family == "linux" | os.family == "mac" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @run main/othervm -Dsun.java2d.uiScale.enabled=false
  *                   -Dsun.java2d.uiScale=2
  *                    HiDPIPropertiesUnixTest UISCALE_DISABLED

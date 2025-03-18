@@ -26,7 +26,7 @@
   @bug 6239938
   @summary Choice drop-down does not disappear when it loses focus, on XToolkit
   @key headful
-  @requires (os.family == "linux")
+  @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
 */
 
 import java.awt.Button;
@@ -48,8 +48,9 @@ public class ChoiceStaysOpenedOnTAB {
 
     public static void main(String[] args) throws Exception {
 
-        if (!System.getProperty("os.name").toLowerCase().startsWith("linux")) {
-            System.out.println("This test is for Linux only");
+        if (!System.getProperty("os.name").toLowerCase().startsWith("linux") &&
+            !System.getProperty("os.name").toLowerCase().endsWith("bsd")) {
+            System.out.println("This test is for Linux/BSD only");
             return;
         }
 

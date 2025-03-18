@@ -75,7 +75,7 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
   fi
 
   # Check if alsa is needed
-  if test "x$OPENJDK_TARGET_OS" = xlinux; then
+  if test "x$OPENJDK_TARGET_OS" = xlinux -o "x$OPENJDK_TARGET_OS_ENV" = xbsd.freebsd -o "x$OPENJDK_TARGET_OS_ENV" = xbsd.netbsd; then
     NEEDS_LIB_ALSA=true
   else
     NEEDS_LIB_ALSA=false
@@ -138,7 +138,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   fi
 
   # Threading library
-  if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xaix; then
+  if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xaix || test "x$OPENJDK_TARGET_OS" = xbsd; then
     BASIC_JVM_LIBS="$BASIC_JVM_LIBS $LIBPTHREAD"
   fi
 
@@ -206,14 +206,24 @@ AC_DEFUN_ONCE([LIB_SETUP_MISC_LIBS],
   AC_SUBST(LIBPTHREAD)
 
   # Setup libiconv flags and library
+  ICONV_CFLAGS=
+  ICONV_LDFLAGS=
+  ICONV_LIBS=
+
   if test "x$OPENJDK_TARGET_OS" == "xaix" || test "x$OPENJDK_TARGET_OS" == "xmacosx"; then
     ICONV_CFLAGS=
     ICONV_LDFLAGS=
     ICONV_LIBS=-liconv
-  else
-    ICONV_CFLAGS=
-    ICONV_LDFLAGS=
-    ICONV_LIBS=
+  elif test "x$OPENJDK_TARGET_OS" = "xbsd"; then
+    if test "x$OPENJDK_TARGET_OS_ENV" = "xbsd.openbsd"; then
+      ICONV_CFLAGS="-I/usr/local/include"
+      ICONV_LDFLAGS="-L/usr/local/lib"
+      ICONV_LIBS=-liconv
+    elif test "x$OPENJDK_TARGET_OS_ENV" = "xbsd.freebsd"; then
+      ICONV_CFLAGS=-DLIBICONV_PLUG
+      ICONV_LDFLAGS=
+      ICONV_LIBS=
+    fi
   fi
   AC_SUBST(ICONV_CFLAGS)
   AC_SUBST(ICONV_LDFLAGS)

@@ -80,7 +80,7 @@ class UnixTest extends ProcessTest {
         processTrapScript.deleteOnExit();
         try (FileWriter fstream = new FileWriter(processTrapScript);
              BufferedWriter out = new BufferedWriter(fstream)) {
-            out.write("#!/bin/bash\n" +
+            out.write("#!/bin/sh\n" +
                 "echo \\\"ProcessTrap.sh started\\\"\n" +
                 "while :\n" +
                 "do\n" +
@@ -113,7 +113,8 @@ public class DestroyTest {
             File tempFile = File.createTempFile("ProcessTrap-", ".sh", userDir);
             if (osName.startsWith("Linux")
                     || osName.startsWith("Mac OS")
-                    || osName.equals("AIX")) {
+                    || osName.equals("AIX")
+                    || osName.endsWith("BSD")) {
                 return new UnixTest(tempFile);
             }
         }

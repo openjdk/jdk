@@ -30,7 +30,7 @@ import java.awt.event.KeyEvent;
  * @test
  * @key headful
  * @bug 4965227
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @summary tests that Shift+F10 during Window show doesn't cause deadlock- Linux only
  */
 

@@ -75,10 +75,22 @@
 #ifndef __OpenBSD__
 # include <ucontext.h>
 #endif
+#ifdef __FreeBSD__
+# include <sys/sysctl.h>
+# include <sys/procctl.h>
+# ifndef PROC_STACKGAP_STATUS
+#  define PROC_STACKGAP_STATUS	18
+# endif
+# ifndef PROC_STACKGAP_DISABLE
+#  define PROC_STACKGAP_DISABLE	0x0002
+# endif
+#endif /* __FreeBSD__ */
 
 #if !defined(__APPLE__) && !defined(__NetBSD__)
 # include <pthread_np.h>
 #endif
+
+#ifdef __APPLE__
 
 #define SPELL_REG_SP "sp"
 #define SPELL_REG_FP "fp"
@@ -565,6 +577,533 @@ extern "C" {
         *(to--) = *(from--);
     }
   }
+  void _Copy_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
+    if (from > to) {
+      const jlong *end = from + count;
+      while (from < end)
+        atomic_copy64(from++, to++);
+    }
+    else if (from < to) {
+      const jlong *end = from;
+      from += count - 1;
+      to   += count - 1;
+      while (from >= end)
+        atomic_copy64(from--, to--);
+    }
+  }
+
+  void _Copy_arrayof_conjoint_bytes(const HeapWord* from,
+                                    HeapWord* to,
+                                    size_t    count) {
+    memmove(to, from, count);
+  }
+  void _Copy_arrayof_conjoint_jshorts(const HeapWord* from,
+                                      HeapWord* to,
+                                      size_t    count) {
+    memmove(to, from, count * 2);
+  }
+  void _Copy_arrayof_conjoint_jints(const HeapWord* from,
+                                    HeapWord* to,
+                                    size_t    count) {
+    memmove(to, from, count * 4);
+  }
+  void _Copy_arrayof_conjoint_jlongs(const HeapWord* from,
+                                     HeapWord* to,
+                                     size_t    count) {
+    memmove(to, from, count * 8);
+  }
+};
+
+#else // __APPLE__
+
+#define REG_FP 29
+
+NOINLINE address os::current_stack_pointer() {
+  return (address)__builtin_frame_address(0);
+}
+
+char* os::non_memory_address_word() {
+  // Must never look like an address returned by reserve_memory,
+  // even in its subfields (as defined by the CPU immediate fields,
+  // if the CPU splits constants across multiple instructions).
+
+  return (char*) 0xffffffffffff;
+}
+
+address os::Posix::ucontext_get_pc(const ucontext_t * uc) {
+#if defined(__FreeBSD__)
+  return (address)uc->uc_mcontext.mc_gpregs.gp_elr;
+#elif defined(__OpenBSD__)
+  return (address)uc->sc_elr;
+#elif defined(__NetBSD__)
+  return (address)uc->uc_mcontext.__gregs[_REG_ELR];
+#endif
+}
+
+void os::Posix::ucontext_set_pc(ucontext_t * uc, address pc) {
+#if defined(__FreeBSD__)
+  uc->uc_mcontext.mc_gpregs.gp_elr = (intptr_t)pc;
+#elif defined(__OpenBSD__)
+  uc->sc_elr = (unsigned long)pc;
+#elif defined(__NetBSD__)
+  uc->uc_mcontext.__gregs[_REG_ELR] = (__greg_t)pc;
+#endif
+}
+
+intptr_t* os::Bsd::ucontext_get_sp(const ucontext_t * uc) {
+#if defined(__FreeBSD__)
+  return (intptr_t*)uc->uc_mcontext.mc_gpregs.gp_sp;
+#elif defined(__OpenBSD__)
+  return (intptr_t*)uc->sc_sp;
+#elif defined(__NetBSD__)
+  return (intptr_t*)uc->uc_mcontext.__gregs[_REG_SP];
+#endif
+}
+
+intptr_t* os::Bsd::ucontext_get_fp(const ucontext_t * uc) {
+#if defined(__FreeBSD__)
+  return (intptr_t*)uc->uc_mcontext.mc_gpregs.gp_x[REG_FP];
+#elif defined(__OpenBSD__)
+  return (intptr_t*)uc->sc_x[REG_FP];
+#elif defined(__NetBSD__)
+  return (intptr_t*)uc->uc_mcontext.__gregs[_REG_FP];
+#endif
+}
+
+address os::fetch_frame_from_context(const void* ucVoid,
+                    intptr_t** ret_sp, intptr_t** ret_fp) {
+
+  address epc;
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+
+  if (uc != nullptr) {
+    epc = os::Posix::ucontext_get_pc(uc);
+    if (ret_sp) *ret_sp = os::Bsd::ucontext_get_sp(uc);
+    if (ret_fp) *ret_fp = os::Bsd::ucontext_get_fp(uc);
+  } else {
+    epc = nullptr;
+    if (ret_sp) *ret_sp = (intptr_t *)nullptr;
+    if (ret_fp) *ret_fp = (intptr_t *)nullptr;
+  }
+
+  return epc;
+}
+
+frame os::fetch_frame_from_context(const void* ucVoid) {
+  intptr_t* sp;
+  intptr_t* fp;
+  address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
+  return frame(sp, fp, epc);
+}
+
+frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+  // In compiled code, the stack banging is performed before LR
+  // has been saved in the frame.  LR is live, and SP and FP
+  // belong to the caller.
+  intptr_t* fp = os::Bsd::ucontext_get_fp(uc);
+  intptr_t* sp = os::Bsd::ucontext_get_sp(uc);
+#if defined(__FreeBSD__)
+  address pc = (address)(uc->uc_mcontext.mc_gpregs.gp_lr
+                         - NativeInstruction::instruction_size);
+#elif defined(__OpenBSD__)
+      address pc = (address)(uc->sc_lr
+                         - NativeInstruction::instruction_size);
+#elif defined(__NetBSD__)
+      address pc = (address)(uc->uc_mcontext.__gregs[_REG_LR]
+                         - NativeInstruction::instruction_size);
+#endif
+  return frame(sp, fp, pc);
+}
+
+// JVM compiled with -fno-omit-frame-pointer, so RFP is saved on the stack.
+frame os::get_sender_for_C_frame(frame* fr) {
+  return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
+}
+
+NOINLINE frame os::current_frame() {
+  intptr_t *fp = *(intptr_t **)__builtin_frame_address(0);
+  frame myframe((intptr_t*)os::current_stack_pointer(),
+                (intptr_t*)fp,
+                CAST_FROM_FN_PTR(address, os::current_frame));
+  if (os::is_first_C_frame(&myframe)) {
+    // stack is not walkable
+    return frame();
+  } else {
+    return os::get_sender_for_C_frame(&myframe);
+  }
+}
+
+// Utility functions
+
+bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
+                                             ucontext_t* uc, JavaThread* thread) {
+
+/*
+  NOTE: does not seem to work on bsd.
+  if (info == nullptr || info->si_code <= 0 || info->si_code == SI_NOINFO) {
+    // can't decode this kind of signal
+    info = nullptr;
+  } else {
+    assert(sig == info->si_signo, "bad siginfo");
+  }
+*/
+  // decide if this trap can be handled by a stub
+  address stub = nullptr;
+
+  address pc          = nullptr;
+
+  //%note os_trap_1
+  if (info != nullptr && uc != nullptr && thread != nullptr) {
+    pc = (address) os::Posix::ucontext_get_pc(uc);
+
+    address addr = (address) info->si_addr;
+
+    // Make sure the high order byte is sign extended, as it may be masked away by the hardware.
+    if ((uintptr_t(addr) & (uintptr_t(1) << 55)) != 0) {
+      addr = address(uintptr_t(addr) | (uintptr_t(0xFF) << 56));
+    }
+
+    // Handle ALL stack overflow variations here
+    if (sig == SIGSEGV) {
+#ifdef __FreeBSD__
+      /*
+       * Determine whether the kernel stack guard pages have been disabled
+       */
+      int status = 0;
+      int ret = procctl(P_PID, getpid(), PROC_STACKGAP_STATUS, &status);
+
+      /*
+       * Check if the call to procctl(2) failed or the stack guard is not
+       * disabled.  Either way, we'll then attempt a workaround.
+       */
+      if (ret == -1 || !(status & PROC_STACKGAP_DISABLE)) {
+          /*
+           * Try to work around the problems caused on FreeBSD where the kernel
+           * may place guard pages above JVM guard pages and prevent the Java
+           * thread stacks growing into the JVM guard pages.  The work around
+           * is to determine how many such pages there may be and round down the
+           * fault address so that tests of whether it is in the JVM guard zone
+           * succeed.
+           *
+           * Note that this is a partial workaround at best since the normally
+           * the JVM could then unprotect the reserved area to allow a critical
+           * section to complete.  This is not possible if the kernel has
+           * placed guard pages below the reserved area.
+           *
+           * This also suffers from the problem that the
+           * security.bsd.stack_guard_page sysctl is dynamic and may have
+           * changed since the stack was allocated.  This is likely to be rare
+           * in practice though.
+           *
+           * What this does do is prevent the JVM crashing on FreeBSD and
+           * instead throwing a StackOverflowError when infinite recursion
+           * is attempted, which is the expected behaviour.  Due to it's
+           * limitations though, objects may be in unexpected states when
+           * this occurs.
+           *
+           * A better way to avoid these problems is either to be on a new
+           * enough version of FreeBSD (one that has PROC_STACKGAP_CTL) or set
+           * security.bsd.stack_guard_page to zero.
+           */
+          int guard_pages = 0;
+          size_t size = sizeof(guard_pages);
+          if (sysctlbyname("security.bsd.stack_guard_page",
+                           &guard_pages, &size, nullptr, 0) == 0 &&
+              guard_pages > 0) {
+            addr -= guard_pages * os::vm_page_size();
+          }
+      }
+#endif
+      // check if fault address is within thread stack
+      if (thread->is_in_full_stack(addr)) {
+        if (os::Posix::handle_stack_overflow(thread, addr, pc, uc, &stub)) {
+          return true; // continue
+        }
+      }
+    }
+
+    if (thread->thread_state() == _thread_in_Java) {
+      // Java thread running in Java code => find exception handler if any
+      // a fault inside compiled code, the interpreter, or a stub
+
+      // Handle signal from NativeJump::patch_verified_entry().
+      if ((sig == SIGILL || sig == SIGTRAP)
+          && nativeInstruction_at(pc)->is_sigill_not_entrant()) {
+        if (TraceTraps) {
+          tty->print_cr("trap: not_entrant (%s)", (sig == SIGTRAP) ? "SIGTRAP" : "SIGILL");
+        }
+        stub = SharedRuntime::get_handle_wrong_method_stub();
+      } else if (sig == SIGSEGV && SafepointMechanism::is_poll_address((address)info->si_addr)) {
+        stub = SharedRuntime::get_poll_stub(pc);
+      } else if (sig == SIGBUS /* && info->si_code == BUS_OBJERR */) {
+        // BugId 4454115: A read from a MappedByteBuffer can fault
+        // here if the underlying file has been truncated.
+        // Do not crash the VM in such a case.
+        CodeBlob* cb = CodeCache::find_blob(pc);
+        nmethod* nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
+        bool is_unsafe_memory_access = (thread->doing_unsafe_access() && UnsafeMemoryAccess::contains_pc(pc));
+        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_memory_access) {
+          address next_pc = pc + NativeCall::instruction_size;
+          if (is_unsafe_memory_access) {
+            next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
+          }
+          stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
+        }
+      } else if (sig == SIGILL && nativeInstruction_at(pc)->is_stop()) {
+        // Pull a pointer to the error message out of the instruction
+        // stream.
+        const uint64_t *detail_msg_ptr
+          = (uint64_t*)(pc + NativeInstruction::instruction_size);
+        const char *detail_msg = (const char *)*detail_msg_ptr;
+        const char *msg = "stop";
+        if (TraceTraps) {
+          tty->print_cr("trap: %s: (SIGILL)", msg);
+        }
+
+        // End life with a fatal error, message and detail message and the context.
+        // Note: no need to do any post-processing here (e.g. signal chaining)
+        VMError::report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
+
+        ShouldNotReachHere();
+
+      }
+      else
+
+      if (sig == SIGFPE  &&
+          (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV)) {
+        stub =
+          SharedRuntime::
+          continuation_for_implicit_exception(thread,
+                                              pc,
+                                              SharedRuntime::
+                                              IMPLICIT_DIVIDE_BY_ZERO);
+      } else if (sig == SIGSEGV &&
+                 MacroAssembler::uses_implicit_null_check((void*)addr)) {
+          // Determination of interpreter/vtable stub/compiled code null exception
+          stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
+      }
+    } else if ((thread->thread_state() == _thread_in_vm ||
+                 thread->thread_state() == _thread_in_native) &&
+               sig == SIGBUS && /* info->si_code == BUS_OBJERR && */
+               thread->doing_unsafe_access()) {
+      address next_pc = pc + NativeCall::instruction_size;
+      if (UnsafeMemoryAccess::contains_pc(pc)) {
+        next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
+      }
+      stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
+    }
+
+    // jni_fast_Get<Primitive>Field can trap at certain pc's if a GC kicks in
+    // and the heap gets shrunk before the field access.
+    if ((sig == SIGSEGV) || (sig == SIGBUS)) {
+      address addr = JNI_FastGetField::find_slowcase_pc(pc);
+      if (addr != (address)-1) {
+        stub = addr;
+      }
+    }
+  }
+
+  if (stub != nullptr) {
+    // save all thread context in case we need to restore it
+    if (thread != nullptr) thread->set_saved_exception_pc(pc);
+
+    os::Posix::ucontext_set_pc(uc, stub);
+    return true;
+  }
+
+  return false; // Mute compiler
+}
+
+void os::Bsd::init_thread_fpu_state(void) {
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// thread stack
+
+// Minimum usable stack sizes required to get to user code. Space for
+// HotSpot guard pages is added later.
+size_t os::_compiler_thread_min_stack_allowed = 72 * K;
+size_t os::_java_thread_min_stack_allowed = 72 * K;
+size_t os::_vm_internal_thread_min_stack_allowed = 72 * K;
+
+// return default stack size for thr_type
+size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
+  // default stack size (compiler thread needs larger stack)
+  size_t s = (thr_type == os::compiler_thread ? 4 * M : 1 * M);
+  return s;
+}
+
+void os::current_stack_base_and_size(address* base, size_t* size) {
+  address bottom;
+#ifdef __APPLE__
+  pthread_t self = pthread_self();
+  *base = (address) pthread_get_stackaddr_np(self);
+  *size = pthread_get_stacksize_np(self);
+  bottom = *base - *size;
+#elif defined(__OpenBSD__)
+  stack_t ss;
+  int rslt = pthread_stackseg_np(pthread_self(), &ss);
+
+  if (rslt != 0)
+    fatal("pthread_stackseg_np failed with error = %d", rslt);
+
+  *base = (address) ss.ss_sp;
+  *size = ss.ss_size;
+  bottom = *base - *size;
+#else
+  pthread_attr_t attr;
+
+  int rslt = pthread_attr_init(&attr);
+
+  // JVM needs to know exact stack location, abort if it fails
+  if (rslt != 0)
+    fatal("pthread_attr_init failed with error = %d", rslt);
+
+  rslt = pthread_attr_get_np(pthread_self(), &attr);
+
+  if (rslt != 0)
+    fatal("pthread_attr_get_np failed with error = %d", rslt);
+
+  if (pthread_attr_getstackaddr(&attr, (void **)&bottom) != 0 ||
+      pthread_attr_getstacksize(&attr, size) != 0) {
+    fatal("Can not locate current stack attributes!");
+  }
+
+  *base = bottom + *size;
+
+  pthread_attr_destroy(&attr);
+#endif
+  assert(os::current_stack_pointer() >= bottom &&
+         os::current_stack_pointer() < *base, "just checking");
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// helper functions for fatal error handler
+
+void os::print_context(outputStream *st, const void *context) {
+  if (context == nullptr) return;
+
+  const ucontext_t *uc = (const ucontext_t*)context;
+
+  st->print_cr("Registers:");
+  for (int r = 0; r < 31; r++) {
+#if defined(__FreeBSD__)
+    st->print_cr(  "R%d=" INTPTR_FORMAT, r, (uintptr_t)uc->uc_mcontext.mc_gpregs.gp_x[r]);
+#elif defined(__OpenBSD__)
+    st->print_cr(  "R%d=" INTPTR_FORMAT, r, (uintptr_t)uc->sc_x[r]);
+#elif defined(__NetBSD__)
+    st->print_cr(  "R%d=" INTPTR_FORMAT, r, (uintptr_t)uc->uc_mcontext.__gregs[r]);
+#endif
+  }
+  st->cr();
+}
+
+void os::print_tos_pc(outputStream *st, const void *context) {
+  if (context == nullptr) return;
+
+  const ucontext_t* uc = (const ucontext_t*)context;
+
+  address sp = (address)os::Bsd::ucontext_get_sp(uc);
+  print_tos(st, sp);
+  st->cr();
+
+  // Note: it may be unsafe to inspect memory near pc. For example, pc may
+  // point to garbage if entry point in an nmethod is corrupted. Leave
+  // this at the end, and hope for the best.
+  address pc = os::Posix::ucontext_get_pc(uc);
+  print_instructions(st, pc, 4/*native instruction size*/);
+  st->cr();
+}
+
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = 32 /* r0-r31 */;
+  int n = continuation;
+  assert(n >= 0 && n <= register_count, "Invalid continuation value");
+  if (context == nullptr || n == register_count) {
+    return;
+  }
+
+  const ucontext_t *uc = (const ucontext_t*)context;
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+    st->print("R%-2d=", n);
+#if defined(__FreeBSD__)
+    print_location(st, uc->uc_mcontext.mc_gpregs.gp_x[n]);
+#elif defined(__OpenBSD__)
+    print_location(st, uc->sc_x[n]);
+#elif defined(__NetBSD__)
+    print_location(st, uc->uc_mcontext.__gregs[n]);
+#endif
+    ++n;
+  }
+}
+
+void os::setup_fpu() {
+}
+
+#ifndef PRODUCT
+void os::verify_stack_alignment() {
+  assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
+}
+#endif
+
+int os::extra_bang_size_in_bytes() {
+  // AArch64 does not require the additional stack bang.
+  return 0;
+}
+
+static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
+  *(jlong *) dst = *(const jlong *) src;
+}
+
+extern "C" {
+  int SpinPause() {
+    using spin_wait_func_ptr_t = void (*)();
+    spin_wait_func_ptr_t func = CAST_TO_FN_PTR(spin_wait_func_ptr_t, StubRoutines::aarch64::spin_wait());
+    assert(func != nullptr, "StubRoutines::aarch64::spin_wait must not be null.");
+    (*func)();
+    // If StubRoutines::aarch64::spin_wait consists of only a RET,
+    // SpinPause can be considered as implemented. There will be a sequence
+    // of instructions for:
+    // - call of SpinPause
+    // - load of StubRoutines::aarch64::spin_wait stub pointer
+    // - indirect call of the stub
+    // - return from the stub
+    // - return from SpinPause
+    // So '1' always is returned.
+    return 1;
+  }
+
+  void _Copy_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count) {
+    if (from > to) {
+      const jshort *end = from + count;
+      while (from < end)
+        *(to++) = *(from++);
+    }
+    else if (from < to) {
+      const jshort *end = from;
+      from += count - 1;
+      to   += count - 1;
+      while (from >= end)
+        *(to--) = *(from--);
+    }
+  }
+  void _Copy_conjoint_jints_atomic(const jint* from, jint* to, size_t count) {
+    if (from > to) {
+      const jint *end = from + count;
+      while (from < end)
+        *(to++) = *(from++);
+    }
+    else if (from < to) {
+      const jint *end = from;
+      from += count - 1;
+      to   += count - 1;
+      while (from >= end)
+        *(to--) = *(from--);
+    }
+  }
 
   void _Copy_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
     if (from > to) {
@@ -602,3 +1141,5 @@ extern "C" {
     memmove(to, from, count * 8);
   }
 };
+
+#endif // __APPLE__

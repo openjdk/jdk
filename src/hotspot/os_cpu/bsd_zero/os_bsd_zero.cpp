@@ -47,6 +47,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
 #include "signals_posix.hpp"
+#include "utilities/align.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
@@ -56,8 +57,8 @@
 #endif
 
 address os::current_stack_pointer() {
-  address dummy = (address) &dummy;
-  return dummy;
+  // return the address of the current function
+  return (address)__builtin_frame_address(0);
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
@@ -89,7 +90,21 @@ char* os::non_memory_address_word() {
 }
 
 address os::Posix::ucontext_get_pc(const ucontext_t* uc) {
-  ShouldNotCallThis();
+  if (DecodeErrorContext) {
+#if  defined(AMD64)
+    return (address)uc->uc_mcontext.mc_rip;
+#elif defined(AARCH64)
+    return (address)uc->uc_mcontext.mc_gpregs.gp_elr;
+#elif defined(PPC)
+    return (address)uc->uc_mcontext.mc_srr0;
+#else
+    // Non-arch-specific Zero code does not really know the PC.
+    // If possible, add the arch-specific definition in this method.
+    fatal("Cannot handle ucontext_get_pc");
+#endif
+  }
+
+  // Answer the default and hope for the best
   return nullptr;
 }
 
@@ -97,16 +112,84 @@ void os::Posix::ucontext_set_pc(ucontext_t * uc, address pc) {
   ShouldNotCallThis();
 }
 
-address os::fetch_frame_from_context(const void* ucVoid,
-                                     intptr_t** ret_sp,
-                                     intptr_t** ret_fp) {
-  ShouldNotCallThis();
+intptr_t* os::Bsd::ucontext_get_sp(const ucontext_t* uc) {
+  if (DecodeErrorContext) {
+#if  defined(AMD64)
+    return (intptr_t*)uc->uc_mcontext.mc_rsp;
+#elif defined(AARCH64)
+    return (intptr_t*)uc->uc_mcontext.mc_gpregs.gp_sp;
+#elif defined(PPC)
+    return (intptr_t*)uc->uc_mcontext.mc_gpr[1/*REG_SP*/];
+#else
+    // Non-arch-specific Zero code does not really know the SP.
+    // If possible, add the arch-specific definition in this method.
+    fatal("Cannot handle ucontext_get_sp");
+#endif
+  }
+
+  // Answer the default and hope for the best
   return nullptr;
 }
 
+intptr_t* os::Bsd::ucontext_get_fp(const ucontext_t* uc) {
+  if (DecodeErrorContext) {
+#if  defined(AMD64)
+    return (intptr_t*)uc->uc_mcontext.mc_rbp;
+#elif defined(AARCH64)
+    return (intptr_t*)uc->uc_mcontext.mc_gpregs.gp_x[REG_FP];
+#elif defined(PPC)
+    return nullptr;
+#else
+    // Non-arch-specific Zero code does not really know the FP.
+    // If possible, add the arch-specific definition in this method.
+    fatal("Cannot handle ucontext_get_fp");
+#endif
+  }
+
+  // Answer the default and hope for the best
+  return nullptr;
+}
+
+address os::fetch_frame_from_context(const void* ucVoid,
+                                     intptr_t** ret_sp,
+                                     intptr_t** ret_fp) {
+  address epc;
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
+
+  if (uc != NULL) {
+    epc = os::Posix::ucontext_get_pc(uc);
+    if (ret_sp) {
+      *ret_sp = (intptr_t*) os::Bsd::ucontext_get_sp(uc);
+    }
+    if (ret_fp) {
+      *ret_fp = (intptr_t*) os::Bsd::ucontext_get_fp(uc);
+    }
+  } else {
+    epc = NULL;
+    if (ret_sp) {
+      *ret_sp = nullptr;
+    }
+    if (ret_fp) {
+      *ret_fp = nullptr;
+    }
+  }
+
+  return epc;
+}
+
 frame os::fetch_frame_from_context(const void* ucVoid) {
-  ShouldNotCallThis();
-  return frame();
+  // This code is only called from error handler to get PC and SP.
+  // We don't have the ready ZeroFrame* at this point, so fake the
+  // frame with bare minimum.
+  if (ucVoid != NULL) {
+    const ucontext_t* uc = (const ucontext_t*)ucVoid;
+    frame dummy = frame();
+    dummy.set_pc(os::Posix::ucontext_get_pc(uc));
+    dummy.set_sp((intptr_t*)os::Bsd::ucontext_get_sp(uc));
+    return dummy;
+  } else {
+    return frame(nullptr, nullptr);
+  }
 }
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
@@ -224,11 +307,11 @@ void os::current_stack_base_and_size(address* base, size_t* size) {
 // helper functions for fatal error handler
 
 void os::print_context(outputStream* st, const void* context) {
-  ShouldNotCallThis();
+  st->print_cr("No context information.");
 }
 
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {
-  ShouldNotCallThis();
+  st->print_cr("No register info.");
 }
 
 /////////////////////////////////////////////////////////////////////////////

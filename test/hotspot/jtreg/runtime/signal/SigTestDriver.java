@@ -61,6 +61,8 @@ public class SigTestDriver {
                     throw new SkippedException("SIGUSR2 can't be tested on Linux");
                 } else if (Platform.isOSX()) {
                     throw new SkippedException("SIGUSR2 can't be tested on OS X");
+                } else if (Platform.isBSD()) {
+                    throw new SkippedException("SIGUSR2 can't be tested on BSD");
                 }
             }
         }
@@ -94,7 +96,10 @@ public class SigTestDriver {
         String failureMessage = null;
         boolean passed = true;
 
-        for (String mode : new String[] {"sigset", "sigaction"}) {
+        String[] functions = Platform.getOsName().equals("OpenBSD") ? new String[] {"sigaction"} :
+                new String[] {"sigset", "sigaction"};
+
+        for (String mode : functions) {
             // Scenarios postpre and postpost requires libjsig.
             // The other scenarios are run with libjsig to validate the deprecation warning.
             for (String scenario : new String[] {"nojvm", "prepre", "prepost", "postpre#libjsig", "postpost#libjsig",

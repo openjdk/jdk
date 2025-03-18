@@ -56,7 +56,7 @@ public class SetSoLinger {
         s.close();
         ss.close();
 
-        if(value != 65535)
+        if(value != 32767)
             throw new RuntimeException("Failed. Value not properly reduced.");
     }
 }

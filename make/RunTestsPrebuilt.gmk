@@ -170,6 +170,8 @@ else
     OPENJDK_TARGET_OS := linux
   else ifeq ($(UNAME_OS), Darwin)
     OPENJDK_TARGET_OS := macosx
+  else ifneq ($(findstring BSD,$(UNAME_OS)),)
+    OPENJDK_TARGET_OS := bsd
   else
     OPENJDK_TARGET_OS := $(UNAME_OS)
   endif
@@ -215,6 +217,9 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
 else ifeq ($(OPENJDK_TARGET_OS), macosx)
   NUM_CORES := $(shell /usr/sbin/sysctl -n hw.ncpu)
   MEMORY_SIZE := $(shell $(EXPR) `/usr/sbin/sysctl -n hw.memsize` / 1024 / 1024)
+else ifeq ($(OPENJDK_TARGET_OS), bsd)
+  NUM_CORES := $(shell /sbin/sysctl -n hw.ncpu)
+  MEMORY_SIZE := $(shell $(EXPR) `/sbin/sysctl -n hw.physmem` / 1024 / 1024)
 else ifeq ($(OPENJDK_TARGET_OS), windows)
   NUM_CORES := $(NUMBER_OF_PROCESSORS)
   MEMORY_SIZE := $(shell \

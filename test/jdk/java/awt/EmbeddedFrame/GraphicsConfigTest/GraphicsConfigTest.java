@@ -29,7 +29,7 @@
  *          correctly when it is moved to another screen in multiscreen system,
  *          XToolkit
  * @author artem.ananiev@sun.com: area=awt.multiscreen
- * @requires os.family == "linux"
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @modules java.desktop/sun.awt
  *          java.desktop/sun.awt.X11
  *          java.desktop/java.awt.peer

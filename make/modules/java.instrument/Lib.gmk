@@ -31,6 +31,14 @@ include LibCommon.gmk
 ## Build libinstrument
 ################################################################################
 
+ifeq ($(call isTargetOs, bsd), true)
+  ifeq ($(OPENJDK_TARGET_OS_ENV), bsd.openbsd)
+    BSD_JLI_LIB := -ljli_static
+  else
+    BSD_JLI_LIB := -ljli
+  endif
+endif
+
 # equivalent of strcasecmp is stricmp on Windows
 $(eval $(call SetupJdkLibrary, BUILD_LIBINSTRUMENT, \
     NAME := instrument, \
@@ -40,11 +48,14 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBINSTRUMENT, \
     CFLAGS_debug := -DJPLIS_LOGGING, \
     CFLAGS_release := -DNO_JPLIS_LOGGING, \
     LDFLAGS := $(ICONV_LDFLAGS), \
+    LDFLAGS_bsd := -L$(SUPPORT_OUTPUTDIR)/native/java.base \
+        $(ICONV_LDFLAGS), \
     JDK_LIBS := java.base:libjava java.base:libjli java.base:libjvm, \
     LIBS := $(ICONV_LIBS), \
     LIBS_unix := $(LIBZ_LIBS), \
     LIBS_linux := $(LIBDL), \
     LIBS_aix := $(LIBDL), \
+    LIBS_bsd := $(ICONV_LIBS) $(LIBDL), \
     LIBS_macosx := \
         -framework ApplicationServices \
         -framework Cocoa \

@@ -61,8 +61,11 @@ if [ "x${VAR_OS_ENV}" == "xwindows.cygwin" ]; then
   VECTORTESTS_HOME_CP=$(cygpath -pw $VECTORTESTS_HOME)
 fi
 
-if [ "$uname_s" == "Linux" ] || [ "$uname_s" == "Darwin" ]; then
-  SEPARATOR=":"
-else
-  SEPARATOR=";"
-fi
+case "$uname_s" in
+  Linux | Darwin | *BSD)
+    SEPARATOR=":"
+    ;;
+  *)
+    SEPARATOR=";"
+    ;;
+esac

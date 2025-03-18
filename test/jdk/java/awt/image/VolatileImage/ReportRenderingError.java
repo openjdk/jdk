@@ -68,7 +68,7 @@ import java.awt.image.ImageProducer;
  * @key headful
  * @summary Broken rendering should be reported by the contentsLost()
  *
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @run main/othervm -Dsun.java2d.opengl=True   ReportRenderingError
  * @run main/othervm -Dsun.java2d.xrender=True  ReportRenderingError
  * @run main/othervm -Dsun.java2d.xrender=false ReportRenderingError

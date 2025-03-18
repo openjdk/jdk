@@ -28,7 +28,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @requires os.family == "linux" | os.family == "mac"
+ * @requires os.family == "linux" | os.family == "mac" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd"
  * @comment TODO: Decide libjsig support on static JDK with 8351367
  * @requires !jdk.static
  * @run driver XCheckJSig

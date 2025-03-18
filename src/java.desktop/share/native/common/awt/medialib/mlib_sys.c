@@ -29,7 +29,7 @@
 #ifdef MACOSX
 #include <unistd.h>
 #include <sys/param.h>
-#else
+#elif !defined(_BSDONLY_SOURCE)
 #include <malloc.h>
 #endif
 #include <mlib_types.h>
@@ -81,6 +81,9 @@ void *__mlib_malloc(mlib_u32 size)
   return (void *) malloc(size);
 #elif defined(MACOSX)
   return valloc(size);
+#elif defined(_ALLBSD_SOURCE)
+  void *ret;
+  return posix_memalign(&ret, 8, size) ? NULL : ret;
 #else
   return (void *) memalign(8, size);
 #endif /* _MSC_VER */

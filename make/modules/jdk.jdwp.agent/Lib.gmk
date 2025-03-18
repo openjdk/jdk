@@ -40,6 +40,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBDT_SOCKET, \
         libjdwp/export, \
     LIBS_linux := $(LIBPTHREAD), \
     LIBS_windows := iphlpapi.lib ws2_32.lib, \
+    LIBS_bsd := -pthread, \
 ))
 
 # Include socket transport with JDWP agent to allow for remote debugging
@@ -73,6 +74,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJDWP, \
         include \
         libjdwp/export \
         java.base:libjava, \
+    LDFLAGS_bsd := $(ICONV_LDFLAGS), \
     JDK_LIBS := java.base:libjvm, \
     LIBS := $(ICONV_LIBS), \
     LIBS_linux := $(LIBDL), \

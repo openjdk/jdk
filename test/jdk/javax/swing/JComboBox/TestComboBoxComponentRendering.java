@@ -25,7 +25,7 @@
  * @test
  * @bug 8218474
  * @key headful
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @summary Verifies if combobox components are rendered correctly.
  * @run main TestComboBoxComponentRendering
  */

@@ -49,6 +49,10 @@
 #include <link.h>
 #endif
 
+#ifdef _BSDONLY_SOURCE
+#include <stdint.h>
+#endif
+
 #endif
 
 #include <limits.h>

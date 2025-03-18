@@ -26,7 +26,7 @@
   @bug 6239941
   @summary Choice triggers ItemEvent when selecting an item with right mouse button, Xtoolkit
   @key headful
-  @requires (os.family == "linux")
+  @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
 */
 
 import java.awt.Choice;
@@ -43,8 +43,9 @@ import java.awt.event.KeyEvent;
 public class ChoiceGeneratesItemEvents implements ItemListener {
 
     public static void main(String[] args) throws Exception {
-        if (!System.getProperty("os.name").toLowerCase().startsWith("linux")) {
-            System.out.println("This test is for Linux only");
+        if (!System.getProperty("os.name").toLowerCase().startsWith("linux") &&
+            !System.getProperty("os.name").toLowerCase().endsWith("bsd")) {
+            System.out.println("This test is for Linux/BSD only");
             return;
         }
         try {

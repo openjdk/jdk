@@ -27,7 +27,7 @@ import java.io.IOException;
  * @test
  * @summary Verify Signal mask is cleared by ProcessBuilder start
  * @bug 8234262
- * @requires (os.family == "linux" | os.family == "mac")
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd" | os.family == "mac")
  * @comment Don't allow -Xcomp, it disturbs the relative timing of the sleep and kill commands
  * @requires (vm.compMode != "Xcomp")
  * @run main/othervm UnblockSignals

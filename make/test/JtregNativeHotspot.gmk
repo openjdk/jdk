@@ -147,6 +147,12 @@ ifeq ($(call isTargetOs, linux), true)
   NO_FRAMEPOINTER_CFLAGS := -fomit-frame-pointer
 endif
 
+ifeq ($(OPENJDK_TARGET_OS),bsd)
+   PTHREAD=-pthread
+else
+   PTHREAD=-lpthread
+endif
+
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libNoFramePointer := $(NO_FRAMEPOINTER_CFLAGS)
 # Optimization -O3 needed, HIGH == -O3
 BUILD_HOTSPOT_JTREG_LIBRARIES_OPTIMIZATION_libNoFramePointer := HIGH
@@ -849,7 +855,7 @@ BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libVirtualMachine09agent00 := $(NSK_AOD_INC
 ################################################################################
 
 # Platform specific setup
-ifeq ($(call isTargetOs, linux), true)
+ifeq ($(call isTargetOs, linux bsd), true)
   BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rw := -z noexecstack
   BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rwx := -z execstack
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libstepBreakPopReturn := $(LIBPTHREAD)

@@ -26,7 +26,7 @@
  * @summary Stack guard pages should be installed correctly and removed when thread is detached
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @requires os.family == "linux"
+ * @requires os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd"
  * @compile DoOverflow.java
  * @run main/native TestStackGuardPages
  */

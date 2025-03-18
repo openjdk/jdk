@@ -1438,12 +1438,16 @@ bool MacroAssembler::is_load_from_polling_page(int instruction, void* ucontext,
     return true; // No ucontext given. Can't check value of ra. Assume true.
   }
 
-#ifdef LINUX
+#if defined(LINUX) || defined(_ALLBSD_SOURCE)
   // Ucontext given. Check that register ra contains the address of
   // the safepoing polling page.
   ucontext_t* uc = (ucontext_t*) ucontext;
   // Set polling address.
+#if defined(LINUX)
   address addr = (address)uc->uc_mcontext.regs->gpr[ra] + (ssize_t)ds;
+#elif defined(_ALLBSD_SOURCE)
+  address addr = (address)uc->uc_mcontext.mc_gpr[ra] + (ssize_t)ds;
+#endif
   if (polling_address_ptr != nullptr) {
     *polling_address_ptr = addr;
   }
@@ -1497,7 +1501,7 @@ void MacroAssembler::bang_stack_with_offset(int offset) {
 // or stdux  R1_SP, Rx, R1_SP    (see push_frame(), resize_frame())
 // return the banged address. Otherwise, return 0.
 address MacroAssembler::get_stack_bang_address(int instruction, void *ucontext) {
-#ifdef LINUX
+#if defined(LINUX) || defined(_ALLBSD_SOURCE)
   ucontext_t* uc = (ucontext_t*) ucontext;
   int rs = inv_rs_field(instruction);
   int ra = inv_ra_field(instruction);
@@ -1506,11 +1510,20 @@ address MacroAssembler::get_stack_bang_address(int instruction, void *ucontext) 
       || (is_stdu(instruction) && rs == 1)) {
     int ds = inv_ds_field(instruction);
     // return banged address
+#if defined(LINUX)
     return ds+(address)uc->uc_mcontext.regs->gpr[ra];
+#elif defined(_ALLBSD_SOURCE)
+    return ds+(address)uc->uc_mcontext.mc_gpr[ra];
+#endif
   } else if (is_stdux(instruction) && rs == 1) {
     int rb = inv_rb_field(instruction);
+#if defined(LINUX)
     address sp = (address)uc->uc_mcontext.regs->gpr[1];
     long rb_val = (long)uc->uc_mcontext.regs->gpr[rb];
+#elif defined(_ALLBSD_SOURCE)
+    address sp = (address)uc->uc_mcontext.mc_gpr[1];
+    long rb_val = (long)uc->uc_mcontext.mc_gpr[rb];
+#endif
     return ra != 1 || rb_val >= 0 ? nullptr         // not a stack bang
                                   : sp + rb_val; // banged address
   }

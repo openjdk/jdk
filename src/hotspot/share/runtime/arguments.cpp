@@ -3686,9 +3686,11 @@ void Arguments::set_compact_headers_flags() {
   if (UseCompactObjectHeaders && LockingMode != LM_LIGHTWEIGHT) {
     FLAG_SET_DEFAULT(LockingMode, LM_LIGHTWEIGHT);
   }
+#if ! (defined(__FreeBSD__) && defined(AARCH64))
   if (UseCompactObjectHeaders && !UseCompressedClassPointers) {
     FLAG_SET_DEFAULT(UseCompressedClassPointers, true);
   }
+#endif
 #endif
 }
 

@@ -933,6 +933,9 @@ void Type::assert_type_verify_empty() const {
   assert(Compile::current()->_type_verify == nullptr || Compile::current()->_type_verify->empty_cache(), "cache should have been discarded");
 }
 
+// _C is a define on OpenBSD
+#undef _C
+
 class VerifyMeet {
 private:
   Compile* _C;

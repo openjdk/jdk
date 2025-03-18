@@ -26,7 +26,7 @@
  * @bug 8081507
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @summary Verifies if Open/Save button shows text as Open/Save.
  * @run main/manual TestFileChooserOpenSaveButtonText
  */
