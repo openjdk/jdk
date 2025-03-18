@@ -24,15 +24,16 @@
 /**
  * @test
  * @bug 8335708
- * @summary Crash Compile::verify_graph_edges
- * @requires vm.debug == true & vm.flavor == "server"
+ * @summary Crash Compile::verify_graph_edges with dead code check when safepoints are reachable but not connected back to Root's inputs
  * @library /test/lib
  *
+ * @run driver compiler.loopopts.VerifyGraphEdgesWithDeadCodeCheckFromSafepoints
  * @run main/othervm
+ *       -XX:+IgnoreUnrecognizedVMOptions
  *       -XX:-TieredCompilation -XX:+VerifyGraphEdges
  *       -XX:+StressIGVN -Xcomp
- *       -XX:CompileCommand=compileonly,compiler.loopopts.Test8335708::mainTest
- *       compiler.loopopts.Test8335708
+ *       -XX:CompileCommand=compileonly,compiler.loopopts.VerifyGraphEdgesWithDeadCodeCheckFromSafepoints::mainTest
+ *       compiler.loopopts.VerifyGraphEdgesWithDeadCodeCheckFromSafepoints
  *
  */
 
@@ -40,11 +41,11 @@ package compiler.loopopts;
 
 import jdk.test.lib.Utils;
 
-public class Test8335708 {
+public class VerifyGraphEdgesWithDeadCodeCheckFromSafepoints {
     public static void main(String[] args) throws Exception {
         Thread thread = new Thread() {
             public void run() {
-                Test8335708 instance = new Test8335708();
+                VerifyGraphEdgesWithDeadCodeCheckFromSafepoints instance = new VerifyGraphEdgesWithDeadCodeCheckFromSafepoints();
                 byte[] a = new byte[997];
                 for (int i = 0; i < 100; ++i) {
                     instance.mainTest(a, a);

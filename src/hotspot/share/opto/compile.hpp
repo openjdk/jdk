@@ -1229,13 +1229,24 @@ public:
   static void print_intrinsic_statistics() PRODUCT_RETURN;
 
   // Graph verification code
-  // Walk the node list, verifying that there is a one-to-one
-  // correspondence between Use-Def edges and Def-Use edges
-  // The option no_dead_code enables stronger checks that the
-  // graph is strongly connected from root in both directions.
-  // root_and_safepoints is used to give the starting points to
-  // find useful nodes. If not supplied, only root is used.
-  // Giving this makes sense only if no_dead_code == true.
+  // Walk the node list, verifying that there is a one-to-one correspondence
+  // between Use-Def edges and Def-Use edges The option no_dead_code enables
+  // stronger checks that the graph is strongly connected from starting points
+  // in both directions.
+  // root_and_safepoints is used to give the starting points for the traversal.
+  // If not supplied, only root is used. When this check is called after CCP,
+  // we need to start traversal from Root and safepoints, just like CCP does its
+  // own traversal (see PhaseCCP::transform for reasons).
+  //
+  // To call this function, there are 2 ways to go:
+  // - give root_and_safepoints to start traversal everywhere needed (like after CCP),
+  // - if the whole graph is assumed to be reachable from Root's input,
+  //   root_and_safepoints is not needed (like in PhaseRemoveUseless).
+  //
+  // Failure to specify root_and_safepoints in case the graph is not fully
+  // reachable from Root's input make this check unsound (can miss inconsistencies)
+  // and even incomplete (can make up non-existing problems) if no_dead_code is
+  // true.
   void verify_graph_edges(bool no_dead_code = false, const Unique_Node_List* root_and_safepoints = nullptr) const PRODUCT_RETURN;
 
   // Verify bi-directional correspondence of edges
