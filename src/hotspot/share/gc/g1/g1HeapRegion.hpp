@@ -347,7 +347,7 @@ public:
   // estimate for remembered set cards.
   double total_based_on_incoming_refs_ms();
 
-  // GC Efficiency for collecting this region based on the time estimate in
+  // GC efficiency for collecting this region based on the time estimate in
   // total_based_on_incoming_refs_ms.
   double gc_efficiency();
 
@@ -365,8 +365,8 @@ public:
   // that the collector is about to start or has finished (concurrently)
   // marking the heap.
 
-  // Notify the region that concurrent marking has finished. Passes TAMS and the number of
-  // bytes marked between bottom and TAMS.
+  // Notify the region that concurrent marking has finished. Passes TAMS, the number of
+  // bytes marked between bottom and TAMS, and the estimate for incoming references.
   inline void note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes, size_t incoming_refs);
 
   // Notify the region that scrubbing has completed.

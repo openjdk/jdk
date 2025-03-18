@@ -562,7 +562,7 @@ public:
   size_t live_bytes(uint region) const { return _region_mark_stats[region]._live_words * HeapWordSize; }
   // Set live bytes for concurrent marking.
   void set_live_bytes(uint region, size_t live_bytes) { _region_mark_stats[region]._live_words = live_bytes / HeapWordSize; }
-
+  // Approximate number of incoming references found during marking.
   size_t incoming_refs(uint region) const { return _region_mark_stats[region]._incoming_refs; }
 
   // Update the TAMS for the given region to the current top.

@@ -49,7 +49,7 @@ struct G1CollectionSetCandidateInfo {
     return _num_unreclaimed < G1NumCollectionsKeepPinned;
   }
 
-  static int compare_gc_efficiency(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
+  static int compare_region_gc_efficiency(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
 };
 
 using G1CSetCandidateGroupIterator = GrowableArrayIterator<G1CollectionSetCandidateInfo>;

@@ -33,10 +33,12 @@
 
 // Per-Region statistics gathered during marking.
 //
-// This includes
+// These include:
 // * the number of live words gathered during marking for the area from bottom
-// to tams. This is an exact measure.
-// The code corrects later for the live data between tams and top.
+//   to tams. This is an exact measure. The code corrects later for the live data
+//   between tams and top.
+// * the number of incoming references found during marking. This is an approximate
+//   value because we do not mark through all objects.
 struct G1RegionMarkStats {
   size_t _live_words;
   size_t _incoming_refs;

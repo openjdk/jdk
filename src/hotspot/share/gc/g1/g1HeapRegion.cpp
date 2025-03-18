@@ -343,7 +343,7 @@ double G1HeapRegion::total_based_on_incoming_refs_ms() {
 
   G1Policy* p = G1CollectedHeap::heap()->policy();
 
-  double merge_scan_time_ms = p->predict_merge_scan_time(_incoming_refs); // We use _incoming_refs as an estimate for remset cards
+  double merge_scan_time_ms = p->predict_merge_scan_time(_incoming_refs); // We use the number of incoming references as an estimate for remset cards.
   double non_young_other_time_ms = p->predict_non_young_other_time_ms(1);
   double predicted_copy_time_ms = p->predict_region_copy_time_ms(this, false /* for_young_only_phase */);
 
