@@ -356,8 +356,7 @@ void JvmtiAgent::convert_xrun_agent() {
   // Don't report any error and bail out too early in
   // lookup_JVM_OnLoad_entry_point if it does not succeed, since we want
   // to try lookup_Agent_OnLoad_entry_point for Agent_OnLoad as well.
-  OnLoadEntry_t on_load_entry = lookup_JVM_OnLoad_entry_point(
-    this, /* vm exit on error */ false);
+  OnLoadEntry_t on_load_entry = lookup_JVM_OnLoad_entry_point(this, /* vm exit on error */ false);
   // If there is an JVM_OnLoad function it will get called later,
   // otherwise see if there is an Agent_OnLoad.
   if (on_load_entry == nullptr) {
