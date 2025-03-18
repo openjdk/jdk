@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -522,7 +522,7 @@ public sealed interface StructuredTaskScope<T, R>
          */
         default boolean onFork(Subtask<? extends T> subtask) {
             if (subtask.state() != Subtask.State.UNAVAILABLE) {
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException("Subtask not in UNAVAILABLE state");
             }
             return false;
         }
@@ -545,7 +545,7 @@ public sealed interface StructuredTaskScope<T, R>
          */
         default boolean onComplete(Subtask<? extends T> subtask) {
             if (subtask.state() == Subtask.State.UNAVAILABLE) {
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException("Subtask has not completed");
             }
             return false;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,26 @@ class Joiners {
     private Joiners() { }
 
     /**
+     * Throws IllegalArgumentException if the subtask is not in the UNAVAILABLE state.
+     */
+    private static void ensureUnavailable(Subtask<?> subtask) {
+        if (subtask.state() != Subtask.State.UNAVAILABLE) {
+            throw new IllegalArgumentException("Subtask not in UNAVAILABLE state");
+        }
+    }
+
+    /**
+     * Throws IllegalArgumentException if the subtask has not completed.
+     */
+    private static Subtask.State ensureCompleted(Subtask<?> subtask) {
+        Subtask.State state = subtask.state();
+        if (state == Subtask.State.UNAVAILABLE) {
+            throw new IllegalArgumentException("Subtask has not completed");
+        }
+        return state;
+    }
+
+    /**
      * A joiner that returns a stream of all subtasks when all subtasks complete
      * successfully. Cancels the scope if any subtask fails.
      */
@@ -58,9 +78,7 @@ class Joiners {
 
         @Override
         public boolean onFork(Subtask<? extends T> subtask) {
-            if (subtask.state() != Subtask.State.UNAVAILABLE) {
-                throw new IllegalArgumentException();
-            }
+            ensureUnavailable(subtask);
             @SuppressWarnings("unchecked")
             var s = (Subtask<T>) subtask;
             subtasks.add(s);
@@ -69,10 +87,7 @@ class Joiners {
 
         @Override
         public boolean onComplete(Subtask<? extends T> subtask) {
-            Subtask.State state = subtask.state();
-            if (state == Subtask.State.UNAVAILABLE) {
-                throw new IllegalArgumentException();
-            }
+            Subtask.State state = ensureCompleted(subtask);
             return (state == Subtask.State.FAILED)
                     && (firstException == null)
                     && FIRST_EXCEPTION.compareAndSet(this, null, subtask.exception());
@@ -116,10 +131,7 @@ class Joiners {
 
         @Override
         public boolean onComplete(Subtask<? extends T> subtask) {
-            Subtask.State state = subtask.state();
-            if (state == Subtask.State.UNAVAILABLE) {
-                throw new IllegalArgumentException();
-            }
+            Subtask.State state = ensureCompleted(subtask);
             Subtask<T> s;
             while (((s = this.subtask) == null)
                     || SUBTASK_STATE_COMPARATOR.compare(s.state(), state) < 0) {
@@ -155,10 +167,7 @@ class Joiners {
 
         @Override
         public boolean onComplete(Subtask<? extends T> subtask) {
-            Subtask.State state = subtask.state();
-            if (state == Subtask.State.UNAVAILABLE) {
-                throw new IllegalArgumentException();
-            }
+            Subtask.State state = ensureCompleted(subtask);
             return (state == Subtask.State.FAILED)
                     && (firstException == null)
                     && FIRST_EXCEPTION.compareAndSet(this, null, subtask.exception());
@@ -190,9 +199,7 @@ class Joiners {
 
         @Override
         public boolean onFork(Subtask<? extends T> subtask) {
-            if (subtask.state() != Subtask.State.UNAVAILABLE) {
-                throw new IllegalArgumentException();
-            }
+            ensureUnavailable(subtask);
             @SuppressWarnings("unchecked")
             var s = (Subtask<T>) subtask;
             subtasks.add(s);
@@ -201,9 +208,7 @@ class Joiners {
 
         @Override
         public boolean onComplete(Subtask<? extends T> subtask) {
-            if (subtask.state() == Subtask.State.UNAVAILABLE) {
-                throw new IllegalArgumentException();
-            }
+            ensureCompleted(subtask);
             return isDone.test(subtask);
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1487,7 +1487,7 @@ class StructuredTaskScopeTest {
      * Test Joiners onFork/onComplete methods with a subtask in an unexpected state.
      */
     @Test
-    void testJoinersWithUnavailableResukt() throws Exception {
+    void testJoinersWithUnavailableResult() throws Exception {
         try (var scope = StructuredTaskScope.open()) {
             var done = new CountDownLatch(1);
             var subtask = scope.fork(() -> {
