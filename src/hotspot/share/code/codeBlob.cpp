@@ -151,6 +151,9 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
     if (_mutable_data == nullptr) {
       vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "codebuffer: no space for mutable data");
     }
+  } else {
+    // We need unique and valid not null address
+    _mutable_data = blob_end();
   }
 
   set_oop_maps(oop_maps);
@@ -175,12 +178,13 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
 {
   assert(is_aligned(size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,     oopSize), "unaligned size");
+  _mutable_data = blob_end(); // Valid not null address
 }
 
 void CodeBlob::purge() {
-  if (_mutable_data != nullptr) {
+  if (_mutable_data != blob_end()) {
     os::free(_mutable_data);
-    _mutable_data = nullptr;
+    _mutable_data = blob_end(); // Valid not null address
   }
   if (_oop_maps != nullptr) {
     delete _oop_maps;
