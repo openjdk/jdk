@@ -590,9 +590,9 @@ final class Operations {
 
             ops.add(new Operation.Unary(type, "", type, ".neg()", null));
 
-            // TODO: rearrange(VectorShuffle<Integer> shuffle)
-            // TODO: rearrange(VectorShuffle<Integer> s, Vector<Integer> v)
-            // TODO: rearrange(VectorShuffle<Integer> s, VectorMask<Integer> m)
+            ops.add(new Operation.Binary(type, "", type, ".rearrange(", type.shuffleType, ")", null));
+            ops.add(new Operation.Ternary(type, "", type, ".rearrange(", type.shuffleType, ", ", type, ")", null));
+            ops.add(new Operation.Ternary(type, "", type, ".rearrange(", type.shuffleType, ", ", type.maskType, ")", null));
 
             ops.add(new Operation.Binary(type, "", type, ".selectFrom(", type, ")", null));
             ops.add(new Operation.Ternary(type, "", type, ".selectFrom(", type, ", ", type, ")", null));

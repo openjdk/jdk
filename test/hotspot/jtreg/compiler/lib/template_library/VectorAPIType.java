@@ -68,6 +68,7 @@ public final class VectorAPIType extends Type {
     public final String species;
 
     public final MaskType maskType;
+    public final ShuffleType shuffleType;
 
     private VectorAPIType(PrimitiveType elementType, int length) {
         this.elementType = elementType;
@@ -75,6 +76,7 @@ public final class VectorAPIType extends Type {
         this.vectorType = elementType.vectorAPITypeName();
         this.species = vectorType + ".SPECIES_" + (elementType.sizeInBits() * length);
         this.maskType = new MaskType(this);
+        this.shuffleType = new ShuffleType(this);
     }
 
     @Override
@@ -117,6 +119,33 @@ public final class VectorAPIType extends Type {
         public final Object con() {
             // TODO:
             return List.of("VectorMask.fromLong(", vectorType.species, ", ", longs().con(), ")");
+        }
+
+        public final int sizeInBits() { return vectorType.sizeInBits(); }
+    }
+
+    public final class ShuffleType extends Type {
+        public final VectorAPIType vectorType;
+        public final String vectorShuffleTypeName;
+
+        ShuffleType(VectorAPIType vectorType) {
+            this.vectorType = vectorType;
+            this.vectorShuffleTypeName = "VectorShuffle<" + vectorType.elementType.boxedTypeName() + ">";
+        }
+
+        @Override
+        public boolean isSubtypeOf(Name.Type other) {
+            // TODO: re-evaluate
+            return this == other;
+        }
+
+        @Override
+        public final String name() { return vectorShuffleTypeName; }
+
+        @Override
+        public final Object con() {
+            // TODO:
+            return List.of("VectorShuffle.iota(", vectorType.species, ", ", ints().con(), ", ", ints().con(), ", true)");
         }
 
         public final int sizeInBits() { return vectorType.sizeInBits(); }

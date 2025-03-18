@@ -121,6 +121,7 @@ public abstract class Type implements Name.Type {
         VectorAPIType.DOUBLE_512
     );
 
+    // TODO: concat?
     public static final List<VectorAPIType> VECTOR_API_VECTOR_TYPES = Stream.of(
         VECTOR_API_BYTE_VECTOR_TYPES,
         VECTOR_API_SHORT_VECTOR_TYPES,
@@ -133,9 +134,13 @@ public abstract class Type implements Name.Type {
     public static final List<VectorAPIType.MaskType> VECTOR_API_MASK_TYPES =
         VECTOR_API_VECTOR_TYPES.stream().map(t -> t.maskType).toList();
 
+    public static final List<VectorAPIType.ShuffleType> VECTOR_API_SHUFFLE_TYPES =
+        VECTOR_API_VECTOR_TYPES.stream().map(t -> t.shuffleType).toList();
+
     public static final List<Type> ALL_VECTOR_API_TYPES = Library.concat(
         VECTOR_API_VECTOR_TYPES,
-        VECTOR_API_MASK_TYPES
+        VECTOR_API_MASK_TYPES,
+        VECTOR_API_SHUFFLE_TYPES
     );
 
     public static final List<Type> ALL_BUILTIN_TYPES = Library.concat(

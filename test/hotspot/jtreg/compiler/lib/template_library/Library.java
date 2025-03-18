@@ -56,10 +56,11 @@ public abstract class Library {
         return list.get(i);
     }
 
-    static final <T> List<T> concat(List<? extends T> a, List<? extends T> b) {
+    static final <T> List<T> concat(List<? extends T> ... lists) {
         List<T> list = new ArrayList<T>();
-        list.addAll(a);
-        list.addAll(b);
+        for (var l : lists) {
+            list.addAll(l);
+        }
 
         // Ensure the list is immutable.
         return List.copyOf(list);
