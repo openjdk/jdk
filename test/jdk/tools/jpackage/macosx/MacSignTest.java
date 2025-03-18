@@ -54,7 +54,7 @@ public class MacSignTest {
     public enum StandardKeychain {
         BASIC("jpackageTest.keychain", cert().userName("jpackage.openjdk.java.net").create()),
         UNICODE("jpackageTest-unicode.keychain", cert().userName("jpackage.openjdk.java.net (ö)").create()),
-        SAME_NAME("jpackageTest-same-name.keychain", 
+        SAME_NAME("jpackageTest-same-name.keychain",
                 cert().userName("jpackage.openjdk.java.net").create(),
                 cert().days(100).userName("jpackage.openjdk.java.net").create()),
         ;
