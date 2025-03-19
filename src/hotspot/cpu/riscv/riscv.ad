@@ -7964,7 +7964,7 @@ instruct unnecessary_membar_rvtso() %{
 
   size(0);
 
-  format %{ "unnecessary_membar_rvtso elided/tso (empty encoding)" %}
+  format %{ "#@unnecessary_membar_rvtso elided/tso (empty encoding)" %}
   ins_encode %{
     __ block_comment("unnecessary_membar_rvtso");
   %}
@@ -7976,7 +7976,7 @@ instruct membar_volatile_rvtso() %{
   match(MemBarVolatile);
   ins_cost(VOLATILE_REF_COST);
 
-  format %{ "membar_volatile_rvtso\n\t"
+  format %{ "#@membar_volatile_rvtso\n\t"
             "fence w, r"%}
 
   ins_encode %{
@@ -7994,7 +7994,7 @@ instruct unnecessary_membar_volatile_rvtso() %{
 
   size(0);
   
-  format %{ "unnecessary_membar_volatile_rvtso (unnecessary so empty encoding)" %}
+  format %{ "#@unnecessary_membar_volatile_rvtso (unnecessary so empty encoding)" %}
   ins_encode %{
     __ block_comment("unnecessary_membar_volatile_rvtso");
   %}
@@ -8009,7 +8009,7 @@ instruct membar_aqcuire_rvwmo() %{
   match(MemBarAcquire);
   ins_cost(VOLATILE_REF_COST);
 
-  format %{ "membar_aqcuire_rvwmo\n\t"
+  format %{ "#@membar_aqcuire_rvwmo\n\t"
             "fence r, rw" %}
 
   ins_encode %{
@@ -8025,7 +8025,7 @@ instruct membar_release_rvwmo() %{
   match(MemBarRelease);
   ins_cost(VOLATILE_REF_COST);
 
-  format %{ "membar_release_rvwmo\n\t"
+  format %{ "#@membar_release_rvwmo\n\t"
             "fence rw, w" %}
 
   ins_encode %{
@@ -8041,7 +8041,7 @@ instruct membar_storestore_rvwmo() %{
   match(StoreStoreFence);
   ins_cost(VOLATILE_REF_COST);
 
-  format %{ "membar_storestore_rvwmo\n\t"
+  format %{ "#@membar_storestore_rvwmo\n\t"
             "fence w, w" %}
 
   ins_encode %{
@@ -8055,8 +8055,8 @@ instruct membar_volatile_rvwmo() %{
   match(MemBarVolatile);
   ins_cost(VOLATILE_REF_COST);
 
-  format %{ "membar_volatile_rvwmo\n\t"
-             "fence w, r"%}
+  format %{ "#@membar_volatile_rvwmo\n\t"
+            "fence w, r"%}
 
   ins_encode %{
     __ block_comment("membar_volatile_rvwmo");
@@ -8072,7 +8072,7 @@ instruct membar_lock_rvwmo() %{
   match(MemBarReleaseLock);
   ins_cost(0);
 
-  format %{ "membar_lock_rvwmo (elided)" %}
+  format %{ "#@membar_lock_rvwmo (elided)" %}
 
   ins_encode %{
     __ block_comment("membar_lock_rvwmo (elided)");
@@ -8087,7 +8087,7 @@ instruct unnecessary_membar_volatile_rvwmo() %{
   ins_cost(0);
 
   size(0);
-  format %{ "unnecessary_membar_volatile_rvwmo (unnecessary so empty encoding)" %}
+  format %{ "#@unnecessary_membar_volatile_rvwmo (unnecessary so empty encoding)" %}
   ins_encode %{
     __ block_comment("unnecessary_membar_volatile_rvwmo");
   %}
