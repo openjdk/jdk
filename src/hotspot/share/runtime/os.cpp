@@ -698,7 +698,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
   }
 
   void* rc = nullptr;
-  size_t outer_size = os::pre_alloc(&rc, memblock, size, mem_tag, stack);
+  long outer_size = os::pre_alloc(&rc, memblock, size, mem_tag, stack);
   if (rc != nullptr) {
     return rc;
   }
