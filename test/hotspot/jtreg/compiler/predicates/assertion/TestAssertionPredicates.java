@@ -27,6 +27,8 @@
  * @bug 8288981 8350579
  * @summary Test all possible cases in which Assertion Predicates are required such that the graph is not left in a
  *          broken state to trigger assertions. Additional tests ensure the correctness of the implementation.
+ *          All tests additionally -XX:+AbortVMOnCompilationFailure which would catch bad graphs as a result of missing
+            or wrong Assertion Predicates where we simply bail out of C2 compilation.
  * @run main/othervm -Xbatch
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.TestAssertionPredicates::*
@@ -37,8 +39,7 @@
 /*
  * @test id=NoTieredCompilation
  * @bug 8288981 8350579
- * @summary Test all possible cases in which Assertion Predicates are required such that the graph is not left in a
- *          broken state to trigger assertions. Additional tests ensure the correctness of the implementation.
+
  * @run main/othervm -Xbatch -XX:-TieredCompilation
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.TestAssertionPredicates::*
@@ -155,7 +156,6 @@ public class TestAssertionPredicates {
         }
     }
 
-    // Runs most of the tests except the really time-consuming ones.
     static void runAllTests() {
         testTemplateAssertionPredicateNotRemovedHalt();
         testTemplateAssertionPredicateNotRemovedMalformedGraph();
