@@ -75,9 +75,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
             return false;
         }
         // Prevent reentry via an orElseSet(supplier)
-        if (Thread.holdsLock(this)) {
-            throw new IllegalStateException("Recursing supplier detected");
-        }
+        preventReentry();
         // Mutual exclusion is required here as `orElseSet` might also
         // attempt to modify the `wrappedValue`
         synchronized (this) {
@@ -127,10 +125,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @DontInline
     private T orElseSetSlowPath(Supplier<? extends T> supplier) {
-        // Prevent reentry
-        if (Thread.holdsLock(this)) {
-            throw new IllegalStateException("Recursing supplier detected: " + supplier);
-        }
+        preventReentry();
         synchronized (this) {
             final Object t = content;  // Plain semantics suffice here
             if (t == null) {
@@ -165,6 +160,12 @@ public final class StableValueImpl<T> implements StableValue<T> {
     }
 
     // Private methods
+
+    private void preventReentry() {
+        if (Thread.holdsLock(this)) {
+            throw new IllegalStateException("Recursing supplier detected");
+        }
+    }
 
     @ForceInline
     private boolean wrapAndSet(Object newValue) {

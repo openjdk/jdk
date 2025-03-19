@@ -78,6 +78,22 @@ final class StableValueTest {
     }
 
     @Test
+    void setOrThrowValue() {
+        StableValue<Integer> stable = StableValue.of();
+        stable.setOrThrow(VALUE);
+        var e = assertThrows(IllegalStateException.class, () -> stable.setOrThrow(VALUE2));
+        assertEquals("Cannot set the content to " + VALUE2 + " because the content is already set: " + VALUE, e.getMessage());
+    }
+
+    @Test
+    void setOrThrowNull() {
+        StableValue<Integer> stable = StableValue.of();
+        stable.setOrThrow(null);
+        var e = assertThrows(IllegalStateException.class, () -> stable.setOrThrow(null));
+        assertEquals("Cannot set the content to null because the content is already set: null", e.getMessage());
+    }
+
+    @Test
     void orElse() {
         StableValue<Integer> stable = StableValue.of();
         assertEquals(VALUE, stable.orElse(VALUE));
