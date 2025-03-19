@@ -498,6 +498,24 @@ public class TestVerify {
         public E e2;
     }
 
+    static class F {
+        private int x;
+
+        public F(int x) {
+            this.x = x;
+        }
+    }
+
+    static class F2 extends F {
+        private int y;
+
+        F2(int x, int y) {
+            super(x);
+            this.y = y;
+        }
+    }
+
+
     public static void testArbitraryClasses() {
         A a1 = new A();
         A a2 = new A();
@@ -535,6 +553,7 @@ public class TestVerify {
         checkNE(d1, d3, false, true);
         checkNE(d3, d1, false, true);
 
+        // Object fields, including cycles.
         E e1 = new E(d1, null, null);
         E e2 = new E(d1, null, null);
         E e3 = new E(d3, null, null);
@@ -544,6 +563,8 @@ public class TestVerify {
         e6.e1 = e6;
         E e7 = new E(d1, null, null);
         e7.e1 = e7;
+        E e8 = new E(d1, e1, e1);
+        E e9 = new E(d1, e1, e2);
 
         Verify.checkEQ(e1, e1, false, true);
         Verify.checkEQ(e1, e2, false, true);
@@ -553,6 +574,25 @@ public class TestVerify {
         Verify.checkEQ(e6, e6, false, true);
         Verify.checkEQ(e6, e7, false, true);
         Verify.checkEQ(e7, e6, false, true);
+        Verify.checkEQ(e8, e8, false, true);
+        checkNE(e8, e9, false, true);
+        checkNE(e9, e8, false, true);
+
+        // Fields from superclass.
+        F2 f1 = new F2(1, 1);
+        F2 f2 = new F2(1, 1);
+        F2 f3 = new F2(2, 1);
+        F2 f4 = new F2(1, 2);
+
+        Verify.checkEQ(f1, f1, false, true);
+        Verify.checkEQ(f1, f2, false, true);
+        Verify.checkEQ(f2, f1, false, true);
+        checkNE(f1, f3, false, true);
+        checkNE(f1, f4, false, true);
+        checkNE(f3, f1, false, true);
+        checkNE(f4, f1, false, true);
+        checkNE(f3, f4, false, true);
+        checkNE(f4, f3, false, true);
 
         // TODO: records!
     }

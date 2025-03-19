@@ -432,17 +432,22 @@ public final class Verify {
     }
 
     private void checkEQArbitraryClasses(Object a, Object b) {
-        for (Field field : a.getClass().getDeclaredFields()) {
-            Object va = null;
-            Object vb = null;
-            try {
-                field.setAccessible(true);
-                va = field.get(a);
-                vb = field.get(b);
-            } catch (IllegalAccessException e) {
-                throw new VerifyException("Failure to access field: " + field + " of " + a);
+        Class c = a.getClass();
+        while (c != Object.class) {
+            for (Field field : c.getDeclaredFields()) {
+                System.out.println(field);
+                Object va = null;
+                Object vb = null;
+                try {
+                    field.setAccessible(true);
+                    va = field.get(a);
+                    vb = field.get(b);
+                } catch (IllegalAccessException e) {
+                    throw new VerifyException("Failure to access field: " + field + " of " + a);
+                }
+                checkEQdispatch(va, vb, field.getName(), a, b);
             }
-            checkEQdispatch(va, vb, field.getName(), a, b);
+            c = c.getSuperclass();
         }
     }
 
@@ -455,7 +460,6 @@ public final class Verify {
     }
 
     private boolean checkAlreadyVisited(Object a, Object b, String field, Object aParent, Object bParent) {
-        // TODO: must also check reverse direction?
         Object bPrevious = a2b.get(a);
         Object aPrevious = b2a.get(b);
         if (aPrevious == null && bPrevious == null) {
