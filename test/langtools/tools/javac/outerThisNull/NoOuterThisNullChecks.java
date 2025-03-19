@@ -35,18 +35,18 @@ import static org.junit.jupiter.api.Assertions.*;
 /*
  * @test
  * @bug 8164714
- * @summary Null check for immediate enclosing instance for VM/reflective
- *          invocation of inner classes
+ * @summary No null check for immediate enclosing instance for VM/reflective
+ *          invocation of inner classes for older versions or on request
  *
  * @clean *
- * @compile OuterThisNullChecks.java
- * @run junit OuterThisNullChecks
+ * @compile -XDnullCheckOuterThis=false NoOuterThisNullChecks.java
+ * @run junit NoOuterThisNullChecks
  *
  * @clean *
- * @compile --release 17 -XDnullCheckOuterThis=true OuterThisNullChecks.java
- * @run junit OuterThisNullChecks
+ * @compile --release 17 NoOuterThisNullChecks.java
+ * @run junit NoOuterThisNullChecks
  */
-class OuterThisNullChecks {
+class NoOuterThisNullChecks {
     static Stream<Class<?>> testClasses() {
         return Stream.of(NoOuterThis.class, OuterThisField.class);
     }
@@ -54,12 +54,11 @@ class OuterThisNullChecks {
     @MethodSource("testClasses")
     @ParameterizedTest
     void testNoOuter(Class<?> clz) {
-        var ite = assertThrows(InvocationTargetException.class, () -> clz.getDeclaredConstructor(OuterThisNullChecks.class).newInstance((Object) null));
-        assertInstanceOf(NullPointerException.class, ite.getCause());
+        assertDoesNotThrow(() -> clz.getDeclaredConstructor(NoOuterThisNullChecks.class).newInstance((Object) null));
 
-        MethodHandle mh = assertDoesNotThrow(() -> MethodHandles.lookup().findConstructor(clz, MethodType.methodType(void.class, OuterThisNullChecks.class)))
+        MethodHandle mh = assertDoesNotThrow(() -> MethodHandles.lookup().findConstructor(clz, MethodType.methodType(void.class, NoOuterThisNullChecks.class)))
                 .asType(MethodType.methodType(Object.class, Object.class));
-        assertThrows(NullPointerException.class, () -> {
+        assertDoesNotThrow(() -> {
             Object stub = mh.invokeExact((Object) null);
         });
     }
@@ -68,7 +67,7 @@ class OuterThisNullChecks {
     class OuterThisField {
         @Override
         public String toString() {
-            return "outer this = " + OuterThisNullChecks.this;
+            return "outer this = " + NoOuterThisNullChecks.this;
         }
     }
 }

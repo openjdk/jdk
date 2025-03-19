@@ -105,6 +105,7 @@ public class Lower extends TreeTranslator {
     private final boolean disableProtectedAccessors; // experimental
     private final PkgInfo pkginfoOpt;
     private final boolean optimizeOuterThis;
+    private final boolean nullCheckOuterThis;
     private final boolean useMatchException;
     private final HashMap<TypePairs, String> typePairToName;
     private int variableIndex = 0;
@@ -134,6 +135,8 @@ public class Lower extends TreeTranslator {
         optimizeOuterThis =
             target.optimizeOuterThis() ||
             options.getBoolean("optimizeOuterThis", false);
+        nullCheckOuterThis = options.getBoolean("nullCheckOuterThis",
+            target.nullCheckOuterThisByDefault());
         disableProtectedAccessors = options.isSet("disableProtectedAccessors");
         Source source = Source.instance(context);
         Preview preview = Preview.instance(context);
@@ -1798,16 +1801,20 @@ public class Lower extends TreeTranslator {
     JCStatement initOuterThis(int pos, VarSymbol rhs, boolean stores) {
         Assert.check(rhs.owner.kind == MTH);
         make.at(pos);
-        var nullCheck = attr.makeNullCheck(make.Ident(rhs));
         JCExpression expression;
         if (stores) {
             VarSymbol lhs = outerThisStack.head;
             Assert.check(rhs.owner.owner == lhs.owner);
+            JCExpression sourceExp = make.Ident(rhs);
+            if (nullCheckOuterThis) {
+                sourceExp = attr.makeNullCheck(sourceExp);
+            }
             expression = make.Assign(
                     make.Select(make.This(lhs.owner.erasure(types)), lhs),
-                    nullCheck).setType(lhs.erasure(types));
+                    sourceExp).setType(lhs.erasure(types));
         } else {
-            expression = nullCheck;
+            Assert.check(nullCheckOuterThis);
+            expression = attr.makeNullCheck(make.Ident(rhs));
         }
         return make.Exec(expression);
     }
@@ -2214,12 +2221,15 @@ public class Lower extends TreeTranslator {
         }
         // If this$n was accessed, add the field definition and prepend
         // initializer code to any super() invocation to initialize it
-        // otherwise just prepend enclosing instance null check code
+        // otherwise prepend enclosing instance null check code if required
+        emitOuter:
         if (currentClass.hasOuterInstance()) {
             boolean storesThis = shouldEmitOuterThis(currentClass);
             if (storesThis) {
                 tree.defs = tree.defs.prepend(otdef);
                 enterSynthetic(tree.pos(), otdef.sym, currentClass.members());
+            } else if (!nullCheckOuterThis) {
+                break emitOuter;
             }
 
             for (JCTree def : tree.defs) {
