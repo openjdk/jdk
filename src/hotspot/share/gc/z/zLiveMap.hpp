@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ private:
   volatile size_t   _live_bytes;
   BitMap::bm_word_t _segment_live_bits;
   BitMap::bm_word_t _segment_claim_bits;
+  size_t            _bitmap_size;
   ZBitMap           _bitmap;
   int               _segment_shift;
 
@@ -64,6 +65,8 @@ private:
   BitMap::idx_t index_to_segment(BitMap::idx_t index) const;
 
   bool claim_segment(BitMap::idx_t segment);
+
+  void allocate_bitmap();
 
   void reset(ZGenerationId id);
   void reset_segment(BitMap::idx_t segment);

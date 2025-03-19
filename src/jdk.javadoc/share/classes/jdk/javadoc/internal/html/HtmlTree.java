@@ -1218,7 +1218,7 @@ public class HtmlTree extends Content {
      */
     public boolean isInline() {
         return switch (tag) {
-            case A, BUTTON, BR, CODE, EM, I, IMG, LABEL, SMALL, SPAN, STRONG, SUB, SUP, WBR -> true;
+            case A, BUTTON, BR, CODE, EM, I, IMG, INPUT, LABEL, SELECT, SMALL, SPAN, STRONG, SUB, SUP, WBR -> true;
             default -> false;
         };
     }
