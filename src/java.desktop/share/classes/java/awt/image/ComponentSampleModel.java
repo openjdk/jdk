@@ -237,22 +237,7 @@ public class ComponentSampleModel extends SampleModel
     }
 
     private void verify() {
-        // Some parts of the code do account for negative strides, but some do not.
-        // We consider them unsupported for the time being.
-
-        if (scanlineStride < 0 || scanlineStride > (Integer.MAX_VALUE / height)) {
-            throw new IllegalArgumentException("Invalid scanline stride");
-        }
-
-        if (pixelStride < 0 || pixelStride > (scanlineStride / width)) {
-            throw new IllegalArgumentException("Invalid pixel stride");
-        }
-
-        for (int i = 0; i < bandOffsets.length; i++) {
-            if (bandOffsets[i] < 0 || bandOffsets[i] >= pixelStride) {
-                throw new IllegalArgumentException("Invalid band offset: " + i);
-            }
-        }
+        int requiredSize = getBufferSize();
     }
 
     /**
@@ -260,7 +245,45 @@ public class ComponentSampleModel extends SampleModel
      * for a data buffer that matches this ComponentSampleModel.
      */
      private int getBufferSize() {
-         return scanlineStride * height;
+         int maxBandOff=bandOffsets[0];
+         for (int i=1; i<bandOffsets.length; i++) {
+             maxBandOff = Math.max(maxBandOff,bandOffsets[i]);
+         }
+
+         if (maxBandOff < 0 || maxBandOff > (Integer.MAX_VALUE - 1)) {
+             throw new IllegalArgumentException("Invalid band offset");
+         }
+
+         if (pixelStride < 0 || pixelStride > (Integer.MAX_VALUE / width)) {
+             throw new IllegalArgumentException("Invalid pixel stride");
+         }
+
+         if (scanlineStride < 0 || scanlineStride > (Integer.MAX_VALUE / height)) {
+             throw new IllegalArgumentException("Invalid scanline stride");
+         }
+
+         int size = maxBandOff + 1;
+
+         int val = pixelStride * (width - 1);
+
+         if (val > (Integer.MAX_VALUE - size)) {
+             throw new IllegalArgumentException("Invalid pixel stride");
+         }
+
+         size += val;
+
+         val = scanlineStride * (height - 1);
+
+         if (val > (Integer.MAX_VALUE - size)) {
+             throw new IllegalArgumentException("Invalid scan stride");
+         }
+
+         size += val;
+
+         // Align to the pixel stride.
+         size = (size + pixelStride - 1) / pixelStride * pixelStride;
+
+         return size;
      }
 
      /**
