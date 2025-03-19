@@ -277,8 +277,8 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     notify_gc_waiters();
   }
 
-  // If this was an allocation failure GC cycle, notify waiters about it
-  if (ShenandoahCollectorPolicy::is_allocation_failure(request.cause)) {
+  // If this cycle completed successfully, notify threads waiting to retry allocation
+  if (!_heap->cancelled_gc()) {
     notify_alloc_failure_waiters();
   }
 
