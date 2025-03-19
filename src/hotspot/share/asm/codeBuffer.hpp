@@ -546,6 +546,8 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     DEBUG_ONLY(: Scrubber(this, sizeof(*this)))
   {
     initialize_misc(name);
+    _total_start = 0;
+    _total_size  = 0;
   }
 
   // (4) code buffer allocating codeBlob memory for code & relocation
