@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ final class LdapSearchEnumeration
         // fully qualified name of starting context of search
         startName = new LdapName(starter);
         searchArgs = args;
-        // No fences here for now.
+        // No reachabilityFence here for now.
         // super() call (aka AbstrctLdapNamingEnumeration ctor) keeps 'this'
         // reachable until end of Cleaner registration. Code after that
         // clearly does not touch cleanable state.
@@ -181,8 +181,6 @@ final class LdapSearchEnumeration
             sr.setNameInNamespace(dn);
             return sr;
         } finally {
-            // Ensure writes are visible to the Cleaner thread
-            VarHandle.fullFence();
             // Ensure Cleaner does not run until after this method completes
             Reference.reachabilityFence(this);
         }
@@ -194,8 +192,7 @@ final class LdapSearchEnumeration
         // a referral has been followed so do not create relative names
         startName = null;
         super.appendUnprocessedReferrals(ex);
-        // No fences here for now.
-        // Rely on fences in the super call.
+        // No reachabilityFence here for now; rely on fence in the super call.
         // Other code in this method clearly doesn't access cleanable state.
     }
 
@@ -207,8 +204,6 @@ final class LdapSearchEnumeration
             return (AbstractLdapNamingEnumeration<? extends NameClassPair>) refCtx.search(
                     searchArgs.name, searchArgs.filter, searchArgs.cons);
         } finally {
-            // Ensure writes are visible to the Cleaner thread
-            VarHandle.fullFence();
             // Ensure Cleaner does not run until after this method completes
             Reference.reachabilityFence(this);
         }
@@ -221,7 +216,7 @@ final class LdapSearchEnumeration
         // Update search-specific variables
         LdapSearchEnumeration se = (LdapSearchEnumeration)ne;
         startName = se.startName;
-        // No fences here for now.
+        // No reachabilityFence here for now.
         // super.update() (aka AbstractLdapNamingEnumeration.update()) already
         // keeps 'this' and 'ne' reachable throughout that method call.
         // After that, we're clearly not accessing cleanable state from 'this'
@@ -230,6 +225,6 @@ final class LdapSearchEnumeration
 
     void setStartName(Name nm) {
         startName = nm;
-        // No fences - clearly doesn't access cleanable state
+        // No reachabilityFence - clearly doesn't access cleanable state
     }
 }
