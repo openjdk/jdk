@@ -181,7 +181,7 @@ public:
     return _remset_words_in_most_recent_mark_scan;
   }
 
-# ifdef KELVIN_REDUNDANT
+#ifdef KELVIN_REDUNDANT
   inline void set_live_words_most_recently_evacuated(size_t words) {
     _live_words_most_recently_evacuated = words;
   }
