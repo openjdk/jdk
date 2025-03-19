@@ -51,10 +51,10 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
  */
 public class ZipFileSharedSourceTest {
 
-    static Path createZipFile(final Charset entryNameCharset) throws Exception {
+    static Path createZipFile(final Charset charset) throws Exception {
         final Path zipFilePath = Files.createTempFile(Path.of("."), "8347712", ".zip");
         try (OutputStream os = Files.newOutputStream(zipFilePath);
-             ZipOutputStream zos = new ZipOutputStream(os, entryNameCharset)) {
+             ZipOutputStream zos = new ZipOutputStream(os, charset)) {
             final int numEntries = 10240;
             for (int i = 1; i <= numEntries; i++) {
                 final ZipEntry entry = new ZipEntry("entry-" + i);
@@ -75,7 +75,7 @@ public class ZipFileSharedSourceTest {
     }
 
     /**
-     * Creates multiple instances of java.util.zip.ZipFile with the given {@code entryNameCharset}
+     * Creates multiple instances of java.util.zip.ZipFile with the given {@code charset}
      * for the same underlying ZIP file. Then each instance of the ZipFile is iterated
      * over its entries, concurrently in a separate thread. Verifies that such access
      * to independent ZipFile instances, doesn't lead to unexpected failures contributed
@@ -83,15 +83,15 @@ public class ZipFileSharedSourceTest {
      */
     @ParameterizedTest
     @MethodSource("charsets")
-    void testMultipleZipFileInstances(final Charset entryNameCommentCharset) throws Exception {
-        final Path zipFilePath = createZipFile(entryNameCommentCharset);
+    void testMultipleZipFileInstances(final Charset charset) throws Exception {
+        final Path zipFilePath = createZipFile(charset);
         final int numTasks = 200;
         final CountDownLatch startLatch = new CountDownLatch(numTasks);
         final List<Future<Void>> results = new ArrayList<>();
         try (final ExecutorService executor =
                      Executors.newThreadPerTaskExecutor(Thread.ofPlatform().factory())) {
             for (int i = 0; i < numTasks; i++) {
-                final var task = new ZipEntryIteratingTask(zipFilePath, entryNameCommentCharset,
+                final var task = new ZipEntryIteratingTask(zipFilePath, charset,
                         startLatch);
                 results.add(executor.submit(task));
             }
@@ -105,13 +105,13 @@ public class ZipFileSharedSourceTest {
 
     private static final class ZipEntryIteratingTask implements Callable<Void> {
         private final Path file;
-        private final Charset entryNameCharset;
+        private final Charset charset;
         private final CountDownLatch startLatch;
 
-        private ZipEntryIteratingTask(final Path file, final Charset entryNameCharset,
+        private ZipEntryIteratingTask(final Path file, final Charset charset,
                                       final CountDownLatch startLatch) {
             this.file = file;
-            this.entryNameCharset = entryNameCharset;
+            this.charset = charset;
             this.startLatch = startLatch;
         }
 
@@ -122,7 +122,7 @@ public class ZipFileSharedSourceTest {
             // wait for other tasks to be ready to run
             this.startLatch.await();
             // create a new instance of ZipFile and iterate over the entries
-            try (final ZipFile zf = new ZipFile(this.file.toFile(), this.entryNameCharset)) {
+            try (final ZipFile zf = new ZipFile(this.file.toFile(), this.charset)) {
                 final var entries = zf.entries();
                 while (entries.hasMoreElements()) {
                     final ZipEntry ze = entries.nextElement();
