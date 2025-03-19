@@ -26,6 +26,7 @@ package compiler.lib.verify;
 import java.util.Optional;
 import java.lang.foreign.*;
 import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -149,7 +150,7 @@ public final class Verify {
                 }
 
                 if (isCheckWithArbitraryClasses) {
-                    checkEQArbitraryClasses(a, b, field, aParent, bParent);
+                    checkEQArbitraryClasses(a, b);
                     return;
                 } else {
                     System.err.println("ERROR: Verify.checkEQ failed: type not supported: " + ca.getName());
@@ -431,7 +432,19 @@ public final class Verify {
         }
     }
 
-    private void checkEQArbitraryClasses(Object a, Object b, String field, Object aParent, Object bParent) {
+    private void checkEQArbitraryClasses(Object a, Object b) {
+        for (Field field : a.getClass().getDeclaredFields()) {
+            Object va = null;
+            Object vb = null;
+            try {
+                field.setAccessible(true);
+                va = field.get(a);
+                vb = field.get(b);
+            } catch (IllegalAccessException e) {
+                throw new VerifyException("Failure to access field: " + field + " of " + a);
+            }
+            checkEQdispatch(va, vb, field.getName(), a, b);
+        }
     }
 
     private void print(Object a, Object b, String field, Object aParent, Object bParent) {

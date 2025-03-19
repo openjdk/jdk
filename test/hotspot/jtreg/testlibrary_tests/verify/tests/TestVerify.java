@@ -479,28 +479,65 @@ public class TestVerify {
     static class C extends B {}
 
     static class D {
+        D(int x) {
+            this.x = x;
+        }
+
         private int x;
     }
 
     static class E {
-        private int x;
+        private D d;
+        private E e1;
+        private E e2;
     }
 
     public static void testArbitraryClasses() {
         A a1 = new A();
         A a2 = new A();
+        B b1 = new B();
+        B b2 = new B();
+        C c1 = new C();
+        C c2 = new C();
 
         // Throws exception because arbitrary classes are not allowed.
         checkNE(a1, a1, false, false);
 
+        // Structurally equivalent.
         Verify.checkEQ(a1, a1, false, true);
         Verify.checkEQ(a1, a2, false, true);
+        Verify.checkEQ(b1, b1, false, true);
+        Verify.checkEQ(b1, b2, false, true);
+        Verify.checkEQ(c1, c1, false, true);
+        Verify.checkEQ(c1, c2, false, true);
+
+        // Must fail because of different classes.
+        checkNE(a1, b1, false, true);
+        checkNE(b1, a1, false, true);
+        checkNE(a1, c1, false, true);
+        checkNE(c1, a1, false, true);
+        checkNE(b1, c1, false, true);
+        checkNE(c1, b1, false, true);
+
+        // Objects with primitive values.
+        D d1 = new D(1);
+        D d2 = new D(1);
+        D d3 = new D(2);
+        Verify.checkEQ(d1, d1, false, true);
+        Verify.checkEQ(d1, d2, false, true);
+        Verify.checkEQ(d2, d1, false, true);
+        checkNE(d1, d3, false, true);
+        checkNE(d3, d1, false, true);
+
+        E e1 = new E();
+
+        // TODO: records!
     }
 
     public static void checkNE(Object a, Object b, boolean isFloatCheckWithRawBits, boolean isCheckWithArbitraryClasses) {
          try {
             Verify.checkEQ(a, b, isFloatCheckWithRawBits, isCheckWithArbitraryClasses);
-            throw new RuntimeException("Should have thrown");
+            throw new RuntimeException("Should have thrown: " + a + " vs " + b);
         } catch (VerifyException e) {}
     }
 
