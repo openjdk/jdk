@@ -628,7 +628,7 @@ long os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, MemTag mem_tag, c
   if (NMTPreInit::handle_realloc(raw_ptr, old_ptr, size, mem_tag)) {
     // No need to fill with 0 because CDS static dumping doesn't use these
     // early allocations.
-    return size;
+    return (long)size;
   }
 
   DEBUG_ONLY(check_crash_protection());
@@ -648,7 +648,7 @@ long os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, MemTag mem_tag, c
     return -1;
   }
 
-  return outer_size;
+  return (long)outer_size;
 }
 
 void* os::post_alloc(void* raw_ptr, size_t size, long chunk, MemTag mem_tag, const NativeCallStack& stack) {
@@ -712,9 +712,9 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     // since it may invalidate the old block, including its header.
     MallocHeader* header = MallocHeader::resolve_checked(memblock);
     MallocHeader::FreeInfo free_info = header->free_info();
-    if (size > free_info.size) {
-      chunk = size - free_info.size;
-    }
+//    if (free_info.size < size) {
+//      chunk = (long)(size - free_info.size);
+//    }
 
     // Observe MallocLimit
     if ((size > free_info.size) && MemTracker::check_exceeds_limit(size-free_info.size, mem_tag)) {
