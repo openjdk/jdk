@@ -200,6 +200,8 @@ AC_DEFUN_ONCE([LIB_SETUP_MISC_LIBS],
   # Setup posix pthread support
   if test "x$OPENJDK_TARGET_OS" != "xwindows"; then
     LIBPTHREAD="-lpthread"
+  elif test "x$OPENJDK_TARGET_OS" == "xbsd"; then
+    LIBPTHREAD="-pthread"
   else
     LIBPTHREAD=""
   fi
