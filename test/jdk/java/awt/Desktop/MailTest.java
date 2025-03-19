@@ -95,15 +95,12 @@ public class MailTest extends JPanel {
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException {
         if (!Desktop.isDesktopSupported()) {
-            String errorMessage = "Class java.awt.Desktop is not supported on " +
-                    "current platform. Further testing will not be performed";
-            throw new SkippedException(errorMessage);
+            throw new SkippedException("Class java.awt.Desktop is not supported " +
+                    "on current platform. Further testing will not be performed");
         }
 
-        Desktop desktop = Desktop.getDesktop();
-        if (!desktop.isSupported(Desktop.Action.MAIL)) {
-            String errorMessage = "Action.MAIL is not supported.";
-            throw new SkippedException(errorMessage);
+        if (!Desktop.getDesktop().isSupported(Desktop.Action.MAIL)) {
+            throw new SkippedException("Action.MAIL is not supported.");
         }
 
         PassFailJFrame.builder()
