@@ -121,7 +121,7 @@ public class TestFuzzClasses {
 
                     @Check(test = "$test")
                     public static void $check(Object result) {
-                        Verify.checkEQ(result, $GOLD);
+                        Verify.checkEQ(result, $GOLD, false, true);
                     }
 
                     // --- $test end   ---

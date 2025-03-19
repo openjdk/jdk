@@ -170,7 +170,7 @@ public final class Verify {
                 } else {
                     System.err.println("ERROR: Verify.checkEQ failed: type not supported: " + ca.getName());
                     print(a, b, field, aParent, bParent);
-                    throw new VerifyException("Object type not supported: " + ca.getName());
+                    throw new VerifyException("Object type not supported: " + ca.getName() + " -- did you mean to enable 'isCheckWithArbitraryClasses'?");
                 }
             }
         }
