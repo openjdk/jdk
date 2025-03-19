@@ -242,7 +242,6 @@ DocComment[DOC_COMMENT, pos:0
      * abc {@index
      * @return def} xyz
      */
-    @NormalizeTags(false) // see DocCommentTester.PrettyChecker
     void bad_nl_at_in_term() {}
 /*
 DocComment[DOC_COMMENT, pos:0
