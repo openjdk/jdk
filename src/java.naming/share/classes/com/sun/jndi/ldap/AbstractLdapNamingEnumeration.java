@@ -60,9 +60,9 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      * reachabilityFences are used to ensure that an AbstractLdapNamingEnumeration
      * instance does not become unreachable while one of its methods is still
      * executing (possibly leading to EnumCtx being cleaned up while it's still in use).
-     *
-     * Because the state is mutable, fullFence() is used to ensure that changes
-     * made on the main/program thread are seen by the cleanup thread.
+     * The fences also ensure that changes made to mutable state on the
+     * main/program thread are visible on the cleanup thread. See
+     * "Memory Consistency Properties" in the java.lang.ref package spec.
      */
     private static class EnumCtx implements Runnable {
         private LdapCtx homeCtx;
