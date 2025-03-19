@@ -1168,7 +1168,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
     + align_up(speculations_len                  , oopSize)
 #endif
     + align_up(debug_info->data_size()           , oopSize)
-    + align_up(sizeof(int)                       , oopSize);
+    + align_up((int)sizeof(int)                  , oopSize);
 
   // First, allocate space for immutable data in C heap.
   address immutable_data = nullptr;
@@ -1660,9 +1660,9 @@ nmethod::nmethod(
 
 #if INCLUDE_JVMCI
     _speculations_offset  = _scopes_data_offset   + align_up(debug_info->data_size(), oopSize);
-    DEBUG_ONLY( int immutable_data_end_offset = _speculations_offset + align_up(speculations_len, oopSize) + align_up(sizeof(int), oopSize); )
+    DEBUG_ONLY( int immutable_data_end_offset = _speculations_offset + align_up(speculations_len, oopSize) + align_up((int)sizeof(int), oopSize); )
 #else
-    DEBUG_ONLY( int immutable_data_end_offset = _scopes_data_offset + align_up(debug_info->data_size(), oopSize) + align_up(sizeof(int), oopSize); )
+    DEBUG_ONLY( int immutable_data_end_offset = _scopes_data_offset + align_up(debug_info->data_size(), oopSize) + align_up((int)sizeof(int), oopSize); )
 #endif
     assert(immutable_data_end_offset <= immutable_data_size, "wrong read-only data size: %d > %d",
            immutable_data_end_offset, immutable_data_size);
