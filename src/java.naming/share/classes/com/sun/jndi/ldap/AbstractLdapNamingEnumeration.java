@@ -411,10 +411,13 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
                         break;
 
                     } catch (LdapReferralException re) {
-
-                        // record a previous exception
-                        if (errEx == null) {
-                            errEx = re.getNamingException();
+                        // record a previous exception and quit if any limit is reached
+                        var namingException = re.getNamingException();
+                        if (namingException instanceof LimitExceededException) {
+                            errEx = namingException;
+                            break;
+                        } else if (errEx == null) {
+                            errEx = namingException;
                         }
                         refEx = re;
                         continue;
