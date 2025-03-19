@@ -75,11 +75,12 @@ public class ZipFileSharedSourceTest {
     }
 
     /**
-     * Creates multiple instances of java.util.zip.ZipFile with the given {@code charset}
-     * for the same underlying ZIP file. Then each instance of the ZipFile is iterated
-     * over its entries, concurrently in a separate thread. Verifies that such access
-     * to independent ZipFile instances, doesn't lead to unexpected failures contributed
-     * by concurrent thread execution.
+     * In this test, multiple concurrent threads each create an instance of java.util.zip.ZipFile
+     * with the given {@code charset} for the same underlying ZIP file. Each of the threads
+     * then iterate over the entries of their ZipFile instance. The test verifies that such access,
+     * where each thread is accessing an independent ZipFile instance corresponding to the same
+     * underlying ZIP file, doesn't lead to unexpected failures contributed by concurrent
+     * threads.
      */
     @ParameterizedTest
     @MethodSource("charsets")
