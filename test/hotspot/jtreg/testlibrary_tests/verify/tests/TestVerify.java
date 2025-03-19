@@ -515,6 +515,10 @@ public class TestVerify {
         }
     }
 
+    static record R1() {}
+    static record R2() {}
+    static record R3(int x, int y) {}
+    static record R4(R4 x, R4 y) {}
 
     public static void testArbitraryClasses() {
         A a1 = new A();
@@ -594,7 +598,42 @@ public class TestVerify {
         checkNE(f3, f4, false, true);
         checkNE(f4, f3, false, true);
 
-        // TODO: records!
+        // Records.
+        R1 r11 = new R1();
+        R1 r12 = new R1();
+        R2 r21 = new R2();
+        R3 r31 = new R3(1, 1);
+        R3 r32 = new R3(1, 1);
+        R3 r33 = new R3(1, 2);
+        R3 r34 = new R3(2, 1);
+
+        Verify.checkEQ(r11, r11, false, true);
+        Verify.checkEQ(r11, r12, false, true);
+        Verify.checkEQ(r12, r11, false, true);
+        checkNE(r11, r21, false, true);
+        Verify.checkEQ(r31, r31, false, true);
+        Verify.checkEQ(r31, r32, false, true);
+        Verify.checkEQ(r32, r31, false, true);
+        checkNE(r31, r33, false, true);
+        checkNE(r33, r31, false, true);
+        checkNE(r31, r34, false, true);
+        checkNE(r34, r31, false, true);
+        checkNE(r33, r34, false, true);
+
+        R4 r41 = new R4(null, null);
+        R4 r42 = new R4(null, null);
+        R4 r43 = new R4(r41, null);
+        R4 r44 = new R4(r42, null);
+        R4 r45 = new R4(r43, r41);
+        R4 r46 = new R4(r44, r42);
+        R4 r47 = new R4(r44, r41);
+
+        Verify.checkEQ(r45, r46, false, true);
+        Verify.checkEQ(r46, r45, false, true);
+        checkNE(r45, r47, false, true);
+        checkNE(r47, r45, false, true);
+        checkNE(r46, r47, false, true);
+        checkNE(r47, r46, false, true);
     }
 
     public static void checkNE(Object a, Object b, boolean isFloatCheckWithRawBits, boolean isCheckWithArbitraryClasses) {
