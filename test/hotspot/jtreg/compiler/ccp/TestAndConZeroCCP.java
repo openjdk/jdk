@@ -26,7 +26,7 @@
  * @bug 8350563
  * @summary Test that And nodes are added to the CCP worklist if they have a constant as input.
  * @run main/othervm -Xbatch -XX:-TieredCompilation compiler.ccp.TestAndConZeroCCP
- * @run driver compiler.ccp.TestAndConZeroCCP
+ * @run main compiler.ccp.TestAndConZeroCCP
  */
 package compiler.ccp;
 
