@@ -2164,7 +2164,36 @@ Node* OrVNode::Identity(PhaseGVN* phase) {
   return redundant_logical_identity(this);
 }
 
+// Returns whether (XorV (VectorMaskCmp) -1) can be optimized by performing the
+// inverse of a comparison operation.
+bool VectorMaskCmpNode::predicate_can_be_inverted() {
+  switch (_predicate) {
+    case BoolTest::eq:
+    case BoolTest::ne:
+      // eq and ne also apply to floating-point special values like NaN and infinities.
+      return true;
+    case BoolTest::le:
+    case BoolTest::ge:
+    case BoolTest::lt:
+    case BoolTest::gt:
+    case BoolTest::ule:
+    case BoolTest::uge:
+    case BoolTest::ult:
+    case BoolTest::ugt: {
+      BasicType bt = vect_type()->element_basic_type();
+      // For float and double, we don't know if either comparison operand is a
+      // NaN, NaN {le|ge|lt|gt} anything is false, resulting in inconsistent
+      // results before and after negation.
+      return is_integral_type(bt);
+    }
+    default:
+      return false;
+  }
+}
+
 Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
   // (XorV src src)      => (Replicate zero)
   // (XorVMask src src)  => (MaskAll zero)
   //
@@ -2172,12 +2201,68 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // operation, since the VectorAPI masked operation requires
   // the unmasked lanes to save the same values in the first
   // operand.
-  if (!is_predicated_vector() && (in(1) == in(2))) {
+  if (!is_predicated_vector() && (in1 == in2)) {
     BasicType bt = vect_type()->element_basic_type();
     Node* zero = phase->transform(phase->zerocon(bt));
-    return VectorNode::scalar2vector(zero, length(), bt, bottom_type()->isa_vectmask() != nullptr);
+    return VectorNode::scalar2vector(zero, length(), bt,
+                                     bottom_type()->isa_vectmask() != nullptr);
   }
-  return VectorNode::Ideal(phase, can_reshape);
+
+  // Transformations for predicated IRs are not supported for now.
+  if (is_predicated_vector() || in1->is_predicated_vector() ||
+      in2->is_predicated_vector()) {
+    return VectorNode::Ideal(phase, can_reshape);
+  }
+
+  // For integer types:
+  // (XorV (VectorMaskCmp src1 src2 cond) (Replicate -1))
+  //    => (VectorMaskCmp src1 src2 ncond)
+  // (XorVMask (VectorMaskCmp src1 src2 cond) (MaskAll m1))
+  //    => (VectorMaskCmp src1 src2 ncond)
+  // cond can be eq, ne, le, ge, lt, gt, ule, uge, ult and ugt, ncond is the
+  // negative comparison of cond.
+  //
+  // For float and double types:
+  // (XorV (VectorMaskCast (VectorMaskCmp src1 src2 cond)) (Replicate -1))
+  //    => (VectorMaskCast (VectorMaskCmp src1 src2 ncond))
+  // (XorVMask (VectorMaskCast (VectorMaskCmp src1 src2 cond)) (MaskAll m1))
+  //    => (VectorMaskCast (VectorMaskCmp src1 src2 ncond))
+  // cond can be eq or ne.
+  //
+  // XorV/XorVMask is commutative, swap VectorMaskCmp/Op_VectorMaskCast to in1.
+  if (in1->Opcode() != Op_VectorMaskCmp && in1->Opcode() != Op_VectorMaskCast) {
+    swap(in1, in2);
+  }
+
+  const TypeVect* vmcast_vt = nullptr;
+  if (in1->Opcode() == Op_VectorMaskCast && in1->outcnt() == 1 &&
+      in1->in(1)->Opcode() == Op_VectorMaskCmp) {
+    vmcast_vt = in1->as_Vector()->vect_type();
+    in1 = in1->in(1);
+  }
+  if (in1->Opcode() != Op_VectorMaskCmp || in1->outcnt() > 1 ||
+      !((VectorMaskCmpNode*) in1)->predicate_can_be_inverted() ||
+      !VectorNode::is_all_ones_vector(in2)) {
+    return VectorNode::Ideal(phase, can_reshape);
+  }
+
+  // This is the same with BoolTest::negate(), but we can't call it with a
+  // BoolTest object because the comparison may be unsigned comparison, but
+  // BoolTest doesn't support unsigned comparisons.
+  BoolTest::mask neg_cond =
+      (BoolTest::mask) (((VectorMaskCmpNode*) in1)->get_predicate() ^ 4);
+
+  ConINode* predicate_node = phase->intcon(neg_cond);
+  const TypeVect* vt = in1->as_Vector()->vect_type();
+  Node* vmcmp = new VectorMaskCmpNode(neg_cond, in1->in(1), in1->in(2),
+                                      predicate_node, vt);
+  if (vmcast_vt != nullptr) {
+    // We optimized out an VectorMaskCast, and in order to ensure type
+    // correctness, we need to regenerate one. VectorMaskCast will be encoded as
+    // empty for types with the same size.
+    vmcmp = new VectorMaskCastNode(phase->transform(vmcmp), vmcast_vt);
+  }
+  return vmcmp;
 }
 
 Node* VectorBlendNode::Identity(PhaseGVN* phase) {
