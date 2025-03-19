@@ -1797,7 +1797,11 @@ public class Lower extends TreeTranslator {
                     make.Ident(rhs)).setType(lhs.erasure(types)));
     }
 
-    /** Return tree simulating null checking outer this and assigning. */
+    /**
+     * Return tree simulating null checking outer this and/or assigning. This is
+     * called when a null check is required (nullCheckOuterThis), or a synthetic
+     * field is generated (stores).
+     */
     JCStatement initOuterThis(int pos, VarSymbol rhs, boolean stores) {
         Assert.check(rhs.owner.kind == MTH);
         make.at(pos);
