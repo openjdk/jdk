@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -308,6 +308,7 @@ public final class ChunkParser {
         long thisCP = chunkHeader.getConstantPoolPosition() + chunkHeader.getAbsoluteChunkStart();
         long lastCP = -1;
         long delta = -1;
+        boolean assertionEnabled = Utils.isAssertionEnabled();
         boolean logTrace = Logger.shouldLog(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE);
         while (thisCP != abortCP && delta != 0) {
             CheckpointEvent cp = null;
@@ -364,7 +365,7 @@ public final class ChunkParser {
                         long position = input.position();
                         long key = input.readLong();
                         Object resolved = lookup.getPreviousResolved(key);
-                        if (resolved == null) {
+                        if (resolved == null || assertionEnabled) {
                             Object v = parser.parse(input);
                             logConstant(key, v, false);
                             lookup.getLatestPool().put(key, v);
