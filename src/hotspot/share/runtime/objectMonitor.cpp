@@ -737,6 +737,7 @@ bool ObjectMonitor::try_lock_or_add_to_entry_list(JavaThread* current, ObjectWai
 static void post_monitor_deflate_event(EventJavaMonitorDeflate* event,
                                        const oop obj) {
   assert(event != nullptr, "invariant");
+  assert(obj != nullptr, "invariant");
   const Klass* monitor_klass = obj->klass();
   if (ObjectMonitor::is_jfr_excluded(monitor_klass)) {
     return;
@@ -840,7 +841,7 @@ bool ObjectMonitor::deflate_monitor(Thread* current) {
     install_displaced_markword_in_object(obj);
   }
 
-  if (event.should_commit()) {
+  if (obj != nullptr && event.should_commit()) {
     post_monitor_deflate_event(&event, obj);
   }
 
