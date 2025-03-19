@@ -114,8 +114,8 @@ const Type* OpaqueNotNullNode::Value(PhaseGVN* phase) const {
 
 OpaqueTemplateAssertionPredicateNode::OpaqueTemplateAssertionPredicateNode(BoolNode* bol,  CountedLoopNode* loop_node)
     : Node(nullptr, bol),
-    _loop_node(loop_node),
-    _predicate_state(PredicateState::Useful) {
+      _loop_node(loop_node),
+      _predicate_state(PredicateState::Useful) {
   init_class_id(Class_OpaqueTemplateAssertionPredicate);
 }
 

@@ -488,9 +488,9 @@ class TemplateAssertionExpression : public StackObj {
   OpaqueTemplateAssertionPredicateNode* const _opaque_node;
   PhaseIdealLoop* const _phase;
  public:
-  TemplateAssertionExpression(OpaqueTemplateAssertionPredicateNode* opaque_node, PhaseIdealLoop* phase) :
-      _opaque_node(opaque_node),
-      _phase(phase) {}
+  TemplateAssertionExpression(OpaqueTemplateAssertionPredicateNode* opaque_node, PhaseIdealLoop* phase)
+      : _opaque_node(opaque_node),
+        _phase(phase) {}
   NONCOPYABLE(TemplateAssertionExpression);
 
  private:
