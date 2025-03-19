@@ -146,7 +146,7 @@ import java.util.Arrays;
  * {@code VSHAPE}.  Each possible {@code VSHAPE} is represented by
  * a member of the {@link VectorShape} enumeration, and represents
  * an implementation format shared in common by all vectors of
- * that shape.  Thus, the {@linkplain #bitSize() size in bits} of
+ * that shape.  Thus, the {@linkplain #bitSize() size in bits}
  * of a vector is determined by appealing to its vector shape.
  *
  * <p> Some Java platforms give special support to only one shape,
@@ -195,12 +195,12 @@ import java.util.Arrays;
  * <h2><a id="subtypes"></a>Vector subtypes</h2>
  *
  * Vector declares a set of vector operations (methods) that are common to all
- * element types (such as addition).  Sub-classes of Vector with a concrete
+ * element types (such as addition).  Subclasses of Vector with a concrete
  * element type declare further operations that are specific to that
  * element type (such as access to element values in lanes, logical operations
  * on values of integral elements types, or transcendental operations on values
  * of floating point element types).
- * There are six abstract sub-classes of Vector corresponding to the supported set
+ * There are six abstract subclasses of Vector corresponding to the supported set
  * of element types, {@link ByteVector}, {@link ShortVector},
  * {@link IntVector}, {@link LongVector}, {@link FloatVector}, and
  * {@link DoubleVector}. Along with type-specific operations these classes
@@ -325,7 +325,7 @@ import java.util.Arrays;
  * this API has no support for
  * lane-wise n-ary operations.
  *
- * For each lane of all of the input vectors {@code v[j]},
+ * For each lane of all the input vectors {@code v[j]},
  * the underlying scalar operator is applied to the lane values.
  * The result is placed into the vector result in the same lane.
  * The following pseudocode illustrates the behavior of this operation
@@ -555,7 +555,7 @@ import java.util.Arrays;
  * <p> An operation suppressed by a mask will never cause an exception
  * or side effect of any sort, even if the underlying scalar operator
  * can potentially do so.  For example, an unset lane that seems to
- * access an out of bounds array element or divide an integral value
+ * access an out-of-bounds array element or divide an integral value
  * by zero will simply be ignored.  Values in suppressed lanes never
  * participate or appear in the result of the overall operation.
  *
@@ -578,7 +578,7 @@ import java.util.Arrays;
  * does not exist (because it is out of an array's index range).</li>
  *
  * <li>If the operation is a cross-lane operation with an operand
- * which supplies lane indexes (of type {@code VectorShuffle} or
+ * which supplies lane indexes (of type {@code VectorShuffle}) or
  * {@code Vector}, suppressed lanes are not computed, and are filled
  * with the zero default value.  Normally, invalid lane indexes elicit
  * an {@code IndexOutOfBoundsException}, but if a lane is unset, the
@@ -739,11 +739,11 @@ import java.util.Arrays;
  * byte order is slightly preferable to an equivalent big-endian
  * fiction, because some related formulas are much simpler,
  * specifically those which renumber bytes after lane structure
- * changes.  The earliest byte is invariantly earliest across all lane
- * structure changes, but only if little-endian convention are used.
+ * changes.  The earliest byte is invariantly the earliest across all
+ * lane structure changes, but only if little-endian convention are used.
  * The root cause of this is that bytes in scalars are numbered from
  * the least significant (rightmost) to the most significant
- * (leftmost), and almost never vice-versa.  If we habitually numbered
+ * (leftmost), and almost never vice versa.  If we habitually numbered
  * sign bits as zero (as on some computers) then this API would reach
  * for big-endian fictions to create unified addressing of vector
  * bytes.
@@ -983,7 +983,7 @@ import java.util.Arrays;
  * {@linkplain #bitSize() vector bit-size} of its input is
  * crammed into a smaller (respectively, dropped into a larger)
  * output container by a factor of {@code M}.
- * Otherwise it is an in-place operation.
+ * Otherwise, it is an in-place operation.
  *
  * Since this method is a reinterpretation cast that can erase and
  * redraw lane boundaries as well as modify shape, the input vector's
@@ -1035,7 +1035,7 @@ import java.util.Arrays;
  * methods, which select an arbitrary set of {@code VLENGTH} lanes
  * from one or two input vectors, and assemble them in an arbitrary
  * order.  The selection and order of lanes is controlled by a
- * {@code VectorShuffle} object, which acts as an routing table
+ * {@code VectorShuffle} object, which acts as a routing table
  * mapping source lanes to destination lanes.  A {@code VectorShuffle}
  * can encode a mathematical permutation as well as many other
  * patterns of data movement.
@@ -1111,7 +1111,7 @@ import java.util.Arrays;
  *
  * <li> ARM AArch64 platforms supporting NEON.  Although the API has
  * been designed to ensure ARM SVE instructions can be supported
- * (vector sizes between 128 to 2048 bits) there is currently no
+ * (vector sizes between 128 and 2048 bits) there is currently no
  * implementation of such instructions and the general masking
  * capability.
  *
@@ -1941,14 +1941,14 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * of the vector's native {@code ETYPE}.
      * (In the case of floating point types, the value
      * {@code NEGATIVE_INFINITY} is used, and will appear
-     * after casting as {@code Long.MIN_VALUE}.
+     * after casting as {@code Long.MIN_VALUE}.)
      * <li>
      * If the operation is {@code MIN},
      * then the identity value is the {@code MAX_VALUE}
      * of the vector's native {@code ETYPE}.
      * (In the case of floating point types, the value
      * {@code POSITIVE_INFINITY} is used, and will appear
-     * after casting as {@code Long.MAX_VALUE}.
+     * after casting as {@code Long.MAX_VALUE}.)
      * </ul>
      * <p>
      * In the case of operations {@code ADD} and {@code MUL},
@@ -2257,7 +2257,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * in lane {@code N} of the current vector.
      *
      * <p> The scale must not be so large, and the element size must
-     * not be so small, that that there would be an overflow when
+     * not be so small, that there would be an overflow when
      * computing any of the {@code N*scale} or {@code VLENGTH*scale},
      * when the result is represented using the vector
      * lane type {@code ETYPE}.
@@ -2339,7 +2339,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *
      * <li>To shift lanes backward to the back of the vector, supply a
      * zero vector for the <em>first</em> operand, and specify the
-     * negative shift count as the origin (modulo {@code VLENGTH}.
+     * negative shift count as the origin (modulo {@code VLENGTH}).
      * For example: {@code v.broadcast(0).slice(v.length()-shift, v)}.
      *
      * <li>To rotate lanes forward toward the front end of the vector,
@@ -2354,7 +2354,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * {@code v.slice(v.length() - rotate, v)}.
      *
      * <li>
-     * Since {@code origin} values less then zero or more than
+     * Since {@code origin} values less than zero or more than
      * {@code VLENGTH} will be rejected, if you need to rotate
      * by an unpredictable multiple of {@code VLENGTH}, be sure
      * to reduce the origin value into the required range.
@@ -2426,7 +2426,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * @see #slice(int,Vector)
      * @see #unslice(int,Vector,int,VectorMask)
      */
-    // This doesn't pull its weight, but its symmetrical with
+    // This doesn't pull its weight, but it's symmetrical with
     // masked unslice, and might cause questions if missing.
     // It could make for clearer code.
     public abstract Vector<E> slice(int origin, Vector<E> v1, VectorMask<E> m);
@@ -2636,7 +2636,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * source index {@code I=s.wrapIndex(s.laneSource(N))} in the shuffle,
      * the output lane {@code N} obtains the value from
      * the input vector at lane {@code I} if the mask is set.
-     * Otherwise the output lane {@code N} is set to zero.
+     * Otherwise, the output lane {@code N} is set to zero.
      *
      * <p> This method returns the value of this pseudocode:
      * <pre>{@code
@@ -2868,7 +2868,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *
      * @apiNote
      * Subtypes improve on this method by sharpening
-     * the method return type and
+     * the method return type
      * and the type of the scalar parameter {@code e}.
      *
      * @param e the value to broadcast
@@ -2934,7 +2934,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * <p>
      * The underlying bits of this vector are copied to the resulting
      * vector without modification, but those bits, before copying,
-     * may be truncated if the this vector's bit-size is greater than
+     * may be truncated if this vector's bit-size is greater than
      * desired vector's bit size, or filled with zero bits if this
      * vector's bit-size is less than desired vector's bit-size.
      *
@@ -3187,7 +3187,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * documented, conversion operations <em>never change vector
      * shape</em>, regardless of how they may change <em>lane sizes</em>.
      *
-     * Therefore an <em>expanding</em> conversion cannot store all of its
+     * Therefore, an <em>expanding</em> conversion cannot store all of its
      * results in its output vector, because the output vector has fewer
      * lanes of larger size, in order to have the same overall bit-size as
      * its input.
@@ -3199,7 +3199,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * <p> As an example, a conversion from {@code byte} to {@code long}
      * ({@code M=8}) will discard 87.5% of the input values in order to
      * convert the remaining 12.5% into the roomy {@code long} lanes of
-     * the output vector. The inverse conversion will convert back all of
+     * the output vector. The inverse conversion will convert back all
      * the large results, but will waste 87.5% of the lanes in the output
      * vector.
      *

@@ -294,7 +294,6 @@ public:
   static void set_excluded_locked(InstanceKlass* k);
   static bool warn_excluded(InstanceKlass* k, const char* reason);
   static void dumptime_classes_do(class MetaspaceClosure* it);
-  static size_t estimate_size_for_archive();
   static void write_to_archive(bool is_static_archive = true);
   static void adjust_lambda_proxy_class_dictionary();
   static void serialize_dictionary_headers(class SerializeClosure* soc,
