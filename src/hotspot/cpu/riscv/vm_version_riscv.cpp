@@ -219,33 +219,25 @@ void VM_Version::common_initialize() {
 
   // UseZvbb (depends on RVV).
   if (UseZvbb && !UseRVV) {
-    if (!FLAG_IS_DEFAULT(UseZvbb)) {
-      warning("Cannot enable UseZvbb on cpu without RVV support.");
-    }
+    warning("Cannot enable UseZvbb on cpu without RVV support.");
     FLAG_SET_DEFAULT(UseZvbb, false);
   }
 
   // UseZvbc (depends on RVV).
   if (UseZvbc && !UseRVV) {
-    if (!FLAG_IS_DEFAULT(UseZvbc)) {
-      warning("Cannot enable UseZvbc on cpu without RVV support.");
-    }
+    warning("Cannot enable UseZvbc on cpu without RVV support.");
     FLAG_SET_DEFAULT(UseZvbc, false);
   }
 
   // UseZvkn (depends on RVV).
   if (UseZvkn && !UseRVV) {
-    if (!FLAG_IS_DEFAULT(UseZvkn)) {
-      warning("Cannot enable UseZvkn on cpu without RVV support.");
-    }
+    warning("Cannot enable UseZvkn on cpu without RVV support.");
     FLAG_SET_DEFAULT(UseZvkn, false);
   }
 
   // UseZvfh (depends on RVV)
   if (UseZvfh && !UseRVV) {
-    if (!FLAG_IS_DEFAULT(UseZvfh)) {
-      warning("Cannot enable UseZvfh on cpu without RVV support.");
-    }
+    warning("Cannot enable UseZvfh on cpu without RVV support.");
     FLAG_SET_DEFAULT(UseZvfh, false);
   }
 }
