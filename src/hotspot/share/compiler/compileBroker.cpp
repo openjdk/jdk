@@ -2374,7 +2374,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     if (CompilationLog::log() != nullptr) {
       CompilationLog::log()->log_failure(thread, task, failure_reason, retry_message);
     }
-    if (PrintCompilation || task->directive()->PrintCompilationOption) {
+    if (PrintCompilation) {
       FormatBufferResource msg = retry_message != nullptr ?
         FormatBufferResource("COMPILE SKIPPED: %s (%s)", failure_reason, retry_message) :
         FormatBufferResource("COMPILE SKIPPED: %s",      failure_reason);
