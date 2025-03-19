@@ -145,27 +145,19 @@ public final class AltServicesRegistry {
             Objects.requireNonNull(value);
             try {
                 URI uri = new URI(value);
-                if (!uri.isAbsolute()) {
+                // the ASCII-serialized form contains scheme://host, optionally followed by :port
+                if (uri.getScheme() == null || uri.getHost() == null) {
                     throw new IllegalArgumentException("Invalid ASCII serialized form of origin");
                 }
-                if (uri.isOpaque()) {
+                // normalize the origin string, check if we get the same result
+                String normalized = uri.getScheme() + "://" + uri.getHost();
+                if (uri.getPort() != -1) {
+                    normalized += ":" + uri.getPort();
+                }
+                if (!value.equals(normalized)) {
                     throw new IllegalArgumentException("Invalid ASCII serialized form of origin");
                 }
-                if (uri.getHost() == null) {
-                    throw new IllegalArgumentException("Invalid ASCII serialized form of origin");
-                }
-                if (uri.getRawUserInfo() != null) {
-                    throw new IllegalArgumentException("Invalid ASCII serialized form of origin");
-                }
-                if (!"".equals(uri.getRawPath()) && !"/".equals(uri.getRawPath())) {
-                    throw new IllegalArgumentException("Invalid ASCII serialized form of origin");
-                }
-                if (uri.getRawQuery() != null) {
-                    throw new IllegalArgumentException("Invalid ASCII serialized form of origin");
-                }
-                if (uri.getRawFragment() != null) {
-                    throw new IllegalArgumentException("Invalid ASCII serialized form of origin");
-                }
+
                 try {
                     return Origin.from(uri);
                 } catch (IllegalArgumentException iae) {
