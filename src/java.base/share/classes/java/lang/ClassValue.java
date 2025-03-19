@@ -25,8 +25,8 @@
 
 package java.lang;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.WeakHashMap;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -283,6 +283,9 @@ public abstract class ClassValue<T> {
     }
 
     /** One binding of a value to a class via a ClassValue.
+     *  Shared for the map and the cache array.
+     *  The states are only meaningful for the cache array; whatever in the map
+     *  is authentic, but state informs the cache an entry may be out-of-date.
      *  States are:<ul>
      *  <li> promise if value == Entry.this
      *  <li> else dead if version == null
@@ -303,27 +306,63 @@ public abstract class ClassValue<T> {
         /** For creating a promise. */
         Entry(Version<T> version) {
             super(version);
-            this.value = new PromiseData();  // for a promise, value is not of type T, but PromiseData!
+            this.value = new PromiseInfo();  // for a promise, value is not of type T, but PromiseInfo!
         }
         /** Fetch the value.  This entry must not be a promise. */
         @SuppressWarnings("unchecked")  // if !isPromise, type is T
         T value() { assertNotPromise(); return (T) value; }
-        boolean isPromise() { return value instanceof PromiseData; }
-        void registerActor() {
-            var actors = ((PromiseData) value).actors;
-            var thread = Thread.currentThread();
-            if (!actors.add(thread)) {
-                actors.remove(thread);
+
+        boolean isPromise() { return value instanceof PromiseInfo; }
+
+        void registerExtraThread() {
+            var tracker = ((PromiseInfo) value);
+            if (!tracker.add()) {
+                // This is trivial: such a recursion already causes StackOverflowError
                 throw new StackOverflowError("Recursive initialization of class value");
             }
         }
-        void ensureNoReentrancy() {
-            var actors = ((PromiseData) value).actors;
-            var thread = Thread.currentThread();
-            if (actors.contains(thread)) {
+
+        void checkReentrancy() {
+            var tracker = ((PromiseInfo) value);
+            if (tracker.contains()) {
                 throw new StackOverflowError("Recursive initialization of class value");
             }
         }
+
+        // Must be accessed in synchronization blocks on the ClassValueMap (otherThreads)
+        // Compared to ThreadTracker, this optimizes optimistically for
+        // single-thread accessors and uses plain instead of concurrent data structures.
+        static final class PromiseInfo {
+            private final Thread initialThread;
+            private Map<Thread, Object> otherThreads; // Must be identity/thread ID-based
+
+            PromiseInfo() {
+                initialThread = Thread.currentThread();
+            }
+
+            boolean add() {
+                Thread t = Thread.currentThread();
+                if (initialThread == t) {
+                    return false;
+                }
+
+                var others = this.otherThreads;
+                if (others == null) {
+                    others = new IdentityHashMap<>();
+                    this.otherThreads = others;
+                }
+                return others.put(t, int.class) != null;
+            }
+
+            boolean contains() {
+                Thread t = Thread.currentThread();
+                if (initialThread == t)
+                    return true;
+                var map = otherThreads;
+                return map != null && map.containsKey(t);
+            }
+        }
+
         Version<T> version() { return get(); }
         ClassValue<T> classValueOrNull() {
             Version<T> v = version();
@@ -345,11 +384,6 @@ public abstract class ClassValue<T> {
             return e2;
         }
         static final Entry<?> DEAD_ENTRY = new Entry<>(null, null);
-
-        static final class PromiseData {
-            // All accesses are made in synchronized blocks on the map!
-            final Set<Thread> actors = new HashSet<>();
-        }
     }
 
     /** Return the backing map associated with this type. */
@@ -436,7 +470,6 @@ public abstract class ClassValue<T> {
                 // Eventually, finishEntry will overwrite the promise.
                 put(classValue.identity, e);
                 // Note that the promise is never entered into the cache!
-                e.registerActor();
                 return e;
             } else if (e.isPromise()) {
                 // Somebody else has asked the same question.
@@ -444,8 +477,9 @@ public abstract class ClassValue<T> {
                 if (e.version() != v) {
                     e = v.createPromise();
                     put(classValue.identity, e);
+                } else {
+                    e.registerExtraThread();
                 }
-                e.registerActor();
                 return e;
             } else {
                 // there is already a completed entry here; report it
@@ -470,6 +504,7 @@ public abstract class ClassValue<T> {
             if (e == e0) {
                 // We can get here during exception processing, unwinding from computeValue.
                 assert(e.isPromise());
+                // Other threads can retry if successful or just propagate their exceptions.
                 remove(classValue.identity);
                 return null;
             } else if (e0 != null && e0.isPromise() && e0.version() == e.version()) {
@@ -484,7 +519,9 @@ public abstract class ClassValue<T> {
                 addToCache(classValue, e);
                 return e;
             } else {
-                // Some sort of mismatch; caller must try again.
+                // Some sort of mismatch; caller must try again. This can happen when:
+                // 1. Another thread computes and finishes exceptionally.
+                // 2. A remove() is issued after computation started.
                 return null;
             }
         }
@@ -500,7 +537,7 @@ public abstract class ClassValue<T> {
                     // Remove the outdated promise to force recomputation.
                     // Perform reentrancy checks so we fail if we are removing
                     // our own promise.
-                    e.ensureNoReentrancy();
+                    e.checkReentrancy();
                 } else {
                     // Initialized.
                     // Bump forward to invalidate racy-read cached entries.
