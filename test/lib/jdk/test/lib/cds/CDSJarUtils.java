@@ -160,7 +160,7 @@ public class CDSJarUtils {
     public static class JarOptions {
         private String [] options;
         private JarOptions() {}
-        
+
         public static JarOptions of(String... options) {
             JarOptions jo = new JarOptions();
             jo.options = options;
@@ -206,7 +206,7 @@ public class CDSJarUtils {
     public static void buildFromSourceDirectory(String jarName, String srcDir, String... extraJavacArgs) throws Exception  {
         buildFromSourceDirectory(jarName, srcDir, null, extraJavacArgs);
     }
- 
+
     /*
      * Compile all source files under srcDir using javac with extraJavacArgs. Package
      * all the classes into the specified JAR file

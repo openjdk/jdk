@@ -33,6 +33,42 @@ import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.util.FileUtils;
 import jdk.test.lib.cds.CDSJarUtils.JarOptions;
 
+
+/*
+ * CDSModulePackager compiles Java sources into a directory that you can pass as the argument for
+ * --module-path to the Java launcher.
+ *
+ * Here's an example for creating two modules from the directory ${test.src}/src
+ *
+ *     CDSModulePackager modulePackager = new CDSModulePackager("src");
+ *     String modulePath = modulePackager.getOutputDir().toString();
+ *
+ *     modulePackager.createModularJar("com.foos");
+ *     modulePackager.createModularJar("com.needsfoosaddexport",
+ *                                     "--add-exports",
+ *                                     "com.foos/com.foos.internal=com.needsfoosaddexport");
+ *
+ * Note that when compiling the second module, it will can access the classes from all
+ * modules that were previously compiled by the same CDSModulePackager.
+ *
+ * The source code should be arranged with the proper directory structure. E.g.
+ *
+ *     ${test.src}/src/com.foos/com/foos/Test.java
+ *     ${test.src}/src/com.foos/com/foos/internal/FoosInternal.java
+ *     ${test.src}/src/com.foos/module-info.java
+ *     ${test.src}/src/com.needsfoosaddexport/com/needsfoosaddexport/Main.java
+ *     ${test.src}/src/com.needsfoosaddexport/module-info.java
+ *
+ * By default, modulePath will be ${user.dir}/test-modules (i.e., in the Jtreg "scratch" directory.
+ * the output from the above would be
+ *
+ *     ${user.dir}/test-modules/com.foos.jar
+ *     ${user.dir}/test-modules/com.needsfoosaddexport.jar
+ *
+ * You can then use these JAR files with:
+ *
+ *     java --module-path test-modules -m com.foos/com.foos.Test
+ */
 public class CDSModulePackager {
     private Path srcRoot;
 
@@ -44,7 +80,7 @@ public class CDSModulePackager {
     // Create modules where the source code is located in ${test.src}/${srcRoot},
     // where test.src is the directory that contains the current Jtreg test case.
     //
-    // All modules will be packaged under ./${outputDir}/
+    // All modules will be packaged under ${outputDir}
     public CDSModulePackager(String srcRoot, String outputDir) {
         String testSrc = System.getProperty("test.src");
         this.srcRoot = Paths.get(testSrc, srcRoot);
@@ -110,7 +146,7 @@ public class CDSModulePackager {
         if (extraModulePaths != null) {
             modulePath += File.pathSeparator + extraModulePaths;
         }
-        if (javacOptions == null) {            
+        if (javacOptions == null) {
             javacOptions = new String[] {"--module-path", modulePath};
         } else {
             javacOptions = StringArrayUtils.concat(javacOptions, "--module-path", modulePath);
