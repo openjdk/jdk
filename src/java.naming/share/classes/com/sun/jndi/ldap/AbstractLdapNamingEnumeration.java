@@ -391,10 +391,8 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      */
     protected final boolean hasMoreReferrals() throws NamingException {
         try {
-            if ((refEx != null) &&
-                (refEx.hasMoreReferrals() ||
-                 refEx.hasMoreReferralExceptions()
-                    && !(errEx instanceof LimitExceededException))) {
+            if ((refEx != null) && !(errEx instanceof LimitExceededException) &&
+                (refEx.hasMoreReferrals() || refEx.hasMoreReferralExceptions())) {
 
                 if (enumCtx.homeCtx.handleReferrals == LdapClient.LDAP_REF_THROW) {
                     throw (NamingException)(refEx.fillInStackTrace());
