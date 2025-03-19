@@ -752,7 +752,7 @@ void LightweightSynchronizer::exit(oop object, BasicLock* lock, JavaThread* curr
       }
     }
   } else {
-    monitor = ObjectSynchronizer::read_monitor(current, object, mark);
+    monitor = ObjectSynchronizer::read_monitor(mark);
   }
   if (monitor->has_anonymous_owner()) {
     assert(current->lock_stack().contains(object), "current must have object on its lock stack");
