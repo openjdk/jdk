@@ -707,8 +707,6 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     MallocHeader::FreeInfo free_info = header->free_info();
     chunk = size - free_info.size;
 
-    header->mark_block_as_dead();
-
     // Observe MallocLimit
     if ((size > free_info.size) && MemTracker::check_exceeds_limit(chunk, mem_tag)) {
       return nullptr;
@@ -740,7 +738,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
   return os::post_alloc(rc, size, chunk, mem_tag, stack);
 }
 
-void  os::free(void *memblock) {
+void os::free(void *memblock) {
 
   // Special handling for NMT preinit phase before arguments are parsed
   if (NMTPreInit::handle_free(memblock)) {
