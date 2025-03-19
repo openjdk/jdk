@@ -25,28 +25,28 @@
  * @test
  * @bug 8350563
  * @summary Test that And nodes are added to the CCP worklist if they have a constant as input.
- * @run main/othervm -Xbatch -XX:-TieredCompilation compiler.c2.TestAndConZeroCCP
- * @run driver compiler.c2.TestAndConZeroCCP
+ * @run main/othervm -Xbatch -XX:-TieredCompilation compiler.ccp.TestAndConZeroCCP
+ * @run driver compiler.ccp.TestAndConZeroCCP
  */
-package compiler.c2;
+package compiler.ccp;
 
 import java.util.Arrays;
 
 public class TestAndConZeroCCP {
 
-  public static void main(String[] args) {
-    for (int i = 0; i < 10000; ++i) {
-      run();
+    public static void main(String[] args) {
+        for (int i = 0; i < 10000; ++i) {
+            run();
+        }
     }
-  }
 
-  private static void run() {
-    for (int cp = 0; cp <= 1 << 16; cp++) {
-      Arrays.binarySearch(array, cp);
-      Character.getType(cp);
-      Character.isAlphabetic(cp);
+    private static void run() {
+        for (int cp = 0; cp <= 1 << 16; cp++) {
+            Arrays.binarySearch(array, cp);
+            Character.getType(cp);
+            Character.isAlphabetic(cp);
+        }
     }
-  }
 
-  private static final int[] array = new int[3];
+    private static final int[] array = new int[3];
 }
