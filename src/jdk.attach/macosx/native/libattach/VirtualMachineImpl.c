@@ -34,6 +34,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -134,8 +135,8 @@ JNIEXPORT jboolean JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkCatches
     */
 
     if (sysctl(mib, sizeof(mib) / sizeof(int), &kiproc, &kipsz, NULL, 0) == 0) {
-        const unsigned char ignored = (kiproc.kp_proc.p_sigignore & sigmask(SIGQUIT)) != 0;
-        const unsigned char caught  = (kiproc.kp_proc.p_sigcatch & sigmask(SIGQUIT))  != 0;
+        const bool ignored = (kiproc.kp_proc.p_sigignore & sigmask(SIGQUIT)) != 0;
+        const bool caught  = (kiproc.kp_proc.p_sigcatch & sigmask(SIGQUIT))  != 0;
 
         // *only* send QUIT if the target is ready to catch and handle the signal to avoid default "death" if not
 
@@ -151,7 +152,7 @@ JNIEXPORT jboolean JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkCatches
         } else if (throwIfNotReady) {
             char msg[100];
  
-            snprintf(msg, sizeof(msg), "%d: state is not ready to participate in attach handshake!", (int)pid);
+            snprintf(msg, sizeof(msg), "pid: %d, state is not ready to participate in attach handshake!", (int)pid);
 
             JNU_ThrowByName(env, "com/sun/tools/attach/AttachNotSupportedException", msg);
         }
