@@ -22,10 +22,8 @@
  */
 package common.jdkcatalog;
 
-import static jaxp.library.JAXPTestUtilities.SRC_DIR;
-import static jaxp.library.JAXPTestUtilities.isWindows;
-
 import java.io.StringReader;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,11 +31,12 @@ import java.util.stream.Collectors;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.Catalog;
 import javax.xml.catalog.CatalogFeatures;
+import javax.xml.catalog.CatalogManager;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import jdk.xml.internal.JdkCatalog;
+import jaxp.library.JAXPTestUtilities;
 import org.testng.Assert;
 import org.testng.Assert.ThrowingRunnable;
 import org.testng.annotations.DataProvider;
@@ -50,7 +49,6 @@ import org.xml.sax.helpers.DefaultHandler;
 /*
  * @test
  * @bug 8344800 8345353 8351969
- * @modules java.xml/jdk.xml.internal
  * @library /javax/xml/jaxp/libs
  * @run testng/othervm common.jdkcatalog.JDKCatalogTest
  * @summary Verifies the W3C DTDs and XSDs in the JDK built-in catalog.
@@ -62,11 +60,9 @@ public class JDKCatalogTest {
     private static final String XSD_LOCATION = "{{SCHEMA_LOCATION}}";
     private static final String TARGET_NAMESPACE = "{{targetNamespace}}";
     private static final String ROOT_ELEMENT = "{{rootElement}}";
-    private static final Catalog JDKCATALOG;
-    static {
-        JdkCatalog.init("continue");
-        JDKCATALOG = JdkCatalog.catalog;
-    }
+    private static final String JDKCATALOG_URL = "jrt:/java.xml/jdk/xml/internal/jdkcatalog/JDKCatalog.xml";
+
+    private Catalog catalog = CatalogManager.catalog(CatalogFeatures.defaults(), URI.create(JDKCATALOG_URL));
 
     /*
      * DataProvider: DTDs in the JDK built-in Catalog
@@ -139,8 +135,8 @@ public class JDKCatalogTest {
      */
     @Test(dataProvider = "DTDsInJDKCatalog")
     public void testDTDsInJDKCatalog(String publicId, String systemId) {
-        String matchingPubId = JDKCATALOG.matchPublic(publicId);
-        String matchingSysId = JDKCATALOG.matchSystem(systemId);
+        String matchingPubId = catalog.matchPublic(publicId);
+        String matchingSysId = catalog.matchSystem(systemId);
         Assert.assertEquals(matchingPubId, matchingSysId);
     }
 
@@ -184,10 +180,10 @@ public class JDKCatalogTest {
     public void testXSD(String xmlTemplate, String xsdLocation, String targetNS, String rootElement, String catalog,
             Class<Throwable> expectedThrow)
             throws Exception {
-        String xmlSrcPath = SRC_DIR + "/" + xmlTemplate;
+        String xmlSrcPath = JAXPTestUtilities.SRC_DIR + "/" + xmlTemplate;
         final String xmlSrcId = getSysId(xmlSrcPath);
 
-        final String customCatalog = getSysId((catalog != null) ? SRC_DIR + "/" + catalog : null);
+        final String customCatalog = getSysId((catalog != null) ? JAXPTestUtilities.SRC_DIR + "/" + catalog : null);
 
         final String xmlString = generateXMLWithXSDRef(xmlSrcPath, xsdLocation,
                 targetNS, rootElement);
@@ -245,7 +241,7 @@ public class JDKCatalogTest {
      */
     private String generateXMLWithDTDRef(String publicId, String systemId)
             throws Exception {
-        Path path = Paths.get(SRC_DIR + "/dtdtest.xml");
+        Path path = Paths.get(JAXPTestUtilities.SRC_DIR + "/dtdtest.xml");
         String xmlString = Files.lines(path).map(line -> {
             line = line.replace(PUBLIC_ID, publicId);
             line = line.replace(SYSTEM_ID, systemId);
@@ -287,7 +283,7 @@ public class JDKCatalogTest {
     private String getSysId(String path) {
         if (path == null) return null;
         String xmlSysId = "file://" + path;
-        if (isWindows) {
+        if (JAXPTestUtilities.isWindows) {
             path = path.replace('\\', '/');
             xmlSysId = "file:///" + path;
         }
