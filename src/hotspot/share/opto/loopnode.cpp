@@ -2503,19 +2503,7 @@ void LoopNode::verify_strip_mined(int expect_skeleton) const {
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.
 // Attempt to convert into a counted-loop.
-Node* CountedLoopNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (can_reshape && phase->type(in(LoopBackControl)) == Type::TOP) {
-    // Since this loop is collapsing, we also need to remove the associated Template Assertion Predicates above this loop
-    // (no more loop opts for this loop). Otherwise, the Template Assertion Predicates could wrongly end up at the loop
-    // entry of another counted loop which did not have any predicates before (could happen for example, when partially
-    // peeling a loop which loses its Parse Predicates due to nodes in between which are later optimized away + converting
-    // this loop into a counted loop). When further splitting this counted loop during loop opts into sub loops, we
-    // erroneously create Initialized Assertion Predicates for the sub loops with the init and stride values of the
-    // previously collapsed loop. These can then fail at runtime because they check the wrong values.
-    KillTemplateAssertionPredicates kill_template_assertion_predicates(phase->is_IterGVN());
-    PredicateIterator predicate_iterator(skip_strip_mined()->in(EntryControl));
-    predicate_iterator.for_each(kill_template_assertion_predicates);
-  }
+Node *CountedLoopNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return RegionNode::Ideal(phase, can_reshape);
 }
 

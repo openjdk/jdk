@@ -41,40 +41,31 @@ Node* AssertionPredicates::find_entry(Node* start_proj) {
   return entry;
 }
 
-// An Assertion Predicate has always a true projection on the success path and a Halt node on the failure path. Usually,
-// Assertion Predicates have their dedicated opaque nodes as bool input, except when an Assertion Predicate was killed
-// as part of loop splitting or during IGVN. In this case, it has a ConI input which we also treat as a valid Assertion
-// Predicate. Note that during IGVN, we could also have a dying Assertion Predicate with only one If projection left.
-// We will treat such a predicate as Runtime Predicate to skip over it during predicate iteration and not process it
-// further as Assertion Predicate.
-bool AssertionPredicate::may_be_assertion_predicate_if(const Node* node) {
+// An Assertion Predicate has always a true projection on the success path.
+bool may_be_assertion_predicate_if(const Node* node) {
   assert(node != nullptr, "should not be null");
-  return node->is_IfTrue() &&
-         RegularPredicate::may_be_predicate_if(node->as_IfProj()) &&
-         node->in(0)->outcnt() == 2 &&
-         has_halt(node);
+  return node->is_IfTrue() && RegularPredicate::may_be_predicate_if(node->as_IfProj());
 }
 
 bool AssertionPredicate::is_predicate(const Node* maybe_success_proj) {
   if (!may_be_assertion_predicate_if(maybe_success_proj)) {
     return false;
   }
-  return has_assertion_predicate_opaque_or_con_input(maybe_success_proj);
+  return has_assertion_predicate_opaque(maybe_success_proj) && has_halt(maybe_success_proj);
 }
 
-// Check if the If node of `predicate_proj` has an OpaqueTemplateAssertionPredicate (Template Assertion Predicate),
-// an OpaqueInitializedAssertionPredicate (Initialized Assertion Predicate) node or a ConI node as bool input. The latter
-// case could happen when an Assertion Predicate is about to be folded during IGVN.
-bool AssertionPredicate::has_assertion_predicate_opaque_or_con_input(const Node* predicate_proj) {
+// Check if the If node of `predicate_proj` has an OpaqueTemplateAssertionPredicate (Template Assertion Predicate) or
+// an OpaqueInitializedAssertionPredicate (Initialized Assertion Predicate) node as input.
+bool AssertionPredicate::has_assertion_predicate_opaque(const Node* predicate_proj) {
   IfNode* iff = predicate_proj->in(0)->as_If();
   Node* bol = iff->in(1);
-  return bol->is_OpaqueTemplateAssertionPredicate() || bol->is_OpaqueInitializedAssertionPredicate() || bol->is_ConI();
+  return bol->is_OpaqueTemplateAssertionPredicate() || bol->is_OpaqueInitializedAssertionPredicate();
 }
 
 // Check if the other projection (UCT projection) of `success_proj` has a Halt node as output.
 bool AssertionPredicate::has_halt(const Node* success_proj) {
   ProjNode* other_proj = success_proj->as_IfProj()->other_if_proj();
-  return other_proj->outcnt() == 1 && other_proj->unique_out()->is_Halt();
+  return other_proj->outcnt() == 1 && other_proj->unique_out()->Opcode() == Op_Halt;
 }
 
 // Returns the Parse Predicate node if the provided node is a Parse Predicate success proj. Otherwise, return null.
@@ -119,37 +110,27 @@ Deoptimization::DeoptReason RuntimePredicate::uncommon_trap_reason(const IfProjN
 
 bool RuntimePredicate::is_predicate(const Node* maybe_success_proj) {
   if (RegularPredicate::may_be_predicate_if(maybe_success_proj)) {
-    return is_being_folded_without_uncommon_proj(maybe_success_proj->as_IfProj()) ||
-           has_valid_uncommon_trap(maybe_success_proj);
+    return has_valid_uncommon_trap(maybe_success_proj);
+  } else {
+    return false;
   }
-  return false;
 }
 
 bool RuntimePredicate::has_valid_uncommon_trap(const Node* success_proj) {
   assert(RegularPredicate::may_be_predicate_if(success_proj), "must have been checked before");
   const Deoptimization::DeoptReason deopt_reason = uncommon_trap_reason(success_proj->as_IfProj());
-  return deopt_reason == Deoptimization::Reason_loop_limit_check ||
-         deopt_reason == Deoptimization::Reason_auto_vectorization_check ||
-         deopt_reason == Deoptimization::Reason_predicate ||
-         deopt_reason == Deoptimization::Reason_profile_predicate;
+  return (deopt_reason == Deoptimization::Reason_loop_limit_check ||
+          deopt_reason == Deoptimization::Reason_auto_vectorization_check ||
+          deopt_reason == Deoptimization::Reason_predicate ||
+          deopt_reason == Deoptimization::Reason_profile_predicate);
 }
 
 bool RuntimePredicate::is_predicate(const Node* node, const Deoptimization::DeoptReason deopt_reason) {
   if (RegularPredicate::may_be_predicate_if(node)) {
-    IfProjNode* success_proj = node->as_IfProj();
-    return is_being_folded_without_uncommon_proj(success_proj) || deopt_reason == uncommon_trap_reason(success_proj);
+    return deopt_reason == uncommon_trap_reason(node->as_IfProj());
+  } else {
+    return false;
   }
-  return false;
-}
-
-// Does the If node only have the success projection left due to already folding the uncommon projection because of a
-// constant bool input? This can happen during IGVN. Treat this case as being a Runtime Predicate to not miss other
-// Predicates above this node when iterating through them. Since the failing path is already removed, we could also
-// match an Assertion Predicate. This is fine since this predicate is being removed anyways and we just want to skip
-// it.
-bool RuntimePredicate::is_being_folded_without_uncommon_proj(const IfProjNode* success_proj) {
-  IfNode* if_node = success_proj->in(0)->as_If();
-  return if_node->in(1)->is_ConI() && if_node->outcnt() == 1;
 }
 
 // A Regular Predicate must have an If or a RangeCheck node, while the If should not be a zero trip guard check.
@@ -182,7 +163,7 @@ void TemplateAssertionPredicate::rewire_loop_data_dependencies(IfTrueNode* targe
 
 // Template Assertion Predicates always have the dedicated OpaqueTemplateAssertionPredicate to identify them.
 bool TemplateAssertionPredicate::is_predicate(const Node* node) {
-  if (!AssertionPredicate::may_be_assertion_predicate_if(node)) {
+  if (!may_be_assertion_predicate_if(node)) {
     return false;
   }
   IfNode* if_node = node->in(0)->as_If();
@@ -243,13 +224,6 @@ InitializedAssertionPredicate TemplateAssertionPredicate::initialize(PhaseIdealL
 void TemplateAssertionPredicate::kill(PhaseIdealLoop* phase) const {
   ConINode* true_con = phase->intcon(1);
   phase->igvn().replace_input_of(_if_node, 1, true_con);
-}
-
-// Kills the Template Assertion Predicate by setting the condition to true. This method should only be called during
-// IGVN. During PhaseIdealLoop, call kill() instead to make sure control of data nodes are maintained correctly.
-void TemplateAssertionPredicate::kill_during_igvn(PhaseIterGVN* igvn) const {
-  ConINode* true_con = igvn->intcon(1);
-  igvn->replace_input_of(_if_node, 1, true_con);
 }
 
 #ifdef ASSERT
@@ -322,7 +296,7 @@ void InitializedAssertionPredicate::verify() const {
 // Initialized Assertion Predicates always have the dedicated OpaqueInitiailizedAssertionPredicate node to identify
 // them.
 bool InitializedAssertionPredicate::is_predicate(const Node* node) {
-  if (!AssertionPredicate::may_be_assertion_predicate_if(node)) {
+  if (!may_be_assertion_predicate_if(node)) {
     return false;
   }
   IfNode* if_node = node->in(0)->as_If();

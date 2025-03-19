@@ -272,11 +272,10 @@ class AssertionPredicates : public StackObj {
 // - A Template Assertion Predicate.
 // - An Initialized Assertion Predicate.
 class AssertionPredicate : public StackObj {
-  static bool has_assertion_predicate_opaque_or_con_input(const Node* predicate_proj);
+  static bool has_assertion_predicate_opaque(const Node* predicate_proj);
   static bool has_halt(const Node* success_proj);
  public:
   static bool is_predicate(const Node* maybe_success_proj);
-  static bool may_be_assertion_predicate_if(const Node* node);
 };
 
 // Utility class representing a Regular Predicate which is either a Runtime Predicate or an Assertion Predicate.
@@ -338,10 +337,7 @@ class ParsePredicate : public Predicate {
   }
 };
 
-// Class to represent a Runtime Predicate which always has an associated UCT on the failing path. Note that when a
-// Regular Predicate is dying, it could already lose one of its out projections. We therefore treat any such dying
-// Regular Predicate (i.e. Assertion or Runtime Predicate) as Runtime Predicate in order to skip through it when
-// iterating through all predicates during IGVN.
+// Class to represent a Runtime Predicate which always has an associated UCT on the failing path.
 class RuntimePredicate : public Predicate {
   IfProjNode* _success_proj;
   IfNode* _if_node;
@@ -358,7 +354,6 @@ class RuntimePredicate : public Predicate {
   static bool is_predicate(const Node* maybe_success_proj);
   static bool has_valid_uncommon_trap(const Node* success_proj);
   static Deoptimization::DeoptReason uncommon_trap_reason(const IfProjNode* if_proj);
-  static bool is_being_folded_without_uncommon_proj(const IfProjNode* success_proj);
 
  public:
   Node* entry() const override {
@@ -377,13 +372,6 @@ class RuntimePredicate : public Predicate {
 };
 
 // Class to represent a Template Assertion Predicate.
-// A Template Assertion Predicate has the following properties:
-// - The head of the predicate is an If or RangeCheck node.
-//   - The bool input into the head is either:
-//     - (Usually) OpaqueTemplateAssertionPredicateNode
-//     - ConI if the predicate is dead or about to be dying during IGVN.
-// - The tail of the predicate is the success path represented with a true projection.
-// - The failing path contains a Halt node.
 class TemplateAssertionPredicate : public Predicate {
   IfTrueNode* const _success_proj;
   IfNode* const _if_node;
@@ -423,7 +411,6 @@ class TemplateAssertionPredicate : public Predicate {
   void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
                                      const PhaseIdealLoop* phase) const;
   void kill(PhaseIdealLoop* phase) const;
-  void kill_during_igvn(PhaseIterGVN* igvn) const;
   static bool is_predicate(const Node* node);
 
 #ifdef ASSERT
@@ -436,15 +423,8 @@ class TemplateAssertionPredicate : public Predicate {
 #endif // ASSERT
 };
 
-// Class to represent an Initialized Assertion Predicate which should never fail at runtime by design.
-// An Initialized Assertion Predicate has the following properties:
-// - The head of the predicate is an If or RangeCheck node.
-//   - The bool input into the head is either:
-//     - (Usually) OpaqueInitializedAssertionPredicate, before macro expansion
-//     - A Bool after removing OpaqueInitializedAssertionPredicate during macro expansion
-//     - ConI if the predicate is dead or about to be dying during IGVN.
-// - The tail of the predicate is the success path represented with a true projection.
-// - The failing path contains a Halt node.
+// Class to represent an Initialized Assertion Predicate which always has a halt node on the failing path.
+// This predicate should never fail at runtime by design.
 class InitializedAssertionPredicate : public Predicate {
   IfTrueNode* const _success_proj;
   IfNode* const _if_node;
@@ -1222,20 +1202,6 @@ class UpdateStrideForAssertionPredicates : public PredicateVisitor {
       // Only Last Value Initialized Assertion Predicates need to be killed and updated.
       initialized_assertion_predicate.kill(_phase);
     }
-  }
-};
-
-// The visitor visits all Template Assertion Predicates and kills them by marking them useless. They will be removed
-// during next round of IGVN.
-class KillTemplateAssertionPredicates : public PredicateVisitor {
-  PhaseIterGVN* _igvn;
-  public:
-  using PredicateVisitor::visit;
-
-  KillTemplateAssertionPredicates(PhaseIterGVN* igvn) : _igvn(igvn) {}
-
-  void visit(const TemplateAssertionPredicate& template_assertion_predicate) override {
-    template_assertion_predicate.kill_during_igvn(_igvn);
   }
 };
 #endif // SHARE_OPTO_PREDICATES_HPP
