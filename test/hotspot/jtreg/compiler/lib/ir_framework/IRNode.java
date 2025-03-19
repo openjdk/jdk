@@ -348,7 +348,7 @@ public class IRNode {
 
     public static final String ALLOC_OF = COMPOSITE_PREFIX + "ALLOC_OF" + POSTFIX;
     static {
-        String regex = START + "Allocate\\b" + MID + "allocationKlass:.*\\b" + IS_REPLACED + "\\b.*" + END;
+        String regex = START + "Allocate\\b" + MID + "allocationKlass:.*\\b" + IS_REPLACED + "\\s.*" + END;
         macroNodes(ALLOC_OF, regex);
     }
 
@@ -362,16 +362,20 @@ public class IRNode {
     static {
         // Assuming we are looking for an array of "some/package/MyClass". The printout is
         // [Lsome/package/MyClass;
+        // or, with more dimensions
+        // [[[Lsome/package/MyClass;
 
-        // Case where the search string is a not fully qualified name (but maybe partially qualified):
+        // Case where the searched string is a not fully qualified name (but maybe partially qualified):
         // package/MyClass or MyClass
-        // The ".*\\b" will eat the "some/"
+        // The ".*\\b" will eat the "some/" and "some/package/" resp.
         String partial_name_prefix = ".+\\b";
 
-        // A sequence of:
+        // The thing after "allocationKlass:" (the name of the allocated class) is a sequence of:
         // - a non-empty sequence of "["
-        // - a single character ("L" in our example),
+        // - a single character ("L"),
         // - maybe a non-empty sequence of characters ending on a word boundary
+        //   this sequence is omitted if the given name is already fully qualified (exact match)
+        //   but will eat the package path prefix in the cases described above
         // - the name we are looking for
         // - the final ";".
         String name_part = "\\[+.(" + partial_name_prefix + ")?" + IS_REPLACED + ";";

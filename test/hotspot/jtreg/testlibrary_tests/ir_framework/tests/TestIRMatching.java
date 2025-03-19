@@ -121,7 +121,8 @@ public class TestIRMatching {
                 BadFailOnConstraint.create(AllocInstance.class, "allocInstance()", 6),
                 BadFailOnConstraint.create(AllocInstance.class, "allocInstance()", 7),
                 GoodFailOnConstraint.create(AllocInstance.class, "allocInstance()", 8),
-                GoodFailOnConstraint.create(AllocInstance.class, "allocInstance()", 9)
+                GoodFailOnConstraint.create(AllocInstance.class, "allocInstance()", 9),
+                GoodFailOnConstraint.create(AllocInstance.class, "allocInstance()", 10)
         );
 
         runCheck(BadFailOnConstraint.create(AllocArray.class, "allocArray()", 1),
@@ -132,7 +133,8 @@ public class TestIRMatching {
                  BadFailOnConstraint.create(AllocArray.class, "allocArray()", 6),
                  BadFailOnConstraint.create(AllocArray.class, "allocArray()", 7),
                  GoodFailOnConstraint.create(AllocArray.class, "allocArray()", 8),
-                 GoodFailOnConstraint.create(AllocArray.class, "allocArray()", 9)
+                 GoodFailOnConstraint.create(AllocArray.class, "allocArray()", 9),
+                 GoodFailOnConstraint.create(AllocArray.class, "allocArray()", 10)
         );
 
         runCheck(BadFailOnConstraint.create(AllocArray.class, "allocMultiArray()", 1),
@@ -143,7 +145,8 @@ public class TestIRMatching {
                  BadFailOnConstraint.create(AllocArray.class, "allocMultiArray()", 6),
                  BadFailOnConstraint.create(AllocArray.class, "allocMultiArray()", 7),
                  GoodFailOnConstraint.create(AllocArray.class, "allocMultiArray()", 8),
-                 GoodFailOnConstraint.create(AllocArray.class, "allocMultiArray()", 9)
+                 GoodFailOnConstraint.create(AllocArray.class, "allocMultiArray()", 9),
+                 GoodFailOnConstraint.create(AllocArray.class, "allocMultiArray()", 10)
         );
 
         runCheck(GoodRuleConstraint.create(RunTests.class, "good1()", 1),
@@ -956,6 +959,7 @@ class AllocInstance {
     @IR(failOn = {IRNode.ALLOC_OF, "tests/MyClass"})
     @IR(failOn = {IRNode.ALLOC_OF, "ests/MyClass"}) // Does not fail
     @IR(failOn = {IRNode.ALLOC_OF, "Atests/MyClass"}) // Does not fail
+    @IR(failOn = {IRNode.ALLOC_OF, "tests"}) // Does not fail
     public void allocInstance() {
         myClass = new MyClass();
     }
@@ -975,6 +979,7 @@ class AllocArray {
     @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "tests/MyClass"})
     @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "ests/MyClass"}) // Does not fail
     @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "Atests/MyClass"}) // Does not fail
+    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "tests"}) // Does not fail
     public void allocArray() {
         myClassArray = new MyClass[2];
     }
@@ -989,6 +994,7 @@ class AllocArray {
     @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "tests/MyClass"})
     @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "ests/MyClass"}) // Does not fail
     @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "Atests/MyClass"}) // Does not fail
+    @IR(failOn = {IRNode.ALLOC_ARRAY_OF, "tests"}) // Does not fail
     public void allocMultiArray() {
         myClassMultiArray = new MyClass[2][3];
     }
