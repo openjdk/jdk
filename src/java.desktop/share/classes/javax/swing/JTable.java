@@ -2159,8 +2159,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         selModel.setValueIsAdjusting(false);
     }
 
-    private void selectColumns(TableColumnModel  columnModel, int columnCount) {
-        ListSelectionModel selModel = columnModel.getSelectionModel();
+    private void selectColumns(ListSelectionModel  selModel, int columnCount) {
         selModel.setValueIsAdjusting(true);
         int oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), false);
         int oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), false);
@@ -2177,6 +2176,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *  Selects all rows, columns, and cells in the table.
      */
     public void selectAll() {
+        ListSelectionModel selModel;
         int rowCount = getRowCount();
         int columnCount = getColumnCount();
 
@@ -2185,12 +2185,16 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             removeEditor();
         }
         if (rowCount > 0 && columnCount > 0) {
-            selectRows(selectionModel, rowCount);
-            selectColumns(columnModel, columnCount);
+            selModel = selectionModel;
+            selectRows(selModel, rowCount);
+            selModel = columnModel.getSelectionModel();
+            selectColumns(selModel, columnCount);
         } else if (rowCount > 0 && columnCount == 0) {
-            selectRows(selectionModel, rowCount);
+            selModel = selectionModel;
+            selectRows(selModel, rowCount);
         } else if (columnCount > 0  && rowCount == 0) {
-            selectColumns(columnModel, columnCount);
+            selModel = columnModel.getSelectionModel();
+            selectColumns(selModel, columnCount);
         }
     }
 
