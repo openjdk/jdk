@@ -906,10 +906,8 @@ public final class AckFrame extends QuicFrame {
         long smallest = largestAcknowledged + 2;
         for (var ackRange : ackRanges) {
             largest = smallest - ackRange.gap - 2;
-            if (first > largest) return false;
             if (last > largest) return false;
             smallest = largest - ackRange.range;
-            if (last < smallest) continue;
             if (first >= smallest) return true;
         }
         return false;
