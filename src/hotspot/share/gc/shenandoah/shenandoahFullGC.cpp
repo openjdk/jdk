@@ -950,7 +950,7 @@ public:
     // NOTE: See blurb at ShenandoahMCResetCompleteBitmapTask on why we need to skip
     // pinned regions.
     if (!r->is_pinned()) {
-      _heap->marking_context()->reset_top_at_mark_start(r);
+      _heap->complete_marking_context()->reset_top_at_mark_start(r);
     }
 
     size_t live = r->used();
@@ -1131,8 +1131,6 @@ void ShenandoahFullGC::phase5_epilog() {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_copy_objects_reset_complete);
     ShenandoahMCResetCompleteBitmapTask task;
     heap->workers()->run_task(&task);
-    // Set mark incomplete after resetting bitmaps.
-    heap->global_generation()->set_mark_incomplete();
   }
 
   // Bring regions in proper states after the collection, and set heap properties.
@@ -1158,6 +1156,9 @@ void ShenandoahFullGC::phase5_epilog() {
     }
 
     heap->free_set()->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
+
+    // Set mark incomplete because the marking bitmaps have been reset except pinned regions.
+    heap->global_generation()->set_mark_incomplete();
 
     heap->clear_cancelled_gc(true /* clear oom handler */);
   }

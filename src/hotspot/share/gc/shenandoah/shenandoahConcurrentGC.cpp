@@ -656,8 +656,8 @@ void ShenandoahConcurrentGC::op_init_mark() {
       heap->old_generation()->transfer_pointers_from_satb();
     }
 
-    // Verify before mark is done before swapping card tables,
-    // therefore the write card table will be verified before being taken snapshot.
+    // Verify before mark is done before swapping card tables.
+    // Therefore, the write card table will be verified before being taken snapshot.
     if (ShenandoahVerify) {
       heap->verifier()->verify_before_concmark();
     }
