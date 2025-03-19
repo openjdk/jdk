@@ -24,8 +24,12 @@
 
 import jdk.test.lib.cds.CDSJarUtils;
 
-public class JarBuilder extends CDSJarUtils {
 
+/*
+ * This class is deprecated and should not be used by any new test cases. Use CDSJarUtils
+ * and jdk.test.lib.cds.CDSModulePackager instead.
+ */
+public class JarBuilder extends CDSJarUtils {
     public static void createModularJar(String jarPath,
                                         String classesDir,
                                         String mainClass) throws Exception {
