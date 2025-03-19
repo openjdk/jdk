@@ -56,6 +56,8 @@ public class TestVerify {
 
         // Test recursive data: Object array of values, etc.
         testRecursive();
+
+        testArbitraryClasses();
     }
 
     public static void testArrayByte() {
@@ -468,6 +470,31 @@ public class TestVerify {
             checkNE(v1, v2);
             checkNE(Double.longBitsToDouble(v1), Double.longBitsToDouble(v2));
         }
+    }
+
+    static class A {}
+
+    static class B {}
+
+    static class C extends B {}
+
+    static class D {
+        private int x;
+    }
+
+    static class E {
+        private int x;
+    }
+
+    public static void testArbitraryClasses() {
+        A a1 = new A();
+        A a2 = new A();
+
+        // Throws exception because arbitrary classes are not allowed.
+        checkNE(a1, a1, false, false);
+
+        Verify.checkEQ(a1, a1, false, true);
+        Verify.checkEQ(a1, a2, false, true);
     }
 
     public static void checkNE(Object a, Object b, boolean isFloatCheckWithRawBits, boolean isCheckWithArbitraryClasses) {

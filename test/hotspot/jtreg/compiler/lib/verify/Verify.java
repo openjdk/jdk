@@ -87,7 +87,7 @@ public final class Verify {
         // Null mismatch
         if (a == null || b == null) {
             System.err.println("ERROR: Verify.checkEQ failed: null mismatch");
-            printX(a, b, field, aParent, bParent);
+            print(a, b, field, aParent, bParent);
             throw new VerifyException("Object array null mismatch.");
         }
 
@@ -97,7 +97,7 @@ public final class Verify {
         if (ca != cb) {
             System.err.println("ERROR: Verify.checkEQ failed: class mismatch.");
             System.err.println("       " + ca.getName() + " vs " + cb.getName());
-            printX(a, b, field, aParent, bParent);
+            print(a, b, field, aParent, bParent);
             throw new VerifyException("Object class mismatch.");
         }
 
@@ -148,9 +148,14 @@ public final class Verify {
                     return;
                 }
 
-                System.err.println("ERROR: Verify.checkEQ failed: type not supported: " + ca.getName());
-                printX(a, b, field, aParent, bParent);
-                throw new VerifyException("Object type not supported: " + ca.getName());
+                if (isCheckWithArbitraryClasses) {
+                    checkEQArbitraryClasses(a, b, field, aParent, bParent);
+                    return;
+                } else {
+                    System.err.println("ERROR: Verify.checkEQ failed: type not supported: " + ca.getName());
+                    print(a, b, field, aParent, bParent);
+                    throw new VerifyException("Object type not supported: " + ca.getName());
+                }
             }
         }
     }
@@ -161,7 +166,7 @@ public final class Verify {
     private void checkEQimpl(byte a, byte b, String field, Object aParent, Object bParent) {
         if (a != b) {
             System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b);
-            printX(a, b, field, aParent, bParent);
+            print(a, b, field, aParent, bParent);
             throw new VerifyException("Value mismatch: " + a + " vs " + b);
         }
     }
@@ -172,7 +177,7 @@ public final class Verify {
     private void checkEQimpl(char a, char b, String field, Object aParent, Object bParent) {
         if (a != b) {
             System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + (int)a + " vs " + (int)b);
-            printX(a, b, field, aParent, bParent);
+            print(a, b, field, aParent, bParent);
             throw new VerifyException("Value mismatch: " + (int)a + " vs " + (int)b);
         }
     }
@@ -183,7 +188,7 @@ public final class Verify {
     private void checkEQimpl(short a, short b, String field, Object aParent, Object bParent) {
         if (a != b) {
             System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + (int)a + " vs " + (int)b);
-            printX(a, b, field, aParent, bParent);
+            print(a, b, field, aParent, bParent);
             throw new VerifyException("Value mismatch: " + (int)a + " vs " + (int)b);
         }
     }
@@ -194,7 +199,7 @@ public final class Verify {
     private void checkEQimpl(int a, int b, String field, Object aParent, Object bParent) {
         if (a != b) {
             System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b);
-            printX(a, b, field, aParent, bParent);
+            print(a, b, field, aParent, bParent);
             throw new VerifyException("Value mismatch: " + a + " vs " + b);
         }
     }
@@ -205,7 +210,7 @@ public final class Verify {
     private void checkEQimpl(long a, long b, String field, Object aParent, Object bParent) {
         if (a != b) {
             System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b);
-            printX(a, b, field, aParent, bParent);
+            print(a, b, field, aParent, bParent);
             throw new VerifyException("Value mismatch: " + a + " vs " + b);
         }
     }
@@ -241,7 +246,7 @@ public final class Verify {
             System.err.println("ERROR: Verify.checkEQ failed: value mismatch. check raw: " + isFloatCheckWithRawBits);
             System.err.println("  Values: " + a + " vs " + b);
             System.err.println("  Raw:    " + Float.floatToRawIntBits(a) + " vs " + Float.floatToRawIntBits(b));
-            printX(a, b, field, aParent, bParent);
+            print(a, b, field, aParent, bParent);
             throw new VerifyException("Value mismatch: " + a + " vs " + b);
         }
     }
@@ -254,7 +259,7 @@ public final class Verify {
             System.err.println("ERROR: Verify.checkEQ failed: value mismatch. check raw: " + isFloatCheckWithRawBits);
             System.err.println("       Values: " + a + " vs " + b);
             System.err.println("       Raw:    " + Double.doubleToRawLongBits(a) + " vs " + Double.doubleToRawLongBits(b));
-            printX(a, b, field, aParent, bParent);
+            print(a, b, field, aParent, bParent);
             throw new VerifyException("Value mismatch: " + a + " vs " + b);
         }
     }
@@ -265,7 +270,7 @@ public final class Verify {
     private void checkEQimpl(boolean a, boolean b, String field, Object aParent, Object bParent) {
         if (a != b) {
             System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b);
-            printX(a, b, field, aParent, bParent);
+            print(a, b, field, aParent, bParent);
             throw new VerifyException("Value mismatch: " + a + " vs " + b);
         }
     }
@@ -281,7 +286,7 @@ public final class Verify {
         // Print some general info
         System.err.println("ERROR: Verify.checkEQ failed");
 
-        printX(a, b, field, aParent, bParent);
+        print(a, b, field, aParent, bParent);
         printMemorySegment(a, "a");
         printMemorySegment(b, "b");
 
@@ -312,7 +317,7 @@ public final class Verify {
         System.err.println("ERROR: Verify.checkEQ failed:");
         System.out.println("a: " + a.getMessage());
         System.out.println("b: " + b.getMessage());
-        printX(a, b, field, aParent, bParent);
+        print(a, b, field, aParent, bParent);
         throw new VerifyException("Exception message mismatch: " + a + " vs " + b);
     }
 
@@ -357,14 +362,14 @@ public final class Verify {
     private void checkEQimpl(float[] a, float[] b, String field, Object aParent, Object bParent) {
         if (a.length != b.length) {
             System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length);
-            printX(a, b, field, aParent, bParent);
+            print(a, b, field, aParent, bParent);
             throw new VerifyException("Float array length mismatch.");
         }
 
         for (int i = 0; i < a.length; i++) {
             if (isFloatEQ(a[i], b[i])) {
                 System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + ". check raw: " + isFloatCheckWithRawBits);
-                printX(a, b, field, aParent, bParent);
+                print(a, b, field, aParent, bParent);
                 throw new VerifyException("Float array value mismatch " + a[i] + " vs " + b[i]);
             }
         }
@@ -376,14 +381,14 @@ public final class Verify {
     private void checkEQimpl(double[] a, double[] b, String field, Object aParent, Object bParent) {
         if (a.length != b.length) {
             System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length);
-            printX(a, b, field, aParent, bParent);
+            print(a, b, field, aParent, bParent);
             throw new VerifyException("Double array length mismatch.");
         }
 
         for (int i = 0; i < a.length; i++) {
             if (isDoubleEQ(a[i], b[i])) {
                 System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + ". check raw: " + isFloatCheckWithRawBits);
-                printX(a, b, field, aParent, bParent);
+                print(a, b, field, aParent, bParent);
                 throw new VerifyException("Double array value mismatch " + a[i] + " vs " + b[i]);
             }
         }
@@ -395,14 +400,14 @@ public final class Verify {
     private void checkEQimpl(boolean[] a, boolean[] b, String field, Object aParent, Object bParent) {
         if (a.length != b.length) {
             System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length);
-            printX(a, b, field, aParent, bParent);
+            print(a, b, field, aParent, bParent);
             throw new VerifyException("Boolean array length mismatch.");
         }
 
         for (int i = 0; i < a.length; i++) {
             if (a[i] != b[i]) {
                 System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i]);
-                printX(a, b, field, aParent, bParent);
+                print(a, b, field, aParent, bParent);
                 throw new VerifyException("Boolean array value mismatch.");
             }
         }
@@ -416,7 +421,7 @@ public final class Verify {
         // (1) Length mismatch
         if (a.length != b.length) {
             System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length);
-            printX(a, b, field, aParent, bParent);
+            print(a, b, field, aParent, bParent);
             throw new VerifyException("Object array length mismatch.");
         }
 
@@ -426,7 +431,10 @@ public final class Verify {
         }
     }
 
-    private void printX(Object a, Object b, String field, Object aParent, Object bParent) {
+    private void checkEQArbitraryClasses(Object a, Object b, String field, Object aParent, Object bParent) {
+    }
+
+    private void print(Object a, Object b, String field, Object aParent, Object bParent) {
         System.err.println("  aParent: " + aParent);
         System.err.println("  bParent: " + bParent);
         System.err.println("  field:   " + field);
@@ -448,7 +456,7 @@ public final class Verify {
             Object bPrevious = a2b.get(a);
             if (b != bPrevious) {
                 System.err.println("ERROR: Verify.checkEQ failed:");
-                printX(a, b, field, aParent, bParent);
+                print(a, b, field, aParent, bParent);
                 System.err.println("  bPrevious: " + bPrevious);
                 throw new VerifyException("Mismatch with previous pair.");
             }
