@@ -85,13 +85,4 @@ public class SigningCheck {
                         "Certifcate not trusted by current user: " + name))
                 .apply(result.stream());
     }
-
-    public static void isXcodeDevToolsInstalled() {
-        int code = Executor.of("/usr/bin/xcrun", "--help")
-                .executeWithoutExitCodeCheck().getExitCode();
-        if (code != 0) {
-            TKit.throwSkippedException("Missing Xcode with command line developer tools");
-        }
-    }
-
 }
