@@ -1063,9 +1063,7 @@ public:
 
   Node* make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem);
 
-#ifndef PRODUCT
-  virtual void dump_spec(outputStream* st) const;
-#endif
+  NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
 };
 
 //------------------------------AllocateArray---------------------------------
