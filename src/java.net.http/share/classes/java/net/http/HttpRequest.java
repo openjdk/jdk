@@ -33,8 +33,6 @@ import java.net.http.HttpClient.Version;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Iterator;
@@ -252,9 +250,16 @@ public abstract class HttpRequest {
      *
      * @see Builder#setOption(HttpRequestOption, Object)
      *
+     * @implSpec
+     * The default implementation of this method returns {@link Optional#empty()}
+     * if {@code option} is non-null, otherwise throws {@link NullPointerException}.
+     *
      * @since TBD
      */
-    public <T> Optional<T> getOption(HttpRequestOption<T> option) { return Optional.empty(); }
+    public <T> Optional<T> getOption(HttpRequestOption<T> option) {
+        Objects.requireNonNull(option);
+        return Optional.empty();
+    }
 
     /**
      * A builder of {@linkplain HttpRequest HTTP requests}.
