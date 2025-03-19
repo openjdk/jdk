@@ -34,6 +34,9 @@
  * @run main/othervm -Xcomp -XX:-TieredCompilation
  *                   -XX:CompileCommand=compileonly,compiler.macronodes.TestEliminationOfAllocationWithoutUse::test*
  *                   compiler.macronodes.TestEliminationOfAllocationWithoutUse
+ * @run main/othervm -Xcomp
+ *                   -XX:CompileCommand=compileonly,compiler.macronodes.TestEliminationOfAllocationWithoutUse::test*
+ *                   compiler.macronodes.TestEliminationOfAllocationWithoutUse
  */
 
 package compiler.macronodes;
@@ -46,6 +49,11 @@ public class TestEliminationOfAllocationWithoutUse {
         failures += run2();
         failures += run3();
         failures += run4();
+        failures += run5();
+        failures += run6();
+        failures += run7();
+        failures += run8();
+        failures += run9();
         if (failures != 0) {
             throw new RuntimeException("Had test failures: " + failures);
         }
@@ -156,4 +164,175 @@ public class TestEliminationOfAllocationWithoutUse {
         }
         return 0;
     }
+
+    // From JDK-8336701
+    static class Test5 {
+        int[] b = new int[400];
+        static int[] staticArray = new int[400];
+    }
+
+    static void test5() {
+        long e;
+        for (e = 1; e < 9; ++e) {
+            Test5.staticArray[(int) e] -= e;
+            synchronized (new Test5()) { }
+        }
+        for (int f = 0; f < 10000; ++f) ;
+    }
+
+    static int run5() {
+        new Test5();
+        for (int i = 0; i < 1000; ++i) {
+            test5();
+        }
+        if (Test5.staticArray[8] != -8000) {
+            System.out.println("test5: wrong result: " + Test5.staticArray[8] + " vs expected: -8000");
+            return 1;
+        }
+        return 0;
+    }
+
+    // From JDK-8336293
+    static class Test6 {
+        static long c;
+        static int a = 400;
+        double[] b = new double[400];
+    }
+
+    static void test6() {
+        long d;
+        double[] e = new double[Test6.a];
+        for (int f = 0; f < e.length; f++)
+            e[f] = 1.116242;
+        d = 1;
+        while (++d < 7)
+            synchronized (new Test6()) { }
+        long g = 0;
+        for (int f = 0; f < e.length; f++)
+            g += e[f];
+        Test6.c += g;
+    }
+
+    static int run6() {
+        new Test6();
+        for (int f = 0; f < 10000; ++f) {
+            test6();
+        }
+        if (Test6.c != 4000000) {
+            System.out.println("test6: wrong result: " + Test6.c + " vs expected: 4000000 ");
+            return 1;
+        }
+        return 0;
+    }
+
+    // From JDK-8327868
+    static class Test7 {
+        static int a = 400;
+        int[] b = new int[400];
+        static int[] staticArray = new int[a];
+    }
+
+    static int test7() {
+        int l, d = 3;
+        for (l = 2; 58 > l; l++) {
+            for (int e = 2; e < 8; e += 2)
+                for (int f = 1; f < e; f += 2)
+                    synchronized (new Test7()) {
+                    }
+            do
+                ; while (d < 2);
+            int g = 0;
+            do
+                g++;
+            while (g < 20000);
+            Test7.staticArray[1] -= 3023399;
+        }
+        int h = 0;
+        for (int i = 0; i < Test7.staticArray.length; i++)
+            h += Test7.staticArray[i];
+        return h;
+    }
+
+    static int run7() {
+        new Test7();
+        int res = test7();
+        if (res != -169310344) {
+            System.out.println("test7: wrong result: " + res + " vs expected: -169310344");
+            return 1;
+        }
+        return 0;
+    }
+
+    // from JDK-8329984
+    static class Test8 {
+        static int a = 400;
+        int[] e = new int[400];
+    }
+
+    static int test8() {
+        int i = 22738;
+        int b;
+        int h;
+        int[] c = new int[Test8.a];
+        for (b = 3; b < 273; b++) {
+            h = 1;
+            while (++h < 97) switch (b % 6 + 56) {
+                case 56:
+                    c[1] = i;
+                case 57:
+                    synchronized (new Test8()) {}
+            }
+        }
+        int k = 0;
+        for (int j = 0; j < c.length; j++) k += c[j];
+        return k;
+    }
+
+    public static int run8() {
+        new Test8();
+        for (int i = 0; i < 20; i++) {
+            int res = test8();
+            if (res != 22738) {
+                System.out.println("test8: wrong result: " + res + " vs expected: 22738");
+                return 1;
+            }
+        }
+        return 0;
+    }
+
+    // from JDK-8341009
+   static class Test9 {
+        static int a = 256;
+        float[] b = new float[256];
+        static long c;
+    }
+
+  static void test9() {
+    for (int f = 0; f < 10000; ++f) ;
+    float[][] g = new float[Test9.a][Test9.a];
+    for (int d = 7; d < 16; d++) {
+      long e = 1;
+      do {
+        g[d][(int) e] = d;
+        synchronized (new Test9()) {
+        }
+      } while (++e < 5);
+    }
+    for (int i = 0; i < Test9.a; ++i) {
+      for (int j = 0; j < Test9.a ; ++j) {
+          Test9.c += g[i][j];
+      }
+    }
+  }
+
+  static int run9() {
+    for (int j = 6; 116 > j; ++j) {
+        test9();
+    }
+    if (Test9.c != 43560) {
+        System.out.println("test9: wrong result: " + Test9.c + " vs expected: 43560");
+        return 1;
+    }
+    return 0;
+  }
 }

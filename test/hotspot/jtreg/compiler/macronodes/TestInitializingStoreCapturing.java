@@ -46,13 +46,13 @@ public class TestInitializingStoreCapturing {
     }
 
     @Test
-    @IR(counts = {IRNode.STE, "= 0"})
+    @IR(counts = {IRNode.STORE_F, "= 0"})
     static A testInitializeField() {
         return new A(4.2f);
     }
 
     @Test
-    @IR(counts = {IRNode.STORE, "= 0"})
+    @IR(counts = {IRNode.STORE_F, "= 0"})
     static float[] testInitializeArray() {
         return new float[] {4.2f};
     }

@@ -105,4 +105,33 @@ public:
   ProjNode* other_if_proj() const;
 };
 
+// A ProjNode variant that captures an adr_type(). Used as a projection of InitializeNode to have the right adr_type()
+// for array elements/fields.
+class NarrowMemProjNode : public ProjNode {
+private:
+  const TypePtr* _adr_type;
+protected:
+  virtual uint hash() const {
+    return ProjNode::hash() + _adr_type->hash();
+  }
+  virtual bool cmp(const Node &n) const {
+    return ProjNode::cmp(n) && ((NarrowMemProjNode&)n)._adr_type == _adr_type;
+  }
+  virtual uint size_of() const {
+    return sizeof(*this);
+  }
+public:
+  NarrowMemProjNode(Node *src, uint con, const TypePtr* adr_type)
+    : ProjNode(src, con), _adr_type(adr_type) {
+  }
+
+  virtual const TypePtr* adr_type() const {
+    return _adr_type;
+  }
+  void set_adr_type(const TypePtr* adr_type) {
+    _adr_type = adr_type;
+  }
+  virtual int Opcode() const;
+};
+
 #endif // SHARE_OPTO_MULTNODE_HPP
