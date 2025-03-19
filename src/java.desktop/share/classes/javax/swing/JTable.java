@@ -2146,7 +2146,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         return getRowSelectionAllowed() && getColumnSelectionAllowed();
     }
 
-    private void selectRows(ListSelectionModel selModel, int rowCount) {
+    private void selectRows(int rowCount) {
+        ListSelectionModel selModel = selectionModel;
         selModel.setValueIsAdjusting(true);
         int oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), true);
         int oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), true);
@@ -2159,7 +2160,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         selModel.setValueIsAdjusting(false);
     }
 
-    private void selectColumns(ListSelectionModel  selModel, int columnCount) {
+    private void selectColumns(int columnCount) {
+        ListSelectionModel selModel = columnModel.getSelectionModel();
         selModel.setValueIsAdjusting(true);
         int oldLead = getAdjustedIndex(selModel.getLeadSelectionIndex(), false);
         int oldAnchor = getAdjustedIndex(selModel.getAnchorSelectionIndex(), false);
@@ -2176,7 +2178,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *  Selects all rows, columns, and cells in the table.
      */
     public void selectAll() {
-        ListSelectionModel selModel;
         int rowCount = getRowCount();
         int columnCount = getColumnCount();
 
@@ -2185,16 +2186,12 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             removeEditor();
         }
         if (rowCount > 0 && columnCount > 0) {
-            selModel = selectionModel;
-            selectRows(selModel, rowCount);
-            selModel = columnModel.getSelectionModel();
-            selectColumns(selModel, columnCount);
+            selectRows(rowCount);
+            selectColumns(columnCount);
         } else if (rowCount > 0 && columnCount == 0) {
-            selModel = selectionModel;
-            selectRows(selModel, rowCount);
+            selectRows(rowCount);
         } else if (columnCount > 0  && rowCount == 0) {
-            selModel = columnModel.getSelectionModel();
-            selectColumns(selModel, columnCount);
+            selectColumns(columnCount);
         }
     }
 
