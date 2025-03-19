@@ -1182,12 +1182,12 @@ public class Main {
     }
 
     private void readEntry(InputStream is) throws IOException {
-        byte[] buffer = new byte[8192];
-        while (is.read(buffer) != -1) {
-        }
+        is.transferTo(OutputStream.nullOutputStream());
     }
 
     private boolean compareManifest(Manifest cenManifest, Manifest locManifest) {
+        boolean validManifest = true;
+
         if (cenManifest == null) {
             crossChkWarnings.add(rb.getString("CEN.manifest.is.missing"));
             return false;
@@ -1208,24 +1208,25 @@ public class Main {
                 crossChkWarnings.add(String.format(
                         rb.getString("main.attribute.key.1.in.CEN.but.missing.in.LOC"),
                         key));
-                return false;
+                validManifest = false;
             } else if (!cenValue.equals(locValue)) {
                 crossChkWarnings.add(String.format(
                         rb.getString("main.atrribute.key.1.mismatch.CEN.2.LOC.3"),
                         key, cenValue, locValue));
-                return false;
+                validManifest = false;
             }
         }
 
         for (Object key : locMainAttrs.keySet()) {
             if (!cenMainAttrs.containsKey(key)) {
-                System.out.println(String.format(
+                crossChkWarnings.add(String.format(
                         rb.getString("main.attribute.key.1.in.LOC.but.missing.in.CEN"),
                         key));
-                return false;
+                validManifest = false;
             }
         }
-        return true;
+
+        return validManifest;
     }
 
     private void compareSigners(JarEntry cenEntry, JarEntry locEntry) {
