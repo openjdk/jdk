@@ -598,6 +598,8 @@ public abstract class HttpRequest {
                     }
                 }
         );
+        request.getOption(HttpRequestOption.H3_DISCOVERY)
+                .ifPresent(opt -> builder.setOption(HttpRequestOption.H3_DISCOVERY, opt));
         return builder;
     }
 
