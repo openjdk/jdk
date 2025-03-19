@@ -707,10 +707,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     // since it may invalidate the old block, including its header.
     MallocHeader* header = MallocHeader::resolve_checked(memblock);
     MallocHeader::FreeInfo free_info = header->free_info();
-    if (size > free_info.size) {
-      chunk = size - free_info.size;
-    }
-    
+
     // Observe MallocLimit
     if ((size > free_info.size) && MemTracker::check_exceeds_limit(chunk, mem_tag)) {
       return nullptr;
