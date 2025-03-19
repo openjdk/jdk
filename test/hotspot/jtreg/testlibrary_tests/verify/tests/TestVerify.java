@@ -52,6 +52,8 @@ public class TestVerify {
         testNativeMemorySegment();
         testException();
 
+        testRawFloat();
+
         // Test recursive data: Object array of values, etc.
         testRecursive();
     }
@@ -314,6 +316,40 @@ public class TestVerify {
         checkNE(e4, e5);
     }
 
+    public static void testRawFloat() {
+        float nanF1 = Float.intBitsToFloat(0x7f800001);
+        float nanF2 = Float.intBitsToFloat(0x7fffffff);
+        double nanD1 = Double.longBitsToDouble(0x7ff0000000000001L);
+        double nanD2 = Double.longBitsToDouble(0x7fffffffffffffffL);
+
+        float[] arrF1 = new float[]{nanF1};
+        float[] arrF2 = new float[]{nanF2};
+        double[] arrD1 = new double[]{nanD1};
+        double[] arrD2 = new double[]{nanD2};
+
+        Verify.checkEQ(nanF1, Float.NaN);
+        Verify.checkEQ(nanF1, nanF1);
+        Verify.checkEQ(nanF1, nanF1, true, false);
+        Verify.checkEQ(nanF1, nanF2);
+        Verify.checkEQ(nanD1, Double.NaN);
+        Verify.checkEQ(nanD1, nanD1);
+        Verify.checkEQ(nanD1, nanD1, true, false);
+        Verify.checkEQ(nanD1, nanD2);
+
+        Verify.checkEQ(arrF1, arrF1);
+        Verify.checkEQ(arrF1, arrF1, true, false);
+        Verify.checkEQ(arrF1, arrF2);
+        Verify.checkEQ(arrD1, arrD1);
+        Verify.checkEQ(arrD1, arrD1, true, false);
+        Verify.checkEQ(arrD1, arrD2);
+
+        checkNE(nanF1, nanF2, true, false);
+        checkNE(nanD1, nanD2, true, false);
+
+        checkNE(arrF1, arrF2, true, false);
+        checkNE(arrD1, arrD2, true, false);
+    }
+
     public static void testRecursive() {
         Verify.checkEQ(null, null);
 
@@ -434,10 +470,14 @@ public class TestVerify {
         }
     }
 
-    public static void checkNE(Object a, Object b) {
+    public static void checkNE(Object a, Object b, boolean isFloatCheckWithRawBits, boolean isCheckWithArbitraryClasses) {
          try {
-            Verify.checkEQ(a, b);
+            Verify.checkEQ(a, b, isFloatCheckWithRawBits, isCheckWithArbitraryClasses);
             throw new RuntimeException("Should have thrown");
         } catch (VerifyException e) {}
+    }
+
+    public static void checkNE(Object a, Object b) {
+        checkNE(a, b, false, false);
     }
 }

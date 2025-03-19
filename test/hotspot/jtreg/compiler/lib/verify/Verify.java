@@ -39,6 +39,8 @@ import java.util.ArrayList;
  * {@link Exception}s are equal. We also check for equivalent content in {@link Vector}s from the Vector
  * API.
  *
+ * TODO: mention that MemorySegment is always checked raw, also for floats.
+ *
  * When a comparison fail, then methods print helpful messages, before throwing a {@link VerifyException}.
  */
 public final class Verify {
@@ -209,30 +211,49 @@ public final class Verify {
     }
 
     /**
+     * There are two comparison modes: one where we compare the raw bits, which sees different NaN
+     * encodings as different values, and one where we see all NaN encodings as identical.
      * Ideally, we would want to assert that the Float.floatToRawIntBits are identical.
      * But the Java spec allows us to return different bits for a NaN, which allows swapping the inputs
      * of an add or mul (NaN1 * NaN2 does not have same bits as NaN2 * NaN1, because the multiplication
-     * of two NaN values should always return the first of the two). So we verify that we have the same bit
+     * of two NaN values should always return the first of the two).
+     * Hence, by default, we pick the non-raw coparison: we verify that we have the same bit
      * pattern in all cases, except for NaN we project to the canonical NaN, using Float.floatToIntBits.
      */
+    private boolean isFloatEQ(float a, float b) {
+        return isFloatCheckWithRawBits ? Float.floatToRawIntBits(a) != Float.floatToRawIntBits(b)
+                                       : Float.floatToIntBits(a) != Float.floatToIntBits(b);
+    }
+
+    /**
+     * See comments for "isFloatEQ".
+     */
+    private boolean isDoubleEQ(double a, double b) {
+        return isFloatCheckWithRawBits ? Double.doubleToRawLongBits(a) != Double.doubleToRawLongBits(b)
+                                       : Double.doubleToLongBits(a) != Double.doubleToLongBits(b);
+    }
+
+    /**
+     * Check that two floats are equal according to "isFloatEQ".
+     */
     private void checkEQimpl(float a, float b, String field, Object aParent, Object bParent) {
-        if (Float.floatToIntBits(a) != Float.floatToIntBits(b)) {
-            System.err.println("ERROR: Verify.checkEQ failed: value mismatch");
-            System.err.println("       Values: " + a + " vs " + b);
-            System.err.println("       Values: " + Float.floatToRawIntBits(a) + " vs " + Float.floatToRawIntBits(b));
+        if (isFloatEQ(a, b)) {
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch. check raw: " + isFloatCheckWithRawBits);
+            System.err.println("  Values: " + a + " vs " + b);
+            System.err.println("  Raw:    " + Float.floatToRawIntBits(a) + " vs " + Float.floatToRawIntBits(b));
             printX(a, b, field, aParent, bParent);
             throw new VerifyException("Value mismatch: " + a + " vs " + b);
         }
     }
 
     /**
-     * Same as Float case, see above.
+     * Check that two doubles are equal according to "isDoubleEQ".
      */
     private void checkEQimpl(double a, double b, String field, Object aParent, Object bParent) {
-        if (Double.doubleToLongBits(a) != Double.doubleToLongBits(b)) {
-            System.err.println("ERROR: Verify.checkEQ failed: value mismatch");
+        if (isDoubleEQ(a, b)) {
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch. check raw: " + isFloatCheckWithRawBits);
             System.err.println("       Values: " + a + " vs " + b);
-            System.err.println("       Values: " + Double.doubleToRawLongBits(a) + " vs " + Double.doubleToRawLongBits(b));
+            System.err.println("       Raw:    " + Double.doubleToRawLongBits(a) + " vs " + Double.doubleToRawLongBits(b));
             printX(a, b, field, aParent, bParent);
             throw new VerifyException("Value mismatch: " + a + " vs " + b);
         }
@@ -331,12 +352,7 @@ public final class Verify {
     }
 
     /**
-     * Verify that the content of two float arrays is identical.
-     * Ideally, we would want to assert that the Float.floatToRawIntBits are identical.
-     * But the Java spec allows us to return different bits for a NaN, which allows swapping the inputs
-     * of an add or mul (NaN1 * NaN2 does not have same bits as NaN2 * NaN1, because the multiplication
-     * of two NaN values should always return the first of the two). So we verify that we have the same bit
-     * pattern in all cases, except for NaN we project to the canonical NaN, using Float.floatToIntBits.
+     * Check that two float arrays are equal according to "isFloatEQ".
      */
     private void checkEQimpl(float[] a, float[] b, String field, Object aParent, Object bParent) {
         if (a.length != b.length) {
@@ -346,8 +362,8 @@ public final class Verify {
         }
 
         for (int i = 0; i < a.length; i++) {
-            if (Float.floatToIntBits(a[i]) != Float.floatToIntBits(b[i])) {
-                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i]);
+            if (isFloatEQ(a[i], b[i])) {
+                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + ". check raw: " + isFloatCheckWithRawBits);
                 printX(a, b, field, aParent, bParent);
                 throw new VerifyException("Float array value mismatch " + a[i] + " vs " + b[i]);
             }
@@ -355,8 +371,7 @@ public final class Verify {
     }
 
     /**
-     * Verify that the content of two double arrays is identical.
-     * Same issue with NaN as above for floats.
+     * Check that two double arrays are equal according to "isDoubleEQ".
      */
     private void checkEQimpl(double[] a, double[] b, String field, Object aParent, Object bParent) {
         if (a.length != b.length) {
@@ -366,8 +381,8 @@ public final class Verify {
         }
 
         for (int i = 0; i < a.length; i++) {
-            if (Double.doubleToLongBits(a[i]) != Double.doubleToLongBits(b[i])) {
-                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i]);
+            if (isDoubleEQ(a[i], b[i])) {
+                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + ". check raw: " + isFloatCheckWithRawBits);
                 printX(a, b, field, aParent, bParent);
                 throw new VerifyException("Double array value mismatch " + a[i] + " vs " + b[i]);
             }
