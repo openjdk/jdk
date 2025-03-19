@@ -69,8 +69,15 @@ public class TestPreCode extends JavadocTester {
                       second line
                     </code></pre>""")
                 .setModifiers("public", "class")
-                .addMembers(ClassBuilder.MethodBuilder.parse("public void m1() {}")
-                        .setComments("""
+                .addMembers(ClassBuilder.MethodBuilder.parse("public void m0() {}")
+                                .setComments("""
+                                Method m0.
+                                <pre> {@code
+                                  first line
+                                  second line
+                                }</pre>"""),
+                        ClassBuilder.MethodBuilder.parse("public void m1() {}")
+                                .setComments("""
                                 Method m1.
                                 <pre> <code> first line
                                   second line
@@ -78,7 +85,8 @@ public class TestPreCode extends JavadocTester {
                         ClassBuilder.MethodBuilder.parse("public void m2() {}")
                                 .setComments("""
                                 Method m2.
-                                <pre> {@code  first line
+                                <pre> {@code\s
+                                  first line
                                   second line
                                 }</pre>"""),
                         ClassBuilder.MethodBuilder.parse("public void m3() {}")
@@ -102,13 +110,18 @@ public class TestPreCode extends JavadocTester {
                       second line
                     </code></pre>""",
                 """
+                    Method m0.
+                    <pre><code>  first line
+                      second line
+                    </code></pre>""",
+                """
                     Method m1.
                     <pre> <code> first line
                       second line
                     </code></pre>""",
                 """
                     Method m2.
-                    <pre> <code> first line
+                    <pre><code>  first line
                       second line
                     </code></pre>""",
                 """
