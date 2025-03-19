@@ -180,6 +180,13 @@ class ZipCoder {
         return dec;
     }
 
+    /**
+     * {@return the {@link Charset} used this {@code ZipCoder}}
+     */
+    final Charset charset() {
+        return this.cs;
+    }
+
     private CharsetEncoder encoder() {
         if (enc == null) {
             enc = cs.newEncoder()
