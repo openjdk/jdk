@@ -121,7 +121,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
                    int mutable_data_size) :
   _oop_maps(nullptr), // will be set by set_oop_maps() call
   _name(name),
-  _mutable_data(nullptr),
+  _mutable_data(header_begin() + size), // default value is blob_end()
   _size(size),
   _relocation_size(align_up(cb->total_relocation_size(), oopSize)),
   _content_offset(CodeBlob::align_code_offset(header_size)),
@@ -153,7 +153,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
     }
   } else {
     // We need unique and valid not null address
-    _mutable_data = blob_end();
+    assert(_mutable_data = blob_end(), "sanity");
   }
 
   set_oop_maps(oop_maps);
@@ -163,7 +163,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
 CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size) :
   _oop_maps(nullptr),
   _name(name),
-  _mutable_data(nullptr),
+  _mutable_data(header_begin() + size), // default value is blob_end()
   _size(size),
   _relocation_size(0),
   _content_offset(CodeBlob::align_code_offset(header_size)),
@@ -178,10 +178,11 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
 {
   assert(is_aligned(size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,     oopSize), "unaligned size");
-  _mutable_data = blob_end(); // Valid not null address
+  assert(_mutable_data = blob_end(), "sanity");
 }
 
 void CodeBlob::purge() {
+  assert(_mutable_data != nullptr, "should never be null");
   if (_mutable_data != blob_end()) {
     os::free(_mutable_data);
     _mutable_data = blob_end(); // Valid not null address
