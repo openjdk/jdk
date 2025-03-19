@@ -699,21 +699,18 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     return rc;
   }
 
-  MallocHeader::FreeInfo* free_info = nullptr;
-  MallocHeader* header = nullptr;
-  void* old_ptr = memblock;
   long chunk = 0;
   if (MemTracker::enabled()) {
     // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3)
     // since it may invalidate the old block, including its header.
-    header = MallocHeader::resolve_checked(memblock);
-    MallocHeader::FreeInfo free_info_local = header->free_info();
-    free_info = &free_info_local;
-    chunk = size - free_info->size;
+    MallocHeader* header = MallocHeader::resolve_checked(memblock);
+    MallocHeader::FreeInfo free_info = header->free_info();
+    chunk = size - free_info.size;
+
     header->mark_block_as_dead();
 
     // Observe MallocLimit
-    if ((size > free_info->size) && MemTracker::check_exceeds_limit(chunk, mem_tag)) {
+    if ((size > free_info.size) && MemTracker::check_exceeds_limit(chunk, mem_tag)) {
       return nullptr;
     }
 
@@ -722,22 +719,22 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
            NMTUtil::tag_to_name(mem_tag), NMTUtil::tag_to_name(header->mem_tag()));
 
     header->mark_block_as_dead();
-    old_ptr = header;
-  }
 
-  // The real realloc
-  ALLOW_C_FUNCTION(::realloc, rc = ::realloc(old_ptr, outer_size);)
-  if (rc == nullptr) {
-    // realloc(3) failed and the block still exists.
-    // We have however marked it as dead, revert this change.
-    if (MemTracker::enabled()) {
+    // The real realloc
+    ALLOW_C_FUNCTION(::realloc, rc = ::realloc(header, outer_size);)
+    if (rc == nullptr) {
+      // realloc(3) failed and the block still exists.
+      // We have however marked it as dead, revert this change.
       header->revive();
+      return nullptr;
     }
-    return nullptr;
-  }
-
-  if (MemTracker::enabled()) {
-    MemTracker::deaccount(*free_info);
+    MemTracker::deaccount(free_info);
+  } else {
+    // NMT disabled.
+    ALLOW_C_FUNCTION(::realloc, rc = ::realloc(memblock, size);)
+    if (rc == nullptr) {
+      return nullptr;
+    }
   }
 
   return os::post_alloc(rc, size, chunk, mem_tag, stack);
