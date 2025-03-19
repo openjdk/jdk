@@ -68,7 +68,7 @@ public class TestDivModNodes {
     @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"x64", "true"},
             counts = {IRNode.DIV_MOD_I, "1"},
             failOn = {IRNode.DIV_I, IRNode.MOD_I})
-    @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"aarch64", "true"},
+    @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatformOr = {"aarch64", "true", "riscv64", "true"},
             counts = {IRNode.DIV_I, "1", IRNode.MUL_I, "1", IRNode.SUB_I, "1"},
             failOn = {IRNode.MOD_I})
     @IR(applyIf = {"UseDivMod", "false"},
@@ -94,7 +94,7 @@ public class TestDivModNodes {
     @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"x64", "true"},
             counts = {IRNode.DIV_MOD_L, "1"},
             failOn = {IRNode.DIV_L, IRNode.MOD_L})
-    @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"aarch64", "true"},
+    @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatformOr = {"aarch64", "true", "riscv64", "true"},
             counts = {IRNode.DIV_L, "1", IRNode.MUL_L, "1", IRNode.SUB_L, "1"},
             failOn = {IRNode.MOD_L})
     @IR(applyIf = {"UseDivMod", "false"},
@@ -119,7 +119,7 @@ public class TestDivModNodes {
     @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"x64", "true"},
             counts = {IRNode.UDIV_MOD_I, "1"},
             failOn = {IRNode.UDIV_I, IRNode.UMOD_I})
-    @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"aarch64", "true"},
+    @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatformOr = {"aarch64", "true", "riscv64", "true"},
             counts = {IRNode.UDIV_I, "1", IRNode.MUL_I, "1", IRNode.SUB_I, "1"},
             failOn = {IRNode.UMOD_I})
     @IR(applyIf = {"UseDivMod", "false"},
@@ -144,7 +144,7 @@ public class TestDivModNodes {
     @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"x64", "true"},
             counts = {IRNode.UDIV_MOD_L, "1"},
             failOn = {IRNode.UDIV_L, IRNode.UMOD_L})
-    @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"aarch64", "true"},
+    @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatformOr = {"aarch64", "true", "riscv64", "true"},
             counts = {IRNode.UDIV_L, "1", IRNode.MUL_L, "1", IRNode.SUB_L, "1"},
             failOn = {IRNode.MOD_L})
     @IR(applyIf = {"UseDivMod", "false"},
