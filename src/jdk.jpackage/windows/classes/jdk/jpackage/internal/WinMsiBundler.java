@@ -185,7 +185,18 @@ public class WinMsiBundler  extends AbstractBundler {
             new StandardBundlerParam<>(
                     "win.msi.productVersion",
                     String.class,
-                    VERSION::fetchFrom,
+                    params -> {
+                        String version = VERSION.fetchFrom(params);
+                        // Special case for MSI product version for runtime
+                        // installer. Runtime version can be single digit
+                        // for example "25", but product version requires 2 or 4
+                        // components. JDK uses "25.0.0.0" in this case.
+                        if (StandardBundlerParam.isRuntimeInstaller(params) &&
+                                !version.contains(".")) {
+                            version = version.concat(".0.0.0");
+                        }
+                        return version;
+                    },
                     (s, p) -> s
             );
 

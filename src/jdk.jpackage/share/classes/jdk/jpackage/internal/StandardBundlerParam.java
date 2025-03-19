@@ -614,7 +614,31 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
         String appVersion = DEFAULT_VERSION;
 
         if (isRuntimeInstaller(params)) {
-            return appVersion;
+            Path runtimePath = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
+            Path releasePath = null;
+            // Try special case for macOS first. "Contents/Home/release"
+            if (OperatingSystem.isMacOS()) {
+                releasePath = runtimePath.resolve("Contents/Home/release");
+                if (!IOUtils.exists(releasePath)) {
+                    releasePath = null;
+                }
+            }
+
+            // Try root for all platforms including macOS.
+            if (releasePath == null) {
+                releasePath = runtimePath.resolve("release");
+                if (!IOUtils.exists(releasePath)) {
+                    releasePath = null;
+                }
+            }
+
+            String releaseVersion = null;
+            if (releasePath != null) {
+                releaseVersion = IOUtils.getPropertyFromFile(releasePath, "JAVA_VERSION");
+                releaseVersion = Arguments.unquoteIfNeeded(releaseVersion);
+            }
+
+            return releaseVersion == null ? appVersion : releaseVersion;
         }
 
         LauncherData launcherData = null;

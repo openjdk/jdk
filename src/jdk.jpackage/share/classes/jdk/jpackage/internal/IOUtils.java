@@ -29,11 +29,15 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import jdk.jpackage.internal.model.PackagerException;
 
 /**
@@ -41,7 +45,7 @@ import jdk.jpackage.internal.model.PackagerException;
  *
  * A collection of static utility methods.
  */
-final class IOUtils {
+public final class IOUtils {
 
     public static void copyFile(Path sourceFile, Path destFile)
             throws IOException {
@@ -219,5 +223,34 @@ final class IOUtils {
                              // if unsupported.
             return -1;
         }
+    }
+
+    static Map<String, String> getPropertiesFromFile(Path filename) {
+        Map<String, String> map = new HashMap<>();
+        // load properties file
+        Properties properties = new Properties();
+        try (Reader reader = Files.newBufferedReader(filename)) {
+            properties.load(reader);
+        } catch (IOException e) {
+            Log.error("Exception: " + e.getMessage());
+        }
+
+        for (final String name: properties.stringPropertyNames()) {
+            map.put(name, properties.getProperty(name));
+        }
+
+        return map;
+    }
+
+    public static String getPropertyFromFile(Path filename, String name) {
+        // load properties file
+        Properties properties = new Properties();
+        try (Reader reader = Files.newBufferedReader(filename)) {
+            properties.load(reader);
+        } catch (IOException e) {
+            Log.error("Exception: " + e.getMessage());
+        }
+
+        return properties.getProperty(name);
     }
 }

@@ -70,6 +70,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
@@ -86,6 +87,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             "Info-lite.plist.template";
     private static final String TEMPLATE_RUNTIME_INFO_PLIST =
             "Runtime-Info.plist.template";
+    private static final String TEMPLATE_RUNTIMEIMAGE_INFO_PLIST =
+            "RuntimeImage-Info.plist.template";
 
     private final Path root;
     private final Path contentsDir;
@@ -287,7 +290,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             }
 
             try {
-                doSigning(params);
+                doSigning(params, root, true);
             } catch (Exception ex) {
                 // Restore original app image file if signing failed
                 if (appImageFile != null) {
@@ -366,7 +369,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
         copyRuntimeFiles(params);
 
-        doSigning(params);
+        doSigning(params, root, true);
     }
 
     private void copyRuntimeFiles(Map<String, ? super Object> params)
@@ -392,8 +395,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
     }
 
-    private void doSigning(Map<String, ? super Object> params)
-            throws IOException {
+    public static void doSigning(Map<String, ? super Object> params, Path root,
+            boolean isAppImage) throws IOException {
 
         if (Optional.ofNullable(
                 SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.TRUE)) {
@@ -415,16 +418,26 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 }
             }
             if (signingIdentity != null) {
-                signAppBundle(params, root, signingIdentity,
+                if (isAppImage) {
+                    signAppBundle(params, root, signingIdentity,
                         BUNDLE_ID_SIGNING_PREFIX.fetchFrom(params),
                         ENTITLEMENTS.fetchFrom(params));
+                } else {
+                    signRuntimeOrFrameworkBundle(params, root, signingIdentity,
+                        BUNDLE_ID_SIGNING_PREFIX.fetchFrom(params),
+                        ENTITLEMENTS.fetchFrom(params));
+                }
             } else {
                 // Case when user requested to sign installer only
                 signAppBundle(params, root, "-", null, null);
             }
             restoreKeychainList(params);
         } else {
-            signAppBundle(params, root, "-", null, null);
+            if (isAppImage) {
+                signAppBundle(params, root, "-", null, null);
+            } else {
+                signRuntimeOrFrameworkBundle(params, root, "-", null, null);
+            }
         }
     }
 
@@ -432,7 +445,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         return APP_NAME.fetchFrom(params);
     }
 
-    private String getBundleName(Map<String, ? super Object> params) {
+    private static String getBundleName(Map<String, ? super Object> params) {
         if (MAC_CF_BUNDLE_NAME.fetchFrom(params) != null) {
             String bn = MAC_CF_BUNDLE_NAME.fetchFrom(params);
             if (bn.length() > 16) {
@@ -477,6 +490,34 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         createResource(TEMPLATE_RUNTIME_INFO_PLIST, params)
                 .setPublicName("Runtime-Info.plist")
                 .setCategory(I18N.getString("resource.runtime-info-plist"))
+                .setSubstitutionData(data)
+                .saveToFile(file);
+    }
+
+    static void writeRuntimeImageInfoPlist(Path file,
+            Map<String, ? super Object> params) throws IOException {
+        Map<String, String> data = new HashMap<>();
+        String identifier = MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params);
+        data.put("CF_BUNDLE_IDENTIFIER", identifier);
+        String name = getBundleName(params);
+        data.put("CF_BUNDLE_NAME", name);
+        String ver = VERSION.fetchFrom(params);
+        String sver = ver;
+        int index = ver.indexOf(".");
+        if (index > 0 && ((index + 1) < ver.length())) {
+            index = ver.indexOf(".", index + 1);
+            if (index > 0 ) {
+                sver = ver.substring(0, index);
+            }
+        }
+        data.put("CF_BUNDLE_VERSION", ver);
+        data.put("CF_BUNDLE_SHORT_VERSION_STRING", sver);
+        String ven = VENDOR.fetchFrom(params);
+        data.put("CF_BUNDLE_VENDOR", ven);
+
+        createResource(TEMPLATE_RUNTIMEIMAGE_INFO_PLIST, params)
+                .setPublicName("RuntimeImage-Info.plist")
+                .setCategory(I18N.getString("resource.runtime-image-info-plist"))
                 .setSubstitutionData(data)
                 .saveToFile(file);
     }
@@ -779,6 +820,36 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         return true;
     }
 
+    public static void signRuntimeOrFrameworkBundle(
+            Map<String, ? super Object> params, Path pathToSign,
+            String signingIdentity, String identifierPrefix, Path entitlements)
+            throws IOException {
+        AtomicReference<IOException> toThrow = new AtomicReference<>();
+        String keyChain = SIGNING_KEYCHAIN.fetchFrom(params);
+
+        Consumer<? super Path> signIdentifiedByPList = path -> {
+            // noinspection ThrowableResultOfMethodCallIgnored
+            if (toThrow.get() != null)
+                return;
+
+            try {
+                List<String> args = getCodesignArgs(true, path, signingIdentity,
+                        identifierPrefix, entitlements, keyChain);
+                ProcessBuilder pb = new ProcessBuilder(args);
+                runCodesign(pb, false, params);
+            } catch (IOException e) {
+                toThrow.set(e);
+            }
+        };
+
+        signIdentifiedByPList.accept(pathToSign);
+
+        IOException ioe = toThrow.get();
+        if (ioe != null) {
+            throw ioe;
+        }
+    }
+
     static void signAppBundle(
             Map<String, ? super Object> params, Path appLocation,
             String signingIdentity, String identifierPrefix, Path entitlements)
@@ -864,34 +935,22 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             return;
         }
 
-        // sign all runtime and frameworks
-        Consumer<? super Path> signIdentifiedByPList = path -> {
-            //noinspection ThrowableResultOfMethodCallIgnored
-            if (toThrow.get() != null) return;
-
-            try {
-                List<String> args = getCodesignArgs(true, path, signingIdentity,
-                            identifierPrefix, entitlements, keyChain);
-                ProcessBuilder pb = new ProcessBuilder(args);
-                runCodesign(pb, false, params);
-            } catch (IOException e) {
-                toThrow.set(e);
-            }
-        };
-
         Path javaPath = appLocation.resolve("Contents/runtime");
         if (Files.isDirectory(javaPath)) {
-            signIdentifiedByPList.accept(javaPath);
-
-            ioe = toThrow.get();
-            if (ioe != null) {
-                throw ioe;
-            }
+            signRuntimeOrFrameworkBundle(params, javaPath, signingIdentity,
+                identifierPrefix, entitlements);
         }
         Path frameworkPath = appLocation.resolve("Contents/Frameworks");
         if (Files.isDirectory(frameworkPath)) {
             try (var fileList = Files.list(frameworkPath)) {
-                fileList.forEach(signIdentifiedByPList);
+                fileList.forEach(pathToSign -> {
+                    try {
+                        signRuntimeOrFrameworkBundle(params, pathToSign,
+                            signingIdentity, identifierPrefix, entitlements);
+                    } catch (IOException ioe2) {
+                        toThrow.set(ioe2);
+                    }
+                });
             }
 
             ioe = toThrow.get();

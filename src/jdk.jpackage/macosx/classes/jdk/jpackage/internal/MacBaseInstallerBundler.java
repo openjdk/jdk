@@ -30,14 +30,20 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.text.MessageFormat;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.NoSuchElementException;
+import java.util.stream.Stream;
+
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
+import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.PackagerException;
@@ -160,6 +166,23 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                             "warning.unsigned.app.image"), getID()));
                 }
             }
+        } else if (StandardBundlerParam.isRuntimeInstaller(params)) {
+            // Call appImageBundler.validate(params); to validate signing
+            // requirements.
+            appImageBundler.validate(params);
+
+            Path runtimeImage = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
+
+            // Make sure we have valid runtime image.
+            if (!isRuntimeImageJDKBundle(runtimeImage)
+                    && !isRuntimeImageJDKImage(runtimeImage)) {
+                throw new ConfigException(
+                    MessageFormat.format(I18N.getString(
+                    "message.runtime-image-invalid"),
+                    runtimeImage.toString()),
+                    I18N.getString(
+                    "message.runtime-image-invalid.advice"));
+            }
         } else {
             appImageBundler.validate(params);
         }
@@ -171,6 +194,8 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
         Path appImageRoot = APP_IMAGE_TEMP_ROOT.fetchFrom(params);
         Path predefinedImage =
                 StandardBundlerParam.getPredefinedAppImage(params);
+        Path runtimeImage =
+                PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
         if (predefinedImage != null) {
             appDir = appImageRoot.resolve(APP_NAME.fetchFrom(params) + ".app");
             FileUtils.copyRecursive(predefinedImage, appDir,
@@ -188,11 +213,93 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                 // need to re-sign it after modification.
                 MacAppImageBuilder.signAppBundle(params, appDir, "-", null, null);
             }
+        } else if (StandardBundlerParam.isRuntimeInstaller(params)) {
+            if (isRuntimeImageJDKBundle(runtimeImage)) {
+                appDir = runtimeImage;
+            } else {
+                // It is a valid JDK image, so convert it to JDK bundle.
+                Path jdkBundleRoot = Files.createTempDirectory(TEMP_ROOT.fetchFrom(params),
+                    "root-");
+
+                convertJDKImageToJDKBundle(jdkBundleRoot, runtimeImage, params);
+
+                appDir = jdkBundleRoot;
+            }
+
+            // Figure out if we need to sign
+            boolean signingRequested = Optional.ofNullable(
+                SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.FALSE);
+
+            // Check if bundle is already signed
+            Path codeSignature = appDir.resolve("Contents/_CodeSignature");
+            boolean bundleIsSigned = IOUtils.exists(codeSignature);
+
+            // We do signing when it is requested or if bundle is not signed to
+            // create ad-hoc signature
+            if (signingRequested || !bundleIsSigned) {
+                MacAppImageBuilder.doSigning(params, appDir, false);
+            }
         } else {
             appDir = appImageBundler.execute(params, appImageRoot);
         }
 
         return appDir;
+    }
+
+    public static void convertJDKImageToJDKBundle(Path jdkBundleRoot,
+            Path runtimeImage,
+            Map<String, ? super Object> params) throws IOException {
+        Path path1 = jdkBundleRoot.resolve("Contents/Home");
+        Files.createDirectories(path1);
+        FileUtils.copyRecursive(runtimeImage, path1);
+
+        // Copy libjli.dylib library
+        Path path2 = Files.createDirectories(
+                jdkBundleRoot.resolve("Contents/MacOS"));
+
+        final Path jliName = Path.of("libjli.dylib");
+        try (Stream<Path> walk = Files.walk(runtimeImage.resolve("lib"))) {
+            final Path jli = walk
+                    .filter(file -> file.getFileName().equals(jliName))
+                    .findFirst()
+                    .get();
+            Files.copy(jli, path2.resolve(jliName));
+        }
+
+        MacAppImageBuilder.writeRuntimeImageInfoPlist(
+                jdkBundleRoot.resolve("Contents/Info.plist"), params);
+    }
+
+    // JDK bundle: "Contents/Home", "Contents/MacOS/libjli.dylib"
+    // and "Contents/Info.plist"
+    private boolean isRuntimeImageJDKBundle(Path runtimeImage) {
+        Path path1 = runtimeImage.resolve("Contents/Home");
+        Path path2 = runtimeImage.resolve("Contents/MacOS/libjli.dylib");
+        Path path3 = runtimeImage.resolve("Contents/Info.plist");
+        if (IOUtils.exists(path1)
+                && path1.toFile().list() != null
+                && path1.toFile().list().length > 0
+                && IOUtils.exists(path2)
+                && IOUtils.exists(path3)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    // JDK image: "lib/*/libjli.dylib"
+    private boolean isRuntimeImageJDKImage(Path runtimeImage) {
+        final Path jliName = Path.of("libjli.dylib");
+        try (Stream<Path> walk = Files.walk(runtimeImage.resolve("lib"))) {
+            final Path jli = walk
+                    .filter(file -> file.getFileName().equals(jliName))
+                    .findFirst()
+                    .get();
+            return IOUtils.exists(jli);
+        } catch (IOException | NoSuchElementException ex) {
+            Log.verbose(ex);
+            return false;
+        }
     }
 
     @Override

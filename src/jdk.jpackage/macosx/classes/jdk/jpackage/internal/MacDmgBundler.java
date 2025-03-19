@@ -127,8 +127,16 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         data.put("DEPLOY_BG_FILE", bgFile.toString());
         data.put("DEPLOY_VOLUME_PATH", volumePath.toString());
         data.put("DEPLOY_APPLICATION_NAME", APP_NAME.fetchFrom(params));
-        String targetItem = (StandardBundlerParam.isRuntimeInstaller(params)) ?
-              APP_NAME.fetchFrom(params) : appLocation.getFileName().toString();
+        String targetItem = null;
+        if (StandardBundlerParam.isRuntimeInstaller(params)) {
+            if (APP_NAME.fetchFrom(params).endsWith(".jdk")) {
+                targetItem = APP_NAME.fetchFrom(params);
+            } else {
+                targetItem = APP_NAME.fetchFrom(params).concat(".jdk");
+            }
+        } else {
+            targetItem = appLocation.getFileName().toString();
+        }
         data.put("DEPLOY_TARGET", targetItem);
         data.put("DEPLOY_INSTALL_LOCATION", getInstallDir(params, true));
         data.put("DEPLOY_INSTALL_LOCATION_DISPLAY_NAME",
@@ -275,17 +283,16 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             Path newRoot = Files.createTempDirectory(TEMP_ROOT.fetchFrom(params),
                     "root-");
 
-            // first, is this already a runtime with
-            // <runtime>/Contents/Home - if so we need the Home dir
-            Path home = appLocation.resolve("Contents/Home");
-            Path source = (Files.exists(home)) ? home : appLocation;
-
-            // Then we need to put back the <NAME>/Content/Home
-            Path root = newRoot.resolve(
+            // We need to copy entire runtime folder as provided to include
+            // .plist and signing files.
+            Path dest = newRoot.resolve(
                     MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params));
-            Path dest = root.resolve("Contents/Home");
+            // Add .jdk if needed.
+            if (!dest.getFileName().endsWith(".jdk")) {
+                dest = dest.resolveSibling(dest.getFileName() + ".jdk");
+            }
 
-            FileUtils.copyRecursive(source, dest);
+            FileUtils.copyRecursive(appLocation, dest);
 
             srcFolder = newRoot;
         }

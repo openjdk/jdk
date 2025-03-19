@@ -90,7 +90,7 @@ class AddLauncherArguments {
             return;
         }
 
-        allArgs = Arguments.getPropertiesFromFile(filename);
+        allArgs = IOUtils.getPropertiesFromFile(Path.of(filename));
         allArgs.put(CLIOptions.NAME.getId(), name);
 
         bundleParams = new HashMap<>();

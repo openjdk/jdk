@@ -54,6 +54,8 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.Arguments;
+import jdk.jpackage.internal.IOUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
@@ -224,7 +226,48 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public String version() {
-        return getArgumentValue("--app-version", () -> "1.0");
+        if (isRuntime()) {
+            String appVersion = getArgumentValue("--app-image");
+            if (appVersion != null) {
+                return appVersion;
+            } else {
+                Path runtimePath = Path.of(getArgumentValue("--runtime-image"));
+                Path releasePath = null;
+                // Try special case for macOS first. "Contents/Home/release"
+                if (TKit.isOSX()) {
+                    releasePath = runtimePath.resolve("Contents/Home/release");
+                    if (!Files.exists(releasePath)) {
+                        releasePath = null;
+                    }
+                }
+
+                // Try root for all platforms including macOS.
+                if (releasePath == null) {
+                    releasePath = runtimePath.resolve("release");
+                    if (!Files.exists(releasePath)) {
+                        releasePath = null;
+                    }
+                }
+
+                String releaseVersion = null;
+                if (releasePath != null) {
+                    releaseVersion = IOUtils.getPropertyFromFile(releasePath, "JAVA_VERSION");
+                    releaseVersion = Arguments.unquoteIfNeeded(releaseVersion);
+                }
+
+                if (releaseVersion == null) {
+                    if (appVersion == null) {
+                        return "1.0";
+                    } else {
+                        return appVersion;
+                    }
+                } else {
+                    return releaseVersion;
+                }
+            }
+        } else {
+            return getArgumentValue("--app-version", () -> "1.0");
+        }
     }
 
     public String name() {
@@ -955,7 +998,11 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         APP_CONTENT(new Builder("--app-content").multiple().create()),
         RESOURCE_DIR(new Builder("--resource-dir").create()),
         MAC_DMG_CONTENT(new Builder("--mac-dmg-content").multiple().create()),
-        RUNTIME_IMAGE(new Builder("--runtime-image").create());
+        RUNTIME_IMAGE(new Builder("--runtime-image").enable(cmd -> {
+            // External runtime image should be R/O unless it is on macOS.
+            // On macOS it will be signed ad-hoc or with real certificate.
+            return !TKit.isOSX();
+        }).create());
 
         ReadOnlyPathAssert(Function<JPackageCommand, List<Path>> getPaths) {
             this.getPaths = getPaths;
@@ -1070,11 +1117,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             TKit.assertDirectoryExists(cmd.appRuntimeDirectory());
             if (TKit.isOSX()) {
                 var libjliPath = cmd.appRuntimeDirectory().resolve("Contents/MacOS/libjli.dylib");
-                if (cmd.isRuntime()) {
-                    TKit.assertPathExists(libjliPath, false);
-                } else {
-                    TKit.assertFileExists(libjliPath);
-                }
+                TKit.assertFileExists(libjliPath);
             }
         }),
         MAC_BUNDLE_STRUCTURE(cmd -> {
