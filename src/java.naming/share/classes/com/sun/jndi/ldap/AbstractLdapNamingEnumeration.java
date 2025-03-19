@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import javax.naming.*;
 import javax.naming.directory.Attributes;
 import javax.naming.ldap.Control;
 
-import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner.Cleanable;
 import java.lang.ref.Reference;
 import jdk.internal.ref.CleanerFactory;
@@ -78,9 +77,6 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
 
         @Override
         public void run() {
-            // Ensure changes on the main/program thread happens-before cleanup
-            VarHandle.fullFence();
-
             if (enumClnt != null) {
                 if (homeCtx != null) {
                     enumClnt.clearSearchReply(res, homeCtx.reqCtls);
@@ -145,58 +141,33 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             // Ensures that context won't get closed from underneath us
             this.enumCtx.homeCtx.incEnumCount();
             this.cleanable = CleanerFactory.cleaner().register(this, this.enumCtx);
-            // For finalizers, JLS guarantees that the constructor of a finalizeable
-            // class will complete before the finalizer is run. Classes that use
-            // Cleaner instead don't currently have such a guarantee.
-
-            // 'this' needs to stay reachable until registration with Cleaner
-            // completes, to ensure that the cleanable state that has been created
-            // will eventually be cleaned up. Within Cleaner.register(), there
-            // are reachability fences to ensure that the registered object remains
-            // reachable.
-            // TODO: Is anything else needed so that this constructor
-            //  "happens-before" the cleaning action ?
     }
 
     @Override
     public final T nextElement() {
         try {
-            try {
-                return next();
-            } finally {
-                // See comment in nextImpl(). This is similar, but in this case, next()
-                // *is* overridable. Fences are included here, in case next() is
-                // overridden to access the cleanable state without the proper fences.
-
-                // Ensure writes are visible to the Cleaner thread
-                VarHandle.fullFence();
-                // Ensure Cleaner does not run until after this method completes
-                Reference.reachabilityFence(this);
-            }
+            return next();
         } catch (NamingException e) {
             // can't throw exception
             cleanup();
             return null;
+        } finally {
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(this);
         }
     }
 
     @Override
     public final boolean hasMoreElements() {
         try {
-            try {
-                return hasMore();
-            } finally {
-                // Same situation as nextElement() - see comment above
-
-                // Ensure writes are visible to the Cleaner thread
-                VarHandle.fullFence();
-                // Ensure Cleaner does not run until after this method completes
-                Reference.reachabilityFence(this);
-            }
+            return hasMore();
         } catch (NamingException e) {
             // can't throw exception
             cleanup();
             return false;
+        } finally {
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -245,8 +216,6 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
                 enumCtx.homeCtx.respCtls = enumCtx.res.resControls;
             }
         } finally {
-            // Ensure writes are visible to the Cleaner thread
-            VarHandle.fullFence();
             // Ensure Cleaner does not run until after this method completes
             Reference.reachabilityFence(this);
         }
@@ -273,10 +242,8 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
                 return (more = hasMoreImpl());
             }
         } finally {
-            // Ensure writes are visible to the Cleaner thread
-            VarHandle.fullFence();
             // Ensure Cleaner does not run until after this method completes
-            Reference.reachabilityFence(enumCtx);
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -292,10 +259,8 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             hasMoreCalled = false;
             return nextImpl();
         } finally {
-            // Ensure writes are visible to the Cleaner thread
-            VarHandle.fullFence();
             // Ensure Cleaner does not run until after this method completes
-            Reference.reachabilityFence(enumCtx);
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -337,10 +302,8 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
                 }
             }
         } finally {
-            // Ensure writes are visible to the Cleaner thread
-            VarHandle.fullFence();
             // Ensure Cleaner does not run until after this method completes
-            Reference.reachabilityFence(enumCtx);
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -353,11 +316,10 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
         } catch (NamingException e) {
             cleanup();
             throw cont.fillInException(e);
+        } finally {
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(this);
         }
-        // No fences here. nextAux() (source just below) has its own fences. The
-        // only other thing this method does is call cleanup().
-        // If nextAux() were overrideable, this method should probably have
-        // fences, but it seems OK for now without.
     }
 
     private T nextAux() throws NamingException {
@@ -376,10 +338,8 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             // gets and outputs DN from the entry
             return createItem(result.DN, result.attributes, result.respCtls);
         } finally {
-            // Ensure writes are visible to the Cleaner thread
-            VarHandle.fullFence();
             // Ensure Cleaner does not run until after this method completes
-            Reference.reachabilityFence(enumCtx);
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -411,8 +371,6 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
                 refEx = ex.appendUnprocessedReferrals(refEx);
             }
         } finally {
-            // Ensure writes are visible to the Cleaner thread
-            VarHandle.fullFence();
             // Ensure Cleaner does not run until after this method completes
             Reference.reachabilityFence(this);
         }
@@ -479,10 +437,8 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
                 return (false);
             }
         } finally {
-            // Ensure writes are visible to the Cleaner thread
-            VarHandle.fullFence();
             // Ensure Cleaner does not run until after this method completes
-            Reference.reachabilityFence(enumCtx);
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -517,8 +473,6 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
                 errEx = ne.errEx;
             }
         } finally {
-            // Ensure writes are visible to the Cleaner thread
-            VarHandle.fullFence();
             // Ensure Cleaner does not run until after this method completes
             Reference.reachabilityFence(ne);
             Reference.reachabilityFence(this);
