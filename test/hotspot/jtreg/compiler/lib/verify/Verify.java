@@ -50,8 +50,7 @@ public final class Verify {
     private final boolean isFloatCheckWithRawBits;
     private final boolean isCheckWithArbitraryClasses;
     private final HashMap<Object, Object> a2b = new HashMap<>();
-    private final HashMap<Object, Integer> a2id = new HashMap<>();
-    private final ArrayList<Object> id2a = new ArrayList<>(); // TODO: remove?
+    private final HashMap<Object, Object> b2a = new HashMap<>();
 
     private Verify(boolean isFloatCheckWithRawBits, boolean isCheckWithArbitraryClasses) {
         this.isFloatCheckWithRawBits = isFloatCheckWithRawBits;
@@ -457,19 +456,18 @@ public final class Verify {
 
     private boolean checkAlreadyVisited(Object a, Object b, String field, Object aParent, Object bParent) {
         // TODO: must also check reverse direction?
-        Integer id = a2id.get(a);
-        if (id == null) {
+        Object bPrevious = a2b.get(a);
+        Object aPrevious = b2a.get(b);
+        if (aPrevious == null && bPrevious == null) {
             // Record for next time.
-            id = id2a.size();
-            a2id.put(a, id);
             a2b.put(a, b);
-            id2a.add(a);
+            b2a.put(b, a);
             return false;
         } else {
-            Object bPrevious = a2b.get(a);
-            if (b != bPrevious) {
+            if (a != aPrevious || b != bPrevious) {
                 System.err.println("ERROR: Verify.checkEQ failed:");
                 print(a, b, field, aParent, bParent);
+                System.err.println("  aPrevious: " + aPrevious);
                 System.err.println("  bPrevious: " + bPrevious);
                 throw new VerifyException("Mismatch with previous pair.");
             }

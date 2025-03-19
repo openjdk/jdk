@@ -462,13 +462,13 @@ public class TestVerify {
             int v1 = (int)RANDOM.nextInt();
             int v2 = (int)(v1 ^ (1 << RANDOM.nextInt(32)));
             checkNE(v1, v2);
-            checkNE(Float.intBitsToFloat(v1), Float.intBitsToFloat(v2));
+            checkNE(Float.intBitsToFloat(v1), Float.intBitsToFloat(v2), true, false);
         }
         for (int i = 0; i < 10; i++) {
             long v1 = (long)RANDOM.nextLong();
             long v2 = (long)(v1 ^ (1L << RANDOM.nextInt(64)));
             checkNE(v1, v2);
-            checkNE(Double.longBitsToDouble(v1), Double.longBitsToDouble(v2));
+            checkNE(Double.longBitsToDouble(v1), Double.longBitsToDouble(v2), true, false);
         }
     }
 
@@ -487,9 +487,15 @@ public class TestVerify {
     }
 
     static class E {
+        E(D d, E e1, E e2) {
+            this.d = d;
+            this.e1 = e1;
+            this.e2 = e2;
+        }
+
         private D d;
-        private E e1;
-        private E e2;
+        public E e1;
+        public E e2;
     }
 
     public static void testArbitraryClasses() {
@@ -529,7 +535,24 @@ public class TestVerify {
         checkNE(d1, d3, false, true);
         checkNE(d3, d1, false, true);
 
-        E e1 = new E();
+        E e1 = new E(d1, null, null);
+        E e2 = new E(d1, null, null);
+        E e3 = new E(d3, null, null);
+        E e4 = new E(d1, e1, null);
+        E e5 = new E(d1, e2, null);
+        E e6 = new E(d1, null, null);
+        e6.e1 = e6;
+        E e7 = new E(d1, null, null);
+        e7.e1 = e7;
+
+        Verify.checkEQ(e1, e1, false, true);
+        Verify.checkEQ(e1, e2, false, true);
+        Verify.checkEQ(e2, e1, false, true);
+        checkNE(e1, e3, false, true);
+        checkNE(e3, e1, false, true);
+        Verify.checkEQ(e6, e6, false, true);
+        Verify.checkEQ(e6, e7, false, true);
+        Verify.checkEQ(e7, e6, false, true);
 
         // TODO: records!
     }
