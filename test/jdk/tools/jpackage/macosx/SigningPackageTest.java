@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,27 +110,24 @@ public class SigningPackageTest {
             return SigningBase.getDevNameIndex(devName);
         } else {
             // Signing-indentity
-            return Integer.valueOf(SigningBase.UNICODE_INDEX);
+            return SigningBase.CertIndex.UNICODE_INDEX.value();
         }
     }
 
     @Test
     // ("signing-key or sign-identity", "sign app-image", "sign pkg", "certificate index"})
     // Signing-key and ASCII certificate
-    @Parameter({"true", "true", "true", SigningBase.ASCII_INDEX})
+    @Parameter({"true", "true", "true", "ASCII_INDEX"})
     // Signing-key and UNICODE certificate
-    @Parameter({"true", "true", "true", SigningBase.UNICODE_INDEX})
+    @Parameter({"true", "true", "true", "UNICODE_INDEX"})
     // Signing-indentity and UNICODE certificate
-    @Parameter({"false", "true", "true", SigningBase.UNICODE_INDEX})
+    @Parameter({"false", "true", "true", "UNICODE_INDEX"})
     // Signing-indentity, but sign app-image only and UNICODE certificate
-    @Parameter({"false", "true", "false", SigningBase.UNICODE_INDEX})
+    @Parameter({"false", "true", "false", "UNICODE_INDEX"})
     // Signing-indentity, but sign pkg only and UNICODE certificate
-    @Parameter({"false", "false", "true", SigningBase.UNICODE_INDEX})
-    public static void test(String... testArgs) throws Exception {
-        boolean signingKey = Boolean.parseBoolean(testArgs[0]);
-        boolean signAppImage = Boolean.parseBoolean(testArgs[1]);
-        boolean signPKG = Boolean.parseBoolean(testArgs[2]);
-        int certIndex = Integer.parseInt(testArgs[3]);
+    @Parameter({"false", "false", "true", "UNICODE_INDEX"})
+    public static void test(boolean signingKey, boolean signAppImage, boolean signPKG, SigningBase.CertIndex certEnum) throws Exception {
+        final var certIndex = certEnum.value();
 
         SigningCheck.checkCertificates(certIndex);
 

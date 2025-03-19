@@ -1447,6 +1447,12 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
         the potential leaking object was allocated is included in the
         information collected.
 
+    `report-on-exit=`*identifier*
+    :   Specifies the name of the view to display when the Java Virtual Machine
+        (JVM) shuts down. This option is not available if the disk option is set
+        to false. For a list of available views, see `jfr help view`. By default,
+        no report is generated.
+
     `settings=`*path*
     :   Specifies the path and name of the event settings file (of type JFC).
         By default, the `default.jfc` file is used, which is located in
