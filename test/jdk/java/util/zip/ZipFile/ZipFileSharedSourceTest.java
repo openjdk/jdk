@@ -125,7 +125,9 @@ public class ZipFileSharedSourceTest {
             try (final ZipFile zf = new ZipFile(this.file.toFile(), this.entryNameCharset)) {
                 final var entries = zf.entries();
                 while (entries.hasMoreElements()) {
-                    entries.nextElement();
+                    final ZipEntry ze = entries.nextElement();
+                    // additionally exercise the ZipFile.getEntry() method
+                    zf.getEntry(ze.getName());
                 }
             }
             return null;
