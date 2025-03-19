@@ -33,20 +33,30 @@ import java.util.ArrayList;
 
 
 /**
- * TODO: update description
- * The {@link Verify} class provides a single {@link Verify#checkEQ} static method, which recursively
- * compares the two {@link Object}s by value. It deconstructs {@link Object[]}, compares boxed primitive
- * types, compares the content of arrays and {@link MemorySegment}s, and checks that the messages of two
- * {@link Exception}s are equal. We also check for equivalent content in {@link Vector}s from the Vector
- * API.
+ * The {@link Verify} class provides {@link Verify#checkEQ}, which recursively compares the two
+ * {@link Object}s by value. It deconstructs {@link Object[]}, compares boxed primitive types,
+ * compares the content of arrays and {@link MemorySegment}s, and checks that the messages of two
+ * {@link Exception}s are equal. It also checks for the equivalent content in {@code Vector}s from
+ * the Vector API.
  *
- * TODO: mention that MemorySegment is always checked raw, also for floats.
- *
+ * <p>
  * When a comparison fail, then methods print helpful messages, before throwing a {@link VerifyException}.
+ *
+ * <p>
+ * We have to take special care of {@link Float}s and {@link Double}s, since they have both various
+ * encodings for NaN values, but on Java specification they are to be regarded as equal. Hence, we
+ * have two modes of comparison, specified by {@code isFloatCheckWithRawBits}. By default, it is
+ * disabled, and different NaN values are regarded as equal. This applies to the boxed floating types,
+ * as well as arrays of floating arrays. When {@code isFloatCheckWithRawBits} is enabled, we compare
+ * the raw bits, and so different NaN encodings are not equal. Note: {@link MemorySegment} data is
+ * always compared with raw bits.
+ *
+ * <p>
+ * By default, we only support comparison of the types mentioned above. However, in some cases one
+ * might want to compare Objects of arbitrare classes by value, i.e. the recursive structure given
+ * by their field values. This feature can be enabled with {@code isCheckWithArbitraryClasses}.
  */
 public final class Verify {
-
-    // TODO: fields for float exactness, maps, etc.
     private final boolean isFloatCheckWithRawBits;
     private final boolean isCheckWithArbitraryClasses;
     private final HashMap<Object, Object> a2b = new HashMap<>();
@@ -57,18 +67,24 @@ public final class Verify {
         this.isCheckWithArbitraryClasses = isCheckWithArbitraryClasses;
     }
 
-    // TODO: desc
+    /**
+     * Verify the content of two Objects, possibly recursively.
+     *
+     * @param a First object to be recursively compared with the second.
+     * @param b Second object to be recursively compared with the first.
+     * @param isFloatCheckWithRawBits Determines if different NaN encodings are equal or not.
+     * @param isCheckWithArbitraryClasses Determines if the structural comparison of Objects from arbitrary classes is enabled.
+     * @throws VerifyException If the comparison fails.
+     */
     public static void checkEQ(Object a, Object b, boolean isFloatCheckWithRawBits, boolean isCheckWithArbitraryClasses) {
         Verify v = new Verify(isFloatCheckWithRawBits, isCheckWithArbitraryClasses);
         v.checkEQdispatch(a, b, "<root>", null, null);
     }
 
-    // recursive, so that we have nicer stack trace? - no need for map!
-    // queue: allows deeper structures
-    // We need to think about "edges": (a, b) -field-> (c, d)
-
     /**
-     * Verify the content of two Objects, possibly recursively. Only limited types are implemented.
+     * Verify the content of two Objects, possibly recursively.
+     * Only limited types are implemented (no arbitrary classes).
+     * Different NaN encodins are considered equal.
      *
      * @param a First object to be recursively compared with the second.
      * @param b Second object to be recursively compared with the first.
