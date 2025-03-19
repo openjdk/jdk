@@ -600,14 +600,13 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       Register klass = Z_ARG3 , obj = Z_ARG2, result = Z_RET;
       Register temp0 = Z_ARG4, temp1 = Z_ARG5, temp2 = Z_R10, temp3 = Z_R11;
 
-      __ z_lg(klass, Address(Z_ARG1, java_lang_Class::klass_offset()));
+      __ z_ltg(klass, Address(Z_ARG1, java_lang_Class::klass_offset())); // Klass is null
 
       Label is_secondary;
 
       __ clear_reg(result /* Z_R2 */, true /* whole_reg */, false /* set_cc */);  // sets result=0 (failure)
 
-      __ z_ltgr(klass, klass); // Klass is null
-      __ z_bcr(Assembler::bcondEqual, Z_R14);
+      __ z_bcr(Assembler::bcondEqual, Z_R14); // cc set by z_ltg above
 
       __ z_ltgr(obj, obj); // obj is null
       __ z_bcr(Assembler::bcondEqual, Z_R14);
