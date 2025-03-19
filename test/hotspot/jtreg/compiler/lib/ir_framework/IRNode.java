@@ -348,7 +348,7 @@ public class IRNode {
 
     public static final String ALLOC_OF = COMPOSITE_PREFIX + "ALLOC_OF" + POSTFIX;
     static {
-        String regex = START + "Allocate\\b" + MID + "precise .*\\b" + IS_REPLACED + ":.*" + END;
+        String regex = START + "Allocate\\b" + MID + "allocationKlass:.*\\b" + IS_REPLACED + "\\b.*" + END;
         macroNodes(ALLOC_OF, regex);
     }
 
@@ -360,7 +360,22 @@ public class IRNode {
 
     public static final String ALLOC_ARRAY_OF = COMPOSITE_PREFIX + "ALLOC_ARRAY_OF" + POSTFIX;
     static {
-        String regex = START + "AllocateArray\\b" + MID + "precise \\[.*\\b" + IS_REPLACED + ":.*" + END;
+        // Assuming we are looking for an array of "some/package/MyClass". The printout is
+        // [Lsome/package/MyClass;
+
+        // Case where the search string is a not fully qualified name (but maybe partially qualified):
+        // package/MyClass or MyClass
+        // The ".*\\b" will eat the "some/"
+        String partial_name_prefix = ".+\\b";
+
+        // A sequence of:
+        // - a non-empty sequence of "["
+        // - a single character ("L" in our example),
+        // - maybe a non-empty sequence of characters ending on a word boundary
+        // - the name we are looking for
+        // - the final ";".
+        String name_part = "\\[+.(" + partial_name_prefix + ")?" + IS_REPLACED + ";";
+        String regex = START + "AllocateArray\\b" + MID + "allocationKlass:" + name_part + ".*" + END;
         macroNodes(ALLOC_ARRAY_OF, regex);
     }
 

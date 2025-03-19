@@ -715,12 +715,25 @@ void CallNode::dump_spec(outputStream *st) const {
 }
 
 void AllocateNode::dump_spec(outputStream* st) const {
-  const Node* const klass_node = in(KlassNode);
-  if (klass_node != nullptr && klass_node->is_ConP()) {
-    st->print(" ");
-    klass_node->as_ConP()->type()->dump_on(st);
+  st->print(" ");
+  if (tf() != nullptr) {
+    tf()->dump_on(st);
   }
-  CallNode::dump_spec(st);
+  if (_cnt != COUNT_UNKNOWN) {
+    st->print(" C=%f", _cnt);
+  }
+  const Node* const klass_node = in(KlassNode);
+  if (klass_node != nullptr) {
+    const TypeKlassPtr* const klass_ptr = klass_node->bottom_type()->isa_klassptr();
+
+    if (klass_ptr != nullptr && klass_ptr->klass_is_exact()) {
+      st->print(" allocationKlass:");
+      klass_ptr->exact_klass()->print_name_on(st);
+    }
+  }
+  if (jvms() != nullptr) {
+    jvms()->dump_spec(st);
+  }
 }
 #endif
 

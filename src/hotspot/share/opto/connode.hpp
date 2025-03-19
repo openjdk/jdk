@@ -70,9 +70,7 @@ public:
 // Simple pointer constants
 class ConPNode : public ConNode {
 public:
-  ConPNode(const TypePtr *t) : ConNode(t) {
-    init_class_id(Class_ConP);
-  }
+  ConPNode(const TypePtr* t) : ConNode(t) {}
   virtual int Opcode() const;
 
   // Factory methods:

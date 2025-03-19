@@ -73,7 +73,6 @@ class CodeBuffer;
 class ConstraintCastNode;
 class ConNode;
 class ConINode;
-class ConPNode;
 class ConvertNode;
 class CompareAndSwapNode;
 class CompareAndExchangeNode;
@@ -747,7 +746,6 @@ public:
         DEFINE_CLASS_ID(MulVL, Vector, 10)
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
-          DEFINE_CLASS_ID(ConP, Con, 1)
       DEFINE_CLASS_ID(SafePointScalarMerge, Type, 9)
       DEFINE_CLASS_ID(Convert, Type, 10)
 
@@ -914,7 +912,6 @@ public:
   DEFINE_CLASS_QUERY(CastLL)
   DEFINE_CLASS_QUERY(CastFF)
   DEFINE_CLASS_QUERY(ConI)
-  DEFINE_CLASS_QUERY(ConP)
   DEFINE_CLASS_QUERY(CastPP)
   DEFINE_CLASS_QUERY(ConstraintCast)
   DEFINE_CLASS_QUERY(ClearArray)
