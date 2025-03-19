@@ -709,7 +709,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     MallocHeader::FreeInfo free_info = header->free_info();
 
     // Observe MallocLimit
-    if ((size > free_info.size) && MemTracker::check_exceeds_limit(chunk, mem_tag)) {
+    if ((size > free_info.size) && MemTracker::check_exceeds_limit(size-free_info.size, mem_tag)) {
       return nullptr;
     }
 
