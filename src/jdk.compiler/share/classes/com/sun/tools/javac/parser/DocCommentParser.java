@@ -357,6 +357,7 @@ public class DocCommentParser {
                             addPendingText(trees, bp - 1);
                             trees.add(html());
 
+                            // Create new list for <pre> content which is merged into main list when element is closed.
                             if (inPre) {
                                 if (mainTrees == null) {
                                     mainTrees = trees;
