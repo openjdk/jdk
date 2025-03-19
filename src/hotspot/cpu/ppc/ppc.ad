@@ -2108,6 +2108,7 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_RoundDoubleModeV:
       return SuperwordUseVSX;
     case Op_PopCountVI:
+    case Op_PopCountVL:
       return (SuperwordUseVSX && UsePopCountInstruction);
     case Op_CountLeadingZerosV:
       return SuperwordUseVSX && UseCountLeadingZerosInstructionsPPC64;
@@ -14085,6 +14086,7 @@ instruct vsqrt2D_reg(vecX dst, vecX src) %{
 
 instruct vpopcnt_reg(vecX dst, vecX src) %{
   match(Set dst (PopCountVI src));
+  match(Set dst (PopCountVL src));
   format %{ "VPOPCNT $dst,$src\t// pop count packed" %}
   size(4);
   ins_encode %{
