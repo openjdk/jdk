@@ -47,21 +47,18 @@ import java.util.Optional;
 public interface QuicPacketReceiver {
 
     /**
-     * A list of local connectionIds for this connection.
-     * @return a stream of local connectionIds for this connection.
+     * {@return a list of local connectionIds for this connection)
      */
     List<QuicConnectionId> connectionIds();
 
     /**
-     * The initial connection id assigned by the peer.
+     * {@return the initial connection id assigned by the peer}
      * On the client side, this is always {@link Optional#empty()}.
      * On the server side, it contains the initial connection id
      * that was assigned by the client in the first INITIAL packet.
      *
      * @implSpec
      * The default implementation of this method returns {@link Optional#empty()}
-     *
-     * @return a stream of local connectionIds for this connection.
      */
     default Optional<QuicConnectionId> initialConnectionId() {
         return Optional.empty();
