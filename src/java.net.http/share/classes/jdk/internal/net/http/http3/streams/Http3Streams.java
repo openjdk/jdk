@@ -62,14 +62,6 @@ public final class Http3Streams {
         }
     }
 
-    public static boolean hasSndError(QuicSenderStream stream) {
-        long sndErrorCode = stream.sndErrorCode();
-        if (sndErrorCode > 0) {
-            return !Http3Error.isNoError(sndErrorCode);
-        }
-        return false;
-    }
-
     /**
      * {@return an optional string that represents the error state of the
      *          stream, or {@code Optional.empty()} if no error code
