@@ -289,7 +289,7 @@ define CreatePrecompiledHeader
         -include $$($1_PCH_DEPS_FILE)
         -include $$($1_PCH_DEPS_TARGETS_FILE)
 
-        $1_PCH_COMMAND := $$($1_CC) $$($1_CFLAGS) $$($1_EXTRA_CXXFLAGS) $$($1_SYSROOT_CFLAGS) \
+        $1_PCH_COMMAND := $$($1_CC) $$($1_CFLAGS) $$($1_EXTRA_CFLAGS) $$($1_SYSROOT_CFLAGS) \
             $$($1_OPT_CFLAGS) -x c++-header -c $(GENDEPS_FLAGS) \
             $$(addsuffix .tmp, $$($1_PCH_DEPS_FILE))
 
