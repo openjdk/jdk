@@ -161,9 +161,6 @@ void VM_Version::initialize() {
         (_model == CPU_MODEL_AMPERE_1A || _model == CPU_MODEL_AMPERE_1B)) {
       FLAG_SET_DEFAULT(CodeEntryAlignment, 32);
     }
-    if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
-      FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
-    }
   }
 
   // ThunderX
@@ -243,7 +240,7 @@ void VM_Version::initialize() {
     }
   }
 
-  if (_cpu == CPU_ARM) {
+  if (_features & (CPU_FP | CPU_ASIMD)) {
     if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
       FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
     }
@@ -415,6 +412,17 @@ void VM_Version::initialize() {
       warning("ChaCha20 intrinsic requires ASIMD instructions");
     }
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  }
+
+  if (_features & CPU_ASIMD) {
+      if (FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
+          UseDilithiumIntrinsics = true;
+      }
+  } else if (UseDilithiumIntrinsics) {
+      if (!FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
+          warning("Dilithium intrinsic requires ASIMD instructions");
+      }
+      FLAG_SET_DEFAULT(UseDilithiumIntrinsics, false);
   }
 
   if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {

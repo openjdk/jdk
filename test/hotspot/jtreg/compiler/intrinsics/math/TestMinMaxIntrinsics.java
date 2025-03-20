@@ -34,7 +34,7 @@
 * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
 *
 * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
-*                   -server -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+*                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
 *                   compiler.intrinsics.math.TestMinMaxIntrinsics
 */
 

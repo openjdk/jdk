@@ -64,8 +64,7 @@ public class MultiNSTSequence {
                 " -Dtest.src=" + System.getProperty("test.src") +
                     " -Dtest.jdk=" + System.getProperty("test.jdk") +
                     " -Dtest.root=" + System.getProperty("test.root") +
-                    " -Djavax.net.debug=ssl,handshake " + params
-                              );
+                    " -Djavax.net.debug=ssl,handshake " + params);
 
             System.out.println("test.java.opts: " +
                 System.getProperty("test.java.opts"));
@@ -115,8 +114,8 @@ public class MultiNSTSequence {
         }
 
         TLSBase.Server server = new TLSBase.Server();
-
-        System.out.println("------  Initial connection");
+        server.serverLatch.await();
+        System.out.println("------  Server ready, starting initial client.");
         TLSBase.Client initial = new TLSBase.Client();
 
         SSLSession initialSession = initial.connect().getSession();

@@ -1316,6 +1316,7 @@ enum operand_size { int8, int16, int32, uint32, int64 };
 
  public:
 
+  void  flh(FloatRegister Rd, Register Rs, const int32_t offset) { fp_load<0b001>(Rd, Rs, offset); }
   void  flw(FloatRegister Rd, Register Rs, const int32_t offset) { fp_load<0b010>(Rd, Rs, offset); }
   void _fld(FloatRegister Rd, Register Rs, const int32_t offset) { fp_load<0b011>(Rd, Rs, offset); }
 
@@ -1397,6 +1398,46 @@ enum operand_size { int8, int16, int32, uint32, int64 };
     fp_base<H_16_hp, 0b11100>(Rd, Rs1, 0b00000, 0b000);
   }
 
+  void fadd_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b00000>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fsub_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b00001>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fmul_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b00010>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fdiv_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b00011>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fsqrt_h(FloatRegister Rd, FloatRegister Rs1, RoundingMode rm = rne) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b01011>(Rd, Rs1, 0b00000, rm);
+  }
+
+  void fmin_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b00101>(Rd, Rs1, Rs2, 0b000);
+  }
+
+  void fmax_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b00101>(Rd, Rs1, Rs2, 0b001);
+  }
+
+  void fmadd_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, FloatRegister Rs3, RoundingMode rm = rne)  {
+    assert_cond(UseZfh);
+    fp_fm<H_16_hp, 0b1000011>(Rd, Rs1, Rs2, Rs3, rm);
+  }
+
 // --------------  ZFA Instruction Definitions  --------------
 // Zfa Extension for Additional Floating-Point Instructions
   void _fli_s(FloatRegister Rd, uint8_t Rs1) {
@@ -1407,6 +1448,36 @@ enum operand_size { int8, int16, int32, uint32, int64 };
   void _fli_d(FloatRegister Rd, uint8_t Rs1) {
     assert_cond(UseZfa);
     fp_base<D_64_dp, 0b11110>(Rd, Rs1, 0b00001, 0b000);
+  }
+
+  void fminm_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfa);
+    fp_base<H_16_hp, 0b00101>(Rd, Rs1, Rs2, 0b010);
+  }
+
+  void fmaxm_h(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfa);
+    fp_base<H_16_hp, 0b00101>(Rd, Rs1, Rs2, 0b011);
+  }
+
+  void fminm_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfa);
+    fp_base<S_32_sp, 0b00101>(Rd, Rs1, Rs2, 0b010);
+  }
+
+  void fmaxm_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfa);
+    fp_base<S_32_sp, 0b00101>(Rd, Rs1, Rs2, 0b011);
+  }
+
+  void fminm_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfa);
+    fp_base<D_64_dp, 0b00101>(Rd, Rs1, Rs2, 0b010);
+  }
+
+  void fmaxm_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    assert_cond(UseZfa);
+    fp_base<D_64_dp, 0b00101>(Rd, Rs1, Rs2, 0b011);
   }
 
 // ==========================
@@ -2323,6 +2394,7 @@ enum Nf {
     emit(insn);                                         \
   }
 
+  INSN(brev8,  0b0010011, 0b101, 0b011010000111);
   INSN(rev8,   0b0010011, 0b101, 0b011010111000);
   INSN(_sext_b, 0b0010011, 0b001, 0b011000000100);
   INSN(_sext_h, 0b0010011, 0b001, 0b011000000101);
