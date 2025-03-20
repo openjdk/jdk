@@ -71,6 +71,7 @@ import static jdk.internal.net.http.common.Utils.ProxyHeaders;
  *      PlainTunnelingConnection: opens plain text (CONNECT) tunnel to server
  *      AsyncSSLConnection: TLS channel direct to server
  *      AsyncSSLTunnelConnection: TLS channel via (CONNECT) proxy tunnel
+ *      HttpQuicConnection: direct QUIC connection to server
  */
 abstract class HttpConnection implements Closeable {
 
