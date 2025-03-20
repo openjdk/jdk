@@ -82,6 +82,11 @@ public final class ClassType extends Type {
     }
 
     // TODO: template that executes some random statement: create, modify, etc...
+    public List<TemplateWithArgs> statementTemplates() {
+        return List.of(
+            // TODO: add cases
+        );
+    }
 
     public TemplateWithArgs classDefinitionTemplateWithArgs() {
         List<ClassField> allFields = collectAllFields();
