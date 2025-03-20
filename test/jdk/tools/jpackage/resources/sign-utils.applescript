@@ -43,22 +43,25 @@ on trustCerts(certs)
   set runShellScriptInTerminal to "osascript " & quoted form of (POSIX path of (path to me)) & " run-shell-script "
   repeat with i from 1 to count of certs
     set cert to item i of certs
-    set label to "certificate [" & i & "/" & count of certs & "]"
+    set theLabel to "certificate [" & i & "/" & count of certs & "]"
     repeat
-      display dialog ("Trust " & label) giving up after 60
+      tell application "Finder"
+        activate
+        display dialog ("Trust " & theLabel) giving up after 60
+      end tell
       if button returned of result = "OK" then
         try
           set theScript to "/usr/bin/security add-trusted-cert -k " & quoted form of (keychain of cert) & " " & quoted form of (cert of cert)
           set theCmdline to runShellScriptInTerminal & quoted form of theScript
           log "Execute: " & theCmdline
           do shell script theCmdline
-          log "Trusted " & label
+          log "Trusted " & theLabel
           exit repeat
         on error errMsg number errNum
           log "Error occurred: " & errMsg & " (Error Code: " & errNum & ")"
         end try
       else if gave up of result then
-        error "Timeout of a request to trust " & label
+        error "Timeout of a request to trust " & theLabel
       end if
     end repeat
   end repeat
