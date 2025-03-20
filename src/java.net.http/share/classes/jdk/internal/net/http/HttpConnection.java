@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.net.http.HttpClient;
@@ -71,32 +72,40 @@ import static jdk.internal.net.http.common.Utils.ProxyHeaders;
  */
 abstract class HttpConnection implements Closeable {
 
+    /**
+     * A comparator providing total order among instances.
+     */
+    static final Comparator<HttpConnection> TOTAL_ORDER_COMPARATOR =
+            Comparator.comparing(connection -> connection.instanceId);
+
+    private static final AtomicLong INSTANCE_ID_COUNTER = new AtomicLong();
+
+    private static final AtomicLong CONNECTION_ID_COUNTER = new AtomicLong();
+
+    /**
+     * A unique identifier that provides a total order among instances.
+     */
+    private final String instanceId = Utils.toRadix62(INSTANCE_ID_COUNTER.getAndIncrement());
+
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
     static final Logger DEBUG_LOGGER = Utils.getDebugLogger(
             () -> "HttpConnection(SocketTube(?))", Utils.DEBUG);
-    public static final Comparator<HttpConnection> COMPARE_BY_ID
-            = Comparator.comparing(HttpConnection::id);
 
     /** The address this connection is connected to. Could be a server or a proxy. */
     final InetSocketAddress address;
     private final HttpClientImpl client;
     private final TrailingOperations trailingOperations;
-    private final long id;
+    final String connectionId;
 
-    HttpConnection(InetSocketAddress address, HttpClientImpl client) {
+    HttpConnection(InetSocketAddress address, HttpClientImpl client, String connectionId) {
         this.address = address;
         this.client = client;
         trailingOperations = new TrailingOperations();
-        this.id = newConnectionId(client);
+        this.connectionId = connectionId;
     }
 
-    // This is overridden in tests
-    long newConnectionId(HttpClientImpl client) {
-        return client.newConnectionId();
-    }
-
-    private long id() {
-        return id;
+    private static String nextConnectionId() {
+        return Utils.toRadix62(CONNECTION_ID_COUNTER.getAndIncrement());
     }
 
     /**
@@ -104,7 +113,7 @@ abstract class HttpConnection implements Closeable {
      * {@link HttpResponse#connectionLabel() HttpResponse::connectionLabel}}
      */
     public String connectionLabel() {
-        return dbgString();
+        return instanceId;
     }
 
     private static final class TrailingOperations {
@@ -312,11 +321,13 @@ abstract class HttpConnection implements Closeable {
                                                    String[] alpn,
                                                    HttpRequestImpl request,
                                                    HttpClientImpl client) {
+        String connectionId = nextConnectionId();
         if (proxy != null)
             return new AsyncSSLTunnelConnection(addr, client, alpn, proxy,
-                                                proxyTunnelHeaders(request));
+                                                proxyTunnelHeaders(request),
+                                                connectionId);
         else
-            return new AsyncSSLConnection(addr, client, alpn);
+            return new AsyncSSLConnection(addr, client, alpn, connectionId);
     }
 
     /**
@@ -390,14 +401,16 @@ abstract class HttpConnection implements Closeable {
                                                      InetSocketAddress proxy,
                                                      HttpRequestImpl request,
                                                      HttpClientImpl client) {
+        String connectionId = nextConnectionId();
         if (request.isWebSocket() && proxy != null)
             return new PlainTunnelingConnection(addr, proxy, client,
-                                                proxyTunnelHeaders(request));
+                                                proxyTunnelHeaders(request),
+                                                connectionId);
 
         if (proxy == null)
-            return new PlainHttpConnection(addr, client);
+            return new PlainHttpConnection(addr, client, connectionId);
         else
-            return new PlainProxyConnection(proxy, client);
+            return new PlainProxyConnection(proxy, client, connectionId);
     }
 
     void closeOrReturnToCache(HttpHeaders hdrs) {

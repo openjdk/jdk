@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import jdk.internal.net.http.common.DebugLogger.LoggerConfig;
@@ -1161,4 +1162,38 @@ public final class Utils {
         }
         throw new IllegalArgumentException("cf is not completed exceptionally");
     }
+
+    /**
+     * Converts the given number to its radix-62 representation using {@code 0-9A-Za-z} as digits.
+     * @param n the number to be converted
+     * @return the radix-62 representation of the given number
+     */
+    public static String toRadix62(long n) {
+        return toRadix(n, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private static String toRadix(long n, String radix) {
+        if (n < 0) {
+            throw new IllegalArgumentException("non-positive number: " + n);
+        }
+        int l;
+        if (radix == null || (l = radix.length()) < 2) {
+            throw new IllegalArgumentException("insufficient radix: " + radix);
+        }
+        if (l != IntStream.range(0, l).mapToObj(radix::charAt).distinct().count()) {
+            throw new IllegalArgumentException("radix contains duplicates: " + radix);
+        }
+        if (n == 0) {
+            return "" + radix.charAt(0);
+        }
+        StringBuilder buffer = new StringBuilder();
+        for (; n > 0; n /= l) {
+            int r = (int) (n % l);
+            char c = radix.charAt(r);
+            buffer.append(c);
+        }
+        return buffer.reverse().toString();
+    }
+
 }
