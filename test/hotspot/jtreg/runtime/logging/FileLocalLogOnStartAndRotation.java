@@ -51,7 +51,7 @@ public class FileLocalLogOnStartAndRotation {
     private static Pattern decorationRegex = Pattern.compile("^\\[.*\\]\\[.*\\]\\[.*\\].*$");
 
     private static void analyzeFile(File f, boolean shouldHaveDecorations) {
-        String content = new String(Files.readAllBytes(f), StandardCharsets.UTF_8);
+        String content = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
 
         Matcher matchStart = startLogRegex.matcher(content);
         Matcher matchRotate = rotateLogRegex.matcher(content);
