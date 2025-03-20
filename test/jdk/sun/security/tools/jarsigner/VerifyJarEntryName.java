@@ -75,7 +75,7 @@ public class VerifyJarEntryName {
         Files.write(jarPath, signedJar);
 
         SecurityTools.jarsigner("-verify -verbose test.jar")
-                .shouldContain("LOC manifest is missing")
+                .shouldContain("Manifest is missing when reading via JarInputStream")
                 .shouldHaveExitValue(0);
 
         // Modify a single byte in "MYKEY.SF" filename in LOC
@@ -89,7 +89,7 @@ public class VerifyJarEntryName {
         Files.write(jarPath1, signedJar1);
 
         SecurityTools.jarsigner("-verify -verbose test1.jar")
-                .shouldContain("Mismatch in entries between CEN and LOC")
+                .shouldContain("Entries mismatch when comparing JarFile and JarInputStream")
                 .shouldHaveExitValue(0);
     }
 }

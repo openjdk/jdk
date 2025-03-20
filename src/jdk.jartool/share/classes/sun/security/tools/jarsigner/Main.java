@@ -1176,7 +1176,7 @@ public class Main {
 
             if (!cenEntries2.equals(locEntries)) {
                 crossChkWarnings.add(rb.getString(
-                        "Mismatch.in.entries.between.CEN.and.LOC"));
+                        "entries.mismatch.when.comparing.jarfile.and.jarinputstream"));
             }
         }
     }
@@ -1189,11 +1189,13 @@ public class Main {
         boolean validManifest = true;
 
         if (cenManifest == null) {
-            crossChkWarnings.add(rb.getString("CEN.manifest.is.missing"));
+            crossChkWarnings.add(rb.getString(
+                    "manifest.missing.when.reading.jarfile"));
             return false;
         }
         if (locManifest == null) {
-            crossChkWarnings.add(rb.getString("LOC.manifest.is.missing"));
+            crossChkWarnings.add(rb.getString(
+                    "manifest.missing.when.reading.jarinputstream"));
             return false;
         }
 
@@ -1205,13 +1207,13 @@ public class Main {
             Object locValue = locMainAttrs.get(key);
 
             if (locValue == null) {
-                crossChkWarnings.add(String.format(
-                        rb.getString("main.attribute.key.1.in.CEN.but.missing.in.LOC"),
+                crossChkWarnings.add(String.format(rb.getString(
+                        "manifest.attribute.1.present.when.reading.jarfile.but.missing.via.jarinputstream"),
                         key));
                 validManifest = false;
             } else if (!cenValue.equals(locValue)) {
-                crossChkWarnings.add(String.format(
-                        rb.getString("main.atrribute.key.1.mismatch.CEN.2.LOC.3"),
+                crossChkWarnings.add(String.format(rb.getString(
+                        "manifest.atrribute.1.differs.jarfile.value.2.jarinputstream.value.3"),
                         key, cenValue, locValue));
                 validManifest = false;
             }
@@ -1219,8 +1221,8 @@ public class Main {
 
         for (Object key : locMainAttrs.keySet()) {
             if (!cenMainAttrs.containsKey(key)) {
-                crossChkWarnings.add(String.format(
-                        rb.getString("main.attribute.key.1.in.LOC.but.missing.in.CEN"),
+                crossChkWarnings.add(String.format(rb.getString(
+                        "manifest.attribute.1.present.when.reading.jarinputstream.but.missing.via.jarfile"),
                         key));
                 validManifest = false;
             }
@@ -1242,7 +1244,8 @@ public class Main {
 
             if (!cenSignerList.equals(locSignerList)) {
                 crossChkWarnings.add(String.format(rb.getString(
-                        "Signature.mismatch.for.entry.1"), cenEntry.getName()));
+                        "signature.mismatch.for.entry.1.when.comparing.jarfile.and.jarinputstream"),
+                        cenEntry.getName()));
             }
         }
     }
