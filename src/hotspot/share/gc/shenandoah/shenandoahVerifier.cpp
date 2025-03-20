@@ -1279,7 +1279,7 @@ public:
   inline void work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_raw(o);
+      oop obj = CompressedOops::decode_raw_not_null(o);
       assert(is_object_aligned(obj), "address not aligned: " PTR_FORMAT, p2i(obj));
       ShenandoahHeapRegion* region = _heap->heap_region_containing(obj);
       if (region->is_active() && region->is_young() && !_scanner->is_card_dirty((HeapWord*) p)) {
