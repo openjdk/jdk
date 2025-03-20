@@ -1055,9 +1055,14 @@ void ShenandoahVerifier::verify_generic(VerifyOption vo) {
 }
 
 void ShenandoahVerifier::verify_before_concmark() {
+  VerifyRememberedSet verify_remembered_set = _verify_remembered_before_marking;
+  if (!_heap->old_generation()->is_mark_complete() && !_heap->old_generation()->is_parsable()) {
+    // Before marking, remembered set can't be verified w/o complete old marking or parsable old generation.
+    verify_remembered_set = _verify_remembered_disable;
+  }
   verify_at_safepoint(
           "Before Mark",
-          _verify_remembered_before_marking,
+          verify_remembered_set,
                                        // verify read-only remembered set from bottom() to top()
           _verify_forwarded_none,      // UR should have fixed up
           _verify_marked_disable,      // do not verify marked: lots ot time wasted checking dead allocations
