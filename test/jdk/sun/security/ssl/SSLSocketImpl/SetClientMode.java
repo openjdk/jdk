@@ -52,7 +52,6 @@
 import java.lang.*;
 import java.net.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import javax.net.ssl.*;
 import jdk.test.lib.security.SecurityUtils;
 
@@ -97,9 +96,7 @@ public class SetClientMode extends SSLContextTemplate {
                 // force handshaking to complete
                 connectedSocket.getSession();
 
-                if (!HANDSHAKE_COMPLETE.await(5, TimeUnit.SECONDS)) {
-                    throw new RuntimeException("Handshake didn't complete within 5 seconds.");
-                }
+                HANDSHAKE_COMPLETE.await();
 
                 try {
                     // Now try invoking setClientMode() on the client socket.

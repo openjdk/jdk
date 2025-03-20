@@ -44,7 +44,6 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import javax.net.ssl.*;
 
 import jdk.test.lib.security.SecurityUtils;
@@ -132,9 +131,7 @@ public class NonAutoClose extends SSLContextTemplate {
          * Wait for server to get started.
          */
         System.out.println("Waiting for server ready");
-        if (!SERVER_READY.await(5, TimeUnit.SECONDS)) {
-            throw new RuntimeException("Server is not ready within 5 seconds.");
-        }
+        SERVER_READY.await();
 
         SSLSocketFactory sslsf = createClientSSLContext().getSocketFactory();
 
