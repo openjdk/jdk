@@ -452,7 +452,6 @@ public final class Verify {
         Class c = a.getClass();
         while (c != Object.class) {
             for (Field field : c.getDeclaredFields()) {
-                System.out.println(field);
                 Object va = null;
                 Object vb = null;
                 try {
