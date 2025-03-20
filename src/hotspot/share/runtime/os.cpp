@@ -621,7 +621,7 @@ static void break_if_ptr_caught(void* ptr) {
 }
 #endif // ASSERT
 
-long os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, MemTag mem_tag, const NativeCallStack& stack) {
+long os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, bool check_limit, MemTag mem_tag, const NativeCallStack& stack) {
   *raw_ptr = nullptr;
 
   // Special handling for NMT preinit phase before arguments are parsed
@@ -638,7 +638,7 @@ long os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, MemTag mem_tag, c
   // we chose the latter.
   size = MAX2((size_t)1, size);
   // Observe MallocLimit
-  if (MemTracker::check_exceeds_limit(size, mem_tag)) {
+  if (check_limit && MemTracker::check_exceeds_limit(size, mem_tag)) {
     return -1;
   }
 
@@ -680,7 +680,7 @@ void* os::malloc(size_t size, MemTag mem_tag) {
 
 void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
   void* rc = nullptr;
-  long outer_size = os::pre_alloc(&rc, nullptr, size, mem_tag, stack);
+  long outer_size = os::pre_alloc(&rc, nullptr, size, true, mem_tag, stack);
   if (rc != nullptr) {
     return rc;
   }
@@ -701,7 +701,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
   }
 
   void* rc = nullptr;
-  long outer_size = os::pre_alloc(&rc, memblock, size, mem_tag, stack);
+  long outer_size = os::pre_alloc(&rc, memblock, size, false, mem_tag, stack);
   if (rc != nullptr) {
     return rc;
   }
@@ -717,11 +717,10 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     MallocHeader::FreeInfo free_info = header->free_info();
     if (free_info.size < size) {
       chunk = (long)free_info.size;
-    }
-
-    // Observe MallocLimit
-    if ((size > free_info.size) && MemTracker::check_exceeds_limit(size-free_info.size, mem_tag)) {
-      return nullptr;
+      // Observe MallocLimit
+      if (MemTracker::check_exceeds_limit(size-free_info.size, mem_tag)) {
+        return nullptr;
+      }
     }
 
     // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3) since it may invalidate the old block, including its header.
