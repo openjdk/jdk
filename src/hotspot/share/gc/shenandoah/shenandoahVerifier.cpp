@@ -1369,7 +1369,7 @@ void ShenandoahVerifier::verify_rem_set_before_mark() {
 
   log_debug(gc)("Verifying remembered set at %s mark", old_generation->is_doing_mixed_evacuations() ? "mixed" : "young");
 
-  ShenandoahScanRemembered* scanner = ShenandoahGenerationalHeap::heap()->old_generation()->card_scan();
+  ShenandoahScanRemembered* scanner = old_generation->card_scan();
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_old() && r->is_active()) {
