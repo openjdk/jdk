@@ -2188,14 +2188,12 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         if (rowCount > 0 && columnCount > 0) {
             selectRows(rowCount);
             selectColumns(columnCount);
-        } else if (rowCount > 0 && columnCount == 0) {
-            if (getRowSelectionAllowed()) {
-                selectRows(rowCount);
-            }
-        } else if (columnCount > 0  && rowCount == 0) {
-            if (getColumnSelectionAllowed()) {
-                selectColumns(columnCount);
-            }
+        } else if (rowCount > 0 && columnCount == 0
+                   && getRowSelectionAllowed()) {
+            selectRows(rowCount);
+        } else if (columnCount > 0  && rowCount == 0
+                   && getColumnSelectionAllowed()) {
+            selectColumns(columnCount);
         }
     }
 
