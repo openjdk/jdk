@@ -1057,9 +1057,8 @@ void ShenandoahVerifier::verify_generic(VerifyOption vo) {
 void ShenandoahVerifier::verify_before_concmark() {
   VerifyRememberedSet verify_remembered_set = _verify_remembered_before_marking;
   if (_heap->mode()->is_generational() &&
-      !_heap->old_generation()->is_mark_complete() &&
-      !_heap->old_generation()->is_parsable()) {
-    // Before marking, remembered set can't be verified w/o complete old marking and parseable old gen.
+      !_heap->old_generation()->is_mark_complete()) {
+    // Before marking in generational mode, remembered set can't be verified w/o complete old marking.
     verify_remembered_set = _verify_remembered_disable;
   }
   verify_at_safepoint(
@@ -1123,10 +1122,7 @@ void ShenandoahVerifier::verify_before_evacuation() {
 void ShenandoahVerifier::verify_before_update_refs() {
   VerifyRememberedSet verify_remembered_set = _verify_remembered_before_updating_references;
   if (_heap->mode()->is_generational() &&
-      !_heap->old_generation()->is_mark_complete() &&
-      !_heap->old_generation()->is_parsable()) {
-    // Before marking, remembered set can't be verified in global GC, because,
-    // we don't know whether old gen is parseable or not.
+      !_heap->old_generation()->is_mark_complete()) {
     verify_remembered_set = _verify_remembered_disable;
   }
   verify_at_safepoint(
@@ -1279,10 +1275,8 @@ public:
   inline void work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_raw_not_null(o);
-      assert(is_object_aligned(obj), "address not aligned: " PTR_FORMAT, p2i(obj));
-      ShenandoahHeapRegion* region = _heap->heap_region_containing(obj);
-      if (region->is_active() && region->is_young() && !_scanner->is_card_dirty((HeapWord*) p)) {
+      oop obj = CompressedOops::decode_not_null(o);
+      if (_heap->is_in_young(obj) && !_scanner->is_card_dirty((HeapWord*) p)) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                                          _message, "clean card, it should be dirty.", __FILE__, __LINE__);
       }
@@ -1297,9 +1291,10 @@ template<typename Scanner>
 void ShenandoahVerifier::help_verify_region_rem_set(Scanner* scanner, ShenandoahHeapRegion* r,
                                                     HeapWord* registration_watermark, const char* message) {
   shenandoah_assert_generations_reconciled();
-  ShenandoahMarkingContext* ctx = _heap->old_generation()->is_mark_complete() ?
-    _heap->old_generation()->complete_marking_context() : nullptr;
+  ShenandoahOldGeneration* old_gen = _heap->old_generation();
+  assert(old_gen->is_mark_complete() || old_gen->is_parsable(), "Sanity");
 
+  ShenandoahMarkingContext* ctx = old_gen->is_mark_complete() ?old_gen->complete_marking_context() : nullptr;
   ShenandoahVerifyRemSetClosure<Scanner> check_interesting_pointers(scanner, message);
   HeapWord* from = r->bottom();
   HeapWord* obj_addr = from;
@@ -1374,11 +1369,11 @@ void ShenandoahVerifier::verify_rem_set_before_mark() {
 
   log_debug(gc)("Verifying remembered set at %s mark", old_generation->is_doing_mixed_evacuations() ? "mixed" : "young");
 
-  ShenandoahWriteTableScanner scanner(ShenandoahGenerationalHeap::heap()->old_generation()->card_scan());
+  ShenandoahScanRemembered* scanner = ShenandoahGenerationalHeap::heap()->old_generation()->card_scan();
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_old() && r->is_active()) {
-      help_verify_region_rem_set(&scanner, r, r->end(), "Verify init-mark remembered set violation");
+      help_verify_region_rem_set(scanner, r, r->end(), "Verify init-mark remembered set violation");
     }
   }
 }
