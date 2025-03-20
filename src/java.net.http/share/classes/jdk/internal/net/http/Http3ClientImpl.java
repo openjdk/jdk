@@ -168,14 +168,13 @@ public final class Http3ClientImpl implements AutoCloseable {
     // is abandoned (marked with setFinalStream() and taken out of the pool) and a
     // new connection is initiated. Waiters are waiting for the new connection
     // handshake to finish and for the connection to be put in the pool.
-    record Waiter(MinimalFuture<Http3Connection> cf, HttpRequestImpl request, Exchange<?> exchange,
-                        AtomicReference<CompletableFuture<Http3Connection>> h3CfRef) {
+    record Waiter(MinimalFuture<Http3Connection> cf, HttpRequestImpl request, Exchange<?> exchange) {
         void complete(Http3Connection conn, Throwable error) {
             if (error != null) cf.completeExceptionally(error);
             else cf.complete(conn);
         }
         static Waiter of(HttpRequestImpl request, Exchange<?> exchange) {
-            return new Waiter(new MinimalFuture<>(), request, exchange, new AtomicReference<>());
+            return new Waiter(new MinimalFuture<>(), request, exchange);
         }
     }
 
@@ -187,16 +186,13 @@ public final class Http3ClientImpl implements AutoCloseable {
     // Indicates that recovery of a connection has been initiated.
     // Waiters will be put in wait until the handshake is completed
     // and the connection is inserted in the pool
-    record PendingConnection(ConcurrentLinkedQueue<Waiter> waiters,
-                             AtomicReference<CompletableFuture<Http3Connection>> h3cfRef)
+    record PendingConnection(ConcurrentLinkedQueue<Waiter> waiters)
             implements ConnectionRecovery {
-        PendingConnection(ConcurrentLinkedQueue<Waiter> waiters,
-                          AtomicReference<CompletableFuture<Http3Connection>> h3cfRef) {
+        PendingConnection(ConcurrentLinkedQueue<Waiter> waiters) {
             this.waiters = Objects.requireNonNull(waiters);
-            this.h3cfRef = Objects.requireNonNull(h3cfRef);
         }
         PendingConnection() {
-            this(new ConcurrentLinkedQueue<>(), new AtomicReference<>());
+            this(new ConcurrentLinkedQueue<>());
         }
     }
 
@@ -575,7 +571,6 @@ public final class Http3ClientImpl implements AutoCloseable {
                     // the connection was done on behalf of a pending waiter.
                     // this can happen if the new connection has already maxed out,
                     // and recovery was initiated on behalf of the next waiter.
-                    pendingWaiter.h3CfRef().set(h3Cf);
                     h3Cf = h3Cf.whenComplete((r,t) -> completeWaiter(debug, pendingWaiter, r, t));
                 }
                 h3Cf = h3Cf.thenApply(conn -> {
@@ -587,8 +582,7 @@ public final class Http3ClientImpl implements AutoCloseable {
                 });
                 if (pendingConnection != null) {
                     // need to wake up waiters after successful handshake and recovery
-                    pendingConnection.h3cfRef.set(h3Cf
-                            .whenComplete((r, t) -> connectionCompleted(key, exchange, r, t)));
+                    h3Cf.whenComplete((r, t) -> connectionCompleted(key, exchange, r, t));
                 }
                 return h3Cf;
             } else {
