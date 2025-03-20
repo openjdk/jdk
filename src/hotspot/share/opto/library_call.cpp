@@ -8004,7 +8004,7 @@ bool LibraryCallKit::inline_kyber12To16() {
   address stubAddr;
   const char *stubName;
   assert(UseKyberIntrinsics, "need Kyber intrinsics support");
-  assert(callee()->signature()->size() == 3, "kyber12To16 has 3 parameters");
+  assert(callee()->signature()->size() == 4, "kyber12To16 has 4 parameters");
 
   stubAddr = StubRoutines::kyber12To16();
   stubName = "kyber12To16";
