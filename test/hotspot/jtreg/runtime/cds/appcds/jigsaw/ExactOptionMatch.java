@@ -37,7 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class ExactOptionMatch {
     record Option(String cmdLine, String property, String valueA, String valueB) {}
-    
+
     static Option[] allOptions = new Option[] {
         new Option("--add-exports",
                    "jdk.module.addexports",
@@ -50,7 +50,7 @@ public class ExactOptionMatch {
         new Option("--enable-native-access",
                    "jdk.module.enable.native.access",
                    "java.base",
-                   "java.logging"),                   
+                   "java.logging"),
     };
 
     static final String FMG_DISABLED = "initial full module graph: disabled";
