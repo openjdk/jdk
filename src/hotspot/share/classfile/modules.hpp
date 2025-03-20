@@ -63,7 +63,8 @@ public:
 #if INCLUDE_CDS_JAVA_HEAP
 private:
   class ArchivedProperty;
-  static Modules::ArchivedProperty _archived_props[];
+
+  static ArchivedProperty _archived_props[];
   static constexpr size_t num_archived_props();
   static ArchivedProperty& archived_prop(size_t i);
 public:
