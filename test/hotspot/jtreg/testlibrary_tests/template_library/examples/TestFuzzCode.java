@@ -44,14 +44,15 @@ import compiler.lib.compile_framework.CompileFramework;
 
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateWithArgs;
+import compiler.lib.template_framework.Name;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
+import static compiler.lib.template_framework.Template.addName;
 
 import compiler.lib.template_library.Library;
 import compiler.lib.template_library.IRTestClass;
 import compiler.lib.template_library.Type;
-import compiler.lib.template_library.ClassType;
 
 /**
  * TODO
@@ -85,15 +86,18 @@ public class TestFuzzCode {
                                                              "compiler.lib.verify.*"),
                                                      List.of());
 
-        var template1Body = Template.make(()-> {
-            return body(
-                // TODO: random code, then sample random variable!
-                "return ", Type.ints().con(), ";\n"
-            );
-        });
-        var template1 = Template.make(() -> body(
+        var template1Body = Template.make("type", (Type type)-> body(
+            // The "ret" variable captures the return value, which can be read / modified
+            // by the random code.
+            addName(new Name($("ret"), type, true, 1)),
+            "#type $ret = ", type.con(), ";\n",
+            // TODO: random code, then sample random variable!
+            "return $ret;\n"
+        ));
+        var template1 = Template.make("type", (Type type) -> body(
                 """
                 // --- $test start ---
+                // type: #type
                 """,
                 Library.CLASS_HOOK.set(
                     """
@@ -104,14 +108,14 @@ public class TestFuzzCode {
                     public static Object $test() {
                     """,
                     Library.METHOD_HOOK.set(
-                        template1Body.withArgs()
+                        template1Body.withArgs(type)
                     ),
                     """
                     }
 
                     @Check(test = "$test")
                     public static void $check(Object result) {
-                        Verify.checkEQ(result, $GOLD, false, true);
+                        Verify.checkEQ(result, $GOLD);
                     }
 
                     // --- $test end   ---
@@ -121,8 +125,8 @@ public class TestFuzzCode {
 
         // Now use the templates and add them into the IRTestClass.
         List<TemplateWithArgs> templates = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            templates.add(template1.withArgs());
+        for (Type type : Type.PRIMITIVE_TYPES) {
+            templates.add(template1.withArgs(type));
         }
         return IRTestClass.TEMPLATE.withArgs(info, templates).render();
     }
