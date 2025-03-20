@@ -811,8 +811,8 @@ static address generate_dilithiumDecomposePoly_avx512(StubGenerator *stubgen,
     const Register rMultiplier = c_rarg4;
   #else
     const Address multiplier_mem(rbp, 6 * wordSize);
-    const Register rMultiplier = c_rarg3;
-    __ movptr(multiplier, multiplier_mem);
+    const Register rMultiplier = c_rarg3; // arg3 is already consumed, reused here
+    __ movptr(rMultiplier, multiplier_mem);
   #endif
   __ evpbroadcastd(barrettMultiplier, rMultiplier,
                    Assembler::AVX_512bit); // multiplier for mod 2 * gamma2 reduce
