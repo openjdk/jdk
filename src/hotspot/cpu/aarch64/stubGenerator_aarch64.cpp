@@ -4063,6 +4063,95 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Execute one round of keccak of two computations in parallel.
+  // One of the states should be loaded into the lower halves of
+  // the vector registers v0-v24, the other should be loaded into
+  // the upper halves of those registers. The ld1r instruction loads
+  // the round constant into both halves of register v31.
+  // Intermediate results c0...c5 and d0...d5 are computed
+  // in registers v25...v30.
+  // All vector instructions that are used operate on both register
+  // halves in parallel.
+  // If only a single computation is needed, one can only load the lower halves.
+  void keccak_round(Register rscratch1) {
+  __ eor3(v29, __ T16B, v4, v9, v14);       // c4 = a4 ^ a9 ^ a14
+  __ eor3(v26, __ T16B, v1, v6, v11);       // c1 = a1 ^ a16 ^ a11
+  __ eor3(v28, __ T16B, v3, v8, v13);       // c3 = a3 ^ a8 ^a13
+  __ eor3(v25, __ T16B, v0, v5, v10);       // c0 = a0 ^ a5 ^ a10
+  __ eor3(v27, __ T16B, v2, v7, v12);       // c2 = a2 ^ a7 ^ a12
+  __ eor3(v29, __ T16B, v29, v19, v24);     // c4 ^= a19 ^ a24
+  __ eor3(v26, __ T16B, v26, v16, v21);     // c1 ^= a16 ^ a21
+  __ eor3(v28, __ T16B, v28, v18, v23);     // c3 ^= a18 ^ a23
+  __ eor3(v25, __ T16B, v25, v15, v20);     // c0 ^= a15 ^ a20
+  __ eor3(v27, __ T16B, v27, v17, v22);     // c2 ^= a17 ^ a22
+
+  __ rax1(v30, __ T2D, v29, v26);           // d0 = c4 ^ rol(c1, 1)
+  __ rax1(v26, __ T2D, v26, v28);           // d2 = c1 ^ rol(c3, 1)
+  __ rax1(v28, __ T2D, v28, v25);           // d4 = c3 ^ rol(c0, 1)
+  __ rax1(v25, __ T2D, v25, v27);           // d1 = c0 ^ rol(c2, 1)
+  __ rax1(v27, __ T2D, v27, v29);           // d3 = c2 ^ rol(c4, 1)
+
+  __ eor(v0, __ T16B, v0, v30);             // a0 = a0 ^ d0
+  __ xar(v29, __ T2D, v1,  v25, (64 - 1));  // a10' = rol((a1^d1), 1)
+  __ xar(v1,  __ T2D, v6,  v25, (64 - 44)); // a1 = rol(a6^d1), 44)
+  __ xar(v6,  __ T2D, v9,  v28, (64 - 20)); // a6 = rol((a9^d4), 20)
+  __ xar(v9,  __ T2D, v22, v26, (64 - 61)); // a9 = rol((a22^d2), 61)
+  __ xar(v22, __ T2D, v14, v28, (64 - 39)); // a22 = rol((a14^d4), 39)
+  __ xar(v14, __ T2D, v20, v30, (64 - 18)); // a14 = rol((a20^d0), 18)
+  __ xar(v31, __ T2D, v2,  v26, (64 - 62)); // a20' = rol((a2^d2), 62)
+  __ xar(v2,  __ T2D, v12, v26, (64 - 43)); // a2 = rol((a12^d2), 43)
+  __ xar(v12, __ T2D, v13, v27, (64 - 25)); // a12 = rol((a13^d3), 25)
+  __ xar(v13, __ T2D, v19, v28, (64 - 8));  // a13 = rol((a19^d4), 8)
+  __ xar(v19, __ T2D, v23, v27, (64 - 56)); // a19 = rol((a23^d3), 56)
+  __ xar(v23, __ T2D, v15, v30, (64 - 41)); // a23 = rol((a15^d0), 41)
+  __ xar(v15, __ T2D, v4,  v28, (64 - 27)); // a15 = rol((a4^d4), 27)
+  __ xar(v28, __ T2D, v24, v28, (64 - 14)); // a4' = rol((a24^d4), 14)
+  __ xar(v24, __ T2D, v21, v25, (64 - 2));  // a24 = rol((a21^d1), 2)
+  __ xar(v8,  __ T2D, v8,  v27, (64 - 55)); // a21' = rol((a8^d3), 55)
+  __ xar(v4,  __ T2D, v16, v25, (64 - 45)); // a8' = rol((a16^d1), 45)
+  __ xar(v16, __ T2D, v5,  v30, (64 - 36)); // a16 = rol((a5^d0), 36)
+  __ xar(v5,  __ T2D, v3,  v27, (64 - 28)); // a5 = rol((a3^d3), 28)
+  __ xar(v27, __ T2D, v18, v27, (64 - 21)); // a3' = rol((a18^d3), 21)
+  __ xar(v3,  __ T2D, v17, v26, (64 - 15)); // a18' = rol((a17^d2), 15)
+  __ xar(v25, __ T2D, v11, v25, (64 - 10)); // a17' = rol((a11^d1), 10)
+  __ xar(v26, __ T2D, v7,  v26, (64 - 6));  // a11' = rol((a7^d2), 6)
+  __ xar(v30, __ T2D, v10, v30, (64 - 3));  // a7' = rol((a10^d0), 3)
+
+  __ bcax(v20, __ T16B, v31, v22, v8);      // a20 = a20' ^ (~a21 & a22')
+  __ bcax(v21, __ T16B, v8,  v23, v22);     // a21 = a21' ^ (~a22 & a23)
+  __ bcax(v22, __ T16B, v22, v24, v23);     // a22 = a22 ^ (~a23 & a24)
+  __ bcax(v23, __ T16B, v23, v31, v24);     // a23 = a23 ^ (~a24 & a20')
+  __ bcax(v24, __ T16B, v24, v8,  v31);     // a24 = a24 ^ (~a20' & a21')
+
+  __ ld1r(v31, __ T2D, __ post(rscratch1, 8)); // rc = round_constants[i]
+
+  __ bcax(v17, __ T16B, v25, v19, v3);      // a17 = a17' ^ (~a18' & a19)
+  __ bcax(v18, __ T16B, v3,  v15, v19);     // a18 = a18' ^ (~a19 & a15')
+  __ bcax(v19, __ T16B, v19, v16, v15);     // a19 = a19 ^ (~a15 & a16)
+  __ bcax(v15, __ T16B, v15, v25, v16);     // a15 = a15 ^ (~a16 & a17')
+  __ bcax(v16, __ T16B, v16, v3,  v25);     // a16 = a16 ^ (~a17' & a18')
+
+  __ bcax(v10, __ T16B, v29, v12, v26);     // a10 = a10' ^ (~a11' & a12)
+  __ bcax(v11, __ T16B, v26, v13, v12);     // a11 = a11' ^ (~a12 & a13)
+  __ bcax(v12, __ T16B, v12, v14, v13);     // a12 = a12 ^ (~a13 & a14)
+  __ bcax(v13, __ T16B, v13, v29, v14);     // a13 = a13 ^ (~a14 & a10')
+  __ bcax(v14, __ T16B, v14, v26, v29);     // a14 = a14 ^ (~a10' & a11')
+
+  __ bcax(v7, __ T16B, v30, v9,  v4);       // a7 = a7' ^ (~a8' & a9)
+  __ bcax(v8, __ T16B, v4,  v5,  v9);       // a8 = a8' ^ (~a9 & a5)
+  __ bcax(v9, __ T16B, v9,  v6,  v5);       // a9 = a9 ^ (~a5 & a6)
+  __ bcax(v5, __ T16B, v5,  v30, v6);       // a5 = a5 ^ (~a6 & a7)
+  __ bcax(v6, __ T16B, v6,  v4,  v30);      // a6 = a6 ^ (~a7 & a8')
+
+  __ bcax(v3, __ T16B, v27, v0,  v28);      // a3 = a3' ^ (~a4' & a0)
+  __ bcax(v4, __ T16B, v28, v1,  v0);       // a4 = a4' ^ (~a0 & a1)
+  __ bcax(v0, __ T16B, v0,  v2,  v1);       // a0 = a0 ^ (~a1 & a2)
+  __ bcax(v1, __ T16B, v1,  v27, v2);       // a1 = a1 ^ (~a2 & a3)
+  __ bcax(v2, __ T16B, v2,  v28, v27);      // a2 = a2 ^ (~a3 & a4')
+
+  __ eor(v0, __ T16B, v0, v31);             // a0 = a0 ^ rc
+  }
+
   // Arguments:
   //
   // Inputs:
@@ -4167,7 +4256,7 @@ class StubGenerator: public StubCodeGenerator {
     __ cbzw(c_rarg5, rounds24_loop);
 
     __ tbnz(block_size, 5, shake128);
-    // block_size == 144, bit5 == 0, SHA3-244
+    // block_size == 144, bit5 == 0, SHA3-224
     __ ldrd(v28, __ post(buf, 8));
     __ eor(v17, __ T8B, v17, v28);
     __ b(rounds24_loop);
@@ -4196,82 +4285,7 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(rounds24_loop);
     __ subw(rscratch2, rscratch2, 1);
 
-    __ eor3(v29, __ T16B, v4, v9, v14);
-    __ eor3(v26, __ T16B, v1, v6, v11);
-    __ eor3(v28, __ T16B, v3, v8, v13);
-    __ eor3(v25, __ T16B, v0, v5, v10);
-    __ eor3(v27, __ T16B, v2, v7, v12);
-    __ eor3(v29, __ T16B, v29, v19, v24);
-    __ eor3(v26, __ T16B, v26, v16, v21);
-    __ eor3(v28, __ T16B, v28, v18, v23);
-    __ eor3(v25, __ T16B, v25, v15, v20);
-    __ eor3(v27, __ T16B, v27, v17, v22);
-
-    __ rax1(v30, __ T2D, v29, v26);
-    __ rax1(v26, __ T2D, v26, v28);
-    __ rax1(v28, __ T2D, v28, v25);
-    __ rax1(v25, __ T2D, v25, v27);
-    __ rax1(v27, __ T2D, v27, v29);
-
-    __ eor(v0, __ T16B, v0, v30);
-    __ xar(v29, __ T2D, v1,  v25, (64 - 1));
-    __ xar(v1,  __ T2D, v6,  v25, (64 - 44));
-    __ xar(v6,  __ T2D, v9,  v28, (64 - 20));
-    __ xar(v9,  __ T2D, v22, v26, (64 - 61));
-    __ xar(v22, __ T2D, v14, v28, (64 - 39));
-    __ xar(v14, __ T2D, v20, v30, (64 - 18));
-    __ xar(v31, __ T2D, v2,  v26, (64 - 62));
-    __ xar(v2,  __ T2D, v12, v26, (64 - 43));
-    __ xar(v12, __ T2D, v13, v27, (64 - 25));
-    __ xar(v13, __ T2D, v19, v28, (64 - 8));
-    __ xar(v19, __ T2D, v23, v27, (64 - 56));
-    __ xar(v23, __ T2D, v15, v30, (64 - 41));
-    __ xar(v15, __ T2D, v4,  v28, (64 - 27));
-    __ xar(v28, __ T2D, v24, v28, (64 - 14));
-    __ xar(v24, __ T2D, v21, v25, (64 - 2));
-    __ xar(v8,  __ T2D, v8,  v27, (64 - 55));
-    __ xar(v4,  __ T2D, v16, v25, (64 - 45));
-    __ xar(v16, __ T2D, v5,  v30, (64 - 36));
-    __ xar(v5,  __ T2D, v3,  v27, (64 - 28));
-    __ xar(v27, __ T2D, v18, v27, (64 - 21));
-    __ xar(v3,  __ T2D, v17, v26, (64 - 15));
-    __ xar(v25, __ T2D, v11, v25, (64 - 10));
-    __ xar(v26, __ T2D, v7,  v26, (64 - 6));
-    __ xar(v30, __ T2D, v10, v30, (64 - 3));
-
-    __ bcax(v20, __ T16B, v31, v22, v8);
-    __ bcax(v21, __ T16B, v8,  v23, v22);
-    __ bcax(v22, __ T16B, v22, v24, v23);
-    __ bcax(v23, __ T16B, v23, v31, v24);
-    __ bcax(v24, __ T16B, v24, v8,  v31);
-
-    __ ld1r(v31, __ T2D, __ post(rscratch1, 8));
-
-    __ bcax(v17, __ T16B, v25, v19, v3);
-    __ bcax(v18, __ T16B, v3,  v15, v19);
-    __ bcax(v19, __ T16B, v19, v16, v15);
-    __ bcax(v15, __ T16B, v15, v25, v16);
-    __ bcax(v16, __ T16B, v16, v3,  v25);
-
-    __ bcax(v10, __ T16B, v29, v12, v26);
-    __ bcax(v11, __ T16B, v26, v13, v12);
-    __ bcax(v12, __ T16B, v12, v14, v13);
-    __ bcax(v13, __ T16B, v13, v29, v14);
-    __ bcax(v14, __ T16B, v14, v26, v29);
-
-    __ bcax(v7, __ T16B, v30, v9,  v4);
-    __ bcax(v8, __ T16B, v4,  v5,  v9);
-    __ bcax(v9, __ T16B, v9,  v6,  v5);
-    __ bcax(v5, __ T16B, v5,  v30, v6);
-    __ bcax(v6, __ T16B, v6,  v4,  v30);
-
-    __ bcax(v3, __ T16B, v27, v0,  v28);
-    __ bcax(v4, __ T16B, v28, v1,  v0);
-    __ bcax(v0, __ T16B, v0,  v2,  v1);
-    __ bcax(v1, __ T16B, v1,  v27, v2);
-    __ bcax(v2, __ T16B, v2,  v28, v27);
-
-    __ eor(v0, __ T16B, v0, v31);
+    keccak_round(rscratch1);
 
     __ cbnzw(rscratch2, rounds24_loop);
 
@@ -4290,11 +4304,102 @@ class StubGenerator: public StubCodeGenerator {
     __ st1(v20, v21, v22, v23, __ T1D, __ post(state, 32));
     __ st1(v24, __ T1D, state);
 
+    // restore callee-saved registers
     __ ldpd(v14, v15, Address(sp, 48));
     __ ldpd(v12, v13, Address(sp, 32));
     __ ldpd(v10, v11, Address(sp, 16));
     __ ldpd(v8, v9, __ post(sp, 64));
 
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Inputs:
+  //   c_rarg0   - long[]  state0
+  //   c_rarg1   - long[]  state1
+  address generate_double_keccak() {
+    static const uint64_t round_consts[24] = {
+      0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
+      0x8000000080008000L, 0x000000000000808BL, 0x0000000080000001L,
+      0x8000000080008081L, 0x8000000000008009L, 0x000000000000008AL,
+      0x0000000000000088L, 0x0000000080008009L, 0x000000008000000AL,
+      0x000000008000808BL, 0x800000000000008BL, 0x8000000000008089L,
+      0x8000000000008003L, 0x8000000000008002L, 0x8000000000000080L,
+      0x000000000000800AL, 0x800000008000000AL, 0x8000000080008081L,
+      0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
+    };
+
+    // Implements the double_keccak() method of the
+    // sun.secyrity.provider.SHA3Parallel class
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "double_keccak");
+    address start = __ pc();
+    __ enter();
+
+    Register state0        = c_rarg0;
+    Register state1        = c_rarg1;
+
+    Label rounds24_loop;
+
+    // save callee-saved registers
+    __ stpd(v8, v9, __ pre(sp, -64));
+    __ stpd(v10, v11, Address(sp, 16));
+    __ stpd(v12, v13, Address(sp, 32));
+    __ stpd(v14, v15, Address(sp, 48));
+
+    // load states
+    __ add(rscratch1, state0, 32);
+    __ ld4(v0, v1, v2,  v3, __ D, 0,  state0);
+    __ ld4(v4, v5, v6,  v7, __ D, 0, __ post(rscratch1, 32));
+    __ ld4(v8, v9, v10, v11, __ D, 0, __ post(rscratch1, 32));
+    __ ld4(v12, v13, v14, v15, __ D, 0, __ post(rscratch1, 32));
+    __ ld4(v16, v17, v18, v19, __ D, 0, __ post(rscratch1, 32));
+    __ ld4(v20, v21, v22, v23, __ D, 0, __ post(rscratch1, 32));
+    __ ld1(v24, __ D, 0, rscratch1);
+    __ add(rscratch1, state1, 32);
+    __ ld4(v0, v1, v2,  v3,  __ D, 1, state1);
+    __ ld4(v4, v5, v6,  v7, __ D, 1, __ post(rscratch1, 32));
+    __ ld4(v8, v9, v10, v11, __ D, 1, __ post(rscratch1, 32));
+    __ ld4(v12, v13, v14, v15, __ D, 1, __ post(rscratch1, 32));
+    __ ld4(v16, v17, v18, v19, __ D, 1, __ post(rscratch1, 32));
+    __ ld4(v20, v21, v22, v23, __ D, 1, __ post(rscratch1, 32));
+    __ ld1(v24, __ D, 1, rscratch1);
+
+    // 24 keccak rounds
+    __ movw(rscratch2, 24);
+
+    // load round_constants base
+    __ lea(rscratch1, ExternalAddress((address) round_consts));
+
+    __ BIND(rounds24_loop);
+    __ subw(rscratch2, rscratch2, 1);
+    keccak_round(rscratch1);
+    __ cbnzw(rscratch2, rounds24_loop);
+
+    __ st4(v0, v1, v2,  v3,  __ D, 0, __ post(state0, 32));
+    __ st4(v4, v5, v6,  v7,  __ D, 0, __ post(state0, 32));
+    __ st4(v8, v9, v10, v11, __ D, 0, __ post(state0, 32));
+    __ st4(v12, v13, v14, v15, __ D, 0, __ post(state0, 32));
+    __ st4(v16, v17, v18, v19, __ D, 0, __ post(state0, 32));
+    __ st4(v20, v21, v22, v23, __ D, 0, __ post(state0, 32));
+    __ st1(v24, __ D, 0, state0);
+    __ st4(v0, v1, v2,  v3,  __ D, 1, __ post(state1, 32));
+    __ st4(v4, v5, v6,  v7, __ D, 1, __ post(state1, 32));
+    __ st4(v8, v9, v10, v11, __ D, 1, __ post(state1, 32));
+    __ st4(v12, v13, v14, v15, __ D, 1, __ post(state1, 32));
+    __ st4(v16, v17, v18, v19, __ D, 1, __ post(state1, 32));
+    __ st4(v20, v21, v22, v23, __ D, 1, __ post(state1, 32));
+    __ st1(v24, __ D, 1, state1);
+
+    // restore callee-saved vector registers
+    __ ldpd(v14, v15, Address(sp, 48));
+    __ ldpd(v12, v13, Address(sp, 32));
+    __ ldpd(v10, v11, Address(sp, 16));
+    __ ldpd(v8, v9, __ post(sp, 64));
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
     __ ret(lr);
 
     return start;
@@ -4536,6 +4641,968 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(lr);
 
     return start;
+  }
+
+  // Helpers to schedule parallel operation bundles across vector
+  // register sequences of size 2, 4 or 8.
+
+  // Implement various primitive computations across vector sequences
+
+  template<int N>
+  void vs_addv(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
+               const VSeq<N>& v1, const VSeq<N>& v2) {
+    for (int i = 0; i < N; i++) {
+      __ addv(v[i], T, v1[i], v2[i]);
+    }
+  }
+
+  template<int N>
+  void vs_subv(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
+               const VSeq<N>& v1, const VSeq<N>& v2) {
+    for (int i = 0; i < N; i++) {
+      __ subv(v[i], T, v1[i], v2[i]);
+    }
+  }
+
+  template<int N>
+  void vs_mulv(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
+               const VSeq<N>& v1, const VSeq<N>& v2) {
+    for (int i = 0; i < N; i++) {
+      __ mulv(v[i], T, v1[i], v2[i]);
+    }
+  }
+
+  template<int N>
+  void vs_negr(const VSeq<N>& v, Assembler::SIMD_Arrangement T, const VSeq<N>& v1) {
+    for (int i = 0; i < N; i++) {
+      __ negr(v[i], T, v1[i]);
+    }
+  }
+
+  template<int N>
+  void vs_sshr(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
+               const VSeq<N>& v1, int shift) {
+    for (int i = 0; i < N; i++) {
+      __ sshr(v[i], T, v1[i], shift);
+    }
+  }
+
+  template<int N>
+  void vs_andr(const VSeq<N>& v, const VSeq<N>& v1, const VSeq<N>& v2) {
+    for (int i = 0; i < N; i++) {
+      __ andr(v[i], __ T16B, v1[i], v2[i]);
+    }
+  }
+
+  template<int N>
+  void vs_orr(const VSeq<N>& v, const VSeq<N>& v1, const VSeq<N>& v2) {
+    for (int i = 0; i < N; i++) {
+      __ orr(v[i], __ T16B, v1[i], v2[i]);
+    }
+  }
+
+  template<int N>
+    void vs_notr(const VSeq<N>& v, const VSeq<N>& v1) {
+    for (int i = 0; i < N; i++) {
+      __ notr(v[i], __ T16B, v1[i]);
+    }
+  }
+
+  // load N/2 successive pairs of quadword values from memory in order
+  // into N successive vector registers of the sequence via the
+  // address supplied in base.
+  template<int N>
+  void vs_ldpq(const VSeq<N>& v, Register base) {
+    for (int i = 0; i < N; i += 2) {
+      __ ldpq(v[i], v[i+1], Address(base, 32 * i));
+    }
+  }
+
+  // load N/2 successive pairs of quadword values from memory in order
+  // into N vector registers of the sequence via the address supplied
+  // in base using post-increment addressing
+  template<int N>
+  void vs_ldpq_post(const VSeq<N>& v, Register base) {
+    for (int i = 0; i < N; i += 2) {
+      __ ldpq(v[i], v[i+1], __ post(base, 32));
+    }
+  }
+
+  // store N successive vector registers of the sequence into N/2
+  // successive pairs of quadword memory locations via the address
+  // supplied in base using post-increment addressing
+  template<int N>
+  void vs_stpq_post(const VSeq<N>& v, Register base) {
+    for (int i = 0; i < N; i += 2) {
+      __ stpq(v[i], v[i+1], __ post(base, 32));
+    }
+  }
+
+  // load N/2 pairs of quadword values from memory into N vector
+  // registers via the address supplied in base with each pair indexed
+  // using the the start offset plus the corresponding entry in the
+  // offsets array
+  template<int N>
+  void vs_ldpq_indexed(const VSeq<N>& v, Register base, int start, int (&offsets)[N/2]) {
+    for (int i = 0; i < N/2; i++) {
+      __ ldpq(v[2*i], v[2*i+1], Address(base, start + offsets[i]));
+    }
+  }
+
+  // store N vector registers into N/2 pairs of quadword memory
+  // locations via the address supplied in base with each pair indexed
+  // using the the start offset plus the corresponding entry in the
+  // offsets array
+  template<int N>
+  void vs_stpq_indexed(const VSeq<N>& v, Register base, int start, int offsets[N/2]) {
+    for (int i = 0; i < N/2; i++) {
+      __ stpq(v[2*i], v[2*i+1], Address(base, start + offsets[i]));
+    }
+  }
+
+  // load N single quadword values from memory into N vector registers
+  // via the address supplied in base with each value indexed using
+  // the the start offset plus the corresponding entry in the offsets
+  // array
+  template<int N>
+  void vs_ldr_indexed(const VSeq<N>& v, Assembler::SIMD_RegVariant T, Register base,
+                      int start, int (&offsets)[N]) {
+    for (int i = 0; i < N; i++) {
+      __ ldr(v[i], T, Address(base, start + offsets[i]));
+    }
+  }
+
+  // store N vector registers into N single quadword memory locations
+  // via the address supplied in base with each value indexed using
+  // the the start offset plus the corresponding entry in the offsets
+  // array
+  template<int N>
+  void vs_str_indexed(const VSeq<N>& v, Assembler::SIMD_RegVariant T, Register base,
+                      int start, int (&offsets)[N]) {
+    for (int i = 0; i < N; i++) {
+      __ str(v[i], T, Address(base, start + offsets[i]));
+    }
+  }
+
+  // load N/2 pairs of quadword values from memory de-interleaved into
+  // N vector registers 2 at a time via the address supplied in base
+  // with each pair indexed using the the start offset plus the
+  // corresponding entry in the offsets array
+  template<int N>
+  void vs_ld2_indexed(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base,
+                      Register tmp, int start, int (&offsets)[N/2]) {
+    for (int i = 0; i < N/2; i++) {
+      __ add(tmp, base, start + offsets[i]);
+      __ ld2(v[2*i], v[2*i+1], T, tmp);
+    }
+  }
+
+  // store N vector registers 2 at a time interleaved into N/2 pairs
+  // of quadword memory locations via the address supplied in base
+  // with each pair indexed using the the start offset plus the
+  // corresponding entry in the offsets array
+  template<int N>
+  void vs_st2_indexed(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base,
+                      Register tmp, int start, int (&offsets)[N/2]) {
+    for (int i = 0; i < N/2; i++) {
+      __ add(tmp, base, start + offsets[i]);
+      __ st2(v[2*i], v[2*i+1], T, tmp);
+    }
+  }
+
+  // Helper routines for various flavours of dilithium montgomery
+  // multiply
+
+  // Perform 16 32-bit Montgomery multiplications in parallel
+  // See the montMul() method of the sun.security.provider.ML_DSA class.
+  //
+  // Computes 4x4S results
+  //    a = b * c * 2^-32 mod MONT_Q
+  // Inputs:  vb, vc - 4x4S vector register sequences
+  //          vq - 2x4S constants <MONT_Q, MONT_Q_INV_MOD_R>
+  // Temps:   vtmp - 4x4S vector sequence trashed after call
+  // Outputs: va - 4x4S vector register sequences
+  // vb, vc, vtmp and vq must all be disjoint
+  // va must be disjoint from all other inputs/temps or must equal vc
+  // n.b. MONT_R_BITS is 32, so the right shift by it is implicit.
+  void dilithium_montmul16(const VSeq<4>& va, const VSeq<4>& vb, const VSeq<4>& vc,
+                    const VSeq<4>& vtmp, const VSeq<2>& vq) {
+    assert(vs_disjoint(vb, vc), "vb and vc overlap");
+    assert(vs_disjoint(vb, vq), "vb and vq overlap");
+    assert(vs_disjoint(vb, vtmp), "vb and vtmp overlap");
+
+    assert(vs_disjoint(vc, vq), "vc and vq overlap");
+    assert(vs_disjoint(vc, vtmp), "vc and vtmp overlap");
+
+    assert(vs_disjoint(vq, vtmp), "vq and vtmp overlap");
+
+    assert(vs_disjoint(va, vc) || vs_same(va, vc), "va and vc neither disjoint nor equal");
+    assert(vs_disjoint(va, vb), "va and vb overlap");
+    assert(vs_disjoint(va, vq), "va and vq overlap");
+    assert(vs_disjoint(va, vtmp), "va and vtmp overlap");
+
+    // schedule 4 streams of instructions across the vector sequences
+    for (int i = 0; i < 4; i++) {
+      __ sqdmulh(vtmp[i], __ T4S, vb[i], vc[i]); // aHigh = hi32(2 * b * c)
+      __ mulv(va[i], __ T4S, vb[i], vc[i]);    // aLow = lo32(b * c)
+    }
+
+    for (int i = 0; i < 4; i++) {
+      __ mulv(va[i], __ T4S, va[i], vq[0]);     // m = aLow * qinv
+    }
+
+    for (int i = 0; i < 4; i++) {
+      __ sqdmulh(va[i], __ T4S, va[i], vq[1]);  // n = hi32(2 * m * q)
+    }
+
+    for (int i = 0; i < 4; i++) {
+      __ shsubv(va[i], __ T4S, vtmp[i], va[i]);   // a = (aHigh - n) / 2
+    }
+  }
+
+  // Perform 2x16 32-bit Montgomery multiplications in parallel
+  // See the montMul() method of the sun.security.provider.ML_DSA class.
+  //
+  // Computes 8x4S results
+  //    a = b * c * 2^-32 mod MONT_Q
+  // Inputs:  vb, vc - 8x4S vector register sequences
+  //          vq - 2x4S constants <MONT_Q, MONT_Q_INV_MOD_R>
+  // Temps:   vtmp - 4x4S vector sequence trashed after call
+  // Outputs: va - 8x4S vector register sequences
+  // vb, vc, vtmp and vq must all be disjoint
+  // va must be disjoint from all other inputs/temps or must equal vc
+  // n.b. MONT_R_BITS is 32, so the right shift by it is implicit.
+  void vs_montmul32(const VSeq<8>& va, const VSeq<8>& vb, const VSeq<8>& vc,
+                    const VSeq<4>& vtmp, const VSeq<2>& vq) {
+    // vb, vc, vtmp and vq must be disjoint. va must either be
+    // disjoint from all other registers or equal vc
+
+    assert(vs_disjoint(vb, vc), "vb and vc overlap");
+    assert(vs_disjoint(vb, vq), "vb and vq overlap");
+    assert(vs_disjoint(vb, vtmp), "vb and vtmp overlap");
+
+    assert(vs_disjoint(vc, vq), "vc and vq overlap");
+    assert(vs_disjoint(vc, vtmp), "vc and vtmp overlap");
+
+    assert(vs_disjoint(vq, vtmp), "vq and vtmp overlap");
+
+    assert(vs_disjoint(va, vc) || vs_same(va, vc), "va and vc neither disjoint nor equal");
+    assert(vs_disjoint(va, vb), "va and vb overlap");
+    assert(vs_disjoint(va, vq), "va and vq overlap");
+    assert(vs_disjoint(va, vtmp), "va and vtmp overlap");
+
+    // we need to multiply the front and back halves of each sequence
+    // 4x4S at a time because
+    //
+    // 1) we are currently only able to get 4-way instruction
+    // parallelism at best
+    //
+    // 2) we need registers for the constants in vq and temporary
+    // scratch registers to hold intermediate results so vtmp can only
+    // be a VSeq<4> which means we only have 4 scratch slots
+
+    dilithium_montmul16(vs_front(va), vs_front(vb), vs_front(vc), vtmp, vq);
+    dilithium_montmul16(vs_back(va), vs_back(vb), vs_back(vc), vtmp, vq);
+  }
+
+  // perform combined montmul then add/sub on 4x4S vectors
+
+  void dilithium_montmul16_sub_add(const VSeq<4>& va0, const VSeq<4>& va1, const VSeq<4>& vc,
+                                   const VSeq<4>& vtmp, const VSeq<2>& vq) {
+    // compute a = montmul(a1, c)
+    dilithium_montmul16(vc, va1, vc, vtmp, vq);
+    // ouptut a1 = a0 - a
+    vs_subv(va1, __ T4S, va0, vc);
+    //    and a0 = a0 + a
+    vs_addv(va0, __ T4S, va0, vc);
+  }
+
+  // perform combined add/sub then montul on 4x4S vectors
+
+  void dilithium_sub_add_montmul16(const VSeq<4>& va0, const VSeq<4>& va1, const VSeq<4>& vb,
+                                   const VSeq<4>& vtmp1, const VSeq<4>& vtmp2, const VSeq<2>& vq) {
+    // compute c = a0 - a1
+    vs_subv(vtmp1, __ T4S, va0, va1);
+    // output a0 = a0 + a1
+    vs_addv(va0, __ T4S, va0, va1);
+    // output a1 = b montmul c
+    dilithium_montmul16(va1, vtmp1, vb, vtmp2, vq);
+  }
+
+  // At these levels, the indices that correspond to the 'j's (and 'j+l's)
+  // in the Java implementation come in sequences of at least 8, so we
+  // can use ldpq to collect the corresponding data into pairs of vector
+  // registers.
+  // We collect the coefficients corresponding to the 'j+l' indexes into
+  // the vector registers v0-v7, the zetas into the vector registers v16-v23
+  // then we do the (Montgomery) multiplications by the zetas in parallel
+  // into v16-v23, load the coeffs corresponding to the 'j' indexes into
+  // v0-v7, then do the additions into v24-v31 and the subtractions into
+  // v0-v7 and finally save the results back to the coeffs array.
+  void dilithiumNttLevel0_4(const Register dilithiumConsts,
+    const Register coeffs, const Register zetas) {
+    int c1 = 0;
+    int c2 = 512;
+    int startIncr;
+    // don't use callee save registers v8 - v15
+    VSeq<8> vs1(0), vs2(16), vs3(24);  // 3 sets of 8x4s inputs/outputs
+    VSeq<4> vtmp = vs_front(vs3);         // n.b. tmp registers overlap vs3
+    VSeq<2> vq(30);                    // n.b. constants overlap vs3
+    int offsets[4] = { 0, 32, 64, 96 };
+
+    for (int level = 0; level < 5; level++) {
+      int c1Start = c1;
+      int c2Start = c2;
+      if (level == 3) {
+        offsets[1] = 32;
+        offsets[2] = 128;
+        offsets[3] = 160;
+      } else if (level == 4) {
+        offsets[1] = 64;
+        offsets[2] = 128;
+        offsets[3] = 192;
+      }
+
+      // for levels 1 - 4 we simply load 2 x 4 adjacent values at a
+      // time at 4 different offsets and multiply them in order by the
+      // next set of input values. So we employ indexed load and store
+      // pair instructions with arrangement 4S
+      for (int i = 0; i < 4; i++) {
+        // reload q and qinv
+        vs_ldpq(vq, dilithiumConsts); // qInv, q
+        // load 8x4S coefficients via second start pos == c2
+        vs_ldpq_indexed(vs1, coeffs, c2Start, offsets);
+        // load next 8x4S inputs == b
+        vs_ldpq_post(vs2, zetas);
+        // compute a == c2 * b mod MONT_Q
+        vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+        // load 8x4s coefficients via first start pos == c1
+        vs_ldpq_indexed(vs1, coeffs, c1Start, offsets);
+        // compute a1 =  c1 + a
+        vs_addv(vs3, __ T4S, vs1, vs2);
+        // compute a2 =  c1 - a
+        vs_subv(vs1, __ T4S, vs1, vs2);
+        // output a1 and a2
+        vs_stpq_indexed(vs3, coeffs, c1Start, offsets);
+        vs_stpq_indexed(vs1, coeffs, c2Start, offsets);
+
+        int k = 4 * level + i;
+
+        if (k > 7) {
+          startIncr = 256;
+        } else if (k == 5) {
+          startIncr = 384;
+        } else {
+          startIncr = 128;
+        }
+
+        c1Start += startIncr;
+        c2Start += startIncr;
+      }
+
+      c2 /= 2;
+    }
+  }
+
+  // Dilithium NTT function except for the final "normalization" to |coeff| < Q.
+  // Implements the method
+  // static int implDilithiumAlmostNtt(int[] coeffs, int zetas[]) {}
+  // of the Java class sun.security.provider
+  //
+  // coeffs (int[256]) = c_rarg0
+  // zetas (int[256]) = c_rarg1
+  address generate_dilithiumAlmostNtt() {
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::dilithiumAlmostNtt_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register coeffs = c_rarg0;
+    const Register zetas = c_rarg1;
+
+    const Register tmpAddr = r9;
+    const Register dilithiumConsts = r10;
+    const Register result = r11;
+    // don't use callee save registers v8 - v15
+    VSeq<8> vs1(0), vs2(16), vs3(24);  // 3 sets of 8x4s inputs/outputs
+    VSeq<4> vtmp = vs_front(vs3);         // n.b. tmp registers overlap vs3
+    VSeq<2> vq(30);                    // n.b. constants overlap vs3
+    int offsets[4] = {0, 32, 64, 96};
+    int offsets1[8] = {16, 48, 80, 112, 144, 176, 208, 240 };
+    int offsets2[8] = { 0, 32, 64, 96, 128, 160, 192, 224 };
+    __ add(result, coeffs, 0);
+    __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
+
+    // Each level represents one iteration of the outer for loop of the Java version
+
+    // level 0-4
+    dilithiumNttLevel0_4(dilithiumConsts, coeffs, zetas);
+
+    // level 5
+
+    // at level 5 the coefficients we need to combine with the zetas
+    // are grouped in memory in blocks of size 4. So, for both sets of
+    // coefficients we load 4 adjacent values at 8 different offsets
+    // using an indexed ldr with register variant Q and multiply them
+    // in sequence order by the next set of inputs. Likewise we store
+    // the resuls using an indexed str with register variant Q.
+    for (int i = 0; i < 1024; i += 256) {
+      // reload constants q, qinv each iteration as they get clobbered later
+      vs_ldpq(vq, dilithiumConsts); // qInv, q
+      // load 32 (8x4S) coefficients via first offsets = c1
+      vs_ldr_indexed(vs1, __ Q, coeffs, i, offsets1);
+      // load next 32 (8x4S) inputs = b
+      vs_ldpq_post(vs2, zetas);
+      // a = b montul c1
+      vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+      // load 32 (8x4S) coefficients via second offsets = c2
+      vs_ldr_indexed(vs1, __ Q, coeffs, i, offsets2);
+      // add/sub with result of multiply
+      vs_addv(vs3, __ T4S, vs1, vs2);     // a1 = a - c2
+      vs_subv(vs1, __ T4S, vs1, vs2);     // a0 = a + c1
+      // write back new coefficients using same offsets
+      vs_str_indexed(vs3, __ Q, coeffs, i, offsets2);
+      vs_str_indexed(vs1, __ Q, coeffs, i, offsets1);
+    }
+
+    // level 6
+    // at level 6 the coefficients we need to combine with the zetas
+    // are grouped in memory in pairs, the first two being montmul
+    // inputs and the second add/sub inputs. We can still implement
+    // the montmul+sub+add using 4-way parallelism but only if we
+    // combine the coefficients with the zetas 16 at a time. We load 8
+    // adjacent values at 4 different offsets using an ld2 load with
+    // arrangement 2D. That interleaves the lower and upper halves of
+    // each pair of quadwords into successive vector registers. We
+    // then need to montmul the 4 even elements of the coefficients
+    // register sequence by the zetas in order and then add/sub the 4
+    // odd elements of the coefficients register sequence. We use an
+    // equivalent st2 operation to store the results back into memory
+    // de-interleaved.
+    for (int i = 0; i < 1024; i += 128) {
+      // reload constants q, qinv each iteration as they get clobbered later
+      vs_ldpq(vq, dilithiumConsts); // qInv, q
+      // load interleaved 16 (4x2D) coefficients via offsets
+      vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, i, offsets);
+      // load next 16 (4x4S) inputs
+      vs_ldpq_post(vs_front(vs2), zetas);
+      // mont multiply odd elements of vs1 by vs2 and add/sub into odds/evens
+      dilithium_montmul16_sub_add(vs_even(vs1), vs_odd(vs1),
+                                  vs_front(vs2), vtmp, vq);
+      // store interleaved 16 (4x2D) coefficients via offsets
+      vs_st2_indexed(vs1, __ T2D, coeffs, tmpAddr, i, offsets);
+    }
+
+    // level 7
+    // at level 7 the coefficients we need to combine with the zetas
+    // occur singly with montmul inputs alterating with add/sub
+    // inputs. Once again we can use 4-way parallelism to combine 16
+    // zetas at a time. However, we have to load 8 adjacent values at
+    // 4 different offsets using an ld2 load with arrangement 4S. That
+    // interleaves the the odd words of each pair into one
+    // coefficients vector register and the even words of the pair
+    // into the next register. We then need to montmul the 4 even
+    // elements of the coefficients register sequence by the zetas in
+    // order and then add/sub the 4 odd elements of the coefficients
+    // register sequence. We use an equivalent st2 operation to store
+    // the results back into memory de-interleaved.
+
+    for (int i = 0; i < 1024; i += 128) {
+      // reload constants q, qinv each iteration as they get clobbered later
+      vs_ldpq(vq, dilithiumConsts); // qInv, q
+      // load interleaved 16 (4x4S) coefficients via offsets
+      vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, i, offsets);
+      // load next 16 (4x4S) inputs
+      vs_ldpq_post(vs_front(vs2), zetas);
+      // mont multiply odd elements of vs1 by vs2 and add/sub into odds/evens
+      dilithium_montmul16_sub_add(vs_even(vs1), vs_odd(vs1),
+                                  vs_front(vs2), vtmp, vq);
+      // store interleaved 16 (4x4S) coefficients via offsets
+      vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, i, offsets);
+    }
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  // At these levels, the indices that correspond to the 'j's (and 'j+l's)
+  // in the Java implementation come in sequences of at least 8, so we
+  // can use ldpq to collect the corresponding data into pairs of vector
+  // registers
+  // We collect the coefficients that correspond to the 'j's into vs1
+  // the coefficiets that correspond to the 'j+l's into vs2 then
+  // do the additions into vs3 and the subtractions into vs1 then
+  // save the result of the additions, load the zetas into vs2
+  // do the (Montgomery) multiplications by zeta in parallel into vs2
+  // finally save the results back to the coeffs array
+  void dilithiumInverseNttLevel3_7(const Register dilithiumConsts,
+    const Register coeffs, const Register zetas) {
+    int c1 = 0;
+    int c2 = 32;
+    int startIncr;
+    int offsets[4];
+    VSeq<8> vs1(0), vs2(16), vs3(24);  // 3 sets of 8x4s inputs/outputs
+    VSeq<4> vtmp = vs_front(vs3);      // n.b. tmp registers overlap vs3
+    VSeq<2> vq(30);                    // n.b. constants overlap vs3
+
+    offsets[0] = 0;
+
+    for (int level = 3; level < 8; level++) {
+      int c1Start = c1;
+      int c2Start = c2;
+      if (level == 3) {
+        offsets[1] = 64;
+        offsets[2] = 128;
+        offsets[3] = 192;
+      } else if (level == 4) {
+        offsets[1] = 32;
+        offsets[2] = 128;
+        offsets[3] = 160;
+      } else {
+        offsets[1] = 32;
+        offsets[2] = 64;
+        offsets[3] = 96;
+      }
+
+      // for levels 3 - 7 we simply load 2 x 4 adjacent values at a
+      // time at 4 different offsets and multiply them in order by the
+      // next set of input values. So we employ indexed load and store
+      // pair instructions with arrangement 4S
+      for (int i = 0; i < 4; i++) {
+        // load v1 32 (8x4S) coefficients relative to first start index
+        vs_ldpq_indexed(vs1, coeffs, c1Start, offsets);
+        // load v2 32 (8x4S) coefficients relative to second start index
+        vs_ldpq_indexed(vs2, coeffs, c2Start, offsets);
+        // a0 = v1 + v2 -- n.b. clobbers vqs
+        vs_addv(vs3, __ T4S, vs1, vs2);
+        // a1 = v1 - v2
+        vs_subv(vs1, __ T4S, vs1, vs2);
+        // save a1 relative to first start index
+        vs_stpq_indexed(vs3, coeffs, c1Start, offsets);
+        // load constants q, qinv each iteration as they get clobbered above
+        vs_ldpq(vq, dilithiumConsts); // qInv, q
+        // load b next 32 (8x4S) inputs
+        vs_ldpq_post(vs2, zetas);
+        // a = a1 montmul b
+        vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+        // save a relative to second start index
+        vs_stpq_indexed(vs2, coeffs, c2Start, offsets);
+
+        int k = 4 * level + i;
+
+        if (k < 24) {
+          startIncr = 256;
+        } else if (k == 25) {
+          startIncr = 384;
+        } else {
+          startIncr = 128;
+        }
+
+        c1Start += startIncr;
+        c2Start += startIncr;
+      }
+
+      c2 *= 2;
+    }
+  }
+
+  // Dilithium Inverse NTT function except the final mod Q division by 2^256.
+  // Implements the method
+  // static int implDilithiumAlmostInverseNtt(int[] coeffs, int[] zetas) {} of
+  // the sun.security.provider.ML_DSA class.
+  //
+  // coeffs (int[256]) = c_rarg0
+  // zetas (int[256]) = c_rarg1
+  address generate_dilithiumAlmostInverseNtt() {
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::dilithiumAlmostInverseNtt_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register coeffs = c_rarg0;
+    const Register zetas = c_rarg1;
+
+    const Register tmpAddr = r9;
+    const Register dilithiumConsts = r10;
+    const Register result = r11;
+    VSeq<8> vs1(0), vs2(16), vs3(24);  // 3 sets of 8x4s inputs/outputs
+    VSeq<4> vtmp = vs_front(vs3);     // n.b. tmp registers overlap vs3
+    VSeq<2> vq(30);                    // n.b. constants overlap vs3
+    int offsets[4] = { 0, 32, 64, 96 };
+    int offsets1[8] = { 0, 32, 64, 96, 128, 160, 192, 224 };
+    int offsets2[8] = { 16, 48, 80, 112, 144, 176, 208, 240 };
+
+    __ add(result, coeffs, 0);
+    __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
+
+    // Each level represents one iteration of the outer for loop of the Java version
+    // level0
+
+    // level 0
+    // At level 0 we need to interleave adjacent quartets of
+    // coefficients before we multiply and add/sub by the next 16
+    // zetas just as we did for level 7 in the multiply code. So we
+    // load and store the values using an ld2/st2 with arrangement 4S
+    for (int i = 0; i < 1024; i += 128) {
+      // load constants q, qinv
+      // n.b. this can be moved out of the loop as they do not get
+      // clobbered by first two loops
+      vs_ldpq(vq, dilithiumConsts); // qInv, q
+      // a0/a1 load interleaved 32 (8x4S) coefficients
+      vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, i, offsets);
+      // b load next 32 (8x4S) inputs
+      vs_ldpq_post(vs_front(vs2), zetas);
+      // compute in parallel (a0, a1) = (a0 + a1, (a0 - a1) montmul b)
+      // n.b. second half of vs2 provides temporary register storage
+      dilithium_sub_add_montmul16(vs_even(vs1), vs_odd(vs1),
+                                  vs_front(vs2), vs_back(vs2), vtmp, vq);
+      // a0/a1 store interleaved 32 (8x4S) coefficients
+      vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, i, offsets);
+    }
+
+    // level 1
+    // At level 1 we need to interleave pairs of adjacent pairs of
+    // coefficients before we multiply by the next 16 zetas just as we
+    // did for level 6 in the multiply code. So we load and store the
+    // values an ld2/st2 with arrangement 2D
+    for (int i = 0; i < 1024; i += 128) {
+      // a0/a1 load interleaved 32 (8x2D) coefficients
+      vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, i, offsets);
+      // b load next 16 (4x4S) inputs
+      vs_ldpq_post(vs_front(vs2), zetas);
+      // compute in parallel (a0, a1) = (a0 + a1, (a0 - a1) montmul b)
+      // n.b. second half of vs2 provides temporary register storage
+      dilithium_sub_add_montmul16(vs_even(vs1), vs_odd(vs1),
+                                  vs_front(vs2), vs_back(vs2), vtmp, vq);
+      // a0/a1 store interleaved 32 (8x2D) coefficients
+      vs_st2_indexed(vs1, __ T2D, coeffs, tmpAddr, i, offsets);
+    }
+
+    // level 2
+    // At level 2 coefficients come in blocks of 4. So, we load 4
+    // adjacent coefficients at 8 distinct offsets for both the first
+    // and second coefficient sequences, using an ldr with register
+    // variant Q then combine them with next set of 32 zetas. Likewise
+    // we store the results using an str with register variant Q.
+    for (int i = 0; i < 1024; i += 256) {
+      // c0 load 32 (8x4S) coefficients via first offsets
+      vs_ldr_indexed(vs1, __ Q, coeffs, i, offsets1);
+      // c1 load 32 (8x4S) coefficients via second offsets
+      vs_ldr_indexed(vs2, __ Q,coeffs, i, offsets2);
+      // a0 = c0 + c1  n.b. clobbers vq which overlaps vs3
+      vs_addv(vs3, __ T4S, vs1, vs2);
+      // c = c0 - c1
+      vs_subv(vs1, __ T4S, vs1, vs2);
+      // store a0 32 (8x4S) coefficients via first offsets
+      vs_str_indexed(vs3, __ Q, coeffs, i, offsets1);
+      // b load 32 (8x4S) next inputs
+      vs_ldpq_post(vs2, zetas);
+      // reload constants q, qinv -- they were clobbered earlier
+      vs_ldpq(vq, dilithiumConsts); // qInv, q
+      // compute a1 = b montmul c
+      vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+      // store a1 32 (8x4S) coefficients via second offsets
+      vs_str_indexed(vs2, __ Q, coeffs, i, offsets2);
+    }
+
+    // level 3-7
+    dilithiumInverseNttLevel3_7(dilithiumConsts, coeffs, zetas);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+
+  }
+
+  // Dilithium multiply polynomials in the NTT domain.
+  // Straightforward implementation of the method
+  // static int implDilithiumNttMult(
+  //              int[] result, int[] ntta, int[] nttb {} of
+  // the sun.security.provider.ML_DSA class.
+  //
+  // result (int[256]) = c_rarg0
+  // poly1 (int[256]) = c_rarg1
+  // poly2 (int[256]) = c_rarg2
+  address generate_dilithiumNttMult() {
+
+        __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::dilithiumNttMult_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    Label L_loop;
+
+    const Register result = c_rarg0;
+    const Register poly1 = c_rarg1;
+    const Register poly2 = c_rarg2;
+
+    const Register dilithiumConsts = r10;
+    const Register len = r11;
+
+    VSeq<8> vs1(0), vs2(16), vs3(24);  // 3 sets of 8x4s inputs/outputs
+    VSeq<4> vtmp = vs_front(vs3);         // n.b. tmp registers overlap vs3
+    VSeq<2> vq(30);                    // n.b. constants overlap vs3
+    VSeq<8> vrsquare(29, 0);           // for montmul by constant RSQUARE
+
+    __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
+
+    // load constants q, qinv
+    vs_ldpq(vq, dilithiumConsts); // qInv, q
+    // load constant rSquare into v29
+    __ ldr(v29, __ Q, Address(dilithiumConsts, 48));  // rSquare
+
+    __ mov(len, zr);
+    __ add(len, len, 1024);
+
+    __ BIND(L_loop);
+
+    // b load 32 (8x4S) next inputs from poly1
+    vs_ldpq_post(vs1, poly1);
+    // c load 32 (8x4S) next inputs from poly2
+    vs_ldpq_post(vs2, poly2);
+    // compute a = b montmul c
+    vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+    // compute a = rsquare montmul a
+    vs_montmul32(vs2, vrsquare, vs2, vtmp, vq);
+    // save a 32 (8x4S) results
+    vs_stpq_post(vs2, result);
+
+    __ sub(len, len, 128);
+    __ cmp(len, (u1)128);
+    __ br(Assembler::GE, L_loop);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+
+  }
+
+  // Dilithium Motgomery multiply an array by a constant.
+  // A straightforward implementation of the method
+  // static int implDilithiumMontMulByConstant(int[] coeffs, int constant) {}
+  // of the sun.security.provider.MLDSA class
+  //
+  // coeffs (int[256]) = c_rarg0
+  // constant (int) = c_rarg1
+  address generate_dilithiumMontMulByConstant() {
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::dilithiumMontMulByConstant_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    Label L_loop;
+
+    const Register coeffs = c_rarg0;
+    const Register constant = c_rarg1;
+
+    const Register dilithiumConsts = r10;
+    const Register result = r11;
+    const Register len = r12;
+
+    VSeq<8> vs1(0), vs2(16), vs3(24);  // 3 sets of 8x4s inputs/outputs
+    VSeq<4> vtmp = vs_front(vs3);         // n.b. tmp registers overlap vs3
+    VSeq<2> vq(30);                    // n.b. constants overlap vs3
+    VSeq<8> vconst(29, 0);             // for montmul by constant
+
+    // results track inputs
+    __ add(result, coeffs, 0);
+    __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
+
+    // load constants q, qinv -- they do not get clobbered by first two loops
+    vs_ldpq(vq, dilithiumConsts); // qInv, q
+    // copy caller supplied constant across vconst
+    __ dup(vconst[0], __ T4S, constant);
+    __ mov(len, zr);
+    __ add(len, len, 1024);
+
+    __ BIND(L_loop);
+
+    // load next 32 inputs
+    vs_ldpq_post(vs2, coeffs);
+    // mont mul by constant
+    vs_montmul32(vs2, vconst, vs2, vtmp, vq);
+    // write next 32 results
+    vs_stpq_post(vs2, result);
+
+    __ sub(len, len, 128);
+    __ cmp(len, (u1)128);
+    __ br(Assembler::GE, L_loop);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+
+  }
+
+  // Dilithium decompose poly.
+  // Implements the method
+  // static int implDilithiumDecomposePoly(int[] coeffs, int constant) {}
+  // of the sun.security.provider.ML_DSA class
+  //
+  // input (int[256]) = c_rarg0
+  // lowPart (int[256]) = c_rarg1
+  // highPart (int[256]) = c_rarg2
+  // twoGamma2  (int) = c_rarg3
+  // multiplier (int) = c_rarg4
+  address generate_dilithiumDecomposePoly() {
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::dilithiumDecomposePoly_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    Label L_loop;
+
+    const Register input = c_rarg0;
+    const Register lowPart = c_rarg1;
+    const Register highPart = c_rarg2;
+    const Register twoGamma2 = c_rarg3;
+    const Register multiplier = c_rarg4;
+
+    const Register len = r9;
+    const Register dilithiumConsts = r10;
+    const Register tmp = r11;
+
+    VSeq<4> vs1(0), vs2(4), vs3(8); // 6 independent sets of 4x4s values
+    VSeq<4> vs4(12), vs5(16), vtmp(20);
+    VSeq<4> one(25, 0);            // 7 constants for cross-multiplying
+    VSeq<4> qminus1(26, 0);
+    VSeq<4> g2(27, 0);
+    VSeq<4> twog2(28, 0);
+    VSeq<4> mult(29, 0);
+    VSeq<4> q(30, 0);
+    VSeq<4> qadd(31, 0);
+
+    __ enter();
+
+    __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
+
+    // save callee-saved registers
+    __ stpd(v8, v9, __ pre(sp, -64));
+    __ stpd(v10, v11, Address(sp, 16));
+    __ stpd(v12, v13, Address(sp, 32));
+    __ stpd(v14, v15, Address(sp, 48));
+
+    // populate constant registers
+    __ mov(tmp, zr);
+    __ add(tmp, tmp, 1);
+    __ dup(one[0], __ T4S, tmp); // 1
+    __ ldr(q[0], __ Q, Address(dilithiumConsts, 16)); // q
+    __ ldr(qadd[0], __ Q, Address(dilithiumConsts, 64)); // addend for mod q reduce
+    __ dup(twog2[0], __ T4S, twoGamma2); // 2 * gamma2
+    __ dup(mult[0], __ T4S, multiplier); // multiplier for mod 2 * gamma reduce
+    __ subv(qminus1[0], __ T4S, v30, v25); // q - 1
+    __ sshr(g2[0], __ T4S, v28, 1); // gamma2
+
+    __ mov(len, zr);
+    __ add(len, len, 1024);
+
+    __ BIND(L_loop);
+
+    // load next 4x4S inputs interleaved: rplus --> vs1
+    __ ld4(vs1[0], vs1[1], vs1[2], vs1[3], __ T4S, __ post(input, 64));
+
+    //  rplus = rplus - ((rplus + qadd) >> 23) * q
+    vs_addv(vtmp, __ T4S, vs1, qadd);
+    vs_sshr(vtmp, __ T4S, vtmp, 23);
+    vs_mulv(vtmp, __ T4S, vtmp, q);
+    vs_subv(vs1, __ T4S, vs1, vtmp);
+
+    // rplus = rplus + ((rplus >> 31) & dilithium_q);
+    vs_sshr(vtmp, __ T4S, vs1, 31);
+    vs_andr(vtmp, vtmp, q);
+    vs_addv(vs1, __ T4S, vs1, vtmp);
+
+    // quotient --> vs2
+    // int quotient = (rplus * multiplier) >> 22;
+    vs_mulv(vtmp, __ T4S, vs1, mult);
+    vs_sshr(vs2, __ T4S, vtmp, 22);
+
+    // r0 --> vs3
+    // int r0 = rplus - quotient * twoGamma2;
+    vs_mulv(vtmp, __ T4S, vs2, twog2);
+    vs_subv(vs3, __ T4S, vs1, vtmp);
+
+    // mask --> vs4
+    // int mask = (twoGamma2 - r0) >> 22;
+    vs_subv(vtmp, __ T4S, twog2, vs3);
+    vs_sshr(vs4, __ T4S, vtmp, 22);
+
+    // r0 -= (mask & twoGamma2);
+    vs_andr(vtmp, vs4, twog2);
+    vs_subv(vs3, __ T4S, vs3, vtmp);
+
+    //  quotient += (mask & 1);
+    vs_andr(vtmp, vs4, one);
+    vs_addv(vs2, __ T4S, vs2, vtmp);
+
+    // mask = (twoGamma2 / 2 - r0) >> 31;
+    vs_subv(vtmp, __ T4S, g2, vs3);
+    vs_sshr(vs4, __ T4S, vtmp, 31);
+
+    // r0 -= (mask & twoGamma2);
+    vs_andr(vtmp, vs4, twog2);
+    vs_subv(vs3, __ T4S, vs3, vtmp);
+
+    // quotient += (mask & 1);
+    vs_andr(vtmp, vs4, one);
+    vs_addv(vs2, __ T4S, vs2, vtmp);
+
+    // r1 --> vs5
+    // int r1 = rplus - r0 - (dilithium_q - 1);
+    vs_subv(vtmp, __ T4S, vs1, vs3);
+    vs_subv(vs5, __ T4S, vtmp, qminus1);
+
+    // r1 --> vs1 (overwriting rplus)
+    // r1 = (r1 | (-r1)) >> 31; // 0 if rplus - r0 == (dilithium_q - 1), -1 otherwise
+    vs_negr(vtmp, __ T4S, vs5);
+    vs_orr(vtmp, vs5, vtmp);
+    vs_sshr(vs1, __ T4S, vtmp, 31);
+
+    // r0 += ~r1;
+    vs_notr(vtmp, vs1);
+    vs_addv(vs3, __ T4S, vs3, vtmp);
+
+    // r1 = r1 & quotient;
+    vs_andr(vs1, vs2, vs1);
+
+    // store results inteleaved
+    // lowPart[m] = r0;
+    // highPart[m] = r1;
+    __ st4(vs3[0], vs3[1], vs3[2], vs3[3], __ T4S, __ post(lowPart, 64));
+    __ st4(vs1[0], vs1[1], vs1[2], vs1[3], __ T4S, __ post(highPart, 64));
+
+
+    __ sub(len, len, 64);
+    __ cmp(len, (u1)64);
+    __ br(Assembler::GE, L_loop);
+
+    // restore callee-saved vector registers
+    __ ldpd(v14, v15, Address(sp, 48));
+    __ ldpd(v12, v13, Address(sp, 32));
+    __ ldpd(v10, v11, Address(sp, 16));
+    __ ldpd(v8, v9, __ post(sp, 64));
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+
   }
 
   /**
@@ -8840,10 +9907,7 @@ class StubGenerator: public StubCodeGenerator {
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
-    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != nullptr) {
-      StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
-    }
+    StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
 
     StubRoutines::aarch64::_spin_wait = generate_spin_wait();
 
@@ -8939,6 +10003,14 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_chacha20Block = generate_chacha20Block_qrpar();
     }
 
+    if (UseDilithiumIntrinsics) {
+      StubRoutines::_dilithiumAlmostNtt = generate_dilithiumAlmostNtt();
+      StubRoutines::_dilithiumAlmostInverseNtt = generate_dilithiumAlmostInverseNtt();
+      StubRoutines::_dilithiumNttMult = generate_dilithiumNttMult();
+      StubRoutines::_dilithiumMontMulByConstant = generate_dilithiumMontMulByConstant();
+      StubRoutines::_dilithiumDecomposePoly = generate_dilithiumDecomposePoly();
+    }
+
     if (UseBASE64Intrinsics) {
         StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
         StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
@@ -8981,6 +10053,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     if (UseSHA3Intrinsics) {
       StubRoutines::_sha3_implCompress     = generate_sha3_implCompress(StubGenStubId::sha3_implCompress_id);
+      StubRoutines::_double_keccak         = generate_double_keccak();
       StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress(StubGenStubId::sha3_implCompressMB_id);
     }
 

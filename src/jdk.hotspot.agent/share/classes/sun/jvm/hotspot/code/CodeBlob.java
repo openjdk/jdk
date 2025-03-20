@@ -52,28 +52,20 @@ public class CodeBlob extends VMObject {
   private static CIntegerField dataOffsetField;
   private static CIntegerField frameSizeField;
   private static AddressField  oopMapsField;
+  private static AddressField  mutableDataField;
+  private static CIntegerField mutableDataSizeField;
+  private static CIntegerField callerMustGCArgumentsField;
 
-  // Kinds of Codeblob
+  // Kinds of CodeBlobs that we need to know about.
   private static int NMethodKind;
-  private static int BufferKind;
-  private static int AdapterKind;
-  private static int VtableKind;
-  private static int MHAdapterKind;
   private static int RuntimeStubKind;
-  private static int DeoptimizationKind;
-  private static int ExceptionKind;
-  private static int SafepointKind;
-  private static int UncommonTrapKind;
   private static int UpcallKind;
-  private static int NumberOfKinds;
 
   private static Class[] wrapperClasses;
 
   public CodeBlob(Address addr) {
     super(addr);
   }
-
-  protected static       int     matcherInterpreterFramePointerReg;
 
   private static void initialize(TypeDataBase db) {
     Type type = db.lookupType("CodeBlob");
@@ -89,45 +81,13 @@ public class CodeBlob extends VMObject {
     dataOffsetField          = type.getCIntegerField("_data_offset");
     frameSizeField           = type.getCIntegerField("_frame_size");
     oopMapsField             = type.getAddressField("_oop_maps");
-
-    if (VM.getVM().isServerCompiler()) {
-      matcherInterpreterFramePointerReg =
-          db.lookupIntConstant("Matcher::interpreter_frame_pointer_reg").intValue();
-    }
+    callerMustGCArgumentsField = type.getCIntegerField("_caller_must_gc_arguments");
+    mutableDataField         = type.getAddressField("_mutable_data");
+    mutableDataSizeField     = type.getCIntegerField("_mutable_data_size");
 
     NMethodKind        = db.lookupIntConstant("CodeBlobKind::Nmethod").intValue();
-    BufferKind         = db.lookupIntConstant("CodeBlobKind::Buffer").intValue();
-    AdapterKind        = db.lookupIntConstant("CodeBlobKind::Adapter").intValue();
-    VtableKind         = db.lookupIntConstant("CodeBlobKind::Vtable").intValue();
-    MHAdapterKind      = db.lookupIntConstant("CodeBlobKind::MHAdapter").intValue();
     RuntimeStubKind    = db.lookupIntConstant("CodeBlobKind::RuntimeStub").intValue();
-    DeoptimizationKind = db.lookupIntConstant("CodeBlobKind::Deoptimization").intValue();
-    SafepointKind      = db.lookupIntConstant("CodeBlobKind::Safepoint").intValue();
     UpcallKind         = db.lookupIntConstant("CodeBlobKind::Upcall").intValue();
-    NumberOfKinds      = db.lookupIntConstant("CodeBlobKind::Number_Of_Kinds").intValue();
-    if (VM.getVM().isServerCompiler()) {
-        ExceptionKind    = db.lookupIntConstant("CodeBlobKind::Exception").intValue();
-        UncommonTrapKind = db.lookupIntConstant("CodeBlobKind::UncommonTrap").intValue();
-    } else {
-        // Set invalid value to not match default.
-        ExceptionKind    = NumberOfKinds + 1;
-        UncommonTrapKind = NumberOfKinds + 1;
-    }
-
-    wrapperClasses                     = new Class[NumberOfKinds];
-    wrapperClasses[NMethodKind]        = NMethod.class;
-    wrapperClasses[BufferKind]         = BufferBlob.class;
-    wrapperClasses[AdapterKind]        = AdapterBlob.class;
-    wrapperClasses[VtableKind]         = VtableBlob.class;
-    wrapperClasses[MHAdapterKind]      = MethodHandlesAdapterBlob.class;
-    wrapperClasses[RuntimeStubKind]    = RuntimeStub.class;
-    wrapperClasses[DeoptimizationKind] = DeoptimizationBlob.class;
-    wrapperClasses[SafepointKind]      = SafepointBlob.class;
-    wrapperClasses[UpcallKind]         = UpcallStub.class;
-    if (VM.getVM().isServerCompiler()) {
-      wrapperClasses[ExceptionKind]    = ExceptionBlob.class;
-      wrapperClasses[UncommonTrapKind] = UncommonTrapBlob.class;
-    }
   }
 
   static {
@@ -140,7 +100,16 @@ public class CodeBlob extends VMObject {
 
   public static Class<?> getClassFor(Address addr) {
       CodeBlob cb = new CodeBlob(addr);
-      return wrapperClasses[cb.getKind()];
+      int kind = cb.getKind();
+      if (kind == NMethodKind) {
+          return NMethod.class;
+      } else if (kind == UpcallKind) {
+          return UpcallStub.class;
+      } else {
+          // All other CodeBlob kinds have no special functionality in SA and can be
+          // represented by the generic CodeBlob class.
+          return CodeBlob.class;
+      }
   }
 
   public Address headerBegin()    { return getAddress(); }
@@ -173,6 +142,15 @@ public class CodeBlob extends VMObject {
 
   public int getHeaderSize()      { return (int) headerSizeField.getValue(addr); }
 
+
+  // Mutable data
+  public int getMutableDataSize()   { return (int) mutableDataSizeField.getValue(addr); }
+
+  public Address mutableDataBegin() { return mutableDataField.getValue(addr); }
+
+  public Address mutableDataEnd()   { return mutableDataBegin().addOffsetTo(getMutableDataSize());  }
+
+
   public long getFrameSizeWords() {
     return (int) frameSizeField.getValue(addr);
   }
@@ -196,47 +174,29 @@ public class CodeBlob extends VMObject {
 
 
   // Typing
-  public boolean isBufferBlob()         { return getKind() == BufferKind; }
-
   public boolean isNMethod()            { return getKind() == NMethodKind; }
 
   public boolean isRuntimeStub()        { return getKind() == RuntimeStubKind; }
 
   public boolean isUpcallStub()         { return getKind() == UpcallKind; }
 
-  public boolean isDeoptimizationBlob() { return getKind() == DeoptimizationKind; }
-
-  public boolean isUncommonTrapBlob()   { return getKind() == UncommonTrapKind; }
-
-  public boolean isExceptionBlob()      { return getKind() == ExceptionKind; }
-
-  public boolean isSafepointBlob()      { return getKind() == SafepointKind; }
-
-  public boolean isAdapterBlob()        { return getKind() == AdapterKind; }
-
-  public boolean isMHAdapterBlob()      { return getKind() == MHAdapterKind; }
-
-  public boolean isVtableBlob()         { return getKind() == VtableKind; }
-
-  // Fine grain nmethod support: isNMethod() == isJavaMethod() || isNativeMethod() || isOSRMethod()
   public boolean isJavaMethod()         { return false; }
 
   public boolean isNativeMethod()       { return false; }
 
-  /** On-Stack Replacement method */
-  public boolean isOSRMethod()          { return false; }
 
   public NMethod asNMethodOrNull() {
     if (isNMethod()) return (NMethod)this;
     return null;
   }
 
-  // FIXME: add getRelocationSize()
   public int getContentSize()      { return (int) contentEnd().minus(contentBegin()); }
 
   public int getCodeSize()         { return (int) codeEnd()   .minus(codeBegin());    }
 
   public int getDataSize()         { return (int) dataEnd()   .minus(dataBegin());    }
+
+  public int getRelocationSize()   { return (int) relocationSizeField.getValue(addr); }
 
   // Containment
   public boolean blobContains(Address addr)    { return headerBegin() .lessThanOrEqual(addr) && dataEnd()   .greaterThan(addr); }
@@ -266,7 +226,9 @@ public class CodeBlob extends VMObject {
   }
 
   // Returns true, if the next frame is responsible for GC'ing oops passed as arguments
-  public boolean callerMustGCArguments() { return false; }
+  public boolean callerMustGCArguments() {
+    return callerMustGCArgumentsField.getValue(addr) != 0;
+  }
 
   public void print() {
     printOn(System.out);
