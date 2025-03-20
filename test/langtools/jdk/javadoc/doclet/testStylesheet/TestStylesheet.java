@@ -117,7 +117,7 @@ public class TestStylesheet extends JavadocTester {
                         display:inline-block;
                     }""",
                 """
-                    input#reset-search, input.reset-filter {
+                    input#reset-search, input.reset-filter, input#page-search-reset {
                         background-color: transparent;
                         background-image:url('x.svg');
                         background-repeat:no-repeat;

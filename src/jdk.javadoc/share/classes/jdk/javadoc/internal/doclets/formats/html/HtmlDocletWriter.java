@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1882,7 +1882,7 @@ public abstract class HtmlDocletWriter {
             String tagText = headingContent.replaceAll("\\s+", " ");
             IndexItem item = IndexItem.of(element, node, tagText,
                     getTagletWriterInstance(context).getHolderName(element),
-                    resources.getText("doclet.Section"),
+                    "",
                     new DocLink(path, id));
             configuration.indexBuilder.add(item);
         }
