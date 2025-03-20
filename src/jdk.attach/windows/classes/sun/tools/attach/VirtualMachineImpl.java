@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     private static byte[] stub;
 
     private volatile long hProcess;     // handle to the process
-    private int ver = VERSION_1;        // updated in ctor depending on detectVersion result
+    private OperationProperties props = new OperationProperties(VERSION_1); // updated in ctor
 
     VirtualMachineImpl(AttachProvider provider, String id)
         throws AttachNotSupportedException, IOException
@@ -55,7 +55,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
         try {
             if (isAPIv2Enabled()) {
-                ver = detectVersion();
+                props = getDefaultProps();
             } else {
                 // The target VM might be a pre-6.0 VM so we enqueue a "null" command
                 // which minimally tests that the enqueue function exists in the target
@@ -88,12 +88,12 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         String pipename = pipeprefix + r;
         long hPipe;
         try {
-            hPipe = createPipe(ver, pipename);
+            hPipe = createPipe(props.version(), pipename);
         } catch (IOException ce) {
             // Retry with another random pipe name.
             r = rnd.nextInt();
             pipename = pipeprefix + r;
-            hPipe = createPipe(ver, pipename);
+            hPipe = createPipe(props.version(), pipename);
         }
 
         // check if we are detached - in theory it's possible that detach is invoked
@@ -105,11 +105,11 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
         try {
             // enqueue the command to the process.
-            if (ver == VERSION_1) {
-                enqueue(hProcess, stub, ver, cmd, pipename, args);
+            if (props.version() == VERSION_1) {
+                enqueue(hProcess, stub, props.version(), cmd, pipename, args);
             } else {
                 // for v2 operations request contains only pipe name.
-                enqueue(hProcess, stub, ver, null, pipename);
+                enqueue(hProcess, stub, props.version(), null, pipename);
             }
 
             // wait for the target VM to connect to the pipe.
@@ -117,11 +117,11 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
             IOException ioe = null;
 
-            if (ver == VERSION_2) {
+            if (props.version() == VERSION_2) {
                 PipeOutputStream writer = new PipeOutputStream(hPipe);
 
                 try {
-                    writeCommand(writer, ver, cmd, args);
+                    writeCommand(writer, props, cmd, args);
                 } catch (IOException x) {
                     ioe = x;
                 }

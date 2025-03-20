@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -119,12 +120,24 @@ final class TestInstance implements ThrowingRunnable {
                         return String.format("%s(length=%d)", asString, Array.getLength(v));
                     }
                     return String.format("%s", v);
-                }).collect(Collectors.joining(", "));
+                }).collect(Collectors.joining(", ")).transform(str -> {
+                    final var sb = new StringBuilder();
+                    for (var chr : str.toCharArray()) {
+                        if (chr != ' ' && (Character.isWhitespace(chr) || Character.isISOControl(chr))) {
+                            sb.append("\\u").append(ARGS_CHAR_FORMATTER.toHexDigits(chr));
+                        } else {
+                            sb.append(chr);
+                        }
+                    }
+                    return sb.toString();
+                });
             }
 
             private List<Object> ctorArgs;
             private List<Object> methodArgs;
             private Method method;
+
+            private static final HexFormat ARGS_CHAR_FORMATTER = HexFormat.of().withUpperCase();
         }
 
         static TestDesc create(Method m, Object... args) {

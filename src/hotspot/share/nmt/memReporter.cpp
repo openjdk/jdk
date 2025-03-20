@@ -79,7 +79,7 @@ void MemReporterBase::print_malloc(const MemoryCounter* c, MemTag mem_tag) const
   const size_t count = c->count();
 
   if (mem_tag != mtNone) {
-    out->print("(%s%zu%s type=%s", alloc_type,
+    out->print("(%s%zu%s tag=%s", alloc_type,
       amount_in_current_scale(amount), scale, NMTUtil::tag_to_name(mem_tag));
   } else {
     out->print("(%s%zu%s", alloc_type,
@@ -181,14 +181,14 @@ void MemSummaryReporter::report() {
     MemTag mem_tag = NMTUtil::index_to_tag(index);
     // thread stack is reported as part of thread category
     if (mem_tag == mtThreadStack) continue;
-    MallocMemory* malloc_memory = _malloc_snapshot->by_type(mem_tag);
-    VirtualMemory* virtual_memory = _vm_snapshot->by_type(mem_tag);
+    MallocMemory* malloc_memory = _malloc_snapshot->by_tag(mem_tag);
+    VirtualMemory* virtual_memory = _vm_snapshot->by_tag(mem_tag);
 
-    report_summary_of_type(mem_tag, malloc_memory, virtual_memory);
+    report_summary_of_tag(mem_tag, malloc_memory, virtual_memory);
   }
 }
 
-void MemSummaryReporter::report_summary_of_type(MemTag mem_tag,
+void MemSummaryReporter::report_summary_of_tag(MemTag mem_tag,
   MallocMemory*  malloc_memory, VirtualMemory* virtual_memory) {
 
   size_t reserved_amount  = reserved_total (malloc_memory, virtual_memory);
@@ -197,7 +197,7 @@ void MemSummaryReporter::report_summary_of_type(MemTag mem_tag,
   // Count thread's native stack in "Thread" category
   if (mem_tag == mtThread) {
     const VirtualMemory* thread_stack_usage =
-      (const VirtualMemory*)_vm_snapshot->by_type(mtThreadStack);
+      (const VirtualMemory*)_vm_snapshot->by_tag(mtThreadStack);
     reserved_amount  += thread_stack_usage->reserved();
     committed_amount += thread_stack_usage->committed();
   } else if (mem_tag == mtNMT) {
@@ -239,7 +239,7 @@ void MemSummaryReporter::report_summary_of_type(MemTag mem_tag,
                   _instance_class_count, _array_class_count);
   } else if (mem_tag == mtThread) {
     const VirtualMemory* thread_stack_usage =
-     _vm_snapshot->by_type(mtThreadStack);
+     _vm_snapshot->by_tag(mtThreadStack);
     // report thread count
     out->print_cr("(threads #%zu)", ThreadStackTracker::thread_count());
     out->print("(stack: ");
@@ -380,7 +380,7 @@ int MemDetailReporter::report_virtual_memory_allocation_sites()  {
       print_total(virtual_memory_site->reserved(), virtual_memory_site->committed());
       const MemTag mem_tag = virtual_memory_site->mem_tag();
       if (mem_tag != mtNone) {
-        out->print(" Type=%s", NMTUtil::tag_to_name(mem_tag));
+        out->print(" Tag=%s", NMTUtil::tag_to_name(mem_tag));
       }
       out->print_cr(")");
     )
@@ -524,7 +524,7 @@ void MemSummaryDiffReporter::report_diff() {
     MemTag mem_tag = NMTUtil::index_to_tag(index);
     // thread stack is reported as part of thread category
     if (mem_tag == mtThreadStack) continue;
-    diff_summary_of_type(mem_tag,
+    diff_summary_of_tag(mem_tag,
       _early_baseline.malloc_memory(mem_tag),
       _early_baseline.virtual_memory(mem_tag),
       _early_baseline.metaspace_stats(),
@@ -594,7 +594,7 @@ void MemSummaryDiffReporter::print_virtual_memory_diff(size_t current_reserved, 
 }
 
 
-void MemSummaryDiffReporter::diff_summary_of_type(MemTag mem_tag,
+void MemSummaryDiffReporter::diff_summary_of_tag(MemTag mem_tag,
   const MallocMemory* early_malloc, const VirtualMemory* early_vm,
   const MetaspaceCombinedStats& early_ms,
   const MallocMemory* current_malloc, const VirtualMemory* current_vm,
@@ -795,8 +795,8 @@ void MemDetailDiffReporter::report_diff() {
 }
 
 void MemDetailDiffReporter::diff_malloc_sites() const {
-  MallocSiteIterator early_itr = _early_baseline.malloc_sites(MemBaseline::by_site_and_type);
-  MallocSiteIterator current_itr = _current_baseline.malloc_sites(MemBaseline::by_site_and_type);
+  MallocSiteIterator early_itr = _early_baseline.malloc_sites(MemBaseline::by_site_and_tag);
+  MallocSiteIterator current_itr = _current_baseline.malloc_sites(MemBaseline::by_site_and_tag);
 
   const MallocSite* early_site   = early_itr.next();
   const MallocSite* current_site = current_itr.next();
