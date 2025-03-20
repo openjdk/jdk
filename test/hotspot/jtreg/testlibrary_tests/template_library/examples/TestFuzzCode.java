@@ -51,6 +51,7 @@ import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.addName;
 
 import compiler.lib.template_library.Library;
+import compiler.lib.template_library.Dispatcher;
 import compiler.lib.template_library.IRTestClass;
 import compiler.lib.template_library.Type;
 
@@ -89,9 +90,9 @@ public class TestFuzzCode {
         var template1Body = Template.make("type", (Type type)-> body(
             // The "ret" variable captures the return value, which can be read / modified
             // by the random code.
-            addName(new Name($("ret"), type, true, 1)),
+            addName(new Name($("ret"), type, true, 10)),
             "#type $ret = ", type.con(), ";\n",
-            // TODO: random code, then sample random variable!
+            new Dispatcher().templateWithArgs(),
             "return $ret;\n"
         ));
         var template1 = Template.make("type", (Type type) -> body(
