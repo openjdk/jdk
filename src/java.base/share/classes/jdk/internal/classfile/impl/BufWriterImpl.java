@@ -30,7 +30,12 @@ import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.function.IntFunction;
+import java.util.function.LongFunction;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
@@ -368,6 +373,14 @@ public final class BufWriterImpl implements BufWriter {
         System.arraycopy(elems, 0, array, bufferOffset, size());
     }
 
+    public void copyTo(ByteBuffer buffer) {
+        buffer.put(elems, 0, size());
+    }
+
+    public void copyTo(MemorySegment segment, long offset) {
+        MemorySegment.copy(elems, 0, segment, ValueLayout.JAVA_BYTE, offset, size());
+    }
+
     // writeIndex methods ensure that any CP info written
     // is relative to the correct constant pool
 
@@ -411,5 +424,25 @@ public final class BufWriterImpl implements BufWriter {
         head.copyTo(result, 0);
         tail.copyTo(result, head.size());
         return result;
+    }
+
+    /**
+     * Join head and tail into an exact-size byte buffer
+     */
+    static ByteBuffer joinToBuffer(IntFunction<ByteBuffer> allocator, BufWriterImpl head, BufWriterImpl tail) {
+        ByteBuffer buffer = allocator.apply(head.size() + tail.size());
+        head.copyTo(buffer);
+        tail.copyTo(buffer);
+        return buffer;
+    }
+
+    /**
+     * Join head and tail into an exact-size memory segment
+     */
+    static MemorySegment joinToMemorySegment(LongFunction<MemorySegment> allocator, BufWriterImpl head, BufWriterImpl tail) {
+        MemorySegment segment = allocator.apply((long)head.size() + tail.size());
+        head.copyTo(segment, 0);
+        tail.copyTo(segment, head.size());
+        return segment;
     }
 }

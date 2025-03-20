@@ -30,10 +30,14 @@ import java.lang.classfile.*;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ConstantDescs;
+import java.lang.foreign.MemorySegment;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
+import java.util.function.LongFunction;
 
 import static java.util.Objects.requireNonNull;
 
@@ -178,20 +182,102 @@ public final class DirectClassBuilder
         // BSM writers until everything else is written.
 
         // Do this early because it might trigger CP activity
+        ClassEntry superclass = computeSuperclass();
+        int interfaceEntriesSize = interfaceEntries.size();
+        ClassEntry[] ies = buildInterfaceEnties(interfaceEntriesSize);
+
+        var constantPool = this.constantPool;
+        // We maintain two writers, and then we join them at the end
+        int size = sizeHint == 0 ? 256 : sizeHint;
+        BufWriterImpl head = new BufWriterImpl(constantPool, context, size);
+        BufWriterImpl tail = new BufWriterImpl(constantPool, context, size, thisClassEntry, majorVersion);
+
+        populateTail(tail, constantPool);
+
+        // Now we can make the head
+        populateHead(head, constantPool, superclass, interfaceEntriesSize, ies);
+
+        // Join head and tail into an exact-size buffer
+        return BufWriterImpl.join(head, tail);
+    }
+
+    public ByteBuffer buildToByteBuffer(IntFunction<ByteBuffer> allocator) {
+
+        // The logic of this is very carefully ordered.  We want to avoid
+        // repeated buffer copyings, so we accumulate lists of writers which
+        // all get written later into the same buffer.  But, writing can often
+        // trigger CP / BSM insertions, so we cannot run the CP writer or
+        // BSM writers until everything else is written.
+
+        // Do this early because it might trigger CP activity
+        ClassEntry superclass = computeSuperclass();
+        int interfaceEntriesSize = interfaceEntries.size();
+        ClassEntry[] ies = buildInterfaceEnties(interfaceEntriesSize);
+
+        var constantPool = this.constantPool;
+        // We maintain two writers, and then we join them at the end
+        int size = sizeHint == 0 ? 256 : sizeHint;
+        BufWriterImpl head = new BufWriterImpl(constantPool, context, size);
+        BufWriterImpl tail = new BufWriterImpl(constantPool, context, size, thisClassEntry, majorVersion);
+
+        populateTail(tail, constantPool);
+
+        // Now we can make the head
+        populateHead(head, constantPool, superclass, interfaceEntriesSize, ies);
+
+        // Join head and tail into an exact-size buffer
+        return BufWriterImpl.joinToBuffer(allocator, head, tail);
+    }
+
+    public MemorySegment buildToMemorySegment(LongFunction<MemorySegment> allocator) {
+
+        // The logic of this is very carefully ordered.  We want to avoid
+        // repeated buffer copyings, so we accumulate lists of writers which
+        // all get written later into the same buffer.  But, writing can often
+        // trigger CP / BSM insertions, so we cannot run the CP writer or
+        // BSM writers until everything else is written.
+
+        // Do this early because it might trigger CP activity
+        ClassEntry superclass = computeSuperclass();
+        int interfaceEntriesSize = interfaceEntries.size();
+        ClassEntry[] ies = buildInterfaceEnties(interfaceEntriesSize);
+
+        var constantPool = this.constantPool;
+        // We maintain two writers, and then we join them at the end
+        int size = sizeHint == 0 ? 256 : sizeHint;
+        BufWriterImpl head = new BufWriterImpl(constantPool, context, size);
+        BufWriterImpl tail = new BufWriterImpl(constantPool, context, size, thisClassEntry, majorVersion);
+
+        populateTail(tail, constantPool);
+
+        // Now we can make the head
+        populateHead(head, constantPool, superclass, interfaceEntriesSize, ies);
+
+        // Join head and tail into an exact-size buffer
+        return BufWriterImpl.joinToMemorySegment(allocator, head, tail);
+    }
+
+    private ClassEntry computeSuperclass() {
         var constantPool = this.constantPool;
         ClassEntry superclass = superclassEntry;
         if (superclass != null)
             superclass = AbstractPoolEntry.maybeClone(constantPool, superclass);
         else if ((flags & ClassFile.ACC_MODULE) == 0 && !"java/lang/Object".equals(thisClassEntry.asInternalName()))
             superclass = constantPool.classEntry(ConstantDescs.CD_Object);
-        int interfaceEntriesSize = interfaceEntries.size();
-        ClassEntry[] ies = interfaceEntriesSize == 0 ? EMPTY_CLASS_ENTRY_ARRAY : buildInterfaceEnties(interfaceEntriesSize);
+        return superclass;
+    }
 
-        // We maintain two writers, and then we join them at the end
-        int size = sizeHint == 0 ? 256 : sizeHint;
-        BufWriterImpl head = new BufWriterImpl(constantPool, context, size);
-        BufWriterImpl tail = new BufWriterImpl(constantPool, context, size, thisClassEntry, majorVersion);
+    private ClassEntry[] buildInterfaceEnties(int interfaceEntriesSize) {
+        if (interfaceEntriesSize == 0) {
+            return EMPTY_CLASS_ENTRY_ARRAY;
+        }
+        var ies = new ClassEntry[interfaceEntriesSize];
+        for (int i = 0; i < interfaceEntriesSize; i++)
+            ies[i] = AbstractPoolEntry.maybeClone(constantPool, interfaceEntries.get(i));
+        return ies;
+    }
 
+    private void populateTail(final BufWriterImpl tail, final SplitConstantPool constantPool) {
         // The tail consists of fields and methods, and attributes
         // This should trigger all the CP/BSM mutation
         Util.writeList(tail, fields, fieldsCount);
@@ -204,8 +290,9 @@ public final class DirectClassBuilder
             // Update attributes count
             tail.patchU2(attributesOffset, attributes.size() + 1);
         }
+    }
 
-        // Now we can make the head
+    private void populateHead(final BufWriterImpl head, final SplitConstantPool constantPool, final ClassEntry superclass, final int interfaceEntriesSize, final ClassEntry[] ies) {
         head.writeInt(ClassFile.MAGIC_NUMBER);
         head.writeU2U2(minorVersion, majorVersion);
         constantPool.writeTo(head);
@@ -214,15 +301,5 @@ public final class DirectClassBuilder
         for (int i = 0; i < interfaceEntriesSize; i++) {
             head.writeIndex(ies[i]);
         }
-
-        // Join head and tail into an exact-size buffer
-        return BufWriterImpl.join(head, tail);
-    }
-
-    private ClassEntry[] buildInterfaceEnties(int interfaceEntriesSize) {
-        var ies = new ClassEntry[interfaceEntriesSize];
-        for (int i = 0; i < interfaceEntriesSize; i++)
-            ies[i] = AbstractPoolEntry.maybeClone(constantPool, interfaceEntries.get(i));
-        return ies;
     }
 }

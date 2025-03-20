@@ -34,11 +34,17 @@ import java.lang.classfile.ClassTransform;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.LongFunction;
 
 import jdk.internal.classfile.impl.verifier.VerifierImpl;
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
 
 import static java.util.Objects.requireNonNull;
 
@@ -136,6 +142,35 @@ public final class ClassFileImpl implements ClassFile {
     }
 
     @Override
+    public ClassModel parse(final MemorySegment bytes) {
+        AbstractMemorySegmentImpl amsi = (AbstractMemorySegmentImpl) bytes;
+        if (amsi.unsafeGetBase() instanceof byte[] ba) {
+            if (amsi.unsafeGetOffset() == 0 && amsi.byteSize() == ba.length) {
+                return parse(ba);
+            }
+        }
+        // must copy the bytes
+        return parse(bytes.toArray(ValueLayout.JAVA_BYTE));
+    }
+
+    @Override
+    public ClassModel parse(final ByteBuffer bytes) {
+        // defensive copy
+        ByteBuffer dup = bytes.duplicate();
+        byte[] array;
+        if (dup.hasArray()) {
+            array = dup.array();
+            if (array.length == dup.limit() && dup.arrayOffset() == 0 && dup.position() == 0) {
+                return parse(array);
+            }
+        }
+        // must copy the bytes
+        array = new byte[dup.remaining()];
+        dup.get(array);
+        return parse(array);
+    }
+
+    @Override
     public byte[] build(ClassEntry thisClassEntry,
                          ConstantPoolBuilder constantPool,
                          Consumer<? super ClassBuilder> handler) {
@@ -146,18 +181,57 @@ public final class ClassFileImpl implements ClassFile {
     }
 
     @Override
+    public ByteBuffer buildToByteBuffer(IntFunction<ByteBuffer> allocator,
+                                        ClassEntry thisClassEntry,
+                                        ConstantPoolBuilder constantPool,
+                                        Consumer<? super ClassBuilder> handler) {
+        thisClassEntry = AbstractPoolEntry.maybeClone(constantPool, thisClassEntry);
+        DirectClassBuilder builder = new DirectClassBuilder((SplitConstantPool)constantPool, this, thisClassEntry);
+        handler.accept(builder);
+        return builder.buildToByteBuffer(allocator);
+    }
+
+    @Override
+    public MemorySegment buildToMemorySegment(LongFunction<MemorySegment> allocator,
+                                              ClassEntry thisClassEntry,
+                                              ConstantPoolBuilder constantPool,
+                                              Consumer<? super ClassBuilder> handler) {
+        thisClassEntry = AbstractPoolEntry.maybeClone(constantPool, thisClassEntry);
+        DirectClassBuilder builder = new DirectClassBuilder((SplitConstantPool)constantPool, this, thisClassEntry);
+        handler.accept(builder);
+        return builder.buildToMemorySegment(allocator);
+    }
+
+    @Override
     public byte[] transformClass(ClassModel model, ClassEntry newClassName, ClassTransform transform) {
         ConstantPoolBuilder constantPool = sharedConstantPool() ? ConstantPoolBuilder.of(model)
                                                                 : ConstantPoolBuilder.of();
-        return build(newClassName, constantPool,
-                new Consumer<ClassBuilder>() {
-                    @Override
-                    public void accept(ClassBuilder builder) {
-                        ((DirectClassBuilder) builder).setOriginal((ClassImpl)model);
-                        ((DirectClassBuilder) builder).setSizeHint(((ClassImpl)model).classfileLength());
-                        builder.transform((ClassImpl)model, transform);
-                    }
-                });
+        return build(newClassName, constantPool, transformationHandler((ClassImpl) model, transform));
+    }
+
+    @Override
+    public ByteBuffer transformClassToByteBuffer(IntFunction<ByteBuffer> allocator, ClassModel model, ClassEntry newClassName, ClassTransform transform) {
+        ConstantPoolBuilder constantPool = sharedConstantPool() ? ConstantPoolBuilder.of(model)
+                                                                : ConstantPoolBuilder.of();
+        return buildToByteBuffer(allocator, newClassName, constantPool, transformationHandler((ClassImpl) model, transform));
+    }
+
+    @Override
+    public MemorySegment transformClassToMemorySegment(LongFunction<MemorySegment> allocator, ClassModel model, ClassEntry newClassName, ClassTransform transform) {
+        ConstantPoolBuilder constantPool = sharedConstantPool() ? ConstantPoolBuilder.of(model)
+                                                                : ConstantPoolBuilder.of();
+        return buildToMemorySegment(allocator, newClassName, constantPool, transformationHandler((ClassImpl) model, transform));
+    }
+
+    private static Consumer<ClassBuilder> transformationHandler(final ClassImpl model, final ClassTransform transform) {
+        return new Consumer<ClassBuilder>() {
+            @Override
+            public void accept(ClassBuilder builder) {
+                ((DirectClassBuilder) builder).setOriginal(model);
+                ((DirectClassBuilder) builder).setSizeHint(model.classfileLength());
+                builder.transform(model, transform);
+            }
+        };
     }
 
     public boolean sharedConstantPool() {
@@ -175,6 +249,24 @@ public final class ClassFileImpl implements ClassFile {
 
     @Override
     public List<VerifyError> verify(byte[] bytes) {
+        try {
+            return verify(parse(bytes));
+        } catch (IllegalArgumentException parsingError) {
+            return List.of(new VerifyError(parsingError.getMessage()));
+        }
+    }
+
+    @Override
+    public List<VerifyError> verify(ByteBuffer bytes) {
+        try {
+            return verify(parse(bytes));
+        } catch (IllegalArgumentException parsingError) {
+            return List.of(new VerifyError(parsingError.getMessage()));
+        }
+    }
+
+    @Override
+    public List<VerifyError> verify(MemorySegment bytes) {
         try {
             return verify(parse(bytes));
         } catch (IllegalArgumentException parsingError) {
