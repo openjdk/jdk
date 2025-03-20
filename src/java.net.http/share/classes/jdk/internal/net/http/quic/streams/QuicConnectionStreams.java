@@ -843,8 +843,16 @@ public final class QuicConnectionStreams {
     public void newPeerTransportParameters(final QuicTransportParameters params) {
         // the limit imposed on the local endpoint by the remote peer
         final long localUniMaxStreams = params.getIntParameter(ParameterId.initial_max_streams_uni);
+        if (debug.on()) {
+            debug.log("increasing localUniMaxStreamLimit to initial_max_streams_uni: "
+                    + localUniMaxStreams);
+        }
         this.localUniMaxStreamLimit.tryIncreaseLimitTo(localUniMaxStreams);
         final long localBidiMaxStreams = params.getIntParameter(ParameterId.initial_max_streams_bidi);
+        if (debug.on()) {
+            debug.log("increasing localBidiMaxStreamLimit to initial_max_streams_bidi: "
+                    + localBidiMaxStreams);
+        }
         this.localBidiMaxStreamLimit.tryIncreaseLimitTo(localBidiMaxStreams);
         // set initial parameters on streams
         streams.all().forEach(s -> newInitialPeerParameters(s, params));
@@ -1105,6 +1113,13 @@ public final class QuicConnectionStreams {
         final StreamCreationPermit permit = maxStreamsFrame.isBidi()
                 ? localBidiMaxStreamLimit : localUniMaxStreamLimit;
         final long newLimit = maxStreamsFrame.maxStreams();
+        if (debug.on()) {
+            if (maxStreamsFrame.isBidi()) {
+                debug.log("increasing localBidiMaxStreamLimit limit to: " + newLimit);
+            } else {
+                debug.log("increasing localUniMaxStreamLimit limit to: " + newLimit);
+            }
+        }
         return permit.tryIncreaseLimitTo(newLimit);
     }
 
