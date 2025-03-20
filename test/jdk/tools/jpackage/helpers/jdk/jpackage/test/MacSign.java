@@ -24,6 +24,7 @@ package jdk.jpackage.test;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
@@ -45,7 +46,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
+import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
 /**
@@ -240,21 +246,12 @@ import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
 public final class MacSign {
 
-    public record KeychainWithCertsSpec(Keychain keychain, List<CertificateRequest> certificateRequests,
-            List<X509Certificate> certificates) {
+    public record KeychainWithCertsSpec(Keychain keychain, List<CertificateRequest> certificateRequests) {
 
         public KeychainWithCertsSpec {
             Objects.requireNonNull(keychain);
-            Objects.requireNonNull(certificates);
             Objects.requireNonNull(certificateRequests);
             certificateRequests.forEach(Objects::requireNonNull);
-            if (!certificates.isEmpty()) {
-                throw new IllegalArgumentException();
-            }
-        }
-
-        public KeychainWithCertsSpec(Keychain keychain, List<CertificateRequest> certificateRequests) {
-            this(keychain, certificateRequests, new ArrayList<>());
         }
 
         @Override
@@ -263,9 +260,6 @@ public final class MacSign {
             sb.append(keychain);
             if (!certificateRequests.isEmpty()) {
                 sb.append("; certs=").append(certificateRequests);
-            }
-            if (!certificates.isEmpty()) {
-                sb.append("; certs=").append(certificates.stream().map(CertificateHash::of).toList());
             }
             return sb.toString();
         }
@@ -333,7 +327,7 @@ public final class MacSign {
             }
 
             private String validatedName() {
-                return Optional.ofNullable(name).orElse("jpackagerTest.keychain");
+                return Optional.ofNullable(name).orElse("jpackageTest.keychain");
             }
 
             private String validatedPassword() {
@@ -370,6 +364,10 @@ public final class MacSign {
         Keychain unlock() {
             createExecutor("unlock-keychain").execute();
             return this;
+        }
+
+        boolean exists() {
+            return Files.exists(path());
         }
 
         Keychain createKeyPair(String name) {
@@ -432,35 +430,45 @@ public final class MacSign {
     public enum CertificateType {
         CODE_SIGN(List.of(
                 "basicConstraints=critical,CA:false",
-                "keyUsage=critical,digitalSignature",
-                // Code Signing
-                "extendedKeyUsage=critical,1.3.6.1.5.5.7.3.3"
-        )),
+                "keyUsage=critical,digitalSignature"
+        ), CODE_SIGN_EXTENDED_KEY_USAGE),
         // https://www.apple.com/certificateauthority/pdf/Apple_Developer_ID_CPS_v1.1.pdf
         // https://security.stackexchange.com/questions/17909/how-to-create-an-apple-installer-package-signing-certificate
         // https://github.com/zschuessler/AXtendedKey/blob/32c8ccec3df7e78fe521d09c48bd20558b3a4a24/src/axtended_key/services/certificate_manager.py#L109C102-L109C115
         INSTALLER(List.of(
                 "basicConstraints=critical,CA:false",
                 "keyUsage=critical,digitalSignature",
-                // Apple Custom Extended Key Usage (EKU) packageSign
-                // https://oid-base.com/get/1.2.840.113635.100.4.13
-                "extendedKeyUsage=critical,1.2.840.113635.100.4.13",
                 // Apple-specific extension for self-distributed apps
                 // https://oid-base.com/get/1.2.840.113635.100.6.1.14
                 "1.2.840.113635.100.6.1.14=critical,DER:0500"
-        ));
+        ), INSTALLER_EXTENDED_KEY_USAGE);
 
-        CertificateType(List<String> extensions) {
-            this.extensions = extensions;
+        CertificateType(List<String> otherExtensions, List<String> extendedKeyUsage) {
+            this.otherExtensions = otherExtensions;
+            this.extendedKeyUsage = extendedKeyUsage;
         }
 
-        final List<String> extensions;
+        boolean isTypeOf(X509Certificate cert) {
+            return toSupplier(() -> cert.getExtendedKeyUsage().containsAll(extendedKeyUsage)).get();
+        }
+
+        List<String> extensions() {
+            return Stream.concat(otherExtensions.stream(),
+                    Stream.of("extendedKeyUsage=" + Stream.concat(Stream.of("critical"), extendedKeyUsage.stream()).collect(joining(",")))).toList();
+        }
+
+        private final List<String> otherExtensions;
+        private final List<String> extendedKeyUsage;
     }
 
     public record CertificateRequest(String name, CertificateType type, int days) {
         public CertificateRequest {
             Objects.requireNonNull(name);
             Objects.requireNonNull(type);
+        }
+
+        CertificateRequest(X509Certificate cert) {
+            this(getSubjectCN(cert), getType(cert), getDurationInDays(cert));
         }
 
         public static final class Builder {
@@ -514,6 +522,38 @@ public final class MacSign {
             private CertificateType type = CertificateType.CODE_SIGN;
             private int days = 365;
         }
+
+        private static String getSubjectCN(X509Certificate cert) {
+            final var principal = cert.getSubjectX500Principal();
+            final var ldapName = toSupplier(() -> new LdapName(principal.getName())).get();
+            return ldapName.getRdns().stream().filter(rdn -> {
+                return rdn.getType().equalsIgnoreCase("CN");
+            }).map(Rdn::getValue).map(Object::toString).distinct().reduce((x, y) -> {
+                throw new IllegalArgumentException(String.format(
+                        "Certificate with hash=%s has multiple subject common names: [%s], [%s]", CertificateHash.of(cert), x, y));
+            }).orElseThrow(() -> {
+                throw new IllegalArgumentException(String.format(
+                        "Certificate with hash=%s doesn't have subject common name", CertificateHash.of(cert)));
+            });
+        }
+
+        private static CertificateType getType(X509Certificate cert) {
+            return Stream.of(CertificateType.values()).filter(certType -> {
+                return certType.isTypeOf(cert);
+            }).reduce((x, y) -> {
+                throw new IllegalArgumentException(String.format(
+                        "Ambiguous type of a certificate with hash=%s: [%s], [%s]", CertificateHash.of(cert), x, y));
+            }).orElseThrow(() -> {
+                throw new IllegalArgumentException(String.format(
+                        "Unrecognized type of a certificate with hash=%s", CertificateHash.of(cert)));
+            });
+        }
+
+        private static int getDurationInDays(X509Certificate cert) {
+            final var notBefore = cert.getNotBefore();
+            final var notAfter = cert.getNotAfter();
+            return (int)TimeUnit.DAYS.convert(notAfter.getTime() - notBefore.getTime(), TimeUnit.MILLISECONDS);
+        }
     }
 
     /**
@@ -531,14 +571,14 @@ public final class MacSign {
      * @param specs the keychains and signing identities configuration
      */
     public static void setUp(List<KeychainWithCertsSpec> specs) {
-        specs.stream().map(KeychainWithCertsSpec::keychain).map(Keychain::name).collect(toMap(x -> x, x -> x, (x, y) -> {
-            throw new IllegalArgumentException(String.format("Multiple keychains with the same name [%s]", x));
-        }));
+        validate(specs);
 
-        TKit.trace("Signing environment:");
-        for (int i = 0; i != specs.size(); ++i) {
-            TKit.trace(String.format("[%d/%d] %s", i + 1, specs.size(), specs.get(i)));
+        if (!OPENSSL.isAbsolute()) {
+            final var opensslVer = Executor.of(OPENSSL.toString(), "version").saveFirstLineOfOutput().execute().getFirstLineOfOutput();
+            TKit.trace(String.format("openssl version: %s", opensslVer));
         }
+
+        traceSigningEnvironment(specs);
 
         // Reset keychain search list to defaults.
         Keychain.addToSearchList(List.of());
@@ -596,10 +636,89 @@ public final class MacSign {
      * @param specs the keychains and signing identities configuration
      */
     public static void tearDown(List<KeychainWithCertsSpec> specs) {
+        validate(specs);
         Keychain.addToSearchList(List.of());
         specs.forEach(spec -> {
             spec.keychain().delete();
         });
+    }
+
+    /**
+     * Returns {@code true} if the given signing configuration is deployed and in
+     * good standing.
+     *
+     * @param specs the keychains and signing identities configuration
+     * @return {@code true} if the given signing configuration is deployed and in
+     *         good standing
+     */
+    public static boolean isDeployed(List<KeychainWithCertsSpec> specs) {
+        validate(specs);
+        traceSigningEnvironment(specs);
+
+        final var missingKeychain = specs.stream().map(KeychainWithCertsSpec::keychain).filter(Predicate.not(Keychain::exists)).peek(keychain -> {
+            TKit.trace(String.format("Missing [%s] keychain file", keychain.path()));
+        }).findAny().isPresent();
+
+        final var missingCertificates = specs.stream().filter(spec -> {
+            return spec.keychain().exists();
+        }).map(spec -> {
+            final var availableCertRequests = spec.keychain().findCertificates().stream().map(cert -> {
+                try {
+                    final var certRequest = new CertificateRequest(cert);
+                    TKit.trace(String.format("Certificate with hash=%s: %s", CertificateHash.of(cert), certRequest));
+                    return certRequest;
+                } catch (RuntimeException ex) {
+                    final Throwable t;
+                    if (ex instanceof ExceptionBox) {
+                        t = ex.getCause();
+                    } else {
+                        t = ex;
+                    }
+                    TKit.trace(String.format("Failed to create certificate request from the certificate with hash=%s: %s",
+                            CertificateHash.of(cert), t));
+                    return null;
+                }
+            }).filter(Objects::nonNull).collect(toSet());
+            final var configuredCertRequests = spec.certificateRequests().stream().collect(toSet());
+            final var comm = Comm.compare(availableCertRequests, configuredCertRequests);
+            return Map.entry(spec.keychain(), comm.unique2());
+        }).filter(e -> {
+            return !e.getValue().isEmpty();
+        }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        missingCertificates.entrySet().forEach(e -> {
+            for (final var certRequest : e.getValue()) {
+                TKit.trace(String.format("Missing certificate for %s certificate request in [%s] keychain",
+                        certRequest, e.getKey().name()));
+            }
+        });
+
+        return !missingKeychain && missingCertificates.isEmpty();
+    }
+
+    private static void validate(List<KeychainWithCertsSpec> specs) {
+        specs.stream().map(KeychainWithCertsSpec::keychain).map(Keychain::name).collect(toMap(x -> x, x -> x, (x, y) -> {
+            throw new IllegalArgumentException(String.format("Multiple keychains with the same name [%s]", x));
+        }));
+
+        specs.stream().forEach(spec -> {
+            spec.certificateRequests().stream().collect(toMap(x -> x, x -> x, (x, y) -> {
+                throw new IllegalArgumentException(String.format(
+                        "Multiple certificate requests with the same specification %s in one keychain [%s]", x, spec.keychain().name()));
+            }));
+        });
+    }
+
+    private static void traceSigningEnvironment(Collection<KeychainWithCertsSpec> specs) {
+        TKit.trace("Signing environment:");
+        int specIdx = 1;
+        for (final var spec : specs) {
+            TKit.trace(String.format("[%d/%d] %s", specIdx++, specs.size(), spec.keychain()));
+            int certRequestIdx = 1;
+            for (final var certRequest : spec.certificateRequests()) {
+                TKit.trace(String.format("  [%d/%d] %s", certRequestIdx++, spec.certificateRequests().size(), certRequest));
+            }
+        }
     }
 
     private static Stream<Keychain> findKeychains(CertificateRequest certificateRequest,
@@ -636,22 +755,31 @@ public final class MacSign {
         withTempDirectory(tmpDir -> {
             final var cfgFile = tmpDir.resolve("cert.cfg");
             final var certFile = tmpDir.resolve("cert.pem");
-            final var keyFile = tmpDir.resolve("key.p12");
+            final var keyFilePKCS12 = tmpDir.resolve("key.p12");
+            final var keyFilePEM = tmpDir.resolve("key.pem");
 
             security("export",
                     "-f", "pkcs12",
                     "-k", privateKeySource.name(),
                     "-t", "privKeys",
                     "-P", "",
-                    "-o", keyFile.normalize().toString()).execute();
+                    "-o", keyFilePKCS12.normalize().toString()).execute();
+
+            // This step is needed only for LibreSSL variant of openssl command which can't take
+            // private key in PKCS#12 format.
+            Executor.of(OPENSSL.toString(), "pkcs12",
+                    "-nodes",
+                    "-in", keyFilePKCS12.normalize().toString(),
+                    "-password", "pass:",
+                    "-out", keyFilePEM.normalize().toString()).dumpOutput().execute();
+
+            final var keyFile = keyFilePEM;
 
             for (final var spec : specs) {
                 for (final var certificateRequest : spec.certificateRequests()) {
                     var cert = createdCertificates.get(certificateRequest);
-                    if (cert != null) {
-                        spec.certificates().add(cert);
-                    } else {
-                        Files.write(cfgFile, List.of(
+                    if (cert == null) {
+                        TKit.createTextFile(cfgFile, Stream.of(
                                 "[ req ]",
                                 "distinguished_name = req_name",
                                 "prompt=no",
@@ -659,13 +787,15 @@ public final class MacSign {
                                 "CN=" + certificateRequest.name()
                         ));
 
-                        final var openssl = Executor.of("openssl", "req", "-x509", "-utf8",
-                                "-days", Integer.toString(certificateRequest.days()), "-sha256", "-nodes",
+                        final var openssl = Executor.of(OPENSSL.toString(), "req",
+                                "-x509", "-utf8", "-sha256", "-nodes",
+                                "-new", // Prevents LibreSSL variant of openssl command from hanging
+                                "-days", Integer.toString(certificateRequest.days()),
                                 "-key", keyFile.normalize().toString(),
                                 "-config", cfgFile.normalize().toString(),
                                 "-out", certFile.normalize().toString());
 
-                        certificateRequest.type().extensions.forEach(ext -> {
+                        certificateRequest.type().extensions().forEach(ext -> {
                             openssl.addArgument("-addext");
                             openssl.addArgument(ext);
                         });
@@ -676,10 +806,8 @@ public final class MacSign {
                             cert = (X509Certificate)CERT_FACTORY.generateCertificate(in);
                             createdCertificates.put(certificateRequest, cert);
 
-                            spec.certificates().add(cert);
-
                             final var certHash = CertificateHash.of(cert);
-                            final var certPemFile = outputPemDir.resolve(CertificateHash.of(cert).toString() + ".pem");
+                            final var certPemFile = outputPemDir.resolve(certHash.toString() + ".pem");
                             Files.copy(certFile, certPemFile);
                         }
                     }
@@ -716,5 +844,19 @@ public final class MacSign {
         return CertificateFactory.getInstance("X.509");
     }).get();
 
+    // Code Signing
+    private static final List<String> CODE_SIGN_EXTENDED_KEY_USAGE = List.of("1.3.6.1.5.5.7.3.3");
+    // Apple Custom Extended Key Usage (EKU) packageSign
+    // https://oid-base.com/get/1.2.840.113635.100.4.13
+    private static final List<String> INSTALLER_EXTENDED_KEY_USAGE = List.of("1.2.840.113635.100.4.13");
+
     private static final Path SIGN_UTILS_SCRIPT = TKit.TEST_SRC_ROOT.resolve("resources/sign-utils.applescript").normalize();
+
+    // macOS comes with /usr/bin/openssl which is LibreSSL
+    // If you install openssl with Homebrew, it will be installed in /usr/local/bin/openssl,
+    // and the PATH env variable will be altered to pick up openssl from Homebrew.
+    // However, jtreg will alter the value of the PATH env variable and
+    // /usr/bin/openssl will preempt /usr/local/bin/openssl.
+    // To workaround this jtreg behavior support specifying path to openssl command.
+    private static final Path OPENSSL = Path.of(Optional.ofNullable(TKit.getConfigProperty("openssl")).orElse("openssl"));
 }
