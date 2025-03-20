@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,7 +219,9 @@ public final class Http3ServerExchange implements Http2TestExchange {
                                      ResponseBodyOutputStream os)
             throws IOException {
         String tag = "streamId=" + streamId + " ";
-        if (responseLength != 0 && rCode != 204 && isHeadRequest) {
+        // in case of HEAD request the caller is supposed to set Content-Length
+        // directly - and the responseLength passed here is supposed to be -1
+        if (responseLength != 0 && rCode != 204 && !isHeadRequest) {
             long clen = responseLength > 0 ? responseLength : 0;
             rspheadersBuilder.setHeader("Content-length", Long.toString(clen));
         }
