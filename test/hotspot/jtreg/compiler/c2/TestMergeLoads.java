@@ -143,6 +143,7 @@ public class TestMergeLoads {
             a[i] = (short)RANDOM.nextInt();
         }
     }
+
     @Warmup(100)
     @Run(test = {"test1a",
                  "test1b",
