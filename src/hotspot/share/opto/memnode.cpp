@@ -3517,7 +3517,7 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 //------------------------------Ideal_sign_extended_input----------------------
 // Check for useless sign-extension before a partial-word store
 // (StoreB ... (RShiftI _ (LShiftI _ v conIL) conIR))
-// If (conIL == conIR && conIR <= num_bits) this simplifies to
+// If (conIL == conIR && conIR <= num_rejected_bits) this simplifies to
 // (StoreB ... (v))
 // If (conIL > conIR) under some conditions, it can be simplified into
 // (StoreB ... (LShiftI _ v (conIL - conIR)))
@@ -3541,31 +3541,39 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // potentially different magnitudes.
 // We denote num_rejected_bits the number of bits of the discarded part. In this
 // case, num_rejected_bits == 24.
-// Let's study different cases of (RShiftI _ (LShiftI _ v conIL) conIR).
-// Eventually, we show that the simplification into (LShiftI _ v (conIL-conIR))
-// is valid if (but not iff):
-// - conIL >= conIR
-// - num_rejected_bits >= conIR
-// Remembering that only the 8 lower bits have to be correct.
 //
-// Let's also remember that conIL < 32 since (v << 33) is simplified into (v << 1)
-// and (v << 31) << 2 is simplified into 0. This means that in any case, after the
-// left shift, we always have at least one bit of v remaining after the double shift.
-// Thus, after the right shift, the upper bits will be a repetition of the higher bit
-// of v that wasn't discarded by the left shift. The point is that there is no case
-// to study where the left shift returns 0 unconditionally (clears all the bits):
-// it might look like a corner case to pay attention to, but it actually is not.
+// Statement (proved further below in case analysis):
+//   Given:
+//   - 0 <= conIL < BitsPerJavaInteger   (no wrap in shift, enforced by maskShiftAmount)
+//   - 0 <= conIR < BitsPerJavaInteger   (no wrap in shift, enforced by maskShiftAmount)
+//   - conIL >= conIR
+//   - num_rejected_bits >= conIR
+//   Then this form:
+//      (RShiftI _ (LShiftI _ v conIL) conIR)
+//   can be replaced with this form:
+//      (LShiftI _ v (conIL-conIR))
+//
+// Note: We only have to show that the non-rejected lowest bits (8 bits for byte)
+//       have to be correct, as the higher bits are rejected / truncated by the store.
+//
+// The hypotheses
+//   0 <= conIL < BitsPerJavaInteger
+//   0 <= conIR < BitsPerJavaInteger
+// are ensured by maskShiftAmount (called from ::Ideal of shift nodes). Indeed,
+// (v << 31) << 2 must be simplified into 0, not into v << 33 (which is equivalent
+// to v << 1).
+//
 //
 // If you don't like case analysis, jump after the conclusion.
 // ### Case 1 : conIL == conIR
 // ###### Case 1.1: conIL == conIR == num_rejected_bits
 // If we do the shift left then right by 24 bits, we get:
-// after << 24
+// after: v << 24
 // +---------+------------------------+
 // | v[0..7] |           0            |
 // +---------+------------------------+
 //  31     24 23                      0
-// after >> 24
+// after: (v << 24) >> 24
 // +------------------------+---------+
 // |        sign bit        | v[0..7] |
 // +------------------------+---------+
@@ -3575,12 +3583,12 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 
 // ###### Case 1.2: conIL == conIR < num_rejected_bits
 // If we do the shift left then right by 22 bits, we get:
-// after << 22
+// after: v << 22
 // +---------+------------------------+
 // | v[0..9] |           0            |
 // +---------+------------------------+
 //  31     22 21                      0
-// after >> 22
+// after: (v << 22) >> 22
 // +------------------------+---------+
 // |        sign bit        | v[0..9] |
 // +------------------------+---------+
@@ -3591,29 +3599,31 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 
 // ###### But! Case 1.3: conIL == conIR > num_rejected_bits
 // If we do the shift left then right by 26 bits, we get:
-// after << 26
+// after: v << 26
 // +---------+------------------------+
 // | v[0..5] |           0            |
 // +---------+------------------------+
 //  31     26 25                      0
-// after >> 26
+// after: (v << 26) >> 26
 // +------------------------+---------+
-// |        sign bit        | v[0..6] |
+// |        sign bit        | v[0..5] |
 // +------------------------+---------+
 //  31                     6 5        0
-// The non-rejected bits are the 8 lower bits of v. The bits 8 and 9 of v are still
-// present in (v << 22) >> 22 but will be dropped by the store. The simplification is
-// still correct.
+// The non-rejected bits are made of
+// - 0-5 => the bits 0 to 5 of v
+// - 6-7 => the sign bit of v[0..5] (that is v[5])
+// Simplifying this as v is not correct.
+// The condition conIR <= num_rejected_bits is indeed necessary in Case 1
 //
 // ### Case 2: conIL > conIR
 // ###### Case 2.1: num_rejected_bits == conIR
 // We take conIL == 26 for this example.
-// after << 26
+// after: v << 26
 // +---------+------------------------+
 // | v[0..5] |           0            |
 // +---------+------------------------+
 //  31     26 25                      0
-// after >> 24
+// after: (v << 26) >> 24
 // +------------------+---------+-----+
 // |     sign bit     | v[0..5] |  0  |
 // +------------------+---------+-----+
@@ -3624,12 +3634,12 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 //
 // ###### Case 2.2: num_rejected_bits > conIR.
 // Let's say conIL == 26 and conIR == 22.
-// after << 26
+// after: v << 26
 // +---------+------------------------+
 // | v[0..5] |           0            |
 // +---------+------------------------+
 //  31     26 25                      0
-// after >> 22
+// after: (v << 26) >> 22
 // +------------------+---------+-----+
 // |     sign bit     | v[0..5] |  0  |
 // +------------------+---------+-----+
@@ -3644,12 +3654,12 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // ###### But! Case 2.3: num_rejected_bits < conIR.
 // Let's see that this case is not as easy to simplify.
 // Let's say conIL == 28 and conIR == 26.
-// after << 28
+// after: v << 28
 // +---------+------------------------+
 // | v[0..3] |           0            |
 // +---------+------------------------+
 //  31     28 27                      0
-// after >> 26
+// after: (v << 28) >> 26
 // +------------------+---------+-----+
 // |     sign bit     | v[0..3] |  0  |
 // +------------------+---------+-----+
@@ -3659,12 +3669,14 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // - 2-5 => the bits 0 to 3 of v
 // - 6-7 => the sign bit of v[0..3] (that is v[3])
 // Simplifying this as (v << 2) is not correct.
-// The condition conIR <= num_rejected_bits is indeed necessary.
+// The condition conIR <= num_rejected_bits is indeed necessary in Case 2.
 //
 // ### Conclusion:
-// Valid if:
-// - conIL >= conIR
-// - num_rejected_bits >= conIR
+// Our hypotheses are indeed sufficient:
+//   - 0 <= conIL < BitsPerJavaInteger
+//   - 0 <= conIR < BitsPerJavaInteger
+//   - conIL >= conIR
+//   - num_rejected_bits >= conIR
 //
 // ### A rationale without case analysis:
 // After the shift left, conIL upper  bits of v are discarded and conIL lower bit
