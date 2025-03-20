@@ -54,35 +54,35 @@ public class TestTOCHeadings extends JavadocTester {
                     package p;
                     /**
                      * <h1>First Level Heading</h1>
-                     * 
+                     *
                      * Lorem ipsum
-                     * 
+                     *
                      * <h2>Second Level Heading</h2>
-                     * 
+                     *
                      * Lorem ipsum
-                     * 
+                     *
                      * <h3>Third Level Heading</h3>
-                     * 
+                     *
                      * Lorem ipsum
-                     * 
+                     *
                      * <h2>Other Second Level Heading</h2>
-                     * 
+                     *
                      * Lorem ipsum
-                     * 
+                     *
                      * <h3>Other Third Level Heading</h3>
-                     * 
+                     *
                      * Lorem ipsum
-                     *            
+                     *
                      * <h4>Fourth Level Heading</h4>
-                     * 
+                     *
                      * Lorem ipsum
-                     *         
+                     *
                      * <h5>Fifth Level Heading</h5>
-                     * 
+                     *
                      * Lorem ipsum
-                     * 
+                     *
                      * <h6>Sixth Level Heading</h6>
-                     * 
+                     *
                      * Lorem ipsum
                      */
                     public class C {
