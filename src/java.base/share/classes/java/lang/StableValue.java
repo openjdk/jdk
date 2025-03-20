@@ -42,7 +42,7 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A stable value is a shallowly immutable holder of deferred content.
+ * A stable value is a deferred holder of shallowly immutable content.
  * <p>
  * A {@linkplain StableValue {@code StableValue<T>}} can be created using the factory
  * method {@linkplain StableValue#of() {@code StableValue.of()}}. When created
@@ -327,37 +327,30 @@ import java.util.function.Supplier;
  * {@linkplain StableValue#orElseSet(Supplier) orElseSet()} they too are
  * thread safe and guarantee at-most-once-per-input invocation.
  *
- * <h2 id="miscellaneous">Miscellaneous</h2>
- * Except for a StableValue's content itself, an {@linkplain #orElse(Object) orElse(other)}
- * parameter, and an {@linkplain #equals(Object) equals(obj)} parameter; all method
- * parameters must be <em>non-null</em> or a {@link NullPointerException} will be thrown.
- * <p>
- * Stable functions and collections are not {@link Serializable} as this would require
- * {@linkplain #list(int, IntFunction) mappers} to be {@link Serializable} as well,
- * which would introduce security vulnerabilities.
- * <p>
- * As objects can be set via stable values but never removed, this can be a source
- * of unintended memory leaks. A stable value's content is
- * {@linkplain java.lang.ref##reachability strongly reachable}. Clients are advised that
- * {@linkplain java.lang.ref##reachability reachable} stable values will hold their set
- * content perpetually.
- * <p>
- * A {@linkplain StableValue} that has a type parameter {@code T} that is an array
- * type (of arbitrary rank) will only allow the JVM to treat the <em>array reference</em>
- * as a stable value but <em>not its components</em>. Clients can instead use
- * {@linkplain #list(int, IntFunction) a stable list} of arbitrary depth, which provides
- * stable components. More generally, a stable value can hold other stable values of
- * arbitrary depth and still provide transitive constantness.
- *
  * @implSpec Implementing classes of {@linkplain StableValue} are free to synchronize on
  *           {@code this} and consequently, care should be taken whenever
  *           (directly or indirectly) synchronizing on a {@code StableValue}. Failure to
  *           do this may lead to deadlock. Stable functions and collections on the
  *           other hand are guaranteed <em>not to synchronize</em> on {@code this}.
+ *           Except for a {@code StableValue}'s content itself, an {@linkplain #orElse(Object) orElse(other)}
+ *           parameter, and an {@linkplain #equals(Object) equals(obj)} parameter; all
+ *           method parameters must be <em>non-null</em> or a {@link NullPointerException}
+ *           will be thrown.
  *
  * @implNote A {@linkplain StableValue} is mainly intended to be a non-public field in
  *           a class and is usually neither exposed directly via accessors nor passed as
  *           a method parameter.
+ *           As objects can be set via stable values but never removed, this can be a source
+ *           of unintended memory leaks. A stable value's content is
+ *           {@linkplain java.lang.ref##reachability strongly reachable}. Clients are
+ *           advised that {@linkplain java.lang.ref##reachability reachable} stable values
+ *           will hold their set content perpetually.
+ *           A {@linkplain StableValue} that has a type parameter {@code T} that is an array
+ *           type (of arbitrary rank) will only allow the JVM to treat the <em>array reference</em>
+ *           as a stable value but <em>not its components</em>. Clients can instead use
+ *           {@linkplain #list(int, IntFunction) a stable list} of arbitrary depth, which
+ *           provides stable components. More generally, a stable value can hold other
+ *           stable values of arbitrary depth and still provide transitive constantness.
  *
  * @param <T> type of the content
  *
@@ -494,7 +487,7 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new unset stable supplier}
+     * {@return a new stable supplier}
      * <p>
      * The returned {@linkplain Supplier supplier} is a caching supplier that records
      * the value of the provided {@code original} supplier upon being first accessed via
@@ -523,7 +516,7 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new unset stable int function}
+     * {@return a new stable int function}
      * <p>
      * The returned {@link IntFunction int function} is a caching int function that,
      * for each allowed input, records the values of the provided {@code original}
@@ -561,7 +554,7 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new unset stable function}
+     * {@return a new stable function}
      * <p>
      * The returned {@link Function function} is a caching function that, for each allowed
      * input in the given set of {@code inputs}, records the values of the provided
@@ -596,7 +589,7 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new unset stable list with the provided {@code size}}
+     * {@return a new stable list with the provided {@code size}}
      * <p>
      * The returned list is an {@linkplain Collection##unmodifiable unmodifiable} list
      * whose size is known at construction. The list's elements are computed via the
@@ -637,7 +630,7 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new unset stable map with the provided {@code keys}}
+     * {@return a new stable map with the provided {@code keys}}
      * <p>
      * The returned map is an {@linkplain Collection##unmodifiable unmodifiable} map whose
      * keys are known at construction. The map's values are computed via the provided
