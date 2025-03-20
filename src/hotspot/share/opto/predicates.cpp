@@ -51,7 +51,7 @@ bool AssertionPredicate::is_predicate(const Node* maybe_success_proj) {
   if (!may_be_assertion_predicate_if(maybe_success_proj)) {
     return false;
   }
-  return has_assertion_predicate_opaque(maybe_success_proj) && has_halt(maybe_success_proj);
+  return has_assertion_predicate_opaque(maybe_success_proj) && has_halt(maybe_success_proj->as_IfTrue());
 }
 
 // Check if the If node of `predicate_proj` has an OpaqueTemplateAssertionPredicate (Template Assertion Predicate) or
@@ -63,8 +63,8 @@ bool AssertionPredicate::has_assertion_predicate_opaque(const Node* predicate_pr
 }
 
 // Check if the other projection (UCT projection) of `success_proj` has a Halt node as output.
-bool AssertionPredicate::has_halt(const Node* success_proj) {
-  ProjNode* other_proj = success_proj->as_IfProj()->other_if_proj();
+bool AssertionPredicate::has_halt(const IfTrueNode* success_proj) {
+  ProjNode* other_proj = success_proj->other_if_proj();
   return other_proj->outcnt() == 1 && other_proj->unique_out()->Opcode() == Op_Halt;
 }
 
@@ -88,6 +88,11 @@ ParsePredicate ParsePredicate::clone_to_unswitched_loop(Node* new_control, const
                                                                                Op_ParsePredicate, is_false_path_loop);
   NOT_PRODUCT(trace_cloned_parse_predicate(is_false_path_loop, success_proj));
   return ParsePredicate(success_proj, _parse_predicate_node->deopt_reason());
+}
+
+// Kills this Parse Predicate by marking it useless. Will be folded away in the next IGVN round.
+void ParsePredicate::kill(PhaseIterGVN& igvn) const {
+  _parse_predicate_node->mark_useless(igvn);
 }
 
 #ifndef PRODUCT
@@ -161,13 +166,16 @@ void TemplateAssertionPredicate::rewire_loop_data_dependencies(IfTrueNode* targe
   }
 }
 
-// Template Assertion Predicates always have the dedicated OpaqueTemplateAssertionPredicate to identify them.
-bool TemplateAssertionPredicate::is_predicate(const Node* node) {
-  if (!may_be_assertion_predicate_if(node)) {
+// A Template Assertion Predicate always has a dedicated OpaqueTemplateAssertionPredicate to identify it.
+bool TemplateAssertionPredicate::is_predicate(const Node* maybe_success_proj) {
+  if (!may_be_assertion_predicate_if(maybe_success_proj)) {
     return false;
   }
-  IfNode* if_node = node->in(0)->as_If();
-  return if_node->in(1)->is_OpaqueTemplateAssertionPredicate();
+  IfNode* if_node = maybe_success_proj->in(0)->as_If();
+  bool is_template_assertion_predicate = if_node->in(1)->is_OpaqueTemplateAssertionPredicate();
+  assert(!is_template_assertion_predicate || AssertionPredicate::has_halt(maybe_success_proj->as_IfTrue()),
+         "Template Assertion Predicate must have a Halt Node on the failing path");
+  return is_template_assertion_predicate;
 }
 
 // Clone this Template Assertion Predicate without modifying any OpaqueLoop*Node inputs.
@@ -293,15 +301,42 @@ void InitializedAssertionPredicate::verify() const {
 }
 #endif // ASSERT
 
-// Initialized Assertion Predicates always have the dedicated OpaqueInitiailizedAssertionPredicate node to identify
-// them.
-bool InitializedAssertionPredicate::is_predicate(const Node* node) {
-  if (!may_be_assertion_predicate_if(node)) {
+// An Initialized Assertion Predicate always has a dedicated OpaqueInitializedAssertionPredicate node to identify it.
+bool InitializedAssertionPredicate::is_predicate(const Node* maybe_success_proj) {
+  if (!may_be_assertion_predicate_if(maybe_success_proj)) {
     return false;
   }
-  IfNode* if_node = node->in(0)->as_If();
-  return if_node->in(1)->is_OpaqueInitializedAssertionPredicate();
+  IfNode* if_node = maybe_success_proj->in(0)->as_If();
+  bool is_initialized_assertion_predicate = if_node->in(1)->is_OpaqueInitializedAssertionPredicate();
+  assert(!is_initialized_assertion_predicate || has_halt(maybe_success_proj->as_IfTrue()),
+         "Initialized Assertion Predicate must have a Halt Node on the failing path");
+  return is_initialized_assertion_predicate;
 }
+
+#ifdef ASSERT
+bool InitializedAssertionPredicate::has_halt(const IfTrueNode* success_proj) {
+  ProjNode* other_proj = success_proj->other_if_proj();
+  if (other_proj->outcnt() != 1) {
+    return false;
+  }
+
+  Node* out = other_proj->unique_out();
+  // Either the Halt node is directly the unique output.
+  if (out->is_Halt()) {
+    return true;
+  }
+  // Or we have a Region that merges serval paths to a single Halt node. Even though OpaqueInitializedAssertionPredicate
+  // nodes do not common up (i.e. NO_HASH), we could have Initialized Assertion Predicates from already folded loops
+  // being now part of the innermost loop. When then further splitting this loop, we could be cloning the If node
+  // of the Initialized Assertion Predicate (part of the loop body) while the OpaqueInitializedAssertionPredicate is not
+  // cloned because it's outside the loop body. We end up sharing the OpaqueInitializedAssertionPredicate between the
+  // original and the cloned If. This should be fine.
+  if (out->is_Region() && out->outcnt() == 2) {
+    return out->find_out_with(Op_Halt);
+  }
+  return false;
+}
+#endif // ASSERT
 
 // Kills this Initialized Assertion Predicate by marking the associated OpaqueInitializedAssertionPredicate node useless.
 // It will then be folded away in the next IGVN round.
@@ -619,7 +654,7 @@ class AssertionPredicateExpressionCreator : public StackObj {
  private:
   OpaqueTemplateAssertionPredicateNode* create_opaque_node(Node* new_control, BoolNode* bool_for_expression) const {
     OpaqueTemplateAssertionPredicateNode* new_expression = new OpaqueTemplateAssertionPredicateNode(bool_for_expression);
-    _phase->C->add_template_assertion_predicate_opaq(new_expression);
+    _phase->C->add_template_assertion_predicate_opaque(new_expression);
     _phase->register_new_node(new_expression, new_control);
     return new_expression;
   }
@@ -1133,5 +1168,83 @@ void UpdateStrideForAssertionPredicates::connect_initialized_assertion_predicate
     _phase->replace_loop_entry(new_control_out->as_Loop(), initialized_assertion_predicate_success_proj);
   } else {
     _phase->replace_control(new_control_out, initialized_assertion_predicate_success_proj);
+  }
+}
+
+// Do the following to find and eliminate useless Parse and Template Assertion Predicates:
+// 1. Mark all Parse and Template Assertion Predicates "maybe useful".
+// 2. Walk through the loop tree and iterate over all Predicates above each loop head. All found Parse and Template
+//    Assertion Predicates are marked "useful".
+// 3. Those Parse and Template Assertion Predicates that are still marked "maybe useful" are now marked "useless" and
+//    removed in the next round of IGVN.
+//
+// Note that we only mark Predicates useless and not actually replace them now. We leave this work for IGVN which is
+// better suited for this kind of graph surgery. We also not want to replace conditions with a constant to avoid
+// interference with Predicate matching code when iterating through them.
+void EliminateUselessPredicates::eliminate() const {
+  mark_all_predicates_maybe_useful();
+  if (C->has_loops()) {
+    mark_loop_associated_predicates_useful();
+  }
+  mark_maybe_useful_predicates_useless();
+}
+
+void EliminateUselessPredicates::mark_all_predicates_maybe_useful() const {
+  mark_predicates_on_list_maybe_useful(_parse_predicates);
+  mark_predicates_on_list_maybe_useful(_template_assertion_predicate_opaques);
+}
+
+template<class PredicateList>
+void EliminateUselessPredicates::mark_predicates_on_list_maybe_useful(const PredicateList& predicate_list) {
+  for (int i = 0; i < predicate_list.length(); i++) {
+    predicate_list.at(i)->mark_maybe_useful();
+  }
+}
+
+void EliminateUselessPredicates::mark_loop_associated_predicates_useful() const {
+  for (LoopTreeIterator iterator(_ltree_root); !iterator.done(); iterator.next()) {
+    IdealLoopTree* loop = iterator.current();
+    if (loop->can_apply_loop_predication()) {
+      mark_useful_predicates_for_loop(loop);
+    }
+  }
+}
+
+// This visitor marks all visited Parse and Template Assertion Predicates useful.
+class PredicateUsefulMarkerVisitor : public PredicateVisitor {
+ public:
+  using PredicateVisitor::visit;
+
+  void visit(const ParsePredicate& parse_predicate) override {
+    parse_predicate.head()->mark_useful();
+  }
+
+  // We actually mark the associated OpaqueTemplateAssertionPredicate node useful.
+  void visit(const TemplateAssertionPredicate& template_assertion_predicate) override {
+    template_assertion_predicate.opaque_node()->mark_useful();
+  }
+};
+
+void EliminateUselessPredicates::mark_useful_predicates_for_loop(IdealLoopTree* loop) {
+  Node* loop_entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
+  const PredicateIterator predicate_iterator(loop_entry);
+  PredicateUsefulMarkerVisitor predicate_useful_marker_visitor;
+  predicate_iterator.for_each(predicate_useful_marker_visitor);
+}
+
+// All Predicates still being marked MaybeUseful could not be found and thus are now marked useless.
+void EliminateUselessPredicates::mark_maybe_useful_predicates_useless() const {
+  mark_maybe_useful_predicates_on_list_useless(_parse_predicates);
+  mark_maybe_useful_predicates_on_list_useless(_template_assertion_predicate_opaques);
+}
+
+template<class PredicateList>
+void EliminateUselessPredicates::mark_maybe_useful_predicates_on_list_useless(
+    const PredicateList& predicate_list) const {
+  for (int i = 0; i < predicate_list.length(); i++) {
+    auto predicate_node = predicate_list.at(i);
+    if (!predicate_node->is_useful()) {
+      predicate_node->mark_useless(_igvn);
+    }
   }
 }
