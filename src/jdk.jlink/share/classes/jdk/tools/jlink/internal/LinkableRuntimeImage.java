@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import jdk.tools.jlink.internal.runtimelink.ResourceDiff;
 
@@ -67,7 +69,7 @@ public class LinkableRuntimeImage {
 
     public static Archive newArchive(String module,
                                      Path path,
-                                     boolean ignoreModifiedRuntime,
+                                     Config config,
                                      TaskHelper taskHelper) {
         assert isLinkableRuntime();
         // Here we retrieve the per module difference file, which is
@@ -81,8 +83,15 @@ public class LinkableRuntimeImage {
             throw new AssertionError("Failure to retrieve resource diff for " +
                                      "module " + module, e);
         }
-        return new JRTArchive(module, path, !ignoreModifiedRuntime, perModuleDiff, taskHelper);
+        return new JRTArchive(module,
+                              path,
+                              !config.ignoreModifiedRuntime,
+                              perModuleDiff,
+                              // Empty map if no alternative sha sums
+                              config.altHashSums.computeIfAbsent(module, k -> Map.of()),
+                              taskHelper);
     }
 
-
+    static record Config(boolean ignoreModifiedRuntime,
+                         Map<String, Map<String, Set<String>>> altHashSums) {}
 }

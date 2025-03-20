@@ -41,10 +41,12 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -74,6 +76,7 @@ public class JRTArchive implements Archive {
     // Maps a module resource path to the corresponding diff to packaged
     // modules for that resource (if any)
     private final Map<String, ResourceDiff> resDiff;
+    private final Map<String, Set<String>> altHashSums;
     private final boolean errorOnModifiedFile;
     private final TaskHelper taskHelper;
 
@@ -86,11 +89,15 @@ public class JRTArchive implements Archive {
      *        install aborts the link.
      * @param perModDiff The lib/modules (a.k.a jimage) diff for this module,
      *                   possibly an empty list if there are no differences.
+     * @param altHashSums A map of alternative hash sums for files in
+     *                    a module, possibly empty.
+     * @param taskHelper The task helper reference.
      */
     JRTArchive(String module,
                Path path,
                boolean errorOnModifiedFile,
                List<ResourceDiff> perModDiff,
+               Map<String, Set<String>> altHashSums,
                TaskHelper taskHelper) {
         this.module = module;
         this.path = path;
@@ -105,6 +112,7 @@ public class JRTArchive implements Archive {
         this.resDiff = Objects.requireNonNull(perModDiff).stream()
                             .collect(Collectors.toMap(ResourceDiff::getName, Function.identity()));
         this.taskHelper = taskHelper;
+        this.altHashSums = altHashSums;
     }
 
     @Override
@@ -217,7 +225,21 @@ public class JRTArchive implements Archive {
 
                         // Read from the base JDK image.
                         Path path = BASE.resolve(m.resPath);
-                        if (shaSumMismatch(path, m.hashOrTarget, m.symlink)) {
+                        // Allow for additional hash sums so as to support
+                        // file modifications done after jlink has run at build
+                        // time. For example for Windows builds done with
+                        // --with-external-symbols-in-bundles=public or
+                        // distribution builds, where some post-processing happens
+                        // on produced binaries and libraries invalidating the
+                        // hash sum included in the jdk.jlink module for those
+                        // files at jlink-time
+                        Set<String> shaSums = new HashSet<>();
+                        shaSums.add(m.hashOrTarget);
+                        Set<String> extra = altHashSums.get(m.resPath);
+                        if (extra != null) {
+                            shaSums.addAll(extra);
+                        }
+                        if (shaSumMismatch(path, shaSums, m.symlink)) {
                             if (errorOnModifiedFile) {
                                 String msg = taskHelper.getMessage("err.runtime.link.modified.file", path.toString());
                                 IOException cause = new IOException(msg);
@@ -239,14 +261,12 @@ public class JRTArchive implements Archive {
         }
     }
 
-    static boolean shaSumMismatch(Path res, String expectedSha, boolean isSymlink) {
+    static boolean shaSumMismatch(Path res, Set<String> expectedShas, boolean isSymlink) {
         if (isSymlink) {
             return false;
         }
         // handle non-symlink resources
         try {
-            HexFormat format = HexFormat.of();
-            byte[] expected = format.parseHex(expectedSha);
             MessageDigest digest = MessageDigest.getInstance("SHA-512");
             try (InputStream is = Files.newInputStream(res)) {
                 byte[] buf = new byte[1024];
@@ -256,7 +276,9 @@ public class JRTArchive implements Archive {
                 }
             }
             byte[] actual = digest.digest();
-            return !MessageDigest.isEqual(expected, actual);
+            // Convert actual to string
+            String strActual = HexFormat.of().formatHex(actual);
+            return !expectedShas.contains(strActual);
         } catch (Exception e) {
             throw new AssertionError("SHA-512 sum check failed!", e);
         }

@@ -159,7 +159,7 @@ public class IntegrationTest {
                 mods,
                 JlinkTask.limitFinder(JlinkTask.newModuleFinder(modulePaths), limits, mods),
                 linkFromRuntime,
-                false /* ignore modified runtime */,
+                null /* run-time image link config */,
                 false /* generate run-time image */);
 
         List<Plugin> lst = new ArrayList<>();
