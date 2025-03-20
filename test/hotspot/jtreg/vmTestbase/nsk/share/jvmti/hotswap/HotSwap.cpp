@@ -145,8 +145,7 @@ CompiledMethodLoad(jvmtiEnv *jvmti_env, jmethodID method,
 
     CompiledMethodLoadEventsCount++;
 
-    // GetMethodNamme is work only in live phasem so just exit
-    // if event is generated too late
+    // GetMethodName works in live phase only so just exit if the event is generated too late
     if (!NSK_JVMTI_VERIFY(jvmti_env->GetPhase(&phase))) {
         nsk_jvmti_setFailStatus();
         return;
