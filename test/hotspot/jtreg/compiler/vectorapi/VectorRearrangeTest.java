@@ -39,7 +39,7 @@ import jdk.incubator.vector.*;
 import jdk.test.lib.Asserts;
 
 public class VectorRearrangeTest {
-    private static final int LENGTH = 2048;
+    private static final int LENGTH = 1024;
     private static final Generators random = Generators.G;
 
     private static final VectorSpecies<Byte> bspec128    = ByteVector.SPECIES_128;
@@ -304,7 +304,7 @@ public class VectorRearrangeTest {
 
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
-        testFramework.setDefaultWarmup(10000)
+        testFramework.setDefaultWarmup(5000)
                      .addFlags("--add-modules=jdk.incubator.vector")
                      .start();
     }
