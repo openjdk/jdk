@@ -71,7 +71,8 @@ public class TestNumberOfContinuousZeros {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNT_TRAILING_ZEROS_VL, "> 0"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.COUNT_TRAILING_ZEROS_VL, "> 0"})
     public void vectorizeNumberOfTrailingZerosLong() {
         for (int i = 0; i < LEN; ++i) {
             outputLong[i] = Long.numberOfTrailingZeros(inputLong[i]);
@@ -79,7 +80,8 @@ public class TestNumberOfContinuousZeros {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNT_LEADING_ZEROS_VL, "> 0"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.COUNT_LEADING_ZEROS_VL, "> 0"})
     public void vectorizeNumberOfLeadingZerosLong() {
         for (int i = 0; i < LEN; ++i) {
             outputLong[i] = Long.numberOfLeadingZeros(inputLong[i]);

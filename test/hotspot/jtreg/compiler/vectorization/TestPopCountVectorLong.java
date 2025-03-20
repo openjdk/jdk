@@ -60,7 +60,8 @@ public class TestPopCountVectorLong {
 
     @Test // needs to be run in (fast) debug mode
     @Warmup(10000)
-    @IR(counts = {IRNode.POPCOUNT_VL, ">= 1"}) // At least one PopCountVL node is generated if vectorization is successful
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.POPCOUNT_VL, ">= 1"}) // At least one PopCountVL node is generated if vectorization is successful
     public void vectorizeBitCount() {
         for (int i = 0; i < LEN; ++i) {
             output[i] = Long.bitCount(input[i]);
