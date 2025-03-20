@@ -1253,13 +1253,12 @@ void ObjectMonitor::vthread_epilog(JavaThread* current, ObjectWaiter* node) {
 // Convert entry_list into a doubly linked list by assigning the prev
 // pointers and the entry_list_tail pointer. Within the entry_list the
 // next pointers always form a consistent singly linked list. The
-// entry_list can be in either of these forms:
-//   1. Empty.
-//   2. Only singly linked.
-//   3. Only doubly linked.
-//   4. Starting as singly linked (from the head), but ending as doubly
+// entry_list can be in any of these forms:
+//   1. Only singly linked.
+//   2. Only doubly linked.
+//   3. Starting as singly linked (from the head), but ending as doubly
 //      linked (at the tail).
-// Number four is because new threads has pushed themself to the
+// Number three is because new threads has pushed themself to the
 // entry_list head after the entry_list was last converted into a
 // doubly linked list.
 void ObjectMonitor::entry_list_build_dll(JavaThread* current) {
@@ -1268,9 +1267,12 @@ void ObjectMonitor::entry_list_build_dll(JavaThread* current) {
   // Need acquire here to match the implicit release of the cmpxchg
   // that updated entry_list, so we can access w->prev().
   ObjectWaiter* w = Atomic::load_acquire(&_entry_list);
+  // This function should only be called when we know that the
+  // entry_list is not empty.
+  assert(w != nullptr, "invariant");
   while (w != nullptr) {
     assert(w->TState == ObjectWaiter::TS_ENTER, "invariant");
-    assert(w->prev() == nullptr || w->prev() == prev, "should be");
+    assert(w->prev() == nullptr || w->prev() == prev, "invariant");
     if (w->prev() != nullptr) {
       break;
     }
@@ -1282,10 +1284,11 @@ void ObjectMonitor::entry_list_build_dll(JavaThread* current) {
     // We converted the entire entry_list from a singly linked list
     // into a doubly linked list. Now we just need to set the tail
     // pointer.
-    assert(prev == nullptr || prev->next() == nullptr, "should be");
-    assert(_entry_list_tail == nullptr || _entry_list_tail == prev, "should be");
+    assert(prev == nullptr || prev->next() == nullptr, "invariant");
+    assert(_entry_list_tail == nullptr || _entry_list_tail == prev, "invariant");
     _entry_list_tail = prev;
   } else {
+#ifdef ASSERT
     // We stopped iterating through the _entry_list when we found a
     // node that had its prev pointer set. I.e. we converted the first
     // part of the entry_list from a singly linked list into a doubly
@@ -1293,15 +1296,14 @@ void ObjectMonitor::entry_list_build_dll(JavaThread* current) {
     // is doubly linked. But first we check that we have a tail
     // pointer, because if the end of the entry_list is doubly linked
     // and we don't have the tail pointer, something is broken.
-    assert(_entry_list_tail != nullptr, "should be");
-#ifdef ASSERT
+    assert(_entry_list_tail != nullptr, "invariant");
     while (w != nullptr) {
       assert(w->TState == ObjectWaiter::TS_ENTER, "invariant");
-      assert(w->prev() == prev, "should be");
+      assert(w->prev() == prev, "invariant");
       prev = w;
       w = w->next();
     }
-    assert(_entry_list_tail == prev, "should be");
+    assert(_entry_list_tail == prev, "invariant");
 #endif
   }
 }
