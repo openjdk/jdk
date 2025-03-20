@@ -1057,7 +1057,8 @@ void ShenandoahVerifier::verify_generic(VerifyOption vo) {
 void ShenandoahVerifier::verify_before_concmark() {
   VerifyRememberedSet verify_remembered_set = _verify_remembered_before_marking;
   if (_heap->mode()->is_generational() &&
-      _heap->gc_generation()->is_global()) {
+      !_heap->old_generation()->is_mark_complete() &&
+      !_heap->old_generation()->is_parsable()) {
     // Before marking, remembered set can't be verified in global GC, because,
     // we don't know whether old gen is parseable or not.
     verify_remembered_set = _verify_remembered_disable;
@@ -1121,9 +1122,17 @@ void ShenandoahVerifier::verify_before_evacuation() {
 }
 
 void ShenandoahVerifier::verify_before_update_refs() {
+  VerifyRememberedSet verify_remembered_set = _verify_remembered_before_updating_references;
+  if (_heap->mode()->is_generational() &&
+      !_heap->old_generation()->is_mark_complete() &&
+      !_heap->old_generation()->is_parsable()) {
+    // Before marking, remembered set can't be verified in global GC, because,
+    // we don't know whether old gen is parseable or not.
+    verify_remembered_set = _verify_remembered_disable;
+  }
   verify_at_safepoint(
           "Before Updating References",
-          _verify_remembered_before_updating_references,  // verify read-write remembered set
+          verify_remembered_set,        // verify read-write remembered set
           _verify_forwarded_allow,     // forwarded references allowed
           _verify_marked_complete,     // bitmaps might be stale, but alloc-after-mark should be well
           _verify_cset_forwarded,      // all cset refs are fully forwarded
