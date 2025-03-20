@@ -1089,15 +1089,22 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
                         debug.log("RequestSubscriber: no more credit");
                 }
             } catch (Throwable t) {
-                errorRef.compareAndSet(null, t);
-                if (writer.stopSendingReceived()
-                        && !Http3Streams.hasSndError(writer.stream())) {
+                if (writer.stopSendingReceived()) {
+                    // We can reach here if we continue sending after stop sending
+                    // was received, which may happen since stop sending is
+                    // received asynchronously. In that case, we should
+                    // not fail the request but simply stop sending the body.
+                    // The sender will either reset the stream or send a full
+                    // response with an error status code if it wants to fail
+                    // or complete the request.
                     if (debug.on())
                         debug.log("Stop sending requested by peer: canceling subscription");
                     requestBodyCF.complete(null);
                     subscription.cancel();
                     return;
                 }
+                // stop sending was not received: cancel the stream
+                errorRef.compareAndSet(null, t);
                 if (debug.on()) {
                     debug.log("Unexpected exception in onNext: " + t);
                     debug.log("resetting stream %s", streamId());
