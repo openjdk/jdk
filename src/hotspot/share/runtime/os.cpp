@@ -656,13 +656,16 @@ void* os::post_alloc(void* raw_ptr, size_t size, long chunk, MemTag mem_tag, con
     // Register alloc with NMT
     void* const client_ptr = MemTracker::record_malloc((address)raw_ptr, size, mem_tag, stack);
 
-//    if (chunk >= 0) {
-//      if (CDSConfig::is_dumping_static_archive()) {
-//        // Need to deterministically fill all the alignment gaps in C++ structures.
-//        ::memset((char*)client_ptr + chunk, 0, chunk);
-//      }
-//      DEBUG_ONLY(::memset((char*)client_ptr + chunk, uninitBlockPad, size-chunk);)
-//    }
+    if (chunk == 0) {
+      if (CDSConfig::is_dumping_static_archive()) {
+        // Need to deterministically fill all the alignment gaps in C++ structures.
+        ::memset((char*)client_ptr, 0, size);
+      } else {
+        DEBUG_ONLY(::memset((char*)client_ptr, uninitBlockPad, size);)
+      }
+    } else if (chunk > 0) {
+      ::memset((char*)client_ptr + chunk, uninitBlockPad, size - chunk);
+    }
 
     DEBUG_ONLY(break_if_ptr_caught(client_ptr);)
     return client_ptr;
@@ -712,9 +715,9 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     // since it may invalidate the old block, including its header.
     MallocHeader* header = MallocHeader::resolve_checked(memblock);
     MallocHeader::FreeInfo free_info = header->free_info();
-//    if (free_info.size < size) {
-//      chunk = (long)(size - free_info.size);
-//    }
+    if (free_info.size < size) {
+      chunk = (long)free_info.size;
+    }
 
     // Observe MallocLimit
     if ((size > free_info.size) && MemTracker::check_exceeds_limit(size-free_info.size, mem_tag)) {
