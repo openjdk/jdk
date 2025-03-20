@@ -695,13 +695,20 @@ void ShenandoahConcurrentGC::op_init_mark() {
       heap->old_generation()->transfer_pointers_from_satb();
     }
 
+    // Verify before mark is done before swapping card tables.
+    // Therefore, the write card table will be verified before being taken snapshot.
+    if (ShenandoahVerify) {
+      ShenandoahTimingsTracker v(ShenandoahPhaseTimings::init_mark_verify);
+      heap->verifier()->verify_before_concmark();
+    }
+
     {
       ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_swap_rset);
       _generation->swap_card_tables();
     }
   }
 
-  if (ShenandoahVerify) {
+  if (ShenandoahVerify && heap->mode()->is_generational()) {
     ShenandoahTimingsTracker v(ShenandoahPhaseTimings::init_mark_verify);
     heap->verifier()->verify_before_concmark();
   }

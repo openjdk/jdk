@@ -1271,8 +1271,10 @@ public:
   inline void work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
-      if (_heap->is_in_young(obj) && !_scanner->is_card_dirty((HeapWord*) p)) {
+      oop obj = CompressedOops::decode_raw(o);
+      assert(is_object_aligned(obj), "address not aligned: " PTR_FORMAT, p2i(obj));
+      ShenandoahHeapRegion* region = _heap->heap_region_containing(obj);
+      if (region->is_active() && region->is_young() && !_scanner->is_card_dirty((HeapWord*) p)) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                                          _message, "clean card, it should be dirty.", __FILE__, __LINE__);
       }
@@ -1364,11 +1366,11 @@ void ShenandoahVerifier::verify_rem_set_before_mark() {
 
   log_debug(gc)("Verifying remembered set at %s mark", old_generation->is_doing_mixed_evacuations() ? "mixed" : "young");
 
-  ShenandoahScanRemembered* scanner = old_generation->card_scan();
+  ShenandoahWriteTableScanner scanner(ShenandoahGenerationalHeap::heap()->old_generation()->card_scan());
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_old() && r->is_active()) {
-      help_verify_region_rem_set(scanner, r, r->end(), "Verify init-mark remembered set violation");
+      help_verify_region_rem_set(&scanner, r, r->end(), "Verify init-mark remembered set violation");
     }
   }
 }
