@@ -1056,7 +1056,9 @@ void ShenandoahVerifier::verify_generic(VerifyOption vo) {
 
 void ShenandoahVerifier::verify_before_concmark() {
   VerifyRememberedSet verify_remembered_set = _verify_remembered_before_marking;
-  if (!_heap->old_generation()->is_mark_complete() && !_heap->old_generation()->is_parsable()) {
+  if (_heap->mode()->is_generational() &&
+      !_heap->old_generation()->is_mark_complete() &&
+      !_heap->old_generation()->is_parsable()) {
     // Before marking, remembered set can't be verified w/o complete old marking or parsable old generation.
     verify_remembered_set = _verify_remembered_disable;
   }
