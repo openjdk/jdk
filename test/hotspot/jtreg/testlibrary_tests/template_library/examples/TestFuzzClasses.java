@@ -87,7 +87,8 @@ public class TestFuzzClasses {
 
         ArrayList<ClassType> classTypes = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            ClassType ct = new ClassType("C" + i, null);
+            ClassType superClass = i > 0 && RANDOM.nextInt(2) == 0 ? Library.choice(classTypes) : null;
+            ClassType ct = new ClassType("C" + i, superClass);
             classTypes.add(ct);
             for (int j = 0; j < RANDOM.nextInt(10); j++) {
                 Type type = Library.choice(Type.PRIMITIVE_TYPES);
@@ -133,7 +134,7 @@ public class TestFuzzClasses {
         // Now use the templates and add them into the IRTestClass.
         List<TemplateWithArgs> templates = new ArrayList<>();
         for (var classType : classTypes) {
-            templates.add(classType.templateWithArgs());
+            templates.add(classType.classDefinitionTemplateWithArgs());
         }
         for (var classType : classTypes) {
             templates.add(template1.withArgs(classType));

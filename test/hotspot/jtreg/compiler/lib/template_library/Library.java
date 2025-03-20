@@ -56,7 +56,7 @@ public abstract class Library {
         return list.get(i);
     }
 
-    static final <T> List<T> concat(List<? extends T> ... lists) {
+    public static final <T> List<T> concat(List<? extends T> ... lists) {
         List<T> list = new ArrayList<T>();
         for (var l : lists) {
             list.addAll(l);

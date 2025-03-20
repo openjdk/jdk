@@ -70,7 +70,7 @@ public final class ClassType extends Type {
         fields.add(new ClassField(name, type));
     }
 
-    public final List<ClassField> allFields() {
+    public final List<ClassField> collectAllFields() {
         List<ClassField> list = new ArrayList<>();
         ClassType ct = this;
         while (ct != null) {
@@ -80,20 +80,33 @@ public final class ClassType extends Type {
         return list;
     }
 
-    public TemplateWithArgs templateWithArgs() {
+    // TODO: template that executes some random statement: create, modify, etc...
+
+    public TemplateWithArgs classDefinitionTemplateWithArgs() {
+        List<ClassField> allFields = collectAllFields();
+
         var fieldTemplate = Template.make("cf", (ClassField cf) -> body(
                 let("name", cf.name()),
                 let("type", cf.type()),
                 "public #type #name = ", cf.type().con(), ";\n"
         ));
+
         var template = Template.make(() -> body(
                 let("class", className),
-                """
-                public static class #class {
-                """,
+                // Declaring the class.
+                "public static class #class ", (superClass == null ? "" : "extends " + superClass) ," {\n",
+                // Define local fields.
                 fields.stream().map((ClassField cf) -> fieldTemplate.withArgs(cf)).toList(),
+                // Constructor with arguments for every field.
+                "public #class(", String.join(", ", allFields.stream().map((ClassField cf) -> cf.type() + " " + cf.name()).toList()), ") {\n",
+                allFields.stream().map((ClassField cf) -> "    this." + cf.name() + " = " + cf.name() + ";\n").toList(),
                 """
-                    public #class() {}
+                }
+                """,
+                // Default constructor.
+                allFields.size() == 0 ? ""
+                                      : "public #class() {} // default\n",
+                """
                 }
                 """
         ));

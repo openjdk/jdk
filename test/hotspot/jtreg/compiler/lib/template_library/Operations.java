@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.stream.Stream;
 
 // TODO: find more operations, like in Math.java or ExactMath.java
-final class Operations {
+public final class Operations {
 
     private static final List<Operation> BYTE_OPERATIONS = List.of(
         // Note: the standard integer arithmetic operations are only defined for int/long.
