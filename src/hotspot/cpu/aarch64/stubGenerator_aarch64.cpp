@@ -4810,23 +4810,27 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-  // Helper routines for various flavours of dilithium montgomery
-  // multiply
+  // Helper routines for various flavours of montgomery multiply
 
-  // Perform 16 32-bit Montgomery multiplications in parallel
-  // See the montMul() method of the sun.security.provider.ML_DSA class.
+  // Perform 16 32-bit (4x4S) or 32 16 bit (4 x 8H) Montgomery
+  // multiplications in parallel
   //
-  // Computes 4x4S results
-  //    a = b * c * 2^-32 mod MONT_Q
-  // Inputs:  vb, vc - 4x4S vector register sequences
-  //          vq - 2x4S constants <MONT_Q, MONT_Q_INV_MOD_R>
-  // Temps:   vtmp - 4x4S vector sequence trashed after call
-  // Outputs: va - 4x4S vector register sequences
+  // See the montMul() method of the sun.security.provider.ML_DSA
+  // class.
+  //
+  // Computes 4x4S results or 8x8H results
+  //    a = b * c * 2^MONT_R_BITS mod MONT_Q
+  // Inputs:  vb, vc - 4x4S or 4x8H vector register sequences
+  //          vq - 2x4S or 2x8H constants <MONT_Q, MONT_Q_INV_MOD_R>
+  // Temps:   vtmp - 4x4S or 4x8H vector sequence trashed after call
+  // Outputs: va - 4x4S or 4x8H vector register sequences
   // vb, vc, vtmp and vq must all be disjoint
   // va must be disjoint from all other inputs/temps or must equal vc
-  // n.b. MONT_R_BITS is 32, so the right shift by it is implicit.
-  void dilithium_montmul16(const VSeq<4>& va, const VSeq<4>& vb, const VSeq<4>& vc,
-                    const VSeq<4>& vtmp, const VSeq<2>& vq) {
+  // n.b. MONT_R_BITS is 16 or 32, so the right shift by it is implicit.
+  void vs_montmul4(const VSeq<4>& va, const VSeq<4>& vb, const VSeq<4>& vc,
+                   Assembler::SIMD_Arrangement T,
+                   const VSeq<4>& vtmp, const VSeq<2>& vq) {
+    assert (T == __ T4S || T == __ T8H, "invalid arrangement for montmul");
     assert(vs_disjoint(vb, vc), "vb and vc overlap");
     assert(vs_disjoint(vb, vq), "vb and vq overlap");
     assert(vs_disjoint(vb, vtmp), "vb and vtmp overlap");
@@ -4843,37 +4847,40 @@ class StubGenerator: public StubCodeGenerator {
 
     // schedule 4 streams of instructions across the vector sequences
     for (int i = 0; i < 4; i++) {
-      __ sqdmulh(vtmp[i], __ T4S, vb[i], vc[i]); // aHigh = hi32(2 * b * c)
-      __ mulv(va[i], __ T4S, vb[i], vc[i]);    // aLow = lo32(b * c)
+      __ sqdmulh(vtmp[i], T, vb[i], vc[i]); // aHigh = hi32(2 * b * c)
+      __ mulv(va[i], T, vb[i], vc[i]);    // aLow = lo32(b * c)
     }
 
     for (int i = 0; i < 4; i++) {
-      __ mulv(va[i], __ T4S, va[i], vq[0]);     // m = aLow * qinv
+      __ mulv(va[i], T, va[i], vq[0]);     // m = aLow * qinv
     }
 
     for (int i = 0; i < 4; i++) {
-      __ sqdmulh(va[i], __ T4S, va[i], vq[1]);  // n = hi32(2 * m * q)
+      __ sqdmulh(va[i], T, va[i], vq[1]);  // n = hi32(2 * m * q)
     }
 
     for (int i = 0; i < 4; i++) {
-      __ shsubv(va[i], __ T4S, vtmp[i], va[i]);   // a = (aHigh - n) / 2
+      __ shsubv(va[i], T, vtmp[i], va[i]);   // a = (aHigh - n) / 2
     }
   }
 
+  void dilithium_montmul16(const VSeq<4>& va, const VSeq<4>& vb, const VSeq<4>& vc,
+                           const VSeq<4>& vtmp, const VSeq<2>& vq) {
+    // Use the helper routine to schedule a 4x4S montgomery multiply.
+    // It will assert that the register use is valid
+    vs_montmul4(va, vb, vc, __ T4S, vtmp, vq);
+  }
+
   // Perform 2x16 32-bit Montgomery multiplications in parallel
-  // See the montMul() method of the sun.security.provider.ML_DSA class.
-  //
-  // Computes 8x4S results
-  //    a = b * c * 2^-32 mod MONT_Q
-  // Inputs:  vb, vc - 8x4S vector register sequences
-  //          vq - 2x4S constants <MONT_Q, MONT_Q_INV_MOD_R>
-  // Temps:   vtmp - 4x4S vector sequence trashed after call
-  // Outputs: va - 8x4S vector register sequences
-  // vb, vc, vtmp and vq must all be disjoint
-  // va must be disjoint from all other inputs/temps or must equal vc
-  // n.b. MONT_R_BITS is 32, so the right shift by it is implicit.
-  void vs_montmul32(const VSeq<8>& va, const VSeq<8>& vb, const VSeq<8>& vc,
-                    const VSeq<4>& vtmp, const VSeq<2>& vq) {
+
+  void dilithium_montmul32(const VSeq<8>& va, const VSeq<8>& vb, const VSeq<8>& vc,
+                           const VSeq<4>& vtmp, const VSeq<2>& vq) {
+    // Schedule two successive 4x4S multiplies via the montmul helper
+    // on the front and back halves of va, vb and vc. The helper will
+    // assert that the register use has no overlap conflicts on each
+    // individual call but we also need to ensure that the necessary
+    // disjoint/equality constraints are met across both calls.
+
     // vb, vc, vtmp and vq must be disjoint. va must either be
     // disjoint from all other registers or equal vc
 
@@ -4891,8 +4898,8 @@ class StubGenerator: public StubCodeGenerator {
     assert(vs_disjoint(va, vq), "va and vq overlap");
     assert(vs_disjoint(va, vtmp), "va and vtmp overlap");
 
-    // we need to multiply the front and back halves of each sequence
-    // 4x4S at a time because
+    // we multiply the front and back halves of each sequence 4 at a
+    // time because
     //
     // 1) we are currently only able to get 4-way instruction
     // parallelism at best
@@ -4901,8 +4908,8 @@ class StubGenerator: public StubCodeGenerator {
     // scratch registers to hold intermediate results so vtmp can only
     // be a VSeq<4> which means we only have 4 scratch slots
 
-    dilithium_montmul16(vs_front(va), vs_front(vb), vs_front(vc), vtmp, vq);
-    dilithium_montmul16(vs_back(va), vs_back(vb), vs_back(vc), vtmp, vq);
+    vs_montmul4(vs_front(va), vs_front(vb), vs_front(vc), __ T4S, vtmp, vq);
+    vs_montmul4(vs_back(va), vs_back(vb), vs_back(vc), __ T4S, vtmp, vq);
   }
 
   // perform combined montmul then add/sub on 4x4S vectors
@@ -4975,7 +4982,7 @@ class StubGenerator: public StubCodeGenerator {
         // load next 8x4S inputs == b
         vs_ldpq_post(vs2, zetas);
         // compute a == c2 * b mod MONT_Q
-        vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+        dilithium_montmul32(vs2, vs1, vs2, vtmp, vq);
         // load 8x4s coefficients via first start pos == c1
         vs_ldpq_indexed(vs1, coeffs, c1Start, offsets);
         // compute a1 =  c1 + a
@@ -5056,7 +5063,7 @@ class StubGenerator: public StubCodeGenerator {
       // load next 32 (8x4S) inputs = b
       vs_ldpq_post(vs2, zetas);
       // a = b montul c1
-      vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+      dilithium_montmul32(vs2, vs1, vs2, vtmp, vq);
       // load 32 (8x4S) coefficients via second offsets = c2
       vs_ldr_indexed(vs1, __ Q, coeffs, i, offsets2);
       // add/sub with result of multiply
@@ -5188,7 +5195,7 @@ class StubGenerator: public StubCodeGenerator {
         // load b next 32 (8x4S) inputs
         vs_ldpq_post(vs2, zetas);
         // a = a1 montmul b
-        vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+        dilithium_montmul32(vs2, vs1, vs2, vtmp, vq);
         // save a relative to second start index
         vs_stpq_indexed(vs2, coeffs, c2Start, offsets);
 
@@ -5306,7 +5313,7 @@ class StubGenerator: public StubCodeGenerator {
       // reload constants q, qinv -- they were clobbered earlier
       vs_ldpq(vq, dilithiumConsts); // qInv, q
       // compute a1 = b montmul c
-      vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+      dilithium_montmul32(vs2, vs1, vs2, vtmp, vq);
       // store a1 32 (8x4S) coefficients via second offsets
       vs_str_indexed(vs2, __ Q, coeffs, i, offsets2);
     }
@@ -5370,9 +5377,9 @@ class StubGenerator: public StubCodeGenerator {
     // c load 32 (8x4S) next inputs from poly2
     vs_ldpq_post(vs2, poly2);
     // compute a = b montmul c
-    vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+    dilithium_montmul32(vs2, vs1, vs2, vtmp, vq);
     // compute a = rsquare montmul a
-    vs_montmul32(vs2, vrsquare, vs2, vtmp, vq);
+    dilithium_montmul32(vs2, vrsquare, vs2, vtmp, vq);
     // save a 32 (8x4S) results
     vs_stpq_post(vs2, result);
 
@@ -5433,7 +5440,7 @@ class StubGenerator: public StubCodeGenerator {
     // load next 32 inputs
     vs_ldpq_post(vs2, coeffs);
     // mont mul by constant
-    vs_montmul32(vs2, vconst, vs2, vtmp, vq);
+    dilithium_montmul32(vs2, vconst, vs2, vtmp, vq);
     // write next 32 results
     vs_stpq_post(vs2, result);
 
