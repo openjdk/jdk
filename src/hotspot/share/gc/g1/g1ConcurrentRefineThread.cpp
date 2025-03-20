@@ -216,7 +216,7 @@ void G1ConcurrentRefineThread::do_refinement() {
     {
       // The young gen revising mechanism reads the predictor and the values set
       // here. Avoid inconsistencies by locking.
-      MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker x(G1ReviseYoungLength_lock, Mutex::_no_safepoint_check_flag);
       policy->record_dirtying_stats(TimeHelper::counter_to_millis(G1CollectedHeap::heap()->last_refinement_epoch_start()),
                                     TimeHelper::counter_to_millis(next_epoch_start),
                                     stats->cards_pending(),

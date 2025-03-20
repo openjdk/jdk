@@ -633,9 +633,9 @@ void G1Policy::record_dirtying_stats(double last_mutator_start_dirty_ms,
                                      double yield_duration_ms,
                                      size_t next_pending_cards_from_gc,
                                      size_t next_to_collection_set_cards) {
-  assert(SafepointSynchronize::is_at_safepoint() || G1RareEvent_lock->is_locked(),
+  assert(SafepointSynchronize::is_at_safepoint() || G1ReviseYoungLength_lock->is_locked(),
          "must be (at safepoint %s locked %s)",
-         BOOL_TO_STR(SafepointSynchronize::is_at_safepoint()), BOOL_TO_STR(G1RareEvent_lock->is_locked()));
+         BOOL_TO_STR(SafepointSynchronize::is_at_safepoint()), BOOL_TO_STR(G1ReviseYoungLength_lock->is_locked()));
   // Record mutator's card logging rate.
 
   // Unlike above for conc-refine rate, here we should not require a
@@ -1431,6 +1431,48 @@ bool G1Policy::next_gc_should_be_mixed() const {
 
 size_t G1Policy::allowed_waste_in_collection_set() const {
   return G1HeapWastePercent * _g1h->capacity() / 100;
+}
+
+bool G1Policy::try_get_available_bytes_estimate(size_t& available_bytes) const {
+  // Getting used young bytes requires holding Heap_lock.  But we can't use
+  // normal lock and block until available.  Blocking on the lock could
+  // deadlock with a GC VMOp that is holding the lock and requesting a
+  // safepoint.  Instead try to lock, and return the result of that attempt,
+  // and the estimate if successful.
+  if (Heap_lock->try_lock()) {
+    size_t used_bytes = estimate_used_young_bytes_locked();
+    Heap_lock->unlock();
+
+    size_t young_bytes = young_list_target_length() * G1HeapRegion::GrainBytes;
+    available_bytes = young_bytes - MIN2(young_bytes, used_bytes);
+    return true;
+  } else {
+    available_bytes = 0;
+    return false;
+  }
+}
+
+double G1Policy::predict_time_to_next_gc_ms(size_t available_bytes) const {
+  double alloc_region_rate = _analytics->predict_alloc_rate_ms();
+  double alloc_bytes_rate = alloc_region_rate * G1HeapRegion::GrainBytes;
+  if (alloc_bytes_rate == 0.0) {
+    // A zero rate indicates we don't yet have data to use for predictions.
+    // Since we don't have any idea how long until the next GC, use a time of
+    // zero.
+    return 0.0;
+  } else {
+    // If the heap size is large and the allocation rate is small, we can get
+    // a predicted time until next GC that is so large it can cause problems
+    // (such as overflow) in other calculations.  Limit the prediction to one
+    // hour, which is still large in this context.
+    const double one_hour_ms = 60.0 * 60.0 * MILLIUNITS;
+    double raw_time_ms = available_bytes / alloc_bytes_rate;
+    return MIN2(raw_time_ms, one_hour_ms);
+  }
+}
+
+uint64_t G1Policy::adjust_wait_time_ms(double wait_time_ms, uint64_t min_time_ms) {
+  return MAX2(static_cast<uint64_t>(sqrt(wait_time_ms) * 4.0), min_time_ms);
 }
 
 double G1Policy::last_mutator_dirty_start_time_ms() {

@@ -62,6 +62,7 @@
 #include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/g1/g1RemSet.hpp"
+#include "gc/g1/g1ReviseYoungListTargetLengthTask.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
@@ -1160,6 +1161,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _service_thread(nullptr),
   _periodic_gc_task(nullptr),
   _free_arena_memory_task(nullptr),
+  _revise_young_length_task(nullptr),
   _workers(nullptr),
   _refinement_epoch(0),
   _last_synchronized_start(0),
@@ -1467,6 +1469,11 @@ jint G1CollectedHeap::initialize() {
 
   _free_arena_memory_task = new G1MonotonicArenaFreeMemoryTask("Card Set Free Memory Task");
   _service_thread->register_task(_free_arena_memory_task);
+
+  if (policy()->use_adaptive_young_list_length()) {
+    _revise_young_length_task = new G1ReviseYoungLengthTargetLengthTask("Revise Young Length List Task");
+    _service_thread->register_task(_revise_young_length_task);
+  }
 
   // Here we allocate the dummy G1HeapRegion that is required by the
   // G1AllocRegion class.

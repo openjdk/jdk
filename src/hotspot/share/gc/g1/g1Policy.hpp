@@ -335,7 +335,6 @@ public:
   // Amount of allowed waste in bytes in the collection set.
   size_t allowed_waste_in_collection_set() const;
 
-
 private:
 
   // Predict the number of bytes of surviving objects from survivor and old
@@ -369,9 +368,27 @@ public:
 
   bool use_adaptive_young_list_length() const;
 
+  // Try to get an estimate of the currently available bytes in the young gen. This
+  // operation considers itself low-priority: if other threads need the resources
+  // required to get the information, return false to indicate that the caller
+  // should retry "soon".
+  bool try_get_available_bytes_estimate(size_t& bytes) const;
+  // Estimate time until next GC, based on remaining bytes available for
+  // allocation and the allocation rate.
+  double predict_time_to_next_gc_ms(size_t available_bytes) const;
+
+  // Adjust wait times to make them less frequent the longer the next GC is away.
+  // But don't increase the wait time too rapidly, further bound it by min_time_ms.
+  // This reduces the number of thread wakeups that just immediately
+  // go back to waiting, while still being responsive to behavior changes.
+  uint64_t adjust_wait_time_ms(double wait_time_ms, uint64_t min_time_ms);
+
+private:
   // Return an estimate of the number of bytes used in young gen.
   // precondition: holding Heap_lock
   size_t estimate_used_young_bytes_locked() const;
+
+public:
 
   void transfer_survivors_to_cset(const G1SurvivorRegions* survivors);
 

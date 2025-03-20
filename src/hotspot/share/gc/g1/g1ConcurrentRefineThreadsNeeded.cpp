@@ -52,28 +52,10 @@ void G1ConcurrentRefineThreadsNeeded::update(uint active_threads,
                                              size_t available_bytes,
                                              size_t num_cards,
                                              size_t target_num_cards) {
-  const G1Analytics* analytics = _policy->analytics();
-
-  // Estimate time until next GC, based on remaining bytes available for
-  // allocation and the allocation rate.
-  double alloc_region_rate = analytics->predict_alloc_rate_ms();
-  double alloc_bytes_rate = alloc_region_rate * G1HeapRegion::GrainBytes;
-  if (alloc_bytes_rate == 0.0) {
-    // A zero rate indicates we don't yet have data to use for predictions.
-    // Since we don't have any idea how long until the next GC, use a time of
-    // zero.
-    _predicted_time_until_next_gc_ms = 0.0;
-  } else {
-    // If the heap size is large and the allocation rate is small, we can get
-    // a predicted time until next GC that is so large it can cause problems
-    // (such as overflow) in other calculations.  Limit the prediction to one
-    // hour, which is still large in this context.
-    const double one_hour_ms = 60.0 * 60.0 * MILLIUNITS;
-    double raw_time_ms = available_bytes / alloc_bytes_rate;
-    _predicted_time_until_next_gc_ms = MIN2(raw_time_ms, one_hour_ms);
-  }
+  _predicted_time_until_next_gc_ms = _policy->predict_time_to_next_gc_ms(available_bytes);
 
   // Estimate number of cards that need to be processed before next GC.
+  const G1Analytics* analytics = _policy->analytics();
 
   double incoming_rate = analytics->predict_dirtied_cards_rate_ms();
   double raw_cards = incoming_rate * _predicted_time_until_next_gc_ms;
