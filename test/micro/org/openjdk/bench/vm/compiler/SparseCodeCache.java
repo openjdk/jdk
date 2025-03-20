@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Mode;
@@ -39,6 +40,7 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 import org.openjdk.bench.util.InMemoryJavaCompiler;
 
@@ -71,12 +73,16 @@ import jdk.test.whitebox.code.NMethod;
     "-XX:-UseCodeCacheFlushing",
     "-XX:-TieredCompilation",
     "-XX:+SegmentedCodeCache",
-    "-XX:ReservedCodeCacheSize=320m",
-    "-XX:InitialCodeCacheSize=320m",
+    "-XX:ReservedCodeCacheSize=512m",
+    "-XX:InitialCodeCacheSize=512m",
     "-XX:+UseSerialGC",
     "-XX:+PrintCodeCache"
 })
 public class SparseCodeCache {
+
+    private static final int C2_LEVEL = 4;
+    private static final int DUMMY_BLOB_SIZE = 1024 * 1024;
+    private static final int DUMMY_BLOB_COUNT = 128;
 
     static byte[] num1;
     static byte[] num2;
@@ -136,7 +142,6 @@ public class SparseCodeCache {
     }
 
     private static final class TestMethod {
-        private static final int C2_LEVEL = 4;
         private static final String CLASS_NAME = "A";
         private static final String METHOD_TO_COMPILE = "sum";
         private static final String JAVA_CODE = """
@@ -183,6 +188,7 @@ public class SparseCodeCache {
         public TestMethod() throws Exception {
             var cl = createClassLoaderFor().loadClass(CLASS_NAME);
             method = cl.getMethod(METHOD_TO_COMPILE, byte[].class, byte[].class, byte[].class);
+            getWhiteBox().testSetDontInlineMethod(method, true);
         }
 
         public void profile(byte[] num1, byte[] num2, byte[] result) throws Exception {
@@ -218,6 +224,19 @@ public class SparseCodeCache {
             methods[i].profile(num1, num2, result);
             methods[i].compileWithC2();
         }
+        allocateDummyBlobs(DUMMY_BLOB_COUNT, DUMMY_BLOB_SIZE, methods[activeMethodCount - 1].getNMethod().code_blob_type.id);
+        compileCallMethods();
+    }
+
+    private void allocateDummyBlobs(int count, int size, int codeBlobType) {
+        getWhiteBox().lockCompilation();
+        for (int i = 0; i < count; i++) {
+            var dummyBlob = getWhiteBox().allocateCodeBlob(size, codeBlobType);
+            if (dummyBlob == 0) {
+                throw new IllegalStateException("Failed to allocate dummy blob.");
+            }
+        }
+        getWhiteBox().unlockCompilation();
     }
 
     private void generateCode() throws Exception {
@@ -277,8 +296,11 @@ public class SparseCodeCache {
             var regionEnd = regionStart + codeRegionSize;
             var lastNmethodInPrevGroup = methods[j - 1].getNMethod();
             if ((lastNmethodInPrevGroup.address + lastNmethodInPrevGroup.size) < regionEnd) {
-                getWhiteBox().allocateCodeBlob(regionEnd - lastNmethodInPrevGroup.address - lastNmethodInPrevGroup.size,
-                    lastNmethodInPrevGroup.code_blob_type.id);
+                var dummyBlob = getWhiteBox().allocateCodeBlob(regionEnd - lastNmethodInPrevGroup.address - lastNmethodInPrevGroup.size,
+                                                               lastNmethodInPrevGroup.code_blob_type.id);
+                if (dummyBlob == 0) {
+                    throw new IllegalStateException("Failed to allocate dummy blob.");
+                }
             }
             getWhiteBox().unlockCompilation();
 
@@ -294,6 +316,25 @@ public class SparseCodeCache {
                 methods[j].compileWithC2();
             }
         }
+
+        allocateDummyBlobs(DUMMY_BLOB_COUNT, DUMMY_BLOB_SIZE, methods[j - 1].getNMethod().code_blob_type.id);
+        compileCallMethods();
+    }
+
+    private void compileCallMethods() throws Exception {
+        var threadState = new ThreadState();
+        threadState.setup();
+        callMethods(threadState);
+        Method method = SparseCodeCache.class.getDeclaredMethod("callMethods", ThreadState.class);
+        getWhiteBox().markMethodProfiled(method);
+        getWhiteBox().enqueueMethodForCompilation(method, C2_LEVEL);
+        while (getWhiteBox().isMethodQueuedForCompilation(method)) {
+            Thread.onSpinWait();
+        }
+        if (getWhiteBox().getMethodCompilationLevel(method) != C2_LEVEL) {
+            throw new IllegalStateException("Method SparseCodeCache::callMethods is not compiled by C2.");
+        }
+        getWhiteBox().testSetDontInlineMethod(method, true);
     }
 
     @Setup(Level.Trial)
@@ -302,10 +343,16 @@ public class SparseCodeCache {
         generateCode();
     }
 
-    @Benchmark
-    public void runMethods(ThreadState s) throws Exception {
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    private void callMethods(ThreadState s) throws Exception {
         for (var m : methods) {
             m.invoke(num1, num2, s.result);
         }
+    }
+
+    @Benchmark
+    @Warmup(iterations = 2)
+    public void runMethodsWithReflection(ThreadState s) throws Exception {
+        callMethods(s);
     }
 }
