@@ -106,17 +106,23 @@ bool VM_GC_Operation::doit_prologue() {
               proper_unit_for_byte_size(NewSize)));
   }
 
+  // For Serial and Parallel, call block() before acquiring Heap_lock in
+  // doit_prologue(), because block() can potentially block the calling thread,
+  // and blocking while holding Heap_lock can result in deadlock.
+  if (UseSerialGC || UseParallelGC) {
+    GCLocker::block();
+  }
   VM_GC_Sync_Operation::doit_prologue();
 
   // Check invocations
   if (skip_operation()) {
     // skip collection
     Heap_lock->unlock();
+    if (UseSerialGC || UseParallelGC) {
+      GCLocker::unblock();
+    }
     _prologue_succeeded = false;
   } else {
-    if (UseSerialGC || UseParallelGC) {
-      GCLocker::block();
-    }
     _prologue_succeeded = true;
   }
   return _prologue_succeeded;
@@ -124,9 +130,6 @@ bool VM_GC_Operation::doit_prologue() {
 
 
 void VM_GC_Operation::doit_epilogue() {
-  if (UseSerialGC || UseParallelGC) {
-    GCLocker::unblock();
-  }
   // GC thread root traversal likely used OopMapCache a lot, which
   // might have created lots of old entries. Trigger the cleanup now.
   OopMapCache::try_trigger_cleanup();
@@ -134,6 +137,9 @@ void VM_GC_Operation::doit_epilogue() {
     Heap_lock->notify_all();
   }
   VM_GC_Sync_Operation::doit_epilogue();
+  if (UseSerialGC || UseParallelGC) {
+    GCLocker::unblock();
+  }
 }
 
 bool VM_GC_HeapInspection::doit_prologue() {
