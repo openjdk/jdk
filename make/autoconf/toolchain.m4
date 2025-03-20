@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -533,6 +533,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
     #   GNU ld (GNU Binutils for Ubuntu) 2.26.1
 
     LINKER_VERSION_STRING=`$LINKER -Wl,-v 2>&1 | $HEAD -n 1`
+    $RM -rf a.out
     # Check if we're using the GNU ld
     $ECHO "$LINKER_VERSION_STRING" | $GREP "GNU" > /dev/null
     if test $? -eq 0; then
