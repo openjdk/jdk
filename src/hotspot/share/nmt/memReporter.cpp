@@ -249,7 +249,7 @@ void MemSummaryReporter::report_summary_of_tag(MemTag mem_tag,
 
    // report malloc'd memory
   if (amount_in_current_scale(MAX2(malloc_memory->malloc_size(), pk_malloc)) > 0) {
-    print_malloc(malloc_memory->malloc_counter());
+    print_malloc(malloc_memory->malloc_counter(), mem_tag);
     out->cr();
   }
 
