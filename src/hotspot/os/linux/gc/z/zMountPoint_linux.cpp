@@ -28,6 +28,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -62,11 +63,11 @@ char* ZMountPoint::get_mountpoint(const char* line, const char* filesystem) cons
       strcmp(line_filesystem, filesystem) != 0 ||
       access(line_mountpoint, R_OK|W_OK|X_OK) != 0) {
     // Not a matching or accessible filesystem
-    ALLOW_C_FUNCTION(::free, ::free(line_mountpoint);)
+    permit_forbidden_function::free(line_mountpoint);
     line_mountpoint = nullptr;
   }
 
-  ALLOW_C_FUNCTION(::free, ::free(line_filesystem);)
+  permit_forbidden_function::free(line_filesystem);
 
   return line_mountpoint;
 }
@@ -90,14 +91,14 @@ void ZMountPoint::get_mountpoints(const char* filesystem, ZArray<char*>* mountpo
   }
 
   // readline will return malloced memory. Need raw ::free, not os::free.
-  ALLOW_C_FUNCTION(::free, ::free(line);)
+  permit_forbidden_function::free(line);
   fclose(fd);
 }
 
 void ZMountPoint::free_mountpoints(ZArray<char*>* mountpoints) const {
   ZArrayIterator<char*> iter(mountpoints);
   for (char* mountpoint; iter.next(&mountpoint);) {
-    ALLOW_C_FUNCTION(::free, ::free(mountpoint);) // *not* os::free
+    permit_forbidden_function::free(mountpoint); // *not* os::free
   }
   mountpoints->clear();
 }

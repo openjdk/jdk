@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,32 +70,45 @@
 #define PRAGMA_ZERO_AS_NULL_POINTER_CONSTANT_IGNORED \
   PRAGMA_DISABLE_GCC_WARNING("-Wzero-as-null-pointer-constant")
 
-#if (__GNUC__ >= 10)
-// TODO: Re-enable warning attribute for Clang once
-// https://github.com/llvm/llvm-project/issues/56519 is fixed and released.
-// || (defined(__clang_major__) && (__clang_major__ >= 14))
+#define PRAGMA_DEPRECATED_IGNORED \
+  PRAGMA_DISABLE_GCC_WARNING("-Wdeprecated-declarations")
 
-// Use "warning" attribute to detect uses of "forbidden" functions.
+// This macro is used by the NORETURN variants of FORBID_C_FUNCTION.
 //
-// Note: The warning attribute is available since GCC 9, but disabling pragmas
-// does not work reliably in ALLOW_C_FUNCTION. GCC 10+ and up work fine.
+// The [[noreturn]] attribute requires that the first declaration of a
+// function has it if any have it.  clang does not treat an old-style noreturn
+// attribute on the first declaration as meeting that requirement.  But some
+// libraries use old-style noreturn attributes.  So if we use [[noreturn]] in
+// the forbidding declaration, but the library header for the function has
+// already been included, we get a compiler error.  Similarly, if we use an
+// old-style noreturn attribute and the library header is included after the
+// forbidding declaration.
 //
-// Note: _FORTIFY_SOURCE transforms calls to certain functions into calls to
-// associated "checking" functions, and that transformation seems to occur
-// *before* the attribute check.  We use fortification in fastdebug builds,
-// so uses of functions that are both forbidden and fortified won't cause
-// forbidden warnings in such builds.
-#define FORBID_C_FUNCTION(signature, alternative) \
-  extern "C" __attribute__((__warning__(alternative))) signature;
+// For now, we're only going to worry about the standard library, and not
+// noreturn functions in some other library that we might want to forbid in
+// the future.  If there's more than one library to be accounted for, then
+// things may get more complicated.
+//
+// There are several ways we could deal with this.
+//
+// Probably the most robust is to use the same style of noreturn attribute as
+// is used by the library providing the function.  That way it doesn't matter
+// in which order the inclusion of the library header and the forbidding are
+// performed.  We could use configure to determine which to use and provide a
+// macro to select on here.
+//
+// Another approach is to always use the old-style attribute in the forbidding
+// declaration, but ensure the relevant library header has been included
+// before the forbidding declaration.  Since there are currently only a couple
+// of affected functions, this is easier to implement.  So this is the
+// approach being taken for now.
+//
+// And remember, all of this is because clang treats an old-style noreturn
+// attribute as not counting toward the [[noreturn]] requirement that the
+// first declaration must have a noreturn attribute.
 
-// Disable warning attribute over the scope of the affected statement.
-// The name serves only to document the intended function.
-#define ALLOW_C_FUNCTION(name, ...)                     \
-  PRAGMA_DIAG_PUSH                                      \
-  PRAGMA_DISABLE_GCC_WARNING("-Wattribute-warning")     \
-  __VA_ARGS__                                           \
-  PRAGMA_DIAG_POP
-
-#endif // gcc10+
+#ifdef __clang__
+#define FORBIDDEN_FUNCTION_NORETURN_ATTRIBUTE __attribute__((__noreturn__))
+#endif // __clang__
 
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_GCC_HPP

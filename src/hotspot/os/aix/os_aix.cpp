@@ -73,6 +73,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
@@ -369,9 +370,9 @@ static void query_multipage_support() {
   // or by environment variable LDR_CNTRL (suboption DATAPSIZE). If none is given,
   // default should be 4K.
   {
-    void* p = ::malloc(16*M);
+    void* p = permit_forbidden_function::malloc(16*M);
     g_multipage_support.datapsize = os::Aix::query_pagesize(p);
-    ::free(p);
+    permit_forbidden_function::free(p);
   }
 
   // Query default shm page size (LDR_CNTRL SHMPSIZE).
@@ -1398,7 +1399,7 @@ static struct {
 } vmem;
 
 static void vmembk_add(char* addr, size_t size, size_t pagesize, int type) {
-  vmembk_t* p = (vmembk_t*) ::malloc(sizeof(vmembk_t));
+  vmembk_t* p = (vmembk_t*) permit_forbidden_function::malloc(sizeof(vmembk_t));
   assert0(p);
   if (p) {
     MiscUtils::AutoCritSect lck(&vmem.cs);
@@ -1427,7 +1428,7 @@ static void vmembk_remove(vmembk_t* p0) {
   for (vmembk_t** pp = &(vmem.first); *pp; pp = &((*pp)->next)) {
     if (*pp == p0) {
       *pp = p0->next;
-      ::free(p0);
+      permit_forbidden_function::free(p0);
       return;
     }
   }
