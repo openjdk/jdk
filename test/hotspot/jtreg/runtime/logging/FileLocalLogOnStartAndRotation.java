@@ -36,6 +36,10 @@
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import java.util.regex.*;
+import java.io.File;
+import java.util.stream.*;
+
 public class FileLocalLogOnStartAndRotation {
     private static Pattern startLogRegex = Pattern.compile("^.*Started logging for file at.*$");
     private static Pattern rotateLogRegex = Pattern.compile("^.*Rotated file at.*$");
@@ -43,7 +47,7 @@ public class FileLocalLogOnStartAndRotation {
     // Match default decorations, ex: [0.001s][info][logging]
     private static Pattern decorationRegex = Pattern.compile("^\\[.*\\]\\[.*\\]\\[.*\\].*$");
 
-    private static void analyzeFile(File f, bool shouldHaveDecorations) {
+    private static void analyzeFile(File f, boolean shouldHaveDecorations) {
         String content = new String(Files.readAllBytes(f), StandardCharsets.UTF_8);
 
         Matcher matchStart = startLogRegex.matcher(content);
