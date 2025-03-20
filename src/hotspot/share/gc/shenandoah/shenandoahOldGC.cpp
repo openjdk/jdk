@@ -134,13 +134,20 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   // the space. This would be the last action if there is nothing to evacuate.
   entry_cleanup_early();
 
-  heap->free_set()->log_status_under_lock();
-
   assert(!heap->is_concurrent_strong_root_in_progress(), "No evacuations during old gc.");
 
-  // We must execute this vm operation if we completed final mark. We cannot return from here with weak roots in progress.
-  // This is not a valid gc state for any young collections (or allocation failures) that interrupt the old collection.
-  // This will reclaim immediate garbage.  vmop_entry_final_roots() will also rebuild the free set.
-  vmop_entry_final_roots();
+  // We must execute this vm operation if we completed final mark. We cannot
+  // return from here with weak roots in progress. This is not a valid gc state
+  // for any young collections (or allocation failures) that interrupt the old
+  // collection.
+  heap->concurrent_final_roots();
+
+  // After concurrent old marking finishes, we reclaim immediate garbage. Further, we may also want to expand OLD in order
+  // to make room for anticipated promotions and/or for mixed evacuations.  Mixed evacuations are especially likely to
+  // follow the end of OLD marking.
+  heap->rebuild_free_set(true /*concurrent*/);
+  heap->free_set()->log_status_under_lock();
+
+
   return true;
 }

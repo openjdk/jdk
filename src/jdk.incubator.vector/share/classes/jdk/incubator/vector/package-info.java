@@ -141,7 +141,7 @@
  * to prevent reading/writing past the array length.
  * The first {@code a.length / SPECIES.length()} iterations will have a mask
  * with all lanes set. Only the final iteration (if {@code a.length}
- * is not a multiple of {@code SPECIES.length()} will have a mask with
+ * is not a multiple of {@code SPECIES.length()}) will have a mask with
  * the first {@code a.length % SPECIES.length()} lanes set.
  *
  * Since a mask is used in all iterations, the above implementation
