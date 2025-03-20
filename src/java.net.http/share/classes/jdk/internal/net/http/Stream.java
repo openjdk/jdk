@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.net.http.HttpClient.Version;
 import java.net.ProtocolException;
 import java.net.URI;
 import java.net.http.HttpResponse.BodyHandler;
@@ -50,13 +49,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiPredicate;
+import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodySubscriber;
 
 import jdk.internal.net.http.common.*;
-import jdk.internal.net.http.common.ValidatingHeadersConsumer.Context;
 import jdk.internal.net.http.frame.*;
 import jdk.internal.net.http.hpack.DecodingCallback;
 
@@ -177,10 +176,6 @@ class Stream<T> extends ExchangeImpl<T> {
 
     // Only accessed in all method calls from incoming(), no need for volatile
     private boolean endStreamSeen;
-
-    Version version() {
-        return Version.HTTP_2;
-    }
 
     @Override
     HttpConnection connection() {
@@ -663,7 +658,7 @@ class Stream<T> extends ExchangeImpl<T> {
 
             response = new Response(
                     request, exchange, responseHeaders, connection(),
-                    responseCode, version());
+                    responseCode, HttpClient.Version.HTTP_2);
 
             /* TODO: review if needs to be removed
                the value is not used, but in case `content-length` doesn't parse as
@@ -1780,7 +1775,7 @@ class Stream<T> extends ExchangeImpl<T> {
 
                 this.response = new Response(
                         pushReq, exchange, responseHeaders, connection(),
-                        responseCode, version());
+                        responseCode, HttpClient.Version.HTTP_2);
 
                 /* TODO: review if needs to be removed
                    the value is not used, but in case `content-length` doesn't parse
