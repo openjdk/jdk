@@ -86,14 +86,18 @@ public class TestFuzzClasses {
                                                      List.of());
 
         ArrayList<ClassType> classTypes = new ArrayList<>();
+        ArrayList<Type> fieldTypes = new ArrayList<>();
+        fieldTypes.addAll(Type.PRIMITIVE_TYPES);
         for (int i = 0; i < 10; i++) {
             ClassType superClass = i > 0 && RANDOM.nextInt(2) == 0 ? Library.choice(classTypes) : null;
-            ClassType ct = new ClassType("C" + i, superClass);
-            classTypes.add(ct);
+            ClassType classType = new ClassType("C" + i, superClass);
+            classTypes.add(classType);
             for (int j = 0; j < RANDOM.nextInt(10); j++) {
-                Type type = Library.choice(Type.PRIMITIVE_TYPES);
-                ct.addField("f_" + i + "_" + j, type);
+                Type type = Library.choice(fieldTypes);
+                classType.addField("f_" + classType.name() + "_" + j, type);
             }
+            // Only add the type to the field types after we create the fields, to prevent cycles.
+            fieldTypes.add(classType);
         }
 
         // TODO: description

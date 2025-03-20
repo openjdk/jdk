@@ -34,6 +34,7 @@ import static compiler.lib.template_framework.Template.let;
 
 // TODO: desc
 // simplicity: all fields are public and non-static.
+// TODO: abstract?
 public final class ClassType extends Type {
     public final ClassType superClass;
     public final String className;

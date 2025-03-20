@@ -525,6 +525,23 @@ public class TestVerify {
         }
     }
 
+    public static class H1  {
+        public boolean bool = true;
+        public byte b = (byte)242;
+        public short s = (short)24242;
+        public char c = (char)24242;
+        public int i = 1335836768;
+        public long l = 4242424242L;
+        public float f = 42.0f;
+        public double d = 42.0;
+        public H1() {}
+    }
+
+    public static class H2 extends H1 {
+        public H1 h1 = new H1();
+        public H2() {}
+    }
+
     static record R1() {}
     static record R2() {}
     static record R3(int x, int y) {}
@@ -621,6 +638,10 @@ public class TestVerify {
         Verify.checkEQ(g4, g3, false, true);
         checkNE(g1, g3, false, true);
         checkNE(g3, g1, false, true);
+
+        // Nested class with primitive types, where the boxed types may not be cached,
+        // and so they would create different boxed objects.
+        Verify.checkEQ(new H2(), new H2(), false, true);
 
         // Records.
         R1 r11 = new R1();

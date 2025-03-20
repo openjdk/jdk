@@ -476,10 +476,19 @@ public final class Verify {
     }
 
     private boolean checkAlreadyVisited(Object a, Object b, String field, Object aParent, Object bParent) {
-        // Floating numbers would fail the "==" check below, and it is not very useful to map their
-        // pairs anyway, as repeated comparison is cheap.
-        if (a instanceof Float || a instanceof Double) {
-            return false;
+        // Boxed primitives are not guaranteed to be the same Object for the same primitive value.
+        // Hence, we cannot use the mapping below. We test these boxed primitive types by value anyway,
+        // and they are no recursive structures, so there is no point in optimizing here anyway.
+        switch(a) {
+            case Boolean x -> { return false; }
+            case Byte x -> { return false; }
+            case Short x -> { return false; }
+            case Character x -> { return false; }
+            case Integer x -> { return false; }
+            case Long x -> { return false; }
+            case Float x -> { return false; }
+            case Double x -> { return false; }
+            default -> {}
         }
 
         Object bPrevious = a2b.get(a);
