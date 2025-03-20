@@ -41,33 +41,53 @@ import java.util.Objects;
  */
 public class ListBuilder extends Content {
 
+    private final HtmlTag listTag;
+    private final HtmlStyle listStyle;
     private final HtmlTree root;
+
     private record Pair(HtmlTree list, HtmlTree item) {}
     private final Deque<Pair> stack = new ArrayDeque<>();
+
     private HtmlTree currentList;
     private HtmlTree currentItem;
+
+    final static int MAX_LEVEL = 5;
 
     /**
      * Creates a new list builder.
      *
-     * @param list the root list element
+     * @param listTag the tag to use for the list elements
+     * @param listStyle the style to use for list elements
      */
-    public ListBuilder(HtmlTree list) {
-        Objects.requireNonNull(list, "Root list element is required");
-        root = currentList = list;
+    public ListBuilder(HtmlTag listTag, HtmlStyle listStyle) {
+        Objects.requireNonNull(listTag, "List tag is required");
+        this.listTag = listTag;
+        this.listStyle = listStyle;
+        root = currentList = createList().put(HtmlAttr.TABINDEX, "-1");
     }
 
     /**
-     * Adds a new list item with the given content to the current list. The last added list item
-     * will also be used as container when pushing a new nested list.
+     * Adds a new list item with the given content to the current list at the given nesting level,
+     * which must be greater than or equal to 0 and less than or equal to {@code MAX_LEVEL}.
+     * If {@code level} is greater than the current nesting level new sublists are added
+     * until the level is reached. If {@code level} is less than the current level, sublists
+     * are closed to reach the level.
      *
      * @param listItemContent the content for the new list item.
-     * @return this list builder
+     * @param level the level on which to add the item.
      */
-    public ListBuilder add(Content listItemContent) {
+    public void addItem(Content listItemContent, int level) {
+        if (level < 0 || level > MAX_LEVEL) {
+            throw new IllegalArgumentException(String.valueOf(level));
+        }
+        while (level > stack.size()) {
+            pushNestedList();
+        }
+        while (level < stack.size()) {
+            popNestedList();
+        }
         currentItem = HtmlTree.LI(listItemContent);
         currentList.addUnchecked(currentItem);
-        return this;
     }
 
     /**
@@ -75,13 +95,14 @@ public class ListBuilder extends Content {
      * Note that the nested list is added even if empty; use {@code addNested} to avoid adding empty
      * lists.
      *
-     * @param list the nested list
      * @return this list builder
      */
-    public ListBuilder pushNestedList(HtmlTree list) {
-        Objects.requireNonNull(currentItem, "List item required for nested list");
+    public ListBuilder pushNestedList() {
+        if (currentItem == null) {
+            currentItem = HtmlTree.LI();
+        }
         stack.push(new Pair(currentList, currentItem));
-        currentList = list;
+        currentList = createList();
         currentItem = null;
         return this;
     }
@@ -103,11 +124,22 @@ public class ListBuilder extends Content {
 
     @Override
     public boolean write(Writer writer, String newline, boolean atNewline) throws IOException {
+        while (!stack.isEmpty()) {
+            popNestedList();
+        }
         return root.write(writer, newline, atNewline);
     }
 
     @Override
     public boolean isEmpty() {
         return root.isEmpty();
+    }
+
+    private HtmlTree createList() {
+        var list = HtmlTree.of(listTag);
+        if (listStyle != null) {
+            list.setStyle(listStyle);
+        }
+        return list;
     }
 }

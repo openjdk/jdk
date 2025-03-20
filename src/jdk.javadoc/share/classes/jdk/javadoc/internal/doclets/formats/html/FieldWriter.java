@@ -81,8 +81,8 @@ public class FieldWriter extends AbstractMemberWriter {
         if (!fields.isEmpty()) {
             Content fieldDetailsHeader = getFieldDetailsHeader(target);
             Content memberList = getMemberList();
-            writer.tableOfContents.addLink(HtmlIds.FIELD_DETAIL, contents.fieldDetailsLabel);
-            writer.tableOfContents.pushNestedList();
+            writer.tableOfContents.addLink(HtmlIds.FIELD_DETAIL, contents.fieldDetailsLabel,
+                    TableOfContents.Level.FIRST);
 
             for (Element element : fields) {
                 currentElement = (VariableElement)element;
@@ -95,11 +95,11 @@ public class FieldWriter extends AbstractMemberWriter {
                 buildTagInfo(div);
                 fieldContent.add(div);
                 memberList.add(getMemberListItem(fieldContent));
-                writer.tableOfContents.addLink(htmlIds.forMember(currentElement), Text.of(name(element)));
+                writer.tableOfContents.addLink(htmlIds.forMember(currentElement), Text.of(name(element)),
+                        TableOfContents.Level.SECOND);
             }
             Content fieldDetails = getFieldDetails(fieldDetailsHeader, memberList);
             target.add(fieldDetails);
-            writer.tableOfContents.popNestedList();
         }
     }
 

@@ -235,6 +235,11 @@ public class DocFilesHandler {
             printHtmlDocument(List.of(), null, localTagsContent, List.of(), htmlContent);
         }
 
+        @Override
+        protected TableOfContents createTableOfContents() {
+            return null;
+        }
+
         private String getWindowTitle(HtmlDocletWriter docletWriter, DocFileElement element) {
             var t = docletWriter.getFileTitle(element);
             return docletWriter.getWindowTitle(t);

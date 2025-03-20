@@ -70,8 +70,8 @@ public class EnumConstantWriter extends AbstractMemberWriter {
         if (!enumConstants.isEmpty()) {
             Content enumConstantsDetailsHeader = getEnumConstantsDetailsHeader(target);
             Content memberList = getMemberList();
-            writer.tableOfContents.addLink(HtmlIds.ENUM_CONSTANT_DETAIL, contents.enumConstantDetailLabel);
-            writer.tableOfContents.pushNestedList();
+            writer.tableOfContents.addLink(HtmlIds.ENUM_CONSTANT_DETAIL, contents.enumConstantDetailLabel,
+                    TableOfContents.Level.FIRST);
 
             for (Element enumConstant : enumConstants) {
                 currentElement = (VariableElement)enumConstant;
@@ -84,12 +84,12 @@ public class EnumConstantWriter extends AbstractMemberWriter {
                 buildTagInfo(div);
                 enumConstantContent.add(div);
                 memberList.add(getMemberListItem(enumConstantContent));
-                writer.tableOfContents.addLink(htmlIds.forMember(currentElement), Text.of(name(currentElement)));
+                writer.tableOfContents.addLink(htmlIds.forMember(currentElement), Text.of(name(currentElement)),
+                        TableOfContents.Level.SECOND);
             }
             Content enumConstantDetails = getEnumConstantsDetails(
                     enumConstantsDetailsHeader, memberList);
             target.add(enumConstantDetails);
-            writer.tableOfContents.popNestedList();
         }
     }
 

@@ -91,8 +91,8 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
             addAnnotationDetailsMarker(target);
             Content annotationDetailsHeader = getAnnotationDetailsHeader();
             Content memberList = getMemberList();
-            writer.tableOfContents.addLink(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL, contents.annotationTypeDetailsLabel);
-            writer.tableOfContents.pushNestedList();
+            writer.tableOfContents.addLink(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL,
+                    contents.annotationTypeDetailsLabel, TableOfContents.Level.FIRST);
 
             for (Element member : members) {
                 currentMember = member;
@@ -102,11 +102,10 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
                 annotationContent.add(div);
                 memberList.add(writer.getMemberListItem(annotationContent));
                 writer.tableOfContents.addLink(htmlIds.forMember((ExecutableElement) member).getFirst(),
-                        Text.of(name(member)));
+                        Text.of(name(member)), TableOfContents.Level.SECOND);
             }
             Content annotationDetails = getAnnotationDetails(annotationDetailsHeader, memberList);
             target.add(annotationDetails);
-            writer.tableOfContents.popNestedList();
         }
     }
 

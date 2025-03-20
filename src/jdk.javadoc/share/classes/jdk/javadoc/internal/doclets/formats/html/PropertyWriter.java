@@ -75,8 +75,8 @@ public class PropertyWriter extends AbstractMemberWriter {
         if (!properties.isEmpty()) {
             Content propertyDetailsHeader = getPropertyDetailsHeader(detailsList);
             Content memberList = getMemberList();
-            writer.tableOfContents.addLink(HtmlIds.PROPERTY_DETAIL, contents.propertyDetailsLabel);
-            writer.tableOfContents.pushNestedList();
+            writer.tableOfContents.addLink(HtmlIds.PROPERTY_DETAIL, contents.propertyDetailsLabel,
+                    TableOfContents.Level.FIRST);
 
             for (Element property : properties) {
                 currentProperty = (ExecutableElement)property;
@@ -90,11 +90,10 @@ public class PropertyWriter extends AbstractMemberWriter {
                 propertyContent.add(div);
                 memberList.add(getMemberListItem(propertyContent));
                 writer.tableOfContents.addLink(htmlIds.forProperty(currentProperty),
-                        Text.of(utils.getPropertyLabel(name(property))));
+                        Text.of(utils.getPropertyLabel(name(property))), TableOfContents.Level.SECOND);
             }
             Content propertyDetails = getPropertyDetails(propertyDetailsHeader, memberList);
             detailsList.add(propertyDetails);
-            writer.tableOfContents.popNestedList();
         }
     }
 

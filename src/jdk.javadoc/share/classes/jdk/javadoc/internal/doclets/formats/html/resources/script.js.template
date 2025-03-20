@@ -467,7 +467,8 @@ document.addEventListener("DOMContentLoaded", function(e) {
     var prevHash;
     function initSectionData() {
         bodyHeight = document.body.offsetHeight;
-        sections = [{ id: "", top: 0 }].concat(Array.from(main.querySelectorAll("section[id], h2[id], h2 a[id], div[id]"))
+        sections = [{ id: "", top: 0 }].concat(Array.from(main.querySelectorAll(
+                "section[id], h2[id], h2 a[id], h3[id], h3 a[id], div[id]"))
             .filter((e) => {
                 return sidebar.querySelector("a[href=\"#" + encodeURI(e.getAttribute("id")) + "\"]") !== null
             }).map((e) => {
