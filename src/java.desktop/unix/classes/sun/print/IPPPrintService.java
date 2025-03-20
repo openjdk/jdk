@@ -1407,7 +1407,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE) ||
                 !isIPPSupportedImages(flavor.getMimeType())) {
-                return attr == Chromaticity.COLOR;
+                return PrintServiceLookupProvider.isMac() || attr == Chromaticity.COLOR;
             } else {
                 return false;
             }

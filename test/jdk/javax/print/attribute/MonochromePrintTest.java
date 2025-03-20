@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2024, BELLSOFT. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,248 +24,158 @@
 
 
 import javax.print.PrintService;
-import javax.print.attribute.Attribute;
+import javax.print.PrintServiceLookup;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.Size2DSyntax;
 import javax.print.attribute.standard.Chromaticity;
+import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.swing.JButton;
-import javax.swing.JDialog;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
+import javax.swing.ListCellRenderer;
+import javax.swing.border.EmptyBorder;
 import java.awt.BasicStroke;
-import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dialog;
-import java.awt.FlowLayout;
+import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GridLayout;
 import java.awt.LinearGradientPaint;
 import java.awt.MultipleGradientPaint;
 import java.awt.Paint;
 import java.awt.RadialGradientPaint;
 import java.awt.Window;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 /*
  * @test
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @bug 8315113
  * @key printer
  * @requires (os.family == "mac")
  * @summary javax.print: Support monochrome printing
+ * @run main/manual MonochromePrintTest
  */
 
 public class MonochromePrintTest {
 
-    private static final long TIMEOUT = 10 * 60_000;
-    private static volatile boolean testPassed = true;
-    private static volatile boolean testSkipped = false;
-    private static volatile boolean testFinished = false;
-
-    private static volatile int testCount;
-    private static volatile int testTotalCount;
+    private static final String INSTRUCTIONS = """
+           This test checks availability of the monochrome printing
+           on color printers.
+           To be able to run this test it is required to have a color
+           printer configured in your user environment.
+           Test's steps:
+             - Choose a printer.
+             - Press 'Print' button.
+           Visual inspection of the printed pages is needed.
+           A passing test will print two pages with
+           color and grayscale appearances
+           """;
 
     public static void main(String[] args) throws Exception {
-
-        final Chromaticity[] supportedChromaticity = getSupportedChromaticity();
-        if (supportedChromaticity == null || supportedChromaticity.length < 2) {
+        PrintService[] availablePrintServices = getTestablePrintServices();
+        if (availablePrintServices.length == 0) {
+            System.out.println("Available print services not found");
             return;
         }
-
-        SwingUtilities.invokeLater(() -> {
-            testTotalCount = supportedChromaticity.length;
-            for (Chromaticity chromaticity : supportedChromaticity) {
-                if (testSkipped) {
-                    break;
-                }
-                testPrint(chromaticity, supportedChromaticity);
-            }
-            testFinished = true;
-        });
-
-        long time = System.currentTimeMillis() + TIMEOUT;
-
-        while (System.currentTimeMillis() < time) {
-            if (!testPassed || testFinished) {
-                break;
-            }
-            Thread.sleep(500);
-        }
-
-        closeDialogs();
-
-        if (testSkipped) {
-            System.out.printf("Test is skipped!%n");
-            return;
-        }
-
-        if (!testPassed) {
-            throw new Exception("Test failed!");
-        }
-
-        if (testCount != testTotalCount) {
-            throw new Exception(
-                    "Timeout: " + testCount + " tests passed out from " + testTotalCount);
-        }
+        PassFailJFrame.builder()
+                .instructions(INSTRUCTIONS)
+                .testTimeOut(300)
+                .title("Monochrome printing")
+                .testUI(createTestWindow(availablePrintServices))
+                .build()
+                .awaitAndCheck();
     }
 
-    private static void testPrint(Chromaticity chromaticity, Chromaticity[] supportedChromaticity) {
-
-        String[] instructions = {
-                "Two tests will run and it will test all available color apearances:",
-                Arrays.toString(supportedChromaticity) + "supported by the printer.",
-                "",
-                "The test is " + (testCount + 1) + " from " + testTotalCount + ".",
-                "",
-                "On-screen inspection is not possible for this printing-specific",
-                "test therefore its only output is a page printed to the printer",
-                "",
-                "To be able to run this test it is required to have a default",
-                "printer configured in your user environment.",
-                "",
-                " - Press 'Start Test' button.",
-                "   The print dialog should appear.",
-                " - Select 'Appearance' tab.",
-                " - Select '" + chromaticity + "' on the 'Color apearance' panel.",
-                " - Press 'Print' button.",
-                "",
-                "Visual inspection of the printed pages is needed.",
-                "",
-                "A passing test will print the page with color appearance '" + chromaticity + "'.",
-                "The text, shapes and image should be " + chromaticity + ".",
-                "The test fails if the page is not printed with required color apearance.",
-        };
-
-        String title = String.format("Print with %s chromaticity test: %d from %d", chromaticity, testCount + 1, testTotalCount);
-        final JDialog dialog = new JDialog(null, title, Dialog.ModalityType.DOCUMENT_MODAL);
-        JTextArea textArea = new JTextArea(String.join("\n", instructions));
-        textArea.setEditable(false);
-        final JButton testButton = new JButton("Start Test");
-        final JButton skipButton = new JButton("Skip Test");
-        final JButton passButton = new JButton("PASS");
-        skipButton.setEnabled(false);
-        passButton.setEnabled(false);
-        passButton.addActionListener((e) -> {
-            pass();
-            dialog.dispose();
-        });
-        skipButton.addActionListener((e) -> {
-            skip();
-            dialog.dispose();
-        });
-        final JButton failButton = new JButton("FAIL");
-        failButton.setEnabled(false);
-        failButton.addActionListener((e) -> {
-            fail(chromaticity);
-            dialog.dispose();
-        });
-        testButton.addActionListener((e) -> {
-            testButton.setEnabled(false);
-            runPrint(chromaticity);
-            skipButton.setEnabled(true);
-            passButton.setEnabled(true);
-            failButton.setEnabled(true);
-        });
-
-        JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.add(textArea, BorderLayout.CENTER);
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(testButton);
-        buttonPanel.add(passButton);
-        buttonPanel.add(failButton);
-        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
-        dialog.add(mainPanel);
-        dialog.pack();
-        dialog.setVisible(true);
-        dialog.addWindowListener(new WindowAdapter() {
+    private static Window createTestWindow(final PrintService[] availablePrintServices) {
+        Window frame = new JFrame("Choose service to test");
+        JPanel pnlMain = new JPanel();
+        pnlMain.setBorder(new EmptyBorder(5,5,5,5));
+        pnlMain.setLayout(new GridLayout(3, 1, 5, 5));
+        JLabel lblServices = new JLabel("Available services");
+        JComboBox<PrintService> cbServices = new JComboBox<>();
+        JButton btnPrint = new JButton("Print");
+        btnPrint.setEnabled(false);
+        cbServices.setRenderer(new ListCellRenderer<PrintService>() {
             @Override
-            public void windowClosing(WindowEvent e) {
-                System.out.println("Dialog closing");
-                fail(chromaticity);
+            public Component getListCellRendererComponent(JList<? extends PrintService> list, PrintService value,
+                                                          int index, boolean isSelected, boolean cellHasFocus) {
+                return new JLabel(value == null ? "" : value.getName());
             }
         });
+        cbServices.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                btnPrint.setEnabled(cbServices.getSelectedItem() != null);
+            }
+        });
+        for (PrintService ps : availablePrintServices) {
+            cbServices.addItem(ps);
+        }
+        lblServices.setLabelFor(cbServices);
+        btnPrint.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                PrintService printService = (PrintService) cbServices.getSelectedItem();
+                if (printService != null) {
+                    cbServices.setEnabled(false);
+                    btnPrint.setEnabled(false);
+                    test(printService);
+                }
+            }
+        });
+        pnlMain.add(lblServices);
+        pnlMain.add(cbServices);
+        pnlMain.add(btnPrint);
+        frame.add(pnlMain);
+        frame.pack();
+        return frame;
     }
 
-    private static void print(Chromaticity chromaticity) throws PrinterException {
-        PrintRequestAttributeSet attr = new HashPrintRequestAttributeSet();
-        attr.add(MediaSizeName.ISO_A4);
-        attr.add(chromaticity);
-
-        for (Attribute attribute : attr.toArray()) {
-            System.out.printf("Used print request attribute: %s%n", attribute);
+    private static PrintService[] getTestablePrintServices() {
+        List<PrintService> testablePrintServices = new ArrayList<>();
+        for (PrintService ps : PrintServiceLookup.lookupPrintServices(null,null)) {
+            if (ps.isAttributeValueSupported(Chromaticity.MONOCHROME, null, null) &&
+                    ps.isAttributeValueSupported(Chromaticity.COLOR, null, null)) {
+                testablePrintServices.add(ps);
+            }
         }
+        return testablePrintServices.toArray(new PrintService[0]);
+    }
 
+    private static void test(PrintService printService) {
+        try {
+            print(printService, Chromaticity.COLOR);
+            print(printService, Chromaticity.MONOCHROME);
+        } catch (PrinterException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static void print(PrintService printService, Chromaticity chromaticity)
+            throws PrinterException {
+        PrintRequestAttributeSet attr = new HashPrintRequestAttributeSet();
+        attr.add(chromaticity);
         PrinterJob job = PrinterJob.getPrinterJob();
+        job.setPrintService(printService);
         job.setJobName("Print with " + chromaticity);
         job.setPrintable(new ChromaticityAttributePrintable(chromaticity));
-
-        if (job.printDialog(attr)) {
-            job.print();
-        } else {
-            throw new RuntimeException("Test for " + chromaticity + " is canceled!");
-        }
+        job.print(attr);
     }
-
-    private static void closeDialogs() {
-        for (Window w : Dialog.getWindows()) {
-            w.dispose();
-        }
-    }
-
-    private static void pass() {
-        testCount++;
-    }
-
-    private static void skip() {
-        testSkipped = true;
-    }
-
-    private static void fail(Chromaticity chromaticity) {
-        System.out.printf("Failed test: %s", chromaticity.toString());
-        testPassed = false;
-    }
-
-    private static Chromaticity[] getSupportedChromaticity() {
-
-        PrinterJob printerJob = PrinterJob.getPrinterJob();
-        PrintService service = printerJob.getPrintService();
-        if (service == null) {
-            System.out.printf("No print service found.");
-            return null;
-        }
-
-        if (!service.isAttributeCategorySupported(Chromaticity.class)) {
-            System.out.printf("Skipping the test as Chromaticity category is not supported for this printer.");
-            return null;
-        }
-
-        Object obj = service.getSupportedAttributeValues(Chromaticity.class, null, null);
-
-        if (obj instanceof Chromaticity[]) {
-            return (Chromaticity[]) obj;
-        }
-
-        throw new RuntimeException("Chromaticity category is supported but no supported attribute values are returned.");
-    }
-
-    private static void runPrint(Chromaticity chromaticity) {
-        try {
-            print(chromaticity);
-        } catch (PrinterException e) {
-            e.printStackTrace();
-            fail(chromaticity);
-            closeDialogs();
-        }
-    }
-
 
     private static class ChromaticityAttributePrintable implements Printable {
 
@@ -276,7 +186,7 @@ public class MonochromePrintTest {
         }
 
         @Override
-        public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) throws PrinterException {
+        public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) {
 
             if (pageIndex != 0) {
                 return NO_SUCH_PAGE;
@@ -287,35 +197,43 @@ public class MonochromePrintTest {
 
             Graphics2D g = (Graphics2D) graphics;
 
-            BufferedImage bufferdImage = getBufferedImage((int) Math.ceil(pageFormat.getImageableWidth() / 3), (int) Math.ceil(pageFormat.getImageableHeight() / 7));
+            BufferedImage bufferdImage = getBufferedImage((int) Math.ceil(pageFormat.getImageableWidth() / 3),
+                    (int) Math.ceil(pageFormat.getImageableHeight() / 7));
             g.drawImage(bufferdImage, null, sx, sy);
 
-            int imh = sy + (int) Math.ceil(pageFormat.getImageableHeight() / 7) + 10;
+            double defaultMediaSizeWidth = MediaSize.getMediaSizeForName(MediaSizeName.ISO_A4)
+                    .getX(Size2DSyntax.INCH) * 72;
+            double scale = pageFormat.getWidth() / defaultMediaSizeWidth;
+
+            final int squareSideLenngth = (int)(50 * scale);
+            final int offset = (int)(10 * scale);
+            int imh = sy + (int) Math.ceil(pageFormat.getImageableHeight() / 7) + offset;
 
             g.setColor(Color.ORANGE);
-            g.drawRect(sx, imh, 50, 50);
-            imh += 60;
+            g.drawRect(sx, imh, squareSideLenngth, squareSideLenngth);
+            imh = imh + squareSideLenngth + offset;
 
             g.setColor(Color.BLUE);
-            g.fillOval(sx, imh, 50, 50);
-            imh += 60;
+            g.fillOval(sx, imh, squareSideLenngth, squareSideLenngth);
+            imh = imh + squareSideLenngth + offset;
 
-            Paint paint = new LinearGradientPaint(0, 0, 20, 5, new float[]{0.0f, 0.2f, 1.0f},
+            Paint paint = new LinearGradientPaint(0, 0,
+                    squareSideLenngth>>1, offset>>1, new float[]{0.0f, 0.2f, 1.0f},
                     new Color[]{Color.RED, Color.GREEN, Color.CYAN}, MultipleGradientPaint.CycleMethod.REPEAT);
             g.setPaint(paint);
-            g.setStroke(new BasicStroke(50));
-            g.fillRect(sx, imh + 10, 50, 50);
-            imh += 60;
+            g.setStroke(new BasicStroke(squareSideLenngth));
+            g.fillRect(sx, imh + offset, squareSideLenngth, squareSideLenngth);
+            imh = imh + squareSideLenngth + offset;
 
-            paint = new RadialGradientPaint(10, 10, 5, new float[]{0.0f, 0.5f, 1.0f},
+            paint = new RadialGradientPaint(offset, offset, offset>>1, new float[]{0.0f, 0.5f, 1.0f},
                     new Color[]{Color.RED, Color.GREEN, Color.CYAN}, MultipleGradientPaint.CycleMethod.REPEAT);
             g.setPaint(paint);
-            g.fillRect(sx, imh + 10, 50, 50);
-            imh += 60;
+            g.fillRect(sx, imh + offset, squareSideLenngth, squareSideLenngth);
+            imh = imh + squareSideLenngth + offset;
 
-            g.setStroke(new BasicStroke(5));
+            g.setStroke(new BasicStroke(offset>>1));
             g.setColor(Color.PINK);
-            g.drawString("Chromaticity: " + chromaticity, sx, imh + 30);
+            g.drawString("This page should be " + chromaticity, sx, imh + squareSideLenngth);
 
             return PAGE_EXISTS;
         }
