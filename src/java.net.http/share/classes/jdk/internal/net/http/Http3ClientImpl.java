@@ -648,9 +648,7 @@ public final class Http3ClientImpl implements AutoCloseable {
     void removeFromPool(Http3Connection c) {
         lock.lock();
         try {
-            Http3Connection c1 = connections.get(c.key());
-            if (c1 != null && c1 == c) {
-                connections.remove(c.key());
+            if (connections.remove(c.key(), c)) {
                 if (debug.on())
                     debug.log("removed from the connection pool: %s", c);
             }
