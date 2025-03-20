@@ -536,17 +536,6 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
     }
     break;
   }
-  case vmIntrinsics::_isPrimitive        : {
-    assert(x->number_of_arguments() == 1, "wrong type");
-
-    // Class.isPrimitive is known on constant classes:
-    InstanceConstant* c = x->argument_at(0)->type()->as_InstanceConstant();
-    if (c != nullptr && !c->value()->is_null_object()) {
-      ciType* t = c->value()->java_mirror_type();
-      set_constant(t->is_primitive_type());
-    }
-    break;
-  }
   default:
     break;
   }

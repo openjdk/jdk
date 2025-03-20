@@ -711,8 +711,12 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // Init thread attributes.
   pthread_attr_t attr;
   int rslt = pthread_attr_init(&attr);
-  guarantee(rslt == 0, "pthread_attr_init has to return 0");
-  guarantee(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0, "???");
+  if (rslt != 0) {
+    thread->set_osthread(nullptr);
+    delete osthread;
+    return false;
+  }
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
   // Make sure we run in 1:1 kernel-user-thread mode.
   guarantee(pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM) == 0, "???");
@@ -792,6 +796,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // OSThread::thread_id is the pthread id.
   osthread->set_thread_id(tid);
 
+  // child thread synchronization is not done here on AIX, a thread is started in suspended state
+
   return true;
 }
 
@@ -832,13 +838,6 @@ bool os::create_attached_thread(JavaThread* thread) {
   osthread->set_state(RUNNABLE);
 
   thread->set_osthread(osthread);
-
-  if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
-  }
 
   // initialize signal mask for this thread
   // and save the caller's signal mask

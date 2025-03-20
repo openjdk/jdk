@@ -29,6 +29,7 @@
  *          a daemon and non-daemon thread. The result should be the same in
  *          both cases.
  * @requires vm.flagless
+ * @requires !jdk.static
  * @library /test/lib
  * @build Main
  * @run main/native TestDaemonDestroy
