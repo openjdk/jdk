@@ -28,9 +28,15 @@
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/macros.hpp"
 
-#include <stdarg.h> // for va_list
-#include <stddef.h> // for size_t
-#include <stdlib.h> // clang workaround for exit, _exit, _Exit - see FORBID macro.
+// For types used in the signatures.
+#include <stdarg.h>
+#include <stddef.h>
+
+// Workaround for noreturn functions: exit, _exit, _Exit - see the clang
+// definition of FORBIDDEN_FUNCTION_NORETURN_ATTRIBUTE.
+#ifdef __clang__
+#include <stdlib.h>
+#endif
 
 #ifdef _WINDOWS
 #include "forbiddenFunctions_windows.hpp"
@@ -53,8 +59,12 @@ FORBID_IMPORTED_C_FUNCTION(char* strerror(int), "use os::strerror");
 FORBID_IMPORTED_C_FUNCTION(char* strtok(char*, const char*), "use strtok_r");
 
 FORBID_C_FUNCTION(int sprintf(char*, const char*, ...), "use os::snprintf");
+
+PRAGMA_DIAG_PUSH
+FORBIDDEN_FUNCTION_IGNORE_CLANG_FORTIFY_WARNING
 FORBID_C_FUNCTION(int vsprintf(char*, const char*, va_list), "use os::vsnprintf");
 FORBID_C_FUNCTION(int vsnprintf(char*, size_t, const char*, va_list), "use os::vsnprintf");
+PRAGMA_DIAG_POP
 
 // All of the following functions return raw C-heap pointers (sometimes as an
 // option, e.g. realpath or getwd) or, in case of free(), take raw C-heap

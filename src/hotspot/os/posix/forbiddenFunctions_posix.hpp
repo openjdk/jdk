@@ -27,8 +27,14 @@
 
 #include "utilities/compilerWarnings.hpp"
 
-#include <stddef.h> // for size_t
-#include <unistd.h> // clang workaround for _exit - see FORBID macro.
+// For types used in the signatures.
+#include <stddef.h>
+
+// Workaround for noreturn functions: _exit - see the clang
+// definition of FORBIDDEN_FUNCTION_NORETURN_ATTRIBUTE.
+#ifdef __clang__
+#include <unistd.h>
+#endif
 
 // If needed, add os::strndup and use that instead.
 FORBID_C_FUNCTION(char* strndup(const char*, size_t), "don't use");
@@ -40,7 +46,11 @@ FORBID_C_FUNCTION(int posix_memalign(void**, size_t, size_t), "don't use");
 FORBID_C_FUNCTION(void* aligned_alloc(size_t, size_t), "don't use");
 
 // realpath with a null second argument mallocs a string for the result.
+// With a non-null second argument, there is a risk of buffer overrun.
+PRAGMA_DIAG_PUSH
+FORBIDDEN_FUNCTION_IGNORE_CLANG_FORTIFY_WARNING
 FORBID_C_FUNCTION(char* realpath(const char*, char*), "use os::realpath");
+PRAGMA_DIAG_POP
 
 // Returns a malloc'ed string.
 FORBID_C_FUNCTION(char* get_current_dir_name(), "use os::get_current_directory");
