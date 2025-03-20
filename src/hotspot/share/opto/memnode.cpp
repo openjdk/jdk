@@ -1852,7 +1852,10 @@ AllocateNode* LoadNode::is_new_object_mark_load() const {
  *                    |                  |
  *                    +-----> Or3 <------+
  *
- * It will be transformed as a merged LoadI and replace the Or3 node
+ * It is transformed as a merged LoadI, which replace the Or3 node.
+ *
+ * Because array value is logical and with constant 0xff/0xffff, LoadS/LoadB is converted to an unsigned load
+ * and 'And' node is eliminated in previous IGVN phase. Please check AndINode::Ideal for reference
  *
  */
 class MergePrimitiveLoads;
@@ -1866,9 +1869,9 @@ class MergePrimitiveLoads;
 class MergeLoadInfo : ResourceObj {
   friend MergePrimitiveLoads;
 private:
-  LoadNode*          _load;
-  Node*                _or;
-  int               _shift;
+  LoadNode* const    _load;
+  Node*     const      _or;
+  int       const   _shift;
   bool            _last_op; // Indicate it's the last item of group, the _or node will be replaced by merged load
 public:
   MergeLoadInfo(LoadNode* load, Node* orNode, int shift) : _load(load), _or(orNode), _shift(shift),
@@ -1899,7 +1902,7 @@ class MergePrimitiveLoads : public StackObj {
 private:
   PhaseGVN* const      _phase;
   LoadNode* const       _load;
-  int          _last_op_index;    // Index of the last item in merged_list
+  int          _last_op_index;    // Index of the last item in merge_list
   MemoryAdjacentStatus _order;
   bool _require_reverse_bytes;    // Do we need add a ReverseBytes for merged load
 
@@ -1973,7 +1976,7 @@ bool MergePrimitiveLoads::is_supported_opcode(int opc) {
 
 // Go through ConvI2L which is unique output of the load
 Node* MergePrimitiveLoads::by_pass_i2l(const LoadNode* l) {
-  if ( l != nullptr && l->outcnt() == 1 && l->unique_out()->Opcode() == Op_ConvI2L) {
+  if (l != nullptr && l->outcnt() == 1 && l->unique_out()->Opcode() == Op_ConvI2L) {
     return l->unique_out();
   } else {
     return (Node*)l;
@@ -2191,6 +2194,7 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list) {
   MergeLoadInfo* base = merge_load_info(_load);
   assert(base != nullptr, "The candidate _load must be checked");
   int collected = 0;
+  // Collect draft merge list to array
   for (DUIterator_Fast imax, iter = mem->fast_outs(imax); iter < imax; iter++) {
     LoadNode* out = mem->fast_out(iter)->isa_Load();
     if (out == nullptr || !is_compatible_load(out)) continue;
@@ -2199,7 +2203,7 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list) {
     if (info == nullptr ||
         (!is_reachable_Or_nodes(info->_or, base->_or) &&
          !is_reachable_Or_nodes(base->_or, info->_or))) {
-      NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeLoads]: merge_list:unreachable or nodes"); base->_or->dump(); info->_or->dump(); tty->cr(); });
+      NOT_PRODUCT( if (is_trace_basic() && info != nullptr) { tty->print("[TraceMergeLoads]: merge_list:unreachable or nodes"); base->_or->dump(); info->_or->dump(); tty->cr(); });
       continue;
     }
 
@@ -2229,13 +2233,26 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list) {
     // too few or not aligned
     return;
   }
+
   if (_load != array[0]->_load && _load != array[collected]->_load && array[0] == nullptr) {
     // candidate is not in the list
     return;
   }
+
   // check loads are adjacent in the same order, and get the index of the last or operator
   MemoryAdjacentStatus order = Unknown;
-  int last_op_index = array[0]->last_op() ? 0 : -1;
+  int last_op_index = -1;
+
+  // Check 1st element if it has last_op flag
+  if (array[0]->last_op()) {
+    if ((array[0]->_or->Opcode() == Op_OrI && bytes != 4) ||
+        (array[0]->_or->Opcode() == Op_OrL && bytes != 8)) {
+      // The merged load can not cover all bits of result value
+      return;
+    }
+    last_op_index = 0;
+  }
+
   for (int i = 1; i < collected; i++) {
     MergeLoadInfo* info = array[i];
     if (info == nullptr) {
@@ -2256,14 +2273,15 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list) {
         // Found multiple ends of list
         return;
       } else {
-        last_op_index = i;
         if ((info->_or->Opcode() == Op_OrI && bytes != 4) ||
             (info->_or->Opcode() == Op_OrL && bytes != 8)) {
           // The merged load can not cover all bits of result value
           return;
         }
+        last_op_index = i;
       }
     }
+
     // Check sign bit of load
     // For shifted value based on memory load, if it does not reach the sign bit of merged load,
     // the load must be an unsigned load
