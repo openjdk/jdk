@@ -39,6 +39,9 @@ import jdk.test.lib.process.OutputAnalyzer;
 import java.util.regex.*;
 import java.io.File;
 import java.util.stream.*;
+import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
+
 
 public class FileLocalLogOnStartAndRotation {
     private static Pattern startLogRegex = Pattern.compile("^.*Started logging for file at.*$");
