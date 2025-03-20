@@ -31,13 +31,13 @@
  */
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -47,12 +47,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class VerifyJarEntryName {
 
-    private static final Path JAR_PATH = Path.of("test.jar");
-    private static final Path JAR_PATH1 = Path.of("test1.jar");
+    private static final Path ORIGINAL_JAR = Path.of("test.jar");
+    private static final Path MODIFIED_JAR = Path.of("modified_test.jar");
 
     @BeforeAll
     static void setup() throws Exception {
-        try (FileOutputStream fos = new FileOutputStream(JAR_PATH.toFile());
+        try (FileOutputStream fos = new FileOutputStream(ORIGINAL_JAR.toFile());
              ZipOutputStream zos = new ZipOutputStream(fos)) {
             zos.putNextEntry(new ZipEntry(JarFile.MANIFEST_NAME));
             zos.write("Manifest-Version: 1.0\nCreated-By: Test\n".getBytes(StandardCharsets.UTF_8));
@@ -63,10 +63,13 @@ public class VerifyJarEntryName {
                 + "-alias mykey -keyalg rsa -dname CN=me ");
 
         SecurityTools.jarsigner("-keystore ks -storepass changeit "
-                        + "test.jar mykey")
+                        + ORIGINAL_JAR + " mykey")
                 .shouldHaveExitValue(0);
+    }
 
-        Files.copy(JAR_PATH, JAR_PATH1, StandardCopyOption.REPLACE_EXISTING);
+    @BeforeEach
+    void cleanup() throws Exception {
+        Files.deleteIfExists(MODIFIED_JAR);
     }
 
     /*
@@ -75,15 +78,8 @@ public class VerifyJarEntryName {
      */
     @Test
     void verifyManifestEntryName() throws Exception {
-        byte[] signedJar = Files.readAllBytes(JAR_PATH);
-        var jarS = new String(signedJar, StandardCharsets.UTF_8);
-
-        var manifestPos = jarS.indexOf("MANIFEST.MF");
-        assertTrue(manifestPos != -1, "Manifest entry is not present");
-        signedJar[manifestPos] = 'X';
-        Files.write(JAR_PATH, signedJar);
-
-        SecurityTools.jarsigner("-verify -verbose test.jar")
+        modifyJarEntryName(ORIGINAL_JAR, MODIFIED_JAR, "MANIFEST.MF");
+        SecurityTools.jarsigner("-verify -verbose " + MODIFIED_JAR)
                 .shouldContain("Manifest is missing when reading via JarInputStream")
                 .shouldHaveExitValue(0);
     }
@@ -94,16 +90,26 @@ public class VerifyJarEntryName {
      */
     @Test
     void verifySignatureEntryName() throws Exception {
-        byte[] signedJar1 = Files.readAllBytes(JAR_PATH1);
-        var jarS1 = new String(signedJar1, StandardCharsets.UTF_8);
-
-        var sfPos = jarS1.indexOf("MYKEY.SF");
-        assertTrue(sfPos != -1, "Signature file is not present");
-        signedJar1[sfPos] = 'X';
-        Files.write(JAR_PATH1, signedJar1);
-
-        SecurityTools.jarsigner("-verify -verbose test1.jar")
+        modifyJarEntryName(ORIGINAL_JAR, MODIFIED_JAR, "MYKEY.SF");
+        SecurityTools.jarsigner("-verify -verbose " + MODIFIED_JAR)
                 .shouldContain("Entries mismatch when comparing JarFile and JarInputStream")
                 .shouldHaveExitValue(0);
+    }
+
+    @Test
+    void verifyOriginalJar() throws Exception {
+        SecurityTools.jarsigner("-verify -verbose " + ORIGINAL_JAR)
+                .shouldNotContain("Manifest is missing when reading via JarInputStream")
+                .shouldNotContain("Entries mismatch when comparing JarFile and JarInputStream")
+                .shouldHaveExitValue(0);
+    }
+
+    private void modifyJarEntryName(Path origJar, Path modifiedJar, String entryName) throws Exception {
+        byte[] jarBytes = Files.readAllBytes(origJar);
+        var jarString = new String(jarBytes, StandardCharsets.UTF_8);
+        var pos = jarString.indexOf(entryName);
+        assertTrue(pos != -1, entryName + " is not present in the JAR");
+        jarBytes[pos] = 'X';
+        Files.write(modifiedJar, jarBytes);
     }
 }
