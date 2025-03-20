@@ -117,7 +117,8 @@ public final class Verify {
             throw new VerifyException("Object class mismatch.");
         }
 
-        // Already visited?
+        // Already visited? This makes sure that we are not stuck in cycles, and that we have
+        // a mapping of pairs (a, b) for structurally equivalent Objects.
         if (checkAlreadyVisited(a, b, field, aParent, bParent)) {
             return;
         }
@@ -476,6 +477,12 @@ public final class Verify {
     }
 
     private boolean checkAlreadyVisited(Object a, Object b, String field, Object aParent, Object bParent) {
+        // Floating numbers would fail the "==" check below, and it is not very useful to map their
+        // pairs anyway, as repeated comparison is cheap.
+        if (a instanceof Float || a instanceof Double) {
+            return false;
+        }
+
         Object bPrevious = a2b.get(a);
         Object aPrevious = b2a.get(b);
         if (aPrevious == null && bPrevious == null) {

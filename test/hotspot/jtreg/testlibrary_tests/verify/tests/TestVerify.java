@@ -515,6 +515,16 @@ public class TestVerify {
         }
     }
 
+    static class G {
+        private float x;
+        private float y;
+
+        public G(float x, float y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+
     static record R1() {}
     static record R2() {}
     static record R3(int x, int y) {}
@@ -597,6 +607,20 @@ public class TestVerify {
         checkNE(f4, f1, false, true);
         checkNE(f3, f4, false, true);
         checkNE(f4, f3, false, true);
+
+        G g1 = new G(1.0f, 1.0f);
+        G g2 = new G(1.0f, 1.0f);
+        G g3 = new G(Float.NaN, Float.NaN);
+        G g4 = new G(Float.NaN, Float.NaN);
+
+        Verify.checkEQ(g1, g1, false, true);
+        Verify.checkEQ(g2, g1, false, true);
+        Verify.checkEQ(g1, g2, false, true);
+        Verify.checkEQ(g3, g3, false, true);
+        Verify.checkEQ(g3, g4, false, true);
+        Verify.checkEQ(g4, g3, false, true);
+        checkNE(g1, g3, false, true);
+        checkNE(g3, g1, false, true);
 
         // Records.
         R1 r11 = new R1();

@@ -37,6 +37,9 @@ package template_library.examples;
 import java.util.List;
 import java.util.ArrayList;
 
+import java.util.Random;
+import jdk.test.lib.Utils;
+
 import compiler.lib.compile_framework.CompileFramework;
 
 import compiler.lib.template_framework.Template;
@@ -55,6 +58,7 @@ import compiler.lib.template_library.ClassType;
  * See {@link TestFuzzExpression} for more explanation about the structure of the test.
  */
 public class TestFuzzClasses {
+    private static final Random RANDOM = Utils.getRandomInstance();
 
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
@@ -81,17 +85,14 @@ public class TestFuzzClasses {
                                                              "compiler.lib.verify.*"),
                                                      List.of());
 
-        var classTemplate = Template.make("classType", (ClassType classType) -> body(
-                """
-                public static class #classType {
-                    public #classType() {}
-                }
-                """
-        ));
- 
         ArrayList<ClassType> classTypes = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            classTypes.add(new ClassType("C" + i));
+            ClassType ct = new ClassType("C" + i, null);
+            classTypes.add(ct);
+            for (int j = 0; j < RANDOM.nextInt(10); j++) {
+                Type type = Library.choice(Type.PRIMITIVE_TYPES);
+                ct.addField("f_" + i + "_" + j, type);
+            }
         }
 
         // TODO: description
@@ -132,7 +133,7 @@ public class TestFuzzClasses {
         // Now use the templates and add them into the IRTestClass.
         List<TemplateWithArgs> templates = new ArrayList<>();
         for (var classType : classTypes) {
-            templates.add(classTemplate.withArgs(classType));
+            templates.add(classType.templateWithArgs());
         }
         for (var classType : classTypes) {
             templates.add(template1.withArgs(classType));

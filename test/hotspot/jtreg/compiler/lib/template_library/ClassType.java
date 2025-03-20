@@ -23,19 +23,39 @@
 
 package compiler.lib.template_library;
 
-import compiler.lib.template_framework.Name;
+import java.util.List;
+import java.util.ArrayList;
 
+import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.TemplateWithArgs;
+import compiler.lib.template_framework.Name;
+import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.let;
+
+// TODO: desc
+// simplicity: all fields are public and non-static.
 public final class ClassType extends Type {
+    public final ClassType superClass;
     public final String className;
 
-    public ClassType(String className) {
+    public static record ClassField(String name, Type type) {}
+    protected final List<ClassField> fields = new ArrayList<ClassField>();
+
+    public ClassType(String className, ClassType superClass) {
         this.className = className;
+        this.superClass = superClass;
     }
 
     @Override
     public boolean isSubtypeOf(Name.Type other) {
-        // TODO: subtyping?
-        return this == other;
+        ClassType ct = this;
+        while (ct != null) {
+            if (ct == other) {
+                return true;
+            }
+            ct = ct.superClass;
+        }
+        return false;
     }
 
     @Override
@@ -46,5 +66,37 @@ public final class ClassType extends Type {
         return "new " + className + "()";
     }
 
-    // TODO: template
+    public final void addField(String name, Type type) {
+        fields.add(new ClassField(name, type));
+    }
+
+    public final List<ClassField> allFields() {
+        List<ClassField> list = new ArrayList<>();
+        ClassType ct = this;
+        while (ct != null) {
+            list.addAll(ct.fields);
+            ct = ct.superClass;
+        }
+        return list;
+    }
+
+    public TemplateWithArgs templateWithArgs() {
+        var fieldTemplate = Template.make("cf", (ClassField cf) -> body(
+                let("name", cf.name()),
+                let("type", cf.type()),
+                "public #type #name = ", cf.type().con(), ";\n"
+        ));
+        var template = Template.make(() -> body(
+                let("class", className),
+                """
+                public static class #class {
+                """,
+                fields.stream().map((ClassField cf) -> fieldTemplate.withArgs(cf)).toList(),
+                """
+                    public #class() {}
+                }
+                """
+        ));
+        return template.withArgs();
+    }
 }

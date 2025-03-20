@@ -50,7 +50,7 @@ public abstract class Library {
     public static final Hook CLASS_HOOK = new Hook("Class");
     public static final Hook METHOD_HOOK = new Hook("Method");
 
-    static <T> T choice(List<T> list) {
+    public static <T> T choice(List<T> list) {
         if (list.isEmpty()) { return null; }
         int i = RANDOM.nextInt(list.size());
         return list.get(i);
