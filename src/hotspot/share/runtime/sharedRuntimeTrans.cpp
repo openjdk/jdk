@@ -112,7 +112,6 @@ ln2_hi  =  6.93147180369123816490e-01,        /* 3fe62e42 fee00000 */
 
 static double zero = 0.0;
 
-ATTRIBUTE_NO_UBSAN
 static double __ieee754_log(double x) {
   double hfsq,f,s,z,R,w,t1,t2,dk;
   int k,hx,i,j;
@@ -126,8 +125,8 @@ static double __ieee754_log(double x) {
   k=0;
   if (hx < 0x00100000) {                   /* x < 2**-1022  */
     if (((hx&0x7fffffff)|lx)==0)
-      return -two54/zero;             /* log(+-0)=-inf */
-    if (hx<0) return (x-x)/zero;   /* log(-#) = NaN */
+      return -std::numeric_limits<double>::infinity();             /* log(+-0)=-inf */
+    if (hx<0) return std::numeric_limits<double>::quiet_NaN();   /* log(-#) = NaN */
     k -= 54; x *= two54; /* subnormal number, scale up x */
     hx = high(x);             /* high word of x */
   }
@@ -209,7 +208,6 @@ ivln10     =  4.34294481903251816668e-01, /* 0x3FDBCB7B, 0x1526E50E */
   log10_2hi  =  3.01029995663611771306e-01, /* 0x3FD34413, 0x509F6000 */
   log10_2lo  =  3.69423907715893078616e-13; /* 0x3D59FEF3, 0x11F12B36 */
 
-ATTRIBUTE_NO_UBSAN
 static double __ieee754_log10(double x) {
   double y,z;
   int i,k,hx;
@@ -223,8 +221,8 @@ static double __ieee754_log10(double x) {
   k=0;
   if (hx < 0x00100000) {                  /* x < 2**-1022  */
     if (((hx&0x7fffffff)|lx)==0)
-      return -two54/zero;             /* log(+-0)=-inf */
-    if (hx<0) return (x-x)/zero;        /* log(-#) = NaN */
+      return -std::numeric_limits<double>::infinity();             /* log(+-0)=-inf */
+    if (hx<0) return std::numeric_limits<double>::quiet_NaN(); /* log(-#) = NaN */
     k -= 54; x *= two54; /* subnormal number, scale up x */
     hx = high(x);                /* high word of x */
   }
