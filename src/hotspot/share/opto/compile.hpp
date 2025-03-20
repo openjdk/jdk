@@ -1230,7 +1230,7 @@ public:
 
   // Graph verification code
   // Walk the node list, verifying that there is a one-to-one correspondence
-  // between Use-Def edges and Def-Use edges The option no_dead_code enables
+  // between Use-Def edges and Def-Use edges. The option no_dead_code enables
   // stronger checks that the graph is strongly connected from starting points
   // in both directions.
   // root_and_safepoints is used to give the starting points for the traversal.
@@ -1239,7 +1239,7 @@ public:
   // own traversal (see PhaseCCP::transform for reasons).
   //
   // To call this function, there are 2 ways to go:
-  // - give root_and_safepoints to start traversal everywhere needed (like after CCP),
+  // - give root_and_safepoints to start traversal everywhere needed (like after CCP)
   // - if the whole graph is assumed to be reachable from Root's input,
   //   root_and_safepoints is not needed (like in PhaseRemoveUseless).
   //

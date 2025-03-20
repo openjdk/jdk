@@ -4205,10 +4205,10 @@ void Compile::verify_bidirectional_edges(Unique_Node_List& visited, const Unique
   Node_List nstack(MAX2(stack_size, (uint) OptoNodeListSize));
   if (root_and_safepoints != nullptr) {
     assert(root_and_safepoints->member(_root), "root is not in root_and_safepoints");
-    for (unsigned int i = 0, limit = root_and_safepoints->size(); i < limit; i++) {
+    for (uint i = 0, limit = root_and_safepoints->size(); i < limit; i++) {
       Node* root_or_safepoint = root_and_safepoints->at(i);
-      // If the node is a safepoint, let's check it still has a control input
-      // Lack of control input signified that this node was killed by CCP or
+      // If the node is a safepoint, let's check if it still has a control input
+      // Lack of control input signifies that this node was killed by CCP or
       // recursively by remove_globally_dead_node and it shouldn't be a starting
       // point.
       if (!root_or_safepoint->is_SafePoint() || root_or_safepoint->in(0) != nullptr) {
