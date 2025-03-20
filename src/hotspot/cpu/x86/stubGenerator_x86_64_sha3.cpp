@@ -79,14 +79,6 @@ static address permsAndRotsAddr() {
   return (address) permsAndRots;
 }
 
-void StubGenerator::generate_sha3_stubs() {
-  if (UseSHA3Intrinsics) {
-    StubRoutines::_sha3_implCompress   = generate_sha3_implCompress(StubGenStubId::sha3_implCompress_id);
-    StubRoutines::_double_keccak         = generate_double_keccak();
-    StubRoutines::_sha3_implCompressMB = generate_sha3_implCompress(StubGenStubId::sha3_implCompressMB_id);
-  }
-}
-
 // Arguments:
 //
 // Inputs:
@@ -96,7 +88,9 @@ void StubGenerator::generate_sha3_stubs() {
 //   c_rarg3   - int     offset
 //   c_rarg4   - int     limit
 //
-address StubGenerator::generate_sha3_implCompress(StubGenStubId stub_id) {
+static address generate_sha3_implCompress(StubGenStubId stub_id,
+                                          StubGenerator *stubgen,
+                                          MacroAssembler *_masm) {
   bool multiBlock;
   switch(stub_id) {
   case sha3_implCompress_id:
@@ -110,7 +104,7 @@ address StubGenerator::generate_sha3_implCompress(StubGenStubId stub_id) {
   }
 
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, stub_id);
+  StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
 
   const Register buf          = c_rarg0;
@@ -345,10 +339,10 @@ address StubGenerator::generate_sha3_implCompress(StubGenStubId stub_id) {
 //
 // Performs two keccak() computations in parallel. The steps of the
 // two computations are executed interleaved.
-address StubGenerator::generate_double_keccak() {
+static address generate_double_keccak(StubGenerator *stubgen, MacroAssembler *_masm) {
   __ align(CodeEntryAlignment);
   StubGenStubId stub_id = double_keccak_id;
-  StubCodeMark mark(this, stub_id);
+  StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
 
   const Register state0 = c_rarg0;
@@ -541,4 +535,15 @@ address StubGenerator::generate_double_keccak() {
   __ ret(0);
 
   return start;
+}
+
+void StubGenerator::generate_sha3_stubs() {
+  if (UseSHA3Intrinsics) {
+    StubRoutines::_sha3_implCompress =
+      generate_sha3_implCompress(StubGenStubId::sha3_implCompress_id, this, _masm);
+    StubRoutines::_double_keccak =
+      generate_double_keccak(this, _masm);
+    StubRoutines::_sha3_implCompressMB =
+      generate_sha3_implCompress(StubGenStubId::sha3_implCompressMB_id, this, _masm);
+  }
 }

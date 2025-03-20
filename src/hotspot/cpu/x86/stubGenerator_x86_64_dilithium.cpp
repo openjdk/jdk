@@ -85,17 +85,6 @@ static address dilithiumAvx512PermsAddr() {
   return (address) dilithiumAvx512Perms;
 }
 
-void StubGenerator::generate_dilithium_stubs() {
-  // Generate Dilithium intrinsics code
-  if (UseDilithiumIntrinsics) {
-      StubRoutines::_dilithiumAlmostNtt = generate_dilithiumAlmostNtt_avx512();
-      StubRoutines::_dilithiumAlmostInverseNtt = generate_dilithiumAlmostInverseNtt_avx512();
-      StubRoutines::_dilithiumNttMult = generate_dilithiumNttMult_avx512();
-      StubRoutines::_dilithiumMontMulByConstant = generate_dilithiumMontMulByConstant_avx512();
-      StubRoutines::_dilithiumDecomposePoly = generate_dilithiumDecomposePoly_avx512();
-  }
-}
-
 // We do Montgomery multiplications of two vectors of 16 ints each in 4 steps:
 // 1. Do the multiplications of the corresponding even numbered slots into
 //    the odd numbered slots of a third register using montmulEven().
@@ -107,48 +96,161 @@ void StubGenerator::generate_dilithium_stubs() {
 // odd-even slots of the first multiplicand as in the second (zetas) the
 // odd slots contain the same number as the corresponding even one.)
 
-// Montgomery multiplication of the *even* numbered slices of parCnt consecutive register pairs
-// Zmm_inputReg1 to Zmm_(inputReg1+parCnt-1) and Zmm_inputReg2 to Zmm_(inputReg2+parCnt-1).
-// The result goes to the *odd* numbered slices of Zmm_outputReg to Zmm_(outputReg1+parCnt-1).
-// Zmm_31 should contain q and Zmm_30 should contain q^-1 mod 2^32 in all of their slices.
-void StubGenerator::montmulEven(int outputReg, int inputReg1,  int inputReg2, int scratchReg1, int scratchReg2, int parCnt) {
+// Montgomery multiplication of the *even* numbered slices of sequences
+// of parCnt consecutive registers. Zmm_inputReg1 and Zmm_inputReg2 are the
+// starts of the two sequences. When inputReg2 == 29, we use that register as
+// the second multiplicand in each multiplication.
+// The result goes to the *odd* numbered slices of Zmm_outputReg.
+// The parCnt long cosecutive sequences of registers that start with
+// Zmm_scratch1 and Zmm_scrath2 are used as scratch registers, so their
+// contents will be clobbered.
+// The output register sequence  can overlap any of the input and scratch
+// register sequences, however the two scratch register sequences should be
+// non-overlapping.
+// Zmm_31 should contain q and
+// Zmm_30 should contain q^-1 mod 2^32 in all of their slices.
+static void montmulEven(int outputReg, int inputReg1,  int inputReg2,
+                        int scratchReg1, int scratchReg2,
+                        int parCnt, MacroAssembler *_masm) {
+  for (int i = 0; i < parCnt; i++) {
+    __ vpmuldq(xmm(i + scratchReg1), xmm(i + inputReg1),
+               xmm((inputReg2 == 29) ? 29 : inputReg2 + i), Assembler::AVX_512bit);
+  }
+  for (int i = 0; i < parCnt; i++) {
+    __ vpmulld(xmm(i + scratchReg2), xmm(i + scratchReg1), xmm30,
+               Assembler::AVX_512bit);
+  }
+  for (int i = 0; i < parCnt; i++) {
+    __ vpmuldq(xmm(i + scratchReg2), xmm(i + scratchReg2), xmm31,
+               Assembler::AVX_512bit);
+  }
+  for (int i = 0; i < parCnt; i++) {
+    __ evpsubd(xmm(i + outputReg), k0, xmm(i + scratchReg1),
+               xmm(i + scratchReg2), false, Assembler::AVX_512bit);
+  }
+}
 
-  for (int i = 0; i < parCnt; i++) {
-    __ vpmuldq(xmm(i + scratchReg1), xmm(i + inputReg1), xmm((inputReg2 == 29) ? 29 : inputReg2 + i), Assembler::AVX_512bit);
+// Full Montgomery multiplication of the corresponding slices of two register
+// sets of 4 registers each. The indexes of the registers to be multiplied
+// are in inputRegs1[] and inputRegs[2].
+// The results go to the registers whose indexes are in outputRegs.
+// scratchRegs should contain 12 different register indexes.
+// The set in outputRegs should not overlap with the set of the middle four
+// scratch registers.
+// The sets in inputRegs1 and inputRegs2 cannot overlap with the set of the
+// first eight scratch registers.
+// In most of the cases, the odd and the corresponding even slices of the
+// registers indexed by the numbers in inputRegs2 will contain the same number,
+// this should be indicated by calling this function with
+// input2NeedsShuffle=false .
+//
+static void montMul64(int outputRegs[], int inputRegs1[], int inputRegs2[],
+                      int scratchRegs[], bool input2NeedsShuffle,
+                      MacroAssembler *_masm) {
+
+  for (int i = 0; i < 4; i++) {
+    __ vpmuldq(xmm(scratchRegs[i]), xmm(inputRegs1[i]), xmm(inputRegs2[i]),
+               Assembler::AVX_512bit);
   }
-  for (int i = 0; i < parCnt; i++) {
-    __ vpmulld(xmm(i + scratchReg2), xmm(i + scratchReg1), xmm30, Assembler::AVX_512bit);
+  for (int i = 0; i < 4; i++) {
+    __ vpmulld(xmm(scratchRegs[i + 4]), xmm(scratchRegs[i]), xmm30,
+               Assembler::AVX_512bit);
   }
-  for (int i = 0; i < parCnt; i++) {
-    __ vpmuldq(xmm(i + scratchReg2), xmm(i + scratchReg2), xmm31, Assembler::AVX_512bit);
+  for (int i = 0; i < 4; i++) {
+    __ vpmuldq(xmm(scratchRegs[i + 4]), xmm(scratchRegs[i + 4]), xmm31,
+               Assembler::AVX_512bit);
   }
-  for (int i = 0; i < parCnt; i++) {
-    __ evpsubd(xmm(i + outputReg), k0, xmm(i + scratchReg1), xmm(i + scratchReg2), false, Assembler::AVX_512bit);
+  for (int i = 0; i < 4; i++) {
+    __ evpsubd(xmm(scratchRegs[i + 4]), k0, xmm(scratchRegs[i]),
+               xmm(scratchRegs[i + 4]), false, Assembler::AVX_512bit);
+  }
+
+  for (int i = 0; i < 4; i++) {
+    __ vpshufd(xmm(inputRegs1[i]), xmm(inputRegs1[i]), 0xB1,
+               Assembler::AVX_512bit);
+    if (input2NeedsShuffle) {
+       __ vpshufd(xmm(inputRegs2[i]), xmm(inputRegs2[i]), 0xB1,
+                  Assembler::AVX_512bit);
+    }
+  }
+
+  for (int i = 0; i < 4; i++) {
+    __ vpmuldq(xmm(scratchRegs[i]), xmm(inputRegs1[i]), xmm(inputRegs2[i]),
+               Assembler::AVX_512bit);
+  }
+  for (int i = 0; i < 4; i++) {
+    __ vpmulld(xmm(scratchRegs[i + 8]), xmm(scratchRegs[i]), xmm30,
+               Assembler::AVX_512bit);
+  }
+  for (int i = 0; i < 4; i++) {
+    __ vpmuldq(xmm(scratchRegs[i + 8]), xmm(scratchRegs[i + 8]), xmm31,
+               Assembler::AVX_512bit);
+  }
+  for (int i = 0; i < 4; i++) {
+    __ evpsubd(xmm(outputRegs[i]), k0, xmm(scratchRegs[i]),
+               xmm(scratchRegs[i + 8]), false, Assembler::AVX_512bit);
+  }
+
+  for (int i = 0; i < 4; i++) {
+    __ evpermt2d(xmm(outputRegs[i]), xmm28, xmm(scratchRegs[i + 4]),
+                 Assembler::AVX_512bit);
   }
 }
 
-// Similar to the 6-parameter montmulEven(), the difference is that here the input regs for the first
-// arguments do not have to be consecutive and that parcnt is always 4, so it is not passed in.
-void StubGenerator::montmulEven(int outputReg, int inputReg11, int inputReg12, int inputReg13, int inputReg14,
-                                int inputReg2, int scratchReg1, int scratchReg2) {
+static void montMul64(int outputRegs[], int inputRegs1[], int inputRegs2[],
+                       int scratchRegs[], MacroAssembler *_masm) {
+   montMul64(outputRegs, inputRegs1, inputRegs2, scratchRegs, false, _masm);
+}
 
-  int parCnt = 4;
+// input in Zmm0-Zmm7, the constant is repeated in all slots of Zmm29
+// qinvmodR and q are repeated in all slots of Zmm30 and Zmm31, resp.
+// Zmm8-Zmm23 used as scratch registers
+// result goes to Zmm0-Zmm7
+static void montMulByConst128(MacroAssembler *_masm) {
+  montmulEven(8, 0, 29, 8, 16, 8, _masm);
 
-  __ vpmuldq(xmm(scratchReg1), xmm(inputReg11), xmm(inputReg2), Assembler::AVX_512bit);
-  __ vpmuldq(xmm(scratchReg1 + 1), xmm(inputReg12), xmm(inputReg2 + 1), Assembler::AVX_512bit);
-  __ vpmuldq(xmm(scratchReg1 + 2), xmm(inputReg13), xmm(inputReg2 + 2), Assembler::AVX_512bit);
-  __ vpmuldq(xmm(scratchReg1 + 3), xmm(inputReg14), xmm(inputReg2 + 3), Assembler::AVX_512bit);
-
-  for (int i = 0; i < parCnt; i++) {
-    __ vpmulld(xmm(i + scratchReg2), xmm(i + scratchReg1), xmm30, Assembler::AVX_512bit);
+  for (int i = 0; i < 8; i++) {
+    __ vpshufd(xmm(i),xmm(i), 0xB1, Assembler::AVX_512bit);
   }
-  for (int i = 0; i < parCnt; i++) {
-    __ vpmuldq(xmm(i + scratchReg2), xmm(i + scratchReg2), xmm31, Assembler::AVX_512bit);
-  }
-  for (int i = 0; i < parCnt; i++) {
-    __ evpsubd(xmm(i + outputReg), k0, xmm(i + scratchReg1), xmm(i + scratchReg2), false, Assembler::AVX_512bit);
+
+  montmulEven(0, 0, 29, 0, 16, 8, _masm);
+
+  for (int i = 0; i < 8; i++) {
+    __ evpermt2d(xmm(i), xmm28, xmm(i + 8), Assembler::AVX_512bit);
   }
 }
+
+static void sub_add(int subResult[], int addResult[],
+                    int input1[], int input2[], MacroAssembler *_masm) {
+
+  for (int i = 0; i < 4; i++) {
+    __ evpsubd(xmm(subResult[i]), k0, xmm(input1[i]), xmm(input2[i]), false,
+               Assembler::AVX_512bit);
+  }
+
+  for (int i = 0; i < 4; i++) {
+    __ evpaddd(xmm(addResult[i]), k0, xmm(input1[i]), xmm(input2[i]), false,
+               Assembler::AVX_512bit);
+  }
+}
+
+static int xmm0_3[] = {0, 1, 2, 3};
+static int xmm0145[] = {0, 1, 4, 5};
+static int xmm0246[] = {0, 2, 4, 6};
+static int xmm0426[] = {0, 4, 2, 6};
+static int xmm1357[] = {1, 3, 5, 7};
+static int xmm1537[] = {1, 5, 3, 7};
+static int xmm2367[] = {2, 3, 6, 7};
+static int xmm4_7[] = {4, 5, 6, 7};
+static int xmm8_11[] = {8, 9, 10, 11};
+static int xmm12_15[] = {12, 13, 14, 15};
+static int xmm16_19[] = {16, 17, 18, 19};
+static int xmm20222426[] = {20, 22, 24, 26};
+static int xmm21232527[] = {21, 23, 25, 27};
+static int xmm24_27[] = {24, 25, 26, 27};
+static int xmm4_20_24[] = {4, 5, 6, 7, 20, 21, 22, 23, 24, 25, 26, 27};
+static int xmm16_27[] = {16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27};
+static int xmm29_29[] = {29, 29, 29, 29};
 
 // Dilithium NTT function except for the final "normalization" to |coeff| < Q.
 // Implements
@@ -158,11 +260,11 @@ void StubGenerator::montmulEven(int outputReg, int inputReg11, int inputReg12, i
 // zetas (int[256]) = c_rarg1
 //
 //
-address StubGenerator::generate_dilithiumAlmostNtt_avx512() {
+static address generate_dilithiumAlmostNtt_avx512(StubGenerator *stubgen, MacroAssembler *_masm) {
 
   __ align(CodeEntryAlignment);
   StubGenStubId stub_id = dilithiumAlmostNtt_id;
-  StubCodeMark mark(this, stub_id);
+  StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();
 
@@ -194,88 +296,20 @@ address StubGenerator::generate_dilithiumAlmostNtt_avx512() {
   // levels are the same for all the montmuls that we can do in parallel
 
   // level 0
-  montmulEven(20, 8, 29, 20, 16, 4);
 
-  for (int i = 0; i < 4; i++) {
-    __ vpshufd(xmm(i + 24), xmm(i + 8), 0xB1, Assembler::AVX_512bit);
-  }
-
-  montmulEven(16, 24, 29, 24, 16, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i + 16), xmm28, xmm(i + 20), Assembler::AVX_512bit);
-  }
-
-  for (int i = 0; i < 4; i++) {
-    __ evpsubd(xmm(i + 8), k0, xmm(i), xmm(i + 16), false, Assembler::AVX_512bit);
-  }
-
-  for (int i = 0; i < 4; i++) {
-    __ evpaddd(xmm(i), k0, xmm(i), xmm(i + 16), false, Assembler::AVX_512bit);
-  }
-
-  montmulEven(20, 12, 29, 20, 16, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ vpshufd(xmm(i + 24), xmm(i + 12), 0xB1, Assembler::AVX_512bit);
-  }
-
-  montmulEven(16, 24, 29, 24, 16, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i + 16), xmm28, xmm(i + 20), Assembler::AVX_512bit);
-  }
-
-  for (int i = 0; i < 4; i++) {
-    __ evpsubd(xmm(i + 12), k0, xmm(i + 4), xmm(i + 16), false, Assembler::AVX_512bit);
-  }
-
-  for (int i = 0; i < 4; i++) {
-    __ evpaddd(xmm(i + 4), k0, xmm(i + 4), xmm(i + 16), false, Assembler::AVX_512bit);
-  }
+  montMul64(xmm16_19, xmm8_11, xmm29_29, xmm16_27, _masm);
+  sub_add(xmm8_11, xmm0_3, xmm0_3, xmm16_19, _masm);
+  montMul64(xmm16_19, xmm12_15, xmm29_29, xmm16_27, _masm);
+  __ evmovdqul(xmm29, Address(zetas, 512), Assembler::AVX_512bit); // for level 1
+  sub_add(xmm12_15, xmm4_7, xmm4_7, xmm16_19, _masm);
 
   // level 1
-  __ evmovdqul(xmm29, Address(zetas, 512), Assembler::AVX_512bit);
 
-  montmulEven(20, 4, 29, 20, 16, 4);
-  for (int i = 0; i < 4; i++) {
-    __ vpshufd(xmm(i + 24), xmm(i + 4), 0xB1, Assembler::AVX_512bit);
-  }
-
-  montmulEven(16, 24, 29, 24, 16, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i + 16), xmm28, xmm(i + 20), Assembler::AVX_512bit);
-  }
-
-  for (int i = 0; i < 4; i++) {
-    __ evpsubd(xmm(i + 4), k0, xmm(i), xmm(i + 16), false, Assembler::AVX_512bit);
-  }
-
-  for (int i = 0; i < 4; i++) {
-    __ evpaddd(xmm(i), k0, xmm(i), xmm(i + 16), false, Assembler::AVX_512bit);
-  }
-
+  montMul64(xmm16_19, xmm4_7, xmm29_29, xmm16_27, _masm);
   __ evmovdqul(xmm29, Address(zetas, 768), Assembler::AVX_512bit);
-
-  montmulEven(20, 12, 29, 20, 16, 4);
-  for (int i = 0; i < 4; i++) {
-    __ vpshufd(xmm(i + 24), xmm(i + 12), 0xB1, Assembler::AVX_512bit);
-  }
-
-  montmulEven(16, 24, 29, 24, 16, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i + 16), xmm28, xmm(i + 20), Assembler::AVX_512bit);
-  }
-
-  for (int i = 0; i < 4; i++) {
-    __ evpsubd(xmm(i + 12), k0, xmm(i + 8), xmm(i + 16), false, Assembler::AVX_512bit);
-  }
-
-  for (int i = 0; i < 4; i++) {
-    __ evpaddd(xmm(i + 8), k0, xmm(i + 8), xmm(i + 16), false, Assembler::AVX_512bit);
-  }
+  sub_add(xmm4_7, xmm0_3, xmm0_3, xmm16_19, _masm);
+  montMul64(xmm16_19, xmm12_15, xmm29_29, xmm16_27, _masm);
+  sub_add(xmm12_15, xmm8_11, xmm8_11, xmm16_19, _masm);
 
   // levels 2 to 7 are done in 2 batches, by first saving half of the coefficients
   // from level 1 into memory, doing all the level 2 to level 7 computations
@@ -300,57 +334,18 @@ address StubGenerator::generate_dilithiumAlmostNtt_avx512() {
   __ evmovdqul(xmm14, Address(zetas, 1152), Assembler::AVX_512bit);
   __ evmovdqul(xmm15, Address(zetas, 1216), Assembler::AVX_512bit);
 
-  montmulEven(20, 2, 3, 6, 7, 12, 20, 16);
+  montMul64(xmm16_19, xmm2367, xmm12_15, xmm16_27, _masm);
 
-  __ vpshufd(xmm(8), xmm(2), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(9), xmm(3), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(10), xmm(6), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(11), xmm(7), 0xB1, Assembler::AVX_512bit);
-
-  montmulEven(16, 8, 12, 24, 16, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i + 16), xmm28, xmm(i + 20), Assembler::AVX_512bit);
-  }
-
-  __ evpsubd(xmm(2), k0, xmm(0), xmm(16), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(3), k0, xmm(1), xmm(17), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(6), k0, xmm(4), xmm(18), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(7), k0, xmm(5), xmm(19), false, Assembler::AVX_512bit);
-
-  __ evpaddd(xmm(0), k0, xmm(0), xmm(16), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(1), k0, xmm(1), xmm(17), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(4), k0, xmm(4), xmm(18), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(5), k0, xmm(5), xmm(19), false, Assembler::AVX_512bit);
-
-  // level 3
-  __ evmovdqul(xmm12, Address(zetas, 1536), Assembler::AVX_512bit);
+  __ evmovdqul(xmm12, Address(zetas, 1536), Assembler::AVX_512bit); // for level 3
   __ evmovdqul(xmm13, Address(zetas, 1600), Assembler::AVX_512bit);
   __ evmovdqul(xmm14, Address(zetas, 1664), Assembler::AVX_512bit);
   __ evmovdqul(xmm15, Address(zetas, 1728), Assembler::AVX_512bit);
+  sub_add(xmm2367, xmm0145, xmm0145, xmm16_19, _masm);
 
-  montmulEven(20, 1, 3, 5, 7, 12, 20, 16);
+  // level 3
 
-  __ vpshufd(xmm(8), xmm(1), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(9), xmm(3), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(10), xmm(5), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(11), xmm(7), 0xB1, Assembler::AVX_512bit);
-
-  montmulEven(16, 8, 12, 24, 16, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i + 16), xmm28, xmm(i + 20), Assembler::AVX_512bit);
-  }
-
-  __ evpsubd(xmm(1), k0, xmm(0), xmm(16), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(3), k0, xmm(2), xmm(17), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(5), k0, xmm(4), xmm(18), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(7), k0, xmm(6), xmm(19), false, Assembler::AVX_512bit);
-
-  __ evpaddd(xmm(0), k0, xmm(0), xmm(16), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(2), k0, xmm(2), xmm(17), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(4), k0, xmm(4), xmm(18), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(6), k0, xmm(6), xmm(19), false, Assembler::AVX_512bit);
+  montMul64(xmm16_19, xmm1357, xmm12_15, xmm16_27, _masm);
+  sub_add(xmm1357, xmm0246, xmm0246, xmm16_19, _masm);
 
   // level 4
   __ evmovdqul(xmm16, Address(perms, 64), Assembler::AVX_512bit);
@@ -362,39 +357,20 @@ address StubGenerator::generate_dilithiumAlmostNtt_avx512() {
   __ evmovdqul(xmm14, xmm12, Assembler::AVX_512bit);
   __ evmovdqul(xmm15, xmm12, Assembler::AVX_512bit);
 
+  __ evmovdqul(xmm24, Address(zetas, 4 * 512), Assembler::AVX_512bit);
+  __ evmovdqul(xmm25, Address(zetas, 4 * 512 + 64), Assembler::AVX_512bit);
+  __ evmovdqul(xmm26, Address(zetas, 4 * 512 + 128), Assembler::AVX_512bit);
+  __ evmovdqul(xmm27, Address(zetas, 4 * 512 + 192), Assembler::AVX_512bit);
+
   for (int i = 0; i < 8; i += 2) {
     __ evpermi2d(xmm(i/2 + 16), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
   }
   for (int i = 0; i < 8; i += 2) {
     __ evpermi2d(xmm(i / 2 + 12), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
   }
-  __ evmovdqul(xmm0, Address(zetas, 4 * 512), Assembler::AVX_512bit);
-  __ evmovdqul(xmm1, Address(zetas, 4 * 512 + 64), Assembler::AVX_512bit);
-  __ evmovdqul(xmm2, Address(zetas, 4 * 512 + 128), Assembler::AVX_512bit);
-  __ evmovdqul(xmm3, Address(zetas, 4 * 512 + 192), Assembler::AVX_512bit);
 
-  montmulEven(20, 0, 12, 4, 20, 4);
-
-  __ vpshufd(xmm(12), xmm(12), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(13), xmm(13), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(14), xmm(14), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(15), xmm(15), 0xB1, Assembler::AVX_512bit);
-
-  montmulEven(12, 0, 12, 4, 24, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i + 12), xmm28, xmm(i + 20), Assembler::AVX_512bit);
-  }
-
-  __ evpsubd(xmm(1), k0, xmm(16), xmm(12), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(3), k0, xmm(17), xmm(13), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(5), k0, xmm(18), xmm(14), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(7), k0, xmm(19), xmm(15), false, Assembler::AVX_512bit);
-
-  __ evpaddd(xmm(0), k0, xmm(16), xmm(12), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(2), k0, xmm(17), xmm(13), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(4), k0, xmm(18), xmm(14), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(6), k0, xmm(19), xmm(15), false, Assembler::AVX_512bit);
+  montMul64(xmm12_15, xmm12_15, xmm24_27, xmm4_20_24, _masm);
+  sub_add(xmm1357, xmm0246, xmm16_19, xmm12_15, _masm);
 
   // level 5
   __ evmovdqul(xmm16, Address(perms, 192), Assembler::AVX_512bit);
@@ -406,39 +382,20 @@ address StubGenerator::generate_dilithiumAlmostNtt_avx512() {
   __ evmovdqul(xmm14, xmm12, Assembler::AVX_512bit);
   __ evmovdqul(xmm15, xmm12, Assembler::AVX_512bit);
 
+  __ evmovdqul(xmm24, Address(zetas, 5 * 512), Assembler::AVX_512bit);
+  __ evmovdqul(xmm25, Address(zetas, 5 * 512 + 64), Assembler::AVX_512bit);
+  __ evmovdqul(xmm26, Address(zetas, 5 * 512 + 128), Assembler::AVX_512bit);
+  __ evmovdqul(xmm27, Address(zetas, 5 * 512 + 192), Assembler::AVX_512bit);
+
   for (int i = 0; i < 8; i += 2) {
     __ evpermi2d(xmm(i/2 + 16), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
   }
   for (int i = 0; i < 8; i += 2) {
     __ evpermi2d(xmm(i / 2 + 12), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
   }
-  __ evmovdqul(xmm0, Address(zetas, 5 * 512), Assembler::AVX_512bit);
-  __ evmovdqul(xmm1, Address(zetas, 5 * 512 + 64), Assembler::AVX_512bit);
-  __ evmovdqul(xmm2, Address(zetas, 5 * 512 + 128), Assembler::AVX_512bit);
-  __ evmovdqul(xmm3, Address(zetas, 5 * 512 + 192), Assembler::AVX_512bit);
 
-  montmulEven(20, 0, 12, 4, 20, 4);
-
-  __ vpshufd(xmm(12), xmm(12), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(13), xmm(13), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(14), xmm(14), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(15), xmm(15), 0xB1, Assembler::AVX_512bit);
-
-  montmulEven(12, 0, 12, 4, 24, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i + 12), xmm28, xmm(i + 20), Assembler::AVX_512bit);
-  }
-
-  __ evpsubd(xmm(1), k0, xmm(16), xmm(12), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(3), k0, xmm(17), xmm(13), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(5), k0, xmm(18), xmm(14), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(7), k0, xmm(19), xmm(15), false, Assembler::AVX_512bit);
-
-  __ evpaddd(xmm(0), k0, xmm(16), xmm(12), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(2), k0, xmm(17), xmm(13), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(4), k0, xmm(18), xmm(14), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(6), k0, xmm(19), xmm(15), false, Assembler::AVX_512bit);
+  montMul64(xmm12_15, xmm12_15, xmm24_27, xmm4_20_24, _masm);
+  sub_add(xmm1357, xmm0246, xmm16_19, xmm12_15, _masm);
 
   // level 6
   __ evmovdqul(xmm16, Address(perms, 320), Assembler::AVX_512bit);
@@ -450,39 +407,20 @@ address StubGenerator::generate_dilithiumAlmostNtt_avx512() {
   __ evmovdqul(xmm14, xmm12, Assembler::AVX_512bit);
   __ evmovdqul(xmm15, xmm12, Assembler::AVX_512bit);
 
+  __ evmovdqul(xmm24, Address(zetas, 6 * 512), Assembler::AVX_512bit);
+  __ evmovdqul(xmm25, Address(zetas, 6 * 512 + 64), Assembler::AVX_512bit);
+  __ evmovdqul(xmm26, Address(zetas, 6 * 512 + 128), Assembler::AVX_512bit);
+  __ evmovdqul(xmm27, Address(zetas, 6 * 512 + 192), Assembler::AVX_512bit);
+
   for (int i = 0; i < 8; i += 2) {
     __ evpermi2d(xmm(i/2 + 16), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
   }
   for (int i = 0; i < 8; i += 2) {
     __ evpermi2d(xmm(i / 2 + 12), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
   }
-  __ evmovdqul(xmm0, Address(zetas, 6 * 512), Assembler::AVX_512bit);
-  __ evmovdqul(xmm1, Address(zetas, 6 * 512 + 64), Assembler::AVX_512bit);
-  __ evmovdqul(xmm2, Address(zetas, 6 * 512 + 128), Assembler::AVX_512bit);
-  __ evmovdqul(xmm3, Address(zetas, 6 * 512 + 192), Assembler::AVX_512bit);
 
-  montmulEven(20, 0, 12, 4, 20, 4);
-
-  __ vpshufd(xmm(12), xmm(12), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(13), xmm(13), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(14), xmm(14), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(15), xmm(15), 0xB1, Assembler::AVX_512bit);
-
-  montmulEven(12, 0, 12, 4, 24, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i + 12), xmm28, xmm(i + 20), Assembler::AVX_512bit);
-  }
-
-  __ evpsubd(xmm(1), k0, xmm(16), xmm(12), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(3), k0, xmm(17), xmm(13), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(5), k0, xmm(18), xmm(14), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(7), k0, xmm(19), xmm(15), false, Assembler::AVX_512bit);
-
-  __ evpaddd(xmm(0), k0, xmm(16), xmm(12), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(2), k0, xmm(17), xmm(13), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(4), k0, xmm(18), xmm(14), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(6), k0, xmm(19), xmm(15), false, Assembler::AVX_512bit);
+  montMul64(xmm12_15, xmm12_15, xmm24_27, xmm4_20_24, _masm);
+  sub_add(xmm1357, xmm0246, xmm16_19, xmm12_15, _masm);
 
   // level 7
   __ evmovdqul(xmm16, Address(perms, 448), Assembler::AVX_512bit);
@@ -494,43 +432,19 @@ address StubGenerator::generate_dilithiumAlmostNtt_avx512() {
   __ evmovdqul(xmm14, xmm12, Assembler::AVX_512bit);
   __ evmovdqul(xmm15, xmm12, Assembler::AVX_512bit);
 
+  __ evmovdqul(xmm24, Address(zetas, 7 * 512), Assembler::AVX_512bit);
+  __ evmovdqul(xmm25, Address(zetas, 7 * 512 + 64), Assembler::AVX_512bit);
+  __ evmovdqul(xmm26, Address(zetas, 7 * 512 + 128), Assembler::AVX_512bit);
+  __ evmovdqul(xmm27, Address(zetas, 7 * 512 + 192), Assembler::AVX_512bit);
+
   for (int i = 0; i < 8; i += 2) {
     __ evpermi2d(xmm(i / 2 + 16), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
   }
   for (int i = 0; i < 8; i += 2) {
     __ evpermi2d(xmm(i / 2 + 12), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
   }
-  __ evmovdqul(xmm0, Address(zetas, 7 * 512), Assembler::AVX_512bit);
-  __ evmovdqul(xmm1, Address(zetas, 7 * 512 + 64), Assembler::AVX_512bit);
-  __ evmovdqul(xmm2, Address(zetas, 7 * 512 + 128), Assembler::AVX_512bit);
-  __ evmovdqul(xmm3, Address(zetas, 7 * 512 + 192), Assembler::AVX_512bit);
 
-  montmulEven(20, 0, 12, 4, 20, 4);
-
-  __ vpshufd(xmm(12), xmm(12), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(13), xmm(13), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(14), xmm(14), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(15), xmm(15), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(0), xmm(0), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(1), xmm(1), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(2), xmm(2), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(3), xmm(3), 0xB1, Assembler::AVX_512bit);
-
-  montmulEven(12, 0, 12, 4, 24, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i + 12), xmm28, xmm(i + 20), Assembler::AVX_512bit);
-  }
-
-  __ evpsubd(xmm(21), k0, xmm(16), xmm(12), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(23), k0, xmm(17), xmm(13), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(25), k0, xmm(18), xmm(14), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(27), k0, xmm(19), xmm(15), false, Assembler::AVX_512bit);
-
-  __ evpaddd(xmm(20), k0, xmm(16), xmm(12), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(22), k0, xmm(17), xmm(13), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(24), k0, xmm(18), xmm(14), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(26), k0, xmm(19), xmm(15), false, Assembler::AVX_512bit);
+  montMul64(xmm12_15, xmm12_15, xmm24_27, xmm4_20_24, true, _masm);
 
   __ evmovdqul(xmm0, Address(perms, 576), Assembler::AVX_512bit);
   __ evmovdqul(xmm2, xmm0, Assembler::AVX_512bit);
@@ -540,6 +454,8 @@ address StubGenerator::generate_dilithiumAlmostNtt_avx512() {
   __ evmovdqul(xmm3, xmm1, Assembler::AVX_512bit);
   __ evmovdqul(xmm5, xmm1, Assembler::AVX_512bit);
   __ evmovdqul(xmm7, xmm1, Assembler::AVX_512bit);
+
+  sub_add(xmm21232527, xmm20222426, xmm16_19, xmm12_15, _masm);
 
   for (int i = 0; i < 8; i += 2) {
     __ evpermi2d(xmm(i), xmm(i + 20), xmm(i + 21), Assembler::AVX_512bit);
@@ -580,11 +496,12 @@ address StubGenerator::generate_dilithiumAlmostNtt_avx512() {
 //
 // coeffs (int[256]) = c_rarg0
 // zetas (int[256]) = c_rarg1
-address StubGenerator::generate_dilithiumAlmostInverseNtt_avx512() {
+static address generate_dilithiumAlmostInverseNtt_avx512(StubGenerator *stubgen,
+                                                         MacroAssembler *_masm) {
 
   __ align(CodeEntryAlignment);
   StubGenStubId stub_id = dilithiumAlmostInverseNtt_id;
-  StubCodeMark mark(this, stub_id);
+  StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();
 
@@ -632,37 +549,13 @@ address StubGenerator::generate_dilithiumAlmostInverseNtt_avx512() {
     __ evpermi2d(xmm(i / 2 + 12), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
   }
 
-  __ evpaddd(xmm(0), k0, xmm(8), xmm(12), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(1), k0, xmm(9), xmm(13), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(2), k0, xmm(10), xmm(14), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(3), k0, xmm(11), xmm(15), false, Assembler::AVX_512bit);
-
-  __ evpsubd(xmm(8), k0, xmm(8), xmm(12), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(9), k0, xmm(9), xmm(13), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(10), k0, xmm(10), xmm(14), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(11), k0, xmm(11), xmm(15), false, Assembler::AVX_512bit);
-
   __ evmovdqul(xmm4, Address(zetas, 0), Assembler::AVX_512bit);
   __ evmovdqul(xmm5, Address(zetas, 64), Assembler::AVX_512bit);
   __ evmovdqul(xmm6, Address(zetas, 128), Assembler::AVX_512bit);
   __ evmovdqul(xmm7, Address(zetas, 192), Assembler::AVX_512bit);
 
-  montmulEven(20, 4, 8, 16, 20, 4);
-
-  __ vpshufd(xmm(4), xmm(4), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(5), xmm(5), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(6), xmm(6), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(7), xmm(7), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(8), xmm(8), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(9), xmm(9), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(10), xmm(10), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(11), xmm(11), 0xB1, Assembler::AVX_512bit);
-
-  montmulEven(4, 4, 8, 16, 24, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i + 4), xmm28, xmm(i + 20), Assembler::AVX_512bit);
-  }
+  sub_add(xmm24_27, xmm0_3, xmm8_11, xmm12_15, _masm);
+  montMul64(xmm4_7, xmm4_7, xmm24_27, xmm16_27, true, _masm);
 
   // level 1
   __ evmovdqul(xmm8, Address(perms, 832), Assembler::AVX_512bit);
@@ -679,33 +572,13 @@ address StubGenerator::generate_dilithiumAlmostInverseNtt_avx512() {
     __ evpermi2d(xmm(i + 12), xmm(i), xmm(i + 4), Assembler::AVX_512bit);
   }
 
-  __ evpaddd(xmm(0), k0, xmm(8), xmm(12), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(1), k0, xmm(9), xmm(13), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(2), k0, xmm(10), xmm(14), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(3), k0, xmm(11), xmm(15), false, Assembler::AVX_512bit);
-
-  __ evpsubd(xmm(8), k0, xmm(8), xmm(12), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(9), k0, xmm(9), xmm(13), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(10), k0, xmm(10), xmm(14), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(11), k0, xmm(11), xmm(15), false, Assembler::AVX_512bit);
-
   __ evmovdqul(xmm4, Address(zetas, 512), Assembler::AVX_512bit);
   __ evmovdqul(xmm5, Address(zetas, 512 + 64), Assembler::AVX_512bit);
   __ evmovdqul(xmm6, Address(zetas, 512 + 128), Assembler::AVX_512bit);
   __ evmovdqul(xmm7, Address(zetas, 512 + 192), Assembler::AVX_512bit);
 
-  montmulEven(20, 4, 8, 16, 20, 4);
-
-  __ vpshufd(xmm(8), xmm(8), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(9), xmm(9), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(10), xmm(10), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(11), xmm(11), 0xB1, Assembler::AVX_512bit);
-
-  montmulEven(4, 4, 8, 16, 24, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i + 4), xmm28, xmm(i + 20), Assembler::AVX_512bit);
-  }
+  sub_add(xmm24_27, xmm0_3, xmm8_11, xmm12_15, _masm);
+  montMul64(xmm4_7, xmm24_27, xmm4_7, xmm16_27, _masm);
 
   // level 2
   __ evmovdqul(xmm8, Address(perms, 960), Assembler::AVX_512bit);
@@ -722,33 +595,13 @@ address StubGenerator::generate_dilithiumAlmostInverseNtt_avx512() {
     __ evpermi2d(xmm(i + 12), xmm(i), xmm(i + 4), Assembler::AVX_512bit);
   }
 
-  __ evpaddd(xmm(0), k0, xmm(8), xmm(12), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(1), k0, xmm(9), xmm(13), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(2), k0, xmm(10), xmm(14), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(3), k0, xmm(11), xmm(15), false, Assembler::AVX_512bit);
-
-  __ evpsubd(xmm(8), k0, xmm(8), xmm(12), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(9), k0, xmm(9), xmm(13), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(10), k0, xmm(10), xmm(14), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(11), k0, xmm(11), xmm(15), false, Assembler::AVX_512bit);
-
   __ evmovdqul(xmm4, Address(zetas, 2 * 512), Assembler::AVX_512bit);
   __ evmovdqul(xmm5, Address(zetas, 2 * 512 + 64), Assembler::AVX_512bit);
   __ evmovdqul(xmm6, Address(zetas, 2 * 512 + 128), Assembler::AVX_512bit);
   __ evmovdqul(xmm7, Address(zetas, 2 * 512 + 192), Assembler::AVX_512bit);
 
-  montmulEven(20, 4, 8, 16, 20, 4);
-
-  __ vpshufd(xmm(8), xmm(8), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(9), xmm(9), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(10), xmm(10), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(11), xmm(11), 0xB1, Assembler::AVX_512bit);
-
-  montmulEven(4, 4, 8, 16, 24, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i + 4), xmm28, xmm(i + 20), Assembler::AVX_512bit);
-  }
+  sub_add(xmm24_27, xmm0_3, xmm8_11, xmm12_15, _masm);
+  montMul64(xmm4_7, xmm24_27, xmm4_7, xmm16_27, _masm);
 
   // level 3
   __ evmovdqul(xmm8, Address(perms, 1088), Assembler::AVX_512bit);
@@ -765,33 +618,13 @@ address StubGenerator::generate_dilithiumAlmostInverseNtt_avx512() {
     __ evpermi2d(xmm(i + 12), xmm(i), xmm(i + 4), Assembler::AVX_512bit);
   }
 
-  __ evpaddd(xmm(0), k0, xmm(8), xmm(12), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(1), k0, xmm(9), xmm(13), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(2), k0, xmm(10), xmm(14), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(3), k0, xmm(11), xmm(15), false, Assembler::AVX_512bit);
-
-  __ evpsubd(xmm(8), k0, xmm(8), xmm(12), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(9), k0, xmm(9), xmm(13), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(10), k0, xmm(10), xmm(14), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(11), k0, xmm(11), xmm(15), false, Assembler::AVX_512bit);
-
   __ evmovdqul(xmm4, Address(zetas, 3 * 512), Assembler::AVX_512bit);
   __ evmovdqul(xmm5, Address(zetas, 3 * 512 + 64), Assembler::AVX_512bit);
   __ evmovdqul(xmm6, Address(zetas, 3 * 512 + 128), Assembler::AVX_512bit);
   __ evmovdqul(xmm7, Address(zetas, 3 * 512 + 192), Assembler::AVX_512bit);
 
-  montmulEven(20, 4, 8, 16, 20, 4);
-
-  __ vpshufd(xmm(8), xmm(8), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(9), xmm(9), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(10), xmm(10), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(11), xmm(11), 0xB1, Assembler::AVX_512bit);
-
-  montmulEven(4, 4, 8, 16, 24, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i + 4), xmm28, xmm(i + 20), Assembler::AVX_512bit);
-  }
+  sub_add(xmm24_27, xmm0_3, xmm8_11, xmm12_15, _masm);
+  montMul64(xmm4_7, xmm24_27, xmm4_7, xmm16_27, _masm);
 
   // level 4
   __ evmovdqul(xmm8, Address(perms, 1216), Assembler::AVX_512bit);
@@ -807,88 +640,31 @@ address StubGenerator::generate_dilithiumAlmostInverseNtt_avx512() {
     __ evpermi2d(xmm(i + 8), xmm(i), xmm(i + 4), Assembler::AVX_512bit);
     __ evpermi2d(xmm(i + 12), xmm(i), xmm(i + 4), Assembler::AVX_512bit);
   }
-
-  __ evpaddd(xmm(0), k0, xmm(8), xmm(12), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(1), k0, xmm(9), xmm(13), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(2), k0, xmm(10), xmm(14), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(3), k0, xmm(11), xmm(15), false, Assembler::AVX_512bit);
-
-  __ evpsubd(xmm(8), k0, xmm(8), xmm(12), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(9), k0, xmm(9), xmm(13), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(10), k0, xmm(10), xmm(14), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(11), k0, xmm(11), xmm(15), false, Assembler::AVX_512bit);
-
   __ evmovdqul(xmm4, Address(zetas, 4 * 512), Assembler::AVX_512bit);
   __ evmovdqul(xmm5, Address(zetas, 4 * 512 + 64), Assembler::AVX_512bit);
   __ evmovdqul(xmm6, Address(zetas, 4 * 512 + 128), Assembler::AVX_512bit);
   __ evmovdqul(xmm7, Address(zetas, 4 * 512 + 192), Assembler::AVX_512bit);
 
-  montmulEven(20, 4, 8, 16, 20, 4);
-
-  __ vpshufd(xmm(8), xmm(8), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(9), xmm(9), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(10), xmm(10), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(11), xmm(11), 0xB1, Assembler::AVX_512bit);
-
-  montmulEven(4, 4, 8, 16, 24, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i + 4), xmm28, xmm(i + 20), Assembler::AVX_512bit);
-  }
+  sub_add(xmm24_27, xmm0_3, xmm8_11, xmm12_15, _masm);
+  montMul64(xmm4_7, xmm24_27, xmm4_7, xmm16_27, _masm);
 
   // level 5
-  __ evpsubd(xmm(8), k0, xmm(0), xmm(1), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(9), k0, xmm(4), xmm(5), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(10), k0, xmm(2), xmm(3), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(11), k0, xmm(6), xmm(7), false, Assembler::AVX_512bit);
+  __ evmovdqul(xmm12, Address(zetas, 5 * 512), Assembler::AVX_512bit);
+  __ evmovdqul(xmm13, Address(zetas, 5 * 512 + 64), Assembler::AVX_512bit);
+  __ evmovdqul(xmm14, Address(zetas, 5 * 512 + 128), Assembler::AVX_512bit);
+  __ evmovdqul(xmm15, Address(zetas, 5 * 512 + 192), Assembler::AVX_512bit);
 
-  __ evpaddd(xmm(0), k0, xmm(0), xmm(1), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(1), k0, xmm(4), xmm(5), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(2), k0, xmm(2), xmm(3), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(3), k0, xmm(6), xmm(7), false, Assembler::AVX_512bit);;
-
-  __ evmovdqul(xmm4, Address(zetas, 5 * 512), Assembler::AVX_512bit);
-  __ evmovdqul(xmm5, Address(zetas, 5 * 512 + 64), Assembler::AVX_512bit);
-  __ evmovdqul(xmm6, Address(zetas, 5 * 512 + 128), Assembler::AVX_512bit);
-  __ evmovdqul(xmm7, Address(zetas, 5 * 512 + 192), Assembler::AVX_512bit);
-
-  montmulEven(20, 4, 8, 16, 20, 4);
-
-  __ vpshufd(xmm(8), xmm(8), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(9), xmm(9), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(10), xmm(10), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(11), xmm(11), 0xB1, Assembler::AVX_512bit);
-
-  montmulEven(4, 4, 8, 16, 24, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i + 4), xmm28, xmm(i + 20), Assembler::AVX_512bit);
-  }
+  sub_add(xmm8_11, xmm0_3, xmm0426, xmm1537, _masm);
+  montMul64(xmm4_7, xmm8_11, xmm12_15, xmm16_27, _masm);
 
   // level 6
-  __ evpsubd(xmm(8), k0, xmm(0), xmm(2), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(9), k0, xmm(1), xmm(3), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(10), k0, xmm(4), xmm(6), false, Assembler::AVX_512bit);
-  __ evpsubd(xmm(11), k0, xmm(5), xmm(7), false, Assembler::AVX_512bit);
+  __ evmovdqul(xmm12, Address(zetas, 6 * 512), Assembler::AVX_512bit);
+  __ evmovdqul(xmm13, Address(zetas, 6 * 512 + 64), Assembler::AVX_512bit);
+  __ evmovdqul(xmm14, Address(zetas, 6 * 512 + 128), Assembler::AVX_512bit);
+  __ evmovdqul(xmm15, Address(zetas, 6 * 512 + 192), Assembler::AVX_512bit);
 
-  __ evpaddd(xmm(0), k0, xmm(0), xmm(2), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(2), k0, xmm(4), xmm(6), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(1), k0, xmm(1), xmm(3), false, Assembler::AVX_512bit);
-  __ evpaddd(xmm(3), k0, xmm(5), xmm(7), false, Assembler::AVX_512bit);
-
-  __ evmovdqul(xmm4, Address(zetas, 6 * 512), Assembler::AVX_512bit);
-  __ evmovdqul(xmm5, Address(zetas, 6 * 512 + 64), Assembler::AVX_512bit);
-  __ evmovdqul(xmm6, Address(zetas, 6 * 512 + 128), Assembler::AVX_512bit);
-  __ evmovdqul(xmm7, Address(zetas, 6 * 512 + 192), Assembler::AVX_512bit);
-
-  montmulEven(20, 4, 8, 16, 20, 4);
-
-  __ vpshufd(xmm(8), xmm(8), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(9), xmm(9), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(10), xmm(10), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(11), xmm(11), 0xB1, Assembler::AVX_512bit);
-
-  montmulEven(4, 4, 8, 16, 24, 4);
+  sub_add(xmm8_11, xmm0_3, xmm0145, xmm2367, _masm);
+  montMul64(xmm4_7, xmm8_11, xmm12_15, xmm16_27, _masm);
 
   for (int i = 0; i < 4; i++) {
     __ evpermt2d(xmm(i + 4), xmm28, xmm(i + 20), Assembler::AVX_512bit);
@@ -914,58 +690,31 @@ address StubGenerator::generate_dilithiumAlmostInverseNtt_avx512() {
   __ BIND(L_end);
 
   // load the coeffs of the first batch of coefficients that were saved after
-  // level 6 into Zmm_8-Zmm_15 and do the last level entirely in the vector registers
+  // level 6 into Zmm_8-Zmm_15 and do the last level entirely in the vector
+  // registers
   for (int i = 0; i < 8; i++) {
     __ evmovdqul(xmm(i + 8), Address(coeffs, i * 64), Assembler::AVX_512bit);
   }
 
   // level 7
-  for (int i = 0; i < 8; i++) {
-    __ evpsubd(xmm(i + 16), k0, xmm(i + 8), xmm(i), false, Assembler::AVX_512bit);
-  }
-
-  for (int i = 0; i < 8; i++) {
-    __ evpaddd(xmm(i), k0, xmm(i), xmm(i + 8), false, Assembler::AVX_512bit);
-  }
-
-  for (int i = 0; i < 8; i++) {
-    __ evmovdqul(Address(coeffs, i * 64), xmm(i), Assembler::AVX_512bit);
-  }
 
   __ evmovdqul(xmm29, Address(zetas, 7 * 512), Assembler::AVX_512bit);
 
-  montmulEven(4, 16, 29, 8, 12, 4);
-
-  __ vpshufd(xmm(16), xmm(16), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(17), xmm(17), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(18), xmm(18), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(19), xmm(19), 0xB1, Assembler::AVX_512bit);
-
-  montmulEven(0, 16, 29, 8, 12, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i), xmm28, xmm(i + 4), Assembler::AVX_512bit);
+  for (int i = 0; i < 8; i++) {
+    __ evpaddd(xmm(i + 16), k0, xmm(i), xmm(i + 8), false, Assembler::AVX_512bit);
   }
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 8; i++) {
+    __ evpsubd(xmm(i), k0, xmm(i + 8), xmm(i), false, Assembler::AVX_512bit);
+  }
+
+  for (int i = 0; i < 8; i++) {
+    __ evmovdqul(Address(coeffs, i * 64), xmm(i + 16), Assembler::AVX_512bit);
+  }
+  montMulByConst128(_masm);
+
+  for (int i = 0; i < 8; i++) {
     __ evmovdqul(Address(coeffs, i * 64 + 512), xmm(i), Assembler::AVX_512bit);
-  }
-
-  montmulEven(4, 20, 29, 8, 12, 4);
-
-  __ vpshufd(xmm(20), xmm(20), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(21), xmm(21), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(22), xmm(22), 0xB1, Assembler::AVX_512bit);
-  __ vpshufd(xmm(23), xmm(23), 0xB1, Assembler::AVX_512bit);
-
-  montmulEven(0, 20, 29, 8, 12, 4);
-
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i), xmm28, xmm(i + 4), Assembler::AVX_512bit);
-  }
-
-  for (int i = 0; i < 4; i++) {
-    __ evmovdqul(Address(coeffs, i * 64 + 768), xmm(i), Assembler::AVX_512bit);
   }
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -983,11 +732,12 @@ address StubGenerator::generate_dilithiumAlmostInverseNtt_avx512() {
 // result (int[256]) = c_rarg0
 // poly1 (int[256]) = c_rarg1
 // poly2 (int[256]) = c_rarg2
-address StubGenerator::generate_dilithiumNttMult_avx512() {
+static address generate_dilithiumNttMult_avx512(StubGenerator *stubgen,
+                                                MacroAssembler *_masm) {
 
   __ align(CodeEntryAlignment);
   StubGenStubId stub_id = dilithiumNttMult_id;
-  StubCodeMark mark(this, stub_id);
+  StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();
 
@@ -997,7 +747,7 @@ address StubGenerator::generate_dilithiumNttMult_avx512() {
   const Register poly1 = c_rarg1;
   const Register poly2 = c_rarg2;
 
-  const Register dilithiumConsts = c_rarg3;
+  const Register dilithiumConsts = c_rarg3; // not used for argument
   const Register perms = r10;
   const Register len = r11;
 
@@ -1015,38 +765,23 @@ address StubGenerator::generate_dilithiumNttMult_avx512() {
   __ BIND(L_loop);
 
   for (int i = 0; i < 4; i++) {
-    __ evmovdqul(xmm(i), Address(poly1, i * 64), Assembler::AVX_512bit);
     __ evmovdqul(xmm(i + 4), Address(poly2, i * 64), Assembler::AVX_512bit);
+    __ evmovdqul(xmm(i), Address(poly1, i * 64), Assembler::AVX_512bit);
   }
 
-  montmulEven(8, 4, 29, 12, 16, 4);
-  for (int i = 0; i < 4; i++) {
-    __ vpshufd(xmm(i + 8), xmm(i + 8), 0xB1, Assembler::AVX_512bit);
-  }
-  montmulEven(8, 0, 8, 12, 16, 4);
-  for (int i = 0; i < 4; i++) {
-    __ vpshufd(xmm(i), xmm(i), 0xB1, Assembler::AVX_512bit);
-    __ vpshufd(xmm(i + 4), xmm(i + 4), 0xB1, Assembler::AVX_512bit);
-  }
-  montmulEven(4, 4, 29, 12, 16, 4);
-  for (int i = 0; i < 4; i++) {
-    __ vpshufd(xmm(i + 4), xmm(i + 4), 0xB1, Assembler::AVX_512bit);
-  }
-  montmulEven(0, 0, 4, 12, 16, 4);
-  for (int i = 0; i < 4; i++) {
-    __ evpermt2d(xmm(i), xmm28, xmm(i + 8), Assembler::AVX_512bit);
-  }
+  montMul64(xmm4_7, xmm4_7, xmm29_29, xmm16_27, _masm);
+
+  montMul64(xmm0_3, xmm0_3, xmm4_7, xmm16_27, true, _masm);
+
   for (int i = 0; i < 4; i++) {
     __ evmovdqul(Address(result, i * 64), xmm(i), Assembler::AVX_512bit);
   }
-
   __ subl(len, 1);
   __ addptr(poly1, 256);
   __ addptr(poly2, 256);
   __ addptr(result, 256);
   __ cmpl(len, 0);
   __ jcc(Assembler::notEqual, L_loop);
-
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ mov64(rax, 0); // return 0
@@ -1061,11 +796,12 @@ address StubGenerator::generate_dilithiumNttMult_avx512() {
 //
 // coeffs (int[256]) = c_rarg0
 // constant (int) = c_rarg1
-address StubGenerator::generate_dilithiumMontMulByConstant_avx512() {
+static address generate_dilithiumMontMulByConstant_avx512(StubGenerator *stubgen,
+                                                          MacroAssembler *_masm) {
 
   __ align(CodeEntryAlignment);
   StubGenStubId stub_id = dilithiumMontMulByConstant_id;
-  StubCodeMark mark(this, stub_id);
+  StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();
 
@@ -1074,8 +810,8 @@ address StubGenerator::generate_dilithiumMontMulByConstant_avx512() {
   const Register coeffs = c_rarg0;
   const Register constant = c_rarg1;
 
-  const Register perms = c_rarg2;
-  const Register dilithiumConsts = c_rarg3;
+  const Register perms = c_rarg2; // not used for argument
+  const Register dilithiumConsts = c_rarg3; // not used for argument
   const Register len = r10;
 
   __ lea(dilithiumConsts, ExternalAddress(dilithiumAvx512ConstsAddr()));
@@ -1095,14 +831,9 @@ address StubGenerator::generate_dilithiumMontMulByConstant_avx512() {
   for (int i = 0; i < 8; i++) {
     __ evmovdqul(xmm(i), Address(coeffs, i * 64), Assembler::AVX_512bit);
   }
-  montmulEven(8, 0, 29, 8, 16, 8);
-  for (int i = 0; i < 8; i++) {
-    __ vpshufd(xmm(i),xmm(i), 0xB1, Assembler::AVX_512bit);
-  }
-  montmulEven(0, 0, 29, 0, 16, 8);
-  for (int i = 0; i < 8; i++) {
-    __ evpermt2d(xmm(i), xmm28, xmm(i + 8), Assembler::AVX_512bit);
-  }
+
+  montMulByConst128(_masm);
+
   for (int i = 0; i < 8; i++) {
     __ evmovdqul(Address(coeffs, i * 64), xmm(i), Assembler::AVX_512bit);
   }
@@ -1128,11 +859,12 @@ address StubGenerator::generate_dilithiumMontMulByConstant_avx512() {
 // highPart (int[256]) = c_rarg2
 // twoGamma2  (int) = c_rarg3
 // multiplier (int) = c_rarg4
-address StubGenerator::generate_dilithiumDecomposePoly_avx512() {
+static address generate_dilithiumDecomposePoly_avx512(StubGenerator *stubgen,
+                                                      MacroAssembler *_masm) {
 
   __ align(CodeEntryAlignment);
   StubGenStubId stub_id = dilithiumDecomposePoly_id;
-  StubCodeMark mark(this, stub_id);
+  StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();
 
@@ -1143,9 +875,9 @@ address StubGenerator::generate_dilithiumDecomposePoly_avx512() {
   const Register highPart = c_rarg2;
   const Register twoGamma2 = c_rarg3;
 
-  const Register len = c_rarg3;
-  const Register dilithiumConsts = r9;
-  const Register tmp = r10;
+  const Register len = c_rarg3; // len is used only after twoGamma2 is consumed
+  const Register dilithiumConsts = r10;
+  const Register tmp = r11;
 
   __ lea(dilithiumConsts, ExternalAddress(dilithiumAvx512ConstsAddr()));
 
@@ -1183,7 +915,7 @@ address StubGenerator::generate_dilithiumDecomposePoly_avx512() {
   __ addptr(input, 256);
 
   // rplus in xmm0
-  //          rplus = rplus - ((rplus + 5373807) >> 23) * dilithium_q;
+  // rplus = rplus - ((rplus + 5373807) >> 23) * dilithium_q;
   __ evpaddd(xmm4, k0, xmm0, xmm31, false, Assembler::AVX_512bit);
   __ evpaddd(xmm5, k0, xmm1, xmm31, false, Assembler::AVX_512bit);
   __ evpaddd(xmm6, k0, xmm2, xmm31, false, Assembler::AVX_512bit);
@@ -1204,9 +936,8 @@ address StubGenerator::generate_dilithiumDecomposePoly_avx512() {
   __ evpsubd(xmm2, k0, xmm2, xmm6, false, Assembler::AVX_512bit);
   __ evpsubd(xmm3, k0, xmm3, xmm7, false, Assembler::AVX_512bit);
 
-            // rplus in xmm0
-
-//            rplus = rplus + ((rplus >> 31) & dilithium_q);
+  // rplus in xmm0
+  // rplus = rplus + ((rplus >> 31) & dilithium_q);
   __ evpsrad(xmm4, k0, xmm0, 31, false, Assembler::AVX_512bit);
   __ evpsrad(xmm5, k0, xmm1, 31, false, Assembler::AVX_512bit);
   __ evpsrad(xmm6, k0, xmm2, 31, false, Assembler::AVX_512bit);
@@ -1222,9 +953,8 @@ address StubGenerator::generate_dilithiumDecomposePoly_avx512() {
   __ evpaddd(xmm2, k0, xmm2, xmm6, false, Assembler::AVX_512bit);
   __ evpaddd(xmm3, k0, xmm3, xmm7, false, Assembler::AVX_512bit);
 
-            // rplus in xmm0
-
-//           int quotient = (rplus * multiplier) >> 22;
+  // rplus in xmm0
+  // int quotient = (rplus * multiplier) >> 22;
   __ evpmulld(xmm4, k0, xmm0, xmm29, false, Assembler::AVX_512bit);
   __ evpmulld(xmm5, k0, xmm1, xmm29, false, Assembler::AVX_512bit);
   __ evpmulld(xmm6, k0, xmm2, xmm29, false, Assembler::AVX_512bit);
@@ -1235,9 +965,8 @@ address StubGenerator::generate_dilithiumDecomposePoly_avx512() {
   __ evpsrad(xmm6, k0, xmm6, 22, false, Assembler::AVX_512bit);
   __ evpsrad(xmm7, k0, xmm7, 22, false, Assembler::AVX_512bit);
 
-            // quotient in xmm4
-
-//            int r0 = rplus - quotient * twoGamma2;
+  // quotient in xmm4
+  // int r0 = rplus - quotient * twoGamma2;
   __ evpmulld(xmm8, k0, xmm4, xmm28, false, Assembler::AVX_512bit);
   __ evpmulld(xmm9, k0, xmm5, xmm28, false, Assembler::AVX_512bit);
   __ evpmulld(xmm10, k0, xmm6, xmm28, false, Assembler::AVX_512bit);
@@ -1248,9 +977,8 @@ address StubGenerator::generate_dilithiumDecomposePoly_avx512() {
   __ evpsubd(xmm10, k0, xmm2, xmm10, false, Assembler::AVX_512bit);
   __ evpsubd(xmm11, k0, xmm3, xmm11, false, Assembler::AVX_512bit);
 
-            // r0 in xmm8
-
-//            int mask = (twoGamma2 - r0) >> 22;
+  // r0 in xmm8
+  // int mask = (twoGamma2 - r0) >> 22;
   __ evpsubd(xmm12, k0, xmm28, xmm8, false, Assembler::AVX_512bit);
   __ evpsubd(xmm13, k0, xmm28, xmm9, false, Assembler::AVX_512bit);
   __ evpsubd(xmm14, k0, xmm28, xmm10, false, Assembler::AVX_512bit);
@@ -1261,9 +989,8 @@ address StubGenerator::generate_dilithiumDecomposePoly_avx512() {
   __ evpsrad(xmm14, k0, xmm14, 22, false, Assembler::AVX_512bit);
   __ evpsrad(xmm15, k0, xmm15, 22, false, Assembler::AVX_512bit);
 
-            // mask in xmm12
-
-//            r0 -= (mask & twoGamma2);
+  // mask in xmm12
+  // r0 -= (mask & twoGamma2);
   __ evpandd(xmm16, k0, xmm12, xmm28, false, Assembler::AVX_512bit);
   __ evpandd(xmm17, k0, xmm13, xmm28, false, Assembler::AVX_512bit);
   __ evpandd(xmm18, k0, xmm14, xmm28, false, Assembler::AVX_512bit);
@@ -1274,9 +1001,8 @@ address StubGenerator::generate_dilithiumDecomposePoly_avx512() {
   __ evpsubd(xmm10, k0, xmm10, xmm18, false, Assembler::AVX_512bit);
   __ evpsubd(xmm11, k0, xmm11, xmm19, false, Assembler::AVX_512bit);
 
-            // r0 in xmm8
-
-//            quotient += (mask & 1);
+  // r0 in xmm8
+  // quotient += (mask & 1);
   __ evpandd(xmm16, k0, xmm12, xmm25, false, Assembler::AVX_512bit);
   __ evpandd(xmm17, k0, xmm13, xmm25, false, Assembler::AVX_512bit);
   __ evpandd(xmm18, k0, xmm14, xmm25, false, Assembler::AVX_512bit);
@@ -1287,7 +1013,7 @@ address StubGenerator::generate_dilithiumDecomposePoly_avx512() {
   __ evpaddd(xmm6, k0, xmm6, xmm18, false, Assembler::AVX_512bit);
   __ evpaddd(xmm7, k0, xmm7, xmm19, false, Assembler::AVX_512bit);
 
-//            mask = (twoGamma2 / 2 - r0) >> 31;
+  // mask = (twoGamma2 / 2 - r0) >> 31;
   __ evpsubd(xmm12, k0, xmm27, xmm8, false, Assembler::AVX_512bit);
   __ evpsubd(xmm13, k0, xmm27, xmm9, false, Assembler::AVX_512bit);
   __ evpsubd(xmm14, k0, xmm27, xmm10, false, Assembler::AVX_512bit);
@@ -1298,7 +1024,7 @@ address StubGenerator::generate_dilithiumDecomposePoly_avx512() {
   __ evpsrad(xmm14, k0, xmm14, 31, false, Assembler::AVX_512bit);
   __ evpsrad(xmm15, k0, xmm15, 31, false, Assembler::AVX_512bit);
 
-//            r0 -= (mask & twoGamma2);
+  // r0 -= (mask & twoGamma2);
   __ evpandd(xmm16, k0, xmm12, xmm28, false, Assembler::AVX_512bit);
   __ evpandd(xmm17, k0, xmm13, xmm28, false, Assembler::AVX_512bit);
   __ evpandd(xmm18, k0, xmm14, xmm28, false, Assembler::AVX_512bit);
@@ -1309,9 +1035,8 @@ address StubGenerator::generate_dilithiumDecomposePoly_avx512() {
   __ evpsubd(xmm10, k0, xmm10, xmm18, false, Assembler::AVX_512bit);
   __ evpsubd(xmm11, k0, xmm11, xmm19, false, Assembler::AVX_512bit);
 
-            // r0 in xmm8
-
-//            quotient += (mask & 1);
+  // r0 in xmm8
+  // quotient += (mask & 1);
   __ evpandd(xmm16, k0, xmm12, xmm25, false, Assembler::AVX_512bit);
   __ evpandd(xmm17, k0, xmm13, xmm25, false, Assembler::AVX_512bit);
   __ evpandd(xmm18, k0, xmm14, xmm25, false, Assembler::AVX_512bit);
@@ -1322,9 +1047,8 @@ address StubGenerator::generate_dilithiumDecomposePoly_avx512() {
   __ evpaddd(xmm6, k0, xmm6, xmm18, false, Assembler::AVX_512bit);
   __ evpaddd(xmm7, k0, xmm7, xmm19, false, Assembler::AVX_512bit);
 
-            // quotient in xmm4
-
-//            int r1 = rplus - r0 - (dilithium_q - 1);
+  // quotient in xmm4
+  // int r1 = rplus - r0 - (dilithium_q - 1);
   __ evpsubd(xmm16, k0, xmm0, xmm8, false, Assembler::AVX_512bit);
   __ evpsubd(xmm17, k0, xmm1, xmm9, false, Assembler::AVX_512bit);
   __ evpsubd(xmm18, k0, xmm2, xmm10, false, Assembler::AVX_512bit);
@@ -1335,9 +1059,8 @@ address StubGenerator::generate_dilithiumDecomposePoly_avx512() {
   __ evpsubd(xmm18, k0, xmm18, xmm26, false, Assembler::AVX_512bit);
   __ evpsubd(xmm19, k0, xmm19, xmm26, false, Assembler::AVX_512bit);
 
-            // r1 in xmm16
-
-//            r1 = (r1 | (-r1)) >> 31; // 0 if rplus - r0 == (dilithium_q - 1), -1 otherwise
+  // r1 in xmm16
+  // r1 = (r1 | (-r1)) >> 31; // 0 if rplus - r0 == (dilithium_q - 1), -1 otherwise
   __ evpsubd(xmm20, k0, xmm24, xmm16, false, Assembler::AVX_512bit);
   __ evpsubd(xmm21, k0, xmm24, xmm17, false, Assembler::AVX_512bit);
   __ evpsubd(xmm22, k0, xmm24, xmm18, false, Assembler::AVX_512bit);
@@ -1355,9 +1078,8 @@ address StubGenerator::generate_dilithiumDecomposePoly_avx512() {
   __ evpsrad(xmm2, k0, xmm18, 31, false, Assembler::AVX_512bit);
   __ evpsrad(xmm3, k0, xmm19, 31, false, Assembler::AVX_512bit);
 
-            // r1 in xmm0
-
-//            r0 += ~r1;
+  // r1 in xmm0
+  // r0 += ~r1;
   __ evpxorq(xmm20, k0, xmm0, xmm12, false, Assembler::AVX_512bit);
   __ evpxorq(xmm21, k0, xmm1, xmm12, false, Assembler::AVX_512bit);
   __ evpxorq(xmm22, k0, xmm2, xmm12, false, Assembler::AVX_512bit);
@@ -1368,18 +1090,16 @@ address StubGenerator::generate_dilithiumDecomposePoly_avx512() {
   __ evpaddd(xmm10, k0, xmm10, xmm22, false, Assembler::AVX_512bit);
   __ evpaddd(xmm11, k0, xmm11, xmm23, false, Assembler::AVX_512bit);
 
-            // r0 in xmm8
-
-//            r1 = r1 & quotient;
+  // r0 in xmm8
+  // r1 = r1 & quotient;
   __ evpandd(xmm0, k0, xmm4, xmm0, false, Assembler::AVX_512bit);
   __ evpandd(xmm1, k0, xmm5, xmm1, false, Assembler::AVX_512bit);
   __ evpandd(xmm2, k0, xmm6, xmm2, false, Assembler::AVX_512bit);
   __ evpandd(xmm3, k0, xmm7, xmm3, false, Assembler::AVX_512bit);
 
-//             r1 in xmm0
-
-//            lowPart[m] = r0;
-//            highPart[m] = r1;
+  // r1 in xmm0
+  // lowPart[m] = r0;
+  // highPart[m] = r1;
   __ evmovdqul(Address(highPart, 0), xmm0, Assembler::AVX_512bit);
   __ evmovdqul(Address(highPart, 64), xmm1, Assembler::AVX_512bit);
   __ evmovdqul(Address(highPart, 128), xmm2, Assembler::AVX_512bit);
@@ -1401,4 +1121,20 @@ address StubGenerator::generate_dilithiumDecomposePoly_avx512() {
   __ ret(0);
 
   return start;
+}
+
+void StubGenerator::generate_dilithium_stubs() {
+  // Generate Dilithium intrinsics code
+  if (UseDilithiumIntrinsics) {
+      StubRoutines::_dilithiumAlmostNtt =
+        generate_dilithiumAlmostNtt_avx512(this, _masm);
+      StubRoutines::_dilithiumAlmostInverseNtt =
+        generate_dilithiumAlmostInverseNtt_avx512(this, _masm);
+      StubRoutines::_dilithiumNttMult =
+        generate_dilithiumNttMult_avx512(this, _masm);
+      StubRoutines::_dilithiumMontMulByConstant =
+        generate_dilithiumMontMulByConstant_avx512(this, _masm);
+      StubRoutines::_dilithiumDecomposePoly =
+        generate_dilithiumDecomposePoly_avx512(this, _masm);
+  }
 }

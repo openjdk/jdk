@@ -489,23 +489,9 @@ class StubGenerator: public StubCodeGenerator {
 
   // SHA3 stubs
   void generate_sha3_stubs();
-  address generate_sha3_implCompress(StubGenStubId stub_id);
-
-  address generate_double_keccak();
 
   // Dilithium stubs and helper functions
-  void montmulEven(int outputReg, int inputReg1,  int inputReg2,
-    int scratchReg1, int scratchReg2, int parCnt);
-  void montmulEven(int outputReg, int inputReg11, int inputReg12,
-    int inputReg13, int inputReg14,  int inputReg2,
-    int scratchReg1, int scratchReg2);
   void generate_dilithium_stubs();
-  address generate_dilithiumAlmostNtt_avx512();
-  address generate_dilithiumAlmostInverseNtt_avx512();
-  address generate_dilithiumNttMult_avx512();
-  address generate_dilithiumMontMulByConstant_avx512();
-  address generate_dilithiumDecomposePoly_avx512();
-
   // BASE64 stubs
 
   address base64_shuffle_addr();
