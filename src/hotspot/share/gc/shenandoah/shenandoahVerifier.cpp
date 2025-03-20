@@ -1059,8 +1059,7 @@ void ShenandoahVerifier::verify_before_concmark() {
   if (_heap->mode()->is_generational() &&
       !_heap->old_generation()->is_mark_complete() &&
       !_heap->old_generation()->is_parsable()) {
-    // Before marking, remembered set can't be verified in global GC, because,
-    // we don't know whether old gen is parseable or not.
+    // Before marking, remembered set can't be verified w/o complete old marking and parseable old gen.
     verify_remembered_set = _verify_remembered_disable;
   }
   verify_at_safepoint(
