@@ -792,7 +792,6 @@ void ShenandoahOldGeneration::complete_mixed_evacuations() {
   }
 
   if (state() == ShenandoahOldGeneration::EVACUATING) {
-    set_parsable(false);
     transition_to(ShenandoahOldGeneration::FILLING);
     return;
   }
