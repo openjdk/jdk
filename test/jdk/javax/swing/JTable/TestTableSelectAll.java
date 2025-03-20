@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 4466930
- * @key headful
  * @summary Verifies selectAll selects all available rows and columns
  *          irrespective of presence of columns and rows respectively
  * @run main TestTableSelectAll
