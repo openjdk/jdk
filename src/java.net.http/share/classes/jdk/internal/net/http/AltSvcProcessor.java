@@ -81,30 +81,25 @@ final class AltSvcProcessor {
      * Parses the alt-svc header received from origin and update
      * registry with the processed values.
      *
-     * This method is intended to be used as a stage in a {@code CompletableFuture::thenCompose}
-     * chain when the completable future that receives the HTTP {@code Response} is completed.
-     *
      * @param response response passed on by the server
      * @param client   client that holds alt-svc registry
      * @param request  request that holds the origin details
-     * @return unmodified response
      */
-    static CompletableFuture<Response> processAltSvcHeader(Response response, HttpClientImpl client,
-                                                           HttpRequestImpl request) {
+    static void processAltSvcHeader(Response response, HttpClientImpl client,
+                                    HttpRequestImpl request) {
 
-        final CompletableFuture<Response> fnResponse = MinimalFuture.completedFuture(response);
         // we don't support AltSvc from unsecure origins
         if (!request.secure()) {
-            return fnResponse;
+            return;
         }
         if (response.statusCode == 421) {
             // As per AltSvc spec (RFC-7838), section 6:
             // An Alt-Svc header field in a 421 (Misdirected Request) response MUST be ignored.
-            return fnResponse;
+            return;
         }
         final var altSvcHeaderVal = response.headers().firstValue(HEADER);
         if (altSvcHeaderVal.isEmpty()) {
-            return fnResponse;
+            return;
         }
         if (debug.on()) {
             debug.log("Processing alt-svc header");
@@ -118,7 +113,7 @@ final class AltSvcProcessor {
                 debug.log("ignoring alt-svc header because connection %s didn't use SNI during" +
                         " connection establishment", conn);
             }
-            return fnResponse;
+            return;
         }
         final Origin origin;
         try {
@@ -128,11 +123,10 @@ final class AltSvcProcessor {
                 debug.log("ignoring alt-svc header due to: " + iae);
             }
             // ignore the alt-svc
-            return fnResponse;
+            return;
         }
         String altSvcValue = altSvcHeaderVal.get();
         processValueAndUpdateRegistry(client, origin, altSvcValue);
-        return fnResponse;
     }
 
     static void processAltSvcFrame(final int streamId,

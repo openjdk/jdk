@@ -390,8 +390,8 @@ class MultiExchange<T> implements Cancelable {
                     // this is the first attempt to have the request processed by the server
                     attempts.set(1);
                     return responseAsyncImpl(true);
-                }).thenCompose(r -> processAltSvcHeader(r, client(), currentreq))
-                    .thenCompose((Response r) -> {
+                }).thenCompose((Response r) -> {
+                        processAltSvcHeader(r, client(), currentreq);
                         Exchange<T> exch = getExchange();
                         if (bodyNotPermitted(r)) {
                             if (bodyIsPresent(r)) {
