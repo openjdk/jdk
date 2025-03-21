@@ -514,14 +514,16 @@ static double __ieee754_pow(double x, double y) {
   if(lx==0) {
     if(ix==0x7ff00000||ix==0||ix==0x3ff00000){
       z = ax;                   /*x is +-0,+-inf,+-1*/
-      if(hy<0) z = one/z;       /* z = (1/|x|) */
+      if(hy<0) {
+        if (z == 0.0) {
+          z = std::numeric_limits<double>::quiet_NaN();
+        } else {
+          z = one/z;       /* z = (1/|x|) */
+        }
+      }
       if(hx<0) {
         if(((ix-0x3ff00000)|yisint)==0) {
-#ifdef CAN_USE_NAN_DEFINE
-          z = NAN;
-#else
-          z = (z-z)/(z-z); /* (-1)**non-int is NaN */
-#endif
+          z = std::numeric_limits<double>::quiet_NaN();
         } else if(yisint==1)
           z = -1.0*z;           /* (x<0)**odd = -(|x|**odd) */
       }
@@ -532,12 +534,9 @@ static double __ieee754_pow(double x, double y) {
   n = (hx>>31)+1;
 
   /* (x<0)**(non-int) is NaN */
-  if((n|yisint)==0)
-#ifdef CAN_USE_NAN_DEFINE
-    return NAN;
-#else
-    return (x-x)/(x-x);
-#endif
+  if((n|yisint)==0) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
 
   s = one; /* s (sign of result -ve**odd) = -1 else = 1 */
   if((n|(yisint-1))==0) s = -one;/* (-ve)**(odd int) */
