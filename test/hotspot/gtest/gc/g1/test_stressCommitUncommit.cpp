@@ -82,7 +82,8 @@ TEST_VM(G1RegionToSpaceMapper, smallStressAdjacent) {
 
   ReservedSpace rs = MemoryReserver::reserve(size,
                                              os::vm_allocation_granularity(),
-                                             os::vm_page_size());
+                                             os::vm_page_size(),
+                                             mtTest);
 
   G1RegionToSpaceMapper* small_mapper  =
     G1RegionToSpaceMapper::create_mapper(rs,
@@ -108,7 +109,8 @@ TEST_VM(G1RegionToSpaceMapper, largeStressAdjacent) {
 
   ReservedSpace rs = MemoryReserver::reserve(size,
                                              os::vm_allocation_granularity(),
-                                             os::vm_page_size());
+                                             os::vm_page_size(),
+                                             mtTest);
   G1RegionToSpaceMapper* large_mapper  =
     G1RegionToSpaceMapper::create_mapper(rs,
                                          size,
