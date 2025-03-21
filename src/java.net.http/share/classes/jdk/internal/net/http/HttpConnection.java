@@ -113,7 +113,7 @@ abstract class HttpConnection implements Closeable {
      * {@link HttpResponse#connectionLabel() HttpResponse::connectionLabel}}
      */
     public String connectionLabel() {
-        return instanceId;
+        return connectionId;
     }
 
     private static final class TrailingOperations {
