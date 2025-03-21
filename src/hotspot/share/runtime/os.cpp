@@ -621,18 +621,14 @@ static void break_if_ptr_caught(void* ptr) {
 }
 #endif // ASSERT
 
-void* os::malloc(size_t size, MemTag mem_tag) {
-  return os::malloc(size, mem_tag, CALLER_PC);
-}
-
-void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
+long os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, bool check_limit, MemTag mem_tag, const NativeCallStack& stack) {
+  *raw_ptr = nullptr;
 
   // Special handling for NMT preinit phase before arguments are parsed
-  void* rc = nullptr;
-  if (NMTPreInit::handle_malloc(&rc, size)) {
+  if (NMTPreInit::handle_realloc(raw_ptr, old_ptr, size, mem_tag)) {
     // No need to fill with 0 because CDS static dumping doesn't use these
     // early allocations.
-    return rc;
+    return (long)size;
   }
 
   DEBUG_ONLY(check_crash_protection());
@@ -641,16 +637,78 @@ void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
   // null or a unique non-null pointer. To unify libc behavior across our platforms
   // we chose the latter.
   size = MAX2((size_t)1, size);
-
   // Observe MallocLimit
-  if (MemTracker::check_exceeds_limit(size, mem_tag)) {
-    return nullptr;
+  if (check_limit && MemTracker::check_exceeds_limit(size, mem_tag)) {
+    return -1;
   }
 
   const size_t outer_size = size + MemTracker::overhead_per_malloc();
-
   // Check for overflow.
   if (outer_size < size) {
+    return -1;
+  }
+
+  return (long)outer_size;
+}
+
+void* os::post_alloc(void* raw_ptr, size_t size, long chunk, MemTag mem_tag, const NativeCallStack& stack) {
+  // Register alloc with NMT
+  void* const client_ptr = MemTracker::record_malloc((address)raw_ptr, size, mem_tag, stack);
+
+  if (chunk == 0) {
+    if (CDSConfig::is_dumping_static_archive()) {
+      // Need to deterministically fill all the alignment gaps in C++ structures.
+      ::memset((char*)client_ptr, 0, size);
+    } else {
+      DEBUG_ONLY(::memset((char*)client_ptr, uninitBlockPad, size);)
+    }
+  } else if (chunk > 0) {
+    ::memset((char*)client_ptr + chunk, uninitBlockPad, size - chunk);
+  }
+
+  DEBUG_ONLY(break_if_ptr_caught(client_ptr);)
+  return client_ptr;
+}
+
+
+void* os::malloc(size_t size, MemTag mem_tag) {
+  return os::malloc(size, mem_tag, CALLER_PC);
+}
+
+void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
+
+//  // Special handling for NMT preinit phase before arguments are parsed
+//  void* rc = nullptr;
+//  if (NMTPreInit::handle_malloc(&rc, size)) {
+//    // No need to fill with 0 because CDS static dumping doesn't use these
+//    // early allocations.
+//    return rc;
+//  }
+//
+//  DEBUG_ONLY(check_crash_protection());
+//
+//  // On malloc(0), implementations of malloc(3) have the choice to return either
+//  // null or a unique non-null pointer. To unify libc behavior across our platforms
+//  // we chose the latter.
+//  size = MAX2((size_t)1, size);
+//
+//  // Observe MallocLimit
+//  if (MemTracker::check_exceeds_limit(size, mem_tag)) {
+//    return nullptr;
+//  }
+//
+//  const size_t outer_size = size + MemTracker::overhead_per_malloc();
+//
+//  // Check for overflow.
+//  if (outer_size < size) {
+//    return nullptr;
+//  }
+  void* rc = nullptr;
+  long outer_size = os::pre_alloc(&rc, nullptr, size, true, mem_tag, stack);
+  if (rc != nullptr) {
+    return rc;
+  }
+  if (outer_size < 0) {
     return nullptr;
   }
 
