@@ -319,15 +319,6 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, true);
   }
 
-  if (!AvoidUnalignedAccesses) {
-    if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
-      FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
-    }
-  } else if (UseMD5Intrinsics) {
-    warning("Intrinsics for MD5 crypto hash functions not available on this CPU.");
-    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
-  }
-
   // Adler32
   if (UseRVV) {
     if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
@@ -366,6 +357,15 @@ void VM_Version::c2_initialize() {
       warning("Cannot enable UseZvbc on cpu without RVV support.");
     }
     FLAG_SET_DEFAULT(UseZvbc, false);
+  }
+
+  if (!AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
+      FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
+    }
+  } else if (UseMD5Intrinsics) {
+    warning("Intrinsics for MD5 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
   }
 
   // SHA's
