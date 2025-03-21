@@ -190,7 +190,7 @@ abstract class Striped64 extends Number {
     }
 
     /**
-     * Returns the ThreadLocalRandom probe value for the current thread.
+     * Returns the ThreadLocalRandom probe value for the current carrier thread.
      */
     static final int getProbe() {
         return TLR.getThreadLocalRandomProbe();
@@ -198,7 +198,7 @@ abstract class Striped64 extends Number {
 
     /**
      * Pseudo-randomly advances and records the given probe value for the
-     * given thread.
+     * given carrier thread.
      */
     static final int advanceProbe(int probe) {
         return TLR.advanceThreadLocalRandomProbe(probe);
