@@ -55,6 +55,8 @@ import java.util.concurrent.CountDownLatch;
 import javax.net.ssl.*;
 import jdk.test.lib.security.SecurityUtils;
 
+import static jdk.test.lib.Asserts.assertThrows;
+
 public class SetClientMode extends SSLContextTemplate {
     private volatile int serverPort = 0;
     private static final CountDownLatch HANDSHAKE_COMPLETE = new CountDownLatch(1);
@@ -98,16 +100,11 @@ public class SetClientMode extends SSLContextTemplate {
 
                 HANDSHAKE_COMPLETE.await();
 
-                try {
-                    // Now try invoking setClientMode() on the client socket.
-                    // We expect to see an IllegalArgumentException because
-                    // handshaking has begun.
-                    clientSocket.setUseClientMode(false);
-
-                    throw new RuntimeException("no IllegalArgumentException");
-                } catch (IllegalArgumentException iae) {
-                    System.out.println("succeeded, we can't set the client mode");
-                }
+                // Now try invoking setClientMode() on the client socket.
+                // We expect to see an IllegalArgumentException because
+                // handshaking has begun.
+                assertThrows(IllegalArgumentException.class,
+                        () -> clientSocket.setUseClientMode(false));
             }
         }
     }
