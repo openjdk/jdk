@@ -55,11 +55,11 @@ final class PlainTunnelingConnection extends HttpConnection {
                                        InetSocketAddress proxy,
                                        HttpClientImpl client,
                                        ProxyHeaders proxyHeaders,
-                                       String connectionLabel) {
-        super(addr, client, connectionLabel);
+                                       String label) {
+        super(addr, client, label);
         this.proxyAddr = proxy;
         this.proxyHeaders = proxyHeaders;
-        delegate = new PlainHttpConnection(proxy, client, connectionLabel);
+        delegate = new PlainHttpConnection(proxy, client, label);
     }
 
     @Override

@@ -85,7 +85,7 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
         if (connection == null) {
             return Optional.empty();
         }
-        return Optional.of(connection.connectionLabel());
+        return Optional.of(connection.label());
     }
 
     @Override

@@ -78,7 +78,7 @@ abstract class HttpConnection implements Closeable {
     public static final Comparator<HttpConnection> COMPARE_BY_ID
             = Comparator.comparing(HttpConnection::id);
 
-    private static final AtomicLong CONNECTION_LABEL_COUNTER = new AtomicLong();
+    private static final AtomicLong LABEL_COUNTER = new AtomicLong();
 
     /** The address this connection is connected to. Could be a server or a proxy. */
     final InetSocketAddress address;
@@ -100,26 +100,26 @@ abstract class HttpConnection implements Closeable {
      * among instances.
      * </p>
      */
-    final String connectionLabel;
+    final String label;
 
-    HttpConnection(InetSocketAddress address, HttpClientImpl client, String connectionLabel) {
+    HttpConnection(InetSocketAddress address, HttpClientImpl client, String label) {
         this.address = address;
         this.client = client;
         trailingOperations = new TrailingOperations();
         this.id = newConnectionId(client);
-        this.connectionLabel = connectionLabel;
+        this.label = label;
     }
 
-    private static String nextConnectionLabel() {
-        return "" + CONNECTION_LABEL_COUNTER.getAndIncrement();
+    private static String nextLabel() {
+        return "" + LABEL_COUNTER.getAndIncrement();
     }
 
     /**
      * {@return a label identifying the connection to facilitate
      * {@link HttpResponse#connectionLabel() HttpResponse::connectionLabel}}
      */
-    public String connectionLabel() {
-        return connectionLabel;
+    public String label() {
+        return label;
     }
 
     // This is overridden in tests
@@ -336,13 +336,13 @@ abstract class HttpConnection implements Closeable {
                                                    String[] alpn,
                                                    HttpRequestImpl request,
                                                    HttpClientImpl client) {
-        String connectionLabel = nextConnectionLabel();
+        String label = nextLabel();
         if (proxy != null)
             return new AsyncSSLTunnelConnection(addr, client, alpn, proxy,
                                                 proxyTunnelHeaders(request),
-                                                connectionLabel);
+                                                label);
         else
-            return new AsyncSSLConnection(addr, client, alpn, connectionLabel);
+            return new AsyncSSLConnection(addr, client, alpn, label);
     }
 
     /**
@@ -416,16 +416,16 @@ abstract class HttpConnection implements Closeable {
                                                      InetSocketAddress proxy,
                                                      HttpRequestImpl request,
                                                      HttpClientImpl client) {
-        String connectionLabel = nextConnectionLabel();
+        String label = nextLabel();
         if (request.isWebSocket() && proxy != null)
             return new PlainTunnelingConnection(addr, proxy, client,
                                                 proxyTunnelHeaders(request),
-                                                connectionLabel);
+                                                label);
 
         if (proxy == null)
-            return new PlainHttpConnection(addr, client, connectionLabel);
+            return new PlainHttpConnection(addr, client, label);
         else
-            return new PlainProxyConnection(proxy, client, connectionLabel);
+            return new PlainProxyConnection(proxy, client, label);
     }
 
     void closeOrReturnToCache(HttpHeaders hdrs) {

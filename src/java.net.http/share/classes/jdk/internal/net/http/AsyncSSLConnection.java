@@ -45,9 +45,9 @@ class AsyncSSLConnection extends AbstractAsyncSSLConnection {
     AsyncSSLConnection(InetSocketAddress addr,
                        HttpClientImpl client,
                        String[] alpn,
-                       String connectionLabel) {
-        super(addr, client, Utils.getServerName(addr), addr.getPort(), alpn, connectionLabel);
-        plainConnection = new PlainHttpConnection(addr, client, connectionLabel);
+                       String label) {
+        super(addr, client, Utils.getServerName(addr), addr.getPort(), alpn, label);
+        plainConnection = new PlainHttpConnection(addr, client, label);
         writePublisher = new PlainHttpPublisher();
     }
 
