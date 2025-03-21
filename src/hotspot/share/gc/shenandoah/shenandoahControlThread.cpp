@@ -134,7 +134,7 @@ void ShenandoahControlThread::run_service() {
 
       // GC is starting, bump the internal gc count and set GCIdMark
       update_gc_count();
-      GCIdMark gc_id_mark(get_gc_id());
+      GCIdMark gc_id_mark(static_cast<uint>(get_gc_id()));
 
       heuristics->cancel_trigger_request();
 
