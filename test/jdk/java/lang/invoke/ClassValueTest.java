@@ -25,22 +25,29 @@
  * @test
  * @bug 8351045 8351996
  * @summary tests for class-specific values
+ * @library /test/lib
  * @run junit ClassValueTest
  */
 
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
+import java.lang.invoke.MethodHandles;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
+import jdk.test.lib.util.ForceGC;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author jrose
@@ -219,6 +226,117 @@ final class ClassValueTest {
             cv.get(int.class);
         } catch (Throwable ex) {
             // swallow if any
+        }
+    }
+
+    private static Class<?> createWeakClass() {
+        var bytes = ClassFile.of().build(ClassDesc.of("WeakTest"), _ -> {});
+        try {
+            return MethodHandles.lookup().defineHiddenClass(bytes, true).lookupClass();
+        } catch (IllegalAccessException ex) {
+            return fail(ex);
+        }
+    }
+
+    @Test
+    void testWeakAgainstClass() {
+        Class<?> hidden = createWeakClass();
+        ClassValue<int[]> cv = new ClassValue<>() {
+            @Override
+            protected int[] computeValue(Class<?> type) {
+                return new int[23];
+            }
+        };
+
+        WeakReference<?> ref = new WeakReference<>(cv.get(hidden));
+        hidden = null; // Remove reference for interpreter
+        if (!ForceGC.wait(() -> ref.refersTo(null))) {
+            fail("Timeout");
+        }
+    }
+
+    @Test
+    @Disabled // JDK-8352622
+    void testWeakAgainstClassValue() {
+        ClassValue<int[]> cv = new ClassValue<>() {
+            @Override
+            protected int[] computeValue(Class<?> type) {
+                return new int[23];
+            }
+        };
+
+        WeakReference<?> ref = new WeakReference<>(cv.get(int.class));
+        cv = null; // Remove reference for interpreter
+        if (!ForceGC.wait(() -> ref.refersTo(null))) {
+            fail("Timeout");
+        }
+    }
+
+    @RepeatedTest(4) // repeat 4 times
+    void testSingletonWinner() {
+        ClassValue<int[]> cv = new ClassValue<>() {
+            @Override
+            protected int[] computeValue(Class<?> type) {
+                try {
+                    Thread.sleep(COMPUTE_TIME_MILLIS);
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
+                return new int[] {ThreadLocalRandom.current().nextInt()};
+            }
+        };
+        AtomicReference<int[]> truth = new AtomicReference<>(null);
+        AtomicInteger truthSwapCount = new AtomicInteger(0);
+
+        List<Thread> threads = new ArrayList<>(100);
+        Runnable job = () -> {
+            var res = cv.get(ClassValueTest.class);
+            var item = truth.compareAndExchange(null, res);
+            if (item != null) {
+                assertSame(item, res);
+            } else {
+                truthSwapCount.incrementAndGet();
+            }
+        };
+        for (int i = 0; i < 100; i++) {
+            threads.add(Thread.startVirtualThread(job));
+        }
+        for (var t : threads) {
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                fail(e);
+            }
+        }
+        assertEquals(1, truthSwapCount.get());
+    }
+
+    @Test
+    @Timeout(value = 4, unit = TimeUnit.SECONDS)
+    void testRacyRemoveInCompute() {
+        ClassValue<Object> cv = new ClassValue<>() {
+            @Override
+            protected Object computeValue(Class<?> type) {
+                try {
+                    Thread.sleep(COMPUTE_TIME_MILLIS);
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
+                remove(type);
+                return Boolean.TRUE;
+            }
+        };
+
+        var threads = Arrays.stream(CLASSES).map(clz ->
+                Thread.startVirtualThread(() ->
+                        assertThrows(Throwable.class, () -> cv.get(clz))))
+                .toList();
+        for (var t : threads) {
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                fail(e);
+            }
         }
     }
 }
