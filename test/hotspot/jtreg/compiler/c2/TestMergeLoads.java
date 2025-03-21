@@ -42,12 +42,20 @@ import java.util.Random;
  *
  * @run main compiler.c2.TestMergeLoads unaligned
  * @run main compiler.c2.TestMergeLoads aligned
- * run main compiler.c2.TestMergeLoads unaligned StressIGVN
- * run main compiler.c2.TestMergeLoads aligned StressIGVN
  *
- * @requires os.arch != "riscv64" | vm.cpu.features ~= ".*zbb.*"
  */
 
+/*
+ * @test
+ * @bug 8345845
+ * @summary Test merging of consecutive loads
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib /
+ *
+ * @run main compiler.c2.TestMergeLoads unaligned StressIGVN
+ * @run main compiler.c2.TestMergeLoads aligned StressIGVN
+ *
+ */
 public class TestMergeLoads {
     static int RANGE = 1000;
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
@@ -552,9 +560,8 @@ public class TestMergeLoads {
           IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
           IRNode.REVERSE_BYTES_I, "1"
         },
-        applyIf = {"UseUnalignedAccesses", "true"},
         applyIfPlatform   = {"riscv64", "true"},
-        applyIfCPUFeature = {"zbb", "true"})
+        applyIfAnd = {"UseUnalignedAccesses", "true", "UseZbb", "true"})
     @IR(counts = {
           IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
           IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3",
@@ -564,9 +571,8 @@ public class TestMergeLoads {
           IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
           IRNode.REVERSE_BYTES_I, "0"
         },
-        applyIf = {"UseUnalignedAccesses", "true"},
         applyIfPlatform   = {"riscv64", "true"},
-        applyIfCPUFeature = {"zbb", "false"})
+        applyIfAnd = {"UseUnalignedAccesses", "true", "UseZbb", "false"})
     @IR(counts = {
           IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
           IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
@@ -620,9 +626,8 @@ public class TestMergeLoads {
           IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
           IRNode.REVERSE_BYTES_I, "1"
         },
-        applyIf = {"UseUnalignedAccesses", "true"},
         applyIfPlatform   = {"riscv64", "true"},
-        applyIfCPUFeature = {"zbb", "true"})
+        applyIfAnd = {"UseUnalignedAccesses", "true", "UseZbb", "true"})
     @IR(counts = {
           IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
           IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3",
@@ -632,9 +637,8 @@ public class TestMergeLoads {
           IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
           IRNode.REVERSE_BYTES_I, "0"
         },
-        applyIf = {"UseUnalignedAccesses", "true"},
         applyIfPlatform   = {"riscv64", "true"},
-        applyIfCPUFeature = {"zbb", "false"})
+        applyIfAnd = {"UseUnalignedAccesses", "true", "UseZbb", "false"})
     @IR(counts = {
           IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
           IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
@@ -689,21 +693,19 @@ public class TestMergeLoads {
           IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
           IRNode.REVERSE_BYTES_L, "1"
         },
-        applyIf = {"UseUnalignedAccesses", "true"},
         applyIfPlatform   = {"riscv64", "true"},
-        applyIfCPUFeature = {"zbb", "true"})
+        applyIfAnd = {"UseUnalignedAccesses", "true", "UseZbb", "true"})
     @IR(counts = {
-          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
-          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "7",
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8",
           IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
           IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
           IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
           IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
           IRNode.REVERSE_BYTES_L, "0"
         },
-        applyIf = {"UseUnalignedAccesses", "true"},
         applyIfPlatform   = {"riscv64", "true"},
-        applyIfCPUFeature = {"zbb", "false"})
+        applyIfAnd = {"UseUnalignedAccesses", "true", "UseZbb", "false"})
     @IR(counts = {
           IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
           IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
@@ -760,21 +762,19 @@ public class TestMergeLoads {
           IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
           IRNode.REVERSE_BYTES_L, "1"
         },
-        applyIf = {"UseUnalignedAccesses", "true"},
         applyIfPlatform   = {"riscv64", "true"},
-        applyIfCPUFeature = {"zbb", "true"})
+        applyIfAnd = {"UseUnalignedAccesses", "true", "UseZbb", "true"})
     @IR(counts = {
-          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
-          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "7",
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8",
           IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
           IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
           IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
           IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
           IRNode.REVERSE_BYTES_L, "0"
         },
-        applyIf = {"UseUnalignedAccesses", "true"},
         applyIfPlatform   = {"riscv64", "true"},
-        applyIfCPUFeature = {"zbb", "false"})
+        applyIfAnd = {"UseUnalignedAccesses", "true", "UseZbb", "false"})
     @IR(counts = {
           IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
           IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
