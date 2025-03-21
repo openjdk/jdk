@@ -205,6 +205,7 @@ class APITest {
             "pkg/package-summary.html",
             "pkg/package-tree.html",
             "resource-files/copy.svg",
+            "resource-files/down.svg",
             "resource-files/glass.svg",
             "resource-files/jquery-ui.min.css",
             "resource-files/left.svg",
