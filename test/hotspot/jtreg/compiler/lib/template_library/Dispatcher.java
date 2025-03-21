@@ -33,6 +33,8 @@ import compiler.lib.template_framework.TemplateWithArgs;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.addName;
+import static compiler.lib.template_framework.Template.fuel;
+import static compiler.lib.template_framework.Template.setFuelCost;
 
 /**
  * TODO
@@ -49,12 +51,20 @@ public class Dispatcher {
     //// public static List<Template.OneArgs<xxx>> basicStatements() {
     //// }
 
-    public Dispatcher() {}
+    private final List<Template.OneArgs<Dispatcher>> templates;
 
-    public TemplateWithArgs templateWithArgs() {
+    public Dispatcher(List<Template.OneArgs<Dispatcher>> templates) {
+        this.templates = templates;
+    }
+
+    public TemplateWithArgs call() {
         // TODO: something!
         var template = Template.make(() -> body(
-            "// empty\n"
+            setFuelCost(0),
+            let("fuel", fuel()),
+            "// $dispatch fuel: #fuel\n",
+            (fuel() <= 0) ? "// $empty\n"
+                          : Library.choice(templates).withArgs(this)
         ));
         return template.withArgs();
     }

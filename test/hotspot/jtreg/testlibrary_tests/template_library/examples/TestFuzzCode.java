@@ -87,12 +87,38 @@ public class TestFuzzCode {
                                                              "compiler.lib.verify.*"),
                                                      List.of());
 
+
+        Dispatcher dispatcher = new Dispatcher(List.of(
+            Template.make("dispatcher", (Dispatcher d) -> body(
+                """
+                { // x $open
+                """,
+                d.call(),
+                """
+                } // x $close
+                """
+            )),
+            Template.make("dispatcher", (Dispatcher d) -> body(
+                """
+                { // y $open
+                """,
+                d.call(),
+                """
+                //   y $mid
+                """,
+                d.call(),
+                """
+                } // y $close
+                """
+            ))
+        ));
+
         var template1Body = Template.make("type", (Type type)-> body(
             // The "ret" variable captures the return value, which can be read / modified
             // by the random code.
             addName(new Name($("ret"), type, true, 10)),
             "#type $ret = ", type.con(), ";\n",
-            new Dispatcher().templateWithArgs(),
+            dispatcher.call(),
             "return $ret;\n"
         ));
         var template1 = Template.make("type", (Type type) -> body(
