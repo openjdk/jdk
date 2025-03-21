@@ -10956,7 +10956,7 @@ instruct scalar_minmax_HF_reg(regF dst, regF src1, regF src2, kReg ktmp, regF xt
   format %{ "scalar_min_max_fp16 $dst, $src1, $src2\t using $ktmp, $xtmp1 and $xtmp2 as TEMP" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
-    __ scalar_max_min_fp16(opcode, $dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister, $ktmp$$KRegister,
+    __ scalar_max_min_fp16(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $ktmp$$KRegister,
                            $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, Assembler::AVX_128bit);
   %}
   ins_pipe( pipe_slow );
