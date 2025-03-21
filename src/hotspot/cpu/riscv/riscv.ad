@@ -4897,8 +4897,11 @@ instruct loadConH(fRegF dst, immH con) %{
 
   ins_encode %{
     assert(UseZfh || UseZfhmin, "must");
-    __ flh(as_FloatRegister($dst$$reg), $constantaddress($con));
-    // TODO: add zfa instructions for half float, and optimize here.
+    if (MacroAssembler::can_hf_imm_load($con$$constant)) {
+      __ fli_h(as_FloatRegister($dst$$reg), $con$$constant);
+    } else {
+      __ flh(as_FloatRegister($dst$$reg), $constantaddress($con));
+    }
   %}
 
   ins_pipe(fp_load_constant_s);
@@ -4929,11 +4932,11 @@ instruct loadConF(fRegF dst, immF con) %{
   %}
 
   ins_encode %{
-      if (MacroAssembler::can_fp_imm_load($con$$constant)) {
-        __ fli_s(as_FloatRegister($dst$$reg), $con$$constant);
-      } else {
-        __ flw(as_FloatRegister($dst$$reg), $constantaddress($con));
-      }
+    if (MacroAssembler::can_fp_imm_load($con$$constant)) {
+      __ fli_s(as_FloatRegister($dst$$reg), $con$$constant);
+    } else {
+      __ flw(as_FloatRegister($dst$$reg), $constantaddress($con));
+    }
   %}
 
   ins_pipe(fp_load_constant_s);
@@ -4963,11 +4966,11 @@ instruct loadConD(fRegD dst, immD con) %{
   %}
 
   ins_encode %{
-      if (MacroAssembler::can_dp_imm_load($con$$constant)) {
-        __ fli_d(as_FloatRegister($dst$$reg), $con$$constant);
-      } else {
-        __ fld(as_FloatRegister($dst$$reg), $constantaddress($con));
-      }
+    if (MacroAssembler::can_dp_imm_load($con$$constant)) {
+      __ fli_d(as_FloatRegister($dst$$reg), $con$$constant);
+    } else {
+      __ fld(as_FloatRegister($dst$$reg), $constantaddress($con));
+    }
   %}
 
   ins_pipe(fp_load_constant_d);
@@ -8342,28 +8345,22 @@ instruct binOps_HF_reg(fRegF dst, fRegF src1, fRegF src2)
   ins_pipe(fp_dop_reg_reg_s);
 %}
 
-instruct min_max_HF_reg(fRegF dst, fRegF src1, fRegF src2)
+instruct min_HF_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr)
 %{
   predicate(!UseZfa);
   match(Set dst (MinHF src1 src2));
-  match(Set dst (MaxHF src1 src2));
-  format %{ "min_max_hf $dst, $src1, $src2" %}
+  effect(KILL cr);
+
+  format %{ "min_hf $dst, $src1, $src2" %}
+
   ins_encode %{
-    int opcode = this->ideal_Opcode();
-    switch(opcode) {
-      case Op_MinHF: __ minmax_fp($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
-                                  __ FLOAT_TYPE::half_precision, true);
-                     break;
-      case Op_MaxHF: __ minmax_fp($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
-                                  __ FLOAT_TYPE::half_precision, false);
-                     break;
-      default: assert(false, "%s is not supported here", NodeClassNames[opcode]); break;
-    }
+    __ minmax_fp($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
+                 __ FLOAT_TYPE::half_precision, true /* is_min */);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct minHF_reg_zfa(fRegF dst, fRegF src1, fRegF src2)
+instruct min_HF_reg_zfa(fRegF dst, fRegF src1, fRegF src2)
 %{
   predicate(UseZfa);
   match(Set dst (MinHF src1 src2));
@@ -8378,7 +8375,22 @@ instruct minHF_reg_zfa(fRegF dst, fRegF src1, fRegF src2)
   ins_pipe(pipe_class_default);
 %}
 
-instruct maxHF_reg_zfa(fRegF dst, fRegF src1, fRegF src2)
+instruct max_HF_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr)
+%{
+  predicate(!UseZfa);
+  match(Set dst (MaxHF src1 src2));
+  effect(KILL cr);
+
+  format %{ "max_hf $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ minmax_fp($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
+                 __ FLOAT_TYPE::half_precision, false /* is_min */);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct max_HF_reg_zfa(fRegF dst, fRegF src1, fRegF src2)
 %{
   predicate(UseZfa);
   match(Set dst (MaxHF src1 src2));
