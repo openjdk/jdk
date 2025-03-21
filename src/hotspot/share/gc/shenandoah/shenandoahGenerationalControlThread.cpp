@@ -232,7 +232,7 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 
   // GC is starting, bump the internal gc count and set GCIdMark
   update_gc_count();
-  GCIdMark gc_id_mark(static_cast<uint>(get_gc_id()));
+  GCIdMark gc_id_mark(checked_cast<uint>(get_gc_count() - 1));
 
   _heap->reset_bytes_allocated_since_gc_start();
 
@@ -573,11 +573,11 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
       msg = (do_old_gc_bootstrap) ? "At end of Concurrent Bootstrap GC" :
             "At end of Concurrent Young GC";
       if (_heap->collection_set()->has_old_regions()) {
-        mmu_tracker->record_mixed(get_gc_id());
+        mmu_tracker->record_mixed(gc_id());
       } else if (do_old_gc_bootstrap) {
-        mmu_tracker->record_bootstrap(get_gc_id());
+        mmu_tracker->record_bootstrap(gc_id());
       } else {
-        mmu_tracker->record_young(get_gc_id());
+        mmu_tracker->record_young(gc_id());
       }
     }
   } else {
@@ -588,7 +588,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
     } else {
       // We only record GC results if GC was successful
       msg = "At end of Concurrent Global GC";
-      mmu_tracker->record_global(get_gc_id());
+      mmu_tracker->record_global(gc_id());
     }
   }
   _heap->log_heap_status(msg);

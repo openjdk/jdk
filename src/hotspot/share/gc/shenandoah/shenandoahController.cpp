@@ -47,12 +47,6 @@ size_t ShenandoahController::get_gc_count() {
   return Atomic::load(&_gc_count);
 }
 
-size_t ShenandoahController::get_gc_id() {
-  size_t gc_count = get_gc_count();
-  assert(gc_count > 0, "Sanity check");
-  return gc_count - 1;
-}
-
 void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest& req, bool block) {
   assert(current()->is_Java_thread(), "expect Java thread here");
 

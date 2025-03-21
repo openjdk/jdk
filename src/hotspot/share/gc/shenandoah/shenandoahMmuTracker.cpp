@@ -83,7 +83,7 @@ void ShenandoahMmuTracker::fetch_cpu_times(double &gc_time, double &mutator_time
   mutator_time =(process_user_time + process_system_time) - most_recent_gc_thread_time;
 }
 
-void ShenandoahMmuTracker::update_utilization(size_t gcid, const char* msg) {
+void ShenandoahMmuTracker::update_utilization(uint gcid, const char* msg) {
   double current = os::elapsedTime();
   _most_recent_gcid = gcid;
   _most_recent_is_full = false;
@@ -109,15 +109,15 @@ void ShenandoahMmuTracker::update_utilization(size_t gcid, const char* msg) {
   }
 }
 
-void ShenandoahMmuTracker::record_young(size_t gcid) {
+void ShenandoahMmuTracker::record_young(uint gcid) {
   update_utilization(gcid, "Concurrent Young GC");
 }
 
-void ShenandoahMmuTracker::record_global(size_t gcid) {
+void ShenandoahMmuTracker::record_global(uint gcid) {
   update_utilization(gcid, "Concurrent Global GC");
 }
 
-void ShenandoahMmuTracker::record_bootstrap(size_t gcid) {
+void ShenandoahMmuTracker::record_bootstrap(uint gcid) {
   // Not likely that this will represent an "ideal" GCU, but doesn't hurt to try
   update_utilization(gcid, "Concurrent Bootstrap GC");
 }
@@ -136,7 +136,7 @@ void ShenandoahMmuTracker::record_old_marking_increment(bool old_marking_done) {
                      gcu * 100, mu * 100, duration);
 }
 
-void ShenandoahMmuTracker::record_mixed(size_t gcid) {
+void ShenandoahMmuTracker::record_mixed(uint gcid) {
   update_utilization(gcid, "Mixed Concurrent GC");
 }
 
@@ -150,7 +150,7 @@ void ShenandoahMmuTracker::record_degenerated(size_t gcid, bool is_old_bootstrap
   }
 }
 
-void ShenandoahMmuTracker::record_full(size_t gcid) {
+void ShenandoahMmuTracker::record_full(uint gcid) {
   update_utilization(gcid, "Full GC");
   _most_recent_is_full = true;
 }

@@ -64,7 +64,7 @@ private:
   double _most_recent_periodic_gc_time;
   double _most_recent_periodic_mutator_time;
 
-  size_t _most_recent_gcid;
+  uint _most_recent_gcid;
   uint _active_processors;
 
   bool _most_recent_is_full;
@@ -72,7 +72,7 @@ private:
   ShenandoahMmuTask* _mmu_periodic_task;
   TruncatedSeq _mmu_average;
 
-  void update_utilization(size_t gcid, const char* msg);
+  void update_utilization(uint gcid, const char* msg);
   static void fetch_cpu_times(double &gc_time, double &mutator_time);
 
 public:
@@ -89,12 +89,12 @@ public:
   // We may redundantly record degen and full in the case that a degen upgrades to full.  When this happens, we will invoke
   // both record_full() and record_degenerated() with the same value of gcid.  record_full() is called first and the log
   // reports such a cycle as a FULL cycle.
-  void record_young(size_t gcid);
-  void record_global(size_t gcid);
-  void record_bootstrap(size_t gcid);
+  void record_young(uint gcid);
+  void record_global(uint gcid);
+  void record_bootstrap(uint gcid);
   void record_old_marking_increment(bool old_marking_done);
-  void record_mixed(size_t gcid);
-  void record_full(size_t gcid);
+  void record_mixed(uint gcid);
+  void record_full(uint gcid);
   void record_degenerated(size_t gcid, bool is_old_boostrap);
 
   // This is called by the periodic task timer. The interval is defined by

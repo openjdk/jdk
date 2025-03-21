@@ -679,9 +679,9 @@ void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t siz
   size_t promotion_reserve;
   size_t promotion_expended;
 
-  const size_t gc_id = heap->control_thread()->get_gc_id();
+  const size_t gc_count = heap->control_thread()->get_gc_count();
 
-  if ((gc_id != last_report_epoch) || (epoch_report_count++ < MaxReportsPerEpoch)) {
+  if ((gc_count != last_report_epoch) || (epoch_report_count++ < MaxReportsPerEpoch)) {
     {
       // Promotion failures should be very rare.  Invest in providing useful diagnostic info.
       ShenandoahHeapLocker locker(heap->lock());
@@ -699,10 +699,10 @@ void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t siz
                        words_remaining * HeapWordSize, promote_enabled, promotion_reserve, promotion_expended,
                        max_capacity(), used(), free_unaffiliated_regions());
 
-    if ((gc_id == last_report_epoch) && (epoch_report_count >= MaxReportsPerEpoch)) {
+    if ((gc_count == last_report_epoch) && (epoch_report_count >= MaxReportsPerEpoch)) {
       log_debug(gc, ergo)("Squelching additional promotion failure reports for current epoch");
-    } else if (gc_id != last_report_epoch) {
-      last_report_epoch = gc_id;
+    } else if (gc_count != last_report_epoch) {
+      last_report_epoch = gc_count;
       epoch_report_count = 1;
     }
   }

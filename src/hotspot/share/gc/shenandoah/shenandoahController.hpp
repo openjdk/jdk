@@ -87,7 +87,5 @@ public:
 
   // Return the value of a monotonic increasing GC count, maintained by the control thread.
   size_t get_gc_count();
-
-  size_t get_gc_id();
 };
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLLER_HPP
