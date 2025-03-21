@@ -570,6 +570,8 @@ public sealed class PacketSpaceManager implements PacketSpace
                         }
                     }
                 }
+            } else {
+                debug.log("Deadline not refreshed: no change");
             }
             logNoDeadline(newDeadline, false);
             return newDeadline;
@@ -623,48 +625,18 @@ public sealed class PacketSpaceManager implements PacketSpace
             return Deadline.MAX.equals(nextDeadline);
         }
 
-        // reschedule this task if it has no deadline.
-        // there is some non-obvious magic here: there is an apparent
-        // race condition with the method handle() - but it is benign.
-        boolean reschedule() {
+        // reschedule this task
+        void reschedule() {
             Deadline deadline = computeNextDeadline();
             Deadline nextDeadline = this.nextDeadline;
-            Deadline now = now();
             if (Deadline.MAX.equals(deadline)) {
-                if (debug.on()) {
-                    debug.log("no deadline, don't reschedule");
-                }
-                return false;
-            }
-            if (Deadline.MIN.equals(deadline) || deadline.isBefore(nextDeadline)) {
-                if (debug.on()) {
-                    if (deadline.equals(Deadline.MIN)) {
-                        // special handling - otherwise now.until overflows
-                        debug.log("run immediately: rescheduling");
-                    } else {
-                        var delay = now.until(deadline, ChronoUnit.MILLIS);
-                        if (delay < 0) {
-                            debug.log("we are past deadline by %s ms: rescheduling", -delay);
-                        } else {
-                            debug.log("rescheduling retransmission task for %d ms",
-                                    now.until(deadline, ChronoUnit.MILLIS));
-                        }
-                    }
-                }
-                packetEmitter.reschedule(this, deadline);
-                if (debug.on()) debug.log("retransmission task: rescheduled");
-                return true;
+                debug.log("no deadline, don't reschedule");
+            } else if (deadline.equals(nextDeadline)) {
+                debug.log("deadline unchanged, don't reschedule");
             } else {
-                if (debug.on()) {
-                    if (Deadline.MIN.equals(nextDeadline)) {
-                        debug.log("deadline is after next deadline: don't reschedule");
-                    } else {
-                        debug.log("deadline is at or after next deadline by %d ms: don't reschedule",
-                                nextDeadline.until(deadline, ChronoUnit.MILLIS));
-                    }
-                }
+                packetEmitter.reschedule(this, deadline);
+                debug.log("retransmission task: rescheduled");
             }
-            return false;
         }
 
         @Override
