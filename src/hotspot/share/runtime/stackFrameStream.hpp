@@ -65,6 +65,7 @@ class StackFrameStream : public StackObj {
   // Query
   frame *current()                { return &_fr; }
   RegisterMap* register_map()     { return &_reg_map; }
+  inline intptr_t frame_id() const;
 };
 
 #endif // SHARE_RUNTIME_STACKFRAMESTREAM_HPP
