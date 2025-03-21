@@ -95,7 +95,7 @@ public:
   void record_old_marking_increment(bool old_marking_done);
   void record_mixed(uint gcid);
   void record_full(uint gcid);
-  void record_degenerated(size_t gcid, bool is_old_boostrap);
+  void record_degenerated(uint gcid, bool is_old_boostrap);
 
   // This is called by the periodic task timer. The interval is defined by
   // GCPauseIntervalMillis and defaults to 5 seconds. This method computes
