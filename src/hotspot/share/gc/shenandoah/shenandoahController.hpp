@@ -51,7 +51,7 @@ protected:
   Monitor _gc_waiters_lock;
 
   // Increments the internal GC id for next GC cycle,
-  // it is called by control thread when it starts fulfill a GC reqeust.
+  // it is called by control thread when it starts to fulfill a GC reqeust.
   void update_gc_id();
 
 public:
