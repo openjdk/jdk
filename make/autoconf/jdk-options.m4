@@ -630,6 +630,16 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_OPTIONS],
       DEFAULT_DESC: [enabled by default unless --enable-linkable-runtime is set],
       CHECKING_MSG: [if packaged modules are kept])
   AC_SUBST(JLINK_KEEP_PACKAGED_MODULES)
+
+  ################################################################################
+  #
+  # Extra jlink options to be (optionally) passed to the JDK build
+  #
+  AC_ARG_WITH(extra-jlink-flags, [AS_HELP_STRING([--with-extra-jlink-flags],
+      [extra flags to be passed to jlink during the build])])
+
+  JLINK_USER_EXTRA_FLAGS="$with_extra_jlink_flags"
+  AC_SUBST(JLINK_USER_EXTRA_FLAGS)
 ])
 
 ################################################################################
