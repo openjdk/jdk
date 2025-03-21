@@ -49,7 +49,7 @@ public class RuntimeExitLogTest {
 
     private static final String TEST_JDK = System.getProperty("test.jdk");
     private static final String TEST_SRC = System.getProperty("test.src");
-    private static final String NL = System.getProperty("line.separator");
+    private static final String NEW_LINE = System.lineSeparator();
     private static Object HOLD_LOGGER;
 
     /**
@@ -164,14 +164,14 @@ public class RuntimeExitLogTest {
             try (BufferedReader reader = process.inputReader()) {
                 List<String> lines = reader.lines().toList();
                 boolean match = (expectMessage.isEmpty())
-                        ? lines.size() == 0
+                        ? lines.isEmpty()
                         : String.join("\n", lines).matches(expectMessage);
                 if (!match) {
                     // Output lines for debug
                     System.err.println("Expected pattern (line-break):");
-                    System.err.println(expectMessage.replaceAll("\\n", NL));
+                    System.err.println(expectMessage.replaceAll("\\n", NEW_LINE));
                     System.err.println("---- Actual output begin");
-                    lines.forEach(l -> System.err.println(l));
+                    lines.forEach(System.err::println);
                     System.err.println("---- Actual output end");
                     fail("Unexpected log contents");
                 }
