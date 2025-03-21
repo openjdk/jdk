@@ -58,6 +58,12 @@ public class VerifyJarEntryName {
             zos.write("Manifest-Version: 1.0\nCreated-By: Test\n".
                     getBytes(StandardCharsets.UTF_8));
             zos.closeEntry();
+
+            // Add hello.txt file
+            ZipEntry textEntry = new ZipEntry("hello.txt");
+            zos.putNextEntry(textEntry);
+            zos.write("hello".getBytes(StandardCharsets.UTF_8));
+            zos.closeEntry();
         }
 
         SecurityTools.keytool("-genkeypair -keystore ks -storepass changeit "
