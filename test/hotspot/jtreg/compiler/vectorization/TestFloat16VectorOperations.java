@@ -35,9 +35,11 @@
 
 package compiler.vectorization;
 import compiler.lib.ir_framework.*;
-import java.util.Random;
+import jdk.incubator.vector.Float16;
 import static jdk.incubator.vector.Float16.*;
 import static java.lang.Float.*;
+import jdk.test.lib.*;
+import compiler.lib.generators.*;
 
 public class TestFloat16VectorOperations {
     private short[] input1;
@@ -46,10 +48,18 @@ public class TestFloat16VectorOperations {
     private short[] output;
     private static short SCALAR_FP16 = (short)0x7777;
     private static final int LEN = 2048;
-    private Random rng;
 
     public static void main(String args[]) {
         TestFramework.runWithFlags("-XX:-TieredCompilation", "-Xbatch","--add-modules=jdk.incubator.vector");
+    }
+
+    public static boolean assertResults(short expected, short actual) {
+        Float16 expected_fp16 = valueOf(expected);
+        Float16 actual_fp16 = valueOf(actual);
+        if (isNaN(expected_fp16) ^ isNaN(actual_fp16)) {
+            return false;
+        }
+        return !expected_fp16.equals(actual_fp16);
     }
 
     public TestFloat16VectorOperations() {
@@ -57,11 +67,12 @@ public class TestFloat16VectorOperations {
         input2 = new short[LEN];
         input3 = new short[LEN];
         output = new short[LEN];
-        rng = new Random(42);
+
+        Generator<Float16> gen = Generators.G.mixedWithSpecialFloat16s(Generators.G.uniformFloat16s(Float16.MIN_VALUE, Float16.MAX_VALUE), 10, 2);
         for (int i = 0; i < LEN; ++i) {
-            input1[i] = floatToFloat16(rng.nextFloat());
-            input2[i] = floatToFloat16(rng.nextFloat());
-            input3[i] = floatToFloat16(rng.nextFloat());
+            input1[i] = float16ToRawShortBits(gen.next());
+            input2[i] = float16ToRawShortBits(gen.next());
+            input3[i] = float16ToRawShortBits(gen.next());
         }
     }
 
@@ -79,8 +90,9 @@ public class TestFloat16VectorOperations {
     public void checkResultAdd() {
         for (int i = 0; i < LEN; ++i) {
             short expected = floatToFloat16(float16ToFloat(input1[i]) + float16ToFloat(input2[i]));
-            if (output[i] != expected) {
-                throw new RuntimeException("Invalid result: output[" + i + "] = " + output[i] + " != " + expected);
+            if (assertResults(expected, output[i])) {
+                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
+                                           " output = " + output[i] + " expected = " + expected);
             }
         }
     }
@@ -99,8 +111,9 @@ public class TestFloat16VectorOperations {
     public void checkResultSub() {
         for (int i = 0; i < LEN; ++i) {
             short expected = floatToFloat16(float16ToFloat(input1[i]) - float16ToFloat(input2[i]));
-            if (output[i] != expected) {
-                throw new RuntimeException("Invalid result: output[" + i + "] = " + output[i] + " != " + expected);
+            if (assertResults(expected, output[i])) {
+                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
+                                           " output = " + output[i] + " expected = " + expected);
             }
         }
     }
@@ -119,8 +132,9 @@ public class TestFloat16VectorOperations {
     public void checkResultMul() {
         for (int i = 0; i < LEN; ++i) {
             short expected = floatToFloat16(float16ToFloat(input1[i]) * float16ToFloat(input2[i]));
-            if (output[i] != expected) {
-                throw new RuntimeException("Invalid result: output[" + i + "] = " + output[i] + " != " + expected);
+            if (assertResults(expected, output[i])) {
+                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
+                                           " output = " + output[i] + " expected = " + expected);
             }
         }
     }
@@ -139,8 +153,9 @@ public class TestFloat16VectorOperations {
     public void checkResultDiv() {
         for (int i = 0; i < LEN; ++i) {
             short expected = floatToFloat16(float16ToFloat(input1[i]) / float16ToFloat(input2[i]));
-            if (output[i] != expected) {
-                throw new RuntimeException("Invalid result: output[" + i + "] = " + output[i] + " != " + expected);
+            if (assertResults(expected, output[i])) {
+                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
+                                           " output = " + output[i] + " expected = " + expected);
             }
         }
     }
@@ -159,8 +174,9 @@ public class TestFloat16VectorOperations {
     public void checkResultMin() {
         for (int i = 0; i < LEN; ++i) {
             short expected = floatToFloat16(Math.min(float16ToFloat(input1[i]), float16ToFloat(input2[i])));
-            if (output[i] != expected) {
-                throw new RuntimeException("Invalid result: output[" + i + "] = " + output[i] + " != " + expected);
+            if (assertResults(expected, output[i])) {
+                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
+                                           " output = " + output[i] + " expected = " + expected);
             }
         }
     }
@@ -179,8 +195,9 @@ public class TestFloat16VectorOperations {
     public void checkResultMax() {
         for (int i = 0; i < LEN; ++i) {
             short expected = floatToFloat16(Math.max(float16ToFloat(input1[i]), float16ToFloat(input2[i])));
-            if (output[i] != expected) {
-                throw new RuntimeException("Invalid result: output[" + i + "] = " + output[i] + " != " + expected);
+            if (assertResults(expected, output[i])) {
+                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
+                                           " output = " + output[i] + " expected = " + expected);
             }
         }
     }
@@ -198,9 +215,10 @@ public class TestFloat16VectorOperations {
     @Check(test="vectorSqrtFloat16")
     public void checkResultSqrt() {
         for (int i = 0; i < LEN; ++i) {
-            short expected = float16ToRawShortBits(valueOf(Math.sqrt(float16ToFloat(input1[i]))));
-            if (output[i] != expected) {
-                throw new RuntimeException("Invalid result: output[" + i + "] = " + output[i] + " != " + expected);
+            short expected = float16ToRawShortBits(sqrt(shortBitsToFloat16(input1[i])));
+            if (assertResults(expected, output[i])) {
+                throw new RuntimeException("Invalid result: [" + i + "] input = " + input1[i] +
+                                           " output = " + output[i] + " expected = " + expected);
             }
         }
     }
@@ -211,16 +229,19 @@ public class TestFloat16VectorOperations {
         applyIfCPUFeature = {"avx512_fp16", "true"})
     public void vectorFmaFloat16() {
         for (int i = 0; i < LEN; ++i) {
-            output[i] = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]), shortBitsToFloat16(input2[i]), shortBitsToFloat16(input3[i])));
+            output[i] = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]), shortBitsToFloat16(input2[i]),
+                                                  shortBitsToFloat16(input3[i])));
         }
     }
 
     @Check(test="vectorFmaFloat16")
     public void checkResultFma() {
         for (int i = 0; i < LEN; ++i) {
-            short expected = floatToFloat16(Math.fma(float16ToFloat(input1[i]), float16ToFloat(input2[i]), float16ToFloat(input3[i])));
-            if (output[i] != expected) {
-                throw new RuntimeException("Invalid result: output[" + i + "] = " + output[i] + " != " + expected);
+            short expected = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]), shortBitsToFloat16(input2[i]),
+                                                       shortBitsToFloat16(input3[i])));
+            if (assertResults(expected, output[i])) {
+                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
+                                           "input3 = " + input3[i] + " output = " + output[i] + " expected = " + expected);
             }
         }
     }
@@ -231,16 +252,19 @@ public class TestFloat16VectorOperations {
         applyIfCPUFeature = {"avx512_fp16", "true"})
     public void vectorFmaFloat16ScalarMixedConstants() {
         for (int i = 0; i < LEN; ++i) {
-            output[i] = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]), shortBitsToFloat16(SCALAR_FP16), shortBitsToFloat16(floatToFloat16(3.0f))));
+            output[i] = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]), shortBitsToFloat16(SCALAR_FP16),
+                                                  shortBitsToFloat16(floatToFloat16(3.0f))));
         }
     }
 
     @Check(test="vectorFmaFloat16ScalarMixedConstants")
     public void checkResultFmaScalarMixedConstants() {
         for (int i = 0; i < LEN; ++i) {
-            short expected = floatToFloat16(Math.fma(float16ToFloat(input1[i]), float16ToFloat(SCALAR_FP16), 3.0f));
-            if (output[i] != expected) {
-                throw new RuntimeException("Invalid result: output[" + i + "] = " + output[i] + " != " + expected);
+            short expected = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]), shortBitsToFloat16(SCALAR_FP16),
+                                                       shortBitsToFloat16(floatToFloat16(3.0f))));
+            if (assertResults(expected, output[i])) {
+                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + SCALAR_FP16 +
+                                           "input3 = 3.0 " + "output = " + output[i] + " expected = " + expected);
             }
         }
     }
@@ -251,17 +275,20 @@ public class TestFloat16VectorOperations {
     @IR(counts = {IRNode.FMA_VHF, " >= 1"},
         applyIfCPUFeature = {"avx512_fp16", "true"})
     public void vectorFmaFloat16MixedConstants() {
+        short input3 = floatToFloat16(3.0f);
         for (int i = 0; i < LEN; ++i) {
-            output[i] = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]), shortBitsToFloat16(input2[i]), shortBitsToFloat16(floatToFloat16(3.0f))));
+            output[i] = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]), shortBitsToFloat16(input2[i]), shortBitsToFloat16(input3)));
         }
     }
 
     @Check(test="vectorFmaFloat16MixedConstants")
     public void checkResultFmaMixedConstants() {
+        short input3 = floatToFloat16(3.0f);
         for (int i = 0; i < LEN; ++i) {
-            short expected = floatToFloat16(Math.fma(float16ToFloat(input1[i]), float16ToFloat(input2[i]), 3.0f));
-            if (output[i] != expected) {
-                throw new RuntimeException("Invalid result: output[" + i + "] = " + output[i] + " != " + expected);
+            short expected = float16ToRawShortBits(fma(shortBitsToFloat16(input1[i]), shortBitsToFloat16(input2[i]), shortBitsToFloat16(input3)));
+            if (assertResults(expected, output[i])) {
+                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1[i] + " input2 = " + input2[i] +
+                                           "input3 = " + input3 + " output = " + output[i] + " expected = " + expected);
             }
         }
     }
@@ -271,17 +298,24 @@ public class TestFloat16VectorOperations {
     @IR(counts = {IRNode.FMA_VHF, " 0 "},
         applyIfCPUFeature = {"avx512_fp16", "true"})
     public void vectorFmaFloat16AllConstants() {
+        short input1 = floatToFloat16(1.0f);
+        short input2 = floatToFloat16(2.0f);
+        short input3 = floatToFloat16(3.0f);
         for (int i = 0; i < LEN; ++i) {
-            output[i] = float16ToRawShortBits(fma(shortBitsToFloat16(floatToFloat16(1.0f)), shortBitsToFloat16(floatToFloat16(2.0f)), shortBitsToFloat16(floatToFloat16(3.0f))));
+            output[i] = float16ToRawShortBits(fma(shortBitsToFloat16(input1), shortBitsToFloat16(input2), shortBitsToFloat16(input3)));
         }
     }
 
     @Check(test="vectorFmaFloat16AllConstants")
     public void checkResultFmaAllConstants() {
+        short input1 = floatToFloat16(1.0f);
+        short input2 = floatToFloat16(2.0f);
+        short input3 = floatToFloat16(3.0f);
         for (int i = 0; i < LEN; ++i) {
-            short expected = floatToFloat16(Math.fma(1.0f, 2.0f, 3.0f));
-            if (output[i] != expected) {
-                throw new RuntimeException("Invalid result: output[" + i + "] = " + output[i] + " != " + expected);
+            short expected = float16ToRawShortBits(fma(shortBitsToFloat16(input1), shortBitsToFloat16(input2), shortBitsToFloat16(input3)));
+            if (assertResults(expected, output[i])) {
+                throw new RuntimeException("Invalid result: [" + i + "] input1 = " + input1 + " input2 = " + input2 +
+                                           "input3 = " + input3 + " output = " + output[i] + " expected = " + expected);
             }
         }
     }

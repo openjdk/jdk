@@ -6680,8 +6680,6 @@ void C2_MacroAssembler::efp16sh(int opcode, XMMRegister dst, XMMRegister src1, X
     case Op_SubHF: vsubsh(dst, src1, src2); break;
     case Op_MulHF: vmulsh(dst, src1, src2); break;
     case Op_DivHF: vdivsh(dst, src1, src2); break;
-    case Op_MaxHF: vmaxsh(dst, src1, src2); break;
-    case Op_MinHF: vminsh(dst, src1, src2); break;
     default: assert(false, "%s", NodeClassNames[opcode]); break;
   }
 }
@@ -7098,8 +7096,6 @@ void C2_MacroAssembler::evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, 
     case Op_SubVHF: evsubph(dst, src1, src2, vlen_enc); break;
     case Op_MulVHF: evmulph(dst, src1, src2, vlen_enc); break;
     case Op_DivVHF: evdivph(dst, src1, src2, vlen_enc); break;
-    case Op_MaxVHF: evmaxph(dst, src1, src2, vlen_enc); break;
-    case Op_MinVHF: evminph(dst, src1, src2, vlen_enc); break;
     default: assert(false, "%s", NodeClassNames[opcode]); break;
   }
 }
@@ -7110,9 +7106,31 @@ void C2_MacroAssembler::evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, 
     case Op_SubVHF: evsubph(dst, src1, src2, vlen_enc); break;
     case Op_MulVHF: evmulph(dst, src1, src2, vlen_enc); break;
     case Op_DivVHF: evdivph(dst, src1, src2, vlen_enc); break;
-    case Op_MaxVHF: evmaxph(dst, src1, src2, vlen_enc); break;
-    case Op_MinVHF: evminph(dst, src1, src2, vlen_enc); break;
     default: assert(false, "%s", NodeClassNames[opcode]); break;
   }
 }
 
+void C2_MacroAssembler::scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                            KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2) {
+  vector_max_min_fp16(opcode, dst, src1, src2, ktmp, xtmp1, xtmp2, Assembler::AVX_128bit);
+}
+
+void C2_MacroAssembler::vector_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                          KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc) {
+  if (opcode == Op_MaxVHF || opcode == Op_MaxHF) {
+    evpmovw2m(ktmp, src2, vlen_enc);
+    evpblendmw(xtmp1, ktmp, src1, src2, true, vlen_enc);
+    evpblendmw(xtmp2, ktmp, src2, src1, true, vlen_enc);
+    evmaxph(dst, xtmp1, xtmp2, vlen_enc);
+    evcmpph(ktmp, k0, xtmp1, xtmp1, Assembler::UNORD_Q, vlen_enc);
+    Assembler::evmovdquw(dst, ktmp, xtmp1, true, vlen_enc);
+  } else {
+    assert(opcode == Op_MinVHF || opcode == Op_MinHF, "");
+    evpmovw2m(ktmp, src1, vlen_enc);
+    evpblendmw(xtmp1, ktmp, src1, src2, true, vlen_enc);
+    evpblendmw(xtmp2, ktmp, src2, src1, true, vlen_enc);
+    evminph(dst, xtmp1, xtmp2, vlen_enc);
+    evcmpph(ktmp, k0, xtmp1, xtmp1, Assembler::UNORD_Q, vlen_enc);
+    Assembler::evmovdquw(dst, ktmp, xtmp1, true, vlen_enc);
+  }
+}

@@ -3204,6 +3204,9 @@ private:
   void evcmpps(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
                ComparisonPredicateFP comparison, int vector_len);
 
+  void evcmpph(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
+               ComparisonPredicateFP comparison, int vector_len);
+
   // Vector integer compares
   void vpcmpgtd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpd(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
