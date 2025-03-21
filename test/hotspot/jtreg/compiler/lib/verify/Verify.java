@@ -51,7 +51,7 @@ public final class Verify {
     /**
      * Verify the content of two Objects, possibly recursively. Only limited types are implemented.
      */
-    private static void checkEQ(Object a, Object b, String context) {
+    public static void checkEQ(Object a, Object b, String context) {
         // Both null
         if (a == null && b == null) {
             return;
