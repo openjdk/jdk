@@ -499,7 +499,7 @@ void LambdaProxyClassDictionary::print_on(const char* prefix,
   }
 }
 
-void LambdaProxyClassDictionary::print_table_statistics(outputStream* st,
+void LambdaProxyClassDictionary::print_statistics(outputStream* st,
                                                         bool is_static_archive) {
   LambdaProxyClassDictionary* dictionary = is_static_archive ? &_runtime_static_table : &_runtime_dynamic_table;
   dictionary->print_table_statistics(st, "Lambda Shared Dictionary");

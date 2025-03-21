@@ -329,7 +329,7 @@ public:
 
   static void print_on(const char* prefix, outputStream* st,
                        int start_index, bool is_static_archive);
-  static void print_table_statistics(outputStream* st,  bool is_static_archive);
+  static void print_statistics(outputStream* st,  bool is_static_archive);
 };
 
 #endif // SHARE_CDS_LAMBDAPROXYCLASSINFO_HPP

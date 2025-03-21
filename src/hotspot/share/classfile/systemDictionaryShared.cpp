@@ -1159,7 +1159,7 @@ void SystemDictionaryShared::ArchiveInfo::print_table_statistics(const char* pre
   st->print_cr("%sArchve Statistics", prefix);
   _builtin_dictionary.print_table_statistics(st, "Builtin Shared Dictionary");
   _unregistered_dictionary.print_table_statistics(st, "Unregistered Shared Dictionary");
-  LambdaProxyClassDictionary::print_table_statistics(st, is_static_archive);
+  LambdaProxyClassDictionary::print_statistics(st, is_static_archive);
 }
 
 void SystemDictionaryShared::print_shared_archive(outputStream* st, bool is_static) {
