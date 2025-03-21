@@ -242,16 +242,6 @@ static char cpu_arch[] = "ppc";
   #error Add appropriate cpu_arch setting
 #endif
 
-// JVM variant
-#if   defined(ZERO)
-  #define JVM_VARIANT "zero"
-#elif defined(COMPILER2)
-  #define JVM_VARIANT "server"
-#else
-  #define JVM_VARIANT "client"
-#endif
-
-
 void os::Bsd::initialize_system_info() {
   int mib[2];
   size_t len;
@@ -637,7 +627,12 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // init thread attributes
   pthread_attr_t attr;
-  pthread_attr_init(&attr);
+  int rslt = pthread_attr_init(&attr);
+  if (rslt != 0) {
+    thread->set_osthread(nullptr);
+    delete osthread;
+    return false;
+  }
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
   // calculate stack size if it's not specified by caller
@@ -1553,7 +1548,7 @@ void os::jvm_path(char *buf, jint buflen) {
         // Add the appropriate JVM variant subdir
         len = strlen(buf);
         jrelib_p = buf + len;
-        snprintf(jrelib_p, buflen-len, "/%s", JVM_VARIANT);
+        snprintf(jrelib_p, buflen-len, "/%s", Abstract_VM_Version::vm_variant());
         if (0 != access(buf, F_OK)) {
           snprintf(jrelib_p, buflen-len, "%s", "");
         }

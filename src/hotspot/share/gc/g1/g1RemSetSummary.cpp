@@ -341,7 +341,6 @@ public:
 
     if (max_cardset_mem_sz_group() != nullptr) {
       G1CSetCandidateGroup* cset_group = max_cardset_mem_sz_group();
-      G1HeapRegionRemSet* rem_set = max_rs_mem_sz_region()->rem_set();
       out->print_cr("    Collectionset Candidate Group with largest cardset = %u:(%u regions), "
                     "size = %zu occupied = %zu",
                     cset_group->group_id(), cset_group->length(),
@@ -389,7 +388,6 @@ void G1RemSetSummary::print_on(outputStream* out, bool show_thread_times) {
     }
     out->cr();
   }
-
   HRRSStatsIter blk;
   G1CollectedHeap::heap()->heap_region_iterate(&blk);
   blk.do_cset_groups();
