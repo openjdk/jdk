@@ -108,6 +108,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     final Logger debugelapsed = Utils.getDebugLogger(this::dbgString, DEBUGELAPSED);
     final Logger debugtimeout = Utils.getDebugLogger(this::dbgString, DEBUGTIMEOUT);
     static final AtomicLong CLIENT_IDS = new AtomicLong();
+    private final AtomicLong CONNECTION_IDS = new AtomicLong();
     static final int DEFAULT_KEEP_ALIVE_TIMEOUT = 30;
     static final long KEEP_ALIVE_TIMEOUT = getTimeoutProp("jdk.httpclient.keepalive.timeout", DEFAULT_KEEP_ALIVE_TIMEOUT);
     // Defaults to value used for HTTP/1 Keep-Alive Timeout. Can be overridden by jdk.httpclient.keepalive.timeout.h2 property.
@@ -347,7 +348,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     private final WeakReference<HttpClientImpl> implRef;
 
     private final ConcurrentSkipListSet<PlainHttpConnection> openedConnections
-            = new ConcurrentSkipListSet<>(HttpConnection.TOTAL_ORDER_COMPARATOR);
+            = new ConcurrentSkipListSet<>(HttpConnection.COMPARE_BY_ID);
     private final ConcurrentSkipListSet<HttpBodySubscriberWrapper<?>> subscribers
             = new ConcurrentSkipListSet<>(HttpBodySubscriberWrapper.COMPARE_BY_ID);
 
@@ -618,6 +619,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     // May be null if that facade is no longer referenced.
     final HttpClientFacade facade() {
         return facadeRef.get();
+    }
+
+    public long newConnectionId() {
+        return CONNECTION_IDS.incrementAndGet();
     }
 
     // Increments the pendingTCPConnectionCount

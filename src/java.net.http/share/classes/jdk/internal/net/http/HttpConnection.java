@@ -72,35 +72,41 @@ import static jdk.internal.net.http.common.Utils.ProxyHeaders;
  */
 abstract class HttpConnection implements Closeable {
 
-    /**
-     * A comparator providing total order among instances.
-     */
-    static final Comparator<HttpConnection> TOTAL_ORDER_COMPARATOR =
-            Comparator.comparingLong(connection -> connection.instanceId);
-
-    private static final AtomicLong INSTANCE_ID_COUNTER = new AtomicLong();
-
-    private static final AtomicLong CONNECTION_LABEL_COUNTER = new AtomicLong();
-
-    /**
-     * A unique identifier that provides a total order among instances.
-     */
-    private final long instanceId = INSTANCE_ID_COUNTER.getAndIncrement();
-
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
     static final Logger DEBUG_LOGGER = Utils.getDebugLogger(
             () -> "HttpConnection(SocketTube(?))", Utils.DEBUG);
+    public static final Comparator<HttpConnection> COMPARE_BY_ID
+            = Comparator.comparing(HttpConnection::id);
+
+    private static final AtomicLong CONNECTION_LABEL_COUNTER = new AtomicLong();
 
     /** The address this connection is connected to. Could be a server or a proxy. */
     final InetSocketAddress address;
     private final HttpClientImpl client;
     private final TrailingOperations trailingOperations;
+
+    /**
+     * A unique identifier that provides a total order among instances.
+     */
+    private final long id;
+
+    /**
+     * A label to identify the connection.
+     * <p>
+     * This label helps with associating multiple components participating in a
+     * connection. For instance, an {@link AsyncSSLConnection} and the
+     * {@link PlainHttpConnection} it wraps will share the same label. As a
+     * result, compared to {@link #id}, this label does not give a total order
+     * among instances.
+     * </p>
+     */
     final String connectionLabel;
 
     HttpConnection(InetSocketAddress address, HttpClientImpl client, String connectionLabel) {
         this.address = address;
         this.client = client;
         trailingOperations = new TrailingOperations();
+        this.id = newConnectionId(client);
         this.connectionLabel = connectionLabel;
     }
 
@@ -114,6 +120,15 @@ abstract class HttpConnection implements Closeable {
      */
     public String connectionLabel() {
         return connectionLabel;
+    }
+
+    // This is overridden in tests
+    long newConnectionId(HttpClientImpl client) {
+        return client.newConnectionId();
+    }
+
+    private long id() {
+        return id;
     }
 
     private static final class TrailingOperations {

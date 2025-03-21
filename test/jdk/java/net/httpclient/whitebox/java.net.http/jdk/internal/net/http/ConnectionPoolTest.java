@@ -478,6 +478,12 @@ public class ConnectionPoolTest {
         final SocketChannel channel;
         volatile boolean closed, finished;
 
+        // Called from within super constructor
+        @Override
+        long newConnectionId(HttpClientImpl client) {
+            return IDS.incrementAndGet();
+        }
+
         // Used for testing closeOrReturnToPool.
         void finish(boolean finished) { this.finished = finished; }
         void reopen() { closed = finished = false;}
