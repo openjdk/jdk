@@ -25,8 +25,7 @@
  * @test
  * @bug 8341976
  * @summary C2: use_mem_state != load->find_exact_control(load->in(0)) assert failure
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
- *                    -XX:CompileOnly=TestSunkLoadAntiDependency::test1 TestSunkLoadAntiDependency
+ * @run main/othervm -XX:-BackgroundCompilation TestSunkLoadAntiDependency
  */
 
 public class TestSunkLoadAntiDependency {
