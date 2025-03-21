@@ -242,12 +242,6 @@ class MacroAssembler: public Assembler {
   static bool needs_explicit_null_check(intptr_t offset);
   static bool uses_implicit_null_check(void* address);
 
-  // idiv variant which deals with MINLONG as dividend and -1 as divisor
-  int corrected_idivl(Register result, Register rs1, Register rs2,
-                      bool want_remainder, bool is_signed);
-  int corrected_idivq(Register result, Register rs1, Register rs2,
-                      bool want_remainder, bool is_signed);
-
   // interface method calling
   void lookup_interface_method(Register recv_klass,
                                Register intf_klass,
