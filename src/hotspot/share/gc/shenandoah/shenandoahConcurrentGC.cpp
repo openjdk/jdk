@@ -695,6 +695,10 @@ void ShenandoahConcurrentGC::op_init_mark() {
       heap->old_generation()->transfer_pointers_from_satb();
     }
     {
+      // After we swap card table below, the write-table is all clean, and the read table holds
+      // cards dirty prior to the start of GC. Young and bootstrap collection will update
+      // the write card table as a side effect of remembered set scanning. Global collection will
+      // update the card table as a side effect of global marking of old objects.
       ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_swap_rset);
       _generation->swap_card_tables();
     }
