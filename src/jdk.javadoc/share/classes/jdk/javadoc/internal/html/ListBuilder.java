@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,9 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 
 /**
- * A utility class for building nested HTML lists. This class is implemented as a
- * stack of nested list/item pairs where list items are added to the inner-most
- * list and nested lists are added to the current list item of the inner-most list.
- * Lists can be added to and removed from the stack using the {@link #pushNestedList}
- * and {@link #popNestedList} methods.
+ * A utility class for building nested HTML lists. The class maintains a
+ * stack of nested list trees which it adapts to obtain the desired nesting
+ * level of added items.
  */
 public class ListBuilder extends Content {
 
@@ -73,8 +71,8 @@ public class ListBuilder extends Content {
      * until the level is reached. If {@code level} is less than the current level, sublists
      * are closed to reach the level.
      *
-     * @param listItemContent the content for the new list item.
-     * @param level the level on which to add the item.
+     * @param listItemContent content for the new list item.
+     * @param level nesting level for the added item
      */
     public void addItem(Content listItemContent, int level) {
         if (level < 0 || level > MAX_LEVEL) {
@@ -91,35 +89,28 @@ public class ListBuilder extends Content {
     }
 
     /**
-     * Adds a new nested list to the current list item and makes it the recipient for new list items.
-     * Note that the nested list is added even if empty; use {@code addNested} to avoid adding empty
-     * lists.
-     *
-     * @return this list builder
+     * Adds a new nested nested list to which new items will be added.
      */
-    public ListBuilder pushNestedList() {
+    private void pushNestedList() {
         if (currentItem == null) {
             currentItem = HtmlTree.LI();
         }
         stack.push(new Pair(currentList, currentItem));
         currentList = createList();
         currentItem = null;
-        return this;
     }
 
     /**
-     * Pops the current list from the stack and returns to adding list items to the parent list.
+     * Closes the current nested list and makes its parent the current list.
      *
-     * @return this list builder
      * @throws NoSuchElementException if the stack is empty
      */
-    public ListBuilder popNestedList() {
+    private void popNestedList() {
         Pair pair = stack.pop();
         // First restore currentItem and add nested list to it before restoring currentList to outer list.
         currentItem = pair.item;
         currentItem.add(currentList);
         currentList = pair.list;
-        return this;
     }
 
     @Override
