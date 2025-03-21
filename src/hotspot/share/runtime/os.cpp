@@ -652,26 +652,22 @@ long os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, bool check_limit,
 }
 
 void* os::post_alloc(void* raw_ptr, size_t size, long chunk, MemTag mem_tag, const NativeCallStack& stack) {
-  if (MemTracker::enabled()) {
-    // Register alloc with NMT
-    void* const client_ptr = MemTracker::record_malloc((address)raw_ptr, size, mem_tag, stack);
+  // Register alloc with NMT
+  void* const client_ptr = MemTracker::record_malloc((address)raw_ptr, size, mem_tag, stack);
 
-    if (chunk == 0) {
-      if (CDSConfig::is_dumping_static_archive()) {
-        // Need to deterministically fill all the alignment gaps in C++ structures.
-        ::memset((char*)client_ptr, 0, size);
-      } else {
-        DEBUG_ONLY(::memset((char*)client_ptr, uninitBlockPad, size);)
-      }
-    } else if (chunk > 0) {
-      ::memset((char*)client_ptr + chunk, uninitBlockPad, size - chunk);
+  if (chunk == 0) {
+    if (CDSConfig::is_dumping_static_archive()) {
+      // Need to deterministically fill all the alignment gaps in C++ structures.
+      ::memset((char*)client_ptr, 0, size);
+    } else {
+      DEBUG_ONLY(::memset((char*)client_ptr, uninitBlockPad, size);)
     }
-
-    DEBUG_ONLY(break_if_ptr_caught(client_ptr);)
-    return client_ptr;
-  } else {
-    return raw_ptr;
+  } else if (chunk > 0) {
+    ::memset((char*)client_ptr + chunk, uninitBlockPad, size - chunk);
   }
+
+  DEBUG_ONLY(break_if_ptr_caught(client_ptr);)
+  return client_ptr;
 }
 
 void* os::malloc(size_t size, MemTag mem_tag) {
