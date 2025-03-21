@@ -28,7 +28,7 @@
  * @summary Verifies if BasicButtonUI uses wrong FontMetrics to Layout JButtons text
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main/manual TestButtonFontMetrics 
+ * @run main/manual TestButtonFontMetrics
  */
 
 import java.awt.Graphics;
