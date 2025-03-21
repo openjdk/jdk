@@ -1247,9 +1247,11 @@ public:
   }
 };
 
-class ShenandoahGCStatePropagator : public ThreadClosure {
+class ShenandoahGCStatePropagator : public HandshakeClosure {
 public:
-  explicit ShenandoahGCStatePropagator(char gc_state) : _gc_state(gc_state) {}
+  explicit ShenandoahGCStatePropagator(char gc_state) :
+    HandshakeClosure("Shenandoah GC State Change"),
+    _gc_state(gc_state) {}
 
   void do_thread(Thread* thread) override {
     ShenandoahThreadLocalData::set_gc_state(thread, _gc_state);
@@ -1304,6 +1306,37 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   Handshake::execute(&prepare_for_update_refs);
 
   _update_refs_iterator.reset();
+}
+
+class ShenandoahCompositeHandshakeClosure : public HandshakeClosure {
+  HandshakeClosure* _handshake_1;
+  HandshakeClosure* _handshake_2;
+  public:
+    ShenandoahCompositeHandshakeClosure(HandshakeClosure* handshake_1, HandshakeClosure* handshake_2) :
+      HandshakeClosure(handshake_2->name()),
+      _handshake_1(handshake_1), _handshake_2(handshake_2) {}
+
+  void do_thread(Thread* thread) override {
+      _handshake_1->do_thread(thread);
+      _handshake_2->do_thread(thread);
+    }
+};
+
+void ShenandoahHeap::concurrent_final_roots(HandshakeClosure* handshake_closure) {
+  {
+    assert(!is_evacuation_in_progress(), "Should not evacuate for abbreviated or old cycles");
+    MutexLocker lock(Threads_lock);
+    set_gc_state_concurrent(WEAK_ROOTS, false);
+  }
+
+  ShenandoahGCStatePropagator propagator(_gc_state.raw_value());
+  Threads::non_java_threads_do(&propagator);
+  if (handshake_closure == nullptr) {
+    Handshake::execute(&propagator);
+  } else {
+    ShenandoahCompositeHandshakeClosure composite(&propagator, handshake_closure);
+    Handshake::execute(&composite);
+  }
 }
 
 oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
@@ -2019,16 +2052,14 @@ void ShenandoahHeap::stw_weak_refs(bool full_gc) {
   gc_generation()->ref_processor()->process_references(phase, workers(), false /* concurrent */);
 }
 
-void ShenandoahHeap::prepare_update_heap_references(bool concurrent) {
+void ShenandoahHeap::prepare_update_heap_references() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
 
   // Evacuation is over, no GCLABs are needed anymore. GCLABs are under URWM, so we need to
   // make them parsable for update code to work correctly. Plus, we can compute new sizes
   // for future GCLABs here.
   if (UseTLAB) {
-    ShenandoahGCPhase phase(concurrent ?
-                            ShenandoahPhaseTimings::init_update_refs_manage_gclabs :
-                            ShenandoahPhaseTimings::degen_gc_init_update_refs_manage_gclabs);
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_init_update_refs_manage_gclabs);
     gclabs_retire(ResizeTLAB);
   }
 
