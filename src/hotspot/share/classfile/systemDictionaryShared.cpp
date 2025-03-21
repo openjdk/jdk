@@ -52,7 +52,6 @@
 #include "classfile/verificationType.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "interpreter/bootstrapInfo.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"

@@ -78,6 +78,7 @@ template <class E> class GrowableArray;
 class SystemDictionary : AllStatic {
   friend class AOTLinkedClassBulkLoader;
   friend class BootstrapInfo;
+  friend class LambdaProxyClassDictionary;
   friend class vmClasses;
 
  public:
@@ -325,7 +326,7 @@ private:
   static void restore_archived_method_handle_intrinsics_impl(TRAPS) NOT_CDS_RETURN;
 
 protected:
-  // Used by SystemDictionaryShared
+  // Used by SystemDictionaryShared and LambdaProxyClassDictionary
 
   static bool add_loader_constraint(Symbol* name, Klass* klass_being_linked,  Handle loader1,
                                     Handle loader2);
@@ -340,6 +341,15 @@ protected:
   static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
                                                       Handle class_loader,
                                                       InstanceKlass* k, TRAPS);
+
+  // *Legacy* optimization for lambdas before JEP 483. May be removed in the future.
+  static InstanceKlass* load_shared_lambda_proxy_class(InstanceKlass* ik,
+                                                       InstanceKlass* shared_nest_host,
+                                                       Handle class_loader,
+                                                       Handle protection_domain,
+                                                       PackageEntry* pkg_entry,
+                                                       TRAPS);
+
 public:
   static bool is_system_class_loader(oop class_loader);
   static bool is_platform_class_loader(oop class_loader);
@@ -354,14 +364,6 @@ public:
 
   // Return Symbol or throw exception if name given is can not be a valid Symbol.
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
-
-  // *Legacy* optimization for lambdas before JEP 483. May be removed in the future.
-  static InstanceKlass* load_shared_lambda_proxy_class(InstanceKlass* ik,
-                                                       InstanceKlass* shared_nest_host,
-                                                       Handle class_loader,
-                                                       Handle protection_domain,
-                                                       PackageEntry* pkg_entry,
-                                                       TRAPS);
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP

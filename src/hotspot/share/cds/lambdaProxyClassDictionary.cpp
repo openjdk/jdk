@@ -27,6 +27,7 @@
 #include "cds/cdsProtectionDomain.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "interpreter/bootstrapInfo.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
