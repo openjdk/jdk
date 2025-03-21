@@ -59,7 +59,6 @@ import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 
 import static java.lang.String.format;
-import static jdk.internal.net.http.common.Utils.addSuppressed;
 import static jdk.internal.net.http.common.Utils.isValidName;
 import static jdk.internal.net.http.common.Utils.stringOf;
 
@@ -227,7 +226,7 @@ public class OpeningHandshake {
             // or the connection, if not.
             ((RawChannel.Provider) response).closeRawChannel();
         } catch (IOException e) {
-            addSuppressed(exception, e);
+            exception.addSuppressed(e);
         }
         return MinimalFuture.failedFuture(exception);
     }
