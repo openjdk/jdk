@@ -84,9 +84,7 @@ void G1NMethodClosure::do_evacuation_and_fixup(nmethod* nm) {
     nm->mark_as_maybe_on_stack();
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != nullptr) {
-      bs_nm->disarm(nm);
-    }
+    bs_nm->disarm(nm);
   }
 
   nm->fix_oop_relocations();
@@ -100,9 +98,7 @@ void G1NMethodClosure::do_marking(nmethod* nm) {
   nm->mark_as_maybe_on_stack();
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != nullptr) {
-    bs_nm->disarm(nm);
-  }
+  bs_nm->disarm(nm);
 
   // The oops were only marked, no need to update oop relocations.
 }

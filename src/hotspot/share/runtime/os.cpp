@@ -2011,10 +2011,10 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   const size_t alignment_adjusted = MAX2(alignment, system_allocation_granularity);
 
   // Calculate first and last possible attach points:
-  char* const lo_att = align_up(MAX2(absolute_min, min), alignment_adjusted);
-  if (lo_att == nullptr) {
+  if (!can_align_up(MAX2(absolute_min, min), alignment_adjusted)) {
     return nullptr; // overflow
   }
+  char* const lo_att = align_up(MAX2(absolute_min, min), alignment_adjusted);
 
   char* const hi_end = MIN2(max, absolute_max);
   if ((uintptr_t)hi_end <= bytes) {
