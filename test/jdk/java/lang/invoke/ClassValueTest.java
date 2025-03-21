@@ -208,17 +208,17 @@ final class ClassValueTest {
     }
 
     /**
-     * Tests that calling remove() from computeValue() is no-op.
+     * Tests that calling get() from computeValue() terminates.
      */
     @Test
     @Timeout(value = 4, unit = TimeUnit.SECONDS)
-    void testRemoveInCompute() {
+    void testGetInCompute() {
         ClassValue<Object> cv = new ClassValue<>() {
             @Override
             protected Object computeValue(Class<?> type) {
-                remove(type);
-                remove(type);
-                remove(type);
+                get(type);
+                get(type);
+                get(type);
                 return Boolean.TRUE;
             }
         };
@@ -227,6 +227,24 @@ final class ClassValueTest {
         } catch (Throwable ex) {
             // swallow if any
         }
+    }
+
+    /**
+     * Tests that calling remove() from computeValue() terminates.
+     */
+    @Test
+    @Timeout(value = 4, unit = TimeUnit.SECONDS)
+    void testRemoveInCompute() {
+        ClassValue<Boolean> cv = new ClassValue<>() {
+            @Override
+            protected Boolean computeValue(Class<?> type) {
+                remove(type);
+                remove(type);
+                remove(type);
+                return Boolean.TRUE;
+            }
+        };
+        assertTrue(cv.get(int.class));
     }
 
     private static Class<?> createWeakClass() {
@@ -317,6 +335,7 @@ final class ClassValueTest {
         ClassValue<Object> cv = new ClassValue<>() {
             @Override
             protected Object computeValue(Class<?> type) {
+                remove(type);
                 try {
                     Thread.sleep(COMPUTE_TIME_MILLIS);
                 } catch (InterruptedException ex) {
@@ -327,9 +346,8 @@ final class ClassValueTest {
             }
         };
 
-        var threads = Arrays.stream(CLASSES).map(clz ->
-                Thread.startVirtualThread(() ->
-                        assertThrows(Throwable.class, () -> cv.get(clz))))
+        var threads = Arrays.stream(CLASSES)
+                .map(clz -> Thread.startVirtualThread(() -> cv.get(clz)))
                 .toList();
         for (var t : threads) {
             try {

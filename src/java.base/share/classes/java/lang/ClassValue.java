@@ -314,19 +314,12 @@ public abstract class ClassValue<T> {
 
         boolean isPromise() { return value instanceof PromiseInfo; }
 
-        void registerExtraThread() {
-            var tracker = ((PromiseInfo) value);
-            if (!tracker.add()) {
-                // This is trivial: such a recursion already causes StackOverflowError
-                throw new StackOverflowError("Recursive initialization of class value");
-            }
+        void registerOwner() {
+            ((PromiseInfo) value).add();
         }
 
-        void checkReentrancy() {
-            var tracker = ((PromiseInfo) value);
-            if (tracker.contains()) {
-                throw new StackOverflowError("Recursive initialization of class value");
-            }
+        boolean hasOwnership() {
+            return ((PromiseInfo) value).contains();
         }
 
         // Must be accessed in synchronization blocks on the ClassValueMap (otherThreads)
@@ -478,7 +471,7 @@ public abstract class ClassValue<T> {
                     e = v.createPromise();
                     put(classValue.identity, e);
                 } else {
-                    e.registerExtraThread();
+                    e.registerOwner();
                 }
                 return e;
             } else {
@@ -507,7 +500,7 @@ public abstract class ClassValue<T> {
                 // Other threads can retry if successful or just propagate their exceptions.
                 remove(classValue.identity);
                 return null;
-            } else if (e0 != null && e0.isPromise() && e0.version() == e.version()) {
+            } else if (e0 != null && e0.isPromise() && e0.version() == e.version() && e0.hasOwnership()) {
                 // If e0 matches the intended entry, there has not been a remove call
                 // between the previous startEntry and now.  So now overwrite e0.
                 Version<T> v = classValue.version();
@@ -535,9 +528,10 @@ public abstract class ClassValue<T> {
             if (e != null) {
                 if (e.isPromise()) {
                     // Remove the outdated promise to force recomputation.
-                    // Perform reentrancy checks so we fail if we are removing
-                    // our own promise.
-                    e.checkReentrancy();
+                    if (e.hasOwnership()) {
+                        // Notify myself that I am still up-to-date. All other guys are stale
+                        put(classValue.identity, classValue.version().createPromise());
+                    }
                 } else {
                     // Initialized.
                     // Bump forward to invalidate racy-read cached entries.
