@@ -112,6 +112,7 @@ static void exit_vm_on_store_failure() {
   }
   LoadAOTCode  = false;
   StoreAOTCode = false;
+  StoreAOTAdapters = false;
 }
 
 uint AOTCodeCache::max_aot_code_size() {

@@ -534,15 +534,34 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
     UseSharedSpaces = false;
   }
 
+  if (is_using_archive() && !is_dumping_archive() && !FLAG_IS_DEFAULT(AOTCache)) {
+    FLAG_SET_ERGO_IF_DEFAULT(LoadAOTCode, true);
+  } else if (LoadAOTCode) {
+    log_info(aot, codecache, init)("-XX:+LoadAOTCode requires -XX:AOTCache");
+    return false;
+  }
+  if (LoadAOTCode) {
+    log_info(aot, codecache, init)("LoadAOTCode is enabled");
+  }
+  if (is_dumping_final_static_archive()) {
+    FLAG_SET_ERGO_IF_DEFAULT(StoreAOTCode, true);
+  } else if (StoreAOTCode) {
+    log_info(aot, codecache, init)("-XX:+StoreAOTCode requires -XX:AOTMode=create");
+    return false;
+  }
+  if (StoreAOTCode) {
+    log_info(aot, codecache, init)("StoreAOTCode is enabled");
+    FLAG_SET_ERGO_IF_DEFAULT(StoreAOTAdapters, true);
+  }
+  if (StoreAOTAdapters) {
+    log_info(aot, codecache, init)("StoreAOTAdapters is enabled");
+  }
+
   if (is_dumping_archive()) {
     // Always verify non-system classes during CDS dump
     if (!BytecodeVerificationRemote) {
       BytecodeVerificationRemote = true;
       log_info(cds)("All non-system classes will be verified (-Xverify:remote) during CDS dump time.");
-    }
-    if (StoreAOTCode) {
-      log_info(cds)("ArchiveAdapters is enabled");
-      FLAG_SET_ERGO_IF_DEFAULT(ArchiveAdapters, true);
     }
   }
 
@@ -769,5 +788,5 @@ void CDSConfig::enable_dumping_aot_code() {
 }
 
 bool CDSConfig::is_dumping_adapters() {
-  return (ArchiveAdapters && is_dumping_final_static_archive());
+  return (StoreAOTAdapters && is_dumping_final_static_archive());
 }
