@@ -367,4 +367,35 @@ public class ThreadDumper {
             return -1L;
         }
     }
+
+    // Thread.async_dump support
+    private static class ThreadIterator {
+        private Iterator<ThreadContainer> containerIterator;
+        private Iterator<Thread> threadIterator;
+        ThreadIterator() {
+            List<ThreadContainer> containers = allContainers();
+            containerIterator = containers.iterator();
+        }
+
+        private Thread next() {
+            if (threadIterator != null && threadIterator.hasNext()) {
+                Thread thread = threadIterator.next();
+                return thread;
+            }
+            if (containerIterator.hasNext()) {
+                ThreadContainer container = containerIterator.next();
+                threadIterator = container.threads().iterator();
+                return next();
+            }
+            return null;
+        }
+    }
+
+    private static ThreadIterator getThreadIterator() {
+        return new ThreadIterator();
+    }
+    private static Thread getNextThread(ThreadIterator threadIterator) {
+        return threadIterator.next();
+    }
+
 }
