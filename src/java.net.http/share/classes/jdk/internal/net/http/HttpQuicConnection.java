@@ -200,17 +200,11 @@ abstract class HttpQuicConnection extends HttpConnection {
     /**
      * Called when the HTTP/3 connection is established, either successfully or
      * unsuccessfully
-     * @apiNote
-     *   In case of a direct connection attempt we want to downgrade to
-     *   HTTP/2 if the connection over Quic was unsuccessful.
-     * @param  connection the HTTP/3 connection, if successful, or null, otherwise
-     * @param  throwable  the excpetion encountered, if unsuccessful
-     * @return a completable future - either completed with the connection, if
-     *         successful, or with null, if downgrading to HTTP/2 is desired,
-     *         or completed exceptionally, if the operation should fail.
+     * @param connection the HTTP/3 connection, if successful, or null, otherwise
+     * @param throwable  the exception encountered, if unsuccessful
      */
-    public abstract CompletableFuture<Http3Connection> connectionEstablished(Http3Connection connection,
-                                                                    Throwable throwable);
+    public abstract void connectionEstablished(Http3Connection connection,
+                                               Throwable throwable);
 
     /**
      * A functional interface used to update the Alternate Service Registry
@@ -219,34 +213,23 @@ abstract class HttpQuicConnection extends HttpConnection {
     @FunctionalInterface
     private interface DirectConnectionUpdater {
         /**
-         * This method can be used to implement the semantics of
-         * {@link HttpQuicConnection#connectionEstablished(Http3Connection, Throwable)}.
-         *
-         * This method may additionally update the HttpClient registry, or
+         * This method may update the HttpClient registry, or
          * {@linkplain Http3ClientImpl#noH3(String) record the unsuccessful}
          * direct connection attempt.
          *
          * @param conn       the connection or null
          * @param throwable  the exception or null
-         * @return a completable future completed as specified in
-         *  {@link HttpQuicConnection#connectionEstablished(Http3Connection, Throwable)}
          */
-        CompletableFuture<Http3Connection> onConnectionEstablished(
+        void onConnectionEstablished(
                 Http3Connection conn, Throwable throwable);
 
         /**
-         * Trivially returns a failed or completed future depending on
-         * whether the throwable argument is non-null.
+         * Does nothing
          * @param conn       the connection
          * @param throwable  the exception
-         * @return a completed future
          */
-        static CompletableFuture<Http3Connection> noUpdate(
+        static void noUpdate(
                 Http3Connection conn, Throwable throwable) {
-            if (throwable != null) {
-                return MinimalFuture.failedFuture(Utils.getCompletionCause(throwable));
-            }
-            return MinimalFuture.completedFuture(conn);
         }
     }
 
@@ -390,7 +373,7 @@ abstract class HttpQuicConnection extends HttpConnection {
         return httpQuicConn;
     }
 
-    static CompletableFuture<Http3Connection> registerUnadvertised(final HttpClientImpl client,
+    static void registerUnadvertised(final HttpClientImpl client,
                                                                    final URI requestURI,
                                                                    final InetSocketAddress destAddr,
                                                                    final Http3Connection connection,
@@ -402,22 +385,18 @@ abstract class HttpQuicConnection extends HttpConnection {
             try {
                 origin = AltServicesRegistry.Origin.from(originURI);
             } catch (IllegalArgumentException iae) {
-                return MinimalFuture.completedFuture(connection);
+                return;
             }
             assert origin.port() == destAddr.getPort();
             var id = new AltService.Identity(H3, origin.host(), origin.port());
-            var altSvc = client.registry().registerUnadvertised(id, origin, connection.connection());
-            return MinimalFuture.completedFuture(connection);
+            client.registry().registerUnadvertised(id, origin, connection.connection());
+            return;
         }
         if (t != null) {
             assert client.client3().isPresent() : "HTTP3 isn't supported by the client";
             // record that there is no h3 at the given origin
             client.client3().get().noH3(originURI.getRawAuthority());
-            // do not downgrade to HTTP/2, since HTTP/2 is attempted in
-            // parallel
-            return MinimalFuture.failedFuture(t);
         }
-        return MinimalFuture.completedFuture(connection);
     }
 
     // TODO: we could probably merge H3QuicConnectionImpl with HttpQuicConnection now
@@ -539,9 +518,9 @@ abstract class HttpQuicConnection extends HttpConnection {
         }
 
         @Override
-        public CompletableFuture<Http3Connection> connectionEstablished(Http3Connection connection,
-                                                                        Throwable throwable) {
-            return connFinishedAction.onConnectionEstablished(connection, throwable);
+        public void connectionEstablished(Http3Connection connection,
+                                          Throwable throwable) {
+            connFinishedAction.onConnectionEstablished(connection, throwable);
         }
 
         private <U> CompletableFuture<U> handleTimeout(CompletableFuture<U> r, Throwable t) {

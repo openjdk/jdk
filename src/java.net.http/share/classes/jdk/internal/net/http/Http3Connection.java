@@ -332,8 +332,7 @@ public final class Http3Connection implements AutoCloseable {
                         cf.completeExceptionally(e);
                     }
                     return cf; } )
-                .handle(httpQuicConnection::connectionEstablished)
-                .thenCompose(Function.identity());
+                .whenComplete(httpQuicConnection::connectionEstablished);
     }
 
     private static CompletableFuture<Void> checkSSLConfig(HttpQuicConnection quic) {
