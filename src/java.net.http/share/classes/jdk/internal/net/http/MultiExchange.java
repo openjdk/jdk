@@ -486,6 +486,7 @@ class MultiExchange<T> implements Cancelable {
                         // 3. apply response filters
                         newrequest = responseFilters(response);
                     } catch (IOException e) {
+                        exch.exchImpl.cancel(e);
                         return failedFuture(e);
                     }
                     // 4. check filter result and repeat or continue
