@@ -33,10 +33,15 @@
 #include "castnode.hpp"
 #include "utilities/checkedCast.hpp"
 
+const ConstraintCastNode::DependencyType ConstraintCastNode::RegularDependency(true, true, "regular dependency");
+const ConstraintCastNode::DependencyType ConstraintCastNode::WidenTypeDependency(true, false, "widen type dependency");
+const ConstraintCastNode::DependencyType ConstraintCastNode::StrongDependency(false, true, "strong dependency");
+const ConstraintCastNode::DependencyType ConstraintCastNode::UnconditionalDependency(false, false, "unconditional dependency");
+
 //=============================================================================
 // If input is already higher or equal to cast type, then this is an identity.
 Node* ConstraintCastNode::Identity(PhaseGVN* phase) {
-  if (_dependency == UnconditionalDependency) {
+  if (!_dependency.narrows_type()) {
     return this;
   }
   Node* dom = dominating_cast(phase, phase);
@@ -101,7 +106,7 @@ Node *ConstraintCastNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 uint ConstraintCastNode::hash() const {
-  return TypeNode::hash() + (int)_dependency + (_extra_types != nullptr ? _extra_types->hash() : 0);
+  return TypeNode::hash() + _dependency.hash() + (_extra_types != nullptr ? _extra_types->hash() : 0);
 }
 
 bool ConstraintCastNode::cmp(const Node &n) const {
@@ -109,7 +114,7 @@ bool ConstraintCastNode::cmp(const Node &n) const {
     return false;
   }
   ConstraintCastNode& cast = (ConstraintCastNode&) n;
-  if (cast._dependency != _dependency) {
+  if (!cast._dependency.cmp(_dependency)) {
     return false;
   }
   if (_extra_types == nullptr || cast._extra_types == nullptr) {
@@ -122,7 +127,7 @@ uint ConstraintCastNode::size_of() const {
   return sizeof(*this);
 }
 
-Node* ConstraintCastNode::make_cast_for_basic_type(Node* c, Node* n, const Type* t, DependencyType dependency, BasicType bt) {
+Node* ConstraintCastNode::make_cast_for_basic_type(Node* c, Node* n, const Type* t, const DependencyType& dependency, BasicType bt) {
   switch(bt) {
   case T_INT:
     return new CastIINode(c, n, t, dependency);
@@ -135,7 +140,7 @@ Node* ConstraintCastNode::make_cast_for_basic_type(Node* c, Node* n, const Type*
 }
 
 TypeNode* ConstraintCastNode::dominating_cast(PhaseGVN* gvn, PhaseTransform* pt) const {
-  if (_dependency == UnconditionalDependency) {
+  if (!_dependency.narrows_type()) {
     return nullptr;
   }
   Node* val = in(1);
@@ -197,9 +202,7 @@ void ConstraintCastNode::dump_spec(outputStream *st) const {
     st->print(" extra types: ");
     _extra_types->dump_on(st);
   }
-  if (_dependency != RegularDependency) {
-    st->print(" %s dependency", _dependency == StrongDependency ? "strong" : "unconditional");
-  }
+  _dependency.dump_on(st);
 }
 #endif
 
@@ -212,15 +215,21 @@ const Type* CastIINode::Value(PhaseGVN* phase) const {
 
   // Similar to ConvI2LNode::Value() for the same reasons
   // see if we can remove type assertion after loop opts
-  res = widen_type(phase, res, T_INT);
+  // res = widen_type(phase, res, T_INT);
 
   return res;
 }
 
-Node* ConstraintCastNode::find_or_make_integer_cast(PhaseIterGVN* igvn, Node* parent, const TypeInteger* type) const {
-  Node* n = clone();
-  n->set_req(1, parent);
-  n->as_ConstraintCast()->set_type(type);
+CastIINode* CastIINode::make_with(Node* parent, const TypeInteger* type, const DependencyType& dependency) const {
+  return new CastIINode(in(0), parent, type, dependency, _range_check_dependency, _extra_types);
+}
+
+CastLLNode* CastLLNode::make_with(Node* parent, const TypeInteger* type, const DependencyType& dependency) const {
+  return new CastLLNode(in(0), parent, type, dependency, _extra_types);
+}
+
+Node* ConstraintCastNode::find_or_make_integer_cast(PhaseIterGVN* igvn, Node* parent, const TypeInteger* type, const DependencyType& dependency) const {
+  Node* n = make_with(parent, type, dependency);
   Node* existing = igvn->hash_find_insert(n);
   if (existing != nullptr) {
     n->destruct(igvn);
@@ -239,7 +248,18 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     phase->C->record_for_post_loop_opts_igvn(this);
   }
   if (!_range_check_dependency || phase->C->post_loop_opts_phase()) {
-    return optimize_integer_cast(phase, T_INT);
+    Node* res = optimize_integer_cast(phase, T_INT);
+    if (res != nullptr) {
+      return res;
+    }
+    const Type* t = Value(phase);
+    if (t != Type::TOP) {
+      const Type* wide_t = widen_type(phase, t, T_INT);
+      if (wide_t != t) {
+        return new CastIINode(in(0), in(1), wide_t, _dependency.widen_type_dependency(), _range_check_dependency, _extra_types);
+      }
+    }
+    return nullptr;
   }
   phase->C->record_for_post_loop_opts_igvn(this);
   return nullptr;
@@ -271,9 +291,9 @@ void CastIINode::dump_spec(outputStream* st) const {
 #endif
 
 CastIINode* CastIINode::pin_array_access_node() const {
-  assert(_dependency == RegularDependency, "already pinned");
+  assert(depends_only_on_test(), "already pinned");
   if (has_range_check()) {
-    return new CastIINode(in(0), in(1), bottom_type(), StrongDependency, has_range_check());
+    return new CastIINode(in(0), in(1), bottom_type(), _dependency.pinned_dependency(), has_range_check());
   }
   return nullptr;
 }
@@ -469,7 +489,7 @@ Node* CastP2XNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-Node* ConstraintCastNode::make_cast_for_type(Node* c, Node* in, const Type* type, DependencyType dependency,
+Node* ConstraintCastNode::make_cast_for_type(Node* c, Node* in, const Type* type, const DependencyType& dependency,
                                              const TypeTuple* types) {
   if (type->isa_int()) {
     return new CastIINode(c, in, type, dependency, false, types);
@@ -508,8 +528,13 @@ Node* ConstraintCastNode::optimize_integer_cast(PhaseGVN* phase, BasicType bt) {
     Node* x = z->in(1);
     Node* y = z->in(2);
 
-    Node* cx = find_or_make_integer_cast(igvn, x, rx);
-    Node* cy = find_or_make_integer_cast(igvn, y, ry);
+    const TypeInteger* tx = phase->type(x)->is_integer(bt);
+    const TypeInteger* ty = phase->type(y)->is_integer(bt);
+
+
+    const DependencyType& dependency = _dependency.widen_type_dependency();
+    Node* cx = find_or_make_integer_cast(igvn, x, rx, dependency);
+    Node* cy = find_or_make_integer_cast(igvn, y, ry, dependency);
     if (op == Op_Add(bt)) {
       return AddNode::make(cx, cy, bt);
     } else {
