@@ -123,6 +123,25 @@
   product(bool, AOTCacheParallelRelocation, true, DIAGNOSTIC,               \
           "Use parallel relocation code to speed up startup.")              \
                                                                             \
+  /* AOT Code flags */                                                      \
+                                                                            \
+  product(bool, StoreAOTCode, false,                                        \
+          "Store AOT compiled code")                                        \
+                                                                            \
+  product(bool, LoadAOTCode, false,                                         \
+          "Load AOT compiled code")                                         \
+                                                                            \
+  product(uintx, AOTCodeMaxSize, 10*M,                                      \
+          "Buffer size in bytes for AOT code caching")                      \
+                                                                            \
+  product(bool, AbortVMOnAOTCodeFailure, false, DIAGNOSTIC,                 \
+          "Abort VM on the first occurrence of AOT code load or store "     \
+          "failure. By default VM will continue execute without AOT code.") \
+                                                                            \
+  product(bool, ArchiveAdapters, false,                                     \
+          "Archive AdapterFingerPrint and AdapterHandlerEntry."             \
+          "Requires AOT code cache")                                        \
+
 // end of CDS_FLAGS
 
 DECLARE_FLAGS(CDS_FLAGS)

@@ -540,6 +540,10 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
       BytecodeVerificationRemote = true;
       log_info(cds)("All non-system classes will be verified (-Xverify:remote) during CDS dump time.");
     }
+    if (StoreAOTCode) {
+      log_info(cds)("ArchiveAdapters is enabled");
+      FLAG_SET_ERGO_IF_DEFAULT(ArchiveAdapters, true);
+    }
   }
 
   return true;
@@ -747,3 +751,23 @@ bool CDSConfig::is_dumping_method_handles() {
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP
+
+// Dumping AOT code is allowed by default. We disable it only in the final image dump
+// before the metadata and heap are dumped.
+static bool _is_dumping_aot_code = true;
+
+bool CDSConfig::is_dumping_aot_code() {
+  return _is_dumping_aot_code;
+}
+
+void CDSConfig::disable_dumping_aot_code() {
+  _is_dumping_aot_code = false;
+}
+
+void CDSConfig::enable_dumping_aot_code() {
+  _is_dumping_aot_code = true;
+}
+
+bool CDSConfig::is_dumping_adapters() {
+  return (ArchiveAdapters && is_dumping_final_static_archive());
+}
