@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package jdk.internal.net.http;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.UnsupportedProtocolVersionException;
 import java.nio.ByteBuffer;
 import java.nio.channels.NetworkChannel;
 import java.nio.channels.SocketChannel;
@@ -329,15 +331,18 @@ abstract class HttpConnection implements Closeable {
                                 + ": SSL connection retrieved from HTTP/1.1 pool");
                 }
                 return c;
-            } else if (version == HTTP_3) {
-                // We only come here after we have checked the HTTP/3 connection pool.
+            } else if (version == HTTP_3 && client.client3().isPresent()) {
+                // We only come here after we have checked the HTTP/3 connection pool,
+                // and if the client config supports HTTP/3
                 if (DEBUG_LOGGER.on())
                     DEBUG_LOGGER.log("Attempting to get an HTTP/3 connection");
                 return HttpQuicConnection.getHttpQuicConnection(addr, proxy, request, exchange, client);
             } else {
+                assert !request.isHttp3Only(version); // should have failed before
                 String[] alpn = null;
                 if (version == HTTP_2 && hasRequiredHTTP2TLSVersion(client)) {
                     // We only come here after we have checked the HTTP/2 connection pool.
+                    // We will not negotiate HTTP/2 if we don't have the appropriate TLS version
                     alpn = new String[] { Alpns.H2, Alpns.HTTP_1_1 };
                 }
                 return getSSLConnection(addr, proxy, alpn, request, client);

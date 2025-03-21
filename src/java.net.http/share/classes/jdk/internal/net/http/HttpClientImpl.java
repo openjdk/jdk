@@ -40,6 +40,7 @@ import java.net.InetAddress;
 import java.net.ProtocolException;
 import java.net.ProxySelector;
 import java.net.http.HttpConnectTimeoutException;
+import java.net.http.HttpRequest.HttpRequestOption;
 import java.net.http.HttpTimeoutException;
 import java.net.http.UnsupportedProtocolVersionException;
 import java.nio.ByteBuffer;
@@ -99,6 +100,8 @@ import jdk.internal.net.http.common.Utils.SafeExecutorService;
 import jdk.internal.net.http.websocket.BuilderImpl;
 import jdk.internal.net.quic.QuicTLSContext;
 
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 import static jdk.internal.net.quic.QuicTLSContext.isQuicCompatible;
@@ -1044,7 +1047,8 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         }
 
         final HttpClient.Version vers = userRequest.version().orElse(this.version());
-        if (vers == Version.HTTP_3 && client3 == null) {
+        if (vers == Version.HTTP_3 && client3 == null
+                && userRequest.getOption(H3_DISCOVERY).orElse(null) == HTTP_3_ONLY) {
             // HTTP3 isn't supported by this client
             return MinimalFuture.failedFuture(new UnsupportedProtocolVersionException(
                     "HTTP3 is not supported"));

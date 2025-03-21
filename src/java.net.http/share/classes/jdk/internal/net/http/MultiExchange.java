@@ -28,6 +28,7 @@ package jdk.internal.net.http;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.ConnectException;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.StreamLimitException;
 import java.time.Duration;
@@ -216,13 +217,21 @@ class MultiExchange<T> implements Cancelable {
 
     HttpClient.Version version() {
         HttpClient.Version vers = request.version().orElse(client.version());
-        if (vers != HttpClient.Version.HTTP_1_1
+        if (vers != Version.HTTP_1_1
                 && !request.secure() && request.proxy() != null
                 && !request.isHttp3Only(vers)) {
             // downgrade to HTTP_1_1 unless HTTP_3_ONLY.
             // if HTTP_3_ONLY and not secure it will fail down the road, so
             // we don't downgrade here.
             vers = HttpClient.Version.HTTP_1_1;
+        }
+        if (vers == Version.HTTP_3 && request.secure() && !client.client3().isPresent()) {
+            if (!request.isHttp3Only(vers)) {
+                // HTTP/3 not supported with the client config.
+                // Downgrade to HTTP/2, unless HTTP_3_ONLY is specified
+                vers = Version.HTTP_2;
+                if (debug.on()) debug.log("HTTP_3 downgraded to " + vers);
+            }
         }
         return vers;
     }
