@@ -215,11 +215,11 @@ static bool reload_table() {
   if (pgmpath[0] == 0) {
     procentry64 PInfo;
     PInfo.pi_pid = ::getpid();
-    if ( 0 == ::getargs(&PInfo, sizeof(PInfo), (char*)pgmpath,PATH_MAX) && *pgmpath ) {
+    if (0 == ::getargs(&PInfo, sizeof(PInfo), (char*)pgmpath, PATH_MAX) && *pgmpath) {
       pgmpath[PATH_MAX] = '\0';
       pgmbase = strrchr(pgmpath, '/');
-      if (pgmbase) {
-        pgmbase +=1;
+      if (pgmbase != nullptr) {
+        pgmbase += 1;
       }
     }
   }
@@ -242,7 +242,7 @@ static bool reload_table() {
     lm->data     = ldi->ldinfo_dataorg;
     lm->data_len = ldi->ldinfo_datasize;
 
-    if (pgmbase && 0 == strcmp(pgmbase, ldi->ldinfo_filename)) {
+    if (pgmbase != nullptr && 0 == strcmp(pgmbase, ldi->ldinfo_filename)) {
       lm->path = g_stringlist.add(pgmpath);
     } else {
       lm->path = g_stringlist.add(ldi->ldinfo_filename);
