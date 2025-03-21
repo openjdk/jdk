@@ -1477,6 +1477,7 @@ static char* mapping_create_shared(size_t size) {
   }
 
   // map the file into the address space
+  MemTracker::NmtVirtualMemoryLocker nvml;
   mapAddress = MapViewOfFile(
                    sharedmem_fileMapHandle, /* HANDLE = file mapping object */
                    FILE_MAP_ALL_ACCESS,     /* DWORD access flags */
@@ -1626,6 +1627,7 @@ static void open_file_mapping(int vmid, char** addrp, size_t* sizep, TRAPS) {
 
   assert(size > 0, "unexpected size <= 0");
 
+  MemTracker::NmtVirtualMemoryLocker nvml;
   // Open the file mapping object with the given name
   HANDLE fmh = open_sharedmem_object(robjectname, ofm_access, CHECK);
   assert(fmh != INVALID_HANDLE_VALUE, "unexpected handle value");
@@ -1800,12 +1802,8 @@ void PerfMemory::detach(char* addr, size_t bytes) {
     return;
   }
 
-  if (MemTracker::enabled()) {
-    // it does not go through os api, the operation has to record from here
-    MemTracker::NmtVirtualMemoryLocker nvml;
-    remove_file_mapping(addr);
-    MemTracker::record_virtual_memory_release(addr, bytes);
-  } else {
-    remove_file_mapping(addr);
-  }
+  // it does not go through os api, the operation has to record from here
+  MemTracker::NmtVirtualMemoryLocker nvml;
+  remove_file_mapping(addr);
+  MemTracker::record_virtual_memory_release(addr, bytes);
 }

@@ -3003,9 +3003,9 @@ static bool numa_interleaving_init() {
 // Reasons for doing this:
 //  * UseLargePagesIndividualAllocation was set (normally only needed on WS2003 but possible to be set otherwise)
 //  * UseNUMAInterleaving requires a separate node for each piece
-static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
+char* os::win32::allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
                                          DWORD prot,
-                                         bool should_inject_error = false) {
+                                         bool should_inject_error) {
   char * p_buf;
   // note: at setup time we guaranteed that NUMAInterleaveGranularity was aligned up to a page size
   size_t page_size = UseLargePages ? _large_page_size : os::vm_allocation_granularity();
@@ -3028,8 +3028,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
                                 PAGE_READWRITE);
   // If reservation failed, return null
   if (p_buf == nullptr) return nullptr;
-  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC);
-  os::release_memory(p_buf, bytes + chunk_size);
+  os::pd_release_memory(p_buf, bytes + chunk_size);
 
   // we still need to round up to a page boundary (in case we are using large pages)
   // but not to a chunk boundary (in case InterleavingGranularity doesn't align with page size)
@@ -3085,12 +3084,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
       if (next_alloc_addr > p_buf) {
         // Some memory was committed so release it.
         size_t bytes_to_release = bytes - bytes_remaining;
-        // NMT has yet to record any individual blocks, so it
-        // need to create a dummy 'reserve' record to match
-        // the release.
-        MemTracker::record_virtual_memory_reserve((address)p_buf,
-                                                  bytes_to_release, CALLER_PC);
-        os::release_memory(p_buf, bytes_to_release);
+        os::pd_release_memory(p_buf, bytes_to_release);
       }
 #ifdef ASSERT
       if (should_inject_error) {
@@ -3319,13 +3313,14 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
     if (Verbose && PrintMiscellaneous) reserveTimer.start();
     // in numa interleaving, we have to allocate pages individually
     // (well really chunks of NUMAInterleaveGranularity size)
-    res = allocate_pages_individually(bytes, addr, MEM_RESERVE, PAGE_READWRITE);
+    res = os::win32::allocate_pages_individually(bytes, addr, MEM_RESERVE, PAGE_READWRITE);
     if (res == nullptr) {
       warning("NUMA page allocation failed");
     }
     if (Verbose && PrintMiscellaneous) {
       reserveTimer.stop();
-      tty->print_cr("reserve_memory of %zx bytes took " JLONG_FORMAT " ms (" JLONG_FORMAT " ticks)", bytes,
+      fileStream fs(defaultStream::output_stream());
+      fs.print_cr("reserve_memory of %zx bytes took " JLONG_FORMAT " ms (" JLONG_FORMAT " ticks)", bytes,
                     reserveTimer.milliseconds(), reserveTimer.ticks());
     }
   }
@@ -3362,7 +3357,7 @@ static char* reserve_large_pages_individually(size_t size, char* req_addr, bool 
   const DWORD prot = exec ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE;
   const DWORD flags = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
 
-  char * p_buf = allocate_pages_individually(size, req_addr, flags, prot, LargePagesIndividualAllocationInjectError);
+  char * p_buf = os::win32::allocate_pages_individually(size, req_addr, flags, prot, LargePagesIndividualAllocationInjectError);
   if (p_buf == nullptr) {
     // give an appropriate warning message
     if (UseNUMAInterleaving) {
