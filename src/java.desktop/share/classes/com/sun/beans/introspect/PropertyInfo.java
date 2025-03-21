@@ -78,7 +78,8 @@ public final class PropertyInfo {
         }
         if (!isInitedToIsGetter && this.readList != null) {
             for (MethodInfo info : this.readList) {
-                if ((this.read == null) || (!info.method.isDefault() && this.read.type.isAssignableFrom(info.type))) {
+                if ((this.read == null) || (!info.method.isDefault()
+                                            && this.read.type.isAssignableFrom(info.type))) {
                     this.read = info;
                     this.type = info.type;
                 }

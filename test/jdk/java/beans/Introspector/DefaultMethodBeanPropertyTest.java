@@ -37,8 +37,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.NavigableSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class DefaultMethodBeanPropertyTest {
 
@@ -228,9 +230,9 @@ public class DefaultMethodBeanPropertyTest {
 //////////////////////////////////////
 
     public interface A5 {
-        default public void setParentFoo(Integer num) {
+        public default void setParentFoo(Integer num) {
         }
-        default public void setFoo(String num) {
+        public default void setFoo(String num) {
         }
     }
 
@@ -331,15 +333,15 @@ public class DefaultMethodBeanPropertyTest {
 //////////////////////////////////////
 
     public interface A8 {
-        default public void setFoo(Float num) {
+        public default void setFoo(Float num) {
         }
-        default public void setFoo2(Integer num) {
+        public default void setFoo2(Integer num) {
         }
     }
     public interface B8 extends A8 {
-        default public void setFoo(Integer num) {
+        public default void setFoo(Integer num) {
         }
-        default public void setFoo2(Float num) {
+        public default void setFoo2(Float num) {
         }
     }
 
@@ -405,8 +407,8 @@ public class DefaultMethodBeanPropertyTest {
                             .collect(Collectors.joining("\n  "))
                     + "\nEXPECTED:\n  "
                     + expected.stream()
-                            .map(Object::toString)
-                            .collect(Collectors.joining("\n  ")));
+                              .map(Object::toString)
+                              .collect(Collectors.joining("\n  ")));
         }
     }
 
@@ -414,10 +416,11 @@ public class DefaultMethodBeanPropertyTest {
         try {
             final Set<String> expected = new HashSet<>(Arrays.asList(methodNames));
             final Set<String> actual = Arrays
-                    .stream(Introspector.getBeanInfo(type).getPropertyDescriptors())
-                    .flatMap(pd -> Arrays.stream(new Method[]{pd.getReadMethod(), pd.getWriteMethod()}))
-                    .filter(method -> method != null)
-                    .map(Method::toString)
+                    .stream(Introspector.getBeanInfo(type)
+                                        .getPropertyDescriptors())
+                    .flatMap(pd -> Stream.of(pd.getReadMethod(), pd.getWriteMethod()))
+                    .filter(Objects::nonNull)
+                    .map((Method m) -> m.toString())
                     .collect(Collectors.toSet());
             verifyEquality("properties", expected, actual);
         } catch (IntrospectionException exception) {
@@ -429,7 +432,8 @@ public class DefaultMethodBeanPropertyTest {
         try {
             final Set<String> expected = new HashSet<>(Arrays.asList(methodNames));
             final Set<String> actual = Arrays
-                    .stream(Introspector.getBeanInfo(type, Object.class).getMethodDescriptors())
+                    .stream(Introspector.getBeanInfo(type, Object.class)
+                                        .getMethodDescriptors())
                     .map(MethodDescriptor::getMethod)
                     .map(Method::toString)
                     .collect(Collectors.toSet());
