@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,10 @@ import jdk.test.lib.net.URIBuilder;
 import jdk.test.lib.security.KeyEntry;
 import jdk.test.lib.security.KeyStoreUtils;
 import jdk.test.lib.security.SSLContextBuilder;
+
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 
@@ -122,12 +126,12 @@ public class TlsVersionTest {
         System.out.println("Making request to " + serverURI.getPath());
         SSLContext ctx = getClientSSLContext(cert);
         HttpClient client = HttpClient.newBuilder()
-                                      .version(HttpClient.Version.HTTP_2)
+                                      .version(HTTP_2)
                                       .proxy(NO_PROXY)
                                       .sslContext(ctx)
                                       .build();
 
-        for (var version : List.of(HttpClient.Version.HTTP_2, HttpClient.Version.HTTP_1_1)) {
+        for (var version : List.of(HTTP_3, HTTP_2, HTTP_1_1)) {
             HttpRequest request = HttpRequest.newBuilder(serverURI)
                                              .version(version)
                                              .GET()
