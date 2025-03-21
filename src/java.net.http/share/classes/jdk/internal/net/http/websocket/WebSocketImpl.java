@@ -747,7 +747,7 @@ public final class WebSocketImpl implements WebSocket {
             } finally {
                 Throwable e = null;
                 if (first != null && second != null) {
-                    Utils.addSuppressed(first, second);
+                    first.addSuppressed(second);
                     e = first;
                 } else if (first != null) {
                     e = first;
