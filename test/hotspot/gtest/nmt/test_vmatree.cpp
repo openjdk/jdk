@@ -229,7 +229,7 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     treap(tree).visit_in_order([&](TNode* x) {
       EXPECT_TRUE(x->key() == 0 || x->key() == 100);
       if (x->key() == 0) {
-        EXPECT_EQ(x->val().out.regiondata().mem_tag, mtTest);
+        EXPECT_EQ(x->val().out.reserved_regiondata().mem_tag, mtTest);
       }
     });
 
@@ -265,10 +265,10 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     tree.commit_mapping(0, 100, rd2);
     treap(tree).visit_range_in_order(0, 99999, [&](TNode* x) {
       if (x->key() == 0) {
-        EXPECT_EQ(mtTest, x->val().out.regiondata().mem_tag);
+        EXPECT_EQ(mtTest, x->val().out.reserved_regiondata().mem_tag);
       }
       if (x->key() == 100) {
-        EXPECT_EQ(mtTest, x->val().in.regiondata().mem_tag);
+        EXPECT_EQ(mtTest, x->val().in.reserved_regiondata().mem_tag);
       }
     });
   }
@@ -289,7 +289,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     VMATree::position from;
     VMATree::position to;
     MemTag tag;
-    NCS::StackIndex stack;
+    NCS::StackIndex reserve_stack;
     State state;
   };
 
@@ -314,8 +314,8 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
       EXPECT_EQ(expect.tag, found.start->val().out.mem_tag());
       EXPECT_EQ(expect.tag, found.end->val().in.mem_tag());
       // Same stack
-      EXPECT_EQ(expect.stack, found.start->val().out.reserved_stack()) << "Unexpected stack at test-line: " << line_no;
-      EXPECT_EQ(expect.stack, found.end->val().in.reserved_stack()) << "Unexpected stack at test-line: " << line_no;
+      EXPECT_EQ(expect.reserve_stack, found.start->val().out.reserved_stack()) << "Unexpected stack at region: " << i << " and at test-line: " << line_no;
+      EXPECT_EQ(expect.reserve_stack, found.end->val().in.reserved_stack()) << "Unexpected stack at region: " << i << " and at test-line: " << line_no;
       // Same state
       EXPECT_EQ(expect.state, found.start->val().out.type());
       EXPECT_EQ(expect.state, found.end->val().in.type());
@@ -753,40 +753,86 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccountingWhenUseFlagInplace) {
 }
 
 TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
-  VMATree::RegionData call_stack_1(si[0], mtTest);
-  VMATree::RegionData call_stack_2(si[1], mtNone);
+  using SIndex = NativeCallStackStorage::StackIndex;
+  SIndex si_1 = si[0];
+  SIndex si_2 = si[1];
+
+  VMATree::RegionData call_stack_1(si_1, mtTest);
+  VMATree::RegionData call_stack_2(si_2, mtNone);
+  auto expected =  [&](Tree& tree, int p, SIndex reserve_stack, SIndex commit_stack, int line_no = __LINE__) {
+    VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(p);
+    const bool check_end_node = true;
+    const char* at_line = " at line: ";
+    if (reserve_stack >= 0) {
+      EXPECT_EQ(r.start->val().out.reserved_stack(), reserve_stack) << at_line << line_no;
+      if (check_end_node) {
+        EXPECT_EQ(r.end->val().in.reserved_stack(), reserve_stack) << at_line << line_no;
+      }
+    } else {
+      EXPECT_FALSE(r.start->val().out.has_reserved_stack()) << at_line << line_no;
+      if (check_end_node) {
+        EXPECT_FALSE(r.end->val().in.has_reserved_stack()) << at_line << line_no;
+      }
+    }
+    if (commit_stack >= 0) {
+      EXPECT_EQ(r.start->val().out.committed_stack(), commit_stack) << at_line << line_no;
+      if (check_end_node) {
+        EXPECT_EQ(r.end->val().in.committed_stack(), commit_stack) << at_line << line_no;
+      }
+    } else {
+      EXPECT_FALSE(r.start->val().out.has_committed_stack()) << at_line << line_no;
+      if (check_end_node) {
+        EXPECT_FALSE(r.end->val().in.has_committed_stack()) << at_line << line_no;
+      }
+    }
+  };
 
   {
     Tree tree;
     tree.reserve_mapping(0, 100, call_stack_1);
-    tree.commit_mapping(25, 25, call_stack_2, true);
-    VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(0);
-    EXPECT_EQ(r.start->val().out.reserved_stack(), si[0]);
-    EXPECT_FALSE(r.start->val().out.has_committed_stack());
+    expected(tree,  0, si_1,   -1, __LINE__);
+
+    tree.commit_mapping(25, 25, call_stack_2, true); // commit at the middle of the region
+    expected(tree,  0, si_1,   -1, __LINE__);
+    expected(tree, 25, si_1, si_2, __LINE__);
+
+    tree.commit_mapping(0, 20, call_stack_2, true); // commit at the begin of the region
+    expected(tree, 0, si_1, si_2, __LINE__);
+
+    tree.commit_mapping(80, 20, call_stack_2, true); // commit at the end of the region
+    expected(tree, 80, si_1, si_2, __LINE__);
+    tree.print_on(tty);
   }
   {
     Tree tree;
     tree.reserve_mapping(0, 100, call_stack_1);
-    tree.reserve_mapping(10, 10, call_stack_2);
-    VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(0);
-    EXPECT_EQ(r.start->val().out.reserved_stack(), si[0]);
-    EXPECT_EQ(r.end->val().in.reserved_stack(), si[0]);
-  }
+    expected(tree, 0, si_1, -1, __LINE__);
 
-  {
-    Tree tree;
-    tree.commit_mapping(0, 100, call_stack_1);
-    VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(0);
-    EXPECT_EQ(r.start->val().out.reserved_stack(), si[0]);
-    EXPECT_FALSE(r.start->val().out.has_committed_stack());
+    tree.commit_mapping(20, 20, call_stack_2, true);
+    expected(tree,  0, si_1,   -1, __LINE__);
+    expected(tree, 20, si_1, si_2, __LINE__);
+
+    tree.commit_mapping(10, 20, call_stack_1); // commit with overlap
+    expected(tree, 10, si_1, si_1, __LINE__);
+    tree.print_on(tty);
   }
   {
     Tree tree;
-    tree.commit_mapping(0, 100, call_stack_1);
-    tree.reserve_mapping(0, 100, call_stack_2);
-    VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(0);
-    EXPECT_EQ(r.start->val().out.reserved_stack(), si[1]);
-    EXPECT_EQ(r.end->val().in.reserved_stack(), si[1]);
-    EXPECT_EQ(r.start->val().out.committed_stack(), si[0]);
+    tree.reserve_mapping(0, 100, call_stack_1);
+    expected(tree, 0, si_1, -1, __LINE__);
+
+    tree.commit_mapping(20, 20, call_stack_2, true);
+    expected(tree,  0, si_1,   -1, __LINE__);
+    expected(tree, 20, si_1, si_2, __LINE__);
+
+    tree.commit_mapping(0, 10, call_stack_2, true);
+    expected(tree, 0, si_1, si_2, __LINE__);
+
+    tree.uncommit_mapping(0, 5, call_stack_2);
+    expected(tree, 0, si_1, -1, __LINE__);
+
+    tree.uncommit_mapping(20, 10, call_stack_2);
+    expected(tree, 20, si_1, -1, __LINE__);
+    tree.print_on(tty);
   }
 }
