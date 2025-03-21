@@ -235,7 +235,7 @@ public final class QuicTimerQueue {
         for (var it = rescheduled.iterator(); it.hasNext(); ) {
             QuicTimedEvent event = it.next();
             it.remove(); // remove before processing to avoid race
-            while (scheduled.remove(event));
+            scheduled.remove(event);
             Deadline deadline = event.refreshDeadline();
             if (deadline.equals(Deadline.MAX)) {
                 continue;
