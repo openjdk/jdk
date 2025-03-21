@@ -896,7 +896,7 @@ public sealed interface ClassFile
      * and to distinguish from {@link ClassFileBuilder#transform}, which is
      * more generic and powerful.
      *
-     * @param allocator the buffer allocator function
+     * @param allocator the segment allocator function
      * @param model the class model to transform
      * @param newClassName new class name
      * @param transform the transform
@@ -935,7 +935,7 @@ public sealed interface ClassFile
      * and to distinguish from {@link ClassFileBuilder#transform}, which is
      * more generic and powerful.
      *
-     * @param allocator the buffer allocator function
+     * @param allocator the segment allocator function
      * @param model the class model to transform
      * @param newClassName new class name
      * @param transform the transform
