@@ -43,11 +43,15 @@ public class TestArrayFillIntrinsic {
         // Disabling unrolling is necessary for test robustness, otherwise the
         // compiler might decide to unroll the array-filling loop instead of
         // replacing it with an intrinsic call even if OptimizeFill is enabled.
-        TestFramework.runWithFlags("-XX:LoopUnrollLimit=0", "-XX:+OptimizeFill");
+        TestFramework framework = new TestFramework();
+        framework.addScenarios(new Scenario(0),
+                               new Scenario(1, "-XX:LoopUnrollLimit=0", "-XX:+OptimizeFill"));
+        framework.start();
     }
 
     @Test
     @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        applyIfAnd = {"LoopUnrollLimit", "0", "OptimizeFill", "true"},
         counts = {IRNode.CALL_OF, "(arrayof_)?jbyte_fill", "1"})
     static void testFillBooleanArray(boolean[] array, boolean val) {
         for (int i = 0; i < array.length; i++) {
@@ -57,6 +61,7 @@ public class TestArrayFillIntrinsic {
 
     @Test
     @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        applyIfAnd = {"LoopUnrollLimit", "0", "OptimizeFill", "true"},
         counts = {IRNode.CALL_OF, "(arrayof_)?jbyte_fill", "1"})
     static void testFillByteArray(byte[] array, byte val) {
         for (int i = 0; i < array.length; i++) {
@@ -66,6 +71,7 @@ public class TestArrayFillIntrinsic {
 
     @Test
     @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        applyIfAnd = {"LoopUnrollLimit", "0", "OptimizeFill", "true"},
         counts = {IRNode.CALL_OF, "(arrayof_)?jshort_fill", "1"})
     static void testFillCharArray(char[] array, char val) {
         for (int i = 0; i < array.length; i++) {
@@ -75,6 +81,7 @@ public class TestArrayFillIntrinsic {
 
     @Test
     @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        applyIfAnd = {"LoopUnrollLimit", "0", "OptimizeFill", "true"},
         counts = {IRNode.CALL_OF, "(arrayof_)?jshort_fill", "1"})
     static void testFillShortArray(short[] array, short val) {
         for (int i = 0; i < array.length; i++) {
@@ -84,6 +91,7 @@ public class TestArrayFillIntrinsic {
 
     @Test
     @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        applyIfAnd = {"LoopUnrollLimit", "0", "OptimizeFill", "true"},
         counts = {IRNode.CALL_OF, "(arrayof_)?jint_fill", "1"})
     static void testFillIntArray(int[] array, int val) {
         for (int i = 0; i < array.length; i++) {
@@ -93,6 +101,7 @@ public class TestArrayFillIntrinsic {
 
     @Test
     @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        applyIfAnd = {"LoopUnrollLimit", "0", "OptimizeFill", "true"},
         counts = {IRNode.CALL_OF, "(arrayof_)?jint_fill", "1"})
     static void testFillFloatArray(float[] array, float val) {
         for (int i = 0; i < array.length; i++) {

@@ -31,9 +31,9 @@ import jdk.test.lib.Asserts;
  * @summary Test that loads anti-dependent on array fill intrinsics are
  *          scheduled correctly, for different load and array fill types.
  *          See detailed comments in testShort() below.
- * @requires vm.compiler2.enabled
  * @library /test/lib
- * @run main/othervm -Xbatch -XX:-TieredCompilation
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -Xbatch -XX:-TieredCompilation
  *                   -XX:CompileOnly=compiler.loopopts.TestArrayFillAntiDependence::test*
  *                   -XX:CompileCommand=quiet -XX:LoopUnrollLimit=0 -XX:+OptimizeFill
  *                   compiler.loopopts.TestArrayFillAntiDependence
