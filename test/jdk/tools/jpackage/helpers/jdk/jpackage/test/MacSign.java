@@ -22,7 +22,11 @@
  */
 package jdk.jpackage.test;
 
+import static java.util.stream.Collectors.flatMapping;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
@@ -33,19 +37,25 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -382,7 +392,7 @@ public final class MacSign {
             return this;
         }
 
-        public List<X509Certificate> findCertificates() {
+        List<X509Certificate> findCertificates() {
             final var in = new ByteArrayInputStream(
                     security("find-certificate", "-ap", name).saveOutput().execute().getOutput().stream().collect(joining("\n")).getBytes(StandardCharsets.UTF_8));
             return toFunction(CERT_FACTORY::generateCertificates).apply(in).stream().map(X509Certificate.class::cast).toList();
@@ -399,6 +409,132 @@ public final class MacSign {
         }
     }
 
+    record ResolvedCertificateRequest(CertificateRequest request, X509Certificate cert, VerifyStatus verifyStatus) {
+        ResolvedCertificateRequest {
+            Objects.requireNonNull(request);
+            Objects.requireNonNull(cert);
+            Objects.requireNonNull(verifyStatus);
+        }
+
+        enum VerifyStatus {
+            VERIFY_OK,
+            VERIFY_ERROR,
+            UNVERIFIED
+        }
+
+        ResolvedCertificateRequest(X509Certificate cert) {
+            this(new CertificateRequest(cert), cert, VerifyStatus.UNVERIFIED);
+        }
+
+        ResolvedCertificateRequest copyVerified(boolean verifySuccess) {
+            return new ResolvedCertificateRequest(request, cert,
+                    verifySuccess ? VerifyStatus.VERIFY_OK : VerifyStatus.VERIFY_ERROR);
+        }
+    }
+
+    record CertificateStats(List<ResolvedCertificateRequest> allResolvedCertificateRequests,
+            List<X509Certificate> allCertificates, List<CertificateRequest> knownCertificateRequests,
+            Map<X509Certificate, Throwable> unmappedCertificates) {
+
+        private static CertificateStats get(KeychainWithCertsSpec spec) {
+            return CACHE.computeIfAbsent(spec, CertificateStats::create);
+        }
+
+        Map<CertificateRequest, List<X509Certificate>> mapKnownCertificateRequests() {
+            return knownCertificateRequests.stream().collect(groupingBy(x -> x, mapping(certificateRequest -> {
+                return allResolvedCertificateRequests.stream().filter(v -> {
+                    return v.request().equals(certificateRequest);
+                }).map(ResolvedCertificateRequest::cert);
+            }, flatMapping(x -> x, toList()))));
+        }
+
+        Set<CertificateRequest> verifyFailedCertificateRequests() {
+            return knownCertificateRequests.stream().filter(certificateRequest -> {
+                return allResolvedCertificateRequests.stream().anyMatch(v -> {
+                    return v.request().equals(certificateRequest) && v.verifyStatus() == ResolvedCertificateRequest.VerifyStatus.VERIFY_ERROR;
+                });
+            }).collect(toSet());
+        }
+
+        Set<CertificateRequest> unmappedCertificateRequests() {
+            return Comm.compare(Set.copyOf(knownCertificateRequests),
+                    allResolvedCertificateRequests.stream().map(ResolvedCertificateRequest::request).collect(toSet())).unique1();
+        }
+
+        private static CertificateStats create(KeychainWithCertsSpec spec) {
+            final var allCertificates = spec.keychain().findCertificates();
+            final List<ResolvedCertificateRequest> allResolvedCertificateRequests = new ArrayList<>();
+            final Map<X509Certificate, Throwable> unmappedCertificates = new HashMap<>();
+
+            withTempDirectory(workDir -> {
+                for (final var cert : allCertificates) {
+                    ResolvedCertificateRequest resolvedCertificateRequest;
+                    try {
+                        resolvedCertificateRequest = new ResolvedCertificateRequest(cert);
+                    } catch (RuntimeException ex) {
+                        final Throwable t;
+                        if (ex instanceof ExceptionBox) {
+                            t = ex.getCause();
+                        } else {
+                            t = ex;
+                        }
+                        unmappedCertificates.put(cert, t);
+                        continue;
+                    }
+
+                    if (spec.certificateRequests().contains(resolvedCertificateRequest.request)) {
+                        final var certFile = workDir.resolve(CertificateHash.of(cert).toString() + ".pem");
+                        final var verifySuccess = verifyCertificate(resolvedCertificateRequest, spec.keychain(), certFile);
+                        resolvedCertificateRequest = resolvedCertificateRequest.copyVerified(verifySuccess);
+                    }
+
+                    allResolvedCertificateRequests.add(resolvedCertificateRequest);
+                }
+            });
+
+            return new CertificateStats(allResolvedCertificateRequests, List.copyOf(allCertificates),
+                    List.copyOf(spec.certificateRequests()), unmappedCertificates);
+        }
+
+        private static final Map<KeychainWithCertsSpec, CertificateStats> CACHE = new ConcurrentHashMap<>();
+    }
+
+    record PemData(String label, byte[] data) {
+        PemData {
+            Objects.requireNonNull(label);
+            Objects.requireNonNull(data);
+        }
+
+        @Override
+        public String toString() {
+            final var sb = new StringBuilder();
+            sb.append(frame("BEGIN " + label));
+            sb.append(ENCODER.encodeToString(data));
+            sb.append("\n");
+            sb.append(frame("END " + label));
+            return sb.toString();
+        }
+
+        static PemData of(X509Certificate cert) {
+            return new PemData("CERTIFICATE", toSupplier(cert::getEncoded).get());
+        }
+
+        void save(Path path, OpenOption... options) {
+            try {
+                Files.createDirectories(path.getParent());
+                Files.writeString(path, toString(), options);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
+
+        private static String frame(String str) {
+            return String.format("-----%s-----\n", Objects.requireNonNull(str));
+        }
+
+        private final static Base64.Encoder ENCODER = Base64.getMimeEncoder(64, "\n".getBytes());
+    }
+
     public record CertificateHash(byte[] value) {
         public CertificateHash {
             Objects.requireNonNull(value);
@@ -407,11 +543,7 @@ public final class MacSign {
             }
         }
 
-        static CertificateHash fromHexString(String str) {
-            return new CertificateHash(FORMAT.parseHex(str, 0, str.length()));
-        }
-
-        static CertificateHash of(X509Certificate cert) {
+        public static CertificateHash of(X509Certificate cert) {
             return new CertificateHash(toSupplier(() -> {
                 final MessageDigest md = MessageDigest.getInstance("SHA-1");
                 md.update(cert.getEncoded());
@@ -431,7 +563,7 @@ public final class MacSign {
         CODE_SIGN(List.of(
                 "basicConstraints=critical,CA:false",
                 "keyUsage=critical,digitalSignature"
-        ), CODE_SIGN_EXTENDED_KEY_USAGE),
+        ), CODE_SIGN_EXTENDED_KEY_USAGE, "codeSign"),
         // https://www.apple.com/certificateauthority/pdf/Apple_Developer_ID_CPS_v1.1.pdf
         // https://security.stackexchange.com/questions/17909/how-to-create-an-apple-installer-package-signing-certificate
         // https://github.com/zschuessler/AXtendedKey/blob/32c8ccec3df7e78fe521d09c48bd20558b3a4a24/src/axtended_key/services/certificate_manager.py#L109C102-L109C115
@@ -441,11 +573,14 @@ public final class MacSign {
                 // Apple-specific extension for self-distributed apps
                 // https://oid-base.com/get/1.2.840.113635.100.6.1.14
                 "1.2.840.113635.100.6.1.14=critical,DER:0500"
-        ), INSTALLER_EXTENDED_KEY_USAGE);
+        ), INSTALLER_EXTENDED_KEY_USAGE,
+                // Should be "pkgSign", but with this policy `security verify-cert` command fails.
+                "basic");
 
-        CertificateType(List<String> otherExtensions, List<String> extendedKeyUsage) {
+        CertificateType(List<String> otherExtensions, List<String> extendedKeyUsage, String verifyPolicy) {
             this.otherExtensions = otherExtensions;
             this.extendedKeyUsage = extendedKeyUsage;
+            this.verifyPolicy = verifyPolicy;
         }
 
         boolean isTypeOf(X509Certificate cert) {
@@ -457,11 +592,16 @@ public final class MacSign {
                     Stream.of("extendedKeyUsage=" + Stream.concat(Stream.of("critical"), extendedKeyUsage.stream()).collect(joining(",")))).toList();
         }
 
+        String verifyPolicy() {
+            return verifyPolicy;
+        }
+
         private final List<String> otherExtensions;
         private final List<String> extendedKeyUsage;
+        private final String verifyPolicy;
     }
 
-    public record CertificateRequest(String name, CertificateType type, int days) {
+    public record CertificateRequest(String name, CertificateType type, int days) implements Comparable<CertificateRequest>{
         public CertificateRequest {
             Objects.requireNonNull(name);
             Objects.requireNonNull(type);
@@ -469,6 +609,11 @@ public final class MacSign {
 
         CertificateRequest(X509Certificate cert) {
             this(getSubjectCN(cert), getType(cert), getDurationInDays(cert));
+        }
+
+        @Override
+        public int compareTo(CertificateRequest o) {
+            return COMPARATOR.compare(this, o);
         }
 
         public static final class Builder {
@@ -554,6 +699,11 @@ public final class MacSign {
             final var notAfter = cert.getNotAfter();
             return (int)TimeUnit.DAYS.convert(notAfter.getTime() - notBefore.getTime(), TimeUnit.MILLISECONDS);
         }
+
+        private static final Comparator<CertificateRequest> COMPARATOR =
+                Comparator.comparing(CertificateRequest::name)
+                .thenComparing(Comparator.comparing(CertificateRequest::type))
+                .thenComparing(Comparator.comparingInt(CertificateRequest::days));
     }
 
     /**
@@ -659,41 +809,58 @@ public final class MacSign {
             TKit.trace(String.format("Missing [%s] keychain file", keychain.path()));
         }).findAny().isPresent();
 
-        final var missingCertificates = specs.stream().filter(spec -> {
+        final var specsWithExistingKeychains = specs.stream().filter(spec -> {
             return spec.keychain().exists();
-        }).map(spec -> {
-            final var availableCertRequests = spec.keychain().findCertificates().stream().map(cert -> {
-                try {
-                    final var certRequest = new CertificateRequest(cert);
-                    TKit.trace(String.format("Certificate with hash=%s: %s", CertificateHash.of(cert), certRequest));
-                    return certRequest;
-                } catch (RuntimeException ex) {
-                    final Throwable t;
-                    if (ex instanceof ExceptionBox) {
-                        t = ex.getCause();
-                    } else {
-                        t = ex;
-                    }
-                    TKit.trace(String.format("Failed to create certificate request from the certificate with hash=%s: %s",
-                            CertificateHash.of(cert), t));
-                    return null;
-                }
-            }).filter(Objects::nonNull).collect(toSet());
-            final var configuredCertRequests = spec.certificateRequests().stream().collect(toSet());
-            final var comm = Comm.compare(availableCertRequests, configuredCertRequests);
-            return Map.entry(spec.keychain(), comm.unique2());
-        }).filter(e -> {
-            return !e.getValue().isEmpty();
-        }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }).toList();
 
-        missingCertificates.entrySet().forEach(e -> {
-            for (final var certRequest : e.getValue()) {
-                TKit.trace(String.format("Missing certificate for %s certificate request in [%s] keychain",
-                        certRequest, e.getKey().name()));
+        final var certificateStats = specsWithExistingKeychains.stream().collect(
+                toMap(KeychainWithCertsSpec::keychain, CertificateStats::get));
+
+        for (final var keychain : specsWithExistingKeychains.stream().map(KeychainWithCertsSpec::keychain).toList()) {
+            TKit.trace(String.format("In [%s] keychain:", keychain.name()));
+            final var certificateStat = certificateStats.get(keychain);
+            final var resolvedCertificateRequests = certificateStat.allResolvedCertificateRequests().stream()
+                    .sorted(Comparator.comparing(ResolvedCertificateRequest::request)).toList();
+            for (final var resolvedCertificateRequest : resolvedCertificateRequests) {
+                TKit.trace(String.format("  Certificate with hash=%s: %s[%s]",
+                        CertificateHash.of(resolvedCertificateRequest.cert()),
+                        resolvedCertificateRequest.request(),
+                        resolvedCertificateRequest.verifyStatus()));
             }
+
+            for (final var unmappedCertificate : certificateStat.unmappedCertificates().entrySet()) {
+                TKit.trace(String.format("  Failed to create certificate request from the certificate with hash=%s: %s",
+                        CertificateHash.of(unmappedCertificate.getKey()), unmappedCertificate.getValue()));
+            }
+
+            for (final var unmappedCertificateRequest : certificateStat.unmappedCertificateRequests().stream().sorted().toList()) {
+                TKit.trace(String.format("  Missing certificate for %s certificate request", unmappedCertificateRequest));
+            }
+        }
+
+        final var missingCertificates = certificateStats.values().stream().anyMatch(stat -> {
+            return !stat.unmappedCertificateRequests().isEmpty();
         });
 
-        return !missingKeychain && missingCertificates.isEmpty();
+        final var invalidCertificates = certificateStats.values().stream().anyMatch(stat -> {
+            return !stat.verifyFailedCertificateRequests().isEmpty();
+        });
+
+        return !missingKeychain && !missingCertificates && !invalidCertificates;
+    }
+
+    public static Map<CertificateRequest, X509Certificate> mapCertificateRequests(KeychainWithCertsSpec spec) {
+        return CertificateStats.get(spec).mapKnownCertificateRequests().entrySet().stream().collect(toMap(Map.Entry::getKey, e -> {
+            return e.getValue().stream().reduce((x, y) -> {
+                throw new IllegalStateException(String.format(
+                        "Certificates with hash=%s and hash=%s map into %s certificate request in [%s] keychain",
+                        CertificateHash.of(x), CertificateHash.of(y), e.getKey(), spec.keychain().name()));
+            }).orElseThrow(() -> {
+                throw new IllegalStateException(String.format(
+                        "A certificate matching %s certificate request not found in [%s] keychain",
+                        e.getKey(), spec.keychain().name()));
+            });
+        }));
     }
 
     private static void validate(List<KeychainWithCertsSpec> specs) {
@@ -707,6 +874,20 @@ public final class MacSign {
                         "Multiple certificate requests with the same specification %s in one keychain [%s]", x, spec.keychain().name()));
             }));
         });
+    }
+
+    private static boolean verifyCertificate(ResolvedCertificateRequest resolvedCertificateRequest, Keychain keychain, Path certFile) {
+        PemData.of(resolvedCertificateRequest.cert()).save(certFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        for (final var mode : List.of("-q", "-v")) {
+            final var ok = security("verify-cert", "-L", "-n", mode,
+                    "-c", certFile.normalize().toString(),
+                    "-k", keychain.name(),
+                    "-p", resolvedCertificateRequest.request().type().verifyPolicy()).executeWithoutExitCodeCheck().getExitCode() == 0;
+            if (ok) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void traceSigningEnvironment(Collection<KeychainWithCertsSpec> specs) {
