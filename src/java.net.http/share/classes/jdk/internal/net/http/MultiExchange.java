@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -441,6 +441,7 @@ class MultiExchange<T> implements Cancelable {
                             // 3. apply response filters
                             newrequest = responseFilters(response);
                         } catch (IOException e) {
+                            exch.exchImpl.cancel(e);
                             return failedFuture(e);
                         }
                         // 4. check filter result and repeat or continue
