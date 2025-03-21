@@ -43,7 +43,7 @@ import jdk.jpackage.test.TKit;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror SigningBase.java
- * @requires (jpackage.test.SignEnv == "setup")
+ * @requires (jpackage.test.MacSignTests == "setup")
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningBase.setUp
  */
@@ -56,7 +56,7 @@ import jdk.jpackage.test.TKit;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror SigningBase.java
- * @requires (jpackage.test.SignEnv == "teardown")
+ * @requires (jpackage.test.MacSignTests == "teardown")
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningBase.tearDown
  */
@@ -88,15 +88,29 @@ public class SigningBase {
             return new CertificateRequest.Builder();
         }
 
+        private static List<KeychainWithCertsSpec> signingEnv() {
+            return Stream.of(values()).map(StandardKeychain::spec).toList();
+        }
+
         final KeychainWithCertsSpec spec;
     }
 
     public static void setUp() {
-        MacSign.setUp(Stream.of(StandardKeychain.values()).map(StandardKeychain::spec).toList());
+        MacSign.setUp(StandardKeychain.signingEnv());
     }
 
     public static void tearDown() {
-        MacSign.tearDown(Stream.of(StandardKeychain.values()).map(StandardKeychain::spec).toList());
+        MacSign.tearDown(StandardKeychain.signingEnv());
+    }
+
+    public static void verifySignTestEnvReady() {
+        if (!Inner.SIGN_ENV_READY) {
+            TKit.throwSkippedException(new IllegalStateException("Misconfigured signing test environment"));
+        }
+    }
+
+    private final class Inner {
+        private final static boolean SIGN_ENV_READY = MacSign.isDeployed(StandardKeychain.signingEnv());
     }
 
     enum CertIndex {
