@@ -135,9 +135,9 @@ public abstract class ClassValue<T> {
      * the stale {@code computeValue} may retry to re-establish this
      * happens-before relationship.
      * <p>
-     * This relationship also means that a {@code computeValue} cannot invoke
-     * {@code remove}: a step in a computation cannot happen-before the start
-     * of that computation.
+     * If this is invoked through {@code computeValue}, which can happen due to
+     * side effects like class initialization, this will be no-op to the caller
+     * thread.
      *
      * @param type the type whose class value must be removed
      * @throws NullPointerException if the argument is null
