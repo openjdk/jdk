@@ -41,19 +41,19 @@ import java.lang.reflect.Field;
 
 public class FinalizerHistogramTest {
     static ReentrantLock lock = new ReentrantLock();
-    static final AtomicInteger wasInitialized = new AtomicInteger(0);
-    static final AtomicInteger wasTrapped = new AtomicInteger(0);
+    static final AtomicInteger initializedCount = new AtomicInteger(0);
+    static final AtomicInteger trappedCount = new AtomicInteger(0);
     static final int OBJECTS_COUNT = 1000;
 
     static class MyObject {
         public MyObject() {
             // Make sure object allocation/deallocation is not optimized out
-            wasInitialized.incrementAndGet();
+            initializedCount.incrementAndGet();
         }
 
         protected void finalize() {
             // Trap the object in a finalization queue
-            wasTrapped.incrementAndGet();
+            trappedCount.incrementAndGet();
             lock.lock();
         }
     }
@@ -66,12 +66,12 @@ public class FinalizerHistogramTest {
             for(int i = 2; i < OBJECTS_COUNT; ++i) {
                 new MyObject();
             }
-            System.out.println("Objects intialized: " + wasInitialized.get());
+            System.out.println("Objects intialized: " + initializedCount.get());
             // GC and wait for at least 2 MyObjects to be ready for finalization,
             // and one MyObject to be stuck in finalize().
             ForceGC.wait(() -> { return ref1.refersTo(null) &&
                                         ref2.refersTo(null) &&
-                                        wasTrapped.intValue() > 0;
+                                        trappedCount.intValue() > 0;
             });
 
             Class<?> klass = Class.forName("java.lang.ref.FinalizerHistogram");
