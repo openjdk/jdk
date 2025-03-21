@@ -1804,21 +1804,18 @@ public class Lower extends TreeTranslator {
      */
     JCStatement initOuterThis(int pos, VarSymbol rhs, boolean stores) {
         Assert.check(rhs.owner.kind == MTH);
+        Assert.check(nullCheckOuterThis || stores); // One of the flags must be true
         make.at(pos);
-        JCExpression expression;
+        JCExpression expression = make.Ident(rhs);
+        if (nullCheckOuterThis) {
+            expression = attr.makeNullCheck(expression);
+        }
         if (stores) {
             VarSymbol lhs = outerThisStack.head;
             Assert.check(rhs.owner.owner == lhs.owner);
-            JCExpression sourceExp = make.Ident(rhs);
-            if (nullCheckOuterThis) {
-                sourceExp = attr.makeNullCheck(sourceExp);
-            }
             expression = make.Assign(
                     make.Select(make.This(lhs.owner.erasure(types)), lhs),
-                    sourceExp).setType(lhs.erasure(types));
-        } else {
-            Assert.check(nullCheckOuterThis);
-            expression = attr.makeNullCheck(make.Ident(rhs));
+                    expression).setType(lhs.erasure(types));
         }
         return make.Exec(expression);
     }
