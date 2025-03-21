@@ -976,31 +976,28 @@ AC_DEFUN([JDKOPT_SETUP_MACOSX_SIGNING],
 
 ################################################################################
 #
-# Setup code signing on Windows. Parameter is the path to a scripts that
-# ultimately invokes signtool (from the Windows SDK) to sign each of the
-# newly built ".exe" and ".dll" with a vendor specific X509 certificate.
+# Setup a hook to invoke a script that runs for file produced by the native
+# compilation steps, after linking.
+# Parameter is the path to the script to be called.
 #
-AC_DEFUN([JDKOPT_SETUP_WINDOWS_SIGNING],
+AC_DEFUN([JDKOPT_SETUP_SIGNING_HOOK],
 [
-  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+  UTIL_ARG_WITH(NAME: signing-hook, TYPE: file,
+      OPTIONAL: true, DEFAULT: "",
+      CHECKING_MSG: [for code signing hook],
+      DESC: [specify path to script used to code sign native binaries]
+  )
 
-    UTIL_ARG_WITH(NAME: windows-signing-script, TYPE: file,
-        OPTIONAL: true, DEFAULT: "",
-        CHECKING_MSG: [for Windows code signing script],
-        DESC: [path to script that invokes signtool for Windows Code signing]
-    )
-
-    AC_MSG_CHECKING([if Windows code signing is enabled])
-    if test "x$WINDOWS_SIGNING_SCRIPT" != x; then
-      WINDOWS_SIGNING_ENABLED=true
-      AC_SUBST(WINDOWS_SIGNING_SCRIPT)
-      AC_MSG_RESULT([yes])
-     else
-        WINDOWS_SIGNING_ENABLED=false
-        AC_MSG_RESULT([no])
-      fi
-  fi
-  AC_SUBST(WINDOWS_SIGNING_ENABLED)
+  AC_MSG_CHECKING([if signing hook is enabled])
+  if test "x$SIGNING_HOOK" != x; then
+    SIGNING_HOOK_ENABLED=true
+    AC_SUBST(SIGNING_HOOK)
+    AC_MSG_RESULT([yes])
+   else
+      SIGNING_HOOK_ENABLED=false
+      AC_MSG_RESULT([no])
+    fi
+  AC_SUBST(SIGNING_HOOK_ENABLED)
 ])
 
 ################################################################################
