@@ -101,7 +101,7 @@ public:
 
   // Roll back the allocation state to the indicated state values.
   // The state must be the current state for this thread.
-  void rollback_to(const SavedState& state) {
+  void rollback_to(const SavedState& state, bool demand_unwind) {
     assert(_nesting > state._nesting, "rollback to inactive mark");
     assert((_nesting - state._nesting) == 1, "rollback across another mark");
 
@@ -120,6 +120,7 @@ public:
 
     if (_hwm != state._hwm) {
       // HWM moved: resource area was used. Roll back!
+      assert(!demand_unwind, "resource mark was used!");
 
       char* replaced_hwm = _hwm;
 
@@ -154,19 +155,27 @@ public:
 class ResourceMarkImpl {
   ResourceArea* _area;          // Resource area to stack allocate
   ResourceArea::SavedState _saved_state;
+  bool _demand_unwind;
 
   NONCOPYABLE(ResourceMarkImpl);
 
 public:
-  explicit ResourceMarkImpl(ResourceArea* area) :
+  explicit ResourceMarkImpl(ResourceArea* area, bool demand_unwind) :
     _area(area),
-    _saved_state(area)
+    _saved_state(area),
+    _demand_unwind(demand_unwind)
   {
     _area->activate_state(_saved_state);
   }
+  explicit ResourceMarkImpl(ResourceArea* area) :
+    ResourceMarkImpl(area, false)
+  {}
+
+  explicit ResourceMarkImpl(Thread* thread, bool demand_unwind)
+    : ResourceMarkImpl(thread->resource_area(), demand_unwind) {}
 
   explicit ResourceMarkImpl(Thread* thread)
-    : ResourceMarkImpl(thread->resource_area()) {}
+    : ResourceMarkImpl(thread->resource_area(), false) {}
 
   ~ResourceMarkImpl() {
     reset_to_mark();
@@ -174,7 +183,7 @@ public:
   }
 
   void reset_to_mark() const {
-    _area->rollback_to(_saved_state);
+    _area->rollback_to(_saved_state, _demand_unwind);
   }
 };
 
@@ -189,19 +198,19 @@ class ResourceMark: public StackObj {
 
   // Helper providing common constructor implementation.
 #ifndef ASSERT
-  ResourceMark(ResourceArea* area, Thread* thread) : _impl(area) {}
+  ResourceMark(ResourceArea* area, Thread* thread, bool demand_unwind = false) : _impl(area, demand_unwind) {}
 #else
-  ResourceMark(ResourceArea* area, Thread* thread);
+  ResourceMark(ResourceArea* area, Thread* thread, bool demand_unwind = false);
 #endif // ASSERT
 
 public:
 
-  ResourceMark() : ResourceMark(Thread::current()) {}
+  ResourceMark(bool demand_unwind = false) : ResourceMark(Thread::current(), demand_unwind) {}
 
-  explicit ResourceMark(Thread* thread)
-    : ResourceMark(thread->resource_area(), thread) {}
+  explicit ResourceMark(Thread* thread, bool demand_unwind = false)
+    : ResourceMark(thread->resource_area(), thread, demand_unwind) {}
 
-  explicit ResourceMark(ResourceArea* area)
+  explicit ResourceMark(ResourceArea* area, bool demand_unwind = false)
     : ResourceMark(area, DEBUG_ONLY(Thread::current_or_null()) NOT_DEBUG(nullptr)) {}
 
 #ifdef ASSERT
