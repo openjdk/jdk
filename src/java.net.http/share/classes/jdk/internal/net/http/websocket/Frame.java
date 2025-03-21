@@ -161,7 +161,7 @@ public final class Frame {
         }
 
         /*
-         * Masks one {@code long} at a time.
+         * Masks one {@code long} (mask + mask) at a time.
          */
         private void applyVectorMask(ByteBuffer src, ByteBuffer dst) {
             assert src.order() == dst.order() : "vectorized masking is only allowed on matching byte orders";
