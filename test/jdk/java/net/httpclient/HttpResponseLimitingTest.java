@@ -66,6 +66,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.copyOfRange;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -89,15 +94,17 @@ class HttpResponseLimitingTest {
      */
     private static final String RESPONSE_HEADER_VALUE = "!".repeat(RESPONSE_BODY.length + 1);
 
-    private static final ServerClientPair HTTP1 = ServerClientPair.of(HttpClient.Version.HTTP_1_1, false);
+    private static final ServerClientPair H1 = ServerClientPair.of(HTTP_1_1, false);
 
-    private static final ServerClientPair HTTPS1 = ServerClientPair.of(HttpClient.Version.HTTP_1_1, true);
+    private static final ServerClientPair H1S = ServerClientPair.of(HTTP_1_1, true);
 
-    private static final ServerClientPair HTTP2 = ServerClientPair.of(HttpClient.Version.HTTP_2, false);
+    private static final ServerClientPair H2 = ServerClientPair.of(HTTP_2, false);
 
-    private static final ServerClientPair HTTPS2 = ServerClientPair.of(HttpClient.Version.HTTP_2, true);
+    private static final ServerClientPair H2S = ServerClientPair.of(HTTP_2, true);
 
-    private record ServerClientPair(HttpTestServer server, HttpClient client, HttpRequest request) {
+    private static final ServerClientPair H3 = ServerClientPair.of(HTTP_3, true);
+
+    private record ServerClientPair(HttpTestServer server, HttpClient client, HttpRequest request, boolean secure) {
 
         private static final SSLContext SSL_CONTEXT = createSslContext();
 
@@ -128,7 +135,7 @@ class HttpResponseLimitingTest {
             // Create the server and the request URI
             SSLContext sslContext = secure ? SSL_CONTEXT : null;
             HttpTestServer server = createServer(version, sslContext);
-            String handlerPath = "/";
+            String handlerPath = "/" + /* salting the path: */ HttpResponseLimitingTest.class.getSimpleName();
             String requestUriScheme = secure ? "https" : "http";
             URI requestUri = URI.create(requestUriScheme + "://" + server.serverAuthority() + handlerPath);
 
@@ -146,16 +153,18 @@ class HttpResponseLimitingTest {
 
             // Create the client and the request
             HttpClient client = createClient(version, sslContext);
-            HttpRequest request = HttpRequest.newBuilder(requestUri).version(version).build();
+            HttpRequest request = createRequest(version, requestUri);
 
             // Create the pair
-            return new ServerClientPair(server, client, request);
+            return new ServerClientPair(server, client, request, secure);
 
         }
 
         private static HttpTestServer createServer(HttpClient.Version version, SSLContext sslContext) {
             try {
-                return HttpTestServer.create(version, sslContext);
+                return HTTP_3.equals(version)
+                        ? HttpTestServer.create(HTTP_3_ONLY, sslContext)
+                        : HttpTestServer.create(version, sslContext);
             } catch (IOException exception) {
                 throw new UncheckedIOException(exception);
             }
@@ -169,6 +178,14 @@ class HttpResponseLimitingTest {
             return builder.build();
         }
 
+        private static HttpRequest createRequest(HttpClient.Version version, URI requestUri) {
+            HttpRequest.Builder builder = HttpRequest.newBuilder(requestUri).version(version);
+            if (HTTP_3.equals(version)) {
+                builder.setOption(H3_DISCOVERY, HTTP_3_ONLY);
+            }
+            return builder.build();
+        }
+
         private <T> HttpResponse<T> request(BodyHandler<T> downstreamHandler, long capacity) throws Exception {
             var handler = BodyHandlers.limiting(downstreamHandler, capacity);
             return client.send(request, handler);
@@ -176,8 +193,9 @@ class HttpResponseLimitingTest {
 
         @Override
         public String toString() {
-            String version = client.version().toString();
-            return client.sslContext() != null ? version.replaceFirst("_", "S_") : version;
+            HttpClient.Version version = client.version();
+            String versionString = version.toString();
+            return secure && !HTTP_3.equals(version) ? versionString.replaceFirst("_", "S_") : versionString;
         }
 
     }
@@ -186,7 +204,7 @@ class HttpResponseLimitingTest {
     static void closeServerClientPairs() {
         Exception[] exceptionRef = {null};
         Stream
-                .of(HTTP1, HTTPS1, HTTP2, HTTPS2)
+                .of(H1, H1S, H2, H2S, H3)
                 .flatMap(pair -> Stream.<Runnable>of(
                         pair.client::close,
                         pair.server::stop))
@@ -306,7 +324,7 @@ class HttpResponseLimitingTest {
 
     private static Arguments[] capacityArgs(long... capacities) {
         return Stream
-                .of(HTTP1, HTTPS1, HTTP2, HTTPS2)
+                .of(H1, H1S, H2, H2S, H3)
                 .flatMap(pair -> Arrays
                                 .stream(capacities)
                                 .mapToObj(capacity -> Arguments.of(pair, capacity)))
