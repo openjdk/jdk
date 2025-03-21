@@ -1251,25 +1251,18 @@ void ObjectMonitor::vthread_epilog(JavaThread* current, ObjectWaiter* node) {
 }
 
 // Convert entry_list into a doubly linked list by assigning the prev
-// pointers and the entry_list_tail pointer. Within the entry_list the
-// next pointers always form a consistent singly linked list. The
-// entry_list can be in any of these forms:
-//   1. Only singly linked.
-//   2. Only doubly linked.
-//   3. Starting as singly linked (from the head), but ending as doubly
-//      linked (at the tail).
-// Number three is because new threads has pushed themself to the
-// entry_list head after the entry_list was last converted into a
-// doubly linked list.
+// pointers and the entry_list_tail pointer (if needed). Within the
+// entry_list the next pointers always form a consistent singly linked
+// list. When this function is called, the entry_list will be either
+// singly linked, or starting as singly linked (at the head), but
+// ending as doubly linked (at the tail).
 void ObjectMonitor::entry_list_build_dll(JavaThread* current) {
   assert(has_owner(current), "invariant");
   ObjectWaiter* prev = nullptr;
   // Need acquire here to match the implicit release of the cmpxchg
   // that updated entry_list, so we can access w->prev().
   ObjectWaiter* w = Atomic::load_acquire(&_entry_list);
-  // This function should only be called when we know that the
-  // entry_list is not empty.
-  assert(w != nullptr, "invariant");
+  assert(w != nullptr, "should only be called when entry list is not empty");
   while (w != nullptr) {
     assert(w->TState == ObjectWaiter::TS_ENTER, "invariant");
     assert(w->prev() == nullptr || w->prev() == prev, "invariant");
@@ -1284,7 +1277,7 @@ void ObjectMonitor::entry_list_build_dll(JavaThread* current) {
     // We converted the entire entry_list from a singly linked list
     // into a doubly linked list. Now we just need to set the tail
     // pointer.
-    assert(prev == nullptr || prev->next() == nullptr, "invariant");
+    assert(prev != nullptr && prev->next() == nullptr, "invariant");
     assert(_entry_list_tail == nullptr || _entry_list_tail == prev, "invariant");
     _entry_list_tail = prev;
   } else {
@@ -1318,7 +1311,7 @@ ObjectWaiter* ObjectMonitor::entry_list_tail(JavaThread* current) {
   }
   entry_list_build_dll(current);
   w = _entry_list_tail;
-  assert(w != nullptr, "should be");
+  assert(w != nullptr, "invariant");
   return w;
 }
 
