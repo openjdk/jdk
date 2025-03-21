@@ -351,7 +351,7 @@ public abstract class ClassValue<T> {
                     others = new IdentityHashMap<>();
                     this.otherThreads = others;
                 }
-                return others.put(t, int.class) != null;
+                return others.put(t, int.class) == null;
             }
 
             boolean contains() {
