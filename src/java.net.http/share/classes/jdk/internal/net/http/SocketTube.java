@@ -66,15 +66,15 @@ final class SocketTube implements FlowTube {
     private final AtomicReference<Throwable> errorRef = new AtomicReference<>();
     private final InternalReadPublisher readPublisher;
     private final InternalWriteSubscriber writeSubscriber;
-    private final String connectionId;
+    private final String connectionLabel;
 
     public SocketTube(HttpClientImpl client, SocketChannel channel,
                       Supplier<ByteBuffer> buffersFactory,
-                      String connectionId) {
+                      String connectionLabel) {
         this.client = client;
         this.channel = channel;
         this.sliceBuffersSource = new SliceBufferSource(buffersFactory);
-        this.connectionId = connectionId;
+        this.connectionLabel = connectionLabel;
         this.readPublisher = new InternalReadPublisher();
         this.writeSubscriber = new InternalWriteSubscriber();
     }
@@ -1342,7 +1342,7 @@ final class SocketTube implements FlowTube {
     }
 
     final String dbgString() {
-        return "SocketTube("+connectionId+")";
+        return "SocketTube("+ connectionLabel +")";
     }
 
     final String channelDescr() {

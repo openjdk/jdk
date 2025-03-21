@@ -75,8 +75,8 @@ abstract class AbstractAsyncSSLConnection extends HttpConnection
                                HttpClientImpl client,
                                ServerName serverName, int port,
                                String[] alpn,
-                               String connectionId) {
-        super(addr, client, connectionId);
+                               String connectionLabel) {
+        super(addr, client, connectionLabel);
         this.sniServerNames = formSNIServerNames(serverName, client);
         SSLContext context = client.theSSLContext();
         sslParameters = createSSLParameters(client, this.sniServerNames, alpn);

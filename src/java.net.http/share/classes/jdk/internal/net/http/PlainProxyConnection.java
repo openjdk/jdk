@@ -29,8 +29,8 @@ import java.net.InetSocketAddress;
 
 class PlainProxyConnection extends PlainHttpConnection {
 
-    PlainProxyConnection(InetSocketAddress proxy, HttpClientImpl client, String connectionId) {
-        super(proxy, client, connectionId);
+    PlainProxyConnection(InetSocketAddress proxy, HttpClientImpl client, String connectionLabel) {
+        super(proxy, client, connectionLabel);
     }
 
     @Override

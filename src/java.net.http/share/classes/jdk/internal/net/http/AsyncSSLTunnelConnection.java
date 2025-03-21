@@ -48,10 +48,10 @@ class AsyncSSLTunnelConnection extends AbstractAsyncSSLConnection {
                              String[] alpn,
                              InetSocketAddress proxy,
                              ProxyHeaders proxyHeaders,
-                             String connectionId)
+                             String connectionLabel)
     {
-        super(addr, client, Utils.getServerName(addr), addr.getPort(), alpn, connectionId);
-        this.plainConnection = new PlainTunnelingConnection(addr, proxy, client, proxyHeaders, connectionId);
+        super(addr, client, Utils.getServerName(addr), addr.getPort(), alpn, connectionLabel);
+        this.plainConnection = new PlainTunnelingConnection(addr, proxy, client, proxyHeaders, connectionLabel);
         this.writePublisher = new PlainHttpPublisher();
     }
 

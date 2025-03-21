@@ -310,8 +310,8 @@ class PlainHttpConnection extends HttpConnection {
         return tube;
     }
 
-    PlainHttpConnection(InetSocketAddress addr, HttpClientImpl client, String connectionId) {
-        super(addr, client, connectionId);
+    PlainHttpConnection(InetSocketAddress addr, HttpClientImpl client, String connectionLabel) {
+        super(addr, client, connectionLabel);
         try {
             this.chan = SocketChannel.open();
             chan.configureBlocking(false);
@@ -335,7 +335,7 @@ class PlainHttpConnection extends HttpConnection {
             }
             chan.setOption(StandardSocketOptions.TCP_NODELAY, true);
             // wrap the channel in a Tube for async reading and writing
-            tube = new SocketTube(client(), chan, Utils::getBuffer, connectionId);
+            tube = new SocketTube(client(), chan, Utils::getBuffer, connectionLabel);
         } catch (IOException e) {
             throw new InternalError(e);
         }
