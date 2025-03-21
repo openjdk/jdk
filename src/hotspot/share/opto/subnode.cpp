@@ -57,8 +57,8 @@ Node* SubNode::Identity(PhaseGVN* phase) {
 
   // Remove double negation if it is not a floating point number since negation
   // is not the same as subtraction for floating point numbers
-  // (cf. JLS § 15.15.4). `0-(0-(-0.0))` must equal to positive 0.0 according to
-  // JLS § 15.8.2, but would result in -0.0 this would apply.
+  // (cf. JLS § 15.15.4). `0-(0-(-0.0))` must be equal to positive 0.0 according to
+  // JLS § 15.8.2, but would result in -0.0 if this folding would be applied.
   if (phase->type(in(1))->higher_equal(zero) &&
       in(2)->Opcode() == Opcode() &&
       phase->type(in(2)->in(1))->higher_equal(zero) &&
