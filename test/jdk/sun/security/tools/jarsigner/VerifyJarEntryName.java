@@ -55,7 +55,8 @@ public class VerifyJarEntryName {
         try (FileOutputStream fos = new FileOutputStream(ORIGINAL_JAR.toFile());
              ZipOutputStream zos = new ZipOutputStream(fos)) {
             zos.putNextEntry(new ZipEntry(JarFile.MANIFEST_NAME));
-            zos.write("Manifest-Version: 1.0\nCreated-By: Test\n".getBytes(StandardCharsets.UTF_8));
+            zos.write("Manifest-Version: 1.0\nCreated-By: Test\n".
+                    getBytes(StandardCharsets.UTF_8));
             zos.closeEntry();
         }
 
@@ -80,7 +81,8 @@ public class VerifyJarEntryName {
     void verifyManifestEntryName() throws Exception {
         modifyJarEntryName(ORIGINAL_JAR, MODIFIED_JAR, "MANIFEST.MF");
         SecurityTools.jarsigner("-verify -verbose " + MODIFIED_JAR)
-                .shouldContain("Manifest is missing when reading via JarInputStream")
+                .shouldContain("Manifest is missing when " +
+                        "reading via JarInputStream")
                 .shouldHaveExitValue(0);
     }
 
@@ -92,19 +94,27 @@ public class VerifyJarEntryName {
     void verifySignatureEntryName() throws Exception {
         modifyJarEntryName(ORIGINAL_JAR, MODIFIED_JAR, "MYKEY.SF");
         SecurityTools.jarsigner("-verify -verbose " + MODIFIED_JAR)
-                .shouldContain("Entries mismatch when comparing JarFile and JarInputStream")
+                .shouldContain("Entries mismatch when " +
+                        "comparing JarFile and JarInputStream")
                 .shouldHaveExitValue(0);
     }
 
+    /*
+     * Validate that jarsigner -verify on a valid JAR works without
+     * emitting warnings about entry mismatches or missing entries.
+     */
     @Test
     void verifyOriginalJar() throws Exception {
         SecurityTools.jarsigner("-verify -verbose " + ORIGINAL_JAR)
-                .shouldNotContain("Manifest is missing when reading via JarInputStream")
-                .shouldNotContain("Entries mismatch when comparing JarFile and JarInputStream")
+                .shouldNotContain("Manifest is missing " +
+                        "when reading via JarInputStream")
+                .shouldNotContain("Entries mismatch " +
+                        "when comparing JarFile and JarInputStream")
                 .shouldHaveExitValue(0);
     }
 
-    private void modifyJarEntryName(Path origJar, Path modifiedJar, String entryName) throws Exception {
+    private void modifyJarEntryName(Path origJar, Path modifiedJar,
+            String entryName) throws Exception {
         byte[] jarBytes = Files.readAllBytes(origJar);
         var jarString = new String(jarBytes, StandardCharsets.UTF_8);
         var pos = jarString.indexOf(entryName);
