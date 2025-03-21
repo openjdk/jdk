@@ -132,8 +132,9 @@ void ShenandoahControlThread::run_service() {
       // Cannot uncommit bitmap slices during concurrent reset
       ShenandoahNoUncommitMark forbid_region_uncommit(heap);
 
-      // GC is starting, bump the internal ID
+      // GC is starting, bump the internal ID and set GCIdMark
       update_gc_id();
+      GCIdMark gc_id_mark(get_gc_id());
 
       heuristics->cancel_trigger_request();
 
@@ -299,7 +300,6 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) return;
 
-  GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause, heap->global_generation());
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
@@ -343,7 +343,6 @@ void ShenandoahControlThread::stop_service() {
 
 void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause, heap->global_generation());
 
   ShenandoahFullGC gc;
@@ -353,7 +352,6 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
   assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause, heap->global_generation());
 
   ShenandoahDegenGC gc(point, heap->global_generation());
