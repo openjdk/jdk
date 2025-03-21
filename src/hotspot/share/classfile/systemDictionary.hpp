@@ -330,11 +330,6 @@ protected:
   static bool add_loader_constraint(Symbol* name, Klass* klass_being_linked,  Handle loader1,
                                     Handle loader2);
   static void post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld);
-  static InstanceKlass* load_shared_lambda_proxy_class(InstanceKlass* ik,
-                                                       Handle class_loader,
-                                                       Handle protection_domain,
-                                                       PackageEntry* pkg_entry,
-                                                       TRAPS);
   static InstanceKlass* load_shared_class(InstanceKlass* ik,
                                           Handle class_loader,
                                           Handle protection_domain,
@@ -359,6 +354,14 @@ public:
 
   // Return Symbol or throw exception if name given is can not be a valid Symbol.
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
+
+  // *Legacy* optimization for lambdas before JEP 483. May be removed in the future.
+  static InstanceKlass* load_shared_lambda_proxy_class(InstanceKlass* ik,
+                                                       InstanceKlass* shared_nest_host,
+                                                       Handle class_loader,
+                                                       Handle protection_domain,
+                                                       PackageEntry* pkg_entry,
+                                                       TRAPS);
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP

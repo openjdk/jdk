@@ -1073,12 +1073,13 @@ bool SystemDictionary::check_shared_class_super_types(InstanceKlass* ik, Handle 
   return true;
 }
 
+// *Legacy* optimization for lambdas before JEP 483. May be removed in the future.
 InstanceKlass* SystemDictionary::load_shared_lambda_proxy_class(InstanceKlass* ik,
+                                                                InstanceKlass* shared_nest_host,
                                                                 Handle class_loader,
                                                                 Handle protection_domain,
                                                                 PackageEntry* pkg_entry,
                                                                 TRAPS) {
-  InstanceKlass* shared_nest_host = SystemDictionaryShared::get_shared_nest_host(ik);
   assert(shared_nest_host->is_shared(), "nest host must be in CDS archive");
   Symbol* cn = shared_nest_host->name();
   Klass *s = resolve_or_fail(cn, class_loader, true, CHECK_NULL);
@@ -1112,6 +1113,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
                                                    PackageEntry* pkg_entry,
                                                    TRAPS) {
   assert(ik != nullptr, "sanity");
+  assert(ik->is_shared(), "sanity");
   assert(!ik->is_unshareable_info_restored(), "shared class can be restored only once");
   assert(Atomic::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
   Symbol* class_name = ik->name();
@@ -1130,7 +1132,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   InstanceKlass* new_ik = nullptr;
   // CFLH check is skipped for VM hidden classes (see KlassFactory::create_from_stream).
   // It will be skipped for shared VM hidden lambda proxy classes.
-  if (!SystemDictionaryShared::is_hidden_lambda_proxy(ik)) {
+  if (!ik->is_hidden()) {
     new_ik = KlassFactory::check_shared_class_file_load_hook(
       ik, class_name, class_loader, protection_domain, cfs, CHECK_NULL);
   }
