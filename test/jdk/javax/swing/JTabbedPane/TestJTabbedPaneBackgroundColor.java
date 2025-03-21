@@ -136,6 +136,8 @@ public class TestJTabbedPaneBackgroundColor {
         Color expected = isOpaque ? c1 : c2;
 
         if (!expected.equals(actual)) {
+            System.out.println("Expected Color : " + expected);
+            System.out.println("Actual Color : " + actual);
             addOpaqueError(laf.getName(), isOpaque);
         }
     }
