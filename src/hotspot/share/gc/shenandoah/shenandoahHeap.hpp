@@ -498,6 +498,7 @@ private:
   void recycle_trash();
 public:
   void rebuild_free_set(bool concurrent);
+  void rebuild_free_set_within_phase();
   void notify_gc_progress();
   void notify_gc_no_progress();
   size_t get_gc_no_progress_count() const;

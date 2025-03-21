@@ -258,12 +258,13 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
       }
     }
   } else {
+    _abbreviated = true;
+
     if (!entry_final_roots()) {
       assert(_degen_point != _degenerated_unset, "Need to know where to start degenerated cycle");
       return false;
     }
 
-    _abbreviated = true;
     if (VerifyAfterGC) {
       vmop_entry_verify_final_roots();
     }

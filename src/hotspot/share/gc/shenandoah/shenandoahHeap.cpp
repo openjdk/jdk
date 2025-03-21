@@ -2538,10 +2538,7 @@ void ShenandoahHeap::final_update_refs_update_region_states() {
   parallel_heap_region_iterate(&cl);
 }
 
-void ShenandoahHeap::rebuild_free_set(bool concurrent) {
-  ShenandoahGCPhase phase(concurrent ?
-                          ShenandoahPhaseTimings::final_update_refs_rebuild_freeset :
-                          ShenandoahPhaseTimings::degen_gc_final_update_refs_rebuild_freeset);
+void ShenandoahHeap::rebuild_free_set_within_phase() {
   ShenandoahHeapLocker locker(lock());
   size_t young_cset_regions, old_cset_regions;
   size_t first_old_region, last_old_region, old_region_count;
@@ -2596,6 +2593,13 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     // Rebuild free set for non-generational mode
     _free_set->finish_rebuild(young_cset_regions, old_cset_regions, old_region_count);
   }
+}
+
+void ShenandoahHeap::rebuild_free_set(bool concurrent) {
+  ShenandoahGCPhase phase(concurrent ?
+                          ShenandoahPhaseTimings::final_update_refs_rebuild_freeset :
+                          ShenandoahPhaseTimings::degen_gc_final_update_refs_rebuild_freeset);
+  rebuild_free_set_within_phase();
 }
 
 void ShenandoahHeap::print_extended_on(outputStream *st) const {
