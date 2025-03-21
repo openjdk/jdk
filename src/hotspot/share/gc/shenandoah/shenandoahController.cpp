@@ -39,12 +39,18 @@ size_t ShenandoahController::reset_allocs_seen() {
   return Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);
 }
 
-void ShenandoahController::update_gc_id() {
-  Atomic::inc(&_gc_id);
+void ShenandoahController::update_gc_count() {
+  Atomic::inc(&_gc_count);
+}
+
+size_t ShenandoahController::get_gc_count() {
+  return Atomic::load(&_gc_count);
 }
 
 size_t ShenandoahController::get_gc_id() {
-  return Atomic::load(&_gc_id);
+  size_t gc_count = get_gc_count();
+  assert(gc_count > 0, "Sanity check");
+  return gc_count - 1;
 }
 
 void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest& req, bool block) {

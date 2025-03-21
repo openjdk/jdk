@@ -230,8 +230,8 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     _heap->soft_ref_policy()->set_should_clear_all_soft_refs(true);
   }
 
-  // GC is starting, bump the internal ID and set GCIdMark
-  update_gc_id();
+  // GC is starting, bump the internal gc count and set GCIdMark
+  update_gc_count();
   GCIdMark gc_id_mark(get_gc_id());
 
   _heap->reset_bytes_allocated_since_gc_start();
@@ -753,13 +753,13 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
   // requested the GC.
 
   MonitorLocker ml(&_gc_waiters_lock);
-  size_t current_gc_id = get_gc_id();
-  const size_t required_gc_id = current_gc_id + 1;
-  while (current_gc_id < required_gc_id && !should_terminate()) {
+  size_t current_gc_count = get_gc_count();
+  const size_t required_gc_count = current_gc_count + 1;
+  while (current_gc_count < required_gc_count && !should_terminate()) {
     // Make requests to run a global cycle until at least one is completed
     notify_control_thread(cause, ShenandoahHeap::heap()->global_generation());
     ml.wait();
-    current_gc_id = get_gc_id();
+    current_gc_count = get_gc_count();
   }
 }
 
