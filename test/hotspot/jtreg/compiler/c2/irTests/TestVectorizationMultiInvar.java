@@ -33,7 +33,8 @@ import java.util.Random;
 /*
  * @test
  * @bug 8300257
- * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64") | (os.simpleArch == "riscv64")
+ * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64") |
+ *           (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
  * @summary C2: vectorization fails on some simple Memory Segment loops
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
