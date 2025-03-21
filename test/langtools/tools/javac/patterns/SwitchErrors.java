@@ -308,11 +308,21 @@ public class SwitchErrors {
         }
     }
 
-    void testPatternWithoutBindingCantOverridePatternWithBinding8348928(Object o) {
+    void testPatternWithoutBindingCantOverridePatternWithBinding8348928a(Object o) {
         record R(int i, String s) {}
         switch (o) {
             case Integer _, R(int x, String _) -> {}
             default -> {}
+        }
+    }
+
+    void testPatternWithoutBindingCantOverridePatternWithBinding8348928b(Object o) {
+        record R(int i, String s) {}
+        switch (o) {
+            case Integer _:
+            case R(int x, String _):
+                break;
+            default:
         }
     }
 }
