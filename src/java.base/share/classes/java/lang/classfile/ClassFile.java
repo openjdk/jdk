@@ -42,16 +42,14 @@ import java.lang.classfile.instruction.LocalVariable;
 import java.lang.classfile.instruction.LocalVariableType;
 import java.lang.constant.ClassDesc;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
 import java.lang.reflect.AccessFlag;
 import java.lang.reflect.ClassFileFormatVersion;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.LongFunction;
 
 import jdk.internal.classfile.impl.ClassFileImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
@@ -531,27 +529,6 @@ public sealed interface ClassFile
      * IllegalArgumentException} may be thrown on any accessor method invocation
      * on the returned model or any structure returned by the accessors in the
      * structure hierarchy.
-     * <p>
-     * On return, the byte buffer's position and limit will be unchanged.
-     *
-     * @param bytes a byte buffer containing the bytes of the {@code class} file
-     * @return the class model
-     * @throws IllegalArgumentException if the {@code class} file is malformed
-     *         or of a version {@linkplain #latestMajorVersion() not supported}
-     *         by the current runtime
-     * @implNote The implementation may or may not support parsing directly from
-     *           a given buffer. In the latter case, the implementation may copy
-     *           the buffer's contents to a temporary array before parsing.
-     */
-    ClassModel parse(ByteBuffer bytes);
-
-    /**
-     * Parses a {@code class} file into a {@link ClassModel}.
-     * <p>
-     * Due to the on-demand nature of {@code class} file parsing, an {@link
-     * IllegalArgumentException} may be thrown on any accessor method invocation
-     * on the returned model or any structure returned by the accessors in the
-     * structure hierarchy.
      *
      * @param bytes a memory segment containing the bytes of the {@code class} file
      * @return the class model
@@ -614,57 +591,6 @@ public sealed interface ClassFile
                  Consumer<? super ClassBuilder> handler);
 
     /**
-     * Builds a {@code class} file into a byte buffer.
-     * <p>
-     * The allocator function must allocate a buffer with a
-     * {@linkplain ByteBuffer#remaining remaining size}
-     * which is <em>at least</em> as large as the size given to it.
-     * If the allocated buffer has a size which is smaller than the size provided
-     * to the allocator function, an unspecified exception may be thrown.
-     * The class file data will be written to the allocated byte buffer at its
-     * initial position. The returned buffer will have a position corresponding
-     * to the first byte after the class file data.
-     *
-     * @param allocator the buffer allocator function
-     * @param thisClass the name of the class to build
-     * @param handler a handler that receives a {@link ClassBuilder}
-     * @return the {@code class} file bytes
-     * @throws IllegalArgumentException if {@code thisClass} represents a
-     *         primitive type or building encounters a failure
-     */
-    default ByteBuffer buildToByteBuffer(IntFunction<ByteBuffer> allocator,
-                                         ClassDesc thisClass,
-                                         Consumer<? super ClassBuilder> handler) {
-        ConstantPoolBuilder pool = ConstantPoolBuilder.of();
-        return buildToByteBuffer(allocator, pool.classEntry(thisClass), pool, handler);
-    }
-
-    /**
-     * Builds a {@code class} file into a byte buffer using the provided constant
-     * pool builder.
-     * <p>
-     * The allocator function must allocate a buffer with a
-     * {@linkplain ByteBuffer#remaining remaining size}
-     * which is <em>at least</em> as large as the size given to it.
-     * If the allocated buffer has a size which is smaller than the size provided
-     * to the allocator function, an unspecified exception may be thrown.
-     * The class file data will be written to the allocated byte buffer at its
-     * initial position. The returned buffer will have a position corresponding
-     * to the first byte after the class file data.
-     *
-     * @param allocator the buffer allocator function
-     * @param thisClassEntry the name of the class to build
-     * @param constantPool the constant pool builder
-     * @param handler a handler that receives a {@link ClassBuilder}
-     * @return the {@code class} file bytes
-     * @throws IllegalArgumentException if building encounters a failure
-     */
-    ByteBuffer buildToByteBuffer(IntFunction<ByteBuffer> allocator,
-                                 ClassEntry thisClassEntry,
-                                 ConstantPoolBuilder constantPool,
-                                 Consumer<? super ClassBuilder> handler);
-
-    /**
      * Builds a {@code class} file into a memory segment.
      * <p>
      * The allocator function must allocate a memory segment with a
@@ -680,7 +606,7 @@ public sealed interface ClassFile
      * @throws IllegalArgumentException if {@code thisClass} represents a
      *         primitive type or building encounters a failure
      */
-    default MemorySegment buildToMemorySegment(LongFunction<MemorySegment> allocator,
+    default MemorySegment buildToMemorySegment(SegmentAllocator allocator,
                                                ClassDesc thisClass,
                                                Consumer<? super ClassBuilder> handler) {
         ConstantPoolBuilder pool = ConstantPoolBuilder.of();
@@ -698,7 +624,7 @@ public sealed interface ClassFile
      * @return the {@code class} file bytes
      * @throws IllegalArgumentException if building encounters a failure
      */
-    MemorySegment buildToMemorySegment(LongFunction<MemorySegment> allocator,
+    MemorySegment buildToMemorySegment(SegmentAllocator allocator,
                                        ClassEntry thisClassEntry,
                                        ConstantPoolBuilder constantPool,
                                        Consumer<? super ClassBuilder> handler);
@@ -765,56 +691,6 @@ public sealed interface ClassFile
     }
 
     /**
-     * Builds a module descriptor into a byte buffer.
-     * <p>
-     * The allocator function must allocate a buffer with a
-     * {@linkplain ByteBuffer#remaining remaining size}
-     * which is <em>at least</em> as large as the size given to it.
-     * If the allocated buffer has a size which is smaller than the size provided
-     * to the allocator function, an unspecified exception may be thrown.
-     * The class file data will be written to the allocated byte buffer at its
-     * initial position. The returned buffer will have a position corresponding
-     * to the first byte after the class file data.
-     *
-     * @param allocator the buffer allocator function
-     * @param moduleAttribute the {@code Module} attribute
-     * @return the {@code class} file bytes
-     * @throws IllegalArgumentException if building encounters a failure
-     */
-    default ByteBuffer buildModuleToByteBuffer(IntFunction<ByteBuffer> allocator,
-                                               ModuleAttribute moduleAttribute) {
-        return buildModuleToByteBuffer(allocator, moduleAttribute, clb -> {});
-    }
-
-    /**
-     * Builds a module descriptor into a byte buffer.
-     * <p>
-     * The allocator function must allocate a buffer with a
-     * {@linkplain ByteBuffer#remaining remaining size}
-     * which is <em>at least</em> as large as the size given to it.
-     * If the allocated buffer has a size which is smaller than the size provided
-     * to the allocator function, an unspecified exception may be thrown.
-     * The class file data will be written to the allocated byte buffer at its
-     * initial position. The returned buffer will have a position corresponding
-     * to the first byte after the class file data.
-     *
-     * @param allocator the buffer allocator function
-     * @param moduleAttribute the {@code Module} attribute
-     * @param handler a handler that receives a {@link ClassBuilder}
-     * @return the {@code class} file bytes
-     * @throws IllegalArgumentException if building encounters a failure
-     */
-    default ByteBuffer buildModuleToByteBuffer(IntFunction<ByteBuffer> allocator,
-                                               ModuleAttribute moduleAttribute,
-                                               Consumer<? super ClassBuilder> handler) {
-        return buildToByteBuffer(allocator, CD_module_info, clb -> {
-            clb.withFlags(AccessFlag.MODULE);
-            clb.with(moduleAttribute);
-            handler.accept(clb);
-        });
-    }
-
-    /**
      * Builds a module descriptor into a memory segment.
      *
      * @param allocator the segment allocator function
@@ -822,7 +698,7 @@ public sealed interface ClassFile
      * @return the {@code class} file bytes
      * @throws IllegalArgumentException if building encounters a failure
      */
-    default MemorySegment buildModuleToMemorySegment(LongFunction<MemorySegment> allocator,
+    default MemorySegment buildModuleToMemorySegment(SegmentAllocator allocator,
                                                      ModuleAttribute moduleAttribute) {
         return buildModuleToMemorySegment(allocator, moduleAttribute, clb -> {});
     }
@@ -836,7 +712,7 @@ public sealed interface ClassFile
      * @return the {@code class} file bytes
      * @throws IllegalArgumentException if building encounters a failure
      */
-    default MemorySegment buildModuleToMemorySegment(LongFunction<MemorySegment> allocator,
+    default MemorySegment buildModuleToMemorySegment(SegmentAllocator allocator,
                                                      ModuleAttribute moduleAttribute,
                                                      Consumer<? super ClassBuilder> handler) {
         return buildToMemorySegment(allocator, CD_module_info, clb -> {
@@ -976,123 +852,6 @@ public sealed interface ClassFile
      * }
      * where {@code cpb} is determined by {@link ConstantPoolSharingOption}.
      * <p>
-     * The allocator function must allocate a buffer with a
-     * {@linkplain ByteBuffer#remaining remaining size}
-     * which is <em>at least</em> as large as the size given to it.
-     * If the allocated buffer has a size which is smaller than the size provided
-     * to the allocator function, an unspecified exception may be thrown.
-     * The class file data will be written to the allocated byte buffer at its
-     * initial position. The returned buffer will have a position corresponding
-     * to the first byte after the class file data.
-     *
-     * @apiNote
-     * This is named {@code transformClass} instead of {@code transform} for
-     * consistency with {@link ClassBuilder#transformField}, {@link
-     * ClassBuilder#transformMethod}, and {@link MethodBuilder#transformCode},
-     * and to distinguish from {@link ClassFileBuilder#transform}, which is
-     * more generic and powerful.
-     *
-     * @param allocator the buffer allocator function
-     * @param model the class model to transform
-     * @param transform the transform
-     * @return the bytes of the new class
-     * @throws IllegalArgumentException if building encounters a failure
-     * @see ConstantPoolSharingOption
-     */
-    default ByteBuffer transformClassToByteBuffer(IntFunction<ByteBuffer> allocator, ClassModel model, ClassTransform transform) {
-        return transformClassToByteBuffer(allocator, model, model.thisClass(), transform);
-    }
-
-    /**
-     * Transform one {@code class} file into a new {@code class} file according
-     * to a {@link ClassTransform}.  The transform will receive each element of
-     * this class, as well as a {@link ClassBuilder} for building the new class.
-     * The transform is free to preserve, remove, or replace elements as it
-     * sees fit.
-     * <p>
-     * The allocator function must allocate a buffer with a
-     * {@linkplain ByteBuffer#remaining remaining size}
-     * which is <em>at least</em> as large as the size given to it.
-     * If the allocated buffer has a size which is smaller than the size provided
-     * to the allocator function, an unspecified exception may be thrown.
-     * The class file data will be written to the allocated byte buffer at its
-     * initial position. The returned buffer will have a position corresponding
-     * to the first byte after the class file data.
-     *
-     * @apiNote
-     * This is named {@code transformClass} instead of {@code transform} for
-     * consistency with {@link ClassBuilder#transformField}, {@link
-     * ClassBuilder#transformMethod}, and {@link MethodBuilder#transformCode},
-     * and to distinguish from {@link ClassFileBuilder#transform}, which is
-     * more generic and powerful.
-     *
-     * @param allocator the buffer allocator function
-     * @param model the class model to transform
-     * @param newClassName new class name
-     * @param transform the transform
-     * @return the bytes of the new class
-     * @throws IllegalArgumentException if building encounters a failure
-     * @see ConstantPoolSharingOption
-     */
-    default ByteBuffer transformClassToByteBuffer(IntFunction<ByteBuffer> allocator, ClassModel model, ClassDesc newClassName, ClassTransform transform) {
-        return transformClassToByteBuffer(allocator, model, TemporaryConstantPool.INSTANCE.classEntry(newClassName), transform);
-    }
-
-    /**
-     * Transform one {@code class} file into a new {@code class} file according
-     * to a {@link ClassTransform}.  The transform will receive each element of
-     * this class, as well as a {@link ClassBuilder} for building the new class.
-     * The transform is free to preserve, remove, or replace elements as it
-     * sees fit.
-     * <p>
-     * This method behaves as if:
-     * {@snippet lang=java :
-     * ConstantPoolBuilder cpb = null; // @replace substring=null; replacement=...
-     * this.build(newClassName, cpb, clb -> clb.transform(model, transform));
-     * }
-     * where {@code cpb} is determined by {@link ConstantPoolSharingOption}.
-     * <p>
-     * The allocator function must allocate a buffer with a
-     * {@linkplain ByteBuffer#remaining remaining size}
-     * which is <em>at least</em> as large as the size given to it.
-     * If the allocated buffer has a size which is smaller than the size provided
-     * to the allocator function, an unspecified exception may be thrown.
-     * The class file data will be written to the allocated byte buffer at its
-     * initial position. The returned buffer will have a position corresponding
-     * to the first byte after the class file data.
-     *
-     * @apiNote
-     * This is named {@code transformClass} instead of {@code transform} for
-     * consistency with {@link ClassBuilder#transformField}, {@link
-     * ClassBuilder#transformMethod}, and {@link MethodBuilder#transformCode},
-     * and to distinguish from {@link ClassFileBuilder#transform}, which is
-     * more generic and powerful.
-     *
-     * @param allocator the buffer allocator function
-     * @param model the class model to transform
-     * @param newClassName new class name
-     * @param transform the transform
-     * @return the bytes of the new class
-     * @throws IllegalArgumentException if building encounters a failure
-     * @see ConstantPoolSharingOption
-     */
-    ByteBuffer transformClassToByteBuffer(IntFunction<ByteBuffer> allocator, ClassModel model, ClassEntry newClassName, ClassTransform transform);
-
-    /**
-     * Transform one {@code class} file into a new {@code class} file according
-     * to a {@link ClassTransform}.  The transform will receive each element of
-     * this class, as well as a {@link ClassBuilder} for building the new class.
-     * The transform is free to preserve, remove, or replace elements as it
-     * sees fit.
-     * <p>
-     * This method behaves as if:
-     * {@snippet lang=java :
-     * ConstantPoolBuilder cpb = null; // @replace substring=null; replacement=...
-     * this.build(model.thisClass(), cpb,
-     *            clb -> clb.transform(model, transform));
-     * }
-     * where {@code cpb} is determined by {@link ConstantPoolSharingOption}.
-     * <p>
      * The allocator function must allocate a memory segment with a
      * {@linkplain MemorySegment#byteSize() size}
      * which is <em>at least</em> as large as the size given to it.
@@ -1113,7 +872,7 @@ public sealed interface ClassFile
      * @throws IllegalArgumentException if building encounters a failure
      * @see ConstantPoolSharingOption
      */
-    default MemorySegment transformClassToMemorySegment(LongFunction<MemorySegment> allocator, ClassModel model, ClassTransform transform) {
+    default MemorySegment transformClassToMemorySegment(SegmentAllocator allocator, ClassModel model, ClassTransform transform) {
         return transformClassToMemorySegment(allocator, model, model.thisClass(), transform);
     }
 
@@ -1145,7 +904,7 @@ public sealed interface ClassFile
      * @throws IllegalArgumentException if building encounters a failure
      * @see ConstantPoolSharingOption
      */
-    default MemorySegment transformClassToMemorySegment(LongFunction<MemorySegment> allocator, ClassModel model, ClassDesc newClassName, ClassTransform transform) {
+    default MemorySegment transformClassToMemorySegment(SegmentAllocator allocator, ClassModel model, ClassDesc newClassName, ClassTransform transform) {
         return transformClassToMemorySegment(allocator, model, TemporaryConstantPool.INSTANCE.classEntry(newClassName), transform);
     }
 
@@ -1184,7 +943,7 @@ public sealed interface ClassFile
      * @throws IllegalArgumentException if building encounters a failure
      * @see ConstantPoolSharingOption
      */
-    MemorySegment transformClassToMemorySegment(LongFunction<MemorySegment> allocator, ClassModel model, ClassEntry newClassName, ClassTransform transform);
+    MemorySegment transformClassToMemorySegment(SegmentAllocator allocator, ClassModel model, ClassEntry newClassName, ClassTransform transform);
 
     /**
      * Verify a {@code class} file.  All verification errors found will be returned.
@@ -1203,15 +962,6 @@ public sealed interface ClassFile
      * found
      */
     List<VerifyError> verify(byte[] bytes);
-
-    /**
-     * Verify a {@code class} file.  All verification errors found will be returned.
-     *
-     * @param bytes the {@code class} file bytes to verify
-     * @return a list of verification errors, or an empty list if no error is
-     * found
-     */
-    List<VerifyError> verify(ByteBuffer bytes);
 
     /**
      * Verify a {@code class} file.  All verification errors found will be returned.

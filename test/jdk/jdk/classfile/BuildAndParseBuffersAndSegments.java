@@ -52,13 +52,7 @@ class BuildAndParseBuffersAndSegments {
         }
 
         testWithModel(classFile, classFile.parse(originalBytes));
-        testWithModel(classFile, classFile.parse(ByteBuffer.wrap(originalBytes)));
         testWithModel(classFile, classFile.parse(MemorySegment.ofArray(originalBytes)));
-
-        ByteBuffer direct = ByteBuffer.allocateDirect(originalBytes.length);
-        direct.put(originalBytes);
-        direct.rewind();
-        testWithModel(classFile, classFile.parse(direct));
 
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(ValueLayout.JAVA_BYTE, originalBytes.length);
@@ -70,13 +64,10 @@ class BuildAndParseBuffersAndSegments {
     private static void testWithModel(final ClassFile classFile, final ClassModel model) {
         try (Arena arena = Arena.ofConfined()) {
             // transform to an array, buffers, and segments, and compare them all for equality
-            ByteBuffer asDirectBuffer = classFile.transformClassToByteBuffer(ByteBuffer::allocateDirect, model, ClassTransform.ACCEPT_ALL);
-            asDirectBuffer.rewind();
-            MemorySegment asSegment = classFile.transformClassToMemorySegment(arena::allocate, model, ClassTransform.ACCEPT_ALL);
+            MemorySegment asSegment = classFile.transformClassToMemorySegment(arena, model, ClassTransform.ACCEPT_ALL);
             byte[] asArray = classFile.transformClass(model, ClassTransform.ACCEPT_ALL);
 
             Assertions.assertEquals(-1, asSegment.mismatch(MemorySegment.ofArray(asArray)));
-            Assertions.assertEquals(ByteBuffer.wrap(asArray), asDirectBuffer);
         }
     }
 }

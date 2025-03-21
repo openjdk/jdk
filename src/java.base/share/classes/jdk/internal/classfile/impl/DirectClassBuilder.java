@@ -31,13 +31,13 @@ import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ConstantDescs;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
-import java.util.function.LongFunction;
 
 import static java.util.Objects.requireNonNull;
 
@@ -229,7 +229,7 @@ public final class DirectClassBuilder
         return BufWriterImpl.joinToBuffer(allocator, head, tail);
     }
 
-    public MemorySegment buildToMemorySegment(LongFunction<MemorySegment> allocator) {
+    public MemorySegment buildToMemorySegment(SegmentAllocator allocator) {
 
         // The logic of this is very carefully ordered.  We want to avoid
         // repeated buffer copyings, so we accumulate lists of writers which

@@ -31,6 +31,7 @@ import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -439,8 +440,8 @@ public final class BufWriterImpl implements BufWriter {
     /**
      * Join head and tail into an exact-size memory segment
      */
-    static MemorySegment joinToMemorySegment(LongFunction<MemorySegment> allocator, BufWriterImpl head, BufWriterImpl tail) {
-        MemorySegment segment = allocator.apply((long)head.size() + tail.size());
+    static MemorySegment joinToMemorySegment(SegmentAllocator allocator, BufWriterImpl head, BufWriterImpl tail) {
+        MemorySegment segment = allocator.allocate((long)head.size() + tail.size());
         head.copyTo(segment, 0);
         tail.copyTo(segment, head.size());
         return segment;
