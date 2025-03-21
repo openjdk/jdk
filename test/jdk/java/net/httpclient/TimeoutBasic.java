@@ -27,6 +27,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -67,7 +68,7 @@ public class TimeoutBasic {
                           null);
 
     static final List<HttpClient.Version> VERSIONS =
-            Arrays.asList(HttpClient.Version.HTTP_2, HttpClient.Version.HTTP_1_1, null);
+            Arrays.asList(Version.HTTP_2, Version.HTTP_1_1, Version.HTTP_3,  null);
 
     static final List<String> SCHEMES = List.of("https", "http");
 
