@@ -132,11 +132,10 @@ public class DisabledAlgorithmPermits {
         // Using only testType 0, this tests that permit(Set<>, String, null)
         // will check only the algorithm against the disabled list
         expected.stream().filter(n->n.testType == 0).forEach(tc -> {
-            boolean r;
+            boolean r = dac.permits(Set.of(CryptoPrimitive.SIGNATURE),
+                    tc.testAlgo, null);
             System.out.print("\tpermits(Set.of(CryptoPrimitive.SIGNATURE), \"" +
-                tc.testAlgo + "\", null): " +
-                (r = dac.permits(Set.of(CryptoPrimitive.SIGNATURE),
-                tc.testAlgo, null)) + " : " );
+                tc.testAlgo + "\", null): " + r + " : " );
             if (r != tc.expected) {
                 System.out.println("failed.");
                 throw new AssertionError("failed.  Expected " +
@@ -156,11 +155,9 @@ public class DisabledAlgorithmPermits {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-            boolean r;
+            boolean r = dac.permits(Set.of(CryptoPrimitive.SIGNATURE), k);
             System.out.print("\tpermits(Set.of(CryptoPrimitive.SIGNATURE), " +
-                tc.testAlgo + " privkey): " +
-                (r = dac.permits(Set.of(CryptoPrimitive.SIGNATURE), k)) +
-                " : " );
+                tc.testAlgo + " privkey): " + r + " : " );
             if (r != tc.expected) {
                 System.out.println("failed.");
                 throw new AssertionError("failed.  Expected " +
