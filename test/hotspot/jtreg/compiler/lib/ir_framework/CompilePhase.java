@@ -124,6 +124,7 @@ public enum CompilePhase {
     PHASEIDEALLOOP_ITERATIONS(      "PhaseIdealLoop Iterations"),
     AFTER_LOOP_OPTS(                "After Loop Optimizations"),
     AFTER_MERGE_STORES(             "After Merge Stores"),
+    AFTER_MERGE_MEMOPS(            "After Merge Memops"),
     AFTER_MACRO_ELIMINATION_STEP(   "After Macro Elimination Step"),
     AFTER_MACRO_ELIMINATION(        "After Macro Elimination"),
     BEFORE_MACRO_EXPANSION(         "Before Macro Expansion"),

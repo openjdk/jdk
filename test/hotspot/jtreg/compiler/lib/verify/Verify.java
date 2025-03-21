@@ -98,6 +98,195 @@ public final class Verify {
         v.checkEQdispatch(a, b, "<root>", null, null);
     }
 
+    /**
+     * Verify the content of two Objects with context string for error messages.
+     */
+    public static void checkEQ(Object a, Object b, String context) {
+        // Both null
+        if (a == null && b == null) {
+            return;
+        }
+
+        // Null mismatch
+        if (a == null || b == null) {
+            System.err.println("ERROR: Equality matching failed: null mismatch for " + context);
+            throw new VerifyException("Object null mismatch for " + context);
+        }
+
+        // Class mismatch
+        Class<?> ca = a.getClass();
+        Class<?> cb = b.getClass();
+        if (ca != cb) {
+            System.err.println("ERROR: Equality matching failed: class mismatch for " + context);
+            System.err.println("       " + ca.getName() + " vs " + cb.getName());
+            throw new VerifyException("Object class mismatch for " + context);
+        }
+
+        switch (a) {
+            case Byte      x -> checkEQimpl(x, (Byte)b, context);
+            case Character x -> checkEQimpl(x, (Character)b, context);
+            case Short     x -> checkEQimpl(x, (Short)b, context);
+            case Integer   x -> checkEQimpl(x, (Integer)b, context);
+            case Long      x -> checkEQimpl(x, (Long)b, context);
+            case Float     x -> checkEQimpl(x, (Float)b, context);
+            case Double    x -> checkEQimpl(x, (Double)b, context);
+            case Boolean   x -> checkEQimpl(x, (Boolean)b, context);
+            case byte[]    x -> checkEQimpl(x, (byte[])b, context);
+            case char[]    x -> checkEQimpl(x, (char[])b, context);
+            case short[]   x -> checkEQimpl(x, (short[])b, context);
+            case int[]     x -> checkEQimpl(x, (int[])b, context);
+            case long[]    x -> checkEQimpl(x, (long[])b, context);
+            case float[]   x -> checkEQimpl(x, (float[])b, context);
+            case double[]  x -> checkEQimpl(x, (double[])b, context);
+            case MemorySegment x -> checkEQimpl(x, (MemorySegment) b, context);
+            default -> {
+                System.err.println("ERROR: Verify.checkEQ failed: type not supported: " + ca.getName() + " for " + context);
+                throw new VerifyException("Object type not supported: " + ca.getName());
+            }
+        }
+    }
+
+    private static void checkEQimpl(byte a, byte b, String context) {
+        if (a != b) {
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b + " for " + context);
+            throw new VerifyException("Value mismatch: " + a + " vs " + b);
+        }
+    }
+
+    private static void checkEQimpl(char a, char b, String context) {
+        if (a != b) {
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + (int)a + " vs " + (int)b + " for " + context);
+            throw new VerifyException("Value mismatch: " + (int)a + " vs " + (int)b);
+        }
+    }
+
+    private static void checkEQimpl(short a, short b, String context) {
+        if (a != b) {
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + (int)a + " vs " + (int)b + " for " + context);
+            throw new VerifyException("Value mismatch: " + (int)a + " vs " + (int)b);
+        }
+    }
+
+    private static void checkEQimpl(int a, int b, String context) {
+        if (a != b) {
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b + " for " + context);
+            throw new VerifyException("Value mismatch: " + a + " vs " + b);
+        }
+    }
+
+    private static void checkEQimpl(long a, long b, String context) {
+        if (a != b) {
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b + " for " + context);
+            throw new VerifyException("Value mismatch: " + a + " vs " + b);
+        }
+    }
+
+    private static void checkEQimpl(float a, float b, String context) {
+        if (Float.compare(a, b) != 0) {
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b + " for " + context);
+            throw new VerifyException("Value mismatch: " + a + " vs " + b);
+        }
+    }
+
+    private static void checkEQimpl(double a, double b, String context) {
+        if (Double.compare(a, b) != 0) {
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b + " for " + context);
+            throw new VerifyException("Value mismatch: " + a + " vs " + b);
+        }
+    }
+
+    private static void checkEQimpl(boolean a, boolean b, String context) {
+        if (a != b) {
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b + " for " + context);
+            throw new VerifyException("Value mismatch: " + a + " vs " + b);
+        }
+    }
+
+    private static void checkEQimpl(byte[] a, byte[] b, String context) {
+        if (a.length != b.length) {
+            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length + " for " + context);
+            throw new VerifyException("Array length mismatch");
+        }
+        for (int i = 0; i < a.length; i++) {
+            checkEQimpl(a[i], b[i], context + "[" + i + "]");
+        }
+    }
+
+    private static void checkEQimpl(char[] a, char[] b, String context) {
+        if (a.length != b.length) {
+            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length + " for " + context);
+            throw new VerifyException("Array length mismatch");
+        }
+        for (int i = 0; i < a.length; i++) {
+            checkEQimpl(a[i], b[i], context + "[" + i + "]");
+        }
+    }
+
+    private static void checkEQimpl(short[] a, short[] b, String context) {
+        if (a.length != b.length) {
+            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length + " for " + context);
+            throw new VerifyException("Array length mismatch");
+        }
+        for (int i = 0; i < a.length; i++) {
+            checkEQimpl(a[i], b[i], context + "[" + i + "]");
+        }
+    }
+
+    private static void checkEQimpl(int[] a, int[] b, String context) {
+        if (a.length != b.length) {
+            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length + " for " + context);
+            throw new VerifyException("Array length mismatch");
+        }
+        for (int i = 0; i < a.length; i++) {
+            checkEQimpl(a[i], b[i], context + "[" + i + "]");
+        }
+    }
+
+    private static void checkEQimpl(long[] a, long[] b, String context) {
+        if (a.length != b.length) {
+            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length + " for " + context);
+            throw new VerifyException("Array length mismatch");
+        }
+        for (int i = 0; i < a.length; i++) {
+            checkEQimpl(a[i], b[i], context + "[" + i + "]");
+        }
+    }
+
+    private static void checkEQimpl(float[] a, float[] b, String context) {
+        if (a.length != b.length) {
+            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length + " for " + context);
+            throw new VerifyException("Array length mismatch");
+        }
+        for (int i = 0; i < a.length; i++) {
+            checkEQimpl(a[i], b[i], context + "[" + i + "]");
+        }
+    }
+
+    private static void checkEQimpl(double[] a, double[] b, String context) {
+        if (a.length != b.length) {
+            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length + " for " + context);
+            throw new VerifyException("Array length mismatch");
+        }
+        for (int i = 0; i < a.length; i++) {
+            checkEQimpl(a[i], b[i], context + "[" + i + "]");
+        }
+    }
+
+    private static void checkEQimpl(MemorySegment a, MemorySegment b, String context) {
+        if (a.byteSize() != b.byteSize()) {
+            System.err.println("ERROR: Verify.checkEQ failed: size mismatch: " + a.byteSize() + " vs " + b.byteSize() + " for " + context);
+            throw new VerifyException("MemorySegment size mismatch");
+        }
+        for (long i = 0; i < a.byteSize(); i++) {
+            byte va = a.get(ValueLayout.JAVA_BYTE, i);
+            byte vb = b.get(ValueLayout.JAVA_BYTE, i);
+            if (va != vb) {
+                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at offset " + i + ": " + va + " vs " + vb + " for " + context);
+                throw new VerifyException("MemorySegment value mismatch");
+            }
+        }
+    }
+
     private void checkEQdispatch(Object a, Object b, String field, Object aParent, Object bParent) {
         // Both null
         if (a == null && b == null) {
