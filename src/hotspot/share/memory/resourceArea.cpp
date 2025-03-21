@@ -31,8 +31,8 @@
 
 #ifdef ASSERT
 
-ResourceMark::ResourceMark(ResourceArea* area, Thread* thread, bool demand_unwind) :
-    _impl(area, demand_unwind),
+ResourceMark::ResourceMark(ResourceArea* area, Thread* thread) :
+    _impl(area),
     _thread(thread),
     _previous_resource_mark(nullptr)
 {
