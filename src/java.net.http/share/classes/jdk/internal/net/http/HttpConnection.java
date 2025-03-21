@@ -76,7 +76,7 @@ abstract class HttpConnection implements Closeable {
      * A comparator providing total order among instances.
      */
     static final Comparator<HttpConnection> TOTAL_ORDER_COMPARATOR =
-            Comparator.comparing(connection -> connection.instanceId);
+            Comparator.comparingLong(connection -> connection.instanceId);
 
     private static final AtomicLong INSTANCE_ID_COUNTER = new AtomicLong();
 
@@ -85,7 +85,7 @@ abstract class HttpConnection implements Closeable {
     /**
      * A unique identifier that provides a total order among instances.
      */
-    private final String instanceId = Utils.toRadix62(INSTANCE_ID_COUNTER.getAndIncrement());
+    private final long instanceId = INSTANCE_ID_COUNTER.getAndIncrement();
 
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
     static final Logger DEBUG_LOGGER = Utils.getDebugLogger(
@@ -105,7 +105,7 @@ abstract class HttpConnection implements Closeable {
     }
 
     private static String nextConnectionLabel() {
-        return Utils.toRadix62(CONNECTION_LABEL_COUNTER.getAndIncrement());
+        return "" + CONNECTION_LABEL_COUNTER.getAndIncrement();
     }
 
     /**
