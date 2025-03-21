@@ -69,10 +69,10 @@ public class FinalizerHistogramTest {
             System.out.println("Objects intialized: " + initializedCount.get());
             // GC and wait for at least 2 MyObjects to be ready for finalization,
             // and one MyObject to be stuck in finalize().
-            ForceGC.wait(() -> { return ref1.refersTo(null) &&
-                                        ref2.refersTo(null) &&
-                                        trappedCount.intValue() > 0;
-            });
+            ForceGC.wait(() -> ref1.refersTo(null) &&
+                               ref2.refersTo(null) &&
+                               trappedCount.intValue() > 0
+            );
 
             Class<?> klass = Class.forName("java.lang.ref.FinalizerHistogram");
 
