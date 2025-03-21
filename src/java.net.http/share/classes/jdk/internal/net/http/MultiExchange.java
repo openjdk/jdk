@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -589,15 +589,14 @@ class MultiExchange<T> implements Cancelable {
     }
 
     /**
-     * This method determines if a failed request can be retried and returns a non-null
-     * RetryContext. The returned RetryContext will contain the
-     * {@linkplain RetryContext#shouldRetry() retry decision} and the
+     * This method determines if a failed request can be retried. The returned RetryContext
+     * will contain the {@linkplain RetryContext#shouldRetry() retry decision} and the
      * {@linkplain RetryContext#requestFailureCause() underlying
      * cause} (computed out of the given {@code requestFailureCause}) of the request failure.
      *
      * @param requestFailureCause the exception that caused the request to fail
      * @param exchg               the Exchange
-     * @return a RetryContext which contains the result of retry eligibility
+     * @return a non-null RetryContext which contains the result of retry eligibility
      */
     private RetryContext checkRetryEligible(final Throwable requestFailureCause,
                                             final Exchange<?> exchg) {
@@ -629,6 +628,12 @@ class MultiExchange<T> implements Cancelable {
         final Limit limit = switch (underlyingCause) {
             case StreamLimitException _ -> {
                 yield new Limit(streamLimitRetries.get(), max_stream_limit_attempts);
+            }
+            case ConnectException _ -> {
+                // for ConnectException (i.e. inability to establish a connection to the server)
+                // we currently retry the request only once and don't honour the
+                // "jdk.httpclient.redirects.retrylimit" configuration value.
+                yield new Limit(attempts.get(), 2);
             }
             default -> {
                 yield new Limit(attempts.get(), max_attempts);
