@@ -282,8 +282,8 @@ private:
                                                 Symbol* method_type,
                                                 Method* member_method,
                                                 Symbol* instantiated_method_type);
-  static InstanceKlass* prepare_lambda_proxy_class(InstanceKlass* lambda_ik,
-                                                   InstanceKlass* caller_ik, TRAPS);
+  static InstanceKlass* load_and_init_lambda_proxy_class(InstanceKlass* lambda_ik,
+                                                         InstanceKlass* caller_ik, TRAPS);
   static void reset_registered_lambda_proxy_class(InstanceKlass* ik);
   static InstanceKlass* get_shared_nest_host(InstanceKlass* lambda_ik);
 

@@ -342,14 +342,6 @@ protected:
                                                       Handle class_loader,
                                                       InstanceKlass* k, TRAPS);
 
-  // *Legacy* optimization for lambdas before JEP 483. May be removed in the future.
-  static InstanceKlass* load_shared_lambda_proxy_class(InstanceKlass* ik,
-                                                       InstanceKlass* shared_nest_host,
-                                                       Handle class_loader,
-                                                       Handle protection_domain,
-                                                       PackageEntry* pkg_entry,
-                                                       TRAPS);
-
 public:
   static bool is_system_class_loader(oop class_loader);
   static bool is_platform_class_loader(oop class_loader);

@@ -231,7 +231,7 @@ InstanceKlass* LambdaProxyClassDictionary::load_shared_lambda_proxy_class(Instan
   if (lambda_ik == nullptr) {
     return nullptr;
   }
-  return prepare_lambda_proxy_class(lambda_ik, caller_ik, THREAD);
+  return load_and_init_lambda_proxy_class(lambda_ik, caller_ik, THREAD);
 }
 
 InstanceKlass* LambdaProxyClassDictionary::find_lambda_proxy_class(InstanceKlass* caller_ik,
@@ -314,8 +314,8 @@ InstanceKlass* LambdaProxyClassDictionary::find_lambda_proxy_class(const RunTime
   return proxy_klass;
 }
 
-InstanceKlass* LambdaProxyClassDictionary::prepare_lambda_proxy_class(InstanceKlass* lambda_ik,
-                                                                      InstanceKlass* caller_ik, TRAPS) {
+InstanceKlass* LambdaProxyClassDictionary::load_and_init_lambda_proxy_class(InstanceKlass* lambda_ik,
+                                                                            InstanceKlass* caller_ik, TRAPS) {
   Handle class_loader(THREAD, caller_ik->class_loader());
   Handle protection_domain;
   PackageEntry* pkg_entry = caller_ik->package();
@@ -325,13 +325,32 @@ InstanceKlass* LambdaProxyClassDictionary::prepare_lambda_proxy_class(InstanceKl
 
   InstanceKlass* shared_nest_host = get_shared_nest_host(lambda_ik);
   assert(shared_nest_host != nullptr, "unexpected nullptr _nest_host");
+  assert(shared_nest_host->is_shared(), "nest host must be in CDS archive");
 
-  InstanceKlass* loaded_lambda =
-    SystemDictionary::load_shared_lambda_proxy_class(lambda_ik, shared_nest_host, class_loader, protection_domain, pkg_entry, CHECK_NULL);
-
-  if (loaded_lambda == nullptr) {
+  Klass* resolved_nest_host = SystemDictionary::resolve_or_fail(shared_nest_host->name(), class_loader, true, CHECK_NULL);
+  if (resolved_nest_host != shared_nest_host) {
+    // The dynamically resolved nest_host is not the same as the one we used during dump time,
+    // so we cannot use lambda_ik.
     return nullptr;
   }
+
+  {
+    InstanceKlass* loaded_lambda =
+      SystemDictionary::load_shared_class(lambda_ik, class_loader, protection_domain,
+                                          nullptr, pkg_entry, CHECK_NULL);
+    if (loaded_lambda != lambda_ik) {
+      // changed by JVMTI
+      return nullptr;
+    }
+  }
+
+  assert(shared_nest_host->is_same_class_package(lambda_ik),
+         "lambda proxy class and its nest host must be in the same package");
+  // The lambda proxy class and its nest host have the same class loader and class loader data,
+  // as verified in add_lambda_proxy_class()
+  assert(shared_nest_host->class_loader() == class_loader(), "mismatched class loader");
+  assert(shared_nest_host->class_loader_data() == ClassLoaderData::class_loader_data(class_loader()), "mismatched class loader data");
+  lambda_ik->set_nest_host(shared_nest_host);
 
   // Ensures the nest host is the same as the lambda proxy's
   // nest host recorded at dump time.
@@ -341,21 +360,21 @@ InstanceKlass* LambdaProxyClassDictionary::prepare_lambda_proxy_class(InstanceKl
   EventClassLoad class_load_start_event;
 
   // Add to class hierarchy, and do possible deoptimizations.
-  loaded_lambda->add_to_hierarchy(THREAD);
+  lambda_ik->add_to_hierarchy(THREAD);
   // But, do not add to dictionary.
 
-  loaded_lambda->link_class(CHECK_NULL);
+  lambda_ik->link_class(CHECK_NULL);
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
-    JvmtiExport::post_class_load(THREAD, loaded_lambda);
+    JvmtiExport::post_class_load(THREAD, lambda_ik);
   }
   if (class_load_start_event.should_commit()) {
-    SystemDictionary::post_class_load_event(&class_load_start_event, loaded_lambda, ClassLoaderData::class_loader_data(class_loader()));
+    SystemDictionary::post_class_load_event(&class_load_start_event, lambda_ik, ClassLoaderData::class_loader_data(class_loader()));
   }
 
-  loaded_lambda->initialize(CHECK_NULL);
+  lambda_ik->initialize(CHECK_NULL);
 
-  return loaded_lambda;
+  return lambda_ik;
 }
 
 void LambdaProxyClassDictionary::dumptime_classes_do(MetaspaceClosure* it) {
