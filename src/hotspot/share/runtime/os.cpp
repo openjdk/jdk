@@ -625,7 +625,7 @@ long os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, bool check_limit,
   *raw_ptr = nullptr;
 
   // Special handling for NMT preinit phase before arguments are parsed
-  if (NMTPreInit::handle_realloc(raw_ptr, old_ptr, size, mem_tag)) {
+  if (!old_ptr && NMTPreInit::handle_malloc(raw_ptr, size)) {
     // No need to fill with 0 because CDS static dumping doesn't use these
     // early allocations.
     return (long)size;
@@ -637,6 +637,7 @@ long os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, bool check_limit,
   // null or a unique non-null pointer. To unify libc behavior across our platforms
   // we chose the latter.
   size = MAX2((size_t)1, size);
+
   // Observe MallocLimit
   if (check_limit && MemTracker::check_exceeds_limit(size, mem_tag)) {
     return -1;
