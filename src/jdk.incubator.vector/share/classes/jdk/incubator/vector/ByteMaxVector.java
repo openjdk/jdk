@@ -521,6 +521,7 @@ final class ByteMaxVector extends ByteVector {
         return laneHelper(i);
     }
 
+    @ForceInline
     public byte laneHelper(int i) {
         return (byte) VectorSupport.extract(
                                 VCLASS, ETYPE, VLENGTH,
@@ -540,6 +541,7 @@ final class ByteMaxVector extends ByteVector {
         return withLaneHelper(i, e);
     }
 
+    @ForceInline
     public ByteMaxVector withLaneHelper(int i, byte e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
