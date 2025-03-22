@@ -92,8 +92,8 @@ public class UnixSocketChannelReadWrite {
         s1.close();
         s2.close();
         ssc.close();
-        Files.delete(socket);
-        Files.delete(Path.of(tempDir));
+        Files.deleteIfExists(socket);
+        Files.deleteIfExists(Path.of(tempDir));
         rt.join();
     }
 
