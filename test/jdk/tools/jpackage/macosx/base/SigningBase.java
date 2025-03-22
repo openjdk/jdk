@@ -24,13 +24,94 @@
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
-
-import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.TKit;
+import java.util.stream.Stream;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.Executor.Result;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.MacSign;
+import jdk.jpackage.test.MacSign.CertificateType;
+import jdk.jpackage.test.MacSign.CertificateRequest;
+import jdk.jpackage.test.MacSign.KeychainWithCertsSpec;
+import jdk.jpackage.test.TKit;
+
+
+/*
+ * @test
+ * @summary Setup the environment for jpackage macos signing tests.
+ *          Creates required keychains and signing identities.
+ *          Does NOT run any jpackag tests.
+ * @library /test/jdk/tools/jpackage/helpers
+ * @build jdk.jpackage.test.*
+ * @compile -Xlint:all -Werror SigningBase.java
+ * @requires (jpackage.test.MacSignTests == "setup")
+ * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=SigningBase.setUp
+ */
+
+/*
+ * @test
+ * @summary Tear down the environment for jpackage macos signing tests.
+ *          Deletes required keychains and signing identities.
+ *          Does NOT run any jpackag tests.
+ * @library /test/jdk/tools/jpackage/helpers
+ * @build jdk.jpackage.test.*
+ * @compile -Xlint:all -Werror SigningBase.java
+ * @requires (jpackage.test.MacSignTests == "teardown")
+ * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=SigningBase.tearDown
+ */
 
 public class SigningBase {
+
+    enum StandardKeychain {
+        MAIN(DEFAULT_KEYCHAIN,
+                cert().userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()]).create(),
+                cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()]).create(),
+                cert().userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()]).create(),
+                cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()]).create());
+
+        StandardKeychain(String keychainName, CertificateRequest cert, CertificateRequest... otherCerts) {
+            final var builder = keychain(keychainName).addCert(cert);
+            List.of(otherCerts).forEach(builder::addCert);
+            this.spec = builder.create();
+        }
+
+        KeychainWithCertsSpec spec() {
+            return spec;
+        }
+
+        private static KeychainWithCertsSpec.Builder keychain(String name) {
+            return new KeychainWithCertsSpec.Builder().name(name);
+        }
+
+        private static CertificateRequest.Builder cert() {
+            return new CertificateRequest.Builder();
+        }
+
+        private static List<KeychainWithCertsSpec> signingEnv() {
+            return Stream.of(values()).map(StandardKeychain::spec).toList();
+        }
+
+        final KeychainWithCertsSpec spec;
+    }
+
+    public static void setUp() {
+        MacSign.setUp(StandardKeychain.signingEnv());
+    }
+
+    public static void tearDown() {
+        MacSign.tearDown(StandardKeychain.signingEnv());
+    }
+
+    public static void verifySignTestEnvReady() {
+        if (!Inner.SIGN_ENV_READY) {
+            TKit.throwSkippedException(new IllegalStateException("Misconfigured signing test environment"));
+        }
+    }
+
+    private final class Inner {
+        private final static boolean SIGN_ENV_READY = MacSign.isDeployed(StandardKeychain.signingEnv());
+    }
 
     enum CertIndex {
         ASCII_INDEX(0),
