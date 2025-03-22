@@ -132,8 +132,9 @@ void ShenandoahControlThread::run_service() {
       // Cannot uncommit bitmap slices during concurrent reset
       ShenandoahNoUncommitMark forbid_region_uncommit(heap);
 
-      // GC is starting, bump the internal ID
-      update_gc_id();
+      // GC is starting, bump the internal gc count and set GCIdMark
+      update_gc_count();
+      GCIdMark gc_id_mark(checked_cast<uint>(get_gc_count() - 1));
 
       heuristics->cancel_trigger_request();
 
@@ -299,7 +300,6 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) return;
 
-  GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause, heap->global_generation());
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
@@ -343,7 +343,6 @@ void ShenandoahControlThread::stop_service() {
 
 void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause, heap->global_generation());
 
   ShenandoahFullGC gc;
@@ -353,7 +352,6 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
   assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause, heap->global_generation());
 
   ShenandoahDegenGC gc(point, heap->global_generation());
@@ -392,9 +390,9 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   // requested the GC.
 
   MonitorLocker ml(&_gc_waiters_lock);
-  size_t current_gc_id = get_gc_id();
-  size_t required_gc_id = current_gc_id + 1;
-  while (current_gc_id < required_gc_id && !should_terminate()) {
+  size_t current_gc_count = get_gc_count();
+  size_t required_gc_count = current_gc_count + 1;
+  while (current_gc_count < required_gc_count && !should_terminate()) {
     // Although setting gc request is under _gc_waiters_lock, but read side (run_service())
     // does not take the lock. We need to enforce following order, so that read side sees
     // latest requested gc cause when the flag is set.
@@ -402,7 +400,7 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
     _gc_requested.set();
 
     ml.wait();
-    current_gc_id = get_gc_id();
+    current_gc_count = get_gc_count();
   }
 }
 
