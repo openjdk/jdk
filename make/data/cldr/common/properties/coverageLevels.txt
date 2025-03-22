@@ -119,7 +119,6 @@ or ;	modern ;	Odia
 pa ;	modern ;	Punjabi
 pcm ;	modern ;	Nigerian Pidgin
 pl ;	modern ;	Polish
-prg ;	basic ;	Prussian
 ps ;	modern ;	Pashto
 pt ;	modern ;	Portuguese
 qu ;	moderate ;	Quechua
@@ -167,7 +166,7 @@ vi ;	modern ;	Vietnamese
 vmw ;	basic ;	Makhuwa
 wo ;	moderate ;	Wolof
 xh ;	moderate ;	Xhosa
-xnr ;	moderate ;	Kangri
+xnr ;	basic ;	Kangri
 yo ;	modern ;	Yoruba
 yrl ;	basic ;	Nheengatu
 yue ;	modern ;	Cantonese

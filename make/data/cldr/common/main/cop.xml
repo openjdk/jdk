@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2025 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="cop"/>
+	</identity>
+	<characters>
+		<exemplarCharacters>[ⲁ ⲃ ⲅ ⲇ ⲉ ⲋ ⲍ ⲏ ⲑ ⲓ ⲕ ⲗ ⲙ ⲛ ⲝ ⲟ ⲡ ⲣ ⲥ ⲧ ⲩ ⲫ ⲭ ⲯ ⲱ ϣ ϥ ϧ ϩ ϫ ϭ ϯ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[⳥ ⳦ ⳧ ⳨ ⳩ ⳪ ⳤ]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[– ⸗ , ; \: . ⳹ ⳾ ⳼ ⳿ ( )]</exemplarCharacters>
+	</characters>
+</ldml>

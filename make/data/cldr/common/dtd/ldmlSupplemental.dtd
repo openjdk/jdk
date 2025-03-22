@@ -1,18 +1,18 @@
 <!--
-Copyright © 1991-2024 Unicode, Inc.
+Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 
-<!ELEMENT supplementalData ( version, generation?, cldrVersion?, currencyData?, territoryContainment?, subdivisionContainment?, languageData?, territoryInfo?, postalCodeData?, calendarData?, calendarPreferenceData?, weekData?, timeData?, measurementData?, unitIdComponents?, unitPrefixes?, unitConstants*, unitQuantities*, convertUnits*, unitPreferenceData?, timezoneData?, characters?, transforms?, metadata?, codeMappings?, parentLocales*, personNamesDefaults?, likelySubtags?, metazoneInfo?, plurals?, telephoneCodeData?, numberingSystems?, bcp47KeywordMappings?, gender?, references?, languageMatching?, dayPeriodRuleSet*, metaZones?, primaryZones?, windowsZones?, coverageLevels?, idValidity?, rgScope?, languageGroups?, grammaticalData? ) >
+<!ELEMENT supplementalData ( version, generation?, cldrVersion?, currencyData?, territoryContainment?, subdivisionContainment?, languageData?, scriptData?, territoryInfo?, postalCodeData?, calendarData?, calendarPreferenceData?, weekData?, timeData?, measurementData?, unitIdComponents?, unitPrefixes?, unitConstants*, unitQuantities*, convertUnits*, unitPreferenceData?, timezoneData?, characters?, transforms?, metadata?, codeMappings?, parentLocales*, personNamesDefaults?, likelySubtags?, metazoneInfo?, plurals?, telephoneCodeData?, numberingSystems?, bcp47KeywordMappings?, gender?, references?, languageMatching?, dayPeriodRuleSet*, metaZones?, primaryZones?, windowsZones?, coverageLevels?, idValidity?, rgScope?, languageGroups?, grammaticalData? ) >
 
 <!ELEMENT version EMPTY >
     <!--@METADATA-->
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:any-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "46" >
+<!ATTLIST version cldrVersion CDATA #FIXED "47" >
     <!--@MATCH:version-->
     <!--@VALUE-->
 <!ATTLIST version unicodeVersion CDATA #FIXED "16.0.0" >
@@ -65,12 +65,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT region ( currency* ) >
 <!ATTLIST region iso3166 NMTOKEN #REQUIRED >
-    <!--@MATCH:validity/region-->
+    <!--@MATCH:validity/region/all-->
 <!ATTLIST region draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED-->
 
 <!ELEMENT currency ( alternate* ) >
+    <!--@ORDERED-->
 <!ATTLIST currency before NMTOKEN #IMPLIED >
     <!-- use from and to instead. -->
     <!--@VALUE-->
@@ -113,7 +114,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST group type NMTOKEN #REQUIRED >
     <!--@MATCH:validity/region-->
 <!ATTLIST group contains NMTOKENS #IMPLIED >
-    <!--@MATCH:set/validity/region-->
+    <!--@MATCH:set/validity/region/all-->
     <!--@VALUE-->
 <!ATTLIST group grouping (true | false) #IMPLIED >
     <!--@VALUE-->
@@ -155,6 +156,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@METADATA-->
 <!ATTLIST language alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/secondary, variant-->
+
+<!ELEMENT scriptData ( scriptVariant* ) >
+
+<!ELEMENT scriptVariant EMPTY >
+<!ATTLIST scriptVariant type NMTOKEN #REQUIRED >
+    <!--@MATCH:literal/compound, visual, subset-->
+<!ATTLIST scriptVariant id NMTOKEN #REQUIRED >
+    <!--@MATCH:validity/script-->
+<!ATTLIST scriptVariant base NMTOKENS #REQUIRED >
+    <!--@MATCH:set/validity/script-->
+    <!--@VALUE-->
 
 <!ELEMENT territoryInfo ( territory* ) >
 <!ATTLIST territoryInfo draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -284,7 +296,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ELEMENT minDays EMPTY >
 <!ATTLIST minDays count (1 | 2 | 3 | 4 | 5 | 6 | 7) #REQUIRED >
 <!ATTLIST minDays territories NMTOKENS #REQUIRED >
-    <!--@MATCH:set/validity/region-->
+    <!--@MATCH:set/validity/region/all-->
     <!--@VALUE-->
 <!ATTLIST minDays draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
@@ -297,7 +309,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ELEMENT firstDay EMPTY >
 <!ATTLIST firstDay day (sun | mon | tue | wed | thu | fri | sat) #REQUIRED >
 <!ATTLIST firstDay territories NMTOKENS #REQUIRED >
-    <!--@MATCH:set/validity/region-->
+    <!--@MATCH:set/validity/region/all-->
     <!--@VALUE-->
 <!ATTLIST firstDay draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
@@ -702,7 +714,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT languageAlias EMPTY >
 <!ATTLIST languageAlias type NMTOKEN #REQUIRED >
-    <!--@MATCH:or/validity/locale||literal/aa_saaho, aar, abk, afr, aka, alb, amh, ara, arg, arm, art_lojban, asm, ava, ave, aym, aze, bak, bam, baq, bel, ben, bih, bis, bod, bos, bre, bul, bur, cat, ces, cha, che, chi, chu, chv, cor, cos, cre, cym, cze, dan, deu, div, dut, dzo, ell, eng, epo, est, eus, ewe, fao, fas, fij, fin, fra, fre, fry, ful, geo, ger, gla, gle, glg, glv, gre, grn, guj, hat, hau, hbs, heb, her, hin, hmo, hrv, hun, hye, i_ami, i_bnn, i_hak, i_klingon, i_lux, i_navajo, i_pwn, i_tao, i_tay, i_tsu, ibo, ice, ido, iii, iku, ile, ina, ind, ipk, isl, ita, jav, jpn, kal, kan, kas, kat, kau, kaz, khm, kik, kin, kir, kom, kon, kor, kua, kur, lao, lat, lav, lim, lin, lit, ltz, lub, lug, mac, mah, mal, mao, mar, may, mkd, mlg, mlt, mol, mon, mri, msa, mya, nau, nav, nbl, nde, ndo, nep, nld, nno, no_bokmal, no_nynorsk, no_bok, no_nyn, nob, nor, nya, oci, oji, ori, orm, oss, pan, per, pli, pol, por, pus, que, roh, ron, rum, run, rus, sag, san, scc, scr, sgn_BE_FR, sgn_BE_NL, sgn_CH_DE, sin, slk, slo, slv, sme, smo, sna, snd, som, sot, spa, sqi, srd, srp, ssw, sun, swa, swe, tah, tam, tat, tel, tgk, tgl, tha, tib, tir, ton, tsn, tso, tuk, tur, twi, uig, ukr, urd, uzb, ven, vie, vol, wel, wln, wol, xho, yid, yor, zh_guoyu, zh_hakka, zh_min_nan, zh_xiang, zha, zho, zul, cel_gaulish, i_default, i_enochian, i_mingo, und_aaland, und_bokmal, und_hakka, und_lojban, und_nynorsk, und_saaho, und_xiang, zh_min, en_GB_oed, zh_cmn, zh_cmn_Hans, zh_cmn_Hant, zh_gan, zh_wuu, zh_yue-->
+    <!--@MATCH:or/validity/bcp47-wellformed||literal/aa_saaho, art_lojban, cel_gaulish, en_GB_oed, hy_arevmda, i_ami, i_bnn, i_default, i_enochian, i_hak, i_klingon, i_lux, i_mingo, i_navajo, i_pwn, i_tao, i_tay, i_tsu, no_bok, no_bokmal, no_nyn, no_nynorsk, sgn_BE_FR, sgn_BE_NL, sgn_BR, sgn_CH_DE, sgn_CO, sgn_DE, sgn_DK, sgn_ES, sgn_FR, sgn_GB, sgn_GR, sgn_IE, sgn_IT, sgn_JP, sgn_MX, sgn_NI, sgn_NL, sgn_NO, sgn_PT, sgn_SE, sgn_US, sgn_ZA, und_aaland, und_arevela, und_arevmda, und_bokmal, und_hakka, und_hepburn_heploc, und_lojban, und_nynorsk, und_saaho, und_xiang, zh_cmn, zh_cmn_Hans, zh_cmn_Hant, zh_gan, zh_guoyu, zh_hakka, zh_min, zh_min_nan, zh_wuu, zh_xiang, zh_yue-->
 <!ATTLIST languageAlias replacement NMTOKEN #REQUIRED >
     <!--@MATCH:or/validity/locale||literal/en_x_i_default, nan_x_zh_min, see_x_i_mingo, und_x_i_enochian, xtg_x_cel_gaulish-->
     <!--@VALUE-->
@@ -711,7 +723,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT scriptAlias EMPTY >
 <!ATTLIST scriptAlias type NMTOKEN #REQUIRED >
-    <!--@MATCH:validity/script-->
+    <!--@MATCH:validity/script/all-->
 <!ATTLIST scriptAlias replacement NMTOKEN #REQUIRED >
     <!--@MATCH:validity/script-->
     <!--@VALUE-->
@@ -720,9 +732,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT territoryAlias EMPTY >
 <!ATTLIST territoryAlias type NMTOKEN #REQUIRED >
-    <!--@MATCH:set/or/validity/region||regex/[0-9]{3}|[A-Z]{3}||literal/CT, DY, FQ, HV, JT, MI, NH, NQ, PC, PU, PZ, RH, UK, VD, WK-->
+    <!--@MATCH:set/or/validity/region/all||regex/[0-9]{3}|[A-Z]{3}||literal/CT, DY, FQ, HV, JT, MI, NH, NQ, PC, PU, PZ, RH, UK, VD, WK-->
 <!ATTLIST territoryAlias replacement NMTOKENS #REQUIRED >
-    <!--@MATCH:set/validity/region-->
+    <!--@MATCH:set/validity/region/all-->
     <!--@VALUE-->
 <!ATTLIST territoryAlias reason (deprecated | overlong) #IMPLIED >
     <!--@VALUE-->
@@ -738,7 +750,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT variantAlias EMPTY >
 <!ATTLIST variantAlias type NMTOKEN #REQUIRED >
-    <!--@MATCH:or/validity/variant||literal/aaland, polytoni-->
+    <!--@MATCH:or/validity/variant/all||literal/aaland, polytoni-->
 <!ATTLIST variantAlias replacement NMTOKEN #REQUIRED >
     <!--@MATCH:or/validity/variant||validity/region||literal/hy, hyw-->
     <!--@VALUE-->
@@ -914,7 +926,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT territoryCodes EMPTY >
 <!ATTLIST territoryCodes type NMTOKEN #REQUIRED >
-    <!--@MATCH:validity/region-->
+    <!--@MATCH:validity/region/all-->
 <!ATTLIST territoryCodes numeric NMTOKEN #IMPLIED >
     <!--@MATCH:range/1~999-->
     <!--@VALUE-->
@@ -962,9 +974,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT likelySubtag EMPTY >
 <!ATTLIST likelySubtag from NMTOKEN #REQUIRED >
-    <!--@MATCH:validity/locale-->
+    <!--@MATCH:validity/locale-for-likely-->
 <!ATTLIST likelySubtag to NMTOKEN #REQUIRED >
-    <!--@MATCH:validity/locale-->
+    <!--@MATCH:validity/locale-for-likely-->
     <!--@VALUE-->
 <!ATTLIST likelySubtag origin NMTOKENS #IMPLIED >
     <!--@MATCH:set/literal/sil1, wikidata, special-->
@@ -996,7 +1008,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT pluralRules ( pluralRule* ) >
 <!ATTLIST pluralRules locales NMTOKENS #REQUIRED >
-    <!--@MATCH:set/validity/locale-->
+    <!--@MATCH:set/or/validity/locale-for-likely||literal/sh-->
 <!ATTLIST pluralRules draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED-->
