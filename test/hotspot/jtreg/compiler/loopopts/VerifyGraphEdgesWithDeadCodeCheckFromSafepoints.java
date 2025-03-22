@@ -29,7 +29,7 @@
  *
  * @run driver compiler.loopopts.VerifyGraphEdgesWithDeadCodeCheckFromSafepoints
  * @run main/othervm
- *       -XX:+IgnoreUnrecognizedVMOptions
+ *       -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *       -XX:-TieredCompilation -XX:+VerifyGraphEdges
  *       -XX:+StressIGVN -Xcomp
  *       -XX:CompileCommand=compileonly,compiler.loopopts.VerifyGraphEdgesWithDeadCodeCheckFromSafepoints::mainTest
