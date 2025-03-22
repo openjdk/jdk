@@ -706,19 +706,6 @@ static void move_i2c_double(MacroAssembler *masm, XMMRegister r, Register saved_
   __ movdbl(r, Address(saved_sp, next_val_off));
 }
 
-static void range_check(MacroAssembler* masm, Register pc_reg, Register temp_reg,
-                        address code_start, address code_end,
-                        Label& L_ok) {
-  Label L_fail;
-  __ lea(temp_reg, AddressLiteral(code_start, relocInfo::none));
-  __ cmpptr(pc_reg, temp_reg);
-  __ jcc(Assembler::belowEqual, L_fail);
-  __ lea(temp_reg, AddressLiteral(code_end, relocInfo::none));
-  __ cmpptr(pc_reg, temp_reg);
-  __ jcc(Assembler::below, L_ok);
-  __ bind(L_fail);
-}
-
 void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
                                     int total_args_passed,
                                     int comp_args_on_stack,
@@ -747,38 +734,6 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
 
   // Pick up the return address
   __ movptr(rax, Address(rsp, 0));
-
-  if (VerifyAdapterCalls &&
-      (Interpreter::code() != nullptr || StubRoutines::final_stubs_code() != nullptr)) {
-    // So, let's test for cascading c2i/i2c adapters right now.
-    //  assert(Interpreter::contains($return_addr) ||
-    //         StubRoutines::contains($return_addr),
-    //         "i2c adapter must return to an interpreter frame");
-    __ block_comment("verify_i2c { ");
-    Label L_ok;
-    if (Interpreter::code() != nullptr) {
-      range_check(masm, rax, rdi,
-                  Interpreter::code()->code_start(), Interpreter::code()->code_end(),
-                  L_ok);
-    }
-    if (StubRoutines::initial_stubs_code() != nullptr) {
-      range_check(masm, rax, rdi,
-                  StubRoutines::initial_stubs_code()->code_begin(),
-                  StubRoutines::initial_stubs_code()->code_end(),
-                  L_ok);
-    }
-    if (StubRoutines::final_stubs_code() != nullptr) {
-      range_check(masm, rax, rdi,
-                  StubRoutines::final_stubs_code()->code_begin(),
-                  StubRoutines::final_stubs_code()->code_end(),
-                  L_ok);
-    }
-    const char* msg = "i2c adapter must return to an interpreter frame";
-    __ block_comment(msg);
-    __ stop(msg);
-    __ bind(L_ok);
-    __ block_comment("} verify_i2ce ");
-  }
 
   // Must preserve original SP for loading incoming arguments because
   // we need to align the outgoing SP for compiled code.
@@ -927,12 +882,12 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
 }
 
 // ---------------------------------------------------------------
-AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
-                                                            int total_args_passed,
-                                                            int comp_args_on_stack,
-                                                            const BasicType *sig_bt,
-                                                            const VMRegPair *regs,
-                                                            AdapterFingerPrint* fingerprint) {
+void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
+                                            int total_args_passed,
+                                            int comp_args_on_stack,
+                                            const BasicType *sig_bt,
+                                            const VMRegPair *regs,
+                                            AdapterHandlerEntry* handler) {
   address i2c_entry = __ pc();
 
   gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
@@ -970,7 +925,8 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
 
-  return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry);
+  handler->set_entry_points(i2c_entry, c2i_entry, c2i_unverified_entry, nullptr);
+  return;
 }
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
