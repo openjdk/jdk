@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package sun.net.www.protocol.jar;
 
 import java.io.IOException;
 import java.net.*;
+import static jdk.internal.util.Exceptions.filterJarName;
+import static jdk.internal.util.Exceptions.throwException;
 
 /*
  * Jar URL Handler
@@ -181,8 +183,10 @@ public class Handler extends java.net.URLStreamHandler {
             String innerSpec = spec.substring(0, index - 1);
             newURL(innerSpec);
         } catch (MalformedURLException e) {
-            throw new NullPointerException("invalid url: " +
-                                           spec + " (" + e + ")");
+            throwException(NullPointerException.class, "invalid url: %s %s",
+                           filterJarName(spec), filterJarName(e.getMessage())
+                                                    .prefixWith("(")
+                                                    .suffixWith(")"));
         }
         return spec;
     }
@@ -193,19 +197,16 @@ public class Handler extends java.net.URLStreamHandler {
         if (spec.startsWith("/")) {
             int bangSlash = indexOfBangSlash(ctxFile);
             if (bangSlash == -1) {
-                throw new NullPointerException("malformed " +
-                                               "context url:" +
-                                               url +
-                                               ": no !/");
+                throwException(NullPointerException.class, "malformed context url%s : no !/",
+                               filterJarName(url.toString()).prefixWith(": "));
             }
             ctxFile = ctxFile.substring(0, bangSlash);
         } else {
             // chop up the last component
             int lastSlash = ctxFile.lastIndexOf('/');
             if (lastSlash == -1) {
-                throw new NullPointerException("malformed " +
-                                               "context url:" +
-                                               url);
+                throwException(NullPointerException.class, "malformed context url%s",
+                               filterJarName(url.toString()).prefixWith(": "));
             } else if (lastSlash < ctxFile.length() - 1) {
                 ctxFile = ctxFile.substring(0, lastSlash + 1);
             }

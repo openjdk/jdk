@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     if (error) {
         // report error
         NET_ThrowByNameWithLastError(env, "java/net/UnknownHostException",
-                                     hostname);
+            getEnhancedExceptionsAllowed(env) ? hostname : "");
         goto cleanupAndReturn;
     } else {
         int i = 0, inetCount = 0, inet6Count = 0, inetIndex = 0,
