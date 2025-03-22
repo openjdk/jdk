@@ -48,7 +48,7 @@ public class JspawnhelperWarnings {
         if (nArgs != 2) {
             oa.shouldContain("Incorrect number of arguments");
         } else {
-            oa.shouldContain("Incorrect Java version");
+            oa.shouldContain("Java version 1");
         }
     }
 
@@ -56,12 +56,12 @@ public class JspawnhelperWarnings {
         String[] args = new String[3];
         args[0] = Paths.get(System.getProperty("java.home"), "lib", "jspawnhelper").toString();
         args[1] = "wrongVersion";
-        args[2] = "1:1:1";
+        args[2] = "-1:-1:-1"; // Avoid passing accidentally correct FD numbers.
         Process p = ProcessTools.startProcess("jspawnhelper", new ProcessBuilder(args));
         OutputAnalyzer oa = new OutputAnalyzer(p);
         oa.shouldHaveExitValue(1);
         oa.shouldContain("This command is not for general use");
-        oa.shouldContain("Incorrect Java version: wrongVersion");
+        oa.shouldContain("Java version wrongVersion");
     }
 
     public static void main(String[] args) throws Exception {
