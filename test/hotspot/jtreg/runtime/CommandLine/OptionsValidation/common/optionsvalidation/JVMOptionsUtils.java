@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class JVMOptionsUtils {
     private static final StringBuilder finalFailedMessage = new StringBuilder();
 
     /* Used to start the JVM with the same type as current */
-    static String VMType;
+    static String VMType = null;
 
     /* Used to start the JVM with the same GC type as current */
     static String GCType;
@@ -61,14 +61,14 @@ public class JVMOptionsUtils {
     private static Map<String, JVMOption> optionsAsMap;
 
     static {
-        if (Platform.isServer()) {
-            VMType = "-server";
-        } else if (Platform.isClient()) {
-            VMType = "-client";
-        } else if (Platform.isMinimal()) {
-            VMType = "-minimal";
-        } else {
-            VMType = null;
+        if (!Platform.isStatic()) {
+            if (Platform.isServer()) {
+                VMType = "-server";
+            } else if (Platform.isClient()) {
+                VMType = "-client";
+            } else if (Platform.isMinimal()) {
+                VMType = "-minimal";
+            }
         }
 
         List<GarbageCollectorMXBean> gcMxBeans = ManagementFactory.getGarbageCollectorMXBeans();
