@@ -1407,6 +1407,11 @@ final class CompilerToVM {
     native int registerCompilerPhase(String phaseName);
 
     /**
+     * Registers the mapping by the {@code id) in an encoded speculation and {@code name}.
+     */
+    native void registerSpeculationName(int id, String name);
+
+    /**
      * @see JFR.CompilerPhaseEvent#write
      */
     native void notifyCompilerPhaseEvent(long startTime, int phase, int compileId, int level);
