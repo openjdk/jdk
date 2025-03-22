@@ -27,6 +27,21 @@
 #include "oops/method.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 
+u2 ResolvedIndyEntry::name_index(ConstantPool* cp) const {
+  BootstrapReference indy(cp, constant_pool_index());
+  return indy.name_index();
+}
+
+u2 ResolvedIndyEntry::signature_index(ConstantPool* cp) const {
+  BootstrapReference indy(cp, constant_pool_index());
+  return indy.signature_index();
+}
+
+u2 ResolvedIndyEntry::bsme_index(ConstantPool* cp) const {
+  BootstrapReference indy(cp, constant_pool_index());
+  return indy.bsme_index();
+}
+
 bool ResolvedIndyEntry::check_no_old_or_obsolete_entry() {
   // return false if m refers to a non-deleted old or obsolete method
   if (_method != nullptr) {
@@ -39,11 +54,8 @@ bool ResolvedIndyEntry::check_no_old_or_obsolete_entry() {
 
 #if INCLUDE_CDS
 void ResolvedIndyEntry::remove_unshareable_info() {
-  u2 saved_resolved_references_index = _resolved_references_index;
-  u2 saved_cpool_index = _cpool_index;
-  memset(this, 0, sizeof(*this));
-  _resolved_references_index = saved_resolved_references_index;
-  _cpool_index = saved_cpool_index;
+  _method = nullptr;  // resolution sets this pointer; the rest is static
+  _flags &= ~(1 << resolution_failed_shift);
 }
 
 void ResolvedIndyEntry::mark_and_relocate() {
