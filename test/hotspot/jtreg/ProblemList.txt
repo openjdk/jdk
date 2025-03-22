@@ -130,6 +130,8 @@ containers/docker/TestJcmdWithSideCar.java 8341518 linux-x64
 
 # :hotspot_serviceability
 
+serviceability/attach/AttachAPIv2/StreamingOutputTest.java 8352392 aix-ppc64
+
 serviceability/sa/sadebugd/DebugdConnectTest.java 8239062,8270326 macosx-x64,macosx-aarch64
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 
