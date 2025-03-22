@@ -521,7 +521,7 @@ public final class TKit {
         RuntimeException ex = ThrowingSupplier.toSupplier(
                 () -> (RuntimeException) Class.forName("jtreg.SkippedException").getConstructor(
                         String.class).newInstance(reason)).get();
-        return throwSkippedException(reason);
+        return throwSkippedException(ex);
     }
 
     public static RuntimeException throwSkippedException(RuntimeException ex) {
