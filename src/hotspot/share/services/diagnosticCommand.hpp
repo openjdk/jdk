@@ -776,6 +776,29 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class AsyncThreadDumpDCmd : public DCmdWithParser {
+private:
+//    void dumpToFile(Symbol* name, Symbol* signature, const char* path, bool overwrite, TRAPS);
+  void dump_thread(jthread t, TRAPS);
+protected:
+  DCmdArgument<bool> _overwrite;
+  DCmdArgument<char*> _format;
+  DCmdArgument<char*> _filepath;
+public:
+  static int num_arguments() { return 3; }
+  AsyncThreadDumpDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "Thread.async_dump";
+  }
+  static const char* description() {
+    return "Perform asyncronous dump threads without STW, with stack traces and locks.";
+  }
+  static const char* impact() {
+    return "Medium: Depends on the number of threads.";
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 class VThreadSchedulerDCmd : public DCmd {
 public:
   VThreadSchedulerDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }

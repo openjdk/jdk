@@ -456,7 +456,8 @@ class java_lang_Thread : AllStatic {
   // Read thread status info from threadStatus field of java.lang.Thread.
   static JavaThreadStatus get_thread_status(oop java_thread_oop);
 
-  static const char*  thread_status_name(oop java_thread_oop);
+  static const char* thread_status_name(oop java_thread_oop);
+  static const char* thread_status_name(JavaThreadStatus status);
 
   // Fill in current stack trace, can cause GC
   static oop async_get_stack_trace(oop java_thread, TRAPS);

@@ -2000,6 +2000,10 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
 
 const char* java_lang_Thread::thread_status_name(oop java_thread) {
   JavaThreadStatus status = get_thread_status(java_thread);
+  return thread_status_name(status);
+}
+
+const char* java_lang_Thread::thread_status_name(JavaThreadStatus status) {
   switch (status) {
     case JavaThreadStatus::NEW                      : return "NEW";
     case JavaThreadStatus::RUNNABLE                 : return "RUNNABLE";
