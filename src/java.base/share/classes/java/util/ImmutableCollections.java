@@ -33,12 +33,20 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.lang.stable.StableValueImpl;
+import jdk.internal.lang.stable.StableValueFactories;
 import jdk.internal.misc.CDS;
+import jdk.internal.util.NullableKeyValueHolder;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -125,6 +133,12 @@ class ImmutableCollections {
                 }
                 public <E> List<E> listFromTrustedArrayNullsAllowed(Object[] array) {
                     return ImmutableCollections.listFromTrustedArrayNullsAllowed(array);
+                }
+                public <E> List<E> stableList(int size, IntFunction<? extends E> mapper) {
+                    return ImmutableCollections.stableList(size, mapper);
+                }
+                public <K, V> Map<K, V> stableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
+                    return new StableMap<>(keys, mapper);
                 }
             });
         }
@@ -246,6 +260,11 @@ class ImmutableCollections {
         } else {
             return new ListN<>((E[])input, true);
         }
+    }
+
+    static <E> List<E> stableList(int size, IntFunction<? extends E> mapper) {
+        // A lazy list is not Serializable so, we cannot return `List.of()` if size == 0
+        return new StableList<>(size, mapper);
     }
 
     // ---------- List Implementations ----------
@@ -446,7 +465,7 @@ class ImmutableCollections {
         private final int size;
 
         private SubList(AbstractImmutableList<E> root, int offset, int size) {
-            assert root instanceof List12 || root instanceof ListN;
+            assert root instanceof List12 || root instanceof ListN || root instanceof StableList;
             this.root = root;
             this.offset = offset;
             this.size = size;
@@ -497,7 +516,8 @@ class ImmutableCollections {
         }
 
         private boolean allowNulls() {
-            return root instanceof ListN && ((ListN<?>)root).allowNulls;
+            return root instanceof ListN<?> listN && listN.allowNulls
+                    || root instanceof StableList<E>;
         }
 
         @Override
@@ -746,6 +766,83 @@ class ImmutableCollections {
             }
             return -1;
         }
+    }
+
+    @jdk.internal.ValueBased
+    static final class StableList<E> extends AbstractImmutableList<E> {
+
+        @Stable
+        private final IntFunction<? extends E> mapper;
+        @Stable
+        private final StableValueImpl<E>[] backing;
+
+        StableList(int size, IntFunction<? extends E> mapper) {
+            this.mapper = mapper;
+            this.backing = StableValueFactories.array(size);
+        }
+
+        @Override public boolean  isEmpty() { return backing.length == 0;}
+        @Override public int      size() { return backing.length; }
+        @Override public Object[] toArray() { return copyInto(new Object[size()]); }
+
+        @ForceInline
+        @Override
+        public E get(int i) {
+            try {
+                return backing[i]
+                        .orElseSet(new Supplier<E>() {
+                            @Override  public E get() { return mapper.apply(i); }});
+            } catch (ArrayIndexOutOfBoundsException aioobe) {
+                throw new IndexOutOfBoundsException(i);
+            }
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <T> T[] toArray(T[] a) {
+            final int size = backing.length;
+            if (a.length < size) {
+                // Make a new array of a's runtime type, but my contents:
+                T[] n = (T[])Array.newInstance(a.getClass().getComponentType(), size);
+                return copyInto(n);
+            }
+            copyInto(a);
+            if (a.length > size) {
+                a[size] = null; // null-terminate
+            }
+            return a;
+        }
+
+        @Override
+        public int indexOf(Object o) {
+            final int size = size();
+            for (int i = 0; i < size; i++) {
+                if (Objects.equals(o, get(i))) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        @Override
+        public int lastIndexOf(Object o) {
+            for (int i = size() - 1; i >= 0; i--) {
+                if (Objects.equals(o, get(i))) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        @SuppressWarnings("unchecked")
+        private <T> T[] copyInto(Object[] a) {
+            final int len = backing.length;
+            for (int i = 0; i < len; i++) {
+                a[i] = get(i);
+            }
+            return (T[]) a;
+        }
+
     }
 
     // ---------- Set Implementations ----------
@@ -1072,7 +1169,7 @@ class ImmutableCollections {
     // ---------- Map Implementations ----------
 
     // Not a jdk.internal.ValueBased class; disqualified by fields in superclass AbstractMap
-    abstract static class AbstractImmutableMap<K,V> extends AbstractMap<K,V> implements Serializable {
+    abstract static class AbstractImmutableMap<K,V> extends AbstractMap<K,V> {
         @Override public void clear() { throw uoe(); }
         @Override public V compute(K key, BiFunction<? super K,? super V,? extends V> rf) { throw uoe(); }
         @Override public V computeIfAbsent(K key, Function<? super K,? extends V> mf) { throw uoe(); }
@@ -1103,7 +1200,7 @@ class ImmutableCollections {
     }
 
     // Not a jdk.internal.ValueBased class; disqualified by fields in superclass AbstractMap
-    static final class Map1<K,V> extends AbstractImmutableMap<K,V> {
+    static final class Map1<K,V> extends AbstractImmutableMap<K,V> implements Serializable {
         @Stable
         private final K k0;
         @Stable
@@ -1170,7 +1267,7 @@ class ImmutableCollections {
      * @param <V> the value type
      */
     // Not a jdk.internal.ValueBased class; disqualified by fields in superclass AbstractMap
-    static final class MapN<K,V> extends AbstractImmutableMap<K,V> {
+    static final class MapN<K,V> extends AbstractImmutableMap<K,V> implements Serializable {
 
         @Stable
         final Object[] table; // pairs of key, value
@@ -1360,6 +1457,88 @@ class ImmutableCollections {
             return new CollSer(CollSer.IMM_MAP, array);
         }
     }
+
+    static final class StableMap<K, V>
+            extends AbstractImmutableMap<K, V> {
+
+        @Stable
+        private final Function<? super K, ? extends V> mapper;
+        @Stable
+        private final Map<K, StableValueImpl<V>> delegate;
+
+        StableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
+            this.mapper = mapper;
+            this.delegate = StableValueFactories.map(keys);
+        }
+
+        @Override public boolean              containsKey(Object o) { return delegate.containsKey(o); }
+        @Override public int                  size() { return delegate.size(); }
+        @Override public Set<Map.Entry<K, V>> entrySet() { return new StableMapEntrySet(); }
+
+        @ForceInline
+        @Override
+        public V get(Object key) {
+            final StableValueImpl<V> stable = delegate.get(key);
+            if (stable == null) {
+                return null;
+            }
+            @SuppressWarnings("unchecked")
+            final K k = (K) key;
+            return stable.orElseSet(new Supplier<V>() {
+                @Override public V get() { return mapper.apply(k); }});
+        }
+
+        @jdk.internal.ValueBased
+        final class StableMapEntrySet extends AbstractImmutableSet<Map.Entry<K, V>> {
+
+            @Stable
+            private final Set<Map.Entry<K, StableValueImpl<V>>> delegateEntrySet;
+
+            StableMapEntrySet() {
+                this.delegateEntrySet = delegate.entrySet();
+            }
+
+            @Override public Iterator<Map.Entry<K, V>> iterator() { return new LazyMapIterator(); }
+            @Override public int                       size() { return delegateEntrySet.size(); }
+            @Override public int                       hashCode() { return StableMap.this.hashCode(); }
+
+            @jdk.internal.ValueBased
+            final class LazyMapIterator implements Iterator<Map.Entry<K, V>> {
+
+                @Stable
+                private final Iterator<Map.Entry<K, StableValueImpl<V>>> delegateIterator;
+
+                LazyMapIterator() {
+                    this.delegateIterator = delegateEntrySet.iterator();
+                }
+
+                @Override public boolean hasNext() { return delegateIterator.hasNext(); }
+
+                @Override
+                public Entry<K, V> next() {
+                    final Map.Entry<K, StableValueImpl<V>> inner = delegateIterator.next();
+                    final K k = inner.getKey();
+                    return new NullableKeyValueHolder<>(k, inner.getValue().orElseSet(new Supplier<V>() {
+                        @Override public V get() { return mapper.apply(k); }}));
+                }
+
+                @Override
+                public void forEachRemaining(Consumer<? super Map.Entry<K, V>> action) {
+                    final Consumer<? super Map.Entry<K, StableValueImpl<V>>> innerAction =
+                            new Consumer<>() {
+                                @Override
+                                public void accept(Entry<K, StableValueImpl<V>> inner) {
+                                    final K k = inner.getKey();
+                                    action.accept(new NullableKeyValueHolder<>(k, inner.getValue().orElseSet(new Supplier<V>() {
+                                        @Override public V get() { return mapper.apply(k); }})));
+                                }
+                            };
+                    delegateIterator.forEachRemaining(innerAction);
+                }
+            }
+        }
+    }
+
 }
 
 // ---------- Serialization Proxy ----------
