@@ -356,6 +356,15 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
           } else {
             error(VALUE_ERROR, "Unrecognized tag name detected in TraceMergeStores: %s", validator.what());
           }
+        } else if (strncmp(option_key->name, "TraceMergeLoads", 15) == 0) {
+          TraceMergeLoads::TagValidator validator(s, false);
+
+          valid = validator.is_valid();
+          if (valid) {
+            set->set_trace_merge_loads_tags(validator.tags());
+          } else {
+            error(VALUE_ERROR, "Unrecognized tag name detected in TraceMergeLoads: %s", validator.what());
+          }
         } else if (strncmp(option_key->name, "PrintIdealPhase", 15) == 0) {
           PhaseNameValidator validator(s);
 
