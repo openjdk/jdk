@@ -829,6 +829,52 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
   // C2 uses the value of ZF to determine the continuation.
 }
 
+#ifdef ASSERT
+void C2_MacroAssembler::checked_cast_int(const TypeInt* type, Register dst) {
+  BLOCK_COMMENT("CastII {");
+  Label fail;
+  Label succeed;
+  cmpl(dst, type->_lo);
+  jccb(Assembler::less, fail);
+  cmpl(dst, type->_hi);
+  jccb(Assembler::lessEqual, succeed);
+  bind(fail);
+  movl(rax, dst);
+  movl(rcx, type->_lo);
+  movl(rdx, type->_hi);
+  hlt(); // hlt so we have the stack trace
+  bind(succeed);
+  BLOCK_COMMENT("} // CastII");
+}
+
+void C2_MacroAssembler::checked_cast_long(const TypeLong* type, Register dst, Register tmp) {
+  BLOCK_COMMENT("CastLL {");
+  Label fail;
+  Label succeed;
+  if (is_simm32(type->_lo)) {
+    cmpq(dst, checked_cast<int>(type->_lo));
+  } else {
+    mov64(tmp, type->_lo);
+    cmpq(dst, tmp);
+  }
+  jccb(Assembler::less, fail);
+  if (is_simm32(type->_hi)) {
+    cmpq(dst, checked_cast<int>(type->_hi));
+  } else {
+    mov64(tmp, type->_hi);
+    cmpq(dst, tmp);
+  }
+  jccb(Assembler::lessEqual, succeed);
+  bind(fail);
+  movq(rax, dst);
+  mov64(rcx, type->_lo);
+  mov64(rdx, type->_hi);
+  hlt(); // hlt so we have the stack trace
+  bind(succeed);
+  BLOCK_COMMENT("} // CastLL");
+}
+#endif // ASSERT
+
 //-------------------------------------------------------------------------------------------
 // Generic instructions support for use in .ad files C2 code generation
 
