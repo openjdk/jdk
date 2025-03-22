@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,49 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_VARIANTS],
   AC_SUBST(JVM_VARIANTS)
   AC_SUBST(VALID_JVM_VARIANTS)
   AC_SUBST(JVM_VARIANT_MAIN)
+])
+
+################################################################################
+# Setup an optional list of additional JVMs that should be included during
+# build.
+#
+AC_DEFUN_ONCE([HOTSPOT_SETUP_IMPORT_JVMS],
+[
+  UTIL_ARG_WITH(NAME: import-jvms, TYPE: string,
+      DEFAULT: [],
+      DESC: [Additional JVMs to import, on the format <name>:<path to jvm lib>, separated by commas],
+      OPTIONAL: true)
+
+  IMPORT_JVMS=
+  IMPORT_JVM_NAMES=
+  AC_MSG_CHECKING([for import JVMs])
+  # Create a nicely formatted list of import JVM names
+  [ import_jvm_names="`$ECHO $with_import_jvms | $SED -E -e 's/([^:,]+):[^,]+/\1/g; s/,/, /g'`" ]
+  if test "x$import_jvm_names" = x; then
+    AC_MSG_RESULT([none])
+  else
+    AC_MSG_RESULT([$import_jvm_names])
+
+    import_jvms="`$ECHO $with_import_jvms | $SED -e 's/,/ /g'`"
+
+    for import_jvm in $import_jvms; do
+      import_jvm_name=`$ECHO $import_jvm | $CUT -d: -f1`
+      import_jvm_lib=`$ECHO $import_jvm | $CUT -d: -f2`
+      if test "x$import_jvm_name" = "x$JVM_VARIANT_MAIN"; then
+        AC_MSG_ERROR([JVM name '$JVM_VARIANT_MAIN' is not allowed for an import JVM])
+      fi
+      if ! test -e $import_jvm_lib; then
+        AC_MSG_ERROR([Import JVM '$import_jvm_name' not found at $import_jvm_lib])
+      fi
+
+      UTIL_FIXUP_PATH(import_jvm_lib)
+      AC_MSG_NOTICE([Importing JVM '$import_jvm_name' from $import_jvm_lib])
+      IMPORT_JVM_NAMES="$IMPORT_JVM_NAMES $import_jvm_name"
+      IMPORT_JVMS="$IMPORT_JVMS $import_jvm_name:$import_jvm_lib"
+    done
+  fi
+  AC_SUBST(IMPORT_JVMS)
+  AC_SUBST(IMPORT_JVM_NAMES)
 ])
 
 ################################################################################
