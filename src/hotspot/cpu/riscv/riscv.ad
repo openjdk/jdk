@@ -9036,17 +9036,11 @@ instruct minI_reg_reg(iRegINoSp dst, iRegI src)
   match(Set dst (MinI dst src));
 
   ins_cost(BRANCH_COST + ALU_COST);
-  format %{
-    "ble $dst, $src, skip\t#@minI_reg_reg\n\t"
-    "mv  $dst, $src\n\t"
-    "skip:"
-  %}
+  format %{"minI_reg_reg $dst, $dst, $src\t#@minI_reg_reg\n\t"%}
 
   ins_encode %{
-    Label Lskip;
-    __ ble(as_Register($dst$$reg), as_Register($src$$reg), Lskip);
-    __ mv(as_Register($dst$$reg), as_Register($src$$reg));
-    __ bind(Lskip);
+    __ cmov_gt(as_Register($dst$$reg), as_Register($src$$reg),
+               as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
   ins_pipe(pipe_class_compare);
@@ -9057,17 +9051,11 @@ instruct maxI_reg_reg(iRegINoSp dst, iRegI src)
   match(Set dst (MaxI dst src));
 
   ins_cost(BRANCH_COST + ALU_COST);
-  format %{
-    "bge $dst, $src, skip\t#@maxI_reg_reg\n\t"
-    "mv  $dst, $src\n\t"
-    "skip:"
-  %}
+  format %{"maxI_reg_reg $dst, $dst, $src\t#@maxI_reg_reg\n\t"%}
 
   ins_encode %{
-    Label Lskip;
-    __ bge(as_Register($dst$$reg), as_Register($src$$reg), Lskip);
-    __ mv(as_Register($dst$$reg), as_Register($src$$reg));
-    __ bind(Lskip);
+    __ cmov_lt(as_Register($dst$$reg), as_Register($src$$reg),
+               as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
   ins_pipe(pipe_class_compare);
@@ -9083,17 +9071,11 @@ instruct minI_reg_zero(iRegINoSp dst, immI0 zero)
   match(Set dst (MinI zero dst));
 
   ins_cost(BRANCH_COST + ALU_COST);
-  format %{
-    "blez $dst, skip\t#@minI_reg_zero\n\t"
-    "mv   $dst, zr\n\t"
-    "skip:"
-  %}
+  format %{"minI_reg_zero $dst, $dst, zr\t#@minI_reg_zero\n\t"%}
 
   ins_encode %{
-    Label Lskip;
-    __ blez(as_Register($dst$$reg), Lskip);
-    __ mv(as_Register($dst$$reg), zr);
-    __ bind(Lskip);
+    __ cmov_gt(as_Register($dst$$reg), zr,
+               as_Register($dst$$reg), zr);
   %}
 
   ins_pipe(pipe_class_compare);
@@ -9105,17 +9087,11 @@ instruct maxI_reg_zero(iRegINoSp dst, immI0 zero)
   match(Set dst (MaxI zero dst));
 
   ins_cost(BRANCH_COST + ALU_COST);
-  format %{
-    "bgez $dst, skip\t#@maxI_reg_zero\n\t"
-    "mv   $dst, zr\n\t"
-    "skip:"
-  %}
+  format %{"maxI_reg_zero $dst, $dst, zr\t#@maxI_reg_zero\n\t"%}
 
   ins_encode %{
-    Label Lskip;
-    __ bgez(as_Register($dst$$reg), Lskip);
-    __ mv(as_Register($dst$$reg), zr);
-    __ bind(Lskip);
+    __ cmov_lt(as_Register($dst$$reg), zr,
+               as_Register($dst$$reg), zr);
   %}
 
   ins_pipe(pipe_class_compare);
@@ -9128,23 +9104,12 @@ instruct minI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
   effect(DEF dst, USE src1, USE src2);
 
   ins_cost(BRANCH_COST + ALU_COST * 2);
-  format %{
-    "ble $src1, $src2, Lsrc1\t#@minI_rReg\n\t"
-    "mv $dst, $src2\n\t"
-    "j Ldone\n\t"
-    "Lsrc1:\n\t"
-    "mv $dst, $src1\n\t"
-    "Ldone:"
-  %}
+  format %{"minI_rReg $dst, $src1, $src2\t#@minI_rReg\n\t"%}
 
   ins_encode %{
-    Label Lsrc1, Ldone;
-    __ ble(as_Register($src1$$reg), as_Register($src2$$reg), Lsrc1);
-    __ mv(as_Register($dst$$reg), as_Register($src2$$reg));
-    __ j(Ldone);
-    __ bind(Lsrc1);
     __ mv(as_Register($dst$$reg), as_Register($src1$$reg));
-    __ bind(Ldone);
+    __ cmov_gt(as_Register($src1$$reg), as_Register($src2$$reg),
+               as_Register($dst$$reg), as_Register($src2$$reg));
   %}
 
   ins_pipe(pipe_class_compare);
@@ -9157,24 +9122,12 @@ instruct maxI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
   effect(DEF dst, USE src1, USE src2);
 
   ins_cost(BRANCH_COST + ALU_COST * 2);
-  format %{
-    "bge $src1, $src2, Lsrc1\t#@maxI_rReg\n\t"
-    "mv $dst, $src2\n\t"
-    "j Ldone\n\t"
-    "Lsrc1:\n\t"
-    "mv $dst, $src1\n\t"
-    "Ldone:"
-  %}
+  format %{"maxI_rReg $dst, $src1, $src2\t#@maxI_rReg\n\t"%}
 
   ins_encode %{
-    Label Lsrc1, Ldone;
-    __ bge(as_Register($src1$$reg), as_Register($src2$$reg), Lsrc1);
-    __ mv(as_Register($dst$$reg), as_Register($src2$$reg));
-    __ j(Ldone);
-    __ bind(Lsrc1);
     __ mv(as_Register($dst$$reg), as_Register($src1$$reg));
-    __ bind(Ldone);
-
+    __ cmov_lt(as_Register($src1$$reg), as_Register($src2$$reg),
+               as_Register($dst$$reg), as_Register($src2$$reg));
   %}
 
   ins_pipe(pipe_class_compare);
