@@ -590,6 +590,22 @@ void G1BarrierSetC2::late_barrier_analysis() const {
   analyze_dominating_barriers();
 }
 
+int G1BarrierSetC2::estimate_stub_size() const {
+  Compile* const C = Compile::current();
+  BufferBlob* const blob = C->output()->scratch_buffer_blob();
+  GrowableArray<G1BarrierStubC2*>* const stubs = barrier_set_state()->stubs();
+  int size = 0;
+
+  for (int i = 0; i < stubs->length(); i++) {
+    CodeBuffer cb(blob->content_begin(), checked_cast<CodeBuffer::csize_t>((address)C->output()->scratch_locs_memory() - blob->content_begin()));
+    MacroAssembler masm(&cb);
+    stubs->at(i)->emit_code(masm);
+    size += cb.insts_size();
+  }
+
+  return size;
+}
+
 void G1BarrierSetC2::emit_stubs(CodeBuffer& cb) const {
   MacroAssembler masm(&cb);
   GrowableArray<G1BarrierStubC2*>* const stubs = barrier_set_state()->stubs();
