@@ -198,7 +198,7 @@ final class WDesktopProperties {
      */
     private native void playWindowsSound(String winEventName);
 
-    class WinPlaySound implements Runnable {
+    final class WinPlaySound implements Runnable {
         String  winEventName;
 
         WinPlaySound(String winEventName) {

@@ -33,7 +33,7 @@ import javax.swing.text.Caret;
 /**
  * Windows rendition of the component.
  */
-public class WindowsPasswordFieldUI extends BasicPasswordFieldUI {
+public final class WindowsPasswordFieldUI extends BasicPasswordFieldUI {
 
     /**
      * Creates a UI for a JPasswordField
@@ -54,6 +54,7 @@ public class WindowsPasswordFieldUI extends BasicPasswordFieldUI {
      *
      * @return the caret object
      */
+    @Override
     protected Caret createCaret() {
         return new WindowsTextUI.WindowsCaret();
     }

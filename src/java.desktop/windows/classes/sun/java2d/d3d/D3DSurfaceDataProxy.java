@@ -38,7 +38,7 @@ import sun.java2d.loops.CompositeType;
  * SurfaceData with a cached D3D Texture and the code to create
  * the accelerated surfaces.
  */
-public class D3DSurfaceDataProxy extends SurfaceDataProxy {
+public final class D3DSurfaceDataProxy extends SurfaceDataProxy {
 
     public static SurfaceDataProxy createProxy(SurfaceData srcData,
                                                D3DGraphicsConfig dstConfig)

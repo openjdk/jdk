@@ -63,7 +63,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
  * @author Rich Schiavi
  */
 @SuppressWarnings("serial") // Same-version serialization only
-public class WindowsIconFactory implements Serializable
+public final class WindowsIconFactory implements Serializable
 {
     private static Icon frame_closeIcon;
     private static Icon frame_iconifyIcon;
@@ -173,13 +173,14 @@ public class WindowsIconFactory implements Serializable
 
 
     @SuppressWarnings("serial") // Same-version serialization only
-    private static class FrameButtonIcon implements Icon, Serializable {
+    private static final class FrameButtonIcon implements Icon, Serializable {
         private final Part part;
 
         private FrameButtonIcon(Part part) {
             this.part = part;
         }
 
+        @Override
         public void paintIcon(Component c, Graphics g, int x0, int y0) {
             int width = getIconWidth();
             int height = getIconHeight();
@@ -281,6 +282,7 @@ public class WindowsIconFactory implements Serializable
             }
         }
 
+        @Override
         public int getIconWidth() {
             int width;
             if (XPStyle.getXP() != null) {
@@ -293,6 +295,7 @@ public class WindowsIconFactory implements Serializable
             return width;
         }
 
+        @Override
         public int getIconHeight() {
             int height = UIManager.getInt("InternalFrame.titleButtonHeight")-4;
             return height;
@@ -302,7 +305,8 @@ public class WindowsIconFactory implements Serializable
 
 
         @SuppressWarnings("serial") // Same-version serialization only
-        private static class ResizeIcon implements Icon, Serializable {
+        private static final class ResizeIcon implements Icon, Serializable {
+            @Override
             public void paintIcon(Component c, Graphics g, int x, int y) {
                 g.setColor(UIManager.getColor("InternalFrame.resizeIconHighlight"));
                 g.drawLine(0, 11, 11, 0);
@@ -317,14 +321,17 @@ public class WindowsIconFactory implements Serializable
                 g.drawLine(9, 11, 11, 9);
                 g.drawLine(10, 11, 11, 10);
             }
+            @Override
             public int getIconWidth() { return 13; }
+            @Override
             public int getIconHeight() { return 13; }
         }
 
     @SuppressWarnings("serial") // Same-version serialization only
-    private static class CheckBoxIcon implements Icon, Serializable
+    private static final class CheckBoxIcon implements Icon, Serializable
     {
         static final int csize = 13;
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             JCheckBox cb = (JCheckBox) c;
             ButtonModel model = cb.getModel();
@@ -425,6 +432,7 @@ public class WindowsIconFactory implements Serializable
             }
         }
 
+        @Override
         public int getIconWidth() {
             XPStyle xp = XPStyle.getXP();
             if (xp != null) {
@@ -434,6 +442,7 @@ public class WindowsIconFactory implements Serializable
             }
         }
 
+        @Override
         public int getIconHeight() {
             XPStyle xp = XPStyle.getXP();
             if (xp != null) {
@@ -445,8 +454,9 @@ public class WindowsIconFactory implements Serializable
     }
 
     @SuppressWarnings("serial") // Same-version serialization only
-    private static class RadioButtonIcon implements Icon, UIResource, Serializable
+    private static final class RadioButtonIcon implements Icon, UIResource, Serializable
     {
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             AbstractButton b = (AbstractButton) c;
             ButtonModel model = b.getModel();
@@ -579,6 +589,7 @@ public class WindowsIconFactory implements Serializable
             }
         }
 
+        @Override
         public int getIconWidth() {
             XPStyle xp = XPStyle.getXP();
             if (xp != null) {
@@ -588,6 +599,7 @@ public class WindowsIconFactory implements Serializable
             }
         }
 
+        @Override
         public int getIconHeight() {
             XPStyle xp = XPStyle.getXP();
             if (xp != null) {
@@ -600,8 +612,9 @@ public class WindowsIconFactory implements Serializable
 
 
     @SuppressWarnings("serial") // Same-version serialization only
-    private static class CheckBoxMenuItemIcon implements Icon, UIResource, Serializable
+    private static final class CheckBoxMenuItemIcon implements Icon, UIResource, Serializable
     {
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             AbstractButton b = (AbstractButton) c;
             ButtonModel model = b.getModel();
@@ -619,15 +632,18 @@ public class WindowsIconFactory implements Serializable
                 g.drawLine(x+3, y+6, x+4, y+6);
             }
         }
+        @Override
         public int getIconWidth() { return 9; }
+        @Override
         public int getIconHeight() { return 9; }
 
     } // End class CheckBoxMenuItemIcon
 
 
     @SuppressWarnings("serial") // Same-version serialization only
-    private static class RadioButtonMenuItemIcon implements Icon, UIResource, Serializable
+    private static final class RadioButtonMenuItemIcon implements Icon, UIResource, Serializable
     {
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             AbstractButton b = (AbstractButton) c;
             ButtonModel model = b.getModel();
@@ -636,14 +652,17 @@ public class WindowsIconFactory implements Serializable
                                4, 4);
             }
         }
+        @Override
         public int getIconWidth() { return 12; }
+        @Override
         public int getIconHeight() { return 12; }
 
     } // End class RadioButtonMenuItemIcon
 
 
     @SuppressWarnings("serial") // Same-version serialization only
-    private static class MenuItemCheckIcon implements Icon, UIResource, Serializable{
+    private static final class MenuItemCheckIcon implements Icon, UIResource, Serializable{
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             /* For debugging:
                Color oldColor = g.getColor();
@@ -652,13 +671,16 @@ public class WindowsIconFactory implements Serializable
             g.setColor(oldColor);
             */
         }
+        @Override
         public int getIconWidth() { return 9; }
+        @Override
         public int getIconHeight() { return 9; }
 
     } // End class MenuItemCheckIcon
 
     @SuppressWarnings("serial") // Same-version serialization only
-    private static class MenuItemArrowIcon implements Icon, UIResource, Serializable {
+    private static final class MenuItemArrowIcon implements Icon, UIResource, Serializable {
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             /* For debugging:
             Color oldColor = g.getColor();
@@ -667,13 +689,16 @@ public class WindowsIconFactory implements Serializable
             g.setColor(oldColor);
             */
         }
+        @Override
         public int getIconWidth() { return 4; }
+        @Override
         public int getIconHeight() { return 8; }
 
     } // End class MenuItemArrowIcon
 
     @SuppressWarnings("serial") // Same-version serialization only
-    private static class MenuArrowIcon implements Icon, UIResource, Serializable {
+    private static final class MenuArrowIcon implements Icon, UIResource, Serializable {
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             XPStyle xp = XPStyle.getXP();
             if (WindowsMenuItemUI.isVistaPainting(xp)) {
@@ -708,6 +733,7 @@ public class WindowsIconFactory implements Serializable
                 g.translate(-x,-y);
             }
         }
+        @Override
         public int getIconWidth() {
             XPStyle xp = XPStyle.getXP();
             if (WindowsMenuItemUI.isVistaPainting(xp)) {
@@ -717,6 +743,7 @@ public class WindowsIconFactory implements Serializable
                 return 4;
             }
         }
+        @Override
         public int getIconHeight() {
             XPStyle xp = XPStyle.getXP();
             if (WindowsMenuItemUI.isVistaPainting(xp)) {
@@ -728,14 +755,16 @@ public class WindowsIconFactory implements Serializable
         }
     } // End class MenuArrowIcon
 
-    static class VistaMenuItemCheckIconFactory
+    static final class VistaMenuItemCheckIconFactory
            implements MenuItemCheckIconFactory {
         private static final int OFFSET = 3;
 
+        @Override
         public Icon getIcon(JMenuItem component) {
             return new VistaMenuItemCheckIcon(component);
         }
 
+        @Override
         public boolean isCompatible(Object icon, String prefix) {
             return icon instanceof VistaMenuItemCheckIcon
               && ((VistaMenuItemCheckIcon) icon).type == getType(prefix);
@@ -788,7 +817,7 @@ public class WindowsIconFactory implements Serializable
          * Note: to be used on Vista only.
          */
         @SuppressWarnings("serial") // Same-version serialization only
-        private static class VistaMenuItemCheckIcon
+        private static final class VistaMenuItemCheckIcon
               implements Icon, UIResource, Serializable {
 
             private final JMenuItem menuItem;
@@ -803,6 +832,7 @@ public class WindowsIconFactory implements Serializable
                 this.menuItem = null;
             }
 
+            @Override
             public int getIconHeight() {
                 Icon lafIcon = getLaFIcon();
                 if (lafIcon != null) {
@@ -825,6 +855,7 @@ public class WindowsIconFactory implements Serializable
                 return height;
             }
 
+            @Override
             public int getIconWidth() {
                 Icon lafIcon = getLaFIcon();
                 if (lafIcon != null) {
@@ -840,6 +871,7 @@ public class WindowsIconFactory implements Serializable
                 return width;
             }
 
+            @Override
             public void paintIcon(Component c, Graphics g, int x, int y) {
                 Icon lafIcon = getLaFIcon();
                 if (lafIcon != null) {
