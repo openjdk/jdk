@@ -832,7 +832,6 @@ void Metaspace::global_initialize() {
     // Note: "cds" would be a better fit but keep this for backward compatibility.
     LogTarget(Info, gc, metaspace) lt;
     if (lt.is_enabled()) {
-      ResourceMark rm;
       LogStream ls(lt);
       CDS_ONLY(MetaspaceShared::print_on(&ls);)
       Metaspace::print_compressed_class_space(&ls);

@@ -934,7 +934,6 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
 
   LogTarget(Debug,module) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm(THREAD);
     LogStream ls(lt);
     Klass* klass = java_lang_Class::as_Klass(mirror);
     oop module_name = java_lang_Module::name(module);
@@ -945,6 +944,7 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
       ls.print("get_module(): Unnamed Module");
     }
     if (klass != nullptr) {
+      ResourceMark rm(THREAD);
       ls.print_cr(" for class %s", klass->external_name());
     } else {
       ls.print_cr(" for primitive class");
