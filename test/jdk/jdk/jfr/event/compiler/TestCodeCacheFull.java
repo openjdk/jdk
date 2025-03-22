@@ -36,6 +36,7 @@ import jdk.test.whitebox.code.BlobType;
 /**
  * @test TestCodeCacheFull
  * @requires vm.hasJFR
+ * @requires vm.opt.UseCodeCacheFlushing == null | vm.opt.UseCodeCacheFlushing == true
  *
  * @library /test/lib
  * @modules jdk.jfr
@@ -45,7 +46,6 @@ import jdk.test.whitebox.code.BlobType;
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:+UseCodeCacheFlushing
  *     -XX:+SegmentedCodeCache -XX:-UseLargePages jdk.jfr.event.compiler.TestCodeCacheFull
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
