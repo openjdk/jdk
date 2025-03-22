@@ -589,6 +589,67 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       __ z_br(Z_R14);
     }
     break;
+    case C1StubId::is_instance_of_id:
+    {
+      // Mirror: Z_ARG1(R2)
+      // Object: Z_ARG2
+      // Temps: Z_ARG3, Z_ARG4, Z_ARG5, Z_R10, Z_R11
+      // Result: Z_RET(R2)
+
+      // Get the Klass* into Z_ARG3
+      Register klass = Z_ARG3 , obj = Z_ARG2, result = Z_RET;
+      Register temp0 = Z_ARG4, temp1 = Z_ARG5, temp2 = Z_R10, temp3 = Z_R11;
+
+      __ z_ltg(klass, Address(Z_ARG1, java_lang_Class::klass_offset())); // Klass is null
+
+      Label is_secondary;
+
+      __ clear_reg(result /* Z_R2 */, true /* whole_reg */, false /* set_cc */);  // sets result=0 (failure)
+
+      __ z_bcr(Assembler::bcondEqual, Z_R14); // cc set by z_ltg above
+
+      __ z_ltgr(obj, obj); // obj is null
+      __ z_bcr(Assembler::bcondEqual, Z_R14);
+
+      __ z_llgf(temp0, Address(klass, in_bytes(Klass::super_check_offset_offset())));
+      __ compare32_and_branch(temp0, in_bytes(Klass::secondary_super_cache_offset()), Assembler::bcondEqual, is_secondary); // Klass is a secondary superclass
+
+      // Klass is a concrete class
+      __ load_klass(temp1, obj);
+      __ z_cg(klass, Address(temp1, temp0));
+
+      // result is already holding 0, denoting NotEqual case
+      __ load_on_condition_imm_32(result, 1, Assembler::bcondEqual);
+      __ z_br(Z_R14);
+
+      __ bind(is_secondary);
+
+      __ load_klass(obj, obj);
+
+      // This is necessary because I am never in my own secondary_super list.
+      __ z_cgr(obj, klass);
+      __ load_on_condition_imm_32(result, 1, Assembler::bcondEqual);
+      __ z_bcr(Assembler::bcondEqual, Z_R14);
+
+      // Z_R10 and Z_R11 are callee saved, so we must need to preserve them before any use
+      __ z_ldgr(Z_F1, Z_R10);
+      __ z_ldgr(Z_F3, Z_R11);
+
+      __ lookup_secondary_supers_table_var(obj, klass,
+                                          /*temps*/ temp0, temp1, temp2, temp3,
+                                          result);
+
+      // lookup_secondary_supers_table_var return 0 on success and 1 on failure.
+      // but this method returns 0 on failure and 1 on success.
+      // so we have to invert the result from lookup_secondary_supers_table_var.
+      __ z_xilf(result, 1);  // invert the result
+
+      __ z_lgdr(Z_R10, Z_F1);
+      __ z_lgdr(Z_R11, Z_F3);
+
+      __ z_br(Z_R14);
+
+    }
     case C1StubId::monitorenter_nofpu_id:
     case C1StubId::monitorenter_id:
       { // Z_R1_scratch : object
