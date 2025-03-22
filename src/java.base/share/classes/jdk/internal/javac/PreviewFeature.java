@@ -80,6 +80,9 @@ public @interface PreviewFeature {
         MODULE_IMPORTS,
         @JEP(number=478, title="Key Derivation Function API", status="Preview")
         KEY_DERIVATION,
+        //XXX Number will change when assigned
+        @JEP(number=999, title="PEM API", status="Preview")
+        PEM_API,
         LANGUAGE_MODEL,
         /**
          * A key for testing.
