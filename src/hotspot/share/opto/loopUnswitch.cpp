@@ -279,14 +279,16 @@ class UnswitchedLoopSelector : public StackObj {
 // Class to unswitch the original loop and create Predicates at the new unswitched loop versions. The newly cloned loop
 // becomes the false-path-loop while original loop becomes the true-path-loop.
 class OriginalLoop : public StackObj {
-  LoopNode* const _loop_head; // OuterStripMinedLoopNode if loop strip mined, else just the loop head.
+  LoopNode* const _loop_head;
+  LoopNode* const _outer_loop_head; // OuterStripMinedLoopNode if loop strip mined, else just the loop head.
   IdealLoopTree* const _loop;
   Node_List& _old_new;
   PhaseIdealLoop* const _phase;
 
  public:
   OriginalLoop(IdealLoopTree* loop, Node_List& old_new)
-      : _loop_head(loop->_head->as_Loop()->skip_strip_mined()),
+      : _loop_head(loop->_head->as_Loop()),
+        _outer_loop_head(loop->_head->as_Loop()->skip_strip_mined()),
         _loop(loop),
         _old_new(old_new),
         _phase(loop->_phase) {}
@@ -314,14 +316,14 @@ class OriginalLoop : public StackObj {
 
  private:
   void clone_loop(const LoopSelector& loop_selector) {
-    _phase->clone_loop(_loop, _old_new, _phase->dom_depth(_loop_head),
+    _phase->clone_loop(_loop, _old_new, _phase->dom_depth(_outer_loop_head),
                        PhaseIdealLoop::CloneIncludesStripMined, loop_selector.selector());
     fix_loop_entries(loop_selector);
   }
 
-  void fix_loop_entries(const LoopSelector& loop_selector) {
-    _phase->replace_loop_entry(_loop_head, loop_selector.true_path_loop_proj());
-    LoopNode* false_path_loop_strip_mined_head = old_to_new(_loop_head)->as_Loop();
+  void fix_loop_entries(const LoopSelector& loop_selector) const {
+    _phase->replace_loop_entry(_outer_loop_head, loop_selector.true_path_loop_proj());
+    LoopNode* false_path_loop_strip_mined_head = old_to_new(_outer_loop_head)->as_Loop();
     _phase->replace_loop_entry(false_path_loop_strip_mined_head,
                                loop_selector.false_path_loop_proj());
   }
