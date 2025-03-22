@@ -55,8 +55,13 @@ public class JspawnhelperProtocol {
         try {
             p = Runtime.getRuntime().exec(CMD);
         } catch (Exception e) {
+            // Check that exception contains rich message on failure.
             e.printStackTrace(System.out);
-            System.exit(ERROR);
+            if (e instanceof IOException && e.getMessage().contains("Possible solutions:")) {
+                System.exit(ERROR);
+            } else {
+                System.exit(ERROR + 3);
+            }
         }
         if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
             System.out.println("Child process timed out");
