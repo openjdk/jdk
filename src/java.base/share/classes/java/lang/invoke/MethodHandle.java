@@ -1780,11 +1780,6 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     }
 
     /*non-public*/
-    Object intrinsicData() {
-        return null;
-    }
-
-    /*non-public*/
     MethodHandle withInternalMemberName(MemberName member, boolean isInvokeSpecial) {
         if (member != null) {
             return MethodHandleImpl.makeWrappedMember(this, member, isInvokeSpecial);
