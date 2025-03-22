@@ -34,6 +34,10 @@ import java.util.function.Function;
 /**
  * {@code Cleaner} manages a set of object references and corresponding cleaning actions.
  * <p>
+ * Let's add another paragraph here. Better add some more text, so we have a
+ * proper paragraph and not just a sentence. A third sentence would be even
+ * better. Also, check that there are no tpyos.
+ * <p>
  * Cleaning actions are {@linkplain #register(Object object, Runnable action) registered}
  * to run after the cleaner is notified that the object has become
  * phantom reachable.
