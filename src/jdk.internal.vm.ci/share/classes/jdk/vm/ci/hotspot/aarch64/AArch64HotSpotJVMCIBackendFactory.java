@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,44 +41,23 @@ import jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.hotspot.HotSpotStackIntrospection;
+import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.runtime.JVMCIBackend;
 
 public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFactory {
 
-    private static EnumSet<AArch64.CPUFeature> computeFeatures(AArch64HotSpotVMConfig config) {
+    private static EnumSet<AArch64.CPUFeature> computeFeatures(HotSpotVMConfig config) {
         // Configure the feature set using the HotSpot flag settings.
         Map<String, Long> constants = config.getStore().getConstants();
         return HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class, constants, config.vmVersionFeatures, emptyMap());
     }
 
-    private static EnumSet<AArch64.Flag> computeFlags(AArch64HotSpotVMConfig config) {
-        EnumSet<AArch64.Flag> flags = EnumSet.noneOf(AArch64.Flag.class);
-
-        if (config.useCRC32) {
-            flags.add(AArch64.Flag.UseCRC32);
-        }
-        if (config.useSIMDForMemoryOps) {
-            flags.add(AArch64.Flag.UseSIMDForMemoryOps);
-        }
-        if (config.avoidUnalignedAccesses) {
-            flags.add(AArch64.Flag.AvoidUnalignedAccesses);
-        }
-        if (config.useLSE) {
-            flags.add(AArch64.Flag.UseLSE);
-        }
-        if (config.useBlockZeroing) {
-            flags.add(AArch64.Flag.UseBlockZeroing);
-        }
-
-        return flags;
-    }
-
-    private static TargetDescription createTarget(AArch64HotSpotVMConfig config) {
+    private static TargetDescription createTarget(HotSpotVMConfig config) {
         final int stackFrameAlignment = 16;
         final int implicitNullCheckLimit = 4096;
         final boolean inlineObjects = true;
-        Architecture arch = new AArch64(computeFeatures(config), computeFlags(config));
+        Architecture arch = new AArch64(computeFeatures(config));
         return new TargetDescription(arch, true, stackFrameAlignment, implicitNullCheckLimit, inlineObjects);
     }
 
@@ -86,7 +65,7 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
         return new HotSpotConstantReflectionProvider(runtime);
     }
 
-    private static RegisterConfig createRegisterConfig(AArch64HotSpotVMConfig config, TargetDescription target) {
+    private static RegisterConfig createRegisterConfig(HotSpotVMConfig config, TargetDescription target) {
         // ARMv8 defines r18 as being available to the platform ABI. Windows
         // and Darwin use it for such. Linux doesn't assign it and thus r18 can
         // be used as an additional register.
@@ -117,8 +96,7 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
     public JVMCIBackend createJVMCIBackend(HotSpotJVMCIRuntime runtime, JVMCIBackend host) {
 
         assert host == null;
-        AArch64HotSpotVMConfig config = new AArch64HotSpotVMConfig(runtime.getConfigStore());
-        TargetDescription target = createTarget(config);
+        TargetDescription target = createTarget(runtime.getConfig());
 
         RegisterConfig regConfig;
         HotSpotCodeCacheProvider codeCache;
@@ -130,7 +108,7 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
                 metaAccess = createMetaAccess(runtime);
             }
             try (InitTimer rt = timer("create RegisterConfig")) {
-                regConfig = createRegisterConfig(config, target);
+                regConfig = createRegisterConfig(runtime.getConfig(), target);
             }
             try (InitTimer rt = timer("create CodeCache provider")) {
                 codeCache = createCodeCache(runtime, target, regConfig);
