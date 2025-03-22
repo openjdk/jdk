@@ -1478,7 +1478,8 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     archive_space_rs = MemoryReserver::reserve((char*)base_address,
                                                archive_space_size,
                                                archive_space_alignment,
-                                               os::vm_page_size());
+                                               os::vm_page_size(),
+                                               mtMetaspace);
     if (archive_space_rs.is_reserved()) {
       assert(base_address == nullptr ||
              (address)archive_space_rs.base() == base_address, "Sanity");
@@ -1546,11 +1547,13 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       archive_space_rs = MemoryReserver::reserve((char*)base_address,
                                                  archive_space_size,
                                                  archive_space_alignment,
-                                                 os::vm_page_size());
+                                                 os::vm_page_size(),
+                                                 mtClassShared);
       class_space_rs   = MemoryReserver::reserve((char*)ccs_base,
                                                  class_space_size,
                                                  class_space_alignment,
-                                                 os::vm_page_size());
+                                                 os::vm_page_size(),
+                                                 mtClass);
     }
     if (!archive_space_rs.is_reserved() || !class_space_rs.is_reserved()) {
       release_reserved_spaces(total_space_rs, archive_space_rs, class_space_rs);
@@ -1564,7 +1567,8 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       total_space_rs = MemoryReserver::reserve((char*) base_address,
                                                total_range_size,
                                                base_address_alignment,
-                                               os::vm_page_size());
+                                               os::vm_page_size(),
+                                               mtClassShared);
     } else {
       // We did not manage to reserve at the preferred address, or were instructed to relocate. In that
       // case we reserve wherever possible, but the start address needs to be encodable as narrow Klass
