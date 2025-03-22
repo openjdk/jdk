@@ -59,8 +59,8 @@ private:
   const size_t           _object_alignment_shift;
   const AttachedArray    _entries;
   ZPage* const           _page;
-  ZPageAge               _from_age;
-  ZPageAge               _to_age;
+  const ZPageAge         _from_age;
+  const ZPageAge         _to_age;
   volatile bool          _claimed;
   mutable ZConditionLock _ref_lock;
   volatile int32_t       _ref_count;
