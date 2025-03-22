@@ -29,6 +29,7 @@ import org.openjdk.jmh.infra.Blackhole;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -51,6 +52,13 @@ public class MergeStoreBench {
             CHAR_L = MethodHandles.byteArrayViewVarHandle(char[].class, ByteOrder.LITTLE_ENDIAN),
             CHAR_B = MethodHandles.byteArrayViewVarHandle(char[].class, ByteOrder.BIG_ENDIAN);
 
+    private static final String NULL_STR = "null";
+    private static final byte[] NULL_BYTES_LATIN1 = NULL_STR.getBytes(java.nio.charset.StandardCharsets.ISO_8859_1);
+    private static final byte[] NULL_BYTES_UTF16 = NULL_STR.getBytes(
+            ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN ? StandardCharsets.UTF_16BE : StandardCharsets.UTF_16LE);
+    private static final int NULL_INT = UNSAFE.getInt(NULL_BYTES_LATIN1, Unsafe.ARRAY_BYTE_BASE_OFFSET);
+    private static final long NULL_LONG = UNSAFE.getLong(NULL_BYTES_UTF16, Unsafe.ARRAY_BYTE_BASE_OFFSET);
+
     final static int NUMBERS = 8192;
 
     final byte[] bytes4 = new byte[NUMBERS * 4];
@@ -58,6 +66,9 @@ public class MergeStoreBench {
     final int [] ints   = new int [NUMBERS    ];
     final long[] longs  = new long[NUMBERS    ];
     final char[] chars  = new char[NUMBERS    ];
+    final char[] chars4 = new char[NUMBERS * 4];
+    final StringBuilder sb = new StringBuilder(NUMBERS * 4);
+    final StringBuilder sb_utf16 = new StringBuilder(NUMBERS * 8).append('\u4e2d');
 
     @Setup
     public void setup() {
@@ -489,6 +500,111 @@ public class MergeStoreBench {
             off = putChars4S(bytes8, off, 'n', 'u', 'l', 'l');
         }
         BH.consume(off);
+    }
+
+    /**
+     * Test whether a constant String of length 4 is MergeStored when calling getBytes
+     */
+    @Benchmark
+    @SuppressWarnings("deprecation")
+    public void putNull_getBytes(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            NULL_STR.getBytes(0, 4, bytes4, off);
+            off += 4;
+        }
+        BH.consume(off);
+    }
+
+    /**
+     * Test whether a constant byte[] with a length of 4 is MergeStored when arraycopy is called
+     */
+    @Benchmark
+    public void putNull_arraycopy(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            System.arraycopy(NULL_BYTES_LATIN1, 0, bytes4, off, 4);
+            off += 4;
+        }
+        BH.consume(off);
+    }
+
+    /**
+     * Test the performance of Unsafe.putInt, used as a benchmark for comparison with other putNull Benchmarks
+     */
+    @Benchmark
+    public void putNull_unsafePutInt(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            UNSAFE.putInt(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, NULL_INT);
+            off += 4;
+        }
+        BH.consume(off);
+    }
+
+    /**
+     * Test whether StringBuilder is MergeStored when appending a constant String of length 4
+     */
+    @Benchmark
+    public void putNull_string_builder(Blackhole BH) {
+        sb.setLength(0);
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            sb.append(NULL_STR);
+        }
+        BH.consume(sb_utf16.length());
+    }
+
+    /**
+     * Test whether the constant String with a length of 4 calls the getChars method to mergestore
+     */
+    @Benchmark
+    public void putNull_getChars(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            NULL_STR.getChars(0, 4, chars4, off);
+            off += 4;
+        }
+        BH.consume(off);
+    }
+
+    /**
+     * Test the performance of putLong for comparison with other putNull_utf16 benchmarks
+     */
+    @Benchmark
+    public void putNull_utf16_unsafePutLong(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            UNSAFE.putLong(bytes8, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, NULL_LONG);
+            off += 8;
+        }
+        BH.consume(off);
+    }
+
+    /**
+     * Test whether the byte[] arraycopy with a length of 8 is MergeStore
+     */
+    @Benchmark
+    public void putNull_utf16_arrayCopy(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            System.arraycopy(NULL_BYTES_UTF16, 0, bytes8, off, 8);
+            off += 8;
+        }
+        BH.consume(off);
+    }
+
+    /**
+     * Test whether the UTF16 StringBuilder appends a constant String of length 4 to MergeStore
+     */
+    @Benchmark
+    public void putNull_utf16_string_builder(Blackhole BH) {
+        sb_utf16.setLength(0);
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            sb_utf16.append(NULL_STR);
+        }
+        BH.consume(sb_utf16.length());
     }
 
     static void setIntB(byte[] array, int offset, int value) {
