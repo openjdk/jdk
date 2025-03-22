@@ -660,13 +660,6 @@ void G1Policy::record_concurrent_refinement_stats(size_t pending_cards,
 
 bool G1Policy::should_retain_evac_failed_region(uint index) const {
   size_t live_bytes = _g1h->region_at(index)->live_bytes();
-
-#ifdef ASSERT
-  G1HeapRegion* r = _g1h->region_at(index);
-  assert(live_bytes != 0,
-         "live bytes not set for %u used %zu garbage %zu cm-live %zu pinned %d",
-         index, r->used(), r->garbage_bytes(), live_bytes, r->has_pinned_objects());
-#endif
   size_t threshold = G1RetainRegionLiveThresholdPercent * G1HeapRegion::GrainBytes / 100;
   return live_bytes < threshold;
 }

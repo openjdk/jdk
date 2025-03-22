@@ -614,6 +614,12 @@ void G1ParScanThreadStateSet::record_unused_optional_region(G1HeapRegion* hr) {
   }
 }
 
+void G1ParScanThreadState::record_evacuation_failed_region(G1HeapRegion* r, uint worker_id, bool cause_pinned) {
+  if (_evac_failure_regions->record(worker_id, r->hrm_index(), cause_pinned)) {
+    G1HeapRegionPrinter::evac_failure(r);
+  }
+}
+
 NOINLINE
 oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, size_t word_sz, bool cause_pinned) {
   assert(_g1h->is_in_cset(old), "Object " PTR_FORMAT " should be in the CSet", p2i(old));
@@ -623,9 +629,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     // Forward-to-self succeeded. We are the "owner" of the object.
     G1HeapRegion* r = _g1h->heap_region_containing(old);
 
-    if (_evac_failure_regions->record(_worker_id, r->hrm_index(), cause_pinned)) {
-      G1HeapRegionPrinter::evac_failure(r);
-    }
+    record_evacuation_failed_region(r, _worker_id, cause_pinned);
 
     // Mark the failing object in the marking bitmap and later use the bitmap to handle
     // evacuation failure recovery.
