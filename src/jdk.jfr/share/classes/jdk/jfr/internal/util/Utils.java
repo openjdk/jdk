@@ -459,4 +459,10 @@ public final class Utils {
         File file = subPath == null ? new File(path) : new File(path, subPath);
         return file.toPath().toAbsolutePath();
     }
+
+    public static boolean isAssertionEnabled() {
+        boolean enabled = false;
+        assert enabled = true;
+        return enabled;
+    }
 }
