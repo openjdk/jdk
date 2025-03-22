@@ -228,6 +228,10 @@ inline void G1CMTask::update_liveness(oop const obj, const size_t obj_size) {
   _mark_stats_cache.add_live_words(_g1h->addr_to_region(obj), obj_size);
 }
 
+inline void G1CMTask::inc_incoming_refs(oop const obj) {
+  _mark_stats_cache.inc_incoming_refs(_g1h->addr_to_region(obj));
+}
+
 inline void G1ConcurrentMark::add_to_liveness(uint worker_id, oop const obj, size_t size) {
   task(worker_id)->update_liveness(obj, size);
 }
@@ -287,6 +291,10 @@ inline bool G1CMTask::deal_with_reference(T* p) {
   oop const obj = RawAccess<MO_RELAXED>::oop_load(p);
   if (obj == nullptr) {
     return false;
+  }
+
+  if (!G1HeapRegion::is_in_same_region(p, obj)) {
+    inc_incoming_refs(obj);
   }
   return make_reference_grey(obj);
 }

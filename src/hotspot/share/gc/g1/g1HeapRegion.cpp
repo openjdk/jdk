@@ -128,6 +128,7 @@ void G1HeapRegion::hr_clear(bool clear_space) {
 
   _parsable_bottom = bottom();
   _garbage_bytes = 0;
+  _incoming_refs = 0;
 
   if (clear_space) clear(SpaceDecorator::Mangle);
 }
@@ -239,6 +240,7 @@ G1HeapRegion::G1HeapRegion(uint hrm_index,
 #endif
   _parsable_bottom(nullptr),
   _garbage_bytes(0),
+  _incoming_refs(0),
   _young_index_in_cset(-1),
   _surv_rate_group(nullptr),
   _age_index(G1SurvRateGroup::InvalidAgeIndex),
@@ -278,6 +280,7 @@ void G1HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
   assert(parsable_bottom_acquire() == bottom(), "must be");
 
   _garbage_bytes = 0;
+  _incoming_refs = 0;
 }
 
 void G1HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {
@@ -334,6 +337,24 @@ public:
   bool failures()           { return _failures; }
   bool has_oops_in_region() { return _has_oops_in_region; }
 };
+
+
+double G1HeapRegion::total_based_on_incoming_refs_ms() {
+
+  G1Policy* p = G1CollectedHeap::heap()->policy();
+
+  double merge_scan_time_ms = p->predict_merge_scan_time(_incoming_refs); // We use the number of incoming references as an estimate for remset cards.
+  double non_young_other_time_ms = p->predict_non_young_other_time_ms(1);
+  double predicted_copy_time_ms = p->predict_region_copy_time_ms(this, false /* for_young_only_phase */);
+
+  return merge_scan_time_ms +
+         non_young_other_time_ms +
+         predicted_copy_time_ms;
+}
+
+double G1HeapRegion::gc_efficiency() {
+  return reclaimable_bytes() / total_based_on_incoming_refs_ms();
+}
 
 class VerifyCodeRootNMethodClosure: public NMethodClosure {
   const G1HeapRegion* _hr;

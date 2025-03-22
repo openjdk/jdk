@@ -1288,7 +1288,8 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
           reclaim_empty_humongous_region(hr);
         }
       } else if (hr->is_old()) {
-        hr->note_end_of_marking(_cm->top_at_mark_start(hr), _cm->live_bytes(hr->hrm_index()));
+        uint region_idx = hr->hrm_index();
+        hr->note_end_of_marking(_cm->top_at_mark_start(hr), _cm->live_bytes(region_idx), _cm->incoming_refs(region_idx));
 
         if (hr->live_bytes() != 0) {
           if (tracker->update_old_before_rebuild(hr)) {
