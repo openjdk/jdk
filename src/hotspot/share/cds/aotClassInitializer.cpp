@@ -293,6 +293,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
       {"java/lang/invoke/LambdaForm"},
       {"java/lang/invoke/LambdaForm$Holder"},                 // UNSAFE.ensureClassInitialized()
       {"java/lang/invoke/LambdaForm$NamedFunction"},
+      {"java/lang/invoke/LambdaMetafactory"},
       {"java/lang/invoke/MethodHandle"},
       {"java/lang/invoke/MethodHandles"},
       {"java/lang/invoke/SimpleMethodHandle"},
