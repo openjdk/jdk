@@ -39,7 +39,8 @@ import jdk.incubator.vector.Float16;
 import static jdk.incubator.vector.Float16.*;
 import static java.lang.Float.*;
 import jdk.test.lib.*;
-import compiler.lib.generators.*;
+import compiler.lib.generators.Generator;
+import static compiler.lib.generators.Generators.G;
 
 public class TestFloat16VectorOperations {
     private short[] input1;
@@ -68,11 +69,13 @@ public class TestFloat16VectorOperations {
         input3 = new short[LEN];
         output = new short[LEN];
 
-        Generator<Float16> gen = Generators.G.mixedWithSpecialFloat16s(Generators.G.uniformFloat16s(Float16.MIN_VALUE, Float16.MAX_VALUE), 10, 2);
+        short min_value = float16ToRawShortBits(Float16.MIN_VALUE);
+        short max_value = float16ToRawShortBits(Float16.MAX_VALUE);
+        Generator<Short> gen = G.mixedWithSpecialFloat16s(G.uniformFloat16s(min_value, max_value), 10, 2);
         for (int i = 0; i < LEN; ++i) {
-            input1[i] = float16ToRawShortBits(gen.next());
-            input2[i] = float16ToRawShortBits(gen.next());
-            input3[i] = float16ToRawShortBits(gen.next());
+            input1[i] = gen.next();
+            input2[i] = gen.next();
+            input3[i] = gen.next();
         }
     }
 

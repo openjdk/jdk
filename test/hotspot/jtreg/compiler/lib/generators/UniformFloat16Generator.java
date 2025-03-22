@@ -23,30 +23,29 @@
 
 package compiler.lib.generators;
 
-import jdk.incubator.vector.Float16;
-import static jdk.incubator.vector.Float16.*;
+import static java.lang.Float.*;
 
 /**
  * Provides a uniform float16 distribution random generator, in the provided range [lo, hi).
  */
-final class UniformFloat16Generator extends UniformIntersectionRestrictableGenerator<Float16> {
+final class UniformFloat16Generator extends UniformIntersectionRestrictableGenerator<Short> {
     /**
      * Creates a new {@link UniformFloat16Generator}.
      *
      * @param lo Lower bound of the range (inclusive).
      * @param hi Higher bound of the range (exclusive).
      */
-    public UniformFloat16Generator(Generators g, Float16 lo, Float16 hi) {
+    public UniformFloat16Generator(Generators g, Short lo, Short hi) {
         super(g, lo, hi);
     }
 
     @Override
-    public Float16 next() {
-        return valueOf(g.random.nextFloat(lo().floatValue(), hi().floatValue()));
+    public Short next() {
+        return floatToFloat16(g.random.nextFloat(float16ToFloat(lo()), float16ToFloat(hi())));
     }
 
     @Override
-    protected RestrictableGenerator<Float16> doRestrictionFromIntersection(Float16 lo, Float16 hi) {
+    protected RestrictableGenerator<Short> doRestrictionFromIntersection(Short lo, Short hi) {
         return new UniformFloat16Generator(g, lo, hi);
     }
 }
