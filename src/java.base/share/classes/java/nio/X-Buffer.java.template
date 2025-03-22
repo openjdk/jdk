@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2352,5 +2352,28 @@ public abstract sealed class $Type$Buffer
     }
 
 #end[streamableType]
+
+#if[char]
+    /**
+     * {@inheritDoc}
+     *
+     * @apiNote This method exists solely to implement
+     * {@link CharSequence#getChars(int,int,char[],int)}.
+     * It has no additional benefit over {@link #get(int, char[], int, int)}.
+     *
+     * @implSpec This method is equivalent to
+     * {@code get(srcBegin, dst, dstBegin, srcEnd - srcBegin)}.
+     *
+     * @implNote This method allows for superior performance over the default
+     * implementation in {@code CharSequence}. It performs a direct
+     * buffer-to-array copy of the complete specified region.
+     *
+     * @since 25
+     */
+    @Override
+    public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
+        get(srcBegin, dst, dstBegin, srcEnd - srcBegin);
+    }
+#end[char]
 
 }
