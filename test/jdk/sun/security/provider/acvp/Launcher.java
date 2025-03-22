@@ -21,7 +21,7 @@
  * questions.
  */
 
-import jdk.test.lib.artifacts.Artifact;
+import jdk.test.lib.security.artifacts.ThirdPartyArtifacts;
 import jdk.test.lib.artifacts.ArtifactResolver;
 import jdk.test.lib.json.JSONValue;
 
@@ -104,7 +104,7 @@ public class Launcher {
 
     public static void main(String[] args) throws Exception {
 
-        Path archivePath = ArtifactResolver.fetchOne(ACVP_SERVER_TESTS.class);
+        Path archivePath = ArtifactResolver.fetchOne(ThirdPartyArtifacts.ACVP_SERVER_TESTS.class);
         System.out.println("Data path: " + archivePath);
 
         if (PROVIDER != null) {
@@ -115,7 +115,9 @@ public class Launcher {
         try (ZipFile zf = new ZipFile(archivePath.toFile())) {
             for (String testFile : TEST_FILES) {
                 // Zip archive entry name, do not update to use File.separator
-                String fullEntryName = ACVP_BUNDLE_NAME + "-" + ACVP_BUNDLE_VERSION + "/" + testFile;
+                String fullEntryName = ThirdPartyArtifacts.ACVP_BUNDLE_NAME
+                                       + "-" + ThirdPartyArtifacts.ACVP_BUNDLE_VERSION
+                                       + "/" + testFile;
                 System.out.println("Find and test with: " + fullEntryName);
                 ZipEntry ze = zf.getEntry(fullEntryName);
                 if (ze != null) {
@@ -174,14 +176,5 @@ public class Launcher {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Artifact(
-            organization = ACVP_BUNDLE_LOC,
-            name = ACVP_BUNDLE_NAME,
-            revision = ACVP_BUNDLE_VERSION,
-            extension = "zip",
-            unpack = false)
-    private static class ACVP_SERVER_TESTS {
     }
 }
