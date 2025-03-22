@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,17 +67,7 @@ final class PBEKey implements SecretKey {
             // Should allow an empty password.
             passwd = new char[0];
         }
-        // Accept "\0" to signify "zero-length password with no terminator".
-        if (!(passwd.length == 1 && passwd[0] == 0)) {
-            for (int i=0; i<passwd.length; i++) {
-                if ((passwd[i] < '\u0020') || (passwd[i] > '\u007E')) {
-                    throw new InvalidKeySpecException("Password is not ASCII");
-                }
-            }
-        }
-        this.key = new byte[passwd.length];
-        for (int i=0; i<passwd.length; i++)
-            this.key[i] = (byte) (passwd[i] & 0x7f);
+        this.key = PBKDF2KeyImpl.getPasswordBytes(passwd);
         Arrays.fill(passwd, '\0');
         type = keytype;
 

@@ -72,7 +72,8 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
     private final transient Mac prf;
     private final transient Cleaner.Cleanable cleaner;
 
-    private static byte[] getPasswordBytes(char[] passwd) {
+    // also used by com.sun.crypto.provider.PBEKey constructor
+    static byte[] getPasswordBytes(char[] passwd) {
         CharBuffer cb = CharBuffer.wrap(passwd);
         ByteBuffer bb = UTF_8.encode(cb);
 

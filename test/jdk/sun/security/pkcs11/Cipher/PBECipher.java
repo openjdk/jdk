@@ -40,7 +40,7 @@ import javax.crypto.spec.PBEParameterSpec;
 
 /*
  * @test
- * @bug 8301553
+ * @bug 8301553 8348732
  * @summary test password based encryption on SunPKCS11's Cipher service
  * @library /test/lib ..
  * @run main/othervm/timeout=30 PBECipher
@@ -61,10 +61,6 @@ public final class PBECipher extends PKCS11Test {
     private enum Configuration {
         // Pass salt and iterations to a Cipher through a PBEParameterSpec.
         PBEParameterSpec,
-
-        // Derive a key using SunPKCS11's SecretKeyFactory (wrapping password,
-        // salt and iterations in a PBEKeySpec), and pass it to a Cipher.
-        SecretKeyFactoryDerivedKey,
 
         // Pass salt and iterations to a Cipher through an AlgorithmParameters.
         AlgorithmParameters,
@@ -201,11 +197,6 @@ public final class PBECipher extends PKCS11Test {
                     }
                 }
             }
-            case SecretKeyFactoryDerivedKey -> {
-                SecretKey key = getDerivedSecretKey(p, keyAlgo);
-                cipher.init(Cipher.ENCRYPT_MODE, key,
-                        pbeSpec.getParameterSpec());
-            }
             case AnonymousPBEKey -> {
                 SecretKey key = getAnonymousPBEKey(keyAlgo,
                         svcAlgo.equals(keyAlgo));
@@ -220,12 +211,6 @@ public final class PBECipher extends PKCS11Test {
             throws GeneralSecurityException {
         return SecretKeyFactory.getInstance("PBE")
                 .generateSecret(new PBEKeySpec(password));
-    }
-
-    private static SecretKey getDerivedSecretKey(Provider sunPKCS11,
-            String algorithm) throws GeneralSecurityException {
-        return SecretKeyFactory.getInstance(algorithm, sunPKCS11)
-                .generateSecret(new PBEKeySpec(password, salt, iterations));
     }
 
     private static SecretKey getAnonymousPBEKey(String algorithm,
