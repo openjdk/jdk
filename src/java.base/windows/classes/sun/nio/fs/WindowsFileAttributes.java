@@ -414,7 +414,8 @@ class WindowsFileAttributes
 
     @Override
     public boolean isSymbolicLink() {
-        return reparseTag == IO_REPARSE_TAG_SYMLINK;
+        return (reparseTag == IO_REPARSE_TAG_SYMLINK ||
+                reparseTag == IO_REPARSE_TAG_MOUNT_POINT);
     }
 
     boolean isUnixDomainSocket() {
