@@ -30,7 +30,7 @@ ifeq ($(INCLUDE), true)
 # Setup JVM_CFLAGS. These are shared between GensrcDtrace.gmk and CompileJvm.gmk.
 ################################################################################
 
-# This variable may be added to onlyby a custom extension
+# This variable may be added to by a custom extension
 JVM_SRC_ROOTS += $(TOPDIR)/src/hotspot
 
 JVM_SRC_DIRS += $(call uniq, $(wildcard $(foreach d, $(JVM_SRC_ROOTS), \
