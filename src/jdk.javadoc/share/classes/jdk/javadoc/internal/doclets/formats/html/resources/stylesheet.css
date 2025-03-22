@@ -133,7 +133,7 @@ pre {
     line-height: var(--code-line-height);
     background-color: var(--pre-background-color);
     color: var(--pre-text-color);
-    padding: 8px;
+    padding: 10px;
     overflow-x:auto;
 }
 h1 {
