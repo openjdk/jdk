@@ -490,9 +490,9 @@ void* RuntimeStub::operator new(size_t s, unsigned size) throw() {
 }
 
 // operator new shared by all singletons:
-void* SingletonBlob::operator new(size_t s, unsigned size) throw() {
+void* SingletonBlob::operator new(size_t s, unsigned size, bool alloc_fail_is_fatal) throw() {
   void* p = CodeCache::allocate(size, CodeBlobType::NonNMethod);
-  if (!p) fatal("Initial size of CodeCache is too small");
+  if (alloc_fail_is_fatal && !p) fatal("Initial size of CodeCache is too small");
   return p;
 }
 
@@ -574,7 +574,7 @@ UncommonTrapBlob* UncommonTrapBlob::create(
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) UncommonTrapBlob(cb, size, oop_maps, frame_size);
+    blob = new (size, false) UncommonTrapBlob(cb, size, oop_maps, frame_size);
   }
 
   trace_new_stub(blob, "UncommonTrapBlob");
@@ -606,7 +606,7 @@ ExceptionBlob* ExceptionBlob::create(
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) ExceptionBlob(cb, size, oop_maps, frame_size);
+    blob = new (size, false) ExceptionBlob(cb, size, oop_maps, frame_size);
   }
 
   trace_new_stub(blob, "ExceptionBlob");
