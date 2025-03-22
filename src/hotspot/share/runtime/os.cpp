@@ -625,7 +625,7 @@ long os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, bool check_limit,
   *raw_ptr = nullptr;
 
   // Special handling for NMT preinit phase before arguments are parsed
-  if (!old_ptr && NMTPreInit::handle_malloc(raw_ptr, size)) {
+  if (NMTPreInit::handle_malloc(raw_ptr, size)) {
     // No need to fill with 0 because CDS static dumping doesn't use these
     // early allocations.
     return (long)size;
@@ -704,12 +704,13 @@ void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
 //  if (outer_size < size) {
 //    return nullptr;
 //  }
+
   void* rc = nullptr;
   long outer_size = os::pre_alloc(&rc, nullptr, size, true, mem_tag, stack);
   if (rc != nullptr) {
     return rc;
   }
-  if (outer_size < 0) {
+  if (outer_size <= 0) {
     return nullptr;
   }
 
