@@ -80,7 +80,7 @@ class LogFileOutput : public LogFileStreamOutput {
     }
   }
 
- public:
+public:
   LogFileOutput(const char *name);
   virtual ~LogFileOutput();
   virtual bool initialize(const char* options, outputStream* errstream);
@@ -98,6 +98,8 @@ class LogFileOutput : public LogFileStreamOutput {
   const char* cur_log_file_name();
   static const char* const Prefix;
   static void set_file_name_parameters(jlong start_time);
+
+  void write_file_unique_time_message(const char* message);
 };
 
 #endif // SHARE_LOGGING_LOGFILEOUTPUT_HPP

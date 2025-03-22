@@ -26,6 +26,7 @@
 #include "logging/logAsyncWriter.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
+#include "logging/logDecorations.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
@@ -365,6 +366,8 @@ void LogFileOutput::rotate() {
     return;
   }
 
+  write_file_unique_time_message("Rotated file at");
+
   // Reset accumulated size, increase current file counter, and check for file count wrap-around.
   _current_size = 0;
   increment_file_count();
@@ -459,4 +462,17 @@ void LogFileOutput::describe(outputStream *out) {
              byte_size_in_proper_unit(_rotate_size),
              proper_unit_for_byte_size(_rotate_size),
              LogConfiguration::is_async_mode() ? "true" : "false");
+}
+
+void LogFileOutput::write_file_unique_time_message(const char* message) {
+  if (LogDateInFileOnStartAndRotation) {
+    LogTagSet& tagset = LogTagSetMapping<LOG_TAGS(logging)>::tagset();
+    LogDecorations decorations(LogLevel::Info, tagset, tagset.decorators());
+
+    stringStream st(os::iso8601_timestamp_size);
+    char buf[os::iso8601_timestamp_size];
+    char* result = os::iso8601_time(os::javaTimeMillis(), buf, os::iso8601_timestamp_size, true);
+    st.print("%s %s", message, result);
+    this->write_internal(decorations, st.freeze());
+  }
 }
