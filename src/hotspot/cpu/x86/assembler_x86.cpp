@@ -6778,6 +6778,14 @@ void Assembler::vpalignr(XMMRegister dst, XMMRegister nds, XMMRegister src, int 
   emit_int24(0x0F, (0xC0 | encode), imm8);
 }
 
+void Assembler::evalignd(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8, int vector_len) {
+  assert(VM_Version::supports_evex(), "");
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int24(0x3, (0xC0 | encode), imm8);
+}
+
 void Assembler::evalignq(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8) {
   assert(VM_Version::supports_evex(), "");
   InstructionAttr attributes(AVX_512bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);

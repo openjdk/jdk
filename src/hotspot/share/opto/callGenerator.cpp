@@ -441,6 +441,23 @@ CallGenerator* CallGenerator::for_mh_late_inline(ciMethod* caller, ciMethod* cal
   return cg;
 }
 
+class LateInlineVectorCallGenerator : public LateInlineCallGenerator {
+ protected:
+ CallGenerator* _inline_cg;
+
+ public:
+  LateInlineVectorCallGenerator(ciMethod* method, CallGenerator* intrinsic_cg, CallGenerator* inline_cg) :
+    LateInlineCallGenerator(method, intrinsic_cg) , _inline_cg(inline_cg) {}
+
+  CallGenerator* inline_cg2() const { return _inline_cg; }
+  virtual bool      is_vector_late_inline() const  { return true; }
+};
+
+CallGenerator* CallGenerator::for_vector_late_inline(ciMethod* m, CallGenerator* intrinsic_cg, CallGenerator* inline_cg) {
+  return new LateInlineVectorCallGenerator(m, intrinsic_cg, inline_cg);
+}
+
+
 // Allow inlining decisions to be delayed
 class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
  private:
@@ -673,6 +690,8 @@ void CallGenerator::do_late_inline_helper() {
 
     // Now perform the inlining using the synthesized JVMState
     JVMState* new_jvms = inline_cg()->generate(jvms);
+    new_jvms = new_jvms == nullptr && is_vector_late_inline() ?
+        static_cast<const LateInlineVectorCallGenerator*>(this)->inline_cg2()->generate(jvms) : new_jvms;
     if (new_jvms == nullptr)  return;  // no change
     if (C->failing())      return;
 

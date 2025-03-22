@@ -753,6 +753,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_index_vector();
   case vmIntrinsics::_IndexPartiallyInUpperRange:
     return inline_index_partially_in_upper_range();
+  case vmIntrinsics::_VectorSlice:
+    return inline_vector_slice();
 
   case vmIntrinsics::_getObjectSize:
     return inline_getObjectSize();

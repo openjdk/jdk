@@ -4365,7 +4365,7 @@ bool MatchRule::is_vector() const {
     "VectorRearrange", "VectorLoadShuffle", "VectorLoadConst",
     "VectorCastB2X", "VectorCastS2X", "VectorCastI2X",
     "VectorCastL2X", "VectorCastF2X", "VectorCastD2X", "VectorCastF2HF", "VectorCastHF2F",
-    "VectorUCastB2X", "VectorUCastS2X", "VectorUCastI2X",
+    "VectorUCastB2X", "VectorUCastS2X", "VectorUCastI2X", "VectorSlice",
     "VectorMaskWrapper","VectorMaskCmp","VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
     "FmaVD","FmaVF","PopCountVI","PopCountVL","PopulateIndex","VectorLongToMask",
     "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD", "SaturatingAddV", "SaturatingSubV",
