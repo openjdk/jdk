@@ -423,6 +423,8 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      wait(jlong millis, bool interruptible, TRAPS);
   void      notify(TRAPS);
   void      notifyAll(TRAPS);
+  void      quick_notify(TRAPS);
+  void      quick_notifyAll(TRAPS);
 
   void      print() const;
 #ifdef ASSERT
