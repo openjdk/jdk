@@ -919,6 +919,8 @@ class os: AllStatic {
   static void* malloc  (size_t size, MemTag mem_tag);
   static void* realloc (void *memblock, size_t size, MemTag mem_tag, const NativeCallStack& stack);
   static void* realloc (void *memblock, size_t size, MemTag mem_tag);
+  static long pre_alloc(void** raw_ptr, void* old_ptr, size_t size, bool check_limit, MemTag mem_tag, const NativeCallStack& stack);
+  void* post_alloc(void* raw_ptr, size_t size, long chunk, MemTag mem_tag, const NativeCallStack& stack);
 
   // handles null pointers
   static void  free    (void *memblock);
