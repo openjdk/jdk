@@ -166,6 +166,20 @@ public final class Generators {
     }
 
     /**
+     * Generates uniform float16s in the range of [lo, hi) (inclusive of lo, exclusive of hi).
+     */
+    public RestrictableGenerator<Short> uniformFloat16s(short lo, short hi) {
+        return new UniformFloat16Generator(this, lo, hi);
+    }
+
+    /**
+     * Generates uniform float16s in the range of [0, 1) (inclusive of 0, exclusive of 1).
+     */
+    public RestrictableGenerator<Short> uniformFloat16s() {
+        return uniformFloat16s(Float.floatToFloat16(0.0f), Float.floatToFloat16(1.0f));
+    }
+
+    /**
      * Generates uniform doubles in the range of [lo, hi) (inclusive of lo, exclusive of hi).
      */
     public RestrictableGenerator<Float> uniformFloats(float lo, float hi) {
@@ -388,6 +402,7 @@ public final class Generators {
      */
     public final RestrictableGenerator<Double> SPECIAL_DOUBLES = orderedRandomElement(List.of(
         0d,
+        -0d,
         1d,
         -1d,
         Double.POSITIVE_INFINITY,
@@ -415,11 +430,12 @@ public final class Generators {
     }
 
     /**
-     * Generates interesting double values, which often are corner cases such as, 0, 1, -1, NaN, +/- Infinity, Min,
+     * Generates interesting float values, which often are corner cases such as, 0, 1, -1, NaN, +/- Infinity, Min,
      * Max.
      */
     public final RestrictableGenerator<Float> SPECIAL_FLOATS = orderedRandomElement(List.of(
         0f,
+        -0f,
         1f,
         -1f,
         Float.POSITIVE_INFINITY,
@@ -429,6 +445,29 @@ public final class Generators {
         Float.MIN_NORMAL,
         Float.MIN_VALUE
     ));
+
+    /**
+     * Generates interesting float16 values, which often are corner cases such as, +/- 0, NaN, +/- Infinity, Min,
+     * Max.
+     */
+    public final RestrictableGenerator<Short> SPECIAL_FLOAT16S = orderedRandomElement(List.of(
+        Float.floatToFloat16(0.0f),
+        Float.floatToFloat16(-0.0f),
+        Float.floatToFloat16(Float.POSITIVE_INFINITY),
+        Float.floatToFloat16(Float.NEGATIVE_INFINITY),
+        Float.floatToFloat16(Float.NaN),
+        Float.floatToFloat16(0x1.ffcP+15f), // MAX_VALUE
+        Float.floatToFloat16(0x1.0P-14f),   // MIN_NORMAL
+        Float.floatToFloat16(0x1.0P-24f)    // MIN_VALUE
+    ));
+
+    /**
+     * Returns a mixed generator that mixes the provided background generator and {@link #SPECIAL_FLOAT16S} with the provided
+     * weights.
+     */
+    public Generator<Short> mixedWithSpecialFloat16s(Generator<Short> background, int weightNormal, int weightSpecial) {
+        return mixed(background, SPECIAL_FLOAT16S, weightNormal, weightSpecial);
+    }
 
     /**
      * Returns a mixed generator that mixes the provided background generator and {@link #SPECIAL_FLOATS} with the provided
