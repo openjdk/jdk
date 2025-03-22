@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1298,30 +1298,10 @@ public final class TIFFField implements Cloneable {
             return Double.toString(((double[])data)[index]);
         case TIFFTag.TIFF_SRATIONAL:
             int[] ivalue = getAsSRational(index);
-            String srationalString;
-            if(ivalue[1] != 0 && ivalue[0] % ivalue[1] == 0) {
-                // If the denominator is a non-zero integral divisor
-                // of the numerator then convert the fraction to be
-                // with respect to a unity denominator.
-                srationalString = (ivalue[0] / ivalue[1]) + "/1";
-            } else {
-                // Use the values directly.
-                srationalString = ivalue[0] + "/" + ivalue[1];
-            }
-            return srationalString;
+            return ivalue[0] + "/" + ivalue[1];
         case TIFFTag.TIFF_RATIONAL:
             long[] lvalue = getAsRational(index);
-            String rationalString;
-            if(lvalue[1] != 0L && lvalue[0] % lvalue[1] == 0) {
-                // If the denominator is a non-zero integral divisor
-                // of the numerator then convert the fraction to be
-                // with respect to a unity denominator.
-                rationalString = (lvalue[0] / lvalue[1]) + "/1";
-            } else {
-                // Use the values directly.
-                rationalString = lvalue[0] + "/" + lvalue[1];
-            }
-            return rationalString;
+            return lvalue[0] + "/" + lvalue[1];
         default:
             throw new ClassCastException(); // should never happen
         }
