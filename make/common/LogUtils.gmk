@@ -64,12 +64,6 @@ define ParseLogValue
 endef
 
 define ParseLogLevel
-  # Catch old-style VERBOSE= command lines.
-  ifneq ($$(origin VERBOSE), undefined)
-    $$(info Error: VERBOSE is deprecated. Use LOG=<warn|info|debug|trace> instead.)
-    $$(error Cannot continue)
-  endif
-
   # Setup logging according to LOG
 
   # If "nofile" is present, do not log to a file

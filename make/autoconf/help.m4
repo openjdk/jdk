@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -338,14 +338,6 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   if test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = "xtrue"; then
     printf "NOTE: You have requested to build more than one version of the JVM, which\n"
     printf "will result in longer build times.\n"
-    printf "\n"
-  fi
-
-  if test "x$FOUND_ALT_VARIABLES" != "x"; then
-    printf "WARNING: You have old-style ALT_ environment variables set.\n"
-    printf "These are not respected, and will be ignored. It is recommended\n"
-    printf "that you clean your environment. The following variables are set:\n"
-    printf "$FOUND_ALT_VARIABLES\n"
     printf "\n"
   fi
 
