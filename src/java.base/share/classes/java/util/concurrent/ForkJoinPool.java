@@ -2135,7 +2135,7 @@ public class ForkJoinPool extends AbstractExecutorService
             stat = 0;                       // spurious wakeup
         else if (!compareAndSetCtl(
                      c, nc = ((w.stackPred & LMASK) | (RC_MASK & c) |
-                              (TC_MASK & (c - TC_UNIT)))))
+                               (TC_MASK & (c - TC_UNIT)))))
             stat = -1;                      // lost race to signaller
         else {
             stat = 1;
