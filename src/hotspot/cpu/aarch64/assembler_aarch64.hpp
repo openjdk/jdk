@@ -2600,6 +2600,9 @@ template<typename R, typename... Rx>
 
   INSN(addv,   0, 0b100001, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
   INSN(subv,   1, 0b100001, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(sqaddv, 0, 0b000011, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(sqsubv, 0, 0b001011, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(uqaddv, 1, 0b000011, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
   INSN(uqsubv, 1, 0b001011, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
   INSN(mulv,   0, 0b100111, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(mlav,   0, 0b100101, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
@@ -2613,6 +2616,8 @@ template<typename R, typename... Rx>
   INSN(umlalv, 1, 0b100000, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(maxv,   0, 0b011001, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(minv,   0, 0b011011, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
+  INSN(umaxv,  1, 0b011001, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
+  INSN(uminv,  1, 0b011011, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(smaxp,  0, 0b101001, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(sminp,  0, 0b101011, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(sqdmulh,0, 0b101101, false); // accepted arrangements: T4H, T8H, T2S, T4S
@@ -3323,8 +3328,12 @@ public:
     f(0b00000100, 31, 24), f(T, 23, 22), f(1, 21),                                     \
     rf(Zm, 16), f(0, 15, 13), f(opcode, 12, 10), rf(Zn, 5), rf(Zd, 0);                 \
   }
-  INSN(sve_add, 0b000);
-  INSN(sve_sub, 0b001);
+  INSN(sve_add,   0b000);
+  INSN(sve_sub,   0b001);
+  INSN(sve_sqadd, 0b100);
+  INSN(sve_sqsub, 0b110);
+  INSN(sve_uqadd, 0b101);
+  INSN(sve_uqsub, 0b111);
 #undef INSN
 
 // SVE integer add/subtract immediate (unpredicated)
@@ -3435,6 +3444,8 @@ public:
   INSN(sve_sminv, 0b00000100, 0b001010001); // signed minimum reduction to scalar
   INSN(sve_sub,   0b00000100, 0b000001000); // vector sub
   INSN(sve_uaddv, 0b00000100, 0b000001001); // unsigned add reduction to scalar
+  INSN(sve_umax,  0b00000100, 0b001001000); // unsigned maximum vectors
+  INSN(sve_umin,  0b00000100, 0b001011000); // unsigned minimum vectors
 #undef INSN
 
 // SVE floating-point arithmetic - predicate
@@ -4224,6 +4235,20 @@ public:
   }
 
   INSN(sve_eor3, 0b001); // Bitwise exclusive OR of three vectors
+#undef INSN
+
+// SVE2 saturating operations - predicate
+#define INSN(NAME, op1, op2)                                                          \
+  void NAME(FloatRegister Zdn, SIMD_RegVariant T, PRegister Pg, FloatRegister Znm) {  \
+    assert(T != Q, "invalid register variant");                                       \
+    sve_predicate_reg_insn(op1, op2, Zdn, T, Pg, Znm);                                \
+  }
+
+  INSN(sve_sqadd, 0b01000100, 0b011000100); // signed saturating add
+  INSN(sve_sqsub, 0b01000100, 0b011010100); // signed saturating sub
+  INSN(sve_uqadd, 0b01000100, 0b011001100); // unsigned saturating add
+  INSN(sve_uqsub, 0b01000100, 0b011011100); // unsigned saturating sub
+
 #undef INSN
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {
