@@ -46,7 +46,10 @@ import java.util.Objects;
  * are initialized in the right order (that is, that {@code MemorySegment} is always initialized first).
  * See {@link SegmentFactories#ensureInitialized()}.
  */
-public class SegmentFactories {
+public final class SegmentFactories {
+
+    // Suppresses default constructor, ensuring non-instantiability.
+    private SegmentFactories() {}
 
     // The maximum alignment supported by malloc - typically 16 bytes on
     // 64-bit platforms and 8 bytes on 32-bit platforms.
