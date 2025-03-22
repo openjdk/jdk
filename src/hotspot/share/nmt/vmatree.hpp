@@ -91,15 +91,17 @@ private:
   private:
     // Store the type and mem_tag as two bytes
     uint8_t type_tag[2];
-    NativeCallStackStorage::StackIndex sidx;
+    NativeCallStackStorage::StackIndex _reserved_stack;
+    NativeCallStackStorage::StackIndex _committed_stack;
 
   public:
-    IntervalState() : type_tag{0,0}, sidx() {}
+    IntervalState() : type_tag{0,0}, _reserved_stack(NativeCallStackStorage::invalid), _committed_stack(NativeCallStackStorage::invalid) {}
     IntervalState(const StateType type, const RegionData data) {
       assert(!(type == StateType::Released) || data.mem_tag == mtNone, "Released state-type must have memory tag mtNone");
       type_tag[0] = static_cast<uint8_t>(type);
       type_tag[1] = static_cast<uint8_t>(data.mem_tag);
-      sidx = data.stack_idx;
+      _reserved_stack = data.stack_idx;
+      _committed_stack = NativeCallStackStorage::invalid;
     }
 
     StateType type() const {
@@ -110,16 +112,39 @@ private:
       return static_cast<MemTag>(type_tag[1]);
     }
 
-    RegionData regiondata() const {
-      return RegionData{sidx, mem_tag()};
+    RegionData reserved_regiondata() const {
+      return RegionData{_reserved_stack, mem_tag()};
+    }
+    RegionData committed_regiondata() const {
+      return RegionData{_committed_stack, mem_tag()};
     }
 
     void set_tag(MemTag tag) {
       type_tag[1] = static_cast<uint8_t>(tag);
     }
 
-    NativeCallStackStorage::StackIndex stack() const {
-     return sidx;
+    NativeCallStackStorage::StackIndex reserved_stack() const {
+      return _reserved_stack;
+    }
+
+    NativeCallStackStorage::StackIndex committed_stack() const {
+      return _committed_stack;
+    }
+
+    void set_reserve_stack(NativeCallStackStorage::StackIndex idx) {
+      _reserved_stack = idx;
+    }
+
+    void set_commit_stack(NativeCallStackStorage::StackIndex idx) {
+      _committed_stack = idx;
+    }
+
+    bool has_reserved_stack() {
+      return _reserved_stack != NativeCallStackStorage::invalid;
+    }
+
+    bool has_committed_stack() {
+      return _committed_stack != NativeCallStackStorage::invalid;
     }
   };
 
@@ -131,7 +156,8 @@ private:
 
     bool is_noop() {
       return in.type() == out.type() &&
-             RegionData::equals(in.regiondata(), out.regiondata());
+             RegionData::equals(in.reserved_regiondata(), out.reserved_regiondata()) &&
+             RegionData::equals(in.committed_regiondata(), out.committed_regiondata());
     }
   };
 
