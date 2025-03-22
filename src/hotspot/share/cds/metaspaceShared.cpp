@@ -758,8 +758,10 @@ void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
       ClassLoaderData* cld = collect_cld.cld_at(i);
       for (Klass* klass = cld->klasses(); klass != nullptr; klass = klass->next_link()) {
         if (klass->is_instance_klass()) {
+          // Skip classes that are not yet loaded: these are classes that have failed
+          // to load after they were inserted into the ClassLoaderData by the ClassFileParser.
           InstanceKlass* ik = InstanceKlass::cast(klass);
-          if (may_be_eagerly_linked(ik)) {
+          if (ik->is_loaded() && may_be_eagerly_linked(ik)) {
             has_linked |= link_class_for_cds(ik, CHECK);
           }
         }
