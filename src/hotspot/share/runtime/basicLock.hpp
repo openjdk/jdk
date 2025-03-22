@@ -50,6 +50,8 @@ class BasicLock {
   static int metadata_offset_in_bytes() { return (int)offset_of(BasicLock, _metadata); }
 
  public:
+  BasicLock() : _metadata(0) {}
+
   // LM_MONITOR
   void set_bad_metadata_deopt() { set_metadata(badDispHeaderDeopt); }
 
