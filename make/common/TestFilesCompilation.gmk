@@ -115,6 +115,7 @@ define SetupTestFilesCompilationBody
         DISABLED_WARNINGS_gcc := format undef unused-but-set-variable \
             unused-const-variable unused-function unused-value \
             unused-variable, \
+        DISABLED_WARNINGS_CXX_gcc := zero-as-null-pointer-constant, \
         DISABLED_WARNINGS_clang := format-nonliteral \
             missing-field-initializers sometimes-uninitialized undef \
             unused-but-set-variable unused-function unused-variable, \

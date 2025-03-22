@@ -35,7 +35,7 @@
 
 namespace {
 
-Jvm* jvmLauncher = 0;
+Jvm* jvmLauncher = NULL;
 
 void launchJvm() {
     // On Mac JLI_Launch() spawns a new thread that actually starts the JVM.
