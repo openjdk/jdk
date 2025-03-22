@@ -44,8 +44,8 @@ struct PacketList {
 };
 
 static volatile struct PacketList *cmdQueue;
-static jrawMonitorID cmdQueueLock;
-static jrawMonitorID vmDeathLock;
+static DebugRawMonitor* cmdQueueLock;
+static DebugRawMonitor* vmDeathLock;
 static jboolean transportError;
 
 static jboolean
@@ -63,7 +63,7 @@ lastCommand(jdwpCmdPacket *cmd)
 void
 debugLoop_initialize(void)
 {
-    vmDeathLock = debugMonitorCreate("JDWP VM_DEATH Lock");
+    vmDeathLock = debugMonitorCreate(vmDeathLockForDebugLoop_Rank, "JDWP VM_DEATH Lock");
 }
 
 void
@@ -88,7 +88,7 @@ debugLoop_run(void)
     /* We may be starting a new connection after an error */
     cmdQueue = NULL;
     if (cmdQueueLock == NULL) {
-      cmdQueueLock = debugMonitorCreate("JDWP Command Queue Lock");
+        cmdQueueLock = debugMonitorCreate(cmdQueueLock_Rank, "JDWP Command Queue Lock");
     }
     transportError = JNI_FALSE;
 
