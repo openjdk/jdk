@@ -35,7 +35,7 @@ public class OnTopFDFTest {
     private volatile Frame  hiddenFrame;
 
     private static final int delay = 500;
-    private final ExtendedRobot robot;
+    private final Robot robot;
 
     public enum DialogOwner {HIDDEN_DIALOG, NULL_DIALOG, HIDDEN_FRAME, NULL_FRAME, FRAME};
 
@@ -51,7 +51,7 @@ public class OnTopFDFTest {
         modalityType = modType;
         setModal = modal;
         owner = o;
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeLater(this::createGUI);
     }
 
