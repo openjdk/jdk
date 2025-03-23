@@ -835,7 +835,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     if (rc == nullptr) {
       return nullptr;
     }
-    
+
   }
 
   DEBUG_ONLY(break_if_ptr_caught(rc);)
