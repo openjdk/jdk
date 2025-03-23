@@ -637,11 +637,11 @@ long os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, bool check_limit,
 //  }
 //
 //  DEBUG_ONLY(check_crash_protection());
-
-  // Observe MallocLimit
-  if (MemTracker::check_exceeds_limit(size, mem_tag)) {
-    return -1;
-  }
+//
+//  // Observe MallocLimit
+//  if (MemTracker::check_exceeds_limit(size, mem_tag)) {
+//    return -1;
+//  }
 
   const size_t outer_size = size + MemTracker::overhead_per_malloc();
 
@@ -692,11 +692,11 @@ void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
   }
 
   DEBUG_ONLY(check_crash_protection());
-//
-//  // Observe MallocLimit
-//  if (MemTracker::check_exceeds_limit(size, mem_tag)) {
-//    return nullptr;
-//  }
+
+  // Observe MallocLimit
+  if (MemTracker::check_exceeds_limit(size, mem_tag)) {
+    return nullptr;
+  }
 //
 //  const size_t outer_size = size + MemTracker::overhead_per_malloc();
 //
