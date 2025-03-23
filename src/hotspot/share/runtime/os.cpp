@@ -697,22 +697,23 @@ void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
   if (MemTracker::check_exceeds_limit(size, mem_tag)) {
     return nullptr;
   }
-//
-//  const size_t outer_size = size + MemTracker::overhead_per_malloc();
-//
-//  // Check for overflow.
-//  if (outer_size < size) {
-//    return nullptr;
-//  }
 
-  //void* rc = nullptr;
-  long outer_size = os::pre_alloc(&rc, nullptr, size, true, mem_tag, stack);
-  if (rc != nullptr) {
-    return rc;
-  }
-  if (outer_size < 0) {
+  size_t outer_size = size + MemTracker::overhead_per_malloc();
+
+  // Check for overflow.
+  if (outer_size < size) {
     return nullptr;
   }
+
+  outer_size = (long)outer_size;
+////  void* rc = nullptr;
+//  long outer_size = os::pre_alloc(&rc, nullptr, size, true, mem_tag, stack);
+//  if (rc != nullptr) {
+//    return rc;
+//  }
+//  if (outer_size < 0) {
+//    return nullptr;
+//  }
 
   ALLOW_C_FUNCTION(::malloc, void* const outer_ptr = ::malloc(outer_size);)
   if (outer_ptr == nullptr) {
