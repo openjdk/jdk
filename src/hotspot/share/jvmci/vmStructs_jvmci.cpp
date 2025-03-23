@@ -328,8 +328,7 @@
                                                                                                                                      \
   volatile_nonstatic_field(ObjectMonitor,      _owner,                                        int64_t)                               \
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intptr_t)                              \
-  volatile_nonstatic_field(ObjectMonitor,      _cxq,                                          ObjectWaiter*)                         \
-  volatile_nonstatic_field(ObjectMonitor,      _EntryList,                                    ObjectWaiter*)                         \
+  volatile_nonstatic_field(ObjectMonitor,      _entry_list,                                   ObjectWaiter*)                         \
   volatile_nonstatic_field(ObjectMonitor,      _succ,                                         int64_t)                               \
   volatile_nonstatic_field(ObjectMonitor,      _stack_locker,                                 BasicLock*)                            \
                                                                                                                                      \
@@ -592,6 +591,10 @@
   declare_constant(CodeInstaller::STACK_SLOT_OOP)                         \
   declare_constant(CodeInstaller::STACK_SLOT_NARROW_OOP)                  \
   declare_constant(CodeInstaller::STACK_SLOT_VECTOR)                      \
+  declare_constant(CodeInstaller::STACK_SLOT4_PRIMITIVE)                  \
+  declare_constant(CodeInstaller::STACK_SLOT4_OOP)                        \
+  declare_constant(CodeInstaller::STACK_SLOT4_NARROW_OOP)                 \
+  declare_constant(CodeInstaller::STACK_SLOT4_VECTOR)                     \
   declare_constant(CodeInstaller::VIRTUAL_OBJECT_ID)                      \
   declare_constant(CodeInstaller::VIRTUAL_OBJECT_ID2)                     \
   declare_constant(CodeInstaller::NULL_CONSTANT)                          \

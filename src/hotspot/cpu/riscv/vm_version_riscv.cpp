@@ -24,6 +24,7 @@
  *
  */
 
+#include "classfile/vmIntrinsics.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
@@ -126,16 +127,12 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
-  if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
-    FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
-  }
-
   if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
-      FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
+    FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
   }
 
   if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
-      FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
+    FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
   }
 
   if (UseRVC && !ext_C.enabled()) {
@@ -151,6 +148,14 @@ void VM_Version::common_initialize() {
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
     FLAG_SET_DEFAULT(AvoidUnalignedAccesses,
       unaligned_access.value() != MISALIGNED_FAST);
+  }
+
+  if (!AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
+      FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
+    }
+  } else if (UsePoly1305Intrinsics) {
+    warning("Intrinsics for Poly1305 crypto hash functions not available on this CPU.");
   }
 
   // See JDK-8026049
@@ -314,10 +319,6 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, true);
   }
 
-  if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
-    FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
-  }
-
   // Adler32
   if (UseRVV) {
     if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
@@ -358,13 +359,22 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseZvbc, false);
   }
 
+  if (!AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
+      FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
+    }
+  } else if (UseMD5Intrinsics) {
+    warning("Intrinsics for MD5 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
+  }
+
   // SHA's
   if (FLAG_IS_DEFAULT(UseSHA)) {
     FLAG_SET_DEFAULT(UseSHA, true);
   }
 
   // SHA-1, no RVV required though.
-  if (UseSHA) {
+  if (UseSHA && !AvoidUnalignedAccesses) {
     if (FLAG_IS_DEFAULT(UseSHA1Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA1Intrinsics, true);
     }
@@ -463,4 +473,19 @@ void VM_Version::initialize_cpu_information(void) {
   snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "RISCV64");
   snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "RISCV64 %s", features_string());
   _initialized = true;
+}
+
+bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  switch (id) {
+  case vmIntrinsics::_floatToFloat16:
+  case vmIntrinsics::_float16ToFloat:
+    if (!supports_float16_float_conversion()) {
+      return false;
+    }
+    break;
+  default:
+    break;
+  }
+  return true;
 }
