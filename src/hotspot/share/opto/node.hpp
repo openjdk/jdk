@@ -506,7 +506,7 @@ protected:
   // Find out of current node that matches opcode.
   Node* find_out_with(int opcode);
   // Find out of current node that matches any of opcodes.
-  Node* find_out_with(int opcode1, int opcode2);
+  Node* find_out_with(int opcode1, int opcode2) const;
   // Return true if the current node has an out that matches opcode.
   bool has_out_with(int opcode);
   // Return true if the current node has an out that matches any of the opcodes.

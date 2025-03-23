@@ -1934,7 +1934,7 @@ private:
   static bool is_reachable_Or_nodes(const Node* from, const Node* to);
   MemoryAdjacentStatus get_adjacent_load_status(const LoadNode* first, const LoadNode* second) const;
   // Go through ConvI2L which is unique output of the load
-  static Node* by_pass_i2l(const LoadNode* load);
+  static const Node* by_pass_i2l(const LoadNode* load);
 
 #ifndef PRODUCT
   // Access to TraceMergeLoads tags
@@ -1975,11 +1975,11 @@ bool MergePrimitiveLoads::is_supported_opcode(int opc) {
 }
 
 // Go through ConvI2L which is unique output of the load
-Node* MergePrimitiveLoads::by_pass_i2l(const LoadNode* l) {
+const Node* MergePrimitiveLoads::by_pass_i2l(const LoadNode* l) {
   if (l != nullptr && l->outcnt() == 1 && l->unique_out()->Opcode() == Op_ConvI2L) {
     return l->unique_out();
   } else {
-    return (Node*)l;
+    return l;
   }
 };
 
@@ -2006,7 +2006,7 @@ bool MergePrimitiveLoads::is_merged_load_candidate() const {
       _load->is_acquire() || !_load->is_unordered()) {
     return false;
   }
-  Node* check = by_pass_i2l(_load);
+  const Node* check = by_pass_i2l(_load);
   // The candidate load has unique out which is OrI/OrL node
   return check->outcnt() == 1 &&
          check->find_out_with(Op_OrI, Op_OrL) != nullptr;
@@ -2014,7 +2014,7 @@ bool MergePrimitiveLoads::is_merged_load_candidate() const {
 
 // Construct merge information item from input load
 MergeLoadInfo* MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
-  Node* check = by_pass_i2l(load);
+  const Node* check = by_pass_i2l(load);
   Node* or_oper = nullptr;
   int shift = -1;
   auto is_or_oper = [&](Node* n) { return n != nullptr && (n->Opcode() == Op_OrI || n->Opcode() == Op_OrL); };
@@ -2243,29 +2243,21 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list) {
   MemoryAdjacentStatus order = Unknown;
   int last_op_index = -1;
 
-  // Check 1st element if it has last_op flag
-  if (array[0]->last_op()) {
-    if ((array[0]->_or->Opcode() == Op_OrI && bytes != 4) ||
-        (array[0]->_or->Opcode() == Op_OrL && bytes != 8)) {
-      // The merged load can not cover all bits of result value
-      return;
-    }
-    last_op_index = 0;
-  }
-
-  for (int i = 1; i < collected; i++) {
+  for (int i = 0; i < collected; i++) {
     MergeLoadInfo* info = array[i];
     if (info == nullptr) {
       return;
     }
-    MemoryAdjacentStatus adjacent = get_adjacent_load_status(array[i-1]->_load, info->_load);
-    if (adjacent == NotAdjacent) {
-      return;
-    } else if (order == Unknown) {
-      order = adjacent;
-    } else if (adjacent != order) {
-      // Different adjacent order
-      return;
+    if (i > 0) {
+      MemoryAdjacentStatus adjacent = get_adjacent_load_status(array[i-1]->_load, info->_load);
+      if (adjacent == NotAdjacent) {
+        return;
+      } else if (order == Unknown) {
+        order = adjacent;
+      } else if (adjacent != order) {
+        // Different adjacent order
+        return;
+      }
     }
 
     if (info->last_op()) {
@@ -2330,6 +2322,15 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list) {
   for (int i=0; i<collected; i++) {
     merge_list.push(array[i]);
   }
+#ifdef ASSERT
+  if (is_trace_basic()) {
+    tty->print_cr("[TraceMergeLoads]: dump final merge info list, collected: %d", collected);
+    for (int i=0; i < merge_list.length(); i++) {
+      MergeLoadInfo* info = merge_list.at(i);
+      info->dump();
+    }
+  }
+#endif
   return;
 }
 
