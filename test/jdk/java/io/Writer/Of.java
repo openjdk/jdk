@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,6 @@
 import java.io.Writer;
 import java.io.StringWriter;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.ReadOnlyBufferException;
 import java.util.function.Supplier;
 
 import org.testng.annotations.*;
@@ -36,7 +32,7 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @bug 1234567
+ * @bug 8353795
  * @summary Check for expected behavior of Writer.of().
  * @run testng Of
  */
@@ -56,10 +52,7 @@ public class Of {
     @DataProvider
     public static Config[] writers() {
         var sw = new StringWriter();
-        var sbuf = new StringBuffer();
         var sbld = new StringBuilder();
-        var dcb = ByteBuffer.allocateDirect(CONTENT.length() * 2).asCharBuffer();
-        var wcb = CharBuffer.wrap(new char[CONTENT.length()]);
         var w = new Writer() {
             private String s = "";
             private boolean isClosed;
@@ -112,43 +105,10 @@ public class Of {
                 return s;
             }
         };
-        var a = new Appendable() {
-            private String s = "";
-
-            @Override
-            public Appendable append(char c) throws IOException {
-                s += c;
-                return this;
-            }
-
-            @Override
-            public Appendable append(CharSequence csq) throws IOException {
-                s += String.valueOf(csq);
-                return this;
-            }
-
-            @Override
-            public Appendable append(CharSequence csq, int start, int end)
-                    throws IOException {
-                s += String.valueOf(csq).subSequence(start, end);
-                return this;
-            }
-
-            @Override
-            public String toString() {
-                return s;
-            }
-        };
         return new Config[] {
             new Config("StringWriter", sw, sw::toString),
-            new Config("StringBuffer", Writer.of(sbuf), sbuf::toString),
             new Config("StringBuilder", Writer.of(sbld), sbld::toString),
-            new Config("Direct CharBuffer", Writer.of(dcb),
-                    () -> { dcb.flip(); return dcb.toString(); }),
-            new Config("Wrapped CharBuffer", Writer.of(wcb),
-                    () -> { wcb.flip(); return wcb.toString(); }),
             new Config("Custom Writer", w, w::toString),
-            new Config("Custom Appendable", Writer.of(a), a::toString)
         };
     }
 

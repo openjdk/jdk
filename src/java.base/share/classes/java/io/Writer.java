@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,31 +146,25 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
     }
 
     /**
-     * Returns a {@code Writer} that writes characters into an
-     * {@code Appendable}. The writer is initially open and writing appends
-     * after the last character in the appendable.
-     *
-     * <p> If the appendable is a {code Writer}, it is returned.
+     * Returns a {@code Writer} that writes characters into a
+     * {@code StringBuilder}. The writer is initially open and writing appends
+     * after the last character in the string builder.
      *
      * <p> The resulting writer is not safe for use by multiple
      * concurrent threads. If the writer is to be used by more than one
      * thread it should be controlled by appropriate synchronization.
      *
-     * <p> If the appendable changes while the writer is open, e.g. the length
+     * <p> If the string builder changes while the writer is open, e.g. the length
      * changes, the behavior is undefined.
      *
-     * @param a {@code Appendable} consuming the character stream.
-     * @return a {@code Writer} which writes characters into {@code a}, or
-     *         {@code a} if it is a {@code Writer}.
-     * @throws NullPointerException if {@code a} is {@code null}
+     * @param sb {@code StringBuilder} consuming the character stream.
+     * @return a {@code Writer} which writes characters into {@code sb}.
+     * @throws NullPointerException if {@code sb} is {@code null}
      *
      * @since 25
      */
-    public static Writer of(final Appendable a) {
-        Objects.requireNonNull(a);
-
-        if (a instanceof Writer w)
-            return w;
+    public static Writer of(final StringBuilder sb) {
+        Objects.requireNonNull(sb);
 
         return new Writer() {
             private boolean isClosed;
@@ -184,7 +178,7 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
             @Override
             public void write(int c) throws IOException {
                 ensureOpen();
-                a.append((char) c);
+                sb.append((char) c);
             }
 
             @Override
@@ -194,73 +188,49 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
                 if (len == 0) {
                     return;
                 }
-                switch (a) {
-                    case StringBuilder sb -> sb.append(cbuf, off, len);
-                    case StringBuffer sb -> sb.append(cbuf, off, len);
-                    case CharBuffer cb -> cb.put(cbuf, off, len);
-                    default -> {
-                        for (int i = 0; i < len; i++)
-                            a.append(cbuf[off + i]);
-                    }
-                }
+                sb.append(cbuf, off, len);
             }
 
             @Override
             public void write(String str) throws IOException {
                 ensureOpen();
-                switch (a) {
-                    case StringBuilder sb -> sb.append(str);
-                    case StringBuffer sb -> sb.append(str);
-                    case CharBuffer cb -> cb.put(str);
-                    default -> a.append(str);
-                }
+                sb.append(str);
             }
 
             @Override
             public void write(String str, int off, int len) throws IOException {
                 ensureOpen();
-                a.append(str, off, off + len);
+                sb.append(str, off, off + len);
             }
 
             @Override
             public Writer append(CharSequence csq) throws IOException {
                 ensureOpen();
-                a.append(csq);
+                sb.append(csq);
                 return this;
             }
 
             @Override
             public Writer append(CharSequence csq, int start, int end) throws IOException {
                 ensureOpen();
-                a.append(csq, start, end);
+                sb.append(csq, start, end);
                 return this;
             }
 
             @Override
             public Writer append(char c) throws IOException {
                 ensureOpen();
-                a.append(c);
+                sb.append(c);
                 return this;
             }
 
             @Override
             public void flush() throws IOException {
                 ensureOpen();
-                implFlush();
-            }
-
-            private void implFlush() throws IOException {
-                if (a instanceof Flushable f)
-                    f.flush();
             }
 
             @Override
             public void close() throws IOException {
-                if (isClosed)
-                    return;
-                implFlush();
-                if (a instanceof Closable c)
-                    c.close();
                 isClosed = true;
             }
         };
