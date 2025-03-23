@@ -1143,10 +1143,7 @@ public class ZipFile implements ZipConstants, Closeable {
     // Represents the resolved name and position of a CEN record
     static record EntryPos(String name, int pos) {}
 
-    // Implementation note: This class must be thread-safe.
-    // Each instance of Source could be shared between multiple different instances of ZipFile.
-    // Although ZipFile isn't thread-safe, the fact that separate instances of ZipFile could
-    // still concurrently use the same Source instance, mandates that Source must be thread-safe.
+    // Implementation note: This class is be thread safe.
     private static class Source {
         // While this is only used from ZipFile, defining it there would cause
         // a bootstrap cycle that would leave this initialized as null
