@@ -279,6 +279,38 @@ Node* ConvF2HFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new ReinterpretHF2SNode(binop);
     }
   }
+
+  Node* const_input = nullptr;
+  Node* non_const_input = nullptr;
+  // Check for incoming binary operations with one of its input being a floating point constant
+  // and other as a half precision to single precision upcasting node.
+  if (in(1)->req() == 3 && in(1)->in(1)->is_Con() &&  in(1)->in(2)->Opcode() == Op_ConvHF2F) {
+    const_input = in(1)->in(1);
+    non_const_input = in(1)->in(2)->in(1);
+  } else if (in(1)->req() == 3 && in(1)->in(2)->is_Con() &&  in(1)->in(1)->Opcode() == Op_ConvHF2F) {
+    const_input = in(1)->in(2);
+    non_const_input = in(1)->in(1)->in(1);
+  }
+  if (const_input && non_const_input &&
+      const_input->bottom_type()->is_float_constant() &&
+      StubRoutines::hf2f_adr() != nullptr &&
+      StubRoutines::f2hf_adr() != nullptr) {
+    jfloat val = const_input->bottom_type()->getf();
+    // If value lies within Float16 value range convert it to
+    // a half-float constant.
+    if (StubRoutines::hf2f(StubRoutines::f2hf(val)) == val) {
+      Node* new_non_const_inp = phase->transform(new ReinterpretS2HFNode(non_const_input));
+      Node* new_const_inp = phase->makecon(TypeH::make(val));
+      Node* binop = nullptr;
+      if (in(1)->in(1) == const_input) {
+        binop = phase->transform(Float16NodeFactory::make(in(1)->Opcode(), in(1)->in(0), new_const_inp, new_non_const_inp));
+      } else {
+        binop = phase->transform(Float16NodeFactory::make(in(1)->Opcode(), in(1)->in(0), new_non_const_inp, new_const_inp));
+      }
+      return new ReinterpretHF2SNode(binop);
+    }
+  }
+
   return nullptr;
 }
 //=============================================================================
