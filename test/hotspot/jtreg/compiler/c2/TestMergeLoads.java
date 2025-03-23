@@ -65,6 +65,7 @@ public class TestMergeLoads {
     byte[] aB = new byte[RANGE];
     char[] aC = new char[RANGE];
     short[] aS = new short[RANGE];
+    int[] aI = new int[RANGE];
 
     interface TestFunction {
         Object run(boolean isWarmUp, int rnd);
@@ -96,6 +97,8 @@ public class TestMergeLoads {
         testGroups.get("test1").put("test1c", (_,_) -> { return test1c(aB.clone()); });
         testGroups.get("test1").put("test1d", (_,_) -> { return test1d(aB.clone()); });
         testGroups.get("test1").put("test1e", (_,_) -> { return test1e(aB.clone()); });
+        testGroups.get("test1").put("test1f", (_,_) -> { return test1f(aB.clone()); });
+        testGroups.get("test1").put("test1g", (_,_) -> { return test1g(aB.clone()); });
 
         // Get long in little endian
         testGroups.put("test2", new HashMap<String,TestFunction>());
@@ -105,6 +108,8 @@ public class TestMergeLoads {
         testGroups.get("test2").put("test2c", (_,_) -> { return test2c(aB.clone()); });
         testGroups.get("test2").put("test2d", (_,_) -> { return test2d(aB.clone()); });
         testGroups.get("test2").put("test2e", (_,_) -> { return test2e(aB.clone()); });
+        testGroups.get("test2").put("test2f", (_,_) -> { return test2f(aB.clone()); });
+        testGroups.get("test2").put("test2g", (_,_) -> { return test2g(aB.clone()); });
 
         // Get int in big endian
         testGroups.put("test3", new HashMap<String,TestFunction>());
@@ -112,6 +117,10 @@ public class TestMergeLoads {
         testGroups.get("test3").put("test3a", (_,_) -> { return test3a(aB.clone()); });
         testGroups.get("test3").put("test3b", (_,_) -> { return test3b(aB.clone()); });
         testGroups.get("test3").put("test3c", (_,_) -> { return test3c(aB.clone()); });
+        testGroups.get("test3").put("test3d", (_,_) -> { return test3d(aB.clone()); });
+        testGroups.get("test3").put("test3e", (_,_) -> { return test3e(aB.clone()); });
+        testGroups.get("test3").put("test3f", (_,_) -> { return test3f(aB.clone()); });
+        testGroups.get("test3").put("test3g", (_,_) -> { return test3g(aB.clone()); });
 
         // Get long in big endian
         testGroups.put("test4", new HashMap<String,TestFunction>());
@@ -119,6 +128,9 @@ public class TestMergeLoads {
         testGroups.get("test4").put("test4a", (_,_) -> { return test4a(aB.clone()); });
         testGroups.get("test4").put("test4b", (_,_) -> { return test4b(aB.clone()); });
         testGroups.get("test4").put("test4c", (_,_) -> { return test4c(aB.clone()); });
+        testGroups.get("test4").put("test4d", (_,_) -> { return test4d(aB.clone()); });
+        testGroups.get("test4").put("test4e", (_,_) -> { return test4e(aB.clone()); });
+        testGroups.get("test4").put("test4f", (_,_) -> { return test4f(aB.clone()); });
 
         // Merge char as int
         testGroups.put("test5", new HashMap<String,TestFunction>());
@@ -143,6 +155,22 @@ public class TestMergeLoads {
         testGroups.get("test8").put("test8R", (_,_) -> { return test8R(aS.clone()); });
         testGroups.get("test8").put("test8a", (_,_) -> { return test8a(aS.clone()); });
         testGroups.get("test8").put("test8b", (_,_) -> { return test8b(aS.clone()); });
+
+        // Merge int as long
+        testGroups.put("test9", new HashMap<String,TestFunction>());
+        testGroups.get("test9").put("test9R", (_,_) -> { return test9R(aI.clone()); });
+        testGroups.get("test9").put("test9a", (_,_) -> { return test9a(aI.clone()); });
+        testGroups.get("test9").put("test9b", (_,_) -> { return test9b(aI.clone()); });
+
+        // Shift value is not aligned
+        testGroups.put("test10", new HashMap<String,TestFunction>());
+        testGroups.get("test10").put("test10R", (_,_) -> { return test10R(aB.clone(), aC.clone(), aS.clone(), aI.clone()); });
+        testGroups.get("test10").put("test10a", (_,_) -> { return test10a(aB.clone(), aC.clone(), aS.clone(), aI.clone()); });
+
+        // Mask value is not aligned
+        testGroups.put("test11", new HashMap<String,TestFunction>());
+        testGroups.get("test11").put("test11R", (_,_) -> { return test11R(aB.clone(), aC.clone(), aS.clone(), aI.clone()); });
+        testGroups.get("test11").put("test11a", (_,_) -> { return test11a(aB.clone(), aC.clone(), aS.clone(), aI.clone()); });
     }
 
     static void set_random(byte[] a) {
@@ -163,26 +191,43 @@ public class TestMergeLoads {
         }
     }
 
+    static void set_random(int[] a) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = RANDOM.nextInt();
+        }
+    }
+
     @Warmup(100)
     @Run(test = {"test1a",
                  "test1b",
                  "test1c",
                  "test1d",
                  "test1e",
+                 "test1f",
+                 "test1g",
 
                  "test2a",
                  "test2b",
                  "test2c",
                  "test2d",
                  "test2e",
+                 "test2f",
+                 "test2g",
 
                  "test3a",
                  "test3b",
                  "test3c",
+                 "test3d",
+                 "test3e",
+                 "test3f",
+                 "test3g",
 
                  "test4a",
                  "test4b",
                  "test4c",
+                 "test4d",
+                 "test4e",
+                 "test4f",
 
                  "test5a",
                  "test5b",
@@ -195,6 +240,13 @@ public class TestMergeLoads {
 
                  "test8a",
                  "test8b",
+
+                 "test9a",
+                 "test9b",
+
+                 "test10a",
+
+                 "test11a",
                 })
     public void runTests(RunInfo info) {
         // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
@@ -309,6 +361,7 @@ public class TestMergeLoads {
             ((UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3) & 0xff) << 24);
     }
 
+    // Shuffle order test
     @Test
     @IR(counts = {
           IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
@@ -338,6 +391,7 @@ public class TestMergeLoads {
              ((a[1] & 0xff) << 8 );
     }
 
+    // Shuffle order test
     @Test
     @IR(counts = {
           IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
@@ -365,6 +419,41 @@ public class TestMergeLoads {
              ((UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3) & 0xff) << 24) |
              ((UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2) & 0xff) << 16) |
               (UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0) & 0xff);
+    }
+
+    // volatile loads can not be merged
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "4",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static int test1f(byte[] a) {
+      return  (UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0) & 0xff)       |
+             ((UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1) & 0xff) << 8 )|
+             ((UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2) & 0xff) << 16)|
+             ((UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3) & 0xff) << 24);
+    }
+
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static int test1g(byte[] a) {
+      return  (UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0) & 0xff)       |
+             ((UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1) & 0xff) << 8 )|
+             ((UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2) & 0xff) << 16)|
+             ((UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3) & 0xff) << 24);
     }
 
     /**
@@ -462,6 +551,7 @@ public class TestMergeLoads {
             (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 7) & 0xff)) << 56);
     }
 
+    // Shuffle test
     @Test
     @IR(counts = {
           IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
@@ -495,6 +585,7 @@ public class TestMergeLoads {
              (((long)(a[7] & 0xff)) << 56);
     }
 
+    // Shuffle test
     @Test
     @IR(counts = {
           IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
@@ -526,6 +617,49 @@ public class TestMergeLoads {
             (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2) & 0xff)) << 16)|
             (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6) & 0xff)) << 48)|
             (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1) & 0xff)) << 8 );
+    }
+
+    // can not merge volatile load
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static long test2f(byte[] a) {
+      return ((long)(UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0) & 0xff)       )|
+            (((long)(UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1) & 0xff)) << 8 )|
+            (((long)(UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2) & 0xff)) << 16)|
+            (((long)(UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3) & 0xff)) << 24)|
+            (((long)(UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4) & 0xff)) << 32)|
+            (((long)(UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 5) & 0xff)) << 40)|
+            (((long)(UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6) & 0xff)) << 48)|
+            (((long)(UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 7) & 0xff)) << 56);
+    }
+
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "7",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static long test2g(byte[] a) {
+      return ((long)(UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0) & 0xff)       )|
+            (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1) & 0xff)) << 8 )|
+            (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2) & 0xff)) << 16)|
+            (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3) & 0xff)) << 24)|
+            (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4) & 0xff)) << 32)|
+            (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 5) & 0xff)) << 40)|
+            (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6) & 0xff)) << 48)|
+            (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 7) & 0xff)) << 56);
     }
 
     /**
@@ -655,6 +789,148 @@ public class TestMergeLoads {
              ((UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1) & 0xff) << 16) |
              ((UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2) & 0xff) <<  8) |
               (UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3) & 0xff);
+    }
+
+    // Shuffle test
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.REVERSE_BYTES_I, "1"
+        },
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.REVERSE_BYTES_I, "1"
+        },
+        applyIfPlatform   = {"riscv64", "true"},
+        applyIfAnd = {"UseUnalignedAccesses", "true", "UseZbb", "true"})
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.REVERSE_BYTES_I, "0"
+        },
+        applyIfPlatform   = {"riscv64", "true"},
+        applyIfAnd = {"UseUnalignedAccesses", "true", "UseZbb", "false"})
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.REVERSE_BYTES_I, "0"
+        },
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"big-endian", "true"})
+    static int test3d(byte[] a) {
+      return  (a[3] & 0xff)        |
+             ((a[2] & 0xff) <<  8) |
+             ((a[1] & 0xff) << 16) |
+             ((a[0] & 0xff) << 24);
+    }
+
+    // Shuffle test
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.REVERSE_BYTES_I, "1"
+        },
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.REVERSE_BYTES_I, "1"
+        },
+        applyIfPlatform   = {"riscv64", "true"},
+        applyIfAnd = {"UseUnalignedAccesses", "true", "UseZbb", "true"})
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.REVERSE_BYTES_I, "0"
+        },
+        applyIfPlatform   = {"riscv64", "true"},
+        applyIfAnd = {"UseUnalignedAccesses", "true", "UseZbb", "false"})
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.REVERSE_BYTES_I, "0"
+        },
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"big-endian", "true"})
+    static int test3e(byte[] a) {
+      return ((UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1) & 0xff) << 16) |
+              (UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3) & 0xff)        |
+             ((UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0) & 0xff) << 24) |
+             ((UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2) & 0xff) <<  8);
+    }
+
+    // Can not merge volatile load
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "4",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static int test3f(byte[] a) {
+      return ((UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0) & 0xff) << 24) |
+             ((UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1) & 0xff) << 16) |
+             ((UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2) & 0xff) <<  8) |
+              (UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3) & 0xff);
+    }
+
+    // Can not merge volatile load
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static int test3g(byte[] a) {
+      return ((UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0) & 0xff) << 24) |
+             ((UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1) & 0xff) << 16) |
+             ((UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2) & 0xff) <<  8) |
+              (UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3) & 0xff);
     }
 
     /**
@@ -794,6 +1070,143 @@ public class TestMergeLoads {
              (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4) & 0xff)) << 24)|
              (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 5) & 0xff)) << 16)|
              (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6) & 0xff)) <<  8)|
+              ((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 7) & 0xff));
+    }
+
+    // Shuffle test
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.REVERSE_BYTES_L, "1"
+        },
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.REVERSE_BYTES_L, "1"
+        },
+        applyIfPlatform   = {"riscv64", "true"},
+        applyIfAnd = {"UseUnalignedAccesses", "true", "UseZbb", "true"})
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.REVERSE_BYTES_L, "0"
+        },
+        applyIfPlatform   = {"riscv64", "true"},
+        applyIfAnd = {"UseUnalignedAccesses", "true", "UseZbb", "false"})
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.REVERSE_BYTES_L, "0"
+        },
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"big-endian", "true"})
+    static long test4d(byte[] a) {
+      return (((long)(a[0] & 0xff)) << 56)|
+             (((long)(a[5] & 0xff)) << 16)|
+             (((long)(a[2] & 0xff)) << 40)|
+             (((long)(a[1] & 0xff)) << 48)|
+             (((long)(a[4] & 0xff)) << 24)|
+             (((long)(a[6] & 0xff)) <<  8)|
+             (((long)(a[3] & 0xff)) << 32)|
+              ((long)(a[7] & 0xff));
+    }
+
+    // Shuffle test
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.REVERSE_BYTES_L, "1"
+        },
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatformAnd = {"little-endian", "true", "riscv64", "false"})
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.REVERSE_BYTES_L, "1"
+        },
+        applyIfPlatform   = {"riscv64", "true"},
+        applyIfAnd = {"UseUnalignedAccesses", "true", "UseZbb", "true"})
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.REVERSE_BYTES_L, "0"
+        },
+        applyIfPlatform   = {"riscv64", "true"},
+        applyIfAnd = {"UseUnalignedAccesses", "true", "UseZbb", "false"})
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.REVERSE_BYTES_L, "0"
+        },
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"big-endian", "true"})
+    static long test4e(byte[] a) {
+      return  ((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 7) & 0xff))       |
+             (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0) & 0xff)) << 56)|
+             (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2) & 0xff)) << 40)|
+             (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6) & 0xff)) <<  8)|
+             (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3) & 0xff)) << 32)|
+             (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4) & 0xff)) << 24)|
+             (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 5) & 0xff)) << 16)|
+             (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1) & 0xff)) << 48);
+    }
+
+    // Can not merge volatile load
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "4",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "4",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.REVERSE_BYTES_L, "0"
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static long test4f(byte[] a) {
+      return (((long)(UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0) & 0xff)) << 56)|
+             (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1) & 0xff)) << 48)|
+             (((long)(UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2) & 0xff)) << 40)|
+             (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3) & 0xff)) << 32)|
+             (((long)(UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4) & 0xff)) << 24)|
+             (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 5) & 0xff)) << 16)|
+             (((long)(UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6) & 0xff)) <<  8)|
               ((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 7) & 0xff));
     }
 
@@ -1019,5 +1432,208 @@ public class TestMergeLoads {
                 (((long)(UNSAFE.getShort(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 12) & 0xffff)) << 32)|
                 (((long)(UNSAFE.getShort(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 14) & 0xffff)) << 48);
       return new long[] {i1, i2};
+    }
+
+    /**
+     * Group 9: merge int as long
+     */
+    @DontCompile
+    static long[] test9R(int[] a) {
+      long i1 = (((long)(a[0] & 0xffffffff)) << 32)|
+                 ((long)(a[1] & 0xffffffff));
+      long i2 =  ((long)(a[2] & 0xffffffff))       |
+                (((long)(a[3] & 0xffffffff)) << 32);
+      return new long[] {i1, i2};
+    }
+
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "4",
+          IRNode.LOAD_L_OF_CLASS,  "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static long[] test9a(int[] a) {
+      long i1 = (((long)(a[0] & 0xffffffff)) << 32)|
+                 ((long)(a[1] & 0xffffffff));
+      long i2 =  ((long)(a[2] & 0xffffffff))       |
+                (((long)(a[3] & 0xffffffff)) << 32);
+      return new long[] {i1, i2};
+    }
+
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "4",
+          IRNode.LOAD_L_OF_CLASS,  "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static long[] test9b(int[] a) {
+      /* only one group which access array in platform order can be merged */
+      long i1 = (((long)(UNSAFE.getInt(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0 ) & 0xffffffff)) << 32)|
+                 ((long)(UNSAFE.getInt(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4 ) & 0xffffffff));
+      long i2 =  ((long)(UNSAFE.getInt(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 ) & 0xffffffff))       |
+                (((long)(UNSAFE.getInt(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 12) & 0xffffffff)) << 32);
+      return new long[] {i1, i2};
+    }
+
+    /**
+     * Group 10: shift value is not aligned
+     */
+    @DontCompile
+    static long[] test10R(byte[] aB, char[] aC, short[] aS, int[] aI) {
+      long i1 = ((long)(aB[4]  & 0xff))        |
+               (((long)(aB[5]  & 0xff)) << 8 ) |
+               (((long)(aB[6]  & 0xff)) << 16) |
+               (((long)(aB[7]  & 0xff)) << 24) |
+               (((long)(aB[8]  & 0xff)) << 32) |
+               (((long)(aB[9]  & 0xff)) << 40) |
+               (((long)(aB[10] & 0xff)) << 47) |          // unaligned shift
+               (((long)(aB[11] & 0xff)) << 56);
+
+      long i2 = ((long)(aC[0]  & 0xffff))        |
+               (((long)(aC[1]  & 0xffff)) << 16) |
+               (((long)(aC[2]  & 0xffff)) << 32) |
+               (((long)(aC[3]  & 0xffff)) << 47);         // unaligned shift
+
+      long i3 = ((long)(aS[0]  & 0xffff))        |
+               (((long)(aS[1]  & 0xffff)) << 16) |
+               (((long)(aS[2]  & 0xffff)) << 33) |        // unaligned shift
+               (((long)(aS[3]  & 0xffff)) << 48);
+
+      long i4 = ((long)(aI[0]  & 0xffffffff))        |
+               (((long)(aI[1]  & 0xffffffff)) << 30);     // unaligned shift
+      return new long[] {i1, i2, i3, i4};
+    }
+
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+
+          IRNode.LOAD_S_OF_CLASS,  "char\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "char\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "4",
+          IRNode.LOAD_I_OF_CLASS,  "char\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "char\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+
+          IRNode.LOAD_S_OF_CLASS,  "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "4",
+          IRNode.LOAD_I_OF_CLASS,  "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+
+          IRNode.LOAD_I_OF_CLASS,  "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",
+          IRNode.LOAD_L_OF_CLASS,  "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static long[] test10a(byte[] aB, char[] aC, short[] aS, int[] aI) {
+      long i1 = ((long)(aB[4]  & 0xff))        |
+               (((long)(aB[5]  & 0xff)) << 8 ) |
+               (((long)(aB[6]  & 0xff)) << 16) |
+               (((long)(aB[7]  & 0xff)) << 24) |
+               (((long)(aB[8]  & 0xff)) << 32) |
+               (((long)(aB[9]  & 0xff)) << 40) |
+               (((long)(aB[10] & 0xff)) << 47) |          // unaligned shift
+               (((long)(aB[11] & 0xff)) << 56);
+
+      long i2 = ((long)(aC[0]  & 0xffff))        |
+               (((long)(aC[1]  & 0xffff)) << 16) |
+               (((long)(aC[2]  & 0xffff)) << 32) |
+               (((long)(aC[3]  & 0xffff)) << 47);         // unaligned shift
+
+      long i3 = ((long)(aS[0]  & 0xffff))        |
+               (((long)(aS[1]  & 0xffff)) << 16) |
+               (((long)(aS[2]  & 0xffff)) << 33) |        // unaligned shift
+               (((long)(aS[3]  & 0xffff)) << 48);
+
+      long i4 = ((long)(aI[0]  & 0xffffffff))        |
+               (((long)(aI[1]  & 0xffffffff)) << 30);     // unaligned shift
+      return new long[] {i1, i2, i3, i4};
+    }
+
+    /**
+     * Group 11: mask value is not aligned
+     */
+    @DontCompile
+    static long[] test11R(byte[] aB, char[] aC, short[] aS, int[] aI) {
+      long i1 = ((long)(aB[4]  & 0xff))        |
+               (((long)(aB[5]  & 0xff)) << 8 ) |
+               (((long)(aB[6]  & 0xff)) << 16) |
+               (((long)(aB[7]  & 0xff)) << 24) |
+               (((long)(aB[8]  & 0xff)) << 32) |
+               (((long)(aB[9]  & 0xff)) << 40) |
+               (((long)(aB[10] & 0xfe)) << 48) |          // unaligned mask
+               (((long)(aB[11] & 0xff)) << 56);
+
+      long i2 = ((long)(aC[0]  & 0xfffe))        |        // unaligned mask
+               (((long)(aC[1]  & 0xffff)) << 16) |
+               (((long)(aC[2]  & 0xffff)) << 32) |
+               (((long)(aC[3]  & 0xffff)) << 48);
+
+      long i3 = ((long)(aS[0]  & 0xffff))        |
+               (((long)(aS[1]  & 0xffff)) << 16) |
+               (((long)(aS[2]  & 0xefff)) << 32) |        // unaligned mask
+               (((long)(aS[3]  & 0xffff)) << 48);
+
+      long i4 = ((long)(aI[0]  & 0xffffffff))        |
+               (((long)(aI[1]  & 0xfffffff0)) << 32);     // unaligned mask
+      return new long[] {i1, i2, i3, i4};
+    }
+
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+
+          IRNode.LOAD_S_OF_CLASS,  "char\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "char\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "4",
+          IRNode.LOAD_I_OF_CLASS,  "char\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "char\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+
+          IRNode.LOAD_S_OF_CLASS,  "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "4",
+          IRNode.LOAD_I_OF_CLASS,  "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+
+          IRNode.LOAD_I_OF_CLASS,  "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",
+          IRNode.LOAD_L_OF_CLASS,  "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static long[] test11a(byte[] aB, char[] aC, short[] aS, int[] aI) {
+      long i1 = ((long)(aB[4]  & 0xff))        |
+               (((long)(aB[5]  & 0xff)) << 8 ) |
+               (((long)(aB[6]  & 0xff)) << 16) |
+               (((long)(aB[7]  & 0xff)) << 24) |
+               (((long)(aB[8]  & 0xff)) << 32) |
+               (((long)(aB[9]  & 0xff)) << 40) |
+               (((long)(aB[10] & 0xfe)) << 48) |          // unaligned mask
+               (((long)(aB[11] & 0xff)) << 56);
+
+      long i2 = ((long)(aC[0]  & 0xfffe))        |        // unaligned mask
+               (((long)(aC[1]  & 0xffff)) << 16) |
+               (((long)(aC[2]  & 0xffff)) << 32) |
+               (((long)(aC[3]  & 0xffff)) << 48);
+
+      long i3 = ((long)(aS[0]  & 0xffff))        |
+               (((long)(aS[1]  & 0xffff)) << 16) |
+               (((long)(aS[2]  & 0xefff)) << 32) |        // unaligned mask
+               (((long)(aS[3]  & 0xffff)) << 48);
+
+      long i4 = ((long)(aI[0]  & 0xffffffff))        |
+               (((long)(aI[1]  & 0xfffffff0)) << 32);     // unaligned mask
+      return new long[] {i1, i2, i3, i4};
     }
 }
