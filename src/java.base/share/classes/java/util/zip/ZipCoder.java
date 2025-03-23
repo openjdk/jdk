@@ -40,11 +40,8 @@ import sun.nio.cs.UTF_8;
 /**
  * Utility class for ZIP file entry name and comment decoding and encoding.
  * <p>
- * The {@linkplain #UTF8 UTF-8 ZipCoder instance}, which gets returned by {@link #get(Charset)}
- * for {@linkplain java.nio.charset.StandardCharsets#UTF_8 UTF-8 Charset} is thread-safe
- * and can be used concurrently by multiple threads. All other {@code ZipCoder} instances
- * are not thread-safe and external synchronization is required by callers, if those
- * instances are to be used concurrently by multiple threads.
+ * The {@code ZipCoder} for UTF-8 charset is thread safe, {@code ZipCoder}
+ * for other charsets require external synchronization.
  */
 class ZipCoder {
 
