@@ -78,11 +78,11 @@ public class TestMergeLoads {
         framework.addFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
 
         for (String arg: args) {
-            switch (args[0]) {
+            switch (arg) {
                 case "aligned"     -> { framework.addFlags("-XX:-UseUnalignedAccesses"); }
                 case "unaligned"   -> { framework.addFlags("-XX:+UseUnalignedAccesses"); }
                 case "StressIGVN"   -> { framework.addFlags("-XX:+StressIGVN"); }
-                default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
+                default -> { throw new RuntimeException("Test argument not recognized: " + arg); }
             }
         }
         framework.start();
