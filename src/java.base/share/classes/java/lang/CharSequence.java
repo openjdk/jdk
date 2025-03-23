@@ -329,6 +329,7 @@ public interface CharSequence {
      *             <li>{@code dstBegin+srcEnd-srcBegin} is greater than
      *             {@code dst.length}
      *             </ul>
+     * @throws     NullPointerException if {@code dst} is {@code null}
      *
      * @implSpec
      * The default implementation iterates over {@link #charAt(int)}.
@@ -337,7 +338,7 @@ public interface CharSequence {
      */
     public default void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         Objects.checkFromToIndex(srcBegin, srcEnd, length());
-        Objects.checkFromIndexSize(dstBegin, srcEnd - srcBegin, dst.length);
+        Objects.checkIndex(dstBegin, dst.length - (srcEnd - srcBegin) + 1);
         while (srcBegin < srcEnd)
             dst[dstBegin++] = charAt(srcBegin++);
     }
