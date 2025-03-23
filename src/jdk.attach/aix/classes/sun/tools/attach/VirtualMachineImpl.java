@@ -166,7 +166,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         // connected - write request
         // <ver> <cmd> <args...>
         try {
-	    SocketOutputStream writer = new SocketOutputStream(s);
+            SocketOutputStream writer = new SocketOutputStream(s);
             writeCommand(writer, props, cmd, args);
         } catch (IOException x) {
             ioe = x;
