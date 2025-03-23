@@ -82,8 +82,7 @@ public class ZipFile implements ZipConstants, Closeable {
 
     private final String filePath;     // ZIP file path
     private final String fileName;     // name of the file
-    // the ZipCoder instance is derived from the Charset passed to the ZipFile constructor
-    // and will be used for decoding the non-UTF-8 entry names and the ZIP file comment.
+    // ZipCoder for entry names and comments when not using UTF-8
     private final ZipCoder zipCoder;
     private volatile boolean closeRequested;
 
