@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,6 @@ public class SSLHandshake {
                     KeyManagerFactory.getDefaultAlgorithm());
             kmf.init(ks, new char[0]);
 
-            // server context will be set by every thread; last one wins
             SSLContext sslCtx = SSLContext.getInstance("TLS");
             sslCtx.init(kmf.getKeyManagers(), null, null);
             return sslCtx;
@@ -103,7 +102,6 @@ public class SSLHandshake {
                 TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(ts);
 
-        // server context will be set by every thread; last one wins
         SSLContext sslCtx = SSLContext.getInstance(tlsVersion);
         sslCtx.init(null, tmf.getTrustManagers(), null);
         sslClientCtx = sslCtx;
