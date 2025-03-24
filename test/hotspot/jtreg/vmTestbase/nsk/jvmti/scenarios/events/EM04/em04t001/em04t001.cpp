@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,18 +118,6 @@ cbDynamicCodeGenerated2(jvmtiEnv *jvmti_env, const char *name,
 
 }
 
- void JNICALL
-cbVMDeath(jvmtiEnv* jvmti, JNIEnv* jni_env) {
-    if (!NSK_VERIFY(nsk_list_destroy(plist))) {
-        nsk_jvmti_setFailStatus();
-    }
-
-    if (!NSK_JVMTI_VERIFY(jvmti->DestroyRawMonitor(syncLock))) {
-        nsk_jvmti_setFailStatus();
-    }
-
-}
-
 /* ============================================================================= */
 
 static int
@@ -147,7 +135,6 @@ int setCallBacks(int stage) {
     jvmtiEventCallbacks eventCallbacks;
     memset(&eventCallbacks, 0, sizeof(eventCallbacks));
 
-    eventCallbacks.VMDeath = cbVMDeath;
     eventCallbacks.DynamicCodeGenerated = (stage == 1) ?
                             cbDynamicCodeGenerated1 : cbDynamicCodeGenerated2;
 
@@ -253,6 +240,25 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
 
     return JNI_OK;
+}
+
+/* ============================================================================= */
+
+JNIEXPORT void JNICALL
+#ifdef STATIC_BUILD
+Agent_OnUnload_em04t001(JavaVM *jvm)
+#else
+Agent_OnUnload(JavaVM *jvm)
+#endif
+{
+
+    if (!NSK_VERIFY(nsk_list_destroy(plist))) {
+        nsk_jvmti_setFailStatus();
+    }
+
+    if (!NSK_JVMTI_VERIFY(jvmti->DestroyRawMonitor(syncLock))) {
+        nsk_jvmti_setFailStatus();
+    }
 }
 
 }
