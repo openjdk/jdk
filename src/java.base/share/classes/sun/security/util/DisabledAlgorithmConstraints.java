@@ -819,7 +819,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                             this.scopes = new HashSet<>(usages.length);
                         }
                         this.scopes.add(scope);
-                    }  else {
+                    } else {
                         this.usages = usages;
                     }
                 }
