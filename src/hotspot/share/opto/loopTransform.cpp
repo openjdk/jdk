@@ -3575,6 +3575,12 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
   }
 
   if (msg == nullptr && store->as_Mem()->is_mismatched_access()) {
+    // This optimization does not currently support mismatched stores, where the
+    // type of the value to be stored differs from the element type of the
+    // destination array. Such patterns arise for example from memory segment
+    // initialization. This limitation could be overcome by extending this
+    // function's address matching logic and ensuring that the fill intrinsic
+    // implementations support mismatched array filling.
     msg = "mismatched store";
   }
 
