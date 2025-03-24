@@ -267,7 +267,6 @@ public:
   // Returns true if allocation was handled here; in that case,
   // *rc contains the return address.
   static bool handle_malloc(void** rc, size_t size) {
-    size = MAX2((size_t)1, size);         // malloc(0)
     if (!MemTracker::is_initialized()) {
       // pre-NMT-init:
       // Allocate entry and add address to lookup table
@@ -287,7 +286,6 @@ public:
     if (old_p == nullptr) {                  // realloc(null, n)
       return handle_malloc(rc, new_size);
     }
-    new_size = MAX2((size_t)1, new_size); // realloc(.., 0)
     switch (MemTracker::tracking_level()) {
       case NMT_unknown: {
         // pre-NMT-init:
