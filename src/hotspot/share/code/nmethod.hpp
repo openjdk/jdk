@@ -342,8 +342,6 @@ class nmethod : public CodeBlob {
   // findable by nmethod iterators! In particular, they must not contain oops!
   void* operator new(size_t size, int nmethod_size, bool allow_NonNMethod_space) throw();
 
-  nmethod* clone(CodeBlobType code_blob_type);
-
   const char* reloc_string_for(u_char* begin, u_char* end);
 
   bool try_transition(signed char new_state);
@@ -494,6 +492,7 @@ public:
 #endif
   );
 
+  nmethod* clone(CodeBlobType code_blob_type);
 
   // Relocate the nmethod to the code heap identified by code_blob_type.
   // Returns nullptr if the code heap does not have enough space, otherwise

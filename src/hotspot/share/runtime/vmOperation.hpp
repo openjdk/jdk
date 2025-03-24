@@ -41,7 +41,7 @@
   template(PrintThreads)                          \
   template(FindDeadlocks)                         \
   template(ClearICs)                              \
-  template(ClearNMethodICs)                       \
+  template(RelocateNMethod)                       \
   template(ForceSafepoint)                        \
   template(DeoptimizeFrame)                       \
   template(DeoptimizeAll)                         \

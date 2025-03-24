@@ -1395,8 +1395,7 @@ nmethod::nmethod(
 }
 
 nmethod* nmethod::clone(CodeBlobType code_blob_type) {
-  debug_only(NoSafepointVerifier nsv;)
-  assert_locked_or_safepoint(CodeCache_lock);
+  assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
 
   // Allocate memory in code heap and copy data from nmethod
   nmethod* nm_copy = (nmethod*) CodeCache::allocate(size(), code_blob_type);
@@ -1448,63 +1447,54 @@ nmethod* nmethod::clone(CodeBlobType code_blob_type) {
 
   ICache::invalidate_range(nm_copy->code_begin(), nm_copy->code_size());
 
+  nm_copy->clear_inline_caches();
+
+  // Update corresponding Java method to point to this nmethod
+  if (nm_copy->method()->code() == this) {
+    MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
+    methodHandle mh(Thread::current(), nm_copy->method());
+    nm_copy->method()->set_code(mh, nm_copy);
+  }
+
+  // To make dependency checking during class loading fast, record
+  // the nmethod dependencies in the classes it is dependent on.
+  // This allows the dependency checking code to simply walk the
+  // class hierarchy above the loaded class, checking only nmethods
+  // which are dependent on those classes.  The slow way is to
+  // check every nmethod for dependencies which makes it linear in
+  // the number of methods compiled.  For applications with a lot
+  // classes the slow way is too slow.
+  for (Dependencies::DepStream deps(nm_copy); deps.next(); ) {
+    if (deps.type() == Dependencies::call_site_target_value) {
+      // CallSite dependencies are managed on per-CallSite instance basis.
+      oop call_site = deps.argument_oop(0);
+      MethodHandles::add_dependent_nmethod(call_site, nm_copy);
+    } else {
+      InstanceKlass* ik = deps.context_type();
+      if (ik == nullptr) {
+        continue;  // ignore things like evol_method
+      }
+      // record this nmethod as dependent on this klass
+      ik->add_dependent_nmethod(nm_copy);
+    }
+  }
+
   nm_copy->post_init();
+
+  make_not_used();
 
   return nm_copy;
 }
 
 nmethod* nmethod::relocate_to(nmethod* nm, CodeBlobType code_blob_type) {
-  if (nm == nullptr || !nm->is_relocatable()) {
-    return nullptr;
-  }
+  // Relocate nmethod at safepoint
+  VM_RelocateNMethod relocate_nmethod(nm, code_blob_type);
+  VMThread::execute(&relocate_nmethod);
+  nmethod* nm_copy = relocate_nmethod.getRelocatedNMethod();
 
-  nmethod* nm_copy = nullptr;
-
-  {
-    // Clear inline caches before acquiring any locks
-    VM_ClearNMethodICs clear_nmethod_ics(nm);
-    VMThread::execute(&clear_nmethod_ics);
-
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    nm_copy = nm->clone(code_blob_type);
-
-    if (nm_copy != nullptr) {
-      // To make dependency checking during class loading fast, record
-      // the nmethod dependencies in the classes it is dependent on.
-      // This allows the dependency checking code to simply walk the
-      // class hierarchy above the loaded class, checking only nmethods
-      // which are dependent on those classes.  The slow way is to
-      // check every nmethod for dependencies which makes it linear in
-      // the number of methods compiled.  For applications with a lot
-      // classes the slow way is too slow.
-      for (Dependencies::DepStream deps(nm_copy); deps.next(); ) {
-        if (deps.type() == Dependencies::call_site_target_value) {
-          // CallSite dependencies are managed on per-CallSite instance basis.
-          oop call_site = deps.argument_oop(0);
-          MethodHandles::add_dependent_nmethod(call_site, nm_copy);
-        } else {
-          InstanceKlass* ik = deps.context_type();
-          if (ik == nullptr) {
-            continue;  // ignore things like evol_method
-          }
-          // record this nmethod as dependent on this klass
-          ik->add_dependent_nmethod(nm_copy);
-        }
-      }
-
-      // Update corresponding Java method to point to this nmethod
-      MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
-      if (nm_copy->method()->code() == nm) {
-        methodHandle mh(Thread::current(), nm_copy->method());
-        nm_copy->method()->set_code(mh, nm_copy);
-        nm->make_not_used();
-      }
-    }
-  }
-  // Do verification and logging outside CodeCache_lock.
+  // Do verification and logging outside safepoint
   if (nm_copy != nullptr) {
     NOT_PRODUCT(note_java_nmethod(nm_copy));
-    // Safepoints in nmethod::verify aren't allowed because nm_copy hasn't been installed yet.
     DEBUG_ONLY(nm_copy->verify();)
     nm_copy->log_new_nmethod();
   }
