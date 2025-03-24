@@ -785,7 +785,8 @@
           range(0, max_juint)                                               \
                                                                             \
   product(bool, UseProfiledLoopPredicate, true,                             \
-          "Move predicates out of loops based on profiling data")           \
+          "Move predicates out of loops based on profiling data. "          \
+          "Requires UseLoopPredicate to be turned on (default).")           \
                                                                             \
   develop(uintx, StressLongCountedLoop, 0,                                  \
           "if > 0, convert int counted loops to long counted loops"         \
