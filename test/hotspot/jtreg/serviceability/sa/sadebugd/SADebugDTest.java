@@ -27,6 +27,7 @@
  * @summary Checks that the jshdb debugd utility successfully starts
  *          and tries to attach to a running process
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires os.family != "windows"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib

@@ -35,6 +35,7 @@ import jdk.test.whitebox.gc.GC;
  * @test
  * @summary Test the 'universe' command of jhsdb clhsdb.
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @bug 8190307
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox

@@ -25,6 +25,7 @@
  * @test
  * @bug 8240248
  * @summary Add C2 x86 Superword support for scalar logical reduction optimizations : int test
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.RedTest_int
  */

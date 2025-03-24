@@ -26,6 +26,7 @@
  * @bug 8204308
  * @summary Test the jhsdb jmap -clstats command with CDS enabled
  * @requires vm.hasSA & vm.cds
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver/timeout=2400 CDSJMapClstats
  */

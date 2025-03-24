@@ -25,6 +25,7 @@
  * @test
  * @bug 8135028
  * @summary Add C2 x86 Superword support for scalar sum reduction optimizations : double sqrt test
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.SumRedSqrt_Double
  */

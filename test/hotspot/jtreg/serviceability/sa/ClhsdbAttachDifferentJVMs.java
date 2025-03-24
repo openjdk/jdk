@@ -33,6 +33,7 @@ import jtreg.SkippedException;
  * @bug 8314679
  * @summary Test clhsdb attach, detach, and then attach to different JVM
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm ClhsdbAttachDifferentJVMs
  */
