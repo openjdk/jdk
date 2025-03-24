@@ -25,6 +25,13 @@ package compiler.lib.template_library;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.NavigableMap;
+import java.util.Random;
+import java.util.TreeMap;
+import java.util.Map;
+
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 // TODO: rm?
 import compiler.lib.template_framework.Hook;
@@ -41,6 +48,8 @@ import static compiler.lib.template_framework.Template.setFuelCost;
  * TODO
  */
 public class Dispatcher {
+    private static final Random RANDOM = Utils.getRandomInstance();
+
     //// // Ok, now we want to add random code. We want some kind of dispatcher, that we return to
     //// // all the time. Can we also have conditions for Templates, to make sure we only choose
     //// // them when their condition is present?
@@ -58,22 +67,32 @@ public class Dispatcher {
 
     private static record Element(Template.OneArgs<Dispatcher> template, Predicate predicate) {}
 
-    private final List<Element> elements;
+    private final NavigableMap<Long, Element> elements = new TreeMap<>();
+    private long totalWeight = 0;
 
-    public Dispatcher() {
-        this.elements = new ArrayList<>();
-    }
+    public Dispatcher() {}
 
-    public void add(Template.OneArgs<Dispatcher> template, Predicate predicate) {
-        elements.add(new Element(template, predicate));
+    public void add(Template.OneArgs<Dispatcher> template, Predicate predicate, long weight) {
+        totalWeight += weight;
+        elements.put(totalWeight - 1, new Element(template, predicate));
     }
 
     public void add(Template.OneArgs<Dispatcher> template) {
-        elements.add(new Element(template, () -> { return true; }));
+        add(template, () -> { return true; }, 1);
     }
 
     private TemplateWithArgs chooseTemplate() {
-        return Library.choice(elements).template.withArgs(this);
+        long r = RANDOM.nextLong(totalWeight);
+        Map.Entry<Long,Element> entry = elements.ceilingEntry(r);
+        long first = entry.getKey();
+        while(!entry.getValue().predicate.check()) {
+            // Step forward, possibly wrapping.
+            long k = entry.getKey() + 1;
+            k = (k < totalWeight) ? k : 0;
+            entry = elements.ceilingEntry(k);
+            if (entry.getKey() == first) { throw new RuntimeException("none passed predicate"); }
+        }
+        return entry.getValue().template.withArgs(this);
     }
 
     public TemplateWithArgs call() {

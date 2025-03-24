@@ -49,12 +49,15 @@ import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.addName;
+import static compiler.lib.template_framework.Template.sampleName;
+import static compiler.lib.template_framework.Template.weighNames;
 import static compiler.lib.template_framework.Template.setFuelCost;
 
 import compiler.lib.template_library.Library;
 import compiler.lib.template_library.Dispatcher;
 import compiler.lib.template_library.IRTestClass;
 import compiler.lib.template_library.Type;
+import compiler.lib.template_library.Expression;
 
 /**
  * TODO
@@ -112,6 +115,26 @@ public class TestFuzzCode {
             } // y $close
             """
         )));
+        for (Type type : Type.PRIMITIVE_TYPES) {
+            dispatcher.add(Template.make("dispatcher", (Dispatcher d) -> {
+                Expression expression = Expression.make(type, Type.PRIMITIVE_TYPES, 2);
+                return body(
+                    let("type", type),
+                    let("name", sampleName(type, true).name()),
+                    """
+                    { // z $open type: #type
+                    """,
+                    "#name = ", expression.withRandomArgs(), ";\n",
+                    """
+                    //   z $mid
+                    """,
+                    d.call(),
+                    """
+                    } // z $close
+                    """
+                );
+            }), () -> weighNames(type, true) > 0, 1);
+        }
 
         var template1Body = Template.make("type", (Type type)-> body(
             setFuelCost(0),
