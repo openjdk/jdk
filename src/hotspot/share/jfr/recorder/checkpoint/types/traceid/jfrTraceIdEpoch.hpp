@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "jfr/utilities/jfrSignal.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allStatic.hpp"
-#include "runtime/atomic.hpp"
 
 #define BIT                                  1
 #define METHOD_BIT                           (BIT << 2)
@@ -57,6 +56,7 @@ class JfrTraceIdEpoch : AllStatic {
  private:
   static u2 _generation;
   static JfrSignal _tag_state;
+  static bool _method_tracer_state;
   static bool _epoch_state;
   static bool _synchronizing;
 
@@ -92,9 +92,7 @@ class JfrTraceIdEpoch : AllStatic {
     return _epoch_state ? (u1)0 : (u1)1;
   }
 
-  static bool is_synchronizing() {
-    return Atomic::load_acquire(&_synchronizing);
-  }
+  static bool is_synchronizing();
 
   static uint8_t this_epoch_bit() {
     return _epoch_state ? EPOCH_1_BIT : EPOCH_0_BIT;
@@ -121,7 +119,7 @@ class JfrTraceIdEpoch : AllStatic {
   }
 
   static bool has_changed_tag_state() {
-    return _tag_state.is_signaled_with_reset();
+    return _tag_state.is_signaled_with_reset() || has_method_tracer_changed_tag_state();
   }
 
   static bool has_changed_tag_state_no_reset() {
@@ -135,6 +133,10 @@ class JfrTraceIdEpoch : AllStatic {
   static address signal_address() {
     return _tag_state.signaled_address();
   }
+
+  static void set_method_tracer_tag_state();
+  static void reset_method_tracer_tag_state();
+  static bool has_method_tracer_changed_tag_state();
 };
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDEPOCH_HPP

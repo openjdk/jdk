@@ -219,7 +219,6 @@ public final class MetadataRepository {
                     nativeEventTypes.remove(n);
                     nativeControls.remove(n);
                     TypeLibrary.removeType(nativeType.getId());
-                    pEventType.setAnnotations(nativeType.getAnnotationElements());
                     pEventType.setFields(nativeType.getFields());
                 }
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,27 +110,36 @@ public final class ValueFormatter {
     }
 
     public static String formatDuration(Duration d) {
+        return formatDuration(d, -1);
+    }
+
+    public static String formatDuration(Duration d, int precision) {
         Duration roundedDuration = roundDuration(d);
         if (roundedDuration.equals(Duration.ZERO)) {
             return "0 s";
         } else if (roundedDuration.isNegative()) {
-            return "-" + formatPositiveDuration(roundedDuration.abs());
+            return "-" + formatPositiveDuration(roundedDuration.abs(), precision);
         } else {
-            return formatPositiveDuration(roundedDuration);
+            return formatPositiveDuration(roundedDuration, precision);
         }
     }
 
-    private static String formatPositiveDuration(Duration d){
+    public static String formatPositiveDuration(Duration d, int precision) {
         if (d.compareTo(MICRO_SECOND) < 0) {
             // 0.000001 ms - 0.000999 ms
+            if (precision == -1) {
+                precision = 6;
+            }
             double outputMs = (double) d.toNanosPart() / 1_000_000;
-            return String.format("%.6f ms", outputMs);
+            return String.format("%." + precision + "f ms", outputMs);
         } else if (d.compareTo(SECOND) < 0) {
             // 0.001 ms - 999 ms
-            int valueLength = countLength(d.toNanosPart());
-            int outputDigit = NANO_SIGNIFICANT_FIGURES - valueLength;
+            if (precision == -1) {
+                int valueLength = countLength(d.toNanosPart());
+                precision = NANO_SIGNIFICANT_FIGURES - valueLength;
+            }
             double outputMs = (double) d.toNanosPart() / 1_000_000;
-            return String.format("%." + outputDigit + "f ms", outputMs);
+            return String.format("%." + precision + "f ms", outputMs);
         } else if (d.compareTo(MINUTE) < 0) {
             // 1.00 s - 59.9 s
             int valueLength = countLength(d.toSecondsPart());
