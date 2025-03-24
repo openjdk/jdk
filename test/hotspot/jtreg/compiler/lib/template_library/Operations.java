@@ -292,6 +292,8 @@ public final class Operations {
     private static final List<Operation> BOOLEAN_OPERATIONS = List.of(
         // Note: there is no casting / conversion from an to boolean directly.
 
+        // TODO: add comparison operators: <, >, ...
+
         new Operation.Unary(Type.booleans(), "(!(", Type.booleans(), "))", null),
 
         new Operation.Binary(Type.booleans(), "(", Type.booleans(), " || ",   Type.booleans(), ")", null),

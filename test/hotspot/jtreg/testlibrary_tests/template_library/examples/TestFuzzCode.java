@@ -108,7 +108,21 @@ public class TestFuzzCode {
             d.call(),
             "} else {\n",
             d.call(),
-            "}\n"
+            "}\n",
+            d.call()
+        )));
+
+        // Simple counted loop.
+        dispatcher.add(Template.make("dispatcher", (Dispatcher d) -> body(
+            setFuelCost(20),
+            addName(new Name($("i"), Type.ints(), false, 1)),
+            """
+            for (int $i = 0; $i < 100; $i++) {
+            """,
+            d.call(),
+            """
+            }
+            """
         )));
 
         for (Type type : Type.PRIMITIVE_TYPES) {
