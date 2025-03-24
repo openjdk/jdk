@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,8 @@ Java_sun_management_VMManagementImpl_getVersion0
 {
     char buf[MAX_VERSION_LEN];
     jstring version_string = NULL;
-
     unsigned int major = ((unsigned int) jmm_version & 0x0FFF0000) >> 16;
     unsigned int minor = ((unsigned int) jmm_version & 0xFF00) >> 8;
-
-    // for internal use
-    unsigned int micro = (unsigned int) jmm_version & 0xFF;
 
     snprintf(buf, sizeof(buf), "%d.%d", major, minor);
     version_string = (*env)->NewStringUTF(env, buf);
@@ -64,7 +60,7 @@ Java_sun_management_VMManagementImpl_initOptionalSupportFields
   (JNIEnv *env, jclass cls)
 {
     jmmOptionalSupport mos;
-    jint ret = jmm_interface->GetOptionalSupport(env, &mos);
+    jmm_interface->GetOptionalSupport(env, &mos);
 
     jboolean value;
 

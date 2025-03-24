@@ -60,7 +60,7 @@ public class TestMultiversionRemoveUselessSlowLoop {
                   "multiversion",              "= 8", // nothing unexpected
                   IRNode.OPAQUE_MULTIVERSIONING, "= 2"}, // Both multiversion_if are still here
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         phase = CompilePhase.PHASEIDEALLOOP1)
     @IR(counts = {"pre .* multiversion_fast",  "= 2",
                   "main .* multiversion_fast", "= 1", // The first main loop is fully unrolled
@@ -69,7 +69,7 @@ public class TestMultiversionRemoveUselessSlowLoop {
                   "multiversion",              "= 7", // nothing unexpected
                   IRNode.OPAQUE_MULTIVERSIONING, "= 1"}, // The multiversion_if of the first loop was constant folded, because the main loop disappeared.
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         phase = CompilePhase.PHASEIDEALLOOP_ITERATIONS)
     @IR(counts = {"pre .* multiversion_fast.*", ">= 1", // In some cases, the pre loop of the first loop also disappears because it only has a single iteration
                   "pre .* multiversion_fast.*", "<= 2", // but not in other cases the pre loop of the first loop remains.
@@ -80,7 +80,7 @@ public class TestMultiversionRemoveUselessSlowLoop {
                   "multiversion",              "<= 6", // nothing unexpected
                   IRNode.OPAQUE_MULTIVERSIONING, "= 0"}, // After loop-opts, we also constant fold the multiversion_if of the second loop, as it is unused.
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         phase = CompilePhase.PRINT_IDEAL)
     public static void testIR() {
         // This loop is short, and the multiversion_fast main loop eventuall is fully unrolled.
@@ -119,6 +119,32 @@ public class TestMultiversionRemoveUselessSlowLoop {
                 b2 = true;
             }
             instanceCount = iFld1;
+        }
+    }
+
+    class Unloaded {
+        static void unloaded() {}
+    }
+    static int f;
+
+    // The outer loop is eventually Multiversioned, then PreMainPost and Unroll.
+    // Then the loops disappear during IGVN, and in the next loop-opts phase, the
+    // OpaqueMultiversioning is marked useless, but then we already run
+    // PhaseIdealLoop::conditional_move before the next IGVN round, and find a
+    // useless OpaqueMultiversioning instead of a BoolNode.
+    @Test
+    @Arguments(values = { Argument.NUMBER_42 })
+    static void testCrash2(int y) {
+        int x = 53446;
+        for (int i = 12; i < 376; i++) {
+            if (x != 0) {
+                // Uncommon trap because the class is not yet loaded.
+                Unloaded.unloaded();
+            }
+            for (int k = 1; k < 4; k++) {
+                y += 1;
+            }
+            x += f;
         }
     }
 }
