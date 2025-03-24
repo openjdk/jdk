@@ -212,8 +212,9 @@ private:
 
 template<class T>
 struct ShenandoahSharedEnumFlag {
+  typedef uint32_t EnumValueType;
   shenandoah_padding(0);
-  volatile ShenandoahSharedValue value;
+  volatile EnumValueType value;
   shenandoah_padding(1);
 
   ShenandoahSharedEnumFlag() {
@@ -222,8 +223,8 @@ struct ShenandoahSharedEnumFlag {
 
   void set(T v) {
     assert (v >= 0, "sanity");
-    assert (v < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
-    Atomic::release_store_fence(&value, (ShenandoahSharedValue)v);
+    assert (v < (sizeof(EnumValueType) * CHAR_MAX), "sanity");
+    Atomic::release_store_fence(&value, (EnumValueType)v);
   }
 
   T get() const {
@@ -232,17 +233,17 @@ struct ShenandoahSharedEnumFlag {
 
   T cmpxchg(T new_value, T expected) {
     assert (new_value >= 0, "sanity");
-    assert (new_value < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
-    return (T)Atomic::cmpxchg(&value, (ShenandoahSharedValue)expected, (ShenandoahSharedValue)new_value);
+    assert (new_value < (sizeof(EnumValueType) * CHAR_MAX), "sanity");
+    return (T)Atomic::cmpxchg(&value, (EnumValueType)expected, (EnumValueType)new_value);
   }
 
   T xchg(T new_value) {
     assert (new_value >= 0, "sanity");
-    assert (new_value < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
-    return (T)Atomic::XchgUsingCmpxchg<1>()(&value, (ShenandoahSharedValue)new_value, atomic_memory_order::memory_order_conservative);
+    assert (new_value < (sizeof(EnumValueType) * CHAR_MAX), "sanity");
+    return (T)Atomic::xchg(&value, (EnumValueType)new_value);
   }
 
-  volatile ShenandoahSharedValue* addr_of() {
+  volatile EnumValueType* addr_of() {
     return &value;
   }
 
