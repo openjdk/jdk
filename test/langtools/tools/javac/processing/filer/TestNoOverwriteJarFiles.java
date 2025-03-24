@@ -32,6 +32,7 @@
  * @run junit TestNoOverwriteJarFiles
  */
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
@@ -51,6 +52,7 @@ import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.util.Set;
 import java.util.jar.JarOutputStream;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
@@ -120,6 +122,16 @@ public class TestNoOverwriteJarFiles {
 
     // Not expensive to create, but conceptually a singleton.
     private static final ToolBox toolBox = new ToolBox();
+
+    @BeforeAll
+    public static void ensureEmptyTestDirectory() throws IOException {
+        try (var files = Files.walk(Path.of("."), 1)) {
+            // Always includes the given path as the first returned element, so skip it.
+            if (files.skip(1).findFirst().isPresent()) {
+                throw new IllegalStateException("Test working directory must be empty.");
+            }
+        }
+    }
 
     @BeforeEach
     public void cleanUpTestDirectory() throws IOException {
