@@ -126,7 +126,7 @@ public class TestFuzzCode {
         )));
 
         for (Type type : Type.PRIMITIVE_TYPES) {
-            // Write to mutable variable.
+            // Write to existing mutable variable.
             dispatcher.add(Template.make("dispatcher", (Dispatcher d) -> {
                 Expression expression = Expression.make(type, Type.PRIMITIVE_TYPES, 2);
                 return body(
@@ -148,7 +148,8 @@ public class TestFuzzCode {
                     "#type $var = ", expression.withRandomArgs(), ";\n",
                     d.call()
                 );
-            }));
+            // Limit adding more variables, otherwise we can use existing ones.
+            }), () -> weighNames(type, true) < 20, 100);
         }
 
         var template1Body = Template.make("type", (Type type)-> body(
