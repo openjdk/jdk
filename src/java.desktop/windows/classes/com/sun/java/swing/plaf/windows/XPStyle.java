@@ -571,14 +571,17 @@ final class XPStyle {
             return getHeight((state != null) ? state : State.NORMAL);
         }
 
+        @Override
         public String toString() {
             return string;
         }
 
+        @Override
         public boolean equals(Object obj) {
             return (obj instanceof Skin && ((Skin)obj).string.equals(string));
         }
 
+        @Override
         public int hashCode() {
             return string.hashCode();
         }

@@ -428,6 +428,7 @@ final class AnimationController implements ActionListener, PropertyChangeListene
         private PartUIClientPropertyKey(Part part) {
             this.part  = part;
         }
+        @Override
         public String toString() {
             return part.toString();
         }

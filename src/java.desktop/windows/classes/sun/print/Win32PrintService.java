@@ -1711,16 +1711,19 @@ public final class Win32PrintService implements PrintService, AttributeUpdater,
         return uiFactory;
     }
 
+    @Override
     public String toString() {
         return "Win32 Printer : " + getName();
     }
 
+    @Override
     public boolean equals(Object obj) {
         return  (obj == this ||
                  (obj instanceof Win32PrintService &&
                   ((Win32PrintService)obj).getName().equals(getName())));
     }
 
+   @Override
    public int hashCode() {
         return this.getClass().hashCode()+getName().hashCode();
     }

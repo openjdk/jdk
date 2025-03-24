@@ -543,6 +543,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * Check to see if two ShellFolder objects are the same
      */
+    @Override
     public boolean equals(Object o) {
         if (!(o instanceof Win32ShellFolder2 rhs)) {
             // Short-circuit circuitous delegation path
