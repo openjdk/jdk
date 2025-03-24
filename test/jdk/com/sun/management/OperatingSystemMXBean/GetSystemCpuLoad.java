@@ -40,7 +40,7 @@ public class GetSystemCpuLoad {
         Exception ex = null;
         double load;
 
-        for(int i = 0; i < 10; i++) {
+        for (int i = 0; i < 10; i++) {
             load = mbean.getSystemCpuLoad();
             if (load == -1.0) {
                 // Some Windows 2019 systems can return -1 for the first few reads.
