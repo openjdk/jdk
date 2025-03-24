@@ -74,9 +74,9 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
 
     private static Optional<String> connectionLabel(Exchange<?> exchange) {
         return Optional.ofNullable(exchange)
-                                 .map(e -> e.exchImpl)
-                                 .map(ExchangeImpl::connection)
-                                 .map(HttpConnection::label);
+                .map(e -> e.exchImpl)
+                .map(ExchangeImpl::connection)
+                .map(HttpConnection::label);
     }
 
     @Override
