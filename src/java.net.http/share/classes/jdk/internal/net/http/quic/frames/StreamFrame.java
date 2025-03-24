@@ -117,7 +117,7 @@ public final class StreamFrame extends QuicFrame {
     }
 
     /**
-     * Creates a new StreamFrame which is a slice of this crypto frame.
+     * Creates a new StreamFrame which is a slice of this stream frame.
      * @param offset the new offset
      * @param length the new length
      * @return a slice of the current crypto frame
@@ -134,9 +134,7 @@ public final class StreamFrame extends QuicFrame {
         int newpos = Math.addExact(pos, (int)offsetdiff);
         // preserves the FIN bit if set
         boolean fin = this.fin && offset + length == oldoffset + oldlen;
-        // We are trusting the server now, since handshake succeeded
-        //   Utils.sliceOrCopy(streamData, newpos, length);
-        ByteBuffer slice = streamData.slice(newpos, length);
+        ByteBuffer slice = Utils.sliceOrCopy(streamData, newpos, length);
         return new StreamFrame(streamID, offset, length, fin, slice, false);
     }
 
