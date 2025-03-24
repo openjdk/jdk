@@ -24,6 +24,11 @@ package jdk.vm.ci.code;
 
 import static jdk.vm.ci.code.ValueUtil.isAllocatableValue;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Value;
 
@@ -49,7 +54,13 @@ public class CallingConvention {
     /**
      * The ordered locations in which the arguments are placed.
      */
-    private final AllocatableValue[] argumentLocations;
+    private final List<? extends AllocatableValue> argumentLocations;
+
+    /**
+     * The set of call-clobbered (caller-saved) registers. If a register is not in this set, it is a
+     * call-preserved (callee-saved) register.
+     */
+    private final Set<? extends AllocatableValue> callerSavedLocations;
 
     /**
      * Creates a description of the registers and stack locations used by a call.
@@ -60,10 +71,11 @@ public class CallingConvention {
      *            call
      * @param argumentLocations the ordered locations in which the arguments are placed
      */
-    public CallingConvention(int stackSize, AllocatableValue returnLocation, AllocatableValue... argumentLocations) {
+    public CallingConvention(int stackSize, AllocatableValue returnLocation, List<? extends AllocatableValue> argumentLocations, Collection<? extends AllocatableValue> callerSavedLocations) {
         assert argumentLocations != null;
         assert returnLocation != null;
-        this.argumentLocations = argumentLocations;
+        this.callerSavedLocations = Set.copyOf(callerSavedLocations);
+        this.argumentLocations = List.copyOf(argumentLocations);
         this.stackSize = stackSize;
         this.returnLocation = returnLocation;
         assert verify();
@@ -80,7 +92,7 @@ public class CallingConvention {
      * Gets the location for the {@code index}'th argument.
      */
     public AllocatableValue getArgument(int index) {
-        return argumentLocations[index];
+        return argumentLocations.get(index);
     }
 
     /**
@@ -94,18 +106,21 @@ public class CallingConvention {
      * Gets the number of locations required for the arguments.
      */
     public int getArgumentCount() {
-        return argumentLocations.length;
+        return argumentLocations.size();
     }
 
     /**
      * Gets the locations required for the arguments.
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "FB false positive")
-    public AllocatableValue[] getArguments() {
-        if (argumentLocations.length == 0) {
-            return argumentLocations;
-        }
-        return argumentLocations.clone();
+    public List<? extends AllocatableValue> getArguments() {
+        return argumentLocations;
+    }
+
+    /**
+     * Get the list of call-clobbered (caller-saved) registers.
+     */
+    public Set<? extends AllocatableValue> getCallerSavedLocations() {
+        return callerSavedLocations;
     }
 
     @Override
@@ -125,8 +140,7 @@ public class CallingConvention {
     }
 
     private boolean verify() {
-        for (int i = 0; i < argumentLocations.length; i++) {
-            Value location = argumentLocations[i];
+        for (Value location : argumentLocations) {
             assert isStackSlot(location) || isAllocatableValue(location);
         }
         return true;
