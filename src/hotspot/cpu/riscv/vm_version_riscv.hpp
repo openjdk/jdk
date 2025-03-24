@@ -89,6 +89,9 @@ class VM_Version : public Abstract_VM_Version {
   #define UPDATE_DEFAULT_DEP(flag, dep)    \
   void update_flag() {                     \
       assert(enabled(), "Must be.");       \
+      /* dep must be declared before */    \
+      assert((uintptr_t)(this) >           \
+             (uintptr_t)(&dep), "Invalid");\
       if (FLAG_IS_DEFAULT(flag)) {         \
         if (dep.enabled()) {               \
           FLAG_SET_DEFAULT(flag, true);    \
