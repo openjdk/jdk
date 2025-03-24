@@ -77,6 +77,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.hpp"
+#include "oops/trainingData.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
@@ -473,6 +474,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   SystemDictionaryShared::serialize_dictionary_headers(soc);
   AOTLinkedClassBulkLoader::serialize(soc, true);
   FinalImageRecipes::serialize(soc);
+  TrainingData::serialize_training_data(soc);
   InstanceMirrorKlass::serialize_offsets(soc);
 
   // Dump/restore well known classes (pointers)
@@ -557,6 +559,7 @@ public:
     SystemDictionaryShared::dumptime_classes_do(it);
     Universe::metaspace_pointers_do(it);
     vmSymbols::metaspace_pointers_do(it);
+    TrainingData::iterate_roots(it);
 
     // The above code should find all the symbols that are referenced by the
     // archived classes. We just need to add the extra symbols which
@@ -596,6 +599,9 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
   if (CDSConfig::is_dumping_preimage_static_archive()) {
     FinalImageRecipes::record_recipes();
   }
+
+  TrainingData::dump_training_data();
+  
   MetaspaceShared::write_method_handle_intrinsics();
 
   // Write lambform lines into archive
@@ -662,6 +668,9 @@ void VM_PopulateDumpSharedSpace::doit() {
   char* serialized_data = dump_read_only_tables(cl_config);
 
   SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
+
+  log_info(cds)("Make training data shareable");
+  _builder.make_training_data_shareable();
 
   // The vtable clones contain addresses of the current process.
   // We don't want to write these addresses into the archive.
@@ -790,6 +799,13 @@ void MetaspaceShared::prepare_for_dumping() {
 void MetaspaceShared::preload_and_dump(TRAPS) {
   CDSConfig::DumperThreadMark dumper_thread_mark(THREAD);
   ResourceMark rm(THREAD);
+ HandleMark hm(THREAD);
+
+ if (CDSConfig::is_dumping_final_static_archive() && PrintTrainingInfo) {
+   tty->print_cr("==================== archived_training_data ** before dumping ====================");
+   TrainingData::print_archived_training_data_on(tty);
+ }
+
   StaticArchiveBuilder builder;
   preload_and_dump_impl(builder, THREAD);
   if (HAS_PENDING_EXCEPTION) {
@@ -935,7 +951,15 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
   // are implemented by K are not verified.
   link_shared_classes(false/*not from jcmd*/, CHECK);
   log_info(cds)("Rewriting and linking classes: done");
-
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    assert(RecordTraining == false, "must be");
+    if (CDSConfig::is_dumping_aot_linked_classes()) {
+      RecordTraining = true;
+    }
+  }
+  
+  TrainingData::init_dumptime_table(CHECK); // captures TrainingDataSetLocker
+    
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
     if (!HeapShared::is_archived_boot_layer_available(THREAD)) {
@@ -1766,7 +1790,7 @@ void MetaspaceShared::initialize_shared_spaces() {
       tty->print_cr("Dynamic archive version %d", dynamic_mapinfo->version());
       SystemDictionaryShared::print_shared_archive(tty, false/*dynamic*/);
     }
-
+    TrainingData::print_archived_training_data_on(tty);
     // collect shared symbols and strings
     CountSharedSymbols cl;
     SymbolTable::shared_symbols_do(&cl);

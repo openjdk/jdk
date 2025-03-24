@@ -68,7 +68,11 @@ public:
   { }
 
   bool is_live(Method* m) {
-    if (!m->method_holder()->is_loader_alive()) {
+    Klass* holder = m->method_holder();
+    if (holder == nullptr ||
+        holder->class_loader_data() == nullptr ||
+        !holder->is_loader_alive() ||
+        (holder->is_instance_klass() && !InstanceKlass::cast(holder)->is_loaded())) {
       return false;
     }
     if (CURRENT_ENV->cached_metadata(m) == nullptr) {
@@ -303,7 +307,8 @@ bool ciMethodData::load_data() {
 void ciReceiverTypeData::translate_receiver_data_from(const ProfileData* data) {
   for (uint row = 0; row < row_limit(); row++) {
     Klass* k = data->as_ReceiverTypeData()->receiver(row);
-    if (k != nullptr) {
+    if (k != nullptr && k->class_loader_data() != nullptr &&
+        (!k->is_instance_klass() || InstanceKlass::cast(k)->is_loaded())) {
       if (k->is_loader_alive()) {
         ciKlass* klass = CURRENT_ENV->get_klass(k);
         set_receiver(row, klass);
@@ -321,7 +326,9 @@ void ciTypeStackSlotEntries::translate_type_data_from(const TypeStackSlotEntries
   for (int i = 0; i < number_of_entries(); i++) {
     intptr_t k = entries->type(i);
     Klass* klass = (Klass*)klass_part(k);
-    if (klass != nullptr && !klass->is_loader_alive()) {
+    if (klass != nullptr &&
+        ((klass->is_instance_klass() && !InstanceKlass::cast(klass)->is_loaded()) ||
+         (klass->class_loader_data() == nullptr || !klass->is_loader_alive()))) {
       // With concurrent class unloading, the MDO could have stale metadata; override it
       TypeStackSlotEntries::set_type(i, TypeStackSlotEntries::with_status((Klass*)nullptr, k));
     } else {
@@ -333,7 +340,9 @@ void ciTypeStackSlotEntries::translate_type_data_from(const TypeStackSlotEntries
 void ciReturnTypeEntry::translate_type_data_from(const ReturnTypeEntry* ret) {
   intptr_t k = ret->type();
   Klass* klass = (Klass*)klass_part(k);
-  if (klass != nullptr && !klass->is_loader_alive()) {
+  if (klass != nullptr &&
+      ((klass->is_instance_klass() && !InstanceKlass::cast(klass)->is_loaded()) ||
+       (klass->class_loader_data() == nullptr || !klass->is_loader_alive()))) {
     // With concurrent class unloading, the MDO could have stale metadata; override it
     set_type(ReturnTypeEntry::with_status((Klass*)nullptr, k));
   } else {

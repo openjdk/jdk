@@ -127,6 +127,9 @@
   product(bool, AOTCacheParallelRelocation, true, DIAGNOSTIC,               \
           "Use parallel relocation code to speed up startup.")              \
                                                                             \
+  product(bool, VerifyTrainingData, trueInDebug, DIAGNOSTIC,                \
+          "Verify archived training data")                                  \
+                                                                            \
 // end of CDS_FLAGS
 
 DECLARE_FLAGS(CDS_FLAGS)

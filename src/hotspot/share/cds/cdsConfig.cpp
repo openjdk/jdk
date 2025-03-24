@@ -471,6 +471,8 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
     FLAG_SET_ERGO_IF_DEFAULT(AOTClassLinking, true);
   }
 
+  setup_compiler_args();
+
   if (AOTClassLinking) {
     // If AOTClassLinking is specified, enable all AOT optimizations by default.
     FLAG_SET_ERGO_IF_DEFAULT(AOTInvokeDynamicLinking, true);
@@ -544,6 +546,32 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   }
 
   return true;
+}
+
+void CDSConfig::setup_compiler_args() {
+  // AOT profiles are supported only in the JEP 483 workflow.
+  bool can_dump_profiles = AOTClassLinking && new_aot_flags_used();
+
+  if (is_dumping_preimage_static_archive() && can_dump_profiles) {
+    // JEP 483 workflow -- training
+    FLAG_SET_ERGO_IF_DEFAULT(RecordTraining, true);
+    FLAG_SET_ERGO(ReplayTraining, false);
+  } else if (is_dumping_final_static_archive() && can_dump_profiles) {
+    // JEP 483 workflow -- assembly
+    FLAG_SET_ERGO(RecordTraining, false); // This will be updated inside MetaspaceShared::preload_and_dump()
+    FLAG_SET_ERGO_IF_DEFAULT(ReplayTraining, true);
+  } else if (is_using_archive() && new_aot_flags_used()) {
+    // JEP 483 workflow -- production
+    FLAG_SET_ERGO(RecordTraining, false);
+    FLAG_SET_ERGO_IF_DEFAULT(ReplayTraining, true);
+    if (UseSharedSpaces && FLAG_IS_DEFAULT(AOTMode)) {
+      log_info(cds)("Enabled -XX:AOTMode=on by default for troubleshooting Leyden prototype");
+      RequireSharedSpaces = true;
+    }
+  } else {
+    FLAG_SET_ERGO(ReplayTraining, false);
+    FLAG_SET_ERGO(RecordTraining, false);
+  }
 }
 
 bool CDSConfig::is_dumping_classic_static_archive() {

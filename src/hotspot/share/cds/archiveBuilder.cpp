@@ -52,9 +52,12 @@
 #include "memory/resourceArea.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/methodCounters.hpp"
+#include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "oops/trainingData.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/globals_extension.hpp"
@@ -524,8 +527,11 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
     // Don't dump existing shared metadata again.
     return point_to_it;
   } else if (ref->msotype() == MetaspaceObj::MethodDataType ||
-             ref->msotype() == MetaspaceObj::MethodCountersType) {
-    return set_to_null;
+            ref->msotype() == MetaspaceObj::MethodCountersType ||
+            ref->msotype() == MetaspaceObj::KlassTrainingDataType ||
+            ref->msotype() == MetaspaceObj::MethodTrainingDataType ||
+            ref->msotype() == MetaspaceObj::CompileTrainingDataType) {
+    return TrainingData::need_data() ? make_a_copy : set_to_null;
   } else {
     if (ref->msotype() == MetaspaceObj::ClassType) {
       Klass* klass = (Klass*)ref->obj();
@@ -934,6 +940,28 @@ void ArchiveBuilder::make_klasses_shareable() {
 #undef STATS_PARAMS
 
   DynamicArchive::make_array_klasses_shareable();
+}
+
+void ArchiveBuilder::make_training_data_shareable() {
+  auto clean_td = [&] (address& src_obj,  SourceObjInfo& info) {
+    if (!is_in_buffer_space(info.buffered_addr())) {
+      return;
+    }
+
+    if (info.msotype() == MetaspaceObj::KlassTrainingDataType ||
+        info.msotype() == MetaspaceObj::MethodTrainingDataType ||
+        info.msotype() == MetaspaceObj::CompileTrainingDataType) {
+      TrainingData* buffered_td = (TrainingData*)info.buffered_addr();
+      buffered_td->remove_unshareable_info();
+    } else if (info.msotype() == MetaspaceObj::MethodDataType) {
+      MethodData* buffered_mdo = (MethodData*)info.buffered_addr();
+      buffered_mdo->remove_unshareable_info();
+    } else if (info.msotype() == MetaspaceObj::MethodCountersType) {
+      MethodCounters* buffered_mc = (MethodCounters*)info.buffered_addr();
+      buffered_mc->remove_unshareable_info();
+    }
+  };
+  _src_obj_table.iterate_all(clean_td);
 }
 
 void ArchiveBuilder::serialize_dynamic_archivable_items(SerializeClosure* soc) {
