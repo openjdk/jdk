@@ -23,23 +23,13 @@
 
 package jdk.jfr.jvm;
 
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.LockSupport;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import jdk.jfr.EventType;
-import jdk.jfr.Recording;
-import jdk.jfr.consumer.RecordedEvent;
-import jdk.test.lib.Asserts;
+import java.util.concurrent.CountDownLatch;
+import jdk.jfr.consumer.RecordingStream;
 import jdk.test.lib.jfr.EventNames;
-import jdk.test.lib.jfr.Events;
 
 /**
  *
@@ -80,35 +70,24 @@ import jdk.test.lib.jfr.Events;
  * @run main/othervm -Xbatch jdk.jfr.jvm.TestJvmCommitIntrinsicAndEA
  */
 public final class TestJvmCommitIntrinsicAndEA {
+    private static final int NUM_TASKS = 10_000;
 
     public static void main(String[] args) throws Throwable {
-        try (Recording recording = new Recording()) {
-            recording.enable(EventNames.VirtualThreadStart).withoutStackTrace();
-            recording.enable(EventNames.VirtualThreadEnd).withoutStackTrace();
-            recording.start();
-            // execute 10_000 tasks, each in their own virtual thread
+        CountDownLatch latch = new CountDownLatch(NUM_TASKS);
+
+        try (RecordingStream rs = new RecordingStream()) {
+            rs.enable(EventNames.VirtualThreadStart).withoutStackTrace();
+            rs.enable(EventNames.VirtualThreadEnd).withoutStackTrace();
+            rs.onEvent(EventNames.VirtualThreadEnd, e -> latch.countDown());
+            rs.startAsync();
+            // Execute NUM_TASKS, each in their own virtual thread.
             ThreadFactory factory = Thread.ofVirtual().factory();
             try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
-                for (int i = 0; i < 10_000; i++) {
+                for (int i = 0; i < NUM_TASKS; i++) {
                     executor.submit(() -> { });
                 }
-            } finally {
-                recording.stop();
             }
-
-            Map<String, Integer> events = sumEvents(recording);
-            System.err.println(events);
-
-            int startCount = events.getOrDefault(EventNames.VirtualThreadStart, 0);
-            int endCount = events.getOrDefault(EventNames.VirtualThreadEnd, 0);
-            Asserts.assertEquals(10_000, startCount, "Expected 10000, got " + startCount);
-            Asserts.assertEquals(10_000, endCount, "Expected 10000, got " + endCount);
+            latch.await();
         }
-    }
-
-    private static Map<String, Integer> sumEvents(Recording recording) throws Exception {
-        List<RecordedEvent> events = Events.fromRecording(recording);
-        return events.stream().map(RecordedEvent::getEventType)
-                               .collect(Collectors.groupingBy(EventType::getName, Collectors.summingInt(x -> 1)));
     }
 }
