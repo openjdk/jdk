@@ -2042,10 +2042,12 @@ bool Compile::inline_incrementally_one() {
         break; // process one call site at a time
       } else {
         bool is_scheduled_for_igvn_after = C->igvn_worklist()->member(cg->call_node());
-        if (!is_scheduled_for_igvn_before && is_scheduled_for_igvn_after) { // avoid potential infinite loop
+        if (!is_scheduled_for_igvn_before && is_scheduled_for_igvn_after) {
+          // Avoid potential infinite loop if node already in the IGVN list
           assert(false, "scheduled for IGVN during inlining attempt");
         } else {
-          assert(is_scheduled_for_igvn_before == is_scheduled_for_igvn_after, "call node removed from IGVN list during inlining pass");
+          // Ensure call node has not disappeared from IGVN worklist during a failed inlining attempt
+          assert(!is_scheduled_for_igvn_before || is_scheduled_for_igvn_after, "call node removed from IGVN list during inlining pass");
           cg->call_node()->set_generator(cg);
         }
       }
