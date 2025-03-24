@@ -587,7 +587,7 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason) {
     default:
       break;
     }
-    if (failing()) { stop(); return; }  // exception allocation might fail
+    // If we have a preconstructed exception object, use it.
     if (ex_obj != nullptr) {
       if (env()->jvmti_can_post_on_exceptions()) {
         // check if we must post exception events, take uncommon trap if so
