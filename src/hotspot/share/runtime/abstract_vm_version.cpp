@@ -138,42 +138,36 @@ const char* Abstract_VM_Version::vm_vendor() {
 
 
 const char* Abstract_VM_Version::vm_info_string() {
+  const char* mode;
   switch (Arguments::mode()) {
     case Arguments::_int:
-      if (is_vm_statically_linked()) {
-        return CDSConfig::is_using_archive() ? "interpreted mode, static, sharing" : "interpreted mode, static";
-      } else {
-        return CDSConfig::is_using_archive() ? "interpreted mode, sharing" : "interpreted mode";
-      }
+      mode = "interpreted mode";
+      break;
     case Arguments::_mixed:
-      if (is_vm_statically_linked()) {
-        if (CompilationModeFlag::quick_only()) {
-          return CDSConfig::is_using_archive() ? "mixed mode, emulated-client, static, sharing" : "mixed mode, emulated-client, static";
-        } else {
-          return CDSConfig::is_using_archive() ? "mixed mode, static, sharing" : "mixed mode, static";
-         }
+      if (CompilationModeFlag::quick_only()) {
+        mode = "mixed mode, emulated-client";
       } else {
-        if (CompilationModeFlag::quick_only()) {
-          return CDSConfig::is_using_archive() ? "mixed mode, emulated-client, sharing" : "mixed mode, emulated-client";
-        } else {
-          return CDSConfig::is_using_archive() ? "mixed mode, sharing" : "mixed mode";
-        }
+        mode = "mixed mode";
       }
+      break;
     case Arguments::_comp:
-      if (is_vm_statically_linked()) {
-        if (CompilationModeFlag::quick_only()) {
-          return CDSConfig::is_using_archive() ? "compiled mode, emulated-client, static, sharing" : "compiled mode, emulated-client, static";
-        }
-        return CDSConfig::is_using_archive() ? "compiled mode, static, sharing" : "compiled mode, static";
+      if (CompilationModeFlag::quick_only()) {
+        mode = "compiled mode, emulated-client";
       } else {
-        if (CompilationModeFlag::quick_only()) {
-          return CDSConfig::is_using_archive() ? "compiled mode, emulated-client, sharing" : "compiled mode, emulated-client";
-        }
-        return CDSConfig::is_using_archive() ? "compiled mode, sharing" : "compiled mode";
+        mode = "compiled mode";
       }
+      break;
+    default:
+      ShouldNotReachHere();
   }
-  ShouldNotReachHere();
-  return "";
+  size_t len = strlen(mode) + (is_vm_statically_linked() ? 8 : 0) +
+               (CDSConfig::is_using_archive() ? 9 : 0) + 1;
+  char* vm_info = NEW_C_HEAP_ARRAY(char, len, mtInternal);
+  // jio_snprintf places null character in the last character.
+  jio_snprintf(vm_info, len, "%s%s%s", mode,
+               is_vm_statically_linked() ? ", static" : "",
+               CDSConfig::is_using_archive() ? ", sharing" : "");
+  return vm_info;
 }
 
 // NOTE: do *not* use stringStream. this function is called by
