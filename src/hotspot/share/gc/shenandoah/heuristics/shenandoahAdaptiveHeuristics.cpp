@@ -577,11 +577,10 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   log_debug(gc)("should_start_gc? available: %zu, soft_max_capacity: %zu"
                 ", allocated: %zu", available, capacity, allocated);
 
-#undef KELVIN_SATB
-#ifdef KELVIN_SATB
-  log_info(gc)("should_start_gc? available: %zu" ", soft_max_capacity: %zu"
-                ", allocated: %zu", available, capacity, allocated);
-#endif
+  if (_start_gc_is_pending) {
+    log_trigger("GC start is already pending");
+    return true;
+  }
 
   // Track allocation rate even if we decide to start a cycle for other reasons.
   double rate = _allocation_rate.sample(allocated);
@@ -592,8 +591,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     log_trigger("Free (%zu%s) is below minimum threshold (%zu%s)",
                  byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                  byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
-    _previous_trigger_declinations = _declined_trigger_count;
-    _declined_trigger_count = 0;
+    accept_trigger_with_type(OTHER);
     return true;
   }
 
@@ -615,8 +613,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                    _gc_times_learned + 1, max_learn,
                    byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                    byte_size_in_proper_unit(init_threshold), proper_unit_for_byte_size(init_threshold));
-      _previous_trigger_declinations = _declined_trigger_count;
-      _declined_trigger_count = 0;
+      accept_trigger_with_type(OTHER);
       return true;
     }
 #ifdef KELVIN_NEEDS_TO_SEE
@@ -795,9 +792,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
       // Count this as a form of RATE trigger for purposes of adjusting heuristic triggering configuration because this
       // trigger is influenced more by margin_of_error_sd than by spike_threshold_sd.
-      _last_trigger = RATE;
-      _previous_trigger_declinations = _declined_trigger_count;
-      _declined_trigger_count = 0;
+      accept_trigger_with_type(RATE);
       return true;
     }
   }
@@ -841,10 +836,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                        byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),
                        byte_size_in_proper_unit(penalties),           proper_unit_for_byte_size(penalties),
                        byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom));
-
-    _last_trigger = RATE;
-    _previous_trigger_declinations = _declined_trigger_count;
-    _declined_trigger_count = 0;
+    accept_trigger_with_type(RATE);
     return true;
   }
 
@@ -856,21 +848,14 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                 byte_size_in_proper_unit(rate),              proper_unit_for_byte_size(rate),
                 byte_size_in_proper_unit(allocatable_bytes), proper_unit_for_byte_size(allocatable_bytes),
                 _spike_threshold_sd);
-
-    _last_trigger = SPIKE;
-    _previous_trigger_declinations = _declined_trigger_count;
-    _declined_trigger_count = 0;
+    accept_trigger_with_type(SPIKE);
     return true;
   }
 
   if (ShenandoahHeuristics::should_start_gc()) {
-    _spike_acceleration_num_samples = 0;
-    _spike_acceleration_first_sample_index = 0;
-    _previous_trigger_declinations = _declined_trigger_count;
-    _declined_trigger_count = 0;
+    // ShenandoahHeuristics::should_start_gc() has accepted trigger, or declined it.
     return true;
   } else {
-    _declined_trigger_count++;
     return false;
   }
 }

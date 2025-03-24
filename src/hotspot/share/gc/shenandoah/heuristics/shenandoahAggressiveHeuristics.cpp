@@ -52,8 +52,7 @@ void ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(Shena
 
 bool ShenandoahAggressiveHeuristics::should_start_gc() {
   log_trigger("Start next cycle immediately");
-  _previous_trigger_declinations = _declined_trigger_count;
-  _declined_trigger_count = 0;
+  accept_trigger();
   return true;
 }
 

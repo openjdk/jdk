@@ -257,14 +257,17 @@ static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
   int frame_size_in_slots = frame_size_in_bytes / sizeof(jint);
   OopMap* oop_map = new OopMap(frame_size_in_slots, 0);
 
-  for (int i = 0; i < FrameMap::nof_cpu_regs; i++) {
-    Register r = as_Register(i);
-    if (r == rthread || (i <= 18 && i != rscratch1->encoding() && i != rscratch2->encoding())) {
-      int sp_offset = cpu_reg_save_offsets[i];
-      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset),
-                                r->as_VMReg());
-    }
+  for (int i = 0; i < FrameMap::nof_caller_save_cpu_regs(); i++) {
+    LIR_Opr opr = FrameMap::caller_save_cpu_reg_at(i);
+    Register r = opr->as_register();
+    int reg_num = r->encoding();
+    int sp_offset = cpu_reg_save_offsets[reg_num];
+    oop_map->set_callee_saved(VMRegImpl::stack2reg(cpu_reg_save_offsets[reg_num]), r->as_VMReg());
   }
+
+  Register r = rthread;
+  int reg_num = r->encoding();
+  oop_map->set_callee_saved(VMRegImpl::stack2reg(cpu_reg_save_offsets[reg_num]), r->as_VMReg());
 
   if (save_fpu_registers) {
     for (int i = 0; i < FrameMap::nof_fpu_regs; i++) {

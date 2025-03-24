@@ -263,6 +263,10 @@ protected:
   // in the generational case. Controlled by global flag ShenandoahMinFreeThreshold.
   size_t min_free_threshold();
 
+  inline void accept_trigger_with_type(Trigger trigger_type) {
+    _last_trigger = trigger_type;
+    ShenandoahHeuristics::accept_trigger();
+  }
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP

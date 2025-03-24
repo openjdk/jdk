@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,27 +24,31 @@
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.jar.JarFile;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
-import jdk.jpackage.test.JavaAppDesc;
-import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.Executor;
-import jdk.jpackage.test.HelloApp;
-import jdk.jpackage.test.JavaTool;
+import java.util.jar.JarFile;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.CannedFormattedString;
+import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.CfgFile;
-import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.HelloApp;
+import jdk.jpackage.test.JPackageCommand;
+import static jdk.jpackage.test.JPackageCommand.cannedArgument;
+import jdk.jpackage.test.JavaAppDesc;
+import jdk.jpackage.test.JavaTool;
+import jdk.jpackage.test.TKit;
 
 
 
@@ -53,7 +57,7 @@ import jdk.jpackage.internal.util.function.ThrowingConsumer;
  * @summary test different settings of main class name for jpackage
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile MainClassTest.java
+ * @compile -Xlint:all -Werror MainClassTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=MainClassTest
  */
@@ -86,8 +90,8 @@ public final class MainClassTest {
             return this;
         }
 
-        Script expectedErrorMessage(String v) {
-            expectedErrorMessage = v;
+        Script expectedErrorMessage(String key, Object... args) {
+            expectedErrorMessage = JPackageStringBundle.MAIN.cannedFormattedString(key, args);
             return this;
         }
 
@@ -124,13 +128,13 @@ public final class MainClassTest {
             }
 
             private final String label;
-        };
+        }
 
         private JavaAppDesc appDesc;
         private boolean withJLink;
         private MainClassType mainClass;
         private MainClassType jarMainClass;
-        private String expectedErrorMessage;
+        private CannedFormattedString expectedErrorMessage;
     }
 
     public MainClassTest(Script script) {
@@ -166,11 +170,16 @@ public final class MainClassTest {
                 } else {
                     cmd.setArgumentValue("--main-class", nonExistingMainClass);
                 }
+                break;
+
+            case SetRight:
+                // NOP
+                break;
         }
     }
 
     @Parameters
-    public static Collection scripts() {
+    public static Collection<?> scripts() {
         final var withMainClass = Set.of(Script.MainClassType.SetWrong,
                 Script.MainClassType.SetRight);
 
@@ -188,11 +197,12 @@ public final class MainClassTest {
                         if (withMainClass.contains(jarMainClass)
                                 || withMainClass.contains(mainClass)) {
                         } else if (modular) {
-                            script.expectedErrorMessage(
-                                    "Error: Main application class is missing");
+                            script.expectedErrorMessage("ERR_NoMainClass");
                         } else {
                             script.expectedErrorMessage(
-                                    "A main class was not specified nor was one found in the jar");
+                                    "error.no-main-class-with-main-jar", cannedArgument(cmd -> {
+                                        return cmd.getArgumentValue("--main-jar");
+                                    }, "MAIN-JAR"));
                         }
 
                         scripts.add(new Script[]{script});
@@ -212,11 +222,7 @@ public final class MainClassTest {
         if (script.expectedErrorMessage != null) {
             // This is the case when main class is not found nor in jar
             // file nor on command line.
-            List<String> output = cmd
-                    .saveConsoleOutput(true)
-                    .execute(1)
-                    .getOutput();
-            TKit.assertTextStream(script.expectedErrorMessage).apply(output.stream());
+            cmd.validateOutput(script.expectedErrorMessage).execute(1);
             return;
         }
 

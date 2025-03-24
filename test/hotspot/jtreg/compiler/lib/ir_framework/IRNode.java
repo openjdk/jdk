@@ -329,6 +329,11 @@ public class IRNode {
         superWordNodes(ADD_REDUCTION_VL, "AddReductionVL");
     }
 
+    public static final String OPAQUE_MULTIVERSIONING = PREFIX + "OPAQUE_MULTIVERSIONING" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(OPAQUE_MULTIVERSIONING, "OpaqueMultiversioning");
+    }
+
     public static final String ADD_P_OF = COMPOSITE_PREFIX + "ADD_P_OF" + POSTFIX;
     static {
         String regex = START + "addP_" + IS_REPLACED + MID + ".*" + END;
@@ -337,26 +342,45 @@ public class IRNode {
 
     public static final String ALLOC = PREFIX + "ALLOC" + POSTFIX;
     static {
-        String optoRegex = "(.*precise .*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: C2 Runtime new_instance" + END;
-        allocNodes(ALLOC, "Allocate", optoRegex);
+        String regex = START + "Allocate\\b" + MID + END;
+        macroNodes(ALLOC, regex);
     }
 
     public static final String ALLOC_OF = COMPOSITE_PREFIX + "ALLOC_OF" + POSTFIX;
     static {
-        String regex = "(.*precise .*" + IS_REPLACED + ":.*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: C2 Runtime new_instance" + END;
-        optoOnly(ALLOC_OF, regex);
+        String regex = START + "Allocate\\b" + MID + "allocationKlass:.*\\b" + IS_REPLACED + "\\s.*" + END;
+        macroNodes(ALLOC_OF, regex);
     }
 
     public static final String ALLOC_ARRAY = PREFIX + "ALLOC_ARRAY" + POSTFIX;
     static {
-        String optoRegex = "(.*precise \\[.*\\R((.*(?i:mov|mv|xor|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: C2 Runtime new_array" + END;
-        allocNodes(ALLOC_ARRAY, "AllocateArray", optoRegex);
+        String regex = START + "AllocateArray\\b" + MID + END;
+        macroNodes(ALLOC_ARRAY,  regex);
     }
 
     public static final String ALLOC_ARRAY_OF = COMPOSITE_PREFIX + "ALLOC_ARRAY_OF" + POSTFIX;
     static {
-        String regex = "(.*precise \\[.*" + IS_REPLACED + ":.*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: C2 Runtime new_array" + END;
-        optoOnly(ALLOC_ARRAY_OF, regex);
+        // Assuming we are looking for an array of "some/package/MyClass". The printout is
+        // [Lsome/package/MyClass;
+        // or, with more dimensions
+        // [[[Lsome/package/MyClass;
+
+        // Case where the searched string is a not fully qualified name (but maybe partially qualified):
+        // package/MyClass or MyClass
+        // The ".*\\b" will eat the "some/" and "some/package/" resp.
+        String partial_name_prefix = ".+\\b";
+
+        // The thing after "allocationKlass:" (the name of the allocated class) is a sequence of:
+        // - a non-empty sequence of "["
+        // - a single character ("L"),
+        // - maybe a non-empty sequence of characters ending on a word boundary
+        //   this sequence is omitted if the given name is already fully qualified (exact match)
+        //   but will eat the package path prefix in the cases described above
+        // - the name we are looking for
+        // - the final ";".
+        String name_part = "\\[+.(" + partial_name_prefix + ")?" + IS_REPLACED + ";";
+        String regex = START + "AllocateArray\\b" + MID + "allocationKlass:" + name_part + ".*" + END;
+        macroNodes(ALLOC_ARRAY_OF, regex);
     }
 
     public static final String OR = PREFIX + "OR" + POSTFIX;
@@ -1515,6 +1539,26 @@ public class IRNode {
         vectorNode(REPLICATE_D, "Replicate", TYPE_DOUBLE);
     }
 
+    public static final String REVERSE_BYTES_I = PREFIX + "REVERSE_BYTES_I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(REVERSE_BYTES_I, "ReverseBytesI");
+    }
+
+    public static final String REVERSE_BYTES_L = PREFIX + "REVERSE_BYTES_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(REVERSE_BYTES_L, "ReverseBytesL");
+    }
+
+    public static final String REVERSE_BYTES_S = PREFIX + "REVERSE_BYTES_S" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(REVERSE_BYTES_S, "ReverseBytesS");
+    }
+
+    public static final String REVERSE_BYTES_US = PREFIX + "REVERSE_BYTES_US" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(REVERSE_BYTES_US, "ReverseBytesUS");
+    }
+
     public static final String REVERSE_BYTES_VB = VECTOR_PREFIX + "REVERSE_BYTES_VB" + POSTFIX;
     static {
         vectorNode(REVERSE_BYTES_VB, "ReverseBytesV", TYPE_BYTE);
@@ -1789,7 +1833,7 @@ public class IRNode {
 
     public static final String SUB = PREFIX + "SUB" + POSTFIX;
     static {
-        beforeMatchingNameRegex(SUB, "Sub(I|L|F|D)");
+        beforeMatchingNameRegex(SUB, "Sub(I|L|F|D|HF)");
     }
 
     public static final String SUB_D = PREFIX + "SUB_D" + POSTFIX;
@@ -2531,6 +2575,18 @@ public class IRNode {
         machOnlyNameRegex(X86_CMOVEL_IMM01UCF, "cmovL_imm_01UCF");
     }
 
+    public static final String MOD_F = PREFIX + "MOD_F" + POSTFIX;
+    static {
+        String regex = START + "ModF" + MID + END;
+        macroNodes(MOD_F, regex);
+    }
+
+    public static final String MOD_D = PREFIX + "MOD_D" + POSTFIX;
+    static {
+        String regex = START + "ModD" + MID + END;
+        macroNodes(MOD_D, regex);
+    }
+
     /*
      * Utility methods to set up IR_NODE_MAPPINGS.
      */
@@ -2566,14 +2622,13 @@ public class IRNode {
         VECTOR_NODE_TYPE.put(irNodePlaceholder, typeString);
     }
 
-    private static void allocNodes(String irNode, String irNodeName, String optoRegex) {
-        String idealIndependentRegex = START + irNodeName + "\\b" + MID + END;
-        Map<PhaseInterval, String> intervalToRegexMap = new HashMap<>();
-        intervalToRegexMap.put(new PhaseInterval(CompilePhase.BEFORE_REMOVEUSELESS, CompilePhase.PHASEIDEALLOOP_ITERATIONS),
-                               idealIndependentRegex);
-        intervalToRegexMap.put(new PhaseInterval(CompilePhase.PRINT_OPTO_ASSEMBLY), optoRegex);
-        MultiPhaseRangeEntry entry = new MultiPhaseRangeEntry(CompilePhase.PRINT_OPTO_ASSEMBLY, intervalToRegexMap);
-        IR_NODE_MAPPINGS.put(irNode, entry);
+    /**
+     * Apply {@code regex} on all ideal graph phases up to and including {@link CompilePhase#BEFORE_MACRO_EXPANSION}.
+     */
+    private static void macroNodes(String irNodePlaceholder, String regex) {
+        IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.BEFORE_MACRO_EXPANSION, regex,
+                                                                          CompilePhase.BEFORE_STRINGOPTS,
+                                                                          CompilePhase.BEFORE_MACRO_EXPANSION));
     }
 
     private static void callOfNodes(String irNodePlaceholder, String callRegex) {
