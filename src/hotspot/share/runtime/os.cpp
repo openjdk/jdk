@@ -688,30 +688,39 @@ void* os::malloc(size_t size, MemTag mem_tag) {
 
 void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
 
-  // On malloc(0), implementations of malloc(3) have the choice to return either
-  // null or a unique non-null pointer. To unify libc behavior across our platforms
-  // we chose the latter.
-  size = MAX2((size_t)1, size);
+//  // On malloc(0), implementations of malloc(3) have the choice to return either
+//  // null or a unique non-null pointer. To unify libc behavior across our platforms
+//  // we chose the latter.
+//  size = MAX2((size_t)1, size);
+//
+//  // Special handling for NMT preinit phase before arguments are parsed
+//  void* rc = nullptr;
+//  if (NMTPreInit::handle_realloc(&rc, nullptr, size, mem_tag)) {
+//    // No need to fill with 0 because CDS static dumping doesn't use these
+//    // early allocations.
+//    return rc;
+//  }
+//
+//  DEBUG_ONLY(check_crash_protection());
+//
+//  // Observe MallocLimit
+//  if (MemTracker::check_exceeds_limit(size, mem_tag)) {
+//    return nullptr;
+//  }
+//
+//  const size_t outer_size = size + MemTracker::overhead_per_malloc();
+//
+//  // Check for overflow.
+//  if (outer_size < size) {
+//    return nullptr;
+//  }
 
-  // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
-  if (NMTPreInit::handle_realloc(&rc, nullptr, size, mem_tag)) {
-    // No need to fill with 0 because CDS static dumping doesn't use these
-    // early allocations.
+  size_t outer_size = os::pre_alloc(&rc, nullptr, size, true, mem_tag, stack);
+  if (rc != nullptr) {
     return rc;
   }
-
-  DEBUG_ONLY(check_crash_protection());
-
-  // Observe MallocLimit
-  if (MemTracker::check_exceeds_limit(size, mem_tag)) {
-    return nullptr;
-  }
-
-  const size_t outer_size = size + MemTracker::overhead_per_malloc();
-
-  // Check for overflow.
-  if (outer_size < size) {
+  if (outer_size == 0) {
     return nullptr;
   }
 
