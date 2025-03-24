@@ -304,9 +304,9 @@ AC_DEFUN([FLAGS_SETUP_QUALITY_CHECKS],
 AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
 [
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-    C_O_FLAG_HIGHEST_JVM="-O3 -mllvm -enable-constraint-elimination=0"
-    C_O_FLAG_HIGHEST="-O3 -mllvm -enable-constraint-elimination=0"
-    C_O_FLAG_HI="-O3 -mllvm -enable-constraint-elimination=0"
+    C_O_FLAG_HIGHEST_JVM="-O3"
+    C_O_FLAG_HIGHEST="-O3"
+    C_O_FLAG_HI="-O3"
     C_O_FLAG_NORM="-O2"
     C_O_FLAG_SIZE="-Os"
     C_O_FLAG_DEBUG="-O0"
