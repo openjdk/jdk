@@ -426,7 +426,7 @@ public class TestCompilePhaseCollector {
         public void mix10() {}
 
         @Test
-        @IR(failOn = IRNode.FIELD_ACCESS, phase = {PHASEIDEALLOOP1, PHASEIDEALLOOP2})
+        @IR(failOn = IRNode.FIELD_ACCESS, phase = {PHASEIDEALLOOP1, PRINT_OPTO_ASSEMBLY, PHASEIDEALLOOP2})
         @IR(counts = {IRNode.FIELD_ACCESS, "3"}, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
         public void mix11() {}
 
