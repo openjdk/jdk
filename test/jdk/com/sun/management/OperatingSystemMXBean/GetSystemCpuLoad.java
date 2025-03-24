@@ -43,7 +43,7 @@ public class GetSystemCpuLoad {
         for(int i = 0; i < 10; i++) {
             load = mbean.getSystemCpuLoad();
             if (load == -1.0) {
-				// Some Windows 2019 systems can return -1 for the first few reads.
+                // Some Windows 2019 systems can return -1 for the first few reads.
                 // Remember a -1 in case it never gets better.
                 ex = new RuntimeException("getSystemCpuLoad() returns " + load
                          +  " which is not in the [0.0,1.0] interval");

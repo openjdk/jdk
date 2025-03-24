@@ -74,8 +74,8 @@ public class GetProcessCpuTime {
         }
 
         long ns = 0;
-		// Do not skip test if first read is -1:
-		// Some Windows 2019 systems can return -1 for the first few reads.
+        // Do not skip test if first read is -1:
+        // Some Windows 2019 systems can return -1 for the first few reads.
         for (int i = 0; i < 10; i++) {
             ns = mbean.getProcessCpuTime();
             if (ns != -1) {
