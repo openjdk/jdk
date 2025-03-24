@@ -362,14 +362,14 @@ public class XorINodeIdealizationTests {
     private static final Range RANGE_2 = Range.generate(G.restricted(0, MAX_VALUE));
     private static final int UPPER_BOUND = Integer.max(0, Integer.highestOneBit(RANGE_1.hi() | RANGE_2.hi()) * 2 - 1);
 
-    private static final long LIMIT_1 = G.next();
-    private static final long LIMIT_2 = G.next();
-    private static final long LIMIT_3 = G.next();
-    private static final long LIMIT_4 = G.next();
-    private static final long LIMIT_5 = G.next();
-    private static final long LIMIT_6 = G.next();
-    private static final long LIMIT_7 = G.next();
-    private static final long LIMIT_8 = G.next();
+    private static final int LIMIT_1 = G.next();
+    private static final int LIMIT_2 = G.next();
+    private static final int LIMIT_3 = G.next();
+    private static final int LIMIT_4 = G.next();
+    private static final int LIMIT_5 = G.next();
+    private static final int LIMIT_6 = G.next();
+    private static final int LIMIT_7 = G.next();
+    private static final int LIMIT_8 = G.next();
 
 
     @Test
