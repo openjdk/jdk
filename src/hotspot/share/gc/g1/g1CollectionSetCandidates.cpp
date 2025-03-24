@@ -146,12 +146,13 @@ int G1CollectionSetCandidateInfo::compare_region_gc_efficiency(G1CollectionSetCa
     return -1;
   }
 
-  size_t reclaimable1 = ci1->_r->gc_efficiency();
-  size_t reclaimable2 = ci2->_r->gc_efficiency();
+  G1Policy* p = G1CollectedHeap::heap()->policy();
+  size_t gc_efficiency1 = p->predict_gc_efficiency(ci1->_r);
+  size_t gc_efficiency2 = p->predict_gc_efficiency(ci2->_r);
 
-  if (reclaimable1 > reclaimable2) {
+  if (gc_efficiency1 > gc_efficiency2) {
     return -1;
-  } else if (reclaimable1 < reclaimable2) {
+  } else if (gc_efficiency1 < gc_efficiency2) {
     return 1;
   } else {
     return 0;

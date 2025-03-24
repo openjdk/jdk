@@ -343,14 +343,6 @@ public:
     return capacity() - known_live_bytes;
   }
 
-  // Total collection pause time if we use incoming references as an
-  // estimate for remembered set cards.
-  double total_based_on_incoming_refs_ms();
-
-  // GC efficiency for collecting this region based on the time estimate in
-  // total_based_on_incoming_refs_ms.
-  double gc_efficiency();
-
   size_t incoming_refs() { return _incoming_refs; }
 
   inline bool is_collection_set_candidate() const;
