@@ -362,14 +362,14 @@ public class XorINodeIdealizationTests {
     private static final Range RANGE_2 = Range.generate(G.restricted(0, MAX_VALUE));
     private static final int UPPER_BOUND = Integer.max(0, Integer.highestOneBit(RANGE_1.hi() | RANGE_2.hi()) * 2 - 1);
 
-    private static final int LIMIT_1 = G.next();
-    private static final int LIMIT_2 = G.next();
-    private static final int LIMIT_3 = G.next();
-    private static final int LIMIT_4 = G.next();
-    private static final int LIMIT_5 = G.next();
-    private static final int LIMIT_6 = G.next();
-    private static final int LIMIT_7 = G.next();
-    private static final int LIMIT_8 = G.next();
+    private static final long LIMIT_1 = G.next();
+    private static final long LIMIT_2 = G.next();
+    private static final long LIMIT_3 = G.next();
+    private static final long LIMIT_4 = G.next();
+    private static final long LIMIT_5 = G.next();
+    private static final long LIMIT_6 = G.next();
+    private static final long LIMIT_7 = G.next();
+    private static final long LIMIT_8 = G.next();
 
 
     @Test
@@ -401,11 +401,11 @@ public class XorINodeIdealizationTests {
     }
 
     @DontCompile
-    private int testRandomLimitsInterpreted(int x,int y) {
+    private int testRandomLimitsInterpreted(int x, int y) {
         x = RANGE_1.clamp(x);
         y = RANGE_2.clamp(y);
 
-        int z = x ^ y;
+        var z = x ^ y;
         // This should now have a new range, possibly some [0, max]
         // Now let's test the range with some random if branches.
         int sum = 0;

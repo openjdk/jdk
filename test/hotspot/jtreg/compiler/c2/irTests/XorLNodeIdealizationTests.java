@@ -248,7 +248,8 @@ public class XorLNodeIdealizationTests {
 
     @Run(test = {
             "testFoldableXor", "testFoldableXorPow2", "testUnfoldableXorPow2",
-            "testFoldableXorDifferingLength", "testXorMax"
+            "testFoldableXorDifferingLength", "testXorMax",
+            "testFoldableRange","testRandomLimits"
     })
     public void runRangeTests() {
         long a = G.next();
@@ -270,11 +271,13 @@ public class XorLNodeIdealizationTests {
         Asserts.assertEQ(true, testFoldableXorPow2(a, b));
         Asserts.assertEQ(true, testFoldableXorDifferingLength(a, b));
         Asserts.assertEQ((a & MAX_VALUE) ^ (b & 0b11), testXorMax(a, b));
+        Asserts.assertEQ(testRandomLimitsInterpreted(a, b), testRandomLimits(a, b));
+        Asserts.assertEQ(true, testFoldableRange(a, b));
     }
 
     @Test
     @IR(failOn = {IRNode.XOR})
-    @IR(counts = {IRNode.CON_I, "1"})
+    @IR(counts = {IRNode.CON_I, "1"})  // boolean is a CON_I
     public boolean testFoldableXorPow2(long x, long y) {
         return ((x & 0b1000) ^ (y & 0b1000)) < 0b10000;
     }
@@ -287,7 +290,7 @@ public class XorLNodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.XOR})
-    @IR(counts = {IRNode.CON_I, "1"}) // note boolean is a CON_I
+    @IR(counts = {IRNode.CON_I, "1"}) // boolean is a CON_I
     public boolean testFoldableXor(long x, long y) {
         var xor = (x & 0b111) ^ (y & 0b100);
         return xor < 0b1000;
@@ -295,7 +298,7 @@ public class XorLNodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.XOR})
-    @IR(counts = {IRNode.CON_I, "1"})
+    @IR(counts = {IRNode.CON_I, "1"}) // boolean is a CON_I
     public boolean testFoldableXorDifferingLength(long x, long y) {
         var xor = (x & 0b111) ^ (y & 0b11);
         return xor < 0b1000;
@@ -306,5 +309,91 @@ public class XorLNodeIdealizationTests {
         return (x & MAX_VALUE) ^ (y & 0b11);
         // can't do the folding range check here since xor <= MAX_VALUE is
         // constant with or without the xor
+    }
+
+    private static final Range RANGE_1 = Range.generate(G.restricted(0L, MAX_VALUE));
+    private static final Range RANGE_2 = Range.generate(G.restricted(0L, MAX_VALUE));
+    private static final long UPPER_BOUND = Math.max(0, Long.highestOneBit(RANGE_1.hi() | RANGE_2.hi()) * 2 - 1);
+
+    private static final long LIMIT_1 = G.next();
+    private static final long LIMIT_2 = G.next();
+    private static final long LIMIT_3 = G.next();
+    private static final long LIMIT_4 = G.next();
+    private static final long LIMIT_5 = G.next();
+    private static final long LIMIT_6 = G.next();
+    private static final long LIMIT_7 = G.next();
+    private static final long LIMIT_8 = G.next();
+
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_I, "1"}) // Boolean is CON_I
+    public boolean testFoldableRange(long x, long y) {
+        return (RANGE_1.clamp(x) ^ RANGE_2.clamp(y)) <= UPPER_BOUND;
+    }
+
+    @Test
+    public int testRandomLimits(long x, long y) {
+        x = RANGE_1.clamp(x);
+        y = RANGE_2.clamp(y);
+
+        var z = x ^ y;
+        // This should now have a new range, possibly some [0, max]
+        // Now let's test the range with some random if branches.
+        int sum = 0;
+        if (z > LIMIT_1) { sum += 1; }
+        if (z > LIMIT_2) { sum += 2; }
+        if (z > LIMIT_3) { sum += 4; }
+        if (z > LIMIT_4) { sum += 8; }
+        if (z > LIMIT_5) { sum += 16; }
+        if (z > LIMIT_6) { sum += 32; }
+        if (z > LIMIT_7) { sum += 64; }
+        if (z > LIMIT_8) { sum += 128; }
+
+        return sum;
+    }
+
+    @DontCompile
+    private int testRandomLimitsInterpreted(long x, long y) {
+        x = RANGE_1.clamp(x);
+        y = RANGE_2.clamp(y);
+
+        var z = x ^ y;
+        // This should now have a new range, possibly some [0, max]
+        // Now let's test the range with some random if branches.
+        int sum = 0;
+        if (z > LIMIT_1) { sum += 1; }
+        if (z > LIMIT_2) { sum += 2; }
+        if (z > LIMIT_3) { sum += 4; }
+        if (z > LIMIT_4) { sum += 8; }
+        if (z > LIMIT_5) { sum += 16; }
+        if (z > LIMIT_6) { sum += 32; }
+        if (z > LIMIT_7) { sum += 64; }
+        if (z > LIMIT_8) { sum += 128; }
+
+        return sum;
+    }
+
+    record Range(long lo, long hi) {
+        Range {
+            if (lo > hi) {
+                throw new IllegalArgumentException("lo > hi");
+            }
+        }
+
+        long clamp(long v) {
+            return Math.min(hi, Math.max(v, lo));
+        }
+
+        static Range generate(Generator<Long> g) {
+            var a = g.next();
+            var b = g.next();
+            if (a > b) {
+                var tmp = a;
+                a = b;
+                b = tmp;
+            }
+            return new Range(a, b);
+        }
     }
 }
