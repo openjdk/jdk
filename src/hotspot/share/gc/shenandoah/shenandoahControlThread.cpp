@@ -167,8 +167,8 @@ void ShenandoahControlThread::run_service() {
         notify_gc_waiters();
       }
 
-      // If this was the allocation failure GC cycle, notify waiters about it
-      if (alloc_failure_pending) {
+      // If this cycle completed without being cancelled, notify waiters about it
+      if (!heap->cancelled_gc()) {
         notify_alloc_failure_waiters();
       }
 
