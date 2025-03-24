@@ -1497,7 +1497,9 @@ int VectorCastNode::opcode(int sopc, BasicType bt, bool is_signed) {
   // Handle special case for to/from Half Float conversions
   switch (sopc) {
     case Op_ConvHF2F:
-      assert(bt == T_SHORT, "");
+      if (!is_signed || (bt != T_SHORT)) {
+        return 0;
+      }
       return Op_VectorCastHF2F;
     case Op_ConvF2HF:
       assert(bt == T_FLOAT, "");

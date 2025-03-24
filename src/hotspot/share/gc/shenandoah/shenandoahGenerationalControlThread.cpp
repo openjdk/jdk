@@ -277,8 +277,8 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     notify_gc_waiters();
   }
 
-  // If this was an allocation failure GC cycle, notify waiters about it
-  if (ShenandoahCollectorPolicy::is_allocation_failure(request.cause)) {
+  // If this cycle completed successfully, notify threads waiting to retry allocation
+  if (!_heap->cancelled_gc()) {
     notify_alloc_failure_waiters();
   }
 
@@ -689,7 +689,8 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
   }
 
   if (gc_mode() == none) {
-    while (gc_mode() == none) {
+    const size_t current_gc_id = get_gc_id();
+    while (gc_mode() == none && current_gc_id == get_gc_id()) {
       if (_requested_gc_cause != GCCause::_no_gc) {
         log_debug(gc, thread)("Reject request for concurrent gc because another gc is pending: %s", GCCause::to_string(_requested_gc_cause));
         return false;
