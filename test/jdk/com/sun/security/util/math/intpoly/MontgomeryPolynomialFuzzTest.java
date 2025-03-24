@@ -60,7 +60,8 @@ public class MontgomeryPolynomialFuzzTest {
         System.out.println("Fuzz Success");
     }
 
-    private static void checkOverflow(ImmutableIntegerModuloP testValue, long seed) {
+    private static void checkOverflow(String opMsg, 
+            ImmutableIntegerModuloP testValue, long seed) {
         long limbs[] = testValue.getLimbs();
         BigInteger mod = MontgomeryIntegerPolynomialP256.ONE.MODULUS;
         BigInteger ref = BigInteger.ZERO;
@@ -68,22 +69,29 @@ public class MontgomeryPolynomialFuzzTest {
             ref.add(BigInteger.valueOf(limbs[i]).shiftLeft(i*52));
         }
         if (ref.compareTo(mod)!=-1) {
-            throw new RuntimeException("SEED[" + seed + "]: " +
-            ref.toString(16) + " != " + mod.toString(16));
+            String msg = "Error while " + opMsg + System.lineSeparator()
+                + ref.toString(16) + " != " + mod.toString(16) + System.lineSeparator()
+                + "To reproduce, set SEED to [" + seed + "L]: ";
+            throw new RuntimeException(msg);
         }
     }
 
-    private static void check(BigInteger reference,
+    private static void check(String opMsg, BigInteger reference,
             ImmutableIntegerModuloP testValue, long seed) {
         BigInteger test = testValue.asBigInteger();
         if (!reference.equals(test)) {
-            throw new RuntimeException("SEED[" + seed + "]: " +
-                reference.toString(16) + " != " + test.toString(16));
+            String msg = "Error while " + opMsg + System.lineSeparator()
+                + reference.toString(16) + " != " + test.toString(16) 
+                + System.lineSeparator()+ "To reproduce, set SEED to [" 
+                + seed + "L]: ";
+            throw new RuntimeException(msg);
         }
     }
 
     public static void run() throws Exception {
         Random rnd = new Random();
+        // To reproduce an error, fix the value of the seed to the value from 
+        // the failure
         long seed = rnd.nextLong();
         rnd.setSeed(seed);
 
@@ -99,59 +107,68 @@ public class MontgomeryPolynomialFuzzTest {
 
         // Test conversion to montgomery domain
         ImmutableIntegerModuloP a = montField.getElement(aRef);
+        String msg = "converting "+aRef.toString(16) + " to montgomery domain";
         aRef = aRef.multiply(r).mod(P);
-        check(aRef, a, seed);
-        checkOverflow(a, seed);
+        check(msg, aRef, a, seed);
+        checkOverflow(msg, a, seed);
 
         ImmutableIntegerModuloP b = montField.getElement(bRef);
+        msg = "converting "+aRef.toString(16) + " to montgomery domain";
         bRef = bRef.multiply(r).mod(P);
-        check(bRef, b, seed);
-        checkOverflow(b, seed);
+        check(msg, bRef, b, seed);
+        checkOverflow(msg, b, seed);
 
         if (rnd.nextBoolean()) {
+            msg = "squaring "+aRef.toString(16);
             aRef = aRef.multiply(aRef).multiply(rInv).mod(P);
             a = a.multiply(a);
-            check(aRef, a, seed);
-            checkOverflow(a, seed);
+            check(msg, aRef, a, seed);
+            checkOverflow(msg, a, seed);
         }
 
         if (rnd.nextBoolean()) {
+            msg = "doubling "+aRef.toString(16);
             aRef = aRef.add(aRef).mod(P);
             a = a.add(a);
-            check(aRef, a, seed);
+            check(msg, aRef, a, seed);
         }
 
         if (rnd.nextBoolean()) {
+            msg = "subtracting "+bRef.toString(16)+" from "+aRef.toString(16);
             aRef = aRef.subtract(bRef).mod(P);
             a = a.mutable().setDifference(b).fixed();
-            check(aRef, a, seed);
+            check(msg, aRef, a, seed);
         }
 
         if (rnd.nextBoolean()) {
+            msg = "multiplying "+bRef.toString(16)+" with "+aRef.toString(16);
             aRef = aRef.multiply(bRef).multiply(rInv).mod(P);
             a = a.multiply(b);
-            check(aRef, a, seed);
-            checkOverflow(a, seed);
+            check(msg, aRef, a, seed);
+            checkOverflow(msg, a, seed);
         }
 
         if (rnd.nextBoolean()) {
+            msg = "multiplying "+aRef.toString(16)+" with constant 2";
             aRef = aRef.multiply(BigInteger.valueOf(2)).mod(P);
             a = a.mutable().setProduct(two).fixed();
-            check(aRef, a, seed);
+            check(msg, aRef, a, seed);
         }
 
         if (rnd.nextBoolean()) {
+            msg = "multiplying "+aRef.toString(16)+" with constant 3";
             aRef = aRef.multiply(BigInteger.valueOf(3)).mod(P);
             a = a.mutable().setProduct(three).fixed();
-            check(aRef, a, seed);
-            checkOverflow(a, seed);
+            check(msg, aRef, a, seed);
+            checkOverflow(msg, a, seed);
         }
 
         if (rnd.nextBoolean()) {
+            msg = "multiplying "+aRef.toString(16)+" with constant 4";
             aRef = aRef.multiply(BigInteger.valueOf(4)).mod(P);
             a = a.mutable().setProduct(four).fixed();
-            check(aRef, a, seed);
-            checkOverflow(a, seed);
+            check(msg, aRef, a, seed);
+            checkOverflow(msg, a, seed);
         }
     }
 }
