@@ -77,7 +77,7 @@ import jdk.test.lib.jfr.Events;
  * @bug 8352696
  * @requires vm.flagless & vm.hasJFR & vm.debug
  * @library /test/lib /test/jdk
- * @run main/othervm jdk.jfr.jvm.TestJvmCommitIntrinsicAndEA
+ * @run main/othervm -Xbatch jdk.jfr.jvm.TestJvmCommitIntrinsicAndEA
  */
 public final class TestJvmCommitIntrinsicAndEA {
 
