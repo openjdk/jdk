@@ -82,8 +82,8 @@ import jdk.test.lib.jfr.Events;
  */
 public final class TestJvmCommitIntrinsicAndEA {
 
-     public static void main(String[] args) throws Throwable {
-         try (Recording recording = new Recording()) {
+    public static void main(String[] args) throws Throwable {
+        try (Recording recording = new Recording()) {
             recording.enable(EventNames.VirtualThreadStart).withoutStackTrace();
             recording.enable(EventNames.VirtualThreadEnd).withoutStackTrace();
             recording.start();
@@ -109,9 +109,7 @@ public final class TestJvmCommitIntrinsicAndEA {
 
     private static Map<String, Integer> sumEvents(Recording recording) throws Exception {
         List<RecordedEvent> events = Events.fromRecording(recording);
-        return events.stream()
-                    .map(RecordedEvent::getEventType)
-                    .collect(Collectors.groupingBy(EventType::getName,
-                                                   Collectors.summingInt(x -> 1)));
+        return events.stream().map(RecordedEvent::getEventType)
+                               .collect(Collectors.groupingBy(EventType::getName, Collectors.summingInt(x -> 1)));
     }
 }
