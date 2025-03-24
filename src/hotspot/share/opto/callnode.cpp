@@ -1111,7 +1111,7 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       }
     } else {
       assert(IncrementalInline, "required");
-      assert(cg->method()->is_method_handle_intrinsic() == false, "required");
+      assert(!cg->method()->is_method_handle_intrinsic(), "required");
       if (phase->C->print_inlining()) {
         phase->C->inline_printer()->record(cg->method(), cg->call_node()->jvms(), InliningResult::FAILURE,
           "static call node changed: trying again");
