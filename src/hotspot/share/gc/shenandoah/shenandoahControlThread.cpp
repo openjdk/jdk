@@ -132,9 +132,10 @@ void ShenandoahControlThread::run_service() {
       // Cannot uncommit bitmap slices during concurrent reset
       ShenandoahNoUncommitMark forbid_region_uncommit(heap);
 
-      // GC is starting, bump the gc id and update internal gc count.
+      // GC is starting, bump the internal ID
+      update_gc_id();
+
       GCIdMark gc_id_mark;
-      update_gc_count();
 
       heuristics->cancel_trigger_request();
 
@@ -390,9 +391,9 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   // requested the GC.
 
   MonitorLocker ml(&_gc_waiters_lock);
-  size_t current_gc_count = get_gc_count();
-  size_t required_gc_count = current_gc_count + 1;
-  while (current_gc_count < required_gc_count && !should_terminate()) {
+  size_t current_gc_id = get_gc_id();
+  size_t required_gc_id = current_gc_id + 1;
+  while (current_gc_id < required_gc_id && !should_terminate()) {
     // Although setting gc request is under _gc_waiters_lock, but read side (run_service())
     // does not take the lock. We need to enforce following order, so that read side sees
     // latest requested gc cause when the flag is set.
@@ -400,7 +401,7 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
     _gc_requested.set();
 
     ml.wait();
-    current_gc_count = get_gc_count();
+    current_gc_id = get_gc_id();
   }
 }
 

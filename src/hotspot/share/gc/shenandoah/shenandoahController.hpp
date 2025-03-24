@@ -40,7 +40,7 @@ private:
   volatile size_t _allocs_seen;
   shenandoah_padding(1);
   // A monotonically increasing GC count.
-  volatile size_t _gc_count;
+  volatile size_t _gc_id;
   shenandoah_padding(2);
 
 protected:
@@ -50,14 +50,13 @@ protected:
   Monitor _alloc_failure_waiters_lock;
   Monitor _gc_waiters_lock;
 
-  // Update the internal GC count,
-  // it is called by control thread when it starts to fulfill a GC reqeust.
-  void update_gc_count();
+  // Increments the internal GC count.
+  void update_gc_id();
 
 public:
   ShenandoahController():
     _allocs_seen(0),
-    _gc_count(0),
+    _gc_id(0),
     _alloc_failure_waiters_lock(Mutex::safepoint-2, "ShenandoahAllocFailureGC_lock", true),
     _gc_waiters_lock(Mutex::safepoint-2, "ShenandoahRequestedGC_lock", true)
   { }
@@ -86,6 +85,6 @@ public:
   size_t reset_allocs_seen();
 
   // Return the value of a monotonic increasing GC count, maintained by the control thread.
-  size_t get_gc_count();
+  size_t get_gc_id();
 };
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLLER_HPP
