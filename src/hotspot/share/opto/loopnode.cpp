@@ -4471,6 +4471,13 @@ void PhaseIdealLoop::eliminate_useless_multiversion_if() {
         IfNode* multiversion_if = head->find_multiversion_if_from_multiversion_fast_main_loop();
         if (multiversion_if != nullptr) {
             useful_multiversioning_opaque_nodes.push(multiversion_if->in(1)->as_OpaqueMultiversioning());
+        } else {
+          // We expect to always find the multiversion_if from the multiversioned fast loop, at
+          // least at this stage of loopopts.
+          assert(false, "multiversion fast main loop did not find the multiversion_if");
+          // We could not find the multiversion_if, and would never find it again. Remove the
+          // multiversion marking for consistency.
+          head->set_no_multiversion();
         }
       }
     }
