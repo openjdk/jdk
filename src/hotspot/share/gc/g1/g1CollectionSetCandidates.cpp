@@ -147,8 +147,8 @@ int G1CollectionSetCandidateInfo::compare_region_gc_efficiency(G1CollectionSetCa
   }
 
   G1Policy* p = G1CollectedHeap::heap()->policy();
-  size_t gc_efficiency1 = p->predict_gc_efficiency(ci1->_r);
-  size_t gc_efficiency2 = p->predict_gc_efficiency(ci2->_r);
+  double gc_efficiency1 = p->predict_gc_efficiency(ci1->_r);
+  double gc_efficiency2 = p->predict_gc_efficiency(ci2->_r);
 
   if (gc_efficiency1 > gc_efficiency2) {
     return -1;
