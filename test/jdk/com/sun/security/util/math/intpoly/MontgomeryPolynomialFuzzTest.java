@@ -60,7 +60,7 @@ public class MontgomeryPolynomialFuzzTest {
         System.out.println("Fuzz Success");
     }
 
-    private static void checkOverflow(String opMsg, 
+    private static void checkOverflow(String opMsg,
             ImmutableIntegerModuloP testValue, long seed) {
         long limbs[] = testValue.getLimbs();
         BigInteger mod = MontgomeryIntegerPolynomialP256.ONE.MODULUS;
@@ -81,8 +81,8 @@ public class MontgomeryPolynomialFuzzTest {
         BigInteger test = testValue.asBigInteger();
         if (!reference.equals(test)) {
             String msg = "Error while " + opMsg + System.lineSeparator()
-                + reference.toString(16) + " != " + test.toString(16) 
-                + System.lineSeparator()+ "To reproduce, set SEED to [" 
+                + reference.toString(16) + " != " + test.toString(16)
+                + System.lineSeparator()+ "To reproduce, set SEED to ["
                 + seed + "L]: ";
             throw new RuntimeException(msg);
         }
@@ -90,7 +90,7 @@ public class MontgomeryPolynomialFuzzTest {
 
     public static void run() throws Exception {
         Random rnd = new Random();
-        // To reproduce an error, fix the value of the seed to the value from 
+        // To reproduce an error, fix the value of the seed to the value from
         // the failure
         long seed = rnd.nextLong();
         rnd.setSeed(seed);
