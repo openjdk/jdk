@@ -186,6 +186,26 @@ class RegMask {
   // all registers/stack locations under _lwm and over _hwm are excluded.
   // The exception is (s10, s11, ...), where the value is decided solely by
   // _all_stack, regardless of the value of _hwm.
+  //
+  // The only operation that may update the _offset attribute is
+  // RegMask::rollover(). This operation requires the register mask to be clean
+  // and _all_stack to be true, and has the effect of increasing _offset by
+  // _rm_size and setting all bits (now necessarily representing stack
+  // locations) to 1. Here is how the above register mask looks like after
+  // clearing, setting _all_stack to true, and successfully rolling over:
+  //
+  // _lwm=0                                      RM_SIZE=3           _hwm=3      _rm_size=5
+  //  |                                              |                 |             |
+  //   s10 s11 s12 s13 s14 s15 s16 s17 s18 s19 s20 s21  s22 s23 s24 s25 s26 s27 s28 s29 s30 s31 ...
+  //  [1   1   1   1  |1   1   1   1  |1   1   1   1 ] [1   1   1   1  |1   1   1   1]  1   1   1
+  // [0]             [1]             [2]              [0]             [1]
+  //
+  // \_______________________________________________/ \_____________________________/
+  //                           |                                     |
+  //                         RM_UP                               RM_UP_EXT
+  // \_______________________________________________________________________________/
+  //                                         |
+  //                                     _rm_size
 
   // Access word i in the register mask.
   const uintptr_t& _rm_up(unsigned int i) const {
