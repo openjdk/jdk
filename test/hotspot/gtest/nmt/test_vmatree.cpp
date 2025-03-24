@@ -716,13 +716,13 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
         const NativeCallStack& start_stack = ncss.get(startn->val().out.reserved_stack());
         const NativeCallStack& end_stack = ncss.get(endn->val().in.reserved_stack());
         // If start-node of a reserved region is committed, the stack is stored in the second_stack of the node.
-        if (!NativeCallStackStorage::is_invalid(startn->val().out.committed_stack())) {
+        if (startn->val().out.has_committed_stack()) {
           const NativeCallStack& start_second_stack = ncss.get(startn->val().out.committed_stack());
           ASSERT_TRUE(starti.stack.equals(start_stack) || starti.stack.equals(start_second_stack));
         } else {
           ASSERT_TRUE(starti.stack.equals(start_stack));
         }
-        if (!NativeCallStackStorage::is_invalid(endn->val().in.committed_stack())) {
+        if (endn->val().in.has_committed_stack()) {
           const NativeCallStack& end_second_stack = ncss.get(endn->val().in.committed_stack());
           ASSERT_TRUE(endi.stack.equals(end_stack) || endi.stack.equals(end_second_stack));
         } else {
@@ -765,25 +765,17 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     const char* at_line = " at line: ";
     if (reserve_stack >= 0) {
       EXPECT_EQ(r.start->val().out.reserved_stack(), reserve_stack) << at_line << line_no;
-      if (check_end_node) {
-        EXPECT_EQ(r.end->val().in.reserved_stack(), reserve_stack) << at_line << line_no;
-      }
+      EXPECT_EQ(r.end->val().in.reserved_stack(), reserve_stack) << at_line << line_no;
     } else {
       EXPECT_FALSE(r.start->val().out.has_reserved_stack()) << at_line << line_no;
-      if (check_end_node) {
-        EXPECT_FALSE(r.end->val().in.has_reserved_stack()) << at_line << line_no;
-      }
+      EXPECT_FALSE(r.end->val().in.has_reserved_stack()) << at_line << line_no;
     }
     if (commit_stack >= 0) {
       EXPECT_EQ(r.start->val().out.committed_stack(), commit_stack) << at_line << line_no;
-      if (check_end_node) {
-        EXPECT_EQ(r.end->val().in.committed_stack(), commit_stack) << at_line << line_no;
-      }
+      EXPECT_EQ(r.end->val().in.committed_stack(), commit_stack) << at_line << line_no;
     } else {
       EXPECT_FALSE(r.start->val().out.has_committed_stack()) << at_line << line_no;
-      if (check_end_node) {
-        EXPECT_FALSE(r.end->val().in.has_committed_stack()) << at_line << line_no;
-      }
+      EXPECT_FALSE(r.end->val().in.has_committed_stack()) << at_line << line_no;
     }
   };
 
@@ -801,7 +793,6 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
 
     tree.commit_mapping(80, 20, call_stack_2, true); // commit at the end of the region
     expected(tree, 80, si_1, si_2, __LINE__);
-    tree.print_on(tty);
   }
   {
     Tree tree;
@@ -814,7 +805,6 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
 
     tree.commit_mapping(10, 20, call_stack_1); // commit with overlap
     expected(tree, 10, si_1, si_1, __LINE__);
-    tree.print_on(tty);
   }
   {
     Tree tree;
@@ -833,6 +823,5 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
 
     tree.uncommit_mapping(20, 10, call_stack_2);
     expected(tree, 20, si_1, -1, __LINE__);
-    tree.print_on(tty);
   }
 }
