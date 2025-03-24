@@ -94,46 +94,37 @@ public class TestFuzzCode {
 
         Dispatcher dispatcher = new Dispatcher();
         dispatcher.add(Template.make("dispatcher", (Dispatcher d) -> body(
-            """
-            { // x $open
-            """,
-            d.call(),
-            """
-            } // x $close
-            """
+            setFuelCost(5),
+            d.call()
         )));
         dispatcher.add(Template.make("dispatcher", (Dispatcher d) -> body(
-            """
-            { // y $open
-            """,
+            setFuelCost(5),
             d.call(),
-            """
-            //   y $mid
-            """,
-            d.call(),
-            """
-            } // y $close
-            """
+            d.call()
         )));
         for (Type type : Type.PRIMITIVE_TYPES) {
+            // Write to mutable variable.
             dispatcher.add(Template.make("dispatcher", (Dispatcher d) -> {
                 Expression expression = Expression.make(type, Type.PRIMITIVE_TYPES, 2);
                 return body(
+                    setFuelCost(1),
                     let("type", type),
                     let("name", sampleName(type, true).name()),
-                    """
-                    { // z $open type: #type
-                    """,
                     "#name = ", expression.withRandomArgs(), ";\n",
-                    """
-                    //   z $mid
-                    """,
-                    d.call(),
-                    """
-                    } // z $close
-                    """
+                    d.call()
                 );
-            }), () -> weighNames(type, true) > 0, 1);
+            }), () -> weighNames(type, true) > 0, 100);
+            // New mutable variable.
+            dispatcher.add(Template.make("dispatcher", (Dispatcher d) -> {
+                Expression expression = Expression.make(type, Type.PRIMITIVE_TYPES, 2);
+                return body(
+                    setFuelCost(1),
+                    let("type", type),
+                    addName(new Name($("var"), type, true, 1)),
+                    "#type $var = ", expression.withRandomArgs(), ";\n",
+                    d.call()
+                );
+            }), () -> true, 100);
         }
 
         var template1Body = Template.make("type", (Type type)-> body(
@@ -142,8 +133,14 @@ public class TestFuzzCode {
             // by the random code.
             addName(new Name($("ret"), type, true, 10)),
             "#type $ret = ", type.con(), ";\n",
+            "try {\n",
             dispatcher.call(),
-            "return $ret;\n"
+            """
+            } catch (Exception e) {
+                return new Object[] {e, $ret };
+            }
+            return $ret;
+            """
         ));
         var template1 = Template.make("type", (Type type) -> body(
             setFuelCost(0),

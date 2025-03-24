@@ -78,7 +78,7 @@ public class Dispatcher {
     }
 
     public void add(Template.OneArgs<Dispatcher> template) {
-        add(template, () -> { return true; }, 1);
+        add(template, () -> true, 100);
     }
 
     private TemplateWithArgs chooseTemplate() {
