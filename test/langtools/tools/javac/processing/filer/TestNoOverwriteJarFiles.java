@@ -52,7 +52,6 @@ import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.util.Set;
 import java.util.jar.JarOutputStream;
-import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
