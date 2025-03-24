@@ -49,6 +49,7 @@ import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.addName;
+import static compiler.lib.template_framework.Template.setFuelCost;
 
 import compiler.lib.template_library.Library;
 import compiler.lib.template_library.Dispatcher;
@@ -114,6 +115,7 @@ public class TestFuzzCode {
         ));
 
         var template1Body = Template.make("type", (Type type)-> body(
+            setFuelCost(0),
             // The "ret" variable captures the return value, which can be read / modified
             // by the random code.
             addName(new Name($("ret"), type, true, 10)),
@@ -122,32 +124,33 @@ public class TestFuzzCode {
             "return $ret;\n"
         ));
         var template1 = Template.make("type", (Type type) -> body(
+            setFuelCost(0),
+            """
+            // --- $test start ---
+            // type: #type
+            """,
+            Library.CLASS_HOOK.set(
                 """
-                // --- $test start ---
-                // type: #type
+
+                static final Object $GOLD = $test();
+
+                @Test
+                public static Object $test() {
                 """,
-                Library.CLASS_HOOK.set(
-                    """
+                Library.METHOD_HOOK.set(
+                    template1Body.withArgs(type)
+                ),
+                """
+                }
 
-                    static final Object $GOLD = $test();
+                @Check(test = "$test")
+                public static void $check(Object result) {
+                    Verify.checkEQ(result, $GOLD);
+                }
 
-                    @Test
-                    public static Object $test() {
-                    """,
-                    Library.METHOD_HOOK.set(
-                        template1Body.withArgs(type)
-                    ),
-                    """
-                    }
-
-                    @Check(test = "$test")
-                    public static void $check(Object result) {
-                        Verify.checkEQ(result, $GOLD);
-                    }
-
-                    // --- $test end   ---
-                    """
-                )
+                // --- $test end   ---
+                """
+            )
         ));
 
         // Now use the templates and add them into the IRTestClass.
