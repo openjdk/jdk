@@ -89,30 +89,29 @@ public class TestFuzzCode {
                                                      List.of());
 
 
-        Dispatcher dispatcher = new Dispatcher(List.of(
-            Template.make("dispatcher", (Dispatcher d) -> body(
-                """
-                { // x $open
-                """,
-                d.call(),
-                """
-                } // x $close
-                """
-            )),
-            Template.make("dispatcher", (Dispatcher d) -> body(
-                """
-                { // y $open
-                """,
-                d.call(),
-                """
-                //   y $mid
-                """,
-                d.call(),
-                """
-                } // y $close
-                """
-            ))
-        ));
+        Dispatcher dispatcher = new Dispatcher();
+        dispatcher.add(Template.make("dispatcher", (Dispatcher d) -> body(
+            """
+            { // x $open
+            """,
+            d.call(),
+            """
+            } // x $close
+            """
+        )));
+        dispatcher.add(Template.make("dispatcher", (Dispatcher d) -> body(
+            """
+            { // y $open
+            """,
+            d.call(),
+            """
+            //   y $mid
+            """,
+            d.call(),
+            """
+            } // y $close
+            """
+        )));
 
         var template1Body = Template.make("type", (Type type)-> body(
             setFuelCost(0),

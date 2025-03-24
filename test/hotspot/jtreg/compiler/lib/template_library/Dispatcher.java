@@ -24,6 +24,7 @@
 package compiler.lib.template_library;
 
 import java.util.List;
+import java.util.ArrayList;
 
 // TODO: rm?
 import compiler.lib.template_framework.Hook;
@@ -51,20 +52,37 @@ public class Dispatcher {
     //// public static List<Template.OneArgs<xxx>> basicStatements() {
     //// }
 
-    private final List<Template.OneArgs<Dispatcher>> templates;
+    public interface Predicate {
+        boolean check();
+    }
 
-    public Dispatcher(List<Template.OneArgs<Dispatcher>> templates) {
-        this.templates = templates;
+    private static record Element(Template.OneArgs<Dispatcher> template, Predicate predicate) {}
+
+    private final List<Element> elements;
+
+    public Dispatcher() {
+        this.elements = new ArrayList<>();
+    }
+
+    public void add(Template.OneArgs<Dispatcher> template, Predicate predicate) {
+        elements.add(new Element(template, predicate));
+    }
+
+    public void add(Template.OneArgs<Dispatcher> template) {
+        elements.add(new Element(template, () -> { return true; }));
+    }
+
+    private TemplateWithArgs chooseTemplate() {
+        return Library.choice(elements).template.withArgs(this);
     }
 
     public TemplateWithArgs call() {
-        // TODO: something!
         var template = Template.make(() -> body(
             setFuelCost(0),
             let("fuel", fuel()),
             "// $dispatch fuel: #fuel\n",
             (fuel() <= 0) ? "// $empty\n"
-                          : Library.choice(templates).withArgs(this)
+                          : chooseTemplate()
         ));
         return template.withArgs();
     }
