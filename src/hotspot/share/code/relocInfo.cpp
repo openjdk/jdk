@@ -508,7 +508,7 @@ void internal_word_Relocation::pack_data_to(CodeSection* dest) {
     jint offset = scaled_offset(_target, base);
     assert((uint)sindex < (uint)CodeBuffer::SECT_LIMIT, "sanity");
     assert(CodeBuffer::SECT_LIMIT <= (1 << section_width), "section_width++");
-    p = pack_1_int_to(p, (offset << section_width) | sindex);
+    p = pack_1_int_to(p, (java_shift_left(offset, section_width)) | sindex);
   }
 
   dest->set_locs_end((relocInfo*) p);
