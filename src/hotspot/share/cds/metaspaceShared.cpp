@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotArtifactFinder.hpp"
+#include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
@@ -39,6 +40,7 @@
 #include "cds/dumpAllocStats.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
+#include "cds/finalImageRecipes.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -150,7 +152,7 @@ static bool shared_base_valid(char* shared_base) {
   // We check user input for SharedBaseAddress at dump time.
 
   // At CDS runtime, "shared_base" will be the (attempted) mapping start. It will also
-  // be the encoding base, since the the headers of archived base objects (and with Lilliput,
+  // be the encoding base, since the headers of archived base objects (and with Lilliput,
   // the prototype mark words) carry pre-computed narrow Klass IDs that refer to the mapping
   // start as base.
   //
@@ -215,30 +217,9 @@ void MetaspaceShared::dump_loaded_classes(const char* file_name, TRAPS) {
   }
 }
 
-// If p is not aligned, move it up to the next address that's aligned with alignment.
-// If this is not possible (because p is too high), return nullptr. Example:
-//     p = 0xffffffffffff0000, alignment= 0x10000    => return nullptr.
-static char* align_up_or_null(char* p, size_t alignment) {
-  assert(p != nullptr, "sanity");
-  if (is_aligned(p, alignment)) {
-    return p;
-  }
-
-  char* down = align_down(p, alignment);
-  if (max_uintx - uintx(down) < uintx(alignment)) {
-    // Run out of address space to align up.
-    return nullptr;
-  }
-
-  char* aligned = align_up(p, alignment);
-  assert(aligned >= p, "sanity");
-  assert(aligned != nullptr, "sanity");
-  return aligned;
-}
-
 static bool shared_base_too_high(char* specified_base, char* aligned_base, size_t cds_max) {
-  // Caller should have checked if align_up_or_null( returns nullptr (comparing specified_base
-  // with nullptr is UB).
+  // Caller should have checked that aligned_base was successfully aligned and is not nullptr.
+  // Comparing specified_base with nullptr is UB.
   assert(aligned_base != nullptr, "sanity");
   assert(aligned_base >= specified_base, "sanity");
 
@@ -262,7 +243,9 @@ static char* compute_shared_base(size_t cds_max) {
     return specified_base;
   }
 
-  char* aligned_base = align_up_or_null(specified_base, alignment);
+  char* aligned_base = can_align_up(specified_base, alignment)
+                           ? align_up(specified_base, alignment)
+                           : nullptr;
 
   if (aligned_base != specified_base) {
     log_info(cds)("SharedBaseAddress (" INTPTR_FORMAT ") aligned up to " INTPTR_FORMAT,
@@ -489,6 +472,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   HeapShared::serialize_tables(soc);
   SystemDictionaryShared::serialize_dictionary_headers(soc);
   AOTLinkedClassBulkLoader::serialize(soc, true);
+  FinalImageRecipes::serialize(soc);
   InstanceMirrorKlass::serialize_offsets(soc);
 
   // Dump/restore well known classes (pointers)
@@ -609,6 +593,9 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
   SystemDictionaryShared::write_to_archive();
   cl_config = AOTClassLocationConfig::dumptime()->write_to_archive();
   AOTClassLinker::write_to_archive();
+  if (CDSConfig::is_dumping_preimage_static_archive()) {
+    FinalImageRecipes::record_recipes();
+  }
   MetaspaceShared::write_method_handle_intrinsics();
 
   // Write lambform lines into archive
@@ -624,12 +611,14 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
 }
 
 void VM_PopulateDumpSharedSpace::doit() {
-  guarantee(!CDSConfig::is_using_archive(), "We should not be using an archive when we dump");
+  if (!CDSConfig::is_dumping_final_static_archive()) {
+    guarantee(!CDSConfig::is_using_archive(), "We should not be using an archive when we dump");
+  }
 
   DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
 
   _pending_method_handle_intrinsics = new (mtClassShared) GrowableArray<Method*>(256, mtClassShared);
-  if (CDSConfig::is_dumping_aot_linked_classes()) {
+  if (CDSConfig::is_dumping_method_handles()) {
     // When dumping AOT-linked classes, some classes may have direct references to a method handle
     // intrinsic. The easiest thing is to save all of them into the AOT cache.
     SystemDictionary::get_all_method_handle_intrinsics(_pending_method_handle_intrinsics);
@@ -679,7 +668,13 @@ void VM_PopulateDumpSharedSpace::doit() {
   CppVtables::zero_archived_vtables();
 
   // Write the archive file
-  const char* static_archive = CDSConfig::static_archive_path();
+  const char* static_archive;
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    static_archive = AOTCache;
+    FileMapInfo::free_current_info();
+  } else {
+    static_archive = CDSConfig::static_archive_path();
+  }
   assert(static_archive != nullptr, "SharedArchiveFile not set?");
   _map_info = new FileMapInfo(static_archive, true);
   _map_info->populate_header(MetaspaceShared::core_region_alignment());
@@ -742,8 +737,9 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
 
 void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
   AOTClassLinker::initialize();
+  AOTClassInitializer::init_test_class(CHECK);
 
-  if (!jcmd_request) {
+  if (!jcmd_request && !CDSConfig::is_dumping_final_static_archive()) {
     LambdaFormInvokers::regenerate_holder_classes(CHECK);
   }
 
@@ -778,6 +774,10 @@ void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
     // Class linking includes verification which may load more classes.
     // Keep scanning until we have linked no more classes.
   }
+
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    FinalImageRecipes::apply_recipes(CHECK);
+  }
 }
 
 void MetaspaceShared::prepare_for_dumping() {
@@ -804,13 +804,20 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     }
   }
 
-  if (!CDSConfig::old_cds_flags_used()) {
-    // The JLI launcher only recognizes the "old" -Xshare:dump flag.
-    // When the new -XX:AOTMode=create flag is used, we can't return
-    // to the JLI launcher, as the launcher will fail when trying to
-    // run the main class, which is not what we want.
-    tty->print_cr("AOTCache creation is complete: %s", AOTCache);
-    vm_exit(0);
+  if (CDSConfig::new_aot_flags_used()) {
+    if (CDSConfig::is_dumping_preimage_static_archive()) {
+      // We are in the JVM that runs the training run. Continue execution,
+      // so that it can finish all clean-up and return the correct exit
+      // code to the OS.
+      tty->print_cr("AOTConfiguration recorded: %s", AOTConfiguration);
+    } else {
+      // The JLI launcher only recognizes the "old" -Xshare:dump flag.
+      // When the new -XX:AOTMode=create flag is used, we can't return
+      // to the JLI launcher, as the launcher will fail when trying to
+      // run the main class, which is not what we want.
+      tty->print_cr("AOTCache creation is complete: %s", AOTCache);
+      vm_exit(0);
+    }
   }
 }
 
@@ -839,37 +846,16 @@ void MetaspaceShared::adjust_heap_sizes_for_dumping() {
 #endif // INCLUDE_CDS_JAVA_HEAP && _LP64
 
 void MetaspaceShared::get_default_classlist(char* default_classlist, const size_t buf_size) {
-  // Construct the path to the class list (in jre/lib)
-  // Walk up two directories from the location of the VM and
-  // optionally tack on "lib" (depending on platform)
-  os::jvm_path(default_classlist, (jint)(buf_size));
-  for (int i = 0; i < 3; i++) {
-    char *end = strrchr(default_classlist, *os::file_separator());
-    if (end != nullptr) *end = '\0';
-  }
-  size_t classlist_path_len = strlen(default_classlist);
-  if (classlist_path_len >= 3) {
-    if (strcmp(default_classlist + classlist_path_len - 3, "lib") != 0) {
-      if (classlist_path_len < buf_size - 4) {
-        jio_snprintf(default_classlist + classlist_path_len,
-                     buf_size - classlist_path_len,
-                     "%slib", os::file_separator());
-        classlist_path_len += 4;
-      }
-    }
-  }
-  if (classlist_path_len < buf_size - 10) {
-    jio_snprintf(default_classlist + classlist_path_len,
-                 buf_size - classlist_path_len,
-                 "%sclasslist", os::file_separator());
-  }
+  const char* filesep = os::file_separator();
+  jio_snprintf(default_classlist, buf_size, "%s%slib%sclasslist",
+               Arguments::get_java_home(), filesep, filesep);
 }
 
 void MetaspaceShared::preload_classes(TRAPS) {
   char default_classlist[JVM_MAXPATHLEN];
   const char* classlist_path;
 
-  get_default_classlist(default_classlist, sizeof(default_classlist));
+  get_default_classlist(default_classlist, JVM_MAXPATHLEN);
   if (SharedClassListFile == nullptr) {
     classlist_path = default_classlist;
   } else {
@@ -910,12 +896,34 @@ void MetaspaceShared::exercise_runtime_cds_code(TRAPS) {
 }
 
 void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS) {
-  preload_classes(CHECK);
+  if (CDSConfig::is_dumping_classic_static_archive()) {
+    // We are running with -Xshare:dump
+    preload_classes(CHECK);
 
-  if (SharedArchiveConfigFile) {
-    log_info(cds)("Reading extra data from %s ...", SharedArchiveConfigFile);
-    read_extra_data(THREAD, SharedArchiveConfigFile);
-    log_info(cds)("Reading extra data: done.");
+    if (SharedArchiveConfigFile) {
+      log_info(cds)("Reading extra data from %s ...", SharedArchiveConfigFile);
+      read_extra_data(THREAD, SharedArchiveConfigFile);
+      log_info(cds)("Reading extra data: done.");
+    }
+  }
+
+  if (CDSConfig::is_dumping_preimage_static_archive()) {
+    log_info(cds)("Reading lambda form invokers from JDK default classlist ...");
+    char default_classlist[JVM_MAXPATHLEN];
+    get_default_classlist(default_classlist, JVM_MAXPATHLEN);
+    struct stat statbuf;
+    if (os::stat(default_classlist, &statbuf) == 0) {
+      ClassListParser::parse_classlist(default_classlist,
+                                       ClassListParser::_parse_lambda_forms_invokers_only, CHECK);
+    }
+  }
+
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    if (ExtraSharedClassListFile) {
+      log_info(cds)("Loading extra classes from %s ...", ExtraSharedClassListFile);
+      ClassListParser::parse_classlist(ExtraSharedClassListFile,
+                                       ClassListParser::_parse_all, CHECK);
+    }
   }
 
   // Rewrite and link classes
@@ -941,7 +949,7 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
       HeapShared::reset_archived_object_states(CHECK);
     }
 
-    if (CDSConfig::is_dumping_invokedynamic()) {
+    if (CDSConfig::is_dumping_method_handles()) {
       // This assert means that the MethodType and MethodTypeForm tables won't be
       // updated concurrently when we are saving their contents into a side table.
       assert(CDSConfig::allow_only_single_java_thread(), "Required");
@@ -951,12 +959,15 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
                              vmSymbols::createArchivedObjects(),
                              vmSymbols::void_method_signature(),
                              CHECK);
+    }
 
+    if (CDSConfig::is_initing_classes_at_dump_time()) {
       // java.lang.Class::reflectionFactory cannot be archived yet. We set this field
       // to null, and it will be initialized again at runtime.
       log_debug(cds)("Resetting Class::reflectionFactory");
       TempNewSymbol method_name = SymbolTable::new_symbol("resetArchivedStates");
       Symbol* method_sig = vmSymbols::void_method_signature();
+      JavaValue result(T_VOID);
       JavaCalls::call_static(&result, vmClasses::Class_klass(),
                              method_name, method_sig, CHECK);
 
@@ -993,8 +1004,8 @@ bool MetaspaceShared::write_static_archive(ArchiveBuilder* builder, FileMapInfo*
   builder->write_archive(map_info, heap_info);
 
   if (AllowArchivingWithJavaAgent) {
-    log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
-            "for testing purposes only and should not be used in a production environment");
+    log_warning(cds)("This %s was created with AllowArchivingWithJavaAgent. It should be used "
+            "for testing purposes only and should not be used in a production environment", CDSConfig::type_of_archive_being_loaded());
   }
   return true;
 }
@@ -1004,7 +1015,13 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
   ExceptionMark em(current);
   JavaThread* THREAD = current; // For exception macros.
   assert(CDSConfig::is_dumping_archive(), "sanity");
-  if (!ik->is_shared() && ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
+
+  if (ik->is_shared() && !CDSConfig::is_dumping_final_static_archive()) {
+    assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
+    return false;
+  }
+
+  if (ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
     if (ik->is_shared_unregistered_class() && ik->class_loader() == nullptr) {
@@ -1072,11 +1089,18 @@ bool MetaspaceShared::is_shared_static(void* p) {
 // - When -XX:+RequireSharedSpaces is specified, AND the JVM cannot load the archive(s) due
 //   to version or classpath mismatch.
 void MetaspaceShared::unrecoverable_loading_error(const char* message) {
-  log_error(cds)("An error has occurred while processing the shared archive file.");
+  log_error(cds)("An error has occurred while processing the %s.", CDSConfig::type_of_archive_being_loaded());
   if (message != nullptr) {
     log_error(cds)("%s", message);
   }
-  vm_exit_during_initialization("Unable to use shared archive.", nullptr);
+
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    vm_exit_during_initialization("Must be a valid AOT configuration generated by the current JVM", AOTConfiguration);
+  } else if (CDSConfig::new_aot_flags_used()) {
+    vm_exit_during_initialization("Unable to use AOT cache.", nullptr);
+  } else {
+    vm_exit_during_initialization("Unable to use shared archive.", nullptr);
+  }
 }
 
 // This function is called when the JVM is unable to write the specified CDS archive due to an

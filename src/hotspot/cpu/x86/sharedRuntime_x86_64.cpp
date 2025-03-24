@@ -101,24 +101,23 @@ class RegisterSaver {
     ymm_off = xmm_off + (XSAVE_AREA_YMM_BEGIN - XSAVE_AREA_BEGIN)/BytesPerInt,
     DEF_YMM_OFFS(0),
     DEF_YMM_OFFS(1),
-    // 2..15 are implied in range usage
-    r31_off = xmm_off + (XSAVE_AREA_EGPRS - XSAVE_AREA_BEGIN)/BytesPerInt,
-    r31H_off,
-    r30_off, r30H_off,
-    r29_off, r29H_off,
-    r28_off, r28H_off,
-    r27_off, r27H_off,
-    r26_off, r26H_off,
-    r25_off, r25H_off,
-    r24_off, r24H_off,
-    r23_off, r23H_off,
-    r22_off, r22H_off,
-    r21_off, r21H_off,
-    r20_off, r20H_off,
-    r19_off, r19H_off,
-    r18_off, r18H_off,
+    r16_off = xmm_off + (XSAVE_AREA_EGPRS - XSAVE_AREA_BEGIN)/BytesPerInt,
+    r16H_off,
     r17_off, r17H_off,
-    r16_off, r16H_off,
+    r18_off, r18H_off,
+    r19_off, r19H_off,
+    r20_off, r20H_off,
+    r21_off, r21H_off,
+    r22_off, r22H_off,
+    r23_off, r23H_off,
+    r24_off, r24H_off,
+    r25_off, r25H_off,
+    r26_off, r26H_off,
+    r27_off, r27H_off,
+    r28_off, r28H_off,
+    r29_off, r29H_off,
+    r30_off, r30H_off,
+    r31_off, r31H_off,
     opmask_off   = xmm_off + (XSAVE_AREA_OPMASK_BEGIN - XSAVE_AREA_BEGIN)/BytesPerInt,
     DEF_OPMASK_OFFS(0),
     DEF_OPMASK_OFFS(1),
@@ -265,7 +264,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   if (UseAPX) {
       int base_addr = XSAVE_AREA_EGPRS;
       off = 0;
-      for(int n = 16; n < Register::number_of_registers; n++) {
+      for (int n = 16; n < Register::number_of_registers; n++) {
         __ movq(Address(rsp, base_addr+(off++*8)), as_Register(n));
       }
   }
