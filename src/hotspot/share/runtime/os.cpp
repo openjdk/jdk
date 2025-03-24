@@ -676,30 +676,57 @@ void* os::malloc(size_t size, MemTag mem_tag) {
 }
 
 void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
-  void* rc = nullptr;
-  size_t outer_size = os::pre_alloc(&rc, nullptr, size, true, mem_tag, stack);
-  if (rc != nullptr) {
-    return rc;
-  }
-  if (outer_size == 0) {
-    return nullptr;
-  }
+    // Special handling for NMT preinit phase before arguments are parsed
+    void* rc = nullptr;
+    if (NMTPreInit::handle_malloc(&rc, size)) {
+      // No need to fill with 0 because CDS static dumping doesn't use these
+      // early allocations.
+      return rc;
+    }
 
-  ALLOW_C_FUNCTION(::malloc, void* const outer_ptr = ::malloc(outer_size);)
-  if (outer_ptr == nullptr) {
-    return nullptr;
-  }
+    DEBUG_ONLY(check_crash_protection());
 
-  void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, mem_tag, stack);
+    // On malloc(0), implementations of malloc(3) have the choice to return either
+    // null or a unique non-null pointer. To unify libc behavior across our platforms
+    // we chose the latter.
+    size = MAX2((size_t)1, size);
 
-  if (CDSConfig::is_dumping_static_archive()) {
-    // Need to deterministically fill all the alignment gaps in C++ structures.
-    ::memset(inner_ptr, 0, size);
-  } else {
-    DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
-  }
-  DEBUG_ONLY(break_if_ptr_caught(inner_ptr);)
-  return inner_ptr;
+    // Observe MallocLimit
+    if (MemTracker::check_exceeds_limit(size, mem_tag)) {
+      return nullptr;
+    }
+
+    const size_t outer_size = size + MemTracker::overhead_per_malloc();
+
+    // Check for overflow.
+    if (outer_size < size) {
+      return nullptr;
+    }
+
+    ALLOW_C_FUNCTION(::malloc, void* const outer_ptr = ::malloc(outer_size);)
+    if (outer_ptr == nullptr) {
+      return nullptr;
+    }
+
+    void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, mem_tag, stack);
+
+    if (CDSConfig::is_dumping_static_archive()) {
+      // Need to deterministically fill all the alignment gaps in C++ structures.
+      ::memset(inner_ptr, 0, size);
+    } else {
+      DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
+    }
+    DEBUG_ONLY(break_if_ptr_caught(inner_ptr);)
+    return inner_ptr;
+
+//  size_t outer_size = os::pre_alloc(&rc, nullptr, size, true, mem_tag, stack);
+//  if (rc != nullptr) {
+//    return rc;
+//  }
+//  if (outer_size == 0) {
+//    return nullptr;
+//  }
+//  return post_alloc(outer_ptr, outer_size, 0, mem_tag, stack);
 }
 
 void* os::realloc(void *memblock, size_t size, MemTag mem_tag) {
@@ -707,57 +734,6 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag) {
 }
 
 void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallStack& stack) {
-  //  if (memblock == nullptr) {
-  //    return os::malloc(size, mem_tag, stack);
-  //  }
-  //
-  //  void* rc = nullptr;
-  //  size_t outer_size = os::pre_alloc(&rc, memblock, size, false, mem_tag, stack);
-  //  if (rc != nullptr) {
-  //    return rc;
-  //  }
-  //  if (outer_size == 0) {
-  //    return nullptr;
-  //  }
-  //
-  //  size_t chunk = 0;
-  //  if (MemTracker::enabled()) {
-  //    // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3)
-  //    // since it may invalidate the old block, including its header.
-  //    MallocHeader* header = MallocHeader::resolve_checked(memblock);
-  //    MallocHeader::FreeInfo free_info = header->free_info();
-  //    if (free_info.size < size) {
-  //      chunk = free_info.size;
-  //      // Observe MallocLimit
-  //      if (MemTracker::check_exceeds_limit(size-free_info.size, mem_tag)) {
-  //        return nullptr;
-  //      }
-  //    }
-  //
-  //    // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3) since it may invalidate the old block, including its header.
-  //    assert(mem_tag == header->mem_tag(), "weird NMT type mismatch (new:\"%s\" != old:\"%s\")\n",
-  //           NMTUtil::tag_to_name(mem_tag), NMTUtil::tag_to_name(header->mem_tag()));
-  //
-  //    header->mark_block_as_dead();
-  //
-  //    // The real realloc
-  //    ALLOW_C_FUNCTION(::realloc, rc = ::realloc(header, outer_size);)
-  //    if (rc == nullptr) {
-  //      // realloc(3) failed and the block still exists.
-  //      // We have however marked it as dead, revert this change.
-  //      header->revive();
-  //      return nullptr;
-  //    }
-  //    MemTracker::deaccount(free_info);
-  //  } else {
-  //    // NMT disabled.
-  //    ALLOW_C_FUNCTION(::realloc, rc = ::realloc(memblock, size);)
-  //    if (rc == nullptr) {
-  //      return nullptr;
-  //    }
-  //  }
-  //
-  //  return os::post_alloc(rc, size, chunk, mem_tag, stack);
 
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
