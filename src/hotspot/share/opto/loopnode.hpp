@@ -258,9 +258,13 @@ public:
   int   stride_con() const;
 
   // Match increment with optional truncation
-  static Node*
-  match_incr_with_optional_truncation(Node* expr, Node** trunc1, Node** trunc2, const TypeInteger** trunc_type,
-                                      BasicType bt);
+  struct TruncatedIncrement {
+    Node* incr = nullptr;
+    Node* trunc1 = nullptr;
+    Node* trunc2 = nullptr;
+    const TypeInteger* trunc_type = nullptr;
+  };
+  static TruncatedIncrement match_incr_with_optional_truncation(Node* expr, BasicType bt);
 
   // A 'main' loop has a pre-loop and a post-loop.  The 'main' loop
   // can run short a few iterations and may start a few iterations in.
@@ -1266,9 +1270,24 @@ public:
   virtual Node* transform(Node* n) { return nullptr; }
 
   Node* loop_exit_control(const Node* x, const IdealLoopTree* loop) const;
-  Node* loop_exit_test(const Node* back_control, const IdealLoopTree* loop, Node*& incr, Node*& limit, BoolTest::mask& bt, float& cl_prob);
-  Node* loop_iv_incr(Node* incr, const Node* x, const IdealLoopTree* loop, const Node*& phi_incr);
-  static Node* loop_iv_stride(const Node* incr, Node*& xphi);
+  struct LoopExitTest {
+    Node* cmp = nullptr;
+    Node* incr = nullptr;
+    Node* limit = nullptr;
+    const BoolTest::mask mask = BoolTest::illegal;
+    const float cl_prob = 0.0f;
+  };
+  LoopExitTest loop_exit_test(const Node* back_control, const IdealLoopTree* loop);
+  struct LoopIVIncr {
+    Node* incr = nullptr;
+    Node* phi_incr = nullptr;
+  };
+  LoopIVIncr loop_iv_incr(Node* old_incr, const Node* x, const IdealLoopTree* loop);
+  struct LoopIvStride {
+    Node* stride = nullptr;
+    Node* xphi = nullptr;
+  };
+  static LoopIvStride loop_iv_stride(const Node* incr);
   static PhiNode* loop_iv_phi(const Node* xphi, const Node* phi_incr, const Node* x);
 
   bool is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicType iv_bt);

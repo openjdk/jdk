@@ -404,73 +404,71 @@ Node* PhaseIdealLoop::loop_exit_control(const Node* x, const IdealLoopTree* loop
   return iftrue;
 }
 
-Node* PhaseIdealLoop::loop_exit_test(const Node* back_control, const IdealLoopTree* loop, Node*& incr, Node*& limit, BoolTest::mask& bt, float& cl_prob) {
+//Node* PhaseIdealLoop::loop_exit_test(const Node* back_control, const IdealLoopTree* loop, Node*& incr, Node*& limit, BoolTest::mask& bt, float& cl_prob) {
+PhaseIdealLoop::LoopExitTest PhaseIdealLoop::loop_exit_test(const Node* back_control, const IdealLoopTree* loop) {
+
+
   const Node* iftrue = back_control;
   uint iftrue_op = iftrue->Opcode();
   Node* iff = iftrue->in(0);
   BoolNode* test = iff->in(1)->as_Bool();
-  bt = test->_test._test;
-  cl_prob = iff->as_If()->_prob;
+  BoolTest::mask bt = test->_test._test;
+  float cl_prob = iff->as_If()->_prob;
   if (iftrue_op == Op_IfFalse) {
     bt = BoolTest(bt).negate();
-    cl_prob = 1.0 - cl_prob;
+    cl_prob = 1.0f - cl_prob;
   }
   // Get backedge compare
   Node* cmp = test->in(1);
   if (!cmp->is_Cmp()) {
-    return nullptr;
+    return {};
   }
 
   // Find the trip-counter increment & limit.  Limit must be loop invariant.
-  incr  = cmp->in(1);
-  limit = cmp->in(2);
+  Node* incr  = cmp->in(1);
+  Node* limit = cmp->in(2);
 
   // ---------
   // need 'loop()' test to tell if limit is loop invariant
   // ---------
 
   if (!is_member(loop, get_ctrl(incr))) { // Swapped trip counter and limit?
-    Node* tmp = incr;            // Then reverse order into the CmpI
-    incr = limit;
-    limit = tmp;
+    swap(incr, limit);                // Then reverse order into the CmpI
     bt = BoolTest(bt).commute(); // And commute the exit test
   }
   if (is_member(loop, get_ctrl(limit))) { // Limit must be loop-invariant
-    return nullptr;
+    return {};
   }
   if (!is_member(loop, get_ctrl(incr))) { // Trip counter must be loop-variant
-    return nullptr;
+    return {};
   }
-  return cmp;
+  return {cmp, incr, limit, bt, cl_prob};
 }
 
-Node* PhaseIdealLoop::loop_iv_incr(Node* incr, const Node* x, const IdealLoopTree* loop, const Node*& phi_incr) {
-  if (incr->is_Phi()) {
-    if (incr->as_Phi()->region() != x || incr->req() != 3) {
-      return nullptr; // Not simple trip counter expression
-    }
-    phi_incr = incr;
-    incr = phi_incr->in(LoopNode::LoopBackControl); // Assume incr is on backedge of Phi
-    if (!is_member(loop, get_ctrl(incr))) { // Trip counter must be loop-variant
-      return nullptr;
+PhaseIdealLoop::LoopIVIncr PhaseIdealLoop::loop_iv_incr(Node* incr, const Node* x, const IdealLoopTree* loop) {
+  if (incr->is_Phi() && incr->as_Phi()->region() == x && incr->req() == 3) { // Simple trip counter expression
+    Node* phi_incr = incr;
+    Node* back_control = phi_incr->in(LoopNode::LoopBackControl); // Assume old_incr is on backedge of Phi
+    if (loop->_phase->is_member(loop, loop->_phase->get_ctrl(back_control))) { // Trip counter must be loop-variant
+      return {back_control, phi_incr};
     }
   }
-  return incr;
+  return {incr, nullptr};
 }
 
-Node* PhaseIdealLoop::loop_iv_stride(const Node* incr, Node*& xphi) {
+PhaseIdealLoop::LoopIvStride PhaseIdealLoop::loop_iv_stride(const Node* incr) {
   assert(incr->Opcode() == Op_AddI || incr->Opcode() == Op_AddL, "caller resp.");
   // Get merge point
-  xphi = incr->in(1);
+  Node* xphi = incr->in(1);
   Node *stride = incr->in(2);
   if (!stride->is_Con()) {     // Oops, swap these
     if (!xphi->is_Con()) {     // Is the other guy a constant?
-      return nullptr;          // Nope, unknown stride, bail out
+      return {};          // Nope, unknown stride, bail out
     }
 
     swap(xphi, stride);        // 'incr' is commutative, so ok to swap
   }
-  return stride;
+  return {stride, xphi};
 }
 
 PhiNode* PhaseIdealLoop::loop_iv_phi(const Node* xphi, const Node* phi_incr, const Node* x) {
@@ -1467,34 +1465,39 @@ void PhaseIdealLoop::check_counted_loop_shape(IdealLoopTree* loop, Node* x, Basi
   Node* back_control = loop_exit_control(x, loop);
   assert(back_control != nullptr, "no back control");
 
-  BoolTest::mask mask = BoolTest::illegal;
-  float cl_prob = 0;
-  Node* incr = nullptr;
-  Node* limit = nullptr;
+//  BoolTest::mask mask = BoolTest::illegal;
+//  float cl_prob = 0;
+//  Node* incr = nullptr;
+//  Node* limit = nullptr;
 
-  Node* cmp = loop_exit_test(back_control, loop, incr, limit, mask, cl_prob);
-  assert(cmp != nullptr && cmp->Opcode() == Op_Cmp(bt), "no exit test");
+//  Node* cmp = loop_exit_test(back_control, loop, incr, limit, mask, cl_prob);
+  LoopExitTest exit_test = loop_exit_test(back_control, loop);
+  assert(exit_test.cmp != nullptr && exit_test.cmp->Opcode() == Op_Cmp(bt), "no exit test");
 
-  const Node* phi_incr = nullptr;
-  incr = loop_iv_incr(incr, x, loop, phi_incr);
-  assert(incr != nullptr && incr->Opcode() == Op_Add(bt), "no incr");
+//  const Node* phi_incr = incr;
+//  incr = loop_iv_incr(incr, x, loop);
+  const LoopIVIncr iv_incr = loop_iv_incr(exit_test.incr, x, loop);
+//  phi_incr = iv_incr.phi_incr;
+//  incr = iv_incr.incr;
+  assert(iv_incr.incr != nullptr && iv_incr.incr->Opcode() == Op_Add(bt), "no incr");
 
-  Node* xphi = nullptr;
-  Node* stride = loop_iv_stride(incr, xphi);
+//  Node* xphi = nullptr;
+//  Node* stride = loop_iv_stride(iv_incr.incr, xphi);
+  LoopIvStride stride = loop_iv_stride(iv_incr.incr);
 
-  assert(stride != nullptr, "no stride");
+  assert(stride.stride != nullptr, "no stride");
 
-  PhiNode* phi = loop_iv_phi(xphi, phi_incr, x);
+  PhiNode* phi = loop_iv_phi(stride.xphi, iv_incr.phi_incr, x);
 
-  assert(phi != nullptr && phi->in(LoopNode::LoopBackControl) == incr, "No phi");
+  assert(phi != nullptr && phi->in(LoopNode::LoopBackControl) == iv_incr.incr, "No phi");
 
-  jlong stride_con = stride->get_integer_as_long(bt);
+  jlong stride_con = stride.stride->get_integer_as_long(bt);
 
-  assert(condition_stride_ok(mask, stride_con), "illegal condition");
+  assert(condition_stride_ok(exit_test.mask, stride_con), "illegal condition");
 
-  assert(mask != BoolTest::ne, "unexpected condition");
-  assert(phi_incr == nullptr, "bad loop shape");
-  assert(cmp->in(1) == incr, "bad exit test shape");
+  assert(exit_test.mask != BoolTest::ne, "unexpected condition");
+  assert(iv_incr.phi_incr == nullptr, "bad loop shape");
+  assert(exit_test.cmp->in(1) == iv_incr.incr, "bad exit test shape");
 
   // Safepoint on backedge not supported
   assert(x->in(LoopNode::LoopBackControl)->Opcode() != Op_SafePoint, "no safepoint on backedge");
@@ -1619,55 +1622,64 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicTy
     return false;
   }
 
-  BoolTest::mask bt = BoolTest::illegal;
-  float cl_prob = 0;
-  Node* incr = nullptr;
-  Node* limit = nullptr;
-  Node* cmp = loop_exit_test(back_control, loop, incr, limit, bt, cl_prob);
-  if (cmp == nullptr || cmp->Opcode() != Op_Cmp(iv_bt)) {
+//  BoolTest::mask bt = BoolTest::illegal;
+//  float cl_prob = 0;
+//  Node* incr = nullptr;
+//  Node* limit = nullptr;
+//  Node* cmp = loop_exit_test(back_control, loop, incr, limit, bt, cl_prob);
+  LoopExitTest exit_test = loop_exit_test(back_control, loop);
+  if (exit_test.cmp == nullptr || exit_test.cmp->Opcode() != Op_Cmp(iv_bt)) {
     return false; // Avoid pointer & float & 64-bit compares
   }
 
   // Trip-counter increment must be commutative & associative.
-  if (incr->Opcode() == Op_Cast(iv_bt)) {
+  Node* incr = exit_test.incr;
+  if (exit_test.incr->Opcode() == Op_Cast(iv_bt)) {
     incr = incr->in(1);
   }
 
-  const Node* phi_incr = nullptr;
-  incr = loop_iv_incr(incr, x, loop, phi_incr);
-  if (incr == nullptr) {
+//  const Node* phi_incr = incr;
+//  incr = loop_iv_incr(incr, x, loop);
+  const LoopIVIncr iv_incr = loop_iv_incr(incr, x, loop);
+//  phi_incr = iv_incr.phi_incr;
+//  incr = iv_incr.incr;
+  if (iv_incr.incr == nullptr) {
     return false;
   }
 
-  Node* trunc1 = nullptr;
-  Node* trunc2 = nullptr;
-  const TypeInteger* iv_trunc_t = nullptr;
-  Node* orig_incr = incr;
-  if (!(incr = CountedLoopNode::match_incr_with_optional_truncation(incr, &trunc1, &trunc2, &iv_trunc_t, iv_bt))) {
+//  Node* trunc1 = nullptr;
+//  Node* trunc2 = nullptr;
+//  const TypeInteger* iv_trunc_t = nullptr;
+//  Node* orig_incr = iv_incr.incr; // FIXME: useless alias?
+//  if (!(incr = CountedLoopNode::match_incr_with_optional_truncation(incr, &trunc1, &trunc2, &iv_trunc_t, iv_bt))) {
+  CountedLoopNode::TruncatedIncrement increment = CountedLoopNode::match_incr_with_optional_truncation(iv_incr.incr, iv_bt);
+  if (increment.incr == nullptr) {
     return false; // Funny increment opcode
   }
-  assert(incr->Opcode() == Op_Add(iv_bt), "wrong increment code");
+  assert(increment.incr->Opcode() == Op_Add(iv_bt), "wrong increment code");
 
-  Node* xphi = nullptr;
-  Node* stride = loop_iv_stride(incr, xphi);
+//  Node* xphi = nullptr;
+//  Node* stride = loop_iv_stride(increment.incr, xphi);
+  const LoopIvStride stride = loop_iv_stride(increment.incr);
 
-  if (stride == nullptr) {
+  if (stride.stride == nullptr) {
     return false;
   }
 
+  Node* xphi = stride.xphi;
   if (xphi->Opcode() == Op_Cast(iv_bt)) {
     xphi = xphi->in(1);
   }
 
   // Stride must be constant
-  jlong stride_con = stride->get_integer_as_long(iv_bt);
+  jlong stride_con = stride.stride->get_integer_as_long(iv_bt);
   assert(stride_con != 0, "missed some peephole opt");
 
-  PhiNode* phi = loop_iv_phi(xphi, phi_incr, x);
+  PhiNode* phi = loop_iv_phi(xphi, iv_incr.phi_incr, x);
 
   if (phi == nullptr ||
-      (trunc1 == nullptr && phi->in(LoopNode::LoopBackControl) != incr) ||
-      (trunc1 != nullptr && phi->in(LoopNode::LoopBackControl) != trunc1)) {
+      (increment.trunc1 == nullptr && phi->in(LoopNode::LoopBackControl) != increment.incr) ||
+      (increment.trunc1 != nullptr && phi->in(LoopNode::LoopBackControl) != increment.trunc1)) {
     return false;
   }
 
@@ -1676,8 +1688,8 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicTy
   Node* iff = iftrue->in(0);
   BoolNode* test = iff->in(1)->as_Bool();
 
-  const TypeInteger* limit_t = gvn->type(limit)->is_integer(iv_bt);
-  if (trunc1 != nullptr) {
+  const TypeInteger* limit_t = gvn->type(exit_test.limit)->is_integer(iv_bt);
+  if (increment.trunc1 != nullptr) {
     // When there is a truncation, we must be sure that after the truncation
     // the trip counter will end up higher than the limit, otherwise we are looking
     // at an endless loop. Can happen with range checks.
@@ -1695,9 +1707,10 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicTy
     // If the array is longer then this is an endless loop
     //  - No transformation can be done.
 
-    const TypeInteger* incr_t = gvn->type(orig_incr)->is_integer(iv_bt);
+//    const TypeInteger* incr_t = gvn->type(orig_incr)->is_integer(iv_bt);
+    const TypeInteger* incr_t = gvn->type(iv_incr.incr)->is_integer(iv_bt);
     if (limit_t->hi_as_long() > incr_t->hi_as_long()) {
-      // if the limit can have a higher value than the increment (before the phi)
+      // if the limit can have a higher value than the increment (before the0 phi)
       return false;
     }
   }
@@ -1705,8 +1718,8 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicTy
   Node *init_trip = phi->in(LoopNode::EntryControl);
 
   // If iv trunc type is smaller than int, check for possible wrap.
-  if (!TypeInteger::bottom(iv_bt)->higher_equal(iv_trunc_t)) {
-    assert(trunc1 != nullptr, "must have found some truncation");
+  if (!TypeInteger::bottom(iv_bt)->higher_equal(increment.trunc_type)) {
+    assert(increment.trunc1 != nullptr, "must have found some truncation");
 
     // Get a better type for the phi (filtered thru if's)
     const TypeInteger* phi_ft = filtered_type(phi);
@@ -1723,23 +1736,23 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicTy
     //    ensure no truncation occurs after the increment.
 
     if (stride_con > 0) {
-      if (iv_trunc_t->hi_as_long() - phi_ft->hi_as_long() < stride_con ||
-          iv_trunc_t->lo_as_long() > phi_ft->lo_as_long()) {
+      if (increment.trunc_type->hi_as_long() - phi_ft->hi_as_long() < stride_con ||
+          increment.trunc_type->lo_as_long() > phi_ft->lo_as_long()) {
         return false;  // truncation may occur
       }
     } else if (stride_con < 0) {
-      if (iv_trunc_t->lo_as_long() - phi_ft->lo_as_long() > stride_con ||
-          iv_trunc_t->hi_as_long() < phi_ft->hi_as_long()) {
+      if (increment.trunc_type->lo_as_long() - phi_ft->lo_as_long() > stride_con ||
+          increment.trunc_type->hi_as_long() < phi_ft->hi_as_long()) {
         return false;  // truncation may occur
       }
     }
     // No possibility of wrap so truncation can be discarded
     // Promote iv type to Int
   } else {
-    assert(trunc1 == nullptr && trunc2 == nullptr, "no truncation for int");
+    assert(increment.trunc1 == nullptr && increment.trunc2 == nullptr, "no truncation for int");
   }
 
-  if (!condition_stride_ok(bt, stride_con)) {
+  if (!condition_stride_ok(exit_test.mask, stride_con)) {
     return false;
   }
 
@@ -1755,7 +1768,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicTy
     }
   }
 
-  if (phi_incr != nullptr && bt != BoolTest::ne) {
+  if (iv_incr.phi_incr != nullptr && exit_test.mask != BoolTest::ne) {
     // check if there is a possibility of IV overflowing after the first increment
     if (stride_con > 0) {
       if (init_t->hi_as_long() > max_signed_integer(iv_bt) - stride_con) {
@@ -1982,10 +1995,10 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicTy
   }
 
   // Accounting for (LE3) and (LE4) where we use pre-incremented phis in the loop exit check.
-  const jlong limit_correction_for_pre_iv_exit_check = (phi_incr != nullptr) ? stride_con : 0;
+  const jlong limit_correction_for_pre_iv_exit_check = (iv_incr.phi_incr != nullptr) ? stride_con : 0;
 
   // Accounting for (LE2) and (LE4) where we use <= or >= in the loop exit check.
-  const bool includes_limit = (bt == BoolTest::le || bt == BoolTest::ge);
+  const bool includes_limit = (exit_test.mask == BoolTest::le || exit_test.mask == BoolTest::ge);
   const jlong limit_correction_for_le_ge_exit_check = (includes_limit ? (stride_con > 0 ? 1 : -1) : 0);
 
   const jlong limit_correction = limit_correction_for_pre_iv_exit_check + limit_correction_for_le_ge_exit_check;
@@ -2019,7 +2032,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicTy
     }
 
     ParsePredicateNode* loop_limit_check_parse_predicate = loop_limit_check_predicate_block->parse_predicate();
-    if (!is_dominator(get_ctrl(limit), loop_limit_check_parse_predicate->in(0))) {
+    if (!is_dominator(get_ctrl(exit_test.limit), loop_limit_check_parse_predicate->in(0))) {
       return false;
     }
 
@@ -2027,10 +2040,10 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicTy
     Node* bol;
 
     if (stride_con > 0) {
-      cmp_limit = CmpNode::make(limit, _igvn.integercon(max_signed_integer(iv_bt) - final_correction, iv_bt), iv_bt);
+      cmp_limit = CmpNode::make(exit_test.limit, _igvn.integercon(max_signed_integer(iv_bt) - final_correction, iv_bt), iv_bt);
       bol = new BoolNode(cmp_limit, BoolTest::le);
     } else {
-      cmp_limit = CmpNode::make(limit, _igvn.integercon(min_signed_integer(iv_bt) - final_correction, iv_bt), iv_bt);
+      cmp_limit = CmpNode::make(exit_test.limit, _igvn.integercon(min_signed_integer(iv_bt) - final_correction, iv_bt), iv_bt);
       bol = new BoolNode(cmp_limit, BoolTest::ge);
     }
 
@@ -2046,8 +2059,8 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicTy
                               (stride_con < 0 && init_t->lo_as_long() <= limit_t->hi_as_long());
 
   if (init_gte_limit && // (2.1)
-     ((bt == BoolTest::ne || init_plus_stride_could_overflow) && // (2.3)
-      !has_dominating_loop_limit_check(init_trip, limit, stride_con, iv_bt, init_control))) { // (2.2)
+     ((exit_test.mask == BoolTest::ne || init_plus_stride_could_overflow) && // (2.3)
+      !has_dominating_loop_limit_check(init_trip, exit_test.limit, stride_con, iv_bt, init_control))) { // (2.2)
     // (2) Iteration Loop Limit Check Predicate is required because neither (2.1), (2.2), nor (2.3) holds.
     // We use the following condition:
     // - stride > 0: init < limit
@@ -2073,7 +2086,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicTy
 
     ParsePredicateNode* loop_limit_check_parse_predicate = loop_limit_check_predicate_block->parse_predicate();
     Node* parse_predicate_entry = loop_limit_check_parse_predicate->in(0);
-    if (!is_dominator(get_ctrl(limit), parse_predicate_entry) ||
+    if (!is_dominator(get_ctrl(exit_test.limit), parse_predicate_entry) ||
         !is_dominator(get_ctrl(init_trip), parse_predicate_entry)) {
       return false;
     }
@@ -2082,16 +2095,17 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicTy
     Node* bol;
 
     if (stride_con > 0) {
-      cmp_limit = CmpNode::make(init_trip, limit, iv_bt);
+      cmp_limit = CmpNode::make(init_trip, exit_test.limit, iv_bt);
       bol = new BoolNode(cmp_limit, BoolTest::lt);
     } else {
-      cmp_limit = CmpNode::make(init_trip, limit, iv_bt);
+      cmp_limit = CmpNode::make(init_trip, exit_test.limit, iv_bt);
       bol = new BoolNode(cmp_limit, BoolTest::gt);
     }
 
     insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
   }
 
+  BoolTest::mask bt = exit_test.mask; // TODO: need to save
   if (bt == BoolTest::ne) {
     // Now we need to canonicalize the loop condition if it is 'ne'.
     assert(stride_con == 1 || stride_con == -1, "simple increment only - checked before");
@@ -2140,14 +2154,14 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicTy
   if (iv_bt == T_INT &&
       !x->as_Loop()->is_loop_nest_inner_loop() &&
       StressLongCountedLoop > 0 &&
-      trunc1 == nullptr &&
-      convert_to_long_loop(cmp, phi, loop)) {
+      increment.trunc1 == nullptr &&
+      convert_to_long_loop(exit_test.cmp, phi, loop)) {
     return false;
   }
 #endif
 
-  Node* adjusted_limit = limit;
-  if (phi_incr != nullptr) {
+  Node* adjusted_limit = exit_test.limit; // TODO: need to save
+  if (iv_incr.phi_incr != nullptr) {
     // If compare points directly to the phi we need to adjust
     // the compare so that it points to the incr. Limit have
     // to be adjusted to keep trip count the same and we
@@ -2157,7 +2171,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicTy
     // is converted to
     //   i = init; do {} while(++i < limit+1);
     //
-    adjusted_limit = gvn->transform(AddNode::make(limit, stride, iv_bt));
+    adjusted_limit = gvn->transform(AddNode::make(exit_test.limit, stride.stride, iv_bt));
   }
 
   if (includes_limit) {
@@ -2177,13 +2191,14 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicTy
 
   // Build a canonical trip test.
   // Clone code, as old values may be in use.
-  incr = incr->clone();
-  incr->set_req(1,phi);
-  incr->set_req(2,stride);
-  incr = _igvn.register_new_node_with_optimizer(incr);
-  set_early_ctrl(incr, false);
+//  incr = incr->clone();
+  Node* incr_clone = increment.incr->clone();
+  incr_clone->set_req(1,phi);
+  incr_clone->set_req(2, stride.stride);
+  incr_clone = _igvn.register_new_node_with_optimizer(incr_clone);
+  set_early_ctrl(incr_clone, false);
   _igvn.rehash_node_delayed(phi);
-  phi->set_req_X( LoopNode::LoopBackControl, incr, &_igvn );
+  phi->set_req_X( LoopNode::LoopBackControl, incr_clone, &_igvn );
 
   // If phi type is more restrictive than Int, raise to
   // Int to prevent (almost) infinite recursion in igvn
@@ -2196,8 +2211,8 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicTy
     _igvn.replace_node(phi, nphi);
     phi = nphi->as_Phi();
   }
-  cmp = cmp->clone();
-  cmp->set_req(1,incr);
+  Node* cmp = exit_test.cmp->clone(); // TODO: need to save
+  cmp->set_req(1,incr_clone);
   cmp->set_req(2, adjusted_limit);
   cmp = _igvn.register_new_node_with_optimizer(cmp);
   set_ctrl(cmp, iff->in(0));
@@ -2209,7 +2224,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicTy
   set_ctrl(test, iff->in(0));
 
   // Replace the old IfNode with a new LoopEndNode
-  Node *lex = _igvn.register_new_node_with_optimizer(BaseCountedLoopEndNode::make(iff->in(0), test, cl_prob, iff->as_If()->_fcnt, iv_bt));
+  Node *lex = _igvn.register_new_node_with_optimizer(BaseCountedLoopEndNode::make(iff->in(0), test, exit_test.cl_prob, iff->as_If()->_fcnt, iv_bt));
   IfNode *le = lex->as_If();
   uint dd = dom_depth(iff);
   set_idom(le, le->in(0), dd); // Update dominance for loop exit
@@ -2255,7 +2270,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicTy
   IdealLoopTree* outer_ilt = nullptr;
   if (strip_mine_loop) {
     outer_ilt = create_outer_strip_mined_loop(init_control, loop,
-                                              cl_prob, le->_fcnt, entry_control,
+                                              exit_test.cl_prob, le->_fcnt, entry_control,
                                               iffalse);
   }
 
@@ -2676,11 +2691,9 @@ Node* LoopLimitNode::Identity(PhaseGVN* phase) {
 // Match increment with optional truncation:
 // CHAR: (i+1)&0x7fff, BYTE: ((i+1)<<8)>>8, or SHORT: ((i+1)<<16)>>16
 // Return null for failure. Success returns the increment node.
-Node* CountedLoopNode::match_incr_with_optional_truncation(Node* expr, Node** trunc1, Node** trunc2,
-                                                           const TypeInteger** trunc_type,
-                                                           BasicType bt) {
+CountedLoopNode::TruncatedIncrement CountedLoopNode::match_incr_with_optional_truncation(Node* expr, BasicType bt) {
   // Quick cutouts:
-  if (expr == nullptr || expr->req() != 3)  return nullptr;
+  if (expr == nullptr || expr->req() != 3)  return TruncatedIncrement{};
 
   Node *t1 = nullptr;
   Node *t2 = nullptr;
@@ -2721,14 +2734,11 @@ Node* CountedLoopNode::match_incr_with_optional_truncation(Node* expr, Node** tr
 
   // If (maybe after stripping) it is an AddI, we won:
   if (n1op == Op_Add(bt)) {
-    *trunc1 = t1;
-    *trunc2 = t2;
-    *trunc_type = trunc_t;
-    return n1;
+    return TruncatedIncrement{n1, t1, t2, trunc_t};
   }
 
   // failed
-  return nullptr;
+  return TruncatedIncrement{};
 }
 
 IfNode* CountedLoopNode::find_multiversion_if_from_multiversion_fast_main_loop() {
