@@ -25,8 +25,7 @@
  * @test
  * @bug 8218287
  * @summary Verify the wrapper input stream is used when using Terminal.reader()
- * @modules jdk.internal.le/jdk.internal.org.jline
- *          jdk.internal.le/jdk.internal.org.jline.terminal
+ * @modules jdk.internal.le/jdk.internal.org.jline.terminal
  *          jdk.internal.le/jdk.internal.org.jline.terminal.impl
  *          jdk.internal.le/jdk.internal.org.jline.terminal.spi
  *          jdk.internal.le/jdk.internal.org.jline.utils
