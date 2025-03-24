@@ -30,6 +30,8 @@
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.HttpRequestOption;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,6 +39,7 @@ import java.util.Set;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
@@ -99,6 +102,8 @@ public class RequestBuilderTest {
         assertThrows(NPE, () -> builder.setHeader(null, null));
         assertThrows(NPE, () -> builder.setHeader("name", null));
         assertThrows(NPE, () -> builder.setHeader(null, "value"));
+        assertThrows(NPE, () -> builder.setOption(null, null));
+        assertThrows(NPE, () -> builder.setOption((HttpRequestOption< H3DiscoveryMode>) null, HTTP_3_ANY));
         assertThrows(NPE, () -> builder.timeout(null));
         assertThrows(NPE, () -> builder.POST(null));
         assertThrows(NPE, () -> builder.PUT(null));
