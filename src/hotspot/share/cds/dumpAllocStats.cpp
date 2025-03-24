@@ -129,7 +129,7 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all) {
                                                                   _bytes [RW][KlassTrainingDataType]);
   msg.info("MethodTrainingData                = %6d (%8d bytes)", _counts[RW][MethodTrainingDataType],
                                                                   _bytes [RW][MethodTrainingDataType]);
-           
+
 }
 
 #ifdef ASSERT

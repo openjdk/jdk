@@ -69,7 +69,7 @@
   f(KlassTrainingData)         \
   f(MethodTrainingData)        \
   f(CompileTrainingData)
-    
+
 class CppVtableInfo {
   intptr_t _vtable_size;
   intptr_t _cloned_vtable[1]; // Pseudo flexible array member.

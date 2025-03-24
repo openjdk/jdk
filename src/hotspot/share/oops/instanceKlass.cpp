@@ -2650,7 +2650,7 @@ void InstanceKlass::remove_unshareable_info() {
     // Remember this so we can avoid walking the hierarchy at runtime.
     set_verified_at_dump_time();
   }
-  
+
   _misc_flags.set_has_init_deps_processed(false);
 
   Klass::remove_unshareable_info();

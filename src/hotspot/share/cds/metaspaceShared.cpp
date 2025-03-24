@@ -601,7 +601,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
   }
 
   TrainingData::dump_training_data();
-  
+
   MetaspaceShared::write_method_handle_intrinsics();
 
   // Write lambform lines into archive
@@ -957,9 +957,9 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
       RecordTraining = true;
     }
   }
-  
+
   TrainingData::init_dumptime_table(CHECK); // captures TrainingDataSetLocker
-    
+
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
     if (!HeapShared::is_archived_boot_layer_available(THREAD)) {

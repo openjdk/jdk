@@ -151,8 +151,8 @@ public:
   void record_dynamic_proxy_class() {
     _num_dynamic_proxy_classes ++;
   }
-   
-  
+
+
   void print_stats(int ro_all, int rw_all);
 
   DEBUG_ONLY(void verify(int expected_byte_size, bool read_only) const);

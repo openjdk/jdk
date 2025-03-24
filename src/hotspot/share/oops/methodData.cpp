@@ -1987,7 +1987,7 @@ void MethodData::restore_unshareable_info(TRAPS) {
   //_extra_data_lock = new Mutex(Mutex::nosafepoint, "MDOExtraData_lock");
 }
 #endif // INCLUDE_CDS
-       
+
 #ifdef ASSERT
 void MethodData::check_extra_data_locked() const {
     // Cast const away, just to be able to verify the lock

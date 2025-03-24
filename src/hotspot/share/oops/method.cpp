@@ -1203,7 +1203,7 @@ void Method::unlink_method() {
   clear_is_not_c2_compilable();
   clear_is_not_c2_osr_compilable();
   clear_queued_for_compilation();
-  
+
   remove_unshareable_flags();
 }
 

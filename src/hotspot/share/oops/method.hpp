@@ -315,7 +315,7 @@ class Method : public Metadata {
     return _method_data;
   }
   void set_method_data(MethodData* data);
- 
+
   MethodTrainingData* training_data_or_null() const;
   bool init_training_data(MethodTrainingData* td);
 
