@@ -35,7 +35,10 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC
- *      -Xbootclasspath/a:. -Xlog:gc=debug,gc+ergo+cset=trace,gc+phases=debug -XX:G1HeapRegionSize=1m -Xms30m  gc.g1.pinnedobjs.TestPinnedEvacEmpty
+ *      -Xbootclasspath/a:. -Xlog:gc=debug,gc+ergo+cset=trace,gc+phases=debug -XX:G1HeapRegionSize=1m -Xms30m  gc.g1.pinnedobjs.TestPinnedEvacEmpty regular
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC
+ *      -Xbootclasspath/a:. -Xlog:gc=debug,gc+ergo+cset=trace,gc+phases=debug -XX:G1HeapRegionSize=1m -Xms30m  gc.g1.pinnedobjs.TestPinnedEvacEmpty humongous
  */
 
 package gc.g1.pinnedobjs;
@@ -51,14 +54,18 @@ public class TestPinnedEvacEmpty {
 
     private static final WhiteBox wb = WhiteBox.getWhiteBox();
 
-    private static final long objSize = wb.getObjectSize(new Object());
+    private static final int objSize = (int)wb.getObjectSize(new Object());
 
-    // How many j.l.Object should we allocate when creating garbage.
-    private static final long numAllocations = 1024 * 1024 * 3 / objSize;
+    private static Object allocHumongous() {
+        final int M = 1024 * 1024;
+        // The target object to pin. Since it is humongous, it will always be in its
+        // own regions.
+        return new int[M];
+    }
 
-    public static void main(String[] args) throws Exception {
-        // Remove garbage from VM initialization.
-        wb.fullGC();
+    private static Object allocRegular() {
+        // How many j.l.Object should we allocate when creating garbage.
+        final int numAllocations = 1024 * 1024 * 3 / objSize;
 
         // Allocate garbage so that the target object will be in a new region.
         for (int i = 0; i < numAllocations; i++) {
@@ -72,6 +79,17 @@ public class TestPinnedEvacEmpty {
         }
 
         Asserts.assertTrue(!wb.isObjectInOldGen(o), "should not be in old gen already");
+        return o;
+    }
+
+    public static void main(String[] args) throws Exception {
+        System.out.println("Testing " + args[0] + " objects...");
+
+        // Remove garbage from VM initialization.
+        wb.fullGC();
+
+        // Allocate target object according to arguments.
+        Object o = args[0].equals("regular") ? allocRegular() : allocHumongous();
 
         // Pin the object.
         wb.pinObject(o);
@@ -92,4 +110,3 @@ public class TestPinnedEvacEmpty {
         System.out.println("Done");
     }
 }
-
