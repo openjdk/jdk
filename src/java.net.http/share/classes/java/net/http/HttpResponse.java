@@ -832,6 +832,7 @@ public interface HttpResponse<T> {
         /**
          * Represents a HTTP/3 PushID. PushIds can be shared across
          * multiple client initiated requests on the same HTTP/3 connection.
+         * @since TBD
          */
         public sealed interface PushId {
             // TODO: should we expose this type?
@@ -845,6 +846,8 @@ public interface HttpResponse<T> {
              * The {@code connectionLabel} should be considered opaque, and ensures that
              * two long pushId emitted by different connections correspond to distinct
              * instances of {@code PushId}.
+             *
+             * @since TBD
              */
             record Http3PushId(long pushId, String connectionLabel) implements PushId { }
         }
@@ -914,6 +917,8 @@ public interface HttpResponse<T> {
          * @param pushid the PushId which can be linked to subsequent notifications
          * @param acceptor the acceptor function that must be successfully
          *                 invoked to accept the push promise
+         *
+         * @since TBD
          */
         public default void applyPushPromise(
                 HttpRequest initiatingRequest,
@@ -933,6 +938,8 @@ public interface HttpResponse<T> {
          *
          * @param initiatingRequest the client initiated request which resulted in the push
          * @param pushid the pushid which may have been notified previously
+         *
+         * @since TBD
          */
         public default void notifyAdditionalPromise(
                 HttpRequest initiatingRequest,
