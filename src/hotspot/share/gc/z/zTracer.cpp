@@ -33,6 +33,7 @@
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
 #include "jfr/metadata/jfrSerializer.hpp"
+#include "jfr/support/jfrNonReentrant.hpp"
 #endif
 
 #if INCLUDE_JFR
@@ -124,7 +125,7 @@ void ZTracer::initialize() {
 void ZTracer::send_stat_counter(const ZStatCounter& counter, uint64_t increment, uint64_t value) {
   NoSafepointVerifier nsv;
 
-  EventZStatisticsCounter e;
+  JfrNonReentrant<EventZStatisticsCounter> e;
   if (e.should_commit()) {
     e.set_id(counter.id());
     e.set_increment(increment);
@@ -136,7 +137,7 @@ void ZTracer::send_stat_counter(const ZStatCounter& counter, uint64_t increment,
 void ZTracer::send_stat_sampler(const ZStatSampler& sampler, uint64_t value) {
   NoSafepointVerifier nsv;
 
-  EventZStatisticsSampler e;
+  JfrNonReentrant<EventZStatisticsSampler> e;
   if (e.should_commit()) {
     e.set_id(sampler.id());
     e.set_value(value);
