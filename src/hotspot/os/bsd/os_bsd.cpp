@@ -22,7 +22,6 @@
  *
  */
 
-// no precompiled headers
 #include "classfile/vmSymbols.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
@@ -242,16 +241,6 @@ static char cpu_arch[] = "ppc";
 #else
   #error Add appropriate cpu_arch setting
 #endif
-
-// JVM variant
-#if   defined(ZERO)
-  #define JVM_VARIANT "zero"
-#elif defined(COMPILER2)
-  #define JVM_VARIANT "server"
-#else
-  #define JVM_VARIANT "client"
-#endif
-
 
 void os::Bsd::initialize_system_info() {
   int mib[2];
@@ -638,7 +627,12 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // init thread attributes
   pthread_attr_t attr;
-  pthread_attr_init(&attr);
+  int rslt = pthread_attr_init(&attr);
+  if (rslt != 0) {
+    thread->set_osthread(nullptr);
+    delete osthread;
+    return false;
+  }
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
   // calculate stack size if it's not specified by caller
@@ -745,7 +739,7 @@ bool os::create_attached_thread(JavaThread* thread) {
   PosixSignals::hotspot_sigmask(thread);
 
   log_info(os, thread)("Thread attached (tid: %zu, pthread id: %zu"
-                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (%zuK) ).",
                        os::current_thread_id(), (uintx) pthread_self(),
                        p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size() / K);
   return true;
@@ -1459,7 +1453,7 @@ void os::print_memory_info(outputStream* st) {
   size_t size = sizeof(swap_usage);
 
   st->print("Memory:");
-  st->print(" " SIZE_FORMAT "k page", os::vm_page_size()>>10);
+  st->print(" %zuk page", os::vm_page_size()>>10);
 
   st->print(", physical " UINT64_FORMAT "k",
             os::physical_memory() >> 10);
@@ -1554,7 +1548,7 @@ void os::jvm_path(char *buf, jint buflen) {
         // Add the appropriate JVM variant subdir
         len = strlen(buf);
         jrelib_p = buf + len;
-        snprintf(jrelib_p, buflen-len, "/%s", JVM_VARIANT);
+        snprintf(jrelib_p, buflen-len, "/%s", Abstract_VM_Version::vm_variant());
         if (0 != access(buf, F_OK)) {
           snprintf(jrelib_p, buflen-len, "%s", "");
         }
@@ -1586,7 +1580,7 @@ void os::jvm_path(char *buf, jint buflen) {
 
 static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
-  warning("INFO: os::commit_memory(" INTPTR_FORMAT ", " SIZE_FORMAT
+  warning("INFO: os::commit_memory(" INTPTR_FORMAT ", %zu"
           ", %d) failed; error='%s' (errno=%d)", (intptr_t)addr, size, exec,
            os::errno_name(err), err);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -432,7 +432,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     prefix {@code 'T'} forces this output to upper case.
  *
  * <tr><th scope="row" style="vertical-align:top">{@code 'z'}
- *     <td> <a href="http://www.ietf.org/rfc/rfc0822.txt">RFC&nbsp;822</a>
+ *     <td> <a href="https://www.ietf.org/rfc/rfc822.txt">RFC&nbsp;822</a>
  *     style numeric time zone offset from GMT, e.g. {@code -0800}.  This
  *     value will be adjusted as necessary for Daylight Saving Time.  For
  *     {@code long}, {@link Long}, and {@link Date} the time zone used is
@@ -1720,7 +1720,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <tr><th scope="row" style="vertical-align:top">{@code 'z'}
  *     <td style="vertical-align:top"> <code>'&#92;u007a'</code>
- *     <td> <a href="http://www.ietf.org/rfc/rfc0822.txt">RFC&nbsp;822</a>
+ *     <td> <a href="https://www.ietf.org/rfc/rfc822.txt">RFC&nbsp;822</a>
  *     style numeric time zone offset from GMT, e.g. {@code -0800}.  This
  *     value will be adjusted as necessary for Daylight Saving Time.  For
  *     {@code long}, {@link Long}, and {@link Date} the time zone used is

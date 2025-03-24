@@ -178,6 +178,7 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DVerbose=true`: Enable more fain-grained logging (slows the execution down).
 - `-DReproduce=true`: Flag to use when directly running a test VM to bypass dependencies to the driver VM state (for example, when reproducing an issue).
 - `-DPrintTimes=true`: Print the execution time measurements of each executed test.
+- `-DPrintRuleMatchingTime=true`: Print the time of matching IR rules per method. Slows down the execution as the rules are warmed up before meassurement.
 - `-DVerifyVM=true`: The framework runs the test VM with additional verification flags (slows the execution down).
 - `-DExcluceRandom=true`: The framework randomly excludes some methods from compilation. IR verification is disabled completely with this flag.
 - `-DFlipC1C2=true`: The framework compiles all `@Test` annotated method with C1 if a C2 compilation would have been applied and vice versa. IR verification is disabled completely with this flag.

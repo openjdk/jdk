@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
@@ -88,9 +87,6 @@ TypeArrayKlass::TypeArrayKlass(BasicType type, Symbol* name) : ArrayKlass(name, 
   assert(size() >= TypeArrayKlass::header_size(), "bad size");
 
   set_class_loader_data(ClassLoaderData::the_null_class_loader_data());
-
-  // Compute modifier flags.
-  set_modifier_flags(compute_modifier_flags());
 }
 
 typeArrayOop TypeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/logSelectionList.hpp"
 #include "logging/logTagSet.hpp"
 #include "runtime/os.hpp"
@@ -72,7 +71,7 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
   for (char *comma_pos = copy, *cur = copy; success; cur = comma_pos + 1) {
     if (_nselections == MaxSelections) {
       if (errstream != nullptr) {
-        errstream->print_cr("Can not have more than " SIZE_FORMAT " log selections in a single configuration.",
+        errstream->print_cr("Can not have more than %zu log selections in a single configuration.",
                             MaxSelections);
       }
       success = false;

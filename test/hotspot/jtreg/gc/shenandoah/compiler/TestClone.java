@@ -233,6 +233,32 @@
  */
 
 /*
+ * @test id=generational-small-card-size
+ * @summary Test clone barriers work correctly
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:GCCardSizeInBytes=128
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:GCCardSizeInBytes=128
+ *                   -Xint
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:GCCardSizeInBytes=128
+ *                   -XX:-TieredCompilation
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:GCCardSizeInBytes=128
+ *                   -XX:TieredStopAtLevel=1
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:GCCardSizeInBytes=128
+ *                   -XX:TieredStopAtLevel=4
+ *                   TestClone
+ */
+
+/*
  * @test id=generational-verify
  * @summary Test clone barriers work correctly
  * @requires vm.gc.Shenandoah

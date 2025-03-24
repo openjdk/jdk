@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
@@ -299,7 +298,9 @@ void JfrThreadLocal::exclude_vthread(const JavaThread* jt) {
 }
 
 void JfrThreadLocal::include_vthread(const JavaThread* jt) {
-  set(&jt->jfr_thread_local()->_vthread_excluded, false);
+  JfrThreadLocal* const tl = jt->jfr_thread_local();
+  Atomic::store(&tl->_vthread_epoch, static_cast<u2>(0));
+  set(&tl->_vthread_excluded, false);
   JfrJavaEventWriter::include(vthread_id(jt), jt);
 }
 

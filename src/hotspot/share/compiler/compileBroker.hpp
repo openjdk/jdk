@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,22 @@
 #endif
 
 class nmethod;
+
+#if defined(ASSERT) && COMPILER2_OR_JVMCI
+// Stress testing. Dedicated threads revert optimizations based on escape analysis concurrently to
+// the running java application.  Configured with vm options DeoptimizeObjectsALot*.
+class DeoptimizeObjectsALotThread : public JavaThread {
+
+  static void deopt_objs_alot_thread_entry(JavaThread* thread, TRAPS);
+  void deoptimize_objects_alot_loop_single();
+  void deoptimize_objects_alot_loop_all();
+
+public:
+  DeoptimizeObjectsALotThread() : JavaThread(&deopt_objs_alot_thread_entry) { }
+
+  bool is_hidden_from_external_view() const      { return true; }
+};
+#endif
 
 // CompilerCounters
 //

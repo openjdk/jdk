@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
@@ -476,6 +475,8 @@ Node* ConstraintCastNode::make_cast_for_type(Node* c, Node* in, const Type* type
     return new CastIINode(c, in, type, dependency, false, types);
   } else if (type->isa_long()) {
     return new CastLLNode(c, in, type, dependency, types);
+  } else if (type->isa_half_float()) {
+    return new CastHHNode(c, in, type, dependency, types);
   } else if (type->isa_float()) {
     return new CastFFNode(c, in, type, dependency, types);
   } else if (type->isa_double()) {

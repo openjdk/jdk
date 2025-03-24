@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
@@ -86,18 +85,10 @@ void VM_GC_Operation::notify_gc_end() {
 
 // Allocations may fail in several threads at about the same time,
 // resulting in multiple gc requests.  We only want to do one of them.
-// In case a GC locker is active and the need for a GC is already signaled,
-// we want to skip this GC attempt altogether, without doing a futile
-// safepoint operation.
 bool VM_GC_Operation::skip_operation() const {
   bool skip = (_gc_count_before != Universe::heap()->total_collections());
   if (_full && skip) {
     skip = (_full_gc_count_before != Universe::heap()->total_full_collections());
-  }
-  if (!skip && GCLocker::is_active_and_needs_gc()) {
-    skip = Universe::heap()->is_maximal_no_gc();
-    assert(!(skip && (_gc_cause == GCCause::_gc_locker)),
-           "GCLocker cannot be active when initiating GC");
   }
   return skip;
 }
@@ -110,7 +101,7 @@ bool VM_GC_Operation::doit_prologue() {
   if (!is_init_completed()) {
     vm_exit_during_initialization(
       err_msg("GC triggered before VM initialization completed. Try increasing "
-              "NewSize, current value " SIZE_FORMAT "%s.",
+              "NewSize, current value %zu%s.",
               byte_size_in_proper_unit(NewSize),
               proper_unit_for_byte_size(NewSize)));
   }
@@ -123,6 +114,9 @@ bool VM_GC_Operation::doit_prologue() {
     Heap_lock->unlock();
     _prologue_succeeded = false;
   } else {
+    if (UseSerialGC || UseParallelGC) {
+      GCLocker::block();
+    }
     _prologue_succeeded = true;
   }
   return _prologue_succeeded;
@@ -130,6 +124,9 @@ bool VM_GC_Operation::doit_prologue() {
 
 
 void VM_GC_Operation::doit_epilogue() {
+  if (UseSerialGC || UseParallelGC) {
+    GCLocker::unblock();
+  }
   // GC thread root traversal likely used OopMapCache a lot, which
   // might have created lots of old entries. Trigger the cleanup now.
   OopMapCache::try_trigger_cleanup();
@@ -140,8 +137,8 @@ void VM_GC_Operation::doit_epilogue() {
 }
 
 bool VM_GC_HeapInspection::doit_prologue() {
-  if (_full_gc && UseZGC) {
-    // ZGC cannot perform a synchronous GC cycle from within the VM thread.
+  if (_full_gc && (UseZGC || UseShenandoahGC)) {
+    // ZGC and Shenandoah cannot perform a synchronous GC cycle from within the VM thread.
     // So VM_GC_HeapInspection::collect() is a noop. To respect the _full_gc
     // flag a synchronous GC cycle is performed from the caller thread in the
     // prologue.
@@ -259,11 +256,7 @@ void VM_CollectForMetadataAllocation::doit() {
     return;
   }
 
-  log_debug(gc)("After Metaspace GC failed to allocate size " SIZE_FORMAT, _size);
-
-  if (GCLocker::is_active_and_needs_gc()) {
-    set_gc_locked();
-  }
+  log_debug(gc)("After Metaspace GC failed to allocate size %zu", _size);
 }
 
 VM_CollectForAllocation::VM_CollectForAllocation(size_t word_size, uint gc_count_before, GCCause::Cause cause)

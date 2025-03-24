@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
@@ -327,6 +326,12 @@ jint Klass::array_layout_helper(BasicType etype) {
   assert(1 << layout_helper_log2_element_size(lh) == esize, "correct decode");
 
   return lh;
+}
+
+int Klass::modifier_flags() const {
+  int mods = java_lang_Class::modifiers(java_mirror());
+  assert(mods == compute_modifier_flags(), "should be same");
+  return mods;
 }
 
 bool Klass::can_be_primary_super_slow() const {
@@ -817,6 +822,19 @@ void Klass::remove_java_mirror() {
     ResourceMark rm;
     log_trace(cds, unshareable)("remove java_mirror: %s", external_name());
   }
+
+#if INCLUDE_CDS_JAVA_HEAP
+  _archived_mirror_index = -1;
+  if (CDSConfig::is_dumping_heap()) {
+    Klass* src_k = ArchiveBuilder::current()->get_source_addr(this);
+    oop orig_mirror = src_k->java_mirror();
+    oop scratch_mirror = HeapShared::scratch_java_mirror(orig_mirror);
+    if (scratch_mirror != nullptr) {
+      _archived_mirror_index = HeapShared::append_root(scratch_mirror);
+    }
+  }
+#endif
+
   // Just null out the mirror.  The class_loader_data() no longer exists.
   clear_java_mirror_handle();
 }
@@ -899,12 +917,6 @@ void Klass::clear_archived_mirror_index() {
     HeapShared::clear_root(_archived_mirror_index);
   }
   _archived_mirror_index = -1;
-}
-
-// No GC barrier
-void Klass::set_archived_java_mirror(int mirror_index) {
-  assert(CDSConfig::is_dumping_heap(), "sanity");
-  _archived_mirror_index = mirror_index;
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 

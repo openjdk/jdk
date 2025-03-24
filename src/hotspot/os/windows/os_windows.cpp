@@ -24,7 +24,6 @@
 
 // API level must be at least Windows Vista or Server 2008 to use InitOnceExecuteOnce
 
-// no precompiled headers
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/nativeInst.hpp"
@@ -77,7 +76,6 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/population_count.hpp"
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
@@ -147,26 +145,34 @@ LPTOP_LEVEL_EXCEPTION_FILTER previousUnhandledExceptionFilter = nullptr;
 
 HINSTANCE vm_lib_handle;
 
+static void windows_preinit(HINSTANCE hinst) {
+  vm_lib_handle = hinst;
+  if (ForceTimeHighResolution) {
+    timeBeginPeriod(1L);
+  }
+  WindowsDbgHelp::pre_initialize();
+  SymbolEngine::pre_initialize();
+}
+
+static void windows_atexit() {
+  if (ForceTimeHighResolution) {
+    timeEndPeriod(1L);
+  }
+#if defined(USE_VECTORED_EXCEPTION_HANDLING)
+  if (topLevelVectoredExceptionHandler != nullptr) {
+    RemoveVectoredExceptionHandler(topLevelVectoredExceptionHandler);
+    topLevelVectoredExceptionHandler = nullptr;
+  }
+#endif
+}
+
 BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
   switch (reason) {
   case DLL_PROCESS_ATTACH:
-    vm_lib_handle = hinst;
-    if (ForceTimeHighResolution) {
-      timeBeginPeriod(1L);
-    }
-    WindowsDbgHelp::pre_initialize();
-    SymbolEngine::pre_initialize();
+    windows_preinit(hinst);
     break;
   case DLL_PROCESS_DETACH:
-    if (ForceTimeHighResolution) {
-      timeEndPeriod(1L);
-    }
-#if defined(USE_VECTORED_EXCEPTION_HANDLING)
-    if (topLevelVectoredExceptionHandler != nullptr) {
-      RemoveVectoredExceptionHandler(topLevelVectoredExceptionHandler);
-      topLevelVectoredExceptionHandler = nullptr;
-    }
-#endif
+    windows_atexit();
     break;
   default:
     break;
@@ -199,12 +205,12 @@ struct PreserveLastError {
 static LPVOID virtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect) {
   LPVOID result = ::VirtualAlloc(lpAddress, dwSize, flAllocationType, flProtect);
   if (result != nullptr) {
-    log_trace(os)("VirtualAlloc(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x) returned " PTR_FORMAT "%s.",
+    log_trace(os)("VirtualAlloc(" PTR_FORMAT ", %zu, %x, %x) returned " PTR_FORMAT "%s.",
                   p2i(lpAddress), dwSize, flAllocationType, flProtect, p2i(result),
                   ((lpAddress != nullptr && result != lpAddress) ? " <different base!>" : ""));
   } else {
     PreserveLastError ple;
-    log_info(os)("VirtualAlloc(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x) failed (%u).",
+    log_info(os)("VirtualAlloc(" PTR_FORMAT ", %zu, %x, %x) failed (%u).",
                   p2i(lpAddress), dwSize, flAllocationType, flProtect, ple.v);
   }
   return result;
@@ -214,11 +220,11 @@ static LPVOID virtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationTy
 static BOOL virtualFree(LPVOID lpAddress, SIZE_T dwSize, DWORD  dwFreeType) {
   BOOL result = ::VirtualFree(lpAddress, dwSize, dwFreeType);
   if (result != FALSE) {
-    log_trace(os)("VirtualFree(" PTR_FORMAT ", " SIZE_FORMAT ", %x) succeeded",
+    log_trace(os)("VirtualFree(" PTR_FORMAT ", %zu, %x) succeeded",
                   p2i(lpAddress), dwSize, dwFreeType);
   } else {
     PreserveLastError ple;
-    log_info(os)("VirtualFree(" PTR_FORMAT ", " SIZE_FORMAT ", %x) failed (%u).",
+    log_info(os)("VirtualFree(" PTR_FORMAT ", %zu, %x) failed (%u).",
                  p2i(lpAddress), dwSize, dwFreeType, ple.v);
   }
   return result;
@@ -229,12 +235,12 @@ static LPVOID virtualAllocExNuma(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSiz
                                  DWORD  flProtect, DWORD  nndPreferred) {
   LPVOID result = ::VirtualAllocExNuma(hProcess, lpAddress, dwSize, flAllocationType, flProtect, nndPreferred);
   if (result != nullptr) {
-    log_trace(os)("VirtualAllocExNuma(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x, %x) returned " PTR_FORMAT "%s.",
+    log_trace(os)("VirtualAllocExNuma(" PTR_FORMAT ", %zu, %x, %x, %x) returned " PTR_FORMAT "%s.",
                   p2i(lpAddress), dwSize, flAllocationType, flProtect, nndPreferred, p2i(result),
                   ((lpAddress != nullptr && result != lpAddress) ? " <different base!>" : ""));
   } else {
     PreserveLastError ple;
-    log_info(os)("VirtualAllocExNuma(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x, %x) failed (%u).",
+    log_info(os)("VirtualAllocExNuma(" PTR_FORMAT ", %zu, %x, %x, %x) failed (%u).",
                  p2i(lpAddress), dwSize, flAllocationType, flProtect, nndPreferred, ple.v);
   }
   return result;
@@ -246,12 +252,12 @@ static LPVOID mapViewOfFileEx(HANDLE hFileMappingObject, DWORD  dwDesiredAccess,
   LPVOID result = ::MapViewOfFileEx(hFileMappingObject, dwDesiredAccess, dwFileOffsetHigh,
                                     dwFileOffsetLow, dwNumberOfBytesToMap, lpBaseAddress);
   if (result != nullptr) {
-    log_trace(os)("MapViewOfFileEx(" PTR_FORMAT ", " SIZE_FORMAT ") returned " PTR_FORMAT "%s.",
+    log_trace(os)("MapViewOfFileEx(" PTR_FORMAT ", %zu) returned " PTR_FORMAT "%s.",
                   p2i(lpBaseAddress), dwNumberOfBytesToMap, p2i(result),
                   ((lpBaseAddress != nullptr && result != lpBaseAddress) ? " <different base!>" : ""));
   } else {
     PreserveLastError ple;
-    log_info(os)("MapViewOfFileEx(" PTR_FORMAT ", " SIZE_FORMAT ") failed (%u).",
+    log_info(os)("MapViewOfFileEx(" PTR_FORMAT ", %zu) failed (%u).",
                  p2i(lpBaseAddress), dwNumberOfBytesToMap, ple.v);
   }
   return result;
@@ -545,7 +551,7 @@ static unsigned thread_native_entry(void* t) {
     res = 20115;    // java thread
   }
 
-  log_info(os, thread)("Thread is alive (tid: %zu, stacksize: " SIZE_FORMAT "k).", os::current_thread_id(), thread->stack_size() / K);
+  log_info(os, thread)("Thread is alive (tid: %zu, stacksize: %zuk).", os::current_thread_id(), thread->stack_size() / K);
 
 #ifdef USE_VECTORED_EXCEPTION_HANDLING
   // Any exception is caught by the Vectored Exception Handler, so VM can
@@ -631,7 +637,7 @@ bool os::create_attached_thread(JavaThread* thread) {
   thread->set_osthread(osthread);
 
   log_info(os, thread)("Thread attached (tid: %zu, stack: "
-                       PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
+                       PTR_FORMAT " - " PTR_FORMAT " (%zuK) ).",
                        os::current_thread_id(), p2i(thread->stack_base()),
                        p2i(thread->stack_end()), thread->stack_size() / K);
 
@@ -664,7 +670,7 @@ static char* describe_beginthreadex_attributes(char* buf, size_t buflen,
   if (stacksize == 0) {
     ss.print("stacksize: default, ");
   } else {
-    ss.print("stacksize: " SIZE_FORMAT "k, ", stacksize / K);
+    ss.print("stacksize: %zuk, ", stacksize / K);
   }
   ss.print("flags: ");
   #define PRINT_FLAG(f) if (initflag & f) ss.print( #f " ");
@@ -2084,7 +2090,7 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
 
 void os::print_memory_info(outputStream* st) {
   st->print("Memory:");
-  st->print(" " SIZE_FORMAT "k page", os::vm_page_size()>>10);
+  st->print(" %zuk page", os::vm_page_size()>>10);
 
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
@@ -2583,38 +2589,6 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   return EXCEPTION_CONTINUE_EXECUTION;
 }
 
-#if defined(_M_AMD64)
-//-----------------------------------------------------------------------------
-static bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  // handle exception caused by native method modifying control word
-  DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
-
-  switch (exception_code) {
-  case EXCEPTION_FLT_DENORMAL_OPERAND:
-  case EXCEPTION_FLT_DIVIDE_BY_ZERO:
-  case EXCEPTION_FLT_INEXACT_RESULT:
-  case EXCEPTION_FLT_INVALID_OPERATION:
-  case EXCEPTION_FLT_OVERFLOW:
-  case EXCEPTION_FLT_STACK_CHECK:
-  case EXCEPTION_FLT_UNDERFLOW: {
-    PCONTEXT ctx = exceptionInfo->ContextRecord;
-    // On Windows, the mxcsr control bits are non-volatile across calls
-    // See also CR 6192333
-    //
-    jint MxCsr = INITIAL_MXCSR;
-    // we can't use StubRoutines::x86::addr_mxcsr_std()
-    // because in Win64 mxcsr is not saved there
-    if (MxCsr != ctx->MxCsr) {
-      ctx->MxCsr = MxCsr;
-      return true;
-    }
-  }
-  }
-
-  return false;
-}
-#endif
-
 static inline void report_error(Thread* t, DWORD exception_code,
                                 address addr, void* siginfo, void* context) {
   VMError::report_and_die(t, exception_code, addr, siginfo, context);
@@ -2799,6 +2773,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     }
 
 #if defined(_M_AMD64)
+    extern bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo);
     if ((in_java || in_native) && handle_FLT_exception(exceptionInfo)) {
       return EXCEPTION_CONTINUE_EXECUTION;
     }
@@ -3434,7 +3409,7 @@ static char* find_aligned_address(size_t size, size_t alignment) {
 }
 
 static char* reserve_large_pages_aligned(size_t size, size_t alignment, bool exec) {
-  log_debug(pagesize)("Reserving large pages at an aligned address, alignment=" SIZE_FORMAT "%s",
+  log_debug(pagesize)("Reserving large pages at an aligned address, alignment=%zu%s",
                       byte_size_in_exact_unit(alignment), exact_unit_for_byte_size(alignment));
 
   // Will try to find a suitable address at most 20 times. The reason we need to try
@@ -3496,7 +3471,7 @@ static void warn_fail_commit_memory(char* addr, size_t bytes, bool exec) {
   int err = os::get_last_error();
   char buf[256];
   size_t buf_len = os::lasterror(buf, sizeof(buf));
-  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", %zu"
           ", %d) failed; error='%s' (DOS error/errno=%d)", addr, bytes,
           exec, buf_len != 0 ? buf : "<no_error_string>", err);
 }
@@ -3632,10 +3607,7 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
     // Handle mapping error. We assert in debug, unconditionally print a warning in release.
     if (err != nullptr) {
       log_warning(os)("bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
-#ifdef ASSERT
-      os::print_memory_mappings((char*)start, bytes, tty);
       assert(false, "bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
-#endif
       return false;
     }
     // Free this range
@@ -3726,7 +3698,7 @@ bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
     int err = os::get_last_error();
     char buf[256];
     size_t buf_len = os::lasterror(buf, sizeof(buf));
-    warning("INFO: os::protect_memory(" PTR_FORMAT ", " SIZE_FORMAT
+    warning("INFO: os::protect_memory(" PTR_FORMAT ", %zu"
           ") failed; error='%s' (DOS error/errno=%d)", addr, bytes,
           buf_len != 0 ? buf : "<no_error_string>", err);
   }
@@ -4395,9 +4367,9 @@ static void exit_process_or_thread(Ept what, int exit_code) {
   if (what == EPT_THREAD) {
     _endthreadex((unsigned)exit_code);
   } else if (what == EPT_PROCESS) {
-    permit_forbidden_function::exit(exit_code);
+    ALLOW_C_FUNCTION(::exit, ::exit(exit_code);)
   } else { // EPT_PROCESS_DIE
-    permit_forbidden_function::_exit(exit_code);
+    ALLOW_C_FUNCTION(::_exit, ::_exit(exit_code);)
   }
 
   // Should not reach here
@@ -4428,6 +4400,14 @@ bool os::message_box(const char* title, const char* message) {
 
 // This is called _before_ the global arguments have been parsed
 void os::init(void) {
+  if (is_vm_statically_linked()) {
+    // Mimick what is done in DllMain for non-static builds
+    HMODULE hModule = nullptr;
+    GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, nullptr, &hModule);
+    windows_preinit(hModule);
+    atexit(windows_atexit);
+  }
+
   _initial_pid = _getpid();
 
   win32::initialize_windows_version();
@@ -5160,7 +5140,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
   }
 
   char* result = nullptr;
-  char* p = permit_forbidden_function::_fullpath(nullptr, filename, 0);
+  ALLOW_C_FUNCTION(::_fullpath, char* p = ::_fullpath(nullptr, filename, 0);)
   if (p != nullptr) {
     if (strlen(p) < outbuflen) {
       strcpy(outbuf, p);
@@ -5168,7 +5148,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
-    permit_forbidden_function::free(p); // *not* os::free
+    ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
   }
   return result;
 }

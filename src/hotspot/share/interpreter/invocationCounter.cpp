@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "interpreter/invocationCounter.hpp"
 

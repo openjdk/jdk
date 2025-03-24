@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
@@ -140,9 +139,6 @@ ObjArrayKlass::ObjArrayKlass(int n, Klass* element_klass, Symbol* name) : ArrayK
   set_layout_helper(array_layout_helper(T_OBJECT));
   assert(is_array_klass(), "sanity");
   assert(is_objArray_klass(), "sanity");
-
-  // Compute modifier flags after bottom_klass and element_klass are initialized.
-  set_modifier_flags(compute_modifier_flags());
 }
 
 size_t ObjArrayKlass::oop_size(oop obj) const {

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-// no precompiled headers
 #include "classfile/vmSymbols.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
@@ -74,7 +73,6 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
@@ -165,6 +163,12 @@ extern "C" int getargs(procsinfo*, int, char*, int);
 #endif
 #ifndef PV_10_Compat
   #define PV_10_Compat  0x508000  /* Power PC 10 */
+#endif
+#ifndef PV_11
+  #define PV_11           0x600000        /* Power PC 11 */
+#endif
+#ifndef PV_11_Compat
+  #define PV_11_Compat    0x608000        /* Power PC 11 */
 #endif
 
 static address resolve_function_descriptor_to_code_pointer(address p);
@@ -365,9 +369,9 @@ static void query_multipage_support() {
   // or by environment variable LDR_CNTRL (suboption DATAPSIZE). If none is given,
   // default should be 4K.
   {
-    void* p = permit_forbidden_function::malloc(16*M);
+    void* p = ::malloc(16*M);
     g_multipage_support.datapsize = os::Aix::query_pagesize(p);
-    permit_forbidden_function::free(p);
+    ::free(p);
   }
 
   // Query default shm page size (LDR_CNTRL SHMPSIZE).
@@ -451,7 +455,7 @@ static void query_multipage_support() {
           if (p != (void*) -1) {
             const size_t real_pagesize = os::Aix::query_pagesize(p);
             if (real_pagesize != pagesize) {
-              log_warning(pagesize)("real page size (" SIZE_FORMAT_X ") differs.", real_pagesize);
+              log_warning(pagesize)("real page size (0x%zx) differs.", real_pagesize);
             } else {
               can_use = true;
             }
@@ -633,7 +637,7 @@ static void *thread_native_entry(Thread *thread) {
     address low_address = thread->stack_end();
     address high_address = thread->stack_base();
     lt.print("Thread is alive (tid: %zu, kernel thread id: %zu"
-             ", stack [" PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k using %luk pages)).",
+             ", stack [" PTR_FORMAT " - " PTR_FORMAT " (%zuk using %luk pages)).",
              os::current_thread_id(), (uintx) kernel_thread_id, p2i(low_address), p2i(high_address),
              (high_address - low_address) / K, os::Aix::query_pagesize(low_address) / K);
   }
@@ -707,8 +711,12 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // Init thread attributes.
   pthread_attr_t attr;
   int rslt = pthread_attr_init(&attr);
-  guarantee(rslt == 0, "pthread_attr_init has to return 0");
-  guarantee(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0, "???");
+  if (rslt != 0) {
+    thread->set_osthread(nullptr);
+    delete osthread;
+    return false;
+  }
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
   // Make sure we run in 1:1 kernel-user-thread mode.
   guarantee(pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM) == 0, "???");
@@ -734,7 +742,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // guard pages might not fit on the tiny stack created.
   int ret = pthread_attr_setstacksize(&attr, stack_size);
   if (ret != 0) {
-    log_warning(os, thread)("The %sthread stack size specified is invalid: " SIZE_FORMAT "k",
+    log_warning(os, thread)("The %sthread stack size specified is invalid: %zuk",
                             (thr_type == compiler_thread) ? "compiler " : ((thr_type == java_thread) ? "" : "VM "),
                             stack_size / K);
     thread->set_osthread(nullptr);
@@ -770,7 +778,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
                             thread->name(), ret, os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
     // Log some OS information which might explain why creating the thread failed.
     log_warning(os, thread)("Number of threads approx. running in the VM: %d", Threads::number_of_threads());
-    log_warning(os, thread)("Checking JVM parameter MaxExpectedDataSegmentSize (currently " SIZE_FORMAT "k)  might be helpful", MaxExpectedDataSegmentSize/K);
+    log_warning(os, thread)("Checking JVM parameter MaxExpectedDataSegmentSize (currently %zuk)  might be helpful", MaxExpectedDataSegmentSize/K);
     LogStream st(Log(os, thread)::info());
     os::Posix::print_rlimit_info(&st);
     os::print_memory_info(&st);
@@ -787,6 +795,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // OSThread::thread_id is the pthread id.
   osthread->set_thread_id(tid);
+
+  // child thread synchronization is not done here on AIX, a thread is started in suspended state
 
   return true;
 }
@@ -829,19 +839,12 @@ bool os::create_attached_thread(JavaThread* thread) {
 
   thread->set_osthread(osthread);
 
-  if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
-  }
-
   // initialize signal mask for this thread
   // and save the caller's signal mask
   PosixSignals::hotspot_sigmask(thread);
 
   log_info(os, thread)("Thread attached (tid: %zu, kernel thread  id: %zu"
-                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (%zuK) ).",
                        os::current_thread_id(), (uintx) kernel_thread_id,
                        p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size() / K);
 
@@ -1068,21 +1071,24 @@ static void* dll_load_library(const char *filename, int *eno, char *ebuf, int eb
 // If filename matches <name>.so, and loading fails, repeat with <name>.a.
 void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   void* result = nullptr;
-  char* const file_path = strdup(filename);
-  char* const pointer_to_dot = strrchr(file_path, '.');
   const char old_extension[] = ".so";
   const char new_extension[] = ".a";
-  STATIC_ASSERT(sizeof(old_extension) >= sizeof(new_extension));
   // First try to load the existing file.
-  int eno=0;
+  int eno = 0;
   result = dll_load_library(filename, &eno, ebuf, ebuflen);
-  // If the load fails,we try to reload by changing the extension to .a for .so files only.
+  // If the load fails, we try to reload by changing the extension to .a for .so files only.
   // Shared object in .so format dont have braces, hence they get removed for archives with members.
-  if (result == nullptr && eno == ENOENT && pointer_to_dot != nullptr && strcmp(pointer_to_dot, old_extension) == 0) {
-    snprintf(pointer_to_dot, sizeof(old_extension), "%s", new_extension);
-    result = dll_load_library(file_path, &eno, ebuf, ebuflen);
+  if (result == nullptr && eno == ENOENT) {
+    const char* pointer_to_dot = strrchr(filename, '.');
+    if (pointer_to_dot != nullptr && strcmp(pointer_to_dot, old_extension) == 0) {
+      STATIC_ASSERT(sizeof(old_extension) >= sizeof(new_extension));
+      char* tmp_path = os::strdup(filename);
+      size_t prefix_size = pointer_delta(pointer_to_dot, filename, 1);
+      os::snprintf(tmp_path + prefix_size, sizeof(old_extension), "%s", new_extension);
+      result = dll_load_library(tmp_path, &eno, ebuf, ebuflen);
+      os::free(tmp_path);
+    }
   }
-  FREE_C_HEAP_ARRAY(char, file_path);
   return result;
 }
 
@@ -1192,10 +1198,10 @@ void os::print_memory_info(outputStream* st) {
 
   os::Aix::meminfo_t mi;
   if (os::Aix::get_meminfo(&mi)) {
-    st->print_cr("physical total : " SIZE_FORMAT, mi.real_total);
-    st->print_cr("physical free  : " SIZE_FORMAT, mi.real_free);
-    st->print_cr("swap total     : " SIZE_FORMAT, mi.pgsp_total);
-    st->print_cr("swap free      : " SIZE_FORMAT, mi.pgsp_free);
+    st->print_cr("physical total : %zu", mi.real_total);
+    st->print_cr("physical free  : %zu", mi.real_free);
+    st->print_cr("swap total     : %zu", mi.pgsp_total);
+    st->print_cr("swap free      : %zu", mi.pgsp_free);
   }
   st->cr();
 
@@ -1203,10 +1209,10 @@ void os::print_memory_info(outputStream* st) {
   st->print_cr("Program break at VM startup: " PTR_FORMAT ".", p2i(g_brk_at_startup));
   address brk_now = (address)::sbrk(0);
   if (brk_now != (address)-1) {
-    st->print_cr("Program break now          : " PTR_FORMAT " (distance: " SIZE_FORMAT "k).",
+    st->print_cr("Program break now          : " PTR_FORMAT " (distance: %zuk).",
                  p2i(brk_now), (size_t)((brk_now - g_brk_at_startup) / K));
   }
-  st->print_cr("MaxExpectedDataSegmentSize    : " SIZE_FORMAT "k.", MaxExpectedDataSegmentSize / K);
+  st->print_cr("MaxExpectedDataSegmentSize    : %zuk.", MaxExpectedDataSegmentSize / K);
   st->cr();
 
   // Print segments allocated with os::reserve_memory.
@@ -1218,6 +1224,9 @@ void os::print_memory_info(outputStream* st) {
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
   // read _system_configuration.version
   switch (_system_configuration.version) {
+  case PV_11:
+    strncpy(buf, "Power PC 11", buflen);
+    break;
   case PV_10:
     strncpy(buf, "Power PC 10", buflen);
     break;
@@ -1262,6 +1271,9 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
     break;
   case PV_10_Compat:
     strncpy(buf, "PV_10_Compat", buflen);
+    break;
+  case PV_11_Compat:
+    strncpy(buf, "PV_11_Compat", buflen);
     break;
   default:
     strncpy(buf, "unknown", buflen);
@@ -1407,7 +1419,7 @@ static struct {
 } vmem;
 
 static void vmembk_add(char* addr, size_t size, size_t pagesize, int type) {
-  vmembk_t* p = (vmembk_t*) permit_forbidden_function::malloc(sizeof(vmembk_t));
+  vmembk_t* p = (vmembk_t*) ::malloc(sizeof(vmembk_t));
   assert0(p);
   if (p) {
     MiscUtils::AutoCritSect lck(&vmem.cs);
@@ -1436,7 +1448,7 @@ static void vmembk_remove(vmembk_t* p0) {
   for (vmembk_t** pp = &(vmem.first); *pp; pp = &((*pp)->next)) {
     if (*pp == p0) {
       *pp = p0->next;
-      permit_forbidden_function::free(p0);
+      ::free(p0);
       return;
     }
   }
@@ -1531,7 +1543,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // work (see above), the system may have given us something other then 4K (LDR_CNTRL).
   const size_t real_pagesize = os::Aix::query_pagesize(addr);
   if (real_pagesize != (size_t)shmbuf.shm_pagesize) {
-    log_trace(os, map)("pagesize is, surprisingly, " SIZE_FORMAT,
+    log_trace(os, map)("pagesize is, surprisingly, %zu",
                        real_pagesize);
   }
 
@@ -1757,9 +1769,8 @@ static bool uncommit_mmaped_memory(char* addr, size_t size) {
 #ifdef PRODUCT
 static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
-  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
-          ", %d) failed; error='%s' (errno=%d)", p2i(addr), size, exec,
-          os::errno_name(err), err);
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", %zu, %d) failed; error='%s' (errno=%d)",
+          p2i(addr), size, exec, os::errno_name(err), err);
 }
 #endif
 
@@ -1776,10 +1787,10 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
 bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
 
   assert(is_aligned_to(addr, os::vm_page_size()),
-    "addr " PTR_FORMAT " not aligned to vm_page_size (" SIZE_FORMAT ")",
+    "addr " PTR_FORMAT " not aligned to vm_page_size (%zu)",
     p2i(addr), os::vm_page_size());
   assert(is_aligned_to(size, os::vm_page_size()),
-    "size " PTR_FORMAT " not aligned to vm_page_size (" SIZE_FORMAT ")",
+    "size " PTR_FORMAT " not aligned to vm_page_size (%zu)",
     size, os::vm_page_size());
 
   vmembk_t* const vmi = vmembk_find(addr);
@@ -1811,10 +1822,10 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
 
 bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   assert(is_aligned_to(addr, os::vm_page_size()),
-    "addr " PTR_FORMAT " not aligned to vm_page_size (" SIZE_FORMAT ")",
+    "addr " PTR_FORMAT " not aligned to vm_page_size (%zu)",
     p2i(addr), os::vm_page_size());
   assert(is_aligned_to(size, os::vm_page_size()),
-    "size " PTR_FORMAT " not aligned to vm_page_size (" SIZE_FORMAT ")",
+    "size " PTR_FORMAT " not aligned to vm_page_size (%zu)",
     size, os::vm_page_size());
 
   // Dynamically do different things for mmap/shmat.

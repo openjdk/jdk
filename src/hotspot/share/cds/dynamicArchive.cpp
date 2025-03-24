@@ -22,8 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
+#include "cds/aotClassLocation.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.inline.hpp"
@@ -89,7 +90,7 @@ public:
   void sort_methods();
   void sort_methods(InstanceKlass* ik) const;
   void remark_pointers_for_instance_klass(InstanceKlass* k, bool should_mark) const;
-  void write_archive(char* serialized_data);
+  void write_archive(char* serialized_data, AOTClassLocationConfig* cl_config);
   void gather_array_klasses();
 
 public:
@@ -112,7 +113,6 @@ public:
 
     // Block concurrent class unloading from changing the _dumptime_table
     MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-    SystemDictionaryShared::find_all_archivable_classes();
 
     if (SystemDictionaryShared::is_dumptime_table_empty()) {
       log_warning(cds, dynamic)("There is no class to be included in the dynamic archive.");
@@ -133,14 +133,13 @@ public:
     dump_ro_metadata();
     relocate_metaspaceobj_embedded_pointers();
 
-    verify_estimate_size(_estimated_metaspaceobj_bytes, "MetaspaceObjs");
-
     sort_methods();
 
     log_info(cds)("Make classes shareable");
     make_klasses_shareable();
 
     char* serialized_data;
+    AOTClassLocationConfig* cl_config;
     {
       // Write the symbol table and system dictionaries to the RO space.
       // Note that these tables still point to the *original* objects, so
@@ -151,6 +150,7 @@ public:
 
       ArchiveBuilder::OtherROAllocMark mark;
       SystemDictionaryShared::write_to_archive(false);
+      cl_config = AOTClassLocationConfig::dumptime()->write_to_archive();
       DynamicArchive::dump_array_klasses();
       AOTClassLinker::write_to_archive();
 
@@ -159,14 +159,12 @@ public:
       ArchiveBuilder::serialize_dynamic_archivable_items(&wc);
     }
 
-    verify_estimate_size(_estimated_hashtable_bytes, "Hashtables");
-
     log_info(cds)("Adjust lambda proxy class dictionary");
     SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
 
     relocate_to_requested();
 
-    write_archive(serialized_data);
+    write_archive(serialized_data, cl_config);
     release_header();
     DynamicArchive::post_dump();
 
@@ -177,7 +175,7 @@ public:
   }
 
   virtual void iterate_roots(MetaspaceClosure* it) {
-    FileMapInfo::metaspace_pointers_do(it);
+    AOTArtifactFinder::all_cached_classes_do(it);
     SystemDictionaryShared::dumptime_classes_do(it);
     iterate_primitive_array_klasses(it);
   }
@@ -339,8 +337,8 @@ void DynamicArchiveBuilder::remark_pointers_for_instance_klass(InstanceKlass* k,
   }
 }
 
-void DynamicArchiveBuilder::write_archive(char* serialized_data) {
-  _header->set_shared_path_table(FileMapInfo::shared_path_table().table());
+void DynamicArchiveBuilder::write_archive(char* serialized_data, AOTClassLocationConfig* cl_config) {
+  _header->set_class_location_config(cl_config);
   _header->set_serialized_data(serialized_data);
 
   FileMapInfo* dynamic_info = FileMapInfo::dynamic_info();
@@ -355,7 +353,7 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
   size_t file_size = pointer_delta(top, base, sizeof(char));
 
   log_info(cds, dynamic)("Written dynamic archive " PTR_FORMAT " - " PTR_FORMAT
-                         " [" UINT32_FORMAT " bytes header, " SIZE_FORMAT " bytes total]",
+                         " [" UINT32_FORMAT " bytes header, %zu bytes total]",
                          p2i(base), p2i(top), _header->header_size(), file_size);
 
   log_info(cds, dynamic)("%d klasses; %d symbols", klasses()->length(), symbols()->length());
@@ -390,11 +388,11 @@ public:
   void doit() {
     ResourceMark rm;
     if (AllowArchivingWithJavaAgent) {
-      log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
-              "for testing purposes only and should not be used in a production environment");
+      log_warning(cds)("This %s was created with AllowArchivingWithJavaAgent. It should be used "
+                       "for testing purposes only and should not be used in a production environment",
+                       CDSConfig::type_of_archive_being_loaded());
     }
-    FileMapInfo::check_nonempty_dir_in_shared_path_table();
-
+    AOTClassLocationConfig::dumptime_check_nonempty_dirs();
     _builder.doit();
   }
   ~VM_PopulateDynamicDumpSharedSpace() {

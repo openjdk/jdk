@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -2443,22 +2443,6 @@ encode %{
     }
   %}
 
-  enc_class Push_ModD_encoding(regD src0, regD src1) %{
-    __ subptr(rsp, 8);
-    __ movdbl(Address(rsp, 0), $src1$$XMMRegister);
-    __ fld_d(Address(rsp, 0));
-    __ movdbl(Address(rsp, 0), $src0$$XMMRegister);
-    __ fld_d(Address(rsp, 0));
-  %}
-
-  enc_class Push_ModF_encoding(regF src0, regF src1) %{
-    __ subptr(rsp, 4);
-    __ movflt(Address(rsp, 0), $src1$$XMMRegister);
-    __ fld_s(Address(rsp, 0));
-    __ movflt(Address(rsp, 0), $src0$$XMMRegister);
-    __ fld_s(Address(rsp, 0));
-  %}
-
   enc_class Push_ResultD(regD dst) %{
     __ fstp_d(Address(rsp, 0));
     __ movdbl($dst$$XMMRegister, Address(rsp, 0));
@@ -2490,20 +2474,6 @@ encode %{
     __ fld_d(Address(rsp, 0));
   %}
 
-  enc_class Push_Result_Mod_DPR( regDPR src) %{
-    if ($src$$reg != FPR1L_enc) {
-      // fincstp
-      emit_opcode (masm, 0xD9);
-      emit_opcode (masm, 0xF7);
-      // FXCH FPR1 with src
-      emit_opcode(masm, 0xD9);
-      emit_d8(masm, 0xC8-1+$src$$reg );
-      // fdecstp
-      emit_opcode (masm, 0xD9);
-      emit_opcode (masm, 0xF6);
-    }
-  %}
-
   enc_class fnstsw_sahf_skip_parity() %{
     // fnstsw ax
     emit_opcode( masm, 0xDF );
@@ -2513,28 +2483,6 @@ encode %{
     // jnp  ::skip
     emit_opcode( masm, 0x7B );
     emit_opcode( masm, 0x05 );
-  %}
-
-  enc_class emitModDPR() %{
-    // fprem must be iterative
-    // :: loop
-    // fprem
-    emit_opcode( masm, 0xD9 );
-    emit_opcode( masm, 0xF8 );
-    // wait
-    emit_opcode( masm, 0x9b );
-    // fnstsw ax
-    emit_opcode( masm, 0xDF );
-    emit_opcode( masm, 0xE0 );
-    // sahf
-    emit_opcode( masm, 0x9E );
-    // jp  ::loop
-    emit_opcode( masm, 0x0F );
-    emit_opcode( masm, 0x8A );
-    emit_opcode( masm, 0xF4 );
-    emit_opcode( masm, 0xFF );
-    emit_opcode( masm, 0xFF );
-    emit_opcode( masm, 0xFF );
   %}
 
   enc_class fpu_flags() %{
@@ -9801,45 +9749,6 @@ instruct strictfp_divDPR_reg(regDPR1 dst, regnotDPR1 src) %{
   ins_pipe( fpu_reg_reg );
 %}
 
-instruct modDPR_reg(regDPR dst, regDPR src, eAXRegI rax, eFlagsReg cr) %{
-  predicate(UseSSE<=1);
-  match(Set dst (ModD dst src));
-  effect(KILL rax, KILL cr); // emitModDPR() uses EAX and EFLAGS
-
-  format %{ "DMOD   $dst,$src" %}
-  ins_cost(250);
-  ins_encode(Push_Reg_Mod_DPR(dst, src),
-              emitModDPR(),
-              Push_Result_Mod_DPR(src),
-              Pop_Reg_DPR(dst));
-  ins_pipe( pipe_slow );
-%}
-
-instruct modD_reg(regD dst, regD src0, regD src1, eAXRegI rax, eFlagsReg cr) %{
-  predicate(UseSSE>=2);
-  match(Set dst (ModD src0 src1));
-  effect(KILL rax, KILL cr);
-
-  format %{ "SUB    ESP,8\t # DMOD\n"
-          "\tMOVSD  [ESP+0],$src1\n"
-          "\tFLD_D  [ESP+0]\n"
-          "\tMOVSD  [ESP+0],$src0\n"
-          "\tFLD_D  [ESP+0]\n"
-     "loop:\tFPREM\n"
-          "\tFWAIT\n"
-          "\tFNSTSW AX\n"
-          "\tSAHF\n"
-          "\tJP     loop\n"
-          "\tFSTP_D [ESP+0]\n"
-          "\tMOVSD  $dst,[ESP+0]\n"
-          "\tADD    ESP,8\n"
-          "\tFSTP   ST0\t # Restore FPU Stack"
-    %}
-  ins_cost(250);
-  ins_encode( Push_ModD_encoding(src0, src1), emitModDPR(), Push_ResultD(dst), PopFPU);
-  ins_pipe( pipe_slow );
-%}
-
 instruct atanDPR_reg(regDPR dst, regDPR src) %{
   predicate (UseSSE<=1);
   match(Set dst(AtanD dst src));
@@ -10442,59 +10351,6 @@ instruct divFPR_reg(regFPR dst, regFPR src) %{
   ins_encode( Push_Reg_FPR(src),
               OpcP, RegOpc(dst) );
   ins_pipe( fpu_reg_reg );
-%}
-
-
-// Spill to obtain 24-bit precision
-instruct modFPR24_reg(stackSlotF dst, regFPR src1, regFPR src2, eAXRegI rax, eFlagsReg cr) %{
-  predicate( UseSSE==0 && Compile::current()->select_24_bit_instr());
-  match(Set dst (ModF src1 src2));
-  effect(KILL rax, KILL cr); // emitModDPR() uses EAX and EFLAGS
-
-  format %{ "FMOD   $dst,$src1,$src2" %}
-  ins_encode( Push_Reg_Mod_DPR(src1, src2),
-              emitModDPR(),
-              Push_Result_Mod_DPR(src2),
-              Pop_Mem_FPR(dst));
-  ins_pipe( pipe_slow );
-%}
-//
-// This instruction does not round to 24-bits
-instruct modFPR_reg(regFPR dst, regFPR src, eAXRegI rax, eFlagsReg cr) %{
-  predicate( UseSSE==0 && !Compile::current()->select_24_bit_instr());
-  match(Set dst (ModF dst src));
-  effect(KILL rax, KILL cr); // emitModDPR() uses EAX and EFLAGS
-
-  format %{ "FMOD   $dst,$src" %}
-  ins_encode(Push_Reg_Mod_DPR(dst, src),
-              emitModDPR(),
-              Push_Result_Mod_DPR(src),
-              Pop_Reg_FPR(dst));
-  ins_pipe( pipe_slow );
-%}
-
-instruct modF_reg(regF dst, regF src0, regF src1, eAXRegI rax, eFlagsReg cr) %{
-  predicate(UseSSE>=1);
-  match(Set dst (ModF src0 src1));
-  effect(KILL rax, KILL cr);
-  format %{ "SUB    ESP,4\t # FMOD\n"
-          "\tMOVSS  [ESP+0],$src1\n"
-          "\tFLD_S  [ESP+0]\n"
-          "\tMOVSS  [ESP+0],$src0\n"
-          "\tFLD_S  [ESP+0]\n"
-     "loop:\tFPREM\n"
-          "\tFWAIT\n"
-          "\tFNSTSW AX\n"
-          "\tSAHF\n"
-          "\tJP     loop\n"
-          "\tFSTP_S [ESP+0]\n"
-          "\tMOVSS  $dst,[ESP+0]\n"
-          "\tADD    ESP,4\n"
-          "\tFSTP   ST0\t # Restore FPU Stack"
-    %}
-  ins_cost(250);
-  ins_encode( Push_ModF_encoding(src0, src1), emitModDPR(), Push_ResultF(dst,0x4), PopFPU);
-  ins_pipe( pipe_slow );
 %}
 
 

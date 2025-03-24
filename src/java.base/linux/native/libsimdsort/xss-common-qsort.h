@@ -49,7 +49,7 @@
  * [3] https://github.com/simd-sorting/fast-and-robust: SPDX-License-Identifier:
  * MIT
  *
- * [4] http://mitp-content-server.mit.edu:18180/books/content/sectbyfn?collid=books_pres_0&fn=Chapter%2027.pdf&id=8030
+ * [4] https://mitp-content-server.mit.edu/books/content/sectbyfn?collid=books_pres_0&fn=Chapter%2027.pdf&id=8030
  *
  */
 

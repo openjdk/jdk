@@ -27,7 +27,6 @@
 
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/forbiddenFunctions.hpp"
 #include "utilities/macros.hpp"
 
 // Get constants like JVM_T_CHAR and JVM_SIGNATURE_INT, before pulling in <jvm.h>.
@@ -135,19 +134,6 @@ class oopDesc;
 #define UINT64_FORMAT_W(width)   "%"   #width PRIu64
 #define UINT64_FORMAT_0          "%016"       PRIx64
 
-// Format integers which change size between 32- and 64-bit.
-#define SSIZE_FORMAT             "%"          PRIdPTR
-#define SSIZE_PLUS_FORMAT        "%+"         PRIdPTR
-#define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR
-#define SIZE_FORMAT              "%"          PRIuPTR
-#define SIZE_FORMAT_X            "0x%"        PRIxPTR
-#ifdef _LP64
-#define SIZE_FORMAT_X_0          "0x%016"     PRIxPTR
-#else
-#define SIZE_FORMAT_X_0          "0x%08"      PRIxPTR
-#endif
-#define SIZE_FORMAT_W(width)     "%"   #width PRIuPTR
-
 // Format jlong, if necessary
 #ifndef JLONG_FORMAT
 #define JLONG_FORMAT             INT64_FORMAT
@@ -167,10 +153,12 @@ class oopDesc;
 #define INTPTR_FORMAT            "0x%016"     PRIxPTR
 #define PTR_FORMAT               "0x%016"     PRIxPTR
 #define UINTX_FORMAT_X_0         "0x%016"     PRIxPTR
+#define SIZE_FORMAT_X_0          "0x%016"     PRIxPTR
 #else   // !_LP64
 #define INTPTR_FORMAT            "0x%08"      PRIxPTR
 #define PTR_FORMAT               "0x%08"      PRIxPTR
 #define UINTX_FORMAT_X_0         "0x%08"      PRIxPTR
+#define SIZE_FORMAT_X_0          "0x%08"      PRIxPTR
 #endif  // _LP64
 
 // Convert pointer to intptr_t, for use in printing pointers.
@@ -184,6 +172,35 @@ inline uintptr_t p2u(const volatile void* p) {
 }
 
 #define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
+
+//----------------------------------------------------------------------------------------------------
+// Forbid the use of various C library functions.
+// Some of these have os:: replacements that should normally be used instead.
+// Others are considered security concerns, with preferred alternatives.
+
+FORBID_C_FUNCTION(void exit(int), "use os::exit");
+FORBID_C_FUNCTION(void _exit(int), "use os::exit");
+FORBID_C_FUNCTION(char* strerror(int), "use os::strerror");
+FORBID_C_FUNCTION(char* strtok(char*, const char*), "use strtok_r");
+FORBID_C_FUNCTION(int sprintf(char*, const char*, ...), "use os::snprintf");
+FORBID_C_FUNCTION(int vsprintf(char*, const char*, va_list), "use os::vsnprintf");
+FORBID_C_FUNCTION(int vsnprintf(char*, size_t, const char*, va_list), "use os::vsnprintf");
+
+// All of the following functions return raw C-heap pointers (sometimes as an option, e.g. realpath or getwd)
+// or, in case of free(), take raw C-heap pointers. Don't use them unless you are really sure you must.
+FORBID_C_FUNCTION(void* malloc(size_t size), "use os::malloc");
+FORBID_C_FUNCTION(void* calloc(size_t nmemb, size_t size), "use os::malloc and zero out manually");
+FORBID_C_FUNCTION(void free(void *ptr), "use os::free");
+FORBID_C_FUNCTION(void* realloc(void *ptr, size_t size), "use os::realloc");
+FORBID_C_FUNCTION(char* strdup(const char *s), "use os::strdup");
+FORBID_C_FUNCTION(char* strndup(const char *s, size_t n), "don't use");
+FORBID_C_FUNCTION(int posix_memalign(void **memptr, size_t alignment, size_t size), "don't use");
+FORBID_C_FUNCTION(void* aligned_alloc(size_t alignment, size_t size), "don't use");
+FORBID_C_FUNCTION(char* realpath(const char* path, char* resolved_path), "use os::realpath");
+FORBID_C_FUNCTION(char* get_current_dir_name(void), "use os::get_current_directory()");
+FORBID_C_FUNCTION(char* getwd(char *buf), "use os::get_current_directory()");
+FORBID_C_FUNCTION(wchar_t* wcsdup(const wchar_t *s), "don't use");
+FORBID_C_FUNCTION(void* reallocf(void *ptr, size_t size), "don't use");
 
 //----------------------------------------------------------------------------------------------------
 // Constants
@@ -350,15 +367,15 @@ inline T byte_size_in_proper_unit(T s) {
   }
 }
 
-#define PROPERFMT             SIZE_FORMAT "%s"
+#define PROPERFMT             "%zu%s"
 #define PROPERFMTARGS(s)      byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
 
 // Printing a range, with start and bytes given
-#define RANGEFMT              "[" PTR_FORMAT " - " PTR_FORMAT "), (" SIZE_FORMAT " bytes)"
+#define RANGEFMT              "[" PTR_FORMAT " - " PTR_FORMAT "), (%zu bytes)"
 #define RANGEFMTARGS(p1, size) p2i(p1), p2i(p1 + size), size
 
 // Printing a range, with start and end given
-#define RANGE2FMT             "[" PTR_FORMAT " - " PTR_FORMAT "), (" SIZE_FORMAT " bytes)"
+#define RANGE2FMT             "[" PTR_FORMAT " - " PTR_FORMAT "), (%zu bytes)"
 #define RANGE2FMTARGS(p1, p2) p2i(p1), p2i(p2), ((uintptr_t)p2 - (uintptr_t)p1)
 
 inline const char* exact_unit_for_byte_size(size_t s) {
@@ -391,12 +408,12 @@ inline size_t byte_size_in_exact_unit(size_t s) {
   return s;
 }
 
-#define EXACTFMT            SIZE_FORMAT "%s"
+#define EXACTFMT            "%zu%s"
 #define EXACTFMTARGS(s)     byte_size_in_exact_unit(s), exact_unit_for_byte_size(s)
 
 // Memory size transition formatting.
 
-#define HEAP_CHANGE_FORMAT "%s: " SIZE_FORMAT "K(" SIZE_FORMAT "K)->" SIZE_FORMAT "K(" SIZE_FORMAT "K)"
+#define HEAP_CHANGE_FORMAT "%s: %zuK(%zuK)->%zuK(%zuK)"
 
 #define HEAP_CHANGE_FORMAT_ARGS(_name_, _prev_used_, _prev_capacity_, _used_, _capacity_) \
   (_name_), (_prev_used_) / K, (_prev_capacity_) / K, (_used_) / K, (_capacity_) / K
@@ -529,6 +546,11 @@ const jfloat min_jfloat = jfloat_cast(min_jintFloat);
 const jint max_jintFloat = (jint)(0x7f7fffff);
 const jfloat max_jfloat = jfloat_cast(max_jintFloat);
 
+const jshort max_jfloat16 = 31743;
+const jshort min_jfloat16 = 1;
+const jshort one_jfloat16 = 15360;
+const jshort pos_inf_jfloat16 = 31744;
+const jshort neg_inf_jfloat16 = -1024;
 // A named constant for the integral representation of a Java null.
 const intptr_t NULL_WORD = 0;
 
@@ -887,6 +909,7 @@ class JavaValue {
  void set_jfloat(jfloat f) { _value.f = f;}
  void set_jdouble(jdouble d) { _value.d = d;}
  void set_jint(jint i) { _value.i = i;}
+ void set_jshort(jshort i) { _value.i = i;}
  void set_jlong(jlong l) { _value.l = l;}
  void set_jobject(jobject h) { _value.h = h;}
  void set_oop(oopDesc* o) { _value.o = o;}

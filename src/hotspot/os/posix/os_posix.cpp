@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,6 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
@@ -931,11 +930,11 @@ ssize_t os::connect(int fd, struct sockaddr* him, socklen_t len) {
 }
 
 void os::exit(int num) {
-  permit_forbidden_function::exit(num);
+  ALLOW_C_FUNCTION(::exit, ::exit(num);)
 }
 
 void os::_exit(int num) {
-  permit_forbidden_function::_exit(num);
+  ALLOW_C_FUNCTION(::_exit, ::_exit(num);)
 }
 
 void os::naked_yield() {
@@ -973,7 +972,7 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
   // Work around glibc stack guard issue, see os::create_thread() in os_linux.cpp.
   LINUX_ONLY(if (os::Linux::adjustStackSizeForGuardPages()) stack_size -= guard_size;)
   pthread_attr_getdetachstate(attr, &detachstate);
-  jio_snprintf(buf, buflen, "stacksize: " SIZE_FORMAT "k, guardsize: " SIZE_FORMAT "k, %s",
+  jio_snprintf(buf, buflen, "stacksize: %zuk, guardsize: %zuk, %s",
     stack_size / K, guard_size / K,
     (detachstate == PTHREAD_CREATE_DETACHED ? "detached" : "joinable"));
   return buf;
@@ -992,7 +991,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
   // This assumes platform realpath() is implemented according to POSIX.1-2008.
   // POSIX.1-2008 allows to specify null for the output buffer, in which case
   // output buffer is dynamically allocated and must be ::free()'d by the caller.
-  char* p = permit_forbidden_function::realpath(filename, nullptr);
+  ALLOW_C_FUNCTION(::realpath, char* p = ::realpath(filename, nullptr);)
   if (p != nullptr) {
     if (strlen(p) < outbuflen) {
       strcpy(outbuf, p);
@@ -1000,7 +999,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
-    permit_forbidden_function::free(p); // *not* os::free
+    ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
   } else {
     // Fallback for platforms struggling with modern Posix standards (AIX 5.3, 6.1). If realpath
     // returns EINVAL, this may indicate that realpath is not POSIX.1-2008 compatible and
@@ -1009,7 +1008,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     // a memory overwrite.
     if (errno == EINVAL) {
       outbuf[outbuflen - 1] = '\0';
-      p = permit_forbidden_function::realpath(filename, outbuf);
+      ALLOW_C_FUNCTION(::realpath, p = ::realpath(filename, outbuf);)
       if (p != nullptr) {
         guarantee(outbuf[outbuflen - 1] == '\0', "realpath buffer overwrite detected.");
         result = p;
