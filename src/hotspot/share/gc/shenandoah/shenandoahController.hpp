@@ -50,7 +50,7 @@ protected:
   Monitor _alloc_failure_waiters_lock;
   Monitor _gc_waiters_lock;
 
-  // Increments the internal GC count,
+  // Update the internal GC count,
   // it is called by control thread when it starts to fulfill a GC reqeust.
   void update_gc_count();
 

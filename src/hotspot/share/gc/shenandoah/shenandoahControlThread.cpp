@@ -132,9 +132,9 @@ void ShenandoahControlThread::run_service() {
       // Cannot uncommit bitmap slices during concurrent reset
       ShenandoahNoUncommitMark forbid_region_uncommit(heap);
 
-      // GC is starting, bump the internal gc count and set GCIdMark
-      update_gc_count();
+      // GC is starting, bump the gc id and update internal gc count.
       GCIdMark gc_id_mark;
+      update_gc_count();
 
       heuristics->cancel_trigger_request();
 
