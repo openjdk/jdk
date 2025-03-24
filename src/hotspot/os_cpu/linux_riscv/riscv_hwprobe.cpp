@@ -168,7 +168,7 @@ void RiscvHwprobe::add_features_from_query_result() {
     // Linux signal return bug when using vector with vlen > 128b in pre 6.8.5.
     long major, minor, patch;
     os::Linux::kernel_version(&major, &minor, &patch);
-    if (os::Linux::kernel_version_compare(major, minor, patch, 6, 8, 5) == -1) {
+    if (!UseRVV && (os::Linux::kernel_version_compare(major, minor, patch, 6, 8, 5) == -1)) {
       LogMessage(os) log;
       if (log.is_info()) {
         log.info("Linux kernels before 6.8.5 (current %ld.%ld.%ld) have a known bug when using Vector and signals.", major, minor, patch);
