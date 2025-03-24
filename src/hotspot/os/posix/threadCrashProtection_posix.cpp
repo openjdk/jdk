@@ -40,7 +40,7 @@ bool ThreadCrashProtection::call(CrashProtectionCallback& cb) {
   pthread_sigmask(0, nullptr, &saved_sig_mask);
 
   Thread* current_thread = Thread::current();
-  assert(current_thread->is_JfrSampler_thread(), "should be JFRSampler");
+  assert(current_thread->is_jfr_sampling(), "should be JFR sampling related");
   assert(current_thread->crash_protection() == nullptr, "not reentrant");
 
   if (sigsetjmp(_jmpbuf, 0) == 0) {

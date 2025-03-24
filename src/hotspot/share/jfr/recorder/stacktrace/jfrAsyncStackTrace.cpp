@@ -27,25 +27,22 @@
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/storage/jfrBuffer.hpp"
 #include "memory/iterator.hpp"
-#include "oops/instanceKlass.hpp"
-#include "oops/klass.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/threadCrashProtection.hpp"
 #include "runtime/vframe.inline.hpp"
 
-JfrAsyncStackFrame::JfrAsyncStackFrame(u2 methodId, int bci, u1 type, int lineno, InstanceKlass* klass) :
-  _methodId(methodId), _type(type), _bci(bci), _line(lineno), _klass(klass) {
-}
+JfrAsyncStackFrame::JfrAsyncStackFrame(const Method* method, int bci, u1 type, int lineno) :
+  _method(method), _line(lineno), _type(type | ((lineno < 0) ? 0x80 : 0)), _bci(bci) {}
 
 int JfrAsyncStackFrame::lineno() const {
+  if (_type & 0x80) {
+    return -1;
+  }
   return _line;
 }
 
-int JfrAsyncStackFrame::bci() const {
-  return _bci;
-}
-
 u1 JfrAsyncStackFrame::type() const {
-  return _type;
+  return _type & 0x7F;
 }
 
 JfrAsyncStackTrace::JfrAsyncStackTrace(JfrAsyncStackFrame* frames, u4 max_frames) :
@@ -54,15 +51,6 @@ JfrAsyncStackTrace::JfrAsyncStackTrace(JfrAsyncStackFrame* frames, u4 max_frames
   _max_frames(max_frames),
   _reached_root(false)
   {}
-
-void JfrAsyncStackTrace::classes_do(KlassClosure* cl) const {
-  if (_nr_of_frames == 0) {
-    return;
-  }
-  for (u4 i = 0; i < _nr_of_frames; i++) {
-    cl->do_klass(_frames[i].klass());
-  }
-}
 
 bool JfrAsyncStackTrace::record_async(JavaThread* jt, const frame& frame) {
   NoHandleMark nhm;
@@ -106,7 +94,7 @@ bool JfrAsyncStackTrace::record_async(JavaThread* jt, const frame& frame) {
       type = JfrStackFrame::FRAME_INLINE;
     }
 
-    _frames[count] = JfrAsyncStackFrame(method->orig_method_idnum(), bci, type, method->line_number_from_bci(bci), method->method_holder());
+    _frames[count] = JfrAsyncStackFrame(method, bci, type, method->line_number_from_bci(bci));
     count++;
   }
   _nr_of_frames = count;
@@ -116,13 +104,13 @@ bool JfrAsyncStackTrace::record_async(JavaThread* jt, const frame& frame) {
 bool JfrAsyncStackTrace::store(JfrStackTrace* trace) const {
   assert(trace != nullptr, "invariant");
   Thread* current_thread = Thread::current();
-  assert(current_thread->is_JfrSampler_thread() || current_thread->in_asgct(), "invariant");
+  assert(current_thread->is_jfr_sampling() || current_thread->in_asgct(), "invariant");
   trace->set_nr_of_frames(_nr_of_frames);
   trace->set_reached_root(_reached_root);
   traceid hash = 1;
   for (u4 i = 0; i < _nr_of_frames; i++) {
     const JfrAsyncStackFrame& frame = _frames[i];
-    Method* method = frame.klass()->method_with_orig_idnum(frame.methodId());
+    const Method* method = frame.method();
     if (!Method::is_valid_method(method)) {
       // we throw away everything we've gathered in this sample since
       // none of it is safe

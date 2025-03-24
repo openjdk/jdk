@@ -33,7 +33,7 @@
 //
 bool ThreadCrashProtection::call(CrashProtectionCallback& cb) {
   Thread* current_thread = Thread::current();
-  assert(current_thread->is_JfrSampler_thread(), "should be JFRSampler");
+  assert(current_thread->is_jfr_sampling(), "should be JFR sampling related");
   assert(current_thread->crash_protection() == nullptr, "not reentrant");
 
   bool success = true;

@@ -34,9 +34,6 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #endif
-#if INCLUDE_JFR
-#include "jfr/jfr.hpp"
-#endif
 
 MetadataOnStackBuffer* MetadataOnStackMark::_used_buffers = nullptr;
 MetadataOnStackBuffer* MetadataOnStackMark::_free_buffers = nullptr;
@@ -46,12 +43,6 @@ NOT_PRODUCT(bool MetadataOnStackMark::_is_active = false;)
 
 class MetadataOnStackClosure : public MetadataClosure {
   void do_metadata(Metadata* m) { Metadata::mark_on_stack(m); }
-};
-
-class KlassOnStackClosure : public KlassClosure {
-  void do_klass(Klass* klass) {
-    klass->mark_for_gc();
-  }
 };
 
 // Walk metadata on the stack and mark it so that redefinition doesn't delete
@@ -67,11 +58,6 @@ MetadataOnStackMark::MetadataOnStackMark(bool walk_all_metadata, bool redefiniti
   NOT_PRODUCT(_is_active = true;)
 
   Threads::metadata_handles_do(Metadata::mark_on_stack);
-
-#if INCLUDE_JFR
-  KlassOnStackClosure closure;
-  Jfr::classes_do(&closure);
-#endif
 
   if (walk_all_metadata) {
     MetadataOnStackClosure md_on_stack;

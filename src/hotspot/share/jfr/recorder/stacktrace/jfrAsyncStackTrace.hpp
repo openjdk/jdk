@@ -39,16 +39,15 @@ class KlassClosure;
 
 class JfrAsyncStackFrame {
  private:
-  // this could be optimized, by restricting the line to 2**24
-  // and storing the bci in 17 bits, reducing the type to 4 bits
-  u2 _methodId;
+  const Method* _method;
+  // line is a 16 bit value or -1, the -1 case is recorded in the type
+  u2 _line;
+  // top bit encodes whether _line is -1 or not
   u1 _type;
   int _bci;
-  int _line;
-  InstanceKlass* _klass;
 
  public:
-  JfrAsyncStackFrame(u2 methodId, int bci, u1 type, int lineno, InstanceKlass* klass);
+  JfrAsyncStackFrame(const Method* _method, int bci, u1 type, int lineno);
 
   enum : u1 {
     FRAME_INTERPRETER = 0,
@@ -58,11 +57,10 @@ class JfrAsyncStackFrame {
     NUM_FRAME_TYPES
   };
 
-  u2 methodId() const { return _methodId; }
-  int bci() const;
+  const Method *method() const { return _method; }
+  int bci() const { return _bci; }
   u1 type() const;
   int lineno() const;
-  InstanceKlass* klass() const { return _klass; }
 };
 
 class JfrAsyncStackTraceStoreCallback;
@@ -86,8 +84,6 @@ class JfrAsyncStackTrace {
   bool full_stacktrace() const { return _reached_root; }
 
   JfrAsyncStackTrace(JfrAsyncStackFrame* frames, u4 max_frames);
-
-  void classes_do(KlassClosure* cl) const;
 
  public:
 

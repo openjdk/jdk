@@ -50,6 +50,9 @@
 #if INCLUDE_JFR
 #include "jfr/support/jfrThreadExtension.hpp"
 #include "utilities/ticks.hpp"
+#if defined(LINUX)
+#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
+#endif
 #endif
 
 class AsyncExceptionHandshake;
@@ -1312,6 +1315,39 @@ public:
   static bool has_oop_handles_to_release() {
     return _oop_handle_list != nullptr;
   }
+
+#if INCLUDE_JFR && defined(LINUX)
+private:
+  volatile bool _cpu_time_jfr_locked = false;
+  volatile bool _has_cpu_time_jfr_events = false;
+  JfrTraceQueue _cpu_time_jfr_queue{500};
+
+public:
+
+
+  bool is_cpu_time_jfr_queue_locked() { return Atomic::load(&_cpu_time_jfr_locked); }
+  bool acquire_cpu_time_jfr_queue_lock() {
+    return Atomic::cmpxchg(&_cpu_time_jfr_locked, false, true) == false;
+  }
+  void release_cpu_time_jfr_queue_lock() {
+    Atomic::store(&_cpu_time_jfr_locked, false);
+  }
+  bool is_cpu_time_jfr_queue_lock_aquired() {
+    return Atomic::load(&_cpu_time_jfr_locked);
+  }
+
+  void set_has_cpu_time_jfr_events(bool has_events) {
+    Atomic::store(&_has_cpu_time_jfr_events, has_events);
+  }
+
+  bool has_cpu_time_jfr_events() {
+    return Atomic::load(&_has_cpu_time_jfr_events);
+  }
+
+  JfrTraceQueue& cpu_time_jfr_queue() { return _cpu_time_jfr_queue; }
+#endif
+
+  bool is_jfr_sampling() const { return JavaThread::current()->is_cpu_time_jfr_queue_lock_aquired(); }
 };
 
 inline JavaThread* JavaThread::current_or_null() {

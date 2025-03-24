@@ -788,19 +788,6 @@ public:
   // Returns true if this Klass needs to be addressable via narrow Klass ID.
   inline bool needs_narrow_id() const;
 
-#if INCLUDE_JFR
-
-private:
-  // epoch that the klass was last marked for the GC
-  // by JFR.
-  volatile uint64_t _marked_gc_epoch = 0;
-
-public:
-  // mark the class as being held in internal JFR
-  // data structures
-  void mark_for_gc();
-#endif
-
 };
 
 #endif // SHARE_OOPS_KLASS_HPP

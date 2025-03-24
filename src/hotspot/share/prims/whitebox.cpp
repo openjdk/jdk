@@ -127,9 +127,6 @@
 #include "osContainer_linux.hpp"
 #include "os_linux.hpp"
 #endif
-#if INCLUDE_JFR && defined(ASSERT)
-#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
-#endif
 
 #define CHECK_JNI_EXCEPTION_(env, value)                               \
   do {                                                                 \
@@ -186,14 +183,6 @@ WB_ENTRY(jstring, WB_PrintString(JNIEnv* env, jobject wb, jstring str, jint max_
   java_lang_String::print(JNIHandles::resolve(str), &sb, max_length);
   oop result = java_lang_String::create_oop_from_str(sb.as_string(), THREAD);
   return (jstring) JNIHandles::make_local(THREAD, result);
-WB_END
-
-WB_ENTRY(void, WB_SetCPUTimeSamplerProcessQueue(JNIEnv* env, jobject o, bool process_queue))
-#if INCLUDE_JFR != 0 && defined(ASSERT)
-  JfrCPUTimeThreadSampling::set_process_queue(process_queue);
-#else
-  warning("Stopping the CPU time sampler is only supported in debug builds with JFR");
-#endif
 WB_END
 
 WB_ENTRY(jint, WB_TakeLockAndHangInSafepoint(JNIEnv* env, jobject wb))

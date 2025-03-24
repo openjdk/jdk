@@ -1348,13 +1348,3 @@ void Klass::on_secondary_supers_verification_failure(Klass* super, Klass* sub, b
   fatal("%s: %s implements %s: linear_search: %d; table_lookup: %d",
         msg, sub->external_name(), super->external_name(), linear_result, table_result);
 }
-
-#if INCLUDE_JFR
-void Klass::mark_for_gc() {
-  if (Atomic::load(&_marked_gc_epoch) >= CodeCache::gc_epoch()) {
-    return; // already marked
-  }
-  Atomic::store(&_marked_gc_epoch, CodeCache::gc_epoch());
-  MetadataOnStackMark::record(this);
-}
-#endif

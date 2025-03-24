@@ -60,7 +60,6 @@ class JfrRecorder : public JfrCHeapObj {
   static bool create_components();
   static void destroy_components();
   static void on_recorder_thread_exit();
-  static void classes_do(KlassClosure* cl);
 
  public:
   static bool is_enabled();
@@ -72,6 +71,7 @@ class JfrRecorder : public JfrCHeapObj {
   static void start_recording();
   static bool is_recording();
   static void stop_recording();
+  static void on_safepoint(JavaThread* jt);
 };
 
 #endif // SHARE_JFR_RECORDER_JFRRECORDER_HPP
