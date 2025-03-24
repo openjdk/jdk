@@ -220,6 +220,7 @@ inline idx_t ShenandoahRegionPartitions::rightmost(ShenandoahFreeSetPartitionId 
 }
 
 void ShenandoahRegionPartitions::make_all_regions_unavailable() {
+  shenandoah_assert_heaplocked_or_safepoint();
   for (size_t partition_id = 0; partition_id < IntNumPartitions; partition_id++) {
     _membership[partition_id].clear_all();
     _leftmosts[partition_id] = _max;
@@ -235,6 +236,8 @@ void ShenandoahRegionPartitions::make_all_regions_unavailable() {
 void ShenandoahRegionPartitions::establish_mutator_intervals(idx_t mutator_leftmost, idx_t mutator_rightmost,
                                                              idx_t mutator_leftmost_empty, idx_t mutator_rightmost_empty,
                                                              size_t mutator_region_count, size_t mutator_used) {
+  shenandoah_assert_heaplocked_or_safepoint();
+
   _leftmosts[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_leftmost;
   _rightmosts[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_rightmost;
   _leftmosts_empty[int(ShenandoahFreeSetPartitionId::Mutator)] = mutator_leftmost_empty;
@@ -258,6 +261,8 @@ void ShenandoahRegionPartitions::establish_old_collector_intervals(idx_t old_col
                                                                    idx_t old_collector_leftmost_empty,
                                                                    idx_t old_collector_rightmost_empty,
                                                                    size_t old_collector_region_count, size_t old_collector_used) {
+  shenandoah_assert_heaplocked_or_safepoint();
+
   _leftmosts[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_leftmost;
   _rightmosts[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_rightmost;
   _leftmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_leftmost_empty;
@@ -269,6 +274,7 @@ void ShenandoahRegionPartitions::establish_old_collector_intervals(idx_t old_col
 }
 
 void ShenandoahRegionPartitions::increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
+  shenandoah_assert_heaplocked_or_safepoint();
   assert (which_partition < NumPartitions, "Partition must be valid");
   _used[int(which_partition)] += bytes;
   assert (_used[int(which_partition)] <= _capacity[int(which_partition)],
@@ -426,6 +432,7 @@ void ShenandoahRegionPartitions::make_free(idx_t idx, ShenandoahFreeSetPartition
   assert (membership(idx) == ShenandoahFreeSetPartitionId::NotFree, "Cannot make free if already free");
   assert (which_partition < NumPartitions, "selected free partition must be valid");
   assert (available <= _region_size_bytes, "Available cannot exceed region size");
+  shenandoah_assert_heaplocked_or_safepoint();
 
   _membership[int(which_partition)].set_bit(idx);
   _capacity[int(which_partition)] += _region_size_bytes;
@@ -454,6 +461,7 @@ bool ShenandoahRegionPartitions::available_implies_empty(size_t available_in_reg
 void ShenandoahRegionPartitions::move_from_partition_to_partition(idx_t idx, ShenandoahFreeSetPartitionId orig_partition,
                                                                   ShenandoahFreeSetPartitionId new_partition, size_t available) {
   ShenandoahHeapRegion* r = ShenandoahHeap::heap()->get_region(idx);
+  shenandoah_assert_heaplocked_or_safepoint();
   assert (idx < _max, "index is sane: %zu < %zu", idx, _max);
   assert (orig_partition < NumPartitions, "Original partition must be valid");
   assert (new_partition < NumPartitions, "New partition must be valid");

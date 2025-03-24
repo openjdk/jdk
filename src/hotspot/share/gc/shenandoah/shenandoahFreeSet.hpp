@@ -232,11 +232,13 @@ public:
 
   inline void set_capacity_of(ShenandoahFreeSetPartitionId which_partition, size_t value) {
     assert (which_partition < NumPartitions, "selected free set must be valid");
+    shenandoah_assert_heaplocked_or_safepoint();
     _capacity[int(which_partition)] = value;
   }
 
   inline void set_used_by(ShenandoahFreeSetPartitionId which_partition, size_t value) {
     assert (which_partition < NumPartitions, "selected free set must be valid");
+    shenandoah_assert_heaplocked_or_safepoint();
     _used[int(which_partition)] = value;
   }
 
@@ -460,8 +462,10 @@ public:
   inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);     }
 
   inline size_t available() const {
-    assert(used() <= capacity(), "must use less than capacity");
-    return capacity() - used();
+    const size_t used_bytes = used();
+    const size_t capacity_bytes = capacity();
+    assert(used_bytes <= capacity_bytes, "Used: %zu must be less than capacity: %zu", used_bytes, capacity_bytes);
+    return capacity_bytes - used_bytes;
   }
 
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
