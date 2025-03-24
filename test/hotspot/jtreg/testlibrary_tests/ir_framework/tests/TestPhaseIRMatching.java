@@ -125,17 +125,18 @@ class Basics {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE, IRNode.ALLOC, IRNode.COUNTED_LOOP},
-        counts = {IRNode.STORE, "3", IRNode.ALLOC, "1", IRNode.COUNTED_LOOP, "2"})
+    @IR(failOn = {IRNode.STORE, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE, "3", IRNode.FIELD_ACCESS, "2", IRNode.COUNTED_LOOP, "2"})
     @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_IDEAL, failOn = 1, counts = {1, 3})
-    @ExpectedFailure(ruleId = 1, phase = CompilePhase.BEFORE_MACRO_EXPANSION, counts = 2)
+    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2)
 
-    @IR(failOn = {IRNode.STORE, IRNode.ALLOC, IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.STORE, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP})
     @ExpectedFailure(ruleId = 2, phase = CompilePhase.PRINT_IDEAL, failOn = 1)
+    @ExpectedFailure(ruleId = 2, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2)
 
-    @IR(counts = {IRNode.STORE, "3", IRNode.ALLOC, "1", IRNode.COUNTED_LOOP, "2"})
+    @IR(counts = {IRNode.STORE, "3", IRNode.FIELD_ACCESS, "1", IRNode.COUNTED_LOOP, "2"})
     @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_IDEAL, counts = {1, 3})
-    @ExpectedFailure(ruleId = 3, phase = CompilePhase.BEFORE_MACRO_EXPANSION, counts = 2)
+    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 2)
 
     @IR(counts = {IRNode.STORE_I, "2"})
     @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_IDEAL, counts = 1)
@@ -169,28 +170,30 @@ class Basics {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE, IRNode.ALLOC, IRNode.ALLOC_OF, "Object", IRNode.COUNTED_LOOP},
-        counts = {IRNode.STORE, "20", IRNode.ALLOC, "1", IRNode.ALLOC_OF, "Object", "1", IRNode.COUNTED_LOOP, "2"})
-    @ExpectedFailure(ruleId = 1, phase = CompilePhase.BEFORE_MACRO_EXPANSION, failOn = {2, 3})
-    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_IDEAL, failOn = 1, counts = {1, 4})
+    @IR(failOn = {IRNode.STORE, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE, "20", IRNode.FIELD_ACCESS, "3", IRNode.COUNTED_LOOP, "2"})
+    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2)
+    @ExpectedFailure(ruleId = 1, phase = CompilePhase.PRINT_IDEAL, failOn = 1, counts = {1, 3})
 
-    @IR(failOn = {IRNode.STORE, IRNode.ALLOC, IRNode.ALLOC_OF, "Object", IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.STORE, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP})
     @ExpectedFailure(ruleId = 2, phase = CompilePhase.PRINT_IDEAL, failOn = 1)
-    @ExpectedFailure(ruleId = 2, phase = CompilePhase.BEFORE_MACRO_EXPANSION, failOn = {2, 3})
+    @ExpectedFailure(ruleId = 2, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2)
 
-    @IR(counts = {IRNode.STORE, "20", IRNode.ALLOC, "1", IRNode.ALLOC_OF, "Object", "2", IRNode.COUNTED_LOOP, "2"})
-    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_IDEAL, counts = {1, 4})
-    @ExpectedFailure(ruleId = 3, phase = CompilePhase.BEFORE_MACRO_EXPANSION, counts = 3)
+    @IR(counts = {IRNode.STORE, "20", IRNode.FIELD_ACCESS, "2", IRNode.COUNTED_LOOP, "2"})
+    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_IDEAL, counts = {1, 3})
+    @ExpectedFailure(ruleId = 3, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 2)
 
-    @IR(failOn = {IRNode.STORE, IRNode.ALLOC, IRNode.ALLOC_OF, "Object", IRNode.COUNTED_LOOP},
-        counts = {IRNode.STORE, "20", IRNode.ALLOC, "2", IRNode.ALLOC_OF, "Object", "2", IRNode.COUNTED_LOOP, "2"})
-    @ExpectedFailure(ruleId = 4, phase = CompilePhase.BEFORE_MACRO_EXPANSION, failOn = {2, 3}, counts = {2, 3})
-    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_IDEAL, failOn = 1, counts = {1, 4})
+    @IR(failOn = {IRNode.STORE, IRNode.FIELD_ACCESS, IRNode.COUNTED_LOOP},
+        counts = {IRNode.STORE, "20", IRNode.FIELD_ACCESS, "2", IRNode.COUNTED_LOOP, "2"})
+    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, failOn = 2, counts = 2)
+    @ExpectedFailure(ruleId = 4, phase = CompilePhase.PRINT_IDEAL, failOn = 1, counts = {1, 3})
 
-    @IR(counts = {IRNode.ALLOC, "2", IRNode.ALLOC_OF, "Object", "1"})
-    @ExpectedFailure(ruleId = 5, phase = CompilePhase.BEFORE_MACRO_EXPANSION, counts = 1)
-    public void defaultOnBoth() {
-        obj = new Object();
+    @IR(counts = {IRNode.FIELD_ACCESS, "2"})
+    @ExpectedFailure(ruleId = 5, phase = CompilePhase.PRINT_OPTO_ASSEMBLY, counts = 1)
+    public Object defaultOnBoth(Helper h) {
+        i = 34;
+        l = 34;
+        return h.getString();
     }
 
     @Test
@@ -212,7 +215,7 @@ class Basics {
         return x;
     }
 
-    @Run(test = {"removeLoopsWithMultipleCompilations", "defaultOnOptoAssembly"})
+    @Run(test = {"removeLoopsWithMultipleCompilations", "defaultOnOptoAssembly", "defaultOnBoth"})
     @Warmup(1)
     public void run() {
         for (int i = 0; i < 10000; i++) {
@@ -222,6 +225,7 @@ class Basics {
             removeLoopsWithMultipleCompilations(3);
         }
         defaultOnOptoAssembly(new Helper("a", 1));
+        defaultOnBoth(new Helper("a", 1));
     }
 
     @Test

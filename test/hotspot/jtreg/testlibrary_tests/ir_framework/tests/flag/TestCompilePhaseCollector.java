@@ -113,12 +113,12 @@ public class TestCompilePhaseCollector {
         assertContainsOnly(methodToCompilePhases, testClass, "mix7", PHASEIDEALLOOP1, PHASEIDEALLOOP2, FINAL_CODE,
                            OPTIMIZE_FINISHED, PRINT_IDEAL);
         assertContainsOnly(methodToCompilePhases, testClass, "mix8", PHASEIDEALLOOP1, PHASEIDEALLOOP2, FINAL_CODE,
-                           OPTIMIZE_FINISHED, PRINT_IDEAL);
+                           OPTIMIZE_FINISHED, PRINT_IDEAL, PRINT_OPTO_ASSEMBLY);
         assertContainsOnly(methodToCompilePhases, testClass, "mix9", PHASEIDEALLOOP1, PHASEIDEALLOOP2, PRINT_IDEAL);
         assertContainsOnly(methodToCompilePhases, testClass, "mix10", PHASEIDEALLOOP1, PHASEIDEALLOOP2, PRINT_OPTO_ASSEMBLY);
-        assertContainsOnly(methodToCompilePhases, testClass, "mix11", PHASEIDEALLOOP1, PHASEIDEALLOOP2, BEFORE_MACRO_EXPANSION,
+        assertContainsOnly(methodToCompilePhases, testClass, "mix11", PHASEIDEALLOOP1, PHASEIDEALLOOP2, PRINT_OPTO_ASSEMBLY,
                            FINAL_CODE, OPTIMIZE_FINISHED);
-        assertContainsOnly(methodToCompilePhases, testClass, "mix12", PHASEIDEALLOOP1, PHASEIDEALLOOP2,
+        assertContainsOnly(methodToCompilePhases, testClass, "mix12", PHASEIDEALLOOP1, PHASEIDEALLOOP2, PRINT_OPTO_ASSEMBLY,
                            FINAL_CODE, OPTIMIZE_FINISHED, PRINT_IDEAL);
         assertContainsOnly(methodToCompilePhases, testClass, "mix13", PHASEIDEALLOOP1, PHASEIDEALLOOP2, PRINT_IDEAL,
                            FINAL_CODE, OPTIMIZE_FINISHED);
@@ -129,7 +129,7 @@ public class TestCompilePhaseCollector {
         assertContainsOnly(methodToCompilePhases, testClass, "mix16", PHASEIDEALLOOP1, PHASEIDEALLOOP2, FINAL_CODE,
                            OPTIMIZE_FINISHED, PRINT_IDEAL);
         assertContainsOnly(methodToCompilePhases, testClass, "mix17", PHASEIDEALLOOP1, PHASEIDEALLOOP2, FINAL_CODE,
-                           OPTIMIZE_FINISHED, PRINT_IDEAL);
+                           OPTIMIZE_FINISHED, PRINT_OPTO_ASSEMBLY);
     }
 
     private void testDefault(Class<?> testClass, CompilePhase... compilePhases) {
@@ -414,7 +414,7 @@ public class TestCompilePhaseCollector {
 
         @Test
         @IR(failOn = IRNode.STORE, phase = {PHASEIDEALLOOP1, DEFAULT, PHASEIDEALLOOP2})
-        @IR(counts = {IRNode.LOOP, "3"}, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
+        @IR(counts = {IRNode.FIELD_ACCESS, "3"}, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
         public void mix8() {}
 
         @Test
@@ -426,13 +426,13 @@ public class TestCompilePhaseCollector {
         public void mix10() {}
 
         @Test
-        @IR(failOn = IRNode.ALLOC, phase = {PHASEIDEALLOOP1, PHASEIDEALLOOP2})
-        @IR(counts = {IRNode.ALLOC, "3"}, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
+        @IR(failOn = IRNode.FIELD_ACCESS, phase = {PHASEIDEALLOOP1, PHASEIDEALLOOP2})
+        @IR(counts = {IRNode.FIELD_ACCESS, "3"}, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
         public void mix11() {}
 
         @Test
         @IR(failOn = IRNode.STORE, phase = {PHASEIDEALLOOP1, PRINT_IDEAL, PHASEIDEALLOOP2})
-        @IR(counts = {IRNode.LOOP, "3"}, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
+        @IR(counts = {IRNode.FIELD_ACCESS, "3"}, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
         public void mix12() {}
 
         @Test
@@ -457,7 +457,7 @@ public class TestCompilePhaseCollector {
 
         @Test
         @IR(counts = {"foo", "3"}, phase = {PHASEIDEALLOOP1, PHASEIDEALLOOP2})
-        @IR(failOn = IRNode.LOOP, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
+        @IR(failOn = IRNode.FIELD_ACCESS, phase = {FINAL_CODE, OPTIMIZE_FINISHED, DEFAULT})
         public void mix17() {}
     }
 }
