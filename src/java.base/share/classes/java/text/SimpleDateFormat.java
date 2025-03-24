@@ -91,8 +91,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <p>
  * The following pattern letters are defined (all other characters from
  * {@code 'A'} to {@code 'Z'} and from {@code 'a'} to
- * {@code 'z'} not in the table below are reserved). The JDK reference implementation throws {@code
- * IllegalArgumentException} for reserved pattern letters.
+ * {@code 'z'} not in the table below are reserved). Using unquoted reserved
+ * characters in a pattern throws {@code IllegalArgumentException}.
  * <blockquote>
  * <table class="striped">
  * <caption style="display:none">Chart shows pattern letters, date/time component, presentation, and examples.</caption>
