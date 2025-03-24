@@ -884,8 +884,12 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
       if (resolved == obj) {
         resolved = _heap->evacuate_object(obj, _thread);
       }
-      shenandoah_assert_not_in_cset_except(p, resolved, _heap->cancelled_gc());
-      ShenandoahHeap::atomic_update_oop(resolved, p, obj);
+
+      if (resolved != obj) {
+        // Evacuation may have failed and given us a self-forwarded object
+        shenandoah_assert_not_in_cset_except(p, resolved, _heap->cancelled_gc());
+        ShenandoahHeap::atomic_update_oop(resolved, p, obj);
+      }
     }
   }
 }
@@ -1022,7 +1026,7 @@ public:
   }
 };
 
-class ShenandoahConcurrentRootsEvacUpdateTask : public WorkerTask {
+class  ShenandoahConcurrentRootsEvacUpdateTask : public WorkerTask {
 private:
   ShenandoahPhaseTimings::Phase                 _phase;
   ShenandoahVMRoots<true /*concurrent*/>        _vm_roots;

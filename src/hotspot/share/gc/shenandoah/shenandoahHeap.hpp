@@ -467,6 +467,10 @@ public:
   // Returns true if the soft maximum heap has been changed using management APIs.
   bool check_soft_max_changed();
 
+  bool has_self_forwarded_objects() const {
+    return _has_self_forwarded_objects;
+  }
+
 protected:
   // This is shared between shConcurrentGC and shDegenerateGC so that degenerated
   // GC can resume update refs from where the concurrent GC was cancelled. It is
@@ -804,6 +808,7 @@ public:
   // Evacuates or promotes object src. Returns the evacuated object, either evacuated
   // by this thread, or by some other thread.
   virtual oop evacuate_object(oop src, Thread* thread);
+  inline bool should_evacuate_object(oop obj) const;
 
   // Call before/after evacuation.
   inline void enter_evacuation(Thread* t);

@@ -1119,7 +1119,8 @@ void ShenandoahVerifier::verify_before_update_refs() {
           _verify_remembered_before_updating_references,  // verify read-write remembered set
           _verify_forwarded_allow,     // forwarded references allowed
           _verify_marked_complete,     // bitmaps might be stale, but alloc-after-mark should be well
-          _verify_cset_forwarded,      // all cset refs are fully forwarded
+          _verify_cset_disable,        // TODO: For evacuation failures, we could have self forwarded or objects that just weren't evacuated
+                                       // TODO: We should probably have a separate region state for 'failed evac'
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_notrash,     // trash regions have been recycled already
           _verify_size_exact,          // expect generation and heap sizes to match exactly
@@ -1134,7 +1135,7 @@ void ShenandoahVerifier::verify_after_update_refs() {
           _verify_remembered_disable,  // do not verify remembered set
           _verify_forwarded_allow,     // failed evac regions may contain forwarded refs
           _verify_marked_complete,     // bitmaps might be stale, but alloc-after-mark should be well
-          _verify_cset_none,           // no cset references, all updated
+          _verify_cset_none,           // TODO: cset regions already trashed when we call this
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_nocset,      // no cset regions, trash regions have appeared
           _verify_size_exact,          // expect generation and heap sizes to match exactly
@@ -1218,7 +1219,7 @@ private:
                 "Verify Roots In To-Space", "Should be marked", __FILE__, __LINE__);
       }
 
-      if (heap->in_collection_set(obj)) {
+      if (heap->in_collection_set(obj) && !heap->heap_region_containing(obj)->has_evacuation_failures()) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                 "Verify Roots In To-Space", "Should not be in collection set", __FILE__, __LINE__);
       }

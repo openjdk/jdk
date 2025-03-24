@@ -68,7 +68,7 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
 
   shenandoah_assert_not_forwarded(nullptr, obj);
   shenandoah_assert_marked(nullptr, obj);
-  shenandoah_assert_not_in_cset_except(nullptr, obj, ShenandoahHeap::heap()->cancelled_gc());
+  shenandoah_assert_not_in_cset_except(nullptr, obj, ShenandoahHeap::heap()->cancelled_gc() || ShenandoahHeap::heap()->has_self_forwarded_objects());
 
   // Are we in weak subgraph scan?
   bool weak = task->is_weak();
@@ -303,6 +303,9 @@ inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, 
 
     ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
     shenandoah_assert_not_forwarded(p, obj);
+
+    // There shouldn't even be a collection set during mark
+    assert(heap->collection_set()->is_empty(), "No collection set before marking is finished");
     shenandoah_assert_not_in_cset_except(p, obj, heap->cancelled_gc());
     if (in_generation<GENERATION>(heap, obj)) {
       mark_ref(q, mark_context, weak, obj);
@@ -346,7 +349,7 @@ inline void ShenandoahMark::mark_non_generational_ref(T* p, ShenandoahObjToScanQ
     oop obj = CompressedOops::decode_not_null(o);
 
     shenandoah_assert_not_forwarded(p, obj);
-    shenandoah_assert_not_in_cset_except(p, obj, ShenandoahHeap::heap()->cancelled_gc());
+    shenandoah_assert_not_in_cset_except(p, obj, ShenandoahHeap::heap()->cancelled_gc() || ShenandoahHeap::heap()->has_self_forwarded_objects());
 
     mark_ref(q, mark_context, weak, obj);
 

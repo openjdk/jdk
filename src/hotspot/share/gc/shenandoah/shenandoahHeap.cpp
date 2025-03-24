@@ -1304,6 +1304,8 @@ oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
   assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
+  // TODO: We don't want GC threads to evacuate objects in regions that have evacuation failures.
+  // TODO: The LRB does this for mutators, we should do the same for GC threads.
   ShenandoahHeapRegion* r = heap_region_containing(p);
   assert(!r->is_humongous(), "never evacuate humongous objects");
 
@@ -1351,7 +1353,6 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     ShenandoahHeapRegion* r = heap_region_containing(p);
     r->set_has_evacuation_failures(true);
     _has_self_forwarded_objects = true;
-    collection_set()->remove_region(r);
 
     return ShenandoahForwarding::try_forward_to_self(p);
   }
@@ -1395,13 +1396,22 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
 void ShenandoahHeap::trash_cset_regions() {
   ShenandoahHeapLocker locker(lock());
 
+  size_t free_bytes_in_evac_failed_regions = 0;
   ShenandoahCollectionSet* set = collection_set();
   ShenandoahHeapRegion* r;
   set->clear_current_index();
   while ((r = set->next()) != nullptr) {
-    r->make_trash();
+    if (r->has_evacuation_failures()) {
+      r->make_regular_allocation(r->affiliation());
+      r->set_has_evacuation_failures(false);
+      free_bytes_in_evac_failed_regions += r->free();
+    } else {
+      r->make_trash();
+    }
   }
   set->clear();
+  log_info(gc)("Memory available in regions that failed evacuation: " EXACTFMT,
+               EXACTFMTARGS(free_bytes_in_evac_failed_regions));
 }
 
 void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
@@ -2386,21 +2396,11 @@ void ShenandoahHeap::finish_concurrent_roots() {
 
   if (_has_self_forwarded_objects) {
     uint nworkers = workers()->active_workers();
+    // TODO: Phase timing name is inaccurate here
     ShenandoahRootUpdater root_updater(nworkers, ShenandoahPhaseTimings::degen_gc_update_roots);
     ShenandoahUpdateRootsTask update_roots(&root_updater, true);
     workers()->run_task(&update_roots);
     _has_self_forwarded_objects = false;
-
-    size_t free_bytes_in_evac_failed_regions = 0;
-    for (size_t i = 0, n = num_regions(); i < n; ++i) {
-      const auto region = get_region(i);
-      if (region->has_evacuation_failures()) {
-        free_bytes_in_evac_failed_regions += region->free();
-        region->set_has_evacuation_failures(false);
-      }
-    }
-    log_info(gc)("Memory available in regions that failed evacuation: " EXACTFMT,
-                 EXACTFMTARGS(free_bytes_in_evac_failed_regions));
   }
 }
 
@@ -2467,9 +2467,16 @@ private:
     T cl;
     ShenandoahHeapRegion* r = _regions->next();
     while (r != nullptr) {
-      HeapWord* update_watermark = r->has_evacuation_failures() ? r->top() : r->get_update_watermark();
+      // TODO: We can't use just the update watermark right now.
+      //
+      // Regions put into service after final mark will not have an update watermark. Without degenerated
+      // cycles we cannot guarantee that references into the collection set won't point at objects that
+      // are forwarded.
+      // HeapWord* update_watermark = MAX2(r->top(), r->get_update_watermark());
+      HeapWord* update_watermark = r->get_update_watermark();
       assert (update_watermark >= r->bottom(), "sanity");
-      if (r->is_active() && !r->is_cset()) {
+      if (r->is_active() || r->has_evacuation_failures()) {
+        // TODO: Some of the marked objects we iterate might be evacuated, would rather not update them
         _heap->marked_object_oop_iterate(r, &cl, update_watermark);
         if (ShenandoahPacing) {
           _heap->pacer()->report_update_refs(pointer_delta(update_watermark, r->bottom()));

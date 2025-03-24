@@ -103,6 +103,15 @@ inline ShenandoahHeapRegion* ShenandoahHeap::heap_region_containing(const void* 
   return result;
 }
 
+inline bool ShenandoahHeap::should_evacuate_object(oop obj) const {
+  if (_has_self_forwarded_objects) {
+    // Stop evacuating from this region, it will not be recycled. Threads should use
+    // their remaining LABs on regions that might still be completely evacuated.
+    return !heap_region_containing(obj)->has_evacuation_failures();
+  }
+  return true;
+}
+
 inline void ShenandoahHeap::enter_evacuation(Thread* t) {
   _oom_evac_handler.enter_evacuation(t);
 }
@@ -114,58 +123,63 @@ inline void ShenandoahHeap::leave_evacuation(Thread* t) {
 template <class T>
 inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
-    if (in_collection_set(obj) || obj->is_forwarded()) {
-      if (obj->is_self_forwarded()) {
-        obj->unset_self_forwarded();
-      } else {
-        // Corner case: when evacuation fails, there are objects in collection
-        // set that are not really forwarded. We can still go and try and update them
-        // (uselessly) to simplify the common path.
-        shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-        oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-        // shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
+  if (CompressedOops::is_null(o)) {
+    return;
+  }
 
-        // Unconditionally store the update: no concurrent updates expected.
-        RawAccess<IS_NOT_NULL>::oop_store(p, fwd);
-      }
-    }
+  const oop obj = CompressedOops::decode_not_null(o);
+  if (!in_collection_set(obj)) {
+    return;
+  }
+
+  // Objects in collection set regions that have failed evacuation could be forwarded
+  // to themselves, they could be forwarded to other regions, or they could not be
+  // forwarded at all. It's chaos, basically.
+
+  if (!obj->is_forwarded()) {
+    assert(heap_region_containing(obj)->has_evacuation_failures(),
+           "Unforwarded object in cset only allowed for regions that have failed evacuation");
+    return;
+  }
+
+  if (obj->is_self_forwarded()) {
+    obj->unset_self_forwarded();
+  } else {
+    shenandoah_assert_forwarded(p, obj);
+    oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+    // Unconditionally store the update: no concurrent updates expected.
+    RawAccess<IS_NOT_NULL>::oop_store(p, fwd);
   }
 }
 
 template <class T>
 inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
-    if (in_collection_set(obj) || obj->is_forwarded()) {
-      if (obj->is_self_forwarded()) {
-        // Everything in the collection set should be forwarded (either to itself,
-        // or to somewhere else). Not sure if we want to clear self-forwarded headers
-        // here or later, after we take the failed region out of the collection set.
-        obj->unset_self_forwarded();
-      } else {
-        // Corner case: when evacuation fails, there are objects in collection
-        // set that are not really forwarded. We can still go and try CAS-update them
-        // (uselessly) to simplify the common path.
-        shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-        oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-        shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
+  if (CompressedOops::is_null(o)) {
+    return;
+  }
 
-        // Sanity check: we should not be updating the cset regions themselves,
-        // unless we are recovering from the evacuation failure.
-        //
-        // We _might_ be updating regions in the cset if there was an evacuation
-        // failure. Objects that could not be evacuated will be self forwarded and
-        // may hold references to objects that _were_ successfully evacuated.
-        // shenandoah_assert_not_in_cset_loc_except(p, !is_in(p) || cancelled_gc());
+  const oop obj = CompressedOops::decode_not_null(o);
+  if (!in_collection_set(obj)) {
+    return;
+  }
 
-        // Either we succeed in updating the reference, or something else gets in our way.
-        // We don't care if that is another concurrent GC update, or another mutator update.
-        atomic_update_oop(fwd, p, obj);
-      }
-    }
+  // Objects in collection set regions that have failed evacuation could be forwarded
+  // to themselves, they could be forwarded to other regions, or they could not be
+  // forwarded at all. It's chaos, basically.
+
+  if (!obj->is_forwarded()) {
+    assert(heap_region_containing(obj)->has_evacuation_failures(),
+           "Unforwarded object in cset only allowed for regions that have failed evacuation");
+    return;
+  }
+
+  if (obj->is_self_forwarded()) {
+    obj->unset_self_forwarded();
+  } else {
+    shenandoah_assert_forwarded(p, obj);
+    oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+    atomic_update_oop(fwd, p, obj);
   }
 }
 
