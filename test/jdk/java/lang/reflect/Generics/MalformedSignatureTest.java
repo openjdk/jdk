@@ -60,6 +60,8 @@ class MalformedSignatureTest {
         var compiledDir = Path.of(System.getProperty("test.classes"));
         var cf = ClassFile.of();
 
+        // Transform that installs malformed signature strings to classes,
+        // fields, methods, and record components.
         var badSignatureTransform = new ClassTransform() {
             private SignatureAttribute badSignature;
 
@@ -100,6 +102,10 @@ class MalformedSignatureTest {
         sampleRecord = ByteCodeLoader.load("SampleRecord", recordBytes);
     }
 
+    /**
+     * Ensures the reflective generic inspection of a malformed Class throws
+     * GenericSignatureFormatError while the non-generic inspection is fine.
+     */
     @Test
     void testBasicClass() {
         assertEquals(ArrayList.class, sampleClass.getSuperclass());
@@ -110,6 +116,10 @@ class MalformedSignatureTest {
         assertTrue(ex.getMessage().contains(BASIC_BAD_SIGNATURE_TEXT));
     }
 
+    /**
+     * Ensures the reflective generic inspection of a malformed Field throws
+     * GenericSignatureFormatError while the non-generic inspection is fine.
+     */
     @Test
     void testBasicField() throws ReflectiveOperationException {
         var field = sampleClass.getDeclaredField("field");
@@ -118,6 +128,10 @@ class MalformedSignatureTest {
         assertTrue(ex.getMessage().contains(BASIC_BAD_SIGNATURE_TEXT));
     }
 
+    /**
+     * Ensures the reflective generic inspection of a malformed Constructor throws
+     * GenericSignatureFormatError while the non-generic inspection is fine.
+     */
     @Test
     void testBasicConstructor() throws ReflectiveOperationException {
         var constructor = sampleClass.getDeclaredConstructors()[0];
@@ -129,6 +143,10 @@ class MalformedSignatureTest {
         assertTrue(ex.getMessage().contains(BASIC_BAD_SIGNATURE_TEXT));
     }
 
+    /**
+     * Ensures the reflective generic inspection of a malformed Method throws
+     * GenericSignatureFormatError while the non-generic inspection is fine.
+     */
     @Test
     void testBasicMethod() throws ReflectiveOperationException {
         var method = sampleClass.getDeclaredMethods()[0];
@@ -143,6 +161,10 @@ class MalformedSignatureTest {
         assertTrue(ex.getMessage().contains(BASIC_BAD_SIGNATURE_TEXT));
     }
 
+    /**
+     * Ensures the reflective generic inspection of a malformed RecordComponent throws
+     * GenericSignatureFormatError while the non-generic inspection is fine.
+     */
     @Test
     void testBasicRecordComponent() {
         var rcs = sampleRecord.getRecordComponents();
@@ -167,6 +189,9 @@ class MalformedSignatureTest {
         };
     }
 
+    /**
+     * Ensures that particular strings are invalid as method signature strings.
+     */
     @MethodSource("badMethodSignatures")
     @ParameterizedTest
     void testSignatureForMethod(String badSig) throws Throwable {

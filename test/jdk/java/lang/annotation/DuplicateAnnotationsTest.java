@@ -25,7 +25,7 @@
  * @test
  * @bug 8345614 8350704
  * @summary Ensure behavior with duplicated annotations - class, method, or
- *          field fails, parameter passes
+ *          field fails fast on duplicate annotations, but parameter allows them
  * @library /test/lib
  * @run junit DuplicateAnnotationsTest
  */
@@ -92,7 +92,7 @@ class DuplicateAnnotationsTest {
                         extract(c -> c.getDeclaredConstructor(int.class))
                 ),
                 Arguments.of(
-                        "parameter", false,
+                        "parameter", false, // Surprisingly, parameters always allowed duplicate annotations
                         ClassTransform.transformingMethods(MethodTransform.endHandler(mb -> mb.with(
                                 RuntimeVisibleParameterAnnotationsAttribute.of(
                                         List.of(List.of(annotationOne, annotationTwo))
@@ -103,6 +103,16 @@ class DuplicateAnnotationsTest {
         };
     }
 
+    /**
+     * A test case represents a declaration that can be annotated.
+     * Different declarations have different behaviors when multiple annotations
+     * of the same interface are present (without a container annotation).
+     *
+     * @param caseName the type of declaration, for pretty printing in JUnit
+     * @param fails whether this case should fail upon encountering duplicate annotations
+     * @param ct transform to install duplicate annotations on the specific declaration
+     * @param extractor function to access the AnnotatedElement representing that declaration
+     */
     @MethodSource("arguments")
     @ParameterizedTest
     void test(String caseName, boolean fails, ClassTransform ct, Extractor extractor) throws IOException, ReflectiveOperationException {
