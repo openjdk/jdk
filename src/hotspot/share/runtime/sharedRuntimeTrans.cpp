@@ -516,7 +516,7 @@ static double __ieee754_pow(double x, double y) {
       z = ax;                   /*x is +-0,+-inf,+-1*/
       if(hy<0) {
         if (z == 0.0) {
-          z = std::numeric_limits<double>::quiet_NaN();
+          z = std::numeric_limits<double>::infinity();
         } else {
           z = one/z;       /* z = (1/|x|) */
         }
