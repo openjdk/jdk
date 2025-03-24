@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "oops/instanceKlass.inline.hpp"
