@@ -3173,11 +3173,7 @@ bool LibraryCallKit::inline_native_jvm_commit() {
   Node* next_pos_X = _gvn.transform(ConvL2X(arg));
 
   // Store the next_position to the underlying jfr java buffer.
-#ifdef _LP64
-  store_to_memory(control(), java_buffer_pos_offset, next_pos_X, T_LONG, MemNode::release);
-#else
-  store_to_memory(control(), java_buffer_pos_offset, next_pos_X, T_INT, MemNode::release);
-#endif
+  store_to_memory(control(), java_buffer_pos_offset, next_pos_X, LP64_ONLY(T_LONG) NOT_LP64(T_INT), MemNode::release);
 
   Node* commit_memory = reset_memory();
   set_all_memory(commit_memory);
