@@ -31,7 +31,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.*;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.openjdk.jmh.annotations.*;
 
@@ -52,22 +51,10 @@ public class UnixSocketChannelReadWrite {
     private ReadThread rt;
     private ByteBuffer bb = ByteBuffer.allocate(1);
 
-    private static volatile String tempDir;
-    private static final AtomicInteger count = new AtomicInteger(0);
     private volatile Path socket;
 
-    static {
-        try {
-            Path p = Files.createTempDirectory("readWriteTest");
-            tempDir = p.toString();
-        } catch (IOException e) {
-            tempDir = null;
-        }
-    }
-
     private ServerSocketChannel getServerSocketChannel() throws IOException {
-        int next = count.incrementAndGet();
-        socket = Paths.get(tempDir, Integer.toString(next));
+        socket = Files.createTempDirectory(UnixSocketChannelReadWrite.class.getSimpleName()).resolve("sock");
         UnixDomainSocketAddress addr = UnixDomainSocketAddress.of(socket);
         ServerSocketChannel c = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
         c.bind(addr);
@@ -92,8 +79,8 @@ public class UnixSocketChannelReadWrite {
         s1.close();
         s2.close();
         ssc.close();
-        Files.deleteIfExists(socket);
-        Files.deleteIfExists(Path.of(tempDir));
+        Files.delete(socket);
+        Files.delete(socket.getParent());
         rt.join();
     }
 
