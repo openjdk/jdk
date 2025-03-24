@@ -82,7 +82,7 @@ public class AOTClassLinkingVMOptions {
 
         // Dumping with AOTInvokeDynamicLinking disabled
         TestCommon.testDump(appJar, TestCommon.list("Hello"),
-                            "-XX:+AOTClassLinking", "-XX:-AOTInvokeDynamicLinking");
+                            "-XX:+UnlockDiagnosticVMOptions", "-XX:+AOTClassLinking", "-XX:-AOTInvokeDynamicLinking");
 
         testCase("Archived full module graph must be enabled at runtime (with -XX:-AOTInvokeDynamicLinking)");
         TestCommon.run("-cp", appJar, "-Djdk.module.validation=1", "Hello")
