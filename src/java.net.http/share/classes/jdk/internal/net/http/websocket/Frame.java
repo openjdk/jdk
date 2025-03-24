@@ -142,7 +142,8 @@ public final class Frame {
         }
 
         /**
-         * Positions the {@link #offset} at 0, which is needed for vectorized masking, by masking necessary amount of bytes.
+         * Positions the {@link #offset} at 0, which is needed for vectorized
+         * masking, by masking up to 3 remaining bytes from the previous pass.
          */
         private void initVectorMask(ByteBuffer src, ByteBuffer dst) {
             assert src.order() == dst.order() : "vectorized masking is only allowed on matching byte orders";
