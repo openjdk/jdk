@@ -182,13 +182,6 @@ public class SecureClassLoader extends ClassLoader {
     }
 
     /*
-     * holder class for the static field "debug" to delay its initialization
-     */
-    private static class DebugHolder {
-        private static final Debug debug = Debug.getInstance("scl");
-    }
-
-    /*
      * Returned cached ProtectionDomain for the specified CodeSource.
      */
     private ProtectionDomain getProtectionDomain(CodeSource cs) {
@@ -209,10 +202,6 @@ public class SecureClassLoader extends ClassLoader {
                         = SecureClassLoader.this.getPermissions(key.cs);
                 ProtectionDomain pd = new ProtectionDomain(
                         key.cs, perms, SecureClassLoader.this, null);
-                if (DebugHolder.debug != null) {
-                    DebugHolder.debug.println(" getPermissions " + pd);
-                    DebugHolder.debug.println("");
-                }
                 return pd;
             }
         });
