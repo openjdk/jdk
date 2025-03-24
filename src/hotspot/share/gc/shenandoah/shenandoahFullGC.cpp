@@ -119,7 +119,7 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
 
   metrics.snap_after();
 
-  if (metrics.is_good_progress()) {
+  if (metrics.is_good_progress(heap->global_generation())) {
     heap->notify_gc_progress();
   } else {
     // Nothing to do. Tell the allocation path that we have failed to make
@@ -130,6 +130,11 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
   // Regardless if progress was made, we record that we completed a "successful" full GC.
   heap->global_generation()->heuristics()->record_success_full();
   heap->shenandoah_policy()->record_success_full();
+
+  {
+    ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::full_gc_propagate_gc_state);
+    heap->propagate_gc_state_to_all_threads();
+  }
 }
 
 void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
@@ -192,16 +197,11 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
       update_roots(true /*full_gc*/);
     }
 
-    // d. Reset the bitmaps for new marking
-    heap->global_generation()->reset_mark_bitmap();
-    assert(heap->marking_context()->is_bitmap_clear(), "sanity");
-    assert(!heap->global_generation()->is_mark_complete(), "sanity");
-
-    // e. Abandon reference discovery and clear all discovered references.
+    // d. Abandon reference discovery and clear all discovered references.
     ShenandoahReferenceProcessor* rp = heap->global_generation()->ref_processor();
     rp->abandon_partial_discovery();
 
-    // f. Sync pinned region status from the CP marks
+    // e. Sync pinned region status from the CP marks
     heap->sync_pinned_region_status();
 
     if (heap->mode()->is_generational()) {
@@ -282,30 +282,15 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   }
 }
 
-class ShenandoahPrepareForMarkClosure: public ShenandoahHeapRegionClosure {
-private:
-  ShenandoahMarkingContext* const _ctx;
-
-public:
-  ShenandoahPrepareForMarkClosure() : _ctx(ShenandoahHeap::heap()->marking_context()) {}
-
-  void heap_region_do(ShenandoahHeapRegion *r) override {
-    _ctx->capture_top_at_mark_start(r);
-    r->clear_live_data();
-  }
-
-  bool is_thread_safe() override { return true; }
-};
-
 void ShenandoahFullGC::phase1_mark_heap() {
   GCTraceTime(Info, gc, phases) time("Phase 1: Mark live objects", _gc_timer);
   ShenandoahGCPhase mark_phase(ShenandoahPhaseTimings::full_gc_mark);
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  ShenandoahPrepareForMarkClosure prepare_for_mark;
-  ShenandoahExcludeRegionClosure<FREE> cl(&prepare_for_mark);
-  heap->parallel_heap_region_iterate(&cl);
+  heap->global_generation()->reset_mark_bitmap<true, true>();
+  assert(heap->marking_context()->is_bitmap_clear(), "sanity");
+  assert(!heap->global_generation()->is_mark_complete(), "sanity");
 
   heap->set_unload_classes(heap->global_generation()->heuristics()->can_unload_classes());
 

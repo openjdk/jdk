@@ -1104,7 +1104,7 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
 
 // Intrinsic for Class::isInstance
 address LIRGenerator::isInstance_entry() {
-  return CAST_FROM_FN_PTR(address, Runtime1::is_instance_of);
+  return Runtime1::entry_for(C1StubId::is_instance_of_id);
 }
 
 void LIRGenerator::do_If(If* x) {
