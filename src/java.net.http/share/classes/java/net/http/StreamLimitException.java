@@ -26,15 +26,18 @@ package java.net.http;
 
 import java.io.IOException;
 import java.net.http.HttpClient.Version;
+import java.net.http.HttpResponse.BodyHandler;
+import java.net.http.HttpResponse.PushPromiseHandler;
 import java.time.Duration;
 import java.util.Objects;
 
 /**
- * An exception thrown when the limit imposed for stream creation on an
+ * An exception raised when the limit imposed for stream creation on an
  * HTTP connection is reached, and the client is unable to create a new
  * stream.
  * <p>
- * A {@code StreamLimitException} may be raised on any {@linkplain #version()
+ * A {@code StreamLimitException} may be raised when attempting to send
+ * a new request on any {@linkplain #version()
  * protocol version} that supports multiplexing on a single connection. Both
  * {@linkplain HttpClient.Version#HTTP_2 HTTP/2} and {@linkplain
  * HttpClient.Version#HTTP_3 HTTP/3} allow multiplexing concurrent requests
@@ -43,10 +46,14 @@ import java.util.Objects;
  * protocol.
  * <p>
  * Whether and when a {@code  StreamLimitException} may be
- * relayed to the code initiating a request/response exchange is entirely
+ * relayed to the code initiating a request/response exchange is
  * implementation and protocol version dependent.
  *
- * @since tbd
+ * @see HttpClient#send(HttpRequest, BodyHandler)
+ * @see HttpClient#sendAsync(HttpRequest, BodyHandler)
+ * @see HttpClient#sendAsync(HttpRequest, BodyHandler, PushPromiseHandler)
+ *
+ * @since TBD
  */
 public final class StreamLimitException extends IOException {
 

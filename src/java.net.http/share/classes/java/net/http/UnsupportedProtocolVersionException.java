@@ -37,7 +37,7 @@ import java.net.http.HttpClient.Builder;
  * HTTP version 3} by default, when the underlying {@link javax.net.ssl.SSLContext
  * SSLContext} implementation does not meet the requirements for supporting
  * the HttpClient's implementation of the underlying QUIC transport protocol.
- * @since tbd
+ * @since TBD
  */
 public final class UnsupportedProtocolVersionException extends IOException {
 
