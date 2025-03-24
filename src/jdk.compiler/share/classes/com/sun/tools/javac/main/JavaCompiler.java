@@ -928,11 +928,6 @@ public class JavaCompiler {
             checkReusable();
         hasBeenUsed = true;
 
-        // forcibly set the equivalent of -Xlint:-options, so that no further
-        // warnings about command line options are generated from this point on
-        options.put(XLINT_CUSTOM.primaryName + "-" + LintCategory.OPTIONS.option, "true");
-        options.remove(XLINT_CUSTOM.primaryName + LintCategory.OPTIONS.option);
-
         start_msec = now();
 
         try {
