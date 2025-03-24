@@ -1212,7 +1212,7 @@ Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       int  not_used3;
       bool call_does_dispatch;
       ciMethod* callee = phase->C->optimize_virtual_call(caller, klass, holder, orig_callee, receiver_type, true /*is_virtual*/,
-                                                        call_does_dispatch, not_used3);  // out-parameters
+                                                         call_does_dispatch, not_used3);  // out-parameters
       if (!call_does_dispatch) {
         // Register for late inlining.
         cg->set_callee_method(callee);
