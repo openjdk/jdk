@@ -22,16 +22,16 @@
  */
 
 /* @test
+ * @bug 8351921 8352508
  * @summary Test that pinned regions with no Java references into them
  *          do not make the garbage collector reclaim that region.
- *          This test simulates this behavior using Whitebox/Unsafe methods
+ *          This test simulates this behavior using Whitebox methods
  *          to pin a Java object in a region with no other pinnable objects and
 *           lose the reference to it before the garbage collection.
  * @requires vm.gc.G1
  * @requires vm.debug
- * @library /test/lib
- * @modules java.base/jdk.internal.misc:+open
- *          java.management
+ * @library /test/lib /
+ * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC
@@ -40,7 +40,7 @@
 
 package gc.g1.pinnedobjs;
 
-import jdk.internal.misc.Unsafe;
+import gc.testlibrary.Helpers;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -49,7 +49,6 @@ import jdk.test.whitebox.WhiteBox;
 
 public class TestPinnedEvacEmpty {
 
-    private static final jdk.internal.misc.Unsafe unsafe = Unsafe.getUnsafe();
     private static final WhiteBox wb = WhiteBox.getWhiteBox();
 
     private static final long objSize = wb.getObjectSize(new Object());
@@ -82,8 +81,15 @@ public class TestPinnedEvacEmpty {
         // must not collect/free it.
         o = null;
 
-        // Do garbage collection to zap the data in the pinned region.
-        wb.youngGC();
+        // Full collection should not crash the VM in case of "empty" pinned regions.
+        wb.fullGC();
+
+        // Do a young garbage collection to zap the data in the pinned region. This test
+        // achieves that by executing a concurrent cycle that both performs both a young
+        // garbage collection as well as checks that errorneous reclamation does not occur
+        // in the Remark pause.
+        wb.g1RunConcurrentGC();
+        System.out.println("Done");
     }
 }
 
