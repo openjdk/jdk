@@ -675,46 +675,7 @@ void* os::malloc(size_t size, MemTag mem_tag) {
   return os::malloc(size, mem_tag, CALLER_PC);
 }
 
-//void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
-//  size_t outer_size = os::pre_alloc(&rc, nullptr, size, true, mem_tag, stack);
-//  if (rc != nullptr) {
-//    return rc;
-//  }
-//  if (outer_size == 0) {
-//    return nullptr;
-//  }
-//  return post_alloc(outer_ptr, outer_size, 0, mem_tag, stack);
-//}
-
 void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
-
-//  // On malloc(0), implementations of malloc(3) have the choice to return either
-//  // null or a unique non-null pointer. To unify libc behavior across our platforms
-//  // we chose the latter.
-//  size = MAX2((size_t)1, size);
-//
-//  // Special handling for NMT preinit phase before arguments are parsed
-//  void* rc = nullptr;
-//  if (NMTPreInit::handle_realloc(&rc, nullptr, size, mem_tag)) {
-//    // No need to fill with 0 because CDS static dumping doesn't use these
-//    // early allocations.
-//    return rc;
-//  }
-//
-//  DEBUG_ONLY(check_crash_protection());
-//
-//  // Observe MallocLimit
-//  if (MemTracker::check_exceeds_limit(size, mem_tag)) {
-//    return nullptr;
-//  }
-//
-//  const size_t outer_size = size + MemTracker::overhead_per_malloc();
-//
-//  // Check for overflow.
-//  if (outer_size < size) {
-//    return nullptr;
-//  }
-
   void* rc = nullptr;
   size_t outer_size = os::pre_alloc(&rc, nullptr, size, true, mem_tag, stack);
   if (rc != nullptr) {
@@ -729,16 +690,17 @@ void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
     return nullptr;
   }
 
-  void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, mem_tag, stack);
-
-  if (CDSConfig::is_dumping_static_archive()) {
-    // Need to deterministically fill all the alignment gaps in C++ structures.
-    ::memset(inner_ptr, 0, size);
-  } else {
-    DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
-  }
-  DEBUG_ONLY(break_if_ptr_caught(inner_ptr);)
-  return inner_ptr;
+//  void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, mem_tag, stack);
+//
+//  if (CDSConfig::is_dumping_static_archive()) {
+//    // Need to deterministically fill all the alignment gaps in C++ structures.
+//    ::memset(inner_ptr, 0, size);
+//  } else {
+//    DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
+//  }
+//  DEBUG_ONLY(break_if_ptr_caught(inner_ptr);)
+//  return inner_ptr;
+  return post_alloc(outer_ptr, size, 0, mem_tag, stack);
 }
 
 void* os::realloc(void *memblock, size_t size, MemTag mem_tag) {
