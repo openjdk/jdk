@@ -25,12 +25,12 @@ package org.openjdk.bench.java.lang;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
 
-@BenchmarkMode(Mode.AverageTime)
+@BenchmarkMode(Mode.Throughput)
 @State(Scope.Benchmark)
 @Warmup(iterations = 20, time = 5, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 10, time = 5, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 1)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@OutputTimeUnit(TimeUnit.SECONDS)
 public class VirtualThreadSleep {
 
     @Param({"100000"})

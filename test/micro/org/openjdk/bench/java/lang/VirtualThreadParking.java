@@ -26,12 +26,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import org.openjdk.jmh.annotations.*;
 
-@BenchmarkMode(Mode.AverageTime)
+@BenchmarkMode(Mode.Throughput)
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 5, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 10, time = 5, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 1)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@OutputTimeUnit(TimeUnit.SECONDS)
 public class VirtualThreadParking {
 
     @Param({"100", "1000", "10000"})
