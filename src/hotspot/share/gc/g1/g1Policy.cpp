@@ -345,6 +345,8 @@ uint G1Policy::calculate_young_target_length(uint desired_young_length) const {
       uint receiving_young = MIN3(_free_regions_at_end_of_collection,
                                   desired_young_length,
                                   max_to_eat_into_reserve);
+      // Ensure that we provision for at least one Eden region.
+      receiving_young = MAX2(receiving_young, _g1h->survivor_regions_count() + 1);
       // We could already have allocated more regions than what we could get
       // above.
       receiving_additional_eden = allocated_young_length < receiving_young ?
@@ -364,6 +366,8 @@ uint G1Policy::calculate_young_target_length(uint desired_young_length) const {
       uint receiving_within_reserve = MIN2(desired_young_length - free_outside_reserve,
                                            max_to_eat_into_reserve);
       uint receiving_young = free_outside_reserve + receiving_within_reserve;
+
+      assert(receiving_young > _g1h->survivor_regions_count(), "We should provision for at least 1 Eden region");
       // Again, we could have already allocated more than we could get.
       receiving_additional_eden = allocated_young_length < receiving_young ?
                                   receiving_young - allocated_young_length : 0;
