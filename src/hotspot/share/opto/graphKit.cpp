@@ -525,17 +525,13 @@ void GraphKit::uncommon_trap_if_should_post_on_exceptions(Deoptimization::DeoptR
 
 }
 
-//------------------------------builtin_throw----------------------------------
-void GraphKit::builtin_throw(Deoptimization::DeoptReason reason) {
-  bool must_throw = true;
-
+Pair<bool, bool> GraphKit::builtin_throw_applies(Deoptimization::DeoptReason reason) {
   // If this particular condition has not yet happened at this
   // bytecode, then use the uncommon trap mechanism, and allow for
   // a future recompilation if several traps occur here.
   // If the throw is hot, try to use a more complicated inline mechanism
   // which keeps execution inside the compiled code.
   bool treat_throw_as_hot = false;
-  ciMethodData* md = method()->method_data();
 
   if (ProfileTraps) {
     if (too_many_traps(reason)) {
@@ -547,12 +543,18 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason) {
 
     // Also, if there is a local exception handler, treat all throws
     // as hot if there has been at least one in this method.
-    if (C->trap_count(reason) != 0
-        && method()->method_data()->trap_count(reason) != 0
-        && has_exception_handler()) {
-        treat_throw_as_hot = true;
+    if (C->trap_count(reason) != 0 && method()->method_data()->trap_count(reason) != 0 && has_exception_handler()) {
+      treat_throw_as_hot = true;
     }
   }
+  return {treat_throw_as_hot && method()->can_omit_stack_trace(), treat_throw_as_hot};
+}
+
+//------------------------------builtin_throw----------------------------------
+void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, ciInstance* exception_object) {
+  bool must_throw = true;
+  Pair<bool, bool> applies_and_treat_throw_as_hot = builtin_throw_applies(reason);
+  bool treat_throw_as_hot = applies_and_treat_throw_as_hot.second;
 
   // If this throw happens frequently, an uncommon trap might cause
   // a performance pothole.  If there is a local exception handler,
@@ -560,7 +562,7 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason) {
   // let us handle the throw inline, with a preconstructed instance.
   // Note:   If the deopt count has blown up, the uncommon trap
   // runtime is going to flush this nmethod, not matter what.
-  if (treat_throw_as_hot && method()->can_omit_stack_trace()) {
+  if (applies_and_treat_throw_as_hot.first) {
     // If the throw is local, we use a pre-existing instance and
     // punt on the backtrace.  This would lead to a missing backtrace
     // (a repeat of 4292742) if the backtrace object is ever asked
@@ -568,24 +570,28 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason) {
     // Fixing this remaining case of 4292742 requires some flavor of
     // escape analysis.  Leave that for the future.
     ciInstance* ex_obj = nullptr;
-    switch (reason) {
-    case Deoptimization::Reason_null_check:
-      ex_obj = env()->NullPointerException_instance();
-      break;
-    case Deoptimization::Reason_div0_check:
-      ex_obj = env()->ArithmeticException_instance();
-      break;
-    case Deoptimization::Reason_range_check:
-      ex_obj = env()->ArrayIndexOutOfBoundsException_instance();
-      break;
-    case Deoptimization::Reason_class_check:
-      ex_obj = env()->ClassCastException_instance();
-      break;
-    case Deoptimization::Reason_array_check:
-      ex_obj = env()->ArrayStoreException_instance();
-      break;
-    default:
-      break;
+    if (exception_object != nullptr) {
+      ex_obj = exception_object;
+    } else {
+      switch (reason) {
+      case Deoptimization::Reason_null_check:
+        ex_obj = env()->NullPointerException_instance();
+        break;
+      case Deoptimization::Reason_div0_check:
+        ex_obj = env()->ArithmeticException_instance();
+        break;
+      case Deoptimization::Reason_range_check:
+        ex_obj = env()->ArrayIndexOutOfBoundsException_instance();
+        break;
+      case Deoptimization::Reason_class_check:
+        ex_obj = env()->ClassCastException_instance();
+        break;
+      case Deoptimization::Reason_array_check:
+        ex_obj = env()->ArrayStoreException_instance();
+        break;
+      default:
+        break;
+      }
     }
     if (failing()) { stop(); return; }  // exception allocation might fail
     if (ex_obj != nullptr) {

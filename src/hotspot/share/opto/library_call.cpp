@@ -2017,7 +2017,7 @@ bool LibraryCallKit::inline_min_max(vmIntrinsics::ID id) {
   return true;
 }
 
-void LibraryCallKit::inline_math_mathExact(Node* math, Node *test) {
+void LibraryCallKit::inline_math_mathExact(Node* math, Node* test, bool use_builtin_throw) {
   Node* bol = _gvn.transform( new BoolNode(test, BoolTest::overflow) );
   IfNode* check = create_and_map_if(control(), bol, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
   Node* fast_path = _gvn.transform( new IfFalseNode(check));
@@ -2031,8 +2031,12 @@ void LibraryCallKit::inline_math_mathExact(Node* math, Node *test) {
     set_control(slow_path);
     set_i_o(i_o());
 
-    uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_maybe_recompile);
+    if (use_builtin_throw) {
+      builtin_throw(Deoptimization::Reason_intrinsic, env()->ArithmeticException_instance());
+    } else {
+      uncommon_trap(Deoptimization::Reason_intrinsic,
+                    Deoptimization::Action_maybe_recompile);
+    }
   }
 
   set_control(fast_path);
@@ -2042,14 +2046,21 @@ void LibraryCallKit::inline_math_mathExact(Node* math, Node *test) {
 template <typename OverflowOp>
 bool LibraryCallKit::inline_math_overflow(Node* arg1, Node* arg2) {
   typedef typename OverflowOp::MathOp MathOp;
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
+  bool use_builtin_throw = false;
+  if (builtin_throw_applies(Deoptimization::Reason_intrinsic).first) {
+    // If builtin_throw would work (notably, the throw is hot and we don't care about backtraces),
+    // instead of bailing out on intrinsic or potentially deopting, let's do that!
+    use_builtin_throw = true;
+  } else if (too_many_traps(Deoptimization::Reason_intrinsic)) {
+    // It has been already too many times, but we cannot use builtin_throw care (e.g. we care about backtraces),
+    // so let's bail out intrinsic rather than risking deopting again.
     return false;
   }
 
   MathOp* mathOp = new MathOp(arg1, arg2);
   Node* operation = _gvn.transform( mathOp );
   Node* ofcheck = _gvn.transform( new OverflowOp(arg1, arg2) );
-  inline_math_mathExact(operation, ofcheck);
+  inline_math_mathExact(operation, ofcheck, use_builtin_throw);
   return true;
 }
 

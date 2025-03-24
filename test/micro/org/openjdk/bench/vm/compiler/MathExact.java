@@ -26,7 +26,6 @@ import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.*;
 
 import java.util.concurrent.TimeUnit;
-import java.util.Random;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -398,4 +397,7 @@ public abstract class MathExact {
                     "-XX:DisableIntrinsic=_addExactI,_incrementExactI,_addExactL,_incrementExactL,_subtractExactI,_decrementExactI,_subtractExactL,_decrementExactL,_negateExactI,_negateExactL,_multiplyExactI,_multiplyExactL",
             })
     public static class C2_no_intrinsics extends MathExact {}
+
+    @Fork(value = 1, jvmArgs = {"-XX:-OmitStackTraceInFastThrow"})
+    public static class C2_no_builtin_throw extends MathExact {}
 }
