@@ -93,15 +93,24 @@ public class TestFuzzCode {
 
 
         Dispatcher dispatcher = new Dispatcher();
+
+        // Split.
         dispatcher.add(Template.make("dispatcher", (Dispatcher d) -> body(
-            setFuelCost(5),
-            d.call()
-        )));
-        dispatcher.add(Template.make("dispatcher", (Dispatcher d) -> body(
-            setFuelCost(5),
+            setFuelCost(10),
             d.call(),
             d.call()
         )));
+
+        // If statement.
+        dispatcher.add(Template.make("dispatcher", (Dispatcher d) -> body(
+            setFuelCost(10),
+            "if (", Expression.make(Type.booleans(), Type.PRIMITIVE_TYPES, 2).withRandomArgs(), ") {\n",
+            d.call(),
+            "} else {\n",
+            d.call(),
+            "}\n"
+        )));
+
         for (Type type : Type.PRIMITIVE_TYPES) {
             // Write to mutable variable.
             dispatcher.add(Template.make("dispatcher", (Dispatcher d) -> {
@@ -114,6 +123,7 @@ public class TestFuzzCode {
                     d.call()
                 );
             }), () -> weighNames(type, true) > 0, 100);
+
             // New mutable variable.
             dispatcher.add(Template.make("dispatcher", (Dispatcher d) -> {
                 Expression expression = Expression.make(type, Type.PRIMITIVE_TYPES, 2);
@@ -124,7 +134,7 @@ public class TestFuzzCode {
                     "#type $var = ", expression.withRandomArgs(), ";\n",
                     d.call()
                 );
-            }), () -> true, 100);
+            }));
         }
 
         var template1Body = Template.make("type", (Type type)-> body(
@@ -137,6 +147,8 @@ public class TestFuzzCode {
             dispatcher.call(),
             """
             } catch (Exception e) {
+                // Exceptions can be thrown by the expression. We capture it,
+                // together with the current state of the $ret variable.
                 return new Object[] {e, $ret };
             }
             return $ret;

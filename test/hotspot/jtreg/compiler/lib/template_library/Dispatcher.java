@@ -98,8 +98,6 @@ public class Dispatcher {
     public TemplateWithArgs call() {
         var template = Template.make(() -> body(
             setFuelCost(0),
-            let("fuel", fuel()),
-            "// $dispatch fuel: #fuel\n",
             (fuel() <= 0) ? "// $empty\n"
                           : chooseTemplate()
         ));
