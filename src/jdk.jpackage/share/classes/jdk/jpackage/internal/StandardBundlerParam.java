@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,7 +276,6 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     (s, p) -> s
             );
 
-    @SuppressWarnings("unchecked")
     public static final StandardBundlerParam<String> LICENSE_FILE =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.LICENSE_FILE.getId(),
@@ -568,30 +567,12 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
     }
 
     static Path getPredefinedAppImage(Map<String, ? super Object> params) {
-        Path applicationImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
-        if (applicationImage != null && !IOUtils.exists(applicationImage)) {
-            throw new RuntimeException(
-                    MessageFormat.format(I18N.getString(
-                            "message.app-image-dir-does-not-exist"),
-                            PREDEFINED_APP_IMAGE.getID(),
-                            applicationImage.toString()));
-        }
-        return applicationImage;
+        return PREDEFINED_APP_IMAGE.fetchFrom(params);
     }
 
     static void copyPredefinedRuntimeImage(Map<String, ? super Object> params,
             ApplicationLayout appLayout) throws IOException, ConfigException {
         Path topImage = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
-        if (!IOUtils.exists(topImage)) {
-            throw new ConfigException(
-                    MessageFormat.format(I18N.getString(
-                    "message.runtime-image-dir-does-not-exist"),
-                    PREDEFINED_RUNTIME_IMAGE.getID(),
-                    topImage.toString()),
-                    MessageFormat.format(I18N.getString(
-                    "message.runtime-image-dir-does-not-exist.advice"),
-                    PREDEFINED_RUNTIME_IMAGE.getID()));
-        }
 
         if (OperatingSystem.isMacOS()) {
             // On Mac topImage can be runtime root or runtime home.
