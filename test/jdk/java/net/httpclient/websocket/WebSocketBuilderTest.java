@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8159053
- * @modules java.net.http/jdk.internal.net.http.websocket
  * @build DummyWebSocketServer
  *        Support
  * @run testng/othervm WebSocketBuilderTest

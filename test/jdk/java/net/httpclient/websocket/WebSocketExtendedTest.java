@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8159053
- * @modules java.net.http/jdk.internal.net.http.websocket
  * @run testng/othervm
  *      -Djdk.internal.httpclient.websocket.debug=true
  *      -Djdk.internal.httpclient.debug=true

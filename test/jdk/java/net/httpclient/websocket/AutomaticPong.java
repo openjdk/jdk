@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @modules java.net.http/jdk.internal.net.http.websocket
  * @build DummyWebSocketServer
  * @run testng/othervm
  *      -Djdk.internal.httpclient.websocket.debug=true
