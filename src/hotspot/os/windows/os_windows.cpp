@@ -3263,7 +3263,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
 
   for (int attempt = 0; attempt < max_attempts && aligned_base == nullptr; attempt ++) {
     char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc, mem_tag) :
-                                         os::reserve_memory(extra_size, false, mem_tag);
+                                         os::reserve_memory(extra_size, mem_tag, false);
     if (extra_base == nullptr) {
       return nullptr;
     }
@@ -3280,7 +3280,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
     // Attempt to map, into the just vacated space, the slightly smaller aligned area.
     // Which may fail, hence the loop.
     aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc, mem_tag) :
-                                     os::attempt_reserve_memory_at(aligned_base, size, false, mem_tag);
+                                     os::attempt_reserve_memory_at(aligned_base, size, mem_tag, false);
   }
 
   assert(aligned_base != nullptr,
