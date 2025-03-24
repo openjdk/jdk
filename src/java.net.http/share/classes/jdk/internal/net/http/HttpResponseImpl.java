@@ -44,7 +44,7 @@ import jdk.internal.net.http.websocket.RawChannel;
 class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
 
     final int responseCode;
-    private final Optional<String> connectionLabel;
+    private final String connectionLabel;
     final HttpRequest initialRequest;
     final Optional<HttpResponse<T>> previousResponse;
     final HttpHeaders headers;
@@ -60,7 +60,7 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
                             T body,
                             Exchange<T> exch) {
         this.responseCode = response.statusCode();
-        this.connectionLabel = connectionLabel(exch);
+        this.connectionLabel = connectionLabel(exch).orElse(null);
         this.initialRequest = initialRequest;
         this.previousResponse = Optional.ofNullable(previousResponse);
         this.headers = response.headers();
@@ -73,19 +73,10 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
     }
 
     private static Optional<String> connectionLabel(Exchange<?> exchange) {
-        if (exchange == null) {
-            return Optional.empty();
-        }
-        ExchangeImpl<?> exchImpl = exchange.exchImpl;
-        if (exchImpl == null) {
-            return Optional.empty();
-        }
-        @SuppressWarnings("resource")
-        HttpConnection connection = exchImpl.connection();
-        if (connection == null) {
-            return Optional.empty();
-        }
-        return Optional.of(connection.label());
+        return Optional.ofNullable(exchange)
+                                 .map(e -> e.exchImpl)
+                                 .map(ExchangeImpl::connection)
+                                 .map(HttpConnection::label);
     }
 
     @Override
@@ -95,7 +86,7 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
 
     @Override
     public Optional<String> connectionLabel() {
-        return connectionLabel;
+        return Optional.ofNullable(connectionLabel);
     }
 
     @Override
