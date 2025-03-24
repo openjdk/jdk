@@ -46,6 +46,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -84,23 +85,23 @@ class HttpResponseConnectionLabelTest {
 
     // Primary server-client pairs
 
-    private static final ServerRequestPair PRI_HTTP1 = ServerRequestPair.of(HttpClient.Version.HTTP_1_1, false);
+    private static final ServerRequestPair PRI_HTTP1 = ServerRequestPair.of(Version.HTTP_1_1, false);
 
-    private static final ServerRequestPair PRI_HTTPS1 = ServerRequestPair.of(HttpClient.Version.HTTP_1_1, true);
+    private static final ServerRequestPair PRI_HTTPS1 = ServerRequestPair.of(Version.HTTP_1_1, true);
 
-    private static final ServerRequestPair PRI_HTTP2 = ServerRequestPair.of(HttpClient.Version.HTTP_2, false);
+    private static final ServerRequestPair PRI_HTTP2 = ServerRequestPair.of(Version.HTTP_2, false);
 
-    private static final ServerRequestPair PRI_HTTPS2 = ServerRequestPair.of(HttpClient.Version.HTTP_2, true);
+    private static final ServerRequestPair PRI_HTTPS2 = ServerRequestPair.of(Version.HTTP_2, true);
 
     // Secondary server-client pairs
 
-    private static final ServerRequestPair SEC_HTTP1 = ServerRequestPair.of(HttpClient.Version.HTTP_1_1, false);
+    private static final ServerRequestPair SEC_HTTP1 = ServerRequestPair.of(Version.HTTP_1_1, false);
 
-    private static final ServerRequestPair SEC_HTTPS1 = ServerRequestPair.of(HttpClient.Version.HTTP_1_1, true);
+    private static final ServerRequestPair SEC_HTTPS1 = ServerRequestPair.of(Version.HTTP_1_1, true);
 
-    private static final ServerRequestPair SEC_HTTP2 = ServerRequestPair.of(HttpClient.Version.HTTP_2, false);
+    private static final ServerRequestPair SEC_HTTP2 = ServerRequestPair.of(Version.HTTP_2, false);
 
-    private static final ServerRequestPair SEC_HTTPS2 = ServerRequestPair.of(HttpClient.Version.HTTP_2, true);
+    private static final ServerRequestPair SEC_HTTPS2 = ServerRequestPair.of(Version.HTTP_2, true);
 
     private static SSLContext createSslContext() {
         try {
@@ -128,7 +129,7 @@ class HttpResponseConnectionLabelTest {
             }
         }
 
-        private static ServerRequestPair of(HttpClient.Version version, boolean secure) {
+        private static ServerRequestPair of(Version version, boolean secure) {
 
             // Create the server and the request URI
             SSLContext sslContext = secure ? SSL_CONTEXT : null;
@@ -186,7 +187,7 @@ class HttpResponseConnectionLabelTest {
 
         }
 
-        private static HttpTestServer createServer(HttpClient.Version version, SSLContext sslContext) {
+        private static HttpTestServer createServer(Version version, SSLContext sslContext) {
             try {
                 return HttpTestServer.create(version, sslContext, ForkJoinPool.commonPool());
             } catch (IOException exception) {
@@ -238,7 +239,7 @@ class HttpResponseConnectionLabelTest {
 
         // There is no implementation-agnostic reliable way to force admission
         // of multiple connections targeting the same server to an HTTP/2 pool.
-        if (HttpClient.Version.HTTP_2.equals(pair.server.getVersion())) {
+        if (Version.HTTP_2.equals(pair.server.getVersion())) {
             return;
         }
 
