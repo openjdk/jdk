@@ -83,11 +83,15 @@ public class LinuxDebBundler extends LinuxPackageBundler {
             },
             (s, p) -> {
                 if (!DEB_PACKAGE_NAME_PATTERN.matcher(s).matches()) {
-                    throw new IllegalArgumentException(new ConfigException(
+                    try {
+                        throw new ConfigException(
                             MessageFormat.format(I18N.getString(
-                            "error.invalid-value-for-package-name"), s),
+                            "error.deb-invalid-value-for-package-name"), s),
                             I18N.getString(
-                            "error.invalid-value-for-package-name.advice")));
+                            "error.deb-invalid-value-for-package-name.advice"));
+                    } catch (ConfigException ex) {
+                        throw new IllegalArgumentException(ex);
+                    }
                 }
 
                 return s;

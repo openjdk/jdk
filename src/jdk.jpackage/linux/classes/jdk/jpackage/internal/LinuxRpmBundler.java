@@ -87,11 +87,15 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
             },
             (s, p) -> {
                 if (!RPM_PACKAGE_NAME_PATTERN.matcher(s).matches()) {
-                    String msgKey = "error.invalid-value-for-package-name";
-                    throw new IllegalArgumentException(
-                            new ConfigException(MessageFormat.format(
-                                    I18N.getString(msgKey), s),
-                                    I18N.getString(msgKey + ".advice")));
+                    try {
+                        throw new ConfigException(
+                            MessageFormat.format(I18N.getString(
+                            "error.rpm-invalid-value-for-package-name"), s),
+                            I18N.getString(
+                            "error.rpm-invalid-value-for-package-name.advice"));
+                    } catch (ConfigException ex) {
+                        throw new IllegalArgumentException(ex);
+                    }
                 }
 
                 return s;
