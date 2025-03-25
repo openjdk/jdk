@@ -1,3 +1,6 @@
+# Require javac
+runtime/HiddenClasses/DefineHiddenClass.java            8352764 generic-all
+
 # Require jstack
 runtime/Thread/TestThreadDumpClassInitMonitor.java      8352764 generic-all
 runtime/Thread/TestThreadDumpSMRInfo.java               8352764 generic-all
