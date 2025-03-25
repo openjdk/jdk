@@ -955,9 +955,7 @@ public class CreateSymbols {
             var cp = builder.constantPool();
             ConstantValueEntry entry = switch (desc.constantValue) {
                 case Boolean v -> cp.intEntry(v ? 1 : 0);
-                case Byte v -> cp.intEntry(v);
                 case Character v -> cp.intEntry(v);
-                case Short v -> cp.intEntry(v);
                 case Integer v -> cp.intEntry(v);
                 case Long v -> cp.longEntry(v);
                 case Float v -> cp.floatEntry(v);
@@ -2224,10 +2222,8 @@ public class CreateSymbols {
         if (descriptor.length() == 1 && info instanceof IntegerEntry ie) {
             var i = ie.intValue();
             return switch (descriptor.charAt(0)) {
-                case 'I' -> i;
-                case 'B' -> (byte) i;
+                case 'I', 'B', 'S' -> i;
                 case 'C' -> (char) i;
-                case 'S' -> (short) i;
                 case 'Z' -> i == 1;
                 default -> throw new IllegalArgumentException(descriptor);
             };
@@ -3431,7 +3427,7 @@ public class CreateSymbols {
     static class FieldDescription extends FeatureDescription {
         String name;
         String descriptor;
-        Object constantValue;
+        Object constantValue; // Uses (unsigned) Integer for byte/short
         String keyName = "field";
 
         @Override
