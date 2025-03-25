@@ -30,6 +30,8 @@ import java.util.UUID;
 
 public interface WinMsiPackageMixin {
 
+    DottedVersion msiVersion();
+
     boolean withInstallDirChooser();
 
     boolean withShortcutPrompt();
@@ -48,7 +50,7 @@ public interface WinMsiPackageMixin {
 
     Optional<Path> serviceInstaller();
 
-    record Stub(boolean withInstallDirChooser, boolean withShortcutPrompt,
+    record Stub(DottedVersion msiVersion, boolean withInstallDirChooser, boolean withShortcutPrompt,
             Optional<String> helpURL, Optional<String> updateURL, String startMenuGroupName,
             boolean isSystemWideInstall, UUID upgradeCode, UUID productCode,
             Optional<Path> serviceInstaller) implements WinMsiPackageMixin {}

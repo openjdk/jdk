@@ -64,6 +64,7 @@ final class WinMsiPackageBuilder {
         }
 
         return WinMsiPackage.create(pkg, new WinMsiPackageMixin.Stub(
+                MsiVersion.of(pkg.version()),
                 withInstallDirChooser,
                 withShortcutPrompt,
                 Optional.ofNullable(helpURL),

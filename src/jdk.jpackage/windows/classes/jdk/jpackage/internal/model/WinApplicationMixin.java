@@ -24,11 +24,13 @@
  */
 package jdk.jpackage.internal.model;
 
-import jdk.jpackage.internal.util.CompositeProxy;
+public interface WinApplicationMixin {
 
-public interface WinApplication extends Application, WinApplicationMixin {
+    DottedVersion winVersion();
 
-    public static WinApplication create(Application app) {
-        return CompositeProxy.create(WinApplication.class, app, new WinApplicationMixin.Stub(app));
+    record Stub(DottedVersion winVersion) implements WinApplicationMixin {
+        public Stub(Application app) {
+            this(DottedVersion.greedy(app.version()));
+        }
     }
 }

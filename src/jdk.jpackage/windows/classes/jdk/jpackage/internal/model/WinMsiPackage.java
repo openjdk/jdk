@@ -28,10 +28,6 @@ import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface WinMsiPackage extends Package, WinMsiPackageMixin {
 
-    default DottedVersion msiVersion() {
-        return MsiVersion.of(version());
-    }
-
     public static WinMsiPackage create(Package pkg, WinMsiPackageMixin mixin) {
         return CompositeProxy.create(WinMsiPackage.class, pkg, mixin);
     }
