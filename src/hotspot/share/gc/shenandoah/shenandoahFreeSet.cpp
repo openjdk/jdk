@@ -1310,7 +1310,7 @@ bool ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
     // mutator (they have nothing to steal), but they do have a usable region in their partition. What
     // we want to do here is swap that region from the mutator partition with one from the old collector
     // partition.
-    // 1. Find an unusable trash region in the old collector partition
+    // 1. Find a temporarily unusable trash region in the old collector partition
     ShenandoahRightLeftIterator iterator(&_partitions, ShenandoahFreeSetPartitionId::OldCollector, true);
     idx_t unusable_trash = -1;
     for (unusable_trash = iterator.current(); iterator.has_next(); unusable_trash = iterator.next()) {
@@ -1321,12 +1321,12 @@ bool ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
     }
 
     if (unusable_trash != -1) {
-      // 2. Move it to the mutator partition
+      // 2. Move the (temporarily) unusable trash region we found to the mutator partition
       _partitions.move_from_partition_to_partition(unusable_trash,
                                                    ShenandoahFreeSetPartitionId::OldCollector,
                                                    ShenandoahFreeSetPartitionId::Mutator, region_capacity);
 
-      // 3. Move this usable region to the old collector partition
+      // 3. Move this usable region from the mutator partition to the old collector partition
       _partitions.move_from_partition_to_partition(idx,
                                                    ShenandoahFreeSetPartitionId::Mutator,
                                                    ShenandoahFreeSetPartitionId::OldCollector, region_capacity);
