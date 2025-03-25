@@ -233,11 +233,11 @@ public class FramesEncoder {
        final int length = frame.length();
        ByteBuffer buf = getBuffer(Http2Frame.FRAME_HEADER_SIZE + length);
        putHeader(buf, length, AltSvcFrame.TYPE, NO_FLAGS,  frame.streamid);
-       final int originLen = frame.getOriginLength();
-       assert (originLen & 0xffff0000) == 0;
-       buf.putShort((short)originLen);
-       if (originLen > 0)
-           buf.put(frame.getOrigin().get().getBytes(StandardCharsets.US_ASCII));
+       final String origin = frame.getOrigin();
+       assert (origin.length() & 0xffff0000) == 0;
+       buf.putShort((short)origin.length());
+       if (!origin.isEmpty())
+           buf.put(frame.getOrigin().getBytes(StandardCharsets.US_ASCII));
        buf.put(frame.getAltSvcValue().getBytes(StandardCharsets.US_ASCII));
        buf.flip();
        return List.of(buf);

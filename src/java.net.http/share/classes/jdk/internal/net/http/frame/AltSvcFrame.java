@@ -34,23 +34,19 @@ public final class AltSvcFrame extends Http2Frame {
 
     public static final int TYPE = 0xa;
 
-
     private final int length;
-    private final int originLength;
     private final String origin;
     private final String altSvcValue;
 
     private static final Charset encoding = StandardCharsets.US_ASCII;
 
     // Strings should be US-ASCII. This is checked by the FrameDecoder.
-    public AltSvcFrame(int streamid, int flags, int oriLength, Optional<String> originVal, String altValue) {
+    public AltSvcFrame(int streamid, int flags, Optional<String> originVal, String altValue) {
         super(streamid, flags);
-        this.originLength = oriLength;
-        this.origin = originVal.orElse(null);
+        this.origin = originVal.orElse("");
         this.altSvcValue = Objects.requireNonNull(altValue);
-        this.length = 2 + originLength + altValue.length();
-        assert (origin == null) == (originLength == 0);
-        assert oriLength == 0 || oriLength == origin.getBytes(encoding).length;
+        this.length = 2 + origin.length() + altValue.length();
+        assert origin.length() == origin.getBytes(encoding).length;
         assert altSvcValue.length() == altSvcValue.getBytes(encoding).length;
     }
 
@@ -64,12 +60,8 @@ public final class AltSvcFrame extends Http2Frame {
         return length;
     }
 
-    public int getOriginLength() {
-        return originLength;
-    }
-
-    public Optional<String> getOrigin() {
-        return Optional.ofNullable(origin);
+    public String getOrigin() {
+        return origin;
     }
 
     public String getAltSvcValue() {

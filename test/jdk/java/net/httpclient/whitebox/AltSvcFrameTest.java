@@ -157,7 +157,7 @@ public class AltSvcFrameTest {
         public void sendResponseHeaders(int rCode, long responseLength) throws IOException {
             // for non-zero stream id, as per spec, the origin is inferred from the stream's origin
             // by the HTTP client
-            AltSvcFrame frame = new AltSvcFrame(streamid, 0, 0, Optional.empty(), "h3=\"www.oracle.com:443\"");
+            AltSvcFrame frame = new AltSvcFrame(streamid, 0, Optional.empty(), "h3=\"www.oracle.com:443\"");
             conn.addToOutputQ(frame);
             super.sendResponseHeaders(rCode, responseLength);
             System.err.println("Sent response headers " + rCode);

@@ -26,7 +26,6 @@
 package jdk.internal.net.http.frame;
 
 import java.io.IOException;
-import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
@@ -580,7 +579,7 @@ public class FramesDecoder {
                     "illegal character in AltSvcFrame");
         }
         String altSvc = new String(altbytes, StandardCharsets.US_ASCII);
-        return new AltSvcFrame(frameStreamid, 0, len, originUri, altSvc);
+        return new AltSvcFrame(frameStreamid, 0, originUri, altSvc);
     }
 
     static boolean isUSAscii(byte[] bytes) {

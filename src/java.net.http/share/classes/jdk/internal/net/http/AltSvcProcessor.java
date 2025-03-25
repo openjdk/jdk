@@ -156,8 +156,7 @@ final class AltSvcProcessor {
         if (streamId == 0) {
             // section 4, RFC-7838 - alt-svc frame on stream 0 with empty (zero length) origin
             // is invalid and MUST be ignored
-            if (frame.getOriginLength() <= 0 || frame.getOrigin().isEmpty() ||
-                    frame.getOrigin().get().isBlank()) {
+            if (frame.getOrigin().isBlank()) {
                 // invalid frame, ignore it
                 debug.log("Ignoring invalid alt-svc frame on stream 0 of " + conn);
                 return;
@@ -165,7 +164,7 @@ final class AltSvcProcessor {
             // parse origin from frame.getOrigin() string which is in ASCII
             // serialized form of an origin (defined in section 6.2 of RFC-6454)
             try {
-                origin = Origin.fromASCIISerializedForm(frame.getOrigin().get());
+                origin = Origin.fromASCIISerializedForm(frame.getOrigin());
             } catch (IllegalArgumentException iae) {
                 // invalid origin value, ignore the frame
                 debug.log("origin couldn't be parsed, ignoring invalid alt-svc frame" +
@@ -176,7 +175,7 @@ final class AltSvcProcessor {
             // (section 4, RFC-7838) - for non-zero stream id, the alt-svc is for the origin of
             // the stream. Additionally, an ALTSVC frame on a stream other than stream 0 containing
             // non-empty "Origin" information is invalid and MUST be ignored.
-            if (frame.getOriginLength() > 0 || frame.getOrigin().isPresent()) {
+            if (!frame.getOrigin().isEmpty()) {
                 // invalid frame, ignore it
                 debug.log("non-empty origin in alt-svc frame on stream " + streamId + " of "
                         + conn + ", ignoring alt-svc frame");

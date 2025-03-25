@@ -977,7 +977,7 @@ public class Http2TestServerConnection {
             svc = svc + ", bar3=\":446\"; ma=2592000; persist=1";
             svc = svc + ", h3-34=\"" + altSvcAddr.host() + ":" + altSvcAddr.port()
                     +"\"; ma=2592000; persist=1";
-            AltSvcFrame frame = new AltSvcFrame(0, 0, origin.length(), Optional.of(origin), svc);
+            AltSvcFrame frame = new AltSvcFrame(0, 0, Optional.of(origin), svc);
             System.err.printf("TestServer: Sending AltSvcFrame for: %s [%s]%n", origin, svc);
             outputQ.put(frame);
             return true;
