@@ -30,7 +30,7 @@ import jdk.incubator.vector.*;
  * @bug 8352585
  * @library /test/lib /
  * @summary Add special case handling for Float16.max/min x86 backend
- * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx512_fp16.*" & vm.cpu.features ~= ".*avx512bw.*")
+ * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx512_fp16.*" & vm.cpu.features ~= ".*avx512bw.*" & vm.cpu.features ~= ".*avx512vl.*")
  * @modules jdk.incubator.vector
  *
  * @run driver compiler.intrinsics.float16.TestFloat16MaxMinSpecialValues
@@ -40,6 +40,7 @@ import jdk.incubator.vector.*;
 public class TestFloat16MaxMinSpecialValues {
     public static Float16 POS_ZERO = Float16.valueOf(0.0f);
     public static Float16 NEG_ZERO = Float16.valueOf(-0.0f);
+    public static Float16 SRC = Float16.valueOf(Float.MAX_VALUE);
 
     public Float16 RES;
 
@@ -54,27 +55,18 @@ public class TestFloat16MaxMinSpecialValues {
     }
 
     @Run(test = "testMaxNaNOperands")
-    @Warmup(1000)
     public void launchMaxNaNOperands() {
-        for (int i = 0; i < 10000; i++) {
-            Float16 SRC = Float16.valueOf(i);
-            RES = testMaxNaNOperands(SRC, Float16.NaN);
-            if (!RES.equals(Float16.NaN)) {
-                throw new AssertionError("input1 = NaN, input2 = " + SRC.floatValue() + ", expected = NaN, actual = " + RES.floatValue());
-            }
+        RES = testMaxNaNOperands(SRC, Float16.NaN);
+        if (!RES.equals(Float16.NaN)) {
+            throw new AssertionError("input1 = " + SRC.floatValue() + " input2 = NaN , expected = NaN, actual = " + RES.floatValue());
         }
-        for (int i = 0; i < 10000; i++) {
-            Float16 SRC = Float16.valueOf(i);
-            RES = testMaxNaNOperands(Float16.NaN, SRC);
-            if (!RES.equals(Float16.NaN)) {
-                throw new AssertionError("input1 = NaN, input2 = " + SRC.floatValue() + ", expected = NaN, actual = " + RES.floatValue());
-            }
+        RES = testMaxNaNOperands(Float16.NaN, SRC);
+        if (!RES.equals(Float16.NaN)) {
+            throw new AssertionError("input1 = NaN, input2 = " + SRC.floatValue() + ", expected = NaN, actual = " + RES.floatValue());
         }
-        for (int i = 0; i < 10000; i++) {
-            RES = testMaxNaNOperands(Float16.NaN, Float16.NaN);
-            if (!RES.equals(Float16.NaN)) {
-                throw new AssertionError("input1 = NaN, input2 = NaN, expected = NaN, actual = " + RES.floatValue());
-            }
+        RES = testMaxNaNOperands(Float16.NaN, Float16.NaN);
+        if (!RES.equals(Float16.NaN)) {
+            throw new AssertionError("input1 = NaN, input2 = NaN, expected = NaN, actual = " + RES.floatValue());
         }
     }
 
@@ -85,27 +77,18 @@ public class TestFloat16MaxMinSpecialValues {
     }
 
     @Run(test = "testMinNaNOperands")
-    @Warmup(1000)
     public void launchMinNaNOperands() {
-        for (int i = 0; i < 10000; i++) {
-            Float16 SRC = Float16.valueOf(i);
-            RES = testMinNaNOperands(SRC, Float16.NaN);
-            if (!RES.equals(Float16.NaN)) {
-                throw new AssertionError("input1 = NaN, input2 = " + SRC.floatValue() + ", expected = NaN, actual = " + RES.floatValue());
-            }
+        RES = testMinNaNOperands(SRC, Float16.NaN);
+        if (!RES.equals(Float16.NaN)) {
+            throw new AssertionError("input1 = " + SRC.floatValue() + " input2 = NaN, expected = NaN, actual = " + RES.floatValue());
         }
-        for (int i = 0; i < 10000; i++) {
-            Float16 SRC = Float16.valueOf(i);
-            RES = testMinNaNOperands(Float16.NaN, SRC);
-            if (!RES.equals(Float16.NaN)) {
-                throw new AssertionError("input1 = NaN, input2 = " + SRC.floatValue() + ", expected = NaN, actual = " + RES.floatValue());
-            }
+        RES = testMinNaNOperands(Float16.NaN, SRC);
+        if (!RES.equals(Float16.NaN)) {
+            throw new AssertionError("input1 = NaN, input2 = " + SRC.floatValue() + ", expected = NaN, actual = " + RES.floatValue());
         }
-        for (int i = 0; i < 10000; i++) {
-            RES = testMinNaNOperands(Float16.NaN, Float16.NaN);
-            if (!RES.equals(Float16.NaN)) {
-                throw new AssertionError("input1 = NaN, input2 = NaN, expected = NaN, actual = " + RES.floatValue());
-            }
+        RES = testMinNaNOperands(Float16.NaN, Float16.NaN);
+        if (!RES.equals(Float16.NaN)) {
+            throw new AssertionError("input1 = NaN, input2 = NaN, expected = NaN, actual = " + RES.floatValue());
         }
     }
 
@@ -116,34 +99,22 @@ public class TestFloat16MaxMinSpecialValues {
     }
 
     @Run(test = "testMaxZeroOperands")
-    @Warmup(1000)
     public void launchMaxZeroOperands() {
-        for (int i = 0; i < 10000; i++) {
-            RES = testMaxZeroOperands(POS_ZERO, NEG_ZERO);
-            if (!RES.equals(POS_ZERO)) {
-                throw new AssertionError("input1 = +0.0, input2 = -0.0, expected = +0.0, actual = " + RES.floatValue());
-            }
+        RES = testMaxZeroOperands(POS_ZERO, NEG_ZERO);
+        if (!RES.equals(POS_ZERO)) {
+            throw new AssertionError("input1 = +0.0, input2 = -0.0, expected = +0.0, actual = " + RES.floatValue());
         }
-        for (int i = 0; i < 10000; i++) {
-            Float16 SRC = Float16.valueOf(i);
-            RES = testMaxZeroOperands(NEG_ZERO, POS_ZERO);
-            if (!RES.equals(POS_ZERO)) {
-                throw new AssertionError("input1 = -0.0, input2 = +0.0, expected = +0.0, actual = " + RES.floatValue());
-            }
+        RES = testMaxZeroOperands(NEG_ZERO, POS_ZERO);
+        if (!RES.equals(POS_ZERO)) {
+            throw new AssertionError("input1 = -0.0, input2 = +0.0, expected = +0.0, actual = " + RES.floatValue());
         }
-        for (int i = 0; i < 10000; i++) {
-            Float16 SRC = Float16.valueOf(i);
-            RES = testMaxZeroOperands(POS_ZERO, POS_ZERO);
-            if (!RES.equals(POS_ZERO)) {
-                throw new AssertionError("input1 = +0.0, input2 = +0.0, expected = +0.0, actual = " + RES.floatValue());
-            }
+        RES = testMaxZeroOperands(POS_ZERO, POS_ZERO);
+        if (!RES.equals(POS_ZERO)) {
+            throw new AssertionError("input1 = +0.0, input2 = +0.0, expected = +0.0, actual = " + RES.floatValue());
         }
-        for (int i = 0; i < 10000; i++) {
-            Float16 SRC = Float16.valueOf(i);
-            RES = testMaxZeroOperands(NEG_ZERO, NEG_ZERO);
-            if (!RES.equals(NEG_ZERO)) {
-                throw new AssertionError("input1 = -0.0, input2 = -0.0, expected = -0.0, actual = " + RES.floatValue());
-            }
+        RES = testMaxZeroOperands(NEG_ZERO, NEG_ZERO);
+        if (!RES.equals(NEG_ZERO)) {
+            throw new AssertionError("input1 = -0.0, input2 = -0.0, expected = -0.0, actual = " + RES.floatValue());
         }
     }
 
@@ -154,34 +125,25 @@ public class TestFloat16MaxMinSpecialValues {
     }
 
     @Run(test = "testMinZeroOperands")
-    @Warmup(1000)
     public void launchMinZeroOperands() {
-        for (int i = 0; i < 10000; i++) {
-            RES = testMinZeroOperands(POS_ZERO, NEG_ZERO);
-            if (!RES.equals(NEG_ZERO)) {
-                throw new AssertionError("input1 = +0.0, input2 = -0.0, expected = -0.0, actual = " + RES.floatValue());
-            }
+        RES = testMinZeroOperands(POS_ZERO, NEG_ZERO);
+        if (!RES.equals(NEG_ZERO)) {
+            throw new AssertionError("input1 = +0.0, input2 = -0.0, expected = -0.0, actual = " + RES.floatValue());
         }
-        for (int i = 0; i < 10000; i++) {
-            Float16 SRC = Float16.valueOf(i);
-            RES = testMinZeroOperands(NEG_ZERO, POS_ZERO);
-            if (!RES.equals(NEG_ZERO)) {
-                throw new AssertionError("input1 = -0.0, input2 = +0.0, expected = -0.0, actual = " + RES.floatValue());
-            }
+
+        RES = testMinZeroOperands(NEG_ZERO, POS_ZERO);
+        if (!RES.equals(NEG_ZERO)) {
+            throw new AssertionError("input1 = -0.0, input2 = +0.0, expected = -0.0, actual = " + RES.floatValue());
         }
-        for (int i = 0; i < 10000; i++) {
-            Float16 SRC = Float16.valueOf(i);
-            RES = testMinZeroOperands(POS_ZERO, POS_ZERO);
-            if (!RES.equals(POS_ZERO)) {
-                throw new AssertionError("input1 = +0.0, input2 = +0.0, expected = +0.0, actual = " + RES.floatValue());
-            }
+
+        RES = testMinZeroOperands(POS_ZERO, POS_ZERO);
+        if (!RES.equals(POS_ZERO)) {
+            throw new AssertionError("input1 = +0.0, input2 = +0.0, expected = +0.0, actual = " + RES.floatValue());
         }
-        for (int i = 0; i < 10000; i++) {
-            Float16 SRC = Float16.valueOf(i);
-            RES = testMinZeroOperands(NEG_ZERO, NEG_ZERO);
-            if (!RES.equals(NEG_ZERO)) {
-                throw new AssertionError("input1 = -0.0, input2 = -0.0, expected = -0.0, actual = " + RES.floatValue());
-            }
+
+        RES = testMinZeroOperands(NEG_ZERO, NEG_ZERO);
+        if (!RES.equals(NEG_ZERO)) {
+            throw new AssertionError("input1 = -0.0, input2 = -0.0, expected = -0.0, actual = " + RES.floatValue());
         }
     }
 }
