@@ -1,0 +1,14 @@
+[21Mar2025 15:58CET]  Starting test run
+[21Mar2025 15:58CET]  Completed test run: not ok
+[21Mar2025 15:59CET]  Starting test run
+[21Mar2025 15:59CET]  Completed test run: not ok
+[21Mar2025 16:02CET]  Starting test run
+[21Mar2025 16:02CET]  Completed test run: ok
+[21Mar2025 16:04CET]  Starting test run
+[21Mar2025 16:05CET]  Completed test run: ok
+[21Mar2025 16:05CET]  Starting test run
+[21Mar2025 16:06CET]  Completed test run: ok
+[25Mar2025 11:39CET]  Starting test run
+[25Mar2025 11:39CET]  Completed test run: not ok
+[25Mar2025 11:41CET]  Starting test run
+[25Mar2025 11:41CET]  Completed test run: ok

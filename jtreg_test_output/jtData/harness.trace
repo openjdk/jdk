@@ -1,0 +1,13 @@
+# Trace file started at 2025-03-25T11:41:21+0100
+# JT Harness version 6.0
+# class directory: /net/sapmnt.sapjvm_work/openjdk/tools/jtreg-7.5.1/lib/javatest.jar
+# using java: /data/d042520/clean_LIBPATH/jdk/build/aix-ppc64-server-fastdebug/images/jdk
+2025-03-25T11:41:21+0100 Starting tests.
+Test suite class: com.sun.javatest.regtest.config.RegressionTestSuite
+Test finder class: com.sun.javatest.regtest.config.RegressionTestFinder
+2025-03-25T11:41:22+0100 Starting: tools/launcher/ExecutionEnvironment.java#id1
+2025-03-25T11:41:38+0100 Finished: (16 seconds) tools/launcher/ExecutionEnvironment.java#id1: Passed. Execution successful
+Below are the 1 slowest tests: 
+16 seconds: tools/launcher/ExecutionEnvironment.java#id1
+2025-03-25T11:41:38+0100 Doing post-run cleanup
+2025-03-25T11:41:38+0100 Completed: All tests passed

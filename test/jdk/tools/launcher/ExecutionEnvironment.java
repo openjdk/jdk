@@ -138,28 +138,37 @@ public class ExecutionEnvironment extends TestHelper {
      */
     @Test
     void testEcoFriendly() {
-        /*
-         * Because aix and musl intentionally pollute the LD_LIBRARY_PATH,
-         * it does not make sense to make this test somehow passing with
-         * crude workarounds, which even do not work in any case. So we
-         * skip this sub test for aix and musl.
-         */
-        if (!IS_EXPANDED_LD_LIBRARY_PATH) {
-            Map<String, String> env = new HashMap<>();
-            for (String x : LD_PATH_STRINGS) {
-                String pairs[] = x.split("=");
-                env.put(pairs[0], pairs[1]);
-            }
+        Map<String, String> env = new HashMap<>();
+        for (String x : LD_PATH_STRINGS) {
+            String pairs[] = x.split("=");
+            env.put(pairs[0], pairs[1]);
+        }
 
-            TestResult tr =
-                doExec(env, javaCmd, "-jar", testJarFile.getAbsolutePath());
+        TestResult tr =
+            doExec(env, javaCmd, "-jar", testJarFile.getAbsolutePath());
 
-            if (!tr.isNotZeroOutput()) {
-                flagError(tr, "Error: No output at all. Did the test execute ?");
-            }
+        if (!tr.isNotZeroOutput()) {
+            flagError(tr, "Error: No output at all. Did the test execute ?");
+        }
 
-            for (String x : LD_PATH_STRINGS) {
-                if (!tr.contains(x)) {
+        for (String x : LD_PATH_STRINGS) {
+            if (!tr.contains(x)) {
+                if (IS_EXPANDED_LD_LIBRARY_PATH && x.startsWith(LD_LIBRARY_PATH)) {
+                    // AIX does not support the '-rpath' linker options so the
+                    // launchers have to prepend the jdk library path to 'LIBPATH'.
+                    // The musl library loader requires LD_LIBRARY_PATH to be set in
+                    // order to correctly resolve the dependency libjava.so has on libjvm.so.
+                    String jvmroot = System.getProperty("java.home");
+                    String libPath = LD_LIBRARY_PATH + "=" +
+                        jvmroot + "/lib/server" + System.getProperty("path.separator") +
+                        jvmroot + "/lib" + System.getProperty("path.separator") +
+                        jvmroot + "/../lib" +
+                        System.getProperty("path.separator") + LD_LIBRARY_PATH_VALUE;
+                    if (!tr.matches(libPath)) {
+                        flagError(tr, "FAIL: did not get <" + libPath + ">");
+                    }
+                }
+                else {
                     flagError(tr, "FAIL: did not get <" + x + ">");
                 }
             }
