@@ -28,7 +28,7 @@
  *          event handler, it can cause a deadlock because the call can result
  *          in ClassPrepareEvents, which the debug agent will block on until
  *          the debugger handles them, which it won't because the event handler
- *          thread is waiting for a reply to ThreadGroupReference.groups(). 
+ *          thread is waiting for a reply to ThreadGroupReference.groups().
  *
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g EarlyThreadGroupChildrenTest.java
@@ -69,7 +69,7 @@ public class EarlyThreadGroupChildrenTest extends TestScaffold {
     BreakpointRequest bkptRequest;
     ClassPrepareRequest cpRequest;
     ThreadStartRequest tsRequest;
-    
+
     @Override
     public void threadStarted(ThreadStartEvent event) {
         System.out.println("Got ThreadStartEvent: " + event);
@@ -80,7 +80,7 @@ public class EarlyThreadGroupChildrenTest extends TestScaffold {
     
     static volatile int classPreparedCount = 0;
     //static final int MAX_CLASSPREPARED_EVENTS = 50;
-    
+
     @Override
     public void classPrepared(ClassPrepareEvent event) {
         try {
