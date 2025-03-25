@@ -90,6 +90,7 @@ public final class Frame {
      */
     public static final class Masker {
 
+        private final ByteBuffer acc = ByteBuffer.allocate(8);
         private final int[] maskBytes = new int[4];
         private int offset;
         private long maskLongBe;
@@ -115,7 +116,7 @@ public final class Frame {
          * The behaviour is as if the mask was set on a newly created instance.
          */
         public Masker setMask(int mask) {
-            ByteBuffer acc = ByteBuffer.allocate(8).putInt(mask).putInt(mask).flip();
+            acc.clear().putInt(mask).putInt(mask).flip();
             for (int i = 0; i < maskBytes.length; i++) {
                 maskBytes[i] = acc.get(i);
             }
