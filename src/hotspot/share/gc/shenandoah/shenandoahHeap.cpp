@@ -2171,7 +2171,7 @@ size_t ShenandoahHeap::tlab_used(Thread* thread) const {
 }
 
 bool ShenandoahHeap::try_cancel_gc(GCCause::Cause cause) {
-  const jbyte prev = _cancelled_gc.xchg(cause);
+  const GCCause::Cause prev = _cancelled_gc.xchg(cause);
   return prev == GCCause::_no_gc || prev == GCCause::_shenandoah_concurrent_gc;
 }
 
