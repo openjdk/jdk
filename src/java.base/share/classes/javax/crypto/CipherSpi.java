@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -979,14 +979,15 @@ public abstract class CipherSpi {
      *
      * @throws UnsupportedOperationException if this method has not been
      *          overridden by an implementation
-     * @throws IllegalArgumentException if one of the input arguments is invalid
+     * @throws IllegalArgumentException if one or more of the input arguments
+     *          is invalid
      * @throws IllegalStateException if this {@code Cipher} object is in a wrong
      *          state (e.g., has not been initialized)
      *
      * @implSpec The default implementation throws an
      * {@code UnsupportedOperationException}.
      *
-     * @since 23
+     * @since 25
      */
     protected SecretKey engineExportKey(byte[] context, String algorithm, int length) {
         throw new UnsupportedOperationException(

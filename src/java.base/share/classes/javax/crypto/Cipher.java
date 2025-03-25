@@ -2625,11 +2625,12 @@ public class Cipher {
      *
      * @throws UnsupportedOperationException if the corresponding method in the
      *          {@code CipherSpi} is not supported
-     * @throws IllegalArgumentException if one of the input arguments is invalid
+     * @throws IllegalArgumentException if one or more of the input arguments
+     *          is invalid
      * @throws IllegalStateException if this {@code Cipher} object is in a wrong
      *          state (e.g., has not been initialized)
      *
-     * @since 23
+     * @since 25
      */
     public SecretKey exportKey(byte[] context, String algorithm, int length) {
         chooseFirstProvider();

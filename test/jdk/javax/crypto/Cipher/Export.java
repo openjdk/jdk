@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,12 +48,12 @@ public class Export {
 
         Cipher c1 = newCipher();
         c1.init(Cipher.ENCRYPT_MODE, sk);
-        SecretKey sk11 = c1.export(s2b("hi"), "X", 32);
-        SecretKey sk12 = c1.export(s2b("ho"), "X", 32);
+        SecretKey sk11 = c1.exportKey(s2b("hi"), "X", 32);
+        SecretKey sk12 = c1.exportKey(s2b("ho"), "X", 32);
 
         Cipher c2 = newCipher();
         c2.init(Cipher.ENCRYPT_MODE, sk);
-        SecretKey sk21 = c2.export(s2b("hi"), "X", 32);
+        SecretKey sk21 = c2.exportKey(s2b("hi"), "X", 32);
 
         Asserts.assertEqualsByteArray(sk11.getEncoded(), sk21.getEncoded());
         Asserts.assertNotEqualsByteArray(sk11.getEncoded(), sk12.getEncoded());
@@ -80,7 +80,7 @@ public class Export {
         }
 
         @Override
-        protected SecretKey engineExport(byte[] context, String algorithm, int length) {
+        protected SecretKey engineExportKey(byte[] context, String algorithm, int length) {
             byte[] output = new byte[length];
             for (int i = 0; i < length; i++) {
                 output[i] = (byte)(context[i % context.length] ^ keyBytes[i % keyBytes.length]);
