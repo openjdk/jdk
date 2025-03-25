@@ -263,8 +263,8 @@ final class MacPackagingPipeline {
             AppImageSigner.createSigner(app, codesignConfigBuilder.create()).accept(appImageDir);
         };
 
-        app.signingConfig().flatMap(SigningConfig::keyChain).ifPresentOrElse(keyChain -> {
-            toBiConsumer(TempKeychain::withKeychain).accept(keyChain, unused -> signAction.run());
+        app.signingConfig().flatMap(SigningConfig::keychain).map(Keychain::new).ifPresentOrElse(keychain -> {
+            toBiConsumer(TempKeychain::withKeychain).accept(keychain, unused -> signAction.run());
         }, signAction);
     }
 

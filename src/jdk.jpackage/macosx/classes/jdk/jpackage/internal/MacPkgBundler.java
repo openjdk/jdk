@@ -26,7 +26,6 @@
 package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
-import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
 import static jdk.jpackage.internal.MacApplicationBuilder.isValidBundleIdentifier;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 
@@ -36,6 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.PackagerException;
 
 public class MacPkgBundler extends MacBaseInstallerBundler {
@@ -90,13 +90,13 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         try {
             Objects.requireNonNull(params);
 
-            MacFromParams.PKG_PACKAGE.fetchFrom(params);
+            final var pkgPkg = MacFromParams.PKG_PACKAGE.fetchFrom(params);
 
             // run basic validation to ensure requirements are met
             // we are not interested in return code, only possible exception
             validateAppImageAndBundeler(params);
 
-            String identifier = MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params);
+            String identifier = ((MacApplication)pkgPkg.app()).bundleIdentifier();
             if (identifier == null) {
                 throw new ConfigException(
                         I18N.getString("message.app-image-requires-identifier"),

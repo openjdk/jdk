@@ -99,7 +99,7 @@ record MacDmgPackager(MacDmgPackage pkg, BuildEnv env, Path hdiutil, Path output
 
     // Location of SetFile utility may be different depending on MacOS version
     // We look for several known places and if none of them work will
-    // try ot find it
+    // try to find it
     static Optional<Path> findSetFileUtility() {
         String typicalPaths[] = {"/Developer/Tools/SetFile",
                 "/usr/bin/SetFile", "/Developer/usr/bin/SetFile"};

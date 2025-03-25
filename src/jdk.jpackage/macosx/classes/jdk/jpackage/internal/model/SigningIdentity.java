@@ -23,32 +23,13 @@
  * questions.
  */
 
-package jdk.jpackage.internal;
+package jdk.jpackage.internal.model;
 
-import static jdk.jpackage.internal.CodesignConfig.ADHOC_SIGNING_IDENTIFIER;
-
-import java.util.Objects;
 import java.util.Optional;
-import jdk.jpackage.internal.model.SigningIdentifier;
 
-record SigningIdentifierImpl(String name, Optional<String> prefix) implements SigningIdentifier {
+public interface SigningIdentity {
 
-    SigningIdentifierImpl {
-        Objects.requireNonNull(name);
-        Objects.requireNonNull(prefix);
+    String id();
 
-        if (ADHOC_SIGNING_IDENTIFIER.equals(name)) {
-            throw new IllegalArgumentException("Adhoc signing identifier no allowed");
-        }
-
-        if (name.contains(".") == prefix.isPresent()) {
-            throw new IllegalArgumentException("name and prefix mismatch");
-        }
-
-        prefix.ifPresent(thePrefix -> {
-            if (!thePrefix.endsWith(".")) {
-                throw new IllegalArgumentException("Illegal prefix");
-            }
-        });
-    }
+    Optional<String> prefix();
 }

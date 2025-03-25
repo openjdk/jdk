@@ -28,13 +28,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import jdk.jpackage.internal.model.SigningIdentifier;
 import jdk.jpackage.internal.model.SigningConfig;
+import jdk.jpackage.internal.model.SigningIdentity;
 import jdk.jpackage.internal.util.PathUtils;
 
 
-record CodesignConfig(Optional<SigningIdentifier> identifier,
-        Optional<Path> entitlements, Optional<Path> keyChain) {
+record CodesignConfig(Optional<SigningIdentity> identity,
+        Optional<Path> entitlements, Optional<Keychain> keychain) {
 
     static final class Builder {
 
@@ -42,8 +42,8 @@ record CodesignConfig(Optional<SigningIdentifier> identifier,
         }
 
         CodesignConfig create() {
-            return new CodesignConfig(Optional.ofNullable(identifier),
-                    Optional.ofNullable(entitlements), Optional.ofNullable(keyChain));
+            return new CodesignConfig(Optional.ofNullable(identity),
+                    Optional.ofNullable(entitlements), Optional.ofNullable(keychain));
         }
 
         Builder entitlements(Path v) {
@@ -51,31 +51,35 @@ record CodesignConfig(Optional<SigningIdentifier> identifier,
             return this;
         }
 
-        Builder identifier(SigningIdentifier v) {
-            identifier = v;
+        Builder identity(SigningIdentity v) {
+            identity = v;
             return this;
         }
 
-        Builder keyChain(Path v) {
-            keyChain = v;
+        Builder keychain(String v) {
+            return keychain(new Keychain(v));
+        }
+
+        Builder keychain(Keychain v) {
+            keychain = v;
             return this;
         }
 
         Builder from(SigningConfig v) {
-            return identifier(v.identifier().orElse(null))
+            return identity(v.identity().orElse(null))
                     .entitlements(v.entitlements().orElse(null))
-                    .keyChain(v.keyChain().orElse(null));
+                    .keychain(v.keychain().orElse(null));
         }
 
         Builder from(CodesignConfig v) {
-            return identifier(v.identifier().orElse(null))
+            return identity(v.identity().orElse(null))
                     .entitlements(v.entitlements().orElse(null))
-                    .keyChain(v.keyChain().orElse(null));
+                    .keychain(v.keychain().orElse(null));
         }
 
-        private SigningIdentifier identifier;
+        private SigningIdentity identity;
         private Path entitlements;
-        private Path keyChain;
+        private Keychain keychain;
     }
 
     static Builder build() {
@@ -83,19 +87,19 @@ record CodesignConfig(Optional<SigningIdentifier> identifier,
     }
 
     List<String> toCodesignArgs() {
-        List<String> args = new ArrayList<>(List.of("-s", identifier.map(SigningIdentifier::name).orElse(ADHOC_SIGNING_IDENTIFIER), "-vvvv"));
+        List<String> args = new ArrayList<>(List.of("-s", identity.map(SigningIdentity::id).orElse(ADHOC_SIGNING_IDENTITY), "-vvvv"));
 
-        if (identifier.isPresent()) {
+        if (identity.isPresent()) {
             args.addAll(List.of("--timestamp", "--options", "runtime"));
-            identifier.flatMap(SigningIdentifier::prefix).ifPresent(identifierPrefix -> {
+            identity.flatMap(SigningIdentity::prefix).ifPresent(identifierPrefix -> {
                 args.addAll(List.of("--prefix", identifierPrefix));
             });
-            keyChain.map(PathUtils::normalizedAbsolutePathString).ifPresent(theKeyChain -> args.addAll(List.of("--keychain", theKeyChain)));
-            entitlements.map(PathUtils::normalizedAbsolutePathString).ifPresent(theEntitlements -> args.addAll(List.of("--entitlements", theEntitlements)));
+            keychain.map(Keychain::asCliArg).ifPresent(k -> args.addAll(List.of("--keychain", k)));
+            entitlements.map(PathUtils::normalizedAbsolutePathString).ifPresent(e -> args.addAll(List.of("--entitlements", e)));
         }
 
         return args;
     }
 
-    static final String ADHOC_SIGNING_IDENTIFIER = "-";
+    static final String ADHOC_SIGNING_IDENTITY = "-";
 }

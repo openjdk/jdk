@@ -54,7 +54,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import jdk.jpackage.internal.SigningConfigBuilder.CertificateNameFilter;
+import jdk.jpackage.internal.SigningConfigBuilder.StandardCertificateSelector;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.Launcher;
@@ -113,15 +113,15 @@ final class MacFromParams {
 
         if (sign) {
             final var signingBuilder = new SigningConfigBuilder();
-            app.mainLauncher().flatMap(Launcher::startupInfo).ifPresent(signingBuilder::signingIdentifierPrefix);
-            BUNDLE_ID_SIGNING_PREFIX.copyInto(params, signingBuilder::signingIdentifierPrefix);
-            SIGNING_KEYCHAIN.copyInto(params, v -> signingBuilder.keyChain(Path.of(v)));
+            app.mainLauncher().flatMap(Launcher::startupInfo).ifPresent(signingBuilder::signingIdentityPrefix);
+            BUNDLE_ID_SIGNING_PREFIX.copyInto(params, signingBuilder::signingIdentityPrefix);
+            SIGNING_KEYCHAIN.copyInto(params, signingBuilder::keychain);
             ENTITLEMENTS.copyInto(params, signingBuilder::entitlements);
-            APP_IMAGE_SIGN_IDENTITY.copyInto(params, signingBuilder::signingIdentifier);
+            APP_IMAGE_SIGN_IDENTITY.copyInto(params, signingBuilder::signingIdentity);
 
-            final var certificateNameFilter = appStore ? CertificateNameFilter.APP_STORE_APP_IMAGE : CertificateNameFilter.APP_IMAGE;
+            final var filter = appStore ? StandardCertificateSelector.APP_STORE_APP_IMAGE : StandardCertificateSelector.APP_IMAGE;
 
-            signingBuilder.addCertificateNameFilters(certificateNameFilter.getFilters(SIGNING_KEY_USER.findIn(params)));
+            signingBuilder.addCertificateSelectors(StandardCertificateSelector.create(SIGNING_KEY_USER.findIn(params), filter));
 
             appBuilder.signingBuilder(signingBuilder);
         }

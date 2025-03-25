@@ -29,7 +29,7 @@ import jdk.jpackage.internal.util.CompositeProxy;
 public interface MacPkgPackage extends MacPackage, MacPkgPackageMixin {
 
     default boolean sign() {
-        return signingConfig().flatMap(SigningConfig::identifier).isPresent();
+        return signingConfig().flatMap(SigningConfig::identity).isPresent();
     }
 
     public static MacPkgPackage create(MacPackage pkg, MacPkgPackageMixin mixin) {

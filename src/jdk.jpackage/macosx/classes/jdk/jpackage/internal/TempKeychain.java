@@ -27,60 +27,43 @@ package jdk.jpackage.internal;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Predicate;
 import jdk.internal.util.OSVersion;
-import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
 final class TempKeychain implements Closeable {
 
-    static void withKeychain(Path keyChain, ThrowingConsumer<Path> keyChainConsumer) throws Throwable {
-        Objects.requireNonNull(keyChain);
+    static void withKeychain(Keychain keychain, ThrowingConsumer<Keychain> keychainConsumer) throws Throwable {
+        Objects.requireNonNull(keychain);
         if (OSVersion.current().compareTo(new OSVersion(10, 12)) < 0) {
             // we need this for OS X 10.12+
-            try (var tempKeychain = new TempKeychain(keyChain)) {
-                keyChainConsumer.accept(tempKeychain.keyChain());
+            try (var tempKeychain = new TempKeychain(keychain)) {
+                keychainConsumer.accept(tempKeychain.keychain);
             }
         } else {
-            keyChainConsumer.accept(PathUtils.normalizedAbsolutePath(keyChain));
+            keychainConsumer.accept(keychain);
         }
     }
 
-    TempKeychain(Path keyChain) throws IOException {
-        this.keyChain = PathUtils.normalizedAbsolutePath(keyChain);
+    TempKeychain(Keychain keychain) throws IOException {
+        this.keychain = Objects.requireNonNull(keychain);
 
-        // Get the current keychain list
-        final List<String> cmdOutput;
-        try {
-            cmdOutput = Executor.of("/usr/bin/security", "list-keychains").saveOutput(true).executeExpectSuccess().getOutput();
-        } catch (IOException ex) {
-            throw I18N.buildException().message("message.keychain.error").cause(ex).create(IOException::new); // FIXME: should be PackagerException
-        }
+        final var currentKeychains = Keychain.listKeychains();
 
-        // Typical output of /usr/bin/security command is:
-        //        "/Users/foo/Library/Keychains/login.keychain-db"
-        //        "/Library/Keychains/System.keychain"
-        final var origKeychains = cmdOutput.stream().map(String::trim).map(str -> {
-            // Strip enclosing double quotes
-            return str.substring(1, str.length() - 1);
-        }).toList();
-
-        final var keychainMissing = origKeychains.stream().map(Path::of).filter(Predicate.isEqual(keyChain)).findAny().isEmpty();
+        final var keychainMissing = currentKeychains.stream().map(Keychain::path).filter(Predicate.isEqual(keychain.path())).findAny().isEmpty();
         if (keychainMissing) {
             List<String> args = new ArrayList<>();
             args.add("/usr/bin/security");
             args.add("list-keychains");
             args.add("-s");
-            args.addAll(origKeychains);
+            args.addAll(currentKeychains.stream().map(Keychain::name).toList());
 
             restoreKeychainsCmd = List.copyOf(args);
 
-            args.add(keyChain.toString());
+            args.add(keychain.asCliArg());
 
             Executor.of(args.toArray(String[]::new)).executeExpectSuccess();
         } else {
@@ -88,8 +71,8 @@ final class TempKeychain implements Closeable {
         }
     }
 
-    Path keyChain() {
-        return keyChain;
+    Keychain keychain() {
+        return keychain;
     }
 
     @Override
@@ -99,6 +82,6 @@ final class TempKeychain implements Closeable {
         }
     }
 
-    private final Path keyChain;
+    private final Keychain keychain;
     private final List<String> restoreKeychainsCmd;
 }

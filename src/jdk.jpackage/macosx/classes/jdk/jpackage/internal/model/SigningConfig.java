@@ -30,15 +30,15 @@ import java.util.Optional;
 
 public interface SigningConfig {
 
-    Optional<SigningIdentifier> identifier();
+    Optional<SigningIdentity> identity();
 
     Optional<Path> entitlements();
 
     String entitlementsResourceName();
 
-    Optional<Path> keyChain();
+    Optional<String> keychain();
 
-    record Stub(Optional<SigningIdentifier> identifier, Optional<Path> entitlements,
-            Optional<Path> keyChain, String entitlementsResourceName) implements SigningConfig {
+    record Stub(Optional<SigningIdentity> identity, Optional<Path> entitlements,
+            Optional<String> keychain, String entitlementsResourceName) implements SigningConfig {
     }
 }

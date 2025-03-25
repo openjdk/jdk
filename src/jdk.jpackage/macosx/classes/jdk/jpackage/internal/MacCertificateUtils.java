@@ -25,52 +25,78 @@
 
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.util.CollectionUtils.toCollectionUBW;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.security.cert.Certificate;
+import java.security.MessageDigest;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import jdk.jpackage.internal.util.PathUtils;
 
 public final class MacCertificateUtils {
 
-    public static Collection<? extends Certificate> findCertificates(Optional<Path> keychain, Optional<String> certificateNameFilter) {
+    public static Collection<X509Certificate> findCertificates(Optional<Keychain> keychain, Optional<String> certificateNameFilter) {
         List<String> args = new ArrayList<>();
         args.add("/usr/bin/security");
         args.add("find-certificate");
         args.add("-a");
         certificateNameFilter.ifPresent(filter -> args.addAll(List.of("-c", filter)));
         args.add("-p"); // PEM format
-        keychain.map(PathUtils::normalizedAbsolutePathString).ifPresent(args::add);
+        keychain.map(Keychain::asCliArg).ifPresent(args::add);
 
-        return toSupplier(() -> {
+        return toCollectionUBW(toSupplier(() -> {
             final var output = Executor.of(args.toArray(String[]::new))
                     .setQuiet(true).saveOutput(true).executeExpectSuccess()
                     .getOutput();
 
             final byte[] pemCertificatesBuffer = output.stream()
                     .reduce(new StringBuilder(),
-                            StringBuilder::append,
-                            StringBuilder::append).toString().getBytes(StandardCharsets.US_ASCII);
+                            MacCertificateUtils::append,
+                            MacCertificateUtils::append).toString().getBytes(StandardCharsets.US_ASCII);
 
             try (var in = new ByteArrayInputStream(pemCertificatesBuffer)) {
                 final var cf = CertificateFactory.getInstance("X.509");
                 return cf.generateCertificates(in);
             }
-        }).get();
+        }).get());
     }
 
-    public static Collection<X509Certificate> filterX509Certificates(Collection<? extends Certificate> certs) {
-        return certs.stream()
-                .filter(X509Certificate.class::isInstance)
-                .map(X509Certificate.class::cast)
-                .toList();
+    record CertificateHash(byte[] value) {
+        CertificateHash {
+            Objects.requireNonNull(value);
+            if (value.length != 20) {
+                throw new IllegalArgumentException("Invalid SHA-1 hash");
+            }
+        }
+
+        static CertificateHash of(X509Certificate cert) {
+            return new CertificateHash(toSupplier(() -> {
+                final MessageDigest md = MessageDigest.getInstance("SHA-1");
+                md.update(cert.getEncoded());
+                return md.digest();
+            }).get());
+        }
+
+        @Override
+        public String toString() {
+            return FORMAT.formatHex(value);
+        }
+
+        static CertificateHash fromHexString(String hash) {
+            return new CertificateHash(FORMAT.parseHex(hash));
+        }
+
+        private static final HexFormat FORMAT = HexFormat.of().withUpperCase();
+    }
+
+    private static StringBuilder append(StringBuilder sb, Object v) {
+        return sb.append(v).append('\n');
     }
 }

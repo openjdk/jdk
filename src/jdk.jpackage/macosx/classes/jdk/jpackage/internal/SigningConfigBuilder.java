@@ -24,8 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import static java.util.stream.Collectors.toMap;
-import static jdk.jpackage.internal.MacCertificateUtils.filterX509Certificates;
 import static jdk.jpackage.internal.MacCertificateUtils.findCertificates;
 
 import java.nio.file.Path;
@@ -33,48 +31,52 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
 import javax.security.auth.x500.X500Principal;
+import jdk.jpackage.internal.MacCertificateUtils.CertificateHash;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
 import jdk.jpackage.internal.model.SigningConfig;
-import jdk.jpackage.internal.model.SigningIdentifier;
+import jdk.jpackage.internal.model.SigningIdentity;
 
 final class SigningConfigBuilder {
 
-    SigningConfigBuilder signingIdentifier(String v) {
-        signingIdentifier = v;
+    SigningConfigBuilder signingIdentity(String v) {
+        signingIdentity = v;
         return this;
     }
 
-    SigningConfigBuilder signingIdentifierPrefix(LauncherStartupInfo mainLauncherStartupInfo) {
+    SigningConfigBuilder signingIdentityPrefix(LauncherStartupInfo mainLauncherStartupInfo) {
         final var pkgName = mainLauncherStartupInfo.packageName();
         if (!pkgName.isEmpty()) {
-            signingIdentifierPrefix(pkgName + ".");
+            signingIdentityPrefix(pkgName + ".");
         }
         return this;
     }
 
-    SigningConfigBuilder signingIdentifierPrefix(String v) {
-        signingIdentifierPrefix = v;
+    SigningConfigBuilder signingIdentityPrefix(String v) {
+        signingIdentityPrefix = v;
         return this;
     }
 
-    SigningConfigBuilder addCertificateNameFilters(String ...certificateNameFilters) {
-        return addCertificateNameFilters(List.of(certificateNameFilters));
+    SigningConfigBuilder addCertificateSelectors(CertificateSelector ...v) {
+        return addCertificateSelectors(List.of(v));
     }
 
-    SigningConfigBuilder addCertificateNameFilters(Collection<String> certificateNameFilters) {
-        this.certificateNameFilters.addAll(certificateNameFilters);
+    SigningConfigBuilder addCertificateSelectors(Collection<CertificateSelector> v) {
+        certificateSelectors.addAll(v);
         return this;
     }
 
-    SigningConfigBuilder keyChain(Path v) {
-        keyChain = v;
+    SigningConfigBuilder keychain(String v) {
+        keychain = v;
         return this;
     }
 
@@ -84,99 +86,175 @@ final class SigningConfigBuilder {
     }
 
     SigningConfig create() throws ConfigException {
-        return new SigningConfig.Stub(validatedSigningIdentifier(), validatedEntitlements(),
-                validatedKeyChain(), "sandbox.plist");
+        return new SigningConfig.Stub(validatedSigningIdentity(), validatedEntitlements(),
+                validatedKeychain().map(Keychain::name), "sandbox.plist");
     }
 
     private Optional<Path> validatedEntitlements() throws ConfigException {
         return Optional.ofNullable(entitlements);
     }
 
-    private Optional<Path> validatedKeyChain() throws ConfigException {
-        return Optional.ofNullable(keyChain);
+    private Optional<Keychain> validatedKeychain() throws ConfigException {
+        return Optional.ofNullable(keychain).map(Keychain::new);
     }
 
-    private Optional<SigningIdentifier> validatedSigningIdentifier() throws ConfigException {
-        if (signingIdentifier != null) {
-            return Optional.of(new SigningIdentifierImpl(signingIdentifier, Optional.ofNullable(signingIdentifierPrefix)));
-        }
-
-        final var validatedKeyChain = validatedKeyChain();
-
-        final var signingIdentifierMap = certificateNameFilters.stream().collect(toMap(x -> x, certificateNameFilter -> {
-            return filterX509Certificates(findCertificates(validatedKeyChain, Optional.of(certificateNameFilter))).stream()
-                    .map(SigningConfigBuilder::findSubjectCN)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get).toList();
-        }));
-
-        for (var certificateNameFilter : certificateNameFilters) {
-            final var signingIdentifiers = signingIdentifierMap.get(certificateNameFilter);
-            switch (signingIdentifiers.size()) {
-                case 0 -> {
-                    throw I18N.buildConfigException("error.explicit-sign-no-cert")
-                            .advice("error.explicit-sign-no-cert.advice").create();
-                }
-                case 1 -> {
-                    return Optional.of(new SigningIdentifierImpl(signingIdentifiers.get(0),
-                            Optional.ofNullable(signingIdentifierPrefix)));
-                }
-                default -> {
-                    // Multiple certificates matching the same criteria found
-                    // FIXME: warn the user?
-                    break;
-                }
+    private Optional<SigningIdentity> validatedSigningIdentity() throws ConfigException {
+        CertificateHash signingIdentityHash = null;
+        if (signingIdentity != null) {
+            try {
+                signingIdentityHash = CertificateHash.fromHexString(signingIdentity);
+            } catch (Throwable t) {
+                // Not a valid certificate hash
             }
         }
 
-        throw I18N.buildConfigException("error.cert.not.found", validatedKeyChain).create();
+        final var validatedKeychain = validatedKeychain();
+
+        final var allCertificates = findCertificates(validatedKeychain, Optional.empty());
+
+        if (signingIdentityHash != null) {
+            if (allCertificates.stream().map(CertificateHash::of).anyMatch(Predicate.isEqual(signingIdentityHash))) {
+                return Optional.of(new SigningIdentityImpl(signingIdentityHash.toString(),
+                        Optional.ofNullable(signingIdentityPrefix)));
+            } else {
+                throw I18N.buildConfigException("error.cert.not.found", validatedKeychain.map(Keychain::name).orElse("")).create();
+            }
+        }
+
+        final var mappedCertficates = allCertificates.stream().<Map.Entry<String, X509Certificate>>mapMulti((cert, acc) -> {
+            findSubjectCNs(cert).stream().map(cn -> {
+                return Map.entry(cn, cert);
+            }).forEach(acc::accept);
+        }).toList();
+
+        final var resolvedCertificateSelectors = certificateSelectors.stream().map(CertificateSelector::fullName).toList();
+
+        var matchingCertificates = mappedCertficates.stream().filter(e -> {
+            return resolvedCertificateSelectors.contains(e.getKey());
+        }).map(Map.Entry::getValue).toList();
+
+        if (!matchingCertificates.isEmpty()) {
+            signingIdentityHash = selectSigningIdentity(matchingCertificates, certificateSelectors, validatedKeychain);
+        } else {
+            matchingCertificates = mappedCertficates.stream().filter(e -> {
+                return resolvedCertificateSelectors.stream().anyMatch(filter -> {
+                    return filter.startsWith(e.getKey());
+                });
+            }).map(Map.Entry::getValue).toList();
+            signingIdentityHash = selectSigningIdentity(matchingCertificates, certificateSelectors, validatedKeychain);
+        }
+
+        return Optional.of(new SigningIdentityImpl(signingIdentityHash.toString(),
+                Optional.ofNullable(signingIdentityPrefix)));
     }
 
-    private static Optional<String> findSubjectCN(X509Certificate cert) {
+    private static CertificateHash selectSigningIdentity(List<X509Certificate> certs,
+            List<CertificateSelector> certificateSelectors, Optional<Keychain> keychain) throws ConfigException {
+        switch (certs.size()) {
+            case 0 -> {
+                throw I18N.buildConfigException("error.explicit-sign-no-cert")
+                        .advice("error.explicit-sign-no-cert.advice").create();
+            }
+            case 1 -> {
+                return CertificateHash.of(certs.getFirst());
+            }
+            default -> {
+                Log.error(I18N.format("error.multiple.certs.found",
+                        certificateSelectors.getFirst().team().orElse(""), keychain.map(Keychain::name).orElse("")));
+                return CertificateHash.of(certs.getFirst());
+            }
+        }
+    }
+
+    private static List<String> findSubjectCNs(X509Certificate cert) {
         final LdapName ldapName;
         try {
             ldapName = new LdapName(cert.getSubjectX500Principal().getName(X500Principal.RFC2253));
         } catch (InvalidNameException e) {
-            return Optional.empty();
+            return List.of();
         }
 
         return ldapName.getRdns().stream().filter(rdn -> {
             return rdn.getType().equalsIgnoreCase("CN");
-        }).map(Rdn::getValue).map(Object::toString).findFirst();
+        }).map(Rdn::getValue).map(Object::toString).toList();
     }
 
-    enum CertificateNameFilter {
-        APP_IMAGE("3rd Party Mac Developer Application: "),
-        PKG_INSTALLER("3rd Party Mac Developer Installer: "),
-        APP_STORE_APP_IMAGE("3rd Party Mac Developer Application: ", "Developer ID Application: "),
-        APP_STORE_PKG_INSTALLER("3rd Party Mac Developer Installer: ", "Developer ID Installer: ");
-
-        CertificateNameFilter(String ... prefixes) {
-            filters = List.of(prefixes);
+    record CertificateSelector(StandardCertificatePrefix prefix, Optional<String> team) {
+        CertificateSelector {
+            Objects.requireNonNull(prefix);
+            Objects.requireNonNull(team);
+            team.ifPresent(v -> {
+                if (v.isEmpty()) {
+                    throw new IllegalArgumentException();
+                }
+            });
         }
 
-        List<String> getFilters(Optional<String> certificateNameFilter) {
-            if (certificateNameFilter.map(CertificateNameFilter::useAsIs).orElse(false)) {
-                return List.of(certificateNameFilter.orElseThrow());
-            } else  {
-                return certificateNameFilter.map(filter -> {
-                    return filters.stream().map(stdFilter -> {
-                        return stdFilter + filter;
-                    }).toList();
-                }).orElse(filters);
-            }
+        CertificateSelector(StandardCertificatePrefix prefix) {
+            this(prefix, Optional.empty());
         }
 
-        private static boolean useAsIs(String certificateNameFilter) {
-            return Stream.of("3rd Party Mac", "Developer ID").noneMatch(certificateNameFilter::startsWith);
+        static Optional<CertificateSelector> createFromFullName(String fullName) {
+            Objects.requireNonNull(fullName);
+            return Stream.of(StandardCertificatePrefix.values()).map(CertificateSelector::new).filter(selector -> {
+                return fullName.startsWith(selector.fullName());
+            }).reduce((x, y) -> {
+                throw new UnsupportedOperationException();
+            }).map(selector -> {
+                final var team = fullName.substring(selector.fullName().length());
+                return new CertificateSelector(selector.prefix, team.isEmpty() ? Optional.empty() : Optional.of(team));
+            });
         }
 
-        private final List<String> filters;
+        String fullName() {
+            final var sb = new StringBuilder();
+            sb.append(prefix.value()).append(": ");
+            team.ifPresent(sb::append);
+            return sb.toString();
+        }
     }
 
-    private String signingIdentifier;
-    private String signingIdentifierPrefix;
-    private List<String> certificateNameFilters = new ArrayList<>();
-    private Path keyChain;
+    enum StandardCertificatePrefix {
+        APP_SIGN_APP_STORE("3rd Party Mac Developer Application"),
+        INSTALLER_SIGN_APP_STORE("3rd Party Mac Developer Installer"),
+        APP_SIGN_PERSONAL("Developer ID Application"),
+        INSTALLER_SIGN_PERSONAL("Developer ID Installer");
+
+        StandardCertificatePrefix(String value) {
+            this.value = value;
+        }
+
+        String value() {
+            return value;
+        }
+
+        private final String value;
+    }
+
+    enum StandardCertificateSelector {
+        APP_IMAGE(StandardCertificatePrefix.APP_SIGN_PERSONAL),
+        PKG_INSTALLER(StandardCertificatePrefix.INSTALLER_SIGN_PERSONAL),
+        APP_STORE_APP_IMAGE(StandardCertificatePrefix.APP_SIGN_PERSONAL, StandardCertificatePrefix.APP_SIGN_APP_STORE),
+        APP_STORE_PKG_INSTALLER(StandardCertificatePrefix.INSTALLER_SIGN_PERSONAL, StandardCertificatePrefix.INSTALLER_SIGN_APP_STORE);
+
+        StandardCertificateSelector(StandardCertificatePrefix ... prefixes) {
+            this.prefixes = List.of(prefixes);
+        }
+
+        static List<CertificateSelector> create(Optional<String> certificateName, StandardCertificateSelector defaultSelector) {
+            return certificateName.flatMap(CertificateSelector::createFromFullName).map(List::of).orElseGet(() -> {
+                return defaultSelector.prefixes.stream().map(prefix -> {
+                    return new CertificateSelector(prefix, certificateName);
+                }).toList();
+            });
+        }
+
+        private final List<StandardCertificatePrefix> prefixes;
+    }
+
+    private String signingIdentity;
+    private String signingIdentityPrefix;
+    private List<CertificateSelector> certificateSelectors = new ArrayList<>();
+    private String keychain;
     private Path entitlements;
 }

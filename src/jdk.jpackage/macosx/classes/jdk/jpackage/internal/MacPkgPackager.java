@@ -529,11 +529,11 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
             final var pkgSigningConfig = pkg.signingConfig().orElseThrow();
 
             commandLine.add("--sign");
-            commandLine.add(pkgSigningConfig.identifier().orElseThrow().name());
+            commandLine.add(pkgSigningConfig.identity().orElseThrow().id());
 
-            pkgSigningConfig.keyChain().ifPresent(keyChain -> {
+            pkgSigningConfig.keychain().map(Keychain::new).ifPresent(keychain -> {
                 commandLine.add("--keychain");
-                commandLine.add(keyChain.toString());
+                commandLine.add(keychain.asCliArg());
             });
         }
 
