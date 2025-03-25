@@ -24,7 +24,7 @@
  */
 
 #include "memory/metaspace.hpp"
-#include "os_linux_ppc.inline.hpp"
+#include "os_linux.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 
