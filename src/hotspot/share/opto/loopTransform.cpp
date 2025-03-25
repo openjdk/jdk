@@ -3429,10 +3429,15 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
         return false;
       }
 
-      // We are going to add pre-loop and post-loop.
-      // But should we also multi-version for auto-vectorization speculative
-      // checks, i.e. fast and slow-paths?
-      phase->maybe_multiversion_for_auto_vectorization_runtime_checks(this, old_new);
+      if (!peel_only) {
+        // We are going to add pre-loop and post-loop (PreMainPost).
+        // But should we also multiversion for auto-vectorization speculative
+        // checks, i.e. fast and slow-paths?
+        // Note: Just PeelMainPost is not sufficient, as we could never find the
+        //       multiversion_if again from the main loop: we need a nicely structured
+        //       pre-loop, a peeled iteration cannot easily be parsed through.
+        phase->maybe_multiversion_for_auto_vectorization_runtime_checks(this, old_new);
+      }
 
       phase->insert_pre_post_loops(this, old_new, peel_only);
     }
