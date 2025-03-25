@@ -1160,7 +1160,6 @@ public class HtmlTree extends Content {
     /**
      * {@return an HTML {@code IMG} element}
      */
-
     public static HtmlTree IMG(DocPath src, String alt) {
         return new HtmlTree(HtmlTag.IMG)
                 .put(HtmlAttr.SRC, src.getPath())
