@@ -23,10 +23,11 @@
 
 /*
  * @test
+ * @bug 8344942
  * @summary Test simple use of Templates with the Compile Framework.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver template_framework.examples.TestSimple
+ * @run main template_framework.examples.TestSimple
  */
 
 package template_framework.examples;

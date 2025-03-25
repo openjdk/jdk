@@ -23,12 +23,13 @@
 
 /*
  * @test
+ * @bug 8344942
  * @summary Test some basic Template instantiations. We do not necessarily generate correct
  *          java code, we just test that the code generation deterministically creates the
  *          expected String.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver template_framework.tests.TestTemplate
+ * @run main template_framework.tests.TestTemplate
  */
 
 package template_framework.tests;

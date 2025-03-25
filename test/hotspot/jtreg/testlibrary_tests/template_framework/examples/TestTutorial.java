@@ -23,11 +23,12 @@
 
 /*
  * @test
+ * @bug 8344942
  * @summary Demonstrate the use of Templates with the Compile Framework.
  *          It displays the use of most features in the Template Framework.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver template_framework.examples.TestTutorial
+ * @run main template_framework.examples.TestTutorial
  */
 
 package template_framework.examples;

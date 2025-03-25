@@ -23,10 +23,11 @@
 
 /*
  * @test
+ * @bug 8344942
  * @summary Test formatting of Integer, Long, Float and Double.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver template_framework.tests.TestFormat
+ * @run main template_framework.tests.TestFormat
  */
 
 package template_framework.tests;
