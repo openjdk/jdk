@@ -668,7 +668,11 @@ void SafepointSynchronize::print_safepoint_timeout() {
 // Implementation of ThreadSafepointState
 
 ThreadSafepointState::ThreadSafepointState(JavaThread *thread)
-  : _at_poll_safepoint(false), _thread(thread), _safepoint_safe(false),
+  :
+#ifdef ASSERT
+    _at_poll_safepoint(false),
+#endif
+    _thread(thread), _safepoint_safe(false),
     _safepoint_id(SafepointSynchronize::InactiveSafepointCounter), _next(nullptr) {
 }
 
@@ -744,9 +748,14 @@ void ThreadSafepointState::restart() {
 void ThreadSafepointState::print_on(outputStream *st) const {
   const char *s = _safepoint_safe ? "_at_safepoint" : "_running";
 
+#ifdef ASSERT
   st->print_cr("Thread: " INTPTR_FORMAT
               "  [0x%2x] State: %s _at_poll_safepoint %d",
                p2i(_thread), _thread->osthread()->thread_id(), s, _at_poll_safepoint);
+#else
+  st->print_cr("Thread: " INTPTR_FORMAT "  [0x%2x] State: %s",
+               p2i(_thread), _thread->osthread()->thread_id(), s);
+#endif
 
   _thread->print_thread_state_on(st);
 }
@@ -818,7 +827,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
     // verify the blob built the "return address" correctly
     assert(real_return_addr == caller_fr.pc(), "must match");
 
-    set_at_poll_safepoint(true);
+    DEBUG_ONLY(set_at_poll_safepoint(true);)
     // Process pending operation
     // We never deliver an async exception at a polling point as the
     // compiler may not have an exception handler for it (polling at
@@ -828,7 +837,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
     // during deoptimization are clobbered by the exception path. The
     // exception will just be delivered once we get into the interpreter.
     SafepointMechanism::process_if_requested_with_exit_check(self, false /* check asyncs */);
-    set_at_poll_safepoint(false);
+    DEBUG_ONLY(set_at_poll_safepoint(false);)
 
     if (self->has_async_exception_condition()) {
       Deoptimization::deoptimize_frame(self, caller_fr.id());
