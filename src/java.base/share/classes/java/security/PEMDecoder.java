@@ -55,7 +55,7 @@ import java.util.Objects;
  *     X509 CERTIFICATE, X509 CRL, and ENCRYPTED PRIVATE KEY.
  * </pre>
  *
- * A specified return class must extend {@link DEREncodable} and be an
+ * A specified return class must implement {@link DEREncodable} and be an
  * appropriate JCE object class for the PEM; otherwise an
  * {@link IllegalArgumentException} is thrown.
  *
@@ -78,7 +78,7 @@ import java.util.Objects;
  * {@link java.nio.charset.StandardCharsets#ISO_8859_1 ISO-8859-1}
  *
  * @apiNote
- * Here is an example of encoding a PrivateKey object:
+ * Here is an example of decoding a PrivateKey object:
  * <pre>
  *     PEMDecoder pd = PEMDecoder.of();
  *     PrivateKey priKey = pd.decode(PriKeyPEM);
@@ -140,19 +140,17 @@ public final class PEMDecoder {
                 }
                 case Pem.PRIVATE_KEY -> {
                     PKCS8Key p8key = new PKCS8Key(decoder.decode(pem.pem()));
-                    KeyFactory kf = getKeyFactory(p8key.getAlgorithm());
-                    DEREncodable d;
-
-                    d = kf.generatePrivate(
-                        new PKCS8EncodedKeySpec(p8key.getEncoded(),
-                            p8key.getAlgorithm()));
+                    String algo = p8key.getAlgorithm();
+                    KeyFactory kf = getKeyFactory(algo);
+                    DEREncodable d = kf.generatePrivate(
+                        new PKCS8EncodedKeySpec(p8key.getEncoded(), algo));
 
                     // Look for a public key inside the pkcs8 encoding.
                     if (p8key.getPubKeyEncoded() != null) {
                         // Check if this is a OneAsymmetricKey encoding
                         X509EncodedKeySpec spec = new X509EncodedKeySpec(
-                            p8key.getPubKeyEncoded(), p8key.getAlgorithm());
-                        yield new KeyPair(getKeyFactory(p8key.getAlgorithm()).
+                            p8key.getPubKeyEncoded(), algo);
+                        yield new KeyPair(getKeyFactory(algo).
                             generatePublic(spec), (PrivateKey) d);
 
                     } else if (d instanceof PKCS8Key p8 &&
@@ -161,8 +159,8 @@ public final class PEMDecoder {
                         // encodings, look for the public key again.  This
                         // happens with EC and SEC1-v2 encoding
                         X509EncodedKeySpec spec = new X509EncodedKeySpec(
-                            p8.getPubKeyEncoded(), p8.getAlgorithm());
-                        yield new KeyPair(getKeyFactory(p8.getAlgorithm()).
+                            p8.getPubKeyEncoded(), algo);
+                        yield new KeyPair(getKeyFactory(algo).
                             generatePublic(spec), p8);
                     } else {
                         // No public key, return the private key.
@@ -171,7 +169,8 @@ public final class PEMDecoder {
                 }
                 case Pem.ENCRYPTED_PRIVATE_KEY -> {
                     if (password == null) {
-                        yield new EncryptedPrivateKeyInfo(decoder.decode(pem.pem()));
+                        yield new EncryptedPrivateKeyInfo(decoder.decode(
+                            pem.pem()));
                     }
                     yield new EncryptedPrivateKeyInfo(decoder.decode(pem.pem())).
                         getKey(password.getPassword());
@@ -189,7 +188,8 @@ public final class PEMDecoder {
                 case Pem.RSA_PRIVATE_KEY -> {
                     KeyFactory kf = getKeyFactory("RSA");
                     yield kf.generatePrivate(
-                        RSAPrivateCrtKeyImpl.getKeySpec(decoder.decode(pem.pem())));
+                        RSAPrivateCrtKeyImpl.getKeySpec(decoder.decode(
+                            pem.pem())));
                 }
                 default -> pem;
             };
@@ -296,7 +296,6 @@ public final class PEMDecoder {
         PEMRecord pem = Pem.readPEM(is);
 
         if (tClass.isAssignableFrom(PEMRecord.class)) {
-        //if (PEMRecord.class.isInstance(tClass)) {
             return tClass.cast(pem);
         }
         DEREncodable so = decode(pem);

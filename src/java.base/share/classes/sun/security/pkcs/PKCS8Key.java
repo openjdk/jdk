@@ -40,7 +40,7 @@ import java.util.Optional;
 
 /**
  * Holds a PKCS#8 key, for example a private key
- * <p>
+ *
  * According to https://tools.ietf.org/html/rfc5958:
  *
  *     OneAsymmetricKey ::= SEQUENCE {
@@ -52,8 +52,8 @@ import java.util.Optional;
  *        [[2: publicKey        [1] PublicKey OPTIONAL ]],
  *        ...
  *      }
- * <p>
- * We support this format but do not parse attributes and publicKey now.
+ *
+ * We support this format but do not parse attributes.
  */
 public class PKCS8Key implements PrivateKey, InternalPrivateKey {
 
@@ -202,9 +202,9 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
         throws InvalidKeyException {
         try {
             PKCS8Key rawKey = new PKCS8Key(encoded);
-            byte[] internal = rawKey.generateEncoding();
+
             PKCS8EncodedKeySpec pkcs8KeySpec =
-                new PKCS8EncodedKeySpec(internal);
+                new PKCS8EncodedKeySpec(rawKey.generateEncoding());
             PrivateKey result = null;
             try {
                 if (provider == null) {

@@ -47,8 +47,6 @@ import java.nio.charset.StandardCharsets;
  *
  * During the instantiation of this record, there is no validation for the
  * {@code type} or {@code pem}.
- * There is no validity checking for {@code type} or {@code pem} during
- * instantiation of this record.
  *
  * @param type The type identifier in the PEM header.  For a public key,
  * {@code type} would be "PUBLIC KEY".

@@ -229,7 +229,7 @@ public final class ECKeyFactory extends KeyFactorySpi {
 
         } else if (keySpec instanceof PKCS8EncodedKeySpec p8) {
             PKCS8Key p8key = new ECPrivateKeyImpl(p8.getEncoded());
-            if (p8key.hasPublicKey()) {
+            if (!p8key.hasPublicKey()) {
                 throw new InvalidKeySpecException("No public key found.");
             }
             return new ECPublicKeyImpl(p8key.getPubKeyEncoded());
