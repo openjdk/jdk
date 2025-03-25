@@ -176,7 +176,7 @@ public final class StreamFrame extends QuicFrame {
         int pos = dest.position();
         encodeVLField(dest, getTypeField(), "type");
         encodeVLField(dest, streamID, "streamID");
-        if (offset != 0) {
+        if (typeFieldHasOFF) {
             encodeVLField(dest, offset, "offset");
         }
         if (hasLength()) {
