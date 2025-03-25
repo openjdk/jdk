@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -68,17 +68,17 @@ AC_DEFUN_ONCE([LIB_SETUP_STD_LIBS],
     if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno ; then
       AC_MSG_RESULT([dynamic])
     else
-      LIBCXX="$LIBCXX $STATIC_STDCXX_FLAGS"
-      JVM_LDFLAGS="$JVM_LDFLAGS $STATIC_STDCXX_FLAGS"
-      ADLC_LDFLAGS="$ADLC_LDFLAGS $STATIC_STDCXX_FLAGS"
-      # Ideally, we should test stdc++ for the BUILD toolchain separately. For now
-      # just use the same setting as for the TARGET toolchain.
-      OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $STATIC_STDCXX_FLAGS"
+      STATIC_STDCXX_LDFLAGS="$STATIC_STDCXX_FLAGS"
       AC_MSG_RESULT([static])
     fi
   fi
 
-  AC_SUBST(LIBCXX)
+  AC_SUBST(STATIC_STDCXX_LDFLAGS)
+
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+    STDCXX_LIBS="-lstdc++"
+  fi
+  AC_SUBST(STDCXX_LIBS)
 
   # Setup Windows runtime dlls
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
