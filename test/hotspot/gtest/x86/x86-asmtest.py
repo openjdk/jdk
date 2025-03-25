@@ -181,11 +181,6 @@ class NFInstruction(Instruction):
         all_reg = all([isinstance(op, Register) for op in self.operands])
         if (self._name == 'eshldl' or self._name == 'eshldq' or self._name == 'eshrdl' or self._name == 'eshrdq') and all_reg:
             cl_str = ', cl'
-
-        ops = [op.cstr() for op in self.operands]
-        if self.demote and len(ops) == 3 and all_reg and is_legacy_gpr(ops[0]) and  is_legacy_gpr(ops[2]) and ops[0] == ops[1] and (not self.no_flag): 
-            return f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]]) + cl_str
-
         return ('{NF}' if self.no_flag else '{EVEX}') + f'{self._aname} ' + ', '.join([op.astr() for op in self.operands]) + cl_str
 
 class RegInstruction(Instruction):
@@ -411,11 +406,12 @@ class RegRegRegNddInstruction(NFInstruction):
         self.generate_operands(self.reg1, self.reg2, self.reg3)
 
     def astr(self):
-        # ops = [op.cstr() for op in self.operands]
-        # cl_str = (', cl' if self._name in shift_rot_ops and len(self.operands) == 2 else '')
-        # if is_legacy_gpr(ops[0]) and  is_legacy_gpr(ops[2]) and ops[0] == ops[1] and (not self.no_flag):
-        #     return f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]]) + cl_str
-        return f'{{load}}' + super().astr()
+        hdr = f'{{load}}'
+        if self.demote:
+            ops = [op.cstr() for op in self.operands]
+            if is_legacy_gpr(ops[0]) and is_legacy_gpr(ops[2]) and ops[0] == ops[1] and (not self.no_flag):
+                return  hdr + f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]])
+        return hdr + super().astr()
 
 class RegRegRegImmNddInstruction(NFInstruction):
     def __init__(self, name, aname, width, no_flag, reg1, reg2, reg3, imm):

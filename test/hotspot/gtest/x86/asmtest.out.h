@@ -12,9 +12,9 @@
     __ eimull(r8, r8, r10, true);                                               //    {load}{NF}imul r8d, r8d, r10d    IID8
     __ eorl(r8, r8, r10, false);                                                //    {load}or r8d, r10d    IID9
     __ eorl(r8, r8, r10, true);                                                 //    {load}{NF}or r8d, r8d, r10d    IID10
-    __ eshldl(r8, r8, r10, false);                                              //    {load}shld r8d, r10d, cl    IID11
+    __ eshldl(r8, r8, r10, false);                                              //    {load}shld r8d, r10d    IID11
     __ eshldl(r8, r8, r10, true);                                               //    {load}{NF}shld r8d, r8d, r10d, cl    IID12
-    __ eshrdl(r8, r8, r10, false);                                              //    {load}shrd r8d, r10d, cl    IID13
+    __ eshrdl(r8, r8, r10, false);                                              //    {load}shrd r8d, r10d    IID13
     __ eshrdl(r8, r8, r10, true);                                               //    {load}{NF}shrd r8d, r8d, r10d, cl    IID14
     __ esubl(r8, r8, r10, false);                                               //    {load}sub r8d, r10d    IID15
     __ esubl(r8, r8, r10, true);                                                //    {load}{NF}sub r8d, r8d, r10d    IID16
