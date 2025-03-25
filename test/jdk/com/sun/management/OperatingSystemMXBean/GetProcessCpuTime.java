@@ -25,6 +25,7 @@
  * @test
  * @bug     4858522
  * @summary Basic unit test of OperatingSystemMXBean.getProcessCpuTime()
+ * @library /test/lib
  * @author  Steve Bohne
  */
 
@@ -45,6 +46,7 @@
 
 import com.sun.management.OperatingSystemMXBean;
 import java.lang.management.*;
+import jdk.test.lib.Platform;
 
 public class GetProcessCpuTime {
 
@@ -73,18 +75,19 @@ public class GetProcessCpuTime {
           sum /= i;
         }
 
-        long ns = 0;
-        // Do not skip test if first read is -1:
-        // Some Windows 2019 systems can return -1 for the first few reads.
-        for (int i = 0; i < 10; i++) {
-            ns = mbean.getProcessCpuTime();
-            if (ns != -1) {
-                break;
-            }
-            try {
-                Thread.sleep(200);
-            } catch(InterruptedException e) {
-                e.printStackTrace();
+        long ns = mbean.getProcessCpuTime();
+        if (ns == -1 && Platform.isWindows()) {
+            // Some Windows 2019 systems can return -1 for the first few reads.
+            for (int i = 0; i < 10; i++) {
+                ns = mbean.getProcessCpuTime();
+                if (ns != -1) {
+                    break;
+                }
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
         if (ns == -1) {

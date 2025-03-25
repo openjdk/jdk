@@ -25,12 +25,13 @@
  * @test
  * @bug     7028071
  * @summary Basic unit test of OperatingSystemMXBean.getProcessCpuLoad()
- *
+ * @library /test/lib
  * @run main GetProcessCpuLoad
  */
 
-import java.lang.management.*;
 import com.sun.management.OperatingSystemMXBean;
+import java.lang.management.*;
+import jdk.test.lib.Platform;
 
 public class GetProcessCpuLoad {
     public static void main(String[] argv) throws Exception {
@@ -42,7 +43,7 @@ public class GetProcessCpuLoad {
 
         for(int i = 0; i < 10; i++) {
             load = mbean.getProcessCpuLoad();
-            if (load == -1.0) {
+            if (load == -1.0 && Platform.isWindows()) {
                 // Some Windows 2019 systems can return -1 for the first few reads.
                 // Remember a -1 in case it never gets better.
                 ex = new RuntimeException("getProcessCpuLoad() returns " + load
