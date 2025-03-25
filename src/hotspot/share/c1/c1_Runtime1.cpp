@@ -229,12 +229,12 @@ CodeBlob* Runtime1::generate_blob(BufferBlob* buffer_blob, C1StubId id, const ch
                                                  CodeOffsets::frame_never_safe,
                                                  frame_size,
                                                  oop_maps,
-                                                 must_gc_arguments);
-  assert(blob != nullptr, "blob must exist");
+                                                 must_gc_arguments,
+                                                 false /* alloc_fail_is_fatal */ );
   return blob;
 }
 
-void Runtime1::generate_blob_for(BufferBlob* buffer_blob, C1StubId id) {
+bool Runtime1::generate_blob_for(BufferBlob* buffer_blob, C1StubId id) {
   assert(C1StubId::NO_STUBID < id && id < C1StubId::NUM_STUBIDS, "illegal stub id");
   bool expect_oop_map = true;
 #ifdef ASSERT
@@ -257,14 +257,19 @@ void Runtime1::generate_blob_for(BufferBlob* buffer_blob, C1StubId id) {
   CodeBlob* blob = generate_blob(buffer_blob, id, name_for(id), expect_oop_map, &cl);
   // install blob
   _blobs[(int)id] = blob;
+  return blob != nullptr;
 }
 
-void Runtime1::initialize(BufferBlob* blob) {
+bool Runtime1::initialize(BufferBlob* blob) {
   // platform-dependent initialization
   initialize_pd();
   // generate stubs
   int limit = (int)C1StubId::NUM_STUBIDS;
-  for (int id = 0; id < limit; id++) generate_blob_for(blob, (C1StubId)id);
+  for (int id = 0; id < limit; id++) {
+    if (!generate_blob_for(blob, (C1StubId) id)) {
+      return false;
+    }
+  }
   // printing
 #ifndef PRODUCT
   if (PrintSimpleStubs) {
@@ -278,7 +283,7 @@ void Runtime1::initialize(BufferBlob* blob) {
   }
 #endif
   BarrierSetC1* bs = BarrierSet::barrier_set()->barrier_set_c1();
-  bs->generate_c1_runtime_stubs(blob);
+  return bs->generate_c1_runtime_stubs(blob);
 }
 
 CodeBlob* Runtime1::blob_for(C1StubId id) {
@@ -795,7 +800,7 @@ JRT_ENTRY(void, Runtime1::deoptimize(JavaThread* current, jint trap_request))
   Deoptimization::DeoptReason reason = Deoptimization::trap_request_reason(trap_request);
 
   if (action == Deoptimization::Action_make_not_entrant) {
-    if (nm->make_not_entrant()) {
+    if (nm->make_not_entrant("C1 deoptimize")) {
       if (reason == Deoptimization::Reason_tenured) {
         MethodData* trap_mdo = Deoptimization::get_method_data(current, method, true /*create_if_missing*/);
         if (trap_mdo != nullptr) {
@@ -1087,7 +1092,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
     // safepoint, but if it's still alive then make it not_entrant.
     nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
     if (nm != nullptr) {
-      nm->make_not_entrant();
+      nm->make_not_entrant("C1 code patch");
     }
 
     Deoptimization::deoptimize_frame(current, caller_frame.id());
@@ -1335,7 +1340,7 @@ void Runtime1::patch_code(JavaThread* current, C1StubId stub_id) {
     // Make sure the nmethod is invalidated, i.e. made not entrant.
     nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
     if (nm != nullptr) {
-      nm->make_not_entrant();
+      nm->make_not_entrant("C1 deoptimize for patching");
     }
   }
 
@@ -1463,7 +1468,7 @@ JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* current))
 
   nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
   assert (nm != nullptr, "no more nmethod?");
-  nm->make_not_entrant();
+  nm->make_not_entrant("C1 predicate failed trap");
 
   methodHandle m(current, nm->method());
   MethodData* mdo = m->method_data();

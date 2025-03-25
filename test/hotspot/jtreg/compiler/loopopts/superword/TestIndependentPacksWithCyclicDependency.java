@@ -132,7 +132,7 @@ public class TestIndependentPacksWithCyclicDependency {
     @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VF, "> 0"},
         applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static void test0(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
             // Hand-unrolled 2x. Int and Float slice are completely separate.
@@ -162,7 +162,7 @@ public class TestIndependentPacksWithCyclicDependency {
     @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VF, "> 0", IRNode.VECTOR_CAST_F2I, "> 0", IRNode.VECTOR_CAST_I2F, "> 0"},
         applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     static void test1(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
             // Hand-unrolled 2x. Converst to and from. StoreF -> LoadF dependency.
@@ -191,7 +191,7 @@ public class TestIndependentPacksWithCyclicDependency {
     @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VI, "> 0"},
         applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static void test2(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
             // int and float arrays are two slices. But we pretend both are of type int.
@@ -221,7 +221,7 @@ public class TestIndependentPacksWithCyclicDependency {
     @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VF, "> 0"},
         applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static void test3(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
             // Inversion of orders. But because we operate on separate slices, this should
@@ -303,7 +303,7 @@ public class TestIndependentPacksWithCyclicDependency {
     @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VI, "> 0", IRNode.ADD_VF, "> 0"},
         applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     static void test6(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb,
                       long[] dataLa, long[] dataLb) {
         for (int i = 0; i < RANGE; i+=2) {

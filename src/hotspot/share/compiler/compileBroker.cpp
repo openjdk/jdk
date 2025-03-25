@@ -2340,7 +2340,6 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       }
     }
 
-    DirectivesStack::release(directive);
 
     if (!ci_env.failing() && !task->is_success()) {
       assert(ci_env.failure_reason() != nullptr, "expect failure reason");
@@ -2374,13 +2373,15 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     if (CompilationLog::log() != nullptr) {
       CompilationLog::log()->log_failure(thread, task, failure_reason, retry_message);
     }
-    if (PrintCompilation) {
+    if (PrintCompilation || directive->PrintCompilationOption) {
       FormatBufferResource msg = retry_message != nullptr ?
         FormatBufferResource("COMPILE SKIPPED: %s (%s)", failure_reason, retry_message) :
         FormatBufferResource("COMPILE SKIPPED: %s",      failure_reason);
       task->print(tty, msg);
     }
   }
+
+  DirectivesStack::release(directive);
 
   methodHandle method(thread, task->method());
 
