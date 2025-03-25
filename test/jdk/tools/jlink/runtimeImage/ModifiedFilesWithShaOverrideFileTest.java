@@ -21,12 +21,16 @@
  * questions.
  */
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Path;
 
 /*
  * @test
  * @summary Verify no warnings are being produced on a modified file which
- *          gets the SHA override from command line
+ *          gets the SHA override from a file
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g & os.family == "linux")
  * @library ../../lib /test/lib
  * @enablePreview
@@ -36,23 +40,23 @@ import java.nio.file.Path;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g ModifiedFilesWithShaOverrideTest
+ * @run main/othervm -Xmx1g ModifiedFilesWithShaOverrideFileTest
  */
-public class ModifiedFilesWithShaOverrideTest extends ModifiedFilesWithShaOverrideBase {
+public class ModifiedFilesWithShaOverrideFileTest extends ModifiedFilesWithShaOverrideBase {
 
     public static void main(String[] args) throws Exception {
-        ModifiedFilesWithShaOverrideTest test = new ModifiedFilesWithShaOverrideTest();
+        ModifiedFilesWithShaOverrideFileTest test = new ModifiedFilesWithShaOverrideFileTest();
         test.run();
     }
 
     @Override
     String initialImageName() {
-        return "java-base-jlink-with-sha-override";
+        return "java-base-jlink-with-sha-override-file";
     }
 
     @Override
     public String getTargetName() {
-        return "java-base-jlink-with-sha-override-target";
+        return "java-base-jlink-with-sha-override-file-target";
     }
 
     @Override
@@ -61,6 +65,14 @@ public class ModifiedFilesWithShaOverrideTest extends ModifiedFilesWithShaOverri
         Path relativePath = initialImage.relativize(modifiedFile);
         // Modified file is libjvm.so, which is in java.base
         String overrideVal = String.format("%s|%s|%s", "java.base", relativePath.toString(), strippedSha);
-        return SHA_OVERRIDE_FLAG + "=" + overrideVal;
+        // Write a file in JAVA_HOME of the linkable runtime with the sha
+        // override.
+        File overrideFile = initialImage.resolve("test_sha_override.txt").toFile();
+        try (PrintWriter pw = new PrintWriter(new FileWriter(overrideFile))) {
+            pw.println(overrideVal);
+        } catch (IOException e) {
+            throw new AssertionError("Test failed unexpectedly: ", e);
+        }
+        return SHA_OVERRIDE_FLAG + "=@${java.home}/test_sha_override.txt";
     }
 }

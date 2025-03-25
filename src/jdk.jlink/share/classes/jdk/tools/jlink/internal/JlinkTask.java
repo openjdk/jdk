@@ -199,12 +199,20 @@ public class JlinkTask {
                     // Only allow a single @file value
                     throw taskHelper.newBadArgs("err.sha.overrides.multiple");
                 }
-                Path file = Paths.get(arg.substring(1));
                 // Ignore non-existing sha overrides file.
                 //
                 // This is to allow for custom builds needing to optionally
                 // support run-time image links on (possibly) modified
                 // binaries/debuginfo files done after the JDK build
+                //
+                // Allow for JAVA_HOME relative paths for the file, by replacing
+                // the ${java.home} token in the file name
+                String fileName = arg.substring(1);
+                if (fileName.startsWith("${java.home}")) {
+                    String javaHome = System.getProperty("java.home");
+                    fileName = javaHome + fileName.substring(12 /* ${java.home}.length() */);
+                }
+                Path file = Paths.get(fileName);
                 if (Files.exists(file)) {
                     try {
                         Files.readAllLines(file).stream()
