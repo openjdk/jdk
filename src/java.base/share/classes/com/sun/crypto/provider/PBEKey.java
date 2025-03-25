@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Locale;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.PBEKeySpec;
+import sun.security.util.PBEUtil;
 
 import jdk.internal.ref.CleanerFactory;
 
@@ -67,7 +68,7 @@ final class PBEKey implements SecretKey {
             // Should allow an empty password.
             passwd = new char[0];
         }
-        this.key = PBKDF2KeyImpl.getPasswordBytes(passwd);
+        this.key = PBEUtil.encodePassword(passwd);
         Arrays.fill(passwd, '\0');
         type = keytype;
 
