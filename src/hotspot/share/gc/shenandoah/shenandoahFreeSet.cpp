@@ -1321,10 +1321,11 @@ bool ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
     }
 
     if (unusable_trash != -1) {
+      const size_t unusable_capacity = alloc_capacity(unusable_trash);
       // 2. Move the (temporarily) unusable trash region we found to the mutator partition
       _partitions.move_from_partition_to_partition(unusable_trash,
                                                    ShenandoahFreeSetPartitionId::OldCollector,
-                                                   ShenandoahFreeSetPartitionId::Mutator, alloc_capacity(unusable_trash));
+                                                   ShenandoahFreeSetPartitionId::Mutator, unusable_capacity);
 
       // 3. Move this usable region from the mutator partition to the old collector partition
       _partitions.move_from_partition_to_partition(idx,
@@ -1334,7 +1335,10 @@ bool ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
       _partitions.assert_bounds();
 
       // 4. Do not adjust capacities for generations, we just swapped the regions that have already
-      // been accounted for.
+      // been accounted for. However, we should adjust the evacuation reserves as those may have changed.
+      shenandoah_assert_heaplocked();
+      const size_t reserve = _heap->old_generation()->get_evacuation_reserve();
+      _heap->old_generation()->set_evacuation_reserve(reserve - unusable_capacity + region_capacity);
       return true;
     }
   }
