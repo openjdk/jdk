@@ -185,13 +185,24 @@ public abstract class JarURLConnection extends URLConnection {
             var _unused2 = jarFileURL = new URL(jarFileURL, "#runtime");
         }
 
+        entryName = parseEntryName(spec, separator);
+    }
+
+    /**
+     * Parse the entry name (if any) of this JarURLConnection
+     *
+     * @param spec the URL spec of this connection
+     * @param separator the index of the '!/' separator
+     * @return the decoded entry name, or null if this URL has no entry name
+     */
+    private static String parseEntryName(String spec, int separator) {
         // If the URL ends with the '!/' separator, entryName is null
         int nameIdx = separator + 2;
         if (nameIdx == spec.length()) {
-            entryName = null;
+            return null;
         } else {
             String encodedName = spec.substring(nameIdx, spec.length());
-            entryName = ParseUtil.decode(encodedName);
+            return ParseUtil.decode(encodedName);
         }
     }
 
