@@ -196,6 +196,7 @@ class Compile {
             throw new CompileFrameworkException("InterruptedException during compilation", e);
         }
 
+        // Note: the output can be non-empty even if the compilation succeeds, e.g. for warnings.
         if (exitCode != 0) {
             System.err.println("Compilation failed.");
             System.err.println("Command: " + command);

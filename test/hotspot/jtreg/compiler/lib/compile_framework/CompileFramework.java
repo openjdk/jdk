@@ -71,6 +71,9 @@ public class CompileFramework {
      * Compile all sources: store the sources to the {@link sourceDir} directory, compile
      * Java and Jasm sources and store the generated class-files in the {@link classesDir}
      * directory.
+     *
+     * @param javacFlags: optional, list of additional flags for javac, e.g. to make modules
+     *                    visible.
      */
     public void compile(String... javacFlags) {
         if (classLoader != null) {
