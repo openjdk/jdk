@@ -334,6 +334,36 @@ public class IRNode {
         beforeMatchingNameRegex(OPAQUE_MULTIVERSIONING, "OpaqueMultiversioning");
     }
 
+    public static final String REARRANGE_VB = VECTOR_PREFIX + "REARRANGE_VB" + POSTFIX;
+    static {
+        vectorNode(REARRANGE_VB, "VectorRearrange", TYPE_BYTE);
+    }
+
+    public static final String REARRANGE_VS = VECTOR_PREFIX + "REARRANGE_VS" + POSTFIX;
+    static {
+        vectorNode(REARRANGE_VS, "VectorRearrange", TYPE_SHORT);
+    }
+
+    public static final String REARRANGE_VI = VECTOR_PREFIX + "REARRANGE_VI" + POSTFIX;
+    static {
+        vectorNode(REARRANGE_VI, "VectorRearrange", TYPE_INT);
+    }
+
+    public static final String REARRANGE_VL = VECTOR_PREFIX + "REARRANGE_VL" + POSTFIX;
+    static {
+        vectorNode(REARRANGE_VL, "VectorRearrange", TYPE_LONG);
+    }
+
+    public static final String REARRANGE_VF = VECTOR_PREFIX + "REARRANGE_VF" + POSTFIX;
+    static {
+        vectorNode(REARRANGE_VF, "VectorRearrange", TYPE_FLOAT);
+    }
+
+    public static final String REARRANGE_VD = VECTOR_PREFIX + "REARRANGE_VD" + POSTFIX;
+    static {
+        vectorNode(REARRANGE_VD, "VectorRearrange", TYPE_DOUBLE);
+    }
+
     public static final String ADD_P_OF = COMPOSITE_PREFIX + "ADD_P_OF" + POSTFIX;
     static {
         String regex = START + "addP_" + IS_REPLACED + MID + ".*" + END;
