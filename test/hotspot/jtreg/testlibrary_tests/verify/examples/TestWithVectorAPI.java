@@ -26,7 +26,7 @@
  * @summary Example test to show Verify.checkEQ with the VectorAPI.
  * @modules jdk.incubator.vector
  * @library /test/lib /
- * @run main/othervm --add-modules=jdk.incubator.vector --add-opens=java.base/jdk.incubator.vector=ALL-UNNAMED verify.examples.TestWithVectorAPI
+ * @run main verify.examples.TestWithVectorAPI
  */
 
 package verify.examples;
