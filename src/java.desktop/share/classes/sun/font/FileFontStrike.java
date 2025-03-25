@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,16 +109,15 @@ public class FileFontStrike extends PhysicalStrike {
     NativeStrike[] nativeStrikes;
 
     static final int MAX_IMAGE_SIZE = OutlineTextRenderer.THRESHHOLD;
+
     /* Used only for communication to native layer */
     private int intPtSize;
 
     /* Perform global initialisation needed for Windows native rasterizer */
-    private static native boolean initNative();
-    private static boolean isXPorLater = false;
+    private static native void initNative();
     static {
-        if (FontUtilities.isWindows && !FontUtilities.useJDKScaler &&
-            !GraphicsEnvironment.isHeadless()) {
-            isXPorLater = initNative();
+        if (FontUtilities.isWindows && !FontUtilities.useJDKScaler && !GraphicsEnvironment.isHeadless()) {
+            initNative();
         }
     }
 
@@ -212,7 +211,7 @@ public class FileFontStrike extends PhysicalStrike {
          * except that the advance returned by GDI is always overwritten by
          * the JDK rasteriser supplied one (see getGlyphImageFromWindows()).
          */
-        if (FontUtilities.isWindows && isXPorLater &&
+        if (FontUtilities.isWindows &&
             !FontUtilities.useJDKScaler &&
             !GraphicsEnvironment.isHeadless() &&
             !fileFont.useJavaRasterizer &&
