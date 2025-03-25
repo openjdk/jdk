@@ -44,6 +44,8 @@ import java.util.function.Supplier;
  */
 public final class StableValueImpl<T> implements StableValue<T> {
 
+    static final String UNSET_LABEL = ".unset";
+
     // Unsafe allows StableValue to be used early in the boot sequence
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
@@ -145,7 +147,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
         final Object t = wrappedContentAcquire();
         return t == this
                 ? "(this StableValue)"
-                : "StableValue" + renderWrapped(t);
+                : renderWrapped(t);
     }
 
     // Internal methods shared with other internal classes
@@ -156,7 +158,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     }
 
     static String renderWrapped(Object t) {
-        return (t == null) ? ".unset" : "[" + unwrap(t) + "]";
+        return (t == null) ? UNSET_LABEL : Objects.toString(unwrap(t));
     }
 
     // Private methods

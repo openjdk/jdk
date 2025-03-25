@@ -72,26 +72,7 @@ record StableIntFunction<R>(@Stable StableValueImpl<R>[] delegates,
 
     @Override
     public String toString() {
-        return "StableIntFunction[values=" +
-                renderElements() +
-                ", original=" + original + ']';
-    }
-
-    private String renderElements() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        boolean first = true;
-        for (int i = 0; i < delegates.length; i++) {
-            if (first) { first = false; } else { sb.append(", "); };
-            final Object value = delegates[i].wrappedContentAcquire();
-            if (value == this) {
-                sb.append("(this StableIntFunction)");
-            } else {
-                sb.append(StableValueImpl.renderWrapped(value));
-            }
-        }
-        sb.append("]");
-        return sb.toString();
+        return StableUtil.renderElements(this, "StableIntFunction", delegates);
     }
 
     static <R> StableIntFunction<R> of(int size, IntFunction<? extends R> original) {

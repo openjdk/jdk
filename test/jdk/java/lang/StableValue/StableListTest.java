@@ -151,8 +151,12 @@ final class StableListTest {
     @Test
     void toStringTest() {
         assertEquals("[]", newEmptyList().toString());
-        assertEquals("[0, 1]", StableValue.list(2, IDENTITY).toString());
-        assertEquals(newRegularList().toString(), newList().toString());
+        var list = StableValue.list(2, IDENTITY);
+        assertEquals("[.unset, .unset]", list.toString());
+        list.get(0);
+        assertEquals("[0, .unset]", list.toString());
+        list.get(1);
+        assertEquals("[0, 1]", list.toString());
     }
 
     @Test

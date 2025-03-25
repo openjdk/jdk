@@ -71,25 +71,7 @@ record StableFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
 
     @Override
     public String toString() {
-        return "StableFunction[values=" + renderMappings() + ", original=" + original + "]";
-    }
-
-    private String renderMappings() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        boolean first = true;
-        for (var e:values.entrySet()) {
-            if (first) { first = false; } else { sb.append(", "); };
-            final Object value = e.getValue().wrappedContentAcquire();
-            sb.append(e.getKey()).append('=');
-            if (value == this) {
-                sb.append("(this StableFunction)");
-            } else {
-                sb.append(StableValueImpl.renderWrapped(value));
-            }
-        }
-        sb.append("}");
-        return sb.toString();
+        return StableUtil.renderMappings(this, "StableFunction", values.entrySet());
     }
 
     static <T, R> StableFunction<T, R> of(Set<? extends T> inputs,

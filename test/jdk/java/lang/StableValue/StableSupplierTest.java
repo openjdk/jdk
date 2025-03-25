@@ -29,6 +29,7 @@
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -52,12 +53,12 @@ final class StableSupplierTest {
     void basic(Supplier<Integer> supplier) {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(supplier);
         var cached = StableValue.supplier(cs);
-        assertEquals("StableSupplier[value=.unset, original=" + cs + "]", cached.toString());
+        assertEquals(".unset", cached.toString());
         assertEquals(supplier.get(), cached.get());
         assertEquals(1, cs.cnt());
         assertEquals(supplier.get(), cached.get());
         assertEquals(1, cs.cnt());
-        assertEquals("StableSupplier[value=[" + supplier.get() + "], original=" + cs + "]", cached.toString());
+        assertEquals(Objects.toString(supplier.get()), cached.toString());
     }
 
     @Test
@@ -70,7 +71,7 @@ final class StableSupplierTest {
         assertEquals(1, cs.cnt());
         assertThrows(UnsupportedOperationException.class, cached::get);
         assertEquals(2, cs.cnt());
-        assertEquals("StableSupplier[value=.unset, original=" + cs + "]", cached.toString());
+        assertEquals(".unset", cached.toString());
     }
 
     @Test
@@ -80,7 +81,7 @@ final class StableSupplierTest {
         ref.set(cached);
         cached.get();
         String toString = cached.toString();
-        assertTrue(toString.startsWith("StableSupplier[value=(this StableSupplier), original="));
+        assertTrue(toString.startsWith("(this StableSupplier)"));
         assertDoesNotThrow(cached::hashCode);
     }
 

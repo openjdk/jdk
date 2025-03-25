@@ -54,12 +54,12 @@ final class StableIntFunctionTest {
     void basic(IntFunction<Integer> mapper) {
         StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(mapper);
         var cached = StableValue.intFunction(SIZE, cif);
-        assertEquals("StableIntFunction[values=[.unset, .unset], original=" + cif + "]", cached.toString());
+        assertEquals("[.unset, .unset]", cached.toString());
         assertEquals(mapper.apply(1), cached.apply(1));
         assertEquals(1, cif.cnt());
         assertEquals(mapper.apply(1), cached.apply(1));
         assertEquals(1, cif.cnt());
-        assertEquals("StableIntFunction[values=[.unset, [" + mapper.apply(1) + "]], original=" + cif + "]", cached.toString());
+        assertEquals("[.unset, " + mapper.apply(1) + "]", cached.toString());
         assertThrows(IllegalArgumentException.class, () -> cached.apply(SIZE));
         assertThrows(IllegalArgumentException.class, () -> cached.apply(-1));
         assertThrows(IllegalArgumentException.class, () -> cached.apply(1_000_000));
@@ -75,7 +75,7 @@ final class StableIntFunctionTest {
         assertEquals(1, cif.cnt());
         assertThrows(UnsupportedOperationException.class, () -> cached.apply(1));
         assertEquals(2, cif.cnt());
-        assertEquals("StableIntFunction[values=[.unset, .unset], original=" + cif + "]", cached.toString());
+        assertEquals("[.unset, .unset]", cached.toString());
     }
 
     @Test
@@ -85,7 +85,7 @@ final class StableIntFunctionTest {
         ref.set(cached);
         cached.apply(0);
         String toString = cached.toString();
-        assertTrue(toString.startsWith("StableIntFunction[values=[(this StableIntFunction), .unset], original="));
+        assertEquals("[(this StableIntFunction), .unset]", toString);
         assertDoesNotThrow(cached::hashCode);
         assertDoesNotThrow((() -> cached.equals(cached)));
     }

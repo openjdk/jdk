@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import java.util.BitSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -162,21 +163,21 @@ final class StableValueTest {
     @Test
     void toStringUnset() {
         StableValue<Integer> stable = StableValue.of();
-        assertEquals("StableValue.unset", stable.toString());
+        assertEquals(".unset", stable.toString());
     }
 
     @Test
     void toStringNull() {
         StableValue<Integer> stable = StableValue.of();
         assertTrue(stable.trySet(null));
-        assertEquals("StableValue[null]", stable.toString());
+        assertEquals("null", stable.toString());
     }
 
     @Test
     void toStringNonNull() {
         StableValue<Integer> stable = StableValue.of();
         assertTrue(stable.trySet(VALUE));
-        assertEquals("StableValue[" + VALUE + "]", stable.toString());
+        assertEquals(Objects.toString(VALUE), stable.toString());
     }
 
     @Test

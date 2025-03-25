@@ -92,13 +92,13 @@ final class StableFunctionTest {
         assertEquals(1, cif.cnt());
         assertEquals(mapper.apply(Value.FORTY_TWO), cached.apply(Value.FORTY_TWO));
         assertEquals(1, cif.cnt());
-        assertTrue(cached.toString().startsWith(cached.getClass().getSimpleName() + "[values={"));
+        assertTrue(cached.toString().startsWith("{"), cached.toString());
         // Key order is unspecified
         assertTrue(cached.toString().contains(Value.THIRTEEN + "=.unset"));
-        assertTrue(cached.toString().contains(Value.FORTY_TWO + "=[" + mapper.apply(Value.FORTY_TWO) + "]"), cached.toString());
-        assertTrue(cached.toString().endsWith(", original=" + cif + "]"));
-        // One between the values and one just before "original"
-        assertEquals(2L, cached.toString().chars().filter(ch -> ch == ',').count(), cached.toString());
+        assertTrue(cached.toString().contains(Value.FORTY_TWO + "=" + mapper.apply(Value.FORTY_TWO)), cached.toString());
+        assertTrue(cached.toString().endsWith("}"));
+        // One between the values
+        assertEquals(1L, cached.toString().chars().filter(ch -> ch == ',').count(), cached.toString());
         var x0 = assertThrows(IllegalArgumentException.class, () -> cached.apply(Value.ILLEGAL_BEFORE));
         assertTrue(x0.getMessage().contains("ILLEGAL"));
         var x1 = assertThrows(IllegalArgumentException.class, () -> cached.apply(Value.ILLEGAL_BETWEEN));
@@ -129,11 +129,11 @@ final class StableFunctionTest {
         assertEquals(1, cif.cnt());
         assertThrows(UnsupportedOperationException.class, () -> cached.apply(Value.FORTY_TWO));
         assertEquals(2, cif.cnt());
-        assertTrue(cached.toString().startsWith(cached.getClass().getSimpleName() + "[values={"));
+        assertTrue(cached.toString().startsWith("{"));
         // Key order is unspecified
         assertTrue(cached.toString().contains(Value.THIRTEEN + "=.unset"));
         assertTrue(cached.toString().contains(Value.FORTY_TWO + "=.unset"), cached.toString());
-        assertTrue(cached.toString().endsWith(", original=" + cif + "]"));
+        assertTrue(cached.toString().endsWith("}"));
     }
 
     @ParameterizedTest
@@ -144,7 +144,7 @@ final class StableFunctionTest {
         ref.set(cached);
         cached.apply(Value.FORTY_TWO);
         String toString = cached.toString();
-        assertTrue(toString.contains("(this " + cached.getClass().getSimpleName() + ")"), toString);
+        assertTrue(toString.contains("(this StableFunction)"), toString);
         assertDoesNotThrow(cached::hashCode);
         assertDoesNotThrow((() -> cached.equals(cached)));
     }

@@ -42,6 +42,7 @@ import java.util.function.UnaryOperator;
 
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.lang.stable.StableUtil;
 import jdk.internal.lang.stable.StableValueImpl;
 import jdk.internal.lang.stable.StableValueFactories;
 import jdk.internal.misc.CDS;
@@ -774,22 +775,22 @@ class ImmutableCollections {
         @Stable
         private final IntFunction<? extends E> mapper;
         @Stable
-        private final StableValueImpl<E>[] backing;
+        private final StableValueImpl<E>[] delegates;
 
         StableList(int size, IntFunction<? extends E> mapper) {
             this.mapper = mapper;
-            this.backing = StableValueFactories.array(size);
+            this.delegates = StableValueFactories.array(size);
         }
 
-        @Override public boolean  isEmpty() { return backing.length == 0;}
-        @Override public int      size() { return backing.length; }
+        @Override public boolean  isEmpty() { return delegates.length == 0;}
+        @Override public int      size() { return delegates.length; }
         @Override public Object[] toArray() { return copyInto(new Object[size()]); }
 
         @ForceInline
         @Override
         public E get(int i) {
             try {
-                return backing[i]
+                return delegates[i]
                         .orElseSet(new Supplier<E>() {
                             @Override  public E get() { return mapper.apply(i); }});
             } catch (ArrayIndexOutOfBoundsException aioobe) {
@@ -800,7 +801,7 @@ class ImmutableCollections {
         @Override
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] a) {
-            final int size = backing.length;
+            final int size = delegates.length;
             if (a.length < size) {
                 // Make a new array of a's runtime type, but my contents:
                 T[] n = (T[])Array.newInstance(a.getClass().getComponentType(), size);
@@ -836,11 +837,16 @@ class ImmutableCollections {
 
         @SuppressWarnings("unchecked")
         private <T> T[] copyInto(Object[] a) {
-            final int len = backing.length;
+            final int len = delegates.length;
             for (int i = 0; i < len; i++) {
                 a[i] = get(i);
             }
             return (T[]) a;
+        }
+
+        @Override
+        public String toString() {
+            return StableUtil.renderElements(this, "StableList", delegates);
         }
 
     }
@@ -1537,6 +1543,12 @@ class ImmutableCollections {
                 }
             }
         }
+
+        @Override
+        public String toString() {
+            return StableUtil.renderMappings(this, "StableMap", delegate.entrySet());
+        }
+
     }
 
 }

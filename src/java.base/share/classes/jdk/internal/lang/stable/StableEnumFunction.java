@@ -29,7 +29,12 @@ import jdk.internal.util.ImmutableBitSetPredicate;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
@@ -80,33 +85,15 @@ record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
 
     @Override
     public String toString() {
-        return "StableEnumFunction[values=" + renderElements() + ", original=" + original + "]";
-    }
-
-    private String renderElements() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        boolean first = true;
+        final Collection<Map.Entry<E, StableValueImpl<R>>> entries = new ArrayList<>();
         final E[] enumElements = enumType.getEnumConstants();
         int ordinal = firstOrdinal;
         for (int i = 0; i < delegates.length; i++, ordinal++) {
             if (member.test(ordinal)) {
-                if (first) {
-                    first = false;
-                } else {
-                    sb.append(", ");
-                }
-                final Object value = delegates[i].wrappedContentAcquire();
-                sb.append(enumElements[ordinal]).append('=');
-                if (value == this) {
-                    sb.append("(this StableEnumFunction)");
-                } else {
-                    sb.append(StableValueImpl.renderWrapped(value));
-                }
+                entries.add(new AbstractMap.SimpleImmutableEntry<>(enumElements[ordinal], delegates[i]));
             }
         }
-        sb.append("}");
-        return sb.toString();
+        return StableUtil.renderMappings(this, "StableFunction", entries);
     }
 
     @SuppressWarnings("unchecked")

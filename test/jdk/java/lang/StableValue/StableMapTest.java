@@ -131,11 +131,14 @@ final class StableMapTest {
     @Test
     void toStringTest() {
         assertEquals("{}", newEmptyMap().toString());
-        assertEquals("{" + KEY + "=" + KEY + "}", StableValue.map(Set.of(KEY), IDENTITY).toString());
+        var map = StableValue.map(Set.of(KEY), IDENTITY);
+        assertEquals("{" + KEY + "=.unset}", map.toString());
+        map.get(KEY);
+        assertEquals("{" + KEY + "=" + KEY + "}", map.toString());
         String actual = newMap().toString();
         assertTrue(actual.startsWith("{"));
         for (int key:KEYS) {
-            assertTrue(actual.contains(key + "=" + key));
+            assertTrue(actual.contains(key + "=.unset"));
         }
         assertTrue(actual.endsWith("}"));
     }

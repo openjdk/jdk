@@ -27,6 +27,7 @@ package jdk.internal.lang.stable;
 
 import jdk.internal.vm.annotation.ForceInline;
 
+import java.util.Collections;
 import java.util.function.Function;
 
 /**
@@ -59,7 +60,7 @@ record EmptyStableFunction<T, R>(Function<? super T, ? extends R> original) impl
 
     @Override
     public String toString() {
-        return "EmptyStableFunction[values={}, original=" + original + "]";
+        return StableUtil.renderMappings(this, "StableFunction", Collections.emptyList());
     }
 
     static <T, R> Function<T, R> of(Function<? super T, ? extends R> original) {
