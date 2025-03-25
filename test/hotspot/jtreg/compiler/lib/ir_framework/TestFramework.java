@@ -593,27 +593,42 @@ public class TestFramework {
      * Disable IR verification completely in certain cases.
      */
     private void disableIRVerificationIfNotFeasible() {
-        if (irVerificationPossible) {
-            irVerificationPossible = Platform.isDebugBuild() && !Platform.isInt() && !Platform.isComp();
-            if (!irVerificationPossible) {
-                System.out.println("IR verification disabled due to not running a debug build (required for PrintIdeal" +
-                                   "and PrintOptoAssembly), running with -Xint, or -Xcomp (use warm-up of 0 instead)");
-                return;
-            }
-
-            irVerificationPossible = hasIRAnnotations();
-            if (!irVerificationPossible) {
-                System.out.println("IR verification disabled due to test " + testClass + " not specifying any @IR annotations");
-                return;
-            }
-
-            // No IR verification is done if additional non-whitelisted JTreg VM or Javaoptions flag is specified.
-            irVerificationPossible = onlyWhitelistedJTregVMAndJavaOptsFlags();
-            if (!irVerificationPossible) {
-                System.out.println("IR verification disabled due to using non-whitelisted JTreg VM or Javaoptions flag(s)."
-                                   + System.lineSeparator());
-            }
+        if (!irVerificationPossible) {
+            return;
         }
+
+        boolean debugTest = Platform.isDebugBuild();
+        boolean intTest = !Platform.isInt();
+        boolean compTest = !Platform.isComp();
+        boolean irTest = hasIRAnnotations();
+        // No IR verification is done if additional non-whitelisted JTreg VM or Javaoptions flag is specified.
+        List<String> nonWhiteListedFlags = anyNonWhitelistedJTregVMAndJavaOptsFlags();
+        boolean nonWhiteListedTest = nonWhiteListedFlags.isEmpty();
+
+        irVerificationPossible = debugTest && intTest && compTest && irTest && nonWhiteListedTest;
+        if (irVerificationPossible) {
+            return;
+        }
+
+        System.out.println("IR verification disabled due to the following reason(s):");
+        if (!debugTest) {
+            System.out.println("- Not running a debug build (required for PrintIdeal and PrintOptoAssembly)");
+        }
+        if (!intTest) {
+            System.out.println("- Running with -Xint (no compilations)");
+        }
+        if (!compTest) {
+            System.out.println("- Running with -Xcomp (use warm-up of 0 instead)");
+        }
+        if (!irTest) {
+            System.out.println("- Test " + testClass + " not specifying any @IR annotations");
+        }
+        if (!nonWhiteListedTest) {
+            System.out.println("- Using non-whitelisted JTreg VM or Javaoptions flag(s):");
+            nonWhiteListedFlags.forEach((f) -> System.out.println("  - " + f));
+        }
+
+        System.out.println("");
     }
 
     /**
@@ -741,18 +756,19 @@ public class TestFramework {
         return Arrays.stream(testClass.getDeclaredMethods()).anyMatch(m -> m.getAnnotationsByType(IR.class).length > 0);
     }
 
-    private boolean onlyWhitelistedJTregVMAndJavaOptsFlags() {
+    private List<String> anyNonWhitelistedJTregVMAndJavaOptsFlags() {
         List<String> flags = Arrays.stream(Utils.getTestJavaOpts())
                                    .map(s -> s.replaceFirst("-XX:[+|-]?|-(?=[^D|^e])", ""))
                                    .collect(Collectors.toList());
+        List<String> nonWhiteListedFlags = new ArrayList();
         for (String flag : flags) {
             // Property flags (prefix -D), -ea and -esa are whitelisted.
             if (!flag.startsWith("-D") && !flag.startsWith("-e") && JTREG_WHITELIST_FLAGS.stream().noneMatch(flag::contains)) {
                 // Found VM flag that is not whitelisted
-                return false;
+                nonWhiteListedFlags.add(flag);
             }
         }
-        return true;
+        return nonWhiteListedFlags;
     }
 
     private void runTestVM(List<String> additionalFlags) {

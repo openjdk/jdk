@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,23 @@ import jdk.jpackage.test.Executor.Result;
 
 public class SigningBase {
 
+    enum CertIndex {
+        ASCII_INDEX(0),
+        UNICODE_INDEX(1),
+        INVALID_INDEX(-1);
+
+        CertIndex(int value) {
+            this.value = value;
+        }
+
+        int value() {
+            return value;
+        }
+
+        private final int value;
+    }
+
     public static int DEFAULT_INDEX = 0;
-    public static final String ASCII_INDEX = "0";
-    public static final String UNICODE_INDEX = "0";
     private static String [] DEV_NAMES = {
         "jpackage.openjdk.java.net",
         "jpackage.openjdk.java.net (ö)",

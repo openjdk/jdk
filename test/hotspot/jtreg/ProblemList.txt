@@ -43,7 +43,6 @@
 
 # :hotspot_compiler
 
-compiler/ciReplay/TestSAServer.java 8029528 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8225370 generic-all
 
 compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
@@ -76,6 +75,9 @@ compiler/startup/StartupOutput.java 8347406 generic-x64
 compiler/codecache/CodeCacheFullCountTest.java 8332954 generic-all
 
 compiler/interpreter/Test6833129.java 8335266 generic-i586
+
+compiler/ciReplay/TestInliningProtectionDomain.java 8349191 generic-all
+compiler/ciReplay/TestIncrementalInlining.java 8349191 generic-all
 
 #############################################################################
 

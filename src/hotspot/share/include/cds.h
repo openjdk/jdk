@@ -38,6 +38,7 @@
 #define NUM_CDS_REGIONS 4 // this must be the same as MetaspaceShared::n_regions
 #define CDS_ARCHIVE_MAGIC 0xf00baba2
 #define CDS_DYNAMIC_ARCHIVE_MAGIC 0xf00baba8
+#define CDS_PREIMAGE_ARCHIVE_MAGIC 0xcafea07c
 #define CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION 13
 #define CURRENT_CDS_ARCHIVE_VERSION 18
 

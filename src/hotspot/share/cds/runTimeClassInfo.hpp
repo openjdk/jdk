@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,13 @@ class Method;
 class Symbol;
 
 class RunTimeClassInfo {
-public:
+ public:
+ enum : char {
+    FROM_FIELD_IS_PROTECTED = 1 << 0,
+    FROM_IS_ARRAY           = 1 << 1,
+    FROM_IS_OBJECT          = 1 << 2
+  };
+
   struct CrcInfo {
     int _clsfile_size;
     int _clsfile_crc32;
@@ -200,6 +206,17 @@ public:
   char verifier_constraint_flag(int i) {
     check_verifier_constraint_offset(i);
     return verifier_constraint_flags()[i];
+  }
+
+  bool from_field_is_protected(int i) {
+    return (verifier_constraint_flag(i) & FROM_FIELD_IS_PROTECTED) != 0;
+  }
+
+  bool from_is_array(int i) {
+    return (verifier_constraint_flag(i) & FROM_IS_ARRAY) != 0;
+  }
+  bool from_is_object(int i) {
+    return (verifier_constraint_flag(i) & FROM_IS_OBJECT) != 0;
   }
 
   int num_enum_klass_static_fields(int i) const {
