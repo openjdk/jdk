@@ -3589,7 +3589,7 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
   }
 
   // Make sure there is an appropriate fill routine
-  BasicType t = store->as_Mem()->memory_type();
+  BasicType t = store->as_Mem()->value_basic_type();
   const char* fill_name;
   if (msg == nullptr &&
       StubRoutines::select_fill_function(t, false, fill_name) == nullptr) {
@@ -3635,7 +3635,7 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
       if (value != head->phi()) {
         msg = "unhandled shift in address";
       } else {
-        if (type2aelembytes(store->as_Mem()->memory_type(), true) != (1 << n->in(2)->get_int())) {
+        if (type2aelembytes(store->as_Mem()->value_basic_type(), true) != (1 << n->in(2)->get_int())) {
           msg = "scale doesn't match";
         } else {
           found_index = true;
@@ -3841,7 +3841,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
 #endif
   }
 
-  BasicType t = store->as_Mem()->memory_type();
+  BasicType t = store->as_Mem()->value_basic_type();
   bool aligned = false;
   if (offset != nullptr && head->init_trip()->is_Con()) {
     int element_size = type2aelembytes(t);
