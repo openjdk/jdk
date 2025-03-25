@@ -1088,6 +1088,7 @@ class os: AllStatic {
 
  private:
   static size_t pre_alloc(void** raw_ptr, void* old_ptr, size_t size, bool check_limit, MemTag mem_tag, const NativeCallStack& stack);
+  static size_t pre_alloc2(void** raw_ptr, void* old_ptr, size_t size, bool check_limit, MemTag mem_tag, const NativeCallStack& stack);
   static void* post_alloc(void* raw_ptr, size_t size, size_t chunk, MemTag mem_tag, const NativeCallStack& stack);
 
 };
