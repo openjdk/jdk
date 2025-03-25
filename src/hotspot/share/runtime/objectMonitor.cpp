@@ -49,7 +49,6 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/perfData.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -648,8 +647,6 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread* current, ObjectMonito
       current->post_vthread_pinned_event(&vthread_pinned_event, "Contended monitor enter", result);
     }
   }
-
-  OM_PERFDATA_OP(ContendedLockAttempts, inc());
 }
 
 // Caveat: try_lock() is not necessarily serializing if it returns failure.
@@ -737,12 +734,19 @@ bool ObjectMonitor::try_lock_or_add_to_entry_list(JavaThread* current, ObjectWai
 static void post_monitor_deflate_event(EventJavaMonitorDeflate* event,
                                        const oop obj) {
   assert(event != nullptr, "invariant");
-  const Klass* monitor_klass = obj->klass();
-  if (ObjectMonitor::is_jfr_excluded(monitor_klass)) {
-    return;
+  if (obj == nullptr) {
+    // Accept the case when obj was already garbage-collected.
+    // Emit the event anyway, but without details.
+    event->set_monitorClass(nullptr);
+    event->set_address(0);
+  } else {
+    const Klass* monitor_klass = obj->klass();
+    if (ObjectMonitor::is_jfr_excluded(monitor_klass)) {
+      return;
+    }
+    event->set_monitorClass(monitor_klass);
+    event->set_address((uintptr_t)(void*)obj);
   }
-  event->set_monitorClass(monitor_klass);
-  event->set_address((uintptr_t)(void*)obj);
   event->commit();
 }
 
@@ -1018,14 +1022,6 @@ void ObjectMonitor::enter_internal(JavaThread* current) {
 
     // The lock is still contested.
 
-    // Keep a tally of the # of futile wakeups.
-    // Note that the counter is not protected by a lock or updated by atomics.
-    // That is by design - we trade "lossy" counters which are exposed to
-    // races during updates for a lower probe effect.
-    // We are in safepoint safe state, so shutdown can remove the counter
-    // under our feet. Make sure we make this access safely.
-    OM_PERFDATA_SAFE_OP(FutileWakeups, inc());
-
     // Assuming this is not a spurious wakeup we'll normally find _succ == current.
     // We can defer clearing _succ until after the spin completes
     // try_spin() must tolerate being called with _succ == current.
@@ -1138,12 +1134,6 @@ void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentN
     // Invariant: after clearing _succ a contending thread
     // *must* retry  _owner before parking.
     OrderAccess::fence();
-
-    // Keep a tally of the # of futile wakeups.
-    // Note that the counter is not protected by a lock or updated by atomics.
-    // That is by design - we trade "lossy" counters which are exposed to
-    // races during updates for a lower probe effect.
-    OM_PERFDATA_OP(FutileWakeups, inc());
   }
 
   // Current has acquired the lock -- Unlink current from the _entry_list.
@@ -1601,9 +1591,6 @@ void ObjectMonitor::exit_epilog(JavaThread* current, ObjectWaiter* Wakee) {
     // Virtual thread case.
     Trigger->unpark();
   }
-
-  // Maintain stats and report events to JVMTI
-  OM_PERFDATA_OP(Parks, inc());
 }
 
 // Exits the monitor returning recursion count. _owner should
@@ -2038,7 +2025,6 @@ void ObjectMonitor::notify(TRAPS) {
   EventJavaMonitorNotify event;
   DTRACE_MONITOR_PROBE(notify, this, object(), current);
   int tally = notify_internal(current) ? 1 : 0;
-  OM_PERFDATA_OP(Notifications, inc(tally));
 
   if ((tally > 0) && event.should_commit()) {
     post_monitor_notify_event(&event, this, /* notified_count = */ tally);
@@ -2066,8 +2052,6 @@ void ObjectMonitor::notifyAll(TRAPS) {
       tally++;
     }
   }
-
-  OM_PERFDATA_OP(Notifications, inc(tally));
 
   if ((tally > 0) && event.should_commit()) {
     post_monitor_notify_event(&event, this, /* notified_count = */ tally);
@@ -2507,14 +2491,6 @@ inline void ObjectMonitor::dequeue_specific_waiter(ObjectWaiter* node) {
 }
 
 // -----------------------------------------------------------------------------
-// PerfData support
-PerfCounter * ObjectMonitor::_sync_ContendedLockAttempts       = nullptr;
-PerfCounter * ObjectMonitor::_sync_FutileWakeups               = nullptr;
-PerfCounter * ObjectMonitor::_sync_Parks                       = nullptr;
-PerfCounter * ObjectMonitor::_sync_Notifications               = nullptr;
-PerfCounter * ObjectMonitor::_sync_Inflations                  = nullptr;
-PerfCounter * ObjectMonitor::_sync_Deflations                  = nullptr;
-PerfLongVariable * ObjectMonitor::_sync_MonExtant              = nullptr;
 
 // One-shot global initialization for the sync subsystem.
 // We could also defer initialization and initialize on-demand
@@ -2529,29 +2505,6 @@ void ObjectMonitor::Initialize() {
     Knob_SpinLimit = 0;
     Knob_PreSpin   = 0;
     Knob_FixedSpin = -1;
-  }
-
-  if (UsePerfData) {
-    EXCEPTION_MARK;
-#define NEWPERFCOUNTER(n)                                                \
-  {                                                                      \
-    n = PerfDataManager::create_counter(SUN_RT, #n, PerfData::U_Events,  \
-                                        CHECK);                          \
-  }
-#define NEWPERFVARIABLE(n)                                                \
-  {                                                                       \
-    n = PerfDataManager::create_variable(SUN_RT, #n, PerfData::U_Events,  \
-                                         CHECK);                          \
-  }
-    NEWPERFCOUNTER(_sync_Inflations);
-    NEWPERFCOUNTER(_sync_Deflations);
-    NEWPERFCOUNTER(_sync_ContendedLockAttempts);
-    NEWPERFCOUNTER(_sync_FutileWakeups);
-    NEWPERFCOUNTER(_sync_Parks);
-    NEWPERFCOUNTER(_sync_Notifications);
-    NEWPERFVARIABLE(_sync_MonExtant);
-#undef NEWPERFCOUNTER
-#undef NEWPERFVARIABLE
   }
 
   _oop_storage = OopStorageSet::create_weak("ObjectSynchronizer Weak", mtSynchronizer);
