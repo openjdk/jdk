@@ -77,9 +77,8 @@ public class EarlyThreadGroupChildrenTest extends TestScaffold {
         cpRequest.setSuspendPolicy(EventRequest.SUSPEND_ALL);
         cpRequest.enable();
     }
-    
+
     static volatile int classPreparedCount = 0;
-    //static final int MAX_CLASSPREPARED_EVENTS = 50;
 
     @Override
     public void classPrepared(ClassPrepareEvent event) {
