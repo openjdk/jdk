@@ -737,12 +737,19 @@ bool ObjectMonitor::try_lock_or_add_to_entry_list(JavaThread* current, ObjectWai
 static void post_monitor_deflate_event(EventJavaMonitorDeflate* event,
                                        const oop obj) {
   assert(event != nullptr, "invariant");
-  const Klass* monitor_klass = obj->klass();
-  if (ObjectMonitor::is_jfr_excluded(monitor_klass)) {
-    return;
+  if (obj == nullptr) {
+    // Accept the case when obj was already garbage-collected.
+    // Emit the event anyway, but without details.
+    event->set_monitorClass(nullptr);
+    event->set_address(0);
+  } else {
+    const Klass* monitor_klass = obj->klass();
+    if (ObjectMonitor::is_jfr_excluded(monitor_klass)) {
+      return;
+    }
+    event->set_monitorClass(monitor_klass);
+    event->set_address((uintptr_t)(void*)obj);
   }
-  event->set_monitorClass(monitor_klass);
-  event->set_address((uintptr_t)(void*)obj);
   event->commit();
 }
 
