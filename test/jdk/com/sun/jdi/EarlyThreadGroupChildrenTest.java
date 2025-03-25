@@ -64,9 +64,6 @@ public class EarlyThreadGroupChildrenTest extends TestScaffold {
 
     /********** event handlers **********/
 
-    static final int NUM_BREAKPOINTS = 1;
-    int bkptCount;
-    BreakpointRequest bkptRequest;
     ClassPrepareRequest cpRequest;
     ThreadStartRequest tsRequest;
 
