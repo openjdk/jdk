@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,7 +173,7 @@ public abstract class JarURLConnection extends URLConnection {
         }
 
         @SuppressWarnings("deprecation")
-        var _unused = jarFileURL = new URL(spec.substring(0, separator++));
+        var _unused = jarFileURL = new URL(spec.substring(0, separator));
 
         /*
          * The url argument may have had a runtime fragment appended, so
@@ -184,12 +184,14 @@ public abstract class JarURLConnection extends URLConnection {
             @SuppressWarnings("deprecation")
             var _unused2 = jarFileURL = new URL(jarFileURL, "#runtime");
         }
-        entryName = null;
 
-        /* if ! is the last letter of the innerURL, entryName is null */
-        if (++separator != spec.length()) {
-            entryName = spec.substring(separator, spec.length());
-            entryName = ParseUtil.decode (entryName);
+        // If the URL ends with the '!/' separator, entryName is null
+        int nameIdx = separator + 2;
+        if (nameIdx == spec.length()) {
+            entryName = null;
+        } else {
+            String encodedName = spec.substring(nameIdx, spec.length());
+            entryName = ParseUtil.decode(encodedName);
         }
     }
 
