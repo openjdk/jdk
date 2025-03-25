@@ -1,6 +1,0 @@
-#Last test run info
-#Tue Mar 25 11:41:38 CET 2025
-configName=regtest
-finishTime=1742899298059
-startTime=1742899281150
-testURLs=tools/launcher/ExecutionEnvironment.java\#id1
