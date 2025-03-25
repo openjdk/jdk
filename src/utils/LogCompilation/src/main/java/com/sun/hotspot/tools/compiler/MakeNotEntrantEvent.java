@@ -48,6 +48,11 @@ class MakeNotEntrantEvent extends BasicLogEvent {
     private String level;
 
     /**
+     * The reason of invalidation.
+     */
+    private String reason;
+
+    /**
      * The compile kind.
      */
     private String compileKind;
@@ -64,10 +69,14 @@ class MakeNotEntrantEvent extends BasicLogEvent {
 
     public void print(PrintStream stream, boolean printID) {
         if (isZombie()) {
-            stream.printf("%s make_zombie\n", getId());
+            stream.printf("%s make_zombie", getId());
         } else {
-            stream.printf("%s make_not_entrant\n", getId());
+            stream.printf("%s make_not_entrant", getId());
         }
+        if (getReason() != null) {
+            stream.printf(": %s", getReason());
+        }
+        stream.println();
     }
 
     public boolean isZombie() {
@@ -88,7 +97,21 @@ class MakeNotEntrantEvent extends BasicLogEvent {
       this.level = level;
   }
 
-    /**
+  /**
+   * @return the reason
+   */
+  public String getReason() {
+      return reason;
+  }
+
+  /**
+   * @param reason the reason to set
+   */
+  public void setReason(String reason) {
+      this.reason = reason;
+  }
+
+  /**
    * @return the compileKind
    */
   public String getCompileKind() {
