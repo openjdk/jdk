@@ -91,7 +91,7 @@ public final class Frame {
     public static final class Masker {
 
         private final ByteBuffer acc = ByteBuffer.allocate(8);
-        private final int[] maskBytes = new int[4];
+        private final byte[] maskBytes = new byte[4];
         private int offset;
         private long maskLongBe;
         private long maskLongLe;
@@ -135,11 +135,15 @@ public final class Frame {
          * the mask hasn't been previously set it is assumed to be 0.
          */
         public void applyMask(ByteBuffer src, ByteBuffer dst) {
-            if (src.order() == dst.order()) {
+            if (canVectorMask(src, dst)) {
                 initVectorMask(src, dst);
                 applyVectorMask(src, dst);
             }
             applyPlainMask(src, dst);
+        }
+
+        private static boolean canVectorMask(ByteBuffer src, ByteBuffer dst) {
+            return src.order() == dst.order() && Math.min(src.remaining(), dst.remaining()) >= 8;
         }
 
         /**
