@@ -2016,6 +2016,21 @@ public class IRNode {
         vectorNode(VECTOR_BLEND_B, "VectorBlend", TYPE_BYTE);
     }
 
+    public static final String VECTOR_BLEND_S = VECTOR_PREFIX + "VECTOR_BLEND_S" + POSTFIX;
+    static {
+        vectorNode(VECTOR_BLEND_S, "VectorBlend", TYPE_SHORT);
+    }
+
+    public static final String VECTOR_BLEND_I = VECTOR_PREFIX + "VECTOR_BLEND_I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_BLEND_I, "VectorBlend", TYPE_INT);
+    }
+
+    public static final String VECTOR_BLEND_L = VECTOR_PREFIX + "VECTOR_BLEND_L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_BLEND_L, "VectorBlend", TYPE_LONG);
+    }
+
     public static final String VECTOR_BLEND_F = VECTOR_PREFIX + "VECTOR_BLEND_F" + POSTFIX;
     static {
         vectorNode(VECTOR_BLEND_F, "VectorBlend", TYPE_FLOAT);
