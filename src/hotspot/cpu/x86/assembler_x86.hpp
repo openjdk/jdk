@@ -28,6 +28,7 @@
 #include "asm/register.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include <iostream>
 
 // Contains all the definitions needed for x86 assembly code generation.
 
@@ -716,7 +717,8 @@ class Assembler : public AbstractAssembler  {
   // in a 32bit vm. This is somewhat unfortunate but keeps the ifdef noise down.
 
 private:
-
+  const bool USE_PREFIXQ = true;
+  const bool DEMOTE = true;
   bool _legacy_mode_bw;
   bool _legacy_mode_dq;
   bool _legacy_mode_vl;
@@ -808,10 +810,10 @@ private:
                              InstructionAttr *attributes, bool src_is_gpr = false, bool nds_is_ndd = false, bool no_flags = false);
 
   int  evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                  InstructionAttr *attributes, bool no_flags = false);
+                                  InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false, bool demote=true);
 
   int  evex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                 InstructionAttr *attributes, bool no_flags = false);
+                                 InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false, bool demote=false);
 
   void simd_prefix(XMMRegister xreg, XMMRegister nds, Address adr, VexSimdPrefix pre,
                    VexOpcode opc, InstructionAttr *attributes);
@@ -820,6 +822,7 @@ private:
                              VexOpcode opc, InstructionAttr *attributes, bool src_is_gpr = false);
 
   // Helper functions for groups of instructions
+  bool is_demotable(bool no_flags, int dst_enc, int nds_enc, int src_enc);
   void emit_arith_b(int op1, int op2, Register dst, int imm8);
 
   void emit_arith(int op1, int op2, Register dst, int32_t imm32);

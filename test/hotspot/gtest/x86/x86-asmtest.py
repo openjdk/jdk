@@ -166,9 +166,10 @@ class Instruction(object):
         return f'{self._aname} ' + ', '.join([op.astr() for op in self.operands]) + cl_str
 
 class NFInstruction(Instruction):
-    def __init__(self, name, aname, no_flag):
+    def __init__(self, name, aname, no_flag, demote=False):
         super().__init__(name, aname)
         self.no_flag = no_flag
+        self.demote = demote
     
     def cstr(self):
         return f'__ {self._name}(' + ', '.join([op.cstr() for op in self.operands]) + (f', {str(self.no_flag).lower()}' if self.no_flag is not None else '') + ');'
@@ -177,8 +178,14 @@ class NFInstruction(Instruction):
         # JDK assembler uses 'cl' for shift instructions with one operand by default
         cl_str = (', cl' if self._name in shift_rot_ops and len(self.operands) == 2 else '')
         # special case for shift instructions with three operands
-        if (self._name == 'eshldl' or self._name == 'eshldq' or self._name == 'eshrdl' or self._name == 'eshrdq') and all([isinstance(op, Register) for op in self.operands]):
+        all_reg = all([isinstance(op, Register) for op in self.operands])
+        if (self._name == 'eshldl' or self._name == 'eshldq' or self._name == 'eshrdl' or self._name == 'eshrdq') and all_reg:
             cl_str = ', cl'
+
+        ops = [op.cstr() for op in self.operands]
+        if self.demote and len(ops) == 3 and all_reg and is_legacy_gpr(ops[0]) and  is_legacy_gpr(ops[2]) and ops[0] == ops[1] and (not self.no_flag): 
+            return f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]]) + cl_str
+
         return ('{NF}' if self.no_flag else '{EVEX}') + f'{self._aname} ' + ', '.join([op.astr() for op in self.operands]) + cl_str
 
 class RegInstruction(Instruction):
@@ -397,13 +404,17 @@ class RegRegMemNddInstruction(NFInstruction):
 
 class RegRegRegNddInstruction(NFInstruction):
     def __init__(self, name, aname, width, no_flag, reg1, reg2, reg3):
-        super().__init__(name, aname, no_flag)
+        super().__init__(name, aname, no_flag, demote=True)
         self.reg1 = Register().generate(reg1, width)
         self.reg2 = Register().generate(reg2, width)
         self.reg3 = Register().generate(reg3, width)
         self.generate_operands(self.reg1, self.reg2, self.reg3)
 
     def astr(self):
+        # ops = [op.cstr() for op in self.operands]
+        # cl_str = (', cl' if self._name in shift_rot_ops and len(self.operands) == 2 else '')
+        # if is_legacy_gpr(ops[0]) and  is_legacy_gpr(ops[2]) and ops[0] == ops[1] and (not self.no_flag):
+        #     return f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]]) + cl_str
         return f'{{load}}' + super().astr()
 
 class RegRegRegImmNddInstruction(NFInstruction):
@@ -432,6 +443,9 @@ immediate_map = {
     32: immediates32,
     64: immediates32
 }
+
+def is_legacy_gpr(reg):
+    return reg in {'rax', 'rcx', 'rdx', 'rbx', 'r8', 'r9', 'r10', 'r11', 'r12', 'r13', 'r14', 'r15'}
 
 def is_64_reg(reg):
     return reg in {'r8', 'r9', 'r10', 'r11', 'r12', 'r13', 'r14', 'r15', 'r16', 'r17', 'r18', 'r19', 'r20', 'r21', 'r22', 'r23', 'r24', 'r25', 'r26', 'r27', 'r28', 'r29', 'r30', 'r31'}
@@ -507,8 +521,8 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                     instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
             else:
-                test_reg1 = random.choice(test_regs)
-                test_reg2 = random.choice(test_regs)
+                test_reg1 = test_regs[3] #random.choice(test_regs)
+                test_reg2 = test_regs[5] #random.choice(test_regs)
                 lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
                 instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2)
                 print_instruction(instr, lp64_flag, print_lp64_flag)
@@ -523,9 +537,9 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                     instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
             else:
-                test_reg1 = random.choice(test_regs)
-                test_reg2 = random.choice(test_regs)
-                test_reg3 = random.choice(test_regs)
+                test_reg1 = test_regs[3] #random.choice(test_regs)
+                test_reg2 = test_reg1 #random.choice(test_regs)
+                test_reg3 = test_regs[5] #random.choice(test_regs)
                 lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2, test_reg3)
                 instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3)
                 print_instruction(instr, lp64_flag, print_lp64_flag)
@@ -736,317 +750,317 @@ def print_with_ifdef(ifdef_flags, items, item_formatter, width):
 
 instruction_set = {
     TwoRegInstruction: [
-        ('shldl', 'shld', 32),
-        ('shrdl', 'shrd', 32),
-        ('adcl', 'adc', 32),
-        ('cmpl', 'cmp', 32),
-        ('imull', 'imul', 32),
-        ('popcntl', 'popcnt', 32),
-        ('sbbl', 'sbb', 32),
+        # ('shldl', 'shld', 32),
+        # ('shrdl', 'shrd', 32),
+        # ('adcl', 'adc', 32),
+        # ('cmpl', 'cmp', 32),
+        # ('imull', 'imul', 32),
+        # ('popcntl', 'popcnt', 32),
+        # ('sbbl', 'sbb', 32),
         ('subl', 'sub', 32),
-        ('tzcntl', 'tzcnt', 32),
-        ('lzcntl', 'lzcnt', 32),
+        # ('tzcntl', 'tzcnt', 32),
+        # ('lzcntl', 'lzcnt', 32),
         ('addl', 'add', 32),
         ('andl', 'and', 32),
-        ('orl', 'or', 32),
-        ('xorl', 'xor', 32),
-        ('movl', 'mov', 32),
-        ('bsfl', 'bsf', 32),
-        ('bsrl', 'bsr', 32),
-        ('xchgl', 'xchg', 32),
-        ('testl', 'test', 32),
+        # ('orl', 'or', 32),
+        # ('xorl', 'xor', 32),
+        # ('movl', 'mov', 32),
+        # ('bsfl', 'bsf', 32),
+        # ('bsrl', 'bsr', 32),
+        # ('xchgl', 'xchg', 32),
+        # ('testl', 'test', 32),
     ],
-    MemRegInstruction: [
-        ('addb', 'add', 8),
-        ('addw', 'add', 16),
-        ('addl', 'add', 32),
-        ('adcl', 'adc', 32),
-        ('andb', 'and', 8),
-        ('andl', 'and', 32),
-        ('cmpb', 'cmp', 8),
-        ('cmpw', 'cmp', 16),
-        ('cmpl', 'cmp', 32),
-        ('orb', 'or', 8),
-        ('orl', 'or', 32),
-        ('xorb', 'xor', 8),
-        ('xorl', 'xor', 32),
-        ('subl', 'sub', 32),
-        ('movb', 'mov', 8),
-        ('movl', 'mov', 32),
-        ('xaddb', 'xadd', 8),
-        ('xaddw', 'xadd', 16),
-        ('xaddl', 'xadd', 32),
-    ],
-    MemImmInstruction: [
-        ('adcl', 'adc', 32),
-        ('andl', 'and', 32),
-        ('addb', 'add', 8),
-        ('addw', 'add', 16),
-        ('addl', 'add', 32),
-        ('cmpb', 'cmp', 8),
-        ('cmpw', 'cmp', 16),
-        ('cmpl', 'cmp', 32),
-        ('sarl', 'sar', 32),
-        ('sall', 'sal', 32),
-        ('sbbl', 'sbb', 32),
-        ('shrl', 'shr', 32),
-        ('subl', 'sub', 32),
-        ('xorl', 'xor', 32),
-        ('orb', 'or', 8),
-        ('orl', 'or', 32),
-        ('movb', 'mov', 8),
-        ('movl', 'mov', 32),
-        ('testb', 'test', 8),
-        ('testl', 'test', 32),
-        ('cmpl_imm32', 'cmp', 32),
-    ],
-    RegMemInstruction: [
-        ('addl', 'add', 32),
-        ('andl', 'and', 32),
-        ('cmpb', 'cmp', 8),
-        ('cmpl', 'cmp', 32),
-        ('lzcntl', 'lzcnt', 32),
-        ('orl', 'or', 32),
-        ('adcl', 'adc', 32),
-        ('imull', 'imul', 32),
-        ('popcntl', 'popcnt', 32),
-        ('sbbl', 'sbb', 32),
-        ('subl', 'sub', 32),
-        ('tzcntl', 'tzcnt', 32),
-        ('xorb', 'xor', 8),
-        ('xorw', 'xor', 16),
-        ('xorl', 'xor', 32),
-        ('movb', 'mov', 8),
-        ('movl', 'mov', 32),
-        ('leal', 'lea', 32),
-        ('xchgb', 'xchg', 8),
-        ('xchgw', 'xchg', 16),
-        ('xchgl', 'xchg', 32),
-        ('testl', 'test', 32),
-    ],
-    RegImmInstruction: [
-        ('addb', 'add', 8),
-        ('addl', 'add', 32),
-        ('andl', 'and', 32),
-        ('adcl', 'adc', 32),
-        ('cmpb', 'cmp', 8),
-        ('cmpl', 'cmp', 32),
-        ('rcll', 'rcl', 32),
-        ('roll', 'rol', 32),
-        ('rorl', 'ror', 32),
-        ('sarl', 'sar', 32),
-        ('sall', 'sal', 32),
-        ('sbbl', 'sbb', 32),
-        ('shll', 'shl', 32),
-        ('shrl', 'shr', 32),
-        ('subl', 'sub', 32),
-        ('xorl', 'xor', 32),
-        ('movl', 'mov', 32),
-        ('testb', 'test', 8),
-        ('testl', 'test', 32),
-        ('subl_imm32', 'sub', 32),
-    ],
-    CondRegMemInstruction: [
-        ('cmovl', 'cmov', 32, key) for key in cond_to_suffix.keys()
-    ],
-    CondRegInstruction: [
-        ('set', 'set', 8, key) for key in cond_to_suffix.keys()
-    ],
-    RegInstruction: [
-        ('divl', 'div', 32),
-        ('idivl', 'idiv', 32),
-        ('imull', 'imul', 32),
-        ('mull', 'mul', 32),
-        ('negl', 'neg', 32),
-        ('notl', 'not', 32),
-        ('roll', 'rol', 32),
-        ('rorl', 'ror', 32),
-        ('sarl', 'sar', 32),
-        ('sall', 'sal', 32),
-        ('shll', 'shl', 32),
-        ('shrl', 'shr', 32),
-        ('incrementl', 'inc', 32),
-        ('decrementl', 'dec', 32),
-    ],
-    MemInstruction: [
-        ('mull', 'mul', 32),
-        ('negl', 'neg', 32),
-        ('sarl', 'sar', 32),
-        ('sall', 'sal', 32),
-        ('shrl', 'shr', 32),
-        ('incrementl', 'inc', 32),
-        ('decrementl', 'dec', 32),
-    ],
-    RegMemImmInstruction: [
-        ('imull', 'imul', 32),
-    ],
-    RegRegImmInstruction: [
-        ('imull', 'imul', 32),
-        ('shldl', 'shld', 32),
-        ('shrdl', 'shrd', 32),
-    ],
-    MoveRegMemInstruction: [
-        ('movzbl', 'movzx', 32, 8),
-        ('movzwl', 'movzx', 32, 16),
-        ('movsbl', 'movsx', 32, 8),
-        ('movswl', 'movsx', 32, 16),
-    ],
-    MoveRegRegInstruction: [
-        ('movzbl', 'movzx', 32, 8),
-        ('movzwl', 'movzx', 32, 16),
-        ('movsbl', 'movsx', 32, 8),
-        ('movswl', 'movsx', 32, 16),
-    ],
-    CmpxchgInstruction: [
-        ('cmpxchgb', 'cmpxchg', 8),
-        ('cmpxchgw', 'cmpxchg', 16),
-        ('cmpxchgl', 'cmpxchg', 32),
-    ],
-    # --- NDD instructions ---
-    RegNddInstruction: [
-        ('eidivl', 'idiv', 32, False),
-        ('eidivl', 'idiv', 32, True),
-        ('edivl', 'div', 32, False),
-        ('edivl', 'div', 32, True),
-        ('eimull', 'imul', 32, False),
-        ('eimull', 'imul', 32, True),
-        ('emull', 'mul', 32, False),
-        ('emull', 'mul', 32, True),
-    ],
-    MemNddInstruction: [
-        ('emull', 'mul', 32, False),
-        ('emull', 'mul', 32, True),
-    ],
-    RegRegNddInstruction: [
-        ('elzcntl', 'lzcnt', 32, False),
-        ('elzcntl', 'lzcnt', 32, True),
-        ('enegl', 'neg', 32, False),
-        ('enegl', 'neg', 32, True),
-        ('epopcntl', 'popcnt', 32, False),
-        ('epopcntl', 'popcnt', 32, True),
-        ('enotl', 'not', 32, None),
-        ('eroll', 'rol', 32, False),
-        ('eroll', 'rol', 32, True),
-        ('erorl', 'ror', 32, False),
-        ('erorl', 'ror', 32, True),
-        ('esall', 'sal', 32, False),
-        ('esall', 'sal', 32, True),
-        ('esarl', 'sar', 32, False),
-        ('esarl', 'sar', 32, True),
-        ('edecl', 'dec', 32, False),
-        ('edecl', 'dec', 32, True),
-        ('eincl', 'inc', 32, False),
-        ('eincl', 'inc', 32, True), 
-        ('eshll', 'shl', 32, False),
-        ('eshll', 'shl', 32, True),
-        ('eshrl', 'shr', 32, False),
-        ('eshrl', 'shr', 32, True),
-        ('etzcntl', 'tzcnt', 32, False),
-        ('etzcntl', 'tzcnt', 32, True),
-    ],
-    RegMemNddInstruction: [
-        ('elzcntl', 'lzcnt', 32, False),
-        ('elzcntl', 'lzcnt', 32, True),
-        ('enegl', 'neg', 32, False),
-        ('enegl', 'neg', 32, True),
-        ('epopcntl', 'popcnt', 32, False),
-        ('epopcntl', 'popcnt', 32, True),
-        ('esall', 'sal', 32, False),
-        ('esall', 'sal', 32, True),
-        ('esarl', 'sar', 32, False),
-        ('esarl', 'sar', 32, True),
-        ('edecl', 'dec', 32, False),
-        ('edecl', 'dec', 32, True),
-        ('eincl', 'inc', 32, False),
-        ('eincl', 'inc', 32, True),
-        ('eshrl', 'shr', 32, False),
-        ('eshrl', 'shr', 32, True),
-        ('etzcntl', 'tzcnt', 32, False),
-        ('etzcntl', 'tzcnt', 32, True),
-    ],
-    RegMemImmNddInstruction: [
-        ('eaddl', 'add', 32, False),
-        ('eaddl', 'add', 32, True),
-        ('eandl', 'and', 32, False),
-        ('eandl', 'and', 32, True),
-        ('eimull', 'imul', 32, False),
-        ('eimull', 'imul', 32, True),
-        ('eorl', 'or', 32, False),
-        ('eorl', 'or', 32, True),
-        ('eorb', 'or', 8, False),
-        ('eorb', 'or', 8, True),
-        ('esall', 'sal', 32, False),
-        ('esall', 'sal', 32, True),
-        ('esarl', 'sar', 32, False),
-        ('esarl', 'sar', 32, True),
-        ('eshrl', 'shr', 32, False),
-        ('eshrl', 'shr', 32, True),
-        ('esubl', 'sub', 32, False),
-        ('esubl', 'sub', 32, True),
-        ('exorl', 'xor', 32, False),
-        ('exorl', 'xor', 32, True),
-    ],
-    RegMemRegNddInstruction: [
-        ('eaddl', 'add', 32, False),
-        ('eaddl', 'add', 32, True),
-        ('eorl', 'or', 32, False),
-        ('eorl', 'or', 32, True),
-        ('eorb', 'or', 8, False),
-        ('eorb', 'or', 8, True),
-        ('esubl', 'sub', 32, False),
-        ('esubl', 'sub', 32, True),
-        ('exorl', 'xor', 32, False),
-        ('exorl', 'xor', 32, True),
-        ('exorb', 'xor', 8, False),
-        ('exorb', 'xor', 8, True),
-    ],
-    RegRegImmNddInstruction: [
-        ('eaddl', 'add', 32, False),
-        ('eaddl', 'add', 32, True),
-        ('eandl', 'and', 32, False),
-        ('eandl', 'and', 32, True),
-        ('eimull', 'imul', 32, False),
-        ('eimull', 'imul', 32, True),
-        ('eorl', 'or', 32, False),
-        ('eorl', 'or', 32, True),
-        ('ercll', 'rcl', 32, None),
-        ('eroll', 'rol', 32, False),
-        ('eroll', 'rol', 32, True),
-        ('erorl', 'ror', 32, False),
-        ('erorl', 'ror', 32, True),
-        ('esall', 'sal', 32, False),
-        ('esall', 'sal', 32, True),
-        ('esarl', 'sar', 32, False),
-        ('esarl', 'sar', 32, True),
-        ('eshll', 'shl', 32, False),
-        ('eshll', 'shl', 32, True),
-        ('eshrl', 'shr', 32, False),
-        ('eshrl', 'shr', 32, True),
-        ('esubl', 'sub', 32, False),
-        ('esubl', 'sub', 32, True),
-        ('exorl', 'xor', 32, False),
-        ('exorl', 'xor', 32, True),
-        ('esubl_imm32', 'sub', 32, False),
-        ('esubl_imm32', 'sub', 32, True),
-    ],
-    RegRegMemNddInstruction: [
-        ('eaddl', 'add', 32, False),
-        ('eaddl', 'add', 32, True),
-        ('eandl', 'and', 32, False),
-        ('eandl', 'and', 32, True),
-        ('eimull', 'imul', 32, False),
-        ('eimull', 'imul', 32, True),
-        ('eorl', 'or', 32, False),
-        ('eorl', 'or', 32, True),
-        ('esubl', 'sub', 32, False),
-        ('esubl', 'sub', 32, True),
-        ('exorl', 'xor', 32, False),
-        ('exorl', 'xor', 32, True),
-        ('exorb', 'xor', 8, False),
-        ('exorb', 'xor', 8, True),
-        ('exorw', 'xor', 16, False),
-        ('exorw', 'xor', 16, True),
-    ],
+    # MemRegInstruction: [
+    #     ('addb', 'add', 8),
+    #     ('addw', 'add', 16),
+    #     ('addl', 'add', 32),
+    #     ('adcl', 'adc', 32),
+    #     ('andb', 'and', 8),
+    #     ('andl', 'and', 32),
+    #     ('cmpb', 'cmp', 8),
+    #     ('cmpw', 'cmp', 16),
+    #     ('cmpl', 'cmp', 32),
+    #     ('orb', 'or', 8),
+    #     ('orl', 'or', 32),
+    #     ('xorb', 'xor', 8),
+    #     ('xorl', 'xor', 32),
+    #     ('subl', 'sub', 32),
+    #     ('movb', 'mov', 8),
+    #     ('movl', 'mov', 32),
+    #     ('xaddb', 'xadd', 8),
+    #     ('xaddw', 'xadd', 16),
+    #     ('xaddl', 'xadd', 32),
+    # ],
+    # MemImmInstruction: [
+    #     ('adcl', 'adc', 32),
+    #     ('andl', 'and', 32),
+    #     ('addb', 'add', 8),
+    #     ('addw', 'add', 16),
+    #     ('addl', 'add', 32),
+    #     ('cmpb', 'cmp', 8),
+    #     ('cmpw', 'cmp', 16),
+    #     ('cmpl', 'cmp', 32),
+    #     ('sarl', 'sar', 32),
+    #     ('sall', 'sal', 32),
+    #     ('sbbl', 'sbb', 32),
+    #     ('shrl', 'shr', 32),
+    #     ('subl', 'sub', 32),
+    #     ('xorl', 'xor', 32),
+    #     ('orb', 'or', 8),
+    #     ('orl', 'or', 32),
+    #     ('movb', 'mov', 8),
+    #     ('movl', 'mov', 32),
+    #     ('testb', 'test', 8),
+    #     ('testl', 'test', 32),
+    #     ('cmpl_imm32', 'cmp', 32),
+    # ],
+    # RegMemInstruction: [
+    #     ('addl', 'add', 32),
+    #     ('andl', 'and', 32),
+    #     ('cmpb', 'cmp', 8),
+    #     ('cmpl', 'cmp', 32),
+    #     ('lzcntl', 'lzcnt', 32),
+    #     ('orl', 'or', 32),
+    #     ('adcl', 'adc', 32),
+    #     ('imull', 'imul', 32),
+    #     ('popcntl', 'popcnt', 32),
+    #     ('sbbl', 'sbb', 32),
+    #     ('subl', 'sub', 32),
+    #     ('tzcntl', 'tzcnt', 32),
+    #     ('xorb', 'xor', 8),
+    #     ('xorw', 'xor', 16),
+    #     ('xorl', 'xor', 32),
+    #     ('movb', 'mov', 8),
+    #     ('movl', 'mov', 32),
+    #     ('leal', 'lea', 32),
+    #     ('xchgb', 'xchg', 8),
+    #     ('xchgw', 'xchg', 16),
+    #     ('xchgl', 'xchg', 32),
+    #     ('testl', 'test', 32),
+    # ],
+    # RegImmInstruction: [
+    #     ('addb', 'add', 8),
+    #     ('addl', 'add', 32),
+    #     ('andl', 'and', 32),
+    #     ('adcl', 'adc', 32),
+    #     ('cmpb', 'cmp', 8),
+    #     ('cmpl', 'cmp', 32),
+    #     ('rcll', 'rcl', 32),
+    #     ('roll', 'rol', 32),
+    #     ('rorl', 'ror', 32),
+    #     ('sarl', 'sar', 32),
+    #     ('sall', 'sal', 32),
+    #     ('sbbl', 'sbb', 32),
+    #     ('shll', 'shl', 32),
+    #     ('shrl', 'shr', 32),
+    #     ('subl', 'sub', 32),
+    #     ('xorl', 'xor', 32),
+    #     ('movl', 'mov', 32),
+    #     ('testb', 'test', 8),
+    #     ('testl', 'test', 32),
+    #     ('subl_imm32', 'sub', 32),
+    # ],
+    # CondRegMemInstruction: [
+    #     ('cmovl', 'cmov', 32, key) for key in cond_to_suffix.keys()
+    # ],
+    # CondRegInstruction: [
+    #     ('set', 'set', 8, key) for key in cond_to_suffix.keys()
+    # ],
+    # RegInstruction: [
+    #     ('divl', 'div', 32),
+    #     ('idivl', 'idiv', 32),
+    #     ('imull', 'imul', 32),
+    #     ('mull', 'mul', 32),
+    #     ('negl', 'neg', 32),
+    #     ('notl', 'not', 32),
+    #     ('roll', 'rol', 32),
+    #     ('rorl', 'ror', 32),
+    #     ('sarl', 'sar', 32),
+    #     ('sall', 'sal', 32),
+    #     ('shll', 'shl', 32),
+    #     ('shrl', 'shr', 32),
+    #     ('incrementl', 'inc', 32),
+    #     ('decrementl', 'dec', 32),
+    # ],
+    # MemInstruction: [
+    #     ('mull', 'mul', 32),
+    #     ('negl', 'neg', 32),
+    #     ('sarl', 'sar', 32),
+    #     ('sall', 'sal', 32),
+    #     ('shrl', 'shr', 32),
+    #     ('incrementl', 'inc', 32),
+    #     ('decrementl', 'dec', 32),
+    # ],
+    # RegMemImmInstruction: [
+    #     ('imull', 'imul', 32),
+    # ],
+    # RegRegImmInstruction: [
+    #     ('imull', 'imul', 32),
+    #     ('shldl', 'shld', 32),
+    #     ('shrdl', 'shrd', 32),
+    # ],
+    # MoveRegMemInstruction: [
+    #     ('movzbl', 'movzx', 32, 8),
+    #     ('movzwl', 'movzx', 32, 16),
+    #     ('movsbl', 'movsx', 32, 8),
+    #     ('movswl', 'movsx', 32, 16),
+    # ],
+    # MoveRegRegInstruction: [
+    #     ('movzbl', 'movzx', 32, 8),
+    #     ('movzwl', 'movzx', 32, 16),
+    #     ('movsbl', 'movsx', 32, 8),
+    #     ('movswl', 'movsx', 32, 16),
+    # ],
+    # CmpxchgInstruction: [
+    #     ('cmpxchgb', 'cmpxchg', 8),
+    #     ('cmpxchgw', 'cmpxchg', 16),
+    #     ('cmpxchgl', 'cmpxchg', 32),
+    # ],
+    # # --- NDD instructions ---
+    # RegNddInstruction: [
+    #     ('eidivl', 'idiv', 32, False),
+    #     ('eidivl', 'idiv', 32, True),
+    #     ('edivl', 'div', 32, False),
+    #     ('edivl', 'div', 32, True),
+    #     ('eimull', 'imul', 32, False),
+    #     ('eimull', 'imul', 32, True),
+    #     ('emull', 'mul', 32, False),
+    #     ('emull', 'mul', 32, True),
+    # ],
+    # MemNddInstruction: [
+    #     ('emull', 'mul', 32, False),
+    #     ('emull', 'mul', 32, True),
+    # ],
+    # RegRegNddInstruction: [
+    #     ('elzcntl', 'lzcnt', 32, False),
+    #     ('elzcntl', 'lzcnt', 32, True),
+    #     ('enegl', 'neg', 32, False),
+    #     ('enegl', 'neg', 32, True),
+    #     ('epopcntl', 'popcnt', 32, False),
+    #     ('epopcntl', 'popcnt', 32, True),
+    #     ('enotl', 'not', 32, None),
+    #     ('eroll', 'rol', 32, False),
+    #     ('eroll', 'rol', 32, True),
+    #     ('erorl', 'ror', 32, False),
+    #     ('erorl', 'ror', 32, True),
+    #     ('esall', 'sal', 32, False),
+    #     ('esall', 'sal', 32, True),
+    #     ('esarl', 'sar', 32, False),
+    #     ('esarl', 'sar', 32, True),
+    #     ('edecl', 'dec', 32, False),
+    #     ('edecl', 'dec', 32, True),
+    #     ('eincl', 'inc', 32, False),
+    #     ('eincl', 'inc', 32, True), 
+    #     ('eshll', 'shl', 32, False),
+    #     ('eshll', 'shl', 32, True),
+    #     ('eshrl', 'shr', 32, False),
+    #     ('eshrl', 'shr', 32, True),
+    #     ('etzcntl', 'tzcnt', 32, False),
+    #     ('etzcntl', 'tzcnt', 32, True),
+    # ],
+    # RegMemNddInstruction: [
+    #     ('elzcntl', 'lzcnt', 32, False),
+    #     ('elzcntl', 'lzcnt', 32, True),
+    #     ('enegl', 'neg', 32, False),
+    #     ('enegl', 'neg', 32, True),
+    #     ('epopcntl', 'popcnt', 32, False),
+    #     ('epopcntl', 'popcnt', 32, True),
+    #     ('esall', 'sal', 32, False),
+    #     ('esall', 'sal', 32, True),
+    #     ('esarl', 'sar', 32, False),
+    #     ('esarl', 'sar', 32, True),
+    #     ('edecl', 'dec', 32, False),
+    #     ('edecl', 'dec', 32, True),
+    #     ('eincl', 'inc', 32, False),
+    #     ('eincl', 'inc', 32, True),
+    #     ('eshrl', 'shr', 32, False),
+    #     ('eshrl', 'shr', 32, True),
+    #     ('etzcntl', 'tzcnt', 32, False),
+    #     ('etzcntl', 'tzcnt', 32, True),
+    # ],
+    # RegMemImmNddInstruction: [
+    #     ('eaddl', 'add', 32, False),
+    #     ('eaddl', 'add', 32, True),
+    #     ('eandl', 'and', 32, False),
+    #     ('eandl', 'and', 32, True),
+    #     ('eimull', 'imul', 32, False),
+    #     ('eimull', 'imul', 32, True),
+    #     ('eorl', 'or', 32, False),
+    #     ('eorl', 'or', 32, True),
+    #     ('eorb', 'or', 8, False),
+    #     ('eorb', 'or', 8, True),
+    #     ('esall', 'sal', 32, False),
+    #     ('esall', 'sal', 32, True),
+    #     ('esarl', 'sar', 32, False),
+    #     ('esarl', 'sar', 32, True),
+    #     ('eshrl', 'shr', 32, False),
+    #     ('eshrl', 'shr', 32, True),
+    #     ('esubl', 'sub', 32, False),
+    #     ('esubl', 'sub', 32, True),
+    #     ('exorl', 'xor', 32, False),
+    #     ('exorl', 'xor', 32, True),
+    # ],
+    # RegMemRegNddInstruction: [
+    #     ('eaddl', 'add', 32, False),
+    #     ('eaddl', 'add', 32, True),
+    #     ('eorl', 'or', 32, False),
+    #     ('eorl', 'or', 32, True),
+    #     ('eorb', 'or', 8, False),
+    #     ('eorb', 'or', 8, True),
+    #     ('esubl', 'sub', 32, False),
+    #     ('esubl', 'sub', 32, True),
+    #     ('exorl', 'xor', 32, False),
+    #     ('exorl', 'xor', 32, True),
+    #     ('exorb', 'xor', 8, False),
+    #     ('exorb', 'xor', 8, True),
+    # ],
+    # RegRegImmNddInstruction: [
+    #     ('eaddl', 'add', 32, False),
+    #     ('eaddl', 'add', 32, True),
+    #     ('eandl', 'and', 32, False),
+    #     ('eandl', 'and', 32, True),
+    #     ('eimull', 'imul', 32, False),
+    #     ('eimull', 'imul', 32, True),
+    #     ('eorl', 'or', 32, False),
+    #     ('eorl', 'or', 32, True),
+    #     ('ercll', 'rcl', 32, None),
+    #     ('eroll', 'rol', 32, False),
+    #     ('eroll', 'rol', 32, True),
+    #     ('erorl', 'ror', 32, False),
+    #     ('erorl', 'ror', 32, True),
+    #     ('esall', 'sal', 32, False),
+    #     ('esall', 'sal', 32, True),
+    #     ('esarl', 'sar', 32, False),
+    #     ('esarl', 'sar', 32, True),
+    #     ('eshll', 'shl', 32, False),
+    #     ('eshll', 'shl', 32, True),
+    #     ('eshrl', 'shr', 32, False),
+    #     ('eshrl', 'shr', 32, True),
+    #     ('esubl', 'sub', 32, False),
+    #     ('esubl', 'sub', 32, True),
+    #     ('exorl', 'xor', 32, False),
+    #     ('exorl', 'xor', 32, True),
+    #     ('esubl_imm32', 'sub', 32, False),
+    #     ('esubl_imm32', 'sub', 32, True),
+    # ],
+    # RegRegMemNddInstruction: [
+    #     ('eaddl', 'add', 32, False),
+    #     ('eaddl', 'add', 32, True),
+    #     ('eandl', 'and', 32, False),
+    #     ('eandl', 'and', 32, True),
+    #     ('eimull', 'imul', 32, False),
+    #     ('eimull', 'imul', 32, True),
+    #     ('eorl', 'or', 32, False),
+    #     ('eorl', 'or', 32, True),
+    #     ('esubl', 'sub', 32, False),
+    #     ('esubl', 'sub', 32, True),
+    #     ('exorl', 'xor', 32, False),
+    #     ('exorl', 'xor', 32, True),
+    #     ('exorb', 'xor', 8, False),
+    #     ('exorb', 'xor', 8, True),
+    #     ('exorw', 'xor', 16, False),
+    #     ('exorw', 'xor', 16, True),
+    # ],
     RegRegRegNddInstruction: [
         ('eaddl', 'add', 32, False),
         ('eaddl', 'add', 32, True),
@@ -1054,8 +1068,8 @@ instruction_set = {
         ('eandl', 'and', 32, True),
         ('eimull', 'imul', 32, False),
         ('eimull', 'imul', 32, True),
-        ('eorw', 'or', 16, False),
-        ('eorw', 'or', 16, True),
+        # ('eorw', 'or', 16, False),
+        # ('eorw', 'or', 16, True),
         ('eorl', 'or', 32, False),
         ('eorl', 'or', 32, True),
         ('eshldl', 'shld', 32, False),
@@ -1067,18 +1081,18 @@ instruction_set = {
         ('exorl', 'xor', 32, False),
         ('exorl', 'xor', 32, True),
     ],
-    RegRegRegImmNddInstruction: [
-        ('eshldl', 'shld', 32, False),
-        ('eshldl', 'shld', 32, True),
-        ('eshrdl', 'shrd', 32, False),
-        ('eshrdl', 'shrd', 32, True),
-    ],
-    CondRegRegRegInstruction: [
-        ('ecmovl', 'cmov', 32, key) for key in cond_to_suffix.keys()
-    ],
-    CondRegRegMemInstruction: [
-        ('ecmovl', 'cmov', 32, key) for key in cond_to_suffix.keys()
-    ],
+    # RegRegRegImmNddInstruction: [
+    #     ('eshldl', 'shld', 32, False),
+    #     ('eshldl', 'shld', 32, True),
+    #     ('eshrdl', 'shrd', 32, False),
+    #     ('eshrdl', 'shrd', 32, True),
+    # ],
+    # CondRegRegRegInstruction: [
+    #     ('ecmovl', 'cmov', 32, key) for key in cond_to_suffix.keys()
+    # ],
+    # CondRegRegMemInstruction: [
+    #     ('ecmovl', 'cmov', 32, key) for key in cond_to_suffix.keys()
+    # ],
 }
 
 instruction_set64 = {
@@ -1253,7 +1267,7 @@ instruction_set64 = {
         ('elzcntq', 'lzcnt', 64, True),
         ('enegq', 'neg', 64, False),
         ('enegq', 'neg', 64, True),
-        ('enotq', 'not', 64, None),
+        #('enotq', 'not', 64, None),
         ('epopcntq', 'popcnt', 64, False),
         ('epopcntq', 'popcnt', 64, True),
         ('erolq', 'rol', 64, False),
@@ -1328,7 +1342,7 @@ instruction_set64 = {
         ('esubq', 'sub', 64, True),
         ('exorq', 'xor', 64, False),
         ('exorq', 'xor', 64, True),
-    ],
+    ], # needs fixes here
     RegRegImmNddInstruction: [
         ('eaddq', 'add', 64, False),
         ('eaddq', 'add', 64, True),
@@ -1338,7 +1352,7 @@ instruction_set64 = {
         ('eimulq', 'imul', 64, True),
         ('eorq', 'or', 64, False),
         ('eorq', 'or', 64, True),
-        ('erclq', 'rcl', 64, None),
+        #('erclq', 'rcl', 64, None),
         ('erolq', 'rol', 64, False),
         ('erolq', 'rol', 64, True),
         ('erorq', 'ror', 64, False),
@@ -1360,20 +1374,20 @@ instruction_set64 = {
         ('esubq_imm32', 'sub', 64, False), 
         ('esubq_imm32', 'sub', 64, True), 
     ],
-    RegRegMemNddInstruction: [
-        ('eaddq', 'add', 64, False),
-        ('eaddq', 'add', 64, True),
-        ('eandq', 'and', 64, False),
-        ('eandq', 'and', 64, True),
-        ('eorq', 'or', 64, False),
-        ('eorq', 'or', 64, True),
-        ('eimulq', 'imul', 64, False),
-        ('eimulq', 'imul', 64, True),
-        ('esubq', 'sub', 64, False),
-        ('esubq', 'sub', 64, True),
-        ('exorq', 'xor', 64, False),
-        ('exorq', 'xor', 64, True),
-    ],
+    # RegRegMemNddInstruction: [
+    #     ('eaddq', 'add', 64, False),
+    #     ('eaddq', 'add', 64, True),
+    #     ('eandq', 'and', 64, False),
+    #     ('eandq', 'and', 64, True),
+    #     ('eorq', 'or', 64, False),
+    #     ('eorq', 'or', 64, True),
+    #     ('eimulq', 'imul', 64, False),
+    #     ('eimulq', 'imul', 64, True),
+    #     ('esubq', 'sub', 64, False),
+    #     ('esubq', 'sub', 64, True),
+    #     ('exorq', 'xor', 64, False),
+    #     ('exorq', 'xor', 64, True),
+    # ],
     RegRegRegNddInstruction: [
         ('eaddq', 'add', 64, False),
         ('eaddq', 'add', 64, True),
@@ -1390,18 +1404,18 @@ instruction_set64 = {
         ('exorq', 'xor', 64, False),
         ('exorq', 'xor', 64, True),
     ],
-    RegRegRegImmNddInstruction: [
-        ('eshldq', 'shld', 64, False),
-        ('eshldq', 'shld', 64, True),
-        ('eshrdq', 'shrd', 64, False),
-        ('eshrdq', 'shrd', 64, True),
-    ],
-    CondRegRegRegInstruction: [
-        ('ecmovq', 'cmov', 64, key) for key in cond_to_suffix.keys()
-    ],
-    CondRegRegMemInstruction: [
-        ('ecmovq', 'cmov', 64, key) for key in cond_to_suffix.keys()
-    ],
+    # RegRegRegImmNddInstruction: [
+    #     ('eshldq', 'shld', 64, False),
+    #     ('eshldq', 'shld', 64, True),
+    #     ('eshrdq', 'shrd', 64, False),
+    #     ('eshrdq', 'shrd', 64, True),
+    # ],
+    # CondRegRegRegInstruction: [
+    #     ('ecmovq', 'cmov', 64, key) for key in cond_to_suffix.keys()
+    # ],
+    # CondRegRegMemInstruction: [
+    #     ('ecmovq', 'cmov', 64, key) for key in cond_to_suffix.keys()
+    # ],
 }
 
 if __name__ == "__main__":
