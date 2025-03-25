@@ -160,13 +160,16 @@ const char* Abstract_VM_Version::vm_info_string() {
     default:
       ShouldNotReachHere();
   }
-  size_t len = strlen(mode) + (is_vm_statically_linked() ? 8 : 0) +
-               (CDSConfig::is_using_archive() ? 9 : 0) + 1;
+
+  const char* static_info = ", static";
+  const char* sharing_info = ", sharing";
+  size_t len = strlen(mode) + (is_vm_statically_linked() ? strlen(static_info) : 0) +
+               (CDSConfig::is_using_archive() ? strlen(sharing_info) : 0) + 1;
   char* vm_info = NEW_C_HEAP_ARRAY(char, len, mtInternal);
   // jio_snprintf places null character in the last character.
   jio_snprintf(vm_info, len, "%s%s%s", mode,
-               is_vm_statically_linked() ? ", static" : "",
-               CDSConfig::is_using_archive() ? ", sharing" : "");
+               is_vm_statically_linked() ? static_info : "",
+               CDSConfig::is_using_archive() ? sharing_info : "");
   return vm_info;
 }
 
