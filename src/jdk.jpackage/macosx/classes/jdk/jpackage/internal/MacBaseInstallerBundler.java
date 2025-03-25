@@ -60,6 +60,7 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
     protected void validateAppImageAndBundeler(
             Map<String, ? super Object> params) throws ConfigException {
         if (PREDEFINED_APP_IMAGE.fetchFrom(params) != null) {
+            Path applicationImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
             if (new MacAppImageFileExtras(PREDEFINED_APP_IMAGE_FILE.fetchFrom(params)).signed()) {
                 var appLayout = ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT.resolveAt(applicationImage);
                 if (!Files.exists(

@@ -336,9 +336,10 @@ public final class MacHelper {
                 return JavaAppDesc.parse(className).packageName();
             });
         });
+    }
+
     public static boolean isXcodeDevToolsInstalled() {
         return Inner.XCODE_DEV_TOOLS_INSTALLED;
-    }
     }
 
     private static String getServicePListFileName(String packageName,

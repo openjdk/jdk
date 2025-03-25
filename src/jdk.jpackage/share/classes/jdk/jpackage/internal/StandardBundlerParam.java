@@ -261,8 +261,8 @@ final class StandardBundlerParam {
                     (s, p) -> s
             );
 
-    public static final StandardBundlerParam<String> LICENSE_FILE =
-            new StandardBundlerParam<>(
+    public static final BundlerParamInfo<String> LICENSE_FILE =
+            new BundlerParamInfo<>(
                     Arguments.CLIOptions.LICENSE_FILE.getId(),
                     String.class,
                     params -> null,
