@@ -720,14 +720,6 @@ void TrainingData::write_training_data_dictionary(TrainingDataDictionary* dictio
   writer.dump(dictionary, "training data dictionary");
 }
 
-size_t TrainingData::estimate_size_for_archive() {
-  if (_dumptime_training_data_dictionary != nullptr) {
-    return CompactHashtableWriter::estimate_size(_dumptime_training_data_dictionary->length());
-  } else {
-    return 0;
-  }
-}
-
 TrainingData* TrainingData::lookup_archived_training_data(const Key* k) {
   // For this to work, all components of the key must be in shared metaspace.
   if (!TrainingData::Key::can_compute_cds_hash(k) || _archived_training_data_dictionary.empty()) {

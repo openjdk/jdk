@@ -403,7 +403,9 @@
   product(bool, PrintTrainingInfo, false, DIAGNOSTIC,                       \
           "Print additional information about training")                    \
                                                                             \
-
+  product(bool, VerifyTrainingData, trueInDebug, DIAGNOSTIC,                \
+          "Verify archived training data")                                  \
+                                                                            \
 // end of COMPILER_FLAGS
 
 DECLARE_FLAGS(COMPILER_FLAGS)

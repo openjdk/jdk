@@ -527,10 +527,10 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
     // Don't dump existing shared metadata again.
     return point_to_it;
   } else if (ref->msotype() == MetaspaceObj::MethodDataType ||
-            ref->msotype() == MetaspaceObj::MethodCountersType ||
-            ref->msotype() == MetaspaceObj::KlassTrainingDataType ||
-            ref->msotype() == MetaspaceObj::MethodTrainingDataType ||
-            ref->msotype() == MetaspaceObj::CompileTrainingDataType) {
+             ref->msotype() == MetaspaceObj::MethodCountersType ||
+             ref->msotype() == MetaspaceObj::KlassTrainingDataType ||
+             ref->msotype() == MetaspaceObj::MethodTrainingDataType ||
+             ref->msotype() == MetaspaceObj::CompileTrainingDataType) {
     return TrainingData::need_data() ? make_a_copy : set_to_null;
   } else {
     if (ref->msotype() == MetaspaceObj::ClassType) {
