@@ -1242,26 +1242,16 @@ class PredicateUsefulMarkerVisitor : public PredicateVisitor {
     parse_predicate.head()->mark_useful();
   }
 
-  // We actually mark the associated OpaqueTemplateAssertionPredicate node useful.
-  void visit(const TemplateAssertionPredicate& template_assertion_predicate) override {
-    if (!_loop_node->is_CountedLoop()) {
-      // Template Assertion Predicate above LoopNode? Must be unrelated because they can only be created above
-      // CountedLoopNodes during Loop Predication or Range Check Elimination.
-      return;
-    }
-
-    mark_template_useful_if_matching_loop(template_assertion_predicate);
-  }
-
   // If the stored loop node does not match the current loop node from which we iterate from, we found a Template
-  // Assertion Predicate belonging to an already earlier folded loop in the graph. We need to drop this Template
-  // Assertion Predicate because we are no longer splitting a loop which it belongs to. Moreover, if we do not remove
-  // this Template Assertion Predicate, we could wrongly be creating Initialized Assertion Predicates from it at the
-  // new loop which has completely unrelated loop values. These Initialized Assertion Predicates can then fail at
+  // Assertion Predicate belonging to an already earlier folded loop in the graph. We mark it useless to drop this
+  // Template Assertion Predicate because we are no longer splitting a loop which it belongs to. Moreover, if we do not
+  // remove this Template Assertion Predicate, we could wrongly be creating Initialized Assertion Predicates from it at
+  // the new loop which has completely unrelated loop values. These Initialized Assertion Predicates can then fail at
   // runtime, and we crash by executing a halt instruction.
-  void mark_template_useful_if_matching_loop(const TemplateAssertionPredicate& template_assertion_predicate) const {
+  void visit(const TemplateAssertionPredicate& template_assertion_predicate) override {
     OpaqueTemplateAssertionPredicateNode* opaque_node = template_assertion_predicate.opaque_node();
     if (opaque_node->loop_node() == _loop_node) {
+      // We actually mark the associated OpaqueTemplateAssertionPredicate node useful.
       template_assertion_predicate.opaque_node()->mark_useful();
     }
   }
