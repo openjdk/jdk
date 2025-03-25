@@ -69,7 +69,7 @@ import static jdk.internal.net.http.quic.QuicConnectionId.MAX_CONNECTION_ID_LENG
  */
 public class QuicPacketEncoder {
 
-    static final Logger debug = Utils.getDebugLogger(() -> "QuicPacketEncoder");
+    private static final Logger debug = Utils.getDebugLogger(() -> "QuicPacketEncoder");
 
     private final QuicVersion quicVersion;
     private QuicPacketEncoder(final QuicVersion quicVersion) {
