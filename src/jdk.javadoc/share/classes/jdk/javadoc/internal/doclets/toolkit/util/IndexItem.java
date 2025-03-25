@@ -641,8 +641,7 @@ public class IndexItem {
                 builder.append("l", escapeQuotes(label))
                        .append("h", holder);
                 if (!description.isEmpty()) {
-                    String normalizedDescription = description.replaceAll("\\s+", " ");
-                    builder.append("d", escapeQuotes(normalizedDescription));
+                    builder.append("d", escapeQuotes(description));
                 }
                 if (kind != null && kind != Kind.SEARCH_ITEM) {
                     builder.append("k", kind.ordinal());
