@@ -28,11 +28,10 @@
  * @library /test/lib
  * @modules java.base/com.sun.crypto.provider
  */
+import jdk.test.lib.Asserts;
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
-import jdk.test.lib.artifacts.ArtifactResolverException;
 import jdk.test.lib.json.JSONValue;
-import jtreg.SkippedException;
 
 import com.sun.crypto.provider.DHKEM;
 
@@ -42,10 +41,9 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.HexFormat;
 
-/// This test is baed on Appendix A (Test Vectors) of
+/// This test is based on Appendix A (Test Vectors) of
 /// [RFC 9180](https://datatracker.ietf.org/doc/html/rfc9180#name-test-vectors)
 /// The test data is available as a JSON file at:
 /// https://github.com/cfrg/draft-irtf-cfrg-hpke/blob/5f503c564da00b0687b3de75f1dfbdfc4079ad31/test-vectors.json.
@@ -66,25 +64,10 @@ public class KAT9180 {
     private static class RFC_9180_KAT {
     }
 
-    private static Path fetchACVPServerTests(Class<?> clazz) {
-        try {
-            return ArtifactResolver.resolve(clazz).entrySet().stream()
-                    .findAny().get().getValue();
-        } catch (ArtifactResolverException e) {
-            Throwable cause = e.getCause();
-            if (cause == null) {
-                throw new SkippedException("Cannot resolve artifact, "
-                        + "please check if JIB jar is present in classpath.", e);
-            }
-
-            throw new SkippedException("Fetch artifact failed: " + clazz, e);
-        }
-    }
-
-    static final HexFormat h = HexFormat.of();
 
     public static void main(String[] args) throws Exception {
-        Path archivePath = fetchACVPServerTests(RFC_9180_KAT.class);
+        var h = HexFormat.of();
+        Path archivePath = ArtifactResolver.fetchOne(RFC_9180_KAT.class);
         System.out.println("Data path: " + archivePath);
         var c1 = Cipher.getInstance("HPKE");
         var c2 = Cipher.getInstance("HPKE");
@@ -130,22 +113,14 @@ public class KAT9180 {
                     var ct = h.parseHex(p.get("ct").asString());
                     c1.updateAAD(aad);
                     var ct1 = c1.doFinal(pt);
-                    assertEQ(ct, ct1);
+                    Asserts.assertEqualsByteArray(ct, ct1);
                     c2.updateAAD(aad);
                     var pt1 = c2.doFinal(ct);
-                    assertEQ(pt, pt1);
+                    Asserts.assertEqualsByteArray(pt, pt1);
                     count++;
                 }
                 System.err.print(count);
             }
-        }
-    }
-
-    private static void assertEQ(byte[] s1, byte[] s2) {
-        if (!Arrays.equals(s1, s2)) {
-            System.out.println(h.formatHex(s1));
-            System.out.println(h.formatHex(s2));
-            throw new RuntimeException("not same");
         }
     }
 }

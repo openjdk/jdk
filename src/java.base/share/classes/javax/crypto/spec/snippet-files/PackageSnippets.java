@@ -22,8 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package javax.crypto.spec.snippets;
-
 import javax.crypto.Cipher;
 import javax.crypto.spec.HPKEParameterSpec;
 import java.nio.charset.StandardCharsets;
@@ -51,9 +49,6 @@ class PackageSnippets {
         // Retrieve the actual parameters used from the sender.
         HPKEParameterSpec actual = sender.getParameters()
                 .getParameterSpec(HPKEParameterSpec.class);
-        assert actual.kem_id() == HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256;
-        assert actual.kdf_id() == HPKEParameterSpec.KDF_HKDF_SHA256;
-        assert actual.aead_id() == HPKEParameterSpec.AEAD_AES_256_GCM;
 
         // The HPKE recipient side is initialized with its own private key,
         // the same algorithm identifiers as used by the sender,

@@ -154,8 +154,6 @@ public class HPKE extends CipherSpi {
         }
         if (params == null) {
             impl.init(ak, HPKEParameterSpec.of(), random);
-        } else if (params instanceof IvParameterSpec iv) {
-            impl.init(ak, HPKEParameterSpec.of().encapsulation(iv.getIV()), random);
         } else if (params instanceof HPKEParameterSpec hps) {
             impl.init(ak, hps, random);
         } else {
@@ -181,7 +179,7 @@ public class HPKE extends CipherSpi {
     // state is ENCRYPT_AND_EXPORT after this call succeeds
     private void maybeReinitInternalCipher() {
         if (state == BEGIN) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Illegal state: " + state);
         }
         if (state == EXPORT_ONLY) {
             throw new UnsupportedOperationException();
@@ -498,6 +496,10 @@ public class HPKE extends CipherSpi {
         private void setParams(AsymmetricKey key, HPKEParameterSpec p)
                 throws InvalidKeyException, InvalidAlgorithmParameterException {
             if (p.kem_id() == -1 || p.kdf_id() == -1 || p.aead_id() == -1) {
+                if (opmode == Cipher.DECRYPT_MODE) {
+                    throw new InvalidAlgorithmParameterException(
+                            "Algorithm identifiers must be provided on receiver");
+                }
                 var kem_id = p.kem_id() != -1
                         ? p.kem_id()
                         : kemIdFromKey(key);
@@ -512,7 +514,8 @@ public class HPKE extends CipherSpi {
                     case HPKEParameterSpec.KEM_DHKEM_P_521_HKDF_SHA512,
                          HPKEParameterSpec.KEM_DHKEM_X448_HKDF_SHA512
                             -> HPKEParameterSpec.KDF_HKDF_SHA512;
-                    default -> throw new InvalidAlgorithmParameterException();
+                    default -> throw new InvalidAlgorithmParameterException(
+                            "Unsupported kem_id: " + params.kem_id());
                 };
                 var aead_id = p.aead_id() != -1
                         ? p.aead_id()
@@ -534,13 +537,15 @@ public class HPKE extends CipherSpi {
                 case HPKEParameterSpec.KDF_HKDF_SHA256 -> "HKDF-SHA256";
                 case HPKEParameterSpec.KDF_HKDF_SHA384 -> "HKDF-SHA384";
                 case HPKEParameterSpec.KDF_HKDF_SHA512 -> "HKDF-SHA512";
-                default -> throw new InvalidAlgorithmParameterException();
+                default -> throw new InvalidAlgorithmParameterException(
+                        "Unsupported kdf_id: " + params.kdf_id());
             };
             kdfNh = switch (params.kdf_id()) {
                 case HPKEParameterSpec.KDF_HKDF_SHA256 -> 32;
                 case HPKEParameterSpec.KDF_HKDF_SHA384 -> 48;
                 case HPKEParameterSpec.KDF_HKDF_SHA512 -> 64;
-                default -> throw new InvalidAlgorithmParameterException();
+                default -> throw new InvalidAlgorithmParameterException(
+                        "Unsupported kdf_id: " + params.kdf_id());
             };
             aead = new AEAD(params.aead_id());
         }

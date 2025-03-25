@@ -50,12 +50,10 @@ import java.util.Objects;
  * <ul>
  * <li> {@link #of()} creates an instance with unspecified KEM, KDF, and AEAD
  * algorithms, which will be determined by the implementation based on the key
- * provided to {@code init()}.
- * <li> {@link #of(int, int)} creates an instance with explicitly specified
- * KDF, and AEAD algorithm identifiers. The KEM algorithm identifier will be
- * determined by the implementation based on the key provided to {@code init()}.
+ * provided to {@code init()}. This instance can only be used by the sender.
  * <li> {@link #of(int, int, int)} creates an instance with explicitly
- * specified KEM, KDF, and AEAD algorithm identifiers.
+ * specified KEM, KDF, and AEAD algorithm identifiers. This instance can be
+ * used by both the sender and the receiver.
  * </ul>
  * The terms "KEM algorithm identifiers", "KDF algorithm identifiers", and
  * "AEAD algorithm identifiers" refer to their respective numeric values
@@ -90,7 +88,7 @@ import java.util.Objects;
  * so that the recipient can recover this shared secret. On the sender side,
  * the key encapsulation message can be retrieved using the {@link Cipher#getIV()}
  * method after the cipher is initialized. On the recipient side, the key
- * encapsulation message can be provided using the {@link #encapsulation(byte[])}
+ * encapsulation message must be provided using the {@link #encapsulation(byte[])}
  * method.
  * </ul>
  * For successful interoperability, both sides need to supply identical
@@ -101,11 +99,9 @@ import java.util.Objects;
  * <p>
  * If the sender cipher is initialized without parameters, it assumes a
  * default parameters object is used, which is equivalent to
- * {@code HPKEParameterSpec.of()}. The recipient cipher can also be initialized
- * with a {@code new IvParameterSpec(encap)} object, which is equivalent to
- * {@code HPKEParameterSpec.of().encapsulation(encap)}. In either case, the
+ * {@code HPKEParameterSpec.of()}. In this case, the
  * cipher always works in {@code mode_base} mode with an empty {@code info}.
- * If the recipient side is initialized without any parameters, an
+ * If the recipient side is initialized without parameters, an
  * {@code InvalidKeyException} will be thrown.
  * <p>
  * At HPKE cipher initialization, if no HPKE implementation supports the provided
@@ -115,13 +111,14 @@ import java.util.Objects;
  * For example:
  * <ul>
  * <li> The algorithm identifiers do not match the provided key type.
+ * <li> The algorithm identifiers are not specified on the receiver side.
  * <li> An attempt to use {@code authKey(key)} is made with an incompatible key.
  * <li> An attempt to use {@code authKey(key)} is made but the selected KEM
  *      does not support authentication.
  * </ul>
  * <p>
- * After an HPKE cipher is initialized, the {@code getParameters} method returns
- * an {@link java.security.AlgorithmParameters} object containing the
+ * After an HPKE cipher is initialized, the {@link Cipher#getParameters} method
+ * returns an {@link java.security.AlgorithmParameters} object containing the
  * actual {@code HPKEParameterSpec} object used by the cipher. Users can call
  * {@link #kem_id()}, {@link #kdf_id()}, and {@link #aead_id()} on the
  * {@code HPKEParameterSpec} object to obtain the algorithm identifiers
@@ -132,8 +129,10 @@ import java.util.Objects;
  *
  * @implNote
  * In the HPKE implementation in the SunJCE provider included in this JDK
- * implementation, {@code HPKEParameterSpec.of()} chooses the following
- * KEM, KDF, and AEAD algorithms depending on the provided key type:
+ * implementation, if the sender's HPKE cipher is initialized with
+ * {@code HPKEParameterSpec.of()}, the following KEM, KDF, and AEAD algorithm
+ * identifiers will be chosen depending on the provided key type and returned
+ * by the {@code getParameters} method:
  * <table class="striped">
  * <caption style="display:none">Default Algorithm Identifiers</caption>
  * <thead>
@@ -144,21 +143,21 @@ import java.util.Objects;
  * </thead>
  * <tbody>
  * <tr><td>EC (secp256r1)
- *     <td>0x10<br>DHKEM(P-256, HKDF-SHA256)
- *     <td>0x1<br>HKDF-SHA256
- *     <td rowspan="5">0x2<br>AES-256-GCM
+ *     <td>{@link #KEM_DHKEM_P_256_HKDF_SHA256}
+ *     <td>{@link #KDF_HKDF_SHA256}
+ *     <td rowspan="5">{@link #AEAD_AES_256_GCM}
  * <tr><td>EC (secp384r1)
- *     <td>0x11<br>DHKEM(P-384, HKDF-SHA384)
- *     <td>0x2<br>HKDF-SHA384
+ *     <td>{@link #KEM_DHKEM_P_384_HKDF_SHA384}
+ *     <td>{@link #KDF_HKDF_SHA384}
  * <tr><td>EC (secp521r1)
- *     <td>0x12<br>DHKEM(P-521, HKDF-SHA512)
- *     <td>0x3<br>HKDF-SHA512
+ *     <td>{@link #KEM_DHKEM_P_521_HKDF_SHA512}
+ *     <td>{@link #KDF_HKDF_SHA512}
  * <tr><td>XDH (X25519)
- *     <td>0x20<br>DHKEM(X25519, HKDF-SHA256)
- *     <td>0x1<br>HKDF-SHA256
+ *     <td>{@link #KEM_DHKEM_X25519_HKDF_SHA256}
+ *     <td>{@link #KDF_HKDF_SHA256}
  * <tr><td>XDH (X448)
- *     <td>0x21<br>DHKEM(X448, HKDF-SHA512)
- *     <td>0x3<br>HKDF-SHA512
+ *     <td>{@link #KEM_DHKEM_X448_HKDF_SHA512}
+ *     <td>{@link #KDF_HKDF_SHA512}
  * </tbody>
  * </table>
  * No other keys are supported.
