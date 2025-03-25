@@ -132,9 +132,12 @@ public class TestFuzzExpression {
                         try {
                     """,
                     "        return ", expression.withArgs(use), ";\n",
+                    expression.exceptions().stream().map(exception ->
+                        "} catch (" + exception + " e) { return e;\n"
+                    ).toList(),
                     """
-                        } catch (Exception e) {
-                            return e;
+                        } finally {
+                            // Just javac is happy if there are no exceptions to catch.
                         }
                     }
 
