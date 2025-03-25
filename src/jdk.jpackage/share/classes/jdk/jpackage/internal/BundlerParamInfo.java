@@ -126,7 +126,6 @@ record BundlerParamInfo<T>(String id, Class<T> valueType,
         return stringConverter;
     }
 
-    @SuppressWarnings("unchecked")
     final T fetchFrom(Map<String, ? super Object> params) {
         return fetchFrom(params, true);
     }

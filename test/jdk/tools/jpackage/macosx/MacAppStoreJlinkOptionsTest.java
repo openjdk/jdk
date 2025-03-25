@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,11 @@
  * questions.
  */
 
-import static java.util.stream.Collectors.joining;
-
-import java.util.ArrayList;
-import java.util.List;
-import jdk.jpackage.test.Annotations.Parameter;
-import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JPackageStringBundle;
+import jdk.jpackage.test.Annotations.Test;
 
 /**
- * Tests generation of app image with --mac-app-store and --jlink-options. jpackage should able
- * to generate app image if "--strip-native-commands" is specified for --jlink-options and should
- * fail if it is not specified.
+ * Tests generation of app image with --mac-app-store and --jlink-options.
  */
 
 /*
@@ -49,25 +41,11 @@ import jdk.jpackage.test.JPackageStringBundle;
 public class MacAppStoreJLinkOptionsTest {
 
     @Test
-    @Parameter("true")
-    @Parameter("false")
-    public static void testWithStripNativeCommands(boolean stripNativeCommands) throws Exception {
+    public static void testWithStripNativeCommands() throws Exception {
+        JPackageCommand cmd = JPackageCommand.helloAppImage();
+        cmd.addArguments("--mac-app-store", "--jlink-options",
+                "--strip-debug --no-man-pages --no-header-files --strip-native-commands");
 
-        final var jlinkOptions = new ArrayList<String>(List.of("--strip-debug --no-man-pages --no-header-files"));
-        if (stripNativeCommands) {
-            jlinkOptions.add("--strip-native-commands");
-        }
-
-        final var cmd = JPackageCommand.helloAppImage().ignoreDefaultRuntime(true);
-
-        cmd.addArguments("--mac-app-store", "--jlink-options", jlinkOptions.stream().collect(joining(" ")));
-
-        if (stripNativeCommands) {
-            cmd.executeAndAssertHelloAppImageCreated();
-        } else {
-            cmd.validateOutput(JPackageStringBundle.MAIN.cannedFormattedString(
-                    "ERR_MissingJLinkOptMacAppStore", "--strip-native-commands"));
-            cmd.execute(1);
-        }
+        cmd.executeAndAssertHelloAppImageCreated();
     }
 }

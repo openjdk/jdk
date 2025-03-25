@@ -336,6 +336,9 @@ public final class MacHelper {
                 return JavaAppDesc.parse(className).packageName();
             });
         });
+    public static boolean isXcodeDevToolsInstalled() {
+        return Inner.XCODE_DEV_TOOLS_INSTALLED;
+    }
     }
 
     private static String getServicePListFileName(String packageName,
@@ -362,6 +365,11 @@ public final class MacHelper {
         } catch (NoSuchMethodException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    private static final class Inner {
+        private static final boolean XCODE_DEV_TOOLS_INSTALLED =
+                Executor.of("/usr/bin/xcrun", "--help").executeWithoutExitCodeCheck().getExitCode() == 0;
     }
 
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
