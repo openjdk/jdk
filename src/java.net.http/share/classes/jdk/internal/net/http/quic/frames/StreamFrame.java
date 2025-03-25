@@ -43,9 +43,9 @@ import jdk.internal.net.quic.QuicTransportException;
 public final class StreamFrame extends QuicFrame {
 
     // Flags in frameType()
-    public static final int OFF = 0x4;
-    public static final int LEN = 0x2;
-    public static final int FIN = 0x1;
+    private static final int OFF = 0x4;
+    private static final int LEN = 0x2;
+    private static final int FIN = 0x1;
 
     private final long streamID;
     // true if the OFF bit in the type field has been set
