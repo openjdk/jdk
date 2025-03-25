@@ -990,11 +990,11 @@ AC_DEFUN([JDKOPT_SETUP_SIGNING_HOOK],
   AC_MSG_CHECKING([for signing hook])
   if test "x$SIGNING_HOOK" != x; then
     UTIL_FIXUP_EXECUTABLE(SIGNING_HOOK)
-    AC_SUBST(SIGNING_HOOK)
     AC_MSG_RESULT([$SIGNING_HOOK])
   else
     AC_MSG_RESULT([none])
   fi
+  AC_SUBST(SIGNING_HOOK)
 ])
 
 ################################################################################
