@@ -162,7 +162,7 @@ public final class ClassFileImpl implements ClassFile {
     }
 
     @Override
-    public MemorySegment buildToMemorySegment(SegmentAllocator allocator,
+    public MemorySegment build(SegmentAllocator allocator,
                                               ClassEntry thisClassEntry,
                                               ConstantPoolBuilder constantPool,
                                               Consumer<? super ClassBuilder> handler) {
@@ -180,10 +180,10 @@ public final class ClassFileImpl implements ClassFile {
     }
 
     @Override
-    public MemorySegment transformClassToMemorySegment(SegmentAllocator allocator, ClassModel model, ClassEntry newClassName, ClassTransform transform) {
+    public MemorySegment transformClass(SegmentAllocator allocator, ClassModel model, ClassEntry newClassName, ClassTransform transform) {
         ConstantPoolBuilder constantPool = sharedConstantPool() ? ConstantPoolBuilder.of(model)
                                                                 : ConstantPoolBuilder.of();
-        return buildToMemorySegment(allocator, newClassName, constantPool, transformationHandler((ClassImpl) model, transform));
+        return build(allocator, newClassName, constantPool, transformationHandler((ClassImpl) model, transform));
     }
 
     private static Consumer<ClassBuilder> transformationHandler(final ClassImpl model, final ClassTransform transform) {

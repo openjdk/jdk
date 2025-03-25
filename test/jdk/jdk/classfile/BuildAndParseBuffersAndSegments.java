@@ -29,7 +29,6 @@ import java.lang.classfile.ClassTransform;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
-import java.nio.ByteBuffer;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -64,7 +63,7 @@ class BuildAndParseBuffersAndSegments {
     private static void testWithModel(final ClassFile classFile, final ClassModel model) {
         try (Arena arena = Arena.ofConfined()) {
             // transform to an array, buffers, and segments, and compare them all for equality
-            MemorySegment asSegment = classFile.transformClassToMemorySegment(arena, model, ClassTransform.ACCEPT_ALL);
+            MemorySegment asSegment = classFile.transformClass(arena, model, ClassTransform.ACCEPT_ALL);
             byte[] asArray = classFile.transformClass(model, ClassTransform.ACCEPT_ALL);
 
             Assertions.assertEquals(-1, asSegment.mismatch(MemorySegment.ofArray(asArray)));

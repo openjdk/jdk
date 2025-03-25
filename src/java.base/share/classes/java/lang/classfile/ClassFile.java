@@ -606,11 +606,11 @@ public sealed interface ClassFile
      * @throws IllegalArgumentException if {@code thisClass} represents a
      *         primitive type or building encounters a failure
      */
-    default MemorySegment buildToMemorySegment(SegmentAllocator allocator,
-                                               ClassDesc thisClass,
-                                               Consumer<? super ClassBuilder> handler) {
+    default MemorySegment build(SegmentAllocator allocator,
+                                ClassDesc thisClass,
+                                Consumer<? super ClassBuilder> handler) {
         ConstantPoolBuilder pool = ConstantPoolBuilder.of();
-        return buildToMemorySegment(allocator, pool.classEntry(thisClass), pool, handler);
+        return build(allocator, pool.classEntry(thisClass), pool, handler);
     }
 
     /**
@@ -624,10 +624,10 @@ public sealed interface ClassFile
      * @return the {@code class} file bytes
      * @throws IllegalArgumentException if building encounters a failure
      */
-    MemorySegment buildToMemorySegment(SegmentAllocator allocator,
-                                       ClassEntry thisClassEntry,
-                                       ConstantPoolBuilder constantPool,
-                                       Consumer<? super ClassBuilder> handler);
+    MemorySegment build(SegmentAllocator allocator,
+                        ClassEntry thisClassEntry,
+                        ConstantPoolBuilder constantPool,
+                        Consumer<? super ClassBuilder> handler);
 
     /**
      * Builds a {@code class} file into a file in a file system.
@@ -698,9 +698,9 @@ public sealed interface ClassFile
      * @return the {@code class} file bytes
      * @throws IllegalArgumentException if building encounters a failure
      */
-    default MemorySegment buildModuleToMemorySegment(SegmentAllocator allocator,
-                                                     ModuleAttribute moduleAttribute) {
-        return buildModuleToMemorySegment(allocator, moduleAttribute, clb -> {});
+    default MemorySegment buildModule(SegmentAllocator allocator,
+                                      ModuleAttribute moduleAttribute) {
+        return buildModule(allocator, moduleAttribute, clb -> {});
     }
 
     /**
@@ -712,10 +712,10 @@ public sealed interface ClassFile
      * @return the {@code class} file bytes
      * @throws IllegalArgumentException if building encounters a failure
      */
-    default MemorySegment buildModuleToMemorySegment(SegmentAllocator allocator,
-                                                     ModuleAttribute moduleAttribute,
-                                                     Consumer<? super ClassBuilder> handler) {
-        return buildToMemorySegment(allocator, CD_module_info, clb -> {
+    default MemorySegment buildModule(SegmentAllocator allocator,
+                                      ModuleAttribute moduleAttribute,
+                                      Consumer<? super ClassBuilder> handler) {
+        return build(allocator, CD_module_info, clb -> {
             clb.withFlags(AccessFlag.MODULE);
             clb.with(moduleAttribute);
             handler.accept(clb);
@@ -872,8 +872,8 @@ public sealed interface ClassFile
      * @throws IllegalArgumentException if building encounters a failure
      * @see ConstantPoolSharingOption
      */
-    default MemorySegment transformClassToMemorySegment(SegmentAllocator allocator, ClassModel model, ClassTransform transform) {
-        return transformClassToMemorySegment(allocator, model, model.thisClass(), transform);
+    default MemorySegment transformClass(SegmentAllocator allocator, ClassModel model, ClassTransform transform) {
+        return transformClass(allocator, model, model.thisClass(), transform);
     }
 
     /**
@@ -904,8 +904,8 @@ public sealed interface ClassFile
      * @throws IllegalArgumentException if building encounters a failure
      * @see ConstantPoolSharingOption
      */
-    default MemorySegment transformClassToMemorySegment(SegmentAllocator allocator, ClassModel model, ClassDesc newClassName, ClassTransform transform) {
-        return transformClassToMemorySegment(allocator, model, TemporaryConstantPool.INSTANCE.classEntry(newClassName), transform);
+    default MemorySegment transformClass(SegmentAllocator allocator, ClassModel model, ClassDesc newClassName, ClassTransform transform) {
+        return transformClass(allocator, model, TemporaryConstantPool.INSTANCE.classEntry(newClassName), transform);
     }
 
     /**
@@ -943,7 +943,7 @@ public sealed interface ClassFile
      * @throws IllegalArgumentException if building encounters a failure
      * @see ConstantPoolSharingOption
      */
-    MemorySegment transformClassToMemorySegment(SegmentAllocator allocator, ClassModel model, ClassEntry newClassName, ClassTransform transform);
+    MemorySegment transformClass(SegmentAllocator allocator, ClassModel model, ClassEntry newClassName, ClassTransform transform);
 
     /**
      * Verify a {@code class} file.  All verification errors found will be returned.
