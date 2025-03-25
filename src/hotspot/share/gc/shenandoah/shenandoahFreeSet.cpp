@@ -1324,7 +1324,7 @@ bool ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
       // 2. Move the (temporarily) unusable trash region we found to the mutator partition
       _partitions.move_from_partition_to_partition(unusable_trash,
                                                    ShenandoahFreeSetPartitionId::OldCollector,
-                                                   ShenandoahFreeSetPartitionId::Mutator, region_capacity);
+                                                   ShenandoahFreeSetPartitionId::Mutator, alloc_capacity(unusable_trash));
 
       // 3. Move this usable region from the mutator partition to the old collector partition
       _partitions.move_from_partition_to_partition(idx,
