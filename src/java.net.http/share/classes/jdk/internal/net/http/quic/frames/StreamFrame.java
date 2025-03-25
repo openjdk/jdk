@@ -103,7 +103,7 @@ public final class StreamFrame extends QuicFrame {
         super(STREAM);
         this.streamID = requireVLRange(streamID, "streamID");
         this.offset = requireVLRange(offset, "offset");
-        // if offset is non-zero that we mark that the type field has OFF bit set
+        // if offset is non-zero then we mark that the type field has OFF bit set
         // to allow for that bit to be set when encoding this frame
         this.typeFieldHasOFF = this.offset != 0;
         if (length != -1 && length != streamData.remaining()) {

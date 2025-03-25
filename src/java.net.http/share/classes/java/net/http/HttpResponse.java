@@ -835,7 +835,6 @@ public interface HttpResponse<T> {
          * @since TBD
          */
         public sealed interface PushId {
-            // TODO: should we expose this type?
 
             /**
              * Represents an HTTP/3 PushId
