@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,8 @@ public non-sealed interface QuicBidiStream extends QuicStream, QuicReceiverStrea
      */
     enum BidiStreamState implements QuicStream.StreamState {
         /**
-         * A bidirectional stream is considered "idle" if it has no
-         * data has been sent or received o that stream.
+         * A bidirectional stream is considered "idle" if no
+         * data has been sent or received on that stream.
          */
         IDLE,
         /**
