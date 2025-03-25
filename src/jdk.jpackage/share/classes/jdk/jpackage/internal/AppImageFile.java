@@ -219,7 +219,7 @@ final class AppImageFile {
             throw I18N.buildConfigException("error.foreign-app-image", appImageDir).create();
         } catch (InvalidAppImageFileException ex) {
             // Invalid input XML
-            throw I18N.buildConfigException("error.invalid-app-image", appImageDir, FILENAME).create();
+            throw I18N.buildConfigException("error.invalid-app-image", appImageDir, srcFilePath).create();
         }
     }
 
