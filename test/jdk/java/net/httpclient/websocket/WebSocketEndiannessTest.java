@@ -39,55 +39,42 @@ import java.net.http.WebSocket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.nio.ByteOrder.BIG_ENDIAN;
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertEqualsByteArray;
 import static jdk.test.lib.Asserts.assertTrue;
 
 public class WebSocketEndiannessTest {
 
-    private static final ByteBuffer DATA_LE = ByteBuffer
-            .wrap(new byte[]{
-                    // 4-byte words in LE order
-                    0x00, 0x01, 0x02, 0x03,
-                    0x04, 0x05, 0x06, 0x07,
-                    0x08, 0x09, 0x0a, 0x0b,
-                    0x0c, 0x0d, 0x0e, 0x0f,
-                    // 2-byte words in LE order
-                    0x10, 0x11,
-                    0x12, 0x13,
-                    0x14, 0x15,
-                    0x16, 0x17,
-                    0x18, 0x19,
-                    0x1a, 0x1b,
-                    0x1c, 0x1d,
-                    0x1e, 0x1f
-            })
-            .order(ByteOrder.LITTLE_ENDIAN);
-
-    private static final ByteBuffer DATA_BE = ByteBuffer
-            .wrap(new byte[]{
-                    // 4-byte words in BE order
-                    0x03, 0x02, 0x01, 0x00,
-                    0x07, 0x06, 0x05, 0x04,
-                    0x0b, 0x0a, 0x09, 0x08,
-                    0x0f, 0x0e, 0x0d, 0x0c,
-                    // 2-byte words in BE order
-                    0x11, 0x10,
-                    0x13, 0x12,
-                    0x15, 0x14,
-                    0x17, 0x16,
-                    0x19, 0x18,
-                    0x1b, 0x1a,
-                    0x1d, 0x1c,
-                    0x1f, 0x1e
-            })
-            .order(ByteOrder.BIG_ENDIAN);
-
     public static void main(String[] args) throws Exception {
-        assertEndiannessAgnosticTransfer(DATA_LE);
-        assertEndiannessAgnosticTransfer(DATA_BE);
+        assertEndiannessAgnosticTransfer();
+        assertSuccessfulMasking();
+    }
+
+    private static void assertEndiannessAgnosticTransfer() throws Exception {
+        Supplier<ByteBuffer> bufferSupplier = () -> ByteBuffer
+                .wrap(new byte[]{
+                        // 4-byte words
+                        0x00, 0x01, 0x02, 0x03,
+                        0x04, 0x05, 0x06, 0x07,
+                        0x08, 0x09, 0x0a, 0x0b,
+                        0x0c, 0x0d, 0x0e, 0x0f,
+                        // 2-byte words
+                        0x10, 0x11,
+                        0x12, 0x13,
+                        0x14, 0x15,
+                        0x16, 0x17,
+                        0x18, 0x19,
+                        0x1a, 0x1b,
+                        0x1c, 0x1d,
+                        0x1e, 0x1f
+                });
+        assertEndiannessAgnosticTransfer(bufferSupplier.get().order(LITTLE_ENDIAN));
+        assertEndiannessAgnosticTransfer(bufferSupplier.get().order(BIG_ENDIAN));
     }
 
     private static void assertEndiannessAgnosticTransfer(ByteBuffer data) throws Exception {
@@ -114,6 +101,61 @@ public class WebSocketEndiannessTest {
             }
             return server.readFrames();
         }
+    }
+
+    private static void assertSuccessfulMasking() {
+        assertSuccessfulMasking(LITTLE_ENDIAN, LITTLE_ENDIAN);
+        assertSuccessfulMasking(LITTLE_ENDIAN, BIG_ENDIAN);
+        assertSuccessfulMasking(BIG_ENDIAN, LITTLE_ENDIAN);
+        assertSuccessfulMasking(BIG_ENDIAN, BIG_ENDIAN);
+    }
+
+    private static void assertSuccessfulMasking(ByteOrder srcOrder, ByteOrder dstOrder) {
+
+        // Create the masker
+        Frame.Masker masker = new Frame.Masker().setMask(0x0A0B0C0D);
+
+        // Perform dummy masking to advance `Frame::offset` 1 byte, and effectively make it non-zero.
+        // A non-zero `Frame::offset` will trigger `Frame::initVectorMask` invocation.
+        masker.applyMask(ByteBuffer.wrap(new byte[1]), ByteBuffer.wrap(new byte[1]));
+
+        // Perform the actual masking
+        ByteBuffer src = ByteBuffer
+                .wrap(new byte[]{
+                        // `initVectorMask` will mask 3 bytes to position the `offset` back to 0.
+                        // It is 3 bytes, because of the 1 byte dummy advancement above.
+                        0x1, 0x2, 0x3,
+                        // `applyVectorMask` will make a single 8-byte pass
+                        0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8,
+                        // `applyPlainMask` will mask 1 byte
+                        0x1
+                })
+                .order(srcOrder);
+        ByteBuffer dst = ByteBuffer.allocate(src.capacity()).order(dstOrder);
+        masker.applyMask(src, dst);
+
+        // Verify the masking
+        assertEqualsByteArray(
+                new byte[]{
+                        // 3 bytes for `initVectorMask`.
+                        // Remember 0xA is consumed by the initial dummy masking.
+                        0x1 ^ 0xB,
+                        0x2 ^ 0xC,
+                        0x3 ^ 0xD,
+                        // 8 bytes for `applyVectorMask`
+                        0x1 ^ 0xA,
+                        0x2 ^ 0xB,
+                        0x3 ^ 0xC,
+                        0x4 ^ 0xD,
+                        0x5 ^ 0xA,
+                        0x6 ^ 0xB,
+                        0x7 ^ 0xC,
+                        0x8 ^ 0xD,
+                        // 1 byte for `applyPlainMask`
+                        0x1 ^ 0xA
+                },
+                dst.array());
+
     }
 
 }
