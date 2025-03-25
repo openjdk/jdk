@@ -814,7 +814,6 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     // commit with overlap at the region's end
     tree.commit_mapping(30, 20, call_stack_3); // Nodes: 0 - 10 - 50 - 100
     expected(tree, 30, si_1, si_3, __LINE__);
-    tree.print_on(tty);
   }
   {// uncommit should not store any call-stack
     Tree tree;
