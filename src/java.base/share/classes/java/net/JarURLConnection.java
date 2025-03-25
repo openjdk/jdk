@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.util.jar.JarFile;
 import java.util.jar.JarEntry;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-import java.security.Permission;
+
 import sun.net.www.ParseUtil;
 
 /**
@@ -136,8 +136,11 @@ import sun.net.www.ParseUtil;
  */
 public abstract class JarURLConnection extends URLConnection {
 
-    private URL jarFileURL;
-    private String entryName;
+    // The URL to the JAR file this connection reads from
+    private final URL jarFileURL;
+
+    // The entry this connection reads from, if any
+    private final String entryName;
 
     /**
      * The connection to the JAR file URL, if the connection has been
@@ -152,22 +155,14 @@ public abstract class JarURLConnection extends URLConnection {
      * could be found in a specification string or the
      * string could not be parsed.
      */
-
     protected JarURLConnection(URL url) throws MalformedURLException {
         super(url);
-        parseSpecs(url);
-    }
 
-    /* get the specs for a given url out of the cache, and compute and
-     * cache them if they're not there.
-     */
-    private void parseSpecs(URL url) throws MalformedURLException {
+        // Extract JAR file URL and entry name components from the URL
         String spec = url.getFile();
-
         int separator = spec.indexOf("!/");
-        /*
-         * REMIND: we don't handle nested JAR URLs
-         */
+
+        // REMIND: we don't handle nested JAR URLs
         if (separator == -1) {
             throw new MalformedURLException("no !/ found in url spec:" + spec);
         }
@@ -198,9 +193,8 @@ public abstract class JarURLConnection extends URLConnection {
          */
         if ("runtime".equals(connectionURL.getRef())) {
             return new URL(url, "#runtime");
-        } else {
-            return url;
         }
+        return url;
     }
 
     /**
