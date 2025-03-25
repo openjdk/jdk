@@ -33,7 +33,6 @@
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
 #include "jfr/metadata/jfrSerializer.hpp"
-#include "jfr/support/jfrNonReentrant.hpp"
 #endif
 
 #if INCLUDE_JFR
