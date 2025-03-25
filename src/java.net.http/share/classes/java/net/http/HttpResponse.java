@@ -837,14 +837,22 @@ public interface HttpResponse<T> {
         public sealed interface PushId {
 
             /**
-             * Represents an HTTP/3 PushId
+             * Represents an HTTP/3 PushId.
+             *
              * @param pushId the pushId as a long
              * @param connectionLabel the {@link HttpResponse#connectionLabel()}
              *                    of the HTTP/3 connection
              * @apiNote
              * The {@code connectionLabel} should be considered opaque, and ensures that
              * two long pushId emitted by different connections correspond to distinct
-             * instances of {@code PushId}.
+             * instances of {@code PushId}. The {@code pushId} corresponds to the
+             * unique push ID assigned by the server that identifies a given server
+             * push on that connection, as defined by
+             * <a href="https://www.rfc-editor.org/rfc/rfc9114#server-push">RFC 9114,
+             * section 4.6</a>
+             *
+             * @spec https://www.rfc-editor.org/info/rfc9114
+             *      RFC 9114: HTTP/3
              *
              * @since TBD
              */
