@@ -677,8 +677,8 @@ void JfrCheckpointManager::write_checkpoint(Thread* thread, traceid tid /* 0 */,
   JfrTypeManager::write_checkpoint(thread, tid, vthread);
 }
 
-void JfrCheckpointManager::write_checkpoint(traceid vtid) {
-  JfrTypeManager::write_checkpoint(vtid);
+void JfrCheckpointManager::write_simplified_vthread_checkpoint(traceid vtid) {
+  JfrTypeManager::write_simplified_vthread_checkpoint(vtid);
 }
 
 class JfrNotifyClosure : public ThreadClosure {

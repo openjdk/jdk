@@ -381,10 +381,11 @@ void JfrThreadLocal::set_vthread_epoch_checked(const JavaThread* jt, traceid tid
   assert(jt != nullptr, "invariant");
   assert(is_vthread(jt), "invariant");
 
-  // If the event is marked as non reentrant, write only a downstripped version of the vthread info.
-  // Essentially all info except the vthread name, because we cannot touch the oop.
+  // If the event is marked as non reentrant, write only a simplified version of the vthread info.
+  // Essentially all the same info except the vthread name, because we cannot touch the oop.
+  // Since we cannot touch the oop, we also cannot update its vthread epoch.
   if (is_non_reentrant()) {
-    JfrCheckpointManager::write_checkpoint(tid);
+    JfrCheckpointManager::write_simplified_vthread_checkpoint(tid);
     return;
   }
 

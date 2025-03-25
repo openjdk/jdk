@@ -117,11 +117,11 @@ class JfrThreadConstant : public JfrSerializer {
   void serialize(JfrCheckpointWriter& writer);
 };
 
-class JfrVirtualThreadConstant : public JfrSerializer {
+class JfrSimplifiedVirtualThreadConstant : public JfrSerializer {
  private:
   traceid _vtid;
  public:
-  JfrVirtualThreadConstant(traceid vtid) : _vtid(vtid) {}
+  JfrSimplifiedVirtualThreadConstant(traceid vtid) : _vtid(vtid) {}
   void serialize(JfrCheckpointWriter & writer);
 };
 

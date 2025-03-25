@@ -132,15 +132,15 @@ void JfrTypeManager::write_checkpoint(Thread* t, traceid tid /* 0 */, oop vthrea
   type_thread.serialize(writer);
 }
 
-void JfrTypeManager::write_checkpoint(traceid vtid) {
+void JfrTypeManager::write_simplified_vthread_checkpoint(traceid vtid) {
   Thread* const current = Thread::current();
   assert(current != nullptr, "invariant");
   ResourceMark rm(current);
   JfrCheckpointWriter writer(current, true, THREADS, JFR_VIRTUAL_THREADLOCAL);
   // TYPE_THREAD and count is written later as part of vthread bulk serialization.
   writer.set_count(1); // Only a logical marker for the checkpoint header.
-  JfrVirtualThreadConstant type_virtual_thread(vtid);
-  type_virtual_thread.serialize(writer);
+  JfrSimplifiedVirtualThreadConstant type_simple_vthread(vtid);
+  type_simple_vthread.serialize(writer);
 }
 
 class SerializerRegistrationGuard : public StackObj {

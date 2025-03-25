@@ -312,12 +312,14 @@ void JfrThreadConstant::serialize(JfrCheckpointWriter& writer) {
   // VirtualThread threadgroup already serialized invariant.
 }
 
-void JfrVirtualThreadConstant::serialize(JfrCheckpointWriter & writer) {
+// This serializer is used when the vthread name cannot
+// be determined because we cannot access any oops.
+void JfrSimplifiedVirtualThreadConstant::serialize(JfrCheckpointWriter & writer) {
   writer.write_key(_vtid);
   // Write the null string categorically as the os name for virtual threads.
   writer.write((const char*)nullptr); // os name
   writer.write(0); // os id
-  // vthread name cannot be determined for this minimal version.
+  // vthread name cannot be determined for this simplified version.
   // This is because we cannot access any oops.
   writer.write_empty_string();
   writer.write(_vtid); // java tid

@@ -41,7 +41,7 @@ class JfrTypeManager : public AllStatic {
   static void write_threads(JfrCheckpointWriter& writer);
   static JfrBlobHandle create_thread_blob(JavaThread* jt, traceid tid = 0, oop vthread = nullptr);
   static void write_checkpoint(Thread* t, traceid tid = 0, oop vthread = nullptr);
-  static void write_checkpoint(traceid vtid);
+  static void write_simplified_vthread_checkpoint(traceid vtid);
   static void write_static_types(JfrCheckpointWriter& writer);
 };
 
