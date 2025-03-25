@@ -635,10 +635,12 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_OPTIONS],
   #
   # Extra jlink options to be (optionally) passed to the JDK build
   #
-  AC_ARG_WITH(extra-jlink-flags, [AS_HELP_STRING([--with-extra-jlink-flags],
-      [extra flags to be passed to jlink during the build])])
+  UTIL_ARG_WITH(NAME: extra-jlink-flags, TYPE: string,
+      DEFAULT: [],
+      DESC: [extra flags to be passed to jlink during the build],
+      OPTIONAL: true)
 
-  JLINK_USER_EXTRA_FLAGS="$with_extra_jlink_flags"
+  JLINK_USER_EXTRA_FLAGS="$EXTRA_JLINK_FLAGS"
   AC_SUBST(JLINK_USER_EXTRA_FLAGS)
 ])
 
