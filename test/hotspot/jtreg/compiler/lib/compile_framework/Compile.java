@@ -39,7 +39,7 @@ import jdk.test.lib.JDKToolFinder;
  * Helper class for compilation of Java and Jasm {@link SourceCode}.
  */
 class Compile {
-    private static final int COMPILE_TIMEOUT = 600; // TODO: only temporarily increasing for windows failures.
+    private static final int COMPILE_TIMEOUT = 60;
 
     private static final String JAVA_PATH = JDKToolFinder.getJDKTool("java");
     private static final String JAVAC_PATH = JDKToolFinder.getJDKTool("javac");
