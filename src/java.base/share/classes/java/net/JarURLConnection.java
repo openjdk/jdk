@@ -172,20 +172,35 @@ public abstract class JarURLConnection extends URLConnection {
             throw new MalformedURLException("no !/ found in url spec:" + spec);
         }
 
-        @SuppressWarnings("deprecation")
-        var _unused = jarFileURL = new URL(spec.substring(0, separator));
+        jarFileURL = parseJarFileURL(spec, separator, url);
+        entryName = parseEntryName(spec, separator);
+    }
 
+    /**
+     * Parse the URL of the JAR file backing this JarURLConnection,
+     * appending any #runtime fragment as neccessary
+     *
+     * @param spec the URL spec of this connection
+     * @param separator the index of the '!/' separator
+     * @param connectionURL the URL passed to the constructor
+     * @return a URL to the JAR file this connection reads from
+     *
+     * @throws MalformedURLException if a malformed URL is found
+     */
+    @SuppressWarnings("deprecation")
+    private static URL parseJarFileURL(String spec, int separator, URL connectionURL) throws MalformedURLException {
+
+        URL url = new URL(spec.substring(0, separator));
         /*
-         * The url argument may have had a runtime fragment appended, so
+         * The url passed to the constructor may have had a runtime fragment appended, so
          * we need to add a runtime fragment to the jarFileURL to enable
          * runtime versioning when the underlying jar file is opened.
          */
-        if ("runtime".equals(url.getRef())) {
-            @SuppressWarnings("deprecation")
-            var _unused2 = jarFileURL = new URL(jarFileURL, "#runtime");
+        if ("runtime".equals(connectionURL.getRef())) {
+            return new URL(url, "#runtime");
+        } else {
+            return url;
         }
-
-        entryName = parseEntryName(spec, separator);
     }
 
     /**
