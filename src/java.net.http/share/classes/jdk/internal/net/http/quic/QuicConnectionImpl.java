@@ -2029,17 +2029,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     /**
-     * {@return true if we should send a RESET_STREAM frame when receiving
-     *          a StreamFrame for a local stream that is not found in the
-     *          list of opened streams}
-     * @param streamId the stream id
-     */
-    protected boolean shouldSendResetStream(long streamId) {
-        assert isLocalStream(streamId);
-        return false;
-    }
-
-    /**
      * Get or open a peer initiated stream with the given stream ID
      * @param streamId the id of the remote stream
      * @param frameType type of the frame received, used in exceptions
