@@ -43,4 +43,4 @@ public abstract class Library {
      * method.
      */
     public static final Hook METHOD_HOOK = new Hook("Method");
-} 
+}
