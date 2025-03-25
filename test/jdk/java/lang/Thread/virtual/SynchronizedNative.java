@@ -42,6 +42,7 @@
 /*
  * @test id=Xcomp-TieredStopAtLevel1
  * @requires vm.continuations
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @run junit/othervm/native -Xcomp -XX:TieredStopAtLevel=1 --enable-native-access=ALL-UNNAMED SynchronizedNative
@@ -50,6 +51,7 @@
 /*
  * @test id=Xcomp-noTieredCompilation
  * @requires vm.continuations
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @run junit/othervm/native -Xcomp -XX:-TieredCompilation --enable-native-access=ALL-UNNAMED SynchronizedNative
