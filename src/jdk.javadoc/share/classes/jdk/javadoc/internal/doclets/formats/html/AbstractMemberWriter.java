@@ -227,13 +227,13 @@ public abstract class AbstractMemberWriter {
             Content member = getMemberSummaryHeader(target);
             summaryTreeList.forEach(member::add);
             buildSummary(target, member);
-            writer.tableOfContents.addLink(HtmlIds.forMemberSummary(kind), getSummaryLabel());
+            writer.tableOfContents.addLink(HtmlIds.forMemberSummary(kind), getSummaryLabel(),
+                    TableOfContents.Level.FIRST);
 
             // Omit TOC entries for inherited members unless there's a substantial number of own members.
             if (!inheritedTocEntries.isEmpty() && ownMemberCount > 8 && inheritedSummaries > 0) {
-                writer.tableOfContents.pushNestedList();
-                inheritedTocEntries.forEach(writer.tableOfContents::addLink);
-                writer.tableOfContents.popNestedList();
+                inheritedTocEntries.forEach((key, value)
+                        -> writer.tableOfContents.addLink(key, value, TableOfContents.Level.SECOND));
             }
         }
     }

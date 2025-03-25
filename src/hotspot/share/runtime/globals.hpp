@@ -1430,7 +1430,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(size_t, MinHeapDeltaBytes, ScaleForWordSize(128*K),               \
           "The minimum change in heap space due to GC (in bytes)")          \
-          range(0, max_uintx)                                               \
+          range(0, max_uintx / 2 + 1)                                       \
                                                                             \
   product(size_t, MinMetaspaceExpansion, ScaleForWordSize(256*K),           \
           "The minimum expansion of Metaspace (in bytes)")                  \

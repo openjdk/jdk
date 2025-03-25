@@ -6855,7 +6855,7 @@ void C2_MacroAssembler::vpsign_extend_dq(BasicType elem_bt, XMMRegister dst, XMM
 
 void C2_MacroAssembler::vpgenmax_value(BasicType elem_bt, XMMRegister dst, XMMRegister allones, int vlen_enc, bool compute_allones) {
   if (compute_allones) {
-    if (vlen_enc == Assembler::AVX_512bit) {
+    if (VM_Version::supports_avx512vl() || vlen_enc == Assembler::AVX_512bit) {
       vpternlogd(allones, 0xff, allones, allones, vlen_enc);
     } else {
       vpcmpeqq(allones, allones, allones, vlen_enc);
@@ -6871,7 +6871,7 @@ void C2_MacroAssembler::vpgenmax_value(BasicType elem_bt, XMMRegister dst, XMMRe
 
 void C2_MacroAssembler::vpgenmin_value(BasicType elem_bt, XMMRegister dst, XMMRegister allones, int vlen_enc, bool compute_allones) {
   if (compute_allones) {
-    if (vlen_enc == Assembler::AVX_512bit) {
+    if (VM_Version::supports_avx512vl() || vlen_enc == Assembler::AVX_512bit) {
       vpternlogd(allones, 0xff, allones, allones, vlen_enc);
     } else {
       vpcmpeqq(allones, allones, allones, vlen_enc);
