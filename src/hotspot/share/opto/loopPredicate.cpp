@@ -35,6 +35,7 @@
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
+
 #include <fenv.h>
 #include <math.h>
 

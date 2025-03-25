@@ -31,15 +31,15 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <libproc.h>
-#include <unistd.h>
 
+#include <libproc.h>
+#include <limits.h>
+#include <mach/mach_vm.h>
 #include <mach/vm_inherit.h>
 #include <mach/vm_prot.h>
-#include <mach/mach_vm.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 // maximum number of mapping records returned
 static const int MAX_REGIONS_RETURNED = 1000000;

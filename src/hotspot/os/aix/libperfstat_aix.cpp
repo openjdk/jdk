@@ -25,8 +25,8 @@
  */
 
 #include "libperfstat_aix.hpp"
-#include "misc_aix.hpp"
 #include "logging/log.hpp"
+#include "misc_aix.hpp"
 #include "runtime/os.hpp"
 
 #include <dlfcn.h>

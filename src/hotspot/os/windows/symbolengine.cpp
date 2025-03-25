@@ -22,16 +22,16 @@
  *
  */
 
-#include "utilities/globalDefinitions.hpp"
 #include "symbolengine.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "windbghelp.hpp"
 
-#include <windows.h>
 
 #include <imagehlp.h>
 #include <psapi.h>
+#include <windows.h>
 
 
 

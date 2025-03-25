@@ -27,6 +27,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.hpp"
+
 #include <sys/mman.h>
 
 void SafepointMechanism::pd_initialize() {

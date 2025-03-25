@@ -23,13 +23,13 @@
  */
 
 
-#include "runtime/os.hpp"
-
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/os.hpp"
 #include "runtime/os.inline.hpp"
+
 
 void ShenandoahLock::contended_lock(bool allow_block_for_safepoint) {
   Thread* thread = Thread::current();

@@ -26,9 +26,9 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
 
+#include <errno.h>
 #include <pthread.h>
 #include <unistd.h>
-#include <errno.h>
 
 void MiscUtils::init_critsect(MiscUtils::critsect_t* cs) {
   const int rc = pthread_mutex_init(cs, nullptr);

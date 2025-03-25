@@ -24,6 +24,7 @@
  */
 
 #include "asm/assembler.hpp"
+#include "entry_zero.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/zero/bytecodeInterpreter.hpp"
@@ -32,8 +33,8 @@
 #include "oops/access.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/basicLock.inline.hpp"
@@ -43,12 +44,11 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
+#include "stack_zero.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-#include "entry_zero.hpp"
-#include "stack_zero.inline.hpp"
 
 void ZeroInterpreter::initialize_stub() {
   if (_code != nullptr) return;

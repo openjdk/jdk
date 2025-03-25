@@ -29,8 +29,8 @@
 #include "interp_masm_arm.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
-#include "oops/klassVtable.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/klassVtable.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "vmreg_arm.inline.hpp"
 #ifdef COMPILER2

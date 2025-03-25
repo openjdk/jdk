@@ -22,8 +22,8 @@
  *
  */
 
-#include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "classfile/classLoader.hpp"

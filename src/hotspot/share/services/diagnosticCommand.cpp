@@ -32,8 +32,8 @@
 #include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
-#include "compiler/compiler_globals.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/directivesParser.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "jvm.h"
@@ -68,9 +68,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/parseInteger.hpp"
 #ifdef LINUX
-#include "os_posix.hpp"
 #include "mallocInfoDcmd.hpp"
+#include "os_posix.hpp"
 #include "trimCHeapDCmd.hpp"
+
 #include <errno.h>
 #endif
 

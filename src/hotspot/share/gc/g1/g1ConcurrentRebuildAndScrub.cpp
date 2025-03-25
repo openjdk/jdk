@@ -23,10 +23,9 @@
  */
 
 
-#include "gc/g1/g1ConcurrentRebuildAndScrub.hpp"
-
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
+#include "gc/g1/g1ConcurrentRebuildAndScrub.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionManager.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -37,6 +36,7 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 
 // Worker task that scans the objects in the old generation to rebuild the remembered
 // set and at the same time scrubs dead objects by replacing them with filler objects

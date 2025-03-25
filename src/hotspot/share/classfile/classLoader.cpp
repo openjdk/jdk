@@ -23,14 +23,14 @@
  */
 
 #include "cds/aotClassLocation.hpp"
-#include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classLoadInfo.hpp"
 #include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
-#include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/klassFactory.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -81,8 +81,8 @@
 #include "utilities/ostream.hpp"
 #include "utilities/utf8.hpp"
 
-#include <stdlib.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 // Entry point in java.dll for path canonicalization
 

@@ -24,9 +24,6 @@
  *
  */
 
-#include <stdio.h>
-#include <sys/types.h>
-
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "compiler/disassembler.hpp"
@@ -34,6 +31,9 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+
+#include <stdio.h>
+#include <sys/types.h>
 
 int AbstractAssembler::code_fill_byte() {
   return 0;

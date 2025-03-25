@@ -28,9 +28,9 @@
 #include "runtime/vm_version.hpp"
 
 #include <limits.h>
-#include <winnt.h>
 #include <memoryapi.h>
 #include <psapi.h>
+#include <winnt.h>
 
 /* maximum number of mapping records returned */
 static const int MAX_REGIONS_RETURNED = 1000000;

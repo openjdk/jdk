@@ -25,10 +25,10 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
-
-#include "shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "shenandoahCollectorPolicy.hpp"
+
 
 void ShenandoahController::pacing_notify_alloc(size_t words) {
   assert(ShenandoahPacing, "should only call when pacing is enabled");

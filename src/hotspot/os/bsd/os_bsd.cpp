@@ -104,8 +104,8 @@
 #endif
 
 #ifdef __APPLE__
-  #include <mach/task_info.h>
   #include <mach-o/dyld.h>
+  #include <mach/task_info.h>
 #endif
 
 #ifndef MAP_ANONYMOUS

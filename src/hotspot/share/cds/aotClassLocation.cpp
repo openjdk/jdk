@@ -44,8 +44,8 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/stringUtils.hpp"
 
-#include <sys/stat.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 AOTClassLocationConfig* AOTClassLocationConfig::_dumptime_instance = nullptr;
 const AOTClassLocationConfig* AOTClassLocationConfig::_runtime_instance = nullptr;

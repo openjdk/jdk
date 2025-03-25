@@ -36,11 +36,11 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/formatBuffer.hpp"
 
-#include <windows.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <errno.h>
 #include <lmcons.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <windows.h>
 
 typedef BOOL (WINAPI *SetSecurityDescriptorControlFnPtr)(
    IN PSECURITY_DESCRIPTOR pSecurityDescriptor,

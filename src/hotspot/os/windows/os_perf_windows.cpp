@@ -28,16 +28,16 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "pdh_interface.hpp"
-#include "runtime/os_perf.hpp"
 #include "runtime/os.hpp"
+#include "runtime/os_perf.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
+#include <TlHelp32.h>
 #include <math.h>
 #include <psapi.h>
-#include <TlHelp32.h>
 
 /*
  * Windows provides a vast plethora of performance objects and counters,

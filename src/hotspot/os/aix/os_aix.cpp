@@ -29,8 +29,8 @@
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
-#include "libperfstat_aix.hpp"
 #include "libodm_aix.hpp"
+#include "libperfstat_aix.hpp"
 #include "loadlib_aix.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -92,10 +92,10 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/ipc.h>
 #include <sys/mman.h>
+#include <unistd.h>
 // sys/mman.h defines MAP_ANON_64K beginning with AIX7.3 TL1
 #ifndef MAP_ANON_64K
   #define MAP_ANON_64K 0x400

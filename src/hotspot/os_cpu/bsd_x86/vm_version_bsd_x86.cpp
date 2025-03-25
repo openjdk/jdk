@@ -27,8 +27,8 @@
 
 #ifdef __APPLE__
 
-#include <sys/types.h>
 #include <sys/sysctl.h>
+#include <sys/types.h>
 
 bool VM_Version::is_cpu_emulated() {
   int ret = 0;

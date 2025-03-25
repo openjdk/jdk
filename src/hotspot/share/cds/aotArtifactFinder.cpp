@@ -22,9 +22,9 @@
  *
  */
 
-#include "cds/aotClassLinker.hpp"
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassInitializer.hpp"
+#include "cds/aotClassLinker.hpp"
 #include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/systemDictionaryShared.hpp"

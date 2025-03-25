@@ -32,8 +32,8 @@
 #ifdef SAFEFETCH_METHOD_SIGSETJMP
 
 // For SafeFetch we need POSIX TLS and sigsetjmp/longjmp.
-#include <setjmp.h>
 #include <pthread.h>
+#include <setjmp.h>
 static pthread_key_t g_jmpbuf_key;
 
 struct InitTLSKey { InitTLSKey() { pthread_key_create(&g_jmpbuf_key, nullptr); } };

@@ -56,12 +56,12 @@
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/synchronizer.inline.hpp"
-#include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframe_hp.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/threadService.hpp"
 
 

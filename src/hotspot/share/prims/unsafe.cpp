@@ -23,8 +23,8 @@
  */
 
 #include "classfile/classFileStream.hpp"
-#include "classfile/classLoader.hpp"
 #include "classfile/classLoadInfo.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"

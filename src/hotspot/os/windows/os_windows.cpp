@@ -88,28 +88,28 @@
 #include <crtdbg.h>
 #endif
 
-#include <windows.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/timeb.h>
-#include <objidl.h>
-#include <shlobj.h>
 
-#include <malloc.h>
-#include <powerbase.h>
-#include <signal.h>
 #include <direct.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <io.h>
+#include <malloc.h>
+#include <objidl.h>
+#include <powerbase.h>
+#include <shlobj.h>
+#include <signal.h>
+#include <sys/stat.h>
+#include <sys/timeb.h>
+#include <sys/types.h>
+#include <windows.h>
 #include <process.h>              // For _beginthreadex(), _endthreadex()
 #include <imagehlp.h>             // For os::dll_address_to_function_name
 // for enumerating dll libraries
-#include <vdmdbg.h>
-#include <psapi.h>
 #include <mmsystem.h>
-#include <winsock2.h>
+#include <psapi.h>
+#include <vdmdbg.h>
 #include <versionhelpers.h>
+#include <winsock2.h>
 
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(-1)

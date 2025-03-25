@@ -23,8 +23,8 @@
  *
  */
 
-#include "assembler_ppc.hpp"
 #include "asm/assembler.inline.hpp"
+#include "assembler_ppc.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/vtableStubs.hpp"

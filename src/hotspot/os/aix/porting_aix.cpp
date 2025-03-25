@@ -26,8 +26,6 @@
 // this is needed for rtv_linkedin_libpath() to get the linked (burned) in library
 // search path of an XCOFF executable
 #define __XCOFF64__
-#include <xcoff.h>
-
 #include "asm/assembler.hpp"
 #include "compiler/disassembler.hpp"
 #include "loadlib_aix.hpp"
@@ -39,10 +37,12 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+
 #include <cxxabi.h>
-#include <sys/debug.h>
 #include <pthread.h>
+#include <sys/debug.h>
 #include <ucontext.h>
+#include <xcoff.h>
 
 //////////////////////////////////
 // Provide implementation for dladdr based on LoadedLibraries pool and

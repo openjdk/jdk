@@ -24,14 +24,14 @@
  */
 
 #include "asm/macroAssembler.inline.hpp"
-#include "code/debugInfoRec.hpp"
 #include "code/compiledIC.hpp"
+#include "code/debugInfoRec.hpp"
 #include "code/vtableStubs.hpp"
-#include "frame_ppc.hpp"
 #include "compiler/oopMap.hpp"
+#include "frame_ppc.hpp"
 #include "gc/shared/gcLocker.hpp"
-#include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"

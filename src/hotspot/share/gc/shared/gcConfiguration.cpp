@@ -22,9 +22,9 @@
  *
  */
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfiguration.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"

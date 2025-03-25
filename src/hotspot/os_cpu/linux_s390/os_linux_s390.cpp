@@ -51,8 +51,8 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
 #include "signals_posix.hpp"
-#include "utilities/events.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
 // put OS-includes here

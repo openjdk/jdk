@@ -30,14 +30,14 @@
 
 #ifdef __APPLE__
   #import <libproc.h>
-  #include <sys/time.h>
-  #include <sys/sysctl.h>
   #include <mach/mach.h>
   #include <mach/task_info.h>
-  #include <sys/socket.h>
   #include <net/if.h>
   #include <net/if_dl.h>
   #include <net/route.h>
+  #include <sys/socket.h>
+  #include <sys/sysctl.h>
+  #include <sys/time.h>
   #include <sys/times.h>
 #endif
 

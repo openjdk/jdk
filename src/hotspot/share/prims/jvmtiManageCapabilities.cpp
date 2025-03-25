@@ -24,9 +24,9 @@
 
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiManageCapabilities.hpp"
+#include "runtime/mutexLocker.hpp"
 
 static const jint CAPA_SIZE = (JVMTI_INTERNAL_CAPABILITY_COUNT + 7) / 8;
 

@@ -25,8 +25,8 @@
 #include "semaphore_windows.hpp"
 #include "utilities/debug.hpp"
 
-#include <windows.h>
 #include <errno.h>
+#include <windows.h>
 
 WindowsSemaphore::WindowsSemaphore(uint value) {
   _semaphore = ::CreateSemaphore(nullptr, value, LONG_MAX, nullptr);

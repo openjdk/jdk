@@ -39,6 +39,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_ppc.inline.hpp"
+
 #include <stdint.h>
 
 #ifdef ASSERT

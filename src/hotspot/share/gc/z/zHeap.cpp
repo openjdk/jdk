@@ -22,8 +22,8 @@
  */
 
 #include "classfile/classLoaderDataGraph.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/locationPrinter.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"

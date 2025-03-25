@@ -23,8 +23,8 @@
  *
  */
 
-#include "assembler_ppc.hpp"
 #include "asm/assembler.inline.hpp"
+#include "assembler_ppc.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/vtableStubs.hpp"
@@ -34,9 +34,9 @@
 #include "nativeInst_ppc.hpp"
 #include "os_aix.hpp"
 #include "os_posix.hpp"
+#include "porting_aix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
-#include "porting_aix.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

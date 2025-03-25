@@ -28,6 +28,7 @@
 #include "utilities/debug.hpp"
 // POSIX unnamed semaphores are not supported on OS X.
 #include "semaphore_posix.hpp"
+
 #include <semaphore.h>
 
 PosixSemaphore::PosixSemaphore(uint value) {

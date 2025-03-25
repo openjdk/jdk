@@ -25,9 +25,9 @@
 
 #include "asm/assembler.inline.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
-#include "gc/shared/cardTableBarrierSet.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

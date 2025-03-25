@@ -37,12 +37,12 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
-#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframe_hp.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 
 #ifdef JVMTI_TRACE
 #define EC_TRACE(out) do { \

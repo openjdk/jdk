@@ -23,8 +23,8 @@
  *
  */
 
-#include "asm/macroAssembler.inline.hpp"
 #include "asm/assembler.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_LIRAssembler.hpp"

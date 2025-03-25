@@ -46,11 +46,11 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vframe.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/threadService.hpp"
 
 // TODO: we need to define a naming convention for perf counters

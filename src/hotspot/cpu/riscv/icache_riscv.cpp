@@ -26,8 +26,8 @@
 
 #include "asm/macroAssembler.hpp"
 #include "riscv_flush_icache.hpp"
-#include "runtime/java.hpp"
 #include "runtime/icache.hpp"
+#include "runtime/java.hpp"
 
 #define __ _masm->
 

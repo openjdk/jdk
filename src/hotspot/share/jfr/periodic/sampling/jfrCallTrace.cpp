@@ -28,9 +28,9 @@
 #include "jfr/periodic/sampling/jfrCallTrace.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "oops/method.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
-#include "runtime/frame.inline.hpp"
 #include "runtime/registerMap.hpp"
 
 bool JfrGetCallTrace::find_top_frame(frame& top_frame, Method** method, frame& first_frame) {

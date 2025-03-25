@@ -22,8 +22,8 @@
  *
  */
 
-#include "semaphore_bsd.hpp"
 #include "runtime/os.hpp"
+#include "semaphore_bsd.hpp"
 #include "utilities/debug.hpp"
 
 #include <semaphore.h>

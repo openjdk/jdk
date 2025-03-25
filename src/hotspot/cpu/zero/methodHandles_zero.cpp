@@ -33,8 +33,8 @@
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/frame.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/frame.inline.hpp"
 
 
 void MethodHandles::invoke_target(Method* method, TRAPS) {

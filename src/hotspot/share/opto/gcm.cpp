@@ -29,12 +29,12 @@
 #include "opto/c2compiler.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/chaitin.hpp"
 #include "opto/machnode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
-#include "opto/chaitin.hpp"
 #include "runtime/deoptimization.hpp"
 
 // Portions of code courtesy of Clifford Click

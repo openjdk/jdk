@@ -24,13 +24,13 @@
 
 #include "asm/macroAssembler.inline.hpp"
 #include "code/vmreg.inline.hpp"
-#include "runtime/jniHandles.hpp"
-#include "runtime/jniHandles.inline.hpp"
-#include "oops/typeArrayOop.inline.hpp"
 #include "oops/oopCast.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "prims/foreignGlobals.hpp"
 #include "prims/foreignGlobals.inline.hpp"
 #include "prims/vmstorage.hpp"
+#include "runtime/jniHandles.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "utilities/formatBuffer.hpp"
 
 #define __ masm->

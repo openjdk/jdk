@@ -23,10 +23,10 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAbort.inline.hpp"
+#include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDirector.hpp"
 #include "gc/z/zDriver.hpp"
-#include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNMethodTable.hpp"

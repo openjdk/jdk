@@ -22,8 +22,8 @@
  *
  */
 
-#include "compiler/compiler_globals.hpp"
 #include "compiler/compilerOracle.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "oops/method.hpp"
 #include "oops/methodCounters.hpp"
 #include "runtime/handles.inline.hpp"

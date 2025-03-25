@@ -25,8 +25,8 @@
  */
 
 #include "cds/aotLinkedClassBulkLoader.hpp"
-#include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"

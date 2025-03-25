@@ -24,12 +24,11 @@
  */
 
 #include "asm/macroAssembler.inline.hpp"
-#include "registerSaver_s390.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
-#include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_s390.hpp"
 #include "oops/instanceOop.hpp"
@@ -37,6 +36,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/upcallLinker.hpp"
+#include "registerSaver_s390.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"

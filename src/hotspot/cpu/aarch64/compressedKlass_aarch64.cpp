@@ -25,12 +25,12 @@
 
 #include "asm/macroAssembler.hpp"
 #include "logging/log.hpp"
-#include "oops/compressedKlass.hpp"
 #include "memory/metaspace.hpp"
+#include "oops/compressedKlass.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Helper function; reserve at an address that is compatible with EOR
 static char* reserve_at_eor_compatible_address(size_t size, bool aslr) {

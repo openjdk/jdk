@@ -25,11 +25,12 @@
 
 #include "libodm_aix.hpp"
 #include "misc_aix.hpp"
-#include <stdlib.h>
-#include <dlfcn.h>
-#include <string.h>
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
+
+#include <dlfcn.h>
+#include <stdlib.h>
+#include <string.h>
 
 
 dynamicOdm::dynamicOdm() {

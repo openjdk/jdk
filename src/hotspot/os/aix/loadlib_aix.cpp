@@ -33,9 +33,9 @@
 //      ?topic=/com.ibm.aix.basetechref/doc/basetrf1/loadquery.htm
 
 #include "loadlib_aix.hpp"
+#include "logging/log.hpp"
 #include "misc_aix.hpp"
 #include "porting_aix.hpp"
-#include "logging/log.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 

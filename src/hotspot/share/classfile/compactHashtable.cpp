@@ -23,8 +23,8 @@
  */
 
 #include "cds/archiveBuilder.hpp"
-#include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/cds_globals.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "jvm.h"

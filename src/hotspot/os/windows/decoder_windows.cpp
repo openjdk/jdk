@@ -22,8 +22,8 @@
  *
  */
 
-#include "utilities/decoder.hpp"
 #include "symbolengine.hpp"
+#include "utilities/decoder.hpp"
 #include "windbghelp.hpp"
 
 bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const char* modulepath, bool demangle) {

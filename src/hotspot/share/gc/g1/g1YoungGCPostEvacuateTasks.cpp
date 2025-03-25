@@ -47,8 +47,8 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.hpp"
-#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/threads.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/ticks.hpp"
 

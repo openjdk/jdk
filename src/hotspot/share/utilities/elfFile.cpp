@@ -36,10 +36,10 @@
 #include "utilities/elfSymbolTable.hpp"
 #include "utilities/ostream.hpp"
 
-#include <string.h>
-#include <stdio.h>
 #include <limits.h>
 #include <new>
+#include <stdio.h>
+#include <string.h>
 
 const char* ElfFile::USR_LIB_DEBUG_DIRECTORY = "/usr/lib/debug";
 

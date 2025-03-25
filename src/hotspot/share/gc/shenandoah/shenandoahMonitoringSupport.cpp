@@ -25,9 +25,9 @@
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/hSpaceCounters.hpp"
-#include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionCounters.hpp"
+#include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "services/memoryService.hpp"
 
