@@ -28,7 +28,7 @@ package compiler.loopopts.superword;
  * @bug 8352587
  * @summary Test case where we used to Multiversion a PeelMainPost loop,
  *          which is useless and triggered an assert later on.
- * @run driver compiler.loopopts.superword.TestMultiversionWithPeelMainPost
+ * @run main compiler.loopopts.superword.TestMultiversionWithPeelMainPost
  * @run main/othervm -XX:CompileCommand=compileonly,compiler.loopopts.superword.TestMultiversionWithPeelMainPost::test
  *                   -XX:-TieredCompilation -Xcomp
  *                   -XX:PerMethodTrapLimit=0

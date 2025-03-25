@@ -60,7 +60,7 @@ public class TestPeelMainPostNoMultiversioning {
         long x = value;
         long y = multiplicator;
         for (int i = 0; i < 10_000; i++) {
-            x *= y; // No memory load/stroe -> PeelMainPost
+            x *= y; // No memory load/store -> PeelMainPost
         }
         value = x;
     }
