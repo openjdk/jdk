@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,12 +106,13 @@ public final class StreamFrame extends QuicFrame {
         // if offset is non-zero that we mark that the type field has OFF bit set
         // to allow for that bit to be set when encoding this frame
         this.typeFieldHasOFF = this.offset != 0;
-        if (length != -1 && length != streamData.remaining())
+        if (length != -1 && length != streamData.remaining()) {
             throw new IllegalArgumentException("bad length");
+        }
         this.length = length;
-        this.dataLength = length == -1 ? streamData.remaining() : length;
+        this.dataLength = streamData.remaining();
         this.fin = fin;
-        this.streamData = slice || dataLength != streamData.remaining()
+        this.streamData = slice
                 ? streamData.slice(streamData.position(), dataLength)
                 : streamData;
     }
