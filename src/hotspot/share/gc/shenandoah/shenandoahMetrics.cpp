@@ -57,7 +57,6 @@ void ShenandoahMetricsSnapshot::snap_after() {
 
 bool ShenandoahMetricsSnapshot::is_good_progress(ShenandoahGeneration* generation) {
   // Under the critical threshold?
-
   ShenandoahFreeSet* free_set = _heap->free_set();
   size_t free_actual   = free_set->available();
 

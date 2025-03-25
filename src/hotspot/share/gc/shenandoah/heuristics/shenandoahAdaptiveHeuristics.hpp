@@ -167,7 +167,7 @@ public:
     size_t allocated_words = _freeset->get_mutator_allocations_since_rebuild();
     size_t result = (allocated_words < _trigger_threshold)? _trigger_threshold - allocated_words: 0;
 #ifdef KELVIN_DEBUG
-    log_info(gc)("allocatable returns " SIZE_FORMAT " words from allocated " SIZE_FORMAT ", trigger_threshold: " SIZE_FORMAT,
+    log_info(gc)("allocatable returns %zu words from allocated %zu, trigger_threshold: %zu",
                  result, allocated_words, _trigger_threshold);
 #endif
     return result;

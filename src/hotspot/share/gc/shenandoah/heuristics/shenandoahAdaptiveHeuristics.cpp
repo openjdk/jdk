@@ -124,7 +124,7 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
   _acceleration_goodness_ratio(ShenandoahInitialAcceleratedAllocationRateGoodnessRatio),
   _consecutive_goodness(0) { }
 #else
-  _most_recent_headroom_at_start_of_idle(0) {
+  _most_recent_headroom_at_start_of_idle((size_t) 0) {
     _freeset = ShenandoahHeap::heap()->free_set();
   }
 #endif
@@ -190,7 +190,7 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
   // safety buffer to allow a small amount of additional allocation to take place in case we were overly optimistic in delaying
   // our trigger.
 #ifdef KELVIN_IDLE_SPAN
-  log_info(gc)("@recalculate_trigger_threshold(mutator_available: %zu" ") for _space_info: %s",
+  log_info(gc)("@recalculate_trigger_threshold(mutator_available: %zu) for _space_info: %s",
                mutator_available, _space_info->name());
 #endif
   size_t capacity       = _space_info->soft_max_capacity();
@@ -204,7 +204,7 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
   // make headroom adjustments
   size_t headroom_adjustments = spike_headroom + penalties;
 #ifdef KELVIN_IDLE_SPAN
-  log_info(gc)("@recalculate_trigger_threshold(mutator_available: %zu" "), spike_headroom: %zu"
+  log_info(gc)("@recalculate_trigger_threshold(mutator_available: %zu), spike_headroom: %zu"
                ", penalties: %zu", mutator_available, spike_headroom, penalties);
 #endif
   if (mutator_available >= headroom_adjustments) {
@@ -216,9 +216,9 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
   assert(!_is_generational || !strcmp(_space_info->name(), "Young") || !strcmp(_space_info->name(), "Global"),
          "Assumed young or global space, but got: %s", _space_info->name());
   assert(_is_generational || !strcmp(_space_info->name(), ""), "Assumed global (unnamed) space, but got: %s", _space_info->name());
-  log_info(gc)("At start or resumption of idle gc span for %s, mutator available set to: %zu" "%s"
-               " after adjusting for spike_headroom: %zu" "%s"
-               " and penalties: %zu" "%s", _is_generational? _space_info->name(): "Global",
+  log_info(gc)("At start or resumption of idle gc span for %s, mutator available set to: %zu%s"
+               " after adjusting for spike_headroom: %zu%s"
+               " and penalties: %zu%s", _is_generational? _space_info->name(): "Global",
                byte_size_in_proper_unit(mutator_available),   proper_unit_for_byte_size(mutator_available),
                byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),
                byte_size_in_proper_unit(penalties),           proper_unit_for_byte_size(penalties));
@@ -228,9 +228,9 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
   _trigger_threshold = mutator_available / HeapWordSize;
 
 #ifdef KELVIN_IDLE_SPAN
-  log_info(gc)("%s: recalculate trigger, capacity: %zu" ", original_mutator_available: %zu"
-               ", spike_headroom: %zu" ", penalties: %zu"
-               ", used: %zu" ", reserved: %zu" ", final answer: %zu",
+  log_info(gc)("%s: recalculate trigger, capacity: %zu, original_mutator_available: %zu"
+               ", spike_headroom: %zu, penalties: %zu"
+               ", used: %zu, reserved: %zu, final answer: %zu",
                _space_info->name(), capacity, original_mutator_available, spike_headroom, penalties, _space_info->used(),
                _freeset->reserved(), _trigger_threshold);
 #endif
@@ -617,13 +617,13 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
       return true;
     }
 #ifdef KELVIN_NEEDS_TO_SEE
-    log_info(gc)("should_start_gc? did not meet init threshold, available: %zu" ", init_threshold: %zu",
+    log_info(gc)("should_start_gc? did not meet init threshold, available: %zu, init_threshold: %zu",
                  available, init_threshold);
 #endif
   }
 
 #ifdef KELVIN_NEEDS_TO_SEE
-  log_info(gc)("should_start_gc? did not trigger for learning, _gc_times_learned: %zu" ", max_learn: %zu",
+  log_info(gc)("should_start_gc? did not trigger for learning, _gc_times_learned: %zu, max_learn: %zu",
                _gc_times_learned, max_learn);
 #endif
 

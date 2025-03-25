@@ -85,7 +85,7 @@ protected:
   size_t _declined_trigger_count;         // This counts how many times since previous GC finished that this
                                           //  heuristic has answered false to should_start_gc().
   size_t _most_recent_declined_trigger_count;
-                                       ;  // This represents the value of _declined_trigger_count as captured at the
+                                          // This represents the value of _declined_trigger_count as captured at the
                                           //  moment the most recent GC effort was triggered.  In case the most recent
                                           //  concurrent GC effort degenerates, the value of this variable allows us to
                                           //  differentiate between degeneration because heuristic was overly optimistic
