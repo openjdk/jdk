@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
          * a flow of {@code CryptoFrame} instances.
          */
         public CryptoDataFlow() {
-            super(CryptoFrame.COMPARE_OFFSETS,
+            super(CryptoFrame::compareOffsets,
                     CryptoFrame::offset,
                     CryptoFrame::length);
         }

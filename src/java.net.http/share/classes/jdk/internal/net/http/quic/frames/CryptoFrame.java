@@ -146,6 +146,4 @@ public final class CryptoFrame extends QuicFrame {
     public static int compareOffsets(CryptoFrame cf1, CryptoFrame cf2) {
         return Long.compare(cf1.offset, cf2.offset);
     }
-
-    public static final Comparator<CryptoFrame> COMPARE_OFFSETS = CryptoFrame::compareOffsets;
 }
