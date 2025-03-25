@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ getEncodingInternal(LCID lcid)
     return ret;
 }
 
-static char* getConsoleEncoding()
+static char* getConsoleEncoding(boolean output)
 {
     size_t buflen = 16;
     char* buf = malloc(buflen);
@@ -136,7 +136,11 @@ static char* getConsoleEncoding()
     if (buf == NULL) {
         return NULL;
     }
-    cp = GetConsoleCP();
+    if (output) {
+        cp = GetConsoleOutputCP();
+    } else {
+        cp = GetConsoleCP();
+    }
     if (cp >= 874 && cp <= 950)
         snprintf(buf, buflen, "ms%d", cp);
     else if (cp == 65001)
@@ -677,7 +681,7 @@ GetJavaProperties(JNIEnv* env)
             hStdOutErr = GetStdHandle(STD_OUTPUT_HANDLE);
             if (hStdOutErr != INVALID_HANDLE_VALUE &&
                 GetFileType(hStdOutErr) == FILE_TYPE_CHAR) {
-                sprops.stdout_encoding = getConsoleEncoding();
+                sprops.stdout_encoding = getConsoleEncoding(TRUE);
             }
             hStdOutErr = GetStdHandle(STD_ERROR_HANDLE);
             if (hStdOutErr != INVALID_HANDLE_VALUE &&
@@ -685,7 +689,7 @@ GetJavaProperties(JNIEnv* env)
                 if (sprops.stdout_encoding != NULL)
                     sprops.stderr_encoding = sprops.stdout_encoding;
                 else
-                    sprops.stderr_encoding = getConsoleEncoding();
+                    sprops.stderr_encoding = getConsoleEncoding(TRUE);
             }
         }
     }
