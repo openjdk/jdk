@@ -1699,17 +1699,16 @@ bool IdealLoopTree::is_invariant(Node* n) const {
 
 // Search the Assertion Predicates added by loop predication and/or range check elimination and update them according
 // to the new stride.
-void PhaseIdealLoop::update_main_loop_assertion_predicates(CountedLoopNode* main_loop_head) {
-  Node* init = main_loop_head->init_trip();
-
+void PhaseIdealLoop::update_main_loop_assertion_predicates(CountedLoopNode* new_main_loop_head,
+                                                           const int stride_con_before_unroll) {
   // Compute the value of the loop induction variable at the end of the
   // first iteration of the unrolled loop: init + new_stride_con - init_inc
-  int unrolled_stride_con = main_loop_head->stride_con() * 2;
+  int unrolled_stride_con = stride_con_before_unroll * 2;
   Node* unrolled_stride = intcon(unrolled_stride_con);
 
-  Node* loop_entry = main_loop_head->skip_strip_mined()->in(LoopNode::EntryControl);
+  Node* loop_entry = new_main_loop_head->skip_strip_mined()->in(LoopNode::EntryControl);
   PredicateIterator predicate_iterator(loop_entry);
-  UpdateStrideForAssertionPredicates update_stride_for_assertion_predicates(unrolled_stride, this);
+  UpdateStrideForAssertionPredicates update_stride_for_assertion_predicates(unrolled_stride, new_main_loop_head, this);
   predicate_iterator.for_each(update_stride_for_assertion_predicates);
 }
 
@@ -1748,9 +1747,9 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_post_loop(CountedLoopNo
 }
 
 void PhaseIdealLoop::create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head,
-                                                          CountedLoopNode* target_loop_head,
-                                                          const NodeInLoopBody& _node_in_loop_body,
-                                                          const bool clone_template) {
+                                                         CountedLoopNode* target_loop_head,
+                                                         const NodeInLoopBody& _node_in_loop_body,
+                                                         const bool clone_template) {
   CreateAssertionPredicatesVisitor create_assertion_predicates_visitor(target_loop_head, this, _node_in_loop_body,
                                                                        clone_template);
   Node* source_loop_entry = source_loop_head->skip_strip_mined()->in(LoopNode::EntryControl);
@@ -1854,14 +1853,12 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   C->set_major_progress();
 
   Node* new_limit = nullptr;
-  int stride_con = stride->get_int();
+  const int stride_con = stride->get_int();
   int stride_p = (stride_con > 0) ? stride_con : -stride_con;
   uint old_trip_count = loop_head->trip_count();
   // Verify that unroll policy result is still valid.
   assert(old_trip_count > 1 && (!adjust_min_trip || stride_p <=
     MIN2<int>(max_jint / 2 - 2, MAX2(1<<3, Matcher::max_vector_size(T_BYTE)) * loop_head->unrolled_count())), "sanity");
-
-  update_main_loop_assertion_predicates(loop_head);
 
   // Adjust loop limit to keep valid iterations number after unroll.
   // Use (limit - stride) instead of (((limit - init)/stride) & (-2))*stride
@@ -1996,7 +1993,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
       phi   ->set_req(LoopNode::LoopBackControl, C->top());
     }
   }
-  Node *clone_head = old_new[loop_head->_idx];
+  CountedLoopNode* clone_head = old_new[loop_head->_idx]->as_CountedLoop();
   _igvn.hash_delete(clone_head);
   loop_head ->set_req(LoopNode::   EntryControl, clone_head->in(LoopNode::LoopBackControl));
   clone_head->set_req(LoopNode::LoopBackControl, loop_head ->in(LoopNode::LoopBackControl));
@@ -2024,6 +2021,8 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
 
   loop->record_for_igvn();
   loop_head->clear_strip_mined();
+
+  update_main_loop_assertion_predicates(clone_head, stride_con);
 
 #ifndef PRODUCT
   if (C->do_vector_loop() && (PrintOpto && (VerifyLoopOptimizations || TraceLoopOpts))) {
