@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -661,7 +661,7 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      */
     private ThreadGroup[] subgroupsAsArray() {
         List<ThreadGroup> groups = synchronizedSubgroups();
-        return groups.toArray(new ThreadGroup[0]);
+        return groups.toArray(new ThreadGroup[groups.size()]);
     }
 
     /**
