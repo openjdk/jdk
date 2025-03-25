@@ -2626,7 +2626,7 @@ public class Cipher {
      * @throws UnsupportedOperationException if the corresponding method in the
      *          {@code CipherSpi} is not supported
      * @throws IllegalArgumentException if one or more of the input arguments
-     *          is invalid
+     *          are invalid
      * @throws IllegalStateException if this {@code Cipher} object is in a wrong
      *          state (e.g., has not been initialized)
      *

@@ -980,7 +980,7 @@ public abstract class CipherSpi {
      * @throws UnsupportedOperationException if this method has not been
      *          overridden by an implementation
      * @throws IllegalArgumentException if one or more of the input arguments
-     *          is invalid
+     *          are invalid
      * @throws IllegalStateException if this {@code Cipher} object is in a wrong
      *          state (e.g., has not been initialized)
      *
