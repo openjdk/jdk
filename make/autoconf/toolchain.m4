@@ -532,7 +532,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
     # or
     #   GNU ld (GNU Binutils for Ubuntu) 2.26.1
 
-    LINKER_VERSION_STRING=`$LINKER -Wl,-v 2>/dev/null | $HEAD -n 1`
+    LINKER_VERSION_STRING=`$LINKER -Wl,-v 2>&1 | $HEAD -n 1`
     # Check if we're using the GNU ld
     $ECHO "$LINKER_VERSION_STRING" | $GREP "GNU" > /dev/null
     if test $? -eq 0; then
@@ -620,6 +620,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     # All other toolchains use the compiler to link.
     LD="$CC"
     LDCXX="$CXX"
+    # Force use of lld, since that is what we expect when setting flags later on
+    if test "x$TOOLCHAIN_TYPE" = xclang; then
+      LD="$LD -fuse-ld=lld"
+      LDCXX="$LDCXX -fuse-ld=lld"
+    fi
   fi
   AC_SUBST(LD)
   # FIXME: it should be CXXLD, according to standard (cf CXXCPP)
