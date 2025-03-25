@@ -117,8 +117,7 @@ import static java.lang.classfile.ClassFile.ACC_PUBLIC;
  *
  * To add historical data for JDK N, N >= 11, do the following:
  *  * cd <open-jdk-checkout>/src/jdk.compiler/share/data/symbols
- *  * <jdk-N>/bin/java --add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED \
- *                     --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
+ *  * <jdk-N>/bin/java --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
  *                     --add-exports jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED \
  *                     --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
  *                     --add-modules jdk.jdeps \
