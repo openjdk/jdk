@@ -1345,9 +1345,19 @@ public:
   }
 
   JfrTraceQueue& cpu_time_jfr_queue() { return _cpu_time_jfr_queue; }
+#else
+  bool is_cpu_time_jfr_queue_lock_aquired() {
+    return false;
+  }
+
+  bool has_cpu_time_jfr_events() {
+    return false;
+  }
 #endif
 
-  bool is_jfr_sampling() const { return JavaThread::current()->is_cpu_time_jfr_queue_lock_aquired(); }
+  bool is_jfr_sampling() const {
+    return JavaThread::current()->is_cpu_time_jfr_queue_lock_aquired();
+  }
 };
 
 inline JavaThread* JavaThread::current_or_null() {
