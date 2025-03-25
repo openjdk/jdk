@@ -832,18 +832,17 @@ public class GenerateJfrFiles {
             out.write("    : EventType(timing), _thread(Thread::current()), _previous_nesting(JfrThreadLocal::make_non_reentrant(_thread)) {}");
             out.write("");
             out.write("  JfrNonReentrant(Thread* thread, EventStartTime timing = TIMED)");
-            out.write("    : EventType(timing), _thread(thread), _previous_nesting(JfrThreadLocal::make_non_reentrant(_thread)) {");
-            out.write("      assert(_thread != nullptr, \"invariant\");");
-            out.write("  }");
+            out.write("    : EventType(timing), _thread(thread), _previous_nesting(JfrThreadLocal::make_non_reentrant(_thread)) {}");
         }
         if (!empty) {
+          out.write("");
           out.write("  ~JfrNonReentrant() {");
           out.write("    if (_previous_nesting != -1) {");
           out.write("      JfrThreadLocal::make_reentrant(_thread, _previous_nesting);");
           out.write("    }");
           out.write("  }");
         }
-        out.write("};");
+        out.write("}; ");
     }
 
     private static void printTypes(Printer out, Metadata metadata, boolean empty) {
