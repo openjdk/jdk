@@ -160,15 +160,15 @@ public abstract class JarURLConnection extends URLConnection {
 
         // Extract JAR file URL and entry name components from the URL
         String spec = url.getFile();
-        int separator = spec.indexOf("!/");
+        int separatorIndex = spec.indexOf("!/");
 
         // REMIND: we don't handle nested JAR URLs
-        if (separator == -1) {
+        if (separatorIndex == -1) {
             throw new MalformedURLException("no !/ found in url spec:" + spec);
         }
 
-        jarFileURL = parseJarFileURL(spec, separator, url);
-        entryName = parseEntryName(spec, separator);
+        jarFileURL = parseJarFileURL(spec, separatorIndex, url);
+        entryName = parseEntryName(spec, separatorIndex);
     }
 
     /**
@@ -176,16 +176,16 @@ public abstract class JarURLConnection extends URLConnection {
      * appending any #runtime fragment as neccessary
      *
      * @param spec the URL spec of this connection
-     * @param separator the index of the '!/' separator
+     * @param separatorIndex the index of the '!/' separator
      * @param connectionURL the URL passed to the constructor
      * @return a URL to the JAR file this connection reads from
      *
      * @throws MalformedURLException if a malformed URL is found
      */
     @SuppressWarnings("deprecation")
-    private static URL parseJarFileURL(String spec, int separator, URL connectionURL) throws MalformedURLException {
+    private static URL parseJarFileURL(String spec, int separatorIndex, URL connectionURL) throws MalformedURLException {
 
-        URL url = new URL(spec.substring(0, separator));
+        URL url = new URL(spec.substring(0, separatorIndex));
         /*
          * The url passed to the constructor may have had a runtime fragment appended, so
          * we need to add a runtime fragment to the jarFileURL to enable
@@ -201,16 +201,16 @@ public abstract class JarURLConnection extends URLConnection {
      * Parse the entry name (if any) of this JarURLConnection
      *
      * @param spec the URL spec of this connection
-     * @param separator the index of the '!/' separator
+     * @param separatorIndex the index of the '!/' separator
      * @return the decoded entry name, or null if this URL has no entry name
      */
-    private static String parseEntryName(String spec, int separator) {
+    private static String parseEntryName(String spec, int separatorIndex) {
         // If the URL ends with the '!/' separator, entryName is null
-        int nameIdx = separator + 2;
-        if (nameIdx == spec.length()) {
+        int nameIndex = separatorIndex + 2;
+        if (nameIndex == spec.length()) {
             return null;
         } else {
-            String encodedName = spec.substring(nameIdx, spec.length());
+            String encodedName = spec.substring(nameIndex, spec.length());
             return ParseUtil.decode(encodedName);
         }
     }
