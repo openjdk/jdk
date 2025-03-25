@@ -36,15 +36,17 @@ using NCS = NativeCallStackStorage;
 class NMTVMATreeTest : public testing::Test {
 public:
   NCS ncs;
-  constexpr static const int si_len = 2;
+  constexpr static const int si_len = 3;
   NCS::StackIndex si[si_len];
   NativeCallStack stacks[si_len];
 
   NMTVMATreeTest() : ncs(true) {
     stacks[0] = make_stack(0xA);
     stacks[1] = make_stack(0xB);
+    stacks[1] = make_stack(0xC);
     si[0] = ncs.push(stacks[0]);
     si[1] = ncs.push(stacks[1]);
+    si[2] = ncs.push(stacks[2]);
   }
 
   // Utilities
@@ -761,7 +763,6 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
   VMATree::RegionData call_stack_2(si_2, mtNone);
   auto expected =  [&](Tree& tree, int p, SIndex reserve_stack, SIndex commit_stack, int line_no = __LINE__) {
     VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(p);
-    const bool check_end_node = true;
     const char* at_line = " at line: ";
     if (reserve_stack >= 0) {
       EXPECT_EQ(r.start->val().out.reserved_stack(), reserve_stack) << at_line << line_no;
@@ -779,7 +780,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     }
   };
 
-  {
+  {// Check committing into a reserved region inherits the call stacks
     Tree tree;
     tree.reserve_mapping(0, 100, call_stack_1);
     expected(tree,  0, si_1,   -1, __LINE__);
@@ -787,6 +788,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     tree.commit_mapping(25, 25, call_stack_2, true); // commit at the middle of the region
     expected(tree,  0, si_1,   -1, __LINE__);
     expected(tree, 25, si_1, si_2, __LINE__);
+    expected(tree, 50, si_1,   -1, __LINE__);
 
     tree.commit_mapping(0, 20, call_stack_2, true); // commit at the begin of the region
     expected(tree, 0, si_1, si_2, __LINE__);
@@ -794,19 +796,27 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     tree.commit_mapping(80, 20, call_stack_2, true); // commit at the end of the region
     expected(tree, 80, si_1, si_2, __LINE__);
   }
-  {
+  {// committing overlapped regions does not destroy the old call-stacks
     Tree tree;
-    tree.reserve_mapping(0, 100, call_stack_1);
+    tree.reserve_mapping(0, 100, call_stack_1); // Nodes: 0 - 100
     expected(tree, 0, si_1, -1, __LINE__);
 
-    tree.commit_mapping(20, 20, call_stack_2, true);
+    tree.commit_mapping(20, 20, call_stack_2, true); // Nodes: 0 - 20 - 40 - 100
     expected(tree,  0, si_1,   -1, __LINE__);
     expected(tree, 20, si_1, si_2, __LINE__);
 
-    tree.commit_mapping(10, 20, call_stack_1); // commit with overlap
-    expected(tree, 10, si_1, si_1, __LINE__);
+    SIndex si_3 = si[2];
+    VMATree::RegionData call_stack_3(si_3, mtTest);
+    // commit with overlap at the region's start
+    tree.commit_mapping(10, 20, call_stack_3); // Nodes: 0 - 10 - 40 - 100
+    expected(tree, 10, si_1, si_3, __LINE__);
+
+    // commit with overlap at the region's end
+    tree.commit_mapping(30, 20, call_stack_3); // Nodes: 0 - 10 - 50 - 100
+    expected(tree, 30, si_1, si_3, __LINE__);
+    tree.print_on(tty);
   }
-  {
+  {// uncommit should not store any call-stack
     Tree tree;
     tree.reserve_mapping(0, 100, call_stack_1);
     expected(tree, 0, si_1, -1, __LINE__);
@@ -823,5 +833,23 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
 
     tree.uncommit_mapping(20, 10, call_stack_2);
     expected(tree, 20, si_1, -1, __LINE__);
+  }
+  {// reserve after reserve
+    Tree tree;
+    tree.reserve_mapping(0, 100, call_stack_1);
+    tree.reserve_mapping(10, 10, call_stack_2);
+    expected(tree,  0, si_1, -1, __LINE__);
+    expected(tree, 10, si_2, -1, __LINE__);
+  }
+  {// commit without reserve
+    Tree tree;
+    tree.commit_mapping(0, 100, call_stack_1);
+    expected(tree, 0, -1, si_1, __LINE__);
+  }
+  {// reserve after commit
+    Tree tree;
+    tree.commit_mapping(0, 100, call_stack_1);
+    tree.reserve_mapping(0, 100, call_stack_2);
+    expected(tree, 0, si_2, -1, __LINE__);
   }
 }
