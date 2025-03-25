@@ -378,8 +378,6 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
             requestContentLen = 0;
         }
 
-        // At this point the stream doesn't have a streamid yet.
-        // It will be allocated if we send the request headers.
         Throwable t = errorRef.get();
         if (t != null) {
             if (debug.on()) debug.log("H3 stream already cancelled, headers not sent: %s", (Object) t);
@@ -906,7 +904,7 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
     }
 
     /**
-     * same as above but for errors
+     * Same as {@link #completeResponse(Response)} above but for errors
      */
     void completeResponseExceptionally(Throwable t) {
         response_cfs_lock.lock();
