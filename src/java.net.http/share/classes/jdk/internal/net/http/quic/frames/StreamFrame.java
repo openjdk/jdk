@@ -121,7 +121,7 @@ public final class StreamFrame extends QuicFrame {
      * Creates a new StreamFrame which is a slice of this stream frame.
      * @param offset the new offset
      * @param length the new length
-     * @return a slice of the current crypto frame
+     * @return a slice of the current stream frame
      * @throws IndexOutOfBoundsException if the offset or length
      * exceed the bounds of this stream frame
      */
@@ -227,18 +227,6 @@ public final class StreamFrame extends QuicFrame {
     public static int compareOffsets(StreamFrame sf1, StreamFrame sf2) {
         return Long.compare(sf1.offset, sf2.offset);
     }
-
-    public static int compareOffsetsAndLengths(StreamFrame sf1, StreamFrame sf2) {
-        int res;
-        if ((res = compareOffsets(sf1, sf2)) == 0) {
-            if ((res = Integer.compare(sf1.dataLength, sf2.dataLength)) == 0) {
-                return - Boolean.compare(sf1.fin, sf2.fin); // we want true to come first.
-            }
-        }
-        return res;
-    }
-
-    public static final Comparator<StreamFrame> COMPARE_OFFSETS = StreamFrame::compareOffsets;
 
     /**
      * Computes the header size that would be required to encode a frame with

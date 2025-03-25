@@ -90,7 +90,7 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
          * a flow of {@code StreamFrame} instances.
          */
         public StreamDataFlow() {
-            super(StreamFrame.COMPARE_OFFSETS,
+            super(StreamFrame::compareOffsets,
                     StreamFrame::offset,
                     StreamFrame::dataLength);
         }
