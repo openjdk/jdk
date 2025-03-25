@@ -291,7 +291,7 @@ public class TestTemplate {
             hook1.set(
                 "World\n",
                 hook1.insert(template1.withArgs())
-	    ),
+            ),
             "}"
         ));
 
@@ -319,7 +319,7 @@ public class TestTemplate {
                 "World\n",
                 template0.withArgs(),
                 hook1.insert(template1.withArgs())
-	    ),
+            ),
             template0.withArgs(),
             "}"
         ));
@@ -358,7 +358,7 @@ public class TestTemplate {
                     template1.withArgs("four"),
                     hook1.insert(template1.withArgs("intoHook1c")),
                     template1.withArgs("five")
-	        ),
+                ),
                 template1.withArgs("six"),
                 hook1.set(), // empty
                 template1.withArgs("seven"),
@@ -368,9 +368,9 @@ public class TestTemplate {
                     template1.withArgs("nine"),
                     hook1.insert(template1.withArgs("intoHook1e")),
                     template1.withArgs("ten")
-	        ),
+                ),
                 template1.withArgs("eleven")
-	    ),
+            ),
             "}"
         ));
 
@@ -444,9 +444,9 @@ public class TestTemplate {
                     "base-C\n",
                     template2.withArgs("sub-"),
                     "base-D\n"
-	        ),
+                ),
                 "base-E\n"
-	    ),
+            ),
             "base-F\n",
             "}\n"
         ));
@@ -516,7 +516,7 @@ public class TestTemplate {
                 "hook-end\n",
                 hook1.insert(template2.withArgs("sub-")),
                 "base-C\n"
-	    ),
+            ),
             "base-D\n",
             "}\n"
         ));
