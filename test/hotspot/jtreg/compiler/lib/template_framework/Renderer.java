@@ -279,7 +279,7 @@ class Renderer {
     private String templateString(String s) {
         var temp = DOLLAR_NAME_PATTERN.matcher(s).replaceAll(
             (MatchResult result) -> $(result.group(1))
-	);
+        );
         return HASHTAG_REPLACEMENT_PATTERN.matcher(temp).replaceAll(
             // We must escape "$", because it has a special meaning in replaceAll.
             (MatchResult result) -> getHashtagReplacement(result.group(1)).replace("\\", "\\\\").replace("$", "\\$")
