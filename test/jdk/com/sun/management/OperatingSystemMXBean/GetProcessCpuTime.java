@@ -57,9 +57,7 @@ public class GetProcessCpuTime {
 
     // Careful with these values.
     private static final long MIN_TIME_FOR_PASS = 1;
-    private static final long MAX_TIME_FOR_PASS = Long.MAX_VALUE / 1000;
-
-    // No max time.
+    private static final long MAX_TIME_FOR_PASS = Long.MAX_VALUE / 10_000_000;
 
     private static boolean trace = false;
 
