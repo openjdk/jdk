@@ -43,6 +43,7 @@ class OuterStripMinedLoopEndNode;
 class PredicateBlock;
 class PathFrequency;
 class PhaseIdealLoop;
+class LoopSelector;
 class UnswitchedLoopSelector;
 class VectorSet;
 class VSharedData;
@@ -79,7 +80,12 @@ protected:
          SubwordLoop           = 1<<13,
          ProfileTripFailed     = 1<<14,
          LoopNestInnerLoop     = 1<<15,
-         LoopNestLongOuterLoop = 1<<16 };
+         LoopNestLongOuterLoop = 1<<16,
+         MultiversionFastLoop         = 1<<17,
+         MultiversionSlowLoop         = 2<<17,
+         MultiversionDelayedSlowLoop  = 3<<17,
+         MultiversionFlagsMask        = 3<<17,
+       };
   char _unswitch_count;
   enum { _unswitch_max=3 };
 
@@ -284,6 +290,8 @@ public:
   bool has_atomic_post_loop  () const { return (_loop_flags & HasAtomicPostLoop) == HasAtomicPostLoop; }
   void set_main_no_pre_loop() { _loop_flags |= MainHasNoPreLoop; }
 
+  IfNode* find_multiversion_if_from_multiversion_fast_main_loop();
+
   int main_idx() const { return _main_idx; }
 
 
@@ -314,6 +322,32 @@ public:
   int  node_count_before_unroll()            { return _node_count_before_unroll; }
   void set_slp_max_unroll(int unroll_factor) { _slp_maximum_unroll_factor = unroll_factor; }
   int  slp_max_unroll() const                { return _slp_maximum_unroll_factor; }
+
+  // Multiversioning allows us to duplicate a CountedLoop, and have two versions, and the multiversion_if
+  // decides which one is taken:
+  // (1) fast_loop: We enter this loop by default, by default the multiversion_if has its condition set to
+  //                "true", guarded by a OpaqueMultiversioning. If we want to make a speculative assumption
+  //                for an optimization, we can add the runtime-check to the multiversion_if, and if the
+  //                assumption fails we take the slow_loop instead, where we do not make the same speculative
+  //                assumption.
+  //                We call it the "fast_loop" because it has more optimizations, enabled by the speculative
+  //                runtime-checks at the multiversion_if, and we expect the fast_loop to execute faster.
+  // (2) slow_loop: By default, it is not taken, until a runtime-check is added to the multiversion_if while
+  //                optimizing the fast_looop. If such a runtime-check is never added, then after loop-opts
+  //                the multiversion_if constant folds to true, and the slow_loop is folded away. To save
+  //                compile time, we delay the optimization of the slow_loop until a runtime-check is added
+  //                to the multiversion_if, at which point we resume optimizations for the slow_loop.
+  //                We call it the "slow_loop" because it has fewer optimizations, since this is the fall-back
+  //                loop where we do not make any of the speculative assumptions we make for the fast_loop.
+  //                Hence, we expect the slow_loop to execute slower.
+  bool is_multiversion()                   const { return (_loop_flags & MultiversionFlagsMask) != Normal; }
+  bool is_multiversion_fast_loop()         const { return (_loop_flags & MultiversionFlagsMask) == MultiversionFastLoop; }
+  bool is_multiversion_slow_loop()         const { return (_loop_flags & MultiversionFlagsMask) == MultiversionSlowLoop; }
+  bool is_multiversion_delayed_slow_loop() const { return (_loop_flags & MultiversionFlagsMask) == MultiversionDelayedSlowLoop; }
+  void set_multiversion_fast_loop()         { assert(!is_multiversion(), ""); _loop_flags |= MultiversionFastLoop; }
+  void set_multiversion_slow_loop()         { assert(!is_multiversion(), ""); _loop_flags |= MultiversionSlowLoop; }
+  void set_multiversion_delayed_slow_loop() { assert(!is_multiversion(), ""); _loop_flags |= MultiversionDelayedSlowLoop; }
+  void set_no_multiversion()                { assert( is_multiversion(), ""); _loop_flags &= ~MultiversionFlagsMask; }
 
   virtual LoopNode* skip_strip_mined(int expect_skeleton = 1);
   OuterStripMinedLoopNode* outer_loop() const;
@@ -900,6 +934,7 @@ private:
   // clear out dead code after build_loop_late
   Node_List _deadlist;
   Node_List _zero_trip_guard_opaque_nodes;
+  Node_List _multiversion_opaque_nodes;
 
   // Support for faster execution of get_late_ctrl()/dom_lca()
   // when a node has many uses and dominator depth is deep.
@@ -944,7 +979,7 @@ private:
  private:
   static void get_opaque_template_assertion_predicate_nodes(ParsePredicateSuccessProj* parse_predicate_proj,
                                                             Unique_Node_List& list);
-  void update_main_loop_assertion_predicates(CountedLoopNode* main_loop_head);
+  void update_main_loop_assertion_predicates(CountedLoopNode* new_main_loop_head, int stride_con_before_unroll);
   void initialize_assertion_predicates_for_peeled_loop(CountedLoopNode* peeled_loop_head,
                                                        CountedLoopNode* remaining_loop_head,
                                                        uint first_node_index_in_cloned_loop_body,
@@ -1358,9 +1393,9 @@ public:
                                       bool* p_short_scale, int depth);
 
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
-  IfTrueNode* create_new_if_for_predicate(
-    ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason, int opcode,
-    bool rewire_uncommon_proj_phi_inputs = false);
+  IfTrueNode* create_new_if_for_predicate(const ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
+                                          Deoptimization::DeoptReason reason, int opcode,
+                                          bool rewire_uncommon_proj_phi_inputs = false);
 
  private:
   // Helper functions for create_new_if_for_predicate()
@@ -1407,20 +1442,10 @@ public:
   void eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
 
   // Helper function to collect predicate for eliminating the useless ones
-  void eliminate_useless_predicates();
-
-  void eliminate_useless_parse_predicates();
-  void mark_all_parse_predicates_useless() const;
-  void mark_loop_associated_parse_predicates_useful();
-  static void mark_useful_parse_predicates_for_loop(IdealLoopTree* loop);
-  void add_useless_parse_predicates_to_igvn_worklist();
-
-  void eliminate_useless_template_assertion_predicates();
-  void collect_useful_template_assertion_predicates(Unique_Node_List& useful_predicates);
-  static void collect_useful_template_assertion_predicates_for_loop(IdealLoopTree* loop, Unique_Node_List& useful_predicates);
-  void eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates);
+  void eliminate_useless_predicates() const;
 
   void eliminate_useless_zero_trip_guard();
+  void eliminate_useless_multiversion_if();
 
  public:
   // Change the control input of expensive nodes to allow commoning by
@@ -1457,6 +1482,8 @@ public:
   static void trace_loop_unswitching_impossible(const LoopNode* original_head);
   static void trace_loop_unswitching_result(const UnswitchedLoopSelector& unswitched_loop_selector,
                                             const LoopNode* original_head, const LoopNode* new_head);
+  static void trace_loop_multiversioning_result(const LoopSelector& loop_selector,
+                                                const LoopNode* original_head, const LoopNode* new_head);
 #endif
 
  public:
@@ -1482,6 +1509,11 @@ public:
     TriedAndFailed,  // We tried to vectorize, but failed.
   };
   AutoVectorizeStatus auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared);
+
+  void maybe_multiversion_for_auto_vectorization_runtime_checks(IdealLoopTree* lpt, Node_List& old_new);
+  void do_multiversioning(IdealLoopTree* lpt, Node_List& old_new);
+  IfTrueNode* create_new_if_for_multiversion(IfTrueNode* multiversioning_fast_proj);
+  bool try_resume_optimizations_for_delayed_slow_loop(IdealLoopTree* lpt);
 
   // Move an unordered Reduction out of loop if possible
   void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);

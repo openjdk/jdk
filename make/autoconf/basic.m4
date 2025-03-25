@@ -549,9 +549,6 @@ AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
 
   BASIC_CHECK_SRC_PERMS
 
-  # Check if the user has any old-style ALT_ variables set.
-  FOUND_ALT_VARIABLES=`env | grep ^ALT_`
-
   # Before generating output files, test if they exist. If they do, this is a reconfigure.
   # Since we can't properly handle the dependencies for this, warn the user about the situation
   if test -e $OUTPUTDIR/spec.gmk; then
@@ -624,10 +621,4 @@ AC_DEFUN_ONCE([BASIC_POST_CONFIG_OUTPUT],
 
   # Make the compare script executable
   $CHMOD +x $OUTPUTDIR/compare.sh
-
-  # Copy the linker wrapper script for clang on AIX and make it executable
-  if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
-    $CP -f "$TOPDIR/make/scripts/aix/ld.sh" "$OUTPUTDIR/ld.sh"
-    $CHMOD +x "$OUTPUTDIR/ld.sh"
-  fi
 ])

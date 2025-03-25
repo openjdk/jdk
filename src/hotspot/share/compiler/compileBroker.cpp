@@ -2074,7 +2074,21 @@ void CompileBroker::maybe_block() {
     if (PrintCompilation && (Verbose || WizardMode))
       tty->print_cr("compiler thread " INTPTR_FORMAT " poll detects block request", p2i(Thread::current()));
 #endif
+    // If we are executing a task during the request to block, report the task
+    // before disappearing.
+    CompilerThread* thread = CompilerThread::current();
+    if (thread != nullptr) {
+      CompileTask* task = thread->task();
+      if (task != nullptr) {
+        if (PrintCompilation) {
+          task->print(tty, "blocked");
+        }
+        task->print_ul("blocked");
+      }
+    }
+    // Go to VM state and block for final VM shutdown safepoint.
     ThreadInVMfromNative tivfn(JavaThread::current());
+    assert(false, "Should never unblock from TIVNM entry");
   }
 }
 
@@ -2326,7 +2340,6 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       }
     }
 
-    DirectivesStack::release(directive);
 
     if (!ci_env.failing() && !task->is_success()) {
       assert(ci_env.failure_reason() != nullptr, "expect failure reason");
@@ -2360,13 +2373,15 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     if (CompilationLog::log() != nullptr) {
       CompilationLog::log()->log_failure(thread, task, failure_reason, retry_message);
     }
-    if (PrintCompilation) {
+    if (PrintCompilation || directive->PrintCompilationOption) {
       FormatBufferResource msg = retry_message != nullptr ?
         FormatBufferResource("COMPILE SKIPPED: %s (%s)", failure_reason, retry_message) :
         FormatBufferResource("COMPILE SKIPPED: %s",      failure_reason);
       task->print(tty, msg);
     }
   }
+
+  DirectivesStack::release(directive);
 
   methodHandle method(thread, task->method());
 

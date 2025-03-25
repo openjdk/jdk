@@ -516,10 +516,11 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
       OPTIONAL: true)
 
   # GCC reports lots of likely false positives for stringop-truncation and format-overflow.
+  # GCC 13 also for array-bounds and stringop-overflow
   # Silence them for now.
   UBSAN_CHECKS="-fsanitize=undefined -fsanitize=float-divide-by-zero -fno-sanitize=shift-base -fno-sanitize=alignment \
       $ADDITIONAL_UBSAN_CHECKS"
-  UBSAN_CFLAGS="$UBSAN_CHECKS -Wno-stringop-truncation -Wno-format-overflow -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
+  UBSAN_CFLAGS="$UBSAN_CHECKS -Wno-stringop-truncation -Wno-format-overflow -Wno-array-bounds -Wno-stringop-overflow -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
   UBSAN_LDFLAGS="$UBSAN_CHECKS"
   UTIL_ARG_ENABLE(NAME: ubsan, DEFAULT: false, RESULT: UBSAN_ENABLED,
       DESC: [enable UndefinedBehaviorSanitizer],
@@ -551,16 +552,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
   AC_SUBST(UBSAN_CFLAGS)
   AC_SUBST(UBSAN_LDFLAGS)
   AC_SUBST(UBSAN_ENABLED)
-])
-
-################################################################################
-#
-# Static build support.  When enabled will generate static
-# libraries instead of shared libraries for all JDK libs.
-#
-AC_DEFUN_ONCE([JDKOPT_SETUP_STATIC_BUILD],
-[
-  UTIL_DEPRECATED_ARG_ENABLE(static-build)
 ])
 
 ################################################################################
@@ -668,15 +659,6 @@ AC_DEFUN([JDKOPT_EXCLUDE_TRANSLATIONS],
   fi
 
   AC_SUBST(EXCLUDE_TRANSLATIONS)
-])
-
-################################################################################
-#
-# Optionally disable man pages (deprecated)
-#
-AC_DEFUN([JDKOPT_ENABLE_DISABLE_MANPAGES],
-[
-  UTIL_DEPRECATED_ARG_ENABLE(manpages)
 ])
 
 ################################################################################
@@ -865,8 +847,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
   AC_SUBST(SOURCE_DATE)
   AC_SUBST(ISO_8601_FORMAT_STRING)
   AC_SUBST(SOURCE_DATE_ISO_8601)
-
-  UTIL_DEPRECATED_ARG_ENABLE(reproducible-build)
 ])
 
 ################################################################################

@@ -196,10 +196,13 @@ private:
 
   // Use symbolic constants defined in cardTable.hpp
   //  CardTable::card_shift = 9;
-  //  CardTable::card_size = 512;
-  //  CardTable::card_size_in_words = 64;
+  //  CardTable::card_size = 512;  (default value 512, a power of 2 >= 128)
+  //  CardTable::card_size_in_words = 64; (default value 64, a power of 2 >= 16)
   //  CardTable::clean_card_val()
   //  CardTable::dirty_card_val()
+
+  // See shenandoahCardTable.hpp
+  //  ShenandoahMinCardSizeInBytes 128
 
   const size_t LogCardValsPerIntPtr;    // the number of card values (entries) in an intptr_t
   const size_t LogCardSizeInWords;      // the size of a card in heap word units
@@ -236,15 +239,17 @@ public:
   inline bool is_write_card_dirty(HeapWord* p) const;
   inline void mark_card_as_dirty(HeapWord* p);
   inline void mark_range_as_dirty(HeapWord* p, size_t num_heap_words);
-  inline void mark_card_as_clean(HeapWord* p);
   inline void mark_range_as_clean(HeapWord* p, size_t num_heap_words);
+
+  // See comment in ShenandoahScanRemembered
+  inline void mark_read_table_as_clean();
 
   // Merge any dirty values from write table into the read table, while leaving
   // the write table unchanged.
   void merge_write_table(HeapWord* start, size_t word_count);
 
-  // Destructively copy the write table to the read table, and clean the write table.
-  void reset_remset(HeapWord* start, size_t word_count);
+  // See comment in ShenandoahScanRemembered
+  void swap_card_tables();
 };
 
 // A ShenandoahCardCluster represents the minimal unit of work
@@ -399,7 +404,7 @@ public:
 
   ShenandoahCardCluster(ShenandoahDirectCardMarkRememberedSet* rs) {
     _rs = rs;
-    _object_starts = NEW_C_HEAP_ARRAY(crossing_info, rs->total_cards(), mtGC);
+    _object_starts = NEW_C_HEAP_ARRAY(crossing_info, rs->total_cards() + 1, mtGC); // the +1 is to account for card table guarding entry
     for (size_t i = 0; i < rs->total_cards(); i++) {
       _object_starts[i].short_word = 0;
     }
@@ -755,10 +760,18 @@ public:
   bool is_write_card_dirty(HeapWord* p);
   void mark_card_as_dirty(HeapWord* p);
   void mark_range_as_dirty(HeapWord* p, size_t num_heap_words);
-  void mark_card_as_clean(HeapWord* p);
   void mark_range_as_clean(HeapWord* p, size_t num_heap_words);
 
-  void reset_remset(HeapWord* start, size_t word_count) { _rs->reset_remset(start, word_count); }
+  // This method is used to concurrently clean the "read" card table -
+  // currently, as part of the reset phase. Later on the pointers to the "read"
+  // and "write" card tables are swapped everywhere to enable the GC to
+  // concurrently operate on the "read" table while mutators effect changes on
+  // the "write" table.
+  void mark_read_table_as_clean();
+
+  // Swaps read and write card tables pointers in effect setting a clean card
+  // table for the next GC cycle.
+  void swap_card_tables() { _rs->swap_card_tables(); }
 
   void merge_write_table(HeapWord* start, size_t word_count) { _rs->merge_write_table(start, word_count); }
 
@@ -888,14 +901,14 @@ private:
   // The largest chunk size is 4 MiB, measured in words.  Otherwise, remembered set scanning may become too unbalanced.
   // If the largest chunk size is too small, there is too much overhead sifting out assignments to individual worker threads.
   static const size_t _maximum_chunk_size_words = (4 * 1024 * 1024) / HeapWordSize;
-
   static const size_t _clusters_in_smallest_chunk = 4;
+
+  size_t _largest_chunk_size_words;
 
   // smallest_chunk_size is 4 clusters.  Each cluster spans 128 KiB.
   // This is computed from CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
   static size_t smallest_chunk_size_words() {
-      return _clusters_in_smallest_chunk * CardTable::card_size_in_words() *
-             ShenandoahCardCluster::CardsPerCluster;
+      return _clusters_in_smallest_chunk * CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
   }
 
   // The total remembered set scanning effort is divided into chunks of work that are assigned to individual worker tasks.
@@ -910,19 +923,30 @@ private:
   // The first group "effectively" processes chunks of size 1 MiB (or smaller for smaller region sizes).
   // The last group processes chunks of size 128 KiB.  There are four groups total.
 
-  // group[0] is 4 MiB chunk size (_maximum_chunk_size_words)
-  // group[1] is 2 MiB chunk size
-  // group[2] is 1 MiB chunk size
-  // group[3] is 512 KiB chunk size
-  // group[4] is 256 KiB chunk size
-  // group[5] is 128 Kib shunk size (_smallest_chunk_size_words = 4 * 64 * 64
-  static const size_t _maximum_groups = 6;
+  // group[ 0] is 4 MiB chunk size (_maximum_chunk_size_words)
+  // group[ 1] is 2 MiB chunk size
+  // group[ 2] is 1 MiB chunk size
+  // group[ 3] is 512 KiB chunk size
+  // group[ 4] is 256 KiB chunk size
+  // group[ 5] is 128 KiB chunk size
+  // group[ 6] is  64 KiB chunk size
+  // group[ 7] is  32 KiB chunk size
+  // group[ 8] is  16 KiB chunk size
+  // group[ 9] is   8 KiB chunk size
+  // group[10] is   4 KiB chunk size
+  //   Note: 4 KiB is smallest possible chunk_size, computed from:
+  //         _clusters_in_smallest_chunk * MinimumCardSizeInWords * ShenandoahCardCluster::CardsPerCluster, which is
+  //         4 * 16 * 64 = 4096
+
+  // We set aside arrays to represent the maximum number of groups that may be required for any heap configuration
+  static const size_t _maximum_groups = 11;
 
   const ShenandoahHeap* _heap;
 
   const size_t _regular_group_size;                        // Number of chunks in each group
   const size_t _first_group_chunk_size_b4_rebalance;
   const size_t _num_groups;                        // Number of groups in this configuration
+  size_t _adjusted_num_groups;                     // Rebalancing may coalesce groups
   const size_t _total_chunks;
 
   shenandoah_padding(0);
