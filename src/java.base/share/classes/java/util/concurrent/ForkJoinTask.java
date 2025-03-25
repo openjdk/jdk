@@ -1809,8 +1809,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             InvokeAnyTask<T> t = null; // list of submitted tasks
             try {
                 for (Callable<T> c : tasks) {
-                    if (c == null)
-                        throw new NullPointerException();
+                    Objects.requireNonNull(c);
                     pool.execute((ForkJoinTask<?>)
                                  (t = new InvokeAnyTask<T>(c, this, t)));
                 }

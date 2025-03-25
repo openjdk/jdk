@@ -48,7 +48,7 @@ class CompletableFutureOrTimeoutExceptionallyTest {
         assertEquals(delayer.getDelayedTaskCount(), 0);
         var future = new CompletableFuture<>().orTimeout(12, TimeUnit.HOURS);
         future.completeExceptionally(new RuntimeException("This is fine"));
-        while (delayer.getDelayedTaskCount() != 0) {
+        while (delayer.getDelayedTaskCount() > 0) {
             Thread.sleep(100);
         };
     }
@@ -62,7 +62,7 @@ class CompletableFutureOrTimeoutExceptionallyTest {
         assertEquals(delayer.getDelayedTaskCount(), 0);
         var future = new CompletableFuture<>().completeOnTimeout(null, 12, TimeUnit.HOURS);
         future.completeExceptionally(new RuntimeException("This is fine"));
-        while (delayer.getDelayedTaskCount() != 0) {
+        while (delayer.getDelayedTaskCount() > 0) {
             Thread.sleep(100);
         };
     }
