@@ -64,14 +64,17 @@ ifeq ($(call isTargetOs, linux), true)
   HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exeinvoke := java.base:libjvm
   HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exestack-gap := java.base:libjvm
   HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exestack-tls := java.base:libjvm
+  HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exegc_z_TestLinuxVirtualAddressSpace := java.base:libjvm
   TEST_exeinvoke_exeinvoke.c_OPTIMIZATION := NONE
+  HOTSPOT_JTREG_EXECUTABLES_LIBS_exegc_z_TestLinuxVirtualAddressSpace := -ldl
   HOTSPOT_JTREG_EXECUTABLES_LIBS_exeFPRegs := -ldl
   HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit += -ldl
   HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetCallTraceTest := -ldl
   HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libfast-math := -ffast-math
 else
   HOTSPOT_JTREG_EXCLUDE += libtest-rw.c libtest-rwx.c \
-      exeinvoke.c exestack-gap.c exestack-tls.c libAsyncGetCallTraceTest.cpp
+      exeinvoke.c exestack-gap.c exestack-tls.c libAsyncGetCallTraceTest.cpp \
+      exegc_z_TestLinuxVirtualAddressSpace.c
 endif
 
 ifneq ($(call isTargetOs, linux)+$(call isTargetCpu, aarch64), true+true)
