@@ -982,7 +982,7 @@ AC_DEFUN([JDKOPT_SETUP_MACOSX_SIGNING],
 #
 AC_DEFUN([JDKOPT_SETUP_SIGNING_HOOK],
 [
-  UTIL_ARG_WITH(NAME: signing-hook, TYPE: file,
+  UTIL_ARG_WITH(NAME: signing-hook, TYPE: executable,
       OPTIONAL: true, DEFAULT: "",
       CHECKING_MSG: [for code signing hook],
       DESC: [specify path to script used to code sign native binaries]
