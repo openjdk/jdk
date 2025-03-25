@@ -58,6 +58,10 @@ import jdk.internal.net.http.quic.BuffersReader.ListBuffersReader;
  *    while ((frame = framesDecoder.poll()) != null) {
  *        if (frame instanceof PartialFrame partial) {
  *            var nextPayloadByte = framesDecoder.readPayloadBytes();
+ *            if (nextPayloadByte == null || nextPayloadByte.isEmpty()) {
+ *                 // no more data is available at this moment
+ *                 break;
+ *            }
  *            // nextPayloadByte are the next bytes for the payload
  *            // of the partial frame
  *            deliverBytes(partial, nextPayloadBytes);
