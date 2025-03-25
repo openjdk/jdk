@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ public final class NewConnectionIDFrame extends QuicFrame {
     private final long retirePriorTo;
     private final ByteBuffer connectionId;
     private final ByteBuffer statelessResetToken;
-    private final String cachedToString;
 
     /**
      * Incoming NEW_CONNECTION_ID frame returned by QuicFrame.decode()
@@ -72,7 +71,6 @@ public final class NewConnectionIDFrame extends QuicFrame {
         statelessResetToken = buffer.slice(position, 16);
         position += 16;
         buffer.position(position);
-        this.cachedToString = makeToString();
     }
 
     /**
@@ -89,14 +87,6 @@ public final class NewConnectionIDFrame extends QuicFrame {
         if (statelessResetToken.remaining() != 16)
             throw new IllegalArgumentException("stateless reset token must be 16 bytes");
         this.statelessResetToken = statelessResetToken.slice();
-        this.cachedToString = makeToString();
-    }
-
-    private String makeToString() {
-        return new StringBuilder("NewConnectionIDFrame[seqNumber=")
-                .append(sequenceNumber).append(", retirePriorTo=")
-                .append(retirePriorTo).append(", connIdLength=").append(connectionId.remaining())
-                .append("]").toString();
     }
 
     @Override
@@ -143,6 +133,9 @@ public final class NewConnectionIDFrame extends QuicFrame {
 
     @Override
     public String toString() {
-        return this.cachedToString;
+        return "NewConnectionIDFrame(seqNumber=" + sequenceNumber
+                + ", retirePriorTo=" + retirePriorTo
+                + ", connIdLength=" + connectionId.remaining()
+                + ")";
     }
 }
