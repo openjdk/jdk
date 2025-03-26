@@ -223,15 +223,16 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
   __ restore_bcp();
   __ restore_locals();
+  const Register thread = r15_thread;
 #if INCLUDE_JVMCI
   // Check if we need to take lock at entry of synchronized method.  This can
   // only occur on method entry so emit it only for vtos with step 0.
   if (EnableJVMCI && state == vtos && step == 0) {
     Label L;
-    __ cmpb(Address(r15_thread, JavaThread::pending_monitorenter_offset()), 0);
+    __ cmpb(Address(thread, JavaThread::pending_monitorenter_offset()), 0);
     __ jcc(Assembler::zero, L);
     // Clear flag.
-    __ movb(Address(r15_thread, JavaThread::pending_monitorenter_offset()), 0);
+    __ movb(Address(thread, JavaThread::pending_monitorenter_offset()), 0);
     // Satisfy calling convention for lock_method().
     __ get_method(rbx);
     // Take lock.
@@ -252,7 +253,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   // handle exceptions
   {
     Label L;
-    __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), NULL_WORD);
+    __ cmpptr(Address(thread, Thread::pending_exception_offset()), NULL_WORD);
     __ jcc(Assembler::zero, L);
     __ call_VM(noreg,
                CAST_FROM_FN_PTR(address,
@@ -647,7 +648,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 
   // _areturn
   __ pop(rdi);                // get return address
-  __ mov(rsp, r13);     // set sp to sender sp
+  __ mov(rsp, r13);           // set sp to sender sp
   __ jmp(rdi);
   __ ret(0);
 
@@ -671,15 +672,17 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   const int page_size = (int)os::vm_page_size();
   const int n_shadow_pages = shadow_zone_size / page_size;
 
+  const Register thread = r15_thread;
+
 #ifdef ASSERT
   Label L_good_limit;
-  __ cmpptr(Address(r15_thread, JavaThread::shadow_zone_safe_limit()), NULL_WORD);
+  __ cmpptr(Address(thread, JavaThread::shadow_zone_safe_limit()), NULL_WORD);
   __ jcc(Assembler::notEqual, L_good_limit);
   __ stop("shadow zone safe limit is not initialized");
   __ bind(L_good_limit);
 
   Label L_good_watermark;
-  __ cmpptr(Address(r15_thread, JavaThread::shadow_zone_growth_watermark()), NULL_WORD);
+  __ cmpptr(Address(thread, JavaThread::shadow_zone_growth_watermark()), NULL_WORD);
   __ jcc(Assembler::notEqual, L_good_watermark);
   __ stop("shadow zone growth watermark is not initialized");
   __ bind(L_good_watermark);
@@ -687,7 +690,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
 
   Label L_done;
 
-  __ cmpptr(rsp, Address(r15_thread, JavaThread::shadow_zone_growth_watermark()));
+  __ cmpptr(rsp, Address(thread, JavaThread::shadow_zone_growth_watermark()));
   __ jcc(Assembler::above, L_done);
 
   for (int p = 1; p <= n_shadow_pages; p++) {
@@ -696,9 +699,9 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
 
   // Record the new watermark, but only if update is above the safe limit.
   // Otherwise, the next time around the check above would pass the safe limit.
-  __ cmpptr(rsp, Address(r15_thread, JavaThread::shadow_zone_safe_limit()));
+  __ cmpptr(rsp, Address(thread, JavaThread::shadow_zone_safe_limit()));
   __ jccb(Assembler::belowEqual, L_done);
-  __ movptr(Address(r15_thread, JavaThread::shadow_zone_growth_watermark()), rsp);
+  __ movptr(Address(thread, JavaThread::shadow_zone_growth_watermark()), rsp);
 
   __ bind(L_done);
 }
@@ -1114,10 +1117,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
                             (intptr_t)(frame::interpreter_frame_initial_sp_offset *
                                        wordSize - (int)sizeof(BasicObjectLock)));
 
-      // monitor expect in c_rarg1 for slow unlock path
-      __ lea(c_rarg1, monitor); // address of first monitor
+      const Register regmon = c_rarg1;
 
-      __ movptr(t, Address(c_rarg1, BasicObjectLock::obj_offset()));
+      // monitor expect in c_rarg1 for slow unlock path
+      __ lea(regmon, monitor); // address of first monitor
+
+      __ movptr(t, Address(regmon, BasicObjectLock::obj_offset()));
       __ testptr(t, t);
       __ jcc(Assembler::notZero, unlock);
 
@@ -1128,7 +1133,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
       __ should_not_reach_here();
 
       __ bind(unlock);
-      __ unlock_object(c_rarg1);
+      __ unlock_object(regmon);
     }
     __ bind(L);
   }
