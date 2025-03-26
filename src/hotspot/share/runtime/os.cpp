@@ -744,17 +744,8 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     return nullptr;
   }
 
-//  DEBUG_ONLY(check_crash_protection());
-
   if (MemTracker::enabled()) {
     // NMT realloc handling
-
-//    const size_t new_outer_size = size + MemTracker::overhead_per_malloc();
-//
-//    // Handle size overflow.
-//    if (new_outer_size < size) {
-//      return nullptr;
-//    }
 
     const size_t old_size = MallocTracker::malloc_header(memblock)->size();
 
