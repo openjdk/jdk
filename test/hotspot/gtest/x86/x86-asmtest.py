@@ -542,12 +542,13 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                     instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
             else:
-                test_reg1 =  random.choice(legacy_test_regs) #test_regs[3]
-                test_reg2 = test_reg1 #random.choice(test_regs)
-                test_reg3 = random.choice(test_regs) #test_regs[5]
-                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2, test_reg3)
-                instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3)
-                print_instruction(instr, lp64_flag, print_lp64_flag)
+                for i in range(2):
+                    test_reg1 =  random.choice(legacy_test_regs if i == 0 else test_regs) #test_regs[3]
+                    test_reg2 = test_reg1 #random.choice(test_regs)
+                    test_reg3 = random.choice(legacy_test_regs if i == 0 else test_regs) #test_regs[5]
+                    lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2, test_reg3)
+                    instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3)
+                    print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [MemRegInstruction, RegMemInstruction, MoveRegMemInstruction, CmpxchgInstruction, CondRegMemInstruction, RegMemNddInstruction]:
             if full_set:
@@ -639,8 +640,9 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                 imm = random.choice(get_immediate_list(op_name, width))
 
                 if RegOp in [RegRegImmNddInstruction]:
-                    test_reg1 = random.choice(legacy_test_regs) #test_regs[3]
-                    test_reg2 = test_reg1
+                    for i in range(2):
+                        test_reg1 = random.choice(legacy_test_regs if i == 0 else test_regs) #test_regs[3]
+                        test_reg2 = test_reg1 if i == 0 else random.choice(test_regs)
                 else:
                     test_reg1 = random.choice(test_regs)
                     test_reg2 = random.choice(test_regs)
