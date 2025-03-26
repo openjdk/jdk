@@ -321,7 +321,7 @@ releaseBytes(JNIEnv *env, jbyteArray arr, const char* parr)
 
 #define SPAWN_HELPER_INTERNAL_ERROR_MSG "\n" \
   "Possible reasons:\n" \
-  "  - Spawn helper ran into JDK version or configuration problems\n" \
+  "  - Spawn helper ran into JDK version mismatch\n" \
   "  - Spawn helper ran into unexpected internal error\n" \
   "  - Spawn helper was terminated by another process\n" \
   "Possible solutions:\n" \

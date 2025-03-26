@@ -57,7 +57,7 @@ public class JspawnhelperProtocol {
         } catch (Exception e) {
             // Check that exception contains rich message on failure.
             e.printStackTrace(System.out);
-            if (e instanceof IOException && e.getMessage().contains("Possible solutions:")) {
+            if (e instanceof IOException && e.getMessage().contains("Possible reasons:")) {
                 System.exit(ERROR);
             } else {
                 System.exit(ERROR + 3);
