@@ -1828,7 +1828,6 @@ class VectorReinterpretNode : public VectorNode {
   virtual Node* Identity(PhaseGVN* phase);
 
   virtual int Opcode() const;
-  static VectorNode* make(Node* n, const TypeVect* dst_vt, const TypeVect* src_vt);
 };
 
 class VectorCastNode : public VectorNode {

@@ -55,12 +55,10 @@ public class TestFloat16VectorOperations {
     }
 
     public static boolean assertResults(short expected, short actual) {
-        Float16 expected_fp16 = valueOf(expected);
-        Float16 actual_fp16 = valueOf(actual);
-        if (isNaN(expected_fp16) ^ isNaN(actual_fp16)) {
+        if (Float.isNaN(Float.float16ToFloat(expected)) && Float.isNaN(Float.float16ToFloat(actual))) {
             return false;
         }
-        return !expected_fp16.equals(actual_fp16);
+        return expected != actual;
     }
 
     public TestFloat16VectorOperations() {

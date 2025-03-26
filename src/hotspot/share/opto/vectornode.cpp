@@ -1018,9 +1018,6 @@ bool VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(int opc) {
   }
 }
 
-VectorNode* VectorReinterpretNode::make(Node* n, const TypeVect* dst_vt, const TypeVect* src_vt) {
-  return new VectorReinterpretNode(n, dst_vt, src_vt);
-}
 
 // Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
 // returns int type, but Vector API for them returns long type. To unify
