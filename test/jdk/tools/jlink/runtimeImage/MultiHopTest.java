@@ -33,7 +33,6 @@ import tests.Helper;
  * @summary Verify that a jlink using the run-time image cannot include jdk.jlink
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
- * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.plugin

@@ -33,7 +33,6 @@ import java.nio.file.Path;
  *          gets the SHA override from a file
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g & os.family == "linux")
  * @library ../../lib /test/lib
- * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.plugin
