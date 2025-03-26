@@ -132,7 +132,9 @@ static bool check_compiled_frame(JavaThread* thread) {
 */
 
 #define GEN_C2_BLOB(name, type)                    \
-  generate_ ## name ## _blob();
+  BLOB_FIELD_NAME(name) =                       \
+    generate_ ## name ## _blob();                  \
+  if (BLOB_FIELD_NAME(name) == nullptr) { return false; }
 
 // a few helper macros to conjure up generate_stub call arguments
 #define C2_STUB_FIELD_NAME(name) _ ## name ## _Java

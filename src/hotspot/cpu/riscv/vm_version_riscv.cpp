@@ -194,7 +194,7 @@ void VM_Version::common_initialize() {
   }
 
   if (UseRVV) {
-    if (!ext_V.enabled()) {
+    if (!ext_V.enabled() && FLAG_IS_DEFAULT(UseRVV)) {
       warning("RVV is not supported on this CPU");
       FLAG_SET_DEFAULT(UseRVV, false);
     } else {
