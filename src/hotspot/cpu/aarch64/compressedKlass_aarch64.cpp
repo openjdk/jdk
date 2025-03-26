@@ -114,7 +114,7 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   if (result == nullptr) {
     constexpr size_t alignment = nth_bit(32);
     log_debug(metaspace, map)("Trying to reserve at a 32-bit-aligned address");
-    result = os::reserve_memory_aligned(size, alignment, mtMetaspace, false);
+    result = os::reserve_memory_aligned(size, alignment, mtNone, false);
   }
 
   return result;
