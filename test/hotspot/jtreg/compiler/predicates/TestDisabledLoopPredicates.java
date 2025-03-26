@@ -46,7 +46,7 @@ public class TestDisabledLoopPredicates {
         TestFramework.runWithFlags("-XX:-UseLoopPredicate");
     }
 
-    @Run(test = { "test" })
+    @Run(test = "test")
     private static void check() {
         for (int i = 0; i < WARMUP; i++) {
             int res = test(true);
@@ -69,7 +69,7 @@ public class TestDisabledLoopPredicates {
     }
 
     @Test
-    @IR(counts = { IRNode.PARSE_PREDICATE_LOOP, "=1",
+    @IR(counts = { IRNode.PARSE_PREDICATE_LOOP, "1",
                    IRNode.PARSE_PREDICATE_PROFILED_LOOP, "1" },
         phase = CompilePhase.AFTER_PARSING,
         applyIfAnd = { "UseLoopPredicate", "true",

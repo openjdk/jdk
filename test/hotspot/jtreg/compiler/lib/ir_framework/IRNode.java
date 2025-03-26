@@ -2760,7 +2760,7 @@ public class IRNode {
         String regex = START + "ParsePredicate" + MID + "#" + label + "[ ]*!jvms:" + END;
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.AFTER_PARSING, regex,
                                                                           CompilePhase.AFTER_PARSING,
-                                                                          CompilePhase.CCP1));
+                                                                          CompilePhase.PHASEIDEALLOOP_ITERATIONS));
     }
 
     private static void loadOfNodes(String irNodePlaceholder, String irNodeRegex) {
