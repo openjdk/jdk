@@ -30,9 +30,7 @@ import jdk.incubator.vector.*;
  * @bug 8352585
  * @library /test/lib /
  * @summary Add special case handling for Float16.max/min x86 backend
- * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx512_fp16.*" & vm.cpu.features ~= ".*avx512bw.*" & vm.cpu.features ~= ".*avx512vl.*")
  * @modules jdk.incubator.vector
- *
  * @run driver compiler.intrinsics.float16.TestFloat16MaxMinSpecialValues
  */
 
@@ -49,7 +47,8 @@ public class TestFloat16MaxMinSpecialValues {
     }
 
     @Test
-    @IR(counts = {IRNode.MAX_HF, " >0 "})
+    @IR(counts = {IRNode.MAX_HF, " >0 "}, applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx512bw", "true"})
+    @IR(counts = {IRNode.MAX_HF, " >0 "}, applyIfCPUFeatureOr = {"zvfh", "true", "asimd", "true", "sve", "true"})
     public Float16 testMaxNaNOperands(Float16 src1, Float16 src2) {
         return Float16.max(src1, src2);
     }
@@ -71,7 +70,8 @@ public class TestFloat16MaxMinSpecialValues {
     }
 
     @Test
-    @IR(counts = {IRNode.MIN_HF, " >0 "})
+    @IR(counts = {IRNode.MIN_HF, " >0 "}, applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx512bw", "true"})
+    @IR(counts = {IRNode.MIN_HF, " >0 "}, applyIfCPUFeatureOr = {"zvfh", "true", "asimd", "true", "sve", "true"})
     public Float16 testMinNaNOperands(Float16 src1, Float16 src2) {
         return Float16.min(src1, src2);
     }
@@ -93,7 +93,8 @@ public class TestFloat16MaxMinSpecialValues {
     }
 
     @Test
-    @IR(counts = {IRNode.MAX_HF, " >0 "})
+    @IR(counts = {IRNode.MAX_HF, " >0 "}, applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx512bw", "true"})
+    @IR(counts = {IRNode.MAX_HF, " >0 "}, applyIfCPUFeatureOr = {"zvfh", "true", "asimd", "true", "sve", "true"})
     public Float16 testMaxZeroOperands(Float16 src1, Float16 src2) {
         return Float16.max(src1, src2);
     }
@@ -119,7 +120,8 @@ public class TestFloat16MaxMinSpecialValues {
     }
 
     @Test
-    @IR(counts = {IRNode.MIN_HF, " >0 "})
+    @IR(counts = {IRNode.MIN_HF, " >0 "}, applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx512bw", "true"})
+    @IR(counts = {IRNode.MIN_HF, " >0 "}, applyIfCPUFeatureOr = {"zvfh", "true", "asimd", "true", "sve", "true"})
     public Float16 testMinZeroOperands(Float16 src1, Float16 src2) {
         return Float16.min(src1, src2);
     }
