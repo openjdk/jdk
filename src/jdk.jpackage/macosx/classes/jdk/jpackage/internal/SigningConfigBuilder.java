@@ -57,6 +57,8 @@ final class SigningConfigBuilder {
         final var pkgName = mainLauncherStartupInfo.packageName();
         if (!pkgName.isEmpty()) {
             signingIdentityPrefix(pkgName + ".");
+        } else {
+            signingIdentityPrefix(mainLauncherStartupInfo.simpleClassName() + ".");
         }
         return this;
     }
