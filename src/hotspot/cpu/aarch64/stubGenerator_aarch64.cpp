@@ -10442,7 +10442,6 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(StubGenStubId::sha512_implCompressMB_id);
     }
     if (UseSHA3Intrinsics) {
-
       StubRoutines::_double_keccak         = generate_double_keccak();
       if (UseSIMDForSHA3Intrinsic) {
          StubRoutines::_sha3_implCompress     = generate_sha3_implCompress(StubGenStubId::sha3_implCompress_id);
