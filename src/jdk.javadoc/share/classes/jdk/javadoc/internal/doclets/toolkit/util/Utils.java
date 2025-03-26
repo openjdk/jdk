@@ -1132,6 +1132,11 @@ public class Utils {
         return result.toString();
     }
 
+    /**
+     * Replaces each group of one or more whitespace characters with a single canonical space
+     * @param s the string to be normalized
+     * @return normalized string
+     */
     public String normalizeWhitespace(String s) {
         return s.replaceAll("\\s+", " ");
     }
