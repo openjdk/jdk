@@ -110,6 +110,10 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * defined by {@link Character#digit Character.digit}, are recognized.
  *
  * <h3 id="digit_limits"> Integer and Fraction Digit Limits </h3>
+ * The integer and fraction digit limits are set by either applying a {@link ##patterns
+ * pattern} or using one of the appropriate {@code DecimalFormat} setter methods,
+ * for example, {@link #setMinimumFractionDigits(int)}. These limits have no impact
+ * on parsing behavior.
  * @implSpec
  * When formatting a {@code Number} other than {@code BigInteger} and
  * {@code BigDecimal}, {@code 309} is used as the upper limit for integer digits,
@@ -3972,9 +3976,8 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Sets the maximum number of digits allowed in the integer portion of a
-     * number. Negative input values are replaced with 0.
-     * @see NumberFormat#setMaximumIntegerDigits
+     * {@inheritDoc}
+     * @see #getMaximumIntegerDigits()
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
@@ -3989,9 +3992,8 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Sets the minimum number of digits allowed in the integer portion of a
-     * number. Negative input values are replaced with 0.
-     * @see NumberFormat#setMinimumIntegerDigits
+     * {@inheritDoc}
+     * @see #getMinimumIntegerDigits()
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
@@ -4006,9 +4008,8 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Sets the maximum number of digits allowed in the fraction portion of a
-     * number. Negative input values are replaced with 0.
-     * @see NumberFormat#setMaximumFractionDigits
+     * {@inheritDoc}
+     * @see #getMaximumFractionDigits()
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
@@ -4023,9 +4024,8 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Sets the minimum number of digits allowed in the fraction portion of a
-     * number. Negative input values are replaced with 0.
-     * @see NumberFormat#setMinimumFractionDigits
+     * {@inheritDoc}
+     * @see #getMinimumFractionDigits()
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override
@@ -4040,10 +4040,11 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Gets the maximum number of digits allowed in the integer portion of a
-     * number. The maximum number of integer digits can be set by either {@link #setMaximumIntegerDigits(int)}
-     * or {@link #applyPattern(String)}. See the {@link ##patterns Pattern Section} for
-     * comprehensive rules regarding maximum integer digits in patterns.
+     * {@inheritDoc}
+     * <p>The maximum number of integer digits can be set by either {@link
+     * #setMaximumIntegerDigits(int)} or {@link #applyPattern(String)}.
+     * See the {@link ##patterns Pattern Section} for comprehensive rules regarding
+     * maximum integer digits in patterns.
      * @see #setMaximumIntegerDigits
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
@@ -4053,8 +4054,7 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Gets the minimum number of digits allowed in the integer portion of a
-     * number.
+     * {@inheritDoc}
      * @see #setMinimumIntegerDigits
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
@@ -4064,8 +4064,7 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Gets the maximum number of digits allowed in the fraction portion of a
-     * number.
+     * {@inheritDoc}
      * @see #setMaximumFractionDigits
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
@@ -4075,8 +4074,7 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Gets the minimum number of digits allowed in the fraction portion of a
-     * number.
+     * {@inheritDoc}
      * @see #setMinimumFractionDigits
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
