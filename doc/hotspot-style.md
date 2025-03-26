@@ -138,7 +138,7 @@ change should be done with a "setter" accessor matched to the simple
 * All source files must have a globally unique basename. The build
 system depends on this uniqueness.
 
-* Keep the include lines within a section alphabetically sorted.
+* Keep the include lines within a section alphabetically sorted by their lowercase value.
 
 * Put conditional inclusions (`#if ...`) at the end of the section of HotSpot
 include lines. This also applies to macro-expanded includes of platform
