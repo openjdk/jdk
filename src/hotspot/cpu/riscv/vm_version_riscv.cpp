@@ -128,11 +128,11 @@ void VM_Version::common_initialize() {
   }
 
   if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
-      FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
+    FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
   }
 
   if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
-      FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
+    FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
   }
 
   if (UseRVC && !ext_C.enabled()) {
@@ -150,8 +150,12 @@ void VM_Version::common_initialize() {
       unaligned_access.value() != MISALIGNED_FAST);
   }
 
-  if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics) && !AvoidUnalignedAccesses) {
-    FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
+  if (!AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
+      FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
+    }
+  } else if (UsePoly1305Intrinsics) {
+    warning("Intrinsics for Poly1305 crypto hash functions not available on this CPU.");
   }
 
   // See JDK-8026049
@@ -190,7 +194,7 @@ void VM_Version::common_initialize() {
   }
 
   if (UseRVV) {
-    if (!ext_V.enabled()) {
+    if (!ext_V.enabled() && FLAG_IS_DEFAULT(UseRVV)) {
       warning("RVV is not supported on this CPU");
       FLAG_SET_DEFAULT(UseRVV, false);
     } else {
@@ -315,10 +319,6 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, true);
   }
 
-  if (FLAG_IS_DEFAULT(UseMD5Intrinsics) && !AvoidUnalignedAccesses) {
-    FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
-  }
-
   // Adler32
   if (UseRVV) {
     if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
@@ -359,14 +359,23 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseZvbc, false);
   }
 
+  if (!AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
+      FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
+    }
+  } else if (UseMD5Intrinsics) {
+    warning("Intrinsics for MD5 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
+  }
+
   // SHA's
   if (FLAG_IS_DEFAULT(UseSHA)) {
     FLAG_SET_DEFAULT(UseSHA, true);
   }
 
   // SHA-1, no RVV required though.
-  if (UseSHA) {
-    if (FLAG_IS_DEFAULT(UseSHA1Intrinsics) && !AvoidUnalignedAccesses) {
+  if (UseSHA && !AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UseSHA1Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA1Intrinsics, true);
     }
   } else if (UseSHA1Intrinsics) {
