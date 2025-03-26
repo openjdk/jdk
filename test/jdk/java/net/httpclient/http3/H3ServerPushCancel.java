@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -582,7 +582,7 @@ public class H3ServerPushCancel implements HttpServerAdapters {
                             err.println("Server: Cancelled push promise: " + pushId);
                             out.println("Server: Cancelled push promise: " + pushId);
                         } else {
-                            exchange.sendHttp3PushResponse(pushId, uri, headers, is);
+                            exchange.sendHttp3PushResponse(pushId, uri, headers, headers, is);
                             out.println("Server: Sent push promise with response: " + pushId);
                             err.println("Server: Sent push promise with response: " + pushId);
                         }
@@ -593,7 +593,7 @@ public class H3ServerPushCancel implements HttpServerAdapters {
                 } else {
                     exchange.sendHttp3PushPromiseFrame(usePushId, uri, headers);
                     err.println("Server: Sent push promise frame: " + usePushId);
-                    exchange.sendHttp3PushResponse(usePushId, uri, headers, is);
+                    exchange.sendHttp3PushResponse(usePushId, uri, headers, headers, is);
                     err.println("Server: Sent push promise response: " + usePushId);
                     lock.lock();
                     sent += 1;

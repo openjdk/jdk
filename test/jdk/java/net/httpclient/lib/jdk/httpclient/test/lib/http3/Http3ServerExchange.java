@@ -341,10 +341,10 @@ public final class Http3ServerExchange implements Http2TestExchange {
     }
 
     @Override
-    public void serverPush(URI uri, HttpHeaders headers, InputStream content)
+    public void serverPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream content)
             throws IOException {
         try {
-            serverPushWithId(uri, headers, content);
+            serverPushWithId(uri, reqHeaders, rspHeaders, content);
         } catch (IOException io) {
             if (debug.on())
                 debug.log("Failed to push " + uri + ": " + io);
@@ -353,34 +353,34 @@ public final class Http3ServerExchange implements Http2TestExchange {
     }
 
     @Override
-    public long serverPushWithId(URI uri, HttpHeaders headers, InputStream content)
+    public long serverPushWithId(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream content)
             throws IOException {
-        HttpHeaders combinedHeaders = combinePromiseHeaders(uri, headers);
+        HttpHeaders combinePromiseHeaders = combinePromiseHeaders(uri, reqHeaders);
         long pushId = serverConn.nextPushId();
         if (debug.on()) {
             debug.log("Server sending serverPushWithId(" + pushId + "): " + uri);
         }
         // send PUSH_PROMISE frame
-        sendPushPromiseFrame(pushId, uri, combinedHeaders);
+        sendPushPromiseFrame(pushId, uri, combinePromiseHeaders);
         if (debug.on())
             debug.log("Server sent PUSH_PROMISE(" + pushId + ")");
         // now open push stream and send response headers + body
-        Http3ServerConnection.PushPromise pp = sendPushResponse(pushId, combinedHeaders, content);
+        Http3ServerConnection.PushPromise pp = sendPushResponse(pushId, combinePromiseHeaders, rspHeaders, content);
         assert pushId == pp.pushId();
         return pp.pushId();
     }
 
     @Override
     public long sendPushId(long pushId, URI uri, HttpHeaders headers) throws IOException {
-        HttpHeaders httpHeaders = combinePromiseHeaders(uri, headers);
-        return sendPushPromiseFrame(pushId, uri, httpHeaders);
+        HttpHeaders combinePromiseHeaders = combinePromiseHeaders(uri, headers);
+        return sendPushPromiseFrame(pushId, uri, combinePromiseHeaders);
     }
 
     @Override
-    public void sendPushResponse(long pushId, URI uri, HttpHeaders headers, InputStream content)
+    public void sendPushResponse(long pushId, URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream content)
             throws IOException {
-        HttpHeaders httpHeaders = combinePromiseHeaders(uri, headers);
-        Http3ServerConnection.PushPromise pp = sendPushResponse(pushId, httpHeaders, content);
+        HttpHeaders combinePromiseHeaders = combinePromiseHeaders(uri, reqHeaders);
+        Http3ServerConnection.PushPromise pp = sendPushResponse(pushId, combinePromiseHeaders, rspHeaders, content);
         assert pushId == pp.pushId();
     }
 
@@ -463,10 +463,14 @@ public final class Http3ServerExchange implements Http2TestExchange {
         return s;
     }
 
-    private Http3ServerConnection.PushPromise sendPushResponse(long pushId, HttpHeaders headers, InputStream body) {
+    private Http3ServerConnection.PushPromise sendPushResponse(long pushId,
+                                                               HttpHeaders reqHeaders,
+                                                               HttpHeaders rspHeaders,
+                                                               InputStream body) {
         var stream = serverConn.quicConnection()
                 .openNewLocalUniStream(Duration.ofSeconds(10));
-        final Http3ServerConnection.PushPromise promise = serverConn.addPendingPush(pushId, stream, headers, this);
+        final Http3ServerConnection.PushPromise promise =
+                serverConn.addPendingPush(pushId, stream, reqHeaders, this);
         if (!(promise instanceof Http3ServerConnection.PendingPush ppp) || ppp.stream() != stream) {
             stream.thenApply(this::cancel);
             return promise;
@@ -507,7 +511,8 @@ public final class Http3ServerExchange implements Http2TestExchange {
                 }
                 ResponseBodyOutputStream os = new ResponseBodyOutputStream(connectionTag(),
                         debug, pushw, pushLock, writePushEnabled, () -> 0);
-                sendResponseHeaders(s.streamId(), pushw, false, 200, 0, new HttpHeadersBuilder(), os);
+                sendResponseHeaders(s.streamId(), pushw, false, 200, 0,
+                        new HttpHeadersBuilder(rspHeaders), os);
                 if (debug.on()) {
                     debug.log(tag + "Server push response headers sent pushId=" + pushId);
                 }
@@ -515,7 +520,7 @@ public final class Http3ServerExchange implements Http2TestExchange {
                     case SEND, READY -> {
                         if (!s.stopSendingReceived()) {
                             body.transferTo(os);
-                            serverConn.addPushPromise(pushId, new Http3ServerConnection.CompletedPush(pushId, headers));
+                            serverConn.addPushPromise(pushId, new Http3ServerConnection.CompletedPush(pushId, reqHeaders));
                             os.close();
                             if (debug.on()) {
                                 debug.log(tag + "Server push response body sent pushId=" + pushId);

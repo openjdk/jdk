@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -828,15 +828,16 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
             byte[] promiseBytes = promise.toASCIIString().getBytes(UTF_8);
             out.printf("TestServer: %s Pushing promise: %s%n", now(), promise);
             err.printf("TestServer: %s Pushing promise: %s%n", now(), promise);
-            HttpHeaders headers;
+            HttpHeaders reqHaders = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
+            HttpHeaders rspHeaders;
             if (fixed) {
                 String length = String.valueOf(promiseBytes.length);
-                headers = HttpHeaders.of(Map.of("Content-Length", List.of(length)),
+                rspHeaders = HttpHeaders.of(Map.of("Content-Length", List.of(length)),
                                          ACCEPT_ALL);
             } else {
-                headers = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
+                rspHeaders = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
             }
-            t.serverPush(promise, headers, promiseBytes);
+            t.serverPush(promise, reqHaders, rspHeaders, promiseBytes);
         } catch (URISyntaxException x) {
             throw new IOException(x.getMessage(), x);
         }
@@ -855,14 +856,8 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
             byte[] promiseBytes = promise.toASCIIString().getBytes(UTF_8);
             out.printf("TestServer: %s sending PushPromiseFrame: %s%n", now(), promise);
             err.printf("TestServer: %s Pushing PushPromiseFrame: %s%n", now(), promise);
-            HttpHeaders headers;
-            if (fixed) {
-                String length = String.valueOf(promiseBytes.length);
-                headers = HttpHeaders.of(Map.of("Content-Length", List.of(length)),
-                        ACCEPT_ALL);
-            } else {
-                headers = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
-            }
+            // headers are added to the request headers sent in the push promise
+            HttpHeaders headers = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
             long pushId = t.sendHttp3PushPromiseFrame(-1, promise, headers);
             out.printf("TestServer: %s PushPromiseFrame pushId=%s sent%n", now(), pushId);
             err.printf("TestServer: %s PushPromiseFrame pushId=%s sent%n", now(), pushId);
@@ -886,15 +881,16 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
             byte[] promiseBytes = promise.toASCIIString().getBytes(UTF_8);
             out.printf("TestServer: %s sending push response pushId=%s: %s%n", now(), pushId, promise);
             err.printf("TestServer: %s Pushing push response pushId=%s: %s%n", now(), pushId, promise);
-            HttpHeaders headers;
+            HttpHeaders reqHaders = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
+            HttpHeaders rspHeaders;
             if (fixed) {
                 String length = String.valueOf(promiseBytes.length);
-                headers = HttpHeaders.of(Map.of("Content-Length", List.of(length)),
+                rspHeaders = HttpHeaders.of(Map.of("Content-Length", List.of(length)),
                         ACCEPT_ALL);
             } else {
-                headers = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
+                rspHeaders = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
             }
-            t.sendHttp3PushResponse(pushId, promise, headers, new ByteArrayInputStream(promiseBytes));
+            t.sendHttp3PushResponse(pushId, promise, reqHaders, rspHeaders, new ByteArrayInputStream(promiseBytes));
         } catch (URISyntaxException x) {
             throw new IOException(x.getMessage(), x);
         }

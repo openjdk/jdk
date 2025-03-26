@@ -44,6 +44,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1263,11 +1264,22 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         }
 
         String method = promiseHeaders.firstValue(":method")
-                .orElseThrow(() -> new IOException("no method in promise request"));
+                .orElseThrow(() -> new ProtocolException("no method in promise request"));
         String path = promiseHeaders.firstValue(":path")
-                .orElseThrow(() -> new IOException("no path in promise request"));
+                .orElseThrow(() -> new ProtocolException("no path in promise request"));
         String authority = promiseHeaders.firstValue(":authority")
-                .orElseThrow(() -> new IOException("no authority in promise request"));
+                .orElseThrow(() -> new ProtocolException("no authority in promise request"));
+        if (Set.of("PUT", "DELETE", "OPTIONS", "TRACE").contains(method)) {
+            throw new ProtocolException("push method not allowed pushId=" + pushId);
+        }
+        long clen = promiseHeaders.firstValueAsLong("Content-Length").orElse(-1);
+        if (clen > 0) {
+            throw new ProtocolException("push headers contain non-zero Content-Length for pushId=" + pushId);
+        }
+        if (promiseHeaders.firstValue("Transfer-Encoding").isPresent()) {
+            throw new ProtocolException("push headers contain Transfer-Encoding for pushId=" + pushId);
+        }
+
 
         // this will clear the response headers
         //       At this point the push promise stream may not be opened yet

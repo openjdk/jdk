@@ -41,11 +41,9 @@ import jdk.internal.net.http.frame.SettingsFrame;
 import jdk.internal.net.http.frame.WindowUpdateFrame;
 import jdk.internal.net.http.hpack.Decoder;
 import jdk.internal.net.http.hpack.DecodingCallback;
-import jdk.internal.net.http.hpack.Encoder;
 import sun.net.www.http.ChunkedInputStream;
 import sun.net.www.http.HttpClient;
 
-import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIMatcher;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
@@ -80,32 +78,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
-import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.AltSvcFrame;
-import jdk.internal.net.http.frame.DataFrame;
-import jdk.internal.net.http.frame.ErrorFrame;
-import jdk.internal.net.http.frame.FramesDecoder;
-import jdk.internal.net.http.frame.FramesEncoder;
-import jdk.internal.net.http.frame.GoAwayFrame;
-import jdk.internal.net.http.frame.HeaderFrame;
-import jdk.internal.net.http.frame.HeadersFrame;
-import jdk.internal.net.http.frame.Http2Frame;
-import jdk.internal.net.http.frame.PingFrame;
-import jdk.internal.net.http.frame.PushPromiseFrame;
-import jdk.internal.net.http.frame.ResetFrame;
-import jdk.internal.net.http.frame.SettingsFrame;
-import jdk.internal.net.http.frame.WindowUpdateFrame;
-import jdk.internal.net.http.hpack.Decoder;
-import jdk.internal.net.http.hpack.DecodingCallback;
-import jdk.internal.net.http.hpack.Encoder;
-import sun.net.www.http.ChunkedInputStream;
-import sun.net.www.http.HttpClient;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
@@ -1152,7 +1129,7 @@ public class Http2TestServerConnection {
         PushPromiseFrame pp = new PushPromiseFrame(op.parentStream,
                                                    op.getFlags(),
                                                    promisedStreamid,
-                                                   encodeHeaders(op.headers),
+                                                   encodeHeaders(op.reqHeaders),
                                                    0);
         pushStreams.add(promisedStreamid);
         nextPushStreamId += 2;
@@ -1183,7 +1160,7 @@ public class Http2TestServerConnection {
         oo.goodToGo();
         exec.submit(() -> {
             try {
-                ResponseHeaders oh = getPushResponse(promisedStreamid);
+                ResponseHeaders oh = getPushResponse(promisedStreamid, op.rspHeaders);
                 outputQ.put(oh);
 
                 ii.transferTo(oo);
@@ -1205,11 +1182,10 @@ public class Http2TestServerConnection {
 
     // returns a minimal response with status 200
     // that is the response to the push promise just sent
-    private ResponseHeaders getPushResponse(int streamid) {
+    private ResponseHeaders getPushResponse(int streamid, HttpHeaders rspHeaders) {
         HttpHeadersBuilder pseudoHeaders = createNewHeadersBuilder();
         pseudoHeaders.addHeader(":status", "200");
-        ResponseHeaders oh = new ResponseHeaders(pseudoHeaders.build(),
-                HttpHeaders.of(Map.of(), (k, v) -> true));
+        ResponseHeaders oh = new ResponseHeaders(pseudoHeaders.build(), rspHeaders);
         oh.streamid(streamid);
         oh.setFlag(HeaderFrame.END_HEADERS);
         return oh;

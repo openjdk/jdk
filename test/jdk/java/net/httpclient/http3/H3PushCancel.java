@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -489,14 +489,14 @@ public class H3PushCancel implements HttpServerAdapters {
                 InputStream is = new ByteArrayInputStream(promise.getValue().getBytes(UTF_8));
                 HttpHeaders headers = HttpHeaders.of(Collections.emptyMap(), (x, y) -> true);
                 if (usePushId == -1) {
-                    long pushId = exchange.http3ServerPush(uri, headers, is);
+                    long pushId = exchange.http3ServerPush(uri, headers, headers, is);
                     System.err.println("Server: Sent push promise with response: " + pushId);
                     waitForPushId = pushId + 1; // assuming no concurrent requests...
                     sent += 1;
                 } else {
                     exchange.sendHttp3PushPromiseFrame(usePushId, uri, headers);
                     System.err.println("Server: Sent push promise frame: " + usePushId);
-                    exchange.sendHttp3PushResponse(usePushId, uri, headers, is);
+                    exchange.sendHttp3PushResponse(usePushId, uri, headers, headers, is);
                     System.err.println("Server: Sent push promise response: " + usePushId);
                     sent += 1;
                     return;
