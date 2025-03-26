@@ -87,7 +87,10 @@ public class VerifyJarEntryName {
     void verifyManifestEntryName() throws Exception {
         modifyJarEntryName(ORIGINAL_JAR, MODIFIED_JAR, "MANIFEST.MF");
         SecurityTools.jarsigner("-verify -verbose " + MODIFIED_JAR)
-                .shouldContain("Manifest is missing when " +
+                .shouldContain("This JAR file contains internal " +
+                        "inconsistencies that may result in different " +
+                        "contents when reading via JarFile and JarInputStream")
+                .shouldContain("- Manifest is missing when " +
                         "reading via JarInputStream")
                 .shouldHaveExitValue(0);
     }
@@ -100,7 +103,10 @@ public class VerifyJarEntryName {
     void verifySignatureEntryName() throws Exception {
         modifyJarEntryName(ORIGINAL_JAR, MODIFIED_JAR, "MYKEY.SF");
         SecurityTools.jarsigner("-verify -verbose " + MODIFIED_JAR)
-                .shouldContain("Entries mismatch when " +
+                .shouldContain("This JAR file contains internal " +
+                        "inconsistencies that may result in different " +
+                        "contents when reading via JarFile and JarInputStream")
+                .shouldContain("- Entries mismatch when " +
                         "comparing JarFile and JarInputStream")
                 .shouldHaveExitValue(0);
     }
@@ -112,9 +118,12 @@ public class VerifyJarEntryName {
     @Test
     void verifyOriginalJar() throws Exception {
         SecurityTools.jarsigner("-verify -verbose " + ORIGINAL_JAR)
-                .shouldNotContain("Manifest is missing " +
+                .shouldNotContain("This JAR file contains internal " +
+                        "inconsistencies that may result in different contents when " +
+                        "reading via JarFile and JarInputStream")
+                .shouldNotContain("- Manifest is missing " +
                         "when reading via JarInputStream")
-                .shouldNotContain("Entries mismatch " +
+                .shouldNotContain("- Entries mismatch " +
                         "when comparing JarFile and JarInputStream")
                 .shouldHaveExitValue(0);
     }

@@ -1135,7 +1135,6 @@ public class Main {
 
     private void crossCheckEntries(String jarName) throws Exception {
         List<String> locEntries = new ArrayList<>();
-        List<String> cenEntries;
 
         try (JarFile jarFile = new JarFile(jarName);
              JarInputStream jis = new JarInputStream(
@@ -1155,31 +1154,61 @@ public class Main {
                 JarEntry cenEntry = jarFile.getJarEntry(entryName);
                 if (cenEntry == null) {
                     crossChkWarnings.add(String.format(rb.getString(
-                            "Entry.1.present.when.reading.jarinputstream." +
-                            "but.missing.via.JarFile"), entryName));
+                            "entry.1.present.when.reading.jarinputstream." +
+                            "but.missing.via.jarfile"), entryName));
                     continue;
                 }
 
-                readEntry(jis);
+                try {
+                    readEntry(jis);
+                } catch (SecurityException e) {
+                    crossChkWarnings.add(String.format(rb.getString(
+                            "signature.verification.failed.on.entry.1." +
+                            "when.reading.via.jarinputstream"),
+                            entryName));
+                    continue;
+                }
+
                 try (InputStream cenInputStream = jarFile.getInputStream(cenEntry)) {
                     if (cenInputStream == null) {
                         crossChkWarnings.add(String.format(rb.getString(
                                 "entry.1.present.in.jarfile.but.unreadable"),
                                 entryName));
+                        continue;
                     } else {
-                        readEntry(cenInputStream);
+                        try {
+                            readEntry(cenInputStream);
+                        } catch (SecurityException e) {
+                            crossChkWarnings.add(String.format(rb.getString(
+                                    "signature.verification.failed.on.entry.1." +
+                                    "when.reading.via.jarfile.inputstream"),
+                                    entryName));
+                            continue;
+                        }
                     }
                 }
 
                 compareSigners(cenEntry, locEntry);
             }
 
+            List<String> cenEntries;
             cenEntries = jarFile.stream()
                     .map(JarEntry::getName)
                     .collect(Collectors.toList());
 
             var cenEntries2 = cenEntries.getFirst().equals(JarFile.MANIFEST_NAME)
                     ? cenEntries.subList(1, cenEntries.size()) : cenEntries;
+
+            Set<String> locEntrySet = new HashSet<>(locEntries);
+            Set<String> cenEntrySet = new HashSet<>(cenEntries2);
+
+            for (String cenEntry : cenEntrySet) {
+                if (!locEntrySet.contains(cenEntry)) {
+                    crossChkWarnings.add(String.format(rb.getString(
+                            "entry.1.present.when.reading.jarfile." +
+                            "but.missing.via.jarinputstream"), cenEntry));
+                }
+            }
 
             if (!cenEntries2.equals(locEntries)) {
                 crossChkWarnings.add(rb.getString(
@@ -1263,6 +1292,16 @@ public class Main {
                     "in.jarfile"),
                     locEntry.getName()));
         }
+    }
+
+    private void displayCrossChkWarnings() {
+        System.out.println();
+        // First is a summary warning
+        System.out.println(rb.getString("jar.contains.internal." +
+                "inconsistencies.may.result.in.different.contents." +
+                "when.reading.via.jarfile.and.jarinputstream"));
+        // each warning message with prefix "- "
+        crossChkWarnings.forEach(warning -> System.out.println("- " + warning));
     }
 
     private void displayMessagesAndResult(boolean isSigning) {
@@ -1492,16 +1531,17 @@ public class Main {
                 warnings.forEach(System.out::println);
             }
             if (!crossChkWarnings.isEmpty()) {
-                System.out.println();
-                crossChkWarnings.forEach(System.out::println);
+                displayCrossChkWarnings();
             }
         } else {
-            if (!errors.isEmpty() || !warnings.isEmpty() || !crossChkWarnings.isEmpty()) {
+            if (!errors.isEmpty() || !warnings.isEmpty()) {
                 System.out.println();
                 System.out.println(rb.getString("Warning."));
                 errors.forEach(System.out::println);
                 warnings.forEach(System.out::println);
-                crossChkWarnings.forEach(System.out::println);
+            }
+            if (!crossChkWarnings.isEmpty()) {
+                displayCrossChkWarnings();
             }
         }
 
