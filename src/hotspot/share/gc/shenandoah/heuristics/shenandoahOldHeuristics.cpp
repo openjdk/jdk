@@ -289,7 +289,6 @@ bool ShenandoahOldHeuristics::finalize_mixed_evacs() {
     slide_pinned_regions_to_front();
   }
   decrease_unprocessed_old_collection_candidates_live_memory(_evacuated_old_bytes);
-  decrease_unprocessed_old_collection_candidates_garbage(_collected_old_bytes);
   if (_included_old_regions > 0) {
     log_info(gc)("Old-gen mixed evac (%zu regions, evacuating %zu%s, reclaiming: %zu%s)",
                  _included_old_regions,
@@ -525,7 +524,6 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   const size_t old_candidates = _last_old_collection_candidate;
   const size_t mixed_evac_live = old_candidates * region_size_bytes - (candidates_garbage + unfragmented);
   set_unprocessed_old_collection_candidates_live_memory(mixed_evac_live);
-  set_unprocessed_old_collection_candidates_garbage(collectable_garbage);
 
   log_info(gc, ergo)("Old-Gen Collectable Garbage: " PROPERFMT " consolidated with free: " PROPERFMT ", over %zu regions",
                      PROPERFMTARGS(collectable_garbage), PROPERFMTARGS(unfragmented), old_candidates);
@@ -554,19 +552,6 @@ void ShenandoahOldHeuristics::set_unprocessed_old_collection_candidates_live_mem
 void ShenandoahOldHeuristics::decrease_unprocessed_old_collection_candidates_live_memory(size_t evacuated_live) {
   assert(evacuated_live <= _live_bytes_in_unprocessed_candidates, "Cannot evacuate more than was present");
   _live_bytes_in_unprocessed_candidates -= evacuated_live;
-}
-
-size_t ShenandoahOldHeuristics::unprocessed_old_collection_candidates_garbage() const {
-  return _garbage_in_unprocessed_candidates;
-}
-
-void ShenandoahOldHeuristics::set_unprocessed_old_collection_candidates_garbage(size_t initial_garbage) {
-  _garbage_in_unprocessed_candidates = initial_garbage;
-}
-
-void ShenandoahOldHeuristics::decrease_unprocessed_old_collection_candidates_garbage(size_t reclaimed_garbage) {
-  assert(reclaimed_garbage <= _garbage_in_unprocessed_candidates, "Cannot reclaim more garbage than was present");
-  _garbage_in_unprocessed_candidates -= reclaimed_garbage;
 }
 
 // Used by unit test: test_shenandoahOldHeuristic.cpp

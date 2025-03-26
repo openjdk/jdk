@@ -32,44 +32,6 @@
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "utilities/numberSeq.hpp"
 
-class ShenandoahPhaseTimeEstimator {
- private:
-  static const uint MaxSamples = 8;
-
-  const char* _name;
-  bool   _changed;
-  uint   _first_index;
-  uint   _num_samples;
-  double _sum_of_x;
-  double _sum_of_y;
-  double _sum_of_xx;
-  double _sum_of_xy;
-  double _most_recent_start;
-  double _x_values[MaxSamples];
-  double _y_values[MaxSamples];
-  double _most_recent_prediction_x_value;
-  double _most_recent_prediction;
-
- public:
-  explicit ShenandoahPhaseTimeEstimator(const char *name);
-
-  void add_sample(double independent_variable, double dependent_variable);
-
-  // Return conservative prediction of time required for next execution of this phase,
-  //   which is Max(average_prediction, linear_prediction),
-  //   average_prediction is average + std_dev, and
-  //   linear_prediction is determined best-fit line + std_dev of this calculation
-  double predict_at(double independent_value);
-
-  void set_most_recent_start_time(double now) {
-    _most_recent_start = now;
-  }
-
-  double get_most_recent_start_time() {
-    return _most_recent_start;
-  }
-};
-
 class ShenandoahAllocationRate : public CHeapObj<mtGC> {
  public:
   explicit ShenandoahAllocationRate();
@@ -111,7 +73,7 @@ public:
                                                      RegionData* data, size_t size,
                                                      size_t actual_free);
 
-  virtual void record_cycle_start();
+  void record_cycle_start();
   void record_success_concurrent();
   void record_success_degenerated();
   void record_success_full();
@@ -137,12 +99,6 @@ public:
 
   friend class ShenandoahAllocationRate;
 
-  void adjust_last_trigger_parameters(double amount);
-  void adjust_margin_of_error(double amount);
-  void adjust_spike_threshold(double amount);
-
-protected:
-
   // Used to record the last trigger that signaled to start a GC.
   // This itself is used to decide whether or not to adjust the margin of
   // error for the average cycle time and allocation rate or the allocation
@@ -151,6 +107,11 @@ protected:
     SPIKE, RATE, OTHER
   };
 
+  void adjust_last_trigger_parameters(double amount);
+  void adjust_margin_of_error(double amount);
+  void adjust_spike_threshold(double amount);
+
+protected:
   ShenandoahAllocationRate _allocation_rate;
 
   // The margin of error expressed in standard deviations to add to our
@@ -178,7 +139,6 @@ protected:
   // establishes what is 'normal' for the application and is used as a
   // source of feedback to adjust trigger parameters.
   TruncatedSeq _available;
-
 
   // A conservative minimum threshold of free space that we'll try to maintain when possible.
   // For example, we might trigger a concurrent gc if we are likely to drop below

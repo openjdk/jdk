@@ -48,7 +48,7 @@
 // a chunk of work, it will finish the work it starts.  Otherwise, the chunk of work will be lost in the transition to
 // degenerated execution, leading to dangling references.
 template <typename ClosureType>
-size_t ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t count, HeapWord* end_of_range,
+void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t count, HeapWord* end_of_range,
                                                                ClosureType* cl, bool use_write_table, uint worker_id) {
 
   assert(ShenandoahHeap::heap()->old_generation()->is_parsable(), "Old generation regions must be parsable for remembered set scan");
@@ -59,8 +59,6 @@ size_t ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t c
   // zombie objects is unsafe because the Klass pointer is not reliable, objects referenced from a zombie may have been
   // collected (if dead), or relocated (if live), or if dead but not yet collected, we don't want to "revive" them
   // by marking them (when marking) or evacuating them (when updating references).
-
-  size_t examined_words = 0;
 
   // start and end addresses of range of objects to be scanned, clipped to end_of_range
   const size_t start_card_index = first_cluster * ShenandoahCardCluster::CardsPerCluster;
@@ -133,7 +131,7 @@ size_t ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t c
       if (end_addr <= start_addr) {
         assert(right_index <= (ssize_t)start_card_index, "Program logic");
         // We are done with our cluster
-        return examined_words;
+        return;
       }
     }
 
@@ -158,7 +156,6 @@ size_t ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t c
       assert(ctbm[dirty_r] == CardTable::dirty_card_val(), "Last card in range should be dirty");
       // Record alternations, dirty run length, and dirty card count
       NOT_PRODUCT(stats.record_dirty_run(dirty_r - dirty_l + 1);)
-      examined_words += (dirty_r - dirty_l + 1) * CardTable::card_size_in_words();
 
       // Find first object that starts this range:
       // [left, right) is a maximal right-open interval of dirty cards
@@ -262,7 +259,6 @@ size_t ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t c
           last_obj->oop_iterate(cl, last_mr);
           log_develop_debug(gc, remset)("Fixed up non-objArray suffix scan in [" INTPTR_FORMAT ", " INTPTR_FORMAT ")",
                                         p2i(last_mr.start()), p2i(last_mr.end()));
-	  examined_words += (p - right);
         } else {
           log_develop_debug(gc, remset)("Skipped suffix scan of objArray in [" INTPTR_FORMAT ", " INTPTR_FORMAT ")",
                                         p2i(right), p2i(p));
@@ -290,15 +286,14 @@ size_t ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t c
       // ==== END CLEAN card range processing ====
     }
   }
-  return examined_words;
 }
 
 // Given that this range of clusters is known to span a humongous object spanned by region r, scan the
-// portion of the humongous object that corresponds to the specified range.  Return number of words examined.
+// portion of the humongous object that corresponds to the specified range.
 template <typename ClosureType>
-inline size_t
+inline void
 ShenandoahScanRemembered::process_humongous_clusters(ShenandoahHeapRegion* r, size_t first_cluster, size_t count,
-						     HeapWord *end_of_range, ClosureType *cl, bool use_write_table) {
+                                                                    HeapWord *end_of_range, ClosureType *cl, bool use_write_table) {
   ShenandoahHeapRegion* start_region = r->humongous_start_region();
   HeapWord* p = start_region->bottom();
   oop obj = cast_to_oop(p);
@@ -310,14 +305,12 @@ ShenandoahScanRemembered::process_humongous_clusters(ShenandoahHeapRegion* r, si
   HeapWord* first_cluster_addr = _rs->addr_for_card_index(first_card_index);
   size_t spanned_words = count * ShenandoahCardCluster::CardsPerCluster * CardTable::card_size_in_words();
   start_region->oop_iterate_humongous_slice_dirty(cl, first_cluster_addr, spanned_words, use_write_table);
-  return spanned_words;
 }
 
 
-// This method takes a region & determines the end of the region that the worker can scan.  It returns the number
-// of words scanned (which reside on cards identified as DIRTY).
+// This method takes a region & determines the end of the region that the worker can scan.
 template <typename ClosureType>
-inline size_t
+inline void
 ShenandoahScanRemembered::process_region_slice(ShenandoahHeapRegion *region, size_t start_offset, size_t clusters,
                                                               HeapWord *end_of_range, ClosureType *cl, bool use_write_table,
                                                               uint worker_id) {
@@ -327,8 +320,6 @@ ShenandoahScanRemembered::process_region_slice(ShenandoahHeapRegion *region, siz
   HeapWord *start_of_range = region->bottom() + start_offset;
   size_t start_cluster_no = cluster_for_addr(start_of_range);
   assert(addr_for_cluster(start_cluster_no) == start_of_range, "process_region_slice range must align on cluster boundary");
-
-  size_t words_examined = 0;
 
   // region->end() represents the end of memory spanned by this region, but not all of this
   //   memory is eligible to be scanned because some of this memory has not yet been allocated.
@@ -362,12 +353,11 @@ ShenandoahScanRemembered::process_region_slice(ShenandoahHeapRegion *region, siz
   if (start_of_range < end_of_range) {
     if (region->is_humongous()) {
       ShenandoahHeapRegion* start_region = region->humongous_start_region();
-      words_examined += process_humongous_clusters(start_region, start_cluster_no, clusters, end_of_range, cl, use_write_table);
+      process_humongous_clusters(start_region, start_cluster_no, clusters, end_of_range, cl, use_write_table);
     } else {
-      words_examined += process_clusters(start_cluster_no, clusters, end_of_range, cl, use_write_table, worker_id);
+      process_clusters(start_cluster_no, clusters, end_of_range, cl, use_write_table, worker_id);
     }
   }
-  return words_examined;
 }
 
 inline bool ShenandoahRegionChunkIterator::has_next() const {

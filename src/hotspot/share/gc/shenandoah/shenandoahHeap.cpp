@@ -2562,41 +2562,19 @@ void ShenandoahHeap::rebuild_free_set_within_phase() {
     }
 #endif
 
+    // The computation of bytes_of_allocation_runway_before_gc_trigger is quite conservative so consider all of this
+    // available for transfer to old. Note that transfer of humongous regions does not impact available.
+    ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
+    size_t allocation_runway = gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
+    gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions, young_cset_regions);
+  }
+  // Rebuild free set based on adjusted generation sizes.
+  _free_set->finish_rebuild(young_cset_regions, old_cset_regions, old_region_count);
+
+  if (mode()->is_generational()) {
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
     ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
-    ShenandoahOldHeuristics* old_heuristics = old_gen->heuristics();
-    size_t mixed_candidates = old_heuristics->unprocessed_old_collection_candidates();
-    ShenandoahYoungGeneration* young_gen = gen_heap->young_generation();
-    ShenandoahYoungHeuristics* young_heuristics = young_gen->heuristics();
-
-    // The promo budget is bounded by the known promo potential.  Some of this memory may be promoted in place.  Ignore
-    // that for now.  Promotion in place is cheaper than promo by evac.
-    size_t promo_potential_words = old_gen->get_promotion_potential() / HeapWordSize;
-    size_t pip_potential_words = old_gen->get_pip_potential() / HeapWordSize;
-
-#ifdef KELVIN_DEBUG
-    // debug message
-    log_info(gc)("This is where I can recompute OldEvacRatio");
-    log_info(gc)(" mixed evacuation candidates are %zu", mixed_candidates);
-    log_info(gc)("    old generation has used: %zu", old_gen->used_including_humongous_waste());
-    log_info(gc)("  young generation has used: %zu", young_gen->used_including_humongous_waste());
-#endif
-
-    size_t mixed_candidate_live_words = old_heuristics->unprocessed_old_collection_candidates_live_memory() / HeapWordSize;
-    size_t mixed_candidate_garbage_words = old_heuristics->unprocessed_old_collection_candidates_garbage() / HeapWordSize;
-    young_heuristics->adjust_old_evac_ratio(old_cset_regions, young_cset_regions, old_gen, young_gen,
-					    promo_potential_words, pip_potential_words, mixed_candidate_live_words,
-					    mixed_candidate_garbage_words);
-    size_t allocation_runway =
-      gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
-    gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions, young_cset_regions);
-
-    // Rebuild free set based on adjusted generation sizes.
-    _free_set->finish_rebuild(young_cset_regions, old_cset_regions, old_region_count);
     old_gen->heuristics()->evaluate_triggers(first_old_region, last_old_region, old_region_count, num_regions());
-  } else {
-    // Rebuild free set for non-generational mode
-    _free_set->finish_rebuild(young_cset_regions, old_cset_regions, old_region_count);
   }
 }
 

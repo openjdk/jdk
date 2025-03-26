@@ -88,9 +88,6 @@ private:
   // How much live data must be evacuated from within the unprocessed mixed evacuation candidates?
   size_t _live_bytes_in_unprocessed_candidates;
 
-  // How much garbage will be reclaimed from within the unprocessed mixed evacuation candidates?
-  size_t _garbage_in_unprocessed_candidates;
-
   // Keep a pointer to our generation that we can use without down casting a protected member from the base class.
   ShenandoahOldGeneration* _old_generation;
 
@@ -177,13 +174,6 @@ public:
   void set_unprocessed_old_collection_candidates_live_memory(size_t initial_live);
 
   void decrease_unprocessed_old_collection_candidates_live_memory(size_t evacuated_live);
-
-  // How much garbage will be reclaimed from within old-collection candidates that have not yet been processed?
-  size_t unprocessed_old_collection_candidates_garbage() const;
-
-  void set_unprocessed_old_collection_candidates_garbage(size_t initial_garbage);
-
-  void decrease_unprocessed_old_collection_candidates_garbage(size_t reclaimed_garbage);
 
   // How many old or hidden collection candidates have not yet been processed?
   uint last_old_collection_candidate_index() const;

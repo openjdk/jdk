@@ -717,10 +717,6 @@ size_t ShenandoahOldGeneration::unprocessed_collection_candidates_live_memory() 
   return _old_heuristics->unprocessed_old_collection_candidates_live_memory();
 }
 
-size_t ShenandoahOldGeneration::unprocessed_collection_candidates_garbage() {
-  return _old_heuristics->unprocessed_old_collection_candidates_garbage();
-}
-
 void ShenandoahOldGeneration::abandon_collection_candidates() {
   _old_heuristics->abandon_collection_candidates();
 }

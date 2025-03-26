@@ -127,26 +127,6 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   }
 }
 
-#undef KELVIN_DEVELOPMENT
-#ifdef KELVIN_DEVELOPMENT
-const char* major_phase_name(ShenandoahMajorGCPhase stage) {
-  switch (stage) {
-    case ShenandoahMajorGCPhase::_num_phases:
-      return "<num-phases>";
-    case ShenandoahMajorGCPhase::_final_roots:
-      return "final_roots";
-    case ShenandoahMajorGCPhase::_mark:
-      return "mark";
-    case ShenandoahMajorGCPhase::_evac:
-      return "evac";
-    case ShenandoahMajorGCPhase::_update:
-      return "update";
-    default:
-      return "<unknown>";
-  }
-}
-#endif
-
 void ShenandoahAdaptiveHeuristics::record_cycle_start() {
   ShenandoahHeuristics::record_cycle_start();
   _allocation_rate.allocation_counter_reset();
@@ -436,72 +416,3 @@ double ShenandoahAllocationRate::instantaneous_rate(double time, size_t allocate
   double time_delta_sec = time - last_time;
   return (time_delta_sec > 0)  ? (allocation_delta / time_delta_sec) : 0;
 }
-
-ShenandoahPhaseTimeEstimator::ShenandoahPhaseTimeEstimator(const char* name) :
-  _name(name),
-  _changed(true),
-  _first_index(0),
-  _num_samples(0),
-  _sum_of_x(0.0),
-  _sum_of_y(0.0),
-  _sum_of_xx(0.0),
-  _sum_of_xy(0.0) { }
-
-void ShenandoahPhaseTimeEstimator::add_sample(double x_value, double y_value) {
-  if (_num_samples >= MaxSamples) {
-    _sum_of_x -= _x_values[_first_index];
-    _sum_of_xx -= _x_values[_first_index] * _x_values[_first_index];
-    _sum_of_xy -= _x_values[_first_index] * _y_values[_first_index];
-    _sum_of_y -= _y_values[_first_index];
-    _num_samples--;
-    _first_index++;
-    if (_first_index == MaxSamples) {
-      _first_index = 0;
-    }
-  }
-  _sum_of_x += x_value;
-  _sum_of_xx += x_value * x_value;
-  _sum_of_xy += x_value * y_value;
-  assert(_num_samples < MaxSamples, "Unexpected overflow of ShenandoahPhaseTimeEstimator samples");
-  assert(_first_index < MaxSamples, "Unexpected overflow");
-
-  _sum_of_y += y_value;;
-  _x_values[(_first_index + _num_samples) % MaxSamples] = x_value;
-  _y_values[(_first_index + _num_samples++) % MaxSamples] = y_value;;
-  _changed = true;
-}
-
-double ShenandoahPhaseTimeEstimator::predict_at(double x_value) {
-  if (!_changed && (_most_recent_prediction_x_value == x_value)) {
-    return _most_recent_prediction;
-  } else if (_num_samples > 2) {
-    double m = (_num_samples * _sum_of_xy - _sum_of_x * _sum_of_y) / (_num_samples * _sum_of_xx - _sum_of_x * _sum_of_x);
-    double b = (_sum_of_y - m * _sum_of_x) / _num_samples;
-    double sum_of_squared_deviations = 0;
-    for (uint i = 0; i < _num_samples; i++) {
-      double x_value = _x_values[(_first_index + i) % MaxSamples];
-      double estimated_y = b + m * x_value;
-      double y_value = _y_values[(_first_index + i) % MaxSamples];
-      double delta = estimated_y - y_value;
-      sum_of_squared_deviations += delta * delta;
-#undef KELVIN_DEVELOPMENT
-#ifdef KELVIN_DEVELOPMENT
-      log_info(gc)("%s sample[%u] (x: %.3f, y: %.3f), predicted_y: %.3f, delta: %.3f",
-		   _name, i, x_value, y_value, estimated_y, delta);
-#endif
-    }
-    double standard_deviation = sqrt(sum_of_squared_deviations / _num_samples);
-    double prediction_by_trend = b + m * x_value + standard_deviation;;
-#ifdef KELVIN_DEVELOPMENT
-    log_info(gc)(" m: %.3f, b: %3f, std_dev: %.3f, prediction_by_trend: %.3f", m, b, standard_deviation, prediction_by_trend);
-#endif
-    _most_recent_prediction = prediction_by_trend;
-    _changed = false;
-    _most_recent_prediction_x_value = x_value;
-    return _most_recent_prediction;
-  } else {
-    // Insufficient samples to make a non-zero prediction
-    return 0.0;
-  }
-}
-

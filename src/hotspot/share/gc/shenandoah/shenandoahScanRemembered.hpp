@@ -828,16 +828,16 @@ public:
   // ClosureType ShenandoahEvacuateUpdateRootsClosure.
 
   template <typename ClosureType>
-  size_t process_clusters(size_t first_cluster, size_t count, HeapWord* end_of_range, ClosureType* oops,
-			  bool use_write_table, uint worker_id);
+  void process_clusters(size_t first_cluster, size_t count, HeapWord* end_of_range, ClosureType* oops,
+                        bool use_write_table, uint worker_id);
 
   template <typename ClosureType>
-  size_t process_humongous_clusters(ShenandoahHeapRegion* r, size_t first_cluster, size_t count,
-				    HeapWord* end_of_range, ClosureType* oops, bool use_write_table);
+  void process_humongous_clusters(ShenandoahHeapRegion* r, size_t first_cluster, size_t count,
+                                  HeapWord* end_of_range, ClosureType* oops, bool use_write_table);
 
   template <typename ClosureType>
-  size_t process_region_slice(ShenandoahHeapRegion* region, size_t offset, size_t clusters, HeapWord* end_of_range,
-			      ClosureType* cl, bool use_write_table, uint worker_id);
+  void process_region_slice(ShenandoahHeapRegion* region, size_t offset, size_t clusters, HeapWord* end_of_range,
+                            ClosureType* cl, bool use_write_table, uint worker_id);
 
   // To Do:
   //  Create subclasses of ShenandoahInitMarkRootsClosure and
@@ -992,32 +992,21 @@ public:
 
 class ShenandoahScanRememberedTask : public WorkerTask {
  private:
-  ShenandoahObjToScanQueueSet* const _queue_set;
-  ShenandoahObjToScanQueueSet* const _old_queue_set;
-  ShenandoahReferenceProcessor* const _rp;
-  ShenandoahRegionChunkIterator* const _work_list;
-  const bool _is_concurrent;
-  const size_t _nworkers;
-  size_t* const _words_examined;
+  ShenandoahObjToScanQueueSet* _queue_set;
+  ShenandoahObjToScanQueueSet* _old_queue_set;
+  ShenandoahReferenceProcessor* _rp;
+  ShenandoahRegionChunkIterator* _work_list;
+  bool _is_concurrent;
 
  public:
   ShenandoahScanRememberedTask(ShenandoahObjToScanQueueSet* queue_set,
                                ShenandoahObjToScanQueueSet* old_queue_set,
                                ShenandoahReferenceProcessor* rp,
                                ShenandoahRegionChunkIterator* work_list,
-                               bool is_concurrent, size_t nworkers, size_t* accumulators);
+                               bool is_concurrent);
 
   void work(uint worker_id);
-  size_t do_work(uint worker_id);
-
-  // call this after all work is done
-  size_t get_words_examined() {
-    size_t result = 0;
-    for (uint i = 0; i < _nworkers; i++) {
-      result += _words_examined[i];
-    }
-    return result;
-  }
+  void do_work(uint worker_id);
 };
 
 // After Full GC is done, reconstruct the remembered set by iterating over OLD regions,
