@@ -103,8 +103,9 @@ public interface HttpResponse<T> {
      * {@return if present, a label identifying the connection on which the
      * response was received}
      * <p>
-     * The format of the string is opaque, but the content should be unique
-     * for the lifetime of the {@link HttpClient} instance.
+     * The format of the string is opaque, but the value is fixed and unique
+     * for any connection in the scope of the associated {@link HttpClient}
+     * instance.
      *
      * @implSpec
      * The default implementation of this method returns
