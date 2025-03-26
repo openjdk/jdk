@@ -746,7 +746,7 @@ void LightweightSynchronizer::exit(oop object, BasicLock* lock, JavaThread* curr
   if (UseObjectMonitorTable) {
     monitor = lock->object_monitor_cache();
     if (monitor == nullptr) {
-      monitor = JavaThread::cast(current)->om_get_from_monitor_cache(object);
+      monitor = current->om_get_from_monitor_cache(object);
       if (monitor == nullptr) {
         monitor = get_monitor_from_table(current, object);
       }
