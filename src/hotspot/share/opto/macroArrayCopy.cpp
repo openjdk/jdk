@@ -1014,7 +1014,7 @@ bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
       uint d_alias_idx = C->get_alias_index(adr_type);
       bool is_mismatched = (basic_elem_type != T_INT);
       Node* sval = transform_later(
-          LoadNode::make(_igvn, *ctrl, (*mem)->memory_at(s_alias_idx), sptr, s_adr_type,
+          LoadNode::make(_igvn, *ctrl, (*mem)->memory_at(s_alias_idx), sptr,
                          TypeInt::INT, T_INT, MemNode::unordered, LoadNode::DependsOnlyOnTest,
                          false /*require_atomic_access*/, false /*unaligned*/, is_mismatched));
       Node* st = transform_later(

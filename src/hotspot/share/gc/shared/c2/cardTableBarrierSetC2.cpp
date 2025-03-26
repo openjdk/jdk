@@ -90,10 +90,7 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
 
   // Combine card table base and card offset
   Node* card_adr = __ AddP(__ top(), byte_map_base_node(kit), card_offset);
-
-  // Get the alias_index for raw card-mark memory
   int adr_type = Compile::AliasIdxRaw;
-
   // Dirty card value to store
   Node* dirty = __ ConI(CardTable::dirty_card_val());
 
@@ -105,12 +102,12 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
     // UseCondCardMark enables MP "polite" conditional card mark
     // stores.  In theory we could relax the load from ctrl() to
     // no_ctrl, but that doesn't buy much latitude.
-    Node* card_val = __ load( __ ctrl(), card_adr, TypeInt::BYTE, T_BYTE, adr_type);
+    Node* card_val = __ load( __ ctrl(), card_adr, TypeInt::BYTE, T_BYTE);
     __ if_then(card_val, BoolTest::ne, dirty);
   }
 
   // Smash dirty value into card
-  __ store(__ ctrl(), card_adr, dirty, T_BYTE, adr_type, MemNode::unordered);
+  __ store(__ ctrl(), card_adr, dirty, T_BYTE, MemNode::unordered);
 
   if (UseCondCardMark) {
     __ end_if();

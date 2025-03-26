@@ -189,7 +189,6 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
   DecoratorSet decorators = access.decorators();
 
   Node* adr = access.addr().node();
-  const TypePtr* adr_type = access.addr().type();
 
   bool mismatched = (decorators & C2_MISMATCHED) != 0;
   bool requires_atomic_access = (decorators & MO_UNORDERED) == 0;
@@ -212,7 +211,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
       Compile* C = Compile::current();
       Node* mem = kit->immutable_memory();
       load = LoadNode::make(kit->gvn(), control, mem, adr,
-                            adr_type, val_type, access.type(), mo, dep, requires_atomic_access,
+                            val_type, access.type(), mo, dep, requires_atomic_access,
                             unaligned, mismatched, unsafe, access.barrier_data());
       load = kit->gvn().transform(load);
     } else {
@@ -226,8 +225,8 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
     Node* control = control_dependent ? opt_access.ctl() : nullptr;
     MergeMemNode* mm = opt_access.mem();
     PhaseGVN& gvn = opt_access.gvn();
-    Node* mem = mm->memory_at(gvn.C->get_alias_index(adr_type));
-    load = LoadNode::make(gvn, control, mem, adr, adr_type, val_type, access.type(), mo, dep,
+    Node* mem = mm->memory_at(gvn.C->get_alias_index(gvn.type(adr)->isa_ptr()));
+    load = LoadNode::make(gvn, control, mem, adr, val_type, access.type(), mo, dep,
                           requires_atomic_access, unaligned, mismatched, unsafe, access.barrier_data());
     load = gvn.transform(load);
   }

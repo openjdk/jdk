@@ -219,7 +219,6 @@ class IdealKit: public StackObj {
              Node* adr,
              const Type* t,
              BasicType bt,
-             int adr_idx,
              bool require_atomic_access = false,
              MemNode::MemOrd mo = MemNode::unordered,
              LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest);
@@ -229,7 +228,6 @@ class IdealKit: public StackObj {
               Node* adr,
               Node* val,
               BasicType bt,
-              int adr_idx,
               MemNode::MemOrd mo,
               bool require_atomic_access = false,
               bool mismatched = false);

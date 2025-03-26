@@ -1561,7 +1561,7 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
   const TypePtr* adr_type = nullptr; // debug-mode-only argument
   debug_only(adr_type = C->get_adr_type(adr_idx));
   Node* mem = memory(adr_idx);
-  Node* ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo, control_dependency, require_atomic_access, unaligned, mismatched, unsafe, barrier_data);
+  Node* ld = LoadNode::make(_gvn, ctl, mem, adr, t, bt, mo, control_dependency, require_atomic_access, unaligned, mismatched, unsafe, barrier_data);
   ld = _gvn.transform(ld);
   if (((bt == T_OBJECT) && C->do_escape_analysis()) || C->eliminate_boxing()) {
     // Improve graph before escape analysis and boxing elimination.
@@ -3009,8 +3009,7 @@ void GraphKit::guard_klass_being_initialized(Node* klass) {
   int init_state_off = in_bytes(InstanceKlass::init_state_offset());
   Node* adr = basic_plus_adr(top(), klass, init_state_off);
   Node* init_state = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
-                                    adr->bottom_type()->is_ptr(), TypeInt::BYTE,
-                                    T_BYTE, MemNode::acquire);
+                                    TypeInt::BYTE, T_BYTE, MemNode::acquire);
   init_state = _gvn.transform(init_state);
 
   Node* being_initialized_state = makecon(TypeInt::make(InstanceKlass::being_initialized));
@@ -3028,8 +3027,7 @@ void GraphKit::guard_init_thread(Node* klass) {
   Node* adr = basic_plus_adr(top(), klass, init_thread_off);
 
   Node* init_thread = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
-                                     adr->bottom_type()->is_ptr(), TypePtr::NOTNULL,
-                                     T_ADDRESS, MemNode::unordered);
+                                     TypePtr::NOTNULL, T_ADDRESS, MemNode::unordered);
   init_thread = _gvn.transform(init_thread);
 
   Node* cur_thread = _gvn.transform(new ThreadLocalNode());
