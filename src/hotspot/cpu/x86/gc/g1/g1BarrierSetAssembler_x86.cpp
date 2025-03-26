@@ -105,19 +105,18 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
 }
 
 void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                    Register dst, Address src, Register tmp1, Register tmp_thread) {
+                                    Register dst, Address src, Register tmp1) {
   bool on_oop = is_reference_type(type);
   bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
   bool on_reference = on_weak || on_phantom;
-  ModRefBarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+  ModRefBarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1);
   if (on_oop && on_reference) {
     // Generate the G1 pre-barrier code to log the value of
     // the referent field in an SATB buffer.
     g1_write_barrier_pre(masm /* masm */,
                          noreg /* obj */,
                          dst /* pre_val */,
-                         r15_thread /* thread */,
                          tmp1 /* tmp */,
                          true /* tosca_live */,
                          true /* expand_call */);
@@ -161,7 +160,7 @@ static void generate_pre_barrier_slow_path(MacroAssembler* masm,
                                            Label& runtime) {
   // Do we need to load the previous value?
   if (obj != noreg) {
-    __ load_heap_oop(pre_val, Address(obj, 0), noreg, noreg, AS_RAW);
+    __ load_heap_oop(pre_val, Address(obj, 0), noreg, AS_RAW);
   }
   // Is the previous value null?
   __ cmpptr(pre_val, NULL_WORD);
@@ -177,7 +176,6 @@ static void generate_pre_barrier_slow_path(MacroAssembler* masm,
 void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
                                                  Register obj,
                                                  Register pre_val,
-                                                 Register thread,
                                                  Register tmp,
                                                  bool tosca_live,
                                                  bool expand_call) {
@@ -185,7 +183,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   // directly to skip generating the check by
   // InterpreterMacroAssembler::call_VM_leaf_base that checks _last_sp.
 
-  assert(thread == r15_thread, "must be"); // FIXME
+  const Register thread = r15_thread;
 
   Label done;
   Label runtime;
@@ -288,10 +286,9 @@ static void generate_post_barrier_slow_path(MacroAssembler* masm,
 void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
                                                   Register store_addr,
                                                   Register new_val,
-                                                  Register thread,
                                                   Register tmp,
                                                   Register tmp2) {
-  assert(thread == r15_thread, "must be"); // TODO: rely on R15
+  const Register thread = r15_thread;
 
   Label done;
   Label runtime;
@@ -330,10 +327,10 @@ static void generate_c2_barrier_runtime_call(MacroAssembler* masm, G1BarrierStub
 void G1BarrierSetAssembler::g1_write_barrier_pre_c2(MacroAssembler* masm,
                                                     Register obj,
                                                     Register pre_val,
-                                                    Register thread,
                                                     Register tmp,
                                                     G1PreBarrierStubC2* stub) {
-  assert(thread == r15_thread, "must be"); // TODO: Rely on r15
+  const Register thread = r15_thread;
+
   assert(pre_val != noreg, "check this code");
   if (obj != noreg) {
     assert_different_registers(obj, pre_val, tmp);
@@ -369,12 +366,10 @@ void G1BarrierSetAssembler::generate_c2_pre_barrier_stub(MacroAssembler* masm,
 void G1BarrierSetAssembler::g1_write_barrier_post_c2(MacroAssembler* masm,
                                                      Register store_addr,
                                                      Register new_val,
-                                                     Register thread,
                                                      Register tmp,
                                                      Register tmp2,
                                                      G1PostBarrierStubC2* stub) {
-  assert(thread == r15_thread, "must be"); // TODO: rely on r15
-
+  const Register thread = r15_thread;
   stub->initialize_registers(thread, tmp, tmp2);
 
   bool new_val_may_be_null = (stub->barrier_data() & G1C2BarrierPostNotNull) == 0;
@@ -426,7 +421,6 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
     g1_write_barrier_pre(masm /*masm*/,
                          tmp1 /* obj */,
                          tmp2 /* pre_val */,
-                         r15_thread /* thread */,
                          tmp3  /* tmp */,
                          val != noreg /* tosca_live */,
                          false /* expand_call */);
@@ -447,7 +441,6 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
       g1_write_barrier_post(masm /*masm*/,
                             tmp1 /* store_adr */,
                             new_val /* new_val */,
-                            r15_thread /* thread */,
                             tmp3 /* tmp */,
                             tmp2 /* tmp2 */);
     }

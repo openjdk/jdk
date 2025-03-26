@@ -3981,7 +3981,7 @@ address StubGenerator::generate_upcall_stub_load_target() {
   __ load_heap_oop(rbx, Address(rbx, java_lang_invoke_MemberName::method_offset()), rscratch1);
   __ access_load_at(T_ADDRESS, IN_HEAP, rbx,
                     Address(rbx, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
-                    noreg, noreg);
+                    noreg);
   __ movptr(Address(r15_thread, JavaThread::callee_target_offset()), rbx); // just in case callee is deoptimized
 
   __ ret(0);
