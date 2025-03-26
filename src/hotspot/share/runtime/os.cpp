@@ -1552,7 +1552,7 @@ void os::read_image_release_file() {
       }
       fseek(file, 0, SEEK_SET);
 
-      _image_release_file_content = (char*) os::malloc(sz, mtInternal);
+      _image_release_file_content = (char*) os::malloc(sz + 1, mtInternal);
       if (!_image_release_file_content) {
         fclose(file);
         free(release_file);
@@ -1561,6 +1561,11 @@ void os::read_image_release_file() {
 
       size_t elements_read = fread(_image_release_file_content, 1, sz, file);
       if (elements_read < (size_t)sz) _image_release_file_content[elements_read] = '\0';
+      _image_release_file_content[sz] = '\0';
+      // issues with \r in line endings on Windows, so better replace those
+      for (size_t i=0; i < elements_read; i++) {
+        if (_image_release_file_content[i] == '\r') { _image_release_file_content[i] = ' '; }
+      }
       fclose(file);
     }
     free(release_file);
