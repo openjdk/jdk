@@ -201,13 +201,16 @@ abstract class ExchangeImpl<T> {
                     // We don't know if the server supports HTTP/3.
                     // happy eyeball: prepare to try both HTTP/3 and HTTP/2 and
                     //      to use the first that succeeds
-                    if (debug.on()) {
-                        debug.log("get: trying with both HTTP/3 and HTTP/2");
-                    }
                     if (config != H3DiscoveryMode.HTTP_3_ONLY) {
+                        if (debug.on()) {
+                            debug.log("get: trying with both HTTP/3 and HTTP/2");
+                        }
                         Http2ClientImpl client2 = exchange.client().client2();
                         c2fs = () -> client2.getConnectionFor(request, exchange);
                     } else {
+                        if (debug.on()) {
+                            debug.log("get: trying with HTTP/3 only");
+                        }
                         c2fs = null;
                     }
                 } else {
