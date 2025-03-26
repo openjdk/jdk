@@ -1282,7 +1282,7 @@ instruction_set64 = {
         ('elzcntq', 'lzcnt', 64, True),
         ('enegq', 'neg', 64, False),
         ('enegq', 'neg', 64, True),
-        #('enotq', 'not', 64, None),
+        ('enotq', 'not', 64, None),
         ('epopcntq', 'popcnt', 64, False),
         ('epopcntq', 'popcnt', 64, True),
         ('erolq', 'rol', 64, False),
@@ -1367,7 +1367,7 @@ instruction_set64 = {
         ('eimulq', 'imul', 64, True),
         ('eorq', 'or', 64, False),
         ('eorq', 'or', 64, True),
-        #('erclq', 'rcl', 64, None),  encoding bug
+        ('erclq', 'rcl', 64, None),
         ('erolq', 'rol', 64, False),
         ('erolq', 'rol', 64, True),
         ('erorq', 'ror', 64, False),
@@ -1386,8 +1386,8 @@ instruction_set64 = {
         ('exorq', 'xor', 64, True),
         ('eorq_imm32', 'or', 64, False),
         ('eorq_imm32', 'or', 64, False),
-        ('esubq_imm32', 'sub', 64, False), 
-        ('esubq_imm32', 'sub', 64, True), 
+        ('esubq_imm32', 'sub', 64, False),
+        ('esubq_imm32', 'sub', 64, True),
     ],
     RegRegMemNddInstruction: [
         ('eaddq', 'add', 64, False),
@@ -1406,7 +1406,7 @@ instruction_set64 = {
     RegRegRegNddInstruction: [
         ('eaddq', 'add', 64, False),
         ('eaddq', 'add', 64, True),
-        ('eadcxq', 'adcx', 64, None), #bug not in demotion
+        ('eadcxq', 'adcx', 64, None),
         ('eadoxq', 'adox', 64, None),
         ('eandq', 'and', 64, False),
         ('eandq', 'and', 64, True),
@@ -1451,7 +1451,7 @@ if __name__ == "__main__":
 
     for RegOp, ops in instruction_set.items():
         generate(RegOp, ops, True, full_set)
-        
+
     if lp64_flag:
         lp64_flag = False
         print("#endif // _LP64")
