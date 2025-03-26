@@ -392,7 +392,6 @@ public interface HttpServerAdapters {
          *
          * @return the maximum pushId allowed (exclusive)
          *
-         * @throws IOException if an error accurs
          * @throws UnsupportedOperationException if the exchange is not {@link
          *         #getExchangeVersion() HTTP_3}
          */

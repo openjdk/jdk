@@ -192,7 +192,7 @@ public interface Http2TestExchange {
     }
 
     /**
-     * For HTTP/3 only: aits until the given {@code pushId} is allowed by
+     * For HTTP/3 only: waits until the given {@code pushId} is allowed by
      * the HTTP/3 peer.
      *
      * @implSpec
@@ -203,7 +203,6 @@ public interface Http2TestExchange {
      *
      * @return the upper bound pf the maximum pushId allowed (exclusive)
      *
-     * @throws IOException if an error accurs
      * @throws UnsupportedOperationException if the exchange is not {@link
      *         #getExchangeVersion() HTTP_3}
      */
