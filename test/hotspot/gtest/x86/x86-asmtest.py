@@ -393,7 +393,7 @@ class RegRegImmNddInstruction(NFInstruction):
     def astr(self):
         if self.demote:
             ops = [op.cstr() for op in self.operands]
-            if is_legacy_gpr(ops[0]) and ops[0] == ops[1] and (not self.no_flag):
+            if ops[0] == ops[1] and (not self.no_flag):
                 cl_str = (', cl' if self._name in shift_rot_ops and len(self.operands) == 2 else '')
                 return  f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]]) + cl_str
         return super().astr()
@@ -418,7 +418,7 @@ class RegRegRegNddInstruction(NFInstruction):
         hdr = f'{{load}}'
         if self.demote:
             ops = [op.cstr() for op in self.operands]
-            if is_legacy_gpr(ops[0]) and is_legacy_gpr(ops[2]) and ops[0] == ops[1] and (not self.no_flag):
+            if ops[0] == ops[1] and (not self.no_flag):
                 return  hdr + f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]])
         return hdr + super().astr()
 
@@ -433,6 +433,8 @@ class RegRegRegImmNddInstruction(NFInstruction):
 
 test_regs = [key for key in registers_mapping.keys() if key != 'rax']
 legacy_test_regs = ['rax', 'rcx', 'rdx', 'rbx', 'r8', 'r9', 'r10', 'r11', 'r12', 'r13', 'r14', 'r15']
+apx_test_regs = ['r16', 'r17', 'r18', 'r19', 'r20', 'r21', 'r22', 'r23', 'r24', 'r25', 'r26', 'r27', 'r28', 'r29', 'r30', 'r31']
+
 
 immediates32 = [2 ** i for i in range(0, 32, 4)]
 immediates16 = [2 ** i for i in range(0, 16, 2)]
@@ -544,9 +546,9 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                     print_instruction(instr, lp64_flag, print_lp64_flag)
             else:
                 for i in range(2):
-                    test_reg1 =  random.choice(legacy_test_regs if i == 0 else test_regs) #test_regs[3]
+                    test_reg1 =  random.choice(test_regs)
                     test_reg2 = test_reg1 if i == 0 else random.choice(test_regs)
-                    test_reg3 = random.choice(legacy_test_regs if i == 0 else test_regs) #test_regs[5]
+                    test_reg3 = random.choice(test_regs)
                     lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2, test_reg3)
                     instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
@@ -642,7 +644,7 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
 
                 if RegOp in [RegRegImmNddInstruction]:
                     for i in range(2):
-                        test_reg1 = random.choice(legacy_test_regs if i == 0 else test_regs) #test_regs[3]
+                        test_reg1 = random.choice(test_regs)
                         test_reg2 = test_reg1 if i == 0 else random.choice(test_regs)
                 else:
                     test_reg1 = random.choice(test_regs)
