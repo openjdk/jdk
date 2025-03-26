@@ -116,7 +116,8 @@ public class FileFontStrike extends PhysicalStrike {
     /* Perform global initialisation needed for Windows native rasterizer */
     private static native void initNative();
     static {
-        if (FontUtilities.isWindows && !FontUtilities.useJDKScaler && !GraphicsEnvironment.isHeadless()) {
+        if (FontUtilities.isWindows && !FontUtilities.useJDKScaler &&
+            !GraphicsEnvironment.isHeadless()) {
             initNative();
         }
     }
