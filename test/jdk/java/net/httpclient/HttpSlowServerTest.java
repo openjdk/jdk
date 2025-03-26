@@ -67,6 +67,7 @@ import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
  * @run main/othervm -Dtest.requiresHost=true
  *                   -Djdk.httpclient.HttpClient.log=headers
  *                   -Djdk.internal.httpclient.debug=false
+ *                   -Djdk.httpclient.quic.maxInitialTimeout=60
  *                   HttpSlowServerTest
  *
  */
