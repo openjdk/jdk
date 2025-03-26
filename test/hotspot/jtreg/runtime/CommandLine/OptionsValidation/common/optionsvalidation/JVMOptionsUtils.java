@@ -53,7 +53,7 @@ public class JVMOptionsUtils {
     private static final StringBuilder finalFailedMessage = new StringBuilder();
 
     /* Used to start the JVM with the same type as current */
-    static String VMType = null;
+    static String VMType;
 
     /* Used to start the JVM with the same GC type as current */
     static String GCType;
@@ -61,14 +61,17 @@ public class JVMOptionsUtils {
     private static Map<String, JVMOption> optionsAsMap;
 
     static {
-        if (!Platform.isStatic()) {
-            if (Platform.isServer()) {
-                VMType = "-server";
-            } else if (Platform.isClient()) {
-                VMType = "-client";
-            } else if (Platform.isMinimal()) {
-                VMType = "-minimal";
-            }
+        if (Platform.isStatic()) {
+            // -server|-client|-minimal flags are not supported on static JDK.
+            VMType = null;
+        } else if (Platform.isServer()) {
+            VMType = "-server";
+        } else if (Platform.isClient()) {
+            VMType = "-client";
+        } else if (Platform.isMinimal()) {
+            VMType = "-minimal";
+        } else {
+            VMType = null;
         }
 
         List<GarbageCollectorMXBean> gcMxBeans = ManagementFactory.getGarbageCollectorMXBeans();
