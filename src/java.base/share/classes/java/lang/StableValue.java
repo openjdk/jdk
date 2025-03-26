@@ -407,23 +407,10 @@ public sealed interface StableValue<T>
      * }
      * <p>
      * When this method returns successfully, the content is always set.
-     *
-     * @implSpec The implementation logic is equivalent to the following steps for this
-     *           {@code stable}:
-     *
-     * {@snippet lang=java:
-     * if (stable.isSet()) {
-     *     return stable.orElseThrow();
-     * } else {
-     *     T newValue = supplier.get();
-     *     stable.setOrThrow(newValue);
-     *     return newValue;
-     * }
-     * }
-     * Except it is thread-safe and will only return the same witness value
-     * regardless if invoked by several threads. Also, the provided {@code supplier}
-     * will only be invoked once even if invoked from several threads unless the
-     * {@code supplier} throws an exception.
+     * <p>
+     * This method will always return the same witness value regardless if invoked by
+     * several threads. Also, the provided {@code supplier} will only be invoked once even
+     * if invoked from several threads unless the {@code supplier} throws an exception.
      *
      * @param  supplier to be used for computing the content, if not previously set
      * @throws IllegalStateException if the provided {@code supplier} recursively
