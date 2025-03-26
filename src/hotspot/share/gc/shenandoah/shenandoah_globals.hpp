@@ -34,6 +34,40 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
+  product(uintx, ShenandoahRateAccelerationSampleSize, 4, EXPERIMENTAL,     \
+          "In selected ShenandoahControlIntervals (if 2 ms has passed "     \
+          "since previous control interval executed), "                     \
+          "we compute the allocation rate since the previous rate was "     \
+          "sampled.  This many samples are analyzed to determine whether "  \
+          "allocation rates are accelerating.  Acceleration may occur "     \
+          "due to increasing client demand or due to phase changes in "     \
+          "an application.  A larger value reduces sensitivity to "         \
+          "noise and delays recognition of the accelerating trend.  A "     \
+          "larger value may also cause the heuristic to miss detection "    \
+          "of very quick accelerations.  Smaller values may cause random "  \
+          "noise to be perceived as acceleration of allocation rate, "      \
+          "triggering excess collections.")                                 \
+                                                                            \
+  product(uintx, ShenandoahMomentaryAllocationRateSpikeSampleSize,          \
+          1, EXPERIMENTAL,                                                  \
+          "In selected ShenandoahControlIntervals (if 2 ms has passed "     \
+          "since previous control interval executed), we compute "          \
+          "the allocation rate since the previous rate was sampled. "       \
+          "The weighted average of this "                                   \
+          "many most recent momentary allocation rate samples is compared " \
+          "against current allocation runway and anticipated GC time to "   \
+          "determine whether a spike in momentary allocation rate "         \
+          "justifies an early GC trigger.  Momentary allocation spike "     \
+          "detection is in addition to previously implemented "             \
+          "ShenandoahAdaptiveInitialSpikeThreshold, the latter of which "   \
+          "is more effective at detecting slower spikes.  The latter "      \
+          "spike detection samples at the rate specifieid by "              \
+          "ShenandoahAdaptiveSampleFrequencyHz.  The value of this "        \
+          "parameter must be less than the value of "                       \
+          "ShenandoahRateAccelerationSampleSize.  A larger value makes "    \
+          "momentary spike detection less sensitive.  A smaller value "     \
+          "may result in excessive GC triggers.")                           \
+                                                                            \
   product(uintx, ShenandoahGenerationalHumongousReserve, 0, EXPERIMENTAL,   \
           "(Generational mode only) What percent of the heap should be "    \
           "reserved for humongous objects if possible.  Old-generation "    \

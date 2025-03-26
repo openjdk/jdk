@@ -125,6 +125,7 @@ private:
   ShenandoahReferenceProcessor* ref_processor() { return _ref_processor; }
 
   virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode);
+  virtual void post_initialize_heuristics();
 
   size_t soft_max_capacity() const override { return _soft_max_capacity; }
   size_t max_capacity() const override      { return _max_capacity; }

@@ -60,7 +60,7 @@ bool ShenandoahMetricsSnapshot::is_good_progress(ShenandoahGeneration* generatio
   ShenandoahFreeSet* free_set = _heap->free_set();
   size_t free_actual   = free_set->available();
 
-  // ShenandoahCriticalFreeThreshold is expressed as a percentage.  We multiple this percentage by 1/100th
+  // ShenandoahCriticalFreeThreshold is expressed as a percentage.  We multiply this percentage by 1/100th
   // of the generation capacity to determine whether the available memory within the generation exceeds the
   // critical threshold.
   size_t free_expected = (generation->max_capacity() / 100) * ShenandoahCriticalFreeThreshold;

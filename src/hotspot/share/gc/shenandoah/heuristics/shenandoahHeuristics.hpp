@@ -85,14 +85,13 @@ protected:
   size_t _declined_trigger_count;         // This counts how many times since previous GC finished that this
                                           //  heuristic has answered false to should_start_gc().
   size_t _most_recent_declined_trigger_count;
-                                       ;  // This represents the value of _declined_trigger_count as captured at the
+                                          // This represents the value of _declined_trigger_count as captured at the
                                           //  moment the most recent GC effort was triggered.  In case the most recent
                                           //  concurrent GC effort degenerates, the value of this variable allows us to
                                           //  differentiate between degeneration because heuristic was overly optimistic
                                           //  in delaying the trigger vs. degeneration for other reasons (such as the
                                           //  most recent GC triggered "immediately" after previous GC finished, but the
                                           //  free headroom has already been depleted).
-
   class RegionData {
     private:
     ShenandoahHeapRegion* _region;
@@ -164,6 +163,7 @@ protected:
 
   size_t _guaranteed_gc_interval;
 
+  double _precursor_cycle_start;
   double _cycle_start;
   double _last_cycle_end;
 
@@ -180,7 +180,7 @@ protected:
                                                      RegionData* data, size_t data_size,
                                                      size_t free) = 0;
 
-  void adjust_penalty(intx step);
+  virtual void adjust_penalty(intx step);
 
   inline void accept_trigger() {
     _most_recent_declined_trigger_count = _declined_trigger_count;
@@ -204,7 +204,13 @@ public:
     _guaranteed_gc_interval = guaranteed_gc_interval;
   }
 
+  virtual void start_idle_span();
+  virtual void start_evac_span();
+  virtual void resume_idle_span();
+
   virtual void record_cycle_start();
+
+  void record_degenerated_cycle_start(bool out_of_cycle);
 
   virtual void record_cycle_end();
 
@@ -238,8 +244,10 @@ public:
   virtual bool is_diagnostic() = 0;
   virtual bool is_experimental() = 0;
   virtual void initialize();
+  virtual void post_initialize();
 
   double elapsed_cycle_time() const;
+  double elapsed_degenerated_cycle_time() const;
 
   // Format prefix and emit log message indicating a GC cycle hs been triggered
   void log_trigger(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3);

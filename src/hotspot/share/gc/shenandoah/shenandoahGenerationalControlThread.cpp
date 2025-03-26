@@ -633,8 +633,9 @@ void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(const Sh
   assert(_degen_point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
 
   GCIdMark gc_id_mark;
+  request.generation->heuristics()->record_degenerated_cycle_start(ShenandoahGC::ShenandoahDegenPoint::_degenerated_outside_cycle
+                                                                  == _degen_point);
   ShenandoahGCSession session(request.cause, request.generation);
-
   ShenandoahDegenGC gc(_degen_point, request.generation);
   gc.collect(request.cause);
   _degen_point = ShenandoahGC::_degenerated_unset;

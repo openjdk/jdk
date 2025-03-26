@@ -199,6 +199,7 @@ public:
   void post_initialize() override;
   void initialize_mode();
   virtual void initialize_heuristics();
+  virtual void post_initialize_heuristics();
   virtual void print_init_logger() const;
   void initialize_serviceability() override;
 
@@ -399,6 +400,8 @@ public:
   bool has_changed() {
     return _heap_changed.try_unset();
   }
+
+  virtual void start_idle_span();
 
   void set_concurrent_young_mark_in_progress(bool in_progress);
   void set_concurrent_old_mark_in_progress(bool in_progress);
@@ -692,6 +695,7 @@ protected:
   inline HeapWord* allocate_from_gclab(Thread* thread, size_t size);
 
 private:
+  size_t _mutator_free_after_updaterefs;
   HeapWord* allocate_memory_under_lock(ShenandoahAllocRequest& request, bool& in_new_region);
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
@@ -719,6 +723,9 @@ public:
   void labs_make_parsable();
   void tlabs_retire(bool resize);
   void gclabs_retire(bool resize);
+
+  inline void set_mutator_free_after_updaterefs(size_t val) { _mutator_free_after_updaterefs = val; };
+  inline size_t get_mutator_free_after_updaterefs() const   { return _mutator_free_after_updaterefs; };
 
 // ---------- Marking support
 //

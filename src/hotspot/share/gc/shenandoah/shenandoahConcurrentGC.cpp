@@ -1226,6 +1226,11 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   }
 
   heap->rebuild_free_set(true /*concurrent*/);
+#undef KELVIN_IDLE_SPAN
+#ifdef KELVIN_IDLE_SPAN
+  log_info(gc)("start_idle_span() at end of concurrent gc");
+#endif
+  heap->heuristics()->start_idle_span();
 
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_update_refs_propagate_gc_state);

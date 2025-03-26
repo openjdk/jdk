@@ -147,6 +147,12 @@ void ShenandoahGenerationalHeap::initialize_heuristics() {
   _old_generation->initialize_heuristics(mode());
 }
 
+void ShenandoahGenerationalHeap::post_initialize_heuristics() {
+  ShenandoahHeap::post_initialize_heuristics();
+  _young_generation->post_initialize_heuristics();
+  _old_generation->post_initialize_heuristics();
+}
+
 void ShenandoahGenerationalHeap::initialize_serviceability() {
   assert(mode()->is_generational(), "Only for the generational mode");
   _young_gen_memory_pool = new ShenandoahYoungGenMemoryPool(this);
@@ -181,6 +187,10 @@ void ShenandoahGenerationalHeap::gc_threads_do(ThreadClosure* tcl) const {
 void ShenandoahGenerationalHeap::stop() {
   ShenandoahHeap::stop();
   regulator_thread()->stop();
+}
+
+void ShenandoahGenerationalHeap::start_idle_span() {
+  young_generation()->heuristics()->start_idle_span();
 }
 
 void ShenandoahGenerationalHeap::evacuate_collection_set(bool concurrent) {

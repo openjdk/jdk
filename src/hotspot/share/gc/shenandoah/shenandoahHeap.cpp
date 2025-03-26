@@ -248,9 +248,6 @@ jint ShenandoahHeap::initialize() {
 
   BarrierSet::set_barrier_set(new ShenandoahBarrierSet(this, _heap_region));
 
-  // Now we know the number of regions and heap sizes, initialize the heuristics.
-  initialize_heuristics();
-
   assert(_heap_region.byte_size() == heap_rs.size(), "Need to know reserved size for card table");
 
   //
@@ -426,12 +423,6 @@ jint ShenandoahHeap::initialize() {
 
     // Initialize to complete
     _marking_context->mark_complete();
-    size_t young_cset_regions, old_cset_regions;
-
-    // We are initializing free set.  We ignore cset region tallies.
-    size_t first_old, last_old, num_old;
-    _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
-    _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
   }
 
   if (AlwaysPreTouch) {
@@ -480,7 +471,32 @@ jint ShenandoahHeap::initialize() {
     _pacer->setup_for_idle();
   }
 
+  // Now we know the number of regions and heap sizes and have initialized controller, initialize the heuristics.
+  initialize_heuristics();
+
+  // Initialization of controller markes use of varaibles esstablished by initialize_heuristics.
   initialize_controller();
+
+  // Certain initialization of heuristics must be deferred until after controller is initialized.
+  post_initialize_heuristics();
+
+  {
+    ShenandoahHeapLocker locker(lock());
+    // We are initializing free set.  We ignore cset region tallies.
+    size_t young_cset_regions, old_cset_regions;
+    size_t first_old, last_old, num_old;
+    _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
+    _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
+#undef KELVIN_VERBOSE
+#ifdef KELVIN_VERBOSE
+    log_info(gc)("starting idle span after rebuilding free set");
+#endif
+#undef KELVIN_IDLE_SPAN
+#ifdef KELVIN_IDLE_SPAN
+    log_info(gc)("start_idle_span() at post_initialize of heap");
+#endif
+    start_idle_span();
+  }
 
   if (ShenandoahUncommit) {
     _uncommit_thread = new ShenandoahUncommitThread(this);
@@ -495,6 +511,10 @@ jint ShenandoahHeap::initialize() {
 
 void ShenandoahHeap::initialize_controller() {
   _control_thread = new ShenandoahControlThread();
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+  log_info(gc)("initialize_controller set _control_thread: " PTR_FORMAT, p2i(_control_thread));
+#endif
 }
 
 void ShenandoahHeap::print_init_logger() const {
@@ -532,6 +552,11 @@ void ShenandoahHeap::initialize_heuristics() {
   _global_generation = new ShenandoahGlobalGeneration(mode()->is_generational(), max_workers(), max_capacity(), max_capacity());
   _global_generation->initialize_heuristics(mode());
 }
+
+void ShenandoahHeap::post_initialize_heuristics() {
+  _global_generation->post_initialize_heuristics();
+}
+
 
 #ifdef _MSC_VER
 #pragma warning( push )
@@ -880,6 +905,10 @@ void ShenandoahHeap::notify_heap_changed() {
   // update costs on slow path.
   monitoring_support()->notify_heap_changed();
   _heap_changed.try_set();
+}
+
+void ShenandoahHeap::start_idle_span() {
+  heuristics()->start_idle_span();
 }
 
 void ShenandoahHeap::set_forced_counters_update(bool value) {
@@ -2580,6 +2609,13 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
     old_gen->heuristics()->evaluate_triggers(first_old_region, last_old_region, old_region_count, num_regions());
   }
+#undef KELVIN_IDLE_SPAN
+#ifdef KELVIN_IDLE_SPAN
+  log_info(gc)("deprecated start_idle_span() at heap->rebuild_free_set()");
+#endif
+#ifdef KELVIN_DEPRECATE
+  start_idle_span();
+#endif
 }
 
 void ShenandoahHeap::print_extended_on(outputStream *st) const {
