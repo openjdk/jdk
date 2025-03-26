@@ -482,9 +482,16 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             boolean closed = connectionClosed;
             if (!firsPacketReceived && !closed) {
                 assert !now().isBefore(maxInitialDeadline);
-                QuicConnectionImpl.this.handshakeFlow.handshakeCF()
-                        .completeExceptionally(new ConnectException("No response from peer for %s seconds"
-                                .formatted(DEFAULT_MAX_INITIAL_TIMEOUT)));
+                var connectException = new ConnectException("No response from peer for %s seconds"
+                        .formatted(DEFAULT_MAX_INITIAL_TIMEOUT));
+                if (QuicConnectionImpl.this.handshakeFlow.handshakeCF()
+                        .completeExceptionally(connectException)) {
+                    // abandon the connection, but sends ConnectionCloseFrame
+                    TerminationCause cause = TerminationCause.forException(
+                            new QuicTransportException(connectException.getMessage(),
+                                    KeySpace.INITIAL, 0, QuicTransportErrors.APPLICATION_ERROR));
+                    terminator.terminate(cause);
+                }
                 connectionClosed = done = closed = true;
             }
             assert firsPacketReceived || closed;
