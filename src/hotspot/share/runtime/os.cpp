@@ -736,7 +736,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
   }
 
   void* rc = nullptr;
-  size_t outer_size = os::pre_alloc(&rc, memblock, size, false, mem_tag, stack);
+  size_t outer_size = os::pre_alloc2(&rc, memblock, size, false, mem_tag, stack);
   if (rc != nullptr) {
     return rc;
   }
@@ -744,8 +744,17 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     return nullptr;
   }
 
+  DEBUG_ONLY(check_crash_protection());
+
   if (MemTracker::enabled()) {
     // NMT realloc handling
+
+    outer_size = size + MemTracker::overhead_per_malloc();
+
+    // Handle size overflow.
+    if (outer_size < size) {
+      return nullptr;
+    }
 
     const size_t old_size = MallocTracker::malloc_header(memblock)->size();
 
