@@ -666,21 +666,21 @@ size_t os::pre_alloc2(void** raw_ptr, void* old_ptr, size_t size, bool check_lim
     return size;
   }
 
-  DEBUG_ONLY(check_crash_protection());
+//  DEBUG_ONLY(check_crash_protection());
+//
+//  // Observe MallocLimit
+//  if (check_limit && MemTracker::check_exceeds_limit(size, mem_tag)) {
+//    return 0;
+//  }
+//
+//  const size_t outer_size = size + MemTracker::overhead_per_malloc();
+//
+//  // Check for overflow.
+//  if (outer_size < size) {
+//    return 0;
+//  }
 
-  // Observe MallocLimit
-  if (check_limit && MemTracker::check_exceeds_limit(size, mem_tag)) {
-    return 0;
-  }
-
-  const size_t outer_size = size + MemTracker::overhead_per_malloc();
-
-  // Check for overflow.
-  if (outer_size < size) {
-    return 0;
-  }
-
-  return outer_size;
+  return size;
 }
 
 void* os::post_alloc(void* raw_ptr, size_t size, size_t chunk, MemTag mem_tag, const NativeCallStack& stack) {
@@ -735,6 +735,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     return os::malloc(size, mem_tag, stack);
   }
 
+#if 0
   // On realloc(p, 0), implementers of realloc(3) have the choice to return either
   // null or a unique non-null pointer. To unify libc behavior across our platforms
   // we chose the latter.
@@ -745,6 +746,16 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
   if (NMTPreInit::handle_realloc(&rc, memblock, size, mem_tag)) {
     return rc;
   }
+#else
+  void* rc = nullptr;
+  size = os::pre_alloc2(&rc, memblock, size, false, mem_tag, stack);
+  if (rc != nullptr) {
+    return rc;
+  }
+  if (size == 0) {
+    return nullptr;
+  }
+#endif
 
   DEBUG_ONLY(check_crash_protection());
 
