@@ -2433,7 +2433,7 @@ class StubGenerator: public StubCodeGenerator {
     // inc_counter_np(SharedRuntime::_unsafe_set_memory_ctr);
 
     {
-      Label L_exit, L_fill8Bytes, L_fill4Bytes, L_fillBytes;
+      Label L_fill8Bytes, L_fill4Bytes, L_fillBytes;
 
       const Register dest = R3_ARG1;
       const Register size = R4_ARG2;
