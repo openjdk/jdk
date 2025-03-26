@@ -735,39 +735,26 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     return os::malloc(size, mem_tag, stack);
   }
 
-#if 0
-  // On realloc(p, 0), implementers of realloc(3) have the choice to return either
-  // null or a unique non-null pointer. To unify libc behavior across our platforms
-  // we chose the latter.
-  size = MAX2((size_t)1, size);
-
-  // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
-  if (NMTPreInit::handle_realloc(&rc, memblock, size, mem_tag)) {
-    return rc;
-  }
-#else
-  void* rc = nullptr;
-  size = os::pre_alloc2(&rc, memblock, size, false, mem_tag, stack);
+  size_t outer_size = os::pre_alloc(&rc, memblock, size, false, mem_tag, stack);
   if (rc != nullptr) {
     return rc;
   }
-  if (size == 0) {
+  if (outer_size == 0) {
     return nullptr;
   }
-#endif
 
-  DEBUG_ONLY(check_crash_protection());
+//  DEBUG_ONLY(check_crash_protection());
 
   if (MemTracker::enabled()) {
     // NMT realloc handling
 
-    const size_t new_outer_size = size + MemTracker::overhead_per_malloc();
-
-    // Handle size overflow.
-    if (new_outer_size < size) {
-      return nullptr;
-    }
+//    const size_t new_outer_size = size + MemTracker::overhead_per_malloc();
+//
+//    // Handle size overflow.
+//    if (new_outer_size < size) {
+//      return nullptr;
+//    }
 
     const size_t old_size = MallocTracker::malloc_header(memblock)->size();
 
@@ -786,9 +773,9 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     header->mark_block_as_dead();
 
     // the real realloc
-    ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc(header, new_outer_size);)
+    ALLOW_C_FUNCTION(::realloc, void* const outer_ptr = ::realloc(header, outer_size);)
 
-    if (new_outer_ptr == nullptr) {
+    if (outer_ptr == nullptr) {
       // realloc(3) failed and the block still exists.
       // We have however marked it as dead, revert this change.
       header->revive();
@@ -799,7 +786,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
 
     // After a successful realloc(3), we account the resized block with its new size
     // to NMT.
-    rc = MemTracker::record_malloc(new_outer_ptr, size, mem_tag, stack);
+    rc = MemTracker::record_malloc(outer_ptr, size, mem_tag, stack);
 
 #ifdef ASSERT
     assert(old_size == free_info.size, "Sanity");
