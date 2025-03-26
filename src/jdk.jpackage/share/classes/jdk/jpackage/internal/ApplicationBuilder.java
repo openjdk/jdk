@@ -39,6 +39,7 @@ import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.LauncherStartupInfo;
 import jdk.jpackage.internal.model.RuntimeBuilder;
 
 final class ApplicationBuilder {
@@ -106,6 +107,10 @@ final class ApplicationBuilder {
         return this;
     }
 
+    Optional<ApplicationLaunchers> launchers() {
+        return Optional.ofNullable(launchers);
+    }
+
     ApplicationBuilder appImageLayout(AppImageLayout v) {
         appImageLayout = v;
         return this;
@@ -144,6 +149,29 @@ final class ApplicationBuilder {
     ApplicationBuilder contentDirs(List<Path> v) {
         contentDirs = v;
         return this;
+    }
+
+    static Launcher overrideLauncherStartupInfo(Launcher launcher, LauncherStartupInfo startupInfo) {
+        return new Launcher.Stub(launcher.name(), Optional.of(startupInfo),
+                launcher.fileAssociations(), launcher.isService(), launcher.description(),
+                launcher.icon(), launcher.defaultIconResourceName(), launcher.extraAppImageFileData());
+    }
+
+    record MainLauncherStartupInfo(String qualifiedClassName) implements LauncherStartupInfo {
+        @Override
+        public List<String> javaOptions() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<String> defaultParameters() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<Path> classPath() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     private record Defaults(String version, String vendor) {
