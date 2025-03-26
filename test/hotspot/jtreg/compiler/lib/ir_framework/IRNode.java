@@ -1470,6 +1470,11 @@ public class IRNode {
         optoOnly(OOPMAP_WITH, regex);
     }
 
+    public static final String OPAQUE_TEMPLATE_ASSERTION_PREDICATE = PREFIX + "OPAQUE_TEMPLATE_ASSERTION_PREDICATE" + POSTFIX;
+    static {
+        fromAfterLoopPredicationRcToBeforeCCP1(OPAQUE_TEMPLATE_ASSERTION_PREDICATE, "OpaqueTemplateAssertionPredicate");
+    }
+
     public static final String OR_I = PREFIX + "OR_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(OR_I, "OrI");
@@ -2809,6 +2814,16 @@ public class IRNode {
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
                                                                           CompilePhase.OPTIMIZE_FINISHED,
                                                                           CompilePhase.BEFORE_MATCHING));
+    }
+
+    /**
+     * Apply {@code regex} on all ideal graph phases starting from {@link CompilePhase#AFTER_LOOP_PREDICATION_RC}
+     * up to and including {@link CompilePhase#BEFORE_CCP1}
+     */
+    private static void fromAfterLoopPredicationRcToBeforeCCP1(String irNodePlaceholder, String regex) {
+        IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.AFTER_BEAUTIFY_LOOPS, regex,
+                                                                          CompilePhase.AFTER_LOOP_PREDICATION_RC,
+                                                                          CompilePhase.BEFORE_CCP1));
     }
 
     private static void trapNodes(String irNodePlaceholder, String trapReason) {
