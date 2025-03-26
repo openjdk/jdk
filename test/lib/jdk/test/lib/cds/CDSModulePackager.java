@@ -25,12 +25,10 @@
 package jdk.test.lib.cds;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import jdk.test.lib.StringArrayUtils;
 import jdk.test.lib.compiler.CompilerUtils;
-import jdk.test.lib.util.FileUtils;
 import jdk.test.lib.cds.CDSJarUtils.JarOptions;
 
 

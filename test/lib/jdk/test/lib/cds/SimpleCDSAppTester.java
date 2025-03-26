@@ -26,11 +26,9 @@ package jdk.test.lib.cds;
 import java.io.File;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.cds.CDSTestUtils;
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.StringArrayUtils;
 import jdk.test.whitebox.WhiteBox;
-import jtreg.SkippedException;
 
 import java.util.function.Consumer;
 
