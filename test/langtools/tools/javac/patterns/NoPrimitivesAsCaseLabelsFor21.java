@@ -131,7 +131,7 @@ public class NoPrimitivesAsCaseLabelsFor21 extends TestRunner {
         }
     }
 
-    private String findPrimitiveBootstrapArguments(Path forFile) throws IOException {    
+    private String findPrimitiveBootstrapArguments(Path forFile) throws IOException {
         AtomicBoolean hasTypeSwitchBootStrap = new AtomicBoolean();
         StringBuilder nonClassInTypeSwitchBootStrap = new StringBuilder();
         ClassModel testClassFileModel = ClassFile.of().parse(forFile);
