@@ -120,7 +120,7 @@ address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler() {
              CAST_FROM_FN_PTR(address,
                               InterpreterRuntime::
                               throw_ArrayIndexOutOfBoundsException),
-             rax, rbx);
+             c_rarg1, rbx);
   return entry;
 }
 
