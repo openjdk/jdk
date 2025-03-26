@@ -869,13 +869,43 @@ void RelocIterator::print_current() {
       static_call_Relocation* r = (static_call_Relocation*) reloc();
       tty->print(" | [destination=" INTPTR_FORMAT " metadata=" INTPTR_FORMAT "]",
                  p2i(r->destination()), p2i(r->method_value()));
+      CodeBlob* cb = CodeCache::find_blob(r->destination());
+      if (cb != nullptr) {
+        tty->print(" Blob::%s", cb->name());
+      }
       break;
     }
   case relocInfo::runtime_call_type:
   case relocInfo::runtime_call_w_cp_type:
     {
       CallRelocation* r = (CallRelocation*) reloc();
-      tty->print(" | [destination=" INTPTR_FORMAT "]", p2i(r->destination()));
+      address dest = r->destination();
+      tty->print(" | [destination=" INTPTR_FORMAT "]", p2i(dest));
+      if (StubRoutines::contains(dest)) {
+        StubCodeDesc* desc = StubCodeDesc::desc_for(dest);
+        if (desc == nullptr) {
+          desc = StubCodeDesc::desc_for(dest + frame::pc_return_offset);
+        }
+        if (desc != nullptr) {
+          tty->print(" Stub::%s", desc->name());
+        }
+      } else {
+        CodeBlob* cb = CodeCache::find_blob(dest);
+        if (cb != nullptr) {
+          tty->print(" %s", cb->name());
+        } else {
+          ResourceMark rm;
+          const int buflen = 1024;
+          char* buf = NEW_RESOURCE_ARRAY(char, buflen);
+          int offset;
+          if (os::dll_address_to_function_name(dest, buf, buflen, &offset)) {
+            tty->print(" %s", buf);
+            if (offset != 0) {
+              tty->print("+%d", offset);
+            }
+          }
+        }
+      }
       break;
     }
   case relocInfo::virtual_call_type:
@@ -883,6 +913,10 @@ void RelocIterator::print_current() {
       virtual_call_Relocation* r = (virtual_call_Relocation*) reloc();
       tty->print(" | [destination=" INTPTR_FORMAT " cached_value=" INTPTR_FORMAT " metadata=" INTPTR_FORMAT "]",
                  p2i(r->destination()), p2i(r->cached_value()), p2i(r->method_value()));
+      CodeBlob* cb = CodeCache::find_blob(r->destination());
+      if (cb != nullptr) {
+        tty->print(" Blob::%s", cb->name());
+      }
       break;
     }
   case relocInfo::static_stub_type:
@@ -902,6 +936,10 @@ void RelocIterator::print_current() {
       opt_virtual_call_Relocation* r = (opt_virtual_call_Relocation*) reloc();
       tty->print(" | [destination=" INTPTR_FORMAT " metadata=" INTPTR_FORMAT "]",
                  p2i(r->destination()), p2i(r->method_value()));
+      CodeBlob* cb = CodeCache::find_blob(r->destination());
+      if (cb != nullptr) {
+        tty->print(" Blob::%s", cb->name());
+      }
       break;
     }
   default:

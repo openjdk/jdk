@@ -369,7 +369,7 @@ public final class NetworkInterface {
      * this machine.
      *
      * @apiNote This method can be used in combination with
-     * {@link #inetAddresses()}} to obtain a stream of all IP addresses for
+     * {@link #inetAddresses()} to obtain a stream of all IP addresses for
      * this node, for example:
      * <pre> {@code
      * Stream<InetAddress> addrs = NetworkInterface.networkInterfaces()

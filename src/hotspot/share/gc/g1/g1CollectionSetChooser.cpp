@@ -96,14 +96,14 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       _data[idx] = CandidateInfo(hr);
     }
 
-    void sort_by_reclaimable_bytes() {
+    void sort_by_gc_efficiency() {
       if (_cur_claim_idx == 0) {
         return;
       }
       for (uint i = _cur_claim_idx; i < _max_size; i++) {
         assert(_data[i]._r == nullptr, "must be");
       }
-      qsort(_data, _cur_claim_idx, sizeof(_data[0]), (_sort_Fn)G1CSetCandidateGroup::compare_reclaimble_bytes);
+      qsort(_data, _cur_claim_idx, sizeof(_data[0]), (_sort_Fn)G1CollectionSetCandidateInfo::compare_region_gc_efficiency);
       for (uint i = _cur_claim_idx; i < _max_size; i++) {
         assert(_data[i]._r == nullptr, "must be");
       }
@@ -247,7 +247,7 @@ public:
   }
 
   void sort_and_prune_into(G1CollectionSetCandidates* candidates) {
-    _result.sort_by_reclaimable_bytes();
+    _result.sort_by_gc_efficiency();
     prune(_result.array());
     candidates->set_candidates_from_marking(_result.array(),
                                             _num_regions_added);

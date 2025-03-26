@@ -75,7 +75,6 @@ ifneq ($(SKIP_SPEC), true)
 
   # Basic checks on environment and command line.
   $(eval $(call CheckControlVariables))
-  $(eval $(call CheckDeprecatedEnvironment))
   $(eval $(call CheckInvalidMakeFlags))
 
   # Check that CONF_CHECK is valid.

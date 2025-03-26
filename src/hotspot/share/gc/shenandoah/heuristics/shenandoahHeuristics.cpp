@@ -188,6 +188,7 @@ void ShenandoahHeuristics::record_cycle_end() {
 
 bool ShenandoahHeuristics::should_start_gc() {
   if (_start_gc_is_pending) {
+    log_trigger("GC start is already pending");
     return true;
   }
   // Perform GC to cleanup metaspace
