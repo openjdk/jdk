@@ -175,6 +175,15 @@ final class StableListTest {
     }
 
     @Test
+    void equalsPartialEvaluationTest() {
+        var list = StableValue.list(2, IDENTITY);
+        assertFalse(list.equals(List.of(0)));
+        assertEquals("[0, .unset]", list.toString());
+        assertTrue(list.equals(List.of(0, 1)));
+        assertEquals("[0, 1]", list.toString());
+    }
+
+    @Test
     void iteratorTotal() {
         var iterator = newList().iterator();
         for (int i = 0; i < SIZE; i++) {
