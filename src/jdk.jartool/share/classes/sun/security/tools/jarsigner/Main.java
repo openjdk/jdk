@@ -1155,13 +1155,20 @@ public class Main {
                 JarEntry cenEntry = jarFile.getJarEntry(entryName);
                 if (cenEntry == null) {
                     crossChkWarnings.add(String.format(rb.getString(
-                            "Entry.missing.in.JarFile.1"), entryName));
+                            "Entry.1.present.when.reading.jarinputstream." +
+                            "but.missing.via.JarFile"), entryName));
                     continue;
                 }
 
                 readEntry(jis);
                 try (InputStream cenInputStream = jarFile.getInputStream(cenEntry)) {
-                    readEntry(cenInputStream);
+                    if (cenInputStream == null) {
+                        crossChkWarnings.add(String.format(rb.getString(
+                                "entry.1.present.in.jarfile.but.unreadable"),
+                                entryName));
+                    } else {
+                        readEntry(cenInputStream);
+                    }
                 }
 
                 compareSigners(cenEntry, locEntry);
@@ -1239,14 +1246,22 @@ public class Main {
         boolean locHasSigners = locSigners != null;
 
         if (cenHasSigners && locHasSigners) {
-            List<CodeSigner> cenSignerList = Arrays.asList(cenSigners);
-            List<CodeSigner> locSignerList = Arrays.asList(locSigners);
-
-            if (!cenSignerList.equals(locSignerList)) {
+            if (!Arrays.equals(cenSigners, locSigners)) {
                 crossChkWarnings.add(String.format(rb.getString(
-                        "signature.mismatch.for.entry.1.when.comparing.jarfile.and.jarinputstream"),
+                        "codesigners.different.for.entry.1.when.reading." +
+                        "jarfile.and.jarinputstream"),
                         cenEntry.getName()));
             }
+        } else if (cenHasSigners) {
+            crossChkWarnings.add(String.format(rb.getString(
+                    "entry.1.has.codesigners.in.jarfile.but.not." +
+                    "in.jarinputstream"),
+                    cenEntry.getName()));
+        } else if (locHasSigners) {
+            crossChkWarnings.add(String.format(rb.getString(
+                    "entry.1.has.codesigners.in.jarinputstream.but.not." +
+                    "in.jarfile"),
+                    locEntry.getName()));
         }
     }
 
