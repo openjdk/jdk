@@ -108,7 +108,7 @@ public class AOTClassLinkingVMOptions {
         String MAIN_MODULE = "com.foos";
         String MAIN_CLASS = "com.foos.Test";
 
-        String appClasses[] = {MAIN_CLASS};
+        String[] appClasses = {MAIN_CLASS};
 
         CDSModulePackager modulePackager = new CDSModulePackager(SRC_DIR);
         modulePackager.createModularJarWithMainClass(MAIN_MODULE, MAIN_CLASS);

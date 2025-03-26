@@ -54,33 +54,37 @@ public class ExportModule {
     // unnamed module package name
     private static final String PKG_NAME = "com.nomodule";
 
+    // A "library" class used by both MODULAR_MAIN_CLASS and NON_MODULAR_MAIN_CLASS
+    private static final String LIB_CLASS = "org.astro.World";
+
     // the module main class
-    private static final String MAIN_CLASS = "com.greetings.Main";
-    private static final String APP_CLASS = "org.astro.World";
+    private static final String MODULAR_MAIN_CLASS = "com.greetings.Main";
 
     // unnamed module main class
-    private static final String UNNAMED_MAIN = "com.nomodule.Main";
+    private static final String NON_MODULAR_MAIN_CLASS = "com.nomodule.Main";
 
     private static Path moduleDir1 = null;
     private static Path moduleDir2 = null;
-    private static Path appJar1 = null;
-    private static Path appJar2 = null;
+    private static Path modularAppJar = null; // a modular jar file that contains MODULAR_MAIN_CLASS
+    private static Path nonModularAppJar = null; // a non-modular jar file that contains NON_MODULAR_MAIN_CLASS
 
     private static void buildJars() throws Exception {
         moduleDir2 = Paths.get("module-path2");
         CDSModulePackager modulePackager2 = new CDSModulePackager(SRC_DIR, moduleDir2);
         modulePackager2.createModularJar(TEST_MODULE2);
 
+        // build a *modular* jar containing the MODULAR_MAIN_CLASS which
+        // requires the org.astro package
         moduleDir1 = Paths.get("module-path1");
         CDSModulePackager modulePackager1 = new CDSModulePackager(SRC_DIR, moduleDir1);
         modulePackager1.addExtraModulePath("module-path2");
-        appJar1 = modulePackager1.createModularJar(TEST_MODULE1);
+        modularAppJar = modulePackager1.createModularJar(TEST_MODULE1);
 
-        // build a non-modular jar containing the main class which
+        // build a *non-modular* jar containing the NON_MODULAR_MAIN_CLASS which
         // requires the org.astro package
-        appJar2 = USER_DIR.resolve("non-modular.jar");
+        nonModularAppJar = USER_DIR.resolve("non-modular.jar");
 
-        CDSJarUtils.buildFromSourceDirectory(appJar2.toString(), SRC_DIR.resolve(PKG_NAME).toString(),
+        CDSJarUtils.buildFromSourceDirectory(nonModularAppJar.toString(), SRC_DIR.resolve(PKG_NAME).toString(),
                                              "--module-path", moduleDir2.toString(),
                                              "--add-modules", TEST_MODULE2,
                                              "--add-exports", "org.astro/org.astro=ALL-UNNAMED");
@@ -89,50 +93,54 @@ public class ExportModule {
     public static void main(String... args) throws Exception {
         buildJars();
 
-        String appClasses[] = {MAIN_CLASS, APP_CLASS};
+        // (1) Modular JAR
+
+        String[] appClasses = {MODULAR_MAIN_CLASS, LIB_CLASS};
         // create an archive with the class in the org.astro module built in the
         // previous step and the main class from the modular jar in the -cp
         // note: the main class is in the modular jar in the -cp which requires
         // the dependent module, org.astro, in the --module-path
         OutputAnalyzer output = TestCommon.createArchive(
-                                        appJar1.toString(), appClasses,
+                                        modularAppJar.toString(), appClasses,
                                         "--module-path", moduleDir2.toString(),
-                                        "--add-modules", TEST_MODULE2, MAIN_CLASS);
+                                        "--add-modules", TEST_MODULE2, MODULAR_MAIN_CLASS);
         TestCommon.checkDump(output);
 
         // run it using the archive
         // both the main class and the class from the org.astro module should
         // be loaded from the archive
         TestCommon.run("-Xlog:class+load=trace",
-                              "-cp", appJar1.toString(),
+                              "-cp", modularAppJar.toString(),
                               "--module-path", moduleDir2.toString(),
-                              "--add-modules", TEST_MODULE2, MAIN_CLASS)
+                              "--add-modules", TEST_MODULE2, MODULAR_MAIN_CLASS)
             .assertNormalExit(
                 "[class,load] org.astro.World source: shared objects file",
                 "[class,load] com.greetings.Main source: shared objects file");
 
-        String appClasses2[] = {UNNAMED_MAIN, APP_CLASS};
+        // (2) Non-modular JAR
+
+        String[] appClasses2 = {NON_MODULAR_MAIN_CLASS, LIB_CLASS};
         // create an archive with the main class from a non-modular jar in the
         // -cp and the class from the org.astro module
         // note: the org.astro package needs to be exported to "ALL-UNNAMED"
         // module since the jar in the -cp is a non-modular jar and thus it is
         // unnmaed.
         output = TestCommon.createArchive(
-                                        appJar2.toString(), appClasses2,
+                                        nonModularAppJar.toString(), appClasses2,
                                         "--module-path", moduleDir2.toString(),
                                         "--add-modules", TEST_MODULE2,
                                         "--add-exports", "org.astro/org.astro=ALL-UNNAMED",
-                                        UNNAMED_MAIN);
+                                        NON_MODULAR_MAIN_CLASS);
         TestCommon.checkDump(output);
 
         // both the main class and the class from the org.astro module should
         // be loaded from the archive
         TestCommon.run("-Xlog:class+load=trace",
-                       "-cp", appJar2.toString(),
+                       "-cp", nonModularAppJar.toString(),
                        "--module-path", moduleDir2.toString(),
                        "--add-modules", TEST_MODULE2,
                        "--add-exports", "org.astro/org.astro=ALL-UNNAMED",
-                       UNNAMED_MAIN)
+                       NON_MODULAR_MAIN_CLASS)
             .assertNormalExit(
                 "[class,load] org.astro.World source: shared objects file",
                 "[class,load] com.nomodule.Main source: shared objects file");
