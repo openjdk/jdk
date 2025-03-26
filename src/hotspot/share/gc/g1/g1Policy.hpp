@@ -253,6 +253,10 @@ public:
 
   size_t current_to_collection_set_cards();
 
+  // GC efficiency for collecting the region based on the time estimate for
+  // merging and scanning incoming references.
+  double predict_gc_efficiency(G1HeapRegion* hr);
+
   // The minimum number of retained regions we will add to the CSet during a young GC.
   uint min_retained_old_cset_length() const;
   // Calculate the minimum number of old regions we'll add to the CSet
