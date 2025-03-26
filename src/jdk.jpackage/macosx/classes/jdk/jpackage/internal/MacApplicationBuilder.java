@@ -50,6 +50,7 @@ final class MacApplicationBuilder {
         category = other.category;
         appStore = other.appStore;
         externalInfoPlistFile = other.externalInfoPlistFile;
+        signingBuilder = other.signingBuilder;
     }
 
     MacApplicationBuilder icon(Path v) {
