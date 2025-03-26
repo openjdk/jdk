@@ -158,7 +158,7 @@ class VM_Version : public Abstract_VM_Version {
 
   #define RV_NO_FLAG_BIT (BitsPerWord+1) // nth_bit will return 0 on values larger than BitsPerWord
 
-  // Note: the order matters, depender should be after thier dependee. E.g. ext_V before ext_Zvbb.
+  // Note: the order matters, depender should be after their dependee. E.g. ext_V before ext_Zvbb.
   // declaration name  , extension name, bit pos       ,in str, mapped flag)
   #define RV_FEATURE_FLAGS(decl)                                                                    \
   decl(ext_I           , "i"           ,    ('I' - 'A'), true , NO_UPDATE_DEFAULT)                  \
