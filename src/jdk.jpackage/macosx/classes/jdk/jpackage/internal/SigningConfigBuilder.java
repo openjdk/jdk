@@ -129,21 +129,29 @@ final class SigningConfigBuilder {
             }).forEach(acc::accept);
         }).toList();
 
-        final var resolvedCertificateSelectors = certificateSelectors.stream().map(CertificateSelector::fullName).toList();
+        final List<CertificateSelector> allCertificateSelectors;
+        if (signingIdentity != null) {
+            allCertificateSelectors = new ArrayList<>(certificateSelectors);
+            allCertificateSelectors.add(new CertificateSelector("", signingIdentity));
+        } else {
+            allCertificateSelectors = certificateSelectors;
+        }
+
+        final var resolvedCertificateSelectors = allCertificateSelectors.stream().map(CertificateSelector::fullName).toList();
 
         var matchingCertificates = mappedCertficates.stream().filter(e -> {
             return resolvedCertificateSelectors.contains(e.getKey());
         }).map(Map.Entry::getValue).toList();
 
         if (!matchingCertificates.isEmpty()) {
-            signingIdentityHash = selectSigningIdentity(matchingCertificates, certificateSelectors, validatedKeychain);
+            signingIdentityHash = selectSigningIdentity(matchingCertificates, allCertificateSelectors, validatedKeychain);
         } else {
             matchingCertificates = mappedCertficates.stream().filter(e -> {
                 return resolvedCertificateSelectors.stream().anyMatch(filter -> {
                     return filter.startsWith(e.getKey());
                 });
             }).map(Map.Entry::getValue).toList();
-            signingIdentityHash = selectSigningIdentity(matchingCertificates, certificateSelectors, validatedKeychain);
+            signingIdentityHash = selectSigningIdentity(matchingCertificates, allCertificateSelectors, validatedKeychain);
         }
 
         return Optional.of(new SigningIdentityImpl(signingIdentityHash.toString(),
@@ -161,8 +169,8 @@ final class SigningConfigBuilder {
                 return CertificateHash.of(certs.getFirst());
             }
             default -> {
-                Log.error(I18N.format("error.multiple.certs.found",
-                        certificateSelectors.getFirst().team().orElse(""), keychain.map(Keychain::name).orElse("")));
+                Log.error(I18N.format("error.multiple.certs.found", certificateSelectors.getFirst().name(),
+                        keychain.map(Keychain::name).orElse("")));
                 return CertificateHash.of(certs.getFirst());
             }
         }
@@ -181,38 +189,17 @@ final class SigningConfigBuilder {
         }).map(Rdn::getValue).map(Object::toString).toList();
     }
 
-    record CertificateSelector(StandardCertificatePrefix prefix, Optional<String> team) {
+    record CertificateSelector(String prefix, String name) {
         CertificateSelector {
             Objects.requireNonNull(prefix);
-            Objects.requireNonNull(team);
-            team.ifPresent(v -> {
-                if (v.isEmpty()) {
-                    throw new IllegalArgumentException();
-                }
-            });
-        }
-
-        CertificateSelector(StandardCertificatePrefix prefix) {
-            this(prefix, Optional.empty());
-        }
-
-        static Optional<CertificateSelector> createFromFullName(String fullName) {
-            Objects.requireNonNull(fullName);
-            return Stream.of(StandardCertificatePrefix.values()).map(CertificateSelector::new).filter(selector -> {
-                return fullName.startsWith(selector.fullName());
-            }).reduce((x, y) -> {
-                throw new UnsupportedOperationException();
-            }).map(selector -> {
-                final var team = fullName.substring(selector.fullName().length());
-                return new CertificateSelector(selector.prefix, team.isEmpty() ? Optional.empty() : Optional.of(team));
-            });
+            Objects.requireNonNull(name);
+            if (prefix.isEmpty() && name.isEmpty()) {
+                throw new IllegalArgumentException("Empty prefix and name");
+            }
         }
 
         String fullName() {
-            final var sb = new StringBuilder();
-            sb.append(prefix.value()).append(": ");
-            team.ifPresent(sb::append);
-            return sb.toString();
+            return prefix + name;
         }
     }
 
@@ -223,11 +210,20 @@ final class SigningConfigBuilder {
         INSTALLER_SIGN_PERSONAL("Developer ID Installer");
 
         StandardCertificatePrefix(String value) {
-            this.value = value;
+            this.value = value + ": ";
         }
 
         String value() {
             return value;
+        }
+
+        static Optional<StandardCertificatePrefix> findStandardCertificatePrefix(String fullName) {
+            Objects.requireNonNull(fullName);
+            return Stream.of(StandardCertificatePrefix.values()).filter(prefix -> {
+                return fullName.startsWith(prefix.value);
+            }).reduce((x, y) -> {
+                throw new UnsupportedOperationException();
+            });
         }
 
         private final String value;
@@ -244,9 +240,11 @@ final class SigningConfigBuilder {
         }
 
         static List<CertificateSelector> create(Optional<String> certificateName, StandardCertificateSelector defaultSelector) {
-            return certificateName.flatMap(CertificateSelector::createFromFullName).map(List::of).orElseGet(() -> {
+            return certificateName.flatMap(StandardCertificatePrefix::findStandardCertificatePrefix).map(prefix -> {
+                return new CertificateSelector(prefix.value(), certificateName.orElseThrow().substring(prefix.value().length()));
+            }).map(List::of).orElseGet(() -> {
                 return defaultSelector.prefixes.stream().map(prefix -> {
-                    return new CertificateSelector(prefix, certificateName);
+                    return new CertificateSelector(prefix.value(), certificateName.orElse(""));
                 }).toList();
             });
         }
