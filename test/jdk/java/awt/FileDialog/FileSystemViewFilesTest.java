@@ -31,7 +31,7 @@ import java.io.File;
 import java.util.Arrays;
 import javax.swing.filechooser.FileSystemView;
 
-public class FileSystemViewFiles {
+public class FileSystemViewFilesTest {
 
     public static void main(String[] args) throws Exception {
 

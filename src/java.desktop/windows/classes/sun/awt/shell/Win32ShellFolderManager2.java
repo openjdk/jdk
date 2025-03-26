@@ -43,7 +43,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import sun.awt.OSInfo;
 import sun.awt.util.ThreadGroupUtils;
 import sun.util.logging.PlatformLogger;
 
