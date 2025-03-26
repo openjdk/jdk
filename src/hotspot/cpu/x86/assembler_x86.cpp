@@ -1903,7 +1903,7 @@ void Assembler::cmovl(Condition cc, Register dst, Register src) {
 
 void Assembler::ecmovl(Condition cc, Register dst, Register src1, Register src2) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, false, false);
+  int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, false, !USE_PREFIXQ, false);
   emit_int16((0x40 | cc), (0xC0 | encode));
 }
 
@@ -15510,7 +15510,7 @@ void Assembler::cmovq(Condition cc, Register dst, Register src) {
 
 void Assembler::ecmovq(Condition cc, Register dst, Register src1, Register src2) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, USE_PREFIXQ, false);
+  int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, false, USE_PREFIXQ, false);
   emit_int16((0x40 | cc), (0xC0 | encode));
 }
 

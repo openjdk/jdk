@@ -1099,12 +1099,12 @@ instruction_set = {
         ('eshrdl', 'shrd', 32, False),
         ('eshrdl', 'shrd', 32, True),
     ],
-    # CondRegRegRegInstruction: [
-    #     ('ecmovl', 'cmov', 32, key) for key in cond_to_suffix.keys()
-    # ],
-    # CondRegRegMemInstruction: [
-    #     ('ecmovl', 'cmov', 32, key) for key in cond_to_suffix.keys()
-    # ],
+    CondRegRegRegInstruction: [
+        ('ecmovl', 'cmov', 32, key) for key in cond_to_suffix.keys()
+    ],
+    CondRegRegMemInstruction: [
+        ('ecmovl', 'cmov', 32, key) for key in cond_to_suffix.keys()
+    ],
 }
 
 instruction_set64 = {
@@ -1422,12 +1422,12 @@ instruction_set64 = {
         ('eshrdq', 'shrd', 64, False),
         ('eshrdq', 'shrd', 64, True),
     ],
-    # CondRegRegRegInstruction: [
-    #     ('ecmovq', 'cmov', 64, key) for key in cond_to_suffix.keys()
-    # ],
-    # CondRegRegMemInstruction: [
-    #     ('ecmovq', 'cmov', 64, key) for key in cond_to_suffix.keys()
-    # ],
+    CondRegRegRegInstruction: [
+        ('ecmovq', 'cmov', 64, key) for key in cond_to_suffix.keys()
+    ],
+    CondRegRegMemInstruction: [
+        ('ecmovq', 'cmov', 64, key) for key in cond_to_suffix.keys()
+    ],
 }
 
 if __name__ == "__main__":
