@@ -150,8 +150,7 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
 
     GraphKit* kit = parse_access.kit();
     if (bt == T_DOUBLE) {
-      Node* new_val = kit->dprecision_rounding(val.node());
-      val.set_node(new_val);
+      val.set_node(val.node());
     }
 
     store = kit->store_to_memory(kit->control(), access.addr().node(), val.node(), bt,
