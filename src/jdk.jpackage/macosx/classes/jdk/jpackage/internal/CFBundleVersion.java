@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.DottedVersion;
 import java.math.BigInteger;
 
 
@@ -38,7 +39,7 @@ final class CFBundleVersion {
      * @throws IllegalArgumentException
      */
     static DottedVersion of(String value) {
-        DottedVersion ver = new DottedVersion(value);
+        DottedVersion ver = DottedVersion.greedy(value);
 
         BigInteger[] components = ver.getComponents();
         if (components.length > 3) {
