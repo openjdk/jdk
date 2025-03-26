@@ -1519,19 +1519,19 @@ public class IRNode {
                                                                        CompilePhase.BEFORE_MATCHING));
     }
 
-    public static final String PARSE_PRED_LOOP = PREFIX + "PARSE_PRED_LOOP" + POSTFIX;
+    public static final String PARSE_PREDICATE_LOOP = PREFIX + "PARSE_PREDICATE_LOOP" + POSTFIX;
     static {
-        parsePredicateNodes(PARSE_PRED_LOOP, "Loop");
+        parsePredicateNodes(PARSE_PREDICATE_LOOP, "Loop");
     }
 
-    public static final String PARSE_PRED_LOOP_LIMIT_CHK = PREFIX + "PARSE_PRED_LOOP_LIMIT_CHK" + POSTFIX;
+    public static final String PARSE_PREDICATE_LOOP_LIMIT_CHECK = PREFIX + "PARSE_PREDICATE_LOOP_LIMIT_CHECK" + POSTFIX;
     static {
-        parsePredicateNodes(PARSE_PRED_LOOP_LIMIT_CHK, "Loop Limit Check");
+        parsePredicateNodes(PARSE_PREDICATE_LOOP_LIMIT_CHECK, "Loop Limit Check");
     }
 
-    public static final String PARSE_PRED_PROFILED_LOOP = PREFIX + "PARSE_PROFILED_PRED_LOOP" + POSTFIX;
+    public static final String PARSE_PREDICATE_PROFILED_LOOP = PREFIX + "PARSE_PROFILED_PREDICATE_LOOP" + POSTFIX;
     static {
-        parsePredicateNodes(PARSE_PRED_PROFILED_LOOP, "Profiled Loop");
+        parsePredicateNodes(PARSE_PREDICATE_PROFILED_LOOP, "Profiled Loop");
     }
 
     public static final String PREDICATE_TRAP = PREFIX + "PREDICATE_TRAP" + POSTFIX;

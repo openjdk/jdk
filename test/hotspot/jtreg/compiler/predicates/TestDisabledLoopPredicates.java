@@ -69,13 +69,13 @@ public class TestDisabledLoopPredicates {
     }
 
     @Test
-    @IR(counts = { IRNode.PARSE_PRED_LOOP, "=1",
-                   IRNode.PARSE_PRED_PROFILED_LOOP, "1" },
+    @IR(counts = { IRNode.PARSE_PREDICATE_LOOP, "=1",
+                   IRNode.PARSE_PREDICATE_PROFILED_LOOP, "1" },
         phase = CompilePhase.AFTER_PARSING,
         applyIfAnd = { "UseLoopPredicate", "true",
                        "UseProfiledLoopPredicate", "true" })
-    @IR(failOn = { IRNode.PARSE_PRED_LOOP,
-                   IRNode.PARSE_PRED_PROFILED_LOOP },
+    @IR(failOn = { IRNode.PARSE_PREDICATE_LOOP,
+                   IRNode.PARSE_PREDICATE_PROFILED_LOOP },
         phase = CompilePhase.AFTER_PARSING,
         applyIf = { "UseLoopPredicate", "false" })
     public static int test(boolean cond) {
