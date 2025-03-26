@@ -71,7 +71,7 @@ public class TestFloat16VectorOperations {
 
         short min_value = float16ToRawShortBits(Float16.MIN_VALUE);
         short max_value = float16ToRawShortBits(Float16.MAX_VALUE);
-        Generator<Short> gen = G.mixedWithSpecialFloat16s(G.uniformFloat16s(min_value, max_value), 10, 2);
+        Generator<Short> gen = G.float16s();
         for (int i = 0; i < LEN; ++i) {
             input1[i] = gen.next();
             input2[i] = gen.next();

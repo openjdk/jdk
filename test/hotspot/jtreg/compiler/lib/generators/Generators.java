@@ -26,6 +26,7 @@ package compiler.lib.generators;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.*;
+import static java.lang.Float.floatToFloat16;
 
 import jdk.test.lib.Utils;
 
@@ -176,7 +177,7 @@ public final class Generators {
      * Generates uniform float16s in the range of [0, 1) (inclusive of 0, exclusive of 1).
      */
     public RestrictableGenerator<Short> uniformFloat16s() {
-        return uniformFloat16s(Float.floatToFloat16(0.0f), Float.floatToFloat16(1.0f));
+        return uniformFloat16s(floatToFloat16(0.0f), floatToFloat16(1.0f));
     }
 
     /**
@@ -184,6 +185,14 @@ public final class Generators {
      */
     public RestrictableGenerator<Float> uniformFloats(float lo, float hi) {
         return new UniformFloatGenerator(this, lo, hi);
+    }
+
+    /**
+     * Provides an any-bits float16 distribution random generator, i.e. the bits are uniformly sampled,
+     * thus creating any possible float16 value, including the multiple different NaN representations.
+     */
+    public Generator<Short> anyBitsFloat16s() {
+        return new AnyBitsFloat16Generator(this);
     }
 
     /**
@@ -359,6 +368,25 @@ public final class Generators {
     }
 
     /**
+     * Randomly pick a float16 generator.
+     *
+     * @return Random float16 generator.
+     */
+    public Generator<Short> float16s() {
+        switch(random.nextInt(0, 5)) {
+            case 0  -> { return uniformFloat16s(floatToFloat16(-1.0f), floatToFloat16(1.0f)); }
+            // Well-balanced, so that multiplication reduction never explodes or collapses to zero:
+            case 1  -> { return uniformFloat16s(floatToFloat16(0.999f), floatToFloat16(1.001f)); }
+            case 2  -> { return anyBitsFloat16s(); }
+            // A tame distribution, mixed in with the occasional special float value:
+            case 3  -> { return mixedWithSpecialFloat16s(uniformFloat16s(floatToFloat16(0.999f), floatToFloat16(1.001f)), 10, 1000); }
+            // Generating any bits, but special values are more frequent.
+            case 4  -> { return mixedWithSpecialFloat16s(anyBitsFloat16s(), 100, 200); }
+            default -> { throw new RuntimeException("impossible"); }
+        }
+    }
+
+    /**
      * Randomly pick a float generator.
      *
      * @return Random float generator.
@@ -451,14 +479,14 @@ public final class Generators {
      * Max.
      */
     public final RestrictableGenerator<Short> SPECIAL_FLOAT16S = orderedRandomElement(List.of(
-        Float.floatToFloat16(0.0f),
-        Float.floatToFloat16(-0.0f),
-        Float.floatToFloat16(Float.POSITIVE_INFINITY),
-        Float.floatToFloat16(Float.NEGATIVE_INFINITY),
-        Float.floatToFloat16(Float.NaN),
-        Float.floatToFloat16(0x1.ffcP+15f), // MAX_VALUE
-        Float.floatToFloat16(0x1.0P-14f),   // MIN_NORMAL
-        Float.floatToFloat16(0x1.0P-24f)    // MIN_VALUE
+        floatToFloat16(0.0f),
+        floatToFloat16(-0.0f),
+        floatToFloat16(Float.POSITIVE_INFINITY),
+        floatToFloat16(Float.NEGATIVE_INFINITY),
+        floatToFloat16(Float.NaN),
+        floatToFloat16(0x1.ffcP+15f), // MAX_VALUE
+        floatToFloat16(0x1.0P-14f),   // MIN_NORMAL
+        floatToFloat16(0x1.0P-24f)    // MIN_VALUE
     ));
 
     /**

@@ -23,29 +23,21 @@
 
 package compiler.lib.generators;
 
-import static java.lang.Float.*;
-
 /**
- * Provides a uniform float16 distribution random generator, in the provided range [lo, hi).
+ * Provides an any-bits float16 distribution random generator, i.e. the bits are uniformly sampled,
+ * thus creating any possible float16 value, including the multiple different NaN representations.
  */
-final class UniformFloat16Generator extends UniformIntersectionRestrictableGenerator<Short> {
+final class AnyBitsFloat16Generator extends BoundGenerator<Short> {
+
     /**
-     * Creates a new {@link UniformFloat16Generator}.
-     *
-     * @param lo Lower bound of the range (inclusive).
-     * @param hi Higher bound of the range (exclusive).
+     * Creates a new {@link AnyBitsFloat16Generator}.
      */
-    public UniformFloat16Generator(Generators g, Short lo, Short hi) {
-        super(g, lo, hi);
+    public AnyBitsFloat16Generator(Generators g) {
+        super(g);
     }
 
     @Override
     public Short next() {
-        return g.random.nextFloat16(lo(), hi());
-    }
-
-    @Override
-    protected RestrictableGenerator<Short> doRestrictionFromIntersection(Short lo, Short hi) {
-        return new UniformFloat16Generator(g, lo, hi);
+        return (short)g.random.nextInt();
     }
 }
