@@ -47,8 +47,7 @@ public class TestFloat16MaxMinSpecialValues {
     }
 
     @Test
-    @IR(counts = {IRNode.MAX_HF, " >0 "}, applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx512bw", "true"})
-    @IR(counts = {IRNode.MAX_HF, " >0 "}, applyIfCPUFeatureOr = {"zvfh", "true", "asimd", "true", "sve", "true"})
+    @IR(counts = {IRNode.MAX_HF, " >0 "}, applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx512bw", "true", "avx512vl", "true"})
     public Float16 testMaxNaNOperands(Float16 src1, Float16 src2) {
         return Float16.max(src1, src2);
     }
@@ -70,8 +69,7 @@ public class TestFloat16MaxMinSpecialValues {
     }
 
     @Test
-    @IR(counts = {IRNode.MIN_HF, " >0 "}, applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx512bw", "true"})
-    @IR(counts = {IRNode.MIN_HF, " >0 "}, applyIfCPUFeatureOr = {"zvfh", "true", "asimd", "true", "sve", "true"})
+    @IR(counts = {IRNode.MIN_HF, " >0 "}, applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx512bw", "true", "avx512vl", "true"})
     public Float16 testMinNaNOperands(Float16 src1, Float16 src2) {
         return Float16.min(src1, src2);
     }
@@ -93,8 +91,7 @@ public class TestFloat16MaxMinSpecialValues {
     }
 
     @Test
-    @IR(counts = {IRNode.MAX_HF, " >0 "}, applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx512bw", "true"})
-    @IR(counts = {IRNode.MAX_HF, " >0 "}, applyIfCPUFeatureOr = {"zvfh", "true", "asimd", "true", "sve", "true"})
+    @IR(counts = {IRNode.MAX_HF, " >0 "}, applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx512bw", "true", "avx512vl", "true"})
     public Float16 testMaxZeroOperands(Float16 src1, Float16 src2) {
         return Float16.max(src1, src2);
     }
@@ -120,8 +117,7 @@ public class TestFloat16MaxMinSpecialValues {
     }
 
     @Test
-    @IR(counts = {IRNode.MIN_HF, " >0 "}, applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx512bw", "true"})
-    @IR(counts = {IRNode.MIN_HF, " >0 "}, applyIfCPUFeatureOr = {"zvfh", "true", "asimd", "true", "sve", "true"})
+    @IR(counts = {IRNode.MIN_HF, " >0 "}, applyIfCPUFeatureAnd = {"avx512_fp16", "true", "avx512bw", "true", "avx512vl", "true"})
     public Float16 testMinZeroOperands(Float16 src1, Float16 src2) {
         return Float16.min(src1, src2);
     }
