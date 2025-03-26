@@ -113,15 +113,6 @@ public class FileFontStrike extends PhysicalStrike {
     /* Used only for communication to native layer */
     private int intPtSize;
 
-    /* Perform global initialisation needed for Windows native rasterizer */
-    private static native void initNative();
-    static {
-        if (FontUtilities.isWindows && !FontUtilities.useJDKScaler &&
-            !GraphicsEnvironment.isHeadless()) {
-            initNative();
-        }
-    }
-
     FileFontStrike(FileFont fileFont, FontStrikeDesc desc) {
         super(fileFont, desc);
         this.fileFont = fileFont;
