@@ -4041,11 +4041,10 @@ public class DecimalFormat extends NumberFormat {
 
     /**
      * {@inheritDoc}
-     * <p>The maximum number of integer digits can be set by either {@link
-     * #setMaximumIntegerDigits(int)} or {@link #applyPattern(String)}.
-     * See the {@link ##patterns Pattern Section} for comprehensive rules regarding
-     * maximum integer digits in patterns.
+     * <p>Unlike the other digit limits, {@code maximumIntegerDigits} is not
+     * updated by {@code DecimalFormats} created or updated with a string pattern.
      * @see #setMaximumIntegerDigits
+     * @see ##patterns Pattern Section
      * @see ##digit_limits Integer and Fraction Digit Limits
      */
     @Override

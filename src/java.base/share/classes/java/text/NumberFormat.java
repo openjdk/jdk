@@ -935,7 +935,7 @@ public abstract class NumberFormat extends Format  {
      * {@code minimumIntegerDigits}, then {@code minimumIntegerDigits} will
      * also be set to the new value.
      *
-     * @apiNote
+     * @implNote
      * A concrete subclass may enforce an upper limit to this value appropriate
      * to the numeric type being formatted.
      *
@@ -968,7 +968,7 @@ public abstract class NumberFormat extends Format  {
      * exceeds the current value of {@code maximumIntegerDigits}, then {@code
      * maximumIntegerDigits} will also be set to the new value.
      *
-     * @apiNote
+     * @implNote
      * A subclass may enforce an upper limit to this value appropriate
      * to the numeric type being formatted.
      *
@@ -1001,7 +1001,7 @@ public abstract class NumberFormat extends Format  {
      * is less than the current value of {@code minimumFractionDigits}, then
      * {@code minimumFractionDigits} will also be set to the new value.
      *
-     * @apiNote
+     * @implNote
      * A subclass may enforce an upper limit to this value appropriate
      * to the numeric type being formatted.
      *
@@ -1035,7 +1035,7 @@ public abstract class NumberFormat extends Format  {
      * maximumFractionDigits}, then {@code maximumFractionDigits} will also be
      * set to the new value.
      *
-     * @apiNote
+     * @implNote
      * A concrete subclass may enforce an upper limit to this value
      * appropriate to the numeric type being formatted.
      *
