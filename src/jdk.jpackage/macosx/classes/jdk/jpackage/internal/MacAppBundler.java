@@ -28,10 +28,9 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
-import static jdk.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
+import static jdk.jpackage.internal.StandardBundlerParam.OUTPUT_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import static jdk.jpackage.internal.StandardBundlerParam.OUTPUT_DIR;
 
 import java.text.MessageFormat;
 import java.util.Map;
@@ -85,26 +84,6 @@ public class MacAppBundler extends AppImageBundler {
                     return result;
                 },
             (s, p) -> s);
-
-    public static final BundlerParamInfo<String> APP_IMAGE_SIGN_IDENTITY =
-            new BundlerParamInfo<>(
-            Arguments.CLIOptions.MAC_APP_IMAGE_SIGN_IDENTITY.getId(),
-            String.class,
-            params -> "",
-            null);
-
-    static String getIdentifier(Map<String, ? super Object> params) {
-        String s = MAIN_CLASS.fetchFrom(params);
-        if (s == null) {
-            return null;
-        }
-
-        int idx = s.lastIndexOf(".");
-        if (idx >= 1) {
-            return s.substring(0, idx);
-        }
-        return s;
-    }
 
     private static void doValidate(Map<String, ? super Object> params)
             throws ConfigException {
