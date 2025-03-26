@@ -812,6 +812,9 @@ private:
   int  evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                   InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false, bool demote=true);
 
+  int  evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, VexSimdPrefix pre, VexOpcode opc,
+                                  InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false, bool demote=false);
+
   int  evex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                  InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false, bool demote=false);
 
