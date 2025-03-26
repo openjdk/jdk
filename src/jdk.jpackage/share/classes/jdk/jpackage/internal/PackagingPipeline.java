@@ -374,10 +374,10 @@ final class PackagingPipeline {
     }
 
     static void copyAppImage(Package pkg, AppImageDesc srcAppImage, AppImageDesc dstAppImage) throws IOException {
-        copyAppImage(pkg, srcAppImage, dstAppImage, true);
+        copyAppImage(srcAppImage, dstAppImage, true);
     }
 
-    static void copyAppImage(Package pkg, AppImageDesc srcAppImage, AppImageDesc dstAppImage,
+    static void copyAppImage(AppImageDesc srcAppImage, AppImageDesc dstAppImage,
             boolean removeAppImageFile) throws IOException {
         final var srcLayout = srcAppImage.resolvedAppImagelayout();
         final var srcLayoutPathGroup = AppImageLayout.toPathGroup(srcLayout);

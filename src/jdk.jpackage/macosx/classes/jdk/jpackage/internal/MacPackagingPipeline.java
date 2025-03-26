@@ -154,7 +154,7 @@ final class MacPackagingPipeline {
 
     private static void copyAppImage(Package pkg, AppImageDesc srcAppImage,
             AppImageDesc dstAppImage) throws IOException {
-        PackagingPipeline.copyAppImage(pkg, srcAppImage, dstAppImage, false/*!((MacApplication)pkg.app()).sign()*/);
+        PackagingPipeline.copyAppImage(srcAppImage, dstAppImage, false/*!((MacApplication)pkg.app()).sign()*/);
     }
 
     private static void copyJliLib(
