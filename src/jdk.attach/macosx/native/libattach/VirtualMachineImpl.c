@@ -151,7 +151,7 @@ JNIEXPORT jboolean JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkCatches
             }
         } else if (throwIfNotReady) {
             char msg[100];
- 
+
             snprintf(msg, sizeof(msg), "pid: %d, state is not ready to participate in attach handshake!", (int)pid);
 
             JNU_ThrowByName(env, "com/sun/tools/attach/AttachNotSupportedException", msg);

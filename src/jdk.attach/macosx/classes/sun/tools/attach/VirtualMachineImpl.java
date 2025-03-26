@@ -80,7 +80,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                 long time_spent = 0;
                 long delay = 0;
 
-		boolean timedout = false;
+                boolean timedout = false;
                 do {
                     // Increase timeout on each attempt to reduce polling
                     delay += delay_step;
