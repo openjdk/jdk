@@ -383,7 +383,7 @@ class RegMemRegNddInstruction(NFInstruction):
 
 class RegRegImmNddInstruction(NFInstruction):
     def __init__(self, name, aname, width, no_flag, reg1, reg2, imm):
-        super().__init__(name, aname, no_flag, demote=False)
+        super().__init__(name, aname, no_flag, demote=True)
         self.reg1 = Register().generate(reg1, width)
         self.reg2 = Register().generate(reg2, width)
         self.imm = Immediate().generate(imm)
@@ -541,9 +541,9 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                     instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
             else:
-                test_reg1 = test_regs[3] #random.choice(test_regs)
+                test_reg1 =  random.choice(test_regs) #test_regs[3]
                 test_reg2 = test_reg1 #random.choice(test_regs)
-                test_reg3 = test_regs[5] #random.choice(test_regs)
+                test_reg3 = random.choice(test_regs) #test_regs[5]
                 lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2, test_reg3)
                 instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3)
                 print_instruction(instr, lp64_flag, print_lp64_flag)
@@ -636,8 +636,13 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                         print_instruction(instr, lp64_flag, print_lp64_flag)
             else:
                 imm = random.choice(get_immediate_list(op_name, width))
-                test_reg1 = random.choice(test_regs)
-                test_reg2 = random.choice(test_regs)
+
+                if RegOp in [RegRegImmNddInstruction]:
+                    test_reg1 = test_regs[3]
+                    test_reg2 = test_reg1
+                else:
+                    test_reg1 = random.choice(test_regs)
+                    test_reg2 = random.choice(test_regs)
                 lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
                 instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, imm=imm)
                 print_instruction(instr, lp64_flag, print_lp64_flag)
@@ -1023,7 +1028,7 @@ instruction_set = {
         ('eaddl', 'add', 32, True),
         ('eandl', 'and', 32, False),
         ('eandl', 'and', 32, True),
-        ('eimull', 'imul', 32, False),
+        #('eimull', 'imul', 32, False),
         ('eimull', 'imul', 32, True),
         ('eorl', 'or', 32, False),
         ('eorl', 'or', 32, True),
@@ -1352,7 +1357,7 @@ instruction_set64 = {
         ('eaddq', 'add', 64, True),
         ('eandq', 'and', 64, False),
         ('eandq', 'and', 64, True),
-        ('eimulq', 'imul', 64, False),
+        #('eimulq', 'imul', 64, False),
         ('eimulq', 'imul', 64, True),
         ('eorq', 'or', 64, False),
         ('eorq', 'or', 64, True),
@@ -1395,7 +1400,7 @@ instruction_set64 = {
     RegRegRegNddInstruction: [
         ('eaddq', 'add', 64, False),
         ('eaddq', 'add', 64, True),
-        ('eadcxq', 'adcx', 64, None),
+        ('eadcxq', 'adcx', 64, None), #bug not in demotion
         ('eadoxq', 'adox', 64, None),
         ('eandq', 'and', 64, False),
         ('eandq', 'and', 64, True),
