@@ -45,7 +45,7 @@
 #endif
 
 typedef void (WINAPI *PGNSI)(LPSYSTEM_INFO);
-static boolean SetupI18nProps(LCID lcid, char** language, char** script, char** country,
+static BOOL SetupI18nProps(LCID lcid, char** language, char** script, char** country,
                char** variant, char** encoding);
 
 #define PROPSIZE 9      // eight-letter + null terminator
@@ -128,7 +128,7 @@ getEncodingInternal(LCID lcid)
     return ret;
 }
 
-static char* getConsoleEncoding(boolean output)
+static char* getConsoleEncoding(BOOL output)
 {
     size_t buflen = 16;
     char* buf = malloc(buflen);
@@ -225,7 +225,7 @@ getHomeFromShell32()
     return u_path;
 }
 
-static boolean
+static BOOL
 haveMMX(void)
 {
     return IsProcessorFeaturePresent(PF_MMX_INSTRUCTIONS_AVAILABLE);
@@ -255,7 +255,7 @@ cpu_isalist(void)
     return NULL;
 }
 
-static boolean
+static BOOL
 SetupI18nProps(LCID lcid, char** language, char** script, char** country,
                char** variant, char** encoding) {
     /* script */
@@ -347,8 +347,8 @@ GetJavaProperties(JNIEnv* env)
     /* OS properties */
     {
         char buf[100];
-        boolean is_workstation;
-        boolean is_64bit;
+        BOOL is_workstation;
+        BOOL is_64bit;
         DWORD platformId;
         {
             OSVERSIONINFOEX ver;
