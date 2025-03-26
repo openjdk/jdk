@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotArtifactFinder.hpp"
+#include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
@@ -736,6 +737,7 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
 
 void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
   AOTClassLinker::initialize();
+  AOTClassInitializer::init_test_class(CHECK);
 
   if (!jcmd_request && !CDSConfig::is_dumping_final_static_archive()) {
     LambdaFormInvokers::regenerate_holder_classes(CHECK);

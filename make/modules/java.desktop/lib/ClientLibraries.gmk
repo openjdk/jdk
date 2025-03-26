@@ -67,8 +67,6 @@ ifeq ($(USE_EXTERNAL_LCMS), true)
   # If we're using an external library, we can't include our own SRC path
   # as includes, instead the system headers should be used.
   LIBLCMS_HEADERS_FROM_SRC := false
-  # FIXME: Keep old behavior and reset LCMS_CFLAGS. This is likely a bug.
-  LCMS_CFLAGS :=
 endif
 
 ifeq ($(TOOLCHAIN_TYPE)+$(TOOLCHAIN_VERSION), clang+10.1)

@@ -3154,7 +3154,8 @@ bool LibraryCallKit::inline_native_jvm_commit() {
   set_control(is_notified);
 
   // Reset notified state.
-  Node* notified_reset_memory = store_to_memory(control(), notified_offset, _gvn.intcon(0), T_BOOLEAN, MemNode::unordered);
+  store_to_memory(control(), notified_offset, _gvn.intcon(0), T_BOOLEAN, MemNode::unordered);
+  Node* notified_reset_memory = reset_memory();
 
   // Iff notified, the return address of the commit method is the current position of the backing java buffer. This is used to reset the event writer.
   Node* current_pos_X = _gvn.transform(new LoadXNode(control(), input_memory_state, java_buffer_pos_offset, TypeRawPtr::NOTNULL, TypeX_X, MemNode::unordered));
@@ -3172,12 +3173,10 @@ bool LibraryCallKit::inline_native_jvm_commit() {
   Node* next_pos_X = _gvn.transform(ConvL2X(arg));
 
   // Store the next_position to the underlying jfr java buffer.
-  Node* commit_memory;
-#ifdef _LP64
-  commit_memory = store_to_memory(control(), java_buffer_pos_offset, next_pos_X, T_LONG, MemNode::release);
-#else
-  commit_memory = store_to_memory(control(), java_buffer_pos_offset, next_pos_X, T_INT, MemNode::release);
-#endif
+  store_to_memory(control(), java_buffer_pos_offset, next_pos_X, LP64_ONLY(T_LONG) NOT_LP64(T_INT), MemNode::release);
+
+  Node* commit_memory = reset_memory();
+  set_all_memory(commit_memory);
 
   // Now load the flags from off the java buffer and decide if the buffer is a lease. If so, it needs to be returned post-commit.
   Node* java_buffer_flags_offset = _gvn.transform(new AddPNode(top(), java_buffer, _gvn.transform(MakeConX(in_bytes(JFR_BUFFER_FLAGS_OFFSET)))));
