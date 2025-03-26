@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.ApplicationImageUtils.createWriteAppImageFileAction;
 import static jdk.jpackage.internal.util.PListWriter.writeArray;
 import static jdk.jpackage.internal.util.PListWriter.writeBoolean;
 import static jdk.jpackage.internal.util.PListWriter.writeDict;
@@ -39,9 +40,11 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -51,6 +54,7 @@ import jdk.jpackage.internal.PackagingPipeline.ApplicationImageTaskAction;
 import jdk.jpackage.internal.PackagingPipeline.BuildApplicationTaskID;
 import jdk.jpackage.internal.PackagingPipeline.CopyAppImageTaskID;
 import jdk.jpackage.internal.PackagingPipeline.PackageBuildEnv;
+import jdk.jpackage.internal.PackagingPipeline.PackageTaskID;
 import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskAction;
 import jdk.jpackage.internal.PackagingPipeline.TaskContext;
@@ -62,6 +66,7 @@ import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacFileAssociation;
 import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.SigningConfig;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
@@ -81,6 +86,7 @@ final class MacPackagingPipeline {
 
     enum MacCopyAppImageTaskID implements TaskID {
         COPY_PACKAGE_FILE,
+        REPLACE_APP_IMAGE_FILE,
         COPY_SIGN
     }
 
@@ -117,6 +123,9 @@ final class MacPackagingPipeline {
                 .task(MacBuildApplicationTaskID.PACKAGE_FILE)
                         .packageAction(MacPackagingPipeline::writePackageFile)
                         .addDependents(BuildApplicationTaskID.CONTENT).add()
+                .task(MacCopyAppImageTaskID.REPLACE_APP_IMAGE_FILE)
+                        .addDependent(PrimaryTaskID.COPY_APP_IMAGE)
+                        .noaction().add()
                 .task(MacCopyAppImageTaskID.COPY_PACKAGE_FILE)
                         .packageAction(MacPackagingPipeline::writePackageFile)
                         .addDependencies(CopyAppImageTaskID.COPY)
@@ -141,15 +150,47 @@ final class MacPackagingPipeline {
                 .add();
 
         pkg.ifPresent(p -> {
-            if (p.isRuntimeInstaller() || (p.predefinedAppImage().isPresent() && ((MacApplication)p.app()).sign())) {
+            final List<TaskID> disabledTasks = new ArrayList<>();
+
+            if (p.type() instanceof SignAppImagePackageType) {
+                // This is a phony package signing predefined app image.
+                // Don't create ".package" file.
+                // Don't copy predefined app image, update it in place.
+                // Disable running user script after app image ready.
+                // Replace ".jpackage.xml" file.
+                // Use app image layout.
+                disabledTasks.add(MacCopyAppImageTaskID.COPY_PACKAGE_FILE);
+                disabledTasks.add(CopyAppImageTaskID.COPY);
+                disabledTasks.add(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT);
+                builder.task(MacCopyAppImageTaskID.REPLACE_APP_IMAGE_FILE).applicationAction(createWriteAppImageFileAction()).add();
+                builder.appImageLayoutForPackaging(Package::appImageLayout);
+            } else if (p.isRuntimeInstaller() || (p.predefinedAppImage().isPresent() && ((MacApplication)p.app()).sign())) {
                 // If this is a runtime package or a signed predefined app image,
                 // don't create ".package" file and don't sign it.
-                builder.task(MacCopyAppImageTaskID.COPY_PACKAGE_FILE).noaction().add();
-                builder.task(MacCopyAppImageTaskID.COPY_SIGN).noaction().add();
+                disabledTasks.add(MacCopyAppImageTaskID.COPY_PACKAGE_FILE);
+                disabledTasks.add(MacCopyAppImageTaskID.COPY_SIGN);
+            }
+
+            for (final var taskId : disabledTasks) {
+                builder.task(taskId).noaction().add();
             }
         });
 
         return builder;
+    }
+
+    enum SignAppImagePackageType implements PackageType {
+        VALUE;
+    }
+
+    static Package createSignAppImagePackage(MacApplication app, BuildEnv env) {
+        if (!app.sign()) {
+            throw new IllegalArgumentException();
+        }
+        return toSupplier(() -> {
+            return new PackageBuilder(app, SignAppImagePackageType.VALUE).predefinedAppImage(
+                    Objects.requireNonNull(env.appImageDir())).installDir(Path.of("/foo")).create();
+        }).get();
     }
 
     private static void copyAppImage(Package pkg, AppImageDesc srcAppImage,

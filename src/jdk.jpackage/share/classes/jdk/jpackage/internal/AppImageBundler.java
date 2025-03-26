@@ -86,20 +86,18 @@ class AppImageBundler extends AbstractBundler {
     @Override
     public final Path execute(Map<String, ? super Object> params,
             Path outputParentDir) throws PackagerException {
-        if (StandardBundlerParam.isRuntimeInstaller(params)) {
-            return PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
-        }
 
-        var predefinedAppImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
-        if (predefinedAppImage != null) {
-            return predefinedAppImage;
-        }
+        final var predefinedAppImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
 
         try {
-            Path rootDirectory = createRoot(params, outputParentDir);
-            appImageSupplier.prepareApplicationFiles(params, rootDirectory);
-            return rootDirectory;
-
+            if (predefinedAppImage == null) {
+                Path rootDirectory = createRoot(params, outputParentDir);
+                appImageSupplier.prepareApplicationFiles(params, rootDirectory);
+                return rootDirectory;
+            } else {
+                appImageSupplier.prepareApplicationFiles(params, predefinedAppImage);
+                return predefinedAppImage;
+            }
         } catch (PackagerException pe) {
             throw pe;
         } catch (RuntimeException|IOException ex) {

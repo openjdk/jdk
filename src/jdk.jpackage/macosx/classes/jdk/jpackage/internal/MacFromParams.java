@@ -54,9 +54,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import jdk.jpackage.internal.SigningConfigBuilder.StandardCertificateSelector;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.FileAssociation;
+import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacDmgPackage;
@@ -64,6 +66,7 @@ import jdk.jpackage.internal.model.MacFileAssociation;
 import jdk.jpackage.internal.model.MacLauncher;
 import jdk.jpackage.internal.model.MacPkgPackage;
 import jdk.jpackage.internal.model.RuntimeLayout;
+import static jdk.jpackage.internal.ApplicationBuilder.MainLauncherStartupInfo;
 
 
 final class MacFromParams {
@@ -81,15 +84,28 @@ final class MacFromParams {
 
         final var launcherFromParams = new LauncherFromParams(Optional.of(MacFromParams::createMacFa));
 
-        final var app = createApplicationBuilder(params, toFunction(launcherParams -> {
+        final var superAppBuilder = createApplicationBuilder(params, toFunction(launcherParams -> {
             var launcher = launcherFromParams.create(launcherParams);
             return MacLauncher.create(launcher);
-        }), APPLICATION_LAYOUT, predefinedRuntimeLayout).create();
+        }), APPLICATION_LAYOUT, predefinedRuntimeLayout);
+
+        if (hasPredefinedAppImage(params)) {
+            // Set the main launcher start up info.
+            // AppImageFile assumes the main launcher start up info is available when
+            // it is constructed from Application instance.
+            // This happens when jpackage signs predefined app image.
+            final var mainLauncherStartupInfo = new MainLauncherStartupInfo(PREDEFINED_APP_IMAGE_FILE.fetchFrom(params).getMainClass());
+            final var launchers = superAppBuilder.launchers().orElseThrow();
+            final var mainLauncher = ApplicationBuilder.overrideLauncherStartupInfo(launchers.mainLauncher(), mainLauncherStartupInfo);
+            superAppBuilder.launchers(new ApplicationLaunchers(MacLauncher.create(mainLauncher), launchers.additionalLaunchers()));
+        }
+
+        final var app = superAppBuilder.create();
 
         final var appBuilder = new MacApplicationBuilder(app);
 
         if (hasPredefinedAppImage(params)) {
-            appBuilder.externalInfoPlistFile(PREDEFINED_APP_IMAGE.fetchFrom(params).resolve("Contents/Info.plist"));
+            appBuilder.externalInfoPlistFile(PREDEFINED_APP_IMAGE.findIn(params).orElseThrow().resolve("Contents/Info.plist"));
         }
 
         ICON.copyInto(params, appBuilder::icon);
@@ -100,10 +116,10 @@ final class MacFromParams {
         final boolean sign;
         final boolean appStore;
 
-        if (hasPredefinedAppImage(params)) {
+        if (hasPredefinedAppImage(params) && PACKAGE_TYPE.findIn(params).filter(Predicate.isEqual("app-image")).isEmpty()) {
             final var appImageFileExtras = new MacAppImageFileExtras(PREDEFINED_APP_IMAGE_FILE.fetchFrom(params));
             sign = appImageFileExtras.signed();
-            appStore = APP_STORE.findIn(params).orElse(false);
+            appStore = appImageFileExtras.appStore();
         } else {
             sign = SIGN_BUNDLE.findIn(params).orElse(false);
             appStore = APP_STORE.findIn(params).orElse(false);
@@ -199,6 +215,9 @@ final class MacFromParams {
 
     static final BundlerParamInfo<String> APP_IMAGE_SIGN_IDENTITY = createStringBundlerParam(
             Arguments.CLIOptions.MAC_APP_IMAGE_SIGN_IDENTITY.getId());
+
+    private static final BundlerParamInfo<String> PACKAGE_TYPE = createStringBundlerParam(
+            Arguments.CLIOptions.PACKAGE_TYPE.getId());
 
     private static final BundlerParamInfo<String> FA_MAC_CFBUNDLETYPEROLE = createStringBundlerParam(
             Arguments.MAC_CFBUNDLETYPEROLE);
