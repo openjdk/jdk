@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHYOUNGHEURISTICS_HPP
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHYOUNGHEURISTICS_HPP
 
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
 
 class ShenandoahYoungGeneration;

@@ -838,7 +838,7 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
   ShenandoahGenerationalHeap* const heap = ShenandoahGenerationalHeap::heap();
   uint nworkers = heap->workers()->active_workers();
   reserve_task_queues(nworkers);
-  size_t accumulators[nworkers];
+  size_t *accumulators = alloca(nworkers * sizeof(size_t));
 
   ShenandoahReferenceProcessor* rp = ref_processor();
   ShenandoahRegionChunkIterator work_list(nworkers);
