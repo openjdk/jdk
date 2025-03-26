@@ -89,7 +89,7 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
 
         String runtimeMsg = "Try to map archive(s) at an alternative address";
         String unlockArg = "-XX:+UnlockDiagnosticVMOptions";
-        String relocationModeMsg = "ArchiveRelocationMode = 0";
+        String relocationModeMsg = "ArchiveRelocationMode: 0";
 
         // (1) Dump base archive (static)
 

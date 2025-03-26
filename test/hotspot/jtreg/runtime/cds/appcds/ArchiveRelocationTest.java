@@ -78,7 +78,7 @@ public class ArchiveRelocationTest {
                         output.shouldContain("ArchiveRelocationMode == 1: always map archive(s) at an alternative address")
                               .shouldContain("Try to map archive(s) at an alternative address");
                     } else {
-                        output.shouldContain("ArchiveRelocationMode = 0");
+                        output.shouldContain("ArchiveRelocationMode: 0");
                     }
                 });
     }
