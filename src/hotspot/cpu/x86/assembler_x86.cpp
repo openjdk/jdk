@@ -15275,7 +15275,7 @@ void Assembler::eadcxq(Register dst, Register src1, Register src2) {
   }
   else {
     InstructionAttr attributes(AVX_128bit, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-    int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3C, &attributes, USE_PREFIXQ, false);
+    int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3C, &attributes, false, USE_PREFIXQ, false);
     emit_int16((unsigned char)0x66, (0xC0 | encode));
   }
 }
@@ -15302,7 +15302,7 @@ void Assembler::eadoxq(Register dst, Register src1, Register src2) {
   }
   else {
     InstructionAttr attributes(AVX_128bit, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-    int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F_3C, &attributes, USE_PREFIXQ, false);
+    int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F_3C, &attributes, false, USE_PREFIXQ, false);
     emit_int16((unsigned char)0x66, (0xC0 | encode));
   }
 }

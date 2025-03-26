@@ -303,6 +303,7 @@ class CondRegRegRegInstruction(Instruction):
         self.reg3 = Register().generate(reg3, width)
         self.cond = cond
         self.generate_operands(self.reg1, self.reg2, self.reg3)
+        self.demote = True
     
     def cstr(self):
         return f'__ {self._name} (' + 'Assembler::Condition::' + self.cond + ', ' + ', '.join([reg.cstr() for reg in self.operands]) + ');'
