@@ -35,5 +35,5 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         //only supported on Linux, Mac OS/X and Windows:
         return new JdkConsoleImpl(isTTY, charset);
     }
-    
+
 }
