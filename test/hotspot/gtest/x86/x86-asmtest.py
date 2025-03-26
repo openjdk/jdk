@@ -431,6 +431,7 @@ class RegRegRegImmNddInstruction(NFInstruction):
         self.generate_operands(self.reg1, self.reg2, self.reg3, self.imm)
 
 test_regs = [key for key in registers_mapping.keys() if key != 'rax']
+legacy_test_regs = ['rax', 'rcx', 'rdx', 'rbx', 'r8', 'r9', 'r10', 'r11', 'r12', 'r13', 'r14', 'r15']
 
 immediates32 = [2 ** i for i in range(0, 32, 4)]
 immediates16 = [2 ** i for i in range(0, 16, 2)]
@@ -525,8 +526,8 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                     instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
             else:
-                test_reg1 = test_regs[3] #random.choice(test_regs)
-                test_reg2 = test_regs[5] #random.choice(test_regs)
+                test_reg1 = random.choice(test_regs) #test_regs[3]
+                test_reg2 = random.choice(test_regs)
                 lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
                 instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2)
                 print_instruction(instr, lp64_flag, print_lp64_flag)
@@ -541,7 +542,7 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                     instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
             else:
-                test_reg1 =  random.choice(test_regs) #test_regs[3]
+                test_reg1 =  random.choice(legacy_test_regs) #test_regs[3]
                 test_reg2 = test_reg1 #random.choice(test_regs)
                 test_reg3 = random.choice(test_regs) #test_regs[5]
                 lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2, test_reg3)
@@ -638,7 +639,7 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                 imm = random.choice(get_immediate_list(op_name, width))
 
                 if RegOp in [RegRegImmNddInstruction]:
-                    test_reg1 = test_regs[3]
+                    test_reg1 = random.choice(legacy_test_regs) #test_regs[3]
                     test_reg2 = test_reg1
                 else:
                     test_reg1 = random.choice(test_regs)
