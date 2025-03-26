@@ -263,7 +263,7 @@ void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Re
 }
 
 void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm,
-                                        Register thread, Register obj,
+                                        Register obj,
                                         Register var_size_in_bytes,
                                         int con_size_in_bytes,
                                         Register t1,
@@ -272,9 +272,8 @@ void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm,
   assert_different_registers(obj, t1, t2);
   assert_different_registers(obj, var_size_in_bytes, t1);
   Register end = t2;
-  if (!thread->is_valid()) {
-    thread = r15_thread; // TODO: rely on r15?
-  }
+
+  const Register thread = r15_thread;
 
   __ verify_tlab();
 

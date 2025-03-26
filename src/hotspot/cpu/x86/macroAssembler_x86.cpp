@@ -4124,14 +4124,14 @@ void MacroAssembler::testptr(Register dst, Register src) {
 }
 
 // Defines obj, preserves var_size_in_bytes, okay for t2 == var_size_in_bytes.
-void MacroAssembler::tlab_allocate(Register thread, Register obj,
+void MacroAssembler::tlab_allocate(Register obj,
                                    Register var_size_in_bytes,
                                    int con_size_in_bytes,
                                    Register t1,
                                    Register t2,
                                    Label& slow_case) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->tlab_allocate(this, thread, obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
+  bs->tlab_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
 }
 
 RegSet MacroAssembler::call_clobbered_gp_registers() {

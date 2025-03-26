@@ -601,7 +601,6 @@ public:
 
   // allocation
   void tlab_allocate(
-    Register thread,                   // Current thread
     Register obj,                      // result: pointer to object after successful allocation
     Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
     int      con_size_in_bytes,        // object size in bytes if   known at compile time

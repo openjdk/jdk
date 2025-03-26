@@ -4071,11 +4071,8 @@ void TemplateTable::_new() {
   //
   //  Go to slow path.
 
-  const Register thread = LP64_ONLY(r15_thread) NOT_LP64(rcx);
-
   if (UseTLAB) {
-    NOT_LP64(__ get_thread(thread);)
-    __ tlab_allocate(thread, rax, rdx, 0, rcx, rbx, slow_case);
+    __ tlab_allocate(rax, rdx, 0, rcx, rbx, slow_case);
     if (ZeroTLAB) {
       // the fields have been already cleared
       __ jmp(initialize_header);

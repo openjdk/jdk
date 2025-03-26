@@ -93,7 +93,7 @@ public:
                                              Register obj, Register tmp, Label& slowpath);
 
   virtual void tlab_allocate(MacroAssembler* masm,
-                             Register thread, Register obj,
+                             Register obj,
                              Register var_size_in_bytes,
                              int con_size_in_bytes,
                              Register t1, Register t2,
