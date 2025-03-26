@@ -3258,6 +3258,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
 
+
   char* aligned_base = nullptr;
   static const int max_attempts = 20;
 
