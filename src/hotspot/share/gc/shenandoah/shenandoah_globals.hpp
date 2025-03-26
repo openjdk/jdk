@@ -394,16 +394,10 @@
           "events.")                                                        \
           range(0,100)                                                      \
                                                                             \
-  product(uintx, ShenandoahMinYoungPercentage, 20, EXPERIMENTAL,            \
-          "The minimum percentage of the heap to use for the young "        \
-          "generation. Heuristics will not adjust the young generation "    \
-          "to be less than this.")                                          \
-          range(0, 100)                                                     \
-                                                                            \
-  product(uintx, ShenandoahMaxYoungPercentage, 100, EXPERIMENTAL,           \
-          "The maximum percentage of the heap to use for the young "        \
-          "generation. Heuristics will not adjust the young generation "    \
-          "to be more than this.")                                          \
+  product(uintx, ShenandoahInitYoungPercentage, 80, EXPERIMENTAL,           \
+          "The initial percentage of the heap to use for the young "        \
+          "generation. Heuristics may adjust the size of the young "        \
+           "generation to be more or less than this.")                      \
           range(0, 100)                                                     \
                                                                             \
   product(bool, ShenandoahPacing, true, EXPERIMENTAL,                       \

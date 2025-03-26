@@ -131,18 +131,15 @@ void ShenandoahGenerationalHeap::initialize_heuristics() {
   // Initialize global generation and heuristics even in generational mode.
   ShenandoahHeap::initialize_heuristics();
 
-  // Max capacity is the maximum _allowed_ capacity. That is, the maximum allowed capacity
-  // for old would be total heap - minimum capacity of young. This means the sum of the maximum
+  // Max capacity is the maximum _allowed_ capacity. This means the sum of the maximum
   // allowed for old and young could exceed the total heap size. It remains the case that the
   // _actual_ capacity of young + old = total.
-  _generation_sizer.heap_size_changed(max_capacity());
-  size_t initial_capacity_young = _generation_sizer.max_young_size();
-  size_t max_capacity_young = _generation_sizer.max_young_size();
-  size_t initial_capacity_old = max_capacity() - max_capacity_young;
-  size_t max_capacity_old = max_capacity() - initial_capacity_young;
+  const size_t max_heap_capacity = max_capacity();
+  const size_t initial_capacity_young = initial_young_size();
+  const size_t initial_capacity_old = max_heap_capacity - initial_capacity_young;
 
-  _young_generation = new ShenandoahYoungGeneration(max_workers(), max_capacity_young, initial_capacity_young);
-  _old_generation = new ShenandoahOldGeneration(max_workers(), max_capacity_old, initial_capacity_old);
+  _young_generation = new ShenandoahYoungGeneration(max_workers(), max_heap_capacity, initial_capacity_young);
+  _old_generation = new ShenandoahOldGeneration(max_workers(), max_heap_capacity, initial_capacity_old);
   _young_generation->initialize_heuristics(mode());
   _old_generation->initialize_heuristics(mode());
 }
@@ -581,7 +578,7 @@ void ShenandoahGenerationalHeap::retire_plab(PLAB* plab) {
   retire_plab(plab, thread);
 }
 
-ShenandoahGenerationalHeap::TransferResult ShenandoahGenerationalHeap::balance_generations() {
+ShenandoahGenerationalHeap::TransferResult ShenandoahGenerationalHeap::balance_generations() const {
   shenandoah_assert_heaplocked_or_safepoint();
 
   ShenandoahOldGeneration* old_gen = old_generation();
@@ -590,7 +587,7 @@ ShenandoahGenerationalHeap::TransferResult ShenandoahGenerationalHeap::balance_g
 
   if (old_region_balance > 0) {
     const auto old_region_surplus = checked_cast<size_t>(old_region_balance);
-    const bool success = generation_sizer()->transfer_to_young(old_region_surplus);
+    const bool success = transfer_to_young(old_region_surplus);
     return TransferResult {
       success, old_region_surplus, "young"
     };
@@ -598,7 +595,7 @@ ShenandoahGenerationalHeap::TransferResult ShenandoahGenerationalHeap::balance_g
 
   if (old_region_balance < 0) {
     const auto old_region_deficit = checked_cast<size_t>(-old_region_balance);
-    const bool success = generation_sizer()->transfer_to_old(old_region_deficit);
+    const bool success = transfer_to_old(old_region_deficit);
     if (!success) {
       old_gen->handle_failed_transfer();
     }
@@ -699,6 +696,44 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t old_xfer_
     const size_t old_region_deficit = MIN2(old_need, max_old_region_xfer);
     old_generation()->set_region_balance(0 - checked_cast<ssize_t>(old_region_deficit));
   }
+}
+
+// Returns true iff transfer is successful
+bool ShenandoahGenerationalHeap::transfer_to_old(size_t regions) const {
+  return transfer_regions(young_generation(), old_generation(), regions);
+}
+
+// Returns true iff transfer is successful
+bool ShenandoahGenerationalHeap::transfer_to_young(size_t regions) const {
+  return transfer_regions(old_generation(), young_generation(), regions);
+}
+
+// This is used when promoting humongous or highly utilized regular regions in place.  It is not required in this situation
+// that the transferred regions be unaffiliated.
+void ShenandoahGenerationalHeap::force_transfer_to_old(size_t regions) const {
+  const bool transferred = transfer_regions(young_generation(), old_generation(), regions, true /* force */);
+  assert(transferred, "Forced transfer must succeed");
+}
+
+bool ShenandoahGenerationalHeap::transfer_regions(ShenandoahGeneration* src, ShenandoahGeneration* dst, size_t regions, bool force) {
+
+  if (!force && src->free_unaffiliated_regions() < regions) {
+    // Source does not have enough free regions for this transfer. The caller should have
+    // already capped the transfer based on available unaffiliated regions.
+    return false;
+  }
+
+  const size_t bytes_to_transfer = regions * ShenandoahHeapRegion::region_size_bytes();
+  src->decrease_capacity(bytes_to_transfer);
+  dst->increase_capacity(bytes_to_transfer);
+  const size_t new_size = dst->max_capacity();
+  log_info(gc, ergo)("Transfer %s %zu region(s) from %s to %s, yielding increased size: " PROPERFMT,
+                     (force ? " (forced)" : ""), regions, src->name(), dst->name(), PROPERFMTARGS(new_size));
+  return true;
+}
+
+size_t ShenandoahGenerationalHeap::initial_young_size() const {
+  return static_cast<size_t>(percent_of(ShenandoahInitYoungPercentage, num_regions())) * ShenandoahHeapRegion::region_size_bytes();
 }
 
 void ShenandoahGenerationalHeap::reset_generation_reserves() {

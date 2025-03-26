@@ -117,10 +117,10 @@ void ShenandoahGenerationalFullGC::balance_generations_after_gc(ShenandoahHeap* 
 
   if (old_capacity > old_usage) {
     size_t excess_old_regions = (old_capacity - old_usage) / ShenandoahHeapRegion::region_size_bytes();
-    gen_heap->generation_sizer()->transfer_to_young(excess_old_regions);
+    gen_heap->transfer_to_young(excess_old_regions);
   } else if (old_capacity < old_usage) {
     size_t old_regions_deficit = (old_usage - old_capacity) / ShenandoahHeapRegion::region_size_bytes();
-    gen_heap->generation_sizer()->force_transfer_to_old(old_regions_deficit);
+    gen_heap->force_transfer_to_old(old_regions_deficit);
   }
 
   log_info(gc, ergo)("FullGC done: young usage: " PROPERFMT ", old usage: " PROPERFMT,
