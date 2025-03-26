@@ -113,7 +113,7 @@ final class StableFunctionTest {
         Function<Value, Integer> f0 = StableValue.function(inputs, Value::asInt);
         Function<Value, Integer> f1 = StableValue.function(inputs, Value::asInt);
         assertTrue(f0.toString().contains("{}"));
-        assertThrows(IllegalArgumentException.class, () -> f0.apply(null));
+        assertThrows(NullPointerException.class, () -> f0.apply(null));
         assertNotEquals(f0, f1);
         assertNotEquals(null, f0);
     }
@@ -175,7 +175,7 @@ final class StableFunctionTest {
         Function<Value, Integer> enumFunction = StableValue.function(EnumSet.of(Value.FORTY_TWO), Value::asInt);
         assertEquals("jdk.internal.lang.stable.StableEnumFunction", enumFunction.getClass().getName());
         Function<Value, Integer> emptyFunction = StableValue.function(Set.of(), Value::asInt);
-        assertEquals("jdk.internal.lang.stable.EmptyStableFunction", emptyFunction.getClass().getName());
+        assertEquals("jdk.internal.lang.stable.StableFunction", emptyFunction.getClass().getName());
     }
 
     private static Stream<Set<Value>> nonEmptySets() {

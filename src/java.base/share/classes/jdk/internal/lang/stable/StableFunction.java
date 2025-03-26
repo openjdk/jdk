@@ -27,6 +27,8 @@ package jdk.internal.lang.stable;
 
 import jdk.internal.vm.annotation.ForceInline;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -48,6 +50,7 @@ import java.util.function.Supplier;
  */
 record StableFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
                             Function<? super T, ? extends R> original) implements Function<T, R> {
+
     @ForceInline
     @Override
     public R apply(T value) {

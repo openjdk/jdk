@@ -38,10 +38,7 @@ public final class StableValueFactories {
 
     public static <T, R> Function<T, R> function(Set<? extends T> inputs,
                                                  Function<? super T, ? extends R> original) {
-        if (inputs.isEmpty()) {
-            return EmptyStableFunction.of(original);
-        }
-        return inputs instanceof EnumSet<?>
+        return inputs instanceof EnumSet<?> && !inputs.isEmpty()
                 ? StableEnumFunction.of(inputs, original)
                 : StableFunction.of(inputs, original);
     }
