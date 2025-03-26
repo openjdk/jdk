@@ -25,7 +25,6 @@
 package jdk.jpackage.internal;
 
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toSet;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 
 import java.io.IOException;
@@ -42,8 +41,6 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.Codesign.CodesignException;
 import jdk.jpackage.internal.model.Application;
-import jdk.jpackage.internal.model.ApplicationLayout;
-import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ExceptionBox;
@@ -76,12 +73,6 @@ final class AppImageSigner {
 
         SignFilter(Application app, Path appImage) {
             Objects.requireNonNull(appImage);
-
-            launchers = app.asApplicationLayout().map(appLayout -> {
-                return appLayout.resolveAt(appImage);
-            }).map(ApplicationLayout::launchersDirectory).map(launchersDir -> {
-                return app.launchers().stream().map(Launcher::executableNameWithSuffix).map(launchersDir::resolve).collect(toSet());
-            }).orElseGet(Set::of);
         }
 
         @Override
@@ -91,7 +82,7 @@ final class AppImageSigner {
             }
 
             if (Files.isExecutable(path) || path.getFileName().toString().endsWith(".dylib")) {
-                if (path.toString().contains("dylib.dSYM/Contents") || launchers.contains(path)) {
+                if (path.toString().contains("dylib.dSYM/Contents")) {
                     return false;
                 }
 
@@ -100,8 +91,6 @@ final class AppImageSigner {
 
             return false;
         }
-
-        private final Set<Path> launchers;
     }
 
     private void sign(MacApplication app, Path appImage) throws CodesignException, IOException {
