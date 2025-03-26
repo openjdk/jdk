@@ -33,6 +33,7 @@ class ShenandoahGCStateResetter : public StackObj {
 private:
   ShenandoahHeap* const _heap;
   const char _gc_state;
+  const bool _gc_state_changed;
 
 public:
   ShenandoahGCStateResetter();
