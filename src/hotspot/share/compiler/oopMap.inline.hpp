@@ -26,6 +26,7 @@
 #define SHARE_VM_COMPILER_OOPMAP_INLINE_HPP
 
 #include "compiler/oopMap.hpp"
+
 #include "oops/compressedOops.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"

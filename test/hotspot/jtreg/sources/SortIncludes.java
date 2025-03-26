@@ -48,33 +48,65 @@ public class SortIncludes {
         return Comparator.comparing(s -> s.toLowerCase().substring(s.indexOf(delim)));
     }
 
+    /// Gets the first substring in `s` enclosed by `start` and `end`.
+    private static String extract(String s, char start, char end) {
+        int startIndex = s.indexOf(start);
+        int endIndex = s.indexOf(end, startIndex + 1);
+        if (startIndex == -1 || endIndex == -1) {
+            throw new IllegalArgumentException(s);
+        }
+        return s.substring(startIndex + 1, endIndex);
+    }
+
     /// Sorts the include statements in `block`.
     ///
+    /// @param path path of source file containing `block`
     /// @param block source code chunk containing 1 or more include statements
     /// @return `block` with the include statements sorted and a blank line between user and
     /// sys includes
-    private static String sortedIncludes(String block) {
+    private static String sortedIncludes(Path path, String block) {
         String[] lines = block.split("\\n");
         SortedSet<String> userIncludes = new TreeSet<>(sortKeyForInclude('"'));
         SortedSet<String> sysIncludes = new TreeSet<>(sortKeyForInclude('<'));
-        List<String> blankLines = new ArrayList<>();
 
-        // Partition lines into user include, sys includes and blank lines
+        // From the style guide:
+        //
+        // All .inline.hpp files should include their corresponding .hpp file
+        // as the first include line with a blank line separating it from the
+        // rest of the include lines. Declarations needed by other files should
+        // be put in the .hpp file, and not in the .inline.hpp file. This rule
+        // exists to resolve problems with circular dependencies between
+        // .inline.hpp files.
+        String pathString = path.toString();
+        boolean isInlineHpp = pathString.endsWith(".inline.hpp");
+        String nonInlineHpp = pathString.replace(".inline.hpp", ".hpp");
+
+        List<String> result = new ArrayList<>(lines.length);
+
+        // Partition lines into user include and sys includes and discard blank lines
         for (String line : lines) {
+            int doubleQuote = line.indexOf('"');
             if (line.contains("\"")) {
-                userIncludes.add(line);
+                if (isInlineHpp && nonInlineHpp.endsWith(extract(line, '"', '"'))) {
+                    result.add(line);
+                } else {
+                    userIncludes.add(line);
+                }
             } else if (line.contains("<")) {
                 sysIncludes.add(line);
-            } else if (line.isEmpty()) {
-                blankLines.add(line);
             }
         }
 
-        List<String> result = new ArrayList<>(userIncludes);
-        if (!userIncludes.isEmpty() && !sysIncludes.isEmpty() && blankLines.isEmpty()) {
-            blankLines = List.of("");
+        if (!result.isEmpty() && (!userIncludes.isEmpty() || !sysIncludes.isEmpty())) {
+            // Insert blank line between include of .hpp from .inline.hpp
+            // and the rest of the includes
+            result.add("");
         }
-        result.addAll(blankLines);
+        result.addAll(userIncludes);
+        if (!userIncludes.isEmpty() && !sysIncludes.isEmpty()) {
+            // Insert blank line between user and sys includes
+            result.add("");
+        }
         result.addAll(sysIncludes);
 
         return String.join("\n", result) + "\n";
@@ -95,7 +127,7 @@ public class SortIncludes {
             if (matcher.start() != end) {
                 buf.append(source, end, matcher.start());
             }
-            buf.append(sortedIncludes(matcher.group()));
+            buf.append(sortedIncludes(path, matcher.group()));
             end = matcher.end();
         }
 

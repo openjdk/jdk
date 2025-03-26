@@ -25,8 +25,9 @@
 #ifndef SHARE_COMPILER_COMPILERDEFINITIONS_INLINE_HPP
 #define SHARE_COMPILER_COMPILERDEFINITIONS_INLINE_HPP
 
-#include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.hpp"
+
+#include "compiler/compiler_globals.hpp"
 #include "runtime/arguments.hpp"
 
 inline bool CompilerConfig::is_interpreter_only() {
