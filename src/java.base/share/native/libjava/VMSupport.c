@@ -41,3 +41,9 @@ Java_jdk_internal_vm_VMSupport_getVMTemporaryDirectory(JNIEnv *env, jclass cls)
 {
     return JVM_GetTemporaryDirectory(env);
 }
+
+JNIEXPORT jobject JNICALL
+Java_jdk_internal_vm_ThreadDumper_getStackTraceInfo(JNIEnv *env, jclass cls, jobject thread, jboolean withLocks)
+{
+    return JVM_GetStackTraceInfo(env, thread, withLocks);
+}

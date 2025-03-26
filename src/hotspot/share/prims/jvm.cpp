@@ -2955,8 +2955,34 @@ JVM_ENTRY(jboolean, JVM_HoldsLock(JNIEnv* env, jclass threadClass, jobject obj))
 JVM_END
 
 JVM_ENTRY(jobject, JVM_GetStackTrace(JNIEnv *env, jobject jthread))
-  oop trace = java_lang_Thread::async_get_stack_trace(JNIHandles::resolve(jthread), THREAD);
+  oop trace = java_lang_Thread::async_get_stack_trace(JNIHandles::resolve(jthread), false, nullptr, THREAD);
   return JNIHandles::make_local(THREAD, trace);
+JVM_END
+
+JVM_ENTRY(jobject, JVM_GetStackTraceInfo(JNIEnv* env, jobject jthread, jboolean withLocks))
+  oop locks = nullptr;
+  oop trace = java_lang_Thread::async_get_stack_trace(JNIHandles::resolve(jthread), withLocks != JNI_FALSE, &locks, THREAD);
+
+  ResourceMark rm(THREAD);
+  Symbol* sti_name = vmSymbols::jdk_internal_vm_StackTraceInfo();
+  Klass* sti_klass = SystemDictionary::resolve_or_fail(sti_name, true, CHECK_NULL);
+  if (sti_klass->should_be_initialized()) {
+      sti_klass->initialize(CHECK_NULL);
+  }
+
+  HandleMark hm(THREAD);
+  JavaValue result(T_OBJECT);
+  JavaCallArguments args;
+  args.push_jobject(JNIHandles::make_local(THREAD, trace));
+  args.push_jobject(JNIHandles::make_local(THREAD, locks));
+  JavaCalls::call_static(&result,
+      sti_klass,
+      vmSymbols::createStackTraceInfo_name(),
+      vmSymbols::createStackTraceInfo_signature(),
+      &args,
+      CHECK_NULL);
+  Handle res(THREAD, result.get_oop());
+  return JNIHandles::make_local(THREAD, res());
 JVM_END
 
 JVM_ENTRY(void, JVM_SetNativeThreadName(JNIEnv* env, jobject jthread, jstring name))

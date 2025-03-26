@@ -743,6 +743,12 @@ class SerializeClosure;
   template(jdk_internal_vm_ThreadDumper,           "jdk/internal/vm/ThreadDumper")                                \
   template(dumpThreads_name,                       "dumpThreads")                                                 \
   template(dumpThreadsToJson_name,                 "dumpThreadsToJson")                                           \
+  template(jdk_internal_vm_ThreadLock,             "jdk/internal/vm/ThreadDumper$ThreadLock")                                  \
+  template(jdk_internal_vm_ThreadLock_ctor_signature, "(IILjava/lang/Object;)V")                                   \
+  template(jdk_internal_vm_StackTraceInfo,          "jdk/internal/vm/ThreadDumper$StackTraceInfo")                             \
+  template(createStackTraceInfo_name,               "createStackTraceInfo")                                       \
+  template(createStackTraceInfo_signature,          "([Ljava/lang/StackTraceElement;[Ljdk/internal/vm/ThreadDumper$ThreadLock;)" \
+                                                    "[Ljdk/internal/vm/ThreadDumper$StackTraceInfo;")             \
                                                                                                                   \
   /* jcmd Thread.vthread_scheduler and Thread.vthread_pollers */                                                  \
   template(jdk_internal_vm_JcmdVThreadCommands,    "jdk/internal/vm/JcmdVThreadCommands")                         \
