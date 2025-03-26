@@ -156,7 +156,7 @@ final class MacApplicationBuilder {
 
     private Optional<SigningConfig> createSigningConfig() throws ConfigException {
         if (signingBuilder != null) {
-            return Optional.of(signingBuilder.create());
+            return signingBuilder.create();
         } else {
             return Optional.empty();
         }

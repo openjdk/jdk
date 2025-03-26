@@ -55,10 +55,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
+import jdk.jpackage.internal.ApplicationBuilder.MainLauncherStartupInfo;
 import jdk.jpackage.internal.SigningConfigBuilder.StandardCertificateSelector;
+import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.FileAssociation;
-import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacDmgPackage;
@@ -66,7 +68,6 @@ import jdk.jpackage.internal.model.MacFileAssociation;
 import jdk.jpackage.internal.model.MacLauncher;
 import jdk.jpackage.internal.model.MacPkgPackage;
 import jdk.jpackage.internal.model.RuntimeLayout;
-import static jdk.jpackage.internal.ApplicationBuilder.MainLauncherStartupInfo;
 
 
 final class MacFromParams {
@@ -128,16 +129,24 @@ final class MacFromParams {
         appBuilder.appStore(appStore);
 
         if (sign) {
-            final var signingBuilder = new SigningConfigBuilder();
-            app.mainLauncher().flatMap(Launcher::startupInfo).ifPresent(signingBuilder::signingIdentityPrefix);
-            BUNDLE_ID_SIGNING_PREFIX.copyInto(params, signingBuilder::signingIdentityPrefix);
-            SIGNING_KEYCHAIN.copyInto(params, signingBuilder::keychain);
+            final var signingBuilder = createSigningConfigBuilder(params, app);
+            if (appStore) {
+                signingBuilder.entitlementsResourceName("entitlements.plist");
+            }
+
             ENTITLEMENTS.copyInto(params, signingBuilder::entitlements);
             APP_IMAGE_SIGN_IDENTITY.copyInto(params, signingBuilder::signingIdentity);
 
-            final var filter = appStore ? StandardCertificateSelector.APP_STORE_APP_IMAGE : StandardCertificateSelector.APP_IMAGE;
+            SIGNING_KEY_USER.findIn(params).ifPresent(userName -> {
+                final StandardCertificateSelector filter;
+                if (appStore) {
+                    filter = StandardCertificateSelector.APP_STORE_APP_IMAGE;
+                } else {
+                    filter = StandardCertificateSelector.APP_IMAGE;
+                }
 
-            signingBuilder.addCertificateSelectors(StandardCertificateSelector.create(SIGNING_KEY_USER.findIn(params), filter));
+                signingBuilder.addCertificateSelectors(StandardCertificateSelector.create(userName, filter));
+            });
 
             appBuilder.signingBuilder(signingBuilder);
         }
@@ -168,7 +177,38 @@ final class MacFromParams {
 
         final var pkgBuilder = new MacPkgPackageBuilder(superPkgBuilder);
 
+        final boolean sign = SIGN_BUNDLE.findIn(params).orElse(false);
+        final boolean appStore = APP_STORE.findIn(params).orElse(false);
+
+        if (sign) {
+            final var signingBuilder = createSigningConfigBuilder(params, app);
+            INSTALLER_SIGN_IDENTITY.copyInto(params, signingBuilder::signingIdentity);
+
+            SIGNING_KEY_USER.findIn(params).ifPresent(userName -> {
+                final List<StandardCertificateSelector> filters;
+                if (appStore) {
+                    filters = List.of(StandardCertificateSelector.APP_STORE_PKG_INSTALLER);
+                } else {
+                    filters = List.of(StandardCertificateSelector.PKG_INSTALLER);
+                }
+
+                for (final var filter : filters) {
+                    signingBuilder.addCertificateSelectors(StandardCertificateSelector.create(userName, filter));
+                }
+            });
+
+            pkgBuilder.signingBuilder(signingBuilder);
+        }
+
         return pkgBuilder.create();
+    }
+
+    private static SigningConfigBuilder createSigningConfigBuilder(Map<String, ? super Object> params, Application app) {
+        final var builder = new SigningConfigBuilder();
+        app.mainLauncher().flatMap(Launcher::startupInfo).ifPresent(builder::signingIdentityPrefix);
+        BUNDLE_ID_SIGNING_PREFIX.copyInto(params, builder::signingIdentityPrefix);
+        SIGNING_KEYCHAIN.copyInto(params, builder::keychain);
+        return builder;
     }
 
     private static MacFileAssociation createMacFa(FileAssociation fa, Map<String, ? super Object> params) {
@@ -215,6 +255,9 @@ final class MacFromParams {
 
     static final BundlerParamInfo<String> APP_IMAGE_SIGN_IDENTITY = createStringBundlerParam(
             Arguments.CLIOptions.MAC_APP_IMAGE_SIGN_IDENTITY.getId());
+
+    static final BundlerParamInfo<String> INSTALLER_SIGN_IDENTITY = createStringBundlerParam(
+            Arguments.CLIOptions.MAC_INSTALLER_SIGN_IDENTITY.getId());
 
     private static final BundlerParamInfo<String> PACKAGE_TYPE = createStringBundlerParam(
             Arguments.CLIOptions.PACKAGE_TYPE.getId());

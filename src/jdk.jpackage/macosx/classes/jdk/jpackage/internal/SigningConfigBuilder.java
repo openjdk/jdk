@@ -87,9 +87,19 @@ final class SigningConfigBuilder {
         return this;
     }
 
-    SigningConfig create() throws ConfigException {
-        return new SigningConfig.Stub(validatedSigningIdentity(), validatedEntitlements(),
-                validatedKeychain().map(Keychain::name), "sandbox.plist");
+    SigningConfigBuilder entitlementsResourceName(String v) {
+        entitlementsResourceName = v;
+        return this;
+    }
+
+    Optional<SigningConfig> create() throws ConfigException {
+        if (signingIdentity == null && certificateSelectors.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(new SigningConfig.Stub(validatedSigningIdentity(), validatedEntitlements(),
+                    validatedKeychain().map(Keychain::name),
+                    Optional.ofNullable(entitlementsResourceName).orElse("sandbox.plist")));
+        }
     }
 
     private Optional<Path> validatedEntitlements() throws ConfigException {
@@ -239,12 +249,12 @@ final class SigningConfigBuilder {
             this.prefixes = List.of(prefixes);
         }
 
-        static List<CertificateSelector> create(Optional<String> certificateName, StandardCertificateSelector defaultSelector) {
-            return certificateName.flatMap(StandardCertificatePrefix::findStandardCertificatePrefix).map(prefix -> {
-                return new CertificateSelector(prefix.value(), certificateName.orElseThrow().substring(prefix.value().length()));
+        static List<CertificateSelector> create(String certificateName, StandardCertificateSelector defaultSelector) {
+            return StandardCertificatePrefix.findStandardCertificatePrefix(certificateName).map(prefix -> {
+                return new CertificateSelector(prefix.value(), certificateName.substring(prefix.value().length()));
             }).map(List::of).orElseGet(() -> {
                 return defaultSelector.prefixes.stream().map(prefix -> {
-                    return new CertificateSelector(prefix.value(), certificateName.orElse(""));
+                    return new CertificateSelector(prefix.value(), certificateName);
                 }).toList();
             });
         }
@@ -257,4 +267,5 @@ final class SigningConfigBuilder {
     private List<CertificateSelector> certificateSelectors = new ArrayList<>();
     private String keychain;
     private Path entitlements;
+    private String entitlementsResourceName;
 }
