@@ -278,6 +278,11 @@ bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
     _included_old_regions++;
     _evacuated_old_bytes += live_data_for_evacuation;
     _collected_old_bytes += r->garbage();
+#define KELVIN_CANDIDATE_GARBAGE
+#ifdef KELVIN_CANDIDATE_GARBAGE
+    log_info(gc)("Adding old candidate region %zu to cset with live: %zu (of total: %zu), garbage: %zu (of total: %zu)",
+                 r->index(), live_data_for_evacuation, _evacuated_old_bytes, r->garbage(), _collected_old_bytes);
+#endif
     consume_old_collection_candidate();
   }
   return true;
@@ -467,6 +472,11 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     size_t region_free = r->free();
     candidates_garbage += region_garbage;
     unfragmented += region_free;
+#define KELVIN_CANDIDATE_GARBAGE
+#ifdef KELVIN_CANDIDATE_GARBAGE
+    log_info(gc)("Legit candidate region %zu has garbage: %zu (out of total: %zu), free: %zu (out of total: %zu)",
+                 r->index(), region_garbage, candidates_garbage, region_free, unfragmented);
+#endif
   }
 
   // defrag_count represents regions that are placed into the old collection set in order to defragment the memory
@@ -509,6 +519,10 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
       const size_t region_free = r->free();
       candidates_garbage += region_garbage;
       unfragmented += region_free;
+#ifdef KELVIN_CANDIDATE_GARBAGE
+      log_info(gc)("Defrag candidate region %zu has garbage: %zu (out of total: %zu), free: %zu (out of total: %zu)",
+                   r->index(), region_garbage, candidates_garbage, region_free, unfragmented);
+#endif
       defrag_count++;
       _last_old_collection_candidate++;
 
@@ -525,7 +539,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   const size_t old_candidates = _last_old_collection_candidate;
   const size_t mixed_evac_live = old_candidates * region_size_bytes - (candidates_garbage + unfragmented);
   set_unprocessed_old_collection_candidates_live_memory(mixed_evac_live);
-  set_unprocessed_old_collection_candidates_garbage(collectable_garbage);
+  set_unprocessed_old_collection_candidates_garbage(candidates_garbage);
 
   log_info(gc, ergo)("Old-Gen Collectable Garbage: " PROPERFMT " consolidated with free: " PROPERFMT ", over %zu regions",
                      PROPERFMTARGS(collectable_garbage), PROPERFMTARGS(unfragmented), old_candidates);
@@ -562,9 +576,16 @@ size_t ShenandoahOldHeuristics::unprocessed_old_collection_candidates_garbage() 
 
 void ShenandoahOldHeuristics::set_unprocessed_old_collection_candidates_garbage(size_t initial_garbage) {
   _garbage_in_unprocessed_candidates = initial_garbage;
+#ifdef KELVIN_CANDIDATE_GARBAGE
+  log_info(gc)("set_unprocessed_old_collection_candidates_garbage(%zu)", initial_garbage);
+#endif
 }
 
 void ShenandoahOldHeuristics::decrease_unprocessed_old_collection_candidates_garbage(size_t reclaimed_garbage) {
+#ifdef KELVIN_CANDIDATE_GARBAGE
+  log_info(gc)("decrease_unprocessed_old_collection_candidates_garbage(%zu) from total %zu",
+               reclaimed_garbage, _garbage_in_unprocessed_candidates);
+#endif
   assert(reclaimed_garbage <= _garbage_in_unprocessed_candidates, "Cannot reclaim more garbage than was present");
   _garbage_in_unprocessed_candidates -= reclaimed_garbage;
 }
