@@ -2454,37 +2454,28 @@ class StubGenerator: public StubCodeGenerator {
       __ andi_(R0, rScratch1, 1);
       __ bne(CR0, L_fillBytes);
 
-      {
-        UnsafeMemoryAccessMark umam(this, true, true);
-        // At this point, we know the lower bit of size is zero and a
-        // multiple of 2
-        do_setmemory_atomic_loop(2, dest, size, byteVal, _masm);
-      }
+      // Mark remaining code as such which performs Unsafe accesses.
+      UnsafeMemoryAccessMark umam(this, true, false);
+
+      // At this point, we know the lower bit of size is zero and a
+      // multiple of 2
+      do_setmemory_atomic_loop(2, dest, size, byteVal, _masm);
 
       __ align(32);
       __ bind(L_fill8Bytes);
-      {
-        UnsafeMemoryAccessMark umam(this, true, true);
-        // At this point, we know the lower 3 bits of size are zero and a
-        // multiple of 8
-        do_setmemory_atomic_loop(8, dest, size, byteVal, _masm);
-      }
+      // At this point, we know the lower 3 bits of size are zero and a
+      // multiple of 8
+      do_setmemory_atomic_loop(8, dest, size, byteVal, _masm);
 
       __ align(32);
       __ bind(L_fill4Bytes);
-      {
-        UnsafeMemoryAccessMark umam(this, true, true);
-        // At this point, we know the lower 2 bits of size are zero and a
-        // multiple of 4
-        do_setmemory_atomic_loop(4, dest, size, byteVal, _masm);
-      }
+      // At this point, we know the lower 2 bits of size are zero and a
+      // multiple of 4
+      do_setmemory_atomic_loop(4, dest, size, byteVal, _masm);
 
       __ align(32);
       __ bind(L_fillBytes);
-      {
-        UnsafeMemoryAccessMark umam(this, true, true);
-        do_setmemory_atomic_loop(1, dest, size, byteVal, _masm);
-      }
+      do_setmemory_atomic_loop(1, dest, size, byteVal, _masm);
     }
 
     return start;
