@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,10 @@
  */
 package jdk.jpackage.internal;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -112,28 +114,57 @@ public class DottedVersionTest {
         return data;
     }
 
-    @ParameterizedTest
-    @MethodSource
-    public void testInvalid(String str) {
-        assertThrowsExactly(IllegalArgumentException.class, () -> new DottedVersion(str));
+    record InvalidVersionTestSpec(String version, String invalidComponent) {
+        public InvalidVersionTestSpec {
+            Objects.requireNonNull(version);
+            Objects.requireNonNull(invalidComponent);
+        }
+
+        InvalidVersionTestSpec(String version) {
+            this(version, "");
+        }
+
+        void run() {
+            final String expectedErrorMsg;
+            if (invalidComponent.isEmpty()) {
+                expectedErrorMsg = MessageFormat.format(I18N.getString("error.version-string-zero-length-component"), version);
+            } else {
+                expectedErrorMsg = MessageFormat.format(I18N.getString("error.version-string-invalid-component"), version, invalidComponent);
+            }
+
+            final var ex = assertThrowsExactly(IllegalArgumentException.class, () -> new DottedVersion(version));
+
+            assertEquals(expectedErrorMsg, ex.getMessage());
+        }
     }
 
-    private static Stream<String> testInvalid() {
+    @ParameterizedTest
+    @MethodSource
+    public void testInvalid(InvalidVersionTestSpec testSpec) {
+        testSpec.run();
+    }
+
+    private static Stream<InvalidVersionTestSpec> testInvalid() {
         return Stream.of(
-                "1.-1",
-                "5.",
-                "4.2.",
-                "3..2",
-                "2.a",
-                "0a",
-                ".",
-                " ",
-                " 1",
-                "1. 2",
-                "+1",
-                "-1",
-                "-0",
-                "+0"
+                new InvalidVersionTestSpec("1.-1", "-1"),
+                new InvalidVersionTestSpec("5."),
+                new InvalidVersionTestSpec("4.2."),
+                new InvalidVersionTestSpec("3..2", ".2"),
+                new InvalidVersionTestSpec("3...2", "..2"),
+                new InvalidVersionTestSpec("2.a", "a"),
+                new InvalidVersionTestSpec("0a", "a"),
+                new InvalidVersionTestSpec("1.0a", "0a"),
+                new InvalidVersionTestSpec(".", "."),
+                new InvalidVersionTestSpec("..", ".."),
+                new InvalidVersionTestSpec(".a.b", ".a.b"),
+                new InvalidVersionTestSpec(".1.2", ".1.2"),
+                new InvalidVersionTestSpec(" ", " "),
+                new InvalidVersionTestSpec(" 1", " 1"),
+                new InvalidVersionTestSpec("1. 2", " 2"),
+                new InvalidVersionTestSpec("+1", "+1"),
+                new InvalidVersionTestSpec("-1", "-1"),
+                new InvalidVersionTestSpec("-0", "-0"),
+                new InvalidVersionTestSpec("+0", "+0")
         );
     }
 
@@ -145,7 +176,8 @@ public class DottedVersionTest {
 
     @Test
     public void testEmptyGreedy() {
-        assertThrowsExactly(IllegalArgumentException.class, () -> DottedVersion.greedy(""), "Version may not be empty string");
+        final var ex = assertThrowsExactly(IllegalArgumentException.class, () -> DottedVersion.greedy(""));
+        assertEquals(I18N.getString("error.version-string-empty"), ex.getMessage());
     }
 
     @Test

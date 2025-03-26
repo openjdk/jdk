@@ -556,16 +556,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
 
 ################################################################################
 #
-# Static build support.  When enabled will generate static
-# libraries instead of shared libraries for all JDK libs.
-#
-AC_DEFUN_ONCE([JDKOPT_SETUP_STATIC_BUILD],
-[
-  UTIL_DEPRECATED_ARG_ENABLE(static-build)
-])
-
-################################################################################
-#
 # jmod options.
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_JMOD_OPTIONS],
@@ -630,6 +620,18 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_OPTIONS],
       DEFAULT_DESC: [enabled by default unless --enable-linkable-runtime is set],
       CHECKING_MSG: [if packaged modules are kept])
   AC_SUBST(JLINK_KEEP_PACKAGED_MODULES)
+
+  ################################################################################
+  #
+  # Extra jlink options to be (optionally) passed to the JDK build
+  #
+  UTIL_ARG_WITH(NAME: extra-jlink-flags, TYPE: string,
+      DEFAULT: [],
+      DESC: [extra flags to be passed to jlink during the build],
+      OPTIONAL: true)
+
+  JLINK_USER_EXTRA_FLAGS="$EXTRA_JLINK_FLAGS"
+  AC_SUBST(JLINK_USER_EXTRA_FLAGS)
 ])
 
 ################################################################################
@@ -669,15 +671,6 @@ AC_DEFUN([JDKOPT_EXCLUDE_TRANSLATIONS],
   fi
 
   AC_SUBST(EXCLUDE_TRANSLATIONS)
-])
-
-################################################################################
-#
-# Optionally disable man pages (deprecated)
-#
-AC_DEFUN([JDKOPT_ENABLE_DISABLE_MANPAGES],
-[
-  UTIL_DEPRECATED_ARG_ENABLE(manpages)
 ])
 
 ################################################################################
@@ -866,8 +859,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
   AC_SUBST(SOURCE_DATE)
   AC_SUBST(ISO_8601_FORMAT_STRING)
   AC_SUBST(SOURCE_DATE_ISO_8601)
-
-  UTIL_DEPRECATED_ARG_ENABLE(reproducible-build)
 ])
 
 ################################################################################
