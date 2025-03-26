@@ -36,22 +36,20 @@ import jdk.test.lib.Asserts;
  */
 
 public class TestDisabledLoopPredicates {
-    static final int WARMUP = 10_000;
     static final int SIZE = 100;
-    static final int min = 3;
+    static final int MIN = 3;
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:+UseLoopPredicate",
                                    "-XX:+UseProfiledLoopPredicate");
         TestFramework.runWithFlags("-XX:-UseLoopPredicate");
+        TestFramework.runWithFlags("-XX:-UseProfiledLoopPredicate");
     }
 
     @Run(test = "test")
     private static void check() {
-        for (int i = 0; i < WARMUP; i++) {
-            int res = test(true);
-            Asserts.assertEQ(res, ((SIZE - 1)*SIZE-min*(min+1))/ 2);
-        }
+        int res = test(true);
+        Asserts.assertEQ(res, ((SIZE - 1) * SIZE - MIN * (MIN + 1)) / 2);
     }
 
     @DontInline
@@ -69,21 +67,23 @@ public class TestDisabledLoopPredicates {
     }
 
     @Test
-    @IR(counts = { IRNode.PARSE_PREDICATE_LOOP, "1",
-                   IRNode.PARSE_PREDICATE_PROFILED_LOOP, "1" },
-        phase = CompilePhase.AFTER_PARSING,
+    @IR(counts = { IRNode.LOOP_PARSE_PREDICATE, "1",
+                   IRNode.PROFILED_LOOP_PARSE_PREDICATE, "1" },
         applyIfAnd = { "UseLoopPredicate", "true",
                        "UseProfiledLoopPredicate", "true" })
-    @IR(failOn = { IRNode.PARSE_PREDICATE_LOOP,
-                   IRNode.PARSE_PREDICATE_PROFILED_LOOP },
-        phase = CompilePhase.AFTER_PARSING,
+    @IR(failOn = { IRNode.LOOP_PARSE_PREDICATE,
+                   IRNode.PROFILED_LOOP_PARSE_PREDICATE },
         applyIf = { "UseLoopPredicate", "false" })
+    @IR(counts = { IRNode.LOOP_PARSE_PREDICATE, "1" },
+        failOn = { IRNode.PROFILED_LOOP_PARSE_PREDICATE },
+        applyIfAnd = { "UseLoopPredicate", "true",
+                       "UseProfiledLoopPredicate", "false" })
     public static int test(boolean cond) {
         int[] arr = getArr();
         int sum = 0;
         for (int i = 0; i < arr.length; i++) {
             if (cond) {
-                if (arr[i] > min) {
+                if (arr[i] > MIN) {
                     sum += arr[i];
                 }
             }
