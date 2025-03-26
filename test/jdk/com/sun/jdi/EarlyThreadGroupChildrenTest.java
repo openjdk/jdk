@@ -51,9 +51,6 @@ class EarlyThreadGroupChildrenTestTarg {
     /********** test program **********/
 
 public class EarlyThreadGroupChildrenTest extends TestScaffold {
-    ClassType targetClass;
-    ThreadReference mainThread;
-
     EarlyThreadGroupChildrenTest(String args[]) {
         super(args);
     }
