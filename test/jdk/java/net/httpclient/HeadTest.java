@@ -139,6 +139,7 @@ public class HeadTest implements HttpServerAdapters {
             assertEquals(response.statusCode(), expResp);
             assertEquals(response.body(), "");
             assertEquals(response.headers().firstValue("Content-length").get(), CONTENT_LEN);
+            assertEquals(response.version(), request.version().get());
         }
     }
 

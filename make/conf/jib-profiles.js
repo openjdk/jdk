@@ -1237,7 +1237,7 @@ var getJibProfilesDependencies = function (input, common) {
             organization: common.organization,
             ext: "tar.gz",
             revision: "9.0.0+1.0",
-            module: "graphviz-" + input.target_platform,
+            module: "graphviz-" + input.build_platform,
             configure_args: "DOT=" + input.get("graphviz", "install_path") + "/dot",
             environment_path: input.get("graphviz", "install_path")
         },

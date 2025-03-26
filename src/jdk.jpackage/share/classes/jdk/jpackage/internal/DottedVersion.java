@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,7 @@ final class DottedVersion {
                             if (!greedy) {
                                 return null;
                             } else {
-                                throw new IllegalArgumentException(MessageFormat.format(I18N.
-                                        getString("error.version-string-zero-length-component"),
-                                        version));
+                                ds.throwException();
                             }
                         }
 
@@ -77,8 +75,7 @@ final class DottedVersion {
                     }).takeWhile(Objects::nonNull).toArray(BigInteger[]::new);
             suffix = ds.getUnprocessedString();
             if (!suffix.isEmpty() && greedy) {
-                throw new IllegalArgumentException(MessageFormat.format(I18N.getString(
-                        "error.version-string-invalid-component"), version, suffix));
+                ds.throwException();
             }
         }
     }
@@ -89,7 +86,7 @@ final class DottedVersion {
             this.input = input;
         }
 
-        public String getNextDigits() {
+        String getNextDigits() {
             if (stoped) {
                 return null;
             }
@@ -130,8 +127,27 @@ final class DottedVersion {
             return sb.toString();
         }
 
-        public String getUnprocessedString() {
+        String getUnprocessedString() {
             return input.substring(cursor);
+        }
+
+        void throwException() {
+            final String tail;
+            if (lastDotPos >= 0) {
+                tail = input.substring(lastDotPos + 1);
+            } else {
+                tail = getUnprocessedString();
+            }
+
+            final String errMessage;
+            if (tail.isEmpty()) {
+                errMessage = MessageFormat.format(I18N.getString(
+                        "error.version-string-zero-length-component"), input);
+            } else {
+                errMessage = MessageFormat.format(I18N.getString(
+                        "error.version-string-invalid-component"), input, tail);
+            }
+            throw new IllegalArgumentException(errMessage);
         }
 
         private int cursor;
