@@ -34,7 +34,21 @@
 #include "utilities/quickSort.hpp"
 
 ShenandoahYoungHeuristics::ShenandoahYoungHeuristics(ShenandoahYoungGeneration* generation)
-        : ShenandoahGenerationalHeuristics(generation) {
+    : ShenandoahGenerationalHeuristics(generation),
+      _words_most_recently_evacuated(0),
+      _young_live_words_not_in_most_recent_cset(0),
+      _old_live_words_not_in_most_recent_cset(0),
+      _remset_words_in_most_recent_mark_scan(0),
+      _young_live_words_after_most_recent_mark(0),
+      _young_words_most_recently_evacuated(0),
+      _old_words_most_recently_evacuated(0),
+      _words_most_recently_promoted(0),
+      _regions_most_recently_promoted_in_place(0),
+      _live_words_most_recently_promoted_in_place(0),
+      _anticipated_mark_words(0),
+      _anticipated_evac_words(0),
+      _anticipated_pip_words(0),
+      _anticipated_update_words(0) {
 }
 
 
@@ -185,11 +199,11 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
 		calculated_gc_time * 1000, byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
   if (calculated_gc_time * avg_alloc_rate > allocation_headroom) {
     log_trigger("Calculated GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
-                 " to deplete free headroom (%zu%s) (margin of error = %.2f)",
+                " to deplete free headroom (%zu%s) (margin of error = %.2f)",
 		calculated_gc_time * 1000,
-                 byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate),
-                 byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
-                 _margin_of_error_sd);
+                byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate),
+                byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
+                _margin_of_error_sd);
     log_info(gc, ergo)("Free headroom: %zu%s (free) - %zu%s (spike) - %zu%s (penalties) = %zu%s",
                        byte_size_in_proper_unit(available),           proper_unit_for_byte_size(available),
                        byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),
@@ -477,6 +491,10 @@ void ShenandoahYoungHeuristics::adjust_old_evac_ratio(size_t old_cset_regions, s
 void ShenandoahYoungHeuristics::record_cycle_start() {
   ShenandoahAdaptiveHeuristics::record_cycle_start();
   double now = os::elapsedTime();
+#undef KELVIN_MARK
+#ifdef KELVIN_MARK
+  log_info(gc)("record_cycle_start(), most recent _mark start time: %.6f", now);
+#endif
   _phase_stats[ShenandoahMajorGCPhase::_mark].set_most_recent_start_time(now);
 }
 
@@ -484,12 +502,13 @@ double ShenandoahYoungHeuristics::predict_gc_time() {
   size_t mark_words = get_anticipated_mark_words();
   if (mark_words == 0) {
     // Use other heuristics to trigger.
-    return 0;
+    return 0.0;
   }
   double mark_time = predict_mark_time(mark_words);
   double evac_time = predict_evac_time(get_anticipated_evac_words(), get_anticipated_pip_words());
   double update_time = predict_update_time(get_anticipated_update_words());
   double result = mark_time + evac_time + update_time;
+#undef KELVIN_DEBUG
 #ifdef KELVIN_DEBUG
   log_info(gc)("predicting gc time: %.3f from mark(%zu): %.3f, evac(%zu, %zu): %.3f, update(%zu): %.3f",
 	       result, get_anticipated_mark_words(), mark_time, get_anticipated_evac_words(), get_anticipated_pip_words(),
@@ -526,9 +545,8 @@ void ShenandoahYoungHeuristics::record_mark_end(double now, size_t marked_words)
   double duration = now - start_phase_time;
   // TODO: make adjustments to duration depending on surge level
 
-#undef KELVIN_DEVELOPMENT
-#ifdef KELVIN_DEVELOPMENT
-  log_info(gc)("Recording duration of _mark phase: %.3f for %zu words young live", duration, marked_words);
+#ifdef KELVIN_MARK
+  log_info(gc)("Recording duration of _mark phase: %.6f for %zu words young live", duration, marked_words);
 #endif
   _phase_stats[ShenandoahMajorGCPhase::_mark].add_sample((double) marked_words, duration);
 }
