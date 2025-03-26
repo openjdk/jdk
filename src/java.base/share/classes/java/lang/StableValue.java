@@ -76,7 +76,7 @@ import java.util.function.Supplier;
  *        if (!logger.isSet()) {
  *            logger.trySet(Logger.create(Component.class));
  *        }
- *         return logger.orElseThrow();
+ *        return logger.orElseThrow();
  *    }
  *
  *    public void process() {
