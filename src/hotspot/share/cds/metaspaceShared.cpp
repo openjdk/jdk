@@ -43,6 +43,7 @@
 #include "cds/finalImageRecipes.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderDataShared.hpp"
@@ -661,7 +662,10 @@ void VM_PopulateDumpSharedSpace::doit() {
   AOTClassLocationConfig* cl_config;
   char* serialized_data = dump_read_only_tables(cl_config);
 
-  SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
+  if (CDSConfig::is_dumping_lambdas_in_legacy_mode()) {
+    log_info(cds)("Adjust lambda proxy class dictionary");
+    LambdaProxyClassDictionary::adjust_dumptime_table();
+  }
 
   // The vtable clones contain addresses of the current process.
   // We don't want to write these addresses into the archive.
