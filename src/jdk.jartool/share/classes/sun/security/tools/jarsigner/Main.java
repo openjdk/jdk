@@ -1154,8 +1154,8 @@ public class Main {
                 JarEntry cenEntry = jarFile.getJarEntry(entryName);
                 if (cenEntry == null) {
                     crossChkWarnings.add(String.format(rb.getString(
-                            "entry.1.present.when.reading.jarinputstream." +
-                            "but.missing.via.jarfile"), entryName));
+                            "entry.1.present.when.reading.jarinputstream.but.missing.via.jarfile"),
+                            entryName));
                     continue;
                 }
 
@@ -1163,8 +1163,7 @@ public class Main {
                     readEntry(jis);
                 } catch (SecurityException e) {
                     crossChkWarnings.add(String.format(rb.getString(
-                            "signature.verification.failed.on.entry.1." +
-                            "when.reading.via.jarinputstream"),
+                            "signature.verification.failed.on.entry.1.when.reading.via.jarinputstream"),
                             entryName));
                     continue;
                 }
@@ -1180,8 +1179,7 @@ public class Main {
                             readEntry(cenInputStream);
                         } catch (SecurityException e) {
                             crossChkWarnings.add(String.format(rb.getString(
-                                    "signature.verification.failed.on.entry.1." +
-                                    "when.reading.via.jarfile"),
+                                    "signature.verification.failed.on.entry.1.when.reading.via.jarfile"),
                                     entryName));
                             continue;
                         }
@@ -1205,8 +1203,8 @@ public class Main {
             for (String cenEntry : cenEntrySet) {
                 if (!locEntrySet.contains(cenEntry)) {
                     crossChkWarnings.add(String.format(rb.getString(
-                            "entry.1.present.when.reading.jarfile." +
-                            "but.missing.via.jarinputstream"), cenEntry));
+                            "entry.1.present.when.reading.jarfile.but.missing.via.jarinputstream"),
+                            cenEntry));
                 }
             }
 
@@ -1277,19 +1275,16 @@ public class Main {
         if (cenHasSigners && locHasSigners) {
             if (!Arrays.equals(cenSigners, locSigners)) {
                 crossChkWarnings.add(String.format(rb.getString(
-                        "codesigners.different.for.entry.1.when.reading." +
-                        "jarfile.and.jarinputstream"),
+                        "codesigners.different.for.entry.1.when.reading.jarfile.and.jarinputstream"),
                         cenEntry.getName()));
             }
         } else if (cenHasSigners) {
             crossChkWarnings.add(String.format(rb.getString(
-                    "entry.1.is.signed.in.jarfile.but.is.not." +
-                    "signed.in.jarinputstream"),
+                    "entry.1.is.signed.in.jarfile.but.is.not.signed.in.jarinputstream"),
                     cenEntry.getName()));
         } else if (locHasSigners) {
             crossChkWarnings.add(String.format(rb.getString(
-                    "entry.1.is.signed.in.jarinputstream.but.is.not." +
-                    "signed.in.jarfile"),
+                    "entry.1.is.signed.in.jarinputstream.but.is.not.signed.in.jarfile"),
                     locEntry.getName()));
         }
     }
@@ -1297,9 +1292,7 @@ public class Main {
     private void displayCrossChkWarnings() {
         System.out.println();
         // First is a summary warning
-        System.out.println(rb.getString("jar.contains.internal." +
-                "inconsistencies.may.result.in.different.contents." +
-                "when.reading.via.jarfile.and.jarinputstream"));
+        System.out.println(rb.getString("jar.contains.internal.inconsistencies.result.in.different.contents.via.jarfile.and.jarinputstream"));
         // each warning message with prefix "- "
         crossChkWarnings.forEach(warning -> System.out.println("- " + warning));
     }
