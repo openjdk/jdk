@@ -180,8 +180,7 @@
 /*
  * @test id=NoFlags
  * @bug 8288981 8350579 8350577
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
- *                    compiler.predicates.assertion.TestAssertionPredicates NoFlags
+ * @run main compiler.predicates.assertion.TestAssertionPredicates NoFlags
  */
 
 package compiler.predicates.assertion;
