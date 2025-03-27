@@ -138,8 +138,8 @@ void ShenandoahGenerationalHeap::initialize_heuristics() {
   const size_t initial_capacity_young = initial_young_size();
   const size_t initial_capacity_old = max_heap_capacity - initial_capacity_young;
 
-  _young_generation = new ShenandoahYoungGeneration(max_workers(), max_heap_capacity, initial_capacity_young);
-  _old_generation = new ShenandoahOldGeneration(max_workers(), max_heap_capacity, initial_capacity_old);
+  _young_generation = new ShenandoahYoungGeneration(max_workers(), initial_capacity_young, initial_capacity_young);
+  _old_generation = new ShenandoahOldGeneration(max_workers(), initial_capacity_old, initial_capacity_old);
   _young_generation->initialize_heuristics(mode());
   _old_generation->initialize_heuristics(mode());
 }
@@ -733,7 +733,7 @@ bool ShenandoahGenerationalHeap::transfer_regions(ShenandoahGeneration* src, She
 }
 
 size_t ShenandoahGenerationalHeap::initial_young_size() const {
-  return static_cast<size_t>(percent_of(ShenandoahInitYoungPercentage, num_regions())) * ShenandoahHeapRegion::region_size_bytes();
+  return (ShenandoahInitYoungPercentage / 100.0) * num_regions() * ShenandoahHeapRegion::region_size_bytes();
 }
 
 void ShenandoahGenerationalHeap::reset_generation_reserves() {
