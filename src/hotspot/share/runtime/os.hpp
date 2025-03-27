@@ -1087,7 +1087,7 @@ class os: AllStatic {
   static bool pd_dll_unload(void* libhandle, char* ebuf, int ebuflen);
 
  private:
-  static size_t pre_alloc(void** raw_ptr, void* old_ptr, size_t size, bool check_limit, MemTag mem_tag, const NativeCallStack& stack);
+  static size_t pre_alloc(void** raw_ptr, void* old_ptr, size_t size, bool check_limit, MemTag mem_tag);
   static void* post_alloc(void* raw_ptr, size_t size, size_t chunk, MemTag mem_tag, const NativeCallStack& stack);
 
 };
