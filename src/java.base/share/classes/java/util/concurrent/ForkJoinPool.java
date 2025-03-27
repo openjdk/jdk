@@ -3924,7 +3924,7 @@ public class ForkJoinPool extends AbstractExecutorService
     /**
      * Returns an estimate of the number of delayed (including
      * periodic) tasks scheduled in this pool that are not yet ready
-     * to submit for execution. The returned value is innacurate while
+     * to submit for execution. The returned value is inaccurate while
      * delayed tasks are being processed.
      *
      * @return an estimate of the number of delayed tasks
