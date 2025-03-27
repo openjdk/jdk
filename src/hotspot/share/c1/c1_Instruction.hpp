@@ -91,7 +91,6 @@ class         LookupSwitch;
 class       Return;
 class       Throw;
 class       Base;
-class   RoundFP;
 class   UnsafeOp;
 class     UnsafeGet;
 class     UnsafePut;
@@ -555,7 +554,6 @@ class Instruction: public CompilationResourceObj {
   virtual Return*           as_Return()          { return nullptr; }
   virtual Throw*            as_Throw()           { return nullptr; }
   virtual Base*             as_Base()            { return nullptr; }
-  virtual RoundFP*          as_RoundFP()         { return nullptr; }
   virtual ExceptionObject*  as_ExceptionObject() { return nullptr; }
   virtual UnsafeOp*         as_UnsafeOp()        { return nullptr; }
   virtual ProfileInvoke*    as_ProfileInvoke()   { return nullptr; }
