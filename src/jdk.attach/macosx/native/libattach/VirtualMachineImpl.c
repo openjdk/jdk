@@ -131,7 +131,8 @@ JNIEXPORT jboolean JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkCatches
     * lifetime before it has initialized its QUIT handler, such a signal delivery will terminate the JVM we
     * are attempting to attach to!
     *
-    * the following code guards the QUIT delivery by testing the current signal masks
+    * The following code guards the QUIT delivery by testing the current signal masks. It is okay to send QUIT
+    * if the signal is caught but not ignored, as that implies a handler has been installed.
     */
 
     if (sysctl(mib, sizeof(mib) / sizeof(int), &kiproc, &kipsz, NULL, 0) == 0) {
