@@ -29,7 +29,10 @@
 
 import java.awt.color.ColorSpace;
 import java.awt.color.ICC_Profile;
-import java.io.IOException;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Map;
 
 public class BuiltInProfileCheck {
@@ -45,33 +48,50 @@ public class BuiltInProfileCheck {
             ColorSpace.CS_LINEAR_RGB, "CS_LINEAR_RGB"
     );
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         System.out.println("CASE 1: Testing BuiltIn Profile");
         for (int cs : colorSpace.keySet()) {
-            updateProfile(true, cs);
+            testProfile(false, true, cs);
         }
         System.out.println("Passed\n");
 
         System.out.println("CASE 2: Testing Custom Profile");
-        updateProfile(false, ColorSpace.CS_sRGB);
+        testProfile(false, false, ColorSpace.CS_sRGB);
         System.out.println("Passed\n");
 
         System.out.println("CASE 4: Testing Built-In Profile"
                            + " Serialization & Deserialization");
-        testSerialization(true);
+        for (int cs : colorSpace.keySet()) {
+            testProfile(true, true, cs);
+        }
         System.out.println("Passed\n");
 
         System.out.println("CASE 5: Testing Custom Profile"
                            + " Serialization & Deserialization");
-        testSerialization(false);
+        testProfile(true, false, ColorSpace.CS_sRGB);
         System.out.println("Passed\n");
     }
 
-    private static void updateProfile(boolean isBuiltIn, int cs) {
+    private static void testProfile(boolean serializationTest, boolean isBuiltIn, int cs) {
         ICC_Profile builtInProfile = ICC_Profile.getInstance(cs);
         // if isBuiltIn=true use builtInProfile else create a copy
         ICC_Profile iccProfile = isBuiltIn ? builtInProfile
                                  : ICC_Profile.getInstance(builtInProfile.getData());
+
+        if (serializationTest) {
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                 ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+                oos.writeObject(iccProfile);
+
+                byte[] array = baos.toByteArray();
+                try (ObjectInputStream ois =
+                             new ObjectInputStream(new ByteArrayInputStream(array))) {
+                    iccProfile = (ICC_Profile) ois.readObject();
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Test Failed", e);
+            }
+        }
 
         byte[] headerData = iccProfile.getData(HEADER_TAG);
         // Set profile class to valid icSigInputClass = 0x73636E72
@@ -98,27 +118,5 @@ public class BuiltInProfileCheck {
             // Modifying custom profile should NOT throw IAE
             iccProfile.setData(HEADER_TAG, headerData);
         }
-    }
-
-    // this test is added to check the ICC_Profile's transient isBuiltIn flag
-    private static void testSerialization(boolean isBuiltIn)
-                                                 throws IOException {
-        ICC_Profile builtInProfile = ICC_Profile.getInstance(ColorSpace.CS_sRGB);
-        // if isBuiltIn=true use builtInProfile else create a copy
-        ICC_Profile iccProfile = isBuiltIn ? builtInProfile
-                                 : ICC_Profile.getInstance(builtInProfile.getData());
-
-        iccProfile.write("Serialized_sRGB.icc");
-        ICC_Profile deSerialProfile = ICC_Profile.getInstance("Serialized_sRGB.icc");
-
-        byte[] headerData = deSerialProfile.getData(HEADER_TAG);
-        // Set profile class to valid icSigInputClass = 0x73636E72
-        headerData[INDEX] = 0x73;
-        headerData[INDEX + 1] = 0x63;
-        headerData[INDEX + 2] = 0x6E;
-        headerData[INDEX + 3] = 0x72;
-
-        // Modifying a deserialized profile should not throw IAE
-        deSerialProfile.setData(HEADER_TAG, headerData);
     }
 }
