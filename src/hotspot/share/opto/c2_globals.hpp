@@ -352,6 +352,9 @@
   develop(bool, TraceLoopMultiversioning, false,                            \
           "Trace loop multiversioning")                                     \
                                                                             \
+  product(bool, UseAutoVectorizationPredicate, true, DIAGNOSTIC,            \
+          "Use AutoVectorization predicate (for speculative compilation)")  \
+                                                                            \
   product(bool, AllowVectorizeOnDemand, true,                               \
           "Globally suppress vectorization set in VectorizeMethod")         \
                                                                             \
