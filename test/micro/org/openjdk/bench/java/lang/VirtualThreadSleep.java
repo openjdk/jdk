@@ -27,14 +27,29 @@ import org.openjdk.jmh.annotations.*;
 
 @BenchmarkMode(Mode.Throughput)
 @State(Scope.Benchmark)
-@Warmup(iterations = 20, time = 5, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 10, time = 5, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 1)
-@OutputTimeUnit(TimeUnit.SECONDS)
+@Warmup(iterations = 5, time = 10, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 5, time = 10, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3)
+//@OutputTimeUnit(TimeUnit.SECONDS)
 public class VirtualThreadSleep {
 
-    @Param({"100000"})
+    @Param({"1000", "10000", "100000"})
     int threadCount;
+
+    @Benchmark
+    public void sleep10() throws Exception {
+        var threads = new Thread[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+            threads[i] = Thread.ofVirtual().start(() -> {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) { }
+            });
+        }
+        for (Thread t : threads) {
+            t.join();
+        }
+    }
 
     @Benchmark
     public void sleep10x10() throws Exception {
