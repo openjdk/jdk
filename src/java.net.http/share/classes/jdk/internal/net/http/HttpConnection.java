@@ -28,8 +28,6 @@ package jdk.internal.net.http;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.http.HttpRequest.H3DiscoveryMode;
-import java.net.http.UnsupportedProtocolVersionException;
 import java.nio.ByteBuffer;
 import java.nio.channels.NetworkChannel;
 import java.nio.channels.SocketChannel;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -538,16 +538,6 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
                 failed.set(new RuntimeException("Dependant action has unexpected frame in " +
                         Thread.currentThread() + ": " + httpStack.get(0)));
             }
-            return;
-        } else if (System.getSecurityManager() != null) {
-            Optional<StackFrame> sf = WALKER.walk(s -> findFrame(s, "PrivilegedRunnable"));
-            if (!sf.isPresent()) {
-                failed.set(new RuntimeException("Dependant action does not have expected frame in "
-                        + Thread.currentThread()));
-                return;
-            } else {
-                System.out.println("Found expected frame: " + sf.get());
-            }
         } else {
             List<StackFrame> httpStack = WALKER.walk(s -> s.filter(f -> f.getDeclaringClass()
                     .getModule().equals(HttpClient.class.getModule()))
@@ -769,15 +759,16 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
             byte[] promiseBytes = promise.toASCIIString().getBytes(UTF_8);
             out.printf("TestServer: %s Pushing promise: %s%n", now(), promise);
             err.printf("TestServer: %s Pushing promise: %s%n", now(), promise);
-            HttpHeaders headers;
+            HttpHeaders reqHeaders = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
+            HttpHeaders rspHeaders;
             if (fixed) {
                 String length = String.valueOf(promiseBytes.length);
-                headers = HttpHeaders.of(Map.of("Content-Length", List.of(length)),
+                rspHeaders = HttpHeaders.of(Map.of("Content-Length", List.of(length)),
                                          ACCEPT_ALL);
             } else {
-                headers = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
+                rspHeaders = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
             }
-            t.serverPush(promise, headers, promiseBytes);
+            t.serverPush(promise, reqHeaders, rspHeaders, promiseBytes);
         } catch (URISyntaxException x) {
             throw new IOException(x.getMessage(), x);
         }
@@ -796,15 +787,8 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
             byte[] promiseBytes = promise.toASCIIString().getBytes(UTF_8);
             out.printf("TestServer: %s sending PushPromiseFrame: %s%n", now(), promise);
             err.printf("TestServer: %s Pushing PushPromiseFrame: %s%n", now(), promise);
-            HttpHeaders headers;
-            if (fixed) {
-                String length = String.valueOf(promiseBytes.length);
-                headers = HttpHeaders.of(Map.of("Content-Length", List.of(length)),
-                        ACCEPT_ALL);
-            } else {
-                headers = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
-            }
-            long pushId = t.sendHttp3PushPromiseFrame(-1, promise, headers);
+            HttpHeaders reqHeaders = HttpHeaders.of(Map.of(), ACCEPT_ALL);
+            long pushId = t.sendHttp3PushPromiseFrame(-1, promise, reqHeaders);
             out.printf("TestServer: %s PushPromiseFrame pushId=%s sent%n", now(), pushId);
             err.printf("TestServer: %s PushPromiseFrame pushId=%s sent%n", now(), pushId);
             return pushId;
@@ -827,15 +811,16 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
             byte[] promiseBytes = promise.toASCIIString().getBytes(UTF_8);
             out.printf("TestServer: %s sending push response pushId=%s: %s%n", now(), pushId, promise);
             err.printf("TestServer: %s Pushing push response pushId=%s: %s%n", now(), pushId, promise);
-            HttpHeaders headers;
+            HttpHeaders reqHeaders = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
+            HttpHeaders rspHeaders;
             if (fixed) {
                 String length = String.valueOf(promiseBytes.length);
-                headers = HttpHeaders.of(Map.of("Content-Length", List.of(length)),
+                rspHeaders = HttpHeaders.of(Map.of("Content-Length", List.of(length)),
                         ACCEPT_ALL);
             } else {
-                headers = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
+                rspHeaders = HttpHeaders.of(Map.of(), ACCEPT_ALL); // empty
             }
-            t.sendHttp3PushResponse(pushId, promise, headers, new ByteArrayInputStream(promiseBytes));
+            t.sendHttp3PushResponse(pushId, promise, reqHeaders, rspHeaders, new ByteArrayInputStream(promiseBytes));
         } catch (URISyntaxException x) {
             throw new IOException(x.getMessage(), x);
         }

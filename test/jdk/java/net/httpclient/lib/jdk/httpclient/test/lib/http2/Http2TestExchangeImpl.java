@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,18 +217,18 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
     }
 
     @Override
-    public void serverPush(URI uri, HttpHeaders headers, InputStream content) {
+    public void serverPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream content) {
         HttpHeadersBuilder headersBuilder = new HttpHeadersBuilder();
         headersBuilder.setHeader(":method", "GET");
         headersBuilder.setHeader(":scheme", uri.getScheme());
         headersBuilder.setHeader(":authority", uri.getAuthority());
         headersBuilder.setHeader(":path", uri.getPath());
-        for (Map.Entry<String,List<String>> entry : headers.map().entrySet()) {
+        for (Map.Entry<String,List<String>> entry : reqHeaders.map().entrySet()) {
             for (String value : entry.getValue())
                 headersBuilder.addHeader(entry.getKey(), value);
         }
         HttpHeaders combinedHeaders = headersBuilder.build();
-        OutgoingPushPromise pp = new OutgoingPushPromise(streamid, uri, combinedHeaders, content);
+        OutgoingPushPromise pp = new OutgoingPushPromise(streamid, uri, combinedHeaders, rspHeaders, content);
         pp.setFlag(HeaderFrame.END_HEADERS);
 
         try {

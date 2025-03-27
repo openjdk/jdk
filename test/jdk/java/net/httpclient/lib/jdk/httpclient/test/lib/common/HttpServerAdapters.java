@@ -263,11 +263,20 @@ public interface HttpServerAdapters {
         public abstract InetSocketAddress getLocalAddress();
         public abstract String getConnectionKey();
         public abstract SSLSession getSSLSession();
-        public void serverPush(URI uri, HttpHeaders headers, byte[] body) throws IOException {
+        public void serverPush(URI uri, HttpHeaders reqHeaders, byte[] body) throws IOException {
             ByteArrayInputStream bais = new ByteArrayInputStream(body);
-            serverPush(uri, headers, bais);
+            serverPush(uri, reqHeaders, bais);
         }
-        public void serverPush(URI uri, HttpHeaders headers, InputStream body)
+        public void serverPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, byte[] body) throws IOException {
+            ByteArrayInputStream bais = new ByteArrayInputStream(body);
+            serverPush(uri, reqHeaders, rspHeaders, bais);
+        }
+        public void serverPush(URI uri, HttpHeaders reqHeaders, InputStream body)
+                throws IOException {
+            serverPush(uri, reqHeaders, HttpHeaders.of(Map.of(), (n,v) -> true), body);
+        }
+
+        public void serverPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream body)
                 throws IOException {
             throw new UnsupportedOperationException("serverPush with " + getExchangeVersion());
         }
@@ -278,16 +287,17 @@ public interface HttpServerAdapters {
 
         /**
          * Sends an HTTP/3 PUSH_PROMISE frame, for the given {@code uri},
-         * with the given request {@code headers}, and opens a push promise
-         * stream to send the given {@code body}.
+         * with the given request {@code reqHeaders}, and opens a push promise
+         * stream to send the given response {@code rspHeaders} and {@code body}.
          *
          * @implSpec
          * The default implementation of this method throws {@link
          * UnsupportedOperationException}
          *
-         * @param uri       the push promise URI
-         * @param headers   the push promise request headers
-         * @param body      the push response body
+         * @param uri        the push promise URI
+         * @param reqHeaders the push promise request headers
+         * @param rspHeaders the push promise request headers
+         * @param body       the push response body
          *
          * @return          the pushId used to push the promise
          *
@@ -295,7 +305,7 @@ public interface HttpServerAdapters {
          * @throws UnsupportedOperationException if the exchange is not {@link
          *         #getExchangeVersion() HTTP_3}
          */
-        public long http3ServerPush(URI uri, HttpHeaders headers, InputStream body)
+        public long http3ServerPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream body)
                 throws IOException {
             throw new UnsupportedOperationException("serverPushWithId with " + getExchangeVersion());
         }
@@ -308,13 +318,13 @@ public interface HttpServerAdapters {
          * @apiNote
          * This method can be used to send a PUSH_PROMISE whose body has
          * already been promised by calling {@link
-         * #http3ServerPush(URI, HttpHeaders, InputStream)}. In that case
+         * #http3ServerPush(URI, HttpHeaders, HttpHeaders, InputStream)}. In that case
          * the {@code pushId} returned by {@link
-         * #http3ServerPush(URI, HttpHeaders, InputStream)} should be passed
+         * #http3ServerPush(URI, HttpHeaders, HttpHeaders, InputStream)} should be passed
          * as parameter. Otherwise, if {@code pushId=-1} is passed as parameter,
          * a new pushId will be allocated. The push response headers and body
          * can be later sent using {@link
-         * #sendHttp3PushResponse(long, URI, HttpHeaders, InputStream)}.
+         * #sendHttp3PushResponse(long, URI, HttpHeaders, HttpHeaders, InputStream)}.
          *
          * @implSpec
          * The default implementation of this method throws {@link
@@ -343,20 +353,24 @@ public interface HttpServerAdapters {
          *
          * @param pushId a positive pushId obtained from {@link
          *               #sendHttp3PushPromiseFrame(long, URI, HttpHeaders)}
-         * @param uri     the push request URI
-         * @param headers the push promise request headers
-         * @param body    the push response body
+         * @param uri        the push request URI
+         * @param reqHeaders the push promise request headers
+         * @param rspHeaders the push promise response headers
+         * @param body       the push response body
          *
          * @throws IOException if an error occurs
          * @throws UnsupportedOperationException if the exchange is not {@link
          */
-        public void sendHttp3PushResponse(long pushId, URI uri, HttpHeaders headers, InputStream body)
+        public void sendHttp3PushResponse(long pushId, URI uri,
+                                          HttpHeaders reqHeaders,
+                                          HttpHeaders rspHeaders,
+                                          InputStream body)
             throws IOException {
             throw new UnsupportedOperationException("serverPushWithId with " + getExchangeVersion());
         }
         /**
          * Sends an HTTP/3 CANCEL_PUSH frame to cancel a push that has been
-         * promised by either {@link #http3ServerPush(URI, HttpHeaders, InputStream)}
+         * promised by either {@link #http3ServerPush(URI, HttpHeaders, HttpHeaders, InputStream)}
          * or {@link #sendHttp3PushPromiseFrame(long, URI, HttpHeaders)}.
          *
          * This method doesn't cancel the push stream but just sends
@@ -392,7 +406,6 @@ public interface HttpServerAdapters {
          *
          * @return the maximum pushId allowed (exclusive)
          *
-         * @throws IOException if an error accurs
          * @throws UnsupportedOperationException if the exchange is not {@link
          *         #getExchangeVersion() HTTP_3}
          */
@@ -520,9 +533,9 @@ public interface HttpServerAdapters {
                 return exchange.serverPushAllowed();
             }
             @Override
-            public void serverPush(URI uri, HttpHeaders headers, InputStream body)
+            public void serverPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream body)
                 throws IOException {
-                exchange.serverPush(uri, headers, body);
+                exchange.serverPush(uri, reqHeaders, rspHeaders, body);
             }
             @Override
             public void requestStopSending(long errorCode) {
@@ -534,20 +547,24 @@ public interface HttpServerAdapters {
             }
 
             @Override
-            public long http3ServerPush(URI uri, HttpHeaders headers, InputStream body) throws IOException {
-                return exchange.serverPushWithId(uri, headers, body);
+            public long http3ServerPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream body) throws IOException {
+                return exchange.serverPushWithId(uri, reqHeaders, rspHeaders, body);
             }
             @Override
-            public long sendHttp3PushPromiseFrame(long pushId, URI uri, HttpHeaders headers) throws IOException {
-               return exchange.sendPushId(pushId, uri, headers);
+            public long sendHttp3PushPromiseFrame(long pushId, URI uri, HttpHeaders reqHeaders) throws IOException {
+               return exchange.sendPushId(pushId, uri, reqHeaders);
             }
             @Override
             public void sendHttp3CancelPushFrame(long pushId) throws IOException {
                 exchange.cancelPushId(pushId);
             }
             @Override
-            public void sendHttp3PushResponse(long pushId, URI uri, HttpHeaders headers, InputStream body) throws IOException {
-                exchange.sendPushResponse(pushId, uri, headers, body);
+            public void sendHttp3PushResponse(long pushId,
+                                              URI uri,
+                                              HttpHeaders reqHeaders,
+                                              HttpHeaders rspHeaders,
+                                              InputStream body) throws IOException {
+                exchange.sendPushResponse(pushId, uri, reqHeaders, rspHeaders, body);
             }
             @Override
             public long waitForHttp3MaxPushId(long pushId) throws InterruptedException {

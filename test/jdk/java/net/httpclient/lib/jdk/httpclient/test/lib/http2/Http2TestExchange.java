@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.net.InetSocketAddress;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiPredicate;
 import javax.net.ssl.SSLSession;
@@ -76,7 +77,12 @@ public interface Http2TestExchange {
 
     boolean serverPushAllowed();
 
-    void serverPush(URI uri, HttpHeaders headers, InputStream content)
+    default void serverPush(URI uri, HttpHeaders headers, InputStream content)
+            throws IOException {
+        serverPush(uri, headers, HttpHeaders.of(Map.of(), (n,v) -> true), content);
+    }
+
+    void serverPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream content)
             throws IOException;
 
     // For HTTP/3 only: send push promise + push stream,  returns pushId
@@ -91,9 +97,10 @@ public interface Http2TestExchange {
      * The default implementation of this method throws {@link
      * UnsupportedOperationException}
      *
-     * @param uri       the push promise URI
-     * @param headers   the push promise request headers
-     * @param content   the push response body
+     * @param uri        the push promise URI
+     * @param reqHeaders the push promise request headers
+     * @param rspHeaders the push promise response headers
+     * @param content    the push response body
      *
      * @return          the pushId used to push the promise
      *
@@ -101,7 +108,7 @@ public interface Http2TestExchange {
      * @throws UnsupportedOperationException if the exchange is not {@link
      *         #getExchangeVersion() HTTP_3}
      */
-    default long serverPushWithId(URI uri, HttpHeaders headers, InputStream content)
+    default long serverPushWithId(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream content)
             throws IOException {
         throw new UnsupportedOperationException("serverPushWithId " + getExchangeVersion());
     }
@@ -111,9 +118,9 @@ public interface Http2TestExchange {
      * pushId is provided, uses the provided pushId and returns it.
      * Otherwise, a new pushId will be allocated and returned.
      * This allows to send an additional promise after {@linkplain
-     * #serverPushWithId(URI, HttpHeaders, InputStream) sending the first},
+     * #serverPushWithId(URI, HttpHeaders, HttpHeaders, InputStream) sending the first},
      * or to send one or several push promise frames before {@linkplain
-     * #sendPushResponse(long, URI, HttpHeaders, InputStream) sending
+     * #sendPushResponse(long, URI, HttpHeaders, HttpHeaders, InputStream) sending
      * the response}.
      *
      * @implSpec
@@ -138,7 +145,7 @@ public interface Http2TestExchange {
     /**
      * For HTTP/3 only: sends an HTTP/3 CANCEL_PUSH frame to cancel
      * a push that has been promised by either {@link
-     * #serverPushWithId(URI, HttpHeaders, InputStream)} or {@link
+     * #serverPushWithId(URI, HttpHeaders, HttpHeaders, InputStream)} or {@link
      * #sendPushId(long, URI, HttpHeaders)}.
      *
      * This method just sends a CANCEL_PUSH frame.
@@ -171,15 +178,19 @@ public interface Http2TestExchange {
      *
      * @param pushId a positive pushId obtained from {@link
      *               #sendPushId(long, URI, HttpHeaders)}
-     * @param uri      the push request URI
-     * @param headers  the push promise request headers
-     * @param content  the push response body
+     * @param uri        the push request URI
+     * @param reqHeaders the push promise request headers
+     * @param rspHeaders the push promise response headers
+     * @param content    the push response body
      *
      * @throws IOException if an error occurs
      * @throws UnsupportedOperationException if the exchange is not {@link
      */
-    default void sendPushResponse(long pushId, URI uri, HttpHeaders headers, InputStream content)
-        throws IOException {
+    default void sendPushResponse(long pushId, URI uri,
+                                  HttpHeaders reqHeaders,
+                                  HttpHeaders rspHeaders,
+                                  InputStream content)
+            throws IOException {
         throw new UnsupportedOperationException("sendPushResponse with " + getExchangeVersion());
     }
 
@@ -192,7 +203,7 @@ public interface Http2TestExchange {
     }
 
     /**
-     * For HTTP/3 only: aits until the given {@code pushId} is allowed by
+     * For HTTP/3 only: waits until the given {@code pushId} is allowed by
      * the HTTP/3 peer.
      *
      * @implSpec
@@ -203,7 +214,6 @@ public interface Http2TestExchange {
      *
      * @return the upper bound pf the maximum pushId allowed (exclusive)
      *
-     * @throws IOException if an error accurs
      * @throws UnsupportedOperationException if the exchange is not {@link
      *         #getExchangeVersion() HTTP_3}
      */

@@ -40,7 +40,6 @@ import java.net.InetAddress;
 import java.net.ProtocolException;
 import java.net.ProxySelector;
 import java.net.http.HttpConnectTimeoutException;
-import java.net.http.HttpRequest.HttpRequestOption;
 import java.net.http.HttpTimeoutException;
 import java.net.http.UnsupportedProtocolVersionException;
 import java.nio.ByteBuffer;
@@ -98,7 +97,6 @@ import jdk.internal.net.http.common.OperationTrackers.Tracker;
 import jdk.internal.net.http.common.Utils.SafeExecutor;
 import jdk.internal.net.http.common.Utils.SafeExecutorService;
 import jdk.internal.net.http.websocket.BuilderImpl;
-import jdk.internal.net.quic.QuicTLSContext;
 
 import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
