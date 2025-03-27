@@ -778,9 +778,11 @@ public interface Elements {
      *                           elements.getTypeElement("I"));
      * }
      *
-     * @apiNote It may not implement the additional compile-time checks on exception types,
-     * return types, and method modifiers specified in JLS {@jls 8.4.8.1} and {@jls 8.4.8.3},
-     * although implementations of this method are allowed to implement these additional checks.
+     * @apiNote This method examines the method's name, signature, subclass relationship, and accessibility
+     * in determining whether one method overrides another, as specified in JLS {@jls 8.4.8.1}.
+     * In addition, an implementation may have stricter checks including method modifiers, return types and
+     * exception types as described in JLS {@jls 8.4.8.1} and {@jls 8.4.8.3}.
+     * Note that such additional compile-time checks are not guaranteed and may vary between implementations.
      *
      * @param overrider  the first method, possible overrider
      * @param overridden  the second method, possibly being overridden
