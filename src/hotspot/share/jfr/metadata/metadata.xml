@@ -123,8 +123,8 @@
   </Event>
 
   <Event name="JavaMonitorDeflate" category="Java Application" label="Java Monitor Deflated">
-    <Field type="Class" name="monitorClass" label="Monitor Class" />
-    <Field type="ulong" contentType="address" name="address" label="Monitor Address" relation="JavaMonitorAddress" />
+    <Field type="Class" name="monitorClass" label="Monitor Class" description="Class of the object deflated. If null or N/A, the object has been garbage collected." />
+    <Field type="ulong" contentType="address" name="address" label="Monitor Address" relation="JavaMonitorAddress" description="Address of the object deflated. If null or N/A, the object has been garbage collected."/>
   </Event>
 
   <Event name="JavaMonitorStatistics" category="Java Application, Statistics" label="Java Monitor Statistics" period="everyChunk">
