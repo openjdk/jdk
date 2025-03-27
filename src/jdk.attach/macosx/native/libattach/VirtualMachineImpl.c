@@ -124,7 +124,7 @@ JNIEXPORT jboolean JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkCatches
     size_t            kipsz = sizeof(struct kinfo_proc);
 
    /*
-    * early in the lifetime of a JVM it has not yet initialized its signal handlers, in particular the QUIT
+    * Early in the lifetime of a JVM it has not yet initialized its signal handlers, in particular the QUIT
     * handler, note that the default behavior of QUIT is to terminate the receiving process, if unhandled.
     *
     * since we use QUIT to initiate an attach operation, if we signal a JVM during this period early in its
