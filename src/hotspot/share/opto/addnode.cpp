@@ -854,6 +854,12 @@ const Type *OrINode::add_ring( const Type *t0, const Type *t1 ) const {
     }
   }
 
+  // If either input is all ones, the output is all ones.
+  // x | ~0 == ~0 <==> x | -1 == -1
+  if (r0 == TypeInt::MINUS_1 || r1 == TypeInt::MINUS_1) {
+    return TypeInt::MINUS_1;
+  }
+
   // If either input is not a constant, just return all integers.
   if( !r0->is_con() || !r1->is_con() )
     return TypeInt::INT;        // Any integer, but still no symbols.
@@ -910,6 +916,12 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 const Type *OrLNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeLong *r0 = t0->is_long(); // Handy access
   const TypeLong *r1 = t1->is_long();
+
+  // If either input is all ones, the output is all ones.
+  // x | ~0 == ~0 <==> x | -1 == -1
+  if (r0 == TypeLong::MINUS_1 || r1 == TypeLong::MINUS_1) {
+    return TypeLong::MINUS_1;
+  }
 
   // If either input is not a constant, just return all integers.
   if( !r0->is_con() || !r1->is_con() )
