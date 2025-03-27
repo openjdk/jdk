@@ -238,7 +238,7 @@ public class AsyncThreadDumpTest {
                 printThreadJava(test.thread);
 
                 //System.out.println("- jcmd Thread.async_dump:");
-				System.out.println("- jcmd Thread.dump_to_file:");
+                System.out.println("- jcmd Thread.dump_to_file:");
 System.out.println("=================");
 System.out.println(output.getStdout());
 System.out.println("=================");
