@@ -112,8 +112,10 @@ const Type* OpaqueNotNullNode::Value(PhaseGVN* phase) const {
   return phase->type(in(1));
 }
 
-OpaqueTemplateAssertionPredicateNode::OpaqueTemplateAssertionPredicateNode(BoolNode* bol): Node(nullptr, bol),
-  _predicate_state(PredicateState::Useful) {
+OpaqueTemplateAssertionPredicateNode::OpaqueTemplateAssertionPredicateNode(BoolNode* bol,  CountedLoopNode* loop_node)
+    : Node(nullptr, bol),
+      _loop_node(loop_node),
+      _predicate_state(PredicateState::Useful) {
   init_class_id(Class_OpaqueTemplateAssertionPredicate);
 }
 
@@ -148,6 +150,7 @@ void OpaqueTemplateAssertionPredicateNode::mark_useless(PhaseIterGVN& igvn) {
 
 #ifndef PRODUCT
 void OpaqueTemplateAssertionPredicateNode::dump_spec(outputStream* st) const {
+  st->print("loop_idx=%d ", _loop_node->_idx);
   if (is_useless()) {
     st->print("#useless ");
   }

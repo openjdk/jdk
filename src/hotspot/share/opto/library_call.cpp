@@ -1721,20 +1721,6 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
   return true;
 }
 
-//--------------------------round_double_node--------------------------------
-// Round a double node if necessary.
-Node* LibraryCallKit::round_double_node(Node* n) {
-  if (Matcher::strict_fp_requires_explicit_rounding) {
-#ifdef IA32
-    if (UseSSE < 2) {
-      n = _gvn.transform(new RoundDoubleNode(nullptr, n));
-    }
-#else
-    Unimplemented();
-#endif // IA32
-  }
-  return n;
-}
 
 //------------------------------inline_math-----------------------------------
 // public static double Math.abs(double)
@@ -1743,7 +1729,7 @@ Node* LibraryCallKit::round_double_node(Node* n) {
 // public static double Math.log10(double)
 // public static double Math.round(double)
 bool LibraryCallKit::inline_double_math(vmIntrinsics::ID id) {
-  Node* arg = round_double_node(argument(0));
+  Node* arg = argument(0);
   Node* n = nullptr;
   switch (id) {
   case vmIntrinsics::_dabs:   n = new AbsDNode(                arg);  break;
@@ -1754,7 +1740,7 @@ bool LibraryCallKit::inline_double_math(vmIntrinsics::ID id) {
   case vmIntrinsics::_floor:  n = RoundDoubleModeNode::make(_gvn, arg, RoundDoubleModeNode::rmode_floor); break;
   case vmIntrinsics::_rint:   n = RoundDoubleModeNode::make(_gvn, arg, RoundDoubleModeNode::rmode_rint); break;
   case vmIntrinsics::_roundD: n = new RoundDNode(arg); break;
-  case vmIntrinsics::_dcopySign: n = CopySignDNode::make(_gvn, arg, round_double_node(argument(2))); break;
+  case vmIntrinsics::_dcopySign: n = CopySignDNode::make(_gvn, arg, argument(2)); break;
   case vmIntrinsics::_dsignum: n = SignumDNode::make(_gvn, arg); break;
   default:  fatal_unexpected_iid(id);  break;
   }
@@ -1788,8 +1774,8 @@ bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, c
          "must be (DD)D or (D)D type");
 
   // Inputs
-  Node* a = round_double_node(argument(0));
-  Node* b = (call_type == OptoRuntime::Math_DD_D_Type()) ? round_double_node(argument(2)) : nullptr;
+  Node* a = argument(0);
+  Node* b = (call_type == OptoRuntime::Math_DD_D_Type()) ? argument(2) : nullptr;
 
   const TypePtr* no_memory_effects = nullptr;
   Node* trig = make_runtime_call(RC_LEAF, call_type, funcAddr, funcName,
@@ -1807,17 +1793,17 @@ bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, c
 
 //------------------------------inline_math_pow-----------------------------
 bool LibraryCallKit::inline_math_pow() {
-  Node* exp = round_double_node(argument(2));
+  Node* exp = argument(2);
   const TypeD* d = _gvn.type(exp)->isa_double_constant();
   if (d != nullptr) {
     if (d->getd() == 2.0) {
       // Special case: pow(x, 2.0) => x * x
-      Node* base = round_double_node(argument(0));
+      Node* base = argument(0);
       set_result(_gvn.transform(new MulDNode(base, base)));
       return true;
     } else if (d->getd() == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
       // Special case: pow(x, 0.5) => sqrt(x)
-      Node* base = round_double_node(argument(0));
+      Node* base = argument(0);
       Node* zero = _gvn.zerocon(T_DOUBLE);
 
       RegionNode* region = new RegionNode(3);
@@ -1963,8 +1949,8 @@ bool LibraryCallKit::inline_min_max(vmIntrinsics::ID id) {
     case vmIntrinsics::_minD_strict:
     case vmIntrinsics::_maxD_strict:
       assert(callee()->signature()->size() == 4, "minD/maxD has 2 parameters of size 2 each.");
-      a = round_double_node(argument(0));
-      b = round_double_node(argument(2));
+      a = argument(0);
+      b = argument(2);
       break;
     case vmIntrinsics::_minL:
     case vmIntrinsics::_maxL:
@@ -3154,7 +3140,8 @@ bool LibraryCallKit::inline_native_jvm_commit() {
   set_control(is_notified);
 
   // Reset notified state.
-  Node* notified_reset_memory = store_to_memory(control(), notified_offset, _gvn.intcon(0), T_BOOLEAN, MemNode::unordered);
+  store_to_memory(control(), notified_offset, _gvn.intcon(0), T_BOOLEAN, MemNode::unordered);
+  Node* notified_reset_memory = reset_memory();
 
   // Iff notified, the return address of the commit method is the current position of the backing java buffer. This is used to reset the event writer.
   Node* current_pos_X = _gvn.transform(new LoadXNode(control(), input_memory_state, java_buffer_pos_offset, TypeRawPtr::NOTNULL, TypeX_X, MemNode::unordered));
@@ -3172,12 +3159,10 @@ bool LibraryCallKit::inline_native_jvm_commit() {
   Node* next_pos_X = _gvn.transform(ConvL2X(arg));
 
   // Store the next_position to the underlying jfr java buffer.
-  Node* commit_memory;
-#ifdef _LP64
-  commit_memory = store_to_memory(control(), java_buffer_pos_offset, next_pos_X, T_LONG, MemNode::release);
-#else
-  commit_memory = store_to_memory(control(), java_buffer_pos_offset, next_pos_X, T_INT, MemNode::release);
-#endif
+  store_to_memory(control(), java_buffer_pos_offset, next_pos_X, LP64_ONLY(T_LONG) NOT_LP64(T_INT), MemNode::release);
+
+  Node* commit_memory = reset_memory();
+  set_all_memory(commit_memory);
 
   // Now load the flags from off the java buffer and decide if the buffer is a lease. If so, it needs to be returned post-commit.
   Node* java_buffer_flags_offset = _gvn.transform(new AddPNode(top(), java_buffer, _gvn.transform(MakeConX(in_bytes(JFR_BUFFER_FLAGS_OFFSET)))));
@@ -8484,9 +8469,9 @@ bool LibraryCallKit::inline_fma(vmIntrinsics::ID id) {
   case vmIntrinsics::_fmaD:
     assert(callee()->signature()->size() == 6, "fma has 3 parameters of size 2 each.");
     // no receiver since it is static method
-    a = round_double_node(argument(0));
-    b = round_double_node(argument(2));
-    c = round_double_node(argument(4));
+    a = argument(0);
+    b = argument(2);
+    c = argument(4);
     result = _gvn.transform(new FmaDNode(a, b, c));
     break;
   case vmIntrinsics::_fmaF:
