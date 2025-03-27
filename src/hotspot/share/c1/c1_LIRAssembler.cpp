@@ -506,12 +506,6 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
       }
       break;
 
-    case lir_roundfp: {
-      LIR_OpRoundFP* round_op = op->as_OpRoundFP();
-      roundfp_op(round_op->in_opr(), round_op->tmp(), round_op->result_opr());
-      break;
-    }
-
     case lir_abs:
     case lir_sqrt:
     case lir_f2hf:
@@ -539,6 +533,16 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
       }
       safepoint_poll(op->in_opr(), op->info());
       break;
+
+#ifdef IA32
+    case lir_fxch:
+      fxch(op->in_opr()->as_jint());
+      break;
+
+    case lir_fld:
+      fld(op->in_opr()->as_jint());
+      break;
+#endif // IA32
 
     case lir_branch:
       break;
@@ -614,6 +618,12 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
       offsets()->set_value(CodeOffsets::OSR_Entry, _masm->offset());
       osr_entry();
       break;
+
+#ifdef IA32
+    case lir_fpop_raw:
+      fpop();
+      break;
+#endif // IA32
 
     case lir_breakpoint:
       breakpoint();
@@ -741,16 +751,6 @@ void LIR_Assembler::emit_op4(LIR_Op4* op) {
 
 void LIR_Assembler::build_frame() {
   _masm->build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes());
-}
-
-
-void LIR_Assembler::roundfp_op(LIR_Opr src, LIR_Opr tmp, LIR_Opr dest) {
-  assert(strict_fp_requires_explicit_rounding, "not required");
-  assert((src->is_single_fpu() && dest->is_single_stack()) ||
-         (src->is_double_fpu() && dest->is_double_stack()),
-         "round_fp: rounds register -> stack location");
-
-  reg2stack (src, dest, src->type());
 }
 
 
