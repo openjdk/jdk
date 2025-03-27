@@ -33,7 +33,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-
 class decode_env;
 
 // The disassembler prints out assembly code annotated

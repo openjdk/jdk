@@ -29,7 +29,6 @@
 
 #include "runtime/interfaceSupport.inline.hpp"
 
-
 // Add a ci native entry wrapper?
 
 // Bring the compilation thread into the VM state.
