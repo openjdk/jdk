@@ -80,9 +80,9 @@ public class TestIncludesAreSorted {
                             %d files with unsorted headers found:
 
                             %s
-                            
+
                             This should be fixable by running:
-                            
+
                                 java %s.java --update %s
 
 
