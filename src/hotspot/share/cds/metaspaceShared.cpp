@@ -1134,6 +1134,8 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     log_info(cds)("Core region alignment: %zu", static_mapinfo->core_region_alignment());
     dynamic_mapinfo = open_dynamic_archive();
 
+    log_info(cds)("ArchiveRelocationMode: %d", ArchiveRelocationMode);
+
     // First try to map at the requested address
     result = map_archives(static_mapinfo, dynamic_mapinfo, true);
     if (result == MAP_ARCHIVE_MMAP_FAILURE) {
