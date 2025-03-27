@@ -498,12 +498,12 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
         __ sd(zr, frame_map()->address_for_slot(dest->single_stack_ix()));
       } else {
         const2reg(src, FrameMap::t1_opr, lir_patch_none, nullptr);
-        reg2stack(FrameMap::t1_opr, dest, c->type(), false);
+        reg2stack(FrameMap::t1_opr, dest, c->type());
       }
       break;
     case T_ADDRESS:   // fall through
       const2reg(src, FrameMap::t1_opr, lir_patch_none, nullptr);
-      reg2stack(FrameMap::t1_opr, dest, c->type(), false);
+      reg2stack(FrameMap::t1_opr, dest, c->type());
     case T_INT:       // fall through
     case T_FLOAT:
       if (c->as_jint_bits() == 0) {
@@ -772,7 +772,7 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
   }
 
   stack2reg(src, temp, src->type());
-  reg2stack(temp, dest, dest->type(), false);
+  reg2stack(temp, dest, dest->type());
 }
 
 void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide) {

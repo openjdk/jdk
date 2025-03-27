@@ -584,14 +584,14 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
         __ str(zr, frame_map()->address_for_slot(dest->single_stack_ix()));
       else {
         const2reg(src, FrameMap::rscratch1_opr, lir_patch_none, nullptr);
-        reg2stack(FrameMap::rscratch1_opr, dest, c->type(), false);
+        reg2stack(FrameMap::rscratch1_opr, dest, c->type());
       }
     }
     break;
   case T_ADDRESS:
     {
       const2reg(src, FrameMap::rscratch1_opr, lir_patch_none, nullptr);
-      reg2stack(FrameMap::rscratch1_opr, dest, c->type(), false);
+      reg2stack(FrameMap::rscratch1_opr, dest, c->type());
     }
   case T_INT:
   case T_FLOAT:
@@ -905,7 +905,7 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
     temp = FrameMap::rscratch1_opr;
 
   stack2reg(src, temp, src->type());
-  reg2stack(temp, dest, dest->type(), false);
+  reg2stack(temp, dest, dest->type());
 }
 
 
