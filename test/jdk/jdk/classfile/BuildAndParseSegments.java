@@ -37,16 +37,16 @@ import org.junit.jupiter.api.Test;
  * @test
  * @bug 8352536
  * @summary Test parsing and generating non-array class data
- * @run junit BuildAndParseBuffersAndSegments
+ * @run junit BuildAndParseSegments
  */
-class BuildAndParseBuffersAndSegments {
+class BuildAndParseSegments {
 
     @Test
     public void testParseAndGenerate() throws IOException {
         ClassFile classFile = ClassFile.of();
         // use our own class, why not?
         byte[] originalBytes;
-        try (InputStream is = BuildAndParseBuffersAndSegments.class.getResourceAsStream("BuildAndParseBuffersAndSegments.class")) {
+        try (InputStream is = BuildAndParseSegments.class.getResourceAsStream("BuildAndParseSegments.class")) {
             originalBytes = is.readAllBytes();
         }
 

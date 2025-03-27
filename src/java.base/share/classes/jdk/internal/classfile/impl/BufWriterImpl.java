@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,10 +33,7 @@ import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.ValueLayout;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.function.IntFunction;
-import java.util.function.LongFunction;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
@@ -374,10 +371,6 @@ public final class BufWriterImpl implements BufWriter {
         System.arraycopy(elems, 0, array, bufferOffset, size());
     }
 
-    public void copyTo(ByteBuffer buffer) {
-        buffer.put(elems, 0, size());
-    }
-
     public void copyTo(MemorySegment segment, long offset) {
         MemorySegment.copy(elems, 0, segment, ValueLayout.JAVA_BYTE, offset, size());
     }
@@ -425,16 +418,6 @@ public final class BufWriterImpl implements BufWriter {
         head.copyTo(result, 0);
         tail.copyTo(result, head.size());
         return result;
-    }
-
-    /**
-     * Join head and tail into an exact-size byte buffer
-     */
-    static ByteBuffer joinToBuffer(IntFunction<ByteBuffer> allocator, BufWriterImpl head, BufWriterImpl tail) {
-        ByteBuffer buffer = allocator.apply(head.size() + tail.size());
-        head.copyTo(buffer);
-        tail.copyTo(buffer);
-        return buffer;
     }
 
     /**
