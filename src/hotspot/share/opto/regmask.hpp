@@ -786,6 +786,9 @@ private:
 
 public:
   unsigned int static basic_rm_size() { return _RM_SIZE; }
+  void set_offset(unsigned int offset) {
+    _offset = offset;
+  }
   void print() const { dump(); }
   void dump(outputStream *st = tty) const; // Print a mask
   void dump_hex(outputStream* st = tty) const; // Print a mask (raw hex)
