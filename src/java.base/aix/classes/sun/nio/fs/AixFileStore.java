@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,6 +38,10 @@ class AixFileStore
     extends UnixFileStore
 {
 
+    // used when checking if extended attributes are enabled or not
+    private volatile boolean xattrChecked;
+    private volatile boolean xattrEnabled;
+
     AixFileStore(UnixPath file) throws IOException {
         super(file);
     }
@@ -73,7 +77,7 @@ class AixFileStore
                 x.rethrowAsIOException(parent);
             }
             if (attrs.dev() != dev())
-                break;
+	        break;
             path = parent;
             parent = parent.getParent();
         }
@@ -89,17 +93,33 @@ class AixFileStore
     }
 
     @Override
-    protected boolean isExtendedAttributesEnabled(UnixPath path) {
-        return false;
-    }
-
-    @Override
     public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
-        return super.supportsFileAttributeView(type);
-    }
+       // support UserDefinedAttributeView if extended attributes enabled
+       if (type == UserDefinedFileAttributeView.class) {
+           // lookup fstypes.properties
+           FeatureStatus status = checkIfFeaturePresent("user_xattr");
+           if (status == FeatureStatus.PRESENT)
+               return true;
+           if (status == FeatureStatus.NOT_PRESENT)
+               return false;
 
-    @Override
-    public boolean supportsFileAttributeView(String name) {
-        return super.supportsFileAttributeView(name);
-    }
+           // typical AIX file system types that support xattr (JFS2 with EA enabled)
+           String fstype = entry().fstype();
+	   System.out.println("fstype :" + fstype);
+           if ("jfs2".equals(fstype)) {
+	       UnixPath dir = new UnixPath(file().getFileSystem(), entry().dir());
+	       return isExtendedAttributesEnabled(dir);
+	   }
+        }
+        return super.supportsFileAttributeView(type);
+
+   }
+
+   @Override
+   public boolean supportsFileAttributeView(String name) {
+       if (name.equals("user"))
+           return supportsFileAttributeView(UserDefinedFileAttributeView.class);
+       return super.supportsFileAttributeView(name);
+   }
+
 }
