@@ -1181,7 +1181,7 @@ public class Main {
                         } catch (SecurityException e) {
                             crossChkWarnings.add(String.format(rb.getString(
                                     "signature.verification.failed.on.entry.1." +
-                                    "when.reading.via.jarfile.inputstream"),
+                                    "when.reading.via.jarfile"),
                                     entryName));
                             continue;
                         }
@@ -1249,7 +1249,7 @@ public class Main {
                 validManifest = false;
             } else if (!cenValue.equals(locValue)) {
                 crossChkWarnings.add(String.format(rb.getString(
-                        "manifest.atrribute.1.differs.jarfile.value.2.jarinputstream.value.3"),
+                        "manifest.attribute.1.differs.jarfile.value.2.jarinputstream.value.3"),
                         key, cenValue, locValue));
                 validManifest = false;
             }
@@ -1283,13 +1283,13 @@ public class Main {
             }
         } else if (cenHasSigners) {
             crossChkWarnings.add(String.format(rb.getString(
-                    "entry.1.has.codesigners.in.jarfile.but.not." +
-                    "in.jarinputstream"),
+                    "entry.1.is.signed.in.jarfile.but.is.not." +
+                    "signed.in.jarinputstream"),
                     cenEntry.getName()));
         } else if (locHasSigners) {
             crossChkWarnings.add(String.format(rb.getString(
-                    "entry.1.has.codesigners.in.jarinputstream.but.not." +
-                    "in.jarfile"),
+                    "entry.1.is.signed.in.jarinputstream.but.is.not." +
+                    "signed.in.jarfile"),
                     locEntry.getName()));
         }
     }
