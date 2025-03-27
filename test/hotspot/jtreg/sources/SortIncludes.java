@@ -33,7 +33,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class SortIncludes {
     private static final String INCLUDE_LINE = "^ *#include *(<[^>]+>|\"[^\"]+\") *$\\n";
@@ -60,7 +59,7 @@ public class SortIncludes {
 
     /// Sorts the include statements in `block`.
     ///
-    /// @param path path of source file containing `block`
+    /// @param path path of the file containing `block`
     /// @param block source code chunk containing 1 or more include statements
     /// @return `block` with the include statements sorted and a blank line between user and
     /// sys includes
@@ -85,7 +84,6 @@ public class SortIncludes {
 
         // Partition lines into user include and sys includes and discard blank lines
         for (String line : lines) {
-            int doubleQuote = line.indexOf('"');
             if (line.contains("\"")) {
                 if (isInlineHpp && nonInlineHpp.endsWith(extract(line, '"', '"'))) {
                     result.add(line);
@@ -146,6 +144,8 @@ public class SortIncludes {
         return false;
     }
 
+    /// Record of the files processed by [#process(List, boolean)] and those
+    /// that had unsorted includes.
     public record Result(List<Path> files, List<Path> unsorted) {
     }
 
@@ -182,7 +182,25 @@ public class SortIncludes {
         return new Result(files, unsorted);
     }
 
-    public static void main(String[] args) throws IOException {
+    /// Exception thrown by [#main] if `"--update"` is in `args` and
+    /// files with unsorted includes were seen.
+    public static class UnsortedIncludesException extends Exception {
+        /// Files with unsorted includes.
+        public final List<Path> files;
+
+        public UnsortedIncludesException(List<Path> files) {
+            this.files = files;
+        }
+    }
+
+    /// Processes C++ files to check if their include statements are sorted.
+    ///
+    /// @param args `[--update] dir|file...` where `update` means the processed
+    ///        files are updated to sort any unsorted includes and `dir|file` are the
+    ///        roots to scan for the C++ files to be processed
+    /// @throws UnsortedIncludesException if `args` includes `"--update"` and
+    ///         files with unsorted includes were found
+    public static void main(String[] args) throws IOException, UnsortedIncludesException {
         boolean update = false;
         List<Path> paths = new ArrayList<>();
         for (String arg : args) {
@@ -199,32 +217,7 @@ public class SortIncludes {
                             result.files.size(),
                             result.unsorted().size());
         } else if (!result.unsorted().isEmpty()) {
-            String unsorted = result.unsorted.stream().map(Path::toString).collect(Collectors.joining(System.lineSeparator()));
-            String msg = String.format("""
-                            %d files with unsorted headers found:
-
-                            %s
-
-                            Note that non-space characters after the closing " or > of an include statement
-                            can be used to prevent re-ordering of the include. For example:
-
-                            #include "e.hpp"
-                            #include "d.hpp"
-                            #include "c.hpp" // do not reorder
-                            #include "b.hpp"
-                            #include "a.hpp"
-
-                            will be reformatted as:
-
-                            #include "d.hpp"
-                            #include "e.hpp"
-                            #include "c.hpp" // do not reorder
-                            #include "a.hpp"
-                            #include "b.hpp"
-
-                            """,
-                            result.unsorted().size(), unsorted);
-            throw new RuntimeException(msg);
+            throw new UnsortedIncludesException(result.unsorted);
         }
     }
 }

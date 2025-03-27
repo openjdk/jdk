@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class TestIncludesAreSorted {
@@ -73,11 +74,40 @@ public class TestIncludesAreSorted {
                         .toArray(String[]::new);
         try {
             SortIncludes.main(args);
-        } catch (RuntimeException e) {
-            String msg = String.format("The unsorted includes listed below should be fixable by running:%n%n    java %s.java --update %s%n",
-                            testSrcDir.resolve(SortIncludes.class.getSimpleName()),
-                            String.join(" ", args));
-            throw new RuntimeException(msg, e);
+        } catch (SortIncludes.UnsortedIncludesException e) {
+            String unsorted = e.files.stream().map(Path::toString).collect(Collectors.joining(System.lineSeparator()));
+            String msg = String.format("""
+                            %d files with unsorted headers found:
+
+                            %s
+                            
+                            This should be fixable by running:
+                            
+                                java %s.java --update %s
+
+
+                            Note that non-space characters after the closing " or > of an include statement
+                            can be used to prevent re-ordering of the include. For example:
+
+                            #include "e.hpp"
+                            #include "d.hpp"
+                            #include "c.hpp" // do not reorder
+                            #include "b.hpp"
+                            #include "a.hpp"
+
+                            will be reformatted as:
+
+                            #include "d.hpp"
+                            #include "e.hpp"
+                            #include "c.hpp" // do not reorder
+                            #include "a.hpp"
+                            #include "b.hpp"
+
+                            """,
+                    e.files.size(), unsorted,
+                    testSrcDir.resolve(SortIncludes.class.getSimpleName()),
+                    String.join(" ", args));
+            throw new RuntimeException(msg);
         }
     }
 }
