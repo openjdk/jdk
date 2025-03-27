@@ -1723,9 +1723,10 @@ packages in the sysroot, configure the build with
 --with-sysroot=$SYSROOT</code></pre>
 <p>and run <code>make</code> normally.</p>
 <h4 id="building-for-windows-aarch64">Building for Windows AArch64</h4>
-<p>To generate Windows AArch64 builds using Cygwin, the target platform
-needs to be set to <code>aarch64-unknown-cygwin</code>. Configure the
-build with <code>--openjdk-target</code>:</p>
+<p>To generate Windows AArch64 builds using Cygwin on a Windows x64
+machine, the target platform needs to be set to
+<code>aarch64-unknown-cygwin</code> to enable cross compilation.
+Configure the build with <code>--openjdk-target</code>:</p>
 <pre><code>bash configure \
   --with-boot-jdk=$BOOT_JDK \
   --openjdk-target=aarch64-unknown-cygwin</code></pre>
