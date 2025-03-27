@@ -1134,7 +1134,7 @@ public class Main {
     }
 
     private void crossCheckEntries(String jarName) throws Exception {
-        List<String> locEntries = new ArrayList<>();
+        Set<String> locEntries = new HashSet<>();
 
         try (JarFile jarFile = new JarFile(jarName);
              JarInputStream jis = new JarInputStream(
@@ -1142,9 +1142,7 @@ public class Main {
 
             Manifest cenManifest = jarFile.getManifest();
             Manifest locManifest = jis.getManifest();
-            if (!compareManifest(cenManifest, locManifest)) {
-                return;
-            }
+            compareManifest(cenManifest, locManifest);
 
             JarEntry locEntry;
             while ((locEntry = jis.getNextJarEntry()) != null) {
@@ -1189,28 +1187,20 @@ public class Main {
                 compareSigners(cenEntry, locEntry);
             }
 
-            List<String> cenEntries;
-            cenEntries = jarFile.stream()
+            List<String> cenEntries = jarFile.stream()
                     .map(JarEntry::getName)
                     .collect(Collectors.toList());
 
-            var cenEntries2 = cenEntries.getFirst().equals(JarFile.MANIFEST_NAME)
-                    ? cenEntries.subList(1, cenEntries.size()) : cenEntries;
-
-            Set<String> locEntrySet = new HashSet<>(locEntries);
-            Set<String> cenEntrySet = new HashSet<>(cenEntries2);
+            Set<String> cenEntrySet = cenEntries.getFirst().equals(JarFile.MANIFEST_NAME)
+                    ? new HashSet<>(cenEntries.subList(1, cenEntries.size()))
+                    : new HashSet<>(cenEntries);
 
             for (String cenEntry : cenEntrySet) {
-                if (!locEntrySet.contains(cenEntry)) {
+                if (!locEntries.contains(cenEntry)) {
                     crossChkWarnings.add(String.format(rb.getString(
                             "entry.1.present.when.reading.jarfile.but.missing.via.jarinputstream"),
                             cenEntry));
                 }
-            }
-
-            if (!cenEntries2.equals(locEntries)) {
-                crossChkWarnings.add(rb.getString(
-                        "entries.mismatch.when.comparing.jarfile.and.jarinputstream"));
             }
         }
     }
@@ -1219,18 +1209,16 @@ public class Main {
         is.transferTo(OutputStream.nullOutputStream());
     }
 
-    private boolean compareManifest(Manifest cenManifest, Manifest locManifest) {
-        boolean validManifest = true;
-
+    private void compareManifest(Manifest cenManifest, Manifest locManifest) {
         if (cenManifest == null) {
             crossChkWarnings.add(rb.getString(
                     "manifest.missing.when.reading.jarfile"));
-            return false;
+            return;
         }
         if (locManifest == null) {
             crossChkWarnings.add(rb.getString(
                     "manifest.missing.when.reading.jarinputstream"));
-            return false;
+            return;
         }
 
         Attributes cenMainAttrs = cenManifest.getMainAttributes();
@@ -1244,12 +1232,10 @@ public class Main {
                 crossChkWarnings.add(String.format(rb.getString(
                         "manifest.attribute.1.present.when.reading.jarfile.but.missing.via.jarinputstream"),
                         key));
-                validManifest = false;
             } else if (!cenValue.equals(locValue)) {
                 crossChkWarnings.add(String.format(rb.getString(
                         "manifest.attribute.1.differs.jarfile.value.2.jarinputstream.value.3"),
                         key, cenValue, locValue));
-                validManifest = false;
             }
         }
 
@@ -1258,11 +1244,8 @@ public class Main {
                 crossChkWarnings.add(String.format(rb.getString(
                         "manifest.attribute.1.present.when.reading.jarinputstream.but.missing.via.jarfile"),
                         key));
-                validManifest = false;
             }
         }
-
-        return validManifest;
     }
 
     private void compareSigners(JarEntry cenEntry, JarEntry locEntry) {

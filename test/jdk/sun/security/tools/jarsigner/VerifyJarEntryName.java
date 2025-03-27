@@ -106,14 +106,14 @@ public class VerifyJarEntryName {
                 .shouldContain("This JAR file contains internal " +
                         "inconsistencies that may result in different " +
                         "contents when reading via JarFile and JarInputStream:")
-                .shouldContain("- Entries mismatch when " +
-                        "comparing JarFile and JarInputStream")
+                .shouldContain("- Entry XETA-INF/MYKEY.SF is present when reading " +
+                        "via JarInputStream but missing when reading via JarFile")
                 .shouldHaveExitValue(0);
     }
 
     /*
      * Validate that jarsigner -verify on a valid JAR works without
-     * emitting warnings about entry mismatches or missing entries.
+     * emitting warnings about internal inconsistencies.
      */
     @Test
     void verifyOriginalJar() throws Exception {
@@ -121,10 +121,6 @@ public class VerifyJarEntryName {
                 .shouldNotContain("This JAR file contains internal " +
                         "inconsistencies that may result in different contents when " +
                         "reading via JarFile and JarInputStream:")
-                .shouldNotContain("- Manifest is missing " +
-                        "when reading via JarInputStream")
-                .shouldNotContain("- Entries mismatch " +
-                        "when comparing JarFile and JarInputStream")
                 .shouldHaveExitValue(0);
     }
 
