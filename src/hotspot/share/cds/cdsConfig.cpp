@@ -60,6 +60,7 @@ JavaThread* CDSConfig::_dumper_thread = nullptr;
 int CDSConfig::get_status() {
   assert(Universe::is_fully_initialized(), "status is finalized only after Universe is initialized");
   return (is_dumping_archive()              ? IS_DUMPING_ARCHIVE : 0) |
+         (is_dumping_method_handles()       ? IS_DUMPING_METHOD_HANDLES : 0) |
          (is_dumping_static_archive()       ? IS_DUMPING_STATIC_ARCHIVE : 0) |
          (is_logging_lambda_form_invokers() ? IS_LOGGING_LAMBDA_FORM_INVOKERS : 0) |
          (is_using_archive()                ? IS_USING_ARCHIVE : 0);
@@ -647,11 +648,15 @@ void CDSConfig::log_reasons_for_not_dumping_heap() {
   log_info(cds)("Archived java heap is not supported: %s", reason);
 }
 
+// This is *Legacy* optimization for lambdas before JEP 483. May be removed in the future.
+bool CDSConfig::is_dumping_lambdas_in_legacy_mode() {
+  return !is_dumping_method_handles();
+}
+
 #if INCLUDE_CDS_JAVA_HEAP
 bool CDSConfig::are_vm_options_incompatible_with_dumping_heap() {
   return check_options_incompatible_with_dumping_heap() != nullptr;
 }
-
 
 bool CDSConfig::is_dumping_heap() {
   if (!(is_dumping_classic_static_archive() || is_dumping_final_static_archive())

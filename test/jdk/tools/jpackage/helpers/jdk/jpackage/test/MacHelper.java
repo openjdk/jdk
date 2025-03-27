@@ -397,6 +397,10 @@ public final class MacHelper {
         private final org.w3c.dom.Document doc;
     }
 
+    public static boolean isXcodeDevToolsInstalled() {
+        return Inner.XCODE_DEV_TOOLS_INSTALLED;
+    }
+
     private static DocumentBuilder createDocumentBuilder() throws
                 ParserConfigurationException {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newDefaultInstance();
@@ -430,6 +434,11 @@ public final class MacHelper {
         } catch (NoSuchMethodException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    private static final class Inner {
+        private static final boolean XCODE_DEV_TOOLS_INSTALLED =
+                Executor.of("/usr/bin/xcrun", "--help").executeWithoutExitCodeCheck().getExitCode() == 0;
     }
 
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
