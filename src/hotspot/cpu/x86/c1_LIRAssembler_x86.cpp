@@ -584,52 +584,28 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
 
     case T_FLOAT: {
       if (dest->is_single_xmm()) {
-        if (LP64_ONLY(UseAVX <= 2 &&) c->is_zero_float()) {
+        if (UseAVX <= 2 && c->is_zero_float()) {
           __ xorps(dest->as_xmm_float_reg(), dest->as_xmm_float_reg());
         } else {
           __ movflt(dest->as_xmm_float_reg(),
                    InternalAddress(float_constant(c->as_jfloat())));
         }
       } else {
-#ifndef _LP64
-        assert(dest->is_single_fpu(), "must be");
-        assert(dest->fpu_regnr() == 0, "dest must be TOS");
-        if (c->is_zero_float()) {
-          __ fldz();
-        } else if (c->is_one_float()) {
-          __ fld1();
-        } else {
-          __ fld_s (InternalAddress(float_constant(c->as_jfloat())));
-        }
-#else
         ShouldNotReachHere();
-#endif // !_LP64
       }
       break;
     }
 
     case T_DOUBLE: {
       if (dest->is_double_xmm()) {
-        if (LP64_ONLY(UseAVX <= 2 &&) c->is_zero_double()) {
+        if (UseAVX <= 2 && c->is_zero_double()) {
           __ xorpd(dest->as_xmm_double_reg(), dest->as_xmm_double_reg());
         } else {
           __ movdbl(dest->as_xmm_double_reg(),
                     InternalAddress(double_constant(c->as_jdouble())));
         }
       } else {
-#ifndef _LP64
-        assert(dest->is_double_fpu(), "must be");
-        assert(dest->fpu_regnrLo() == 0, "dest must be TOS");
-        if (c->is_zero_double()) {
-          __ fldz();
-        } else if (c->is_one_double()) {
-          __ fld1();
-        } else {
-          __ fld_d (InternalAddress(double_constant(c->as_jdouble())));
-        }
-#else
         ShouldNotReachHere();
-#endif // !_LP64
       }
       break;
     }
@@ -823,23 +799,6 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
     }
 #endif // LP64
 
-#ifndef _LP64
-    // special moves from fpu-register to xmm-register
-    // necessary for method results
-  } else if (src->is_single_xmm() && !dest->is_single_xmm()) {
-    __ movflt(Address(rsp, 0), src->as_xmm_float_reg());
-    __ fld_s(Address(rsp, 0));
-  } else if (src->is_double_xmm() && !dest->is_double_xmm()) {
-    __ movdbl(Address(rsp, 0), src->as_xmm_double_reg());
-    __ fld_d(Address(rsp, 0));
-  } else if (dest->is_single_xmm() && !src->is_single_xmm()) {
-    __ fstp_s(Address(rsp, 0));
-    __ movflt(dest->as_xmm_float_reg(), Address(rsp, 0));
-  } else if (dest->is_double_xmm() && !src->is_double_xmm()) {
-    __ fstp_d(Address(rsp, 0));
-    __ movdbl(dest->as_xmm_double_reg(), Address(rsp, 0));
-#endif // !_LP64
-
     // move between xmm-registers
   } else if (dest->is_single_xmm()) {
     assert(src->is_single_xmm(), "must match");
@@ -847,13 +806,6 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
   } else if (dest->is_double_xmm()) {
     assert(src->is_double_xmm(), "must match");
     __ movdbl(dest->as_xmm_double_reg(), src->as_xmm_double_reg());
-
-#ifndef _LP64
-    // move between fpu-registers (no instruction necessary because of fpu-stack)
-  } else if (dest->is_single_fpu() || dest->is_double_fpu()) {
-    assert(src->is_single_fpu() || src->is_double_fpu(), "must match");
-    assert(src->fpu() == dest->fpu(), "currently should be nothing to do");
-#endif // !_LP64
 
   } else {
     ShouldNotReachHere();
@@ -1046,18 +998,6 @@ void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
     Address src_addr = frame_map()->address_for_slot(src->double_stack_ix());
     __ movdbl(dest->as_xmm_double_reg(), src_addr);
 
-#ifndef _LP64
-  } else if (dest->is_single_fpu()) {
-    assert(dest->fpu_regnr() == 0, "dest must be TOS");
-    Address src_addr = frame_map()->address_for_slot(src->single_stack_ix());
-    __ fld_s(src_addr);
-
-  } else if (dest->is_double_fpu()) {
-    assert(dest->fpu_regnrLo() == 0, "dest must be TOS");
-    Address src_addr = frame_map()->address_for_slot(src->double_stack_ix());
-    __ fld_d(src_addr);
-#endif // _LP64
-
   } else {
     ShouldNotReachHere();
   }
@@ -1140,13 +1080,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       if (dest->is_single_xmm()) {
         __ movflt(dest->as_xmm_float_reg(), from_addr);
       } else {
-#ifndef _LP64
-        assert(dest->is_single_fpu(), "must be");
-        assert(dest->fpu_regnr() == 0, "dest must be TOS");
-        __ fld_s(from_addr);
-#else
         ShouldNotReachHere();
-#endif // !LP64
       }
       break;
     }
@@ -1155,13 +1089,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       if (dest->is_double_xmm()) {
         __ movdbl(dest->as_xmm_double_reg(), from_addr);
       } else {
-#ifndef _LP64
-        assert(dest->is_double_fpu(), "must be");
-        assert(dest->fpu_regnrLo() == 0, "dest must be TOS");
-        __ fld_d(from_addr);
-#else
         ShouldNotReachHere();
-#endif // !LP64
       }
       break;
     }
@@ -1403,8 +1331,6 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
       __ sign_extend_short(dest->as_register());
       break;
 
-
-#ifdef _LP64
     case Bytecodes::_f2d:
       __ cvtss2sd(dest->as_xmm_double_reg(), src->as_xmm_float_reg());
       break;
@@ -1444,74 +1370,6 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     case Bytecodes::_d2l:
       __ convert_d2l(dest->as_register_lo(), src->as_xmm_double_reg());
       break;
-#else
-    case Bytecodes::_f2d:
-    case Bytecodes::_d2f:
-      if (dest->is_single_xmm()) {
-        __ cvtsd2ss(dest->as_xmm_float_reg(), src->as_xmm_double_reg());
-      } else if (dest->is_double_xmm()) {
-        __ cvtss2sd(dest->as_xmm_double_reg(), src->as_xmm_float_reg());
-      } else {
-        assert(src->fpu() == dest->fpu(), "register must be equal");
-        // do nothing (float result is rounded later through spilling)
-      }
-      break;
-
-    case Bytecodes::_i2f:
-    case Bytecodes::_i2d:
-      if (dest->is_single_xmm()) {
-        __ cvtsi2ssl(dest->as_xmm_float_reg(), src->as_register());
-      } else if (dest->is_double_xmm()) {
-        __ cvtsi2sdl(dest->as_xmm_double_reg(), src->as_register());
-      } else {
-        assert(dest->fpu() == 0, "result must be on TOS");
-        __ movl(Address(rsp, 0), src->as_register());
-        __ fild_s(Address(rsp, 0));
-      }
-      break;
-
-    case Bytecodes::_l2f:
-    case Bytecodes::_l2d:
-      assert(!dest->is_xmm_register(), "result in xmm register not supported (no SSE instruction present)");
-      assert(dest->fpu() == 0, "result must be on TOS");
-      __ movptr(Address(rsp, 0),          src->as_register_lo());
-      __ movl(Address(rsp, BytesPerWord), src->as_register_hi());
-      __ fild_d(Address(rsp, 0));
-      // float result is rounded later through spilling
-      break;
-
-    case Bytecodes::_f2i:
-    case Bytecodes::_d2i:
-      if (src->is_single_xmm()) {
-        __ cvttss2sil(dest->as_register(), src->as_xmm_float_reg());
-      } else if (src->is_double_xmm()) {
-        __ cvttsd2sil(dest->as_register(), src->as_xmm_double_reg());
-      } else {
-        assert(src->fpu() == 0, "input must be on TOS");
-        __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_trunc()));
-        __ fist_s(Address(rsp, 0));
-        __ movl(dest->as_register(), Address(rsp, 0));
-        __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
-      }
-      // IA32 conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
-      assert(op->stub() != nullptr, "stub required");
-      __ cmpl(dest->as_register(), 0x80000000);
-      __ jcc(Assembler::equal, *op->stub()->entry());
-      __ bind(*op->stub()->continuation());
-      break;
-
-    case Bytecodes::_f2l:
-    case Bytecodes::_d2l:
-      assert(!src->is_xmm_register(), "input in xmm register not supported (no SSE instruction present)");
-      assert(src->fpu() == 0, "input must be on TOS");
-      assert(dest == FrameMap::long0_opr, "runtime stub places result in these registers");
-
-      // instruction sequence too long to inline it here
-      {
-        __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::fpu2long_stub_id)));
-      }
-      break;
-#endif // _LP64
 
     default: ShouldNotReachHere();
   }
@@ -2221,15 +2079,6 @@ void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr tmp, LIR_
       default      : ShouldNotReachHere();
     }
 
-#ifndef _LP64
-  } else if (value->is_double_fpu()) {
-    assert(value->fpu_regnrLo() == 0 && dest->fpu_regnrLo() == 0, "both must be on TOS");
-    switch(code) {
-      case lir_abs   : __ fabs() ; break;
-      case lir_sqrt  : __ fsqrt(); break;
-      default      : ShouldNotReachHere();
-    }
-#endif // !_LP64
   } else if (code == lir_f2hf) {
     __ flt_to_flt16(dest->as_register(), value->as_xmm_float_reg(), tmp->as_xmm_float_reg());
   } else if (code == lir_hf2f) {
@@ -3602,13 +3451,6 @@ void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp) {
     __ xorpd(dest->as_xmm_double_reg(),
              ExternalAddress((address)double_signflip_pool),
              rscratch1);
-#ifndef _LP64
-  } else if (left->is_single_fpu() || left->is_double_fpu()) {
-    assert(left->fpu() == 0, "arg must be on TOS");
-    assert(dest->fpu() == 0, "dest must be TOS");
-    __ fchs();
-#endif // !_LP64
-
   } else {
     ShouldNotReachHere();
   }
@@ -3677,29 +3519,6 @@ void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, 
     } else {
       ShouldNotReachHere();
     }
-
-#ifndef _LP64
-  } else if (src->is_double_fpu()) {
-    assert(src->fpu_regnrLo() == 0, "must be TOS");
-    if (dest->is_double_stack()) {
-      __ fistp_d(frame_map()->address_for_slot(dest->double_stack_ix()));
-    } else if (dest->is_address()) {
-      __ fistp_d(as_Address(dest->as_address_ptr()));
-    } else {
-      ShouldNotReachHere();
-    }
-
-  } else if (dest->is_double_fpu()) {
-    assert(dest->fpu_regnrLo() == 0, "must be TOS");
-    if (src->is_double_stack()) {
-      __ fild_d(frame_map()->address_for_slot(src->double_stack_ix()));
-    } else if (src->is_address()) {
-      __ fild_d(as_Address(src->as_address_ptr()));
-    } else {
-      ShouldNotReachHere();
-    }
-#endif // !_LP64
-
   } else {
     ShouldNotReachHere();
   }
