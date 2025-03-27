@@ -537,7 +537,7 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                     instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
             else:
-                iters = 2 if RegOp in [RegRegNddInstruction] and op[1] not in ['popcnt', 'lzcnt', 'tzcnt'] else 1
+                iters = 2 if RegOp in [RegRegNddInstruction] else 1
                 for i in range(iters):
                     test_reg1 = random.choice(test_regs)
                     test_reg2 = random.choice(test_regs) if i == 0 else test_reg1
@@ -650,18 +650,14 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                         instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, imm=imm)
                         print_instruction(instr, lp64_flag, print_lp64_flag)
             else:
-                imm = random.choice(get_immediate_list(op_name, width))
-
-                if RegOp in [RegRegImmNddInstruction]:
-                    for i in range(2):
-                        test_reg1 = random.choice(test_regs)
-                        test_reg2 = test_reg1 if i == 0 else random.choice(test_regs)
-                else:
+                iters = 2 if RegOp in [RegRegImmNddInstruction] else 1
+                for i in range(iters):
+                    imm = random.choice(get_immediate_list(op_name, width))
                     test_reg1 = random.choice(test_regs)
-                    test_reg2 = random.choice(test_regs)
-                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
-                instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, imm=imm)
-                print_instruction(instr, lp64_flag, print_lp64_flag)
+                    test_reg2 = test_reg1 if i == 1 else random.choice(test_regs)
+                    lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
+                    instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, imm=imm)
+                    print_instruction(instr, lp64_flag, print_lp64_flag)
 
                 # additional tests with rax as destination
                 if RegOp in [RegRegImmNddInstruction]:

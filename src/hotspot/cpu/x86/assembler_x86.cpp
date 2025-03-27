@@ -13688,7 +13688,7 @@ int Assembler::evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, int src_enc,
 
 int Assembler::evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, VexSimdPrefix pre, VexOpcode opc,
                            InstructionAttr *attributes, bool no_flags, bool use_prefixq, bool demote) {
-  // Demote RegRegImm instructions
+  // Demote RegReg and RegRegImm instructions
   if (demote && !no_flags && dst_enc == nds_enc) {
     return use_prefixq? prefixq_and_encode(dst_enc) : prefix_and_encode(dst_enc);
   }
