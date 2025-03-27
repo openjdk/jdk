@@ -141,12 +141,17 @@ static char* getConsoleEncoding(BOOL output)
     } else {
         cp = GetConsoleCP();
     }
-    if (cp >= 874 && cp <= 950)
+    if (cp >= 874 && cp <= 950) {
         snprintf(buf, buflen, "ms%d", cp);
-    else if (cp == 65001)
+    } else if (cp == 65001) {
         snprintf(buf, buflen, "UTF-8");
-    else
+    } else if (cp == 0) {
+        // Failed to get the console code page
+        free(buf);
+        buf = NULL;
+    } else {
         snprintf(buf, buflen, "cp%d", cp);
+    }
     return buf;
 }
 
