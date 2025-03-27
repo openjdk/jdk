@@ -79,16 +79,22 @@ public class ExactOptionMatch {
                 .shouldMatch("Mismatched values for property " + o.property() + ": j.*specified during runtime but not during dump time")
                 .shouldContain(FMG_DISABLED);
 
-            // (3) Dump = specified twice, Run = specified once
+            // (3) Dump = specified twice
             TestCommon.dumpBaseArchive(archiveName, o.cmdLine(), o.valueA(), o.cmdLine(), o.valueB())
                 .shouldHaveExitValue(0);
 
+            // (3.1) Run = specified once
             TestCommon.execCommon("-Xlog:cds", o.cmdLine(), o.valueA(), "--version")
                 .shouldMatch("Mismatched values for property " + o.property() + ": runtime.*dump time")
                 .shouldContain(FMG_DISABLED);
 
-            // (4) Dump = specified twice, Run = specified twice (but in different order)
-            //     Should still be able to use FMG (values are sorted by CDS).
+            // (3.2) Run = specified twice (same order)
+            //       Should still be able to use FMG.
+            TestCommon.execCommon("-Xlog:cds", o.cmdLine(), o.valueA(), o.cmdLine(), o.valueB(), "--version")
+                .shouldContain(FMG_ENABLED);
+
+            // (3.3) Run = specified twice (but in different order)
+            //       Should still be able to use FMG (values are sorted by CDS).
             TestCommon.execCommon("-Xlog:cds", o.cmdLine(), o.valueB(), o.cmdLine(), o.valueA(), "--version")
                 .shouldContain(FMG_ENABLED);
         }
