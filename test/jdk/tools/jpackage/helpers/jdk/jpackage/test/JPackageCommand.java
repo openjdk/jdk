@@ -747,10 +747,10 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public JPackageCommand validateOutput(CannedFormattedString... str) {
         // Will look up the given errors in the order they are specified.
-        return validateOutput(Stream.of(str)
-                .map(this::getValue)
+        Stream.of(str).map(this::getValue)
                 .map(TKit::assertTextStream)
-                .reduce(TKit.TextStreamVerifier::andThen).get());
+                .reduce(TKit.TextStreamVerifier::andThen).ifPresent(this::validateOutput);
+        return this;
     }
 
     public boolean isWithToolProvider() {

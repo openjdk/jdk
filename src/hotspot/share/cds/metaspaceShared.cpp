@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotArtifactFinder.hpp"
+#include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
@@ -42,6 +43,7 @@
 #include "cds/finalImageRecipes.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderDataShared.hpp"
@@ -660,7 +662,10 @@ void VM_PopulateDumpSharedSpace::doit() {
   AOTClassLocationConfig* cl_config;
   char* serialized_data = dump_read_only_tables(cl_config);
 
-  SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
+  if (CDSConfig::is_dumping_lambdas_in_legacy_mode()) {
+    log_info(cds)("Adjust lambda proxy class dictionary");
+    LambdaProxyClassDictionary::adjust_dumptime_table();
+  }
 
   // The vtable clones contain addresses of the current process.
   // We don't want to write these addresses into the archive.
@@ -736,6 +741,7 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
 
 void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
   AOTClassLinker::initialize();
+  AOTClassInitializer::init_test_class(CHECK);
 
   if (!jcmd_request && !CDSConfig::is_dumping_final_static_archive()) {
     LambdaFormInvokers::regenerate_holder_classes(CHECK);
