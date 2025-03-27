@@ -202,6 +202,7 @@ void ConstraintCastNode::dump_spec(outputStream *st) const {
     st->print(" extra types: ");
     _extra_types->dump_on(st);
   }
+  st->print(" ");
   _dependency.dump_on(st);
 }
 #endif
@@ -215,7 +216,9 @@ const Type* CastIINode::Value(PhaseGVN* phase) const {
 
   // Similar to ConvI2LNode::Value() for the same reasons
   // see if we can remove type assertion after loop opts
-  // res = widen_type(phase, res, T_INT);
+  if (!UseNewCode) {
+    res = widen_type(phase, res, T_INT);
+  }
 
   return res;
 }
@@ -255,7 +258,7 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     const Type* t = Value(phase);
     if (t != Type::TOP) {
       const Type* wide_t = widen_type(phase, t, T_INT);
-      if (wide_t != t) {
+      if (wide_t != t && UseNewCode) {
         return new CastIINode(in(0), in(1), wide_t, _dependency.widen_type_dependency(), _range_check_dependency, _extra_types);
       }
     }
@@ -532,7 +535,7 @@ Node* ConstraintCastNode::optimize_integer_cast(PhaseGVN* phase, BasicType bt) {
     const TypeInteger* ty = phase->type(y)->is_integer(bt);
 
 
-    const DependencyType& dependency = _dependency.widen_type_dependency();
+    const DependencyType& dependency = UseNewCode2 ? _dependency.widen_type_dependency() : _dependency;
     Node* cx = find_or_make_integer_cast(igvn, x, rx, dependency);
     Node* cy = find_or_make_integer_cast(igvn, y, ry, dependency);
     if (op == Op_Add(bt)) {
