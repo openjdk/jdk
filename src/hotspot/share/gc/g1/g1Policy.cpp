@@ -340,8 +340,9 @@ uint G1Policy::calculate_young_target_length(uint desired_young_length) const {
                               _reserve_regions,
                               max_to_eat_into_reserve);
 
-    uint desired_eden_length = desired_young_length - _g1h->survivor_regions_count();
-    uint allocated_eden_length = allocated_young_length - _g1h->survivor_regions_count();
+    uint survivor_regions_count = _g1h->survivor_regions_count();
+    uint desired_eden_length = desired_young_length - survivor_regions_count;
+    uint allocated_eden_length = allocated_young_length - survivor_regions_count;
 
     if (_free_regions_at_end_of_collection <= _reserve_regions) {
       // Fully eat (or already eating) into the reserve, hand back at most absolute_min_length regions.
@@ -356,9 +357,8 @@ uint G1Policy::calculate_young_target_length(uint desired_young_length) const {
                                   receiving_eden - allocated_eden_length : 0;
 
       log_trace(gc, ergo, heap)("Young target length: Fully eat into reserve "
-                                "receiving young %u receiving additional eden %u",
-                                receiving_eden,
-                                receiving_additional_eden);
+                                "receiving eden %u receiving additional eden %u",
+                                receiving_eden, receiving_additional_eden);
     } else if (_free_regions_at_end_of_collection < (desired_eden_length + _reserve_regions)) {
       // Partially eat into the reserve, at most max_to_eat_into_reserve regions.
       uint free_outside_reserve = _free_regions_at_end_of_collection - _reserve_regions;
@@ -377,7 +377,7 @@ uint G1Policy::calculate_young_target_length(uint desired_young_length) const {
       log_trace(gc, ergo, heap)("Young target length: Partially eat into reserve "
                                 "free outside reserve %u "
                                 "receiving within reserve %u "
-                                "receiving young %u "
+                                "receiving eden %u "
                                 "receiving additional eden %u",
                                 free_outside_reserve, receiving_within_reserve,
                                 receiving_eden, receiving_additional_eden);
