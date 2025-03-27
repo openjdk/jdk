@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class TestIncludesAreSorted {
@@ -75,10 +74,7 @@ public class TestIncludesAreSorted {
         try {
             SortIncludes.main(args);
         } catch (SortIncludes.UnsortedIncludesException e) {
-            String unsorted = e.files.stream().map(Path::toString).collect(Collectors.joining(System.lineSeparator()));
             String msg = String.format("""
-                            %d files with unsorted headers found:
-
                             %s
 
                             This should be fixable by running:
@@ -104,7 +100,7 @@ public class TestIncludesAreSorted {
                             #include "b.hpp"
 
                             """,
-                    e.files.size(), unsorted,
+                    e.getMessage(),
                     testSrcDir.resolve(SortIncludes.class.getSimpleName()),
                     String.join(" ", args));
             throw new RuntimeException(msg);

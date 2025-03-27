@@ -33,7 +33,9 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+/// See [#main].
 public class SortIncludes {
     private static final String INCLUDE_LINE = "^ *# *include *(<[^>]+>|\"[^\"]+\") *$\\n";
     private static final String BLANK_LINE = "^$\\n";
@@ -190,6 +192,12 @@ public class SortIncludes {
 
         public UnsortedIncludesException(List<Path> files) {
             this.files = files;
+        }
+
+        @Override
+        public String getMessage() {
+            String unsorted = files.stream().map(Path::toString).collect(Collectors.joining(System.lineSeparator()));
+            return String.format("%d files with unsorted headers found:%n%s", files.size(), unsorted);
         }
     }
 
