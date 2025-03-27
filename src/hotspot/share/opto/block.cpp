@@ -1612,10 +1612,9 @@ void PhaseBlockLayout::find_edges() {
         if (b->succ_fall_through(j)) {
           Block *target = b->non_connector_successor(j);
           float freq = b->_freq * b->succ_prob(j);
-          float f_from_pct = (100 * freq) / b->_freq;
+          int from_pct = (int) ((100 * freq) / b->_freq);
           float f_to_pct = (100 * freq) / target->_freq;
-          int from_pct = (f_from_pct < (float)INT_MAX) ? (int)f_from_pct : INT_MAX;
-          int to_pct = (f_to_pct < (float)INT_MAX) ? (int)f_to_pct : INT_MAX;
+          int to_pct = (f_to_pct < 100.0) ? (int)f_to_pct : 100;
           edges->append(new CFGEdge(b, target, freq, from_pct, to_pct));
         }
       }
