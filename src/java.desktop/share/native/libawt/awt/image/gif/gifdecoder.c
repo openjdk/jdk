@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,8 +190,8 @@ Java_sun_awt_image_GifImageDecoder_parseImage(JNIEnv *env,
         JNU_ThrowNullPointerException(env, 0);
         return 0;
     }
-    if (((*env)->GetArrayLength(env, prefixh) != 4096) ||
-        ((*env)->GetArrayLength(env, suffixh) != 4096) ||
+    if (((*env)->GetArrayLength(env, prefixh) != 4097) ||
+        ((*env)->GetArrayLength(env, suffixh) != 4097) ||
         ((*env)->GetArrayLength(env, outCodeh) != OUTCODELENGTH))
     {
         JNU_ThrowArrayIndexOutOfBoundsException(env, 0);
@@ -343,8 +343,11 @@ Java_sun_awt_image_GifImageDecoder_parseImage(JNIEnv *env,
                  */
                 goto flushit;
             }
-            curCode = oldCode;
-            outCode[--outCount] = prevChar;
+	
+	        if (curCode != 4095) {
+                curCode = oldCode;
+                outCode[--outCount] = prevChar;
+            }
         }
 
         /* Unless this code is raw data, pursue the chain pointed
@@ -454,6 +457,8 @@ Java_sun_awt_image_GifImageDecoder_parseImage(JNIEnv *env,
                 codeSize++;
                 maxCode <<= 1;
                 codeMask = maxCode - 1;
+            } else if (codeSize == 12) {
+                freeCode = 4096;
             } else {
                 /* Just in case */
                 freeCode = maxCode - 1;
