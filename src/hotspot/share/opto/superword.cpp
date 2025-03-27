@@ -837,7 +837,7 @@ bool VLoopDependencyGraph::independent(Node* s1, Node* s2) const {
   worklist.push(deep);
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
-    for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
+    for (PredsIterator preds(*this, n, false); !preds.done(); preds.next()) {
       Node* pred = preds.current();
       if (_vloop.in_bb(pred) && depth(pred) >= min_d) {
         if (pred == shallow) {
@@ -871,7 +871,7 @@ bool VLoopDependencyGraph::mutually_independent(const Node_List* nodes) const {
   }
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
-    for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
+    for (PredsIterator preds(*this, n, false); !preds.done(); preds.next()) {
       Node* pred = preds.current();
       if (_vloop.in_bb(pred) && depth(pred) >= min_d) {
         if (nodes_set.test(_body.bb_idx(pred))) {
