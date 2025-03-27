@@ -209,7 +209,7 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
     }
 
     void submitExchange(final Http2TestExchange exchange) {
-        System.err.printf("H3 server handling exchange for: %s%n\t\t" +
+        debug.log("H3 server handling exchange for: %s%n\t\t" +
                 "(Memory: max=%s, free=%s, total=%s)%n",
                 exchange.getRequestURI(), Runtime.getRuntime().maxMemory(),
                 Runtime.getRuntime().freeMemory(), Runtime.getRuntime().totalMemory());
