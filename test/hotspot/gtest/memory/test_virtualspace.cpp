@@ -544,7 +544,7 @@ class TestVirtualSpace : AllStatic {
 
     ReservedSpace reserved = reserve_memory(reserve_size_aligned, mode);
 
-    EXPECT_TRUE(reserved.is_reserved());
+    ASSERT_TRUE(reserved.is_reserved());
 
     VirtualSpace vs;
     bool initialized = initialize_virtual_space(vs, reserved, mode);
@@ -564,9 +564,7 @@ class TestVirtualSpace : AllStatic {
       EXPECT_LT(vs.actual_committed_size(), commit_size + commit_granularity);
     }
 
-    if (reserved.is_reserved()) {
-      MemoryReserver::release(reserved);
-    }
+    MemoryReserver::release(reserved);
   }
 
   static void test_virtual_space_actual_committed_space_one_large_page() {
@@ -580,7 +578,7 @@ class TestVirtualSpace : AllStatic {
                                                      large_page_size,
                                                      large_page_size);
 
-    EXPECT_TRUE(reserved.is_reserved());
+    ASSERT_TRUE(reserved.is_reserved());
 
     VirtualSpace vs;
     bool initialized = vs.initialize(reserved, 0);
@@ -590,9 +588,7 @@ class TestVirtualSpace : AllStatic {
 
     EXPECT_EQ(vs.actual_committed_size(), large_page_size);
 
-    if (reserved.is_reserved()) {
-      MemoryReserver::release(reserved);
-    }
+    MemoryReserver::release(reserved);
   }
 
   static void test_virtual_space_actual_committed_space() {

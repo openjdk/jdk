@@ -42,7 +42,7 @@ TEST_VM_F(NMTNativeCallStackStorageTest, DoNotStoreStackIfNotDetailed) {
 TEST_VM_F(NMTNativeCallStackStorageTest, CollisionsReceiveDifferentIndexes) {
   constexpr const int nr_of_stacks = 10;
   NativeCallStack ncs_arr[nr_of_stacks];
-  for (int i = 0; i < nr_of_stacks; i++) {
+  for (size_t i = 0; i < nr_of_stacks; i++) {
     ncs_arr[i] = NativeCallStack((address*)(&i), 1);
   }
 
@@ -52,7 +52,7 @@ TEST_VM_F(NMTNativeCallStackStorageTest, CollisionsReceiveDifferentIndexes) {
     si_arr[i] = ncss.push(ncs_arr[i]);
   }
 
-  // Every SI should be different as every sack is different
+  // Every SI should be different as every stack is different
   for (int i = 0; i < nr_of_stacks; i++) {
     for (int j = 0; j < nr_of_stacks; j++) {
       if (i == j) continue;

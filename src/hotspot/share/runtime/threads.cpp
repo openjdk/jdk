@@ -799,21 +799,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     initialize_class(vmSymbols::jdk_internal_vm_Continuation(), CHECK_JNI_ERR);
   }
 
-#if INCLUDE_CDS
-  // capture the module path info from the ModuleEntryTable
-  ClassLoader::initialize_module_path(THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, tty);
-    vm_exit_during_initialization("ClassLoader::initialize_module_path() failed unexpectedly");
-  }
-#endif
-
-#if INCLUDE_JVMCI
-  if (force_JVMCI_initialization) {
-    JVMCI::initialize_compiler(CHECK_JNI_ERR);
-  }
-#endif
-
   if (NativeHeapTrimmer::enabled()) {
     NativeHeapTrimmer::initialize();
   }
@@ -827,6 +812,12 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Notify JVMTI agents that VM initialization is complete - nop if no agents.
   JvmtiExport::post_vm_initialized();
+
+#if INCLUDE_JVMCI
+  if (force_JVMCI_initialization) {
+    JVMCI::initialize_compiler(CHECK_JNI_ERR);
+  }
+#endif
 
   JFR_ONLY(Jfr::on_create_vm_3();)
 
@@ -862,7 +853,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   _vm_complete = true;
 #endif
 
-  if (CDSConfig::is_dumping_static_archive()) {
+  if (CDSConfig::is_dumping_classic_static_archive()) {
+    // Classic -Xshare:dump, aka "old workflow"
+    MetaspaceShared::preload_and_dump(CHECK_JNI_ERR);
+  } else if (CDSConfig::is_dumping_final_static_archive()) {
+    tty->print_cr("Reading AOTConfiguration %s and writing AOTCache %s", AOTConfiguration, AOTCache);
     MetaspaceShared::preload_and_dump(CHECK_JNI_ERR);
   }
 

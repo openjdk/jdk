@@ -82,7 +82,7 @@ import jdk.internal.access.SharedSecrets;
  * @since   1.2
  */
 
-public class Collections {
+public final class Collections {
     // Suppresses default constructor, ensuring non-instantiability.
     private Collections() {
     }
@@ -3363,7 +3363,6 @@ public class Collections {
         @SuppressWarnings("serial") // Conditionally serializable
         final Collection<E> c;
         /** @serial */
-        @SuppressWarnings("serial") // Conditionally serializable
         final Class<E> type;
 
         @SuppressWarnings("unchecked")
@@ -3926,10 +3925,8 @@ public class Collections {
         @SuppressWarnings("serial") // Conditionally serializable
         private final Map<K, V> m;
         /** @serial */
-        @SuppressWarnings("serial") // Conditionally serializable
         final Class<K> keyType;
         /** @serial */
-        @SuppressWarnings("serial") // Conditionally serializable
         final Class<V> valueType;
 
         private void typeCheck(Object key, Object value) {

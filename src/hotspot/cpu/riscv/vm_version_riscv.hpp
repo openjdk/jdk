@@ -156,7 +156,9 @@ class VM_Version : public Abstract_VM_Version {
   decl(ext_Zbb         , "Zbb"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZbb))         \
   decl(ext_Zbc         , "Zbc"         , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
   decl(ext_Zbs         , "Zbs"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZbs))         \
+  decl(ext_Zbkb        , "Zbkb"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZbkb))        \
   decl(ext_Zcb         , "Zcb"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZcb))         \
+  decl(ext_Zfa         , "Zfa"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZfa))         \
   decl(ext_Zfh         , "Zfh"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZfh))         \
   decl(ext_Zfhmin      , "Zfhmin"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZfhmin))      \
   decl(ext_Zicsr       , "Zicsr"       , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
@@ -226,6 +228,7 @@ class VM_Version : public Abstract_VM_Version {
     RV_ENABLE_EXTENSION(UseZbb)                     \
     RV_ENABLE_EXTENSION(UseZbs)                     \
     RV_ENABLE_EXTENSION(UseZcb)                     \
+    RV_ENABLE_EXTENSION(UseZfa)                     \
     RV_ENABLE_EXTENSION(UseZfhmin)                  \
     RV_ENABLE_EXTENSION(UseZic64b)                  \
     RV_ENABLE_EXTENSION(UseZicbom)                  \
@@ -295,6 +298,13 @@ class VM_Version : public Abstract_VM_Version {
   // RISCV64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }
   static bool supports_fencei_barrier() { return ext_Zifencei.enabled(); }
+
+  static bool supports_float16_float_conversion() {
+    return UseZfh || UseZfhmin;
+  }
+
+  // Check intrinsic support
+  static bool is_intrinsic_supported(vmIntrinsicID id);
 };
 
 #endif // CPU_RISCV_VM_VERSION_RISCV_HPP

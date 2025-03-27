@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6851214 8347841
+ * @bug 6851214 8347841 8347955
  * @summary Allow 24:00 as a valid end/start DST time stamp
  * @run main ListTimeZones
  */
@@ -35,7 +35,7 @@ import java.util.function.Predicate;
 public class ListTimeZones{
   public static void main(String[] args){
     Date date = new Date();
-    String[] TimeZoneIds = Arrays.stream(TimeZone.getAvailableIDs())
+    String[] TimeZoneIds = TimeZone.availableIDs()
             .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
             .toArray(String[]::new);
     for(int i = 0; i < TimeZoneIds.length; i++){

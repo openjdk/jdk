@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4052223 4089987 4469904 4326988 4486735 8008577 8045998 8140571
- *      8190748 8216969 8174269 8347841
+ *      8190748 8216969 8174269 8347841 8347955
  * @summary test DateFormat and SimpleDateFormat.
  * @modules jdk.localedata
  * @run junit DateFormatTest
@@ -91,7 +91,7 @@ public class DateFormatTest
         /*
          * A String array for the time zone ids.
          */
-        String[] ids = Arrays.stream(TimeZone.getAvailableIDs())
+        String[] ids = TimeZone.availableIDs()
                 .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
                 .toArray(String[]::new);
         /*

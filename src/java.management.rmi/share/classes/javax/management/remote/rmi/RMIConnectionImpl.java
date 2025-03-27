@@ -122,7 +122,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
     }
 
     public String getConnectionId() throws IOException {
-        // We should call reqIncomming() here... shouldn't we?
+        // reqIncoming()/rspOutgoing() could be here, but never have been.
         return connectionId;
     }
 
@@ -1495,20 +1495,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         try {
             ClassLoader old = setCcl(cl);
             try {
-                if (subject != null) {
-                    try {
-                        return Subject.callAs(subject, () -> wrappedClass.cast(mo.get()));
-                    } catch (CompletionException ce) {
-                        Throwable thr = ce.getCause();
-                        if (thr instanceof Exception e) {
-                            throw e;
-                        } else {
-                            throw new RuntimeException(thr);
-                        }
-                    }
-                } else {
-                    return wrappedClass.cast(mo.get());
-                }
+                return wrappedClass.cast(mo.get());
             } finally {
                 setCcl(old);
             }

@@ -29,7 +29,7 @@ import jdk.test.lib.jfr.EventNames;
 /**
  * @test
  * @bug 8316271
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm -Xverify:all jdk.jfr.jvm.TestVerifyInstrumentation

@@ -542,6 +542,31 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
     assert(s2.size() < sizeof(buffer), "size in range");
     print_prop("dump_spec", buffer);
 
+    const TypePtr* adr_type = node->adr_type();
+    if (adr_type != nullptr && C->have_alias_type(adr_type)) {
+      Compile::AliasType* at = C->alias_type(adr_type);
+      if (at != nullptr) {
+        print_prop("alias_index", at->index());
+        // The value of at->field(), if present, is already dumped in the
+        // "source"/"destination" properties.
+        const Type* element = at->element();
+        if (element != nullptr) {
+          stringStream element_stream;
+          element->dump_on(&element_stream);
+          print_prop("alias_element", element_stream.freeze());
+        }
+        if (at->is_rewritable()) {
+          print_prop("alias_is_rewritable", "true");
+        }
+        if (at->is_volatile()) {
+          print_prop("alias_is_volatile", "true");
+        }
+        if (at->general_index() != at->index()) {
+          print_prop("alias_general_index", at->general_index());
+        }
+      }
+    }
+
     if (node->is_block_proj()) {
       print_prop("is_block_proj", "true");
     }

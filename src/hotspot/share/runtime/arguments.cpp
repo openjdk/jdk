@@ -24,7 +24,6 @@
 
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/filemap.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -102,6 +101,7 @@ bool   Arguments::_ClipInlining                 = ClipInlining;
 size_t Arguments::_default_SharedBaseAddress    = SharedBaseAddress;
 
 bool   Arguments::_enable_preview               = false;
+bool   Arguments::_has_jdwp_agent               = false;
 
 LegacyGCLogging Arguments::_legacyGCLogging     = { nullptr, 0 };
 
@@ -533,6 +533,7 @@ static SpecialFlag const special_jvm_flags[] = {
 
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "ZGenerational",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::undefined() },
+  { "ZMarkStackSpaceLimit",         JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::undefined() },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1364,11 +1365,19 @@ void Arguments::set_mode_flags(Mode mode) {
 // incompatible command line options were chosen.
 void Arguments::no_shared_spaces(const char* message) {
   if (RequireSharedSpaces) {
-    jio_fprintf(defaultStream::error_stream(),
-      "Class data sharing is inconsistent with other specified options.\n");
-    vm_exit_during_initialization("Unable to use shared archive", message);
+    log_error(cds)("%s is incompatible with other specified options.",
+                   CDSConfig::new_aot_flags_used() ? "AOT cache" : "CDS");
+    if (CDSConfig::new_aot_flags_used()) {
+      vm_exit_during_initialization("Unable to use AOT cache", message);
+    } else {
+      vm_exit_during_initialization("Unable to use shared archive", message);
+    }
   } else {
-    log_info(cds)("Unable to use shared archive: %s", message);
+    if (CDSConfig::new_aot_flags_used()) {
+      log_warning(cds)("Unable to use AOT cache: %s", message);
+    } else {
+      log_info(cds)("Unable to use shared archive: %s", message);
+    }
     UseSharedSpaces = false;
   }
 }
@@ -2007,7 +2016,7 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
   return JNI_OK;
 }
 
-#if !INCLUDE_JVMTI
+#if !INCLUDE_JVMTI || INCLUDE_CDS
 // Checks if name in command-line argument -agent{lib,path}:name[=options]
 // represents a valid JDWP agent.  is_path==true denotes that we
 // are dealing with -agentpath (case where name is a path), otherwise with
@@ -2305,6 +2314,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
             "Debugging agents are not supported in this VM\n");
           return JNI_ERR;
         }
+#elif INCLUDE_CDS
+        if (valid_jdwp_agent(name, is_absolute_path)) {
+          _has_jdwp_agent = true;
+        }
 #endif // !INCLUDE_JVMTI
         JvmtiAgentList::add(name, options, is_absolute_path);
         os::free(name);
@@ -2592,9 +2605,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       } else if (strcmp(tail, ":disable") == 0) {
         LogConfiguration::disable_logging();
         ret = true;
-      } else if (strcmp(tail, ":async") == 0) {
-        LogConfiguration::set_async_mode(true);
-        ret = true;
+      } else if (strncmp(tail, ":async", strlen(":async")) == 0) {
+        const char* async_tail = tail + strlen(":async");
+        ret = LogConfiguration::parse_async_argument(async_tail);
       } else if (*tail == '\0') {
         ret = LogConfiguration::parse_command_line_arguments();
         assert(ret, "-Xlog without arguments should never fail to parse");
@@ -3787,7 +3800,8 @@ jint Arguments::apply_ergo() {
   if (log_is_enabled(Info, perf, class, link)) {
     if (!UsePerfData) {
       warning("Disabling -Xlog:perf+class+link since UsePerfData is turned off.");
-      LogConfiguration::configure_stdout(LogLevel::Off, false, LOG_TAGS(perf, class, link));
+      LogConfiguration::disable_tags(false, LOG_TAGS(perf, class, link));
+      assert(!log_is_enabled(Info, perf, class, link), "sanity");
     }
   }
 

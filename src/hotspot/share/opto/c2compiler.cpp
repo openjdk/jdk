@@ -352,6 +352,12 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_floatToFloat16:
     if (!Matcher::match_rule_supported(Op_ConvF2HF)) return false;
     break;
+  case vmIntrinsics::_sqrt_float16:
+    if (!Matcher::match_rule_supported(Op_SqrtHF)) return false;
+    break;
+  case vmIntrinsics::_fma_float16:
+    if (!Matcher::match_rule_supported(Op_FmaHF)) return false;
+    break;
 
   /* CompareAndSet, Object: */
   case vmIntrinsics::_compareAndSetReference:
@@ -627,6 +633,8 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_max:
   case vmIntrinsics::_min_strict:
   case vmIntrinsics::_max_strict:
+  case vmIntrinsics::_maxL:
+  case vmIntrinsics::_minL:
   case vmIntrinsics::_arraycopy:
   case vmIntrinsics::_arraySort:
   case vmIntrinsics::_arrayPartition:
@@ -749,10 +757,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_clone:
   case vmIntrinsics::_isAssignableFrom:
   case vmIntrinsics::_isInstance:
-  case vmIntrinsics::_getModifiers:
-  case vmIntrinsics::_isInterface:
-  case vmIntrinsics::_isArray:
-  case vmIntrinsics::_isPrimitive:
   case vmIntrinsics::_isHidden:
   case vmIntrinsics::_getSuperclass:
   case vmIntrinsics::_getClassAccessFlags:
@@ -778,6 +782,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_sha2_implCompress:
   case vmIntrinsics::_sha5_implCompress:
   case vmIntrinsics::_sha3_implCompress:
+  case vmIntrinsics::_double_keccak:
   case vmIntrinsics::_digestBase_implCompressMB:
   case vmIntrinsics::_multiplyToLen:
   case vmIntrinsics::_squareToLen:
@@ -787,6 +792,11 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_ghash_processBlocks:
   case vmIntrinsics::_chacha20Block:
+  case vmIntrinsics::_dilithiumAlmostNtt:
+  case vmIntrinsics::_dilithiumAlmostInverseNtt:
+  case vmIntrinsics::_dilithiumNttMult:
+  case vmIntrinsics::_dilithiumMontMulByConstant:
+  case vmIntrinsics::_dilithiumDecomposePoly:
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:
   case vmIntrinsics::_poly1305_processBlocks:

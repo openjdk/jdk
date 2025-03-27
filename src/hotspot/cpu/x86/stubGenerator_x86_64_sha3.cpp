@@ -81,8 +81,8 @@ static address permsAndRotsAddr() {
 
 void StubGenerator::generate_sha3_stubs() {
   if (UseSHA3Intrinsics) {
-    StubRoutines::_sha3_implCompress   = generate_sha3_implCompress(false,"sha3_implCompress");
-    StubRoutines::_sha3_implCompressMB = generate_sha3_implCompress(true, "sha3_implCompressMB");
+    StubRoutines::_sha3_implCompress   = generate_sha3_implCompress(StubGenStubId::sha3_implCompress_id);
+    StubRoutines::_sha3_implCompressMB = generate_sha3_implCompress(StubGenStubId::sha3_implCompressMB_id);
   }
 }
 
@@ -95,9 +95,21 @@ void StubGenerator::generate_sha3_stubs() {
 //   c_rarg3   - int     offset
 //   c_rarg4   - int     limit
 //
-address StubGenerator::generate_sha3_implCompress(bool multiBlock, const char *name) {
+address StubGenerator::generate_sha3_implCompress(StubGenStubId stub_id) {
+  bool multiBlock;
+  switch(stub_id) {
+  case sha3_implCompress_id:
+    multiBlock = false;
+    break;
+  case sha3_implCompressMB_id:
+    multiBlock = true;
+    break;
+  default:
+    ShouldNotReachHere();
+  }
+
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", name);
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   const Register buf          = c_rarg0;

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,10 +126,10 @@ void InterpreterMacroAssembler::check_and_handle_popframe(Register scratch_reg) 
     // means that this code is called *during* popframe handling - we
     // don't want to reenter.
     andi_(R0, scratch_reg, JavaThread::popframe_pending_bit);
-    beq(CCR0, L);
+    beq(CR0, L);
 
     andi_(R0, scratch_reg, JavaThread::popframe_processing_bit);
-    bne(CCR0, L);
+    bne(CR0, L);
 
     // Call the Interpreter::remove_activation_preserving_args_entry()
     // func to get the address of the same-named entrypoint in the
@@ -150,12 +150,12 @@ void InterpreterMacroAssembler::check_and_handle_earlyret(Register scratch_reg) 
   if (JvmtiExport::can_force_early_return()) {
     Label Lno_early_ret;
     ld(Rthr_state_addr, in_bytes(JavaThread::jvmti_thread_state_offset()), R16_thread);
-    cmpdi(CCR0, Rthr_state_addr, 0);
-    beq(CCR0, Lno_early_ret);
+    cmpdi(CR0, Rthr_state_addr, 0);
+    beq(CR0, Lno_early_ret);
 
     lwz(R0, in_bytes(JvmtiThreadState::earlyret_state_offset()), Rthr_state_addr);
-    cmpwi(CCR0, R0, JvmtiThreadState::earlyret_pending);
-    bne(CCR0, Lno_early_ret);
+    cmpwi(CR0, R0, JvmtiThreadState::earlyret_pending);
+    bne(CR0, Lno_early_ret);
 
     // Jump to Interpreter::_earlyret_entry.
     lwz(R3_ARG1, in_bytes(JvmtiThreadState::earlyret_tos_offset()), Rthr_state_addr);
@@ -229,7 +229,7 @@ void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, Register byt
       ld(R0, in_bytes(JavaThread::polling_word_offset()), R16_thread);
       // Armed page has poll_bit set, if poll bit is cleared just continue.
       andi_(R0, R0, SafepointMechanism::poll_bit());
-      beq(CCR0, dispatch);
+      beq(CR0, dispatch);
       load_dispatch_table(R11_scratch1, sfpt_tbl);
       align(32, 16);
       bind(dispatch);
@@ -528,8 +528,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   Label index_ok;
   lwa(R0, arrayOopDesc::length_offset_in_bytes(), result);
   sldi(R0, R0, LogBytesPerHeapOop);
-  cmpd(CCR0, index, R0);
-  blt(CCR0, index_ok);
+  cmpd(CR0, index, R0);
+  blt(CR0, index_ok);
   stop("resolved reference index out of bounds");
   bind(index_ok);
 #endif
@@ -592,8 +592,8 @@ void InterpreterMacroAssembler::index_check_without_pop(Register Rarray, Registe
 
   // Array nullcheck
   if (!ImplicitNullChecks) {
-    cmpdi(CCR0, Rarray, 0);
-    beq(CCR0, LisNull);
+    cmpdi(CR0, Rarray, 0);
+    beq(CR0, LisNull);
   } else {
     null_check_throw(Rarray, arrayOopDesc::length_offset_in_bytes(), /*temp*/RsxtIndex);
   }
@@ -605,9 +605,9 @@ void InterpreterMacroAssembler::index_check_without_pop(Register Rarray, Registe
 
   // Index check
   lwz(Rlength, arrayOopDesc::length_offset_in_bytes(), Rarray);
-  cmplw(CCR0, Rindex, Rlength);
+  cmplw(CR0, Rindex, Rlength);
   sldi(RsxtIndex, RsxtIndex, index_shift);
-  blt(CCR0, LnotOOR);
+  blt(CR0, LnotOOR);
   // Index should be in R17_tos, array should be in R4_ARG2.
   mr_if_needed(R17_tos, Rindex);
   mr_if_needed(R4_ARG2, Rarray);
@@ -687,11 +687,11 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
     push(state);
 
     // Skip if we don't have to unlock.
-    testbitdi(CCR0, R0, Raccess_flags, JVM_ACC_SYNCHRONIZED_BIT);
-    beq(CCR0, Lunlocked);
+    testbitdi(CR0, R0, Raccess_flags, JVM_ACC_SYNCHRONIZED_BIT);
+    beq(CR0, Lunlocked);
 
-    cmpwi(CCR0, Rdo_not_unlock_flag, 0);
-    bne(CCR0, Lno_unlock);
+    cmpwi(CR0, Rdo_not_unlock_flag, 0);
+    bne(CR0, Lno_unlock);
   }
 
   // Unlock
@@ -705,8 +705,8 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
          -(frame::ijava_state_size + frame::interpreter_frame_monitor_size_in_bytes())); // Monitor base
 
     ld(R0, BasicObjectLock::obj_offset(), Rmonitor_base);
-    cmpdi(CCR0, R0, 0);
-    bne(CCR0, Lunlock);
+    cmpdi(CR0, R0, 0);
+    bne(CR0, Lunlock);
 
     // If it's already unlocked, throw exception.
     if (throw_monitor_exception) {
@@ -740,7 +740,7 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
       addi(Rmonitor_base, Rmonitor_base, - frame::ijava_state_size);  // Monitor base
 
       subf_(Riterations, R26_monitor, Rmonitor_base);
-      ble(CCR0, Lno_unlock);
+      ble(CR0, Lno_unlock);
 
       addi(Rcurrent_obj_addr, Rmonitor_base,
            in_bytes(BasicObjectLock::obj_offset()) - frame::interpreter_frame_monitor_size_in_bytes());
@@ -759,8 +759,8 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
       bind(Lloop);
 
       // Check if current entry is used.
-      cmpdi(CCR0, Rcurrent_obj, 0);
-      bne(CCR0, Lexception);
+      cmpdi(CR0, Rcurrent_obj, 0);
+      bne(CR0, Lexception);
       // Preload next iteration's compare value.
       ld(Rcurrent_obj, 0, Rcurrent_obj_addr);
       addi(Rcurrent_obj_addr, Rcurrent_obj_addr, -delta);
@@ -816,29 +816,29 @@ void InterpreterMacroAssembler::narrow(Register result) {
   Label notBool, notByte, notChar, done;
 
   // common case first
-  cmpwi(CCR0, ret_type, T_INT);
-  beq(CCR0, done);
+  cmpwi(CR0, ret_type, T_INT);
+  beq(CR0, done);
 
-  cmpwi(CCR0, ret_type, T_BOOLEAN);
-  bne(CCR0, notBool);
+  cmpwi(CR0, ret_type, T_BOOLEAN);
+  bne(CR0, notBool);
   andi(result, result, 0x1);
   b(done);
 
   bind(notBool);
-  cmpwi(CCR0, ret_type, T_BYTE);
-  bne(CCR0, notByte);
+  cmpwi(CR0, ret_type, T_BYTE);
+  bne(CR0, notByte);
   extsb(result, result);
   b(done);
 
   bind(notByte);
-  cmpwi(CCR0, ret_type, T_CHAR);
-  bne(CCR0, notChar);
+  cmpwi(CR0, ret_type, T_CHAR);
+  bne(CR0, notChar);
   andi(result, result, 0xffff);
   b(done);
 
   bind(notChar);
-  // cmpwi(CCR0, ret_type, T_SHORT);  // all that's left
-  // bne(CCR0, done);
+  // cmpwi(CR0, ret_type, T_SHORT);  // all that's left
+  // bne(CR0, done);
   extsh(result, result);
 
   // Nothing to do for T_INT
@@ -893,8 +893,8 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     // check if already enabled - if so no re-enabling needed
     assert(sizeof(StackOverflow::StackGuardState) == 4, "unexpected size");
     lwz(R0, in_bytes(JavaThread::stack_guard_state_offset()), R16_thread);
-    cmpwi(CCR0, R0, StackOverflow::stack_guard_enabled);
-    beq_predict_taken(CCR0, no_reserved_zone_enabling);
+    cmpwi(CR0, R0, StackOverflow::stack_guard_enabled);
+    beq_predict_taken(CR0, no_reserved_zone_enabling);
 
     // Compare frame pointers. There is no good stack pointer, as with stack
     // frame compression we can get different SPs when we do calls. A subsequent
@@ -902,8 +902,8 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     // inner call of the method annotated with ReservedStack.
     ld_ptr(R0, JavaThread::reserved_stack_activation_offset(), R16_thread);
     ld_ptr(R11_scratch1, _abi0(callers_sp), R1_SP); // Load frame pointer.
-    cmpld(CCR0, R11_scratch1, R0);
-    blt_predict_taken(CCR0, no_reserved_zone_enabling);
+    cmpld(CR0, R11_scratch1, R0);
+    blt_predict_taken(CR0, no_reserved_zone_enabling);
 
     // Enable reserved zone again, throw stack overflow exception.
     call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), R16_thread);
@@ -961,8 +961,8 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp, object);
       lbz(tmp, in_bytes(Klass::misc_flags_offset()), tmp);
-      testbitdi(CCR0, R0, tmp, exact_log2(KlassFlags::_misc_is_value_based_class));
-      bne(CCR0, slow_case);
+      testbitdi(CR0, R0, tmp, exact_log2(KlassFlags::_misc_is_value_based_class));
+      bne(CR0, slow_case);
     }
 
     if (LockingMode == LM_LIGHTWEIGHT) {
@@ -989,8 +989,8 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
       addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());
 
       // Must fence, otherwise, preceding store(s) may float below cmpxchg.
-      // CmpxchgX sets CCR0 to cmpX(current, displaced).
-      cmpxchgd(/*flag=*/CCR0,
+      // CmpxchgX sets CR0 to cmpX(current, displaced).
+      cmpxchgd(/*flag=*/CR0,
                /*current_value=*/current_header,
                /*compare_value=*/header, /*exchange_value=*/monitor,
                /*where=*/object_mark_addr,
@@ -1021,7 +1021,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
       and_(R0/*==0?*/, current_header, tmp);
       // If condition is true we are done and hence we can store 0 in the displaced
       // header indicating it is a recursive lock.
-      bne(CCR0, slow_case);
+      bne(CR0, slow_case);
       std(R0/*==0!*/, mark_offset, monitor);
       b(count_locking);
     }
@@ -1087,8 +1087,8 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
                  BasicLock::displaced_header_offset_in_bytes(), monitor);
 
       // If the displaced header is zero, we have a recursive unlock.
-      cmpdi(CCR0, header, 0);
-      beq(CCR0, free_slot); // recursive unlock
+      cmpdi(CR0, header, 0);
+      beq(CR0, free_slot); // recursive unlock
     }
 
     // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
@@ -1108,8 +1108,8 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
       // We have the displaced header in displaced_header. If the lock is still
       // lightweight, it will contain the monitor address and we'll store the
       // displaced header back into the object's mark word.
-      // CmpxchgX sets CCR0 to cmpX(current, monitor).
-      cmpxchgd(/*flag=*/CCR0,
+      // CmpxchgX sets CR0 to cmpX(current, monitor).
+      cmpxchgd(/*flag=*/CR0,
                /*current_value=*/current_header,
                /*compare_value=*/monitor, /*exchange_value=*/header,
                /*where=*/object_mark_addr,
@@ -1170,8 +1170,8 @@ void InterpreterMacroAssembler::call_from_interpreter(Register Rtarget_method, R
     // compiled code in threads for which the event is enabled. Check here for
     // interp_only_mode if these events CAN be enabled.
     Label done;
-    cmpwi(CCR0, Rinterp_only, 0);
-    beq(CCR0, done);
+    cmpwi(CR0, Rinterp_only, 0);
+    beq(CR0, done);
     ld(Rtarget_addr, in_bytes(Method::interpreter_entry_offset()), Rtarget_method);
     align(32, 12);
     bind(done);
@@ -1180,8 +1180,8 @@ void InterpreterMacroAssembler::call_from_interpreter(Register Rtarget_method, R
 #ifdef ASSERT
   {
     Label Lok;
-    cmpdi(CCR0, Rtarget_addr, 0);
-    bne(CCR0, Lok);
+    cmpdi(CR0, Rtarget_addr, 0);
+    bne(CR0, Lok);
     stop("null entry point");
     bind(Lok);
   }
@@ -1211,7 +1211,7 @@ void InterpreterMacroAssembler::call_from_interpreter(Register Rtarget_method, R
   sldi(Rscratch1, Rscratch1, Interpreter::logStackElementSize);
   add(Rscratch1, Rscratch1, Rscratch2); // Rscratch2 contains fp
   // Compare sender_sp with the derelativized top_frame_sp
-  cmpd(CCR0, R21_sender_SP, Rscratch1);
+  cmpd(CR0, R21_sender_SP, Rscratch1);
   asm_assert_eq("top_frame_sp incorrect");
 #endif
 
@@ -1234,8 +1234,8 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
 // Test ImethodDataPtr. If it is null, continue at the specified label.
 void InterpreterMacroAssembler::test_method_data_pointer(Label& zero_continue) {
   assert(ProfileInterpreter, "must be profiling interpreter");
-  cmpdi(CCR0, R28_mdx, 0);
-  beq(CCR0, zero_continue);
+  cmpdi(CR0, R28_mdx, 0);
+  beq(CR0, zero_continue);
 }
 
 void InterpreterMacroAssembler::verify_method_data_pointer() {
@@ -1250,8 +1250,8 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
   ld(R12_scratch2, in_bytes(Method::const_offset()), R19_method);
   addi(R11_scratch1, R11_scratch1, in_bytes(ConstMethod::codes_offset()));
   add(R11_scratch1, R12_scratch2, R12_scratch2);
-  cmpd(CCR0, R11_scratch1, R14_bcp);
-  beq(CCR0, verify_continue);
+  cmpd(CR0, R11_scratch1, R14_bcp);
+  beq(CR0, verify_continue);
 
   call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::verify_mdp ), R19_method, R14_bcp, R28_mdx);
 
@@ -1334,8 +1334,8 @@ void InterpreterMacroAssembler::test_mdp_data_at(int offset,
   assert(ProfileInterpreter, "must be profiling interpreter");
 
   ld(test_out, offset, R28_mdx);
-  cmpd(CCR0,  value, test_out);
-  bne(CCR0, not_equal_continue);
+  cmpd(CR0,  value, test_out);
+  bne(CR0, not_equal_continue);
 }
 
 // Update the method data pointer by the displacement located at some fixed
@@ -1491,8 +1491,8 @@ void InterpreterMacroAssembler::profile_virtual_call(Register Rreceiver,
   Label skip_receiver_profile;
   if (receiver_can_be_null) {
     Label not_null;
-    cmpdi(CCR0, Rreceiver, 0);
-    bne(CCR0, not_null);
+    cmpdi(CR0, Rreceiver, 0);
+    bne(CR0, not_null);
     // We are making a call. Increment the count for null receiver.
     increment_mdp_data_at(in_bytes(CounterData::count_offset()), Rscratch1, Rscratch2);
     b(skip_receiver_profile);
@@ -1681,8 +1681,8 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
       if (start_row == last_row) {
         // The only thing left to do is handle the null case.
         // Scratch1 contains test_out from test_mdp_data_at.
-        cmpdi(CCR0, scratch1, 0);
-        beq(CCR0, found_null);
+        cmpdi(CR0, scratch1, 0);
+        beq(CR0, found_null);
         // Receiver did not match any saved receiver and there is no empty row for it.
         // Increment total counter to indicate polymorphic case.
         increment_mdp_data_at(in_bytes(CounterData::count_offset()), scratch1, scratch2);
@@ -1691,8 +1691,8 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
         break;
       }
       // Since null is rare, make it be the branch-taken case.
-      cmpdi(CCR0, scratch1, 0);
-      beq(CCR0, found_null);
+      cmpdi(CR0, scratch1, 0);
+      beq(CR0, found_null);
 
       // Put all the "Case 3" tests here.
       record_klass_in_profile_helper(receiver, scratch1, scratch2, start_row + 1, done);
@@ -1734,27 +1734,27 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, Register mdo_addr
   ld(tmp, mdo_addr_offs, mdo_addr_base);
 
   // Set null_seen if obj is 0.
-  cmpdi(CCR0, obj, 0);
+  cmpdi(CR0, obj, 0);
   ori(R0, tmp, TypeEntries::null_seen);
-  beq(CCR0, do_update);
+  beq(CR0, do_update);
 
   load_klass(klass, obj);
 
   clrrdi(R0, tmp, exact_log2(-TypeEntries::type_klass_mask));
   // Basically same as andi(R0, tmp, TypeEntries::type_klass_mask);
-  cmpd(CCR1, R0, klass);
+  cmpd(CR1, R0, klass);
   // Klass seen before, nothing to do (regardless of unknown bit).
-  //beq(CCR1, do_nothing);
+  //beq(CR1, do_nothing);
 
   andi_(R0, tmp, TypeEntries::type_unknown);
   // Already unknown. Nothing to do anymore.
-  //bne(CCR0, do_nothing);
-  crorc(CCR0, Assembler::equal, CCR1, Assembler::equal); // cr0 eq = cr1 eq or cr0 ne
-  beq(CCR0, do_nothing);
+  //bne(CR0, do_nothing);
+  crorc(CR0, Assembler::equal, CR1, Assembler::equal); // cr0 eq = cr1 eq or cr0 ne
+  beq(CR0, do_nothing);
 
   clrrdi_(R0, tmp, exact_log2(-TypeEntries::type_mask));
   orr(R0, klass, tmp); // Combine klass and null_seen bit (only used if (tmp & type_mask)==0).
-  beq(CCR0, do_update); // First time here. Set profile type.
+  beq(CR0, do_update); // First time here. Set profile type.
 
   // Different than before. Cannot keep accurate profile.
   ori(R0, tmp, TypeEntries::type_unknown);
@@ -1785,8 +1785,8 @@ void InterpreterMacroAssembler::profile_arguments_type(Register callee,
       in_bytes(VirtualCallData::virtual_call_data_size()) : in_bytes(CounterData::counter_data_size());
 
     lbz(tmp1, in_bytes(DataLayout::tag_offset()) - off_to_start, R28_mdx);
-    cmpwi(CCR0, tmp1, is_virtual ? DataLayout::virtual_call_type_data_tag : DataLayout::call_type_data_tag);
-    bne(CCR0, profile_continue);
+    cmpwi(CR0, tmp1, is_virtual ? DataLayout::virtual_call_type_data_tag : DataLayout::call_type_data_tag);
+    bne(CR0, profile_continue);
 
     if (MethodData::profile_arguments()) {
       Label done;
@@ -1797,9 +1797,9 @@ void InterpreterMacroAssembler::profile_arguments_type(Register callee,
         if (i > 0 || MethodData::profile_return()) {
           // If return value type is profiled we may have no argument to profile.
           ld(tmp1, in_bytes(TypeEntriesAtCall::cell_count_offset())-off_to_args, R28_mdx);
-          cmpdi(CCR0, tmp1, (i+1)*TypeStackSlotEntries::per_arg_count());
+          cmpdi(CR0, tmp1, (i+1)*TypeStackSlotEntries::per_arg_count());
           addi(tmp1, tmp1, -i*TypeStackSlotEntries::per_arg_count());
-          blt(CCR0, done);
+          blt(CR0, done);
         }
         ld(tmp1, in_bytes(Method::const_offset()), callee);
         lhz(tmp1, in_bytes(ConstMethod::size_of_parameters_offset()), tmp1);
@@ -1865,12 +1865,12 @@ void InterpreterMacroAssembler::profile_return_type(Register ret, Register tmp1,
       // length.
       lbz(tmp1, 0, R14_bcp);
       lbz(tmp2, in_bytes(Method::intrinsic_id_offset()), R19_method);
-      cmpwi(CCR0, tmp1, Bytecodes::_invokedynamic);
-      cmpwi(CCR1, tmp1, Bytecodes::_invokehandle);
-      cror(CCR0, Assembler::equal, CCR1, Assembler::equal);
-      cmpwi(CCR1, tmp2, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
-      cror(CCR0, Assembler::equal, CCR1, Assembler::equal);
-      bne(CCR0, profile_continue);
+      cmpwi(CR0, tmp1, Bytecodes::_invokedynamic);
+      cmpwi(CR1, tmp1, Bytecodes::_invokehandle);
+      cror(CR0, Assembler::equal, CR1, Assembler::equal);
+      cmpwi(CR1, tmp2, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
+      cror(CR0, Assembler::equal, CR1, Assembler::equal);
+      bne(CR0, profile_continue);
     }
 
     profile_obj_type(ret, R28_mdx, -in_bytes(ReturnTypeEntry::size()), tmp1, tmp2);
@@ -1890,8 +1890,8 @@ void InterpreterMacroAssembler::profile_parameters_type(Register tmp1, Register 
     // Load the offset of the area within the MDO used for
     // parameters. If it's negative we're not profiling any parameters.
     lwz(tmp1, in_bytes(MethodData::parameters_type_data_di_offset()) - in_bytes(MethodData::data_offset()), R28_mdx);
-    cmpwi(CCR0, tmp1, 0);
-    blt(CCR0, profile_continue);
+    cmpwi(CR0, tmp1, 0);
+    blt(CR0, profile_continue);
 
     // Compute a pointer to the area for parameters from the offset
     // and move the pointer to the slot for the last
@@ -1936,9 +1936,9 @@ void InterpreterMacroAssembler::profile_parameters_type(Register tmp1, Register 
 
     // Go to next parameter.
     int delta = TypeStackSlotEntries::per_arg_count() * DataLayout::cell_size + (type_base - off_base);
-    cmpdi(CCR0, entry_offset, off_base + delta);
+    cmpdi(CR0, entry_offset, off_base + delta);
     addi(entry_offset, entry_offset, -delta);
-    bge(CCR0, loop);
+    bge(CR0, loop);
 
     align(32, 12);
     bind(profile_continue);
@@ -1975,7 +1975,7 @@ void InterpreterMacroAssembler::add_monitor_to_stack(bool stack_is_empty, Regist
     subf(n_slots, esp, R26_monitor);
     srdi_(n_slots, n_slots, LogBytesPerWord);          // Compute number of slots to copy.
     assert(LogBytesPerWord == 3, "conflicts assembler instructions");
-    beq(CCR0, copy_slot_finished);                     // Nothing to copy.
+    beq(CR0, copy_slot_finished);                     // Nothing to copy.
 
     mtctr(n_slots);
 
@@ -2115,8 +2115,8 @@ void InterpreterMacroAssembler::check_and_forward_exception(Register Rscratch1, 
   Label Ldone;
   // Get pending exception oop.
   ld(Rexception, thread_(pending_exception));
-  cmpdi(CCR0, Rexception, 0);
-  beq(CCR0, Ldone);
+  cmpdi(CR0, Rexception, 0);
+  beq(CR0, Ldone);
   li(Rtmp, 0);
   mr_if_needed(R3, Rexception);
   std(Rtmp, thread_(pending_exception)); // Clear exception in thread
@@ -2168,7 +2168,7 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result, address
   Label resume_pc, not_preempted;
 
   DEBUG_ONLY(ld(R0, in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread));
-  DEBUG_ONLY(cmpdi(CCR0, R0, 0));
+  DEBUG_ONLY(cmpdi(CR0, R0, 0));
   asm_assert_eq("Should not have alternate return address set");
 
   // Preserve 2 registers
@@ -2186,8 +2186,8 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result, address
 
   // Jump to handler if the call was preempted
   ld(R0, in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread);
-  cmpdi(CCR0, R0, 0);
-  beq(CCR0, not_preempted);
+  cmpdi(CR0, R0, 0);
+  beq(CR0, not_preempted);
   mtlr(R0);
   li(R0, 0);
   std(R0, in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread);
@@ -2215,8 +2215,8 @@ void InterpreterMacroAssembler::restore_after_resume(Register fp) {
   {
     Label ok;
     ld(R12_scratch2, 0, R1_SP);  // load fp
-    cmpd(CCR0, R12_scratch2, R11_scratch1);
-    beq(CCR0, ok);
+    cmpd(CR0, R12_scratch2, R11_scratch1);
+    beq(CR0, ok);
     stop(FILE_AND_LINE ": FP is expected in R11_scratch1");
     bind(ok);
   }
@@ -2298,8 +2298,8 @@ void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool
   {
     Label Lok;
     subf(R0, R1_SP, scratch);
-    cmpdi(CCR0, R0, frame::top_ijava_frame_abi_size + frame::ijava_state_size);
-    bge(CCR0, Lok);
+    cmpdi(CR0, R0, frame::top_ijava_frame_abi_size + frame::ijava_state_size);
+    bge(CR0, Lok);
     stop("frame too small (restore istate)");
     bind(Lok);
   }
@@ -2312,13 +2312,13 @@ void InterpreterMacroAssembler::get_method_counters(Register method,
   BLOCK_COMMENT("Load and ev. allocate counter object {");
   Label has_counters;
   ld(Rcounters, in_bytes(Method::method_counters_offset()), method);
-  cmpdi(CCR0, Rcounters, 0);
-  bne(CCR0, has_counters);
+  cmpdi(CR0, Rcounters, 0);
+  bne(CR0, has_counters);
   call_VM(noreg, CAST_FROM_FN_PTR(address,
                                   InterpreterRuntime::build_method_counters), method);
   ld(Rcounters, in_bytes(Method::method_counters_offset()), method);
-  cmpdi(CCR0, Rcounters, 0);
-  beq(CCR0, skip); // No MethodCounters, OutOfMemory.
+  cmpdi(CR0, Rcounters, 0);
+  beq(CR0, skip); // No MethodCounters, OutOfMemory.
   BLOCK_COMMENT("} Load and ev. allocate counter object");
 
   bind(has_counters);
@@ -2398,7 +2398,7 @@ void InterpreterMacroAssembler::verify_oop_or_return_address(Register reg, Regis
 
   const int log2_bytecode_size_limit = 16;
   srdi_(Rtmp, reg, log2_bytecode_size_limit);
-  bne(CCR0, test);
+  bne(CR0, test);
 
   address fd = CAST_FROM_FN_PTR(address, verify_return_address);
   const int nbytes_save = MacroAssembler::num_volatile_regs * 8;
@@ -2442,8 +2442,8 @@ void InterpreterMacroAssembler::notify_method_entry() {
     Label jvmti_post_done;
 
     lwz(R0, in_bytes(JavaThread::interp_only_mode_offset()), R16_thread);
-    cmpwi(CCR0, R0, 0);
-    beq(CCR0, jvmti_post_done);
+    cmpwi(CR0, R0, 0);
+    beq(CR0, jvmti_post_done);
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_entry));
 
     bind(jvmti_post_done);
@@ -2476,8 +2476,8 @@ void InterpreterMacroAssembler::notify_method_exit(bool is_native_method, TosSta
     Label jvmti_post_done;
 
     lwz(R0, in_bytes(JavaThread::interp_only_mode_offset()), R16_thread);
-    cmpwi(CCR0, R0, 0);
-    beq(CCR0, jvmti_post_done);
+    cmpwi(CR0, R0, 0);
+    beq(CR0, jvmti_post_done);
     if (!is_native_method) { push(state); } // Expose tos to GC.
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit), check_exceptions);
     if (!is_native_method) { pop(state); }

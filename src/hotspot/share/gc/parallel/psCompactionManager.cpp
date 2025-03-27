@@ -28,6 +28,8 @@
 #include "gc/parallel/psCompactionManager.inline.hpp"
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
+#include "gc/shared/partialArraySplitter.inline.hpp"
+#include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "logging/log.hpp"
@@ -42,9 +44,9 @@
 PSOldGen*               ParCompactionManager::_old_gen = nullptr;
 ParCompactionManager**  ParCompactionManager::_manager_array = nullptr;
 
-ParCompactionManager::OopTaskQueueSet*      ParCompactionManager::_oop_task_queues = nullptr;
-ParCompactionManager::ObjArrayTaskQueueSet* ParCompactionManager::_objarray_task_queues = nullptr;
+ParCompactionManager::PSMarkTasksQueueSet*  ParCompactionManager::_marking_stacks = nullptr;
 ParCompactionManager::RegionTaskQueueSet*   ParCompactionManager::_region_task_queues = nullptr;
+PartialArrayStateManager* ParCompactionManager::_partial_array_state_manager = nullptr;
 
 ObjectStartArray*    ParCompactionManager::_start_array = nullptr;
 ParMarkBitMap*       ParCompactionManager::_mark_bitmap = nullptr;
@@ -54,8 +56,10 @@ Monitor*                ParCompactionManager::_shadow_region_monitor = nullptr;
 PreservedMarksSet* ParCompactionManager::_preserved_marks_set = nullptr;
 
 ParCompactionManager::ParCompactionManager(PreservedMarks* preserved_marks,
-                                           ReferenceProcessor* ref_processor)
-  : _mark_and_push_closure(this, ref_processor) {
+                                           ReferenceProcessor* ref_processor,
+                                           uint parallel_gc_threads)
+  :_partial_array_splitter(_partial_array_state_manager, parallel_gc_threads),
+   _mark_and_push_closure(this, ref_processor) {
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
@@ -78,8 +82,10 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
   assert(_manager_array == nullptr, "Attempt to initialize twice");
   _manager_array = NEW_C_HEAP_ARRAY(ParCompactionManager*, parallel_gc_threads, mtGC);
 
-  _oop_task_queues = new OopTaskQueueSet(parallel_gc_threads);
-  _objarray_task_queues = new ObjArrayTaskQueueSet(parallel_gc_threads);
+  assert(_partial_array_state_manager == nullptr, "Attempt to initialize twice");
+  _partial_array_state_manager
+    = new PartialArrayStateManager(parallel_gc_threads);
+  _marking_stacks = new PSMarkTasksQueueSet(parallel_gc_threads);
   _region_task_queues = new RegionTaskQueueSet(parallel_gc_threads);
 
   _preserved_marks_set = new PreservedMarksSet(true);
@@ -88,16 +94,15 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
   // Create and register the ParCompactionManager(s) for the worker threads.
   for(uint i=0; i<parallel_gc_threads; i++) {
     _manager_array[i] = new ParCompactionManager(_preserved_marks_set->get(i),
-                                                 PSParallelCompact::ref_processor());
-    oop_task_queues()->register_queue(i, _manager_array[i]->oop_stack());
-    _objarray_task_queues->register_queue(i, &_manager_array[i]->_objarray_stack);
+                                                 PSParallelCompact::ref_processor(),
+                                                 parallel_gc_threads);
+    marking_stacks()->register_queue(i, _manager_array[i]->marking_stack());
     region_task_queues()->register_queue(i, _manager_array[i]->region_stack());
   }
 
   _shadow_region_array = new (mtGC) GrowableArray<size_t >(10, mtGC);
 
   _shadow_region_monitor = new Monitor(Mutex::nosafepoint, "CompactionManager_lock");
-
 }
 
 void ParCompactionManager::flush_all_string_dedup_requests() {
@@ -114,42 +119,41 @@ ParCompactionManager::gc_thread_compaction_manager(uint index) {
   return _manager_array[index];
 }
 
-inline void ParCompactionManager::publish_and_drain_oop_tasks() {
-  oop obj;
-  while (oop_stack()->pop_overflow(obj)) {
-    if (!oop_stack()->try_push_to_taskqueue(obj)) {
-      follow_contents(obj);
-    }
-  }
-  while (oop_stack()->pop_local(obj)) {
-    follow_contents(obj);
-  }
+void ParCompactionManager::push_objArray(oop obj) {
+  assert(obj->is_objArray(), "precondition");
+  _mark_and_push_closure.do_klass(obj->klass());
+
+  objArrayOop obj_array = objArrayOop(obj);
+  size_t array_length = obj_array->length();
+  size_t initial_chunk_size =
+    _partial_array_splitter.start(&_marking_stack, obj_array, nullptr, array_length);
+  follow_array(obj_array, 0, initial_chunk_size);
 }
 
-bool ParCompactionManager::publish_or_pop_objarray_tasks(ObjArrayTask& task) {
-  while (_objarray_stack.pop_overflow(task)) {
-    if (!_objarray_stack.try_push_to_taskqueue(task)) {
-      return true;
-    }
-  }
-  return false;
+void ParCompactionManager::process_array_chunk(PartialArrayState* state, bool stolen) {
+  // Access before release by claim().
+  oop obj = state->source();
+  PartialArraySplitter::Claim claim =
+    _partial_array_splitter.claim(state, &_marking_stack, stolen);
+  follow_array(objArrayOop(obj), claim._start, claim._end);
 }
 
 void ParCompactionManager::follow_marking_stacks() {
+  ScannerTask task;
   do {
     // First, try to move tasks from the overflow stack into the shared buffer, so
     // that other threads can steal. Otherwise process the overflow stack first.
-    publish_and_drain_oop_tasks();
-
-    // Process ObjArrays one at a time to avoid marking stack bloat.
-    ObjArrayTask task;
-    if (publish_or_pop_objarray_tasks(task) ||
-        _objarray_stack.pop_local(task)) {
-      follow_array((objArrayOop)task.obj(), task.index());
+    while (marking_stack()->pop_overflow(task)) {
+      if (!marking_stack()->try_push_to_taskqueue(task)) {
+        follow_contents(task, false);
+      }
     }
-  } while (!marking_stacks_empty());
+    while (marking_stack()->pop_local(task)) {
+      follow_contents(task, false);
+    }
+  } while (!marking_stack_empty());
 
-  assert(marking_stacks_empty(), "Sanity");
+  assert(marking_stack_empty(), "Sanity");
 }
 
 void ParCompactionManager::drain_region_stacks() {
@@ -196,11 +200,32 @@ void ParCompactionManager::remove_all_shadow_regions() {
   _shadow_region_array->clear();
 }
 
+
+#if TASKQUEUE_STATS
+void ParCompactionManager::print_and_reset_taskqueue_stats() {
+  marking_stacks()->print_and_reset_taskqueue_stats("Marking Stacks");
+
+  auto get_pa_stats = [&](uint i) {
+    return _manager_array[i]->partial_array_task_stats();
+  };
+  PartialArrayTaskStats::log_set(ParallelGCThreads, get_pa_stats,
+                                 "Partial Array Task Stats");
+  uint parallel_gc_threads = ParallelScavengeHeap::heap()->workers().max_workers();
+  for (uint i = 0; i < parallel_gc_threads; ++i) {
+    get_pa_stats(i)->reset();
+  }
+}
+
+PartialArrayTaskStats* ParCompactionManager::partial_array_task_stats() {
+  return _partial_array_splitter.stats();
+}
+#endif // TASKQUEUE_STATS
+
 #ifdef ASSERT
 void ParCompactionManager::verify_all_marking_stack_empty() {
   uint parallel_gc_threads = ParallelGCThreads;
   for (uint i = 0; i < parallel_gc_threads; i++) {
-    assert(_manager_array[i]->marking_stacks_empty(), "Marking stack should be empty");
+    assert(_manager_array[i]->marking_stack_empty(), "Marking stack should be empty");
   }
 }
 

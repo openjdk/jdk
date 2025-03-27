@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5097350 8347841
+ * @bug 5097350 8347841 8347955
  * @summary Make sure that TimeZone.getTimeZone returns a clone of a cached TimeZone instance.
  */
 
@@ -33,7 +33,7 @@ import java.util.function.Predicate;
 
 public class Bug5097350 {
     public static void main(String[] args) {
-        String[] tzids = Arrays.stream(TimeZone.getAvailableIDs())
+        String[] tzids = TimeZone.availableIDs()
                 .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
                 .toArray(String[]::new);
         List<String> ids = new ArrayList<>(tzids.length + 10);

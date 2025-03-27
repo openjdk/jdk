@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ class MemTracker : AllStatic {
     }
   }
 
-  static inline void record_virtual_memory_release(address addr, size_t size) {
+  static inline void record_virtual_memory_release(void* addr, size_t size) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
@@ -143,7 +143,7 @@ class MemTracker : AllStatic {
     }
   }
 
-  static inline void record_virtual_memory_uncommit(address addr, size_t size) {
+  static inline void record_virtual_memory_uncommit(void* addr, size_t size) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
@@ -210,7 +210,7 @@ class MemTracker : AllStatic {
   //  be fully uncommitted.
   //
   // The two new memory regions will be both registered under stack and
-  //  memory flags of the original region.
+  //  memory tags of the original region.
   static inline void record_virtual_memory_split_reserved(void* addr, size_t size, size_t split, MemTag mem_tag, MemTag split_tag) {
     assert_post_init();
     if (!enabled()) return;
@@ -225,7 +225,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::set_reserved_region_type((address)addr, mem_tag);
+      VirtualMemoryTracker::set_reserved_region_tag((address)addr, mem_tag);
     }
   }
 

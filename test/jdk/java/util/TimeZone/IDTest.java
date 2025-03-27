@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4509255 5055567 6176318 7090844 8347841
+ * @bug 4509255 5055567 6176318 7090844 8347841 8347955
  * @summary Tests consistencies of time zone IDs.
  */
 
@@ -41,10 +41,10 @@ public class IDTest {
         Set<String> ids = new HashSet<>();
         Map<Integer, Set<String>> tree = new TreeMap<>();
 
-        String[] tzs = Arrays.stream(TimeZone.getAvailableIDs())
+        String[] tzs = TimeZone.availableIDs()
                 .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
                 .toArray(String[]::new);
-        String[] tzs2 = Arrays.stream(TimeZone.getAvailableIDs())
+        String[] tzs2 = TimeZone.availableIDs()
                 .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
                 .toArray(String[]::new);
         if (tzs.length != tzs2.length) {
@@ -89,10 +89,10 @@ public class IDTest {
             // Check the getAvailableIDs(int) call to return the same
             // set of IDs
             int offset = key.intValue();
-            tzs = Arrays.stream(TimeZone.getAvailableIDs(offset))
+            tzs = TimeZone.availableIDs(offset)
                     .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
                     .toArray(String[]::new);
-            tzs2 = Arrays.stream(TimeZone.getAvailableIDs(offset))
+            tzs2 = TimeZone.availableIDs(offset)
                     .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
                     .toArray(String[]::new);
             if (!Arrays.equals(tzs, tzs2)) {

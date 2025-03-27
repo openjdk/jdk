@@ -46,17 +46,15 @@ public class FileURLConnection extends URLConnection {
     private static final String TEXT_PLAIN = "text/plain";
     private static final String LAST_MODIFIED = "last-modified";
 
-    String contentType;
-    InputStream is;
+    private final File file;
+    private InputStream is;
+    private List<String> directoryListing;
 
-    File file;
-    String filename;
-    boolean isDirectory = false;
-    boolean exists = false;
-    List<String> files;
+    private boolean isDirectory = false;
+    private boolean exists = false;
 
-    long length = -1;
-    long lastModified = 0;
+    private long length = -1;
+    private long lastModified = 0;
 
     protected FileURLConnection(URL u, File file) {
         super(u);
@@ -71,20 +69,17 @@ public class FileURLConnection extends URLConnection {
      */
     public void connect() throws IOException {
         if (!connected) {
-            try {
-                filename = file.toString();
-                isDirectory = file.isDirectory();
-                if (isDirectory) {
-                    String[] fileList = file.list();
-                    if (fileList == null)
-                        throw new FileNotFoundException(filename + " exists, but is not accessible");
-                    files = Arrays.<String>asList(fileList);
-                } else {
-                    is = new BufferedInputStream(new FileInputStream(filename));
-                }
-            } catch (IOException e) {
-                throw e;
+
+            isDirectory = file.isDirectory();
+            if (isDirectory) {
+                String[] fileList = file.list();
+                if (fileList == null)
+                    throw new FileNotFoundException(file.getPath() + " exists, but is not accessible");
+                directoryListing = Arrays.asList(fileList);
+            } else {
+                is = new BufferedInputStream(new FileInputStream(file.getPath()));
             }
+
             connected = true;
         }
     }
@@ -109,11 +104,11 @@ public class FileURLConnection extends URLConnection {
 
             if (!isDirectory) {
                 FileNameMap map = java.net.URLConnection.getFileNameMap();
-                contentType = map.getContentTypeFor(filename);
+                String contentType = map.getContentTypeFor(file.getPath());
                 if (contentType != null) {
                     properties.add(CONTENT_TYPE, contentType);
                 }
-                properties.add(CONTENT_LENGTH, String.valueOf(length));
+                properties.add(CONTENT_LENGTH, Long.toString(length));
 
                 /*
                  * Format the last-modified field into the preferred
@@ -179,32 +174,26 @@ public class FileURLConnection extends URLConnection {
     public synchronized InputStream getInputStream()
         throws IOException {
 
-        int iconHeight;
-        int iconWidth;
-
         connect();
 
         if (is == null) {
             if (isDirectory) {
-                FileNameMap map = java.net.URLConnection.getFileNameMap();
 
-                StringBuilder sb = new StringBuilder();
-
-                if (files == null) {
-                    throw new FileNotFoundException(filename);
+                if (directoryListing == null) {
+                    throw new FileNotFoundException(file.getPath());
                 }
 
-                files.sort(Collator.getInstance());
+                directoryListing.sort(Collator.getInstance());
 
-                for (int i = 0 ; i < files.size() ; i++) {
-                    String fileName = files.get(i);
+                StringBuilder sb = new StringBuilder();
+                for (String fileName : directoryListing) {
                     sb.append(fileName);
                     sb.append("\n");
                 }
                 // Put it into a (default) locale-specific byte-stream.
                 is = new ByteArrayInputStream(sb.toString().getBytes());
             } else {
-                throw new FileNotFoundException(filename);
+                throw new FileNotFoundException(file.getPath());
             }
         }
         return is;

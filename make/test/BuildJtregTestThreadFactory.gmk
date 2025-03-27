@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,12 @@
 # questions.
 #
 
-default: build
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
 
 include CopyFiles.gmk
 include JavaCompilation.gmk
-
-TARGETS :=
-
-################################################################################
 
 TTF_BASEDIR := $(TOPDIR)/test/jtreg_test_thread_factory
 TTF_SUPPORT := $(SUPPORT_OUTPUTDIR)/test/jtreg_test_thread_factory
@@ -64,4 +59,8 @@ IMAGES_TARGETS += $(COPY_TTF)
 build: $(TARGETS)
 images: $(IMAGES_TARGETS)
 
-.PHONY: all images
+.PHONY: images
+
+################################################################################
+
+include MakeFileEnd.gmk
