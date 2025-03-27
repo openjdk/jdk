@@ -101,17 +101,17 @@ public final class PBAMac extends PKCS11Test {
 
     // Generated with SunJCE.
     private static final AssertionData[] assertionData = new AssertionData[]{
-             macAssertionData("HmacPBESHA1", "HmacSHA1",
+            macAssertionData("HmacPBESHA1", "HmacSHA1",
                     "8611414ddb1875d9f576282199ab492a802b7d49"),
-             macAssertionData("HmacPBESHA224", "HmacSHA224",
+            macAssertionData("HmacPBESHA224", "HmacSHA224",
                     "cebb12b48eb90c07336c695f771d1d0ef4ccf5b9524fc0ab6fb9813a"),
-             macAssertionData("HmacPBESHA256", "HmacSHA256",
+            macAssertionData("HmacPBESHA256", "HmacSHA256",
                     "d83a6a4e8b0e1ec939d05790f385dd774bd2b7c17cfa2dd004efc894" +
                     "e5d53f51"),
-             macAssertionData("HmacPBESHA384", "HmacSHA384",
+            macAssertionData("HmacPBESHA384", "HmacSHA384",
                     "ae6b69cf9edfd9cd8c3b51cdf2b0243502f35a3e6007f33b1ab73568" +
                     "2ea81ea562f4383bb9512ff70752367b7259b16f"),
-             macAssertionData("HmacPBESHA512", "HmacSHA512",
+            macAssertionData("HmacPBESHA512", "HmacSHA512",
                     "46f6d09b0e7e50a66fa559ea4c4e9737a9d9e258b94f0075230d0acb" +
                     "40f2c926f96a152c4f6b03b631efc7f99c84f052f1c78d79e07f2a9e" +
                     "4a96164f5b46e70b"),
