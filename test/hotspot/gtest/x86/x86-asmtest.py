@@ -354,10 +354,18 @@ class MemNddInstruction(NFInstruction):
 
 class RegRegNddInstruction(NFInstruction):
     def __init__(self, name, aname, width, no_flag, reg1, reg2):
-        super().__init__(name, aname, no_flag)
+        super().__init__(name, aname, no_flag, demote=True)
         self.reg1 = Register().generate(reg1, width)
         self.reg2 = Register().generate(reg2, width)
         self.generate_operands(self.reg1, self.reg2)
+
+    def astr(self):
+        if self.demote and self._aname not in ['popcnt', 'lzcnt', 'tzcnt']:
+            ops = [op.cstr() for op in self.operands]
+            if ops[0] == ops[1] and (not self.no_flag):
+                cl_str = (', cl' if self._name in shift_rot_ops and len(self.operands) == 2 else '')
+                return  f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]]) + cl_str
+        return super().astr()
 
 class RegMemNddInstruction(NFInstruction):
     def __init__(self, name, aname, width, no_flag, reg, mem_base, mem_idx):
@@ -529,11 +537,13 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                     instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
             else:
-                test_reg1 = random.choice(test_regs) #test_regs[3]
-                test_reg2 = random.choice(test_regs)
-                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
-                instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2)
-                print_instruction(instr, lp64_flag, print_lp64_flag)
+                iters = 2 if RegOp in [RegRegNddInstruction] and op[1] not in ['popcnt', 'lzcnt', 'tzcnt'] else 1
+                for i in range(iters):
+                    test_reg1 = random.choice(test_regs)
+                    test_reg2 = random.choice(test_regs) if i == 0 else test_reg1
+                    lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
+                    instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2)
+                    print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [RegRegRegNddInstruction, CondRegRegRegInstruction]:
             if full_set:
@@ -965,7 +975,7 @@ instruction_set = {
         ('edecl', 'dec', 32, False),
         ('edecl', 'dec', 32, True),
         ('eincl', 'inc', 32, False),
-        ('eincl', 'inc', 32, True), 
+        ('eincl', 'inc', 32, True),
         ('eshll', 'shl', 32, False),
         ('eshll', 'shl', 32, True),
         ('eshrl', 'shr', 32, False),
@@ -1276,7 +1286,7 @@ instruction_set64 = {
         ('emulq', 'mul', 64, True),
     ],
     RegRegNddInstruction: [
-        ('eimulq', 'imul', 64, False),
+        # ('eimulq', 'imul', 64, False),
         ('eimulq', 'imul', 64, True),
         ('elzcntq', 'lzcnt', 64, False),
         ('elzcntq', 'lzcnt', 64, True),
