@@ -244,13 +244,34 @@ TEST_VM_F(AsyncLogTest, logBuffer) {
 }
 
 TEST_VM_F(AsyncLogTest, droppingMessage) {
-  if (AsyncLogWriter::instance() == nullptr) {
+  if (AsyncLogWriter::instance() == nullptr) return;
+  if (LogConfiguration::async_mode() != LogConfiguration::AsyncMode::Drop) {
+    EXPECT_TRUE(false) << "This test must be run in drop mode if async UL is activated";
     return;
   }
 
   set_log_config(TestLogFileName, "logging=debug");
   test_asynclog_drop_messages();
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
+  bool messages_dropped = file_contains_substring(TestLogFileName, "messages dropped due to async logging");
+  if (!messages_dropped) {
+    stringStream content;
+    FILE* fp = os::fopen(TestLogFileName, "r");
+    assert(fp != nullptr, "error opening file %s: %s", TestLogFileName, os::strerror(errno));
+    {
+      ResourceMark rm;
+      char* line = read_line(fp);
+      while (line != nullptr) {
+        ResourceMark rm;
+        content.print_raw(line);
+        line = read_line(fp);
+      }
+    }
+
+    // The thread is null and deattached.
+    // That means that UL degrades to synchronous logging for this thread, which means that no messages can be dropped.
+    EXPECT_NE(nullptr, Thread::current_or_null()) << "Thread was null";
+    EXPECT_TRUE(messages_dropped) << "Log file content:\n" << content.freeze();
+  }
 }
 
 TEST_VM_F(AsyncLogTest, stdoutOutput) {
