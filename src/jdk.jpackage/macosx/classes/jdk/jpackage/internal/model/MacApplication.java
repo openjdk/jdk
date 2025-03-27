@@ -56,6 +56,13 @@ public interface MacApplication extends Application, MacApplicationMixin {
         }
     }
 
+    /**
+     * Returns {@code true} if the application image of this application should be
+     * signed.
+     *
+     * @return {@code true} if the application image of this application should be
+     *         signed
+     */
     default boolean sign() {
         return signingConfig().isPresent();
     }
