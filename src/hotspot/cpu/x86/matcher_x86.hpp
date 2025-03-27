@@ -121,13 +121,6 @@
   // Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
 
-  // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-#ifdef _LP64
-  static const bool strict_fp_requires_explicit_rounding = false;
-#else
-  static const bool strict_fp_requires_explicit_rounding = true;
-#endif
-
   // Are floats converted to double when stored to stack during deoptimization?
   // On x64 it is stored without conversion so we can use normal access.
   // On x32 it is stored with conversion only when FPU is used for floats.

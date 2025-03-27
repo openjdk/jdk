@@ -550,20 +550,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     }
 
 
-// LIR_OpRoundFP;
-    case lir_roundfp: {
-      assert(op->as_OpRoundFP() != nullptr, "must be");
-      LIR_OpRoundFP* opRoundFP = (LIR_OpRoundFP*)op;
-
-      assert(op->_info == nullptr, "info not used by this instruction");
-      assert(opRoundFP->_tmp->is_illegal(), "not used");
-      do_input(opRoundFP->_opr);
-      do_output(opRoundFP->_result);
-
-      break;
-    }
-
-
 // LIR_Op2
     case lir_cmp:
     case lir_cmp_l2i:
@@ -1731,7 +1717,6 @@ const char * LIR_Op::name() const {
      case lir_branch:                s = "branch";        break;
      case lir_cond_float_branch:     s = "flt_cond_br";   break;
      case lir_move:                  s = "move";          break;
-     case lir_roundfp:               s = "roundfp";       break;
      case lir_abs:                   s = "abs";           break;
      case lir_neg:                   s = "neg";           break;
      case lir_sqrt:                  s = "sqrt";          break;
@@ -1974,12 +1959,6 @@ void LIR_OpAllocObj::print_instr(outputStream* out) const {
   out->print("[hdr:%d]", header_size()); out->print(" ");
   out->print("[obj:%d]", object_size()); out->print(" ");
   out->print("[lbl:" INTPTR_FORMAT "]", p2i(stub()->entry()));
-}
-
-void LIR_OpRoundFP::print_instr(outputStream* out) const {
-  _opr->print(out);         out->print(" ");
-  tmp()->print(out);        out->print(" ");
-  result_opr()->print(out); out->print(" ");
 }
 
 // LIR_Op2
