@@ -31,7 +31,6 @@
 #include "oops/oopHandle.hpp"
 #include "oops/weakHandle.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/perfDataTypes.hpp"
 #include "utilities/checkedCast.hpp"
 
 class ObjectMonitor;
@@ -43,7 +42,7 @@ class ContinuationWrapper;
 
 class ObjectWaiter : public CHeapObj<mtThread> {
  public:
-  enum TStates : uint8_t { TS_UNDEF, TS_READY, TS_RUN, TS_WAIT, TS_ENTER, TS_CXQ };
+  enum TStates : uint8_t { TS_UNDEF, TS_READY, TS_RUN, TS_WAIT, TS_ENTER };
   ObjectWaiter* volatile _next;
   ObjectWaiter* volatile _prev;
   JavaThread*     _thread;
@@ -72,6 +71,23 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   oop vthread() const;
   void wait_reenter_begin(ObjectMonitor *mon);
   void wait_reenter_end(ObjectMonitor *mon);
+
+  ObjectWaiter* const badObjectWaiterPtr = (ObjectWaiter*) 0xBAD;
+  void set_bad_pointers() {
+#ifdef ASSERT
+    this->_prev  = badObjectWaiterPtr;
+    this->_next  = badObjectWaiterPtr;
+    this->TState = ObjectWaiter::TS_RUN;
+#endif
+  }
+  ObjectWaiter* next() {
+    assert (_next != badObjectWaiterPtr, "corrupted list!");
+    return _next;
+  }
+  ObjectWaiter* prev() {
+    assert (_prev != badObjectWaiterPtr, "corrupted list!");
+    return _prev;
+  }
 };
 
 // The ObjectMonitor class implements the heavyweight version of a
@@ -120,7 +136,7 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 //   monitorenter will invalidate the line underlying _owner. We want
 //   to avoid an L1 data cache miss on that same line for monitorexit.
 //   Putting these <remaining_fields>:
-//   _recursions, _EntryList, _cxq, and _succ, all of which may be
+//   _recursions, _entry_list and _succ, all of which may be
 //   fetched in the inflated unlock path, on a different cache line
 //   would make them immune to CAS-based invalidation from the _owner
 //   field.
@@ -140,11 +156,11 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   static OopStorage* _oop_storage;
 
   // List of j.l.VirtualThread waiting to be unblocked by unblocker thread.
-  static OopHandle _vthread_cxq_head;
+  static OopHandle _vthread_list_head;
   // ParkEvent of unblocker thread.
   static ParkEvent* _vthread_unparker_ParkEvent;
 
-  // Because of frequent access, the the metadata field is at offset zero (0).
+  // Because of frequent access, the metadata field is at offset zero (0).
   // Enforced by the assert() in metadata_addr().
   // * LM_LIGHTWEIGHT with UseObjectMonitorTable:
   // Contains the _object's hashCode.
@@ -173,11 +189,10 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
                         sizeof(volatile uint64_t));
   ObjectMonitor* _next_om;          // Next ObjectMonitor* linkage
   volatile intx _recursions;        // recursion count, 0 for first entry
-  ObjectWaiter* volatile _EntryList;  // Threads blocked on entry or reentry.
-                                      // The list is actually composed of WaitNodes,
-                                      // acting as proxies for Threads.
-
-  ObjectWaiter* volatile _cxq;      // LL of recently-arrived threads blocked on entry.
+  ObjectWaiter* volatile _entry_list;  // Threads blocked on entry or reentry.
+                                       // The list is actually composed of wait-nodes,
+                                       // acting as proxies for Threads.
+  ObjectWaiter* volatile _entry_list_tail; // _entry_list is the head, this is the tail.
   int64_t volatile _succ;           // Heir presumptive thread - used for futile wakeup throttling
 
   volatile int _SpinDuration;
@@ -187,9 +202,9 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
                                     // deflated. It is also used by the async deflation protocol. See
                                     // ObjectMonitor::deflate_monitor().
 
-  ObjectWaiter* volatile _WaitSet;  // LL of threads wait()ing on the monitor
+  ObjectWaiter* volatile _wait_set; // LL of threads waiting on the monitor - wait()
   volatile int  _waiters;           // number of waiting threads
-  volatile int _WaitSetLock;        // protects Wait Queue - simple spinlock
+  volatile int _wait_set_lock;      // protects wait set queue - simple spinlock
 
   // Used in LM_LEGACY mode to store BasicLock* in case of inflation by contending thread.
   BasicLock* volatile _stack_locker;
@@ -199,55 +214,16 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   static void Initialize();
   static void Initialize2();
 
-  static OopHandle& vthread_cxq_head() { return _vthread_cxq_head; }
+  static OopHandle& vthread_list_head() { return _vthread_list_head; }
   static ParkEvent* vthread_unparker_ParkEvent() { return _vthread_unparker_ParkEvent; }
-
-  // Only perform a PerfData operation if the PerfData object has been
-  // allocated and if the PerfDataManager has not freed the PerfData
-  // objects which can happen at normal VM shutdown. This operation is
-  // only safe when thread is not in safepoint-safe code, i.e. PerfDataManager
-  // could not reach the safepoint and free the counter while we are using it.
-  // If this is not guaranteed, use OM_PERFDATA_SAFE_OP instead.
-  #define OM_PERFDATA_OP(f, op_str)                 \
-    do {                                            \
-      if (ObjectMonitor::_sync_ ## f != nullptr) {  \
-        if (PerfDataManager::has_PerfData()) {      \
-          ObjectMonitor::_sync_ ## f->op_str;       \
-        }                                           \
-      }                                             \
-    } while (0)
-
-  // Only perform a PerfData operation if the PerfData object has been
-  // allocated and if the PerfDataManager has not freed the PerfData
-  // objects which can happen at normal VM shutdown. Additionally, we
-  // enter the critical section to resolve the race against PerfDataManager
-  // entering the safepoint and deleting the counter during shutdown.
-  #define OM_PERFDATA_SAFE_OP(f, op_str)            \
-    do {                                            \
-      if (ObjectMonitor::_sync_ ## f != nullptr) {  \
-        GlobalCounter::CriticalSection cs(Thread::current()); \
-        if (PerfDataManager::has_PerfData()) {      \
-          ObjectMonitor::_sync_ ## f->op_str;       \
-        }                                           \
-      }                                             \
-    } while (0)
-
-  static PerfCounter * _sync_ContendedLockAttempts;
-  static PerfCounter * _sync_FutileWakeups;
-  static PerfCounter * _sync_Parks;
-  static PerfCounter * _sync_Notifications;
-  static PerfCounter * _sync_Inflations;
-  static PerfCounter * _sync_Deflations;
-  static PerfLongVariable * _sync_MonExtant;
 
   static int Knob_SpinLimit;
 
   static ByteSize metadata_offset()    { return byte_offset_of(ObjectMonitor, _metadata); }
   static ByteSize owner_offset()       { return byte_offset_of(ObjectMonitor, _owner); }
   static ByteSize recursions_offset()  { return byte_offset_of(ObjectMonitor, _recursions); }
-  static ByteSize cxq_offset()         { return byte_offset_of(ObjectMonitor, _cxq); }
   static ByteSize succ_offset()        { return byte_offset_of(ObjectMonitor, _succ); }
-  static ByteSize EntryList_offset()   { return byte_offset_of(ObjectMonitor, _EntryList); }
+  static ByteSize entry_list_offset()  { return byte_offset_of(ObjectMonitor, _entry_list); }
 
   // ObjectMonitor references can be ORed with markWord::monitor_value
   // as part of the ObjectMonitor tagging mechanism. When we combine an
@@ -275,7 +251,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   bool is_busy() const {
     // TODO-FIXME: assert _owner == NO_OWNER implies _recursions = 0
-    intptr_t ret_code = intptr_t(_waiters) | intptr_t(_cxq) | intptr_t(_EntryList);
+    intptr_t ret_code = intptr_t(_waiters) | intptr_t(_entry_list);
     int cnts = contentions(); // read once
     if (cnts > 0) {
       ret_code |= intptr_t(cnts);
@@ -317,7 +293,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   int64_t   try_set_owner_from(int64_t old_value, JavaThread* current);
 
   // Methods to check and set _succ. The successor is the thread selected
-  // from _cxq/_EntryList by the current owner when releasing the monitor,
+  // from _entry_list by the current owner when releasing the monitor,
   // to run again and re-try acquiring the monitor. It is used to avoid
   // unnecessary wake-ups if there is already a successor set.
   bool      has_successor() const;
@@ -360,7 +336,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   // JVM/TI GetObjectMonitorUsage() needs this:
   int waiters() const;
-  ObjectWaiter* first_waiter()                                         { return _WaitSet; }
+  ObjectWaiter* first_waiter()                                         { return _wait_set; }
   ObjectWaiter* next_waiter(ObjectWaiter* o)                           { return o->_next; }
   JavaThread* thread_of_waiter(ObjectWaiter* o)                        { return o->_thread; }
 
@@ -419,32 +395,40 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   intx      complete_exit(JavaThread* current);
 
  private:
-  void      AddWaiter(ObjectWaiter* waiter);
-  void      INotify(JavaThread* current);
-  ObjectWaiter* DequeueWaiter();
-  void      DequeueSpecificWaiter(ObjectWaiter* waiter);
-  void      EnterI(JavaThread* current);
-  void      ReenterI(JavaThread* current, ObjectWaiter* current_node);
-  void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
+  void      add_to_entry_list(JavaThread* current, ObjectWaiter* node);
+  void      add_waiter(ObjectWaiter* waiter);
+  bool      notify_internal(JavaThread* current);
+  ObjectWaiter* dequeue_waiter();
+  void      dequeue_specific_waiter(ObjectWaiter* waiter);
+  void      enter_internal(JavaThread* current);
+  void      reenter_internal(JavaThread* current, ObjectWaiter* current_node);
+  void      entry_list_build_dll(JavaThread* current);
+  void      unlink_after_acquire(JavaThread* current, ObjectWaiter* current_node);
+  ObjectWaiter* entry_list_tail(JavaThread* current);
 
-  bool      VThreadMonitorEnter(JavaThread* current, ObjectWaiter* node = nullptr);
-  void      VThreadWait(JavaThread* current, jlong millis);
-  bool      VThreadWaitReenter(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont);
-  void      VThreadEpilog(JavaThread* current, ObjectWaiter* node);
+  bool      vthread_monitor_enter(JavaThread* current, ObjectWaiter* node = nullptr);
+  void      vthread_wait(JavaThread* current, jlong millis);
+  bool      vthread_wait_reenter(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont);
+  void      vthread_epilog(JavaThread* current, ObjectWaiter* node);
 
   enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
 
-  bool           TryLockWithContentionMark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
-  TryLockResult  TryLock(JavaThread* current);
+  bool           try_lock_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
+  bool           try_lock_or_add_to_entry_list(JavaThread* current, ObjectWaiter* node);
+  TryLockResult  try_lock(JavaThread* current);
 
-  bool      TrySpin(JavaThread* current);
+  bool      try_spin(JavaThread* current);
   bool      short_fixed_spin(JavaThread* current, int spin_count, bool adapt);
-  void      ExitEpilog(JavaThread* current, ObjectWaiter* Wakee);
+  void      exit_epilog(JavaThread* current, ObjectWaiter* Wakee);
 
   // Deflation support
   bool      deflate_monitor(Thread* current);
  private:
   void      install_displaced_markword_in_object(const oop obj);
+
+  // JFR support
+public:
+  static bool is_jfr_excluded(const Klass* monitor_klass);
 };
 
 // RAII object to ensure that ObjectMonitor::is_being_async_deflated() is

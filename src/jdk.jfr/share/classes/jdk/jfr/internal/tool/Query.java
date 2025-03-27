@@ -94,12 +94,18 @@ final class Query extends Command {
         p.println("                        WHERE B.when = 'Before GC' AND A.when = 'After GC'");
         p.println("                        GROUP BY gcId");
         p.println("                        ORDER BY G.startTime\" recording.jfr");
+        p.println();
+        p.println("************************************ WARNING ******************************************");
+        p.println("The query command is only available in debug builds and is targeted towards OpenJDK");
+        p.println("developers. The tool may be removed or its syntax changed at any time.");
+        p.println("***************************************************************************************");
+        p.println();
    }
 
     @Override
     public List<String> getOptionSyntax() {
         List<String> list = new ArrayList<>();
-        list.add("[--verbose] [--width <integer>] <query> <file>");
+        list.add("[--verbose] [--width <integer>] <query> <file> (in debug builds)");
         return list;
     }
 

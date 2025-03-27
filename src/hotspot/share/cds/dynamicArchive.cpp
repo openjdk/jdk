@@ -24,12 +24,14 @@
 
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
+#include "cds/aotClassLocation.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -89,7 +91,7 @@ public:
   void sort_methods();
   void sort_methods(InstanceKlass* ik) const;
   void remark_pointers_for_instance_klass(InstanceKlass* k, bool should_mark) const;
-  void write_archive(char* serialized_data);
+  void write_archive(char* serialized_data, AOTClassLocationConfig* cl_config);
   void gather_array_klasses();
 
 public:
@@ -138,6 +140,7 @@ public:
     make_klasses_shareable();
 
     char* serialized_data;
+    AOTClassLocationConfig* cl_config;
     {
       // Write the symbol table and system dictionaries to the RO space.
       // Note that these tables still point to the *original* objects, so
@@ -148,6 +151,7 @@ public:
 
       ArchiveBuilder::OtherROAllocMark mark;
       SystemDictionaryShared::write_to_archive(false);
+      cl_config = AOTClassLocationConfig::dumptime()->write_to_archive();
       DynamicArchive::dump_array_klasses();
       AOTClassLinker::write_to_archive();
 
@@ -156,12 +160,14 @@ public:
       ArchiveBuilder::serialize_dynamic_archivable_items(&wc);
     }
 
-    log_info(cds)("Adjust lambda proxy class dictionary");
-    SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
+    if (CDSConfig::is_dumping_lambdas_in_legacy_mode()) {
+      log_info(cds)("Adjust lambda proxy class dictionary");
+      LambdaProxyClassDictionary::adjust_dumptime_table();
+    }
 
     relocate_to_requested();
 
-    write_archive(serialized_data);
+    write_archive(serialized_data, cl_config);
     release_header();
     DynamicArchive::post_dump();
 
@@ -172,7 +178,6 @@ public:
   }
 
   virtual void iterate_roots(MetaspaceClosure* it) {
-    FileMapInfo::metaspace_pointers_do(it);
     AOTArtifactFinder::all_cached_classes_do(it);
     SystemDictionaryShared::dumptime_classes_do(it);
     iterate_primitive_array_klasses(it);
@@ -335,8 +340,8 @@ void DynamicArchiveBuilder::remark_pointers_for_instance_klass(InstanceKlass* k,
   }
 }
 
-void DynamicArchiveBuilder::write_archive(char* serialized_data) {
-  _header->set_shared_path_table(FileMapInfo::shared_path_table().table());
+void DynamicArchiveBuilder::write_archive(char* serialized_data, AOTClassLocationConfig* cl_config) {
+  _header->set_class_location_config(cl_config);
   _header->set_serialized_data(serialized_data);
 
   FileMapInfo* dynamic_info = FileMapInfo::dynamic_info();
@@ -386,11 +391,11 @@ public:
   void doit() {
     ResourceMark rm;
     if (AllowArchivingWithJavaAgent) {
-      log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
-              "for testing purposes only and should not be used in a production environment");
+      log_warning(cds)("This %s was created with AllowArchivingWithJavaAgent. It should be used "
+                       "for testing purposes only and should not be used in a production environment",
+                       CDSConfig::type_of_archive_being_loaded());
     }
-    FileMapInfo::check_nonempty_dir_in_shared_path_table();
-
+    AOTClassLocationConfig::dumptime_check_nonempty_dirs();
     _builder.doit();
   }
   ~VM_PopulateDynamicDumpSharedSpace() {

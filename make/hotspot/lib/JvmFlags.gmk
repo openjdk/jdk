@@ -23,10 +23,12 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, hotspot/lib/JvmFlags.gmk))
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
 
 ################################################################################
 # Setup JVM_CFLAGS. These are shared between GensrcDtrace.gmk and CompileJvm.gmk.
+################################################################################
 
 # This variable may be added to by a custom extension
 JVM_SRC_ROOTS += $(TOPDIR)/src/hotspot
@@ -99,3 +101,8 @@ endif
 ifeq ($(ENABLE_COMPATIBLE_CDS_ALIGNMENT), true)
   JVM_CFLAGS += -DCOMPATIBLE_CDS_ALIGNMENT
 endif
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

@@ -124,7 +124,7 @@ void CodeBlobCollector::do_blob(CodeBlob* cb) {
     return;
   }
   // exclude VtableStubs, which are processed separately
-  if (cb->is_buffer_blob() && strcmp(cb->name(), "vtable chunks") == 0) {
+  if (cb->is_vtable_blob()) {
     return;
   }
 

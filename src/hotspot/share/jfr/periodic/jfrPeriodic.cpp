@@ -739,3 +739,9 @@ TRACE_REQUEST_FUNC(NativeMemoryUsage) {
 TRACE_REQUEST_FUNC(NativeMemoryUsageTotal) {
   JfrNativeMemoryEvent::send_total_event(timestamp());
 }
+
+TRACE_REQUEST_FUNC(JavaMonitorStatistics) {
+  EventJavaMonitorStatistics event;
+  event.set_count(ObjectSynchronizer::in_use_list_count());
+  event.commit();
+}
