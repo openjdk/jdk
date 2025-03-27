@@ -304,7 +304,7 @@ void MetaspaceShared::initialize_for_static_dump() {
   _symbol_rs = MemoryReserver::reserve(symbol_rs_size,
                                        os::vm_allocation_granularity(),
                                        os::vm_page_size(),
-                                       mtNone);
+                                       mtClassShared);
   if (!_symbol_rs.is_reserved()) {
     log_error(cds)("Unable to reserve memory for symbols: %zu bytes.", symbol_rs_size);
     MetaspaceShared::unrecoverable_writing_error();
