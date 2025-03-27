@@ -61,6 +61,11 @@ public class GifDecodeTest {
             BufferedImage expectedFrame = ImageIO.read(gifFile);
             BufferedImage actualFrame = getFrame(gifFile, 0);
 
+            // If images are added to this test dir: you should also visually inspect
+            // the expected/actual results at least once. (That is: don't just assume
+            // ImageIO is doing the correct thing; it's possible both implementations
+            // are flawed.)
+
             expectedFrame = trimTransparentEdges(expectedFrame);
             actualFrame = trimTransparentEdges(actualFrame);
 
@@ -74,10 +79,11 @@ public class GifDecodeTest {
             }
         }
 
-        if (!allTestsPassed)
+        if (!allTestsPassed) {
             throw new Error("One or more tests failed.");
-        if (!anyTestsPassed)
+        } else  if (!anyTestsPassed) {
             throw new Error("This test did not identify any gif files to test in " + dir.getAbsolutePath());
+        }
     }
 
     /**
@@ -107,10 +113,12 @@ public class GifDecodeTest {
     }
 
     private static boolean testEquals(BufferedImage expectedImage, BufferedImage actualImage) {
-        if (expectedImage.getWidth() != actualImage.getWidth())
+        if (expectedImage.getWidth() != actualImage.getWidth()) {
             return false;
-        if (expectedImage.getHeight() != actualImage.getHeight())
+        }
+        if (expectedImage.getHeight() != actualImage.getHeight()) {
             return false;
+        }
         int tolerance = 0;
 
         for (int y = 0; y < expectedImage.getHeight(); y++) {
@@ -129,16 +137,20 @@ public class GifDecodeTest {
                 int b2 = (argb2 >> 0) & 0xff;
 
                 // transparency should be 0% or 100%
-                if (a1 != a2)
+                if (a1 != a2) {
                     return false;
+                }
 
                 if (a1 == 255) {
-                    if (Math.abs(r1 - r2) > tolerance)
+                    if (Math.abs(r1 - r2) > tolerance) {
                         return false;
-                    if (Math.abs(g1 - g2) > tolerance)
+                    }
+                    if (Math.abs(g1 - g2) > tolerance) {
                         return false;
-                    if (Math.abs(b1 - b2) > tolerance)
+                    }
+                    if (Math.abs(b1 - b2) > tolerance) {
                         return false;
+                    }
                 }
             }
         }
