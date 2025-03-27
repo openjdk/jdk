@@ -878,7 +878,7 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
   }
 }
 
-void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool pop_fpu_stack) {
+void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
   assert(src->is_register(), "should not call otherwise");
   assert(dest->is_stack(), "should not call otherwise");
 
@@ -907,27 +907,13 @@ void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool po
     Address dst_addr = frame_map()->address_for_slot(dest->double_stack_ix());
     __ movdbl(dst_addr, src->as_xmm_double_reg());
 
-#ifndef _LP64
-  } else if (src->is_single_fpu()) {
-    assert(src->fpu_regnr() == 0, "argument must be on TOS");
-    Address dst_addr = frame_map()->address_for_slot(dest->single_stack_ix());
-    if (pop_fpu_stack)     __ fstp_s (dst_addr);
-    else                   __ fst_s  (dst_addr);
-
-  } else if (src->is_double_fpu()) {
-    assert(src->fpu_regnrLo() == 0, "argument must be on TOS");
-    Address dst_addr = frame_map()->address_for_slot(dest->double_stack_ix());
-    if (pop_fpu_stack)     __ fstp_d (dst_addr);
-    else                   __ fst_d  (dst_addr);
-#endif // !_LP64
-
   } else {
     ShouldNotReachHere();
   }
 }
 
 
-void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool wide) {
+void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide) {
   LIR_Address* to_addr = dest->as_address_ptr();
   PatchingStub* patch = nullptr;
   Register compressed_src = rscratch1;
@@ -954,36 +940,14 @@ void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
   int null_check_here = code_offset();
   switch (type) {
     case T_FLOAT: {
-#ifdef _LP64
       assert(src->is_single_xmm(), "not a float");
       __ movflt(as_Address(to_addr), src->as_xmm_float_reg());
-#else
-      if (src->is_single_xmm()) {
-        __ movflt(as_Address(to_addr), src->as_xmm_float_reg());
-      } else {
-        assert(src->is_single_fpu(), "must be");
-        assert(src->fpu_regnr() == 0, "argument must be on TOS");
-        if (pop_fpu_stack)      __ fstp_s(as_Address(to_addr));
-        else                    __ fst_s (as_Address(to_addr));
-      }
-#endif // _LP64
       break;
     }
 
     case T_DOUBLE: {
-#ifdef _LP64
       assert(src->is_double_xmm(), "not a double");
       __ movdbl(as_Address(to_addr), src->as_xmm_double_reg());
-#else
-      if (src->is_double_xmm()) {
-        __ movdbl(as_Address(to_addr), src->as_xmm_double_reg());
-      } else {
-        assert(src->is_double_fpu(), "must be");
-        assert(src->fpu_regnrLo() == 0, "argument must be on TOS");
-        if (pop_fpu_stack)      __ fstp_d(as_Address(to_addr));
-        else                    __ fst_d (as_Address(to_addr));
-      }
-#endif // _LP64
       break;
     }
 
@@ -2032,7 +1996,7 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
 }
 
 
-void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest, CodeEmitInfo* info, bool pop_fpu_stack) {
+void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest, CodeEmitInfo* info) {
   assert(info == nullptr, "should never be used, idiv/irem and ldiv/lrem not handled by this method");
 
   if (left->is_single_cpu()) {
@@ -2213,80 +2177,6 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       }
     }
 
-#ifndef _LP64
-  } else if (left->is_single_fpu()) {
-    assert(dest->is_single_fpu(),  "fpu stack allocation required");
-
-    if (right->is_single_fpu()) {
-      arith_fpu_implementation(code, left->fpu_regnr(), right->fpu_regnr(), dest->fpu_regnr(), pop_fpu_stack);
-
-    } else {
-      assert(left->fpu_regnr() == 0, "left must be on TOS");
-      assert(dest->fpu_regnr() == 0, "dest must be on TOS");
-
-      Address raddr;
-      if (right->is_single_stack()) {
-        raddr = frame_map()->address_for_slot(right->single_stack_ix());
-      } else if (right->is_constant()) {
-        address const_addr = float_constant(right->as_jfloat());
-        assert(const_addr != nullptr, "incorrect float/double constant maintenance");
-        // hack for now
-        raddr = __ as_Address(InternalAddress(const_addr));
-      } else {
-        ShouldNotReachHere();
-      }
-
-      switch (code) {
-        case lir_add: __ fadd_s(raddr); break;
-        case lir_sub: __ fsub_s(raddr); break;
-        case lir_mul: __ fmul_s(raddr); break;
-        case lir_div: __ fdiv_s(raddr); break;
-        default:      ShouldNotReachHere();
-      }
-    }
-
-  } else if (left->is_double_fpu()) {
-    assert(dest->is_double_fpu(),  "fpu stack allocation required");
-
-    if (code == lir_mul || code == lir_div) {
-      // Double values require special handling for strictfp mul/div on x86
-      __ fld_x(ExternalAddress(StubRoutines::x86::addr_fpu_subnormal_bias1()));
-      __ fmulp(left->fpu_regnrLo() + 1);
-    }
-
-    if (right->is_double_fpu()) {
-      arith_fpu_implementation(code, left->fpu_regnrLo(), right->fpu_regnrLo(), dest->fpu_regnrLo(), pop_fpu_stack);
-
-    } else {
-      assert(left->fpu_regnrLo() == 0, "left must be on TOS");
-      assert(dest->fpu_regnrLo() == 0, "dest must be on TOS");
-
-      Address raddr;
-      if (right->is_double_stack()) {
-        raddr = frame_map()->address_for_slot(right->double_stack_ix());
-      } else if (right->is_constant()) {
-        // hack for now
-        raddr = __ as_Address(InternalAddress(double_constant(right->as_jdouble())));
-      } else {
-        ShouldNotReachHere();
-      }
-
-      switch (code) {
-        case lir_add: __ fadd_d(raddr); break;
-        case lir_sub: __ fsub_d(raddr); break;
-        case lir_mul: __ fmul_d(raddr); break;
-        case lir_div: __ fdiv_d(raddr); break;
-        default: ShouldNotReachHere();
-      }
-    }
-
-    if (code == lir_mul || code == lir_div) {
-      // Double values require special handling for strictfp mul/div on x86
-      __ fld_x(ExternalAddress(StubRoutines::x86::addr_fpu_subnormal_bias2()));
-      __ fmulp(dest->fpu_regnrLo() + 1);
-    }
-#endif // !_LP64
-
   } else if (left->is_single_stack() || left->is_address()) {
     assert(left == dest, "left and dest must be equal");
 
@@ -2327,64 +2217,6 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     ShouldNotReachHere();
   }
 }
-
-#ifndef _LP64
-void LIR_Assembler::arith_fpu_implementation(LIR_Code code, int left_index, int right_index, int dest_index, bool pop_fpu_stack) {
-  assert(pop_fpu_stack  || (left_index     == dest_index || right_index     == dest_index), "invalid LIR");
-  assert(!pop_fpu_stack || (left_index - 1 == dest_index || right_index - 1 == dest_index), "invalid LIR");
-  assert(left_index == 0 || right_index == 0, "either must be on top of stack");
-
-  bool left_is_tos = (left_index == 0);
-  bool dest_is_tos = (dest_index == 0);
-  int non_tos_index = (left_is_tos ? right_index : left_index);
-
-  switch (code) {
-    case lir_add:
-      if (pop_fpu_stack)       __ faddp(non_tos_index);
-      else if (dest_is_tos)    __ fadd (non_tos_index);
-      else                     __ fadda(non_tos_index);
-      break;
-
-    case lir_sub:
-      if (left_is_tos) {
-        if (pop_fpu_stack)     __ fsubrp(non_tos_index);
-        else if (dest_is_tos)  __ fsub  (non_tos_index);
-        else                   __ fsubra(non_tos_index);
-      } else {
-        if (pop_fpu_stack)     __ fsubp (non_tos_index);
-        else if (dest_is_tos)  __ fsubr (non_tos_index);
-        else                   __ fsuba (non_tos_index);
-      }
-      break;
-
-    case lir_mul:
-      if (pop_fpu_stack)       __ fmulp(non_tos_index);
-      else if (dest_is_tos)    __ fmul (non_tos_index);
-      else                     __ fmula(non_tos_index);
-      break;
-
-    case lir_div:
-      if (left_is_tos) {
-        if (pop_fpu_stack)     __ fdivrp(non_tos_index);
-        else if (dest_is_tos)  __ fdiv  (non_tos_index);
-        else                   __ fdivra(non_tos_index);
-      } else {
-        if (pop_fpu_stack)     __ fdivp (non_tos_index);
-        else if (dest_is_tos)  __ fdivr (non_tos_index);
-        else                   __ fdiva (non_tos_index);
-      }
-      break;
-
-    case lir_rem:
-      assert(left_is_tos && dest_is_tos && right_index == 1, "must be guaranteed by FPU stack allocation");
-      __ fremr(noreg);
-      break;
-
-    default:
-      ShouldNotReachHere();
-  }
-}
-#endif // _LP64
 
 
 void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr tmp, LIR_Opr dest, LIR_Op* op) {
@@ -2733,13 +2565,6 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
       ShouldNotReachHere();
     }
 
-#ifndef _LP64
-  } else if(opr1->is_single_fpu() || opr1->is_double_fpu()) {
-    assert(opr1->is_fpu_register() && opr1->fpu() == 0, "currently left-hand side must be on TOS (relax this restriction)");
-    assert(opr2->is_fpu_register(), "both must be registers");
-    __ fcmp(noreg, opr2->fpu(), op->fpu_pop_count() > 0, op->fpu_pop_count() > 1);
-#endif // LP64
-
   } else if (opr1->is_address() && opr2->is_constant()) {
     LIR_Const* c = opr2->as_constant_ptr();
 #ifdef _LP64
@@ -2782,16 +2607,7 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
       __ cmpsd2int(left->as_xmm_double_reg(), right->as_xmm_double_reg(), dst->as_register(), code == lir_ucmp_fd2i);
 
     } else {
-#ifdef _LP64
       ShouldNotReachHere();
-#else
-      assert(left->is_single_fpu() || left->is_double_fpu(), "must be");
-      assert(right->is_single_fpu() || right->is_double_fpu(), "must match");
-
-      assert(left->fpu() == 0, "left must be on TOS");
-      __ fcmp2int(dst->as_register(), code == lir_ucmp_fd2i, right->fpu(),
-                  op->fpu_pop_count() > 0, op->fpu_pop_count() > 1);
-#endif // LP64
     }
   } else {
     assert(code == lir_cmp_l2i, "check");
