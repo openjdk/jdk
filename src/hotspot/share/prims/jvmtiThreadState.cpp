@@ -259,11 +259,9 @@ JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(jthread thread)
     _is_self(false),
     _thread(thread)
 {
-#if 0
   if (!Continuations::enabled()) {
     return; // JvmtiVTMSTransitionDisabler is no-op without virtual threads
   }
-#endif
   if (Thread::current_or_null() == nullptr) {
     return;  // Detached thread, can be a call from Agent_OnLoad.
   }
@@ -300,11 +298,9 @@ JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(bool is_SR)
     _is_self(false),
     _thread(nullptr)
 {
-#if 0
   if (!Continuations::enabled()) {
     return; // JvmtiVTMSTransitionDisabler is no-op without virtual threads
   }
-#endif
   if (Thread::current_or_null() == nullptr) {
     return;  // Detached thread, can be a call from Agent_OnLoad.
   }
@@ -318,11 +314,9 @@ JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(bool is_SR)
 }
 
 JvmtiVTMSTransitionDisabler::~JvmtiVTMSTransitionDisabler() {
-#if 0
   if (!Continuations::enabled()) {
     return; // JvmtiVTMSTransitionDisabler is a no-op without virtual threads
   }
-#endif
   if (Thread::current_or_null() == nullptr) {
     return;  // Detached thread, can be a call from Agent_OnLoad.
   }

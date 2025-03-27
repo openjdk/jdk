@@ -778,12 +778,10 @@ bool HandshakeState::suspend() {
   if (_handshakee == self) {
     // If target is the current thread we can bypass the handshake machinery
     // and just suspend directly
-    JavaThreadState jts = self->thread_state();
-    self->set_thread_state(_thread_blocked);
+    ThreadBlockInVM tbivm(self);
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
     set_suspended(true);
     do_self_suspend();
-    self->set_thread_state(jts);
     return true;
   } else {
     SuspendThreadHandshake st;
