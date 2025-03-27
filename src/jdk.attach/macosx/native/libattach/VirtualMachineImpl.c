@@ -124,14 +124,15 @@ JNIEXPORT jboolean JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkCatches
     size_t            kipsz = sizeof(struct kinfo_proc);
 
    /*
-    * early in the lifetime of a JVM it has not yet initialized its signal handlers, in particular the QUIT
+    * Early in the lifetime of a JVM it has not yet initialized its signal handlers, in particular the QUIT
     * handler, note that the default behavior of QUIT is to terminate the receiving process, if unhandled.
     *
-    * since we use QUIT to initiate an attach operation, if we signal a JVM during this period early in its
+    * Since we use QUIT to initiate an attach operation, if we signal a JVM during this period early in its
     * lifetime before it has initialized its QUIT handler, such a signal delivery will terminate the JVM we
     * are attempting to attach to!
     *
-    * the following code guards the QUIT delivery by testing the current signal masks
+    * The following code guards the QUIT delivery by testing the current signal masks. It is okay to send QUIT
+    * if the signal is caught but not ignored, as that implies a handler has been installed.
     */
 
     if (sysctl(mib, sizeof(mib) / sizeof(int), &kiproc, &kipsz, NULL, 0) == 0) {
