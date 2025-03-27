@@ -774,8 +774,15 @@ public:
   static bool cpu_supports_evex()     { return (_cpu_features & CPU_AVX512F) != 0; }
 
   static bool supports_avx512_simd_sort() {
-    //  Disable AVX512 version of SIMD Sort on AMD Zen4 Processors
-    return ((is_intel() || (is_amd() && (cpu_family() > CPU_FAMILY_AMD_19H))) && supports_avx512dq()); }
+    if (supports_avx512dq()) {
+      // Disable AVX512 version of SIMD Sort on AMD Zen4 Processors.
+      if (is_amd() && cpu_family() == CPU_FAMILY_AMD_19H) {
+        return false;
+      }
+      return true;
+    }
+    return false;
+  }
 
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
