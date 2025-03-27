@@ -35,7 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class SortIncludes {
-    private static final String INCLUDE_LINE = "^ *#include *(<[^>]+>|\"[^\"]+\") *$\\n";
+    private static final String INCLUDE_LINE = "^ *# *include *(<[^>]+>|\"[^\"]+\") *$\\n";
     private static final String BLANK_LINE = "^$\\n";
     private static final Pattern INCLUDES_RE = Pattern.compile(
                     String.format("%s(?:(?:%s)*%s)*", INCLUDE_LINE, BLANK_LINE, INCLUDE_LINE),
