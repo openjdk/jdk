@@ -319,7 +319,10 @@ void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& known_overla
 int VLoopDependencyGraph::find_max_pred_depth(const Node* n) const {
   int max_pred_depth = 0;
   if (!n->is_Phi()) { // ignore backedge
-    for (PredsIterator it(*this, n, false); !it.done(); it.next()) {
+    // We must compute the dependence graph depth with all edges (including the unknown aliasing edges),
+    // so that the independence queries work correctly, no matter if we check independence with or without
+    // unknown aliasing edges.
+    for (PredsIterator it(*this, n, true); !it.done(); it.next()) {
       Node* pred = it.current();
       if (_vloop.in_bb(pred)) {
         max_pred_depth = MAX2(max_pred_depth, depth(pred));
@@ -366,7 +369,7 @@ void VLoopDependencyGraph::print() const {
         Node* pred = _body.body().at(dn->known_overlap_edge(j));
         tty->print("  %d %s", pred->_idx, pred->Name());
       }
-      tty->print(" | unknown: ");
+      tty->print(" | unknown aliasing:");
       for (uint j = 0; j < dn->num_unknown_aliasing_edges(); j++) {
         Node* pred = _body.body().at(dn->unknown_aliasing_edge(j));
         tty->print("  %d %s", pred->_idx, pred->Name());
@@ -376,11 +379,17 @@ void VLoopDependencyGraph::print() const {
   }
   tty->cr();
 
-  tty->print_cr(" Complete dependency graph:");
+  // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
+  bool with_unknown_aliasing_edges = !_vloop.are_speculative_checks_possible();
+  if (with_unknown_aliasing_edges) {
+    tty->print_cr(" Complete dependency graph (with unknown aliasing edges, because we cannot speculate):");
+  } else {
+    tty->print_cr(" Dependency graph without unknown aliasing edges (because we can speculate):");
+  }
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
     tty->print("  d%02d Dependencies[%d %s:", depth(n), n->_idx, n->Name());
-    for (PredsIterator it(*this, n, false); !it.done(); it.next()) {
+    for (PredsIterator it(*this, n, with_unknown_aliasing_edges); !it.done(); it.next()) {
       Node* pred = it.current();
       tty->print("  %d %s", pred->_idx, pred->Name());
     }

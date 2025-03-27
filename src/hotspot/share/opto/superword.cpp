@@ -832,12 +832,15 @@ bool VLoopDependencyGraph::independent(Node* s1, Node* s2) const {
   Node* shallow = d1 > d2 ? s2 : s1;
   int min_d = MIN2(d1, d2); // prune traversal at min_d
 
+  // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
+  bool with_unknown_aliasing_edges = !_vloop.are_speculative_checks_possible();
+
   ResourceMark rm;
   Unique_Node_List worklist;
   worklist.push(deep);
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
-    for (PredsIterator preds(*this, n, false); !preds.done(); preds.next()) {
+    for (PredsIterator preds(*this, n, with_unknown_aliasing_edges); !preds.done(); preds.next()) {
       Node* pred = preds.current();
       if (_vloop.in_bb(pred) && depth(pred) >= min_d) {
         if (pred == shallow) {
@@ -869,9 +872,13 @@ bool VLoopDependencyGraph::mutually_independent(const Node_List* nodes) const {
     worklist.push(n); // start traversal at all nodes in nodes list
     nodes_set.set(_body.bb_idx(n));
   }
+
+  // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
+  bool with_unknown_aliasing_edges = !_vloop.are_speculative_checks_possible();
+
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
-    for (PredsIterator preds(*this, n, false); !preds.done(); preds.next()) {
+    for (PredsIterator preds(*this, n, with_unknown_aliasing_edges); !preds.done(); preds.next()) {
       Node* pred = preds.current();
       if (_vloop.in_bb(pred) && depth(pred) >= min_d) {
         if (nodes_set.test(_body.bb_idx(pred))) {
