@@ -34,12 +34,18 @@ import java.util.Objects;
  * Implements an output stream filter for uncompressing data stored in the
  * "deflate" compression format.
  *
- * <h2 id="inflater-usage">Inflater Usage</h2>
- * <p>This class uses an {@link Inflater} for uncompressing the data. When constructing an
- * {@code InflaterOutputStream}, if it is passed an {@code Inflater}, then it is the
- * responsibility of the caller to {@linkplain Inflater#close() close the Inflater}
- * as and when appropriate, after the
- * {@linkplain InflaterOutputStream#close() InflaterOutputStream has been closed}.
+ * <h2 id="decompressor-usage">Decompressor Usage</h2>
+ * An {@linkplain InflaterOutputStream output stream} that is created without specifying
+ * a {@linkplain Inflater decompressor} will use a default decompressor. The default
+ * decompressor will be closed when the output stream is {@linkplain #close closed}.
+ * <p>
+ * If a decompressor is specified when creating the output stream, it is the
+ * responsibility of the caller to {@linkplain Inflater#close close} the
+ * decompressor after closing the output stream.
+ *
+ * @apiNote
+ * The {@link #close} method should be called to release resources used by this
+ * stream, either directly, or with the {@code try}-with-resources statement.
  *
  * @since       1.6
  * @author      David R Tribble (david@tribble.com)
@@ -78,6 +84,10 @@ public class InflaterOutputStream extends FilterOutputStream {
      * Creates a new output stream with a default decompressor and buffer
      * size.
      *
+     * @apiNote
+     * The default decompressor will be closed when this output stream
+     * is {@linkplain #close() closed}.
+     *
      * @param out output stream to write the uncompressed data to
      * @throws NullPointerException if {@code out} is null
      */
@@ -90,8 +100,10 @@ public class InflaterOutputStream extends FilterOutputStream {
      * Creates a new output stream with the specified decompressor and a
      * default buffer size.
      *
-     * @apiNote {@linkplain #close() Closing} the {@code InflaterOutputStream}
-     * {@linkplain ##inflater-usage will not close} the given {@code infl}.
+     * @apiNote
+     * {@linkplain #close() Closing} this output stream
+     * {@linkplain ##decompressor-usage will not close} the given
+     * {@linkplain Inflater decompressor}.
      *
      * @param out output stream to write the uncompressed data to
      * @param infl decompressor ("inflater") for this stream
@@ -105,8 +117,10 @@ public class InflaterOutputStream extends FilterOutputStream {
      * Creates a new output stream with the specified decompressor and
      * buffer size.
      *
-     * @apiNote {@linkplain #close() Closing} the {@code InflaterOutputStream}
-     * {@linkplain ##inflater-usage will not close} the given {@code infl}.
+     * @apiNote
+     * {@linkplain #close() Closing} this output stream
+     * {@linkplain ##decompressor-usage will not close} the given
+     * {@linkplain Inflater decompressor}.
      *
      * @param out output stream to write the uncompressed data to
      * @param infl decompressor ("inflater") for this stream
@@ -133,10 +147,6 @@ public class InflaterOutputStream extends FilterOutputStream {
     /**
      * Writes any remaining uncompressed data to the output stream and closes
      * the underlying output stream.
-     *
-     * @apiNote If this {@code InflaterOutputStream} was constructed by passing
-     * an {@code Inflater}, then this method {@linkplain ##inflater-usage does not close}
-     * that {@code Inflater}.
      *
      * @throws IOException if an I/O error occurs
      */

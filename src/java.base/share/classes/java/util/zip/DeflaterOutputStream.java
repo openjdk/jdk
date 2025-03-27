@@ -38,12 +38,18 @@ import java.io.IOException;
  * or method in this class will cause a {@link NullPointerException} to be
  * thrown.
  *
- * <h2 id="deflater-usage">Deflater Usage</h2>
- * <p>This class uses a {@link Deflater} for compressing the data. When constructing a
- * {@code DeflaterOutputStream}, if it is passed a {@code Deflater}, then it is the
- * responsibility of the caller to {@linkplain Deflater#close() close the Deflater}
- * as and when appropriate, after the
- * {@linkplain DeflaterOutputStream#close() DeflaterOutputStream has been closed}.
+ * <h2 id="compressor-usage">Compressor Usage</h2>
+ * An {@linkplain DeflaterOutputStream output stream} that is created without specifying
+ * a {@linkplain Deflater compressor} will use a default compressor. The default
+ * compressor will be closed when the output stream is {@linkplain #close closed}.
+ * <p>
+ * If a compressor is specified when creating the output stream, it is the
+ * responsibility of the caller to {@linkplain Deflater#close close} the
+ * compressor after closing the output stream.
+ *
+ * @apiNote
+ * The {@link #close} method should be called to release resources used by this
+ * stream, either directly, or with the {@code try}-with-resources statement.
  *
  * @see         Deflater
  * @author      David Connelly
@@ -71,8 +77,10 @@ public class DeflaterOutputStream extends FilterOutputStream {
      * Creates a new output stream with the specified compressor,
      * buffer size and flush mode.
      *
-     * @apiNote {@linkplain #close() Closing} the {@code DeflaterOutputStream}
-     * {@linkplain ##deflater-usage will not close} the given {@code def}.
+     * @apiNote
+     * {@linkplain #close() Closing} this output stream
+     * {@linkplain ##compressor-usage will not close} the given
+     * {@linkplain Deflater compressor}.
      *
      * @param out the output stream
      * @param def the compressor ("deflater")
@@ -110,8 +118,10 @@ public class DeflaterOutputStream extends FilterOutputStream {
      * <p>The new output stream instance is created as if by invoking
      * the 4-argument constructor {@code DeflaterOutputStream(out, def, size, false)}.
      *
-     * @apiNote {@linkplain #close() Closing} the {@code DeflaterOutputStream}
-     * {@linkplain ##deflater-usage will not close} the given {@code def}.
+     * @apiNote
+     * {@linkplain #close() Closing} this output stream
+     * {@linkplain ##compressor-usage will not close} the given
+     * {@linkplain Deflater compressor}.
      *
      * @param out the output stream
      * @param def the compressor ("deflater")
@@ -126,8 +136,10 @@ public class DeflaterOutputStream extends FilterOutputStream {
      * Creates a new output stream with the specified compressor, flush
      * mode and a default buffer size.
      *
-     * @apiNote {@linkplain #close() Closing} the {@code DeflaterOutputStream}
-     * {@linkplain ##deflater-usage will not close} the given {@code def}.
+     * @apiNote
+     * {@linkplain #close() Closing} this output stream
+     * {@linkplain ##compressor-usage will not close} the given
+     * {@linkplain Deflater compressor}.
      *
      * @param out the output stream
      * @param def the compressor ("deflater")
@@ -153,8 +165,10 @@ public class DeflaterOutputStream extends FilterOutputStream {
      * <p>The new output stream instance is created as if by invoking
      * the 3-argument constructor {@code DeflaterOutputStream(out, def, false)}.
      *
-     * @apiNote {@linkplain #close() Closing} the {@code DeflaterOutputStream}
-     * {@linkplain ##deflater-usage will not close} the given {@code def}.
+     * @apiNote
+     * {@linkplain #close() Closing} this output stream
+     * {@linkplain ##compressor-usage will not close} the given
+     * {@linkplain Deflater compressor}.
      *
      * @param out the output stream
      * @param def the compressor ("deflater")
@@ -169,6 +183,10 @@ public class DeflaterOutputStream extends FilterOutputStream {
     /**
      * Creates a new output stream with a default compressor, a default
      * buffer size and the specified flush mode.
+     *
+     * @apiNote
+     * The default compressor will be closed when this output stream
+     * is {@linkplain #close() closed}.
      *
      * @param out the output stream
      * @param syncFlush
@@ -189,6 +207,10 @@ public class DeflaterOutputStream extends FilterOutputStream {
      *
      * <p>The new output stream instance is created as if by invoking
      * the 2-argument constructor {@code DeflaterOutputStream(out, false)}.
+     *
+     * @apiNote
+     * The default compressor will be closed when this output stream
+     * is {@linkplain #close() closed}.
      *
      * @param out the output stream
      */
@@ -260,10 +282,6 @@ public class DeflaterOutputStream extends FilterOutputStream {
     /**
      * Writes remaining compressed data to the output stream and closes the
      * underlying stream.
-     *
-     * @apiNote If this {@code DeflaterOutputStream} was constructed by passing
-     * a {@code Deflater}, then this method {@linkplain ##deflater-usage does not close}
-     * that {@code Deflater}.
      *
      * @throws    IOException if an I/O error has occurred
      */

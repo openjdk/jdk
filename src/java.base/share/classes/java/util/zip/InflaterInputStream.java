@@ -39,12 +39,18 @@ import java.util.Objects;
  * or method in this class will cause a {@link NullPointerException} to be
  * thrown.
  *
- * <h2 id="inflater-usage">Inflater Usage</h2>
- * <p>This class uses an {@link Inflater} for uncompressing the data. When constructing an
- * {@code InflaterInputStream}, if it is passed an {@code Inflater}, then it is the
- * responsibility of the caller to {@linkplain Inflater#close() close the Inflater}
- * as and when appropriate, after the
- * {@linkplain InflaterInputStream#close() InflaterInputStream has been closed}.
+ * <h2 id="decompressor-usage">Decompressor Usage</h2>
+ * An {@linkplain InflaterInputStream input stream} that is created without specifying
+ * a {@linkplain Inflater decompressor} will use a default decompressor. The default
+ * decompressor will be closed when the input stream is {@linkplain #close closed}.
+ * <p>
+ * If a decompressor is specified when creating the input stream, it is the
+ * responsibility of the caller to {@linkplain Inflater#close close} the
+ * decompressor after closing the input stream.
+ *
+ * @apiNote
+ * The {@link #close} method should be called to release resources used by this
+ * stream, either directly, or with the {@code try}-with-resources statement.
  *
  * @see         Inflater
  * @author      David Connelly
@@ -84,8 +90,10 @@ public class InflaterInputStream extends FilterInputStream {
      * Creates a new input stream with the specified decompressor and
      * buffer size.
      *
-     * @apiNote {@linkplain #close() Closing} the {@code InflaterInputStream}
-     * {@linkplain ##inflater-usage will not close} the given {@code inf}.
+     * @apiNote
+     * {@linkplain #close() Closing} this input stream
+     * {@linkplain ##decompressor-usage will not close} the given
+     * {@linkplain Inflater decompressor}.
      *
      * @param in the input stream
      * @param inf the decompressor ("inflater")
@@ -107,8 +115,10 @@ public class InflaterInputStream extends FilterInputStream {
      * Creates a new input stream with the specified decompressor and a
      * default buffer size.
      *
-     * @apiNote {@linkplain #close() Closing} the {@code InflaterInputStream}
-     * {@linkplain ##inflater-usage will not close} the given {@code inf}.
+     * @apiNote
+     * {@linkplain #close() Closing} this input stream
+     * {@linkplain ##decompressor-usage will not close} the given
+     * {@linkplain Inflater decompressor}.
      *
      * @param in the input stream
      * @param inf the decompressor ("inflater")
@@ -121,6 +131,11 @@ public class InflaterInputStream extends FilterInputStream {
 
     /**
      * Creates a new input stream with a default decompressor and buffer size.
+     *
+     * @apiNote
+     * The default decompressor will be closed when this input stream
+     * is {@linkplain #close() closed}.
+     *
      * @param in the input stream
      */
     public InflaterInputStream(InputStream in) {
@@ -266,10 +281,6 @@ public class InflaterInputStream extends FilterInputStream {
     /**
      * Closes this input stream and releases any system resources associated
      * with the stream.
-     *
-     * @apiNote If this {@code InflaterInputStream} was constructed by passing
-     * an {@code Inflater}, then this method {@linkplain ##inflater-usage does not close}
-     * that {@code Inflater}.
      *
      * @throws    IOException if an I/O error has occurred
      */
