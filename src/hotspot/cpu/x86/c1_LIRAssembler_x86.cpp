@@ -161,24 +161,6 @@ address LIR_Assembler::double_constant(double d) {
   }
 }
 
-#ifndef _LP64
-void LIR_Assembler::fpop() {
-  __ fpop();
-}
-
-void LIR_Assembler::fxch(int i) {
-  __ fxch(i);
-}
-
-void LIR_Assembler::fld(int i) {
-  __ fld_s(i);
-}
-
-void LIR_Assembler::ffree(int i) {
-  __ ffree(i);
-}
-#endif // !_LP64
-
 void LIR_Assembler::breakpoint() {
   __ int3();
 }
