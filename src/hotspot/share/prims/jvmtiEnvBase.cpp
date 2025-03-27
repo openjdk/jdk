@@ -1756,6 +1756,7 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
   HandleMark hm(current);
   Handle thread_h(current, thread_oop);
   bool is_virtual = java_lang_VirtualThread::is_instance(thread_h());
+  bool is_thread_carrying = is_thread_carrying_vthread(java_thread, thread_h());
 
   if (is_virtual) {
     if (single_suspend) {
@@ -1782,7 +1783,6 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
   if (java_thread->is_hidden_from_external_view()) {
     return JVMTI_ERROR_NONE;
   }
-  bool is_thread_carrying = is_thread_carrying_vthread(java_thread, thread_h());
 
   // A case of non-virtual thread.
   if (!is_virtual) {
@@ -1822,10 +1822,13 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
 // java_thread - protected by ThreadsListHandle
 jvmtiError
 JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single_resume) {
-  JavaThread* current = JavaThread::current();
+  // current thread can be VMThread which is a NonJavaThread
+  Thread* current = Thread::current();
   HandleMark hm(current);
   Handle thread_h(current, thread_oop);
+  ThreadsListHandle tlh(current);
   bool is_virtual = java_lang_VirtualThread::is_instance(thread_h());
+  NoSafepointVerifier nsv;
 
   if (is_virtual) {
     if (single_resume) {
@@ -2056,6 +2059,7 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, ThreadsListHandle* t
 
   assert(!Continuations::enabled() || self || !is_virtual || current->is_VTMS_transition_disabler(), "sanity check");
 
+  hs_cl->set_target_h(target_h);
   hs_cl->set_target_jt(target_jt);   // can be needed in the virtual thread case
   hs_cl->set_is_virtual(is_virtual); // can be needed in the virtual thread case
   hs_cl->set_self(self);             // needed when suspend is required for non-current target thread
@@ -2610,6 +2614,16 @@ GetStackTraceClosure::do_vthread(Handle target_h) {
   _result = ((JvmtiEnvBase *)_env)->get_stack_trace(jvf,
                                                     _start_depth, _max_count,
                                                     _frame_buffer, _count_ptr);
+}
+
+void
+ResumeThreadClosure::do_thread(Thread *target) {
+  set_result(JvmtiEnvBase::resume_thread(_target_h(), _target_jt, _single_resume));
+}
+
+void
+ResumeThreadClosure::do_vthread(Handle thread_h) {
+  set_result(JvmtiEnvBase::resume_thread(_target_h(), _target_jt, _single_resume));
 }
 
 #ifdef ASSERT
