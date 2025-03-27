@@ -56,7 +56,7 @@ class AixFileSystem extends UnixFileSystem {
         private static Set<String> supportedFileAttributeViews() {
             Set<String> result = new HashSet<String>();
             result.addAll(UnixFileSystem.standardFileAttributeViews());
-	    result.add("user");
+            result.add("user");
             return Collections.unmodifiableSet(result);
         }
     }

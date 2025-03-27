@@ -73,7 +73,7 @@ class AixFileStore
                 x.rethrowAsIOException(parent);
             }
             if (attrs.dev() != dev())
-	        break;
+                break;
             path = parent;
             parent = parent.getParent();
         }
@@ -101,11 +101,10 @@ class AixFileStore
 
            // typical AIX file system types that support xattr (JFS2 with EA enabled)
            String fstype = entry().fstype();
-	   System.out.println("fstype :" + fstype);
            if ("jfs2".equals(fstype)) {
 	       UnixPath dir = new UnixPath(file().getFileSystem(), entry().dir());
-	       return isExtendedAttributesEnabled(dir);
-	   }
+               return isExtendedAttributesEnabled(dir);
+           }
         }
         return super.supportsFileAttributeView(type);
 
