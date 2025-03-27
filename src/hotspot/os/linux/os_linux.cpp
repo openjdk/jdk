@@ -3775,10 +3775,9 @@ static bool hugetlbfs_sanity_check(size_t page_size) {
     munmap(p, page_size);
     return true;
   } else {
-      log_info(pagesize)("Large page size (%zu%s) failed sanity check, "
+      log_info(pagesize)("Large page size (" EXACTFMT ") failed sanity check, "
                          "checking if smaller large page sizes are usable",
-                         byte_size_in_exact_unit(page_size),
-                         exact_unit_for_byte_size(page_size));
+                         EXACTFMTARGS(page_size));
       for (size_t page_size_ = page_sizes.next_smaller(page_size);
           page_size_ > os::vm_page_size();
           page_size_ = page_sizes.next_smaller(page_size_)) {
@@ -3787,9 +3786,8 @@ static bool hugetlbfs_sanity_check(size_t page_size) {
         if (p != MAP_FAILED) {
           // Mapping succeeded, sanity check passed.
           munmap(p, page_size_);
-          log_info(pagesize)("Large page size (%zu%s) passed sanity check",
-                             byte_size_in_exact_unit(page_size_),
-                             exact_unit_for_byte_size(page_size_));
+          log_info(pagesize)("Large page size (" EXACTFMT ") passed sanity check",
+                             EXACTFMTARGS(page_size_));
           return true;
         }
       }
@@ -3986,26 +3984,21 @@ void os::Linux::large_page_init() {
        LargePageSizeInBytes == 0 ||
        LargePageSizeInBytes == default_large_page_size) {
      large_page_size = default_large_page_size;
-     log_info(pagesize)("Using the default large page size: %zu%s",
-                        byte_size_in_exact_unit(large_page_size),
-                        exact_unit_for_byte_size(large_page_size));
+     log_info(pagesize)("Using the default large page size: " EXACTFMT,
+                        EXACTFMTARGS(large_page_size));
     } else {
       if (all_large_pages.contains(LargePageSizeInBytes)) {
         large_page_size = LargePageSizeInBytes;
-        log_info(pagesize)("Overriding default large page size (%zu%s) "
-                           "using LargePageSizeInBytes: %zu%s",
-                           byte_size_in_exact_unit(default_large_page_size),
-                           exact_unit_for_byte_size(default_large_page_size),
-                           byte_size_in_exact_unit(large_page_size),
-                           exact_unit_for_byte_size(large_page_size));
+        log_info(pagesize)("Overriding default large page size (" EXACTFMT ") "
+                           "using LargePageSizeInBytes: " EXACTFMT,
+                           EXACTFMTARGS(default_large_page_size),
+                           EXACTFMTARGS(large_page_size));
       } else {
         large_page_size = default_large_page_size;
-        log_info(pagesize)("LargePageSizeInBytes is not a valid large page size (%zu%s) "
-                           "using the default large page size: %zu%s",
-                           byte_size_in_exact_unit(LargePageSizeInBytes),
-                           exact_unit_for_byte_size(LargePageSizeInBytes),
-                           byte_size_in_exact_unit(large_page_size),
-                           exact_unit_for_byte_size(large_page_size));
+        log_info(pagesize)("LargePageSizeInBytes is not a valid large page size (" EXACTFMT ") "
+                           "using the default large page size: " EXACTFMT,
+                           EXACTFMTARGS(LargePageSizeInBytes),
+                           EXACTFMTARGS(large_page_size));
       }
     }
 
@@ -4046,9 +4039,8 @@ static void log_on_commit_special_failure(char* req_addr, size_t bytes,
   assert(error == ENOMEM, "Only expect to fail if no memory is available");
 
   log_info(pagesize)("Failed to reserve and commit memory with given page size. req_addr: " PTR_FORMAT
-                     " size: %zu%s, page size: %zu%s, (errno = %d)",
-                     p2i(req_addr), byte_size_in_exact_unit(bytes), exact_unit_for_byte_size(bytes),
-                     byte_size_in_exact_unit(page_size), exact_unit_for_byte_size(page_size), error);
+                     " size: " EXACTFMT ", page size: " EXACTFMT ", (errno = %d)",
+                     p2i(req_addr), EXACTFMTARGS(bytes), EXACTFMTARGS(page_size), error);
 }
 
 static bool commit_memory_special(size_t bytes,
@@ -4075,11 +4067,8 @@ static bool commit_memory_special(size_t bytes,
     return false;
   }
 
-  log_debug(pagesize)("Commit special mapping: " PTR_FORMAT ", size=%zu%s, page size=%zu%s",
-                      p2i(addr), byte_size_in_exact_unit(bytes),
-                      exact_unit_for_byte_size(bytes),
-                      byte_size_in_exact_unit(page_size),
-                      exact_unit_for_byte_size(page_size));
+  log_debug(pagesize)("Commit special mapping: " PTR_FORMAT ", size=" EXACTFMT ", page size=" EXACTFMT,
+                      p2i(addr), EXACTFMTARGS(bytes), EXACTFMTARGS(page_size));
   assert(is_aligned(addr, page_size), "Must be");
   return true;
 }

@@ -1100,6 +1100,15 @@ size_t G1Policy::predict_bytes_to_copy(G1HeapRegion* hr) const {
   return bytes_to_copy;
 }
 
+double G1Policy::predict_gc_efficiency(G1HeapRegion* hr) {
+
+  double total_based_on_incoming_refs_ms = predict_merge_scan_time(hr->incoming_refs()) + // We use the number of incoming references as an estimate for remset cards.
+                                           predict_non_young_other_time_ms(1) +
+                                           predict_region_copy_time_ms(hr, false /* for_young_only_phase */);
+
+  return hr->reclaimable_bytes() / total_based_on_incoming_refs_ms;
+}
+
 double G1Policy::predict_young_region_other_time_ms(uint count) const {
   return _analytics->predict_young_other_time_ms(count);
 }

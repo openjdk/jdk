@@ -884,7 +884,6 @@ class      LIR_OpBranch;
 class      LIR_OpConvert;
 class      LIR_OpAllocObj;
 class      LIR_OpReturn;
-class      LIR_OpRoundFP;
 class    LIR_Op2;
 class    LIR_OpDelay;
 class    LIR_Op3;
@@ -938,7 +937,6 @@ enum LIR_Code {
       , lir_convert
       , lir_alloc_object
       , lir_monaddr
-      , lir_roundfp
       , lir_sqrt
       , lir_abs
       , lir_neg
@@ -1147,7 +1145,6 @@ class LIR_Op: public CompilationResourceObj {
   virtual LIR_OpLock* as_OpLock() { return nullptr; }
   virtual LIR_OpAllocArray* as_OpAllocArray() { return nullptr; }
   virtual LIR_OpAllocObj* as_OpAllocObj() { return nullptr; }
-  virtual LIR_OpRoundFP* as_OpRoundFP() { return nullptr; }
   virtual LIR_OpBranch* as_OpBranch() { return nullptr; }
   virtual LIR_OpReturn* as_OpReturn() { return nullptr; }
   virtual LIR_OpRTCall* as_OpRTCall() { return nullptr; }
@@ -1526,23 +1523,6 @@ class LIR_OpAllocObj : public LIR_Op1 {
   virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
 };
 
-
-// LIR_OpRoundFP
-class LIR_OpRoundFP : public LIR_Op1 {
- friend class LIR_OpVisitState;
-
- private:
-  LIR_Opr _tmp;
-
- public:
-  LIR_OpRoundFP(LIR_Opr reg, LIR_Opr stack_loc_temp, LIR_Opr result)
-    : LIR_Op1(lir_roundfp, reg, result)
-    , _tmp(stack_loc_temp) {}
-
-  LIR_Opr tmp() const                            { return _tmp; }
-  virtual LIR_OpRoundFP* as_OpRoundFP()          { return this; }
-  void print_instr(outputStream* out) const PRODUCT_RETURN;
-};
 
 // LIR_OpTypeCheck
 class LIR_OpTypeCheck: public LIR_Op {
@@ -2205,7 +2185,6 @@ class LIR_List: public CompilationResourceObj {
 
   // result is a stack location for old backend and vreg for UseLinearScan
   // stack_loc_temp is an illegal register for old backend
-  void roundfp(LIR_Opr reg, LIR_Opr stack_loc_temp, LIR_Opr result) { append(new LIR_OpRoundFP(reg, stack_loc_temp, result)); }
   void move(LIR_Opr src, LIR_Opr dst, CodeEmitInfo* info = nullptr) { append(new LIR_Op1(lir_move, src, dst, dst->type(), lir_patch_none, info)); }
   void move(LIR_Address* src, LIR_Opr dst, CodeEmitInfo* info = nullptr) { append(new LIR_Op1(lir_move, LIR_OprFact::address(src), dst, src->type(), lir_patch_none, info)); }
   void move(LIR_Opr src, LIR_Address* dst, CodeEmitInfo* info = nullptr) { append(new LIR_Op1(lir_move, src, LIR_OprFact::address(dst), dst->type(), lir_patch_none, info)); }
