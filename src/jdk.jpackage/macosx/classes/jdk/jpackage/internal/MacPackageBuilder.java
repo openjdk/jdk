@@ -22,29 +22,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal.model;
+package jdk.jpackage.internal;
 
-import java.nio.file.Path;
-import jdk.jpackage.internal.util.CompositeProxy;
+import java.util.Objects;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.MacPackage;
+import jdk.jpackage.internal.model.MacPackageMixin;
 
-public interface MacPackage extends Package, MacPackageMixin {
+final class MacPackageBuilder {
 
-    @Override
-    default AppImageLayout appImageLayout() {
-        if (isRuntimeInstaller()) {
-            return RUNTIME_PACKAGE_LAYOUT;
-        } else {
-            return Package.super.appImageLayout();
-        }
+    MacPackageBuilder(PackageBuilder pkgBuilder) {
+        this.pkgBuilder = Objects.requireNonNull(pkgBuilder);
     }
 
-    default Path installDir() {
-        return Path.of("/").resolve(relativeInstallDir());
+    MacPackageBuilder predefinedAppImageSigned(boolean  v) {
+        predefinedAppImageSigned = v;
+        return this;
     }
 
-    public static MacPackage create(Package pkg, MacPackageMixin mixin) {
-        return CompositeProxy.create(MacPackage.class, pkg, mixin);
+    PackageBuilder pkgBuilder() {
+        return pkgBuilder;
     }
 
-    public final static RuntimeLayout RUNTIME_PACKAGE_LAYOUT = RuntimeLayout.create(Path.of("Contents/Home"));
+    MacPackage create() throws ConfigException {
+        final var pkg = pkgBuilder.create();
+        return MacPackage.create(pkg, new MacPackageMixin.Stub(pkg.predefinedAppImage().map(v -> predefinedAppImageSigned)));
+    }
+
+    private final PackageBuilder pkgBuilder;
+    private boolean predefinedAppImageSigned;
 }

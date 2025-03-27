@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,27 +24,26 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.nio.file.Path;
-import jdk.jpackage.internal.util.CompositeProxy;
+import java.util.Optional;
 
-public interface MacPackage extends Package, MacPackageMixin {
+public interface MacPackageMixin {
 
-    @Override
-    default AppImageLayout appImageLayout() {
-        if (isRuntimeInstaller()) {
-            return RUNTIME_PACKAGE_LAYOUT;
-        } else {
-            return Package.super.appImageLayout();
-        }
+    /**
+     * Gets sign status of the predefined app image.
+     * <p>
+     * Returns {@code Optional.of(Boolean.TRUE)} if the predefined app image is
+     * available and is signed.
+     * <p>
+     * Returns {@code Optional.of(Boolean.FALSE)} if the predefined app image is
+     * available and is unsigned.
+     * <p>
+     * Returns any empty {@link Optional} instance if the predefined app image is
+     * unavailable.
+     * 
+     * @return sign status of the predefined app image if any
+     */
+    Optional<Boolean> predefinedAppImageSigned();
+
+    record Stub(Optional<Boolean> predefinedAppImageSigned) implements MacPackageMixin {
     }
-
-    default Path installDir() {
-        return Path.of("/").resolve(relativeInstallDir());
-    }
-
-    public static MacPackage create(Package pkg, MacPackageMixin mixin) {
-        return CompositeProxy.create(MacPackage.class, pkg, mixin);
-    }
-
-    public final static RuntimeLayout RUNTIME_PACKAGE_LAYOUT = RuntimeLayout.create(Path.of("Contents/Home"));
 }

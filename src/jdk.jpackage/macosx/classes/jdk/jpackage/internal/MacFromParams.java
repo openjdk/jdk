@@ -67,6 +67,7 @@ import jdk.jpackage.internal.model.MacDmgPackage;
 import jdk.jpackage.internal.model.MacFileAssociation;
 import jdk.jpackage.internal.model.MacLauncher;
 import jdk.jpackage.internal.model.MacPkgPackage;
+import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.RuntimeLayout;
 
 
@@ -154,12 +155,25 @@ final class MacFromParams {
         return appBuilder.create();
     }
 
+    private static MacPackageBuilder createMacPackageBuilder(
+            Map<String, ? super Object> params, MacApplication app,
+            PackageType type) throws ConfigException {
+        final var builder = new MacPackageBuilder(createPackageBuilder(params, app, type));
+
+        PREDEFINED_APP_IMAGE_FILE.findIn(params)
+                .map(MacAppImageFileExtras::new)
+                .map(MacAppImageFileExtras::signed)
+                .ifPresent(builder::predefinedAppImageSigned);
+
+        return builder;
+    }
+
     private static MacDmgPackage createMacDmgPackage(
             Map<String, ? super Object> params) throws ConfigException, IOException {
 
         final var app = APPLICATION.fetchFrom(params);
 
-        final var superPkgBuilder = createPackageBuilder(params, app, MAC_DMG);
+        final var superPkgBuilder = createMacPackageBuilder(params, app, MAC_DMG);
 
         final var pkgBuilder = new MacDmgPackageBuilder(superPkgBuilder);
 
@@ -173,7 +187,7 @@ final class MacFromParams {
 
         final var app = APPLICATION.fetchFrom(params);
 
-        final var superPkgBuilder = createPackageBuilder(params, app, MAC_PKG);
+        final var superPkgBuilder = createMacPackageBuilder(params, app, MAC_PKG);
 
         final var pkgBuilder = new MacPkgPackageBuilder(superPkgBuilder);
 

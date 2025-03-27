@@ -28,8 +28,13 @@ import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface MacPkgPackage extends MacPackage, MacPkgPackageMixin {
 
+    /**
+     * Returns {@code true} if this PKG installer should be signed.
+     *
+     * @return {@code true} if this PKG installer should be signed
+     */
     default boolean sign() {
-        return signingConfig().flatMap(SigningConfig::identity).isPresent();
+        return signingConfig().isPresent();
     }
 
     public static MacPkgPackage create(MacPackage pkg, MacPkgPackageMixin mixin) {

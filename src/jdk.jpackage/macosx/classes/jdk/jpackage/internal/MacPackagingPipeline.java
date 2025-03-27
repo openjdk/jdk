@@ -61,6 +61,7 @@ import jdk.jpackage.internal.PackagingPipeline.TaskContext;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.MacApplication;
@@ -164,7 +165,7 @@ final class MacPackagingPipeline {
                 disabledTasks.add(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT);
                 builder.task(MacCopyAppImageTaskID.REPLACE_APP_IMAGE_FILE).applicationAction(createWriteAppImageFileAction()).add();
                 builder.appImageLayoutForPackaging(Package::appImageLayout);
-            } else if (p.isRuntimeInstaller() || (p.predefinedAppImage().isPresent() && ((MacApplication)p.app()).sign())) {
+            } else if (p.isRuntimeInstaller() || ((MacPackage)p).predefinedAppImageSigned().orElse(false)) {
                 // If this is a runtime package or a signed predefined app image,
                 // don't create ".package" file and don't sign it.
                 disabledTasks.add(MacCopyAppImageTaskID.COPY_PACKAGE_FILE);
