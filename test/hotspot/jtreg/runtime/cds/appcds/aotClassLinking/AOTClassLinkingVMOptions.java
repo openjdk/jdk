@@ -85,6 +85,10 @@ public class AOTClassLinkingVMOptions {
         TestCommon.testDump(appJar, TestCommon.list("Hello"),
                             "-XX:+UnlockDiagnosticVMOptions", "-XX:+AOTClassLinking", "-XX:-AOTInvokeDynamicLinking");
 
+        testCase("Use the archive that was created with -XX:-AOTInvokeDynamicLinking.");
+        TestCommon.run("-cp", appJar, "Hello")
+            .assertNormalExit("Hello");
+
         testCase("Archived full module graph must be enabled at runtime (with -XX:-AOTInvokeDynamicLinking)");
         TestCommon.run("-cp", appJar, "-Djdk.module.validation=1", "Hello")
             .assertAbnormalExit("CDS archive has aot-linked classes." +
@@ -108,7 +112,7 @@ public class AOTClassLinkingVMOptions {
         String MAIN_MODULE = "com.foos";
         String MAIN_CLASS = "com.foos.Test";
 
-        String appClasses[] = {MAIN_CLASS};
+        String[] appClasses = {MAIN_CLASS};
 
         CDSModulePackager modulePackager = new CDSModulePackager(SRC_DIR);
         modulePackager.createModularJarWithMainClass(MAIN_MODULE, MAIN_CLASS);

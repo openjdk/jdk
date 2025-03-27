@@ -979,7 +979,7 @@ private:
  private:
   static void get_opaque_template_assertion_predicate_nodes(ParsePredicateSuccessProj* parse_predicate_proj,
                                                             Unique_Node_List& list);
-  void update_main_loop_assertion_predicates(CountedLoopNode* main_loop_head);
+  void update_main_loop_assertion_predicates(CountedLoopNode* new_main_loop_head, int stride_con_before_unroll);
   void initialize_assertion_predicates_for_peeled_loop(CountedLoopNode* peeled_loop_head,
                                                        CountedLoopNode* remaining_loop_head,
                                                        uint first_node_index_in_cloned_loop_body,
@@ -1442,18 +1442,7 @@ public:
   void eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
 
   // Helper function to collect predicate for eliminating the useless ones
-  void eliminate_useless_predicates();
-
-  void eliminate_useless_parse_predicates();
-  void mark_all_parse_predicates_useless() const;
-  void mark_loop_associated_parse_predicates_useful();
-  static void mark_useful_parse_predicates_for_loop(IdealLoopTree* loop);
-  void add_useless_parse_predicates_to_igvn_worklist();
-
-  void eliminate_useless_template_assertion_predicates();
-  void collect_useful_template_assertion_predicates(Unique_Node_List& useful_predicates);
-  static void collect_useful_template_assertion_predicates_for_loop(IdealLoopTree* loop, Unique_Node_List& useful_predicates);
-  void eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates) const;
+  void eliminate_useless_predicates() const;
 
   void eliminate_useless_zero_trip_guard();
   void eliminate_useless_multiversion_if();

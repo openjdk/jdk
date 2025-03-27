@@ -265,7 +265,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Debugging
   void verify_oop(Register reg, TosState state = atos);    // only if +VerifyOops && state == atos
   void verify_oop_or_return_address(Register reg, Register rtmp); // for astore
-  void verify_FPU(int stack_depth, TosState state = ftos);
 
   typedef enum { NotifyJVMTI, SkipNotifyJVMTI } NotifyMethodExitMode;
 
