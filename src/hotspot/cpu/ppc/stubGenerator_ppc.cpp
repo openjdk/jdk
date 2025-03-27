@@ -195,8 +195,8 @@ class StubGenerator: public StubCodeGenerator {
              r_top_of_arguments_addr, r_frame_alignment_in_bytes);
 
       // any arguments to copy?
-      __ cmpdi(CCR0, r_arg_argument_count, 0);
-      __ beq(CCR0, arguments_copied);
+      __ cmpdi(CR0, r_arg_argument_count, 0);
+      __ beq(CR0, arguments_copied);
 
       // prepare loop and copy arguments in reverse order
       {
@@ -335,10 +335,10 @@ class StubGenerator: public StubCodeGenerator {
 
       // Store result depending on type. Everything that is not
       // T_OBJECT, T_LONG, T_FLOAT, or T_DOUBLE is treated as T_INT.
-      __ cmpwi(CCR0, r_arg_result_type, T_OBJECT);
-      __ cmpwi(CCR1, r_arg_result_type, T_LONG);
-      __ cmpwi(CCR5, r_arg_result_type, T_FLOAT);
-      __ cmpwi(CCR6, r_arg_result_type, T_DOUBLE);
+      __ cmpwi(CR0, r_arg_result_type, T_OBJECT);
+      __ cmpwi(CR1, r_arg_result_type, T_LONG);
+      __ cmpwi(CR5, r_arg_result_type, T_FLOAT);
+      __ cmpwi(CR6, r_arg_result_type, T_DOUBLE);
 
       // restore non-volatile registers
       __ restore_nonvolatile_gprs(R1_SP, _spill_nonvolatiles_neg(r14));
@@ -354,10 +354,10 @@ class StubGenerator: public StubCodeGenerator {
       // All non-volatiles have been restored at this point!!
       assert(R3_RET == R3, "R3_RET should be R3");
 
-      __ beq(CCR0, ret_is_object);
-      __ beq(CCR1, ret_is_long);
-      __ beq(CCR5, ret_is_float);
-      __ beq(CCR6, ret_is_double);
+      __ beq(CR0, ret_is_object);
+      __ beq(CR1, ret_is_long);
+      __ beq(CR5, ret_is_float);
+      __ beq(CR6, ret_is_double);
 
       // default:
       __ stw(R3_RET, 0, r_arg_result_addr);
@@ -461,8 +461,8 @@ class StubGenerator: public StubCodeGenerator {
       // Make sure that this code is only executed if there is a pending exception.
       {
         Label L;
-        __ cmpdi(CCR0, R3_ARG1, 0);
-        __ bne(CCR0, L);
+        __ cmpdi(CR0, R3_ARG1, 0);
+        __ bne(CR0, L);
         __ stop("StubRoutines::forward exception: no pending exception (1)");
         __ bind(L);
       }
@@ -499,8 +499,8 @@ class StubGenerator: public StubCodeGenerator {
     // Make sure exception is set.
     {
       Label L;
-      __ cmpdi(CCR0, R3_ARG1, 0);
-      __ bne(CCR0, L);
+      __ cmpdi(CR0, R3_ARG1, 0);
+      __ bne(CR0, L);
       __ stop("StubRoutines::forward exception: no pending exception (2)");
       __ bind(L);
     }
@@ -615,21 +615,21 @@ class StubGenerator: public StubCodeGenerator {
         shift = 2;
         // Clone bytes (zero extend not needed because store instructions below ignore high order bytes).
         __ rldimi(value, value, 8, 48);     // 8 bit -> 16 bit
-        __ cmpdi(CCR0, count, 2<<shift);    // Short arrays (< 8 bytes) fill by element.
-        __ blt(CCR0, L_fill_elements);
+        __ cmpdi(CR0, count, 2<<shift);    // Short arrays (< 8 bytes) fill by element.
+        __ blt(CR0, L_fill_elements);
         __ rldimi(value, value, 16, 32);    // 16 bit -> 32 bit
         break;
        case T_SHORT:
         shift = 1;
         // Clone bytes (zero extend not needed because store instructions below ignore high order bytes).
         __ rldimi(value, value, 16, 32);    // 16 bit -> 32 bit
-        __ cmpdi(CCR0, count, 2<<shift);    // Short arrays (< 8 bytes) fill by element.
-        __ blt(CCR0, L_fill_elements);
+        __ cmpdi(CR0, count, 2<<shift);    // Short arrays (< 8 bytes) fill by element.
+        __ blt(CR0, L_fill_elements);
         break;
       case T_INT:
         shift = 0;
-        __ cmpdi(CCR0, count, 2<<shift);    // Short arrays (< 8 bytes) fill by element.
-        __ blt(CCR0, L_fill_4_bytes);
+        __ cmpdi(CR0, count, 2<<shift);    // Short arrays (< 8 bytes) fill by element.
+        __ blt(CR0, L_fill_4_bytes);
         break;
       default: ShouldNotReachHere();
     }
@@ -639,7 +639,7 @@ class StubGenerator: public StubCodeGenerator {
       if (t == T_BYTE) {
         // One byte misalignment happens only for byte arrays.
         __ andi_(temp, to, 1);
-        __ beq(CCR0, L_skip_align1);
+        __ beq(CR0, L_skip_align1);
         __ stb(value, 0, to);
         __ addi(to, to, 1);
         __ addi(count, count, -1);
@@ -647,7 +647,7 @@ class StubGenerator: public StubCodeGenerator {
       }
       // Two bytes misalignment happens only for byte and short (char) arrays.
       __ andi_(temp, to, 2);
-      __ beq(CCR0, L_skip_align2);
+      __ beq(CR0, L_skip_align2);
       __ sth(value, 0, to);
       __ addi(to, to, 2);
       __ addi(count, count, -(1 << (shift - 1)));
@@ -657,7 +657,7 @@ class StubGenerator: public StubCodeGenerator {
     if (!aligned) {
       // Align to 8 bytes, we know we are 4 byte aligned to start.
       __ andi_(temp, to, 7);
-      __ beq(CCR0, L_fill_32_bytes);
+      __ beq(CR0, L_fill_32_bytes);
       __ stw(value, 0, to);
       __ addi(to, to, 4);
       __ addi(count, count, -(1 << shift));
@@ -671,7 +671,7 @@ class StubGenerator: public StubCodeGenerator {
     Label L_check_fill_8_bytes;
     // Fill 32-byte chunks.
     __ subf_(count, temp, count);
-    __ blt(CCR0, L_check_fill_8_bytes);
+    __ blt(CR0, L_check_fill_8_bytes);
 
     Label L_fill_32_bytes_loop;
     __ align(32);
@@ -684,13 +684,13 @@ class StubGenerator: public StubCodeGenerator {
     __ std(value, 24, to);
 
     __ addi(to, to, 32);
-    __ bge(CCR0, L_fill_32_bytes_loop);
+    __ bge(CR0, L_fill_32_bytes_loop);
 
     __ bind(L_check_fill_8_bytes);
     __ add_(count, temp, count);
-    __ beq(CCR0, L_exit);
+    __ beq(CR0, L_exit);
     __ addic_(count, count, -(2 << shift));
-    __ blt(CCR0, L_fill_4_bytes);
+    __ blt(CR0, L_fill_4_bytes);
 
     //
     // Length is too short, just fill 8 bytes at a time.
@@ -700,12 +700,12 @@ class StubGenerator: public StubCodeGenerator {
     __ std(value, 0, to);
     __ addic_(count, count, -(2 << shift));
     __ addi(to, to, 8);
-    __ bge(CCR0, L_fill_8_bytes_loop);
+    __ bge(CR0, L_fill_8_bytes_loop);
 
     // Fill trailing 4 bytes.
     __ bind(L_fill_4_bytes);
     __ andi_(temp, count, 1<<shift);
-    __ beq(CCR0, L_fill_2_bytes);
+    __ beq(CR0, L_fill_2_bytes);
 
     __ stw(value, 0, to);
     if (t == T_BYTE || t == T_SHORT) {
@@ -713,14 +713,14 @@ class StubGenerator: public StubCodeGenerator {
       // Fill trailing 2 bytes.
       __ bind(L_fill_2_bytes);
       __ andi_(temp, count, 1<<(shift-1));
-      __ beq(CCR0, L_fill_byte);
+      __ beq(CR0, L_fill_byte);
       __ sth(value, 0, to);
       if (t == T_BYTE) {
         __ addi(to, to, 2);
         // Fill trailing byte.
         __ bind(L_fill_byte);
         __ andi_(count, count, 1);
-        __ beq(CCR0, L_exit);
+        __ beq(CR0, L_exit);
         __ stb(value, 0, to);
       } else {
         __ bind(L_fill_byte);
@@ -736,18 +736,18 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L_fill_elements);
       Label L_fill_2, L_fill_4;
       __ andi_(temp, count, 1);
-      __ beq(CCR0, L_fill_2);
+      __ beq(CR0, L_fill_2);
       __ stb(value, 0, to);
       __ addi(to, to, 1);
       __ bind(L_fill_2);
       __ andi_(temp, count, 2);
-      __ beq(CCR0, L_fill_4);
+      __ beq(CR0, L_fill_4);
       __ stb(value, 0, to);
       __ stb(value, 0, to);
       __ addi(to, to, 2);
       __ bind(L_fill_4);
       __ andi_(temp, count, 4);
-      __ beq(CCR0, L_exit);
+      __ beq(CR0, L_exit);
       __ stb(value, 0, to);
       __ stb(value, 1, to);
       __ stb(value, 2, to);
@@ -759,12 +759,12 @@ class StubGenerator: public StubCodeGenerator {
       Label L_fill_2;
       __ bind(L_fill_elements);
       __ andi_(temp, count, 1);
-      __ beq(CCR0, L_fill_2);
+      __ beq(CR0, L_fill_2);
       __ sth(value, 0, to);
       __ addi(to, to, 2);
       __ bind(L_fill_2);
       __ andi_(temp, count, 2);
-      __ beq(CCR0, L_exit);
+      __ beq(CR0, L_exit);
       __ sth(value, 0, to);
       __ sth(value, 2, to);
       __ blr();
@@ -794,12 +794,12 @@ class StubGenerator: public StubCodeGenerator {
 
     __ subf(tmp1, R3_ARG1, R4_ARG2); // distance in bytes
     __ sldi(tmp2, R5_ARG3, log2_elem_size); // size in bytes
-    __ cmpld(CCR0, R3_ARG1, R4_ARG2); // Use unsigned comparison!
-    __ cmpld(CCR1, tmp1, tmp2);
-    __ crnand(CCR0, Assembler::less, CCR1, Assembler::less);
+    __ cmpld(CR0, R3_ARG1, R4_ARG2); // Use unsigned comparison!
+    __ cmpld(CR1, tmp1, tmp2);
+    __ crnand(CR0, Assembler::less, CR1, Assembler::less);
     // Overlaps if Src before dst and distance smaller than size.
     // Branch to forward copy routine otherwise (within range of 32kB).
-    __ bc(Assembler::bcondCRbiIs1, Assembler::bi0(CCR0, Assembler::less), no_overlap_target);
+    __ bc(Assembler::bcondCRbiIs1, Assembler::bi0(CR0, Assembler::less), no_overlap_target);
 
     // need to copy backwards
   }
@@ -873,18 +873,18 @@ class StubGenerator: public StubCodeGenerator {
 
       // Don't try anything fancy if arrays don't have many elements.
       __ li(tmp3, 0);
-      __ cmpwi(CCR0, R5_ARG3, 17);
-      __ ble(CCR0, l_6); // copy 4 at a time
+      __ cmpwi(CR0, R5_ARG3, 17);
+      __ ble(CR0, l_6); // copy 4 at a time
 
       if (!aligned) {
         __ xorr(tmp1, R3_ARG1, R4_ARG2);
         __ andi_(tmp1, tmp1, 3);
-        __ bne(CCR0, l_6); // If arrays don't have the same alignment mod 4, do 4 element copy.
+        __ bne(CR0, l_6); // If arrays don't have the same alignment mod 4, do 4 element copy.
 
         // Copy elements if necessary to align to 4 bytes.
         __ neg(tmp1, R3_ARG1); // Compute distance to alignment boundary.
         __ andi_(tmp1, tmp1, 3);
-        __ beq(CCR0, l_2);
+        __ beq(CR0, l_2);
 
         __ subf(R5_ARG3, tmp1, R5_ARG3);
         __ bind(l_9);
@@ -893,7 +893,7 @@ class StubGenerator: public StubCodeGenerator {
         __ stb(tmp2, 0, R4_ARG2);
         __ addi(R3_ARG1, R3_ARG1, 1);
         __ addi(R4_ARG2, R4_ARG2, 1);
-        __ bne(CCR0, l_9);
+        __ bne(CR0, l_9);
 
         __ bind(l_2);
       }
@@ -901,11 +901,11 @@ class StubGenerator: public StubCodeGenerator {
       // copy 8 elements at a time
       __ xorr(tmp2, R3_ARG1, R4_ARG2); // skip if src & dest have differing alignment mod 8
       __ andi_(tmp1, tmp2, 7);
-      __ bne(CCR0, l_7); // not same alignment -> to or from is aligned -> copy 8
+      __ bne(CR0, l_7); // not same alignment -> to or from is aligned -> copy 8
 
       // copy a 2-element word if necessary to align to 8 bytes
       __ andi_(R0, R3_ARG1, 7);
-      __ beq(CCR0, l_7);
+      __ beq(CR0, l_7);
 
       __ lwzx(tmp2, R3_ARG1, tmp3);
       __ addi(R5_ARG3, R5_ARG3, -4);
@@ -917,8 +917,8 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(l_7);
 
       { // FasterArrayCopy
-        __ cmpwi(CCR0, R5_ARG3, 31);
-        __ ble(CCR0, l_6); // copy 2 at a time if less than 32 elements remain
+        __ cmpwi(CR0, R5_ARG3, 31);
+        __ ble(CR0, l_6); // copy 2 at a time if less than 32 elements remain
 
         __ srdi(tmp1, R5_ARG3, 5);
         __ andi_(R5_ARG3, R5_ARG3, 31);
@@ -983,8 +983,8 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(l_6);
 
       // copy 4 elements at a time
-      __ cmpwi(CCR0, R5_ARG3, 4);
-      __ blt(CCR0, l_1);
+      __ cmpwi(CR0, R5_ARG3, 4);
+      __ blt(CR0, l_1);
       __ srdi(tmp1, R5_ARG3, 2);
       __ mtctr(tmp1); // is > 0
       __ andi_(R5_ARG3, R5_ARG3, 3);
@@ -1002,8 +1002,8 @@ class StubGenerator: public StubCodeGenerator {
 
       // do single element copy
       __ bind(l_1);
-      __ cmpwi(CCR0, R5_ARG3, 0);
-      __ beq(CCR0, l_4);
+      __ cmpwi(CR0, R5_ARG3, 0);
+      __ beq(CR0, l_4);
 
       { // FasterArrayCopy
         __ mtctr(R5_ARG3);
@@ -1070,7 +1070,7 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(l_2);
       __ addic_(R5_ARG3, R5_ARG3, -1);
       __ lbzx(tmp1, R3_ARG1, R5_ARG3);
-      __ bge(CCR0, l_1);
+      __ bge(CR0, l_1);
     }
     __ li(R3_RET, 0); // return 0
     __ blr();
@@ -1165,19 +1165,19 @@ class StubGenerator: public StubCodeGenerator {
       UnsafeMemoryAccessMark umam(this, !aligned, false);
       // don't try anything fancy if arrays don't have many elements
       __ li(tmp3, 0);
-      __ cmpwi(CCR0, R5_ARG3, 9);
-      __ ble(CCR0, l_6); // copy 2 at a time
+      __ cmpwi(CR0, R5_ARG3, 9);
+      __ ble(CR0, l_6); // copy 2 at a time
 
       if (!aligned) {
         __ xorr(tmp1, R3_ARG1, R4_ARG2);
         __ andi_(tmp1, tmp1, 3);
-        __ bne(CCR0, l_6); // if arrays don't have the same alignment mod 4, do 2 element copy
+        __ bne(CR0, l_6); // if arrays don't have the same alignment mod 4, do 2 element copy
 
         // At this point it is guaranteed that both, from and to have the same alignment mod 4.
 
         // Copy 1 element if necessary to align to 4 bytes.
         __ andi_(tmp1, R3_ARG1, 3);
-        __ beq(CCR0, l_2);
+        __ beq(CR0, l_2);
 
         __ lhz(tmp2, 0, R3_ARG1);
         __ addi(R3_ARG1, R3_ARG1, 2);
@@ -1192,11 +1192,11 @@ class StubGenerator: public StubCodeGenerator {
         // Align to 8 bytes, but only if both, from and to, have same alignment mod 8.
         __ xorr(tmp2, R3_ARG1, R4_ARG2);
         __ andi_(tmp1, tmp2, 7);
-        __ bne(CCR0, l_7); // not same alignment mod 8 -> copy 4, either from or to will be unaligned
+        __ bne(CR0, l_7); // not same alignment mod 8 -> copy 4, either from or to will be unaligned
 
         // Copy a 2-element word if necessary to align to 8 bytes.
         __ andi_(R0, R3_ARG1, 7);
-        __ beq(CCR0, l_7);
+        __ beq(CR0, l_7);
 
         __ lwzx(tmp2, R3_ARG1, tmp3);
         __ addi(R5_ARG3, R5_ARG3, -2);
@@ -1213,8 +1213,8 @@ class StubGenerator: public StubCodeGenerator {
       // be unaligned if aligned == false.
 
       { // FasterArrayCopy
-        __ cmpwi(CCR0, R5_ARG3, 15);
-        __ ble(CCR0, l_6); // copy 2 at a time if less than 16 elements remain
+        __ cmpwi(CR0, R5_ARG3, 15);
+        __ ble(CR0, l_6); // copy 2 at a time if less than 16 elements remain
 
         __ srdi(tmp1, R5_ARG3, 4);
         __ andi_(R5_ARG3, R5_ARG3, 15);
@@ -1278,8 +1278,8 @@ class StubGenerator: public StubCodeGenerator {
 
       // copy 2 elements at a time
       { // FasterArrayCopy
-        __ cmpwi(CCR0, R5_ARG3, 2);
-        __ blt(CCR0, l_1);
+        __ cmpwi(CR0, R5_ARG3, 2);
+        __ blt(CR0, l_1);
         __ srdi(tmp1, R5_ARG3, 1);
         __ andi_(R5_ARG3, R5_ARG3, 1);
 
@@ -1298,8 +1298,8 @@ class StubGenerator: public StubCodeGenerator {
 
       // do single element copy
       __ bind(l_1);
-      __ cmpwi(CCR0, R5_ARG3, 0);
-      __ beq(CCR0, l_4);
+      __ cmpwi(CR0, R5_ARG3, 0);
+      __ beq(CR0, l_4);
 
       { // FasterArrayCopy
         __ mtctr(R5_ARG3);
@@ -1366,7 +1366,7 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(l_2);
       __ addic_(tmp1, tmp1, -2);
       __ lhzx(tmp2, R3_ARG1, tmp1);
-      __ bge(CCR0, l_1);
+      __ bge(CR0, l_1);
     }
     __ li(R3_RET, 0); // return 0
     __ blr();
@@ -1395,19 +1395,19 @@ class StubGenerator: public StubCodeGenerator {
 
     // for short arrays, just do single element copy
     __ li(tmp3, 0);
-    __ cmpwi(CCR0, R5_ARG3, 5);
-    __ ble(CCR0, l_2);
+    __ cmpwi(CR0, R5_ARG3, 5);
+    __ ble(CR0, l_2);
 
     if (!aligned) {
         // check if arrays have same alignment mod 8.
         __ xorr(tmp1, R3_ARG1, R4_ARG2);
         __ andi_(R0, tmp1, 7);
         // Not the same alignment, but ld and std just need to be 4 byte aligned.
-        __ bne(CCR0, l_4); // to OR from is 8 byte aligned -> copy 2 at a time
+        __ bne(CR0, l_4); // to OR from is 8 byte aligned -> copy 2 at a time
 
         // copy 1 element to align to and from on an 8 byte boundary
         __ andi_(R0, R3_ARG1, 7);
-        __ beq(CCR0, l_4);
+        __ beq(CR0, l_4);
 
         __ lwzx(tmp2, R3_ARG1, tmp3);
         __ addi(R5_ARG3, R5_ARG3, -1);
@@ -1420,8 +1420,8 @@ class StubGenerator: public StubCodeGenerator {
       }
 
     { // FasterArrayCopy
-      __ cmpwi(CCR0, R5_ARG3, 7);
-      __ ble(CCR0, l_2); // copy 1 at a time if less than 8 elements remain
+      __ cmpwi(CR0, R5_ARG3, 7);
+      __ ble(CR0, l_2); // copy 1 at a time if less than 8 elements remain
 
       __ srdi(tmp1, R5_ARG3, 3);
       __ andi_(R5_ARG3, R5_ARG3, 7);
@@ -1485,8 +1485,8 @@ class StubGenerator: public StubCodeGenerator {
 
     // copy 1 element at a time
     __ bind(l_2);
-    __ cmpwi(CCR0, R5_ARG3, 0);
-    __ beq(CCR0, l_1);
+    __ cmpwi(CR0, R5_ARG3, 0);
+    __ beq(CR0, l_1);
 
     { // FasterArrayCopy
       __ mtctr(R5_ARG3);
@@ -1561,8 +1561,8 @@ class StubGenerator: public StubCodeGenerator {
     VectorSRegister tmp_vsr2  = VSR2;
 
     { // FasterArrayCopy
-      __ cmpwi(CCR0, R5_ARG3, 0);
-      __ beq(CCR0, l_6);
+      __ cmpwi(CR0, R5_ARG3, 0);
+      __ beq(CR0, l_6);
 
       __ sldi(R5_ARG3, R5_ARG3, 2);
       __ add(R3_ARG1, R3_ARG1, R5_ARG3);
@@ -1574,11 +1574,11 @@ class StubGenerator: public StubCodeGenerator {
         __ xorr(tmp1, R3_ARG1, R4_ARG2);
         __ andi_(R0, tmp1, 7);
         // Not the same alignment, but ld and std just need to be 4 byte aligned.
-        __ bne(CCR0, l_7); // to OR from is 8 byte aligned -> copy 2 at a time
+        __ bne(CR0, l_7); // to OR from is 8 byte aligned -> copy 2 at a time
 
         // copy 1 element to align to and from on an 8 byte boundary
         __ andi_(R0, R3_ARG1, 7);
-        __ beq(CCR0, l_7);
+        __ beq(CR0, l_7);
 
         __ addi(R3_ARG1, R3_ARG1, -4);
         __ addi(R4_ARG2, R4_ARG2, -4);
@@ -1588,8 +1588,8 @@ class StubGenerator: public StubCodeGenerator {
         __ bind(l_7);
       }
 
-      __ cmpwi(CCR0, R5_ARG3, 7);
-      __ ble(CCR0, l_5); // copy 1 at a time if less than 8 elements remain
+      __ cmpwi(CR0, R5_ARG3, 7);
+      __ ble(CR0, l_5); // copy 1 at a time if less than 8 elements remain
 
       __ srdi(tmp1, R5_ARG3, 3);
       __ andi(R5_ARG3, R5_ARG3, 7);
@@ -1646,8 +1646,8 @@ class StubGenerator: public StubCodeGenerator {
       }
      }
 
-      __ cmpwi(CCR0, R5_ARG3, 0);
-      __ beq(CCR0, l_6);
+      __ cmpwi(CR0, R5_ARG3, 0);
+      __ beq(CR0, l_6);
 
       __ bind(l_5);
       __ mtctr(R5_ARG3);
@@ -1724,8 +1724,8 @@ class StubGenerator: public StubCodeGenerator {
     VectorSRegister tmp_vsr2  = VSR2;
 
     { // FasterArrayCopy
-      __ cmpwi(CCR0, R5_ARG3, 3);
-      __ ble(CCR0, l_3); // copy 1 at a time if less than 4 elements remain
+      __ cmpwi(CR0, R5_ARG3, 3);
+      __ ble(CR0, l_3); // copy 1 at a time if less than 4 elements remain
 
       __ srdi(tmp1, R5_ARG3, 2);
       __ andi_(R5_ARG3, R5_ARG3, 3);
@@ -1788,8 +1788,8 @@ class StubGenerator: public StubCodeGenerator {
 
     // copy 1 element at a time
     __ bind(l_3);
-    __ cmpwi(CCR0, R5_ARG3, 0);
-    __ beq(CCR0, l_1);
+    __ cmpwi(CR0, R5_ARG3, 0);
+    __ beq(CR0, l_1);
 
     { // FasterArrayCopy
       __ mtctr(R5_ARG3);
@@ -1860,8 +1860,8 @@ class StubGenerator: public StubCodeGenerator {
 
     Label l_1, l_2, l_3, l_4, l_5;
 
-    __ cmpwi(CCR0, R5_ARG3, 0);
-    __ beq(CCR0, l_1);
+    __ cmpwi(CR0, R5_ARG3, 0);
+    __ beq(CR0, l_1);
 
     { // FasterArrayCopy
       __ sldi(R5_ARG3, R5_ARG3, 3);
@@ -1869,8 +1869,8 @@ class StubGenerator: public StubCodeGenerator {
       __ add(R4_ARG2, R4_ARG2, R5_ARG3);
       __ srdi(R5_ARG3, R5_ARG3, 3);
 
-      __ cmpwi(CCR0, R5_ARG3, 3);
-      __ ble(CCR0, l_5); // copy 1 at a time if less than 4 elements remain
+      __ cmpwi(CR0, R5_ARG3, 3);
+      __ ble(CR0, l_5); // copy 1 at a time if less than 4 elements remain
 
       __ srdi(tmp1, R5_ARG3, 2);
       __ andi(R5_ARG3, R5_ARG3, 3);
@@ -1927,8 +1927,8 @@ class StubGenerator: public StubCodeGenerator {
       }
      }
 
-      __ cmpwi(CCR0, R5_ARG3, 0);
-      __ beq(CCR0, l_1);
+      __ cmpwi(CR0, R5_ARG3, 0);
+      __ beq(CR0, l_1);
 
       __ bind(l_5);
       __ mtctr(R5_ARG3);
@@ -2192,12 +2192,12 @@ class StubGenerator: public StubCodeGenerator {
     Label no_overlap;
     __ subf(tmp1, R3_ARG1, R4_ARG2); // distance in bytes
     __ sldi(tmp2, R5_ARG3, LogBytesPerHeapOop); // size in bytes
-    __ cmpld(CCR0, R3_ARG1, R4_ARG2); // Use unsigned comparison!
-    __ cmpld(CCR1, tmp1, tmp2);
-    __ crnand(CCR0, Assembler::less, CCR1, Assembler::less);
+    __ cmpld(CR0, R3_ARG1, R4_ARG2); // Use unsigned comparison!
+    __ cmpld(CR1, tmp1, tmp2);
+    __ crnand(CR0, Assembler::less, CR1, Assembler::less);
     // Overlaps if Src before dst and distance smaller than size.
     // Branch to forward copy routine otherwise.
-    __ blt(CCR0, no_overlap);
+    __ blt(CR0, no_overlap);
     __ stop("overlap in checkcast_copy");
     __ bind(no_overlap);
     }
@@ -2216,7 +2216,7 @@ class StubGenerator: public StubCodeGenerator {
     Label load_element, store_element, store_null, success, do_epilogue;
     __ or_(R9_remain, R5_count, R5_count); // Initialize loop index, and test it.
     __ li(R8_offset, 0);                   // Offset from start of arrays.
-    __ bne(CCR0, load_element);
+    __ bne(CR0, load_element);
 
     // Empty array: Nothing to do.
     __ li(R3_RET, 0);           // Return 0 on (trivial) success.
@@ -2244,7 +2244,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ addi(R8_offset, R8_offset, heapOopSize);   // Step to next offset.
     __ addic_(R9_remain, R9_remain, -1);          // Decrement the count.
-    __ beq(CCR0, success);
+    __ beq(CR0, success);
 
     // ======== loop entry is here ========
     __ bind(load_element);
@@ -2274,7 +2274,7 @@ class StubGenerator: public StubCodeGenerator {
     // and report their number to the caller.
     __ subf_(R5_count, R9_remain, R5_count);
     __ nand(R3_RET, R5_count, R5_count);   // report (-1^K) to caller
-    __ bne(CCR0, do_epilogue);
+    __ bne(CR0, do_epilogue);
     __ blr();
 
     __ bind(success);
@@ -2325,13 +2325,13 @@ class StubGenerator: public StubCodeGenerator {
     __ orr(R6_bits, R3_from, R4_to);
     __ orr(R6_bits, R6_bits, R5_count);
     __ andi_(R0, R6_bits, (BytesPerLong-1));
-    __ beq(CCR0, long_copy);
+    __ beq(CR0, long_copy);
 
     __ andi_(R0, R6_bits, (BytesPerInt-1));
-    __ beq(CCR0, int_copy);
+    __ beq(CR0, int_copy);
 
     __ andi_(R0, R6_bits, (BytesPerShort-1));
-    __ beq(CCR0, short_copy);
+    __ beq(CR0, short_copy);
 
     // byte_copy:
     __ b(byte_copy_entry);
@@ -2370,14 +2370,14 @@ class StubGenerator: public StubCodeGenerator {
     //  if (src_pos + length > arrayOop(src)->length() ) FAIL;
     __ lwa(array_length, arrayOopDesc::length_offset_in_bytes(), src);
     __ add(end_pos, src_pos, length);  // src_pos + length
-    __ cmpd(CCR0, end_pos, array_length);
-    __ bgt(CCR0, L_failed);
+    __ cmpd(CR0, end_pos, array_length);
+    __ bgt(CR0, L_failed);
 
     //  if (dst_pos + length > arrayOop(dst)->length() ) FAIL;
     __ lwa(array_length, arrayOopDesc::length_offset_in_bytes(), dst);
     __ add(end_pos, dst_pos, length);  // src_pos + length
-    __ cmpd(CCR0, end_pos, array_length);
-    __ bgt(CCR0, L_failed);
+    __ cmpd(CR0, end_pos, array_length);
+    __ bgt(CR0, L_failed);
 
     BLOCK_COMMENT("arraycopy_range_checks done");
   }
@@ -2443,16 +2443,16 @@ class StubGenerator: public StubCodeGenerator {
     // (8) dst_pos + length must not exceed length of dst.
     BLOCK_COMMENT("arraycopy initial argument checks");
 
-    __ cmpdi(CCR1, src, 0);      // if (src == nullptr) return -1;
+    __ cmpdi(CR1, src, 0);      // if (src == nullptr) return -1;
     __ extsw_(src_pos, src_pos); // if (src_pos < 0) return -1;
-    __ cmpdi(CCR5, dst, 0);      // if (dst == nullptr) return -1;
-    __ cror(CCR1, Assembler::equal, CCR0, Assembler::less);
+    __ cmpdi(CR5, dst, 0);      // if (dst == nullptr) return -1;
+    __ cror(CR1, Assembler::equal, CR0, Assembler::less);
     __ extsw_(dst_pos, dst_pos); // if (src_pos < 0) return -1;
-    __ cror(CCR5, Assembler::equal, CCR0, Assembler::less);
+    __ cror(CR5, Assembler::equal, CR0, Assembler::less);
     __ extsw_(length, length);   // if (length < 0) return -1;
-    __ cror(CCR1, Assembler::equal, CCR5, Assembler::equal);
-    __ cror(CCR1, Assembler::equal, CCR0, Assembler::less);
-    __ beq(CCR1, L_failed);
+    __ cror(CR1, Assembler::equal, CR5, Assembler::equal);
+    __ cror(CR1, Assembler::equal, CR0, Assembler::less);
+    __ beq(CR1, L_failed);
 
     BLOCK_COMMENT("arraycopy argument klass checks");
     __ load_klass(src_klass, src);
@@ -2474,22 +2474,22 @@ class StubGenerator: public StubCodeGenerator {
     // Handle objArrays completely differently...
     jint objArray_lh = Klass::array_layout_helper(T_OBJECT);
     __ load_const_optimized(temp, objArray_lh, R0);
-    __ cmpw(CCR0, lh, temp);
-    __ beq(CCR0, L_objArray);
+    __ cmpw(CR0, lh, temp);
+    __ beq(CR0, L_objArray);
 
-    __ cmpd(CCR5, src_klass, dst_klass);          // if (src->klass() != dst->klass()) return -1;
-    __ cmpwi(CCR6, lh, Klass::_lh_neutral_value); // if (!src->is_Array()) return -1;
+    __ cmpd(CR5, src_klass, dst_klass);          // if (src->klass() != dst->klass()) return -1;
+    __ cmpwi(CR6, lh, Klass::_lh_neutral_value); // if (!src->is_Array()) return -1;
 
-    __ crnand(CCR5, Assembler::equal, CCR6, Assembler::less);
-    __ beq(CCR5, L_failed);
+    __ crnand(CR5, Assembler::equal, CR6, Assembler::less);
+    __ beq(CR5, L_failed);
 
     // At this point, it is known to be a typeArray (array_tag 0x3).
 #ifdef ASSERT
     { Label L;
       jint lh_prim_tag_in_place = (Klass::_lh_array_tag_type_value << Klass::_lh_array_tag_shift);
       __ load_const_optimized(temp, lh_prim_tag_in_place, R0);
-      __ cmpw(CCR0, lh, temp);
-      __ bge(CCR0, L);
+      __ cmpw(CR0, lh, temp);
+      __ bge(CR0, L);
       __ stop("must be a primitive array");
       __ bind(L);
     }
@@ -2529,17 +2529,17 @@ class StubGenerator: public StubCodeGenerator {
 
     BLOCK_COMMENT("choose copy loop based on element size");
     // Using conditional branches with range 32kB.
-    const int bo = Assembler::bcondCRbiIs1, bi = Assembler::bi0(CCR0, Assembler::equal);
-    __ cmpwi(CCR0, elsize, 0);
+    const int bo = Assembler::bcondCRbiIs1, bi = Assembler::bi0(CR0, Assembler::equal);
+    __ cmpwi(CR0, elsize, 0);
     __ bc(bo, bi, entry_jbyte_arraycopy);
-    __ cmpwi(CCR0, elsize, LogBytesPerShort);
+    __ cmpwi(CR0, elsize, LogBytesPerShort);
     __ bc(bo, bi, entry_jshort_arraycopy);
-    __ cmpwi(CCR0, elsize, LogBytesPerInt);
+    __ cmpwi(CR0, elsize, LogBytesPerInt);
     __ bc(bo, bi, entry_jint_arraycopy);
 #ifdef ASSERT
     { Label L;
-      __ cmpwi(CCR0, elsize, LogBytesPerLong);
-      __ beq(CCR0, L);
+      __ cmpwi(CR0, elsize, LogBytesPerLong);
+      __ beq(CR0, L);
       __ stop("must be long copy, but elsize is wrong");
       __ bind(L);
     }
@@ -2552,8 +2552,8 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_disjoint_plain_copy, L_checkcast_copy;
     //  test array classes for subtyping
-    __ cmpd(CCR0, src_klass, dst_klass);         // usual case is exact equality
-    __ bne(CCR0, L_checkcast_copy);
+    __ cmpd(CR0, src_klass, dst_klass);         // usual case is exact equality
+    __ bne(CR0, L_checkcast_copy);
 
     // Identically typed arrays can be copied without element-wise checks.
     arraycopy_range_checks(src, src_pos, dst, dst_pos, length,
@@ -2573,8 +2573,8 @@ class StubGenerator: public StubCodeGenerator {
     {
       // Before looking at dst.length, make sure dst is also an objArray.
       __ lwz(temp, lh_offset, dst_klass);
-      __ cmpw(CCR0, lh, temp);
-      __ bne(CCR0, L_failed);
+      __ cmpw(CR0, lh, temp);
+      __ bne(CR0, L_failed);
 
       // It is safe to examine both src.length and dst.length.
       arraycopy_range_checks(src, src_pos, dst, dst_pos, length,
@@ -2752,8 +2752,8 @@ class StubGenerator: public StubCodeGenerator {
     __ vec_perm        (vKey2, vTmp1, keyPerm);
 
     // if all round keys are loaded, skip next 4 rounds
-    __ cmpwi           (CCR0, keylen, 44);
-    __ beq             (CCR0, L_doLast);
+    __ cmpwi           (CR0, keylen, 44);
+    __ beq             (CR0, L_doLast);
 
     // 10th - 11th rounds
     __ vcipher         (vRet, vRet, vKey1);
@@ -2770,12 +2770,12 @@ class StubGenerator: public StubCodeGenerator {
     __ vec_perm        (vKey2, vTmp1, keyPerm);
 
     // if all round keys are loaded, skip next 2 rounds
-    __ cmpwi           (CCR0, keylen, 52);
-    __ beq             (CCR0, L_doLast);
+    __ cmpwi           (CR0, keylen, 52);
+    __ beq             (CR0, L_doLast);
 
 #ifdef ASSERT
-    __ cmpwi           (CCR0, keylen, 60);
-    __ bne             (CCR0, L_error);
+    __ cmpwi           (CR0, keylen, 60);
+    __ bne             (CR0, L_error);
 #endif
 
     // 12th - 13th rounds
@@ -2890,15 +2890,15 @@ class StubGenerator: public StubCodeGenerator {
     __ vsldoi          (keyPerm, keyPerm, keyPerm, 8);
 #endif
 
-    __ cmpwi           (CCR0, keylen, 44);
-    __ beq             (CCR0, L_do44);
+    __ cmpwi           (CR0, keylen, 44);
+    __ beq             (CR0, L_do44);
 
-    __ cmpwi           (CCR0, keylen, 52);
-    __ beq             (CCR0, L_do52);
+    __ cmpwi           (CR0, keylen, 52);
+    __ beq             (CR0, L_do52);
 
 #ifdef ASSERT
-    __ cmpwi           (CCR0, keylen, 60);
-    __ bne             (CCR0, L_error);
+    __ cmpwi           (CR0, keylen, 60);
+    __ bne             (CR0, L_error);
 #endif
 
     // load the 15th round key to vKey1
@@ -3134,7 +3134,7 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     __ andi_(temp, is_presync, 1);
-    __ bne(CCR0, SKIP);
+    __ bne(CR0, SKIP);
     __ cache_wbsync(false); // post sync => emit 'sync'
     __ bind(SKIP);          // pre sync => emit nothing
     __ blr();
@@ -3392,10 +3392,10 @@ class StubGenerator: public StubCodeGenerator {
     // Store the squares, right shifted one bit (i.e., divided by 2)
     __ subi   (out_aux,   out,       8);
     __ subi   (in_aux,    in,        4);
-    __ cmpwi  (CCR0,      in_len,    0);
+    __ cmpwi  (CR0,      in_len,    0);
     // Initialize lplw outside of the loop
     __ xorr   (lplw,      lplw,      lplw);
-    __ ble    (CCR0,      SKIP_LOOP_SQUARE);    // in_len <= 0
+    __ ble    (CR0,      SKIP_LOOP_SQUARE);    // in_len <= 0
     __ mtctr  (in_len);
 
     __ bind(LOOP_SQUARE);
@@ -3418,8 +3418,8 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(SKIP_LOOP_SQUARE);
 
     // Add in off-diagonal sums
-    __ cmpwi  (CCR0,      in_len,    0);
-    __ ble    (CCR0,      SKIP_DIAGONAL_SUM);
+    __ cmpwi  (CR0,      in_len,    0);
+    __ ble    (CR0,      SKIP_DIAGONAL_SUM);
     // Avoid CTR usage here in order to use it at mulAdd
     __ subi   (i_minus1,  in_len,    1);
     __ li     (offset,    4);
@@ -3450,25 +3450,25 @@ class StubGenerator: public StubCodeGenerator {
 
     // if (((uint64_t)s >> 32) != 0) {
     __ srdi_  (a,         b,         32);
-    __ beq    (CCR0,      SKIP_ADDONE);
+    __ beq    (CR0,      SKIP_ADDONE);
 
     // while (--mlen >= 0) {
     __ bind(LOOP_ADDONE);
     __ subi   (mlen,      mlen,      4);
-    __ cmpwi  (CCR0,      mlen,      0);
-    __ beq    (CCR0,      SKIP_ADDONE);
+    __ cmpwi  (CR0,      mlen,      0);
+    __ beq    (CR0,      SKIP_ADDONE);
 
     // if (--offset_aux < 0) { // Carry out of number
     __ subi   (off_aux,   off_aux,   4);
-    __ cmpwi  (CCR0,      off_aux,   0);
-    __ blt    (CCR0,      SKIP_ADDONE);
+    __ cmpwi  (CR0,      off_aux,   0);
+    __ blt    (CR0,      SKIP_ADDONE);
 
     // } else {
     __ lwzx   (b,         off_aux,   out);
     __ addi   (b,         b,         1);
     __ stwx   (b,         off_aux,   out);
-    __ cmpwi  (CCR0,      b,         0);
-    __ bne    (CCR0,      SKIP_ADDONE);
+    __ cmpwi  (CR0,      b,         0);
+    __ bne    (CR0,      SKIP_ADDONE);
     __ b      (LOOP_ADDONE);
 
     __ bind(SKIP_ADDONE);
@@ -3476,16 +3476,16 @@ class StubGenerator: public StubCodeGenerator {
 
     __ addi   (offset,    offset,    8);
     __ subi   (i_minus1,  i_minus1,  1);
-    __ cmpwi  (CCR0,      i_minus1,  0);
-    __ bge    (CCR0,      LOOP_DIAGONAL_SUM);
+    __ cmpwi  (CR0,      i_minus1,  0);
+    __ bge    (CR0,      LOOP_DIAGONAL_SUM);
 
     __ bind(SKIP_DIAGONAL_SUM);
 
     // Shift back up and set low bit
     // Shifts 1 bit left up to len positions. Assumes no leading zeros
     // begin<primitiveLeftShift>
-    __ cmpwi  (CCR0,      out_len,   0);
-    __ ble    (CCR0,      SKIP_LSHIFT);
+    __ cmpwi  (CR0,      out_len,   0);
+    __ ble    (CR0,      SKIP_LSHIFT);
     __ li     (i,         0);
     __ lwz    (c,         0,         out);
     __ subi   (b,         out_len,   1);
@@ -3630,10 +3630,10 @@ class StubGenerator: public StubCodeGenerator {
     __ restore_LR(R3_RET /* used as tmp register */);
     __ restore_volatile_gprs(R1_SP, -nbytes_save, true);
 
-    __ cmpdi(CCR0, R0, 0);
+    __ cmpdi(CR0, R0, 0);
 
     // Return to prologue if no deoptimization is required (bnelr)
-    __ bclr(Assembler::bcondCRbiIs1, Assembler::bi0(CCR0, Assembler::equal), Assembler::bhintIsTaken);
+    __ bclr(Assembler::bcondCRbiIs1, Assembler::bi0(CR0, Assembler::equal), Assembler::bhintIsTaken);
 
     // Deoptimization required.
     // For actually handling the deoptimization, the 'wrong method stub' is invoked.
@@ -3915,7 +3915,7 @@ class StubGenerator: public StubCodeGenerator {
     // = sl >> block_size_shift.  After the shift, if sl <= 0, there's too
     // little data to be processed by this intrinsic.
     __ srawi_(sl, sl, block_size_shift);
-    __ ble(CCR0, return_zero);
+    __ ble(CR0, return_zero);
     __ mtctr(sl);
 
     // Clear the other two parameter registers upper 32 bits.
@@ -3954,8 +3954,8 @@ class StubGenerator: public StubCodeGenerator {
 
     // The rest of the constants use different values depending on the
     // setting of isURL
-    __ cmpwi(CCR0, isURL, 0);
-    __ beq(CCR0, not_URL);
+    __ cmpwi(CR0, isURL, 0);
+    __ beq(CR0, not_URL);
 
     // isURL != 0 (true)
     if (PowerArchitecturePPC64 >= 10) {
@@ -4045,11 +4045,11 @@ class StubGenerator: public StubCodeGenerator {
       //
       __ vcmpequb_(non_match, non_match, vec_0s);
     }
-    // vmcmpequb_ sets the EQ bit of CCR6 if no elements compare equal.
+    // vmcmpequb_ sets the EQ bit of CR6 if no elements compare equal.
     // Any element comparing equal to zero means there is an error in
     // that element.  Note that the comparison result register
-    // non_match is not referenced again.  Only CCR6-EQ matters.
-    __ bne_predict_not_taken(CCR6, loop_exit);
+    // non_match is not referenced again.  Only CR6-EQ matters.
+    __ bne_predict_not_taken(CR6, loop_exit);
 
     // The Base64 characters had no errors, so add the offsets, which in
     // the case of Power10 is a constant vector of all 0x80's (see earlier
@@ -4450,8 +4450,8 @@ class StubGenerator: public StubCodeGenerator {
 
     // Use a different translation lookup table depending on the
     // setting of isURL
-    __ cmpdi(CCR0, isURL, 0);
-    __ beq(CCR0, not_URL);
+    __ cmpdi(CR0, isURL, 0);
+    __ beq(CR0, not_URL);
     __ lxv(vec_base64_48_63->to_vsr(), BLK_OFFSETOF(base64_48_63_URL_val), const_ptr);
     __ b(calculate_size);
 
@@ -4468,8 +4468,8 @@ class StubGenerator: public StubCodeGenerator {
     //
     __ sub(size, sl, sp);
     __ subi(size, size, 4);
-    __ cmpdi(CCR7, size, block_size);
-    __ bgt(CCR7, calculate_blocked_size);
+    __ cmpdi(CR7, size, block_size);
+    __ bgt(CR7, calculate_blocked_size);
     __ mr(remaining, size);
     // Add the 4 back into remaining again
     __ addi(remaining, remaining, 4);
@@ -4527,8 +4527,8 @@ class StubGenerator: public StubCodeGenerator {
     __ addi(bytes_to_write, bytes_to_write, 2);
     __ divwu(bytes_to_write, bytes_to_write, three);
 
-    __ cmpwi(CCR7, bytes_to_write, 16);
-    __ ble_predict_taken(CCR7, le_16_to_write);
+    __ cmpwi(CR7, bytes_to_write, 16);
+    __ ble_predict_taken(CR7, le_16_to_write);
     __ stxv(expanded->to_vsr(), 0, out);
 
     // We've processed 12 of the 13-15 data bytes, so advance the pointers,
@@ -4549,7 +4549,7 @@ class StubGenerator: public StubCodeGenerator {
     __ add(out, out, bytes_to_write);
 
     __ li(pad_char, '=');
-    __ rlwinm_(modulo_chars, bytes_to_write, 0, 30, 31); // bytes_to_write % 4, set CCR0
+    __ rlwinm_(modulo_chars, bytes_to_write, 0, 30, 31); // bytes_to_write % 4, set CR0
     // Examples:
     //    remaining  bytes_to_write  modulo_chars  num pad chars
     //        0            0               0            0
@@ -4563,9 +4563,9 @@ class StubGenerator: public StubCodeGenerator {
     //       13           18               2            2
     //       14           19               3            1
     //       15           20               0            0
-    __ beq(CCR0, no_pad);
-    __ cmpwi(CCR7, modulo_chars, 3);
-    __ beq(CCR7, one_pad_char);
+    __ beq(CR0, no_pad);
+    __ cmpwi(CR7, modulo_chars, 3);
+    __ beq(CR7, one_pad_char);
 
     // two pad chars
     __ stb(pad_char, out);
@@ -4670,13 +4670,13 @@ void generate_lookup_secondary_supers_table_stub() {
       __ ld_ptr(R1_SP, JavaThread::cont_entry_offset(), R16_thread);
 #ifdef ASSERT
       __ ld_ptr(tmp2, _abi0(callers_sp), R1_SP);
-      __ cmpd(CCR0, tmp1, tmp2);
+      __ cmpd(CR0, tmp1, tmp2);
       __ asm_assert_eq(FILE_AND_LINE ": callers sp is corrupt");
 #endif
     }
 #ifdef ASSERT
     __ ld_ptr(tmp1, JavaThread::cont_entry_offset(), R16_thread);
-    __ cmpd(CCR0, R1_SP, tmp1);
+    __ cmpd(CR0, R1_SP, tmp1);
     __ asm_assert_eq(FILE_AND_LINE ": incorrect R1_SP");
 #endif
 
@@ -4685,14 +4685,14 @@ void generate_lookup_secondary_supers_table_stub() {
 
 #ifdef ASSERT
     DEBUG_ONLY(__ ld_ptr(tmp1, JavaThread::cont_entry_offset(), R16_thread));
-    DEBUG_ONLY(__ cmpd(CCR0, R1_SP, tmp1));
+    DEBUG_ONLY(__ cmpd(CR0, R1_SP, tmp1));
     __ asm_assert_eq(FILE_AND_LINE ": incorrect R1_SP");
 #endif
 
     // R3_RET contains the size of the frames to thaw, 0 if overflow or no more frames
     Label thaw_success;
-    __ cmpdi(CCR0, R3_RET, 0);
-    __ bne(CCR0, thaw_success);
+    __ cmpdi(CR0, R3_RET, 0);
+    __ bne(CR0, thaw_success);
     __ load_const_optimized(tmp1, (SharedRuntime::throw_StackOverflowError_entry()), R0);
     __ mtctr(tmp1); __ bctr();
     __ bind(thaw_success);
@@ -4767,8 +4767,8 @@ void generate_lookup_secondary_supers_table_stub() {
 
     Label preemption_cancelled;
     __ lbz(R11_scratch1, in_bytes(JavaThread::preemption_cancelled_offset()), R16_thread);
-    __ cmpwi(CCR0, R11_scratch1, 0);
-    __ bne(CCR0, preemption_cancelled);
+    __ cmpwi(CR0, R11_scratch1, 0);
+    __ bne(CR0, preemption_cancelled);
 
     // Remove enterSpecial frame from the stack and return to Continuation.run() to unmount.
     SharedRuntime::continuation_enter_cleanup(_masm);
@@ -4881,20 +4881,19 @@ void generate_lookup_secondary_supers_table_stub() {
     StubRoutines::_verify_oop_subroutine_entry             = generate_verify_oop();
 
     // nmethod entry barriers for concurrent class unloading
-    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != nullptr) {
-      StubRoutines::_method_entry_barrier            = generate_method_entry_barrier();
-    }
+    StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
+#ifdef COMPILER2
     if (UseSecondarySupersTable) {
       StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
       if (!InlineSecondarySupersTest) {
         generate_lookup_secondary_supers_table_stub();
       }
     }
+#endif // COMPILER2
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
     StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();

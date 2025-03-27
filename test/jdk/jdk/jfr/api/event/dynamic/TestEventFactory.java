@@ -53,7 +53,6 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test
- * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.event.dynamic.TestEventFactory

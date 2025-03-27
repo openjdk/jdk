@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2151,7 +2151,7 @@ public final class System {
             }
 
             public ProtectionDomain protectionDomain(Class<?> c) {
-                return c.protectionDomain();
+                return c.getProtectionDomain();
             }
 
             public MethodHandle stringConcatHelper(String name, MethodType methodType) {
@@ -2197,11 +2197,6 @@ public final class System {
             @Override
             public NativeLibraries nativeLibrariesFor(ClassLoader loader) {
                 return ClassLoader.nativeLibrariesFor(loader);
-            }
-
-            @Override
-            public void exit(int statusCode) {
-                Shutdown.exit(statusCode);
             }
 
             public Thread[] getAllThreads() {

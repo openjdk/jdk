@@ -199,6 +199,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
   int          comp_level()                      { return _comp_level;}
   void         set_comp_level(int comp_level)    { _comp_level = comp_level;}
 
+  CompileReason compile_reason()                 { return _compile_reason; }
+
   AbstractCompiler* compiler() const;
   CompileTask*      select_for_compilation();
 

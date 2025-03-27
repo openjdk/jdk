@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,13 +138,6 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
                     return result;
                 },
-            (s, p) -> s);
-
-    public static final BundlerParamInfo<String> INSTALLER_SUFFIX =
-            new StandardBundlerParam<> (
-            "mac.pkg.installerName.suffix",
-            String.class,
-            params -> "",
             (s, p) -> s);
 
     public Path bundle(Map<String, ? super Object> params,
@@ -593,7 +586,6 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
             // build final package
             Path finalPKG = outdir.resolve(MAC_INSTALLER_NAME.fetchFrom(params)
-                    + INSTALLER_SUFFIX.fetchFrom(params)
                     + ".pkg");
             Files.createDirectories(outdir);
 
@@ -693,6 +685,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
     }
 
     private static boolean isValidBundleIdentifier(String id) {
+        Objects.requireNonNull(id);
         for (int i = 0; i < id.length(); i++) {
             char a = id.charAt(i);
             // We check for ASCII codes first which we accept. If check fails,
@@ -717,12 +710,6 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             validateAppImageAndBundeler(params);
 
             String identifier = MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params);
-            if (identifier == null) {
-                throw new ConfigException(
-                        I18N.getString("message.app-image-requires-identifier"),
-                        I18N.getString(
-                            "message.app-image-requires-identifier.advice"));
-            }
             if (!isValidBundleIdentifier(identifier)) {
                 throw new ConfigException(
                         MessageFormat.format(I18N.getString(

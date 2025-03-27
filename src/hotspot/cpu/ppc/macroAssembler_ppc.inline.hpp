@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,14 +248,14 @@ inline bool MacroAssembler::is_bc_far_variant3_at(address instruction_addr) {
          is_endgroup(instruction_2);
 }
 
-// set dst to -1, 0, +1 as follows: if CCR0bi is "greater than", dst is set to 1,
-// if CCR0bi is "equal", dst is set to 0, otherwise it's set to -1.
+// set dst to -1, 0, +1 as follows: if CR0bi is "greater than", dst is set to 1,
+// if CR0bi is "equal", dst is set to 0, otherwise it's set to -1.
 inline void MacroAssembler::set_cmp3(Register dst) {
   assert_different_registers(dst, R0);
   // P10, prefer using setbc instructions
   if (VM_Version::has_brw()) {
-    setbc(R0, CCR0, Assembler::greater); // Set 1 to R0 if CCR0bi is "greater than", otherwise 0
-    setnbc(dst, CCR0, Assembler::less); // Set -1 to dst if CCR0bi is "less than", otherwise 0
+    setbc(R0, CR0, Assembler::greater); // Set 1 to R0 if CR0bi is "greater than", otherwise 0
+    setnbc(dst, CR0, Assembler::less); // Set -1 to dst if CR0bi is "less than", otherwise 0
   } else {
     mfcr(R0); // copy CR register to R0
     srwi(dst, R0, 30); // copy the first two bits to dst
@@ -267,9 +267,9 @@ inline void MacroAssembler::set_cmp3(Register dst) {
 // set dst to (treat_unordered_like_less ? -1 : +1)
 inline void MacroAssembler::set_cmpu3(Register dst, bool treat_unordered_like_less) {
   if (treat_unordered_like_less) {
-    cror(CCR0, Assembler::less, CCR0, Assembler::summary_overflow); // treat unordered like less
+    cror(CR0, Assembler::less, CR0, Assembler::summary_overflow); // treat unordered like less
   } else {
-    cror(CCR0, Assembler::greater, CCR0, Assembler::summary_overflow); // treat unordered like greater
+    cror(CR0, Assembler::greater, CR0, Assembler::summary_overflow); // treat unordered like greater
   }
   set_cmp3(dst);
 }
@@ -280,11 +280,11 @@ inline void MacroAssembler::normalize_bool(Register dst, Register temp, bool is_
 
   if (VM_Version::has_brw()) {
     if (is_64bit) {
-      cmpdi(CCR0, dst, 0);
+      cmpdi(CR0, dst, 0);
     } else {
-      cmpwi(CCR0, dst, 0);
+      cmpwi(CR0, dst, 0);
     }
-    setbcr(dst, CCR0, Assembler::equal);
+    setbcr(dst, CR0, Assembler::equal);
   } else {
     assert_different_registers(temp, dst);
     neg(temp, dst);
@@ -373,8 +373,8 @@ inline void MacroAssembler::null_check_throw(Register a, int offset, Register te
       trap_null_check(a);
     } else {
       Label ok;
-      cmpdi(CCR0, a, 0);
-      bne(CCR0, ok);
+      cmpdi(CR0, a, 0);
+      bne(CR0, ok);
       load_const_optimized(temp_reg, exception_entry);
       mtctr(temp_reg);
       bctr();
@@ -390,8 +390,8 @@ inline void MacroAssembler::null_check(Register a, int offset, Label *Lis_null) 
       trap_null_check(a);
     } else if (Lis_null){
       Label ok;
-      cmpdi(CCR0, a, 0);
-      beq(CCR0, *Lis_null);
+      cmpdi(CR0, a, 0);
+      beq(CR0, *Lis_null);
     }
   }
 }
@@ -468,14 +468,14 @@ inline Register MacroAssembler::encode_heap_oop_not_null(Register d, Register sr
 inline Register MacroAssembler::encode_heap_oop(Register d, Register src) {
   if (CompressedOops::base() != nullptr) {
     if (VM_Version::has_isel()) {
-      cmpdi(CCR0, src, 0);
+      cmpdi(CR0, src, 0);
       Register co = encode_heap_oop_not_null(d, src);
       assert(co == d, "sanity");
-      isel_0(d, CCR0, Assembler::equal);
+      isel_0(d, CR0, Assembler::equal);
     } else {
       Label isNull;
       or_(d, src, src); // move and compare 0
-      beq(CCR0, isNull);
+      beq(CR0, isNull);
       encode_heap_oop_not_null(d, src);
       bind(isNull);
     }
@@ -509,16 +509,16 @@ inline void MacroAssembler::decode_heap_oop(Register d) {
   Label isNull;
   bool use_isel = false;
   if (CompressedOops::base() != nullptr) {
-    cmpwi(CCR0, d, 0);
+    cmpwi(CR0, d, 0);
     if (VM_Version::has_isel()) {
       use_isel = true;
     } else {
-      beq(CCR0, isNull);
+      beq(CR0, isNull);
     }
   }
   decode_heap_oop_not_null(d);
   if (use_isel) {
-    isel_0(d, CCR0, Assembler::equal);
+    isel_0(d, CR0, Assembler::equal);
   }
   bind(isNull);
 }
