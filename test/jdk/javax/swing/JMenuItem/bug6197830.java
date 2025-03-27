@@ -26,7 +26,7 @@
  * @bug 6197830
  * @requires (os.family == "linux")
  * @summary Fix for 4729669 does not work on Motif and GTK look and feels
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug6197830
  */

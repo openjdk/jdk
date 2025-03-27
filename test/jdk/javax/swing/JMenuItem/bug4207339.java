@@ -25,7 +25,7 @@
  * @test
  * @bug 4207339
  * @summary Verifies HTML label support for MenuItems
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4207339
  */
