@@ -3556,7 +3556,7 @@ public class ForkJoinPool extends AbstractExecutorService
                                            long delay, TimeUnit unit) {
         return scheduleDelayedTask(
             new ScheduledForkJoinTask<V>(
-                unit.toNanos(delay), 0L, false, null,
+                unit.toNanos(delay), 0L, false, null,  // implicit null check of unit
                 Objects.requireNonNull(callable), this));
     }
 
@@ -3609,7 +3609,7 @@ public class ForkJoinPool extends AbstractExecutorService
             throw new IllegalArgumentException();
         return scheduleDelayedTask(
             new ScheduledForkJoinTask<Void>(
-                unit.toNanos(initialDelay),
+                unit.toNanos(initialDelay),  // implicit null check of unit
                 unit.toNanos(period), false,
                 Objects.requireNonNull(command), null, this));
     }
@@ -3658,7 +3658,7 @@ public class ForkJoinPool extends AbstractExecutorService
             throw new IllegalArgumentException();
         return scheduleDelayedTask(
             new ScheduledForkJoinTask<Void>(
-                unit.toNanos(initialDelay),
+                unit.toNanos(initialDelay),  // implicit null check of unit
                 -unit.toNanos(delay), false, // negative for fixed delay
                 Objects.requireNonNull(command), null, this));
     }
@@ -3732,12 +3732,13 @@ public class ForkJoinPool extends AbstractExecutorService
     /**
      * Arranges that scheduled tasks that are not executing and have
      * not already been enabled for execution will not be executed and
-     * will be cancelled upon {@link #shutdown}. This method may be
-     * invoked either before {@link #shutdown} to take effect upon the
-     * next call, or afterwards to cancel such tasks, which may then
-     * allow termination. Note that subsequent executions of periodic
-     * tasks are always disabled upon shutdown, so this method applies
-     * meaningfully only to non-periodic tasks.
+     * will be cancelled upon {@link #shutdown} (unless this pool is
+     * the {@link #commonPool()} which never shuts down). This method
+     * may be invoked either before {@link #shutdown} to take effect
+     * upon the next call, or afterwards to cancel such tasks, which
+     * may then allow termination. Note that subsequent executions of
+     * periodic tasks are always disabled upon shutdown, so this
+     * method applies meaningfully only to non-periodic tasks.
      * @since 25
      */
     public void cancelDelayedTasksOnShutdown() {
@@ -3923,13 +3924,13 @@ public class ForkJoinPool extends AbstractExecutorService
     /**
      * Returns an estimate of the number of delayed (including
      * periodic) tasks scheduled in this pool that are not yet ready
-     * to submit for execution. The returned value is innacurate when
+     * to submit for execution. The returned value is innacurate while
      * delayed tasks are being processed.
      *
      * @return an estimate of the number of delayed tasks
      * @since 25
      */
-    public int getDelayedTaskCount() {
+    public long getDelayedTaskCount() {
         DelayScheduler ds;
         return ((ds = delayScheduler) == null ? 0 : ds.lastStableSize());
     }
