@@ -34,6 +34,7 @@
  * @run junit HttpResponseLimitingTest
  */
 
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
@@ -171,7 +172,8 @@ class HttpResponseLimitingTest {
         }
 
         private static HttpClient createClient(HttpClient.Version version, SSLContext sslContext) {
-            HttpClient.Builder builder = HttpClient.newBuilder().version(version).proxy(NO_PROXY);
+            HttpClient.Builder builder = HttpServerAdapters.createClientBuilderFor(version)
+                    .version(version).proxy(NO_PROXY);
             if (sslContext != null) {
                 builder.sslContext(sslContext);
             }
