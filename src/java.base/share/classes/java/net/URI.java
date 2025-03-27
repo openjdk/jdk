@@ -3427,18 +3427,18 @@ public final class URI
             int q = scan(p, n, L_DIGIT, H_DIGIT);
             if (q <= p) return q;
 
-            int digitCount = q - p;
-            // if no of digits > 3 (number of digits in 255)
-            if (digitCount > 3) {
-                // Check if the extra digits are all-leading zeros
-                int nonZeroPos = p;
-                while (nonZeroPos < q && input.charAt(nonZeroPos) == '0') {
-                    nonZeroPos++;
-                }
+            // Handle leading zeros
+            int i = p;
+            while ((i = scan(i, q, '0')) > i);
 
-                // If we have more than 3 significant digits, it's > 255
-                if (q - nonZeroPos > 3) return p;
-            }
+            // Calculate the number of significant digits (after leading zeros)
+            int significantDigits = q - i;
+
+            // If no significant digits (all zeros), the value is 0
+            if (significantDigits == 0)  return q;
+
+            // If more than 3 significant digits, it's definitely > 255
+            if (significantDigits > 3) return p;
 
             if (Integer.parseInt(input, p, q, 10) > 255) return p;
             return q;
