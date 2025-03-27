@@ -38,7 +38,7 @@ public:
                            Register obj, vmClassID klass_id,
                            const char* error_message = "wrong klass") NOT_DEBUG_RETURN;
 
-  static void verify_method(MacroAssembler* _masm, Register method, Register temp) NOT_DEBUG_RETURN;
+  static void verify_method(MacroAssembler* _masm, Register method, Register temp, vmIntrinsics::ID iid) NOT_DEBUG_RETURN;
 
   static void verify_method_handle(MacroAssembler* _masm, Register mh_reg) {
     verify_klass(_masm, mh_reg, VM_CLASS_ID(MethodHandle_klass),
@@ -50,7 +50,7 @@ public:
   // Similar to InterpreterMacroAssembler::jump_from_interpreted.
   // Takes care of special dispatch from single stepping too.
   static void jump_from_method_handle(MacroAssembler* _masm, Register method, Register temp,
-                                      bool for_compiler_entry);
+                                      bool for_compiler_entry, vmIntrinsics::ID iid);
 
   static void jump_to_lambda_form(MacroAssembler* _masm,
                                   Register recv, Register method_temp,
