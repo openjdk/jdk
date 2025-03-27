@@ -621,7 +621,7 @@ static void break_if_ptr_caught(void* ptr) {
 }
 #endif // ASSERT
 
-size_t os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, bool check_limit, MemTag mem_tag, const NativeCallStack& stack) {
+size_t os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, bool check_limit, MemTag mem_tag) {
   // On malloc(0), implementations of malloc(3) have the choice to return either
   // null or a unique non-null pointer. To unify libc behavior across our platforms
   // we chose the latter.
@@ -677,7 +677,7 @@ void* os::malloc(size_t size, MemTag mem_tag) {
 void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
 
   void* rc = nullptr;
-  size_t outer_size = os::pre_alloc(&rc, nullptr, size, true, mem_tag, stack);
+  size_t outer_size = os::pre_alloc(&rc, nullptr, size, true, mem_tag);
   if (rc != nullptr) {
     return rc;
   }
@@ -709,7 +709,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
   size = MAX2((size_t)1, size);
 
   void* rc = nullptr;
-  size_t outer_size = os::pre_alloc(&rc, memblock, size, false, mem_tag, stack);
+  size_t outer_size = os::pre_alloc(&rc, memblock, size, false, mem_tag);
   if (rc != nullptr) {
     return rc;
   }
