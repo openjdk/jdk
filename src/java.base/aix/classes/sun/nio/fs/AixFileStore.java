@@ -38,10 +38,6 @@ class AixFileStore
     extends UnixFileStore
 {
 
-    // used when checking if extended attributes are enabled or not
-    private volatile boolean xattrChecked;
-    private volatile boolean xattrEnabled;
-
     AixFileStore(UnixPath file) throws IOException {
         super(file);
     }
