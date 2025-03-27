@@ -149,7 +149,7 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, Regist
       case vmIntrinsicID::_linkToInterface:
         // Class initialization check is too strong here. Just ensure that initialization has been initiated.
         __ cmpb(Address(method_holder, InstanceKlass::init_state_offset()), InstanceKlass::being_initialized);
-        __ jccb(Assembler::greaterEqual, L_ok);
+        __ jcc(Assembler::greaterEqual, L_ok);
 
         // init_state check failed, but it may be an abstract interface method
         __ load_unsigned_short(temp, Address(method, Method::access_flags_offset()));
