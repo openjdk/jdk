@@ -41,26 +41,26 @@ public class NSSArtifactFetcher {
      private static Class<?> getNssLibClass(String osId){
         switch (osId) {
             case "Windows-amd64-64":
-                return ThirdPartyArtifacts.WINDOWS_X64.class;
+                return ThirdPartyArtifacts.NSS_WINDOWS_X64.class;
 
             case "MacOSX-x86_64-64":
-                return ThirdPartyArtifacts.MACOSX_X64.class;
+                return ThirdPartyArtifacts.NSS_MACOSX_X64.class;
 
             case "MacOSX-aarch64-64":
-                return ThirdPartyArtifacts.MACOSX_AARCH64.class;
+                return ThirdPartyArtifacts.NSS_MACOSX_AARCH64.class;
 
             case "Linux-amd64-64":
                 if (Platform.isOracleLinux7()) {
                     throw new SkippedException("Skipping Oracle Linux prior to v8");
                 } else {
-                    return ThirdPartyArtifacts.LINUX_X64.class;
+                    return ThirdPartyArtifacts.NSS_LINUX_X64.class;
                 }
 
             case "Linux-aarch64-64":
                 if (Platform.isOracleLinux7()) {
                     throw new SkippedException("Skipping Oracle Linux prior to v8");
                 } else {
-                    return ThirdPartyArtifacts.LINUX_AARCH64.class;
+                    return ThirdPartyArtifacts.NSS_LINUX_AARCH64.class;
                 }
             default:
                 return null;

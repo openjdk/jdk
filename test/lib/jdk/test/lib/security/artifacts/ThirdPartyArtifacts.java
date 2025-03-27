@@ -24,29 +24,24 @@
 package jdk.test.lib.security.artifacts;
 
 import jdk.test.lib.artifacts.Artifact;
-import jdk.test.lib.artifacts.ArtifactResolver;
-import jdk.test.lib.artifacts.ArtifactResolverException;
-
-import java.io.IOException;
-import java.nio.file.Path;
 
 public class ThirdPartyArtifacts {
 
-    public static final String ACVP_BUNDLE_LOC = "jpg.tests.jdk";
+    public static final String ARTIFACT_BASE = "jpg.tests.jdk";
     public static final String ACVP_BUNDLE_NAME = "ACVP-Server";
     public static final String ACVP_BUNDLE_VERSION = "1.1.0.38";
 
     // Version of the NSS artifact. This coincides with the version of
     // the NSS version
     public static final String NSS_BUNDLE_VERSION = "3.107";
-    public static final String NSSLIB = "jpg.tests.jdk.nsslib";
+    public static final String NSSLIB =  ARTIFACT_BASE + ".nsslib";
 
     @Artifact(
             organization = NSSLIB,
             name = "nsslib-windows_x64",
             revision = NSS_BUNDLE_VERSION,
             extension = "zip")
-    public static class WINDOWS_X64 {
+    public static class NSS_WINDOWS_X64 {
     }
 
     @Artifact(
@@ -54,7 +49,7 @@ public class ThirdPartyArtifacts {
             name = "nsslib-macosx_x64",
             revision = NSS_BUNDLE_VERSION,
             extension = "zip")
-    public static class MACOSX_X64 {
+    public static class NSS_MACOSX_X64 {
     }
 
     @Artifact(
@@ -62,7 +57,7 @@ public class ThirdPartyArtifacts {
             name = "nsslib-macosx_aarch64",
             revision = NSS_BUNDLE_VERSION,
             extension = "zip")
-    public static class MACOSX_AARCH64 {
+    public static class NSS_MACOSX_AARCH64 {
     }
 
     @Artifact(
@@ -70,7 +65,7 @@ public class ThirdPartyArtifacts {
             name = "nsslib-linux_x64",
             revision = NSS_BUNDLE_VERSION,
             extension = "zip")
-    public static class LINUX_X64 {
+    public static class NSS_LINUX_X64 {
     }
 
     @Artifact(
@@ -79,11 +74,11 @@ public class ThirdPartyArtifacts {
             revision = NSS_BUNDLE_VERSION,
             extension = "zip"
     )
-    public static class LINUX_AARCH64 {
+    public static class NSS_LINUX_AARCH64 {
     }
 
     @Artifact(
-            organization = ACVP_BUNDLE_LOC,
+            organization = ARTIFACT_BASE,
             name = ACVP_BUNDLE_NAME,
             revision = ACVP_BUNDLE_VERSION,
             extension = "zip",
