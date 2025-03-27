@@ -538,7 +538,7 @@ sun.security.krb5.maxReferrals=5
 #       usage UsageType { UsageType }
 #
 #   UsageType:
-#       ([TLSServer] | [TLSClient] | [SignedJAR])
+#       TLSServer | TLSClient | SignedJAR
 #
 #   IncludeProperty:
 #       include <security property>
