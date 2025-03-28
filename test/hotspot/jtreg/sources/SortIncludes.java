@@ -22,6 +22,7 @@
  * questions.
  */
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -81,6 +82,9 @@ public class SortIncludes {
         String pathString = path.toString();
         boolean isInlineHpp = pathString.endsWith(".inline.hpp");
         String nonInlineHpp = pathString.replace(".inline.hpp", ".hpp");
+        if (File.separatorChar != '/') {
+            nonInlineHpp = nonInlineHpp.replace(File.separatorChar, '/');
+        }
 
         List<String> result = new ArrayList<>(lines.length);
 
