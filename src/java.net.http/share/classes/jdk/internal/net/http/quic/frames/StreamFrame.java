@@ -181,12 +181,9 @@ public final class StreamFrame extends QuicFrame {
         }
         if (hasLength()) {
             encodeVLField(dest, length, "length");
-            // copy length bytes from streamData to dest
-            Util.copy(streamData.slice(), dest, length);
-        } else {
-            // copy all bytes from streamData to dest
-            dest.put(streamData.slice());
+            assert streamData.remaining() == length;
         }
+        putByteBuffer(dest, streamData);
         assert dest.position() - pos == size();
     }
 

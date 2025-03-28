@@ -110,8 +110,8 @@ public final class CryptoFrame extends QuicFrame {
         encodeVLField(dest, CRYPTO, "type");
         encodeVLField(dest, offset, "offset");
         encodeVLField(dest, length, "length");
-        // copy length bytes from cryptoData to dest
-        Util.copy(cryptoData.slice(), dest, length);
+        assert cryptoData.remaining() == length;
+        putByteBuffer(dest, cryptoData);
         assert dest.position() - pos == size();
     }
 
