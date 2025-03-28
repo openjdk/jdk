@@ -46,7 +46,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/continuationEntry.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
@@ -1615,30 +1614,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // activation frame _before_ we test the method return safepoint poll.
   // This is equivalent to how it is done for compiled frames.
   // Removing an interpreter activation frame from a sampling perspective means
-  // updating the frame link. But since we are unwinding the current frame,
-  // we must save the current rbp in a temporary register, current_fp, for use
+  // updating the frame link (fp). But since we are unwinding the current frame,
+  // we must save the current rfp in a temporary register, this_fp, for use
   // as the last java fp should we decide to unwind.
-  // The asynchronous profiler will only see the updated rbp, either using the
+  // The asynchronous profiler will only see the updated rfp, either using the
   // CPU context or by reading the saved_Java_fp() field as part of the ljf.
-  const Register current_fp = rscratch2;
-  const Register return_addr = rscratch2;
-  const Register continuation_return_pc = rscratch1;
-  const Register sender_sp = rscratch1;
-  __ ldr(return_addr, Address(rfp, wordSize)); // return address
-  // Load address of ContinuationEntry return pc
-  __ lea(continuation_return_pc, ExternalAddress(ContinuationEntry::return_pc_address()));
-  // Load the ContinuationEntry return pc
-  __ ldr(continuation_return_pc, Address(continuation_return_pc));
-  Label L_continuation, L_end;
-  __ cmp(continuation_return_pc, return_addr);
-  __ mov(current_fp, rfp); // Save current fp in temporary register.
-  __ br(Assembler::EQ, L_continuation);
-  __ ldr(rfp, Address(rfp)); // Update the frame link.
-  __ b(L_end);
-  __ bind(L_continuation);
-  __ lea(sender_sp, Address(rfp, frame::sender_sp_offset* wordSize));
-  __ ldr(rfp, Address(sender_sp, (int)(ContinuationEntry::size()))); // Update the frame link.
-  __ bind(L_end);
+  const Register this_fp = rscratch2;
+  __ make_sender_fp_current(this_fp, rscratch1);
 
   // The interpreter frame is now unwound from a sampling perspective,
   // meaning it sees the sender frame as the current frame from this point onwards.
@@ -1648,20 +1630,20 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // the stack, will call InterpreterRuntime::at_unwind.
   Label slow_path;
   Label fast_path;
-  __ safepoint_poll(slow_path, current_fp, true /* at_return */, false /* acquire */, false /* in_nmethod */);
+  __ safepoint_poll(slow_path, this_fp, true /* at_return */, false /* acquire */, false /* in_nmethod */);
   __ br(Assembler::AL, fast_path);
   __ bind(slow_path);
   __ push(dtos);
   __ push(ltos);
-  __ set_last_Java_frame_with_sender_fp(esp, current_fp, (address)__ pc(), rscratch1);
+  __ set_last_Java_frame_with_sender_fp(esp, this_fp, (address)__ pc(), rscratch1);
   __ call_VM_with_sender_Java_fp_entry(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind));
-  __ reset_last_Java_frame_with_sender_fp(current_fp);
+  __ reset_last_Java_frame_with_sender_fp(this_fp);
   __ pop(ltos);
   __ pop(dtos);
   __ bind(fast_path);
 
-  __ ldr(esp, Address(current_fp, frame::interpreter_frame_sender_sp_offset* wordSize));
-  __ ldr(lr, Address(current_fp, wordSize));
+  __ ldr(esp, Address(this_fp, frame::interpreter_frame_sender_sp_offset* wordSize));
+  __ ldr(lr, Address(this_fp, wordSize));
   __ authenticate_return_address();
   // restore sender sp
   __ mov(sp, esp);

@@ -41,6 +41,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -502,11 +503,10 @@ void InterpreterMacroAssembler::reset_last_Java_frame_with_sender_fp(Register fp
 //       installs IllegalMonitorStateException
 //    Else
 //       no error processing
-void InterpreterMacroAssembler::remove_activation(
-        TosState state,
-        bool throw_monitor_exception,
-        bool install_monitor_exception,
-        bool notify_jvmdi) {
+void InterpreterMacroAssembler::remove_activation(TosState state,
+                                                  bool throw_monitor_exception,
+                                                  bool install_monitor_exception,
+                                                  bool notify_jvmdi) {
   // Note: Registers r3 xmm0 may be in use for the
   // result check if synchronized method
   Label unlocked, unlock, no_unlock;
@@ -669,29 +669,12 @@ void InterpreterMacroAssembler::remove_activation(
   // This is equivalent to how it is done for compiled frames.
   // Removing an interpreter activation frame from a sampling perspective means
   // updating the frame link. But since we are unwinding the current frame,
-  // we must save the current rbp in a temporary register, current_fp, for use
+  // we must save the current rfp in a temporary register, this_fp, for use
   // as the last java fp should we decide to unwind.
   // The asynchronous profiler will only see the updated rfp, either using the
   // CPU context or by reading the saved_Java_fp() field as part of the ljf.
-  const Register current_fp = rscratch2;
-  const Register return_addr = rscratch2;
-  const Register continuation_return_pc = rscratch1;
-  const Register sender_sp = rscratch1;
-  ldr(return_addr, Address(rfp, wordSize)); // return address
-  // Load address of ContinuationEntry return pc
-  lea(continuation_return_pc, ExternalAddress(ContinuationEntry::return_pc_address()));
-  // Load the ContinuationEntry return pc
-  ldr(continuation_return_pc, Address(continuation_return_pc));
-  Label L_continuation, L_end;
-  cmp(continuation_return_pc, return_addr);
-  mov(current_fp, rfp); // Save current fp in temporary register.
-  br(Assembler::EQ, L_continuation);
-  ldr(rfp, Address(rfp)); // Update the frame link.
-  b(L_end);
-  bind(L_continuation);
-  lea(sender_sp, Address(rfp, frame::sender_sp_offset * wordSize));
-  ldr(rfp, Address(sender_sp, (int)(ContinuationEntry::size()))); // Update the frame link.
-  bind(L_end);
+  const Register this_fp = rscratch2;
+  make_sender_fp_current(this_fp, rscratch1);
 
   // The interpreter frame is now unwound from a sampling perspective,
   // meaning it sees the sender frame as the current frame from this point onwards.
@@ -701,27 +684,48 @@ void InterpreterMacroAssembler::remove_activation(
   // the stack, will call InterpreterRuntime::at_unwind.
   Label slow_path;
   Label fast_path;
-  safepoint_poll(slow_path, current_fp, true /* at_return */, false /* acquire */, false /* in_nmethod */);
+  safepoint_poll(slow_path, this_fp, true /* at_return */, false /* acquire */, false /* in_nmethod */);
   br(Assembler::AL, fast_path);
   bind(slow_path);
-  save_bcp(current_fp); // need to save bcp but not restore it.
+  save_bcp(this_fp); // need to save bcp but not restore it.
   push(state);
-  set_last_Java_frame_with_sender_fp(esp, current_fp, (address)pc(), rscratch1);
+  set_last_Java_frame_with_sender_fp(esp, this_fp, (address)pc(), rscratch1);
   call_VM_with_sender_Java_fp_entry(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind));
-  reset_last_Java_frame_with_sender_fp(current_fp);
+  reset_last_Java_frame_with_sender_fp(this_fp);
   pop(state);
   bind(fast_path);
 
-  ldr(esp, Address(current_fp, frame::interpreter_frame_sender_sp_offset * wordSize));
-  ldr(lr, Address(current_fp, wordSize));
+  ldr(esp, Address(this_fp, frame::interpreter_frame_sender_sp_offset * wordSize));
+  ldr(lr, Address(this_fp, wordSize));
   authenticate_return_address();
-  lea(sp, Address(current_fp, 2 * wordSize));
+  lea(sp, Address(this_fp, 2 * wordSize));
 
   // If we're returning to interpreted code we will shortly be
   // adjusting SP to allow some space for ESP.  If we're returning to
   // compiled code the saved sender SP was saved in sender_sp, so this
   // restores it.
   andr(sp, esp, -16);
+}
+
+void InterpreterMacroAssembler::make_sender_fp_current(Register save_this_fp, Register tmp) {
+  const Register return_addr = save_this_fp;
+  const Register continuation_return_pc = tmp;
+  const Register sender_sp = tmp;
+  ldr(return_addr, Address(rfp, wordSize)); // return address
+  // Load address of ContinuationEntry return pc
+  lea(continuation_return_pc, ExternalAddress(ContinuationEntry::return_pc_address()));
+  // Load the ContinuationEntry return pc
+  ldr(continuation_return_pc, Address(continuation_return_pc));
+  Label L_continuation, L_end;
+  cmp(continuation_return_pc, return_addr);
+  mov(save_this_fp, rfp); // Save current fp in temporary register.
+  br(Assembler::EQ, L_continuation);
+  ldr(rfp, Address(rfp)); // Update the frame link.
+  b(L_end);
+  bind(L_continuation);
+  lea(sender_sp, Address(rfp, frame::sender_sp_offset * wordSize));
+  ldr(rfp, Address(sender_sp, (int)(ContinuationEntry::size()))); // Update the frame link.
+  bind(L_end);
 }
 
 // Lock object

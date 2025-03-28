@@ -1161,30 +1161,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // activation frame _before_ we test the method return safepoint poll.
   // This is equivalent to how it is done for compiled frames.
   // Removing an interpreter activation frame from a sampling perspective means
-  // updating the frame link. But since we are unwinding the current frame,
-  // we must save the current rbp in a temporary register, current_fp, for use
+  // updating the frame link (fp). But since we are unwinding the current frame,
+  // we must save the current rbp in a temporary register, this_fp, for use
   // as the last java fp should we decide to unwind.
   // The asynchronous profiler will only see the updated rfp, either using the
   // CPU context or by reading the saved_Java_fp() field as part of the ljf.
-  const Register current_fp = rscratch2;
-  const Register return_addr = rscratch2;
-  const Register continuation_return_pc = rscratch1;
-  const Register sender_sp = rscratch1;
-  __ movptr(return_addr, Address(rbp, wordSize)); // return address
-  // Load address of ContinuationEntry return pc
-  __ lea(continuation_return_pc, ExternalAddress(ContinuationEntry::return_pc_address()));
-  // Load the ContinuationEntry return pc
-  __ movptr(continuation_return_pc, Address(continuation_return_pc));
-  Label L_continuation, L_end;
-  __ cmpptr(continuation_return_pc, return_addr);
-  __ movptr(current_fp, rbp); // Save current fp in temporary register.
-  __ jcc(Assembler::equal, L_continuation);
-  __ movptr(rbp, Address(rbp, frame::link_offset)); // Update the frame link.
-  __ jmp(L_end);
-  __ bind(L_continuation);
-  __ lea(sender_sp, Address(rbp, frame::sender_sp_offset* wordSize));
-  __ movptr(rbp, Address(sender_sp, (int)(ContinuationEntry::size()))); // Update the frame link.
-  __ bind(L_end);
+  const Register this_fp = rscratch2;
+  __ make_sender_fp_current(this_fp, rscratch1);
 
   // The interpreter frame is now unwound from a sampling perspective,
   // meaning it sees the sender frame as the current frame from this point onwards.
@@ -1194,19 +1177,19 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // the stack, will call InterpreterRuntime::at_unwind.
   Label slow_path;
   Label fast_path;
-  __ safepoint_poll(slow_path, thread, current_fp, true, false);
+  __ safepoint_poll(slow_path, thread, this_fp, true, false);
   __ jmp(fast_path);
   __ bind(slow_path);
   __ push(dtos);
   __ push(ltos);
-  __ call_VM_with_sender_Java_fp_entry(current_fp, rscratch1, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), false /* save_bcp */);
+  __ call_VM_with_sender_Java_fp_entry(this_fp, rscratch1, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), false /* save_bcp */);
   __ pop(ltos);
   __ pop(dtos);
   __ bind(fast_path);
 
   // remove activation
-  __ movptr(rdi, Address(current_fp, wordSize)); // get return address
-  __ movptr(rsp, Address(current_fp, frame::interpreter_frame_sender_sp_offset* wordSize)); // get sender sp
+  __ movptr(rdi, Address(this_fp, wordSize)); // get return address
+  __ movptr(rsp, Address(this_fp, frame::interpreter_frame_sender_sp_offset* wordSize)); // get sender sp
   __ jmp(rdi);
 
   if (inc_counter) {

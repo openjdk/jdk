@@ -210,6 +210,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
                          bool throw_monitor_exception = true,
                          bool install_monitor_exception = true,
                          bool notify_jvmdi = true);
+
+  void make_sender_fp_current(Register save_this_fp, Register tmp);
+
   void get_method_counters(Register method, Register mcs, Label& skip);
 
   // Object locking

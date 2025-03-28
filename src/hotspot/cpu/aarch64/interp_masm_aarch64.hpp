@@ -238,6 +238,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
                          bool install_monitor_exception = true,
                          bool notify_jvmdi = true);
 
+  void make_sender_fp_current(Register save_this_fp, Register tmp);
+
   // FIXME: Give us a valid frame at a null check.
   virtual void null_check(Register reg, int offset = -1) {
 // #ifdef ASSERT

@@ -43,7 +43,6 @@
 #include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
-#include "runtime/continuationEntry.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -1895,47 +1894,30 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
     // activation frame _before_ we test the method return safepoint poll.
     // This is equivalent to how it is done for compiled frames.
     // Removing an interpreter activation frame from a sampling perspective means
-    // updating the frame link. But since we are unwinding the current frame,
-    // we must save the current rbp in a temporary register, current_fp, for use
+    // updating the frame link (fp). But since we are unwinding the current frame,
+    // we must save the current rfp in a temporary register, this_fp, for use
     // as the last java fp should we decide to unwind.
     // The asynchronous profiler will only see the updated rfp, either using the
     // CPU context or by reading the saved_Java_fp() field as part of the ljf.
-    const Register current_fp = rscratch2;
-    const Register return_addr = rscratch2;
-    const Register continuation_return_pc = rscratch1;
-    const Register sender_sp = rscratch1;
-    __ ldr(return_addr, Address(rfp, wordSize)); // return address
-    // Load address of ContinuationEntry return pc
-    __ lea(continuation_return_pc, ExternalAddress(ContinuationEntry::return_pc_address()));
-    // Load the ContinuationEntry return pc
-    __ ldr(continuation_return_pc, Address(continuation_return_pc));
-    Label L_continuation, L_end;
-    __ cmp(continuation_return_pc, return_addr);
-    __ mov(current_fp, rfp); // Save current fp in temporary register.
-    __ br(Assembler::EQ, L_continuation);
-    __ ldr(rfp, Address(rfp)); // Update the frame link.
-    __ b(L_end);
-    __ bind(L_continuation);
-    __ lea(sender_sp, Address(rfp, frame::sender_sp_offset* wordSize));
-    __ ldr(rfp, Address(sender_sp, (int)(ContinuationEntry::size()))); // Update the frame link.
-    __ bind(L_end);
+    const Register this_fp = rscratch2;
+    __ make_sender_fp_current(this_fp, rscratch1);
 
     // The interpreter frame is now unwound from a sampling perspective,
     // meaning it sees the sender frame as the current frame from this point onwards.
 
-    __ save_bcp(current_fp); // need to save bcp but not restore it.
-    __ set_last_Java_frame_with_sender_fp(esp, current_fp, (address)__ pc(), rscratch1);
+    __ save_bcp(this_fp); // need to save bcp but not restore it.
+    __ set_last_Java_frame_with_sender_fp(esp, this_fp, (address)__ pc(), rscratch1);
     __ call_VM_with_sender_Java_fp_entry(CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin));
     // r0 is OSR buffer, move it to expected parameter location
     __ mov(j_rarg0, r0);
-    __ reset_last_Java_frame_with_sender_fp(current_fp);
+    __ reset_last_Java_frame_with_sender_fp(this_fp);
 
     // remove activation
     // get sender esp
-    __ ldr(esp, Address(current_fp, frame::interpreter_frame_sender_sp_offset* wordSize));
-    __ ldr(lr, Address(current_fp, wordSize));
+    __ ldr(esp, Address(this_fp, frame::interpreter_frame_sender_sp_offset* wordSize));
+    __ ldr(lr, Address(this_fp, wordSize));
     __ authenticate_return_address();
-    __ lea(sp, Address(current_fp, 2 * wordSize));
+    __ lea(sp, Address(this_fp, 2 * wordSize));
     // Ensure compiled code always sees stack at proper alignment
     __ andr(sp, esp, -16);
 
