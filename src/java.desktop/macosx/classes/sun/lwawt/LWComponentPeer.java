@@ -25,23 +25,7 @@
 
 package sun.lwawt;
 
-import java.awt.AWTEvent;
-import java.awt.AWTException;
-import java.awt.BufferCapabilities;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.GraphicsConfiguration;
-import java.awt.Image;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.Toolkit;
-import java.awt.Window;
+import java.awt.*;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.peer.DropTargetPeer;
 import java.awt.event.AWTEventListener;
@@ -52,6 +36,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.PaintEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BaseMultiResolutionImage;
 import java.awt.image.ColorModel;
 import java.awt.image.VolatileImage;
 import java.awt.peer.ComponentPeer;
@@ -71,6 +57,7 @@ import sun.awt.PaintEventDispatcher;
 import sun.awt.RepaintArea;
 import sun.awt.SunToolkit;
 import sun.awt.event.IgnorePaintEvent;
+import sun.awt.image.OffScreenImage;
 import sun.awt.image.SunVolatileImage;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.metal.MTLRenderQueue;
@@ -984,7 +971,25 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
 
     @Override
     public final Image createImage(final int width, final int height) {
-        return getLWGC().createAcceleratedImage(getTarget(), width, height);
+        GraphicsConfiguration gc = getGraphicsConfiguration();
+        AffineTransform at = gc.getDefaultTransform();
+        double ScaleX = at.getScaleX();
+        double ScaleY = at.getScaleY();
+        int scaledWidth = Math.round((float)ScaleX  * width);
+        int scaledHeight = Math.round((float)ScaleY * height);
+
+        Image img = getLWGC().createAcceleratedImage(getTarget(), scaledWidth, scaledHeight);
+        if(ScaleX == 1 || ScaleY == 1)
+            return img;
+        return new BaseMultiResolutionImage(img.getScaledInstance(width, height, Image.SCALE_DEFAULT), img) {
+            @Override
+            public Graphics getGraphics() {
+                Graphics graphics = img.getGraphics();
+                if (graphics instanceof Graphics2D)
+                    ((Graphics2D) graphics).scale(ScaleX, ScaleY);
+                return graphics;
+                }
+        };
     }
 
     @Override
