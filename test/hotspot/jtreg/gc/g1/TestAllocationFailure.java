@@ -50,7 +50,7 @@ public class TestAllocationFailure {
                                                                     "-XX:G1GCAllocationFailureALotCount=100",
                                                                     "-XX:G1GCAllocationFailureALotInterval=1",
                                                                     "-XX:+UnlockDiagnosticVMOptions",
-                                                                    "-Xlog:gc",
+                                                                    "-Xlog:gc=debug",
                                                                     GCTestWithAllocationFailure.class.getName());
 
         System.out.println(output.getStdout());
@@ -59,7 +59,6 @@ public class TestAllocationFailure {
     }
 
     static class GCTestWithAllocationFailure {
-        private static byte[] garbage;
         private static byte[] largeObject;
         private static Object[] holder = new Object[200]; // Must be larger than G1GCAllocationFailureALotCount
 
@@ -69,8 +68,11 @@ public class TestAllocationFailure {
             // Create 16 MB of garbage. This should result in at least one GC,
             // (Heap size is 32M, we use 17MB for the large object above)
             // which is larger than G1GCAllocationFailureALotInterval.
+            for (int j = 0; j < 16; j++) {
             for (int i = 0; i < 16 * 1024; i++) {
-                holder[i % holder.length] = new byte[1024];
+                holder[i % holder.length] = new Object[1024 / 4];
+            }
+              holder = new Object[200];
             }
             System.out.println("Done");
         }
