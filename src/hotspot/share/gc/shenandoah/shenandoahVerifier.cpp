@@ -268,12 +268,12 @@ private:
                "Must be marked in incomplete bitmap");
         break;
       case ShenandoahVerifier::_verify_marked_complete:
-        check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked(obj),
+        check(ShenandoahAsserts::_safe_all, obj, _heap->gc_generation()->complete_marking_context()->is_marked(obj),
                "Must be marked in complete bitmap");
         break;
       case ShenandoahVerifier::_verify_marked_complete_except_references:
       case ShenandoahVerifier::_verify_marked_complete_satb_empty:
-        check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked(obj),
+        check(ShenandoahAsserts::_safe_all, obj, _heap->gc_generation()->complete_marking_context()->is_marked(obj),
               "Must be marked in complete bitmap, except j.l.r.Reference referents");
         break;
       default:
@@ -701,7 +701,7 @@ public:
   virtual void work_humongous(ShenandoahHeapRegion *r, ShenandoahVerifierStack& stack, ShenandoahVerifyOopClosure& cl) {
     size_t processed = 0;
     HeapWord* obj = r->bottom();
-    if (_heap->complete_marking_context()->is_marked(cast_to_oop(obj))) {
+    if (_heap->gc_generation()->complete_marking_context()->is_marked(cast_to_oop(obj))) {
       verify_and_follow(obj, stack, cl, &processed);
     }
     Atomic::add(&_processed, processed, memory_order_relaxed);
@@ -709,7 +709,7 @@ public:
 
   virtual void work_regular(ShenandoahHeapRegion *r, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl) {
     size_t processed = 0;
-    ShenandoahMarkingContext* ctx = _heap->complete_marking_context();
+    ShenandoahMarkingContext* ctx = _heap->gc_generation()->complete_marking_context();
     HeapWord* tams = ctx->top_at_mark_start(r);
 
     // Bitmaps, before TAMS
@@ -989,7 +989,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
         (marked == _verify_marked_complete ||
          marked == _verify_marked_complete_except_references ||
          marked == _verify_marked_complete_satb_empty)) {
-    guarantee(_heap->marking_context()->is_complete(), "Marking context should be complete");
+    guarantee(_heap->gc_generation()->is_mark_complete(), "Marking context should be complete");
     ShenandoahVerifierMarkedRegionTask task(_verification_bit_map, ld, label, options);
     _heap->workers()->run_task(&task);
     count_marked = task.processed();
@@ -1278,8 +1278,11 @@ public:
 
 ShenandoahMarkingContext* ShenandoahVerifier::get_marking_context_for_old() {
   shenandoah_assert_generations_reconciled();
-  if (_heap->old_generation()->is_mark_complete() || _heap->gc_generation()->is_global()) {
-    return _heap->complete_marking_context();
+  if (_heap->gc_generation()->is_global()) {
+    return _heap->marking_context();
+  }
+  if (_heap->old_generation()->is_mark_complete()) {
+    return _heap->old_generation()->complete_marking_context();
   }
   return nullptr;
 }
