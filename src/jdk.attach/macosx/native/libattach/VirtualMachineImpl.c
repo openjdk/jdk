@@ -145,7 +145,7 @@ JNIEXPORT jboolean JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkCatches
         // observed behavior of the current JVM implementation.
 
         if (caught && !ignored) {
-            if (kill((pid_t)pid, SIGQUIT)) {
+            if (kill((pid_t)pid, SIGQUIT) != 0) {
                 JNU_ThrowIOExceptionWithLastError(env, "kill");
             } else {
                 return JNI_TRUE;
