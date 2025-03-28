@@ -1952,7 +1952,7 @@ void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
     fields_sorted.sort(compare_fields_by_offset);
     for (int i = 0; i < length; i++) {
       fd.reinitialize(this, fields_sorted.at(i).template get<1>(), fields_sorted.at(i).template get<2>());
-      assert(!fd.is_static() && fd.offset() == fields_sorted.at(i).first, "only nonstatic fields");
+      assert(!fd.is_static() && fd.offset() == fields_sorted.at(i).template get<0>(), "only nonstatic fields");
       cl->do_field(&fd);
     }
   }
