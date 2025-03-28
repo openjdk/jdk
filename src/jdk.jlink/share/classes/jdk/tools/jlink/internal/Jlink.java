@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,7 @@ public final class Jlink {
         private final Set<String> modules;
         private final ModuleFinder finder;
         private final boolean linkFromRuntimeImage;
-        private final boolean ignoreModifiedRuntime;
+        private final LinkableRuntimeImage.Config runtimeImageConfig;
         private final boolean generateRuntimeImage;
 
         /**
@@ -162,13 +162,13 @@ public final class Jlink {
                                   Set<String> modules,
                                   ModuleFinder finder,
                                   boolean linkFromRuntimeImage,
-                                  boolean ignoreModifiedRuntime,
+                                  LinkableRuntimeImage.Config runtimeImageConfig,
                                   boolean generateRuntimeImage) {
             this.output = output;
             this.modules = Objects.requireNonNull(modules);
             this.finder = finder;
             this.linkFromRuntimeImage = linkFromRuntimeImage;
-            this.ignoreModifiedRuntime = ignoreModifiedRuntime;
+            this.runtimeImageConfig = runtimeImageConfig;
             this.generateRuntimeImage = generateRuntimeImage;
         }
 
@@ -198,8 +198,8 @@ public final class Jlink {
             return linkFromRuntimeImage;
         }
 
-        public boolean ignoreModifiedRuntime() {
-            return ignoreModifiedRuntime;
+        public LinkableRuntimeImage.Config runtimeImageConfig() {
+            return runtimeImageConfig;
         }
 
         public boolean isGenerateRuntimeImage() {

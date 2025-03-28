@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,43 @@ public class JlinkTask {
         // be used for linking from the run-time image.
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.generateLinkableRuntime = true;
-        }, true, "--generate-linkable-runtime")
+        }, true, "--generate-linkable-runtime"),
+        new Option<JlinkTask>(true, (task, opt, arg) -> {
+            if (arg.startsWith("@")) {
+                // Read overrides from file
+                if (!task.options.shaOverrides.isEmpty()) {
+                    // Only allow a single @file value
+                    throw taskHelper.newBadArgs("err.sha.overrides.multiple");
+                }
+                // Ignore non-existing sha overrides file.
+                //
+                // This is to allow for custom builds needing to optionally
+                // support run-time image links on (possibly) modified
+                // binaries/debuginfo files done after the JDK build
+                //
+                // Allow for JAVA_HOME relative paths for the file, by replacing
+                // the ${java.home} token in the file name
+                String fileName = arg.substring(1);
+                if (fileName.startsWith("${java.home}")) {
+                    String javaHome = System.getProperty("java.home");
+                    fileName = javaHome + fileName.substring(12 /* ${java.home}.length() */);
+                }
+                Path file = Paths.get(fileName);
+                if (Files.exists(file)) {
+                    try {
+                        Files.readAllLines(file).stream()
+                            .forEach(task.options.shaOverrides::add);
+                    } catch (IOException e) {
+                        throw taskHelper.newBadArgs("err.sha.overrides.freaderr", file.toString());
+                    }
+                }
+            } else {
+                // Allow multiple values, separated by comma in addition to
+                // multiple times the same option.
+                Arrays.asList(arg.split(",")).stream()
+                    .forEach(task.options.shaOverrides::add);
+            }
+        }, true, "--sha-overrides"),
     };
 
 
@@ -235,6 +271,7 @@ public class JlinkTask {
         boolean suggestProviders = false;
         boolean ignoreModifiedRuntime = false;
         boolean generateLinkableRuntime = false;
+        final Set<String> shaOverrides = new HashSet<>();
     }
 
     public static final String OPTIONS_RESOURCE = "jdk/tools/jlink/internal/options";
@@ -459,12 +496,39 @@ public class JlinkTask {
             throw taskHelper.newBadArgs("err.runtime.link.packaged.mods");
         }
 
+        LinkableRuntimeImage.Config linkableRuntimeConfig = new LinkableRuntimeImage.Config(
+                options.ignoreModifiedRuntime,
+                isLinkFromRuntime ? buildShaSumMap(taskHelper, options.shaOverrides) : null);
         return new JlinkConfiguration(options.output,
                                       roots,
                                       finder,
                                       isLinkFromRuntime,
-                                      options.ignoreModifiedRuntime,
+                                      linkableRuntimeConfig,
                                       options.generateLinkableRuntime);
+    }
+
+    private Map<String, Map<String, Set<String>>> buildShaSumMap(TaskHelper taskHelper,
+                                                                 Set<String> shaOverrides) throws BadArgs {
+        Map<String, Map<String, Set<String>>> moduleToFiles = new HashMap<>();
+        for (String t: shaOverrides) {
+            String trimmed = t.trim();
+            if (trimmed.startsWith("#")) {
+                // skip comment lines
+                continue;
+            }
+            String[] tokens = trimmed.split("\\|");
+            if (tokens.length != 3) {
+                throw taskHelper.newBadArgs("err.sha.overrides.bad.format", t);
+            }
+            // t is a '|'-separated item of (in that order):
+            //    <module-name>
+            //    <file-path>
+            //    <SHA-512-sum>
+            Map<String, Set<String>> perModuleMap = moduleToFiles.computeIfAbsent(tokens[0], k -> new HashMap<>());
+            Set<String> shaSumsPerFile = perModuleMap.computeIfAbsent(tokens[1], k -> new HashSet<>());
+            shaSumsPerFile.add(tokens[2]);
+        }
+        return moduleToFiles;
     }
 
     /*
@@ -788,7 +852,7 @@ public class JlinkTask {
                         taskHelper.getMessage("err.not.a.module.directory", path));
             }
         } else if (config.linkFromRuntimeImage()) {
-            return LinkableRuntimeImage.newArchive(module, path, config.ignoreModifiedRuntime(), taskHelper);
+            return LinkableRuntimeImage.newArchive(module, path, config.runtimeImageConfig(), taskHelper);
         } else {
             throw new IllegalArgumentException(
                     taskHelper.getMessage("err.not.modular.format", module, path));

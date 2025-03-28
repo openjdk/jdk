@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Red Hat, Inc.
+ * Copyright (c) 2025, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,12 @@
  */
 
 import java.nio.file.Path;
-import java.util.List;
-
-import tests.Helper;
-
 
 /*
  * @test
- * @summary Test basic linking from the run-time image
- * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @summary Verify no warnings are being produced on a modified file which
+ *          gets the SHA override from command line
+ * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g & os.family == "linux")
  * @library ../../lib /test/lib
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
@@ -38,31 +35,31 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g BasicJlinkTest false
+ * @run main/othervm -Xmx1g ModifiedFilesWithShaOverrideTest
  */
-public class BasicJlinkTest extends AbstractLinkableRuntimeTest {
-
-    @Override
-    public void runTest(Helper helper, boolean isLinkableRuntime) throws Exception {
-        Path finalImage = createJavaBaseRuntimeLink(helper, "java-base", isLinkableRuntime);
-        verifyListModules(finalImage, List.of("java.base"));
-    }
-
-    private Path createJavaBaseRuntimeLink(Helper helper, String name, boolean isLinkableRuntime) throws Exception {
-        BaseJlinkSpecBuilder builder = new BaseJlinkSpecBuilder();
-        builder.helper(helper)
-               .name(name)
-               .addModule("java.base")
-               .validatingModule("java.base");
-        if (isLinkableRuntime) {
-            builder.setLinkableRuntime();
-        }
-        return createJavaImageRuntimeLink(builder.build());
-    }
+public class ModifiedFilesWithShaOverrideTest extends ModifiedFilesWithShaOverrideBase {
 
     public static void main(String[] args) throws Exception {
-        BasicJlinkTest test = new BasicJlinkTest();
+        ModifiedFilesWithShaOverrideTest test = new ModifiedFilesWithShaOverrideTest();
         test.run();
     }
 
+    @Override
+    String initialImageName() {
+        return "java-base-jlink-with-sha-override";
+    }
+
+    @Override
+    public String getTargetName() {
+        return "java-base-jlink-with-sha-override-target";
+    }
+
+    @Override
+    public String getShaOverrideOption(Path modifiedFile, Path initialImage) {
+        String strippedSha = buildSHA512(modifiedFile);
+        Path relativePath = initialImage.relativize(modifiedFile);
+        // Modified file is libjvm.so, which is in java.base
+        String overrideVal = String.format("%s|%s|%s", "java.base", relativePath.toString(), strippedSha);
+        return SHA_OVERRIDE_FLAG + "=" + overrideVal;
+    }
 }
