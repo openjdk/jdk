@@ -25,8 +25,8 @@
 #ifndef SHARE_COMPILER_DIRECTIVESPARSER_HPP
 #define SHARE_COMPILER_DIRECTIVESPARSER_HPP
 
-#include "utilities/json.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "utilities/json.hpp"
 
 enum FlagType {
   boolFlag,

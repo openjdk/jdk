@@ -26,6 +26,7 @@
 #define SHARE_COMPILER_COMPILERDEFINITIONS_INLINE_HPP
 
 #include "compiler/compilerDefinitions.hpp"
+
 #include "compiler/compiler_globals.hpp"
 #include "runtime/arguments.hpp"
 

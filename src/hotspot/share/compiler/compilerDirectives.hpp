@@ -25,8 +25,8 @@
 #ifndef SHARE_COMPILER_COMPILERDIRECTIVES_HPP
 #define SHARE_COMPILER_COMPILERDIRECTIVES_HPP
 
-#include "classfile/vmIntrinsics.hpp"
 #include "ci/ciMethod.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "compiler/methodMatcher.hpp"
 #include "opto/phasetype.hpp"
 #include "utilities/bitMap.hpp"
