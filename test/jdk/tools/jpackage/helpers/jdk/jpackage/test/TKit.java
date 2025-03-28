@@ -43,6 +43,7 @@ import java.nio.file.WatchService;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -518,9 +519,9 @@ public final class TKit {
     }
 
     public static RuntimeException throwSkippedException(String reason) {
-        RuntimeException ex = ThrowingSupplier.toSupplier(
-                () -> (RuntimeException) Class.forName("jtreg.SkippedException").getConstructor(
-                        String.class).newInstance(reason)).get();
+        RuntimeException ex = ThrowingSupplier.toSupplier(() -> {
+            return JtregSkippedExceptionClass.INSTANCE.getConstructor(String.class).newInstance(reason);
+        }).get();
         return throwSkippedException(ex);
     }
 
@@ -1139,5 +1140,31 @@ public final class TKit {
             VERBOSE_JPACKAGE = isNonOf.test(Set.of("jpackage", "jp"));
             VERBOSE_TEST_SETUP = isNonOf.test(Set.of("init", "i"));
         }
+    }
+
+    private static final class JtregSkippedExceptionClass extends ClassLoader {
+        @SuppressWarnings("unchecked")
+        JtregSkippedExceptionClass() {
+            super(TKit.class.getClassLoader());
+
+            final byte[] bytes = Base64.getDecoder().decode(
+                    // Base64-encoded "jtreg/SkippedException.class" file
+                    // emitted by jdk8's javac from "$OPEN_JDK/test/lib/jtreg/SkippedException.java"
+                    "yv66vgAAADQAFQoABAARCgAEABIHABMHABQBABBzZXJpYWxWZXJzaW9uVUlEAQABSgEADUNvbnN0"
+                    + "YW50VmFsdWUFErH6BHk+kr0BAAY8aW5pdD4BACooTGphdmEvbGFuZy9TdHJpbmc7TGphdmEvbGFu"
+                    + "Zy9UaHJvd2FibGU7KVYBAARDb2RlAQAPTGluZU51bWJlclRhYmxlAQAVKExqYXZhL2xhbmcvU3Ry"
+                    + "aW5nOylWAQAKU291cmNlRmlsZQEAFVNraXBwZWRFeGNlcHRpb24uamF2YQwACgALDAAKAA4BABZq"
+                    + "dHJlZy9Ta2lwcGVkRXhjZXB0aW9uAQAaamF2YS9sYW5nL1J1bnRpbWVFeGNlcHRpb24AMQADAAQA"
+                    + "AAABABoABQAGAAEABwAAAAIACAACAAEACgALAAEADAAAACMAAwADAAAAByorLLcAAbEAAAABAA0A"
+                    + "AAAKAAIAAAAiAAYAIwABAAoADgABAAwAAAAiAAIAAgAAAAYqK7cAArEAAAABAA0AAAAKAAIAAAAm"
+                    + "AAUAJwABAA8AAAACABA");
+
+            clazz = (Class<RuntimeException>)defineClass("jtreg.SkippedException", bytes, 0, bytes.length);
+        }
+
+        private final Class<RuntimeException> clazz;
+
+        static final Class<RuntimeException> INSTANCE = new JtregSkippedExceptionClass().clazz;
+
     }
 }
