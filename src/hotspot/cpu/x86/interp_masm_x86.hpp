@@ -53,8 +53,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
  public:
   InterpreterMacroAssembler(CodeBuffer* code) : MacroAssembler(code),
-    _locals_register(LP64_ONLY(r14) NOT_LP64(rdi)),
-    _bcp_register(LP64_ONLY(r13) NOT_LP64(rsi)) {}
+    _locals_register(r14),
+    _bcp_register(r13) {}
 
   void jump_to_entry(address entry);
 
@@ -121,9 +121,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
                                     Register cpool,  // the constant pool (corrupted on return)
                                     Register index); // the constant pool index (corrupted on return)
 
-  NOT_LP64(void f2ieee();)        // truncate ftos to 32bits
-  NOT_LP64(void d2ieee();)        // truncate dtos to 64bits
-
   // Expression stack
   void pop_ptr(Register r = rax);
   void pop_i(Register r = rax);
@@ -143,18 +140,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void pop_f(XMMRegister r);
   void pop_d(XMMRegister r);
   void push_d(XMMRegister r);
-#ifdef _LP64
   void pop_l(Register r = rax);
   void push_l(Register r = rax);
-#else
-  void pop_l(Register lo = rax, Register hi = rdx);
-  void pop_f();
-  void pop_d();
-
-  void push_l(Register lo = rax, Register hi = rdx);
-  void push_d();
-  void push_f();
-#endif // _LP64
 
   void pop(Register r) { ((MacroAssembler*)this)->pop(r); }
   void push(Register r) { ((MacroAssembler*)this)->push(r); }
@@ -168,7 +155,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
     lea(rsp, Address(rbp, rcx, Address::times_ptr));
     // null last_sp until next java call
     movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
-    NOT_LP64(empty_FPU_stack());
   }
 
   // Helpers for swap and dup
@@ -273,8 +259,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // only if +VerifyOops && state == atos
 #define interp_verify_oop(reg, state) _interp_verify_oop(reg, state, __FILE__, __LINE__);
   void _interp_verify_oop(Register reg, TosState state, const char* file, int line);
-  // only if +VerifyFPU  && (state == ftos || state == dtos)
-  void verify_FPU(int stack_depth, TosState state = ftos);
 
   typedef enum { NotifyJVMTI, SkipNotifyJVMTI } NotifyMethodExitMode;
 
