@@ -53,7 +53,7 @@ import java.util.ArrayList;
  *
  * <p>
  * By default, we only support comparison of the types mentioned above. However, in some cases one
- * might want to compare Objects of arbitrare classes by value, i.e. the recursive structure given
+ * might want to compare Objects of arbitrary classes by value, i.e. the recursive structure given
  * by their field values. This feature can be enabled with {@code isCheckWithArbitraryClasses}.
  */
 public final class Verify {
