@@ -31,7 +31,7 @@
  *     This test is manual. The tester is asked to compare left-to-right and
  *     right-to-left menus and judge whether they are mirror images of each
  *     other.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual RightLeftOrientation
  */
