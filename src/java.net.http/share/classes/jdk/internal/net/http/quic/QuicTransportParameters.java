@@ -120,7 +120,7 @@ public final class QuicTransportParameters {
         int idx();
 
         /**
-         * {@return the parameter id corresponding to the given index, if
+         * {@return the parameter id corresponding to the given identifier, if
          * defined, an empty optional otherwise}
          * @param idx a parameter identifier
          */
