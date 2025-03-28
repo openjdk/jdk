@@ -234,22 +234,6 @@ util_initialize(JNIEnv *env)
         saveGlobalRef(env, localSystemThreadGroup, &(gdata->systemThreadGroup));
         jvmtiDeallocate(groups);
 
-        #if 0
-        // This is a workaround for 8352088. GetThreadGroupChildren does an upcall to 
-        // java which may trigger class loading the first time it is called. Call is now
-        // for the first time when we know it will be safe to trigger the class loading.
-        jint threadCount;
-        jthread *theThreads;
-        jthread *theGroups;
-        error = JVMTI_FUNC_PTR(gdata->jvmti,GetThreadGroupChildren)
-                    (gdata->jvmti, gdata->systemThreadGroup,
-                     &threadCount,&theThreads,
-                     &groupCount, &theGroups);
-        if (error != JVMTI_ERROR_NONE) {
-            EXIT_ERROR(error, "JDWP unable to call GetThreadGroupChildren");
-        }
-        #endif
-
         /* Get some basic Java property values we will need at some point */
         gdata->property_java_version
                         = getPropertyUTF8(env, "java.version");
