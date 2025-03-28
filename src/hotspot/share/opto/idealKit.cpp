@@ -163,14 +163,12 @@ void IdealKit::end_if() {
 // onto the stack.
 void IdealKit::loop(GraphKit* gkit, int nargs, IdealVariable& iv, Node* init, BoolTest::mask relop, Node* limit, float prob, float cnt) {
   assert((state() & (BlockS|LoopS|IfThenS|ElseS)), "bad state for new loop");
-  if (UseLoopPredicate) {
-    // Sync IdealKit and graphKit.
-    gkit->sync_kit(*this);
-    // Add Parse Predicates.
-    gkit->add_parse_predicates(nargs);
-    // Update IdealKit memory.
-    sync_kit(gkit);
-  }
+  // Sync IdealKit and graphKit.
+  gkit->sync_kit(*this);
+  // Add Parse Predicates.
+  gkit->add_parse_predicates(nargs);
+  // Update IdealKit memory.
+  sync_kit(gkit);
   set(iv, init);
   Node* head = make_label(1);
   bind(head);
