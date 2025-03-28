@@ -54,6 +54,8 @@ MemBaseline MemTracker::_baseline;
 bool MemTracker::NmtVirtualMemoryLocker::_safe_to_use;
 
 void MemTracker::initialize() {
+  NMT_LogRecorder::initialize();
+
   bool rc = true;
   assert(_tracking_level == NMT_unknown, "only call once");
 
@@ -94,6 +96,8 @@ void MemTracker::initialize() {
     NMTPreInit::print_state(&ls);
     MallocLimitHandler::print_on(&ls);
   }
+
+  NMT_LogRecorder::replay();
 }
 
 // Report during error reporting.
