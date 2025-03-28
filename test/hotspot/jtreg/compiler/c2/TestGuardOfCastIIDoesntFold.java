@@ -28,6 +28,7 @@
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
  *                   -XX:CompileCommand=dontinline,TestGuardOfCastIIDoesntFold::notInlined
  *                   TestGuardOfCastIIDoesntFold
+ * @run main/othervm TestGuardOfCastIIDoesntFold
  */
 
 public class TestGuardOfCastIIDoesntFold {

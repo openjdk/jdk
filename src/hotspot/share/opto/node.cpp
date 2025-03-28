@@ -3077,11 +3077,11 @@ uint TypeNode::ideal_reg() const {
   return _type->ideal_reg();
 }
 
-void TypeNode::make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j) {
+void TypeNode::make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j, const char* phase_str) {
   Node* c = ctrl_use->in(j);
   if (igvn->type(c) != Type::TOP) {
     igvn->replace_input_of(ctrl_use, j, igvn->C->top());
-    create_halt_path(igvn, c, loop);
+    create_halt_path(igvn, c, loop, phase_str);
   }
 }
 
@@ -3089,10 +3089,10 @@ void TypeNode::make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ct
 // inputs do not intersect anymore. That node has some uses along some control flow paths. Those control flow paths must
 // be unreachable as using a dead value makes no sense. For the Type node to capture a narrowed down type, some control
 // flow construct must guard the Type node (an If node usually). When the Type node becomes dead, the guard usually
-// constant fold and the control flow that leads to the Type node becomes unreachable. There are cases where that doesn't
-// happen, however. They are handled here by following uses of the Type node until a CFG or a Phi to find dead paths.
-// The dead paths are then replaced by a Halt node.
-void TypeNode::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop) {
+// constant folds and the control flow that leads to the Type node becomes unreachable. There are cases where that
+// doesn't happen, however. They are handled here by following uses of the Type node until a CFG or a Phi to find dead
+// paths. The dead paths are then replaced by a Halt node.
+void TypeNode::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, const char* phase_str) {
   Unique_Node_List wq;
   wq.push(this);
   for (uint i = 0; i < wq.size(); ++i) {
@@ -3101,14 +3101,14 @@ void TypeNode::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loo
       Node* u = n->fast_out(k);
       if (u->is_CFG()) {
         assert(!u->is_Region(), "Can't reach a Region without going through a Phi");
-        make_path_dead(igvn, loop, u, 0);
+        make_path_dead(igvn, loop, u, 0, phase_str);
       } else if (u->is_Phi()) {
         Node* r = u->in(0);
         assert(r->is_Region() || r->is_top(), "unexpected Phi's control");
         if (r->is_Region()) {
           for (uint j = 1; j < u->req(); ++j) {
             if (u->in(j) == n) {
-              make_path_dead(igvn, loop, r, j);
+              make_path_dead(igvn, loop, r, j, phase_str);
             }
           }
         }
@@ -3119,14 +3119,21 @@ void TypeNode::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loo
   }
 }
 
-void TypeNode::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop) const {
+void TypeNode::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop, const char* phase_str) const {
   Node* frame = new ParmNode(igvn->C->start(), TypeFunc::FramePtr);
   if (loop == nullptr) {
     igvn->register_new_node_with_optimizer(frame);
   } else {
     loop->register_new_node(frame, igvn->C->start());
   }
-  Node* halt = new HaltNode(c, frame, "dead path discovered by TypeNode");
+
+  stringStream ss;
+  ss.print("dead path discovered by TypeNode during %s", phase_str);
+  size_t len = ss.size() + 1;
+  char* arena_str = NEW_ARENA_ARRAY(igvn->C->comp_arena(), char, len);
+  memcpy(arena_str, ss.base(), len);
+
+  Node* halt = new HaltNode(c, frame, arena_str);
   if (loop == nullptr) {
     igvn->register_new_node_with_optimizer(halt);
   } else {
@@ -3136,11 +3143,11 @@ void TypeNode::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loo
 }
 
 Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (can_reshape && Value(phase) == Type::TOP) {
+  if (KillPathsReachableByDeadTypeNode && can_reshape && Value(phase) == Type::TOP) {
     PhaseIterGVN* igvn = phase->is_IterGVN();
     Node* top = igvn->C->top();
     ResourceMark rm;
-    make_paths_from_here_dead(igvn, nullptr);
+    make_paths_from_here_dead(igvn, nullptr, "igvn");
     return top;
   }
 

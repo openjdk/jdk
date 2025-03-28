@@ -2065,11 +2065,13 @@ Node *PhaseCCP::transform( Node *n ) {
   // track all visited nodes, so that we can remove the complement
   Unique_Node_List useful;
 
-  for (uint i = 0; i < _type_nodes.size(); ++i) {
-    Node* type_node = _type_nodes.at(i);
-    if (type(type_node) == Type::TOP) {
-      ResourceMark rm;
-      type_node->as_Type()->make_paths_from_here_dead(this, nullptr);
+  if (KillPathsReachableByDeadTypeNode) {
+    for (uint i = 0; i < _type_nodes.size(); ++i) {
+      Node* type_node = _type_nodes.at(i);
+      if (type(type_node) == Type::TOP) {
+        ResourceMark rm;
+        type_node->as_Type()->make_paths_from_here_dead(this, nullptr, "ccp");
+      }
     }
   }
 
