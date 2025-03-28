@@ -25,8 +25,7 @@
  * @test
  * @requires vm.cds
  * @requires vm.flagless
- * @bug 8005933
- * @summary -Xshare:auto is the default when -Xshare is not specified
+ * @summary -Xshare:auto is the default
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -40,7 +39,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class XShareAuto {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-server", "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=./XShareAuto.jsa", "-Xshare:dump", "-Xlog:cds");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Loading classes to share");

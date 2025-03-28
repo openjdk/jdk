@@ -23,19 +23,19 @@
 # questions.
 #
 
-##############################################################################
+################################################################################
 # Helper functions for PreInit.gmk, the initial part of initialization before
 # the SPEC file is loaded. Most of these functions provide parsing and setting
 # up make options from the command-line.
-##############################################################################
-
-# COMMA is defined in spec.gmk, but that is not included yet
-COMMA := ,
+################################################################################
 
 # Include the corresponding closed file, if present.
 ifneq ($(CUSTOM_MAKE_DIR), )
-  -include $(CUSTOM_MAKE_DIR)/InitSupport.gmk
+  -include $(CUSTOM_MAKE_DIR)/PreInitSupport-pre.gmk
 endif
+
+# COMMA is defined in spec.gmk, but that is not included yet
+COMMA := ,
 
 # Essential control variables that are handled by PreInit.gmk or Init.gmk
 INIT_CONTROL_VARIABLES := LOG CONF CONF_NAME SPEC JOBS CONF_CHECK ALLOW \
@@ -68,13 +68,13 @@ USER_MAKE_VARS := $(subst §,\ , $(filter-out $(addsuffix =%, $(ALL_CONTROL_VARI
 
 # Setup information about available configurations, if any.
 ifneq ($(CUSTOM_ROOT), )
-  build_dir = $(CUSTOM_ROOT)/build
+  build_dir := $(CUSTOM_ROOT)/build
 else
-  build_dir = $(topdir)/build
+  build_dir := $(TOPDIR)/build
 endif
-all_spec_files = $(wildcard $(build_dir)/*/spec.gmk)
+all_spec_files := $(wildcard $(build_dir)/*/spec.gmk)
 # Extract the configuration names from the path
-all_confs = $(patsubst %/spec.gmk, %, $(patsubst $(build_dir)/%, %, $(all_spec_files)))
+all_confs := $(patsubst %/spec.gmk, %, $(patsubst $(build_dir)/%, %, $(all_spec_files)))
 
 # Check for unknown command-line variables
 define CheckControlVariables
@@ -94,23 +94,11 @@ define CheckControlVariables
   endif
 endef
 
-# Check for deprecated ALT_ variables
-define CheckDeprecatedEnvironment
-  defined_alt_variables := $$(filter ALT_%, $$(.VARIABLES))
-  ifneq ($$(defined_alt_variables), )
-    $$(info Warning: You have the following ALT_ variables set:)
-    $$(foreach var, $$(defined_alt_variables), $$(info * $$(var)=$$($$(var))))
-    $$(info ALT_ variables are deprecated, and may result in a failed build.)
-    $$(info Please clean your environment.)
-    $$(info )
-  endif
-endef
-
 # Check for invalid make flags like -j
 define CheckInvalidMakeFlags
   # This is a trick to get this rule to execute before any other rules
   # MAKEFLAGS only indicate -j if read in a recipe (!)
-  $$(topdir)/make/PreInit.gmk: .FORCE
+  $$(TOPDIR)/make/PreInit.gmk: .FORCE
 	$$(if $$(findstring --jobserver, $$(MAKEFLAGS)), \
 	    $$(info Error: 'make -jN' is not supported, use 'make JOBS=N') \
 	    $$(error Cannot continue) \
@@ -162,7 +150,7 @@ define ParseConfAndSpec
       ifneq ($(CUSTOM_ROOT), )
         $$(info Error: No configurations found for $$(CUSTOM_ROOT).)
       else
-        $$(info Error: No configurations found for $$(topdir).)
+        $$(info Error: No configurations found for $$(TOPDIR).)
       endif
       $$(info Please run 'bash configure' to create a configuration.)
       $$(info )
@@ -278,9 +266,9 @@ define DefineMainTargets
   endif
 
   $$(main_targets_file):
-	@( cd $$(topdir) && \
-	$$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(topdir)/make/Main.gmk \
-	    -I $$(topdir)/make/common SPEC=$(strip $2) NO_RECIPES=true \
+	@( cd $$(TOPDIR) && \
+	$$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(TOPDIR)/make/Main.gmk \
+	    -I $$(TOPDIR)/make/common SPEC=$(strip $2) NO_RECIPES=true \
 	    $$(MAKE_LOG_VARS) \
 	    create-main-targets-include )
 
@@ -295,3 +283,5 @@ define PrintConfCheckFailed
 	@echo "This behavior may also be changed using CONF_CHECK=<ignore|auto>."
 	@echo ' '
 endef
+
+################################################################################

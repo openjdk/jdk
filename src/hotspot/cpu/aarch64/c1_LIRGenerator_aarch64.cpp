@@ -1316,6 +1316,11 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
                 x->direct_compare(), patching_info, x->profiled_method(), x->profiled_bci());
 }
 
+// Intrinsic for Class::isInstance
+address LIRGenerator::isInstance_entry() {
+  return Runtime1::entry_for(C1StubId::is_instance_of_id);
+}
+
 void LIRGenerator::do_If(If* x) {
   assert(x->number_of_sux() == 2, "inconsistency");
   ValueTag tag = x->x()->type()->tag();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -501,7 +501,7 @@ public interface List<E> extends SequencedCollection<E> {
      *         contract
      * @since 1.8
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     default void sort(Comparator<? super E> c) {
         Object[] a = this.toArray();
         Arrays.sort(a, (Comparator) c);

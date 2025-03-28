@@ -528,6 +528,7 @@ final class Byte64Vector extends ByteVector {
         }
     }
 
+    @ForceInline
     public byte laneHelper(int i) {
         return (byte) VectorSupport.extract(
                                 VCLASS, ETYPE, VLENGTH,
@@ -554,6 +555,7 @@ final class Byte64Vector extends ByteVector {
         }
     }
 
+    @ForceInline
     public Byte64Vector withLaneHelper(int i, byte e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,

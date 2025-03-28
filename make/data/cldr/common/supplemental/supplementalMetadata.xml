@@ -179,7 +179,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="mof" replacement="xnt" reason="deprecated"/>  <!-- Mohegan-Montauk-Narragansett -->
 			<languageAlias type="mwd" replacement="dmw" reason="deprecated"/>  <!-- Mudbura -->
 			<languageAlias type="nbf" replacement="nru" reason="deprecated"/>  <!-- Naxi -->
-			<languageAlias type="nbx" replacement="ekc" reason="deprecated"/>  <!-- Ngura -->
+			<languageAlias type="nbx" replacement="gll" reason="deprecated"/>  <!-- Ngura -->
 			<languageAlias type="nln" replacement="azd" reason="deprecated"/>  <!-- Durango Nahuatl -->
 			<languageAlias type="nlr" replacement="nrk" reason="deprecated"/>  <!-- Ngarla -->
 			<languageAlias type="noo" replacement="dtd" reason="deprecated"/>  <!-- Nootka -->
@@ -306,6 +306,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="him" replacement="srx" reason="macrolanguage"/> <!-- Himachali ⇒ Sirmauri (= Pahari, Himachali) -->
 			<languageAlias type="mnk" replacement="man" reason="macrolanguage"/> <!-- Mandinka ⇒ Mandingo -->
 			<languageAlias type="bh" replacement="bho" reason="macrolanguage"/> <!-- Bihari ⇒ Bhojpuri -->
+			<languageAlias type="cls" replacement="sa" reason="macrolanguage"/> <!-- Classical Sanskrit ⇒ Sanskrit -->
+			<!-- Special case <languageAlias type="nb" replacement="no" reason="macrolanguage"/> <! - - Norwegian Bokmål ⇒ Norwegian -->
+			<!-- Special case <languageAlias type="sr" replacement="sh" reason="macrolanguage"/> <! - - Serbian ⇒ Serbo-Croatian -->
 
 			<languageAlias type="prs" replacement="fa_AF" reason="overlong"/> <!-- Dari ⇒ Farsi (Afganistan) -->
 			<languageAlias type="swc" replacement="sw_CD" reason="overlong"/> <!-- Congo Swahili ⇒ Swahili (Congo - Kinshasa) -->
@@ -1880,14 +1883,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			bgc_IN bgn_PK bho_IN blo_BJ blt_VN bm_ML bm_Nkoo_ML bn_BD bo_CN br_FR brx_IN
 			bs_Cyrl_BA bs_Latn bs_Latn_BA bss_CM byn_ER
 			ca_ES cad_US cch_NG ccp_BD ce_RU ceb_PH cgg_UG cho_US chr_US cic_US ckb_IQ
-			co_FR cs_CZ csw_CA cu_RU cv_RU cy_GB
+			co_FR cop_EG cs_CZ csw_CA cu_RU cv_RU cy_GB
 			da_DK dav_KE de_DE dje_NE doi_IN dsb_DE dua_CM dv_MV dyo_SN dz_BT
 			ebu_KE ee_GH el_GR en_Dsrt_US en_Shaw_GB en_US eo_001 es_ES et_EE eu_ES ewo_CM
 			fa_IR ff_Adlm_GN ff_Latn ff_Latn_SN fi_FI fil_PH fo_FO fr_FR frr_DE fur_IT
 			fy_NL
 			ga_IE gaa_GH gd_GB gez_ET gl_ES gn_PY gsw_CH gu_IN guz_KE gv_IM
 			ha_Arab_NG ha_NG haw_US he_IL hi_IN hi_Latn_IN hnj_Hmnp hnj_Hmnp_US hr_HR
-			hsb_DE hu_HU hy_AM
+			hsb_DE ht_HT hu_HU hy_AM
 			ia_001 id_ID ie_EE ife_TG ig_NG ii_CN io_001 is_IS it_IT iu_CA iu_Latn_CA
 			ja_JP jbo_001 jgo_CM jmc_TZ jv_ID
 			ka_GE kaa_Cyrl kaa_Cyrl_UZ kaa_Latn_UZ kab_DZ kaj_NG kam_KE kcg_NG kde_TZ kea_CV ken_CM kgp_BR
