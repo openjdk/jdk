@@ -573,6 +573,24 @@ bool CDSConfig::is_logging_lambda_form_invokers() {
   return ClassListWriter::is_enabled() || is_dumping_dynamic_archive();
 }
 
+bool CDSConfig::is_dumping_regenerated_lambdaform_invokers() {
+  if (is_dumping_final_static_archive()) {
+    // No need to regenerate -- the lambda form invokers should have been regenerated
+    // in the preimage archive (if allowed)
+    return false;
+  } else if (is_dumping_dynamic_archive() && is_using_aot_linked_classes()) {
+    // The base archive has aot-linked classes that may have AOT-resolved CP references
+    // that point to the lambda form invokers in the base archive. Such pointers will
+    // be invalid if lambda form invokers are regenerated in the dynamic archive.
+    return false;
+  } else if (CDSConfig::is_dumping_method_handles()) {
+    // Work around JDK-8310831, as some methods in lambda form holder classes may not get generated.
+    return false;
+  } else {
+    return is_dumping_archive();
+  }
+}
+
 void CDSConfig::stop_using_optimized_module_handling() {
   _is_using_optimized_module_handling = false;
   _is_dumping_full_module_graph = false; // This requires is_using_optimized_module_handling()
