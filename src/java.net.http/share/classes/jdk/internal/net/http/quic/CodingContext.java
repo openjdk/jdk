@@ -161,9 +161,9 @@ public interface CodingContext {
         //
         // A 1-RTT packet contains the peer connection id
         // (whose length is destConnectionIdLength), therefore the
-        // payload should be at least 22 - (destConnectionIdLength
+        // payload should be at least 5 - (destConnectionIdLength
         // - connectionIdLength()) - where connectionIdLength is the
         // length of the local connection ID.
-        return 22 - (destConnectionIdLength - connectionIdLength());
+        return 5 - (destConnectionIdLength - connectionIdLength());
     }
 }
