@@ -1295,7 +1295,7 @@ bool ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
   ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
   const size_t region_capacity = alloc_capacity(r);
 
-  bool transferred = gen_heap->generation_sizer()->transfer_to_old(1);
+  bool transferred = gen_heap->transfer_to_old(1);
   if (transferred) {
     _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Mutator,
                                                  ShenandoahFreeSetPartitionId::OldCollector, region_capacity);
@@ -1568,7 +1568,7 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
                                                                old_collector_xfer);
     max_xfer_regions -= old_collector_regions;
     if (old_collector_regions > 0) {
-      ShenandoahGenerationalHeap::cast(_heap)->generation_sizer()->transfer_to_young(old_collector_regions);
+      ShenandoahGenerationalHeap::cast(_heap)->transfer_to_young(old_collector_regions);
     }
   }
 

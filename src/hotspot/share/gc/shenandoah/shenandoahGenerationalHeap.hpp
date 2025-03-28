@@ -116,6 +116,9 @@ private:
   static size_t calculate_min_plab();
   static size_t calculate_max_plab();
 
+  // Initial size of young generation in bytes as a multiple of region size.
+  size_t initial_young_size() const;
+
 public:
   // ---------- Serviceability
   //
@@ -137,8 +140,6 @@ public:
     void print_on(const char* when, outputStream* ss) const;
   };
 
-  const ShenandoahGenerationSizer* generation_sizer()  const { return &_generation_sizer;  }
-
   // Zeros out the evacuation and promotion reserves
   void reset_generation_reserves();
 
@@ -146,11 +147,27 @@ public:
   void compute_old_generation_balance(size_t old_xfer_limit, size_t old_cset_regions);
 
   // Transfers surplus old regions to young, or takes regions from young to satisfy old region deficit
-  TransferResult balance_generations();
+  TransferResult balance_generations() const;
 
+  // True if transfer succeeds, else false. See transfer_regions.
+  bool transfer_to_young(size_t regions) const;
+  bool transfer_to_old(size_t regions) const;
+
+  // force transfer is used when we promote humongous objects.  May violate min/max limits on generation sizes
+  void force_transfer_to_old(size_t regions) const;
+
+private:
+  // This will attempt to transfer regions from the `src` generation to `dst` generation.
+  // If the transfer would violate the configured minimum size for the source or the configured
+  // maximum size of the destination, it will not perform the transfer and will return false.
+  // Returns true if the transfer is performed.
+  static bool transfer_regions(ShenandoahGeneration* src, ShenandoahGeneration* dst, size_t regions, bool force = false);
+
+public:
   // Balances generations, coalesces and fills old regions if necessary
   void complete_degenerated_cycle();
   void complete_concurrent_cycle();
+
 private:
   void initialize_controller() override;
   void entry_global_coalesce_and_fill();
@@ -162,8 +179,6 @@ private:
 
   MemoryPool* _young_gen_memory_pool;
   MemoryPool* _old_gen_memory_pool;
-
-  ShenandoahGenerationSizer     _generation_sizer;
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP

@@ -468,7 +468,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   }
 
   if (regions_to_xfer > 0) {
-    bool result = ShenandoahGenerationalHeap::cast(heap)->generation_sizer()->transfer_to_young(regions_to_xfer);
+    bool result = ShenandoahGenerationalHeap::cast(heap)->transfer_to_young(regions_to_xfer);
     assert(excess_old >= regions_to_xfer * region_size_bytes,
            "Cannot transfer (%zu, %zu) more than excess old (%zu)",
            regions_to_xfer, region_size_bytes, excess_old);

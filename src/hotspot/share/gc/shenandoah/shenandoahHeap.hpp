@@ -37,7 +37,6 @@
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
-#include "gc/shenandoah/shenandoahGenerationSizer.hpp"
 #include "gc/shenandoah/shenandoahMmuTracker.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
