@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3977,7 +3977,7 @@ public class Resolve {
             return false;
 
         // The flexible constructors feature must be enabled
-        preview.checkSourceLevel(pos, Feature.FLEXIBLE_CONSTRUCTORS);
+        preview.checkSourceLevel(env.info.lint, pos, Feature.FLEXIBLE_CONSTRUCTORS);
 
         // OK
         return true;

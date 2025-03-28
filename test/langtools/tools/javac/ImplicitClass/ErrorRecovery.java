@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,8 +87,6 @@ public class ErrorRecovery extends TestRunner {
             .getOutputLines(OutputKind.DIRECT);
         List<String> expected = List.of(
             "Test.java:1:1: compiler.err.invalid.meth.decl.ret.type.req",
-            "- compiler.note.preview.filename: Test.java, DEFAULT",
-            "- compiler.note.preview.recompile",
             "1 error"
         );
         if (!Objects.equals(expected, log)) {
