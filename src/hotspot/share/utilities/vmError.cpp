@@ -508,12 +508,13 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                 buf, jdk_debug_level, runtime_version);
 
    // This is the long version with some default settings added
+   const char* vm_info = VM_Version::vm_info_string();
    st->print_cr("# Java VM: %s%s%s (%s%s, %s%s%s%s%s%s, %s, %s)",
                  VM_Version::vm_name(),
                 (*vendor_version != '\0') ? " " : "", vendor_version,
                  jdk_debug_level,
                  VM_Version::vm_release(),
-                 VM_Version::vm_info_string(),
+                 vm_info,
                  TieredCompilation ? ", tiered" : "",
 #if INCLUDE_JVMCI
                  EnableJVMCI ? ", jvmci" : "",
@@ -526,6 +527,7 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                  GCConfig::hs_err_name(),
                  VM_Version::vm_platform_string()
                );
+               FREE_C_HEAP_ARRAY(char, vm_info);
 }
 
 // Returns true if at least one thread reported a fatal error and fatal error handling is in process.
