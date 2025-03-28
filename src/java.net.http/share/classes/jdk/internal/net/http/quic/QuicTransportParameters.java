@@ -1061,12 +1061,12 @@ public final class QuicTransportParameters {
                 throw new QuicTransportException(e.getMessage(),
                         null, 0, QuicTransportErrors.TRANSPORT_PARAMETER_ERROR);
             }
-            if (parameters.values.get(pid) != null) {
+            var oldValue = parameters.values.putIfAbsent(pid, value);
+            if (oldValue != null) {
                 throw new QuicTransportException(
                         "Duplicate transport parameter " + name,
                         null, 0, QuicTransportErrors.TRANSPORT_PARAMETER_ERROR);
             }
-            parameters.values.put(pid, value);
         }
         return parameters;
     }
