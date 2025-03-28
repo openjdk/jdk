@@ -238,7 +238,7 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
   jlong hi = bt == T_INT ? max_jint : max_jlong;
   jlong lo = bt == T_INT ? min_jint : min_jlong;
 
-  if(mask_type->is_con() && mask_type->get_con_as_long(bt) != -1L) {
+  if (mask_type->is_con() && mask_type->get_con_as_long(bt) != -1L) {
     jlong maskcon = mask_type->get_con_as_long(bt);
     int bitcount = population_count(static_cast<julong>(bt == T_INT ? maskcon & 0xFFFFFFFFL : maskcon));
     if (opc == Op_CompressBits) {
@@ -261,27 +261,37 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
   }
 
   if (!mask_type->is_con()) {
-    int mask_max_bw;
-    int max_bw = bt == T_INT ? 32 : 64;
-    // Case 1) Mask value range includes -1.
-    if ((mask_type->lo_as_long() < 0L && mask_type->hi_as_long() >= -1L)) {
-      mask_max_bw = max_bw;
-    // Case 2) Mask value range is less than -1.
-    } else if (mask_type->hi_as_long() < -1L) {
-      mask_max_bw = max_bw - 1;
-    } else {
-    // Case 3) Mask value range only includes +ve values.
-      assert(mask_type->lo_as_long() >= 0, "");
-      jlong clz = count_leading_zeros(mask_type->hi_as_long());
-      clz = bt == T_INT ? clz - 32 : clz;
-      mask_max_bw = max_bw - clz;
-    }
     if ( opc == Op_CompressBits) {
+      int mask_max_bw;
+      int max_bw = bt == T_INT ? 32 : 64;
+      // Case 1) Mask value range includes -1, this negates the possibility of
+      // strictly non-negative result value range.
+      if ((mask_type->lo_as_long() < 0L && mask_type->hi_as_long() >= -1L)) {
+        mask_max_bw = max_bw;
+      // Case 2) Mask value range is less than -1, this indicates presence of at least
+      // one zero bit in the mask value, there by constraining the result of compression to
+      // a +ve value range.
+      } else if (mask_type->hi_as_long() < -1L) {
+        mask_max_bw = max_bw - 1;
+      } else {
+      // Case 3) Mask value range only includes +ve values, this can again be
+      // used to ascertain known Zero bits of resultant value.
+        assert(mask_type->lo_as_long() >= 0, "");
+        jlong clz = count_leading_zeros(mask_type->hi_as_long());
+        clz = bt == T_INT ? clz - 32 : clz;
+        mask_max_bw = max_bw - clz;
+      }
+
       lo = mask_max_bw == max_bw ? lo : 0L;
       // Compress operation is inherently an unsigned operation and
       // result value range is primarily dependent on true count
-      // of participating mask value.
-      hi = mask_max_bw < max_bw ? (1L << mask_max_bw) - 1 : src_type->hi_as_long();
+      // of participating mask value. Thus bit compression can never
+      // result into a value greater than original value.
+      // For constant input we pessimistically set the upper bound
+      // of result to max_int to prevent incorrect constant value in case
+      // input equals lower bound of mask value range.
+      hi = src_type->hi_as_long() == lo ? hi : src_type->hi_as_long();
+      hi = mask_max_bw < max_bw ? (1L << mask_max_bw) - 1 : hi;
     } else {
       assert(opc == Op_ExpandBits, "");
       jlong max_mask = mask_type->hi_as_long();
