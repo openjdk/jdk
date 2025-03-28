@@ -105,17 +105,12 @@ public final class QuicTransportParameters {
 
     /**
      * An interface to model a transport parameter ID.
-     * A transport parameter ID maps to an integer index in RFC 9000, but
-     * uses a byte array key in TLS - where the byte array correspond to
-     * the encoding of the index as a variable-length integer.
      * A transport parameter ID has a {@linkplain #name() name} (which is
-     * not transmitted), an {@linkplain #idx() index} (as specified in RFC
-     * 9000), and a {@linkplain #key() key}, which is the variable-length
-     * encoding of the index.
-     * Standard parameters defined in RFC 9000 are modeled by enum values in
+     * not transmitted) and an {@linkplain #idx() identifier}.
+     * Standard parameters are modeled by enum values in
      * {@link ParameterId}.
      */
-    public interface TransportParameterId {
+    public sealed interface TransportParameterId {
         /**
          * {@return the transport parameter name}
          * This a human-readable string.
@@ -123,51 +118,25 @@ public final class QuicTransportParameters {
         String name();
 
         /**
-         * {@return the transport parameter key, used in the TLS parameters map}
-         */
-        byte[] key();
-
-        /**
-         * {@return true if the given {@code key} matches this transport
-         * parameter's {@linkplain #key() key}}
-         * @param key the key as a byte array
-         */
-        boolean hasKey(byte[] key);
-
-        /**
-         * {@return the transport parameter index as defined in RFC 9000,
-         * or {@code -1}}
-         * Can be -1 if this parameter is not defined in RFC 9000.
+         * {@return the transport parameter identifier}
          */
         int idx();
 
         /**
          * {@return the parameter id corresponding to the given index, if
-         * defined in RFC 9000, an empty optional otherwise}
-         * @param idx a parameter index
+         * defined, an empty optional otherwise}
+         * @param idx a parameter identifier
          */
         static Optional<ParameterId> valueOf(int idx) {
             if (idx < 0 || idx >= PARAMETERS_COUNT) return Optional.empty();
             return Optional.of(ParameterId.valueOf(idx));
         }
-
-        /**
-         * {@return the parameter id corresponding to the given key, if
-         * defined in RFC 9000, an empty optional otherwise}
-         * @param key a parameter key
-         */
-        static Optional<ParameterId> valueOf(byte[] key) {
-            return Stream.of(ParameterId.values())
-                    .filter(p -> p.hasKey(key))
-                    .findFirst();
-        }
     }
 
     /**
      * Standard Quic transport parameter names and ids.
-     * These are the transport parameters defined in RFC 9000.
-     * The id of a parameter indicates its position in the
-     * {@link #getValues()} array.
+     * These are the transport parameters defined in IANA
+     * "QUIC Transport Parameters" registry.
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9000#name-quic-transport-parameters-r">
      *     RFC 9000, Section 22.3</a>
      */
@@ -184,7 +153,7 @@ public final class QuicTransportParameters {
          * }</pre></blockquote>
          * @see <a href="https://www.rfc-editor.org/rfc/rfc9000#section-7.3">RFC 9000, Section 7.3</a>
          */
-        original_destination_connection_id(toBytes(0x00)),
+        original_destination_connection_id(0x00),
 
         /**
          * max_idle_timeout (0x01).
@@ -199,7 +168,7 @@ public final class QuicTransportParameters {
          * }</pre></blockquote>
          * @see <a href="https://www.rfc-editor.org/rfc/rfc9000#section-10.1">RFC 9000, Section 10.1</a>
          */
-        max_idle_timeout(toBytes(0x01)),
+        max_idle_timeout(0x01),
 
         /**
          * stateless_reset_token (0x02).
@@ -216,7 +185,7 @@ public final class QuicTransportParameters {
          * }</pre></blockquote>
          * @see <a href="https://www.rfc-editor.org/rfc/rfc9000#section-10.3">RFC 9000, Section 10.3</a>
          */
-        stateless_reset_token(toBytes(0x02)),
+        stateless_reset_token(0x02),
 
         /**
          * max_udp_payload_size (0x03).
@@ -240,7 +209,7 @@ public final class QuicTransportParameters {
          * }</pre></blockquote>
          * @see <a href="https://www.rfc-editor.org/rfc/rfc9000#datagram-size">RFC 9000, Section 14</a>
          */
-        max_udp_payload_size(toBytes(0x03)),
+        max_udp_payload_size(0x03),
 
         /**
          * initial_max_data (0x04).
@@ -255,7 +224,7 @@ public final class QuicTransportParameters {
          * }</pre></blockquote>
          * @see <a href="https://www.rfc-editor.org/rfc/rfc9000#section-19.9">RFC 9000, Section 19.9</a>
          */
-        initial_max_data(toBytes(0x04)),
+        initial_max_data(0x04),
 
         /**
          * initial_max_stream_data_bidi_local (0x05).
@@ -273,7 +242,7 @@ public final class QuicTransportParameters {
          *     significant two bits set to 0x01.
          * }</pre></blockquote>
          */
-        initial_max_stream_data_bidi_local(toBytes(0x05)),
+        initial_max_stream_data_bidi_local(0x05),
 
         /**
          * initial_max_stream_data_bidi_remote (0x06).
@@ -290,7 +259,7 @@ public final class QuicTransportParameters {
          *     significant two bits set to 0x00.
          * }</pre></blockquote>
          */
-        initial_max_stream_data_bidi_remote(toBytes(0x06)),
+        initial_max_stream_data_bidi_remote(0x06),
 
         /**
          * initial_max_stream_data_uni (0x07).
@@ -307,7 +276,7 @@ public final class QuicTransportParameters {
          *     two bits set to 0x02.
          * }</pre></blockquote>
          */
-        initial_max_stream_data_uni(toBytes(0x07)),
+        initial_max_stream_data_uni(0x07),
 
         /**
          * initial_max_streams_bidi (0x08).
@@ -325,7 +294,7 @@ public final class QuicTransportParameters {
          * }</pre></blockquote>
          * @see <a href="https://www.rfc-editor.org/rfc/rfc9000#section-19.11">RFC 9000, Section 19.11</a>
          */
-        initial_max_streams_bidi(toBytes(0x08)),
+        initial_max_streams_bidi(0x08),
 
         /**
          * initial_max_streams_uni (0x09).
@@ -342,7 +311,7 @@ public final class QuicTransportParameters {
          * }</pre></blockquote>
          * @see <a href="https://www.rfc-editor.org/rfc/rfc9000#section-19.11">RFC 9000, Section 19.11</a>
          */
-        initial_max_streams_uni(toBytes(0x09)),
+        initial_max_streams_uni(0x09),
 
         /**
          * ack_delay_exponent (0x0a).
@@ -357,7 +326,7 @@ public final class QuicTransportParameters {
          * }</pre></blockquote>
          * @see <a href="https://www.rfc-editor.org/rfc/rfc9000#section-19.3">RFC 9000, Section 19.3</a>
          */
-        ack_delay_exponent(toBytes(0x0a)),
+        ack_delay_exponent(0x0a),
 
         /**
          * max_ack_delay (0x0b).
@@ -373,7 +342,7 @@ public final class QuicTransportParameters {
          *     milliseconds is assumed. Values of 2^14 or greater are invalid.
          * }</pre></blockquote>
          */
-        max_ack_delay(toBytes(0x0b)),
+        max_ack_delay(0x0b),
 
         /**
          * disable_active_migration (0x0c).
@@ -390,7 +359,7 @@ public final class QuicTransportParameters {
          * }</pre></blockquote>
          * @see <a href="https://www.rfc-editor.org/rfc/rfc9000#section-9">RFC 9000, Section 9</a>
          */
-        disable_active_migration(toBytes(0x0c)),
+        disable_active_migration(0x0c),
 
         /**
          * preferred_address (0x0d).
@@ -443,7 +412,7 @@ public final class QuicTransportParameters {
          * @see <a href="https://www.rfc-editor.org/rfc/rfc9000#section-9.6">RFC 9000, Section 9.6</a>
          * @see <a href="https://www.rfc-editor.org/rfc/rfc9000#section-19.15">RFC 9000, Section 19.15</a>
          */
-        preferred_address(toBytes(0x0d)),
+        preferred_address(0x0d),
 
         /**
          * active_connection_id_limit (0x0e).
@@ -463,7 +432,7 @@ public final class QuicTransportParameters {
          *     received from its peer.
          * }</pre></blockquote>
          */
-        active_connection_id_limit(toBytes(0x0e)),
+        active_connection_id_limit(0x0e),
 
         /**
          * initial_source_connection_id (0x0f).
@@ -476,7 +445,7 @@ public final class QuicTransportParameters {
          * }</pre></blockquote>
          * @see <a href="https://www.rfc-editor.org/rfc/rfc9000#section-7.3">RFC 9000, Section 7.3</a>
          */
-        initial_source_connection_id(toBytes(0x0f)),
+        initial_source_connection_id(0x0f),
 
         /**
          * retry_source_connection_id (0x10).
@@ -489,7 +458,7 @@ public final class QuicTransportParameters {
          * }</pre></blockquote>
          * @see <a href="https://www.rfc-editor.org/rfc/rfc9000#section-7.3">RFC 9000, Section 7.3</a>
          */
-        retry_source_connection_id(toBytes(0x10)),
+        retry_source_connection_id(0x10),
 
         /**
          * version_information (0x11).
@@ -504,9 +473,9 @@ public final class QuicTransportParameters {
          *     such that this data is authenticated.
          * }</pre></blockquote>
          */
-        version_information(toBytes(0x11));
+        version_information(0x11);
 
-        /**
+        /*
          * Reserved Transport Parameters (31 * N + 27 for int values of N)
          * <p>
          * From <a href="https://www.rfc-editor.org/rfc/rfc9000#transport-parameter-definitions">
@@ -522,28 +491,13 @@ public final class QuicTransportParameters {
         // ignored if received (see
         // sun.security.ssl.QuicTransportParametersExtension).
 
-        private final byte[] key;
-
-        ParameterId(byte[] key) {
-            this.key = key;
+        ParameterId(int idx) {
+            assert idx == ordinal();
         }
 
         @Override
         public int idx() {
             return ordinal();
-        }
-
-        @Override
-        public byte[] key() {
-            return key.clone();
-        }
-
-        @Override
-        public boolean hasKey(byte[] key) {
-            if (key == null) {
-                return false;
-            }
-            return Arrays.mismatch(key, this.key) == -1;
         }
 
         @Override
@@ -556,24 +510,12 @@ public final class QuicTransportParameters {
                 throw new IllegalArgumentException("no such parameter index: " + idx);
             return values()[idx];
         }
-
-        private static ParameterId valueOf(byte[] key) {
-            Objects.requireNonNull(key);
-            Supplier<RuntimeException> thrower = () ->
-                    new IllegalArgumentException("no such parameter: "
-                            + HexFormat.of().formatHex(key));
-            return Stream.of(values())
-                    .filter(p -> p.hasKey(key))
-                    .findFirst()
-                    .orElseThrow(thrower);
-        }
-
     }
 
     public record VersionInformation(int chosenVersion, int[] availableVersions) { }
 
     /**
-     * The number of transport parameters defined in RFC 9000.
+     * The number of known transport parameters.
      * This is also the number of enum values defined by the
      * {@link ParameterId} enumeration.
      */
@@ -585,15 +527,13 @@ public final class QuicTransportParameters {
     // an empty optional is returned. The parameter id name is ignored.
     private static Optional<ParameterId> map(TransportParameterId id) {
         if (id instanceof ParameterId pid) return Optional.of(pid);
-        var key = id.key();
-        return TransportParameterId.valueOf(key)
-                .filter((pid) -> pid.idx() == id.idx());
+        return TransportParameterId.valueOf(id.idx());
     }
 
     // Maps a TransportParameterId to a ParameterId.
     // throws IllegalArgumentException if none match.
     private static ParameterId mapOrThrow(TransportParameterId id) {
-        var pid = ParameterId.valueOf(id.key());
+        var pid = ParameterId.valueOf(id.idx());
         assert pid != null; // valueOf would already have thrown IAE
         int idx = id.idx();
         if (pid.idx() != idx) {
@@ -625,29 +565,6 @@ public final class QuicTransportParameters {
      */
     public QuicTransportParameters() {
         values = new byte[PARAMETERS_COUNT][];
-    }
-
-    /**
-     * {@return {@code true} if the given transport parameter is supported,
-     * {@code false} otherwise
-     * @param id the parameter id
-     */
-    public boolean isSupported(TransportParameterId id) {
-        return map(id).isPresent();
-    }
-
-    /**
-     * {@return {@code true} if the a transport parameter with this key
-     * is supported, {@code false} otherwise.
-     *
-     * @apiNote
-     * This is equivalent to calling {@code
-     * TransportParameterId.valueOf(key).isPresent()}.
-     *
-     * @param id the parameter key
-     */
-    public boolean isSupported(byte[] key) {
-        return TransportParameterId.valueOf(key).isPresent();
     }
 
     /**
@@ -688,9 +605,7 @@ public final class QuicTransportParameters {
      * @param id the parameter id
      * @param value the new parameter value, or {@code null}.
      * @throws IllegalArgumentException if the given value is invalid for
-     *         the given parameter id, or if the given id does not correspond
-     *         to a {@linkplain #isSupported(TransportParameterId) supported
-     *         parameter}
+     *         the given parameter id
      */
     public void setParameter(TransportParameterId id, byte[] value) {
         ParameterId pid = checkParameterValue(id, value);
@@ -715,23 +630,6 @@ public final class QuicTransportParameters {
     }
 
     /**
-     * {@return  the quic transport parameters array keys}
-     * The returned array contains all {@link #PARAMETERS_COUNT} keys.
-     * A key at an index {@code idx} correspond to the
-     * {@linkplain TransportParameterId#valueOf(int) parameter whose id is {@code idx}}
-     * A {@code null} value indicates that the corresponding parameter is
-     * absent.
-     */
-    public byte[][] getKeys() {
-        byte[][] keys = new byte[PARAMETERS_COUNT][];
-        for (int i=0; i<PARAMETERS_COUNT; i++) {
-            var value = values[i];
-            keys[i] = value == null ? null : ParameterId.valueOf(i).key();
-        }
-        return keys;
-    }
-
-    /**
      * Returns the transport parameters as a map, where the keys are
      * the transport parameter keys and the values are the corresponding
      * transport parameter values.
@@ -740,7 +638,7 @@ public final class QuicTransportParameters {
     public Map<byte[], byte[]> toMap() {
         return Stream.of(ParameterId.values())
                 .filter(this::isPresent)
-                .collect(Collectors.toMap(ParameterId::key, this::getParameter));
+                .collect(Collectors.toMap(p->toBytes(p.idx()), this::getParameter));
     }
 
     /**
@@ -762,7 +660,9 @@ public final class QuicTransportParameters {
         for (var entry : values.entrySet()) {
             var key = entry.getKey();
             var value = entry.getValue();
-            var tid = TransportParameterId.valueOf(key).orElse(null);
+            var idx = VariableLengthEncoder.decode(ByteBuffer.wrap(key));
+            if (idx != (int)idx) continue;
+            var tid = TransportParameterId.valueOf((int)idx).orElse(null);
             if (tid == null) continue; // ignore
             setParameter(tid, value);
         }
@@ -851,9 +751,7 @@ public final class QuicTransportParameters {
      * @param value the new value of the parameter, or a negative value
      *
      * @throws IllegalArgumentException if the value of the given parameter is
-     * not an int, or if the provided value is out of range, or if the given
-     * id does not correspond to a {@linkplain #isSupported(TransportParameterId)
-     * supported parameter}
+     * not an int, or if the provided value is out of range
      */
     public void setIntParameter(TransportParameterId id, long value) {
         ParameterId pid = mapOrThrow(id);
@@ -885,9 +783,7 @@ public final class QuicTransportParameters {
      * @param id the parameter id
      *
      * @throws IllegalArgumentException if the value of the given parameter
-     * is not a boolean, or if the given id does not correspond
-     * to a {@linkplain #isSupported(TransportParameterId) supported
-     * parameter}
+     * is not a boolean
      */
     public boolean getBooleanParameter(TransportParameterId id) {
         ParameterId pid = mapOrThrow(id);
@@ -907,9 +803,7 @@ public final class QuicTransportParameters {
      * @param id the parameter id
      * @param value the new value of the parameter
      * @throws IllegalArgumentException if the value of the given parameter is
-     * not a boolean, or if the given id does not correspond
-     * to a {@linkplain #isSupported(TransportParameterId) supported
-     * parameter}
+     * not a boolean
      */
     public void setBooleanParameter(TransportParameterId id, boolean value) {
         ParameterId pid = mapOrThrow(id);
@@ -926,9 +820,7 @@ public final class QuicTransportParameters {
      * @param id the parameter id
      *
      * @throws IllegalArgumentException if the value of the given parameter
-     * is not a version information, or if the given id does not correspond
-     * to a {@linkplain #isSupported(TransportParameterId) supported
-     * parameter}
+     * is not a version information
      * @throws QuicTransportException if the parameter value has incorrect length,
      *      or if any version is equal to zero
      */
@@ -973,9 +865,7 @@ public final class QuicTransportParameters {
      * @param id the parameter id
      * @param value the new value of the parameter
      * @throws IllegalArgumentException if the value of the given parameter is
-     * not a version information, or if the given id does not correspond
-     * to a {@linkplain #isSupported(TransportParameterId) supported
-     * parameter}
+     * not a version information
      */
     public void setVersionInformationParameter(TransportParameterId id, VersionInformation value) {
         ParameterId pid = mapOrThrow(id);
@@ -1019,9 +909,7 @@ public final class QuicTransportParameters {
      * @param statelessToken  the stateless token
      * @throws IllegalArgumentException if any of the given parameters has an
      *    illegal value, or if the given parameter value is not of the
-     *    {@link ParameterId#preferred_address} format, or if the given id
-     *    does not correspond to a {@linkplain #isSupported(TransportParameterId)
-     *    supported parameter}
+     *    {@link ParameterId#preferred_address} format
      * @see ParameterId#preferred_address
      */
     public void setPreferredAddressParameter(TransportParameterId id,
@@ -1125,12 +1013,7 @@ public final class QuicTransportParameters {
             var value = values[i];
             if (value == null) continue;
 
-            var key = ParameterId.valueOf(i).key();
-            // since the highest index is 0x10 then the two asserts below
-            // should hold:
-            assert key != null && key.length == 1 && (key[0] & 0xFF) == i;
-            assert VariableLengthEncoder.decode(ByteBuffer.wrap(key)) == i;
-            buffer.put(key);
+            VariableLengthEncoder.encode(buffer, i);
             VariableLengthEncoder.encode(buffer, value.length);
             buffer.put(value);
         }
@@ -1197,25 +1080,8 @@ public final class QuicTransportParameters {
     }
 
     /**
-     * Creates a {@code QuicTransportParameters} array from the given map.
-     * Parameters which are not {@linkplain #isSupported(TransportParameterId)
-     * supported} are ignored.
-     *
-     * @param map the parameters map
-     *
-     * @return a new instance of {@code QuicTransportParameters} initialized
-     * from the given map.
-     */
-    public static QuicTransportParameters valueOf(Map<byte[], byte[]> map) {
-        QuicTransportParameters parameters = new QuicTransportParameters();
-        parameters.setAll(map);
-        return parameters;
-    }
-
-    /**
      * Decodes the quic transport parameters from the given buffer.
-     * Parameters which are not {@linkplain #isSupported(TransportParameterId)
-     * supported} are silently discarded.
+     * Parameters which are not supported are silently discarded.
      *
      * @param buffer a byte buffer containing the transport parameters
      *
