@@ -56,7 +56,7 @@ class SimpleRuntimeFrame {
 #define __ masm->
 
 //------------------------------generate_uncommon_trap_blob--------------------
-void OptoRuntime::generate_uncommon_trap_blob() {
+UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
@@ -226,7 +226,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
   // Make sure all code is generated
   masm->flush();
 
-  _uncommon_trap_blob =  UncommonTrapBlob::create(&buffer, oop_maps,
+  return UncommonTrapBlob::create(&buffer, oop_maps,
                                                  SimpleRuntimeFrame::framesize >> 1);
 }
 
@@ -256,7 +256,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
 //       Registers rax, rdx, rcx, rsi, rdi, r8-r11 are not callee saved.
 //
 
-void OptoRuntime::generate_exception_blob() {
+ExceptionBlob* OptoRuntime::generate_exception_blob() {
   assert(!OptoRuntime::is_callee_saved_register(RDX_num), "");
   assert(!OptoRuntime::is_callee_saved_register(RAX_num), "");
   assert(!OptoRuntime::is_callee_saved_register(RCX_num), "");
@@ -368,6 +368,6 @@ void OptoRuntime::generate_exception_blob() {
 
   AOTCodeCache::store_exception_blob(&buffer, pc_offset);
   // Set exception blob
-  _exception_blob =  ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
+  return ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
 }
 #endif // COMPILER2

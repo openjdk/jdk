@@ -68,9 +68,11 @@ class CDSConfig : public AllStatic {
 public:
   // Used by jdk.internal.misc.CDS.getCDSConfigStatus();
   static const int IS_DUMPING_ARCHIVE              = 1 << 0;
-  static const int IS_DUMPING_STATIC_ARCHIVE       = 1 << 1;
-  static const int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 2;
-  static const int IS_USING_ARCHIVE                = 1 << 3;
+  static const int IS_DUMPING_METHOD_HANDLES       = 1 << 1;
+  static const int IS_DUMPING_STATIC_ARCHIVE       = 1 << 2;
+  static const int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 3;
+  static const int IS_USING_ARCHIVE                = 1 << 4;
+
   static int get_status() NOT_CDS_RETURN_(0);
 
   // Initialization and command-line checking
@@ -128,6 +130,9 @@ public:
 
   // Misc CDS features
   static bool allow_only_single_java_thread()                NOT_CDS_RETURN_(false);
+
+  // This is *Legacy* optimization for lambdas before JEP 483. May be removed in the future.
+  static bool is_dumping_lambdas_in_legacy_mode()            NOT_CDS_RETURN_(false);
 
   // optimized_module_handling -- can we skip some expensive operations related to modules?
   static bool is_using_optimized_module_handling()           { return CDS_ONLY(_is_using_optimized_module_handling) NOT_CDS(false); }
