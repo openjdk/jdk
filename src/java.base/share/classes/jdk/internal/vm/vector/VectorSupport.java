@@ -729,6 +729,23 @@ public class VectorSupport {
 
     /* ============================================================================ */
 
+    public interface VectorSliceOp<V extends Vector<E>, E> {
+        V apply(int origin, V v1, V v2);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <V extends Vector<E>,
+     E>
+    V sliceOp(int origin, Class<?> vClass, Class<E> eClass, int length, V v1, V v2,
+              VectorSliceOp<V, E> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(origin, v1, v2);
+    }
+
+
+    /* ============================================================================ */
+
     // query the JVM's supported vector sizes and types
     public static native int getMaxLaneCount(Class<?> etype);
 
