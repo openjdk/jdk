@@ -129,7 +129,7 @@ public class JavaBaseTest {
             case "current":
                 options.add("--release");
                 options.add(CURRENT_VERSION);
-                expectOK = false;
+                expectOK = true;
                 break;
             case "current-preview":
                 options.add("--enable-preview");
@@ -166,7 +166,7 @@ public class JavaBaseTest {
             for (String mod : mods) {
                 String key = mod.equals("static")
                     ? "compiler.err.mod.not.allowed.here: " + mod
-                    : "compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.java.base.transitive)";
+                    : "compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.java.base.transitive), $(VERSION), 25".replace("$(VERSION)", target);
                 String message = "module-info.java:1:12: " + key;
                 if (log.contains(message)) {
                     foundErrorMessage = true;

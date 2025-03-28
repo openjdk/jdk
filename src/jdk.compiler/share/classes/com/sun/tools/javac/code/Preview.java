@@ -231,8 +231,6 @@ public class Preview {
             case IMPLICIT_CLASSES -> true;
             case FLEXIBLE_CONSTRUCTORS -> true;
             case PRIMITIVE_PATTERNS -> true;
-            case MODULE_IMPORTS -> true;
-            case JAVA_BASE_TRANSITIVE -> true;
             //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).
             //When real preview features will be added, this method can be implemented to return 'true'
             //for those selected features, and 'false' for all the others.
