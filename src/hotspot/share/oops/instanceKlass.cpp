@@ -97,8 +97,8 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeStackPrinter.hpp"
-#include "utilities/pair.hpp"
 #include "utilities/stringUtils.hpp"
+#include "utilities/tuple.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
@@ -1785,7 +1785,7 @@ bool InstanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor*
     Symbol* f_name = fs.name();
     Symbol* f_sig  = fs.signature();
     if (f_name == name && f_sig == sig) {
-      fd->reinitialize(const_cast<InstanceKlass*>(this), fs.index());
+      fd->reinitialize(const_cast<InstanceKlass*>(this), fs.index(), fs.to_FieldInfo());
       return true;
     }
   }
@@ -1854,7 +1854,7 @@ Klass* InstanceKlass::find_field(Symbol* name, Symbol* sig, bool is_static, fiel
 bool InstanceKlass::find_local_field_from_offset(int offset, bool is_static, fieldDescriptor* fd) const {
   for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
     if (fs.offset() == offset) {
-      fd->reinitialize(const_cast<InstanceKlass*>(this), fs.index());
+      fd->reinitialize(const_cast<InstanceKlass*>(this), fs.index(), fs.to_FieldInfo());
       if (fd->is_static() == is_static) return true;
     }
   }
@@ -1915,10 +1915,8 @@ void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
   if (super != nullptr) {
     super->do_nonstatic_fields(cl);
   }
-  fieldDescriptor fd;
-  int length = java_fields_count();
-  for (int i = 0; i < length; i += 1) {
-    fd.reinitialize(this, i);
+  for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
+    fieldDescriptor& fd = fs.field_descriptor();
     if (!fd.is_static()) {
       cl->do_field(&fd);
     }
@@ -1926,8 +1924,8 @@ void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
 }
 
 // first in Pair is offset, second is index.
-static int compare_fields_by_offset(Pair<int,int>* a, Pair<int,int>* b) {
-  return a->first - b->first;
+static int compare_fields_by_offset(Tuple<int, int, FieldInfo>* a, Tuple<int, int, FieldInfo>* b) {
+  return a->template get<0>() - b->template get<0>();
 }
 
 void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
@@ -1938,12 +1936,12 @@ void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
   ResourceMark rm;
   fieldDescriptor fd;
   // In DebugInfo nonstatic fields are sorted by offset.
-  GrowableArray<Pair<int,int> > fields_sorted;
+  GrowableArray<Tuple<int, int, FieldInfo> > fields_sorted;
   int i = 0;
   for (AllFieldStream fs(this); !fs.done(); fs.next()) {
     if (!fs.access_flags().is_static()) {
       fd = fs.field_descriptor();
-      Pair<int,int> f(fs.offset(), fs.index());
+      Tuple<int, int, FieldInfo> f(fs.offset(), fs.index(), fs.to_FieldInfo());
       fields_sorted.push(f);
       i++;
     }
@@ -1953,7 +1951,7 @@ void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
     assert(length == fields_sorted.length(), "duh");
     fields_sorted.sort(compare_fields_by_offset);
     for (int i = 0; i < length; i++) {
-      fd.reinitialize(this, fields_sorted.at(i).second);
+      fd.reinitialize(this, fields_sorted.at(i).template get<1>(), fields_sorted.at(i).template get<2>());
       assert(!fd.is_static() && fd.offset() == fields_sorted.at(i).first, "only nonstatic fields");
       cl->do_field(&fd);
     }
