@@ -301,24 +301,13 @@ public final class QuicClient implements QuicInstance, AutoCloseable {
     }
 
     @Override
-    public QuicConnectionIdFactory idFactory() {
-        return idFactory;
+    public QuicEndpoint getEndpoint() throws IOException {
+        return chooseEndpoint();
     }
 
-    /**
-     * Registers the given connection with a {@link  QuicEndpoint}
-     * @return the QuicEndpoint for the given connection.
-     * @throws IOException if an error occurs when setting up the endpoint
-     *     or linking the connection with the endpoint.
-     * @throws IllegalStateException if the client is closed.
-     */
-    public QuicEndpoint registerWithEndpoint(final QuicConnection connection) throws IOException {
-        assert connection instanceof QuicConnectionImpl : "unexpected connection type: "
-                + connection.getClass();
-        final QuicEndpoint endpoint = chooseEndpoint();
-        // register the connection with the endpoint
-        endpoint.registerNewConnection((QuicConnectionImpl) connection);
-        return endpoint;
+    @Override
+    public QuicConnectionIdFactory idFactory() {
+        return idFactory;
     }
 
     private QuicEndpoint chooseEndpoint() throws IOException {

@@ -268,7 +268,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     private final PeerConnIdManager peerConnIdManager;
     private final LocalConnIdManager localConnIdManager;
     private volatile QuicConnectionId incomingInitialPacketSourceId;
-    protected volatile QuicEndpoint endpoint;
+    protected final QuicEndpoint endpoint;
     private volatile QuicTransportParameters localTransportParameters;
     private volatile QuicTransportParameters peerTransportParameters;
     private volatile byte[] initialToken;
@@ -319,6 +319,11 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                                  final SSLParameters sslParameters,
                                  String logTag) {
         this.quicInstance = Objects.requireNonNull(quicInstance, "quicInstance");
+        try {
+            this.endpoint = quicInstance.getEndpoint();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         this.peerAddress = peerAddress;
         this.maxConnectionMTU = peerAddress.getAddress() instanceof Inet6Address
                 ? MAX_IPV6_MTU
@@ -2863,7 +2868,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         try {
             // register the connection with an endpoint
             assert this.quicInstance instanceof QuicClient : "Not a QuicClient";
-            this.endpoint = ((QuicClient) this.quicInstance).registerWithEndpoint(this);
+            endpoint.registerNewConnection(this);
             cf = MinimalFuture.completedFuture(null);
         } catch (Throwable t) {
             cf = MinimalFuture.failedFuture(t);

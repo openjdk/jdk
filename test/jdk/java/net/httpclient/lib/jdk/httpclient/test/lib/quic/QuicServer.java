@@ -467,6 +467,7 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
      *                               or linking the transport with the endpoint.
      * @throws IllegalStateException if the server is closed.
      */
+    @Override
     public QuicEndpoint getEndpoint() throws IOException {
         var endpoint = this.endpoint;
         if (endpoint != null) return endpoint;

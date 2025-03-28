@@ -124,11 +124,6 @@ public final class QuicServerConnection extends QuicConnectionImpl {
         this.clientSentDestConnId = clientSentDestConnId;
         this.retryData = retryData;
         this.originalServerConnId = retryData == null ? clientSentDestConnId : retryData.originalServerConnId();
-        try {
-            this.endpoint = server.getEndpoint();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
         handshakeFlow().handshakeCF().thenAccept(this::onHandshakeCompletion);
         assert quicVersion == quicVersion() : "unexpected quic version on" +
                 " server connection, expected " + quicVersion + " but found " + quicVersion();

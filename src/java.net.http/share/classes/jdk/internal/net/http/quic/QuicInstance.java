@@ -24,6 +24,7 @@
  */
 package jdk.internal.net.http.quic;
 
+import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.HexFormat;
@@ -80,6 +81,12 @@ public interface QuicInstance {
      * @return the executor used by this QuicClient.
      */
     Executor executor();
+
+    /**
+     * {@return  an endpoint to associate with a connection}
+     * @throws IOException
+     */
+    QuicEndpoint getEndpoint() throws IOException;
 
     /**
      * This method is called when a quic packet that couldn't be attributed
