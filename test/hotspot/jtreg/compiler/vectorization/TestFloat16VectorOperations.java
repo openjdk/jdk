@@ -26,7 +26,6 @@
 * @test
 * @bug 8346236
 * @summary Auto-vectorization support for various Float16 operations
-* @requires vm.compiler2.enabled
 * @modules jdk.incubator.vector
 * @library /test/lib /
 * @compile TestFloat16VectorOperations.java
@@ -51,7 +50,7 @@ public class TestFloat16VectorOperations {
     private static final int LEN = 2048;
 
     public static void main(String args[]) {
-        TestFramework.runWithFlags("-XX:-TieredCompilation", "-Xbatch","--add-modules=jdk.incubator.vector");
+        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
     }
 
     public static boolean assertResults(short expected, short actual) {
