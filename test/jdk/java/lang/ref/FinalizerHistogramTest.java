@@ -23,7 +23,10 @@
 
 import jdk.test.lib.util.ForceGC;
 
-import java.lang.ref.PhantomReference;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -45,6 +48,8 @@ public class FinalizerHistogramTest {
     static final AtomicInteger trappedCount = new AtomicInteger(0);
     static final int OBJECTS_COUNT = 1000;
 
+    static RefQForTwo refQForTwo;
+
     static class MyObject {
         public MyObject() {
             // Make sure object allocation/deallocation is not optimized out
@@ -61,18 +66,22 @@ public class FinalizerHistogramTest {
     public static void main(String[] argvs) {
         try {
             lock.lock();
-            final PhantomReference<MyObject> ref1 = new PhantomReference<>(new MyObject(), null);
-            final PhantomReference<MyObject> ref2 = new PhantomReference<>(new MyObject(), null);
+            refQForTwo = new RefQForTwo(new MyObject(), new MyObject());
             for(int i = 2; i < OBJECTS_COUNT; ++i) {
                 new MyObject();
             }
             System.out.println("Objects intialized: " + initializedCount.get());
             // GC and wait for at least 2 MyObjects to be ready for finalization,
-            // and one MyObject to be stuck in finalize().
-            ForceGC.wait(() -> ref1.refersTo(null) &&
-                               ref2.refersTo(null) &&
-                               trappedCount.intValue() > 0
-            );
+            // and one MyObject to be trapped in finalize().
+            boolean forceGCResult = ForceGC.waitFor(() -> refQForTwo.bothRefsCleared() &&
+                                                          trappedCount.intValue() > 0,
+                    Duration.ofSeconds(60).toMillis());
+            if (!forceGCResult) {
+                System.out.println("*** ForceGC condition not met! ***");
+            }
+            System.out.println("ref1Cleared: " + refQForTwo.ref1Cleared);
+            System.out.println("ref2Cleared: " + refQForTwo.ref2Cleared);
+            System.out.println("trappedCount.intValue(): " + trappedCount.intValue());
 
             Class<?> klass = Class.forName("java.lang.ref.FinalizerHistogram");
 
@@ -111,5 +120,38 @@ public class FinalizerHistogramTest {
         } finally {
             lock.unlock();
         }
+    }
+
+    private static class RefQForTwo implements Runnable {
+        final ReferenceQueue queue;
+        final WeakReference ref1;
+        final WeakReference ref2;
+        volatile boolean ref1Cleared = false;
+        volatile boolean ref2Cleared = false;
+        Thread thread;
+
+        private RefQForTwo(Object obj1, Object obj2) {
+            queue = new ReferenceQueue();
+            ref1 = new WeakReference(obj1, queue);
+            ref2 = new WeakReference(obj2, queue);
+
+            thread = new Thread(this, "RefQForTwo thread");
+            thread.start();
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (!bothRefsCleared()) {
+                    Reference ref = queue.remove();
+                    if (ref == ref1) { ref1Cleared = true; }
+                    else if (ref == ref2) { ref2Cleared = true; }
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public boolean bothRefsCleared() { return ref1Cleared && ref2Cleared; }
     }
 }
