@@ -812,7 +812,7 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
   }
 
   // Step 5: Assertion Predicates initialization
-  if (counted_loop && UseLoopPredicate) {
+  if (counted_loop) {
     initialize_assertion_predicates_for_peeled_loop(new_head->as_CountedLoop(), head->as_CountedLoop(),
                                                     first_node_index_in_post_loop_body, old_new);
  }
@@ -1450,11 +1450,9 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   DEBUG_ONLY(const uint last_node_index_from_backedge_goo = Compile::current()->unique() - 1);
 
   DEBUG_ONLY(ensure_zero_trip_guard_proj(outer_main_head->in(LoopNode::EntryControl), true);)
-  if (UseLoopPredicate) {
-    initialize_assertion_predicates_for_main_loop(pre_head, main_head, first_node_index_in_pre_loop_body,
-                                                  last_node_index_in_pre_loop_body,
-                                                  DEBUG_ONLY(last_node_index_from_backedge_goo COMMA) old_new);
-  }
+  initialize_assertion_predicates_for_main_loop(pre_head, main_head, first_node_index_in_pre_loop_body,
+                                                last_node_index_in_pre_loop_body,
+                                                DEBUG_ONLY(last_node_index_from_backedge_goo COMMA) old_new);
 
   // Step B4: Shorten the pre-loop to run only 1 iteration (for now).
   // RCE and alignment may change this later.
@@ -1683,9 +1681,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   }
 
   DEBUG_ONLY(ensure_zero_trip_guard_proj(post_head->in(LoopNode::EntryControl), false);)
-  if (UseLoopPredicate) {
-    initialize_assertion_predicates_for_post_loop(main_head, post_head, first_node_index_in_cloned_loop_body);
-  }
+  initialize_assertion_predicates_for_post_loop(main_head, post_head, first_node_index_in_cloned_loop_body);
   return new_main_exit;
 }
 

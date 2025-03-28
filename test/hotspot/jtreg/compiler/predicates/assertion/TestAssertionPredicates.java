@@ -167,7 +167,18 @@
  */
 
 /*
- * @test id=NoLoopPredication
+ * @test id=NoLoopPredicationXcomp
+ * @bug 8288981 8350577
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -Xcomp -XX:-UseLoopPredicate
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
+ *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
+ *                   compiler.predicates.assertion.TestAssertionPredicates NoLoopPredication
+ */
+
+/*
+ * @test id=NoLoopPredicationXbatch
  * @bug 8288981 8350579 8350577
  * @requires vm.compiler2.enabled
  * @run main/othervm -Xbatch -XX:-UseLoopPredicate
