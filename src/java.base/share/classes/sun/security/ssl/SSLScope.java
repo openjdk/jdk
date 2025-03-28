@@ -36,7 +36,7 @@ public enum SSLScope {
     // Certificate signature scope as in signature_algorithms_cert extension.
     CERTIFICATE_SIGNATURE("CertificateSignature");
 
-    final String name;
+    private final String name;
 
     SSLScope(String name) {
         this.name = name;

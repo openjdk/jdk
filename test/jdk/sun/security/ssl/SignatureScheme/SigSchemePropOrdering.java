@@ -54,6 +54,10 @@ public class SigSchemePropOrdering extends AbstractCheckSignatureSchemes {
         new SigSchemePropOrdering().run();
     }
 
+    protected String getProtocol() {
+        return "TLSv1.2";
+    }
+
     private void run() throws Exception {
         // Start the handshake.  Check the ClientHello's signature_algorithms
         // extension and make sure the ordering matches what we specified

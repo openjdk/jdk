@@ -744,7 +744,7 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #         usage UsageType { UsageType }
 #
 #     UsageType:
-#         ([HandshakeSignature] | [CertificateSignature])
+#         HandshakeSignature | CertificateSignature
 #
 #     HandshakeSignature restricts the use of the algorithm in TLS handshake
 #     signatures. CertificateSignature restricts the use of the algorithm in

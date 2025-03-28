@@ -47,6 +47,8 @@ public class DisableSignatureSchemePerScopeTLS12 extends
     protected static final String CERTIFICATE_DISABLED_SIG = "ecdsa_secp384r1_sha384";
 
     // jdk.tls.disabledAlgorithms value
+    // We differ from "HandshakeSignature" and "CertificateSignature" specified
+    // in java.security to check case-insensitive matching.
     protected static final String DISABLED_CONSTRAINTS =
             HANDSHAKE_DISABLED_SIG + " usage HandShakesignature, "
             + CERTIFICATE_DISABLED_SIG + " usage certificateSignature";
@@ -59,6 +61,10 @@ public class DisableSignatureSchemePerScopeTLS12 extends
         Security.setProperty(
                 "jdk.tls.disabledAlgorithms", DISABLED_CONSTRAINTS);
         new DisableSignatureSchemePerScopeTLS12().run();
+    }
+
+    protected String getProtocol() {
+        return "TLSv1.2";
     }
 
     // Run things in TLS handshake order.

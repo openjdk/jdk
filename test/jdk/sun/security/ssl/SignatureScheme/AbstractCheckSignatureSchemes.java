@@ -74,9 +74,8 @@ public abstract class AbstractCheckSignatureSchemes extends SSLEngineTemplate {
         super();
     }
 
-    protected String getProtocol() {
-        return "TLSv1.2";
-    }
+    // Returns the protocol for test to use.
+    abstract String getProtocol();
 
     protected boolean isDtls() {
         return getProtocol().startsWith("DTLS");
@@ -107,70 +106,10 @@ public abstract class AbstractCheckSignatureSchemes extends SSLEngineTemplate {
         return new ContextParameters(getProtocol(), "PKIX", "NewSunX509");
     }
 
-    /**
-     * Given a TLS record containing one or more handshake messages, return
-     * the specific handshake message as a ByteBuffer (a slice of the record)
-     *
-     * @param tlsRecord A ByteBuffer containing a TLS record.  It is
-     *                  assumed that the position of the ByteBuffer is on the
-     *                  first byte of the TLS record header.
-     * @param hsMsgId   The message identifier for the handshake message
-     *                  being sought.
-     * @return          a ByteBuffer containing the TLS handshake message.
-     *                  The position of the returned ByteBuffer will be on the
-     *                  first byte of the TLS handshake message data,
-     *                  immediately following the handshake header.
-     *                  If the message is not found, null will be returned.
-     * @throws SSLException if the incoming ByteBuffer does not contain
-     *                      a well-formed TLS message.
-     */
-    protected ByteBuffer extractHandshakeMsg(ByteBuffer tlsRecord,
-            int hsMsgId) throws SSLException {
-        Objects.requireNonNull(tlsRecord);
-        tlsRecord.mark();
-
-        // Process the TLS record header
-        int type = Byte.toUnsignedInt(tlsRecord.get());
-        int ver_major = Byte.toUnsignedInt(tlsRecord.get());
-        int ver_minor = Byte.toUnsignedInt(tlsRecord.get());
-        // Skip DTLS-specific bytes
-        if (isDtls()) {
-            tlsRecord.position(tlsRecord.position() + 8);
-        }
-        int recLen = Short.toUnsignedInt(tlsRecord.getShort());
-
-        if (recLen > tlsRecord.remaining()) {
-            throw new SSLException("Incomplete record in buffer: " +
-                    "Record length = " + recLen + ", Remaining = " +
-                    tlsRecord.remaining());
-        }
-
-        while (tlsRecord.hasRemaining()) {
-            // Grab the handshake message header.
-            int msgHdr = tlsRecord.getInt();
-            int msgType = (msgHdr >> 24) & 0x000000FF;
-            int msgLen = msgHdr & 0x00FFFFFF;
-            // Skip DTLS-specific bytes
-            if (isDtls()) {
-                tlsRecord.position(tlsRecord.position() + 8);
-            }
-
-            if (msgType == hsMsgId) {
-                // Slice the buffer such that it contains the entire
-                // handshake message (less the handshake header).
-                ByteBuffer buf = tlsRecord.slice(tlsRecord.position(), msgLen);
-                tlsRecord.reset();
-                return buf;
-            } else {
-                // Skip to the next handshake message, if there is one
-                tlsRecord.position(tlsRecord.position() + msgLen);
-            }
-        }
-
-        tlsRecord.reset();
-        return null;
+    protected ByteBuffer extractHandshakeMsg(ByteBuffer tlsRecord, int hsMsgId)
+            throws SSLException {
+        return extractHandshakeMsg(tlsRecord, hsMsgId, isDtls());
     }
-
 
     /**
      * Parses the ClientHello message and extracts from it a list of
