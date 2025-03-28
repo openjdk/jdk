@@ -42,8 +42,8 @@ import jdk.test.lib.Utils;
  * @key randomness
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @requires vm.cpu.features ~= ".*asimd.*"
- * @summary AArch64: [vector] Make all bits set vector sharable for match rules
+ * @requires (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*asimd.*") | (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*zvbb.*")
+ * @summary [vector] Make all bits set vector sharable for match rules
  * @modules jdk.incubator.vector
  *
  * @run driver compiler.vectorapi.AllBitsSetVectorMatchRuleTest
@@ -109,6 +109,20 @@ public class AllBitsSetVectorMatchRuleTest {
         // Verify results
         for (int i = 0; i < L_SPECIES.length(); i++) {
             Asserts.assertEquals((ma[i] & (!mb[i])) & (!mc[i]), mr[i]);
+        }
+    }
+
+    @Test
+    @Warmup(10000)
+    @IR(counts = { IRNode.VAND_NOT_REGI, " >= 1" }, applyIfCPUFeatureOr = {"zvbb", "true"})
+    public static void testAllBitsSetVectorRegI() {
+        IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
+        int bs = ib[0];
+        av.not().lanewise(VectorOperators.AND_NOT, bs).intoArray(ir, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            Asserts.assertEquals((~ia[i]) & (~bs), ir[i]);
         }
     }
 
