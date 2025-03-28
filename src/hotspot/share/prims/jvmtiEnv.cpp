@@ -1074,18 +1074,10 @@ JvmtiEnv::SuspendAllVirtualThreads(jint except_count, const jthread* except_list
 // thread - NOT protected by ThreadsListHandle and NOT pre-checked
 jvmtiError
 JvmtiEnv::ResumeThread(jthread thread) {
-  JvmtiVTMSTransitionDisabler disabler(true);
-  JavaThread* current = JavaThread::current();
-  ThreadsListHandle tlh(current);
-
-  JavaThread* java_thread = nullptr;
-  oop thread_oop = nullptr;
-  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, current, &java_thread, &thread_oop);
-  if (err != JVMTI_ERROR_NONE) {
-    return err;
-  }
-  err = resume_thread(thread_oop, java_thread, /* single_resume */ true);
-  return err;
+  // resume thread with handshake
+  ResumeThreadClosure op(/* single_resume */ true);
+  JvmtiHandshake::execute(&op, thread);
+  return op.result();
 } /* end ResumeThread */
 
 
@@ -1094,27 +1086,13 @@ JvmtiEnv::ResumeThread(jthread thread) {
 // results - pre-checked for null
 jvmtiError
 JvmtiEnv::ResumeThreadList(jint request_count, const jthread* request_list, jvmtiError* results) {
-  oop thread_oop = nullptr;
-  JavaThread* java_thread = nullptr;
-  JvmtiVTMSTransitionDisabler disabler(true);
-  ThreadsListHandle tlh;
-
   for (int i = 0; i < request_count; i++) {
     jthread thread = request_list[i];
-    jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), thread, &java_thread, &thread_oop);
+    oop thread_oop = JNIHandles::resolve_external_guard(thread);
 
-    if (thread_oop != nullptr &&
-        java_lang_VirtualThread::is_instance(thread_oop) &&
-        !JvmtiEnvBase::is_vthread_alive(thread_oop)) {
-      err = JVMTI_ERROR_THREAD_NOT_ALIVE;
-    }
-    if (err != JVMTI_ERROR_NONE) {
-      if (thread_oop == nullptr || err != JVMTI_ERROR_INVALID_THREAD) {
-        results[i] = err;
-        continue;
-      }
-    }
-    results[i] = resume_thread(thread_oop, java_thread, /* single_resume */ true);
+    ResumeThreadClosure op(/* single_resume */ true);
+    JvmtiHandshake::execute(&op, thread);
+    results[i] = op.result();
   }
   // per-thread resume results returned via results parameter
   return JVMTI_ERROR_NONE;
@@ -1130,8 +1108,11 @@ JvmtiEnv::ResumeAllVirtualThreads(jint except_count, const jthread* except_list)
   if (err != JVMTI_ERROR_NONE) {
     return err;
   }
+  JavaThread* current = JavaThread::current();
+  HandleMark hm(current);
   ResourceMark rm;
   JvmtiVTMSTransitionDisabler disabler(true);
+  ThreadsListHandle tlh(current);
   GrowableArray<jthread>* elist = new GrowableArray<jthread>(except_count);
 
   // Collect threads from except_list for which suspended status must be restored (only for VirtualThread case)
@@ -1156,7 +1137,8 @@ JvmtiEnv::ResumeAllVirtualThreads(jint except_count, const jthread* except_list)
           (vt_oop->is_a(vmClasses::BoundVirtualThread_klass()) && java_thread->is_suspended())) &&
         !is_in_thread_list(except_count, except_list, vt_oop)
     ) {
-      resume_thread(vt_oop, java_thread, /* single_resume */ false);
+      ResumeThreadClosure op(/* single_resume */ false);
+      JvmtiHandshake::execute(&op, &tlh, java_thread, Handle(current, vt_oop));
     }
   }
   JvmtiVTSuspender::register_all_vthreads_resume();
