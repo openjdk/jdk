@@ -1142,7 +1142,7 @@ public final class TKit {
         }
     }
 
-    private final static class JtregSkippedExceptionClass extends ClassLoader {
+    private static final class JtregSkippedExceptionClass extends ClassLoader {
         @SuppressWarnings("unchecked")
         JtregSkippedExceptionClass() {
             super(TKit.class.getClassLoader());
@@ -1164,7 +1164,7 @@ public final class TKit {
 
         private final Class<RuntimeException> clazz;
 
-        final static Class<RuntimeException> INSTANCE = new JtregSkippedExceptionClass().clazz;
+        static final Class<RuntimeException> INSTANCE = new JtregSkippedExceptionClass().clazz;
 
     }
 }

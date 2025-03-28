@@ -174,7 +174,7 @@ public final class ErrorTest {
 
         static final PackageTypeSpec NATIVE = new PackageTypeSpec(Optional.empty(), true);
 
-        static final private Optional<PackageType> NATIVE_TYPE = defaultNativeType();
+        private static final Optional<PackageType> NATIVE_TYPE = defaultNativeType();
     }
 
     public record TestSpec(Optional<PackageTypeSpec> type, Optional<String> appDesc, List<String> addArgs,
