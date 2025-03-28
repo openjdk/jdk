@@ -90,7 +90,7 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
 
   // Combine card table base and card offset
   Node* card_adr = __ AddP(__ top(), byte_map_base_node(kit), card_offset);
-  int adr_type = Compile::AliasIdxRaw;
+
   // Dirty card value to store
   Node* dirty = __ ConI(CardTable::dirty_card_val());
 

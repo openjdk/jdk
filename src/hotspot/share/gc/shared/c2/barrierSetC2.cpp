@@ -207,7 +207,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
     GraphKit* kit = parse_access.kit();
     Node* control = control_dependent ? kit->control() : nullptr;
 
-    if (immutable) {    
+    if (immutable) {
       Compile* C = Compile::current();
       Node* mem = kit->immutable_memory();
       load = LoadNode::make(kit->gvn(), control, mem, adr,
