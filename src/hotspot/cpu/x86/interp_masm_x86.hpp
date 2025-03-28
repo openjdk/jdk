@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,11 @@ class InterpreterMacroAssembler: public MacroAssembler {
   virtual void call_VM_leaf_base(address entry_point,
                                  int number_of_arguments);
 
+  void call_VM_with_sender_Java_fp_entry(Register fp_reg,
+                                         Register tmp,
+                                         address entry_point,
+                                         bool store_bcp = true);
+
  protected:
 
   virtual void call_VM_base(Register oop_result,
@@ -70,7 +75,11 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Interpreter-specific registers
   void save_bcp() {
-    movptr(Address(rbp, frame::interpreter_frame_bcp_offset * wordSize), _bcp_register);
+    save_bcp(rbp);
+  }
+
+  void save_bcp(Register fp_register) {
+    movptr(Address(fp_register, frame::interpreter_frame_bcp_offset * wordSize), _bcp_register);
   }
 
   void restore_bcp() {
@@ -270,6 +279,11 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   Register _locals_register; // register that contains the pointer to the locals
   Register _bcp_register; // register that contains the bcp
+
+  void call_VM_with_sender_Java_fp(Register fp_reg,
+                                   Register tmp,
+                                   address entry_point,
+                                   bool store_bcp);
 
  public:
   void profile_obj_type(Register obj, const Address& mdo_addr);

@@ -37,6 +37,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -777,11 +778,56 @@ void InterpreterMacroAssembler::narrow(Register result) {
   bind(done);
 }
 
+void InterpreterMacroAssembler::call_VM_with_sender_Java_fp(Register fp_reg, Register tmp, address entry_point, bool store_bcp) {
+  if (store_bcp) {
+    save_bcp(fp_reg); // We must save the bcp, but need not restore it. This is because we have already popped the fp.
+  }
+  // Adjust sp as we now have a return address on stack.
+  // We've pushed one address, correct last_Java_sp
+  Register last_java_sp = tmp;
+  lea(last_java_sp, Address(rsp, wordSize));
+
+  // Thread argument
+  mov(c_rarg0, r15_thread);
+
+#if INCLUDE_JFR
+  Label L_ljf, L_valid_rbp;
+  testptr(rbp, rbp);
+  jcc(Assembler::notZero, L_valid_rbp);
+  Address last_sender_Java_fp_offset(r15_thread, JavaThread::frame_anchor_offset() + JavaFrameAnchor::last_sender_Java_fp_offset());
+  movptr(last_sender_Java_fp_offset, 1);
+  jmp(L_ljf);
+  bind(L_valid_rbp);
+  movptr(last_sender_Java_fp_offset, rbp);
+  bind(L_ljf);
+#endif
+
+  movptr(Address(r15_thread, JavaThread::last_Java_fp_offset()), fp_reg);
+  movptr(fp_reg, Address(rsp, 0)); // last_java_pc
+  movptr(Address(r15_thread, JavaThread::last_Java_pc_offset()), fp_reg);
+  movptr(Address(r15_thread, JavaThread::last_Java_sp_offset()), last_java_sp);
+  MacroAssembler::call_VM_leaf_base(entry_point, 0);
+  Address last_java_fp_offset(r15_thread, JavaThread::last_Java_fp_offset());
+  movptr(fp_reg, last_java_fp_offset); // restore fp_reg
+  reset_last_Java_frame(true);
+  JFR_ONLY(movptr(last_sender_Java_fp_offset, NULL_WORD);)
+}
+
+void InterpreterMacroAssembler::call_VM_with_sender_Java_fp_entry(Register fp_reg, Register tmp, address entry_point, bool store_bcp /* true */) {
+  Label C, E;
+  call(C, relocInfo::none);
+  jmp(E);
+  bind(C);
+  call_VM_with_sender_Java_fp(fp_reg, tmp, entry_point, store_bcp);
+  ret(0);
+  bind(E);
+}
+
 // remove activation
 //
-// Apply stack watermark barrier.
 // Unlock the receiver if this is a synchronized method.
 // Unlock any Java monitors from synchronized blocks.
+// Apply stack watermark barrier.
 // Remove the activation from the stack.
 //
 // If there are locked Java monitors
@@ -804,21 +850,6 @@ void InterpreterMacroAssembler::remove_activation(
   const Register rthread = r15_thread;
   const Register robj    = c_rarg1;
   const Register rmon    = c_rarg1;
-
-  // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
-  // that would normally not be safe to use. Such bad returns into unsafe territory of
-  // the stack, will call InterpreterRuntime::at_unwind.
-  Label slow_path;
-  Label fast_path;
-  safepoint_poll(slow_path, rthread, true /* at_return */, false /* in_nmethod */);
-  jmp(fast_path);
-  bind(slow_path);
-  push(state);
-  set_last_Java_frame(rthread, noreg, rbp, (address)pc(), rscratch1);
-  super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), rthread);
-  reset_last_Java_frame(rthread, true);
-  pop(state);
-  bind(fast_path);
 
   // get the value of _do_not_unlock_if_synchronized into rdx
   const Address do_not_unlock_if_synchronized(rthread,
@@ -973,9 +1004,57 @@ void InterpreterMacroAssembler::remove_activation(
 
     bind(no_reserved_zone_enabling);
   }
-  leave();                           // remove frame anchor
-  pop(ret_addr);                     // get return address
-  mov(rsp, rbx);                     // set sp to sender sp
+
+  // For asynchronous profiling to work correctly, we must remove the
+  // activation frame _before_ we test the method return safepoint poll.
+  // This is equivalent to how it is done for compiled frames.
+  // Removing an interpreter activation frame from a sampling perspective means
+  // updating the frame link. But since we are unwinding the current frame,
+  // we must save the current rbp in a temporary register, current_fp, for use
+  // as the last java fp should we decide to unwind.
+  // The asynchronous profiler will only see the updated rbp, either using the
+  // CPU context or by reading the saved_Java_fp() field as part of the ljf.
+  const Register current_fp = rscratch2;
+  const Register return_addr = rscratch2;
+  const Register continuation_return_pc = rscratch1;
+  const Register sender_sp = rscratch1;
+  movptr(return_addr, Address(rbp, wordSize)); // return address
+  // Load address of ContinuationEntry return pc
+  lea(continuation_return_pc, ExternalAddress(ContinuationEntry::return_pc_address()));
+  // Load the ContinuationEntry return pc
+  movptr(continuation_return_pc, Address(continuation_return_pc));
+  Label L_continuation, L_end;
+  cmpptr(continuation_return_pc, return_addr);
+  movptr(current_fp, rbp); // Save current fp in temporary register.
+  jcc(Assembler::equal, L_continuation);
+  movptr(rbp, Address(rbp, frame::link_offset)); // Update the frame link.
+  jmp(L_end);
+  bind(L_continuation);
+  lea(sender_sp, Address(rbp, frame::sender_sp_offset* wordSize));
+  movptr(rbp, Address(sender_sp, (int)(ContinuationEntry::size()))); // Update the frame link.
+  bind(L_end);
+
+  // The interpreter frame is now unwound from a sampling perspective,
+  // meaning it sees the sender frame as the current frame from this point onwards.
+
+  // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
+  // that would normally not be safe to use. Such bad returns into unsafe territory of
+  // the stack, will call InterpreterRuntime::at_unwind.
+  Label slow_path;
+  Label fast_path;
+  safepoint_poll(slow_path, rthread, current_fp, true /* at_return */, false /* in_nmethod */);
+  jmp(fast_path);
+  bind(slow_path);
+  push(state);
+  // Special call to save also the sender fp (the now updated rbp) and using the temporary current_fp register as the last_java_fp.
+  call_VM_with_sender_Java_fp_entry(current_fp, rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind));
+  pop(state);
+  bind(fast_path);
+
+  // Finalize remove activation by getting the return address and the caller sp.
+  movptr(ret_addr, Address(current_fp, wordSize)); // return address
+  movptr(rsp, rbx); // sender sp
+
   pop_cont_fastpath();
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -120,6 +120,8 @@ class MacroAssembler: public Assembler {
  virtual void check_and_handle_earlyret(Register java_thread);
 
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp = rscratch1);
+  void safepoint_poll(Label& slow_path, Register fp_reg, bool at_return, bool acquire, bool in_nmethod, Register tmp = rscratch1);
+
   void rt_call(address dest, Register tmp = rscratch1);
 
   // Load Effective Address

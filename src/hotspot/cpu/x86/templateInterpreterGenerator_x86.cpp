@@ -1155,13 +1155,58 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
                        (frame::interpreter_frame_result_handler_offset) * wordSize));
   __ call(t);
 
+  // Remove activation
+
+  // For asynchronous profiling to work correctly, we must remove the
+  // activation frame _before_ we test the method return safepoint poll.
+  // This is equivalent to how it is done for compiled frames.
+  // Removing an interpreter activation frame from a sampling perspective means
+  // updating the frame link. But since we are unwinding the current frame,
+  // we must save the current rbp in a temporary register, current_fp, for use
+  // as the last java fp should we decide to unwind.
+  // The asynchronous profiler will only see the updated rfp, either using the
+  // CPU context or by reading the saved_Java_fp() field as part of the ljf.
+  const Register current_fp = rscratch2;
+  const Register return_addr = rscratch2;
+  const Register continuation_return_pc = rscratch1;
+  const Register sender_sp = rscratch1;
+  __ movptr(return_addr, Address(rbp, wordSize)); // return address
+  // Load address of ContinuationEntry return pc
+  __ lea(continuation_return_pc, ExternalAddress(ContinuationEntry::return_pc_address()));
+  // Load the ContinuationEntry return pc
+  __ movptr(continuation_return_pc, Address(continuation_return_pc));
+  Label L_continuation, L_end;
+  __ cmpptr(continuation_return_pc, return_addr);
+  __ movptr(current_fp, rbp); // Save current fp in temporary register.
+  __ jcc(Assembler::equal, L_continuation);
+  __ movptr(rbp, Address(rbp, frame::link_offset)); // Update the frame link.
+  __ jmp(L_end);
+  __ bind(L_continuation);
+  __ lea(sender_sp, Address(rbp, frame::sender_sp_offset* wordSize));
+  __ movptr(rbp, Address(sender_sp, (int)(ContinuationEntry::size()))); // Update the frame link.
+  __ bind(L_end);
+
+  // The interpreter frame is now unwound from a sampling perspective,
+  // meaning it sees the sender frame as the current frame from this point onwards.
+
+  // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
+  // that would normally not be safe to use. Such bad returns into unsafe territory of
+  // the stack, will call InterpreterRuntime::at_unwind.
+  Label slow_path;
+  Label fast_path;
+  __ safepoint_poll(slow_path, thread, current_fp, true, false);
+  __ jmp(fast_path);
+  __ bind(slow_path);
+  __ push(dtos);
+  __ push(ltos);
+  __ call_VM_with_sender_Java_fp_entry(current_fp, rscratch1, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), false /* save_bcp */);
+  __ pop(ltos);
+  __ pop(dtos);
+  __ bind(fast_path);
+
   // remove activation
-  __ movptr(t, Address(rbp,
-                       frame::interpreter_frame_sender_sp_offset *
-                       wordSize)); // get sender sp
-  __ leave();                                // remove frame anchor
-  __ pop(rdi);                               // get return address
-  __ mov(rsp, t);                            // set sp to sender sp
+  __ movptr(rdi, Address(current_fp, wordSize)); // get return address
+  __ movptr(rsp, Address(current_fp, frame::interpreter_frame_sender_sp_offset* wordSize)); // get sender sp
   __ jmp(rdi);
 
   if (inc_counter) {
@@ -1428,6 +1473,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ movptr(c_rarg1, Address(rbp, frame::return_addr_offset * wordSize));
     __ super_call_VM_leaf(CAST_FROM_FN_PTR(address,
                                InterpreterRuntime::interpreter_contains), c_rarg1);
+    __ restore_bcp();
     __ testl(rax, rax);
     __ jcc(Assembler::notZero, caller_not_deoptimized);
 

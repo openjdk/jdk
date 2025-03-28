@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,28 +27,23 @@
 
 #include "jfr/utilities/jfrAllocation.hpp"
 
-class JavaThread;
-class JfrThreadSampler;
-
-class JfrThreadSampling : public JfrCHeapObj {
+class JfrThreadSampler : public JfrCHeapObj {
   friend class JfrRecorder;
  private:
-  JfrThreadSampler* _sampler;
   void create_sampler(int64_t java_period_millis, int64_t native_period_millis);
   void update_run_state(int64_t java_period_millis, int64_t native_period_millis);
-  void set_sampling_period(bool is_java_period, int64_t period_millis);
+  void set_period(bool is_java_period, int64_t period_millis);
 
-  JfrThreadSampling();
-  ~JfrThreadSampling();
+  JfrThreadSampler();
+  ~JfrThreadSampler();
 
-  static JfrThreadSampling& instance();
-  static JfrThreadSampling* create();
+  static JfrThreadSampler& instance();
+  static JfrThreadSampler* create();
   static void destroy();
 
  public:
   static void set_java_sample_period(int64_t period_millis);
   static void set_native_sample_period(int64_t period_millis);
-  static void on_javathread_suspend(JavaThread* thread);
 };
 
 #endif // SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLER_HPP

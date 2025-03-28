@@ -3126,10 +3126,14 @@ void MacroAssembler::save_rax(Register tmp) {
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, Register thread_reg, bool at_return, bool in_nmethod) {
+  return safepoint_poll(slow_path, thread_reg, rbp, at_return, in_nmethod);
+}
+
+void MacroAssembler::safepoint_poll(Label& slow_path, Register thread_reg, Register fp_reg, bool at_return, bool in_nmethod) {
   if (at_return) {
     // Note that when in_nmethod is set, the stack pointer is incremented before the poll. Therefore,
     // we may safely use rsp instead to perform the stack watermark check.
-    cmpptr(in_nmethod ? rsp : rbp, Address(thread_reg, JavaThread::polling_word_offset()));
+    cmpptr(in_nmethod ? rsp : fp_reg, Address(thread_reg, JavaThread::polling_word_offset()));
     jcc(Assembler::above, slow_path);
     return;
   }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -710,6 +710,11 @@
     <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
   </Event>
 
+  <Event name="SafepointLatency" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Latency"
+    description="The time delay for a thread in reaching a safepoint poll after receiving an asynchronous interrupt" thread="true" stackTrace="true" throttle="true" >
+    <Field type="VMThreadState" name="threadState" label="VM Thread State" />
+  </Event>
+
   <Event name="ExecuteVMOperation" category="Java Virtual Machine, Runtime" label="VM Operation" description="Execution of a VM Operation" thread="true">
     <Field type="VMOperationType" name="operation" label="Operation" />
     <Field type="boolean" name="safepoint" label="At Safepoint" description="If the operation occurred at a safepoint" />
@@ -1295,6 +1300,10 @@
 
   <Type name="DeoptimizationAction" label="Deoptimization Action">
     <Field type="string" name="action" label="Action" />
+  </Type>
+
+  <Type name="VMThreadState" label="JVM Thread State">
+    <Field type="string" name="state" label="State" />
   </Type>
 
   <Type name="Bytecode" label="Bytecode Instruction">

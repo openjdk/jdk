@@ -77,9 +77,7 @@ int64_t JfrStackFilterRegistry::add(const JfrStackFilter* filter) {
 }
 
 const JfrStackFilter* JfrStackFilterRegistry::lookup(int64_t id) {
-  if (id < 0) {
-    return nullptr;
-  }
+  assert(id >= 0, "invariant");
   assert(range_check(id), "invariant");
   return _elements[id];
 }

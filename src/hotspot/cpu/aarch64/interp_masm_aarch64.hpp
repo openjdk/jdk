@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -63,6 +63,15 @@ class InterpreterMacroAssembler: public MacroAssembler {
                            Register arg_1);
   void restore_after_resume(bool is_native);
 
+  void call_VM_with_sender_Java_fp_entry(address entry_point);
+
+  void set_last_Java_frame_with_sender_fp(Register last_java_sp,
+                                          Register last_java_fp,
+                                          address last_java_pc,
+                                          Register scratch);
+
+  void reset_last_Java_frame_with_sender_fp(Register fp_reg);
+
   void jump_to_entry(address entry);
 
   virtual void check_and_handle_popframe(Register java_thread);
@@ -70,7 +79,11 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Interpreter-specific registers
   void save_bcp() {
-    str(rbcp, Address(rfp, frame::interpreter_frame_bcp_offset * wordSize));
+    save_bcp(rfp);
+  }
+
+  void save_bcp(Register fp_register) {
+    str(rbcp, Address(fp_register, frame::interpreter_frame_bcp_offset * wordSize));
   }
 
   void restore_bcp() {
