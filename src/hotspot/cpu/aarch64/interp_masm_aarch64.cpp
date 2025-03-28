@@ -463,9 +463,9 @@ void InterpreterMacroAssembler::call_VM_with_sender_Java_fp_entry(address entry_
 }
 
 void InterpreterMacroAssembler::set_last_Java_frame_with_sender_fp(Register last_java_sp,
-  Register last_java_fp,
-  address last_java_pc,
-  Register scratch) {
+                                                                   Register last_java_fp,
+                                                                   address last_java_pc,
+                                                                   Register scratch) {
   assert_different_registers(last_java_fp, rfp);
 
 #if INCLUDE_JFR
