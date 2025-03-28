@@ -163,6 +163,23 @@ inline size_t ShenandoahHeapRegion::get_live_data_bytes() const {
   return get_live_data_words() * HeapWordSize;
 }
 
+inline size_t ShenandoahHeapRegion::get_mixed_candidate_live_data_bytes() const {
+  assert(SafepointSynchronize::is_at_safepoint(), "Should be at Shenandoah safepoint");
+  assert(used() >= _mixed_candidate_garbage_words * HeapWordSize, "used must exceed garbage");
+  return used() - _mixed_candidate_garbage_words * HeapWordSize;
+}
+
+inline size_t ShenandoahHeapRegion::get_mixed_candidate_live_data_words() const {
+  assert(SafepointSynchronize::is_at_safepoint(), "Should be at Shenandoah safepoint");
+  assert(used() >= _mixed_candidate_garbage_words * HeapWordSize, "used must exceed garbage");
+  return used() / HeapWordSize - _mixed_candidate_garbage_words;
+}
+
+inline void ShenandoahHeapRegion::capture_mixed_candidate_garbage() {
+  assert(SafepointSynchronize::is_at_safepoint(), "Should be at Shenandoah safepoint");
+  _mixed_candidate_garbage_words = garbage() / HeapWordSize;
+}
+
 inline bool ShenandoahHeapRegion::has_live() const {
   return get_live_data_words() != 0;
 }
