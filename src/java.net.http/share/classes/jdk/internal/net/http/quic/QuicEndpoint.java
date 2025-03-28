@@ -1502,11 +1502,11 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     }
 
     /**
-     * Remove the cid to connection mapping from the endpoint.
+     * Add the cid to connection mapping to the endpoint.
      *
-     * @param cid        the connection ID to be removed
-     * @param connection the connection that is mapped to the cid
-     * @return true if connection ID was removed, false otherwise
+     * @param cid        the connection ID to be added
+     * @param connection the connection that should be mapped to the cid
+     * @return true if connection ID was added, false otherwise
      */
     public boolean addConnectionId(QuicConnectionId cid, QuicPacketReceiver connection) {
         var old = connections.putIfAbsent(cid, connection);
