@@ -1228,7 +1228,7 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
     }
     PredicateIterator predicate_iterator(entry_control);
     NodeInShortLoopBody node_in_short_loop_body(this, loop);
-    CloneShortLoopPredicatesVisitor clone_short_loop_predicates_visitor(head->skip_strip_mined(), node_in_short_loop_body, this);
+    CloneShortLoopPredicatesVisitor clone_short_loop_predicates_visitor(head, node_in_short_loop_body, this);
     predicate_iterator.for_each(clone_short_loop_predicates_visitor);
 
     entry_control = head->skip_strip_mined()->in(LoopNode::EntryControl);
