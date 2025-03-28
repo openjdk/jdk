@@ -83,6 +83,9 @@ public final class PackageTest extends RunnablePackageTest {
         namedInitializers = new HashSet<>();
         handlers = NATIVE.stream()
                 .collect(Collectors.toMap(v -> v, v -> new Handler()));
+        if (currentTypes.isEmpty()) {
+            PackageType.throwSkippedExceptionIfNativePackagingUnavailable();
+        }
     }
 
     public PackageTest excludeTypes(PackageType... types) {
