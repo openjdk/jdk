@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,7 +182,9 @@ public:
 class ThreadSafepointState: public CHeapObj<mtThread> {
  private:
   // At polling page safepoint (NOT a poll return safepoint):
+#ifdef ASSERT
   volatile bool                   _at_poll_safepoint;
+#endif
   JavaThread*                     _thread;
   bool                            _safepoint_safe;
   volatile uint64_t               _safepoint_id;
@@ -212,8 +214,10 @@ class ThreadSafepointState: public CHeapObj<mtThread> {
   void     set_safepoint_id(uint64_t sid);
 
   // Support for safepoint timeout (debugging)
+#ifdef ASSERT
   bool is_at_poll_safepoint()           { return _at_poll_safepoint; }
   void set_at_poll_safepoint(bool val)  { _at_poll_safepoint = val; }
+#endif
 
   void handle_polling_page_exception();
 
