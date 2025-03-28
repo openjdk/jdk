@@ -108,7 +108,7 @@ public class RightLeftOrientation {
             menu.addSeparator();
             addMenuItems(menu, ComponentOrientation.RIGHT_TO_LEFT);
             UIManager.setLookAndFeel(save);
-        } catch(Exception e) {
+        } catch (Exception e) {
             menu = new JMenu(name);
             menu.setEnabled(false);
         }
