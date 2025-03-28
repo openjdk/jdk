@@ -688,7 +688,7 @@ public final class QuicTransportParameters {
                     assert size == length;
                     checkParameterValue(pid, v);
                 }
-                values.put(pid, v);
+                setOrRemove(pid, v);
             }
             default -> throw new IllegalArgumentException(String.valueOf(pid));
         }
@@ -729,8 +729,12 @@ public final class QuicTransportParameters {
         if (pid != ParameterId.disable_active_migration) {
             throw new IllegalArgumentException(String.valueOf(id));
         }
-        if (value) {
-            values.put(pid, NOBYTES);
+        setOrRemove(pid, value ? NOBYTES : null);
+    }
+
+    private void setOrRemove(ParameterId pid, byte[] value) {
+        if (value != null) {
+            values.put(pid, value);
         } else {
             values.remove(pid);
         }
