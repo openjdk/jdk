@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
- * @LastModified: May 2022
+ * @LastModified: Nov 2024
  */
 public class XPATHErrorResources_zh_TW extends ListResourceBundle
 {
@@ -326,7 +326,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
          "WG_PROPERTY_NOT_SUPPORTED";
   public static final String WG_DONT_DO_ANYTHING_WITH_NS =
          "WG_DONT_DO_ANYTHING_WITH_NS";
-  public static final String WG_SECURITY_EXCEPTION = "WG_SECURITY_EXCEPTION";
   public static final String WG_QUO_NO_LONGER_DEFINED =
          "WG_QUO_NO_LONGER_DEFINED";
   public static final String WG_NEED_DERIVED_OBJECT_TO_IMPLEMENT_NODETEST =
@@ -838,9 +837,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { WG_DONT_DO_ANYTHING_WITH_NS,
       "\u76EE\u524D\u4E0D\u6703\u8655\u7406\u5C6C\u6027\u4E2D\u7684\u547D\u540D\u7A7A\u9593 {0}: {1}"},
-
-  { WG_SECURITY_EXCEPTION,
-      "\u5617\u8A66\u5B58\u53D6 XSL \u7CFB\u7D71\u5C6C\u6027\u6642\u767C\u751F SecurityException: {0}"},
 
   { WG_QUO_NO_LONGER_DEFINED,
       "\u820A\u8A9E\u6CD5: XPath \u4E2D\u4E0D\u518D\u5B9A\u7FA9 quo(...)\u3002"},

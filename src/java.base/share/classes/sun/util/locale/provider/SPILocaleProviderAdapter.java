@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,6 @@
 
 package sun.util.locale.provider;
 
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.text.BreakIterator;
 import java.text.Collator;
 import java.text.DateFormat;
@@ -69,43 +66,31 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         return LocaleProviderAdapter.Type.SPI;
     }
 
-    @SuppressWarnings("removal")
     @Override
+    @SuppressWarnings(value={"unchecked", "deprecation"})
     protected <P extends LocaleServiceProvider> P findInstalledProvider(final Class<P> c) {
-        try {
-            return AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
-                @Override
-                @SuppressWarnings(value={"unchecked", "deprecation"})
-                public P run() {
-                    P delegate = null;
-
-                    for (LocaleServiceProvider provider :
-                             ServiceLoader.load(c, ClassLoader.getSystemClassLoader())) {
-                        if (delegate == null) {
-                            try {
-                                delegate =
-                                    (P) Class.forName(SPILocaleProviderAdapter.class.getCanonicalName() +
-                                              "$" +
-                                              c.getSimpleName() +
-                                              "Delegate")
-                                              .newInstance();
-                            }  catch (ClassNotFoundException |
-                                      InstantiationException |
-                                      IllegalAccessException e) {
-                                throw new ServiceConfigurationError(
-                                    "SPI locale provider cannot be instantiated.", e);
-                            }
-                        }
-
-                        ((Delegate)delegate).addImpl(provider);
-                    }
-                    return delegate;
+        P delegate = null;
+        for (LocaleServiceProvider provider :
+                 ServiceLoader.load(c, ClassLoader.getSystemClassLoader())) {
+            if (delegate == null) {
+                try {
+                    delegate =
+                        (P) Class.forName(SPILocaleProviderAdapter.class.getCanonicalName() +
+                                  "$" +
+                                  c.getSimpleName() +
+                                  "Delegate")
+                                  .newInstance();
+                }  catch (ClassNotFoundException |
+                          InstantiationException |
+                          IllegalAccessException e) {
+                    throw new ServiceConfigurationError(
+                        "SPI locale provider cannot be instantiated.", e);
                 }
-            });
-        }  catch (PrivilegedActionException e) {
-            throw new ServiceConfigurationError(
-                "SPI locale provider cannot be instantiated.", e);
+            }
+
+            ((Delegate)delegate).addImpl(provider);
         }
+        return delegate;
     }
 
     /*

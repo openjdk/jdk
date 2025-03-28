@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Tests for FileServerHandler with SecurityManager
+ * @summary Tests file permission checks during the creation of a `FileServerHandler`
  * @library /test/lib
  * @build jdk.test.lib.net.URIBuilder
  * @run main/othervm -ea RootDirPermissionsTest true
@@ -245,7 +245,6 @@ public class RootDirPermissionsTest {
         }
     }
 
-    @SuppressWarnings("removal")
     private static void testCreateHandler(){
         try {
             SimpleFileServer.createFileServer(LOOPBACK_ADDR, TEST_DIR, OutputLevel.NONE);

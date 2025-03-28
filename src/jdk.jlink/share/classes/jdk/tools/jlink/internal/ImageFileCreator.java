@@ -32,6 +32,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -56,7 +57,6 @@ import jdk.tools.jlink.internal.runtimelink.JimageDiffGenerator;
 import jdk.tools.jlink.internal.runtimelink.JimageDiffGenerator.ImageResource;
 import jdk.tools.jlink.internal.runtimelink.ResourceDiff;
 import jdk.tools.jlink.internal.runtimelink.ResourcePoolReader;
-import jdk.tools.jlink.internal.runtimelink.RuntimeImageLinkException;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
@@ -91,14 +91,11 @@ public final class ImageFileCreator {
     private final Map<String, List<Entry>> entriesForModule = new HashMap<>();
     private final ImagePluginStack plugins;
     private final boolean generateRuntimeImage;
-    private final TaskHelper helper;
 
     private ImageFileCreator(ImagePluginStack plugins,
-                             boolean generateRuntimeImage,
-                             TaskHelper taskHelper) {
+                             boolean generateRuntimeImage) {
         this.plugins = Objects.requireNonNull(plugins);
         this.generateRuntimeImage = generateRuntimeImage;
-        this.helper = taskHelper;
     }
 
     /**
@@ -118,24 +115,20 @@ public final class ImageFileCreator {
     public static ExecutableImage create(Set<Archive> archives,
             ByteOrder byteOrder,
             ImagePluginStack plugins,
-            boolean generateRuntimeImage,
-            TaskHelper taskHelper)
+            boolean generateRuntimeImage)
             throws IOException
     {
         ImageFileCreator image = new ImageFileCreator(plugins,
-                                                      generateRuntimeImage,
-                                                      taskHelper);
+                                                      generateRuntimeImage);
         try {
             image.readAllEntries(archives);
             // write to modular image
             image.writeImage(archives, byteOrder);
-        } catch (RuntimeImageLinkException e) {
-            // readAllEntries() might throw this exception.
-            // Propagate as IOException with appropriate message for
-            // jlink runs from the run-time image. This handles better
-            // error messages for the case of modified files in the run-time
-            // image.
-            throw image.newIOException(e);
+        } catch (UncheckedIOException e) {
+            // When linking from the run-time image, readAllEntries() might
+            // throw this exception for a modified runtime. Unpack and
+            // re-throw as IOException.
+            throw e.getCause();
         } finally {
             // Close all archives
             for (Archive a : archives) {
@@ -200,11 +193,6 @@ public final class ImageFileCreator {
         ResourcePool result = null;
         try (DataOutputStream out = plugins.getJImageFileOutputStream()) {
             result = generateJImage(allContent, writer, plugins, out, generateRuntimeImage);
-        } catch (RuntimeImageLinkException e) {
-            // Propagate as IOException with appropriate message for
-            // jlink runs from the run-time image. This handles better
-            // error messages for the case of --patch-module.
-            throw newIOException(e);
         }
 
         //Handle files.
@@ -216,18 +204,6 @@ public final class ImageFileCreator {
             }
             throw new IOException(ex);
         }
-    }
-
-    private IOException newIOException(RuntimeImageLinkException e) throws IOException {
-        if (JlinkTask.DEBUG) {
-            e.printStackTrace();
-        }
-        String message = switch (e.getReason()) {
-            case PATCH_MODULE -> helper.getMessage("err.runtime.link.patched.module", e.getFile());
-            case MODIFIED_FILE -> helper.getMessage("err.runtime.link.modified.file", e.getFile());
-            default -> throw new AssertionError("Unexpected value: " + e.getReason());
-        };
-        throw new IOException(message);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,6 @@ import javax.swing.border.MatteBorder;
 import javax.swing.plaf.ColorUIResource;
 
 import sun.swing.PrintColorUIResource;
-
-import static sun.reflect.misc.ReflectUtil.isPackageAccessible;
 
 /*
  * Like the {@code Introspector}, the {@code MetaData} class
@@ -749,7 +747,7 @@ static final class java_awt_AWTKeyStroke_PersistenceDelegate extends Persistence
 
 static class StaticFieldsPersistenceDelegate extends PersistenceDelegate {
     protected void installFields(Encoder out, Class<?> cls) {
-        if (Modifier.isPublic(cls.getModifiers()) && isPackageAccessible(cls)) {
+        if (Modifier.isPublic(cls.getModifiers())) {
             Field[] fields = cls.getFields();
             for(int i = 0; i < fields.length; i++) {
                 Field field = fields[i];

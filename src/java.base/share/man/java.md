@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -279,7 +279,8 @@ contain whitespace characters. All content between the open quote and the
 first matching close quote are preserved by simply removing the pair of quotes.
 In case a matching quote is not found, the launcher will abort with an error
 message. `@`-files are supported as they are specified in the command line.
-However, as in `@`-files, use of a wildcard is not supported. In order to
+Any wildcard literal `*` in the `JDK_JAVA_OPTIONS` environment variable
+content isn't expanded and is passed as-is to the starting VM. In order to
 mitigate potential misuse of `JDK_JAVA_OPTIONS` behavior, options that specify
 the main class (such as `-jar`) or cause the `java` launcher to exit without
 executing the main class (such as `-h`) are disallowed in the environment
@@ -979,7 +980,7 @@ the Java HotSpot Virtual Machine.
     : Disallow use of the memory-access methods by throwing an
       `UnsupportedOperationException` on every usage.
 
-    The default value when the option is not specified is `allow`.
+    The default value when the option is not specified is `warn`.
 
 
 ## Extra Options for macOS
@@ -1291,10 +1292,15 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
 `-XX:OnOutOfMemoryError=`*string*
 :   Sets a custom command or a series of semicolon-separated commands to run
-    when an `OutOfMemoryError` exception is first thrown. If the string
+    when an `OutOfMemoryError` exception is first thrown by the JVM.
+    If the string
     contains spaces, then it must be enclosed in quotation marks. For an
     example of a command string, see the description of the `-XX:OnError`
     option.
+    This applies only to `OutOfMemoryError` exceptions caused by Java Heap
+    exhaustion; it does not apply to `OutOfMemoryError` exceptions thrown
+    directly from Java code, nor by the JVM for other types of resource
+    exhaustion (such as native thread creation errors).
 
 `-XX:+PrintCommandLineFlags`
 :   Enables printing of ergonomically selected JVM flags that appeared on the
@@ -1305,7 +1311,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 `-XX:+PreserveFramePointer`
 :   Selects between using the RBP register as a general purpose register
     (`-XX:-PreserveFramePointer`) and using the RBP register to hold the frame
-    pointer of the currently executing method (`-XX:+PreserveFramePointer` . If
+    pointer of the currently executing method (`-XX:+PreserveFramePointer`). If
     the frame pointer is available, then external profiling tools (for example,
     Linux perf) can construct more accurate stack traces.
 
@@ -1440,6 +1446,12 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
         `settings` parameter is set to `profile`, the stack trace from where
         the potential leaking object was allocated is included in the
         information collected.
+
+    `report-on-exit=`*identifier*
+    :   Specifies the name of the view to display when the Java Virtual Machine
+        (JVM) shuts down. This option is not available if the disk option is set
+        to false. For a list of available views, see `jfr help view`. By default,
+        no report is generated.
 
     `settings=`*path*
     :   Specifies the path and name of the event settings file (of type JFC).
@@ -2188,10 +2200,14 @@ perform extensive debugging.
 `-XX:+HeapDumpOnOutOfMemoryError`
 :   Enables the dumping of the Java heap to a file in the current directory by
     using the heap profiler (HPROF) when a `java.lang.OutOfMemoryError`
-    exception is thrown. You can explicitly set the heap dump file path and
+    exception is thrown by the JVM. You can explicitly set the heap dump file path and
     name using the `-XX:HeapDumpPath` option. By default, this option is
     disabled and the heap isn't dumped when an `OutOfMemoryError` exception is
     thrown.
+    This applies only to `OutOfMemoryError` exceptions caused by Java Heap
+    exhaustion; it does not apply to `OutOfMemoryError` exceptions thrown
+    directly from Java code, nor by the JVM for other types of resource
+    exhaustion (such as native thread creation errors).
 
 `-XX:HeapDumpPath=`*path*
 :   Sets the path and file name for writing the heap dump provided by the heap
@@ -2894,6 +2910,12 @@ when they're used.
     396](https://openjdk.org/jeps/396) and made obsolete in JDK 17
     by [JEP 403](https://openjdk.org/jeps/403).
 
+## Removed Java Options
+
+These `java` options have been removed in JDK @@VERSION_SPECIFICATION@@ and using them results in an error of:
+
+>   `Unrecognized VM option` *option-name*
+
 `-XX:RTMAbortRatio=`*abort\_ratio*
 :   Specifies the RTM abort ratio is specified as a percentage (%) of all
     executed RTM transactions. If a number of aborted transactions becomes
@@ -2953,57 +2975,9 @@ when they're used.
     processors, which forces them to read from main memory instead of their
     cache.
 
-## Removed Java Options
-
-These `java` options have been removed in JDK @@VERSION_SPECIFICATION@@ and using them results in an error of:
-
->   `Unrecognized VM option` *option-name*
-
-`-XX:InitialRAMFraction=`*ratio*
-:   Sets the initial amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics as a ratio of the maximum amount
-    determined as described in the `-XX:MaxRAM` option. The default value is
-    64.
-
-    Use the option `-XX:InitialRAMPercentage` instead.
-
-`-XX:MaxRAMFraction=`*ratio*
-:   Sets the maximum amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics as a fraction of the maximum amount
-    determined as described in the `-XX:MaxRAM` option. The default value is 4.
-
-    Specifying this option disables automatic use of compressed oops if
-    the combined result of this and other options influencing the maximum amount
-    of memory is larger than the range of memory addressable by compressed oops.
-    See `-XX:UseCompressedOops` for further information about compressed oops.
-
-    Use the option `-XX:MaxRAMPercentage` instead.
-
-`-XX:MinRAMFraction=`*ratio*
-:   Sets the maximum amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics as a fraction of the maximum amount
-    determined as described in the `-XX:MaxRAM` option for small heaps. A small
-    heap is a heap of approximately 125 MB. The default value is 2.
-
-    Use the option `-XX:MinRAMPercentage` instead.
-
-`-XX:+ScavengeBeforeFullGC`
-:   Enables GC of the young generation before each full GC. This option is
-    enabled by default. It is recommended that you *don't* disable it, because
-    scavenging the young generation before a full GC can reduce the number of
-    objects reachable from the old generation space into the young generation
-    space. To disable GC of the young generation before each full GC, specify
-    the option `-XX:-ScavengeBeforeFullGC`.
-
-`-Xfuture`
-:   Enables strict class-file format checks that enforce close conformance to
-    the class-file format specification. Developers should use this flag when
-    developing new code. Stricter checks may become the default in future
-    releases.
-
-    Use the option `-Xverify:all` instead.
-
 For the lists and descriptions of options removed in previous releases see the *Removed Java Options* section in:
+
+-   [The `java` Command, Release 24](https://docs.oracle.com/en/java/javase/24/docs/specs/man/java.html)
 
 -   [The `java` Command, Release 23](https://docs.oracle.com/en/java/javase/23/docs/specs/man/java.html)
 
@@ -3073,9 +3047,9 @@ The following items describe the syntax of `java` argument files:
 -   The argument file size must not exceed MAXINT (2,147,483,647) bytes.
 
 -   The launcher doesn't expand wildcards that are present within an argument
-    file. That means, an asterisk  `*` is passed on as-is to the starting VM.
-    For example `*.java` stays `*.java` and is not expanded to `Foo.java`,
-    `Bar.java`, etc. like on some command line shell.
+    file. That means an asterisk (`*`) is passed on as-is to the starting VM.
+    For example `*.java` stays `*.java` and is not expanded to
+    `Foo.java Bar.java ...`, as would happen with some command line shells.
 
 -   Use white space or new line characters to separate arguments included in
     the file.
@@ -3117,8 +3091,6 @@ The following items describe the syntax of `java` argument files:
 
 -   An open quote stops at end-of-line unless `\` is the last character, which
     then joins the next line by removing all leading white space characters.
-
--   Wildcards (\*) aren't allowed in these lists (such as specifying `*.java`).
 
 -   Use of the at sign (`@`) to recursively interpret files isn't supported.
 
@@ -3391,16 +3363,18 @@ getting overwritten.
 ### -Xlog Output Mode
 
 By default logging messages are output synchronously - each log message is written to
-the designated output when the logging call is made. But you can instead use asynchronous
+the designated output when the logging call is made. You can instead use asynchronous
 logging mode by specifying:
 
-`-Xlog:async`
+`-Xlog:async[:[stall|drop]]`
 :     Write all logging asynchronously.
 
 In asynchronous logging mode, log sites enqueue all logging messages to an intermediate buffer
 and a standalone thread is responsible for flushing them to the corresponding outputs. The
-intermediate buffer is bounded and on buffer exhaustion the enqueuing message is discarded.
-Log entry write operations are guaranteed non-blocking.
+intermediate buffer is bounded. On buffer exhaustion the enqueuing message is either discarded (`async:drop`),
+or logging threads are stalled until the flushing thread catches up (`async:stall`).
+If no specific mode is chosen, then `async:drop` is chosen by default.
+Log entry write operations are guaranteed to be non-blocking in the `async:drop` case.
 
 The option `-XX:AsyncLogBufferSize=N` specifies the memory budget in bytes for the intermediate buffer.
 The default value should be big enough to cater for most cases. Users can provide a custom value to
@@ -4003,11 +3977,149 @@ archive, you should make sure that the archive is created by at least version
 -   The CDS archive cannot be loaded if any JAR files in the class path or
     module path are modified after the archive is generated.
 
--   If any of the VM options `--upgrade-module-path`, `--patch-module` or
-    `--limit-modules` are specified, CDS is disabled. This means that the
-    JVM will execute without loading any CDS archives. In addition, if
-    you try to create a CDS archive with any of these 3 options specified,
-    the JVM will report an error.
+### Module related options
+
+The following module related options are supported by CDS: `--module-path`, `--module`,
+`--add-modules`, and `--enable-native-access`.
+
+The values for these options (if specified), should be identical when creating and using the
+CDS archive. Otherwise, if there is a mismatch of any of these options, the CDS archive may be
+partially or completely disabled, leading to lower performance.
+
+- If the `AOTClassLinking` option (see below) *was* enabled during CDS archive creation, the CDS archive
+  cannot be used, and the following error message is printed:
+
+  `CDS archive has aot-linked classes. It cannot be used when archived full module graph is not used`
+
+- If the `AOTClassLinking` option *was not* enabled during CDS archive creation, the CDS archive
+  can be used, but the "archived module graph" feature will be disabled. This can lead to increased
+  start-up time.
+
+To diagnose problems with the above options, you can add `-Xlog:cds` to the application's VM
+arguments. For example, if `--add-modules jdk.jconcole` was specified during archive creation
+and `--add-modules jdk.incubator.vector` is specified during runtime, the following messages will
+be logged:
+
+ `Mismatched values for property jdk.module.addmods`
+
+ `runtime jdk.incubator.vector dump time jdk.jconsole`
+
+ `subgraph jdk.internal.module.ArchivedBootLayer cannot be used because full module graph is disabled`
+
+If any of the VM options `--upgrade-module-path`, `--patch-module` or
+`--limit-modules` are specified, CDS is disabled. This means that the
+JVM will execute without loading any CDS archives. In addition, if
+you try to create a CDS archive with any of these 3 options specified,
+the JVM will report an error.
+
+## Ahead-of-Time Cache
+
+The JDK supports ahead-of-time (AOT) optimizations that can be performed before an
+application is executed. One example is Class Data Sharing (CDS), as described above,
+that parses classes ahead of time. AOT optimizations can improve the start-up and
+warm-up performance of Java applications.
+
+The Ahead-of-Time Cache (AOT cache) is a container introduced in JDK 24 for
+storing artifacts produced by AOT optimizations. The AOT cache currently contains
+Java classes and heap objects. In future JDK releases, the AOT cache may contain additional
+artifacts, such as execution profiles and compiled methods.
+
+An AOT cache is specific to a combination of the following:
+
+-   A particular application (as expressed by `-classpath`, `-jar`, or `--module-path`.)
+-   A particular JDK release.
+-   A particular OS and CPU architecture.
+
+If any of the above changes, you must recreate the AOT cache.
+
+The deployment of the AOT cache is divided into three phases:
+
+-   **Training:** We execute the application with a representative work-load
+    to gather statistical data that tell us what artifacts should be included
+    into the AOT cache. The data are saved in an *AOT Configuration* file.
+
+-   **Assembly:** We use the AOT Configuration file to produce an AOT cache.
+
+-   **Production:** We execute the application with the AOT cache for better
+    start-up and warm-up performance.
+
+The AOT cache can be used with the following command-line options:
+
+`-XX:AOTCache:=`*cachefile*
+:   Specifies the location of the AOT cache. The standard extension for *cachefile* is `.aot`.
+    If `-XX:AOTCache` is specified but `-XX:AOTMode` is not specified,
+    then `AOTMode` will be given the value of `auto`.
+
+`-XX:AOTConfiguration:=`*configfile*
+:   Specifies the AOT Configuration file for the JVM to write to or read from.
+    This option can be used only with `-XX:AOTMode=record` and `-XX:AOTMode=create`.
+    The standard extension for *configfile* is `.aotconfig`.
+
+`-XX:+AOTMode:=`*mode*
+:   *mode* must be one of the following: `off`, `record`, `create`, `auto`, or `on`.
+
+-   `off`: no AOT cache is used.
+
+-   `record`: Execute the application in the Training phase.
+    `-XX:AOTConfiguration=`*configfile* must be specified. The JVM gathers
+     statistical data and stores them into *configfile*.
+
+-   `create`: Perform the Assembly phase. `-XX:AOTConfiguration=`*configfile*
+     and `-XX:AOTCache=`*cachefile*  must be specified. The JVM reads the statistical
+     data from *configfile* and writes the optimization artifacts into *cachefile*.
+     Note that the application itself is not executed in this phase.
+
+-   `auto` or `on`: These modes should be used in the Production phase.
+     If `-XX:AOTCache=`*cachefile* is specified, the JVM tries to
+     load *cachefile* as the AOT cache. Otherwise, the JVM tries to load
+     a *default CDS archive* from the JDK installation directory as the AOT cache.
+
+     The loading of an AOT cache can fail for a number of reasons:
+
+     - You are trying to use the AOT cache with an incompatible application, JDK release,
+       or OS/CPU.
+
+     - The specified *cachefile* does not exist or is not accessible.
+
+     - Incompatible JVM options are used (for example, certain JVMTI options).
+
+       Since the AOT cache is an optimization feature, there's no guarantee that it will be
+       compatible with all possible JVM options. See [JEP 483](https://openjdk.org/jeps/483),
+       section **Consistency of training and subsequent runs** for a representative
+       list of scenarios that may be incompatible with the AOT cache for JDK 24.
+
+       These scenarios usually involve arbitrary modification of classes for diagnostic
+       purposes and are typically not relevant for production environments.
+
+     When the AOT cache fails to load:
+
+     - If `AOTMode` is `auto`, the JVM will continue execution without using the
+       AOT cache. This is the recommended mode for production environments, especially
+       when you may not have complete control of the command-line (e.g., your
+       application's launch script may allow users to inject options to the command-line).
+       This allows your application to function correctly, although sometimes it may not
+       benefit from the AOT cache.
+
+     - If `AOTMode` is `on`, the JVM will print an error message and exit immediately. This
+       mode should be used only as a "fail-fast" debugging aid to check if your command-line
+       options are compatible with the AOT cache. An alternative is to run your application with
+       `-XX:AOTMode=auto -Xlog:cds` to see if the AOT cache can be used or not.
+
+`-XX:+AOTClassLinking`
+:   If this option is enabled, the JVM will perform more advanced optimizations (such
+    as ahead-of-time resolution of invokedynamic instructions)
+    when creating the AOT cache. As a result, the application will see further improvements
+    in start-up and warm-up performance. However, an AOT cache created with this option
+    cannot be used when certain command-line parameters are specified in
+    the Production phase. Please see [JEP 483](https://openjdk.org/jeps/483) for a
+    detailed discussion of `-XX:+AOTClassLinking` and its restrictions.
+
+    When `-XX:AOTMode` *is used* in the command-line, `AOTClassLinking` is automatically
+    enabled. To disable it, you must explicitly pass the `-XX:-AOTClassLinking` option.
+
+    When `-XX:AOTMode` *is not used* in the command-line,  `AOTClassLinking` is disabled by
+    default to provide full compatibility with traditional CDS options such as `-Xshare:dump.
+
 
 ## Performance Tuning Examples
 

@@ -46,10 +46,10 @@
        $ jfr print dump.jfr
 
        Programmatic access:
-       try (var rf = new RecordingFile(Path.of("dump.jfr)) {
+       try (var rf = new RecordingFile(Path.of("dump.jfr"))) {
            while (rf.hasMoreEvents()) {
                RecordedEvent e = rf.readEvent();
-               System.out.println(e.getName() + " " + e.getDuration()));
+               System.out.println(e.getName() + " " + e.getDuration());
            }
        };
   !-->
@@ -110,10 +110,25 @@
     <Field type="ulong" contentType="address" name="address" label="Monitor Address" description="Address of object waited on" relation="JavaMonitorAddress" />
   </Event>
 
+  <Event name="JavaMonitorNotify" category="Java Application" label="Java Monitor Notify" description="Notifying a Java monitor" thread="true" stackTrace="true">
+    <Field type="Class" name="monitorClass" label="Monitor Class" description="Class of object waited on" />
+    <Field type="uint" name="notifiedCount" label="Notified Threads" description="Number of actually notified threads" />
+    <Field type="ulong" contentType="address" name="address" label="Monitor Address" description="Address of object waited on" relation="JavaMonitorAddress" />
+  </Event>
+
   <Event name="JavaMonitorInflate" category="Java Application" label="Java Monitor Inflated" thread="true" stackTrace="true">
     <Field type="Class" name="monitorClass" label="Monitor Class" />
     <Field type="ulong" contentType="address" name="address" label="Monitor Address" relation="JavaMonitorAddress" />
     <Field type="InflateCause" name="cause" label="Monitor Inflation Cause" description="Cause of inflation" />
+  </Event>
+
+  <Event name="JavaMonitorDeflate" category="Java Application" label="Java Monitor Deflated">
+    <Field type="Class" name="monitorClass" label="Monitor Class" description="Class of the object deflated. If null or N/A, the object has been garbage collected." />
+    <Field type="ulong" contentType="address" name="address" label="Monitor Address" relation="JavaMonitorAddress" description="Address of the object deflated. If null or N/A, the object has been garbage collected."/>
+  </Event>
+
+  <Event name="JavaMonitorStatistics" category="Java Application, Statistics" label="Java Monitor Statistics" period="everyChunk">
+    <Field type="ulong" name="count" label="Monitors in Use" description="Current number of in-use monitors" />
   </Event>
 
   <Event name="SyncOnValueBasedClass" category="Java Virtual Machine, Diagnostics" label="Value Based Class Synchronization" thread="true" stackTrace="true" startTime="false" experimental="true">
@@ -1208,6 +1223,23 @@
     <Field type="string" name="state" label="State" />
   </Type>
 
+  <Event name="ShenandoahEvacuationInformation" category="Java Virtual Machine, GC, Detailed" label="Shenandoah Evacuation Information" startTime="false">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+    <Field type="ulong" name="cSetRegions" label="Collection Set Regions" />
+    <Field type="ulong" contentType="bytes" name="cSetUsedBefore" label="Collection Set Before" description="Memory usage before GC in the collection set regions" />
+    <Field type="ulong" contentType="bytes" name="cSetUsedAfter" label="Collection Set After" description="Memory usage after GC in the collection set regions" />
+    <Field type="ulong" contentType="bytes" name="collectedOld" label="Collected Old" description="Memory collected from old generation" />
+    <Field type="ulong" contentType="bytes" name="collectedPromoted" label="Collected Promoted" description="Memory collected from generation promotion" />
+    <Field type="ulong" contentType="bytes" name="collectedYoung" label="Collection Young" description="Memory collected from young generation" />
+    <Field type="ulong" name="regionsPromotedHumongous" label="Regions Promoted Humongous" />
+    <Field type="ulong" name="regionsPromotedRegular" label="Regions Promoted Regular" />
+    <Field type="ulong" contentType="bytes" name="regularPromotedGarbage" label="Regular Promoted Garbage" description="Garbage memory of in place promoted regular regions" />
+    <Field type="ulong" contentType="bytes" name="regularPromotedFree" label="Regular Promoted Free" description="Free memory of in place promoted regular regions" />
+    <Field type="ulong" name="freeRegions" label="Free Regions" description="Free regions prior to collection" />
+    <Field type="ulong" name="regionsImmediate" label="Regions Immediate" />
+    <Field type="ulong" contentType="bytes" name="immediateBytes" label="Immediate Bytes" />
+  </Event>
+  
   <Event name="Flush" category="Flight Recorder" label="Flush" thread="false" experimental="true">
     <Field type="ulong" name="flushId" label="Flush Identifier" relation="FlushId" />
     <Field type="ulong" name="elements" label="Elements Written" />
@@ -1222,11 +1254,6 @@
     <Field type="boolean" name="onOutOfMemoryError" label="Heap Dump on Out of Memory Error" />
     <Field type="boolean" name="overwrite" label="Overwrite" description="Heap dump overwrites previous file location if it exists" />
     <Field type="int" name="compression" label="Compression Level" description="Compression level of the dump, if larger than 0 we use gzip compression with this level" />
-  </Event>
-
-  <Event name="GCLocker" category="Java Virtual Machine, GC, Detailed" label="GC Locker" startTime="true" thread="true" stackTrace="true">
-    <Field type="uint" name="lockCount" label="Lock Count" description="The number of Java threads in a critical section when the GC locker is started" />
-    <Field type="uint" name="stallCount" label="Stall Count" description="The number of Java threads stalled by the GC locker" />
   </Event>
 
   <Event name="FinalizerStatistics" category="Java Application, Statistics" label="Finalizer Statistics" description="Per class statistics about finalizers" thread="false" startTime="false" period="endChunk">

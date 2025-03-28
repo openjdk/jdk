@@ -346,6 +346,12 @@
   develop(bool, TraceLoopUnswitching, false,                                \
           "Trace loop unswitching")                                         \
                                                                             \
+  product(bool, LoopMultiversioning, true, DIAGNOSTIC,                      \
+          "Enable loop multiversioning (for speculative compilation)")      \
+                                                                            \
+  develop(bool, TraceLoopMultiversioning, false,                            \
+          "Trace loop multiversioning")                                     \
+                                                                            \
   product(bool, AllowVectorizeOnDemand, true,                               \
           "Globally suppress vectorization set in VectorizeMethod")         \
                                                                             \
@@ -354,6 +360,12 @@
                                                                             \
   product(bool, SuperWordReductions, true,                                  \
           "Enable reductions support in superword.")                        \
+                                                                            \
+  product_pd(uint, SuperWordStoreToLoadForwardingFailureDetection, DIAGNOSTIC, \
+          "if >0, auto-vectorization detects possible store-to-load "       \
+          "forwarding failures. The number specifies over how many "        \
+          "loop iterations this detection spans.")                          \
+          range(0, 4096)                                                    \
                                                                             \
   product(bool, UseCMoveUnconditionally, false,                             \
           "Use CMove (scalar and vector) ignoring profitability test.")     \
@@ -626,6 +638,9 @@
                                                                             \
   develop(bool, VerifyLoopOptimizations, false,                             \
           "verify major loop optimizations")                                \
+                                                                            \
+  develop(bool, VerifyNoNewIrreducibleLoops, false,                         \
+          "Verify that no new irreducible loops are created after parsing") \
                                                                             \
   product(bool, ProfileDynamicTypes, true, DIAGNOSTIC,                      \
           "do extra type profiling and use it more aggressively")           \

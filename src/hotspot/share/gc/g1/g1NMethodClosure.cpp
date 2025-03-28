@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/nmethod.hpp"
 #include "gc/g1/g1NMethodClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -85,9 +84,7 @@ void G1NMethodClosure::do_evacuation_and_fixup(nmethod* nm) {
     nm->mark_as_maybe_on_stack();
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != nullptr) {
-      bs_nm->disarm(nm);
-    }
+    bs_nm->disarm(nm);
   }
 
   nm->fix_oop_relocations();
@@ -101,9 +98,7 @@ void G1NMethodClosure::do_marking(nmethod* nm) {
   nm->mark_as_maybe_on_stack();
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != nullptr) {
-    bs_nm->disarm(nm);
-  }
+  bs_nm->disarm(nm);
 
   // The oops were only marked, no need to update oop relocations.
 }

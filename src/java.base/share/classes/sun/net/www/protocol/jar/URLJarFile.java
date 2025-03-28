@@ -36,9 +36,6 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
 import java.security.CodeSigner;
 import java.security.cert.Certificate;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 import sun.net.www.ParseUtil;
 
 /* URL jar file is a common JarFile subtype used for JarURLConnection */
@@ -159,39 +156,26 @@ public class URLJarFile extends JarFile {
      * Given a URL, retrieves a JAR file, caches it to disk, and creates a
      * cached JAR file object.
      */
-    @SuppressWarnings("removal")
     private static JarFile retrieve(final URL url, final URLJarFileCloseController closeController) throws IOException {
-        JarFile result = null;
         Runtime.Version version = "runtime".equals(url.getRef())
                 ? JarFile.runtimeVersion()
                 : JarFile.baseVersion();
-
-        /* get the stream before asserting privileges */
         try (final InputStream in = url.openConnection().getInputStream()) {
-            result = AccessController.doPrivileged(
-                new PrivilegedExceptionAction<>() {
-                    public JarFile run() throws IOException {
-                        Path tmpFile = Files.createTempFile("jar_cache", null);
-                        try {
-                            Files.copy(in, tmpFile, StandardCopyOption.REPLACE_EXISTING);
-                            JarFile jarFile = new URLJarFile(tmpFile.toFile(), closeController, version);
-                            tmpFile.toFile().deleteOnExit();
-                            return jarFile;
-                        } catch (Throwable thr) {
-                            try {
-                                Files.delete(tmpFile);
-                            } catch (IOException ioe) {
-                                thr.addSuppressed(ioe);
-                            }
-                            throw thr;
-                        }
-                    }
-                });
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getException();
+            Path tmpFile = Files.createTempFile("jar_cache", null);
+            try {
+                Files.copy(in, tmpFile, StandardCopyOption.REPLACE_EXISTING);
+                JarFile jarFile = new URLJarFile(tmpFile.toFile(), closeController, version);
+                tmpFile.toFile().deleteOnExit();
+                return jarFile;
+            } catch (Throwable thr) {
+                try {
+                    Files.delete(tmpFile);
+                } catch (IOException ioe) {
+                    thr.addSuppressed(ioe);
+                }
+                throw thr;
+            }
         }
-
-        return result;
     }
 
     private class URLJarFileEntry extends JarEntry {

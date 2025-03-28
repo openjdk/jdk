@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 package jdk.jpackage.test;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -48,15 +47,7 @@ public class Functional {
         return v;
     }
 
-    public static <T, R> Function<T, R> identity(Function<T, R> v) {
-        return v;
-    }
-
     public static <T, R> Function<T, R> identityFunction(Function<T, R> v) {
-        return v;
-    }
-
-    public static <T> Predicate<T> identity(Predicate<T> v) {
         return v;
     }
 

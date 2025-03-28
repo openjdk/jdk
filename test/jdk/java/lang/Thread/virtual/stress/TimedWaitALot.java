@@ -24,28 +24,28 @@
 /*
  * @test id=timeout
  * @summary Stress test timed-Object.wait
- * @run main/othervm TimedWaitALot 200
+ * @run main TimedWaitALot 200
  */
 
 /*
  * @test id=timeout-notify
  * @summary Test timed-Object.wait where the waiting thread is awakened with Object.notify
  *     at around the same time that the timeout expires.
- * @run main/othervm TimedWaitALot 200 true false
+ * @run main TimedWaitALot 150 true false
  */
 
 /*
  * @test id=timeout-interrupt
  * @summary Test timed-Object.wait where the waiting thread is awakened with Thread.interrupt
  *     at around the same time that the timeout expires.
- * @run main/othervm TimedWaitALot 200 false true
+ * @run main TimedWaitALot 150 false true
  */
 
 /*
  * @test id=timeout-notify-interrupt
  * @summary Test timed-Object.wait where the waiting thread is awakened with Object.notify
  *     and Thread.interrupt at around the same time that the timeout expires.
- * @run main/othervm TimedWaitALot 100 true true
+ * @run main TimedWaitALot 100 true true
  */
 
 import java.time.Instant;

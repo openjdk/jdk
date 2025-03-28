@@ -101,13 +101,10 @@ findClass(JNIEnv *env, const char * name)
         EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"findClass name");
     }
     x = JNI_FUNC_PTR(env,FindClass)(env, name);
-    if (x == NULL) {
-        ERROR_MESSAGE(("JDWP Can't find class %s", name));
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
-    }
     if ( JNI_FUNC_PTR(env,ExceptionCheck)(env) ) {
-        ERROR_MESSAGE(("JDWP Exception occurred finding class %s", name));
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
+        JNI_FUNC_PTR(env,ExceptionClear)(env); // keep -Xcheck:jni happy
+        ERROR_MESSAGE(("JNI Exception occurred finding class %s", name));
+        EXIT_ERROR(AGENT_ERROR_JNI_EXCEPTION,NULL);
     }
     return x;
 }
@@ -130,15 +127,11 @@ getMethod(JNIEnv *env, jclass clazz, const char * name, const char *signature)
         EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"getMethod signature");
     }
     method = JNI_FUNC_PTR(env,GetMethodID)(env, clazz, name, signature);
-    if (method == NULL) {
-        ERROR_MESSAGE(("JDWP Can't find method %s with signature %s",
-                                name, signature));
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
-    }
     if ( JNI_FUNC_PTR(env,ExceptionCheck)(env) ) {
-        ERROR_MESSAGE(("JDWP Exception occurred finding method %s with signature %s",
-                                name, signature));
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
+        JNI_FUNC_PTR(env,ExceptionClear)(env); // keep -Xcheck:jni happy
+        ERROR_MESSAGE(("JNI Exception occurred finding method %s with signature %s",
+                       name, signature));
+        EXIT_ERROR(AGENT_ERROR_JNI_EXCEPTION,NULL);
     }
     return method;
 }
@@ -161,15 +154,11 @@ getStaticMethod(JNIEnv *env, jclass clazz, const char * name, const char *signat
         EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"getStaticMethod signature");
     }
     method = JNI_FUNC_PTR(env,GetStaticMethodID)(env, clazz, name, signature);
-    if (method == NULL) {
-        ERROR_MESSAGE(("JDWP Can't find method %s with signature %s",
-                                name, signature));
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
-    }
     if ( JNI_FUNC_PTR(env,ExceptionCheck)(env) ) {
+        JNI_FUNC_PTR(env,ExceptionClear)(env); // keep -Xcheck:jni happy
         ERROR_MESSAGE(("JDWP Exception occurred finding method %s with signature %s",
-                                name, signature));
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
+                       name, signature));
+        EXIT_ERROR(AGENT_ERROR_JNI_EXCEPTION,NULL);
     }
     return method;
 }

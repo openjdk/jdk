@@ -174,7 +174,9 @@ public class DatagramSocketAdaptor
     @Override
     public void send(DatagramPacket p) throws IOException {
         try {
-            dc.blockingSend(p);
+            synchronized (p) {
+                dc.blockingSend(p);
+            }
         } catch (AlreadyConnectedException e) {
             throw new IllegalArgumentException("Connected and packet address differ");
         } catch (ClosedChannelException e) {
@@ -185,7 +187,9 @@ public class DatagramSocketAdaptor
     @Override
     public void receive(DatagramPacket p) throws IOException {
         try {
-            dc.blockingReceive(p, MILLISECONDS.toNanos(timeout));
+            synchronized (p) {
+                dc.blockingReceive(p, MILLISECONDS.toNanos(timeout));
+            }
         } catch (SocketTimeoutException | ClosedByInterruptException e) {
             throw e;
         } catch (InterruptedIOException e) {

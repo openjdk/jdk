@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -50,6 +49,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceCounters.hpp"
@@ -62,6 +62,7 @@
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/objLayout.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
@@ -369,7 +370,7 @@ void Universe::serialize(SerializeClosure* f) {
 void Universe::check_alignment(uintx size, uintx alignment, const char* name) {
   if (size < alignment || size % alignment != 0) {
     vm_exit_during_initialization(
-      err_msg("Size of %s (" UINTX_FORMAT " bytes) must be aligned to " UINTX_FORMAT " bytes", name, size, alignment));
+      err_msg("Size of %s (%zu bytes) must be aligned to %zu bytes", name, size, alignment));
   }
 }
 
@@ -571,7 +572,7 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
       }
     }
     if (CDSConfig::is_dumping_heap()) {
-      HeapShared::init_scratch_objects(CHECK);
+      HeapShared::init_scratch_objects_for_basic_type_mirrors(CHECK);
     }
 }
 
@@ -868,6 +869,8 @@ jint universe_init() {
   // Initialize CPUTimeCounters object, which must be done before creation of the heap.
   CPUTimeCounters::initialize();
 
+  ObjLayout::initialize();
+
 #ifdef _LP64
   MetaspaceShared::adjust_heap_sizes_for_dumping();
 #endif // _LP64
@@ -936,7 +939,7 @@ void Universe::initialize_tlab() {
 ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
 
   assert(alignment <= Arguments::conservative_max_heap_alignment(),
-         "actual alignment " SIZE_FORMAT " must be within maximum heap alignment " SIZE_FORMAT,
+         "actual alignment %zu must be within maximum heap alignment %zu",
          alignment, Arguments::conservative_max_heap_alignment());
 
   size_t total_reserved = align_up(heap_size, alignment);
@@ -953,33 +956,36 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   }
 
   // Now create the space.
-  ReservedHeapSpace total_rs(total_reserved, alignment, page_size, AllocateHeapAt);
+  ReservedHeapSpace rhs = HeapReserver::reserve(total_reserved, alignment, page_size, AllocateHeapAt);
 
-  if (total_rs.is_reserved()) {
-    assert((total_reserved == total_rs.size()) && ((uintptr_t)total_rs.base() % alignment == 0),
-           "must be exactly of required size and alignment");
-    // We are good.
-
-    if (AllocateHeapAt != nullptr) {
-      log_info(gc,heap)("Successfully allocated Java heap at location %s", AllocateHeapAt);
-    }
-
-    if (UseCompressedOops) {
-      CompressedOops::initialize(total_rs);
-    }
-
-    Universe::calculate_verify_data((HeapWord*)total_rs.base(), (HeapWord*)total_rs.end());
-
-    return total_rs;
+  if (!rhs.is_reserved()) {
+    vm_exit_during_initialization(
+      err_msg("Could not reserve enough space for %zu KB object heap",
+              total_reserved/K));
   }
 
-  vm_exit_during_initialization(
-    err_msg("Could not reserve enough space for " SIZE_FORMAT "KB object heap",
-            total_reserved/K));
+  assert(total_reserved == rhs.size(),    "must be exactly of required size");
+  assert(is_aligned(rhs.base(),alignment),"must be exactly of required alignment");
 
-  // satisfy compiler
-  ShouldNotReachHere();
-  return ReservedHeapSpace(0, 0, os::vm_page_size());
+  assert(markWord::encode_pointer_as_mark(rhs.base()).decode_pointer() == rhs.base(),
+      "area must be distinguishable from marks for mark-sweep");
+  assert(markWord::encode_pointer_as_mark(&rhs.base()[rhs.size()]).decode_pointer() ==
+      &rhs.base()[rhs.size()],
+      "area must be distinguishable from marks for mark-sweep");
+
+  // We are good.
+
+  if (AllocateHeapAt != nullptr) {
+    log_info(gc,heap)("Successfully allocated Java heap at location %s", AllocateHeapAt);
+  }
+
+  if (UseCompressedOops) {
+    CompressedOops::initialize(rhs);
+  }
+
+  Universe::calculate_verify_data((HeapWord*)rhs.base(), (HeapWord*)rhs.end());
+
+  return rhs;
 }
 
 OopStorage* Universe::vm_weak() {

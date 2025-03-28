@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -116,11 +115,6 @@ JavaCallWrapper::~JavaCallWrapper() {
   ThreadStateTransition::transition_from_java(_thread, _thread_in_vm);
 
   // State has been restored now make the anchor frame visible for the profiler.
-  // Do this after the transition because this allows us to put an assert
-  // the Java->vm transition which checks to see that stack is not walkable
-  // on sparc/ia64 which will catch violations of the resetting of last_Java_frame
-  // invariants (i.e. _flags always cleared on return to Java)
-
   _thread->frame_anchor()->copy(&_anchor);
 
   // Release handles after we are marked as being inside the VM again, since this

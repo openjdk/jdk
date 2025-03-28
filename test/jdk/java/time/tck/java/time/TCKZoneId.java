@@ -96,6 +96,7 @@ public class TCKZoneId extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // SHORT_IDS
     //-----------------------------------------------------------------------
+    @Test
     public void test_constant_OLD_IDS_POST_2024b() {
         Map<String, String> ids = ZoneId.SHORT_IDS;
         assertEquals(ids.get("EST"), "America/Panama");

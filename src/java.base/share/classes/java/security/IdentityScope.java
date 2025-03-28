@@ -76,13 +76,7 @@ class IdentityScope extends Identity {
     // initialize the system scope
     private static void initializeSystemScope() {
 
-        String classname = AccessController.doPrivileged(
-                                new PrivilegedAction<>() {
-            public String run() {
-                return Security.getProperty("system.scope");
-            }
-        });
-
+        String classname = Security.getProperty("system.scope");
         if (classname == null) {
             return;
 
@@ -153,7 +147,6 @@ class IdentityScope extends Identity {
      * @see #getSystemScope
      */
     protected static void setSystemScope(IdentityScope scope) {
-        check("setSystemScope");
         IdentityScope.scope = scope;
     }
 
@@ -241,12 +234,4 @@ class IdentityScope extends Identity {
     public String toString() {
         return super.toString() + "[" + size() + "]";
     }
-
-    private static void check(String directive) {
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkSecurityAccess(directive);
-        }
-    }
-
 }

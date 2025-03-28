@@ -47,6 +47,7 @@ Java_NoClassDefFoundErrorTest_callFindClass(JNIEnv *env, jclass klass, jstring c
 
 
 static char* giant_string() {
+#ifdef _LP64
     size_t len = ((size_t)INT_MAX) + 3;
     char* c_name = malloc(len * sizeof(char));
     if (c_name != NULL) {
@@ -54,6 +55,14 @@ static char* giant_string() {
         c_name[len - 1] = '\0';
     }
     return c_name;
+#else
+    /* On 32-bit, gcc warns us against using values larger than ptrdiff_t for malloc,
+     * memset and as array subscript. Since the chance of a 2GB allocation to be
+     * successful is slim (would typically reach or exceed the user address space
+     * size), lets just not bother. Returning NULL will cause the test to be silently
+     * skipped. */
+    return NULL;
+#endif
 }
 
 JNIEXPORT jboolean JNICALL

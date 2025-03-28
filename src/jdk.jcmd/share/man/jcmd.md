@@ -737,6 +737,17 @@ The following commands are available:
     -   `-e`: (Optional) Print extended thread information (BOOLEAN, false)
     -   `-l`: (Optional) Prints `java.util.concurrent` locks (BOOLEAN, false)
 
+`Thread.vthread_scheduler`
+:   Print the virtual thread scheduler, and the delayed task schedulers that support
+    virtual threads doing timed operations.
+
+    Impact: Low
+
+`Thread.vthread_pollers`
+:   Print the I/O pollers that support virtual threads doing blocking network I/O operations.
+
+    Impact: Low
+
 `VM.cds` \[*arguments*\]
 :   Dump a static or dynamic shared archive that includes all currently loaded classes.
 
@@ -836,7 +847,7 @@ The following commands are available:
     -   `log`: (Optional) Name of log to be printed.
         If omitted, all logs are printed. (STRING, no default value)
     -   `max`: (Optional) Maximum number of events to be printed (newest first).
-        If omitted, all events are printed. (STRING, no default value)
+        If omitted or zero, all events are printed. (INT, 0)
 
 `VM.flags` \[*options*\]
 :   Print the VM flag options and their current values.

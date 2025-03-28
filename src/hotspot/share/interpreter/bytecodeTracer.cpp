@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classPrinter.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
@@ -105,7 +104,7 @@ class BytecodePrinter {
       // the incoming method.  We could lose a line of trace output.
       // This is acceptable in a debug-only feature.
       st->cr();
-      st->print("[" UINTX_FORMAT "] ", Thread::current()->osthread()->thread_id_for_printing());
+      st->print("[%zu] ", Thread::current()->osthread()->thread_id_for_printing());
       method->print_name(st);
       st->cr();
       _current_method = method();
@@ -128,12 +127,12 @@ class BytecodePrinter {
         code == Bytecodes::_return_register_finalizer ||
         (code >= Bytecodes::_ireturn && code <= Bytecodes::_return)) {
       int bci = (int)(bcp - method->code_base());
-      st->print("[" UINTX_FORMAT  "] ", Thread::current()->osthread()->thread_id_for_printing());
+      st->print("[%zu] ", Thread::current()->osthread()->thread_id_for_printing());
       if (Verbose) {
-        st->print("%8d  %4d  " INTPTR_FORMAT " " INTPTR_FORMAT " %s",
+        st->print("%8zu  %4d  " INTPTR_FORMAT " " INTPTR_FORMAT " %s",
             BytecodeCounter::counter_value(), bci, tos, tos2, Bytecodes::name(code));
       } else {
-        st->print("%8d  %4d  %s",
+        st->print("%8zu  %4d  %s",
             BytecodeCounter::counter_value(), bci, Bytecodes::name(code));
       }
       print_attributes(bci, st);
@@ -179,6 +178,7 @@ class BytecodePrinter {
   }
 };
 
+#ifndef PRODUCT
 // We need a global instance to keep track of the states when the bytecodes
 // are executed. Access by multiple threads are controlled by ttyLocker.
 static BytecodePrinter _interpreter_printer;
@@ -194,6 +194,7 @@ void BytecodeTracer::trace_interpreter(const methodHandle& method, address bcp, 
     _interpreter_printer.trace(method, bcp, tos, tos2, st);
   }
 }
+#endif
 
 void BytecodeTracer::print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags) {
   BytecodePrinter method_printer(flags);

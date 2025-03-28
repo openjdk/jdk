@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,9 +90,8 @@ public class DnsContextFactory implements InitialContextFactory {
      * Public for use by product test suite.
      */
     public static boolean platformServersAvailable() {
-        return !filterNameServers(
-                    ResolverConfiguration.open().nameservers(), true
-                ).isEmpty();
+        return !ResolverConfiguration
+                .open().nameservers().isEmpty();
     }
 
     private static Context urlToContext(String url, Hashtable<?,?> env)
@@ -145,8 +144,8 @@ public class DnsContextFactory implements InitialContextFactory {
                 // No server or port given, so look to underlying platform.
                 // ResolverConfiguration does some limited caching, so the
                 // following is reasonably efficient even if called rapid-fire.
-                List<String> platformServers = filterNameServers(
-                    ResolverConfiguration.open().nameservers(), false);
+                List<String> platformServers =
+                        ResolverConfiguration.open().nameservers();
                 if (!platformServers.isEmpty()) {
                     servers.addAll(platformServers);
                     continue;  // on to next URL (if any, which is unlikely)
@@ -215,43 +214,5 @@ public class DnsContextFactory implements InitialContextFactory {
     private static String getInitCtxUrl(Hashtable<?,?> env) {
         String url = (String) env.get(Context.PROVIDER_URL);
         return ((url != null) ? url : DEFAULT_URL);
-    }
-
-    /**
-     * Removes any DNS server that's not permitted to access
-     * @param input the input server[:port] list, must not be null
-     * @param oneIsEnough return output once there exists one ok
-     * @return the filtered list, all non-permitted input removed
-     */
-    private static List<String> filterNameServers(List<String> input, boolean oneIsEnough) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security == null || input == null || input.isEmpty()) {
-            return input;
-        } else {
-            List<String> output = new ArrayList<>();
-            for (String platformServer: input) {
-                int colon = platformServer.indexOf(':',
-                        platformServer.indexOf(']') + 1);
-
-                int p = (colon < 0)
-                    ? DEFAULT_PORT
-                    : Integer.parseInt(
-                        platformServer.substring(colon + 1));
-                String s = (colon < 0)
-                    ? platformServer
-                    : platformServer.substring(0, colon);
-                try {
-                    security.checkConnect(s, p);
-                    output.add(platformServer);
-                    if (oneIsEnough) {
-                        return output;
-                    }
-                } catch (SecurityException se) {
-                    continue;
-                }
-            }
-            return output;
-        }
     }
 }

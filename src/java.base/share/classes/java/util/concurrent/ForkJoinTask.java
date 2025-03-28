@@ -278,6 +278,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     static final int UNCOMPENSATE   = 1 << 16; // helpJoin sentinel
 
     // Fields
+    /** @serial */
     volatile int status;                // accessed directly by pool and workers
     private transient volatile Aux aux; // either waiters or thrown Exception
 
@@ -786,7 +787,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             invokeAll(tasks.toArray(new ForkJoinTask<?>[0]));
             return tasks;
         }
-        @SuppressWarnings("unchecked")
         List<? extends ForkJoinTask<?>> ts =
             (List<? extends ForkJoinTask<?>>) tasks;
         Throwable ex = null;

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,9 +246,9 @@ inline void Assembler::nop()                              { Assembler::ori(R0, R
 // NOP for FP and BR units (different versions to allow them to be in one group)
 inline void Assembler::fpnop0()                           { Assembler::fmr(F30, F30); }
 inline void Assembler::fpnop1()                           { Assembler::fmr(F31, F31); }
-inline void Assembler::brnop0()                           { Assembler::mcrf(CCR2, CCR2); }
-inline void Assembler::brnop1()                           { Assembler::mcrf(CCR3, CCR3); }
-inline void Assembler::brnop2()                           { Assembler::mcrf(CCR4,  CCR4); }
+inline void Assembler::brnop0()                           { Assembler::mcrf(CR2, CR2); }
+inline void Assembler::brnop1()                           { Assembler::mcrf(CR3, CR3); }
+inline void Assembler::brnop2()                           { Assembler::mcrf(CR4,  CR4); }
 
 inline void Assembler::mr(      Register d, Register s)   { Assembler::orr(d, s, s); }
 inline void Assembler::ori_opt( Register d, int ui16)     { if (ui16!=0) Assembler::ori( d, d, ui16); }
@@ -303,7 +303,7 @@ inline void Assembler::clrlsldi_(Register a, Register s, int clrl6, int shl6) { 
 inline void Assembler::extrdi(  Register a, Register s, int n, int b){ Assembler::rldicl(a, s, b+n, 64-n); }
 // testbit with condition register.
 inline void Assembler::testbitdi(ConditionRegister cr, Register a, Register s, int ui6) {
-  if (cr == CCR0) {
+  if (cr == CR0) {
     Assembler::rldicr_(a, s, 63-ui6, 0);
   } else {
     Assembler::rldicr(a, s, 63-ui6, 0);
@@ -335,6 +335,13 @@ inline void Assembler::rlwimi(  Register a, Register s, int sh5, int mb5, int me
 inline void Assembler::rldimi_( Register a, Register s, int sh6, int mb6)         { emit_int32(RLDIMI_OPCODE | rta(a) | rs(s) | sh162030(sh6) | mb2126(mb6) | rc(1)); }
 inline void Assembler::insrdi(  Register a, Register s, int n,   int b)           { Assembler::rldimi(a, s, 64-(b+n), b); }
 inline void Assembler::insrwi(  Register a, Register s, int n,   int b)           { Assembler::rlwimi(a, s, 32-(b+n), b, b+n-1); }
+
+inline void Assembler::rlwnm( Register a, Register s, Register b, int mb, int me) { emit_int32(RLWNM_OPCODE | rta(a) | rs(s) | rb(b) | mb2125(mb) | me2630(me) | rc(0)); }
+inline void Assembler::rlwnm_(Register a, Register s, Register b, int mb, int me) { emit_int32(RLWNM_OPCODE | rta(a) | rs(s) | rb(b) | mb2125(mb) | me2630(me) | rc(1)); }
+inline void Assembler::rldcl(  Register a, Register s, Register b, int mb)        { emit_int32(RLDCL_OPCODE | rta(a) | rs(s) | rb(b) | mb2126(mb) | rc(0)); }
+inline void Assembler::rldcl_( Register a, Register s, Register b, int mb)        { emit_int32(RLDCL_OPCODE | rta(a) | rs(s) | rb(b) | mb2126(mb) | rc(1)); }
+inline void Assembler::rldcr(  Register a, Register s, Register b, int me)        { emit_int32(RLDCR_OPCODE | rta(a) | rs(s) | rb(b) | me2126(me) | rc(0)); }
+inline void Assembler::rldcr_( Register a, Register s, Register b, int me)        { emit_int32(RLDCR_OPCODE | rta(a) | rs(s) | rb(b) | me2126(me) | rc(1)); }
 
 // PPC 1, section 3.3.2 Fixed-Point Load Instructions
 inline void Assembler::lwzx( Register d, Register s1, Register s2) { emit_int32(LWZX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
@@ -741,6 +748,9 @@ inline void Assembler::lfd( FloatRegister d, int si16, Register a)   { emit_int3
 inline void Assembler::lfdu(FloatRegister d, int si16, Register a)   { emit_int32( LFDU_OPCODE | frt(d) | ra(a)     | simm(si16,16)); }
 inline void Assembler::lfdx(FloatRegister d, Register a, Register b) { emit_int32( LFDX_OPCODE | frt(d) | ra0mem(a) | rb(b)); }
 
+inline void Assembler::lfiwax(FloatRegister d, Register a, Register b) { emit_int32( LFIWAX_OPCODE | frt(d) | ra0mem(a) |rb(b)); }
+inline void Assembler::lfiwzx(FloatRegister d, Register a, Register b) { emit_int32( LFIWZX_OPCODE | frt(d) | ra0mem(a) |rb(b)); }
+
 // PPC 1, section 4.6.3 Floating-Point Store Instructions
 // Use ra0mem instead of ra in some instructions below.
 inline void Assembler::stfs( FloatRegister s, int si16, Register a)  { emit_int32( STFS_OPCODE  | frs(s) | ra0mem(a) | simm(si16,16)); }
@@ -749,6 +759,8 @@ inline void Assembler::stfsx(FloatRegister s, Register a, Register b){ emit_int3
 inline void Assembler::stfd( FloatRegister s, int si16, Register a)  { emit_int32( STFD_OPCODE  | frs(s) | ra0mem(a) | simm(si16,16)); }
 inline void Assembler::stfdu(FloatRegister s, int si16, Register a)  { emit_int32( STFDU_OPCODE | frs(s) | ra(a)     | simm(si16,16)); }
 inline void Assembler::stfdx(FloatRegister s, Register a, Register b){ emit_int32( STFDX_OPCODE | frs(s) | ra0mem(a) | rb(b)); }
+
+inline void Assembler::stfiwx(FloatRegister s, Register a, Register b) { emit_int32( STFIWX_OPCODE | frs(s) | ra0mem(a) |rb(b)); }
 
 // PPC 1, section 4.6.4 Floating-Point Move Instructions
 inline void Assembler::fmr( FloatRegister d, FloatRegister b) { emit_int32( FMR_OPCODE | frt(d) | frb(b) | rc(0)); }
@@ -861,6 +873,7 @@ inline void Assembler::stxvd2x( VectorSRegister d, Register s1, Register s2) { e
 inline void Assembler::mtvsrd(  VectorSRegister d, Register a)               { emit_int32( MTVSRD_OPCODE  | vsrt(d)  | ra(a)); }
 inline void Assembler::mtvsrdd( VectorSRegister d, Register a, Register b)   { emit_int32( MTVSRDD_OPCODE | vsrt(d)  | ra(a) | rb(b)); }
 inline void Assembler::mfvsrd(  Register d, VectorSRegister a)               { emit_int32( MFVSRD_OPCODE  | vsrs(a)  | ra(d)); }
+inline void Assembler::mfvsrld( Register d, VectorSRegister a)               { emit_int32( MFVSRLD_OPCODE | vsrs(a)  | ra(d)); }
 inline void Assembler::mtvsrwz( VectorSRegister d, Register a)               { emit_int32( MTVSRWZ_OPCODE | vsrt(d) | ra(a)); }
 inline void Assembler::mfvsrwz( Register d, VectorSRegister a)               { emit_int32( MFVSRWZ_OPCODE | vsrs(a) | ra(d)); }
 inline void Assembler::xxspltib(VectorSRegister d, int ui8)                  { emit_int32( XXSPLTIB_OPCODE | vsrt(d) | imm8(ui8)); }
@@ -871,6 +884,10 @@ inline void Assembler::xxlxor(  VectorSRegister d, VectorSRegister a, VectorSReg
 inline void Assembler::xxleqv(  VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XXLEQV_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xxbrd(   VectorSRegister d, VectorSRegister b)                    { emit_int32( XXBRD_OPCODE | vsrt(d) | vsrb(b) ); }
 inline void Assembler::xxbrw(   VectorSRegister d, VectorSRegister b)                    { emit_int32( XXBRW_OPCODE | vsrt(d) | vsrb(b) ); }
+inline void Assembler::xvcvhpsp(VectorSRegister d, VectorSRegister b)                    { emit_int32( XVCVHPSP_OPCODE | vsrt(d) | vsrb(b) ); }
+inline void Assembler::xvcvsphp(VectorSRegister d, VectorSRegister b)                    { emit_int32( XVCVSPHP_OPCODE | vsrt(d) | vsrb(b) ); }
+inline void Assembler::xscvhpdp(VectorSRegister d, VectorSRegister b)                    { emit_int32( XSCVHPDP_OPCODE | vsrt(d) | vsrb(b) ); }
+inline void Assembler::xscvdphp(VectorSRegister d, VectorSRegister b)                    { emit_int32( XSCVDPHP_OPCODE | vsrt(d) | vsrb(b) ); }
 inline void Assembler::xvdivsp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVDIVSP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvdivdp( VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVDIVDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
 inline void Assembler::xvabssp( VectorSRegister d, VectorSRegister b)                    { emit_int32( XVABSSP_OPCODE | vsrt(d) | vsrb(b)); }
@@ -1060,6 +1077,14 @@ inline void Assembler::vpopcntb(VectorRegister d, VectorRegister b)             
 inline void Assembler::vpopcnth(VectorRegister d, VectorRegister b)                   { emit_int32( VPOPCNTH_OPCODE | vrt(d) | vrb(b)); }
 inline void Assembler::vpopcntw(VectorRegister d, VectorRegister b)                   { emit_int32( VPOPCNTW_OPCODE | vrt(d) | vrb(b)); }
 inline void Assembler::vpopcntd(VectorRegister d, VectorRegister b)                   { emit_int32( VPOPCNTD_OPCODE | vrt(d) | vrb(b)); }
+inline void Assembler::vclzb(   VectorRegister d, VectorRegister b)                   { emit_int32( VCLZB_OPCODE    | vrt(d) | vrb(b)); }
+inline void Assembler::vclzh(   VectorRegister d, VectorRegister b)                   { emit_int32( VCLZH_OPCODE    | vrt(d) | vrb(b)); }
+inline void Assembler::vclzw(   VectorRegister d, VectorRegister b)                   { emit_int32( VCLZW_OPCODE    | vrt(d) | vrb(b)); }
+inline void Assembler::vclzd(   VectorRegister d, VectorRegister b)                   { emit_int32( VCLZD_OPCODE    | vrt(d) | vrb(b)); }
+inline void Assembler::vctzb(   VectorRegister d, VectorRegister b)                   { emit_int32( VCTZB_OPCODE    | vrt(d) | vrb(b)); }
+inline void Assembler::vctzh(   VectorRegister d, VectorRegister b)                   { emit_int32( VCTZH_OPCODE    | vrt(d) | vrb(b)); }
+inline void Assembler::vctzw(   VectorRegister d, VectorRegister b)                   { emit_int32( VCTZW_OPCODE    | vrt(d) | vrb(b)); }
+inline void Assembler::vctzd(   VectorRegister d, VectorRegister b)                   { emit_int32( VCTZD_OPCODE    | vrt(d) | vrb(b)); }
 inline void Assembler::mtvscr(  VectorRegister b)                                     { emit_int32( MTVSCR_OPCODE   | vrb(b)); }
 inline void Assembler::mfvscr(  VectorRegister d)                                     { emit_int32( MFVSCR_OPCODE   | vrt(d)); }
 
@@ -1150,11 +1175,16 @@ inline void Assembler::lfsx(FloatRegister d, Register b) { emit_int32( LFSX_OPCO
 inline void Assembler::lfd( FloatRegister d, int si16)   { emit_int32( LFD_OPCODE  | frt(d) | simm(si16,16)); }
 inline void Assembler::lfdx(FloatRegister d, Register b) { emit_int32( LFDX_OPCODE | frt(d) | rb(b)); }
 
+inline void Assembler::lfiwax(FloatRegister d, Register b) { emit_int32( LFIWAX_OPCODE | frt(d) | rb(b)); }
+inline void Assembler::lfiwzx(FloatRegister d, Register b) { emit_int32( LFIWZX_OPCODE | frt(d) | rb(b)); }
+
 // ra0 version
 inline void Assembler::stfs( FloatRegister s, int si16)   { emit_int32( STFS_OPCODE  | frs(s) | simm(si16, 16)); }
 inline void Assembler::stfsx(FloatRegister s, Register b) { emit_int32( STFSX_OPCODE | frs(s) | rb(b)); }
 inline void Assembler::stfd( FloatRegister s, int si16)   { emit_int32( STFD_OPCODE  | frs(s) | simm(si16, 16)); }
 inline void Assembler::stfdx(FloatRegister s, Register b) { emit_int32( STFDX_OPCODE | frs(s) | rb(b)); }
+
+inline void Assembler::stfiwx(FloatRegister s, Register b) { emit_int32( STFIWX_OPCODE | frs(s) |rb(b)); }
 
 // ra0 version
 inline void Assembler::lvebx( VectorRegister d, Register s2) { emit_int32( LVEBX_OPCODE  | vrt(d) | rb(s2)); }

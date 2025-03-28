@@ -28,7 +28,10 @@
  * @requires vm.compiler2.enabled
  * @requires (os.arch == "riscv64" & vm.cpu.features ~= ".*zvfh.*")
  * @library /test/lib /
- * @run driver compiler.vectorization.TestFloatConversionsVectorNaN
+ * @run driver compiler.vectorization.TestFloatConversionsVectorNaN nCOH_nAV
+ * @run driver compiler.vectorization.TestFloatConversionsVectorNaN nCOH_yAV
+ * @run driver compiler.vectorization.TestFloatConversionsVectorNaN yCOH_nAV
+ * @run driver compiler.vectorization.TestFloatConversionsVectorNaN yCOH_yAV
  */
 
 package compiler.vectorization;
@@ -47,16 +50,30 @@ public class TestFloatConversionsVectorNaN {
     private static float  [] fout;
 
     public static void main(String args[]) {
-        TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                   "-XX:CompileThresholdScaling=0.3");
+        TestFramework framework = new TestFramework(TestFloatConversionsVectorNaN.class);
+        framework.addFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3");
+        switch (args[0]) {
+            case "nCOH_nAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"); }
+            case "nCOH_yAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"); }
+            case "yCOH_nAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"); }
+            case "yCOH_yAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector"); }
+            default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
+        };
+        framework.start();
         System.out.println("PASSED");
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE + "min(max_float, max_short)", "> 0"})
+    @IR(counts = {IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE + "min(max_float, max_short)", "> 0"},
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"})
     public void test_float_float16(short[] sout, float[] finp) {
         for (int i = 0; i < finp.length; i++) {
             sout[i] = Float.floatToFloat16(finp[i]);
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // F_adr = base + 16 + 4*i   ->  i % 2 = 0       F_adr = base + 12 + 4*i   ->  i % 2 = 1
+            // S_adr = base + 16 + 2*i   ->  i % 4 = 0       S_adr = base + 12 + 2*i   ->  i % 4 = 2
+            // -> vectorize                                  -> no vectorization
         }
     }
 
@@ -129,10 +146,16 @@ public class TestFloatConversionsVectorNaN {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE + "min(max_float, max_short)", "> 0"})
+    @IR(counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE + "min(max_float, max_short)", "> 0"},
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"})
     public void test_float16_float(float[] fout, short[] sinp) {
         for (int i = 0; i < sinp.length; i++) {
             fout[i] = Float.float16ToFloat(sinp[i]);
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // F_adr = base + 16 + 4*i   ->  i % 2 = 0       F_adr = base + 12 + 4*i   ->  i % 2 = 1
+            // S_adr = base + 16 + 2*i   ->  i % 4 = 0       S_adr = base + 12 + 2*i   ->  i % 4 = 2
+            // -> vectorize                                  -> no vectorization
         }
     }
 

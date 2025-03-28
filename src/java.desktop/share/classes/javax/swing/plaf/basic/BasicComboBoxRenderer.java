@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,6 @@ implements ListCellRenderer<Object>, Serializable {
     * the <code>setBorder</code> method.
     */
     protected static Border noFocusBorder = new EmptyBorder(1, 1, 1, 1);
-    private static final Border SAFE_NO_FOCUS_BORDER = new EmptyBorder(1, 1, 1, 1);
 
     /**
      * Constructs a new instance of {@code BasicComboBoxRenderer}.
@@ -68,13 +67,8 @@ implements ListCellRenderer<Object>, Serializable {
         setBorder(getNoFocusBorder());
     }
 
-    @SuppressWarnings("removal")
     private static Border getNoFocusBorder() {
-        if (System.getSecurityManager() != null) {
-            return SAFE_NO_FOCUS_BORDER;
-        } else {
-            return noFocusBorder;
-        }
+        return noFocusBorder;
     }
 
     public Dimension getPreferredSize() {

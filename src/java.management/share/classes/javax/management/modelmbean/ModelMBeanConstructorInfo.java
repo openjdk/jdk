@@ -31,14 +31,12 @@
 package javax.management.modelmbean;
 
 import static com.sun.jmx.defaults.JmxProperties.MODELMBEAN_LOGGER;
-import com.sun.jmx.mbeanserver.GetPropertyAction;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.lang.reflect.Constructor;
-import java.security.AccessController;
 import java.lang.System.Logger.Level;
 
 import javax.management.Descriptor;

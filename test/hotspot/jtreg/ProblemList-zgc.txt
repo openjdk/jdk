@@ -92,6 +92,7 @@ serviceability/sa/TestIntConstant.java                        8307393   generic-
 serviceability/sa/TestJhsdbJstackLineNumbers.java             8307393   generic-all
 serviceability/sa/TestJhsdbJstackLock.java                    8307393   generic-all
 serviceability/sa/TestJhsdbJstackMixed.java                   8307393   generic-all
+serviceability/sa/TestJhsdbJstackPrintVMLocks.java            8307393   generic-all
 serviceability/sa/TestJhsdbJstackUpcall.java                  8307393   generic-all
 serviceability/sa/TestJmapCore.java                           8307393   generic-all
 serviceability/sa/TestJmapCoreMetaspace.java                  8307393   generic-all

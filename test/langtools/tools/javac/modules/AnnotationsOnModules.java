@@ -26,10 +26,8 @@
  * @bug 8159602 8170549 8171255 8171322 8254023 8341966
  * @summary Test annotations on module declaration.
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main AnnotationsOnModules
  */
@@ -806,7 +804,7 @@ public class AnnotationsOnModules extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(OutputKind.DIRECT);
         List<String> expectedErrors = List.of(
-            "- compiler.err.cant.access: m.module-info, (compiler.misc.bad.class.file.header: module-info.class, (compiler.misc.bad.requires.flag: ACC_TRANSITIVE (0x0020))",
+            "- compiler.err.cant.access: m.module-info, (compiler.misc.bad.class.file.header: module-info.class, (compiler.misc.bad.requires.flag: ACC_TRANSITIVE (0x0020)))",
             "1 error"
         );
 

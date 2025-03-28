@@ -263,7 +263,6 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
      * Check that the caller has access to perform indicated operation.
      * The client must be on same the same host as this server.
      */
-    @SuppressWarnings("removal")
     public static void checkAccess(String op) throws AccessException {
 
         try {
@@ -370,7 +369,6 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
      *          {@link ObjectInputFilter.Status#REJECTED} if rejected,
      *          otherwise {@link ObjectInputFilter.Status#UNDECIDED}
      */
-    @SuppressWarnings("removal")
     private static ObjectInputFilter.Status registryFilter(ObjectInputFilter.FilterInfo filterInfo) {
         if (registryFilter != null) {
             ObjectInputFilter.Status status = registryFilter.checkInput(filterInfo);

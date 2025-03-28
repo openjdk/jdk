@@ -68,13 +68,6 @@ import javax.management.loading.ClassLoaderRepository;
  * @since 1.5
  */
 
-/* DELETED:
- *
- * <li><p>For the {@link #isRegistered isRegistered} method, the
- * caller's permissions must imply {@link
- * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
- * MBeanPermission(null, null, name, "isRegistered")}.</p>
- */
 public interface MBeanServer extends MBeanServerConnection {
 
     /**

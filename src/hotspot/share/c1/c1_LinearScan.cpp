@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_CFGPrinter.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_Compilation.hpp"
@@ -5889,7 +5888,6 @@ bool LinearScanWalker::activate_current() {
 
   } else if (allocator()->gen()->is_vreg_flag_set(cur->reg_num(), LIRGenerator::must_start_in_memory)) {
     // activating an interval that must start in a stack slot, but may get a register later
-    // used for lir_roundfp: rounding is done by store to stack and reload later
     TRACE_LINEAR_SCAN(4, tty->print_cr("      interval must start in stack slot -> split it before first use"));
     assert(cur->assigned_reg() == any_reg && cur->assigned_regHi() == any_reg, "register already assigned");
 
@@ -6739,7 +6737,6 @@ void LinearScanStatistic::collect(LinearScan* allocator) {
         case lir_abs:
         case lir_f2hf:
         case lir_hf2f:
-        case lir_log10:
         case lir_logic_and:
         case lir_logic_or:
         case lir_logic_xor:
@@ -6772,7 +6769,6 @@ void LinearScanStatistic::collect(LinearScan* allocator) {
         case lir_push:
         case lir_pop:
         case lir_convert:
-        case lir_roundfp:
         case lir_cmove:           inc_counter(counter_misc_inst); break;
 
         default:                  inc_counter(counter_other_inst); break;

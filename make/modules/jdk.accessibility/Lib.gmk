@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 # questions.
 #
 
+################################################################################
+
 include LibCommon.gmk
 
 ################################################################################
@@ -38,6 +40,7 @@ ifeq ($(call isTargetOs, windows), true)
       NAME := javaaccessbridge, \
       EXTRA_SRC := common, \
       OPTIMIZATION := LOW, \
+      ONLY_EXPORTED := true, \
       DISABLED_WARNINGS_microsoft := 4311 4302 4312, \
       CXXFLAGS_FILTER_OUT := -MD, \
       CXXFLAGS := -MT -DACCESSBRIDGE_ARCH_64, \
@@ -67,6 +70,7 @@ ifeq ($(call isTargetOs, windows), true)
       CXXFLAGS := -DACCESSBRIDGE_ARCH_64, \
       EXTRA_HEADER_DIRS := \
           include/bridge, \
+      ONLY_EXPORTED := true, \
       LDFLAGS := \
           -def:$(ACCESSIBILITY_SRCDIR)/libwindowsaccessbridge/WinAccessBridge.DEF, \
       LIBS_windows := advapi32.lib comdlg32.lib gdi32.lib kernel32.lib \
@@ -78,3 +82,5 @@ ifeq ($(call isTargetOs, windows), true)
 
   TARGETS += $(BUILD_LIBWINDOWSACCESSBRIDGE)
 endif
+
+################################################################################

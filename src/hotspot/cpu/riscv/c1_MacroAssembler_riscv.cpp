@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
@@ -199,16 +198,16 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
   Label done;
 
   // len_in_bytes is positive and ptr sized
-  sub(len_in_bytes, len_in_bytes, hdr_size_in_bytes);
+  subi(len_in_bytes, len_in_bytes, hdr_size_in_bytes);
   beqz(len_in_bytes, done);
 
   // Preserve obj
   if (hdr_size_in_bytes) {
-    add(obj, obj, hdr_size_in_bytes);
+    addi(obj, obj, hdr_size_in_bytes);
   }
   zero_memory(obj, len_in_bytes, tmp);
   if (hdr_size_in_bytes) {
-    sub(obj, obj, hdr_size_in_bytes);
+    subi(obj, obj, hdr_size_in_bytes);
   }
 
   bind(done);
@@ -262,7 +261,7 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
       j(entry_point);
 
       bind(loop);
-      sub(index, index, 1);
+      subi(index, index, 1);
       for (int i = -unroll; i < 0; i++) {
         if (-i == remainder) {
           bind(entry_point);
@@ -272,7 +271,7 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
       if (remainder == 0) {
         bind(entry_point);
       }
-      add(t0, t0, unroll * wordSize);
+      addi(t0, t0, unroll * wordSize);
       bnez(index, loop);
     }
   }
@@ -301,7 +300,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register tmp1
   // align object end
   mv(arr_size, (int32_t)base_offset_in_bytes + MinObjAlignmentInBytesMask);
   shadd(arr_size, len, arr_size, t0, f);
-  andi(arr_size, arr_size, ~(uint)MinObjAlignmentInBytesMask);
+  andi(arr_size, arr_size, ~MinObjAlignmentInBytesMask);
 
   try_allocate(obj, arr_size, 0, tmp1, tmp2, slow_case);
 

@@ -140,6 +140,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         cardLayout = new CardLayout();
         centerPanel = new JPanel();
         centerPanel.setLayout(cardLayout);
+        centerPanel.setOpaque(true);
         centerPanel.setBackground(Color.WHITE);
         satelliteComponent = scene.createSatelliteView();
         satelliteComponent.setSize(200, 200);
@@ -175,6 +176,11 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         toolBar.addSeparator();
         ButtonGroup layoutButtons = new ButtonGroup();
 
+        JToggleButton freeInteractiveLayoutButton = new JToggleButton(new EnableFreeLayoutAction(this));
+        freeInteractiveLayoutButton.setSelected(diagramViewModel.getShowFreeInteractive());
+        layoutButtons.add(freeInteractiveLayoutButton);
+        toolBar.add(freeInteractiveLayoutButton);
+
         JToggleButton stableSeaLayoutButton = new JToggleButton(new EnableStableSeaLayoutAction(this));
         stableSeaLayoutButton.setSelected(diagramViewModel.getShowStableSea());
         layoutButtons.add(stableSeaLayoutButton);
@@ -195,17 +201,6 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         cfgLayoutButton.setSelected(diagramViewModel.getShowCFG());
         layoutButtons.add(cfgLayoutButton);
         toolBar.add(cfgLayoutButton);
-
-        diagramViewModel.getGraphChangedEvent().addListener(model -> {
-            // HierarchicalStableLayoutManager is not reliable for difference graphs
-            boolean isDiffGraph = model.getGraph().isDiffGraph();
-            // deactivate HierarchicalStableLayoutManager for difference graphs
-            stableSeaLayoutButton.setEnabled(!isDiffGraph);
-            if (stableSeaLayoutButton.isSelected() && isDiffGraph) {
-                // fallback to HierarchicalLayoutManager for difference graphs
-                seaLayoutButton.setSelected(true);
-            }
-        });
 
         toolBar.addSeparator();
         toolBar.add(new JToggleButton(new PredSuccAction(diagramViewModel.getShowNodeHull())));

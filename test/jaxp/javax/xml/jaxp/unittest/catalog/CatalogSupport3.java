@@ -51,7 +51,7 @@ import org.xml.sax.SAXParseException;
 
 /*
  * @test
- * @bug 8158084 8162438 8162442 8163535 8166220
+ * @bug 8158084 8162438 8162442 8163535 8166220 8344800
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm catalog.CatalogSupport3
  * @summary extends CatalogSupport tests, verifies that the use of the Catalog may
@@ -236,7 +236,7 @@ public class CatalogSupport3 extends CatalogSupportBase {
 
         return new Object[][]{
             // for resolving DTD in xsd
-            {true, false, xml_catalog, xsd_xmlSchema, null},
+            {true, false, xml_catalog, xsd_val_test_dtd, null},
             // for resolving xsd import
             {true, false, xml_catalog, xsd_xmlSchema_import, null},
             // for resolving xsd include

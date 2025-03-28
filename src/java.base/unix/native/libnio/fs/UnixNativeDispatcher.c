@@ -250,23 +250,6 @@ static int statx_wrapper(int dirfd, const char *restrict pathname, int flags,
 }
 #endif
 
-#if defined(__linux__) && defined(__arm__)
-/**
- * Lookup functions with time_t parameter. Try to use 64 bit symbol
- * if sizeof(time_t) exceeds 32 bit.
- */
-static void* lookup_time_t_function(const char* symbol, const char* symbol64) {
-    void *func_ptr = NULL;
-    if (sizeof(time_t) > 4) {
-        func_ptr = dlsym(RTLD_DEFAULT, symbol64);
-    }
-    if (func_ptr == NULL) {
-        return dlsym(RTLD_DEFAULT, symbol);
-    }
-    return func_ptr;
-}
-#endif
-
 /**
  * Call this to throw an internal UnixException when a system/library
  * call fails

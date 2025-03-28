@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_Instruction.hpp"
 #include "c1/c1_LinearScan.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -625,13 +624,20 @@ void FpuStackAllocator::handle_op1(LIR_Op1* op1) {
       break;
     }
 
-    case lir_roundfp: {
-      assert(in->is_fpu_register() && !in->is_xmm_register(), "input must be in register");
-      assert(res->is_stack(), "result must be on stack");
+    case lir_abs:
+    case lir_sqrt:
+    case lir_neg: {
+      assert(in->is_fpu_register(), "must be");
+      assert(res->is_fpu_register(), "must be");
+      assert(in->is_last_use(), "old value gets destroyed");
 
+      insert_free_if_dead(res, in);
       insert_exchange(in);
-      new_in = to_fpu_stack_top(in);
-      pop_if_last_use(op1, in);
+      do_rename(in, res);
+
+      new_in = to_fpu_stack_top(res);
+      new_res = new_in;
+
       break;
     }
 
@@ -753,26 +759,6 @@ void FpuStackAllocator::handle_op2(LIR_Op2* op2) {
       do_rename(right, res);
 
       new_res = to_fpu_stack_top(res);
-      break;
-    }
-
-    case lir_abs:
-    case lir_sqrt:
-    case lir_neg: {
-      // Right argument appears to be unused
-      assert(right->is_illegal(), "must be");
-      assert(left->is_fpu_register(), "must be");
-      assert(res->is_fpu_register(), "must be");
-      assert(left->is_last_use(), "old value gets destroyed");
-
-      insert_free_if_dead(res, left);
-      insert_exchange(left);
-      do_rename(left, res);
-
-      new_left = to_fpu_stack_top(res);
-      new_res = new_left;
-
-      op2->set_fpu_stack_size(sim()->stack_size());
       break;
     }
 

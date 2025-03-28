@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -393,16 +393,16 @@ public final class NumericShaper implements java.io.Serializable {
         }
     }
 
-    /** index of context for contextual shaping - values range from 0 to 18 */
+    /** @serial index of context for contextual shaping - values range from 0 to 18 */
     private int key;
 
-    /** flag indicating whether to shape contextually (high bit) and which
+    /** @serial flag indicating whether to shape contextually (high bit) and which
      *  digit ranges to shape (bits 0-18)
      */
     private int mask;
 
     /**
-     * The context {@code Range} for contextual shaping or the {@code
+     * @serial The context {@code Range} for contextual shaping or the {@code
      * Range} for non-contextual shaping. {@code null} for the bit
      * mask-based API.
      *

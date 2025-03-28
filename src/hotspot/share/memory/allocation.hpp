@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,7 +314,6 @@ class MetaspaceObj {
   f(ConstantPoolCache) \
   f(Annotations) \
   f(MethodCounters) \
-  f(SharedClassPathEntry) \
   f(RecordComponent)
 
 #define METASPACE_OBJ_TYPE_DECLARE(name) name ## Type,
@@ -353,7 +352,7 @@ class MetaspaceObj {
   void* operator new(size_t size, ClassLoaderData* loader_data,
                      size_t word_size,
                      Type type) throw();
-  void operator delete(void* p) { ShouldNotCallThis(); }
+  void operator delete(void* p) = delete;
 
   // Declare a *static* method with the same signature in any subclass of MetaspaceObj
   // that should be read-only by default. See symbol.hpp for an example. This function

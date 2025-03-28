@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3511,7 +3511,6 @@ public abstract class ResourceBundle {
          */
         static ResourceBundle newResourceBundle(Class<? extends ResourceBundle> bundleClass) {
             try {
-                @SuppressWarnings("unchecked")
                 Constructor<? extends ResourceBundle> ctor =
                     bundleClass.getConstructor();
                 if (!Modifier.isPublic(ctor.getModifiers())) {
@@ -3654,8 +3653,7 @@ public abstract class ResourceBundle {
 
     }
 
-    private static final boolean TRACE_ON = Boolean.getBoolean(
-        System.getProperty("resource.bundle.debug", "false"));
+    private static final boolean TRACE_ON = Boolean.getBoolean("resource.bundle.debug");
 
     private static void trace(String format, Object... params) {
         if (TRACE_ON)

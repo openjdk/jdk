@@ -63,14 +63,18 @@ public class VMDeprecatedOptions {
             {"CreateMinidumpOnCrash", "false"}
           }
         ));
+        if (Platform.isLinux()) {
+          deprecated.addAll(
+            Arrays.asList(new String[][] {
+              {"UseOprofile", "false"}
+            })
+          );
+        }
         if (Platform.isX86() || Platform.isX64()) {
           deprecated.addAll(
             Arrays.asList(new String[][] {
             })
           );
-        }
-        if (Platform.isLinux()) {
-            deprecated.add(new String[] { "UseLinuxPosixThreadCPUClocks", "true" });
         }
         if (wb.isJFRIncluded()) {
             deprecated.add(new String[] {"FlightRecorder", "false"});

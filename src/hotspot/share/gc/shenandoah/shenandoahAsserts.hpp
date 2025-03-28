@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +73,9 @@ public:
   static void assert_heaplocked(const char* file, int line);
   static void assert_not_heaplocked(const char* file, int line);
   static void assert_heaplocked_or_safepoint(const char* file, int line);
+  static void assert_control_or_vm_thread_at_safepoint(bool at_safepoint, const char* file, int line);
+  static void assert_generational(const char* file, int line);
+  static void assert_generations_reconciled(const char* file, int line);
 
 #ifdef ASSERT
 #define shenandoah_assert_in_heap_bounds(interior_loc, obj) \
@@ -163,6 +167,21 @@ public:
 
 #define shenandoah_assert_heaplocked_or_safepoint() \
                     ShenandoahAsserts::assert_heaplocked_or_safepoint(__FILE__, __LINE__)
+
+#define shenandoah_assert_control_or_vm_thread() \
+                    ShenandoahAsserts::assert_control_or_vm_thread(false /* at_safepoint */, __FILE__, __LINE__)
+
+// A stronger version of the above that checks that we are at a safepoint if the vm thread
+#define shenandoah_assert_control_or_vm_thread_at_safepoint()                                                                                                               \
+                    ShenandoahAsserts::assert_control_or_vm_thread_at_safepoint(true /* at_safepoint */, __FILE__, __LINE__)
+
+#define shenandoah_assert_generational() \
+                    ShenandoahAsserts::assert_generational(__FILE__, __LINE__)
+
+// Some limited sanity checking of the _gc_generation and _active_generation fields of ShenandoahHeap
+#define shenandoah_assert_generations_reconciled()                                                             \
+                    ShenandoahAsserts::assert_generations_reconciled(__FILE__, __LINE__)
+
 #else
 #define shenandoah_assert_in_heap_bounds(interior_loc, obj)
 #define shenandoah_assert_in_heap_bounds_or_null(interior_loc, obj)
@@ -213,6 +232,10 @@ public:
 #define shenandoah_assert_heaplocked()
 #define shenandoah_assert_not_heaplocked()
 #define shenandoah_assert_heaplocked_or_safepoint()
+#define shenandoah_assert_control_or_vm_thread()
+#define shenandoah_assert_control_or_vm_thread_at_safepoint()
+#define shenandoah_assert_generational()
+#define shenandoah_assert_generations_reconciled()
 
 #endif
 

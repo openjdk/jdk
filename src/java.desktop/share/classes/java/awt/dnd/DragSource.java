@@ -905,7 +905,6 @@ public class DragSource implements Serializable {
      * @since 1.5
      */
     public static int getDragThreshold() {
-        @SuppressWarnings("removal")
         int ts = Integer.getInteger("awt.dnd.drag.threshold", 0);
         if (ts > 0) {
             return ts;

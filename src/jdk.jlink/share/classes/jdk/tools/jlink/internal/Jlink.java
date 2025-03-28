@@ -243,18 +243,6 @@ public final class Jlink {
     }
 
     /**
-     * Jlink instance constructor, if a security manager is set, the jlink
-     * permission is checked.
-     */
-    @SuppressWarnings("removal")
-    public Jlink() {
-        if (System.getSecurityManager() != null) {
-            System.getSecurityManager().
-                    checkPermission(new JlinkPermission("jlink"));
-        }
-    }
-
-    /**
      * Build the image.
      *
      * @param config Jlink config, must not be null.

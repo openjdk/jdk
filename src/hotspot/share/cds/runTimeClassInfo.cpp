@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
 #include "cds/runTimeClassInfo.hpp"
@@ -76,10 +75,13 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
 }
 
 InstanceKlass* RunTimeClassInfo::klass() const {
-  if (ArchiveBuilder::is_active() && ArchiveBuilder::current()->is_in_buffer_space((address)this)) {
-    return ArchiveBuilder::current()->offset_to_buffered<InstanceKlass*>(_klass_offset);
+  if (MetaspaceShared::is_in_shared_metaspace(this)) {
+    // <this> is inside a mmaped CDS archive.
+    return ArchiveUtils::offset_to_archived_address<InstanceKlass*>(_klass_offset);
   } else {
-    return ArchiveUtils::from_offset<InstanceKlass*>(_klass_offset);
+    // <this> is a temporary copy of a RunTimeClassInfo that's being initialized
+    // by the ArchiveBuilder.
+    return ArchiveBuilder::current()->offset_to_buffered<InstanceKlass*>(_klass_offset);
   }
 }
 

@@ -2,4 +2,10 @@ LocalFreeVarStaticInstantiate.java:18:17: compiler.err.local.cant.be.inst.static
 LocalFreeVarStaticInstantiate.java:22:17: compiler.err.local.cant.be.inst.static: kindname.class, Local
 LocalFreeVarStaticInstantiate.java:36:17: compiler.err.local.cant.be.inst.static: kindname.class, Local
 LocalFreeVarStaticInstantiate.java:40:17: compiler.err.local.cant.be.inst.static: kindname.class, Local
-4 errors
+LocalFreeVarStaticInstantiate.java:55:21: compiler.err.local.cant.be.inst.static: kindname.class, Local
+LocalFreeVarStaticInstantiate.java:59:21: compiler.err.local.cant.be.inst.static: kindname.class, Local
+LocalFreeVarStaticInstantiate.java:75:17: compiler.err.local.cant.be.inst.static: kindname.class, Local
+LocalFreeVarStaticInstantiate.java:79:17: compiler.err.local.cant.be.inst.static: kindname.class, Local
+LocalFreeVarStaticInstantiate.java:93:17: compiler.err.local.cant.be.inst.static: kindname.class, Local
+LocalFreeVarStaticInstantiate.java:97:17: compiler.err.local.cant.be.inst.static: kindname.class, Local
+10 errors

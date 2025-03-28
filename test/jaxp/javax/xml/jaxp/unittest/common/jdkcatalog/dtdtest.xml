@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+    <!DOCTYPE html PUBLIC "{{publicId}}"
+      "{{systemId}}">
+<html>
+    <head>
+        <title>
+            XHTML 1.0
+        </title>
+    </head>
+    <body>
+        <h1>
+            XHTML 1.0
+        </h1>
+        <ul>
+            <li>
+                xhtml1-transition.dtd
+            </li>
+        </ul>
+    </body>
+</html>

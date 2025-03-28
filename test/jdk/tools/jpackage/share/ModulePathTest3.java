@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,20 +29,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
-import jdk.jpackage.internal.AppImageFile;
+import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
-import org.w3c.dom.Document;
 
 
 /*
@@ -50,7 +46,7 @@ import org.w3c.dom.Document;
  * @summary jpackage for app's module linked in external runtime
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile ModulePathTest3.java
+ * @compile -Xlint:all -Werror ModulePathTest3.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ModulePathTest3
  */
@@ -105,18 +101,14 @@ public final class ModulePathTest3 {
         cmd.executeAndAssertHelloAppImageCreated();
 
         if (appDesc.moduleVersion() != null) {
-            Document xml = AppImageFile.readXml(cmd.outputBundle());
-            String actualVersion = XPathFactory.newInstance().newXPath().evaluate(
-                    "/jpackage-state/app-version/text()", xml,
-                    XPathConstants.STRING).toString();
-
+            String actualVersion = AppImageFile.load(cmd.outputBundle()).version();
             TKit.assertEquals(appDesc.moduleVersion(), actualVersion,
                     "Check application version");
         }
     }
 
     @Parameters
-    public static Collection data() {
+    public static Collection<?> data() {
         final List<String[]> paths = new ArrayList<>();
         paths.add(new String[] { "", "" });
         if (TKit.isOSX()) {

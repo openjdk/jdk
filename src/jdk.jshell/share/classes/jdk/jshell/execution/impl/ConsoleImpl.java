@@ -117,6 +117,9 @@ public class ConsoleImpl {
 
         private char[] readChars() throws IOException {
             int actualLen = readInt();
+            if (actualLen == (-1)) {
+                return null;
+            }
             char[] result = new char[actualLen];
             for (int i = 0; i < actualLen; i++) {
                 result[i] = (char) ((remoteOutput.read() <<  8) |
@@ -267,6 +270,9 @@ public class ConsoleImpl {
                     remoteInput.write(Task.READ_LINE.ordinal());
                     sendChars(chars, 0, chars.length);
                     char[] line = readChars();
+                    if (line == null) {
+                        return null;
+                    }
                     return new String(line);
                 });
             } catch (IOException ex) {
@@ -417,8 +423,12 @@ public class ConsoleImpl {
                     char[] data = readCharsOrNull(1);
                     if (data != null) {
                         String line = console.readLine(new String(data));
-                        char[] chars = line.toCharArray();
-                        sendChars(sinkOutput, chars, 0, chars.length);
+                        if (line == null) {
+                            sendInt(sinkOutput, -1);
+                        } else {
+                            char[] chars = line.toCharArray();
+                            sendChars(sinkOutput, chars, 0, chars.length);
+                        }
                         bp = 0;
                     }
                 }
@@ -432,7 +442,11 @@ public class ConsoleImpl {
                     char[] data = readCharsOrNull(1);
                     if (data != null) {
                         char[] chars = console.readPassword(new String(data));
-                        sendChars(sinkOutput, chars, 0, chars.length);
+                        if (chars == null) {
+                            sendInt(sinkOutput, -1);
+                        } else {
+                            sendChars(sinkOutput, chars, 0, chars.length);
+                        }
                         bp = 0;
                     }
                 }

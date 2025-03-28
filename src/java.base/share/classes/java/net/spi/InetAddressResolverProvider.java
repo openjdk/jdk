@@ -99,15 +99,6 @@ public abstract class InetAddressResolverProvider {
     public abstract String name();
 
     /**
-     * The {@code RuntimePermission("inetAddressResolverProvider")} is
-     * necessary to subclass and instantiate the {@code InetAddressResolverProvider} class,
-     * as well as to obtain resolver from an instance of that class,
-     * and it is also required to obtain the operating system name resolution configurations.
-     */
-    private static final RuntimePermission INET_ADDRESS_RESOLVER_PERMISSION =
-            new RuntimePermission("inetAddressResolverProvider");
-
-    /**
      * Creates a new instance of {@code InetAddressResolverProvider}.
      *
      * @implNote It is recommended that an {@code InetAddressResolverProvider} service
@@ -116,19 +107,6 @@ public abstract class InetAddressResolverProvider {
      * service provider.
      */
     protected InetAddressResolverProvider() {
-        this(checkPermission());
-    }
-
-    private InetAddressResolverProvider(Void unused) {
-    }
-
-    @SuppressWarnings("removal")
-    private static Void checkPermission() {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(INET_ADDRESS_RESOLVER_PERMISSION);
-        }
-        return null;
     }
 
     /**

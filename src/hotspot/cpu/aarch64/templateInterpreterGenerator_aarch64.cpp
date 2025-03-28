@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/disassembler.hpp"
@@ -620,7 +619,7 @@ address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter()
   // Restore Java expression stack pointer
   __ ldr(rscratch1, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ lea(esp, Address(rfp, rscratch1, Address::lsl(Interpreter::logStackElementSize)));
-  // and NULL it as marker that esp is now tos until next java call
+  // and null it as marker that esp is now tos until next java call
   __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
 
   // Restore machine SP
@@ -809,7 +808,7 @@ void TemplateInterpreterGenerator::lock_method() {
 #ifdef ASSERT
   {
     Label L;
-    __ ldrw(r0, access_flags);
+    __ ldrh(r0, access_flags);
     __ tst(r0, JVM_ACC_SYNCHRONIZED);
     __ br(Assembler::NE, L);
     __ stop("method doesn't need synchronization");
@@ -820,7 +819,7 @@ void TemplateInterpreterGenerator::lock_method() {
   // get synchronization object
   {
     Label done;
-    __ ldrw(r0, access_flags);
+    __ ldrh(r0, access_flags);
     __ tst(r0, JVM_ACC_STATIC);
     // get receiver (assume this is frequent case)
     __ ldr(r0, Address(rlocals, Interpreter::local_offset_in_bytes(0)));
@@ -1225,7 +1224,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // make sure method is native & not abstract
 #ifdef ASSERT
-  __ ldrw(r0, access_flags);
+  __ ldrh(r0, access_flags);
   {
     Label L;
     __ tst(r0, JVM_ACC_NATIVE);
@@ -1277,7 +1276,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 #ifdef ASSERT
     {
       Label L;
-      __ ldrw(r0, access_flags);
+      __ ldrh(r0, access_flags);
       __ tst(r0, JVM_ACC_SYNCHRONIZED);
       __ br(Assembler::EQ, L);
       __ stop("method needs synchronization");
@@ -1354,7 +1353,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // pass mirror handle if static call
   {
     Label L;
-    __ ldrw(t, Address(rmethod, Method::access_flags_offset()));
+    __ ldrh(t, Address(rmethod, Method::access_flags_offset()));
     __ tbz(t, exact_log2(JVM_ACC_STATIC), L);
     // get mirror
     __ load_mirror(t, rmethod, r10, rscratch2);
@@ -1564,7 +1563,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // do unlocking if necessary
   {
     Label L;
-    __ ldrw(t, Address(rmethod, Method::access_flags_offset()));
+    __ ldrh(t, Address(rmethod, Method::access_flags_offset()));
     __ tbz(t, exact_log2(JVM_ACC_SYNCHRONIZED), L);
     // the code below should be shared with interpreter macro
     // assembler implementation
@@ -1695,7 +1694,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // make sure method is not native & not abstract
 #ifdef ASSERT
-  __ ldrw(r0, access_flags);
+  __ ldrh(r0, access_flags);
   {
     Label L;
     __ tst(r0, JVM_ACC_NATIVE);
@@ -1751,7 +1750,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 #ifdef ASSERT
     {
       Label L;
-      __ ldrw(r0, access_flags);
+      __ ldrh(r0, access_flags);
       __ tst(r0, JVM_ACC_SYNCHRONIZED);
       __ br(Assembler::EQ, L);
       __ stop("method needs synchronization");
@@ -1800,12 +1799,6 @@ address TemplateInterpreterGenerator::generate_currentThread() {
 
   return entry_point;
 }
-
-// Not supported
-address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
 
 //-----------------------------------------------------------------------------
 // Exceptions
@@ -2103,7 +2096,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 
 void TemplateInterpreterGenerator::count_bytecode() {
   __ mov(r10, (address) &BytecodeCounter::_counter_value);
-  __ atomic_addw(noreg, 1, r10);
+  __ atomic_add(noreg, 1, r10);
 }
 
 void TemplateInterpreterGenerator::histogram_bytecode(Template* t) {
@@ -2151,7 +2144,7 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
   __ mov(rscratch1, (address) &BytecodeCounter::_counter_value);
   __ ldr(rscratch1, Address(rscratch1));
   __ mov(rscratch2, StopInterpreterAt);
-  __ cmpw(rscratch1, rscratch2);
+  __ cmp(rscratch1, rscratch2);
   __ br(Assembler::NE, L);
   __ brk(0);
   __ bind(L);

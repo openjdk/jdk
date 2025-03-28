@@ -24,9 +24,11 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
+import java.lang.classfile.Opcode;
 import java.lang.classfile.constantpool.InvokeDynamicEntry;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
@@ -40,10 +42,20 @@ import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.Util;
 
 /**
- * Models an {@code invokedynamic} instruction in the {@code code} array of a
- * {@code Code} attribute.  Delivered as a {@link CodeElement} when traversing
- * the elements of a {@link CodeModel}.
+ * Models a dynamically-computed call site invocation instruction in the
+ * {@code code} array of a {@code Code} attribute.  The corresponding opcode is
+ * {@link Opcode#INVOKEDYNAMIC invokedynamic}.  Delivered as a {@link
+ * CodeElement} when traversing the elements of a {@link CodeModel}.
+ * <p>
+ * A dynamically-computed call site invocation instruction is composite:
+ * {@snippet lang=text :
+ * // @link substring="InvokeDynamicInstruction" target="#of" :
+ * InvokeDynamicInstruction(InvokeDynamicEntry invokedynamic) // @link substring="invokedynamic" target="#invokedynamic()"
+ * }
  *
+ * @see Opcode.Kind#INVOKE_DYNAMIC
+ * @see CodeBuilder#invokedynamic CodeBuilder::invokedynamic
+ * @jvms 6.5.invokedynamic <em>invokedynamic</em>
  * @since 24
  */
 public sealed interface InvokeDynamicInstruction extends Instruction
@@ -62,6 +74,10 @@ public sealed interface InvokeDynamicInstruction extends Instruction
 
     /**
      * {@return the invocation type of the call site}
+     *
+     * @apiNote
+     * A symbolic descriptor for the invocation typeis available through {@link
+     * #typeSymbol() typeSymbol()}.
      */
     default Utf8Entry type() {
         return invokedynamic().type();

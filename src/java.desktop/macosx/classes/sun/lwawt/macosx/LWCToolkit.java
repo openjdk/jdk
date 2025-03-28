@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,6 @@ import sun.lwawt.LWWindowPeer.PeerType;
 import sun.lwawt.PlatformComponent;
 import sun.lwawt.PlatformDropTarget;
 import sun.lwawt.PlatformWindow;
-import sun.lwawt.SecurityWarningWindow;
 
 @SuppressWarnings("serial") // JDK implementation class
 final class NamedCursor extends Cursor {
@@ -290,12 +289,6 @@ public final class LWCToolkit extends LWToolkit {
             return createCPrinterDialog((CPrinterDialog)target);
         }
         return super.createDialog(target);
-    }
-
-    @Override
-    protected SecurityWarningWindow createSecurityWarning(Window ownerWindow,
-                                                          LWWindowPeer ownerPeer) {
-        return new CWarningWindow(ownerWindow, ownerPeer);
     }
 
     @Override

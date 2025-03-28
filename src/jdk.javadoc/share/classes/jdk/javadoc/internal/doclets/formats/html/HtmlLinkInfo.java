@@ -31,7 +31,6 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.html.Content;
@@ -110,6 +109,9 @@ public class HtmlLinkInfo {
     // The label for the link.
     private Content label;
 
+    // The title attribute for the link
+    private String title;
+
     // True if we should print the type bounds for the type parameter.
     private boolean showTypeBounds = true;
 
@@ -122,9 +124,6 @@ public class HtmlLinkInfo {
 
     // True iff the preview flags should be skipped for this link.
     private boolean skipPreview;
-
-    // True if type parameters should be separated by hard line breaks.
-    private boolean addLineBreaksInTypeParameters = false;
 
     // True if additional <wbr> tags should be added to type parameters
     private boolean addLineBreakOpportunitiesInTypeParameters = false;
@@ -183,7 +182,6 @@ public class HtmlLinkInfo {
         linkInfo.showTypeBounds = showTypeBounds;
         linkInfo.linkTypeParameters = linkTypeParameters;
         linkInfo.linkToSelf = linkToSelf;
-        linkInfo.addLineBreaksInTypeParameters = addLineBreaksInTypeParameters;
         linkInfo.showTypeParameterAnnotations = showTypeParameterAnnotations;
         linkInfo.skipPreview = skipPreview;
         return linkInfo;
@@ -265,6 +263,23 @@ public class HtmlLinkInfo {
     }
 
     /**
+     * Sets the title attribute for the link.
+     * @param title the value of the title attribute
+     * @return this object
+     */
+    public HtmlLinkInfo title(String title) {
+        this.title = title;
+        return this;
+    }
+
+    /**
+     * {@return the value of the title attribute}
+     */
+    public String getTitle() {
+        return title;
+    }
+
+    /**
      * Set whether or not this is a link to a varargs parameter.
      * @param varargs the new value
      * @return this object
@@ -299,20 +314,10 @@ public class HtmlLinkInfo {
     }
 
     /**
-     * Sets the addLineBreaksInTypeParameters flag for this link.
-     * @param addLineBreaksInTypeParameters the new value
-     * @return this object
+     * {@return {@code true} if the link target is the top level page or one of its summary sections}
      */
-    public HtmlLinkInfo addLineBreaksInTypeParameters(boolean addLineBreaksInTypeParameters) {
-        this.addLineBreaksInTypeParameters = addLineBreaksInTypeParameters;
-        return this;
-    }
-
-    /**
-     * {@return true if type parameters should be separated by line breaks}
-     */
-    public boolean addLineBreaksInTypeParameters() {
-        return addLineBreaksInTypeParameters;
+    public boolean isPageOrSummaryLink() {
+        return fragment == null || fragment.isEmpty() || fragment.endsWith("-summary");
     }
 
     /**
@@ -506,7 +511,6 @@ public class HtmlLinkInfo {
                 ", showTypeBounds=" + showTypeBounds +
                 ", linkTypeParameters=" + linkTypeParameters +
                 ", linkToSelf=" + linkToSelf +
-                ", addLineBreaksInTypeParameters=" + addLineBreaksInTypeParameters +
                 ", showTypeParameterAnnotations=" + showTypeParameterAnnotations +
                 ", context=" + context +
                 ", fragment=" + fragment +

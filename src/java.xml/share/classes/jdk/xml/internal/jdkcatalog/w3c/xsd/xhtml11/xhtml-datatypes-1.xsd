@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<xs:schema
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ xmlns="http://www.w3.org/1999/xhtml/datatypes/"
+ xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+ targetNamespace="http://www.w3.org/1999/xhtml/datatypes/"
+ elementFormDefault="qualified"
+>
+    <xs:annotation>
+        <xs:documentation>
+          XHTML Datatypes
+          This is the XML Schema datatypes module for XHTML
+          
+          Defines containers for the XHTML datatypes, many of
+          these imported from other specifications and standards.
+          
+          $Id: xhtml-datatypes-1.xsd,v 1.12 2009/09/30 15:12:48 ahby Exp $
+        </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+        <xs:documentation source="http://www.w3.org/TR/2001/REC-xhtml-modularization-20010410/abstraction.html#s_common_attrtypes"/>
+    </xs:annotation>
+
+    <!-- nn for pixels or nn% for percentage length -->
+    <xs:simpleType name="Length">
+        <xs:union memberTypes="xs:nonNegativeInteger">
+            <xs:simpleType>
+                <xs:restriction base="xs:token">
+                    <xs:pattern value="\d+[%]|\d*\.\d+[%]"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:union>
+    </xs:simpleType>
+    <!-- space-separated list of link types -->
+    <xs:simpleType name="LinkTypes">
+        <xs:list itemType="xs:NMTOKEN"/>
+    </xs:simpleType>
+    <!-- single or comma-separated list of media descriptors -->
+    <xs:simpleType name="MediaDesc">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    <!-- pixel, percentage, or relative -->
+    <xs:simpleType name="MultiLength">
+        <xs:union memberTypes="xh11d:Length">
+            <xs:simpleType>
+                <xs:restriction base="xs:token">
+                    <xs:pattern value="\d*\*"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:union>
+    </xs:simpleType>
+    <!-- one or more digits (NUMBER) -->
+    <xs:simpleType name="Number">
+        <xs:restriction base="xs:nonNegativeInteger"/>
+    </xs:simpleType>
+    <!-- integer representing length in pixels -->
+    <xs:simpleType name="Pixels">
+        <xs:restriction base="xs:nonNegativeInteger"/>
+    </xs:simpleType>
+    <!-- script expression -->
+    <xs:simpleType name="Script">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    <!-- sixteen color names or RGB color expression-->
+    <xs:simpleType name="Color">
+        <xs:union memberTypes="xs:NMTOKEN">
+            <xs:simpleType>
+                <xs:restriction base="xs:token">
+                    <xs:pattern value="#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:union>
+    </xs:simpleType>
+    <!-- textual content -->
+    <xs:simpleType name="Text">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    <!-- Imported Datatypes  -->
+    <!-- a single character, as per section 2.2 of [XML] -->
+    <xs:simpleType name="Character">
+        <xs:restriction base="xs:string">
+            <xs:length value="1" fixed="true"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <!-- a character encoding, as per [RFC2045] -->
+    <xs:simpleType name="Charset">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    <!-- a space separated list of character encodings, as per [RFC2045] -->
+    <xs:simpleType name="Charsets">
+        <xs:list itemType="Charset"/>
+    </xs:simpleType>
+    <!-- media type, as per [RFC2045] -->
+    <xs:simpleType name="ContentType">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    <!-- comma-separated list of media types, as per [RFC2045] -->
+    <xs:simpleType name="ContentTypes">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    <!-- date and time information. ISO date format -->
+    <xs:simpleType name="Datetime">
+        <xs:restriction base="xs:dateTime"/>
+    </xs:simpleType>
+    <!-- formal public identifier, as per [ISO8879] -->
+    <xs:simpleType name="FPI">
+        <xs:restriction base="xs:normalizedString"/>
+    </xs:simpleType>
+
+    <!-- a window name as used in the target attribute -->
+    <xs:simpleType name="FrameTarget">
+      <xs:union>
+        <xs:simpleType>
+          <xs:restriction base="xs:NMTOKEN">
+            <xs:enumeration value="_blank"/>
+            <xs:enumeration value="_self"/>
+            <xs:enumeration value="_parent"/>
+            <xs:enumeration value="_top"/>
+          </xs:restriction>
+        </xs:simpleType>
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:pattern value="[a-zA-Z].*"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:union>
+    </xs:simpleType>
+    
+    <!-- a language code, as per [RFC3066] -->
+    <xs:simpleType name="LanguageCode">
+     <xs:union memberTypes="xs:language">
+       <xs:simpleType>    
+         <xs:restriction base="xs:string">
+           <xs:enumeration value=""/>
+         </xs:restriction>
+       </xs:simpleType>
+     </xs:union>
+    </xs:simpleType>
+    <!-- a comma separated list of language ranges -->
+    <xs:simpleType name="LanguageCodes">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    <!-- a Uniform Resource Identifier, see [URI] -->
+    <xs:simpleType name="URI">
+        <xs:restriction base="xs:anyURI"/>
+    </xs:simpleType>
+    <!-- a space-separated list of Uniform Resource Identifiers, see [URI] -->
+    <xs:simpleType name="URIs">
+        <xs:list itemType="xs:anyURI"/>
+    </xs:simpleType>
+    <!-- a relative URI reference to a fragment ID -->
+    <xs:simpleType name="URIREF">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="#\c*" />
+            <xs:minLength value="1"/>
+        </xs:restriction>
+    </xs:simpleType> 
+    <!-- comma-separated list of MultiLength -->
+    <xs:simpleType name="MultiLengths">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    <!-- character Data -->
+    <xs:simpleType name="CDATA">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    <!-- CURIE placeholder datatypes -->
+    <xs:simpleType name="CURIE">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(([\i-[:]][\c-[:]]*)?:)?(/[^\s/][^\s]*|[^\s/][^\s]*|[^\s]?)" />
+            <xs:minLength value="1"/>
+        </xs:restriction>
+    </xs:simpleType> 
+
+    <xs:simpleType name="CURIEs">
+        <xs:list itemType="xh11d:CURIE"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="SafeCURIE">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="\[(([\i-[:]][\c-[:]]*)?:)?(/[^\s/][^\s]*|[^\s/][^\s]*|[^\s]?)\]" />
+            <xs:minLength value="3"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="SafeCURIEs">
+        <xs:list itemType="xh11d:SafeCURIE"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="URIorSafeCURIE">
+        <xs:union memberTypes="xs:anyURI xh11d:SafeCURIE" />
+    </xs:simpleType>
+    <xs:simpleType name="URIorSafeCURIEs">
+        <xs:list itemType="xh11d:URIorSafeCURIE"/>
+    </xs:simpleType>
+
+    <!-- RDFa Core 1.1 Datatypes -->
+    <xs:simpleType name="PREFIX">
+        <xs:restriction base="xs:Name">
+            <xs:pattern value="[\i-[:]][\c-[:]]*: [\i-[:]][\c-[:]]+:.+" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="PREFIXes">
+        <xs:list itemType="xh11d:PREFIX"/>
+    </xs:simpleType> 
+
+    <xs:simpleType name="TERM">
+      <xs:restriction base="xs:Name">
+        <xs:pattern value="[\i-[:]][/\c-[:]]*" />
+      </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="CURIEorIRI">
+        <xs:union memberTypes="xh11d:CURIE xs:anyURI" />
+    </xs:simpleType>
+
+    <xs:simpleType name="CURIEorIRIs">
+        <xs:list itemType="xh11d:CURIEorIRI"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="SafeCURIEorCURIEorIRI">
+        <xs:union memberTypes="xh11d:SafeCURIE xh11d:CURIE xs:anyURI" />
+    </xs:simpleType>
+
+    <xs:simpleType name="SafeCURIEorCURIEorIRIs">
+        <xs:list itemType="xh11d:SafeCURIEorCURIEorIRI"/>
+    </xs:simpleType>
+
+    <xs:simpleType name='AbsIRI'>
+        <xs:restriction base='xs:string'>
+            <xs:pattern value="[\i-[:]][\c-[:]]+:.+" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="TERMorCURIEorAbsIRI">
+        <xs:union memberTypes="xh11d:TERM xh11d:CURIE xh11d:AbsIRI" />
+    </xs:simpleType>
+
+    <xs:simpleType name="TERMorCURIEorAbsIRIs">
+        <xs:list itemType="xh11d:TERMorCURIEorAbsIRI"/>
+    </xs:simpleType>
+
+</xs:schema>

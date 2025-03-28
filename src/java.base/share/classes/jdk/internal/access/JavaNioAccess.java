@@ -68,6 +68,11 @@ public interface JavaNioAccess {
     ByteBuffer newHeapByteBuffer(byte[] hb, int offset, int capacity, MemorySegment segment);
 
     /**
+     * Used by {@code sun.nio.ch.Util}.
+     */
+    ByteBuffer newDirectByteBuffer(long addr, int cap);
+
+    /**
      * Used by {@code jdk.internal.foreign.Utils}.
      */
     Object getBufferBase(Buffer bb);

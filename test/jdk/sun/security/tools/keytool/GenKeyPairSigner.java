@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,14 +77,14 @@ public class GenKeyPairSigner {
         SecurityTools.keytool("-keystore ks -storepass changeit " +
                 "-genkeypair -keyalg EdDSA -alias ca -dname CN=CA -ext bc:c " +
                 "-ext 2.5.29.14=04:14:00:01:02:03:04:05:06:07:08:09:10:11:12:13:14:15:16:17:18:19")
-                .shouldContain("Generating 255 bit Ed25519 key pair and self-signed certificate (Ed25519) with a validity of 90 days")
+                .shouldContain("Generating Ed25519 key pair and self-signed certificate (Ed25519) with a validity of 90 days")
                 .shouldContain("for: CN=CA")
                 .shouldHaveExitValue(0);
 
         System.out.println("Generating an XDH cert with -signer option");
         SecurityTools.keytool("-keystore ks -storepass changeit " +
                 "-genkeypair -keyalg XDH -alias e1 -dname CN=E1 -signer ca")
-                .shouldContain("Generating 255 bit X25519 key pair and a certificate (Ed25519) issued by <ca> with a validity of 90 days")
+                .shouldContain("Generating X25519 key pair and a certificate (Ed25519) issued by <ca> with a validity of 90 days")
                 .shouldContain("for: CN=E1")
                 .shouldHaveExitValue(0);
 
@@ -118,7 +118,7 @@ public class GenKeyPairSigner {
                 .shouldContain("Alias name: e1")
                 .shouldContain("Certificate chain length: 2")
                 .shouldContain("Signature algorithm name: Ed25519")
-                .shouldContain("Subject Public Key Algorithm: 255-bit X25519 key")
+                .shouldContain("Subject Public Key Algorithm: X25519 key")
                 .shouldHaveExitValue(0);
 
         // check to make sure that cert's AKID is created from the SKID of the signing cert
@@ -150,7 +150,7 @@ public class GenKeyPairSigner {
         System.out.println("Generating an X448 cert with -signer option");
         SecurityTools.keytool("-keystore ks -storepass changeit " +
                 "-genkeypair -keyalg X448 -alias e2 -dname CN=E2 -sigalg SHA384withRSA -signer ca2")
-                .shouldContain("Generating 448 bit X448 key pair and a certificate (SHA384withRSA) issued by <ca2> with a validity of 90 days")
+                .shouldContain("Generating X448 key pair and a certificate (SHA384withRSA) issued by <ca2> with a validity of 90 days")
                 .shouldContain("for: CN=E2")
                 .shouldHaveExitValue(0);
 
@@ -177,7 +177,7 @@ public class GenKeyPairSigner {
                 "-list -v")
                 .shouldContain("Alias name: e2")
                 .shouldContain("Signature algorithm name: SHA384withRSA")
-                .shouldContain("Subject Public Key Algorithm: 448-bit X448 key")
+                .shouldContain("Subject Public Key Algorithm: X448 key")
                 .shouldHaveExitValue(0);
 
         kt("-genkeypair -keyalg DSA -alias ca3 -dname CN=CA3 -ext bc:c ",
@@ -186,7 +186,7 @@ public class GenKeyPairSigner {
         System.out.println("Generating a DH cert with -signer option");
         SecurityTools.keytool("-keystore ks -storepass changeit " +
                 "-genkeypair -keyalg DH -alias e3 -dname CN=E3 -signer ca3")
-                .shouldContain("Generating 3,072 bit DH key pair and a certificate (SHA256withDSA) issued by <ca3> with a validity of 90 days")
+                .shouldContain("Generating 3072-bit DH key pair and a certificate (SHA256withDSA) issued by <ca3> with a validity of 90 days")
                 .shouldContain("for: CN=E3")
                 .shouldHaveExitValue(0);
 
@@ -239,7 +239,7 @@ public class GenKeyPairSigner {
         SecurityTools.keytool("-keystore ksjks -storepass changeit -storetype jks " +
                 "-genkeypair -keyalg DSA -keysize 1024 -alias ca1 -dname CN=CA1 " +
                 "-keypass ca1keypass -signer ca -signerkeypass cakeypass")
-                .shouldContain("Generating 1,024 bit DSA key pair and a certificate (SHA384withRSA) issued by <ca> with a validity of 90 days")
+                .shouldContain("Generating 1024-bit DSA key pair and a certificate (SHA384withRSA) issued by <ca> with a validity of 90 days")
                 .shouldContain("for: CN=CA1")
                 .shouldContain("The generated certificate #1 of 2 uses a 1024-bit DSA key which is considered a security risk")
                 .shouldContain("The generated certificate #2 of 2 uses a 1024-bit RSA key which is considered a security risk")
@@ -249,7 +249,7 @@ public class GenKeyPairSigner {
         SecurityTools.keytool("-keystore ksjks -storepass changeit -storetype jks " +
                 "-genkeypair -keyalg XDH -alias e1 -dname CN=E1 " +
                 "-keypass e1keypass -signer ca1 -signerkeypass ca1keypass")
-                .shouldContain("Generating 255 bit X25519 key pair and a certificate (SHA256withDSA) issued by <ca1> with a validity of 90 days")
+                .shouldContain("Generating X25519 key pair and a certificate (SHA256withDSA) issued by <ca1> with a validity of 90 days")
                 .shouldContain("for: CN=E1")
                 .shouldContain("The generated certificate #2 of 3 uses a 1024-bit DSA key which is considered a security risk")
                 .shouldContain("The generated certificate #3 of 3 uses a 1024-bit RSA key which is considered a security risk")
@@ -285,7 +285,7 @@ public class GenKeyPairSigner {
                 .shouldContain("Alias name: e1")
                 .shouldContain("Certificate chain length: 3")
                 .shouldContain("Signature algorithm name: SHA256withDSA")
-                .shouldContain("Subject Public Key Algorithm: 255-bit X25519 key")
+                .shouldContain("Subject Public Key Algorithm: X25519 key")
                 .shouldHaveExitValue(0);
     }
 

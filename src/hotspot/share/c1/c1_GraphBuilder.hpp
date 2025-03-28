@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,7 +266,6 @@ class GraphBuilder {
   void monitorexit(Value x, int bci);
   void new_multi_array(int dimensions);
   void throw_op(int bci);
-  Value round_fp(Value fp_value);
 
   // stack/code manipulation helpers
   Instruction* append_with_bci(Instruction* instr, int bci);

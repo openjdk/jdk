@@ -31,6 +31,8 @@
 #include "runtime/atomic.hpp"
 #include "utilities/macros.hpp"
 
+class ReservedSpace;
+
 // Blocks
 
 class HeapBlock {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,8 +39,14 @@
                        VectorRegister vrs,
                        bool is_latin, Label& DONE, Assembler::LMUL lmul);
 
-  void compress_bits_v(Register dst, Register src, Register mask, bool is_long);
-  void expand_bits_v(Register dst, Register src, Register mask, bool is_long);
+  void string_compare_long_same_encoding(Register result, Register str1, Register str2,
+                                  const bool isLL, Register cnt1, Register cnt2,
+                                  Register tmp1, Register tmp2, Register tmp3,
+                                  const int STUB_THRESHOLD, Label *STUB, Label *SHORT_STRING, Label *DONE);
+  void string_compare_long_different_encoding(Register result, Register str1, Register str2,
+                                  bool isLU, Register cnt1, Register cnt2,
+                                  Register tmp1, Register tmp2, Register tmp3,
+                                  const int STUB_THRESHOLD, Label *STUB, Label *DONE);
 
  public:
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
@@ -101,7 +107,6 @@
 
   // refer to conditional_branches and float_conditional_branches
   static const int bool_test_bits = 3;
-  static const int neg_cond_bits = 2;
   static const int unsigned_branch_mask = 1 << bool_test_bits;
   static const int double_branch_mask = 1 << bool_test_bits;
 
@@ -167,9 +172,15 @@
     }
   }
 
+  enum class FLOAT_TYPE {
+    half_precision,
+    single_precision,
+    double_precision
+  };
+
   void minmax_fp(FloatRegister dst,
                  FloatRegister src1, FloatRegister src2,
-                 bool is_double, bool is_min);
+                 FLOAT_TYPE ft, bool is_min);
 
   void round_double_mode(FloatRegister dst, FloatRegister src, int round_mode,
                          Register tmp1, Register tmp2, Register tmp3);
@@ -183,13 +194,6 @@
 
 
   // intrinsic methods implemented by rvv instructions
-
-  // compress bits, i.e. j.l.Integer/Long::compress.
-  void compress_bits_i_v(Register dst, Register src, Register mask);
-  void compress_bits_l_v(Register dst, Register src, Register mask);
-  // expand bits, i.e. j.l.Integer/Long::expand.
-  void expand_bits_i_v(Register dst, Register src, Register mask);
-  void expand_bits_l_v(Register dst, Register src, Register mask);
 
   void java_round_float_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, BasicType bt, uint vector_length);
   void java_round_double_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, BasicType bt, uint vector_length);
@@ -250,6 +254,10 @@
                         int opc, BasicType bt, uint vector_length,
                         VectorMask vm = Assembler::unmasked);
 
+  void reduce_mul_integral_v(Register dst, Register src1, VectorRegister src2,
+                             VectorRegister vtmp1, VectorRegister vtmp2, BasicType bt,
+                             uint vector_length, VectorMask vm = Assembler::unmasked);
+
   void vsetvli_helper(BasicType bt, uint vector_length, LMUL vlmul = Assembler::m1, Register tmp = t0);
 
   void compare_integral_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,
@@ -280,7 +288,5 @@
 
   void extract_v(Register dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
   void extract_fp_v(FloatRegister dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
-
-  void load_narrow_klass_compact_c2(Register dst, Address src);
 
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP

@@ -53,12 +53,14 @@ EXPORT void test_allow_heap_void(unsigned char* heapArr, unsigned char* nativeAr
     for (int i = 0; i < numBytes; i++) {
         heapArr[i] = nativeArr[i];
     }
+    errno = 42;
 }
 
 EXPORT int test_allow_heap_int(int a0, unsigned char* heapArr, unsigned char* nativeArr, int numBytes) {
     for (int i = 0; i < numBytes; i++) {
         heapArr[i] = nativeArr[i];
     }
+    errno = 42;
     return a0;
 }
 
@@ -71,6 +73,7 @@ EXPORT struct L2 test_allow_heap_return_buffer(struct L2 a0, unsigned char* heap
     for (int i = 0; i < numBytes; i++) {
         heapArr[i] = nativeArr[i];
     }
+    errno = 42;
     return a0;
 }
 
@@ -84,6 +87,7 @@ EXPORT struct L3 test_allow_heap_imr(struct L3 a0, unsigned char* heapArr, unsig
     for (int i = 0; i < numBytes; i++) {
         heapArr[i] = nativeArr[i];
     }
+    errno = 42;
     return a0;
 }
 
@@ -94,4 +98,5 @@ EXPORT void test_allow_heap_void_stack(long long a0, long long a1, long long a2,
     for (int i = 0; i < numBytes; i++) {
         heapArr[i] = nativeArr[i];
     }
+    errno = 42;
 }

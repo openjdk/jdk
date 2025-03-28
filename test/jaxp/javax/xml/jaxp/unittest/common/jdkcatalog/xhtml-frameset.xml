@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.w3.org/1999/xhtml {{SCHEMA_LOCATION}}"
+    >
+    <head>
+        <title>Test XHTML</title>
+    </head>
+    <frameset cols="1*, 1*, 2*">
+        <frame src="frame1.html" name="left" />
+        <frame src="frame2.html" name="middle" />
+        <frame src="frame3.html" name="right" />
+    </frameset>
+</html>

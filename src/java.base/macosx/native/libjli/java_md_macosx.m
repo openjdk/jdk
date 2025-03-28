@@ -336,29 +336,31 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     int  argc         = *pargc;
     char **argv       = *pargv;
 
-    /* Find out where the JDK is that we will be using. */
-    if (!GetJDKInstallRoot(jdkroot, so_jdkroot, JNI_FALSE) ) {
-        JLI_ReportErrorMessage(LAUNCHER_ERROR1);
-        exit(2);
-    }
-    JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
-                 jdkroot, FILESEP, FILESEP);
-    /* Find the specified JVM type */
-    if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
-        JLI_ReportErrorMessage(CFG_ERROR7);
-        exit(1);
-    }
+    if (!JLI_IsStaticallyLinked()) {
+        /* Find out where the JDK is that we will be using. */
+        if (!GetJDKInstallRoot(jdkroot, so_jdkroot, JNI_FALSE) ) {
+            JLI_ReportErrorMessage(LAUNCHER_ERROR1);
+            exit(2);
+        }
+        JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
+                     jdkroot, FILESEP, FILESEP);
+        /* Find the specified JVM type */
+        if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
+            JLI_ReportErrorMessage(CFG_ERROR7);
+            exit(1);
+        }
 
-    jvmpath[0] = '\0';
-    jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
-    if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
-        JLI_ReportErrorMessage(CFG_ERROR9);
-        exit(4);
-    }
+        jvmpath[0] = '\0';
+        jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
+        if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
+            JLI_ReportErrorMessage(CFG_ERROR9);
+            exit(4);
+        }
 
-    if (!GetJVMPath(jdkroot, jvmtype, jvmpath, so_jvmpath)) {
-        JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
-        exit(4);
+        if (!GetJVMPath(jdkroot, jvmtype, jvmpath, so_jvmpath)) {
+            JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
+            exit(4);
+        }
     }
 
     /*

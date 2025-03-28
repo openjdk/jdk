@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import jdk.test.lib.Asserts;
 /**
  * @test
  * @summary Set repository path. Verify recording created in repo.
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:StartFlightRecording:name=myrec,settings=profile -XX:FlightRecorderOptions:repository=./subdirectory/subdirectory1/subdirectory2/subdirectory3/subdirectory4/subdirectory5/subdirectory6/subdirectory7/subdirectory8/subdirectory9/subdirectory10/subdirectory11/subdirectory12/subdirectory13/subdirectory14/subdirectory15 jdk.jfr.startupargs.TestRepositoryPathLong

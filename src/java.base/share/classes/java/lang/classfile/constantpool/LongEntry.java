@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,18 @@ import java.lang.classfile.TypeKind;
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 
 /**
- * Models a {@code CONSTANT_Long_info} constant in the constant pool of a
- * classfile.
- * @jvms 4.4.5 The CONSTANT_Long_info and CONSTANT_Double_info Structures
+ * Models a {@code CONSTANT_Long_info} structure, or a {@code long} constant, in
+ * the constant pool of a {@code class} file.
+ * <p>
+ * The use of a {@code LongEntry} is modeled by a {@code long}.  Conversions are
+ * through {@link ConstantPoolBuilder#longEntry(long)} and {@link #longValue()}.
+ * <p>
+ * A long entry has a {@linkplain #width() width} of {@code 2}, making its
+ * subsequent constant pool index valid and unusable.
  *
+ * @see ConstantPoolBuilder#longEntry ConstantPoolBuilder::longEntry
+ * @jvms 4.4.5 The {@code CONSTANT_Long_info} and {@code CONSTANT_Double_info}
+ *             Structures
  * @since 24
  */
 public sealed interface LongEntry
@@ -40,7 +48,10 @@ public sealed interface LongEntry
         permits AbstractPoolEntry.LongEntryImpl {
 
     /**
-     * {@return the long value}
+     * {@return the {@code long} value}
+     *
+     * @see ConstantPoolBuilder#longEntry(long)
+     *      ConstantPoolBuilder::longEntry(long)
      */
     long longValue();
 

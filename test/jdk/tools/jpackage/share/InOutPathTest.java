@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.internal.AppImageFile;
-import jdk.jpackage.internal.ApplicationLayout;
-import jdk.jpackage.internal.PackageFile;
+import jdk.jpackage.test.AppImageFile;
+import jdk.jpackage.test.ApplicationLayout;
+import jdk.jpackage.test.PackageFile;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
@@ -49,14 +49,14 @@ import jdk.jpackage.test.TKit;
  * @summary Test jpackage command line with overlapping input and output paths
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile InOutPathTest.java
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @compile -Xlint:all -Werror InOutPathTest.java
+ * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=InOutPathTest
  */
 public final class InOutPathTest {
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         List<Object[]> data = new ArrayList<>();
 
         for (var packageTypeAlias : PackageTypeAlias.values()) {

@@ -56,7 +56,6 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import sun.awt.AppContext;
-import sun.awt.AWTPermissions;
 import sun.awt.SunToolkit;
 import sun.awt.datatransfer.DataTransferer;
 import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
@@ -223,18 +222,6 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
       throws UnsupportedFlavorException, IOException,
         InvalidDnDOperationException
     {
-
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        try {
-            if (!dropInProcess && sm != null) {
-                sm.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
-            }
-        } catch (Exception e) {
-            Thread currentThread = Thread.currentThread();
-            currentThread.getUncaughtExceptionHandler().uncaughtException(currentThread, e);
-            return null;
-        }
 
         Long lFormat = null;
         Transferable localTransferable = local;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_Instruction.hpp"
@@ -30,7 +29,6 @@
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_ValueStack.hpp"
-#include "ci/ciInstance.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "runtime/os.hpp"
@@ -521,11 +519,16 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
       }
       break;
 
-    case lir_roundfp: {
-      LIR_OpRoundFP* round_op = op->as_OpRoundFP();
-      roundfp_op(round_op->in_opr(), round_op->tmp(), round_op->result_opr(), round_op->pop_fpu_stack());
+    case lir_abs:
+    case lir_sqrt:
+    case lir_f2hf:
+    case lir_hf2f:
+      intrinsic_op(op->code(), op->in_opr(), op->tmp_opr(), op->result_opr(), op);
       break;
-    }
+
+    case lir_neg:
+      negate(op->in_opr(), op->result_opr(), op->tmp_opr());
+      break;
 
     case lir_return: {
       assert(op->as_OpReturn() != nullptr, "sanity");
@@ -724,19 +727,6 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
         op->fpu_pop_count() == 1);
       break;
 
-    case lir_abs:
-    case lir_sqrt:
-    case lir_tan:
-    case lir_log10:
-    case lir_f2hf:
-    case lir_hf2f:
-      intrinsic_op(op->code(), op->in_opr1(), op->in_opr2(), op->result_opr(), op);
-      break;
-
-    case lir_neg:
-      negate(op->in_opr1(), op->result_opr(), op->in_opr2());
-      break;
-
     case lir_logic_and:
     case lir_logic_or:
     case lir_logic_xor:
@@ -776,16 +766,6 @@ void LIR_Assembler::emit_op4(LIR_Op4* op) {
 
 void LIR_Assembler::build_frame() {
   _masm->build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes());
-}
-
-
-void LIR_Assembler::roundfp_op(LIR_Opr src, LIR_Opr tmp, LIR_Opr dest, bool pop_fpu_stack) {
-  assert(strict_fp_requires_explicit_rounding, "not required");
-  assert((src->is_single_fpu() && dest->is_single_stack()) ||
-         (src->is_double_fpu() && dest->is_double_stack()),
-         "round_fp: rounds register -> stack location");
-
-  reg2stack (src, dest, src->type(), pop_fpu_stack);
 }
 
 

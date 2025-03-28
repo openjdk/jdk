@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1286,6 +1286,9 @@ public class DataFlavor implements Externalizable, Cloneable {
 
     /**
      * Serializes this {@code DataFlavor}.
+     *
+     * @serialData The {@code mimeType} field with the {@code humanPresentableName} parameter set,
+     * followed by the {@code representationClass} field
      */
    public synchronized void writeExternal(ObjectOutput os) throws IOException {
        if (mimeType != null) {

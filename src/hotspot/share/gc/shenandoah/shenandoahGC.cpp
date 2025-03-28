@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "compiler/oopMap.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -39,11 +38,13 @@ const char* ShenandoahGC::degen_point_to_string(ShenandoahDegenPoint point) {
       return "<UNSET>";
     case _degenerated_outside_cycle:
       return "Outside of Cycle";
+    case _degenerated_roots:
+      return "Roots";
     case _degenerated_mark:
       return "Mark";
     case _degenerated_evac:
       return "Evacuation";
-    case _degenerated_updaterefs:
+    case _degenerated_update_refs:
       return "Update References";
     default:
       ShouldNotReachHere();

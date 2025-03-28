@@ -172,7 +172,7 @@ Provide informative, but not too verbose error messages.
 All GoogleTest asserts print compared expressions and their values, so
 there is no need to have them in error messages. Asserts print only
 compared values, they do not print any of interim variables, e.g.
-`ASSERT_TRUE((val1 == val2 && isFail(foo(8)) || i == 18)` prints only
+`ASSERT_TRUE((val1 == val2 && isFail(foo(8))) || i == 18)` prints only
 one value. If you use some complex predicates, please consider
 `EXPECT_PRED*` or `EXPECT_FORMAT_PRED` assertions family, they check that
 a predicate returns true/success and print out all parameters values.

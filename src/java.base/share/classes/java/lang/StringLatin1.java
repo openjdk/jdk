@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,7 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.LATIN1;
@@ -43,8 +41,6 @@ import static java.lang.String.checkIndex;
 import static java.lang.String.checkOffset;
 
 final class StringLatin1 {
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-
     public static char charAt(byte[] value, int index) {
         checkIndex(index, value.length);
         return (char)(value[index] & 0xff);
@@ -84,120 +80,6 @@ final class StringLatin1 {
         byte[] ret = StringUTF16.newBytesFor(len);
         inflate(value, off, ret, 0, len);
         return ret;
-    }
-
-    /**
-     * Places characters representing the integer i into the
-     * character array buf. The characters are placed into
-     * the buffer backwards starting with the least significant
-     * digit at the specified index (exclusive), and working
-     * backwards from there.
-     *
-     * @implNote This method converts positive inputs into negative
-     * values, to cover the Integer.MIN_VALUE case. Converting otherwise
-     * (negative to positive) will expose -Integer.MIN_VALUE that overflows
-     * integer.
-     *
-     * @param i     value to convert
-     * @param index next index, after the least significant digit
-     * @param buf   target buffer, Latin1-encoded
-     * @return index of the most significant digit or minus sign, if present
-     */
-    static int getChars(int i, int index, byte[] buf) {
-        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
-        int q;
-        int charPos = index;
-
-        boolean negative = i < 0;
-        if (!negative) {
-            i = -i;
-        }
-
-        // Generate two digits per iteration
-        while (i <= -100) {
-            q = i / 100;
-            charPos -= 2;
-            writeDigitPair(buf, charPos, (q * 100) - i);
-            i = q;
-        }
-
-        // We know there are at most two digits left at this point.
-        if (i < -9) {
-            charPos -= 2;
-            writeDigitPair(buf, charPos, -i);
-        } else {
-            buf[--charPos] = (byte)('0' - i);
-        }
-
-        if (negative) {
-            buf[--charPos] = (byte)'-';
-        }
-        return charPos;
-    }
-
-    /**
-     * Places characters representing the long i into the
-     * character array buf. The characters are placed into
-     * the buffer backwards starting with the least significant
-     * digit at the specified index (exclusive), and working
-     * backwards from there.
-     *
-     * @implNote This method converts positive inputs into negative
-     * values, to cover the Long.MIN_VALUE case. Converting otherwise
-     * (negative to positive) will expose -Long.MIN_VALUE that overflows
-     * long.
-     *
-     * @param i     value to convert
-     * @param index next index, after the least significant digit
-     * @param buf   target buffer, Latin1-encoded
-     * @return index of the most significant digit or minus sign, if present
-     */
-    static int getChars(long i, int index, byte[] buf) {
-        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
-        long q;
-        int charPos = index;
-
-        boolean negative = (i < 0);
-        if (!negative) {
-            i = -i;
-        }
-
-        // Get 2 digits/iteration using longs until quotient fits into an int
-        while (i <= Integer.MIN_VALUE) {
-            q = i / 100;
-            charPos -= 2;
-            writeDigitPair(buf, charPos, (int)((q * 100) - i));
-            i = q;
-        }
-
-        // Get 2 digits/iteration using ints
-        int q2;
-        int i2 = (int)i;
-        while (i2 <= -100) {
-            q2 = i2 / 100;
-            charPos -= 2;
-            writeDigitPair(buf, charPos, (q2 * 100) - i2);
-            i2 = q2;
-        }
-
-        // We know there are at most two digits left at this point.
-        if (i2 < -9) {
-            charPos -= 2;
-            writeDigitPair(buf, charPos, -i2);
-        } else {
-            buf[--charPos] = (byte)('0' - i2);
-        }
-
-        if (negative) {
-            buf[--charPos] = (byte)'-';
-        }
-        return charPos;
-    }
-
-    private static void writeDigitPair(byte[] buf, int charPos, int value) {
-        short pair = DecimalDigits.digitPair(value);
-        buf[charPos] = (byte)(pair);
-        buf[charPos + 1] = (byte)(pair >> 8);
     }
 
     public static void getChars(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
@@ -825,27 +707,6 @@ final class StringLatin1 {
 
     static Stream<String> lines(byte[] value) {
         return StreamSupport.stream(LinesSpliterator.spliterator(value), false);
-    }
-
-    static void putCharsAt(byte[] val, int index, int c1, int c2, int c3, int c4) {
-        assert index >= 0 && index + 3 < length(val) : "Trusted caller missed bounds check";
-        // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
-        long offset = (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
-        UNSAFE.putByte(val, offset    , (byte)(c1));
-        UNSAFE.putByte(val, offset + 1, (byte)(c2));
-        UNSAFE.putByte(val, offset + 2, (byte)(c3));
-        UNSAFE.putByte(val, offset + 3, (byte)(c4));
-    }
-
-    static void putCharsAt(byte[] val, int index, int c1, int c2, int c3, int c4, int c5) {
-        assert index >= 0 && index + 4 < length(val) : "Trusted caller missed bounds check";
-        // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
-        long offset  = (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
-        UNSAFE.putByte(val, offset    , (byte)(c1));
-        UNSAFE.putByte(val, offset + 1, (byte)(c2));
-        UNSAFE.putByte(val, offset + 2, (byte)(c3));
-        UNSAFE.putByte(val, offset + 3, (byte)(c4));
-        UNSAFE.putByte(val, offset + 4, (byte)(c5));
     }
 
     public static void putChar(byte[] val, int index, int c) {

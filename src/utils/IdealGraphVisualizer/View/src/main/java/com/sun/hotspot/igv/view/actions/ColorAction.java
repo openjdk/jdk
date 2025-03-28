@@ -82,6 +82,7 @@ public final class ColorAction extends ModelAwareAction {
 
     private static final JLabel selectedColorLabel = new JLabel("Preview");
     private static final JColorChooser colorChooser = new JColorChooser(Color.WHITE);
+    private static final Color NO_COLOR = new Color(0, 0, 0, 0);
 
     public ColorAction() {
         initializeComponents();
@@ -89,8 +90,8 @@ public final class ColorAction extends ModelAwareAction {
 
     private void initializeComponents() {
         selectedColorLabel.setPreferredSize(new Dimension(3 * 32, 32));
-        selectedColorLabel.setOpaque(true);
-        selectedColorLabel.setBackground(Color.WHITE);
+        selectedColorLabel.setOpaque(false); // Allow transparency
+        selectedColorLabel.setBackground(NO_COLOR); // Set transparent background
         selectedColorLabel.setForeground(Color.BLACK); // Set text color
         selectedColorLabel.setHorizontalAlignment(SwingConstants.CENTER); // Center the text
 
@@ -100,6 +101,7 @@ public final class ColorAction extends ModelAwareAction {
             Color selectedColor = colorChooser.getColor();
             if (selectedColor != null) {
                 selectedColorLabel.setBackground(selectedColor);
+                selectedColorLabel.setOpaque(selectedColor.getAlpha() != 0);
                 selectedColorLabel.setForeground(FigureWidget.getTextColor(selectedColor));
             }
         });
@@ -118,10 +120,27 @@ public final class ColorAction extends ModelAwareAction {
             colorButton.setPreferredSize(new Dimension(16, 16));
             colorButton.addActionListener(e -> {
                 selectedColorLabel.setBackground(color);
+                selectedColorLabel.setOpaque(color.getAlpha() != 0);
                 selectedColorLabel.setForeground(FigureWidget.getTextColor(color));
             });
             colorsPanel.add(colorButton);
         }
+
+        // Add "No Color" button
+        JButton noColorButton = new JButton("No Color");
+        noColorButton.setOpaque(true);
+        noColorButton.setContentAreaFilled(true);
+        noColorButton.setBorderPainted(true);
+        noColorButton.setPreferredSize(new Dimension(90, 24));
+        noColorButton.setFocusPainted(false);
+        noColorButton.addActionListener(e -> {
+            selectedColorLabel.setBackground(NO_COLOR);
+            selectedColorLabel.setOpaque(false);
+            selectedColorLabel.setForeground(Color.BLACK);
+        });
+        colorsPanel.add(noColorButton);
+
+        // Add the preview label
         colorsPanel.add(selectedColorLabel, 0);
         colorsPanel.revalidate();
         colorsPanel.repaint();
@@ -148,9 +167,10 @@ public final class ColorAction extends ModelAwareAction {
                         dialogLoc = dialogHolder[0].getLocation();
                         // OK button action
                         Color selectedColor = selectedColorLabel.getBackground();
-                        if (selectedColor != null) {
-                            editor.colorSelectedFigures(selectedColor);
+                        if (selectedColor.equals(NO_COLOR)) {
+                            selectedColor = null;
                         }
+                        editor.colorSelectedFigures(selectedColor);
                     },
                     null // Cancel button action
             );

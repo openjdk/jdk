@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,9 +121,6 @@ public class ParserDelegator extends HTMLEditorKit.Parser implements Serializabl
 
     /**
      * Fetch a resource relative to the ParserDelegator classfile.
-     * If this is called on 1.2 the loading will occur under the
-     * protection of a doPrivileged call to allow the ParserDelegator
-     * to function when used in an applet.
      *
      * @param name the name of the resource, relative to the
      *  ParserDelegator class.

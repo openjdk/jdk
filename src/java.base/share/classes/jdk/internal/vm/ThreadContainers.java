@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Stream;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import sun.security.action.GetPropertyAction;
 
 /**
  * This class consists exclusively of static methods to support groupings of threads.
@@ -52,7 +51,7 @@ public class ThreadContainers {
     private static final ReferenceQueue<Object> QUEUE = new ReferenceQueue<>();
 
     static {
-        String s = GetPropertyAction.privilegedGetProperty("jdk.trackAllThreads");
+        String s = System.getProperty("jdk.trackAllThreads");
         if (s == null || s.isEmpty() || Boolean.parseBoolean(s)) {
             TRACK_ALL_THREADS = true;
             ROOT_CONTAINER = new RootContainer.TrackingRootContainer();

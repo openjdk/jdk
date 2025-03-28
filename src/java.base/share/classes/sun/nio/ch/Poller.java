@@ -36,7 +36,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
 import jdk.internal.misc.InnocuousThread;
-import sun.security.action.GetPropertyAction;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * Polls file descriptors. Virtual threads invoke the poll method to park
@@ -53,6 +53,9 @@ public abstract class Poller {
             throw new ExceptionInInitializerError(ioe);
         }
     }
+
+    // the poller or sub-poller thread
+    private @Stable Thread owner;
 
     // maps file descriptors to parked Thread
     private final Map<Integer, Thread> map = new ConcurrentHashMap<>();
@@ -239,6 +242,7 @@ public abstract class Poller {
      * descriptor that is polled.
      */
     private void pollerLoop() {
+        owner = Thread.currentThread();
         try {
             for (;;) {
                 poll(-1);
@@ -259,6 +263,7 @@ public abstract class Poller {
      */
     private void subPollerLoop(Poller masterPoller) {
         assert Thread.currentThread().isVirtual();
+        owner = Thread.currentThread();
         try {
             int polled = 0;
             for (;;) {
@@ -283,7 +288,8 @@ public abstract class Poller {
 
     @Override
     public String toString() {
-        return Objects.toIdentityString(this) + " [registered = " + registered() + "]";
+        return String.format("%s [registered = %d, owner = %s]",
+                Objects.toIdentityString(this), registered(), owner);
     }
 
     /**
@@ -305,7 +311,7 @@ public abstract class Poller {
         Pollers() throws IOException {
             PollerProvider provider = PollerProvider.provider();
             Poller.Mode mode;
-            String s = GetPropertyAction.privilegedGetProperty("jdk.pollerMode");
+            String s = System.getProperty("jdk.pollerMode");
             if (s != null) {
                 if (s.equalsIgnoreCase(Mode.SYSTEM_THREADS.name()) || s.equals("1")) {
                     mode = Mode.SYSTEM_THREADS;
@@ -418,7 +424,7 @@ public abstract class Poller {
          * is not a power of 2.
          */
         private static int pollerCount(String propName, int defaultCount) {
-            String s = GetPropertyAction.privilegedGetProperty(propName);
+            String s = System.getProperty(propName);
             int count = (s != null) ? Integer.parseInt(s) : defaultCount;
 
             // check power of 2
@@ -442,5 +448,26 @@ public abstract class Poller {
                 throw new InternalError(e);
             }
         }
+    }
+
+    /**
+     * Return the master poller or null if there is no master poller.
+     */
+    public static Poller masterPoller() {
+        return POLLERS.masterPoller();
+    }
+
+    /**
+     * Return the list of read pollers.
+     */
+    public static List<Poller> readPollers() {
+        return POLLERS.readPollers();
+    }
+
+    /**
+     * Return the list of write pollers.
+     */
+    public static List<Poller> writePollers() {
+        return POLLERS.writePollers();
     }
 }
