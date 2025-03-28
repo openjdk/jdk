@@ -99,10 +99,10 @@ public class SparseCodeCache {
 
     private static Object WB;
 
-    @Param({"128", "256", "512", "768", "1024"})
+    @Param({"256", "512", "1024"})
     public int activeMethodCount;
 
-    @Param({"1", "32", "48", "64", "80", "96", "112"})
+    @Param({"1", "32", "64", "128"})
     public int groupCount;
 
     @Param({"2097152"})
