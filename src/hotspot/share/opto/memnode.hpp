@@ -133,9 +133,9 @@ public:
   // (Return -1 if unknown.)
   virtual int store_Opcode() const { return -1; }
 
-  // Return type is the property of the value that is loaded/stored 
-  // and not the memory that is accessed. For instance, in case of 
-  // mismatch a value of type 'short' can be stored into an array 
+  // Return type is the property of the value that is loaded/stored
+  // and not the memory that is accessed. For instance, in case of
+  // mismatch a value of type 'short' can be stored into an array
   // with elements of type 'long'.
   virtual BasicType value_basic_type() const = 0;
   virtual int memory_size() const {
