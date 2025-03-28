@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import jdk.jfr.internal.Logger;
 import jdk.jfr.EventType;
 import jdk.jfr.ValueDescriptor;
+import jdk.jfr.internal.LogLevel;
+import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.LongMap;
 import jdk.jfr.internal.MetadataDescriptor;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Type;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Class that create parsers suitable for reading events and constant pools
@@ -58,7 +62,7 @@ final class ParserFactory {
         types.forEach(typeList::add);
         for (Type t : typeList) {
             if (!t.getFields().isEmpty()) { // Avoid primitives
-                CompositeParser cp = createCompositeParser(t, false);
+                CompositeParser cp = createCompositeParser(null, t);
                 if (t.isSimpleType()) { // Reduce to nested parser
                     parsers.put(t.getId(), cp.parsers[0]);
                 }
@@ -81,17 +85,17 @@ final class ParserFactory {
     private EventParser createEventParser(EventType eventType) throws IOException {
         List<Parser> parsers = new ArrayList<Parser>();
         for (ValueDescriptor f : eventType.getFields()) {
-            parsers.add(createParser(f, true));
+            parsers.add(createParser(eventType, f));
         }
         return new EventParser(timeConverter, eventType, parsers.toArray(new Parser[0]));
     }
 
-    private Parser createParser(ValueDescriptor v, boolean event) throws IOException {
+    private Parser createParser(EventType eventType, ValueDescriptor v) throws IOException {
         boolean constantPool = PrivateAccess.getInstance().isConstantPool(v);
         if (v.isArray()) {
             Type valueType = PrivateAccess.getInstance().getType(v);
             ValueDescriptor element = PrivateAccess.getInstance().newValueDescriptor(v.getName(), valueType, v.getAnnotationElements(), 0, constantPool, null);
-            return new ArrayParser(createParser(element, event));
+            return new ArrayParser(createParser(eventType, element));
         }
         long id = v.getTypeId();
         Type type = types.get(id);
@@ -105,15 +109,15 @@ final class ParserFactory {
                 lookup = new ConstantLookup(pool, type);
                 constantLookups.put(id, lookup);
             }
-            if (event) {
-                return new EventValueConstantParser(lookup);
+            if (eventType != null) {
+                return new EventValueConstantParser(eventType, v.getName(), lookup);
             }
             return new ConstantValueParser(lookup);
         }
         Parser parser = parsers.get(id);
         if (parser == null) {
             if (!v.getFields().isEmpty()) {
-                return createCompositeParser(type, event);
+                return createCompositeParser(null, type);
             } else {
                 return registerParserType(type, createPrimitiveParser(type, constantPool));
             }
@@ -151,7 +155,7 @@ final class ParserFactory {
         return parser;
     }
 
-    private CompositeParser createCompositeParser(Type type, boolean event) throws IOException {
+    private CompositeParser createCompositeParser(EventType eventType, Type type) throws IOException {
         List<ValueDescriptor> vds = type.getFields();
         Parser[] parsers = new Parser[vds.size()];
         CompositeParser composite = new CompositeParser(parsers);
@@ -160,7 +164,7 @@ final class ParserFactory {
 
         int index = 0;
         for (ValueDescriptor vd : vds) {
-            parsers[index++] = createParser(vd, event);
+            parsers[index++] = createParser(eventType, vd);
         }
         return composite;
     }
@@ -316,23 +320,44 @@ final class ParserFactory {
     }
 
     private static final class EventValueConstantParser extends Parser {
+        private static final boolean ASSERTION_ENABLED = Utils.isAssertionEnabled();
         private final ConstantLookup lookup;
+        private final EventType eventType;
+        private final String fieldName;
+
         private Object lastValue = 0;
         private long lastKey = -1;
         private Object lastReferenceValue;
         private long lastReferenceKey = -1;
-        EventValueConstantParser(ConstantLookup lookup) {
+
+        EventValueConstantParser(EventType eventType, String fieldName, ConstantLookup lookup) {
+            this.eventType = eventType;
+            this.fieldName = fieldName;
             this.lookup = lookup;
         }
 
         @Override
         public Object parse(RecordingInput input) throws IOException {
             long key = input.readLong();
-            if (key == lastKey) {
+            if (key == lastKey && !ASSERTION_ENABLED) {
                 return lastValue;
             }
             lastKey = key;
             lastValue = lookup.getCurrentResolved(key);
+            if (lastValue == null && key != 0) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("Missing object ID ");
+                sb.append(key);
+                sb.append(" for ");
+                sb.append(eventType.getName());
+                sb.append(".");
+                sb.append(fieldName);
+                sb.append(" of type " + lookup.getType().getName());
+                sb.append(". All IDs should reference an object.");
+                String msg = sb.toString();
+                Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, msg);
+                assert false : msg;
+            }
             return lastValue;
         }
 
