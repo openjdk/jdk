@@ -30,7 +30,7 @@ import java.awt.Toolkit;
 
 import sun.awt.windows.WToolkit;
 
-public class PlatformGraphicsInfo {
+public final class PlatformGraphicsInfo {
 
     private static final boolean hasDisplays;
 

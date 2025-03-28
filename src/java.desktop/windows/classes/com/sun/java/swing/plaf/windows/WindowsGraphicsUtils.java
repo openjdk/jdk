@@ -58,7 +58,7 @@ import static com.sun.java.swing.plaf.windows.TMSchema.TypeEnum;
  * @author Mark Davidson
  * @since 1.4
  */
-public class WindowsGraphicsUtils {
+public final class WindowsGraphicsUtils {
 
     /**
      * Renders a text String in Windows without the mnemonic.

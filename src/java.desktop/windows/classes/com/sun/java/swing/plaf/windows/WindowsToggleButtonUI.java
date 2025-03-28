@@ -45,7 +45,7 @@ import sun.awt.AppContext;
  *
  * @author Jeff Dinkins
  */
-public class WindowsToggleButtonUI extends BasicToggleButtonUI
+public final class WindowsToggleButtonUI extends BasicToggleButtonUI
 {
     protected int dashedRectGapX;
     protected int dashedRectGapY;
@@ -73,6 +73,7 @@ public class WindowsToggleButtonUI extends BasicToggleButtonUI
     // ********************************
     //            Defaults
     // ********************************
+    @Override
     protected void installDefaults(AbstractButton b) {
         super.installDefaults(b);
         if(!defaults_initialized) {
@@ -93,6 +94,7 @@ public class WindowsToggleButtonUI extends BasicToggleButtonUI
         }
     }
 
+    @Override
     protected void uninstallDefaults(AbstractButton b) {
         super.uninstallDefaults(b);
         defaults_initialized = false;
@@ -112,6 +114,7 @@ public class WindowsToggleButtonUI extends BasicToggleButtonUI
     private transient Color cachedBackgroundColor = null;
     private transient Color cachedHighlightColor = null;
 
+    @Override
     protected void paintButtonPressed(Graphics g, AbstractButton b) {
         if (XPStyle.getXP() == null && b.isContentAreaFilled()) {
             Color oldColor = g.getColor();
@@ -135,6 +138,7 @@ public class WindowsToggleButtonUI extends BasicToggleButtonUI
         }
     }
 
+    @Override
     public void paint(Graphics g, JComponent c) {
         if (XPStyle.getXP() != null) {
             WindowsButtonUI.paintXPButtonBackground(g, c);
@@ -146,10 +150,12 @@ public class WindowsToggleButtonUI extends BasicToggleButtonUI
     /**
      * Overridden method to render the text without the mnemonic
      */
+    @Override
     protected void paintText(Graphics g, AbstractButton b, Rectangle textRect, String text) {
         WindowsGraphicsUtils.paintText(g, b, textRect, text, getTextShiftOffset());
     }
 
+    @Override
     protected void paintFocus(Graphics g, AbstractButton b,
                               Rectangle viewRect, Rectangle textRect, Rectangle iconRect) {
         g.setColor(getFocusColor());
@@ -161,6 +167,7 @@ public class WindowsToggleButtonUI extends BasicToggleButtonUI
     // ********************************
     //          Layout Methods
     // ********************************
+    @Override
     public Dimension getPreferredSize(JComponent c) {
         Dimension d = super.getPreferredSize(c);
 

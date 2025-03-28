@@ -54,9 +54,11 @@ import sun.awt.dnd.SunDragSourceContextPeer;
  */
 
 final class WDragSourceContextPeer extends SunDragSourceContextPeer {
+    @Override
     public void startSecondaryEventLoop(){
         WToolkit.startSecondaryEventLoop();
     }
+    @Override
     public void quitSecondaryEventLoop(){
         WToolkit.quitSecondaryEventLoop();
     }
@@ -168,6 +170,7 @@ final class WDragSourceContextPeer extends SunDragSourceContextPeer {
             int imgWidth, int imgHight,
             int offsetX, int offsetY);
 
+    @Override
     protected native void setNativeCursor(long nativeCtxt, Cursor c, int cType);
 
 }

@@ -43,7 +43,7 @@ import sun.java2d.SurfaceData;
  * that is faster than our current fallback (which creates
  * a temporary GDI DIB)
  */
-public class GDIBlitLoops extends Blit {
+public final class GDIBlitLoops extends Blit {
 
     // Store these values to be passed to native code
     int rmask, gmask, bmask;
@@ -134,6 +134,7 @@ public class GDIBlitLoops extends Blit {
      * Composite data because we only register these loops for
      * SrcNoEa composite operations.
      */
+    @Override
     public void Blit(SurfaceData src, SurfaceData dst,
                      Composite comp, Region clip,
                      int sx, int sy, int dx, int dy, int w, int h)

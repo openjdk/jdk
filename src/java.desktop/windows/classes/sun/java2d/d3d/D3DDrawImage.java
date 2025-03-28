@@ -37,7 +37,7 @@ import sun.java2d.loops.SurfaceType;
 import sun.java2d.loops.TransformBlit;
 import sun.java2d.pipe.DrawImage;
 
-public class D3DDrawImage extends DrawImage {
+public final class D3DDrawImage extends DrawImage {
 
     @Override
     protected void renderImageXform(SunGraphics2D sg, Image img,
