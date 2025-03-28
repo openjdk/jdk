@@ -349,23 +349,22 @@ Node* IdealKit::load(Node* ctl,
                      Node* adr,
                      const Type* t,
                      BasicType bt,
-                     int adr_idx,
                      bool require_atomic_access,
                      MemNode::MemOrd mo,
                      LoadNode::ControlDependency control_dependency) {
-
+  int adr_idx = C->get_alias_index(_gvn.type(adr)->isa_ptr());
   assert(adr_idx != Compile::AliasIdxTop, "use other make_load factory" );
   const TypePtr* adr_type = nullptr; // debug-mode-only argument
   debug_only(adr_type = C->get_adr_type(adr_idx));
   Node* mem = memory(adr_idx);
-  Node* ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo, control_dependency, require_atomic_access);
+  Node* ld = LoadNode::make(_gvn, ctl, mem, adr, t, bt, mo, control_dependency, require_atomic_access);
   return transform(ld);
 }
 
 Node* IdealKit::store(Node* ctl, Node* adr, Node *val, BasicType bt,
-                      int adr_idx,
                       MemNode::MemOrd mo, bool require_atomic_access,
                       bool mismatched) {
+  int adr_idx = C->get_alias_index(_gvn.type(adr)->isa_ptr());
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory");
   const TypePtr* adr_type = nullptr;
   debug_only(adr_type = C->get_adr_type(adr_idx));
