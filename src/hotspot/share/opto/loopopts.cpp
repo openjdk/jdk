@@ -4484,7 +4484,7 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
   return AutoVectorizeStatus::Success;
 }
 
-// Just before insert_pre_post_loops, we can multi-version the loop:
+// Just before insert_pre_post_loops, we can multiversion the loop:
 //
 //              multiversion_if
 //               |       |

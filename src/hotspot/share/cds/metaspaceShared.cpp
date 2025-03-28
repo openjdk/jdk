@@ -43,6 +43,7 @@
 #include "cds/finalImageRecipes.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderDataShared.hpp"
@@ -661,7 +662,10 @@ void VM_PopulateDumpSharedSpace::doit() {
   AOTClassLocationConfig* cl_config;
   char* serialized_data = dump_read_only_tables(cl_config);
 
-  SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
+  if (CDSConfig::is_dumping_lambdas_in_legacy_mode()) {
+    log_info(cds)("Adjust lambda proxy class dictionary");
+    LambdaProxyClassDictionary::adjust_dumptime_table();
+  }
 
   // The vtable clones contain addresses of the current process.
   // We don't want to write these addresses into the archive.
@@ -1129,6 +1133,8 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   if (static_mapinfo != nullptr) {
     log_info(cds)("Core region alignment: %zu", static_mapinfo->core_region_alignment());
     dynamic_mapinfo = open_dynamic_archive();
+
+    log_info(cds)("ArchiveRelocationMode: %d", ArchiveRelocationMode);
 
     // First try to map at the requested address
     result = map_archives(static_mapinfo, dynamic_mapinfo, true);

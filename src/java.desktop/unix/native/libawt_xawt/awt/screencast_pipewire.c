@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
 #include <dlfcn.h>
 #include "jni_util.h"
 #include "awt.h"
+
+#ifndef _AIX
 #include "screencast_pipewire.h"
 
 struct pw_buffer *(*fp_pw_stream_dequeue_buffer)(struct pw_stream *stream);
@@ -1095,3 +1097,28 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
     releaseToken(env, jtoken, token);
     return 0;
 }
+#else
+JNIEXPORT void JNICALL
+Java_sun_awt_screencast_ScreencastHelper_closeSession(JNIEnv *env, jclass cls) {
+}
+
+JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl(
+        JNIEnv *env,
+        jclass cls,
+        jint jx,
+        jint jy,
+        jint jwidth,
+        jint jheight,
+        jintArray pixelArray,
+        jintArray affectedScreensBoundsArray,
+        jstring jtoken
+) {
+    return -1; /* RESULT_ERROR */
+}
+
+JNIEXPORT jboolean JNICALL Java_sun_awt_screencast_ScreencastHelper_loadPipewire(
+        JNIEnv *env, jclass cls, jboolean screencastDebug
+) {
+    return JNI_FALSE;
+}
+#endif
