@@ -54,6 +54,8 @@ public class RasterCreationTest {
 
         SampleModel[] inputSampleModels = {
             new PixelInterleavedSampleModel(DataBuffer.TYPE_BYTE,
+                    1, 1, 4, 4, bandOffsets),
+            new PixelInterleavedSampleModel(DataBuffer.TYPE_BYTE,
                     1, 1, 1, 1, bandOffsets),
             new PixelInterleavedSampleModel(DataBuffer.TYPE_USHORT,
                     1, 1, 1, 1, bandOffsets),
