@@ -118,12 +118,14 @@ class Startup {
     }
 
     private static final String DEFAULT_STARTUP_NAME = "DEFAULT";
+    private static final String DEFAULT_24_STARTUP_NAME = "DEFAULT_24";
     private static final String PREVIEW_DEFAULT_STARTUP_NAME = "PREVIEW_DEFAULT";
 
     // cached DEFAULT start-up
     private static Startup[] defaultStartup = new Startup[] {
         null, //standard startup
-        null  //preview  startup
+        null, //JDK 24 and older startup
+        null  //preview startup
     };
 
     // the list of entries
@@ -171,6 +173,7 @@ class Startup {
         if (entries.size() == 1) {
             StartupEntry sue = entries.get(0);
             if (sue.isBuiltIn && (sue.name.equals(DEFAULT_STARTUP_NAME) ||
+                                  sue.name.equals(DEFAULT_24_STARTUP_NAME) ||
                                   sue.name.equals(PREVIEW_DEFAULT_STARTUP_NAME))) {
                 return true;
             }
@@ -222,7 +225,7 @@ class Startup {
      * @param mh handler for error messages
      * @return Startup, or default startup when error (message has been printed)
      */
-    static Startup unpack(String storedForm, boolean preview, MessageHandler mh) {
+    static Startup unpack(String storedForm, int sourceLevel, boolean preview, MessageHandler mh) {
         if (storedForm != null) {
             if (storedForm.isEmpty()) {
                 return noStartup();
@@ -243,14 +246,18 @@ class Startup {
                         String name = all[i + 1];
                         String timeStamp = all[i + 2];
                         String content = all[i + 3];
-                        if (isBuiltIn) {
-                            // update to current definition, use stored if removed/error
-                            String resource = getResource(name);
-                            if (resource != null) {
-                                content = resource;
+                        if (isBuiltIn && DEFAULT_STARTUP_NAME.equals(name)) {
+                            e.addAll(defaultStartup(sourceLevel, preview, mh).entries);
+                        } else {
+                            if (isBuiltIn) {
+                                // update to current definition, use stored if removed/error
+                                String resource = getResource(name);
+                                if (resource != null) {
+                                    content = resource;
+                                }
                             }
+                            e.add(new StartupEntry(isBuiltIn, name, content, timeStamp));
                         }
-                        e.add(new StartupEntry(isBuiltIn, name, content, timeStamp));
                     }
                     return new Startup(e);
                 } else {
@@ -260,7 +267,7 @@ class Startup {
                 mh.errormsg("jshell.err.corrupted.stored.startup", ex.getMessage());
             }
         }
-        return defaultStartup(preview, mh);
+        return defaultStartup(sourceLevel, preview, mh);
     }
 
     /**
@@ -329,18 +336,20 @@ class Startup {
      * @param mh handler for error messages
      * @return The default Startup, or empty startup when error (message has been printed)
      */
-    static Startup defaultStartup(boolean preview, MessageHandler mh) {
-        int idx = preview ? 1 : 0;
+    static Startup defaultStartup(int sourceLevel, boolean preview, MessageHandler mh) {
+        boolean startup24 = sourceLevel < 25;
+        int idx = preview ? 2 : startup24 ? 1 : 0;
 
         if (defaultStartup[idx] != null) {
             return defaultStartup[idx];
         }
         String resourceName = preview ? PREVIEW_DEFAULT_STARTUP_NAME
-                                      : DEFAULT_STARTUP_NAME;
+                                      : startup24 ? DEFAULT_24_STARTUP_NAME
+                                                  : DEFAULT_STARTUP_NAME;
         try {
             String content = readResource(resourceName);
             return defaultStartup[idx] = new Startup(
-                    new StartupEntry(true, resourceName, content));
+                    new StartupEntry(true, DEFAULT_STARTUP_NAME, content));
         } catch (AccessDeniedException e) {
             mh.errormsg("jshell.err.file.not.accessible", "jshell", resourceName, e.getMessage());
         } catch (NoSuchFileException e) {
