@@ -28,7 +28,7 @@
  * @summary
  *     This test checks if menu items lay out correctly when their
  *     ComponentOrientation property is set to RIGHT_TO_LEFT.
- *     This test is manual. The tester is asked to compare left-to-right and
+ *     The tester is asked to compare left-to-right and
  *     right-to-left menus and judge whether they are mirror images of each
  *     other.
  * @library /java/awt/regtesthelpers
@@ -101,14 +101,14 @@ public class RightLeftOrientation {
 
     static JMenu createMenu(String laf, String name) {
         JMenu menu = new JMenu(name);
-        try{
+        try {
             LookAndFeel save = UIManager.getLookAndFeel();
             UIManager.setLookAndFeel(laf);
             addMenuItems(menu, ComponentOrientation.LEFT_TO_RIGHT);
             menu.addSeparator();
             addMenuItems(menu, ComponentOrientation.RIGHT_TO_LEFT);
             UIManager.setLookAndFeel(save);
-        } catch(Exception e){
+        } catch(Exception e) {
             menu = new JMenu(name);
             menu.setEnabled(false);
         }
