@@ -3444,8 +3444,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     protected ByteBuffer buildInitialParameters() {
-        final QuicTransportParameters params = new QuicTransportParameters();
-        params.setAll(this.transportParams.toMap());
+        final QuicTransportParameters params = new QuicTransportParameters(this.transportParams);
         setIntParamIfNotSet(params, active_connection_id_limit, this::getLocalActiveConnIDLimit);
         setIntParamIfNotSet(params, max_idle_timeout, this::getMaxIdleTimeoutTransportParam);
         setIntParamIfNotSet(params, max_udp_payload_size, () -> {

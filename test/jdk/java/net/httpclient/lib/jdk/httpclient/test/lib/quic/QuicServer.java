@@ -960,9 +960,7 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
             return null;
         }
         // return a copy
-        final QuicTransportParameters params = new QuicTransportParameters();
-        params.setAll(qtp.toMap());
-        return params;
+        return new QuicTransportParameters(qtp);
     }
 
     /**

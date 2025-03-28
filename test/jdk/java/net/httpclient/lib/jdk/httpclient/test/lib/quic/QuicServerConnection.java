@@ -372,8 +372,7 @@ public final class QuicServerConnection extends QuicConnectionImpl {
 
     @Override
     protected ByteBuffer buildInitialParameters() {
-        final QuicTransportParameters params = new QuicTransportParameters();
-        params.setAll(this.transportParams.toMap());
+        final QuicTransportParameters params = new QuicTransportParameters(this.transportParams);
         if (!params.isPresent(original_destination_connection_id)) {
             params.setParameter(original_destination_connection_id, originalServerConnId.getBytes());
         }

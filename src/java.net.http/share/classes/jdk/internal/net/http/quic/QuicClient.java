@@ -171,9 +171,7 @@ public final class QuicClient implements QuicInstance, AutoCloseable {
             return null;
         }
         // return a copy
-        final QuicTransportParameters params = new QuicTransportParameters();
-        params.setAll(this.transportParams.toMap());
-        return params;
+        return new QuicTransportParameters(this.transportParams);
     }
 
     private static String nextName() {

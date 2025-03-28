@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.net.http.common.Log;
@@ -48,9 +47,19 @@ import jdk.internal.net.quic.QuicTransportParametersConsumer;
 import jdk.internal.net.quic.QuicVersion;
 
 /**
- * This class models Quic transport parameters. This class is mutable
+ * This class models a collection of Quic transport parameters. This class is mutable
  * and not thread safe.
  *
+ * A parameter is considered absent if {@link #getParameter(TransportParameterId)}
+ * yields {@code null}. The parameter is present otherwise.
+ * Parameters can be removed by calling {@link
+ * #setParameter(TransportParameterId, byte[]) setParameter(id, null)}.
+ * The methods {@link #getBooleanParameter(TransportParameterId)} and
+ * {@link #getIntParameter(TransportParameterId)} allow easy access to
+ * parameters whose type is boolean or int, respectively.
+ * When such a parameter is absent, its default value is returned by
+ * those methods.
+
  * From <a href="https://www.rfc-editor.org/rfc/rfc9000#transport-parameter-definitions">
  *     RFC 9000, section 18.2</a>:
  *
@@ -90,16 +99,6 @@ import jdk.internal.net.quic.QuicVersion;
  *      RFC 9000: QUIC: A UDP-Based Multiplexed and Secure Transport
  */
 public final class QuicTransportParameters {
-
-    static byte[] toBytes(int x) {
-        int len = VariableLengthEncoder.getEncodedSize(x);
-        if (len <= 0) throw new IllegalArgumentException("invalid value: " + x);
-        var key = new byte[len];
-        var buffer = ByteBuffer.wrap(key);
-        VariableLengthEncoder.encode(buffer, x);
-        assert !buffer.hasRemaining();
-        return key;
-    }
 
     /**
      * An interface to model a transport parameter ID.
@@ -526,18 +525,18 @@ public final class QuicTransportParameters {
 
     /**
      * Constructs a new empty array of Quic transport parameters.
-     * A parameter is considered absent if {@link #getParameter(TransportParameterId)}
-     * yields {@code null}. The parameter is present otherwise.
-     * Parameters can be removed by calling {@link
-     * #setParameter(TransportParameterId, byte[]) setParameter(id, null)}.
-     * The methods {@link #getBooleanParameter(TransportParameterId)} and
-     * {@link #getIntParameter(TransportParameterId)} allow easy access to
-     * parameters whose type is boolean or int, respectively.
-     * When such a parameter is absent, its default value is returned by
-     * those methods.
      */
     public QuicTransportParameters() {
         values = new EnumMap<>(ParameterId.class);
+    }
+
+    /**
+     * Constructs a new collection of Quic transport parameters initialized
+     * from the specified collection.
+     * @param params the parameter collection used to initialize this object     *
+     */
+    public QuicTransportParameters(QuicTransportParameters params) {
+        values = new EnumMap<>(params.values);
     }
 
     /**
@@ -586,45 +585,6 @@ public final class QuicTransportParameters {
             values.put(pid, value.clone());
         } else {
             values.remove(pid);
-        }
-    }
-
-    /**
-     * Returns the transport parameters as a map, where the keys are
-     * the transport parameter keys and the values are the corresponding
-     * transport parameter values.
-     * @return the transport parameters as a map
-     */
-    public Map<byte[], byte[]> toMap() {
-        return Stream.of(ParameterId.values())
-                .filter(this::isPresent)
-                .collect(Collectors.toMap(p->toBytes(p.idx()), this::getParameter));
-    }
-
-    /**
-     * Sets the value of all standard parameters (as defined by RFC 9000) found
-     * in the given map. Unrecognized parameters are ignored.
-     * <p>
-     * If the given map contains a key whose value is {@code null}, the parameter
-     * value is reset to {@code null}, indicating that the parameter is now
-     * absent.
-     *
-     * @param values A map whose keys are a parameter {@linkplain
-     * TransportParameterId#key() key} and whose values are the corresponding
-     * parameter {@linkplain #getParameter(TransportParameterId) value}.
-     *
-     * @throws IllegalArgumentException if one of the values is invalid for its
-     * corresponding parameters.
-     */
-    public void setAll(Map<byte[], byte[]> values) {
-        for (var entry : values.entrySet()) {
-            var key = entry.getKey();
-            var value = entry.getValue();
-            var idx = VariableLengthEncoder.decode(ByteBuffer.wrap(key));
-            if (idx != (int)idx) continue;
-            var tid = TransportParameterId.valueOf(idx).orElse(null);
-            if (tid == null) continue; // ignore
-            setParameter(tid, value);
         }
     }
 
