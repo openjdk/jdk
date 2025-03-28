@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +22,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.console;
 
-/**
- * Internal API for line editing
- *
- * @since 9
- */
-module jdk.internal.le {
-    exports jdk.internal.org.jline.keymap to
-        jdk.jshell;
-    exports jdk.internal.org.jline.reader to
-        jdk.jshell;
-    exports jdk.internal.org.jline.reader.impl to
-        jdk.jshell;
-    exports jdk.internal.org.jline.reader.impl.completer to
-        jdk.jshell;
-    exports jdk.internal.org.jline.reader.impl.history to
-        jdk.jshell;
-    exports jdk.internal.org.jline.terminal.impl to
-        jdk.jshell;
-    exports jdk.internal.org.jline.terminal to
-        jdk.jshell;
-    exports jdk.internal.org.jline.utils to
-        jdk.jshell;
-    exports jdk.internal.org.jline.terminal.spi to
-        jdk.jshell;
+import java.io.Reader;
+import java.io.Writer;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
+import static jdk.internal.console.WindowsTerminal.*;
 
-    // Console
-    provides jdk.internal.io.JdkConsoleProvider with
-            jdk.internal.console.JdkConsoleProviderImpl;
+public class NativeConsoleReader {
+
+    public static char[] readline(Reader reader, Writer out, boolean password) throws IOException {
+        byte[] originalModes = switchToRaw();
+        try {
+            AtomicInteger width = new AtomicInteger(terminalWidth());
+            int firstLineOffset = cursorX();
+            Reader in = new ConsoleInputStream(() -> {
+                width.set(terminalWidth());
+            });
+            return SimpleConsoleReader.doRead(in, out, password, firstLineOffset, () -> width.get());
+        } finally {
+            restore(originalModes);
+        }
+    }
+
 }
-

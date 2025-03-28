@@ -27,164 +27,17 @@ package jdk.internal.io;
 
 import java.io.IOError;
 import java.io.IOException;
-import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.Formatter;
-import java.util.Locale;
-import java.util.Objects;
 
 import jdk.internal.access.SharedSecrets;
 import sun.nio.cs.StreamDecoder;
-import sun.nio.cs.StreamEncoder;
 
 /**
  * JdkConsole implementation based on the platform's TTY.
  */
-public final class JdkConsoleImpl implements JdkConsole {
-    @Override
-    public PrintWriter writer() {
-        return pw;
-    }
-
-    @Override
-    public Reader reader() {
-        return reader;
-    }
-
-    @Override
-    public JdkConsole println(Object obj) {
-        pw.println(obj);
-        // automatic flushing covers println
-        return this;
-    }
-
-    @Override
-    public JdkConsole print(Object obj) {
-        pw.print(obj);
-        pw.flush(); // automatic flushing does not cover print
-        return this;
-    }
-
-    @Override
-    public String readln(String prompt) {
-        String line = null;
-        synchronized (writeLock) {
-            synchronized(readLock) {
-                pw.print(prompt);
-                pw.flush(); // automatic flushing does not cover print
-                try {
-                    char[] ca = readline(false);
-                    if (ca != null)
-                        line = new String(ca);
-                } catch (IOException x) {
-                    throw new IOError(x);
-                }
-            }
-        }
-        return line;
-    }
-
-    @Override
-    public String readln() {
-        String line = null;
-        synchronized(readLock) {
-            try {
-                char[] ca = readline(false);
-                if (ca != null)
-                    line = new String(ca);
-            } catch (IOException x) {
-                throw new IOError(x);
-            }
-        }
-        return line;
-    }
-
-    @Override
-    public JdkConsole format(Locale locale, String format, Object ... args) {
-        formatter.format(locale, format, args).flush();
-        return this;
-    }
-
-    @Override
-    public String readLine(Locale locale, String format, Object ... args) {
-        String line = null;
-        synchronized (writeLock) {
-            synchronized(readLock) {
-                if (!format.isEmpty())
-                    pw.format(locale, format, args);
-                try {
-                    char[] ca = readline(false);
-                    if (ca != null)
-                        line = new String(ca);
-                } catch (IOException x) {
-                    throw new IOError(x);
-                }
-            }
-        }
-        return line;
-    }
-
-    @Override
-    public String readLine() {
-        return readLine(Locale.getDefault(Locale.Category.FORMAT), "");
-    }
-
-    @Override
-    public char[] readPassword(Locale locale, String format, Object ... args) {
-        char[] passwd = null;
-        synchronized (writeLock) {
-            synchronized(readLock) {
-                installShutdownHook();
-                try {
-                    synchronized(restoreEchoLock) {
-                        restoreEcho = echo(false);
-                    }
-                } catch (IOException x) {
-                    throw new IOError(x);
-                }
-                IOError ioe = null;
-                try {
-                    if (!format.isEmpty())
-                        pw.format(locale, format, args);
-                    passwd = readline(true);
-                } catch (IOException x) {
-                    ioe = new IOError(x);
-                } finally {
-                    try {
-                        synchronized(restoreEchoLock) {
-                            if (restoreEcho) {
-                                restoreEcho = echo(true);
-                            }
-                        }
-                    } catch (IOException x) {
-                        if (ioe == null)
-                            ioe = new IOError(x);
-                        else
-                            ioe.addSuppressed(x);
-                    }
-                    if (ioe != null) {
-                        Arrays.fill(passwd, ' ');
-                        try {
-                            if (reader instanceof LineReader lr) {
-                                lr.zeroOut();
-                            }
-                        } catch (IOException _) {
-                            // ignore
-                        }
-                        throw ioe;
-                    }
-                }
-                pw.println();
-            }
-        }
-        return passwd;
-    }
+public final class JdkConsoleImpl extends BaseJdkConsoleImpl {
 
     private void installShutdownHook() {
         if (shutdownHookInstalled)
@@ -213,35 +66,62 @@ public final class JdkConsoleImpl implements JdkConsole {
         shutdownHookInstalled = true;
     }
 
-    @Override
-    public char[] readPassword() {
-        return readPassword(Locale.getDefault(Locale.Category.FORMAT), "");
-    }
-
-    @Override
-    public void flush() {
-        pw.flush();
-    }
-
-    @Override
-    public Charset charset() {
-        return charset;
-    }
-
-    private final Charset charset;
-    private final Object readLock;
-    private final Object writeLock;
     // Must not block while holding this. It is used in the shutdown hook.
     private final Object restoreEchoLock;
-    private final Reader reader;
-    private final Writer out;
-    private final PrintWriter pw;
-    private final Formatter formatter;
     private char[] rcb;
     private boolean restoreEcho;
     private boolean shutdownHookInstalled;
 
-    private char[] readline(boolean zeroOut) throws IOException {
+    protected char[] readline(boolean password) throws IOException {
+        if (!password) {
+            return doReadline(password);
+        }
+
+        //reading password, disable echo, and ensure it is re-enabled:
+        installShutdownHook();
+        try {
+            synchronized(restoreEchoLock) {
+                restoreEcho = echo(false);
+            }
+        } catch (IOException x) {
+            throw new IOError(x);
+        }
+        IOError ioe = null;
+        char[] passwd = null;
+        try {
+            passwd = doReadline(true);
+        } catch (IOException x) {
+            ioe = new IOError(x);
+        } finally {
+            try {
+                synchronized(restoreEchoLock) {
+                    if (restoreEcho) {
+                        restoreEcho = echo(true);
+                    }
+                }
+            } catch (IOException x) {
+                if (ioe == null)
+                    ioe = new IOError(x);
+                else
+                    ioe.addSuppressed(x);
+            }
+            if (ioe != null) {
+                Arrays.fill(passwd, ' ');
+                try {
+                    if (reader instanceof LineReader lr) {
+                        lr.zeroOut();
+                    }
+                } catch (IOException _) {
+                    // ignore
+                }
+                throw ioe;
+            }
+        }
+
+        return passwd;
+    }
+
+    private char[] doReadline(boolean password) throws IOException {
         int len = reader.read(rcb, 0, rcb.length);
         if (len < 0)
             return null;  //EOL
@@ -255,7 +135,7 @@ public final class JdkConsoleImpl implements JdkConsole {
         char[] b = new char[len];
         if (len > 0) {
             System.arraycopy(rcb, 0, b, 0, len);
-            if (zeroOut) {
+            if (password) {
                 Arrays.fill(rcb, 0, len, ' ');
                 if (reader instanceof LineReader lr) {
                     lr.zeroOut();
@@ -398,25 +278,14 @@ public final class JdkConsoleImpl implements JdkConsole {
         }
     }
 
+    @Override
+    protected Reader wrapReader(Reader baseReader) {
+        return new LineReader(baseReader);
+    }
+
     public JdkConsoleImpl(Charset charset) {
-        Objects.requireNonNull(charset);
-        this.charset = charset;
-        readLock = new Object();
-        writeLock = new Object();
+        super(charset);
         restoreEchoLock = new Object();
-        out = StreamEncoder.forOutputStreamWriter(
-                new FileOutputStream(FileDescriptor.out),
-                writeLock,
-                charset);
-        pw = new PrintWriter(out, true) {
-            public void close() {
-            }
-        };
-        formatter = new Formatter(out);
-        reader = new LineReader(StreamDecoder.forInputStreamReader(
-                new FileInputStream(FileDescriptor.in),
-                readLock,
-                charset));
         rcb = new char[1024];
     }
 }

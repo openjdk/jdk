@@ -38,6 +38,8 @@ import jdk.test.lib.process.ProcessTools;
 
 public class JLineConsoleProviderTest {
 
+    private static final String NL = System.getProperty("line.separator");
+
     public static void main(String... args) throws Throwable {
         for (Method m : JLineConsoleProviderTest.class.getDeclaredMethods()) {
             if (m.getName().startsWith("test")) {
@@ -51,7 +53,7 @@ public class JLineConsoleProviderTest {
     }
 
     void testCorrectOutputReadPassword() throws Exception {
-        doRunConsoleTest("testCorrectOutputReadPassword", "inp", "%s");
+        doRunConsoleTest("testCorrectOutputReadPassword", "inp", "%s" + NL); //see BaseJdkConsoleImpl.readPassword re the NL
     }
 
     void doRunConsoleTest(String testName,

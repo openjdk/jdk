@@ -88,7 +88,6 @@ public class LocaleTest {
                 con.readLine(Locale.GERMANY, FORMAT, TODAY);
                 con.printf("\n");
                 con.readPassword(Locale.of("es"), FORMAT, TODAY);
-                con.printf("\n");
 
                 // tests null locale
                 con.format((Locale)null, FORMAT, TODAY);
