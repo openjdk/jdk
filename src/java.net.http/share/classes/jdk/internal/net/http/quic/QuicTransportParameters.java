@@ -495,6 +495,9 @@ public final class QuicTransportParameters {
         private static final int PARAMETERS_COUNT = ParameterId.values().length;
 
         ParameterId(int idx) {
+            // idx() and valueOf() assume that idx = ordinal;
+            // if that's no longer the case, update the implementation
+            // and remove this assert.
             assert idx == ordinal();
         }
 
