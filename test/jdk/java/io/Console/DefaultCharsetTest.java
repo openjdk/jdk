@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @test
- * @bug 8341975
+ * @bug 8341975 8351435
  * @summary Tests the default charset. It should honor `stdout.encoding`
  *          which should be the same as System.out.charset()
  * @modules jdk.internal.le
- * @run junit/othervm -Dstdout.encoding=UTF-8 DefaultCharsetTest
- * @run junit/othervm -Dstdout.encoding=ISO-8859-1 DefaultCharsetTest
- * @run junit/othervm -Dstdout.encoding=US-ASCII DefaultCharsetTest
- * @run junit/othervm -Dstdout.encoding=foo DefaultCharsetTest
- * @run junit/othervm DefaultCharsetTest
+ * @run junit/othervm -Djdk.console=jdk.internal.le -Dstdout.encoding=UTF-8 DefaultCharsetTest
+ * @run junit/othervm -Djdk.console=jdk.internal.le -Dstdout.encoding=ISO-8859-1 DefaultCharsetTest
+ * @run junit/othervm -Djdk.console=jdk.internal.le -Dstdout.encoding=US-ASCII DefaultCharsetTest
+ * @run junit/othervm -Djdk.console=jdk.internal.le -Dstdout.encoding=foo DefaultCharsetTest
+ * @run junit/othervm -Djdk.console=jdk.internal.le DefaultCharsetTest
  */
 public class DefaultCharsetTest {
     @Test
