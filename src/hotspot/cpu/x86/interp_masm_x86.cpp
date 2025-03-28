@@ -793,10 +793,10 @@ void InterpreterMacroAssembler::call_VM_with_sender_Java_fp(Register fp_reg, Reg
 #if INCLUDE_JFR
   Label L_ljf, L_valid_rbp;
   testptr(rbp, rbp);
-  jcc(Assembler::notZero, L_valid_rbp);
+  jccb(Assembler::notZero, L_valid_rbp);
   Address last_sender_Java_fp_offset(r15_thread, JavaThread::frame_anchor_offset() + JavaFrameAnchor::last_sender_Java_fp_offset());
   movptr(last_sender_Java_fp_offset, 1);
-  jmp(L_ljf);
+  jmpb(L_ljf);
   bind(L_valid_rbp);
   movptr(last_sender_Java_fp_offset, rbp);
   bind(L_ljf);
@@ -1025,7 +1025,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   Label slow_path;
   Label fast_path;
   safepoint_poll(slow_path, r15_thread, this_fp, true /* at_return */, false /* in_nmethod */);
-  jmpb(fast_path);
+  jmp(fast_path);
   bind(slow_path);
   push(state);
   // Special call to save also the sender fp (the now updated rbp) and using the temporary this_fp register as the last_java_fp.
