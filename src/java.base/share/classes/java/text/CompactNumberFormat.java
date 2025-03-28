@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2169,14 +2169,9 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Sets the maximum number of digits allowed in the integer portion of a
-     * number.
-     * The maximum allowed integer range is 309, if the {@code newValue} &gt; 309,
-     * then the maximum integer digits count is set to 309. Negative input
-     * values are replaced with 0.
-     *
-     * @param newValue the maximum number of integer digits to be shown
-     * @see #getMaximumIntegerDigits()
+     * {@inheritDoc}
+     * <p>The maximum allowed integer range is 309, if the {@code newValue} &gt;
+     * 309, then the maximum integer digits count is set to 309.
      */
     @Override
     public void setMaximumIntegerDigits(int newValue) {
@@ -2194,14 +2189,9 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Sets the minimum number of digits allowed in the integer portion of a
-     * number.
-     * The maximum allowed integer range is 309, if the {@code newValue} &gt; 309,
-     * then the minimum integer digits count is set to 309. Negative input
-     * values are replaced with 0.
-     *
-     * @param newValue the minimum number of integer digits to be shown
-     * @see #getMinimumIntegerDigits()
+     * {@inheritDoc}
+     * <p>The maximum allowed integer range is 309, if the {@code newValue} &gt;
+     * 309, then the minimum integer digits count is set to 309.
      */
     @Override
     public void setMinimumIntegerDigits(int newValue) {
@@ -2219,14 +2209,9 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Sets the minimum number of digits allowed in the fraction portion of a
-     * number.
-     * The maximum allowed fraction range is 340, if the {@code newValue} &gt; 340,
-     * then the minimum fraction digits count is set to 340. Negative input
-     * values are replaced with 0.
-     *
-     * @param newValue the minimum number of fraction digits to be shown
-     * @see #getMinimumFractionDigits()
+     * {@inheritDoc}
+     * <p>The maximum allowed fraction range is 340, if the {@code newValue} &gt;
+     * 340, then the minimum fraction digits count is set to 340.
      */
     @Override
     public void setMinimumFractionDigits(int newValue) {
@@ -2245,14 +2230,9 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Sets the maximum number of digits allowed in the fraction portion of a
-     * number.
-     * The maximum allowed fraction range is 340, if the {@code newValue} &gt; 340,
-     * then the maximum fraction digits count is set to 340. Negative input
-     * values are replaced with 0.
-     *
-     * @param newValue the maximum number of fraction digits to be shown
-     * @see #getMaximumFractionDigits()
+     * {@inheritDoc}
+     * <p>The maximum allowed fraction range is 340, if the {@code newValue} &gt;
+     * 340, then the maximum fraction digits count is set to 340.
      */
     @Override
     public void setMaximumFractionDigits(int newValue) {
