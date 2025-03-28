@@ -33,6 +33,9 @@ import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.CompoundElement;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 
@@ -58,9 +61,13 @@ public class ClassfileBenchmark {
     private ClassFile sharedCP, newCP;
     private ClassTransform threeLevelNoop;
     private ClassTransform addNOP;
+    private MemorySegment outputSegment;
+    private SegmentAllocator segmentAllocator;
 
     @Setup
     public void setup() throws IOException {
+        outputSegment = Arena.ofAuto().allocate(1 << 20);
+        segmentAllocator = (_, _) -> outputSegment;
         benchBytes = Files.readAllBytes(
                 FileSystems.getFileSystem(URI.create("jrt:/"))
                 .getPath("modules/java.base/java/util/AbstractMap.class"));
@@ -97,18 +104,36 @@ public class ClassfileBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void transformWithSharedCP(Blackhole bh) {
-        bh.consume(sharedCP.transformClass(benchModel, threeLevelNoop));
+        bh.consume(outputSegment.copyFrom(MemorySegment.ofArray(sharedCP.transformClass(benchModel, threeLevelNoop))));
     }
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void transformWithNewCP(Blackhole bh) {
-        bh.consume(newCP.transformClass(benchModel, threeLevelNoop));
+        bh.consume(outputSegment.copyFrom(MemorySegment.ofArray(newCP.transformClass(benchModel, threeLevelNoop))));
     }
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void transformWithAddedNOP(Blackhole bh) {
-        bh.consume(sharedCP.transformClass(benchModel, addNOP));
+        bh.consume(outputSegment.copyFrom(MemorySegment.ofArray(sharedCP.transformClass(benchModel, addNOP))));
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    public void transformWithSharedCPWithoutCopy(Blackhole bh) {
+        bh.consume(sharedCP.transformClass(segmentAllocator, benchModel, threeLevelNoop));
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    public void transformWithNewCPWithoutCopy(Blackhole bh) {
+        bh.consume(newCP.transformClass(segmentAllocator, benchModel, threeLevelNoop));
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    public void transformWithAddedNOPWithoutCopy(Blackhole bh) {
+        bh.consume(sharedCP.transformClass(segmentAllocator, benchModel, addNOP));
     }
 }
