@@ -29,6 +29,7 @@
 #include "opto/loopnode.hpp"
 #include "opto/traceAutoVectorizationTag.hpp"
 #include "opto/mempointer.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/pair.hpp"
 
 // Code in this file and the vectorization.cpp contains shared logics and
@@ -611,7 +612,7 @@ public:
   bool mutually_independent(const Node_List* nodes) const;
 
 private:
-  void add_node(MemNode* n, GrowableArray<int>& memory_pred_edges);
+  void add_node(MemNode* n, GrowableArray<int>& known_overlap_edges, GrowableArray<int>& unknown_aliasing_edges);
   int depth(const Node* n) const { return _depths.at(_body.bb_idx(n)); }
   void set_depth(const Node* n, int d) { _depths.at_put(_body.bb_idx(n), d); }
   int find_max_pred_depth(const Node* n) const;
@@ -625,16 +626,23 @@ private:
   class DependencyNode : public ArenaObj {
   private:
     MemNode* _node; // Corresponding ideal node
-    const uint _memory_pred_edges_length;
+    const uint _num_known_overlap_edges;
+    const uint _num_unknown_aliasing_edges;
     int* _memory_pred_edges; // memory pred-edges, mapping to bb_idx
   public:
-    DependencyNode(MemNode* n, GrowableArray<int>& memory_pred_edges, Arena* arena);
+    DependencyNode(MemNode* n, GrowableArray<int>& known_overlap_edges, GrowableArray<int>& unknown_aliasing_edges, Arena* arena);
     NONCOPYABLE(DependencyNode);
-    uint memory_pred_edges_length() const { return _memory_pred_edges_length; }
+    uint num_known_overlap_edges() const { return _num_known_overlap_edges; }
+    uint num_unknown_aliasing_edges() const { return _num_unknown_aliasing_edges; }
 
-    int memory_pred_edge(uint i) const {
-      assert(i < _memory_pred_edges_length, "bounds check");
+    int known_overlap_edge(uint i) const {
+      assert(i < _num_known_overlap_edges, "bounds check");
       return _memory_pred_edges[i];
+    }
+
+    int unknown_aliasing_edge(uint i) const {
+      assert(i < _num_unknown_aliasing_edges, "bounds check");
+      return _memory_pred_edges[_num_known_overlap_edges + i];
     }
   };
 
@@ -653,11 +661,15 @@ public:
     int _next_pred;
     int _end_pred;
 
-    // Iterate in dependency_node->memory_pred_edge(i)
-    int _next_memory_pred;
-    int _end_memory_pred;
+    // Iterate in dependency_node->known_overlap_edges()
+    int _next_known_overlap_edge;
+    int _end_known_overlap_edge;
+
+    // Iterate in dependency_node->unknown_aliasing_edge()
+    int _next_unknown_aliasing_edge;
+    int _end_unknown_aliasing_edge;
   public:
-    PredsIterator(const VLoopDependencyGraph& dependency_graph, const Node* node);
+    PredsIterator(const VLoopDependencyGraph& dependency_graph, const Node* node, bool with_unknown_aliasing_edges);
     NONCOPYABLE(PredsIterator);
     void next();
     bool done() const { return _current == nullptr; }
@@ -927,6 +939,20 @@ public:
       return false;
     }
     return mem_pointer().never_overlaps_with(other.mem_pointer());
+  }
+
+  // Delegate to MemPointer::always_overlaps_with, but guard for invalid cases
+  // where we must return a conservative answer: unknown overlap, return false.
+  bool always_overlaps_with(const VPointer& other) const {
+    if (!is_valid() || !other.is_valid()) {
+#ifndef PRODUCT
+      if (_vloop.mptrace().is_trace_overlap()) {
+        tty->print_cr("VPointer::always_overlaps_with: invalid VPointer, overlap unknown.");
+      }
+#endif
+      return false;
+    }
+    return mem_pointer().always_overlaps_with(other.mem_pointer());
   }
 
   NOT_PRODUCT( void print_on(outputStream* st, bool end_with_cr = true) const; )

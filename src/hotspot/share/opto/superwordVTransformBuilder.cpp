@@ -88,7 +88,7 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
       } else if (p0->is_CMove()) {
         // Cmp + Bool + CMove -> VectorMaskCmp + VectorBlend.
         set_all_req_with_vectors(pack, vtn, vtn_dependencies);
-        VTransformBoolVectorNode* vtn_mask_cmp = vtn->in(1)->isa_BoolVector();
+        VTransformBoolVectorNode* vtn_mask_cmp = vtn->in_req(1)->isa_BoolVector();
         if (vtn_mask_cmp->test()._is_negated) {
           vtn->swap_req(2, 3); // swap if test was negated.
         }
@@ -298,7 +298,11 @@ void SuperWordVTransformBuilder::set_all_req_with_vectors(const Node_List* pack,
 }
 
 void SuperWordVTransformBuilder::add_dependencies_of_node_to_vtnode(Node*n, VTransformNode* vtn, VectorSet& vtn_dependencies) {
-  for (VLoopDependencyGraph::PredsIterator preds(_vloop_analyzer.dependency_graph(), n); !preds.done(); preds.next()) {
+  // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
+  bool with_unknown_aliasing_edges = !_vloop.are_speculative_checks_possible();
+
+  // TODO: consider carrying the unknown dependency, and deduce the checks after scheduling, for "backwards" edges!
+  for (VLoopDependencyGraph::PredsIterator preds(_vloop_analyzer.dependency_graph(), n, with_unknown_aliasing_edges); !preds.done(); preds.next()) {
     Node* pred = preds.current();
     if (!_vloop.in_bb(pred)) { continue; }
 
@@ -311,6 +315,6 @@ void SuperWordVTransformBuilder::add_dependencies_of_node_to_vtnode(Node*n, VTra
     if (vtn == dependency && _vloop_analyzer.reductions().is_marked_reduction(n)) { continue; }
 
     if (vtn_dependencies.test_set(dependency->_idx)) { continue; }
-    vtn->add_dependency(dependency); // Add every dependency only once per vtn.
+    vtn->add_strong_memory_dependency(dependency); // Add every dependency only once per vtn.
   }
 }

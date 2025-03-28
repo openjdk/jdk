@@ -618,3 +618,56 @@ bool MemPointer::never_overlaps_with(const MemPointer& other) const {
   return is_never_overlap;
 }
 
+// Examples:
+//   p1 = MemPointer[size=1, base + i + 16]
+//   p2 = MemPointer[size=1, base + i + 17]
+//   -> Always at distance 1
+//   -> Can never overlap -> return false
+//
+//   p1 = MemPointer[size=1, base + i + 16]
+//   p2 = MemPointer[size=1, base + i + 16]
+//   -> Always at distance 0
+//   -> Always have exact overlap -> return true
+//
+//   p1 = MemPointer[size=4, x + y + z + 4L * i + 16]
+//   p2 = MemPointer[size=4, x + y + z + 4L * i + 56]
+//   -> Always at distance 40
+//   -> Can never overlap -> return false
+//
+//   p1 = MemPointer[size=8, x + y + z + 4L * i + 16]
+//   p2 = MemPointer[size=8, x + y + z + 4L * i + 20]
+//   -> Always at distance 4
+//   -> Always have partial overlap -> return true
+//
+//   p1 = MemPointer[size=4, base1 + 4L * i1 + 16]
+//   p2 = MemPointer[size=4, base2 + 4L * i2 + 20]
+//   -> Have differing summands, distance is unknown
+//   -> Unknown if overlap at runtime -> return false
+bool MemPointer::always_overlaps_with(const MemPointer& other) const {
+  const MemPointerAliasing aliasing = get_aliasing_with(other NOT_PRODUCT( COMMA _trace ));
+
+  // The aliasing tries to compute:
+  //   distance = other - this
+  //
+  // We know that we have an overlap if we can prove:
+  //   this < other + other.size       &&  this + this.size > other
+  //
+  // Which we can restate as:
+  //   distance > -other.size          &&  this.size > distance
+  //
+  const jint distance_lo = -other.size();
+  const jint distance_hi = size();
+  bool is_always_overlap = aliasing.is_always_in_distance_range(distance_lo, distance_hi);
+
+#ifndef PRODUCT
+  if (_trace.is_trace_overlap()) {
+    tty->print("Always Overlap: %s, distance_lo: %d, distance_hi: %d, aliasing: ",
+               is_always_overlap ? "true" : "false", distance_lo, distance_hi);
+    aliasing.print_on(tty);
+    tty->cr();
+  }
+#endif
+
+  return is_always_overlap;
+}
+

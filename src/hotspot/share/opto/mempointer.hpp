@@ -466,6 +466,13 @@ public:
            (_distance <= distance_lo || distance_hi <= _distance);
   }
 
+  // Use case: overlap.
+  // Note: the bounds are exclusive: lo < element < hi
+  bool is_always_in_distance_range(const jint distance_lo, const jint distance_hi) const {
+    return _aliasing == AlwaysAtDistance &&
+           (distance_lo < _distance && _distance < distance_hi);
+  }
+
 #ifndef PRODUCT
   void print_on(outputStream* st) const {
     switch(_aliasing) {
@@ -801,6 +808,7 @@ public:
 
   bool is_adjacent_to_and_before(const MemPointer& other) const;
   bool never_overlaps_with(const MemPointer& other) const;
+  bool always_overlaps_with(const MemPointer& other) const;
 
 #ifndef PRODUCT
   void print_form_on(outputStream* st) const {
