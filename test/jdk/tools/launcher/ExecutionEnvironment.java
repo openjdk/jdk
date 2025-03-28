@@ -39,8 +39,6 @@
  *   2. the environment is pristine,  users environment variable wrt.
  *      LD_LIBRARY_PATH if set are not modified in any way.
  *   3. the correct vm is chosen with -server and -client options
- *   4. no extra symlink exists on Solaris i.e.
- *      lib/$arch/libjvm.so -> client/libjvm.so
  * TODO:
  *      perhaps we need to add a test to audit all environment variables are
  *      in pristine condition after the launch, there may be a few that the
