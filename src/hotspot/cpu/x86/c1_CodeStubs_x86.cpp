@@ -366,7 +366,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     // Load without verification to keep code size small. We need it because
     // begin_initialized_entry_offset has to fit in a byte. Also, we know it's not null.
     __ movptr(tmp2, Address(_obj, java_lang_Class::klass_offset()));
-    __ get_thread(tmp);
+    __ movptr(tmp, r15_thread);
     __ cmpptr(tmp, Address(tmp2, InstanceKlass::init_thread_offset()));
     __ pop(tmp2);
     __ pop(tmp);
