@@ -727,20 +727,6 @@ void LIR_Assembler::reg2reg(LIR_Opr src, LIR_Opr dest) {
     assert(f_hi == f_lo, "must be same");
     assert(t_hi == t_lo, "must be same");
     move_regs(f_lo, t_lo);
-    assert(f_lo != f_hi && t_lo != t_hi, "invalid register allocation");
-
-
-    if (f_lo == t_hi && f_hi == t_lo) {
-      swap_reg(f_lo, f_hi);
-    } else if (f_hi == t_lo) {
-      assert(f_lo != t_hi, "overwriting register");
-      move_regs(f_hi, t_hi);
-      move_regs(f_lo, t_lo);
-    } else {
-      assert(f_hi != t_lo, "overwriting register");
-      move_regs(f_lo, t_lo);
-      move_regs(f_hi, t_hi);
-    }
 
     // move between xmm-registers
   } else if (dest->is_single_xmm()) {
