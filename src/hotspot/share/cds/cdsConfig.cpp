@@ -535,6 +535,29 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
     UseSharedSpaces = false;
   }
 
+  if (is_using_archive() && !is_dumping_archive() && !FLAG_IS_DEFAULT(AOTCache)) {
+    FLAG_SET_ERGO_IF_DEFAULT(LoadAOTCode, true);
+  } else if (LoadAOTCode) {
+    log_info(aot, codecache, init)("-XX:+LoadAOTCode requires -XX:AOTCache");
+    return false;
+  }
+  if (LoadAOTCode) {
+    log_info(aot, codecache, init)("LoadAOTCode is enabled");
+  }
+  if (is_dumping_final_static_archive()) {
+    FLAG_SET_ERGO_IF_DEFAULT(StoreAOTCode, true);
+  } else if (StoreAOTCode) {
+    log_info(aot, codecache, init)("-XX:+StoreAOTCode requires -XX:AOTMode=create");
+    return false;
+  }
+  if (StoreAOTCode) {
+    log_info(aot, codecache, init)("StoreAOTCode is enabled");
+    FLAG_SET_ERGO_IF_DEFAULT(StoreAOTAdapters, true);
+  }
+  if (StoreAOTAdapters) {
+    log_info(aot, codecache, init)("StoreAOTAdapters is enabled");
+  }
+
   if (is_dumping_archive()) {
     // Always verify non-system classes during CDS dump
     if (!BytecodeVerificationRemote) {
@@ -752,3 +775,23 @@ bool CDSConfig::is_dumping_method_handles() {
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP
+
+// Dumping AOT code is allowed by default. We disable it only in the final image dump
+// before the metadata and heap are dumped.
+static bool _is_dumping_aot_code = true;
+
+bool CDSConfig::is_dumping_aot_code() {
+  return _is_dumping_aot_code;
+}
+
+void CDSConfig::disable_dumping_aot_code() {
+  _is_dumping_aot_code = false;
+}
+
+void CDSConfig::enable_dumping_aot_code() {
+  _is_dumping_aot_code = true;
+}
+
+bool CDSConfig::is_dumping_adapters() {
+  return (StoreAOTAdapters && is_dumping_final_static_archive());
+}

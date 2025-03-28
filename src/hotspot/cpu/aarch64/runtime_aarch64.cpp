@@ -26,6 +26,7 @@
 #ifdef COMPILER2
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/vmreg.hpp"
 #include "interpreter/interpreter.hpp"
 #include "opto/runtime.hpp"
@@ -285,6 +286,16 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   // Setup code generation tools
   const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
   CodeBuffer buffer(name, 2048, 1024);
+
+  int pc_offset = 0;
+  if (AOTCodeCache::load_exception_blob(&buffer, &pc_offset)) {
+    OopMapSet* oop_maps = new OopMapSet();
+    oop_maps->add_gc_map(pc_offset, new OopMap(SimpleRuntimeFrame::framesize, 0));
+
+    // Set exception blob
+    return ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
+  }
+
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   // TODO check various assumptions made here
@@ -338,7 +349,8 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   OopMapSet* oop_maps = new OopMapSet();
 
-  oop_maps->add_gc_map(the_pc - start, new OopMap(SimpleRuntimeFrame::framesize, 0));
+  pc_offset = the_pc - start;
+  oop_maps->add_gc_map(pc_offset, new OopMap(SimpleRuntimeFrame::framesize, 0));
 
   __ reset_last_Java_frame(false);
 
@@ -377,6 +389,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   // Make sure all code is generated
   masm->flush();
 
+  AOTCodeCache::store_exception_blob(&buffer, pc_offset);
   // Set exception blob
   return ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
 }
