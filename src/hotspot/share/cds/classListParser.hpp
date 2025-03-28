@@ -137,7 +137,7 @@ private:
   void print_diagnostic_info(outputStream* st, const char* msg, ...) ATTRIBUTE_PRINTF(3, 0);
   void constant_pool_resolution_warning(const char* msg, ...) ATTRIBUTE_PRINTF(2, 0);
   void error(const char* msg, ...) ATTRIBUTE_PRINTF(2, 0);
-  objArrayOop get_specified_interfaces(TRAPS);
+  GrowableArray<InstanceKlass*> get_specified_interfaces();
 
 public:
   static void parse_classlist(const char* classlist_path, ParseMode parse_mode, TRAPS);
