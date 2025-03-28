@@ -207,7 +207,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
     GraphKit* kit = parse_access.kit();
     Node* control = control_dependent ? kit->control() : nullptr;
 
-    if (immutable) {
+    if (immutable) {    
       Compile* C = Compile::current();
       Node* mem = kit->immutable_memory();
       load = LoadNode::make(kit->gvn(), control, mem, adr,
@@ -225,7 +225,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
     Node* control = control_dependent ? opt_access.ctl() : nullptr;
     MergeMemNode* mm = opt_access.mem();
     PhaseGVN& gvn = opt_access.gvn();
-    Node* mem = mm->memory_at(gvn.C->get_alias_index(gvn.type(adr)->isa_ptr()));
+    Node* mem = mm->memory_at(gvn.C->get_alias_index(access.addr().type()));
     load = LoadNode::make(gvn, control, mem, adr, val_type, access.type(), mo, dep,
                           requires_atomic_access, unaligned, mismatched, unsafe, access.barrier_data());
     load = gvn.transform(load);
