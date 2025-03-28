@@ -259,6 +259,8 @@ private:
   volatile size_t _live_data;
   volatile size_t _critical_pins;
 
+  size_t _mixed_candidate_garbage_words;
+
   HeapWord* volatile _update_watermark;
 
   uint _age;
@@ -376,9 +378,21 @@ public:
   inline void increase_live_data_gc_words(size_t s);
 
   inline bool has_live() const;
+
+  // Returns bytes identified as live at time of most recent mark. Does not include allocations subsequent to last mark.
   inline size_t get_live_data_bytes() const;
+
+  // Returns words identified as live at time of most recent mark. Does not include allocations subsequent to last mark.
   inline size_t get_live_data_words() const;
 
+  inline size_t get_mixed_candidate_live_data_bytes() const;
+  inline size_t get_mixed_candidate_live_data_words() const;
+
+  inline void capture_mixed_candidate_garbage();
+
+  // Returns garbage by calculating difference between used and get_live_data_words.  The value returned is only
+  // meaningful immediately following completion of marking.  If there have been subsequent allocations in this region,
+  // use a different approach to determine garbage, such as (used() - get_mixed_candidate_live_data_bytes())
   inline size_t garbage() const;
 
   void print_on(outputStream* st) const;
