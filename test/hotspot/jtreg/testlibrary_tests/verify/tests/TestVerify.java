@@ -331,25 +331,25 @@ public class TestVerify {
 
         Verify.checkEQ(nanF1, Float.NaN);
         Verify.checkEQ(nanF1, nanF1);
-        Verify.checkEQ(nanF1, nanF1, true, false);
+        Verify.checkEQ(nanF1, nanF1, new Verify.Options().enableFloatCheckWithRawBits());
         Verify.checkEQ(nanF1, nanF2);
         Verify.checkEQ(nanD1, Double.NaN);
         Verify.checkEQ(nanD1, nanD1);
-        Verify.checkEQ(nanD1, nanD1, true, false);
+        Verify.checkEQ(nanD1, nanD1, new Verify.Options().enableFloatCheckWithRawBits());
         Verify.checkEQ(nanD1, nanD2);
 
         Verify.checkEQ(arrF1, arrF1);
-        Verify.checkEQ(arrF1, arrF1, true, false);
+        Verify.checkEQ(arrF1, arrF1, new Verify.Options().enableFloatCheckWithRawBits());
         Verify.checkEQ(arrF1, arrF2);
         Verify.checkEQ(arrD1, arrD1);
-        Verify.checkEQ(arrD1, arrD1, true, false);
+        Verify.checkEQ(arrD1, arrD1, new Verify.Options().enableFloatCheckWithRawBits());
         Verify.checkEQ(arrD1, arrD2);
 
-        checkNE(nanF1, nanF2, true, false);
-        checkNE(nanD1, nanD2, true, false);
+        checkNE(nanF1, nanF2, new Verify.Options().enableFloatCheckWithRawBits());
+        checkNE(nanD1, nanD2, new Verify.Options().enableFloatCheckWithRawBits());
 
-        checkNE(arrF1, arrF2, true, false);
-        checkNE(arrD1, arrD2, true, false);
+        checkNE(arrF1, arrF2, new Verify.Options().enableFloatCheckWithRawBits());
+        checkNE(arrD1, arrD2, new Verify.Options().enableFloatCheckWithRawBits());
     }
 
     public static void testRecursive() {
@@ -462,13 +462,13 @@ public class TestVerify {
             int v1 = (int)RANDOM.nextInt();
             int v2 = (int)(v1 ^ (1 << RANDOM.nextInt(32)));
             checkNE(v1, v2);
-            checkNE(Float.intBitsToFloat(v1), Float.intBitsToFloat(v2), true, false);
+            checkNE(Float.intBitsToFloat(v1), Float.intBitsToFloat(v2), new Verify.Options().enableFloatCheckWithRawBits());
         }
         for (int i = 0; i < 10; i++) {
             long v1 = (long)RANDOM.nextLong();
             long v2 = (long)(v1 ^ (1L << RANDOM.nextInt(64)));
             checkNE(v1, v2);
-            checkNE(Double.longBitsToDouble(v1), Double.longBitsToDouble(v2), true, false);
+            checkNE(Double.longBitsToDouble(v1), Double.longBitsToDouble(v2), new Verify.Options().enableFloatCheckWithRawBits());
         }
     }
 
@@ -556,33 +556,33 @@ public class TestVerify {
         C c2 = new C();
 
         // Throws exception because arbitrary classes are not allowed.
-        checkNE(a1, a1, false, false);
+        checkNE(a1, a1);
 
         // Structurally equivalent.
-        Verify.checkEQ(a1, a1, false, true);
-        Verify.checkEQ(a1, a2, false, true);
-        Verify.checkEQ(b1, b1, false, true);
-        Verify.checkEQ(b1, b2, false, true);
-        Verify.checkEQ(c1, c1, false, true);
-        Verify.checkEQ(c1, c2, false, true);
+        Verify.checkEQ(a1, a1, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(a1, a2, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(b1, b1, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(b1, b2, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(c1, c1, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(c1, c2, new Verify.Options().enableCheckWithArbitraryClasses());
 
         // Must fail because of different classes.
-        checkNE(a1, b1, false, true);
-        checkNE(b1, a1, false, true);
-        checkNE(a1, c1, false, true);
-        checkNE(c1, a1, false, true);
-        checkNE(b1, c1, false, true);
-        checkNE(c1, b1, false, true);
+        checkNE(a1, b1, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(b1, a1, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(a1, c1, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(c1, a1, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(b1, c1, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(c1, b1, new Verify.Options().enableCheckWithArbitraryClasses());
 
         // Objects with primitive values.
         D d1 = new D(1);
         D d2 = new D(1);
         D d3 = new D(2);
-        Verify.checkEQ(d1, d1, false, true);
-        Verify.checkEQ(d1, d2, false, true);
-        Verify.checkEQ(d2, d1, false, true);
-        checkNE(d1, d3, false, true);
-        checkNE(d3, d1, false, true);
+        Verify.checkEQ(d1, d1, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(d1, d2, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(d2, d1, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(d1, d3, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(d3, d1, new Verify.Options().enableCheckWithArbitraryClasses());
 
         // Object fields, including cycles.
         E e1 = new E(d1, null, null);
@@ -597,17 +597,17 @@ public class TestVerify {
         E e8 = new E(d1, e1, e1);
         E e9 = new E(d1, e1, e2);
 
-        Verify.checkEQ(e1, e1, false, true);
-        Verify.checkEQ(e1, e2, false, true);
-        Verify.checkEQ(e2, e1, false, true);
-        checkNE(e1, e3, false, true);
-        checkNE(e3, e1, false, true);
-        Verify.checkEQ(e6, e6, false, true);
-        Verify.checkEQ(e6, e7, false, true);
-        Verify.checkEQ(e7, e6, false, true);
-        Verify.checkEQ(e8, e8, false, true);
-        checkNE(e8, e9, false, true);
-        checkNE(e9, e8, false, true);
+        Verify.checkEQ(e1, e1, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(e1, e2, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(e2, e1, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(e1, e3, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(e3, e1, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(e6, e6, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(e6, e7, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(e7, e6, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(e8, e8, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(e8, e9, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(e9, e8, new Verify.Options().enableCheckWithArbitraryClasses());
 
         // Fields from superclass.
         F2 f1 = new F2(1, 1);
@@ -615,33 +615,33 @@ public class TestVerify {
         F2 f3 = new F2(2, 1);
         F2 f4 = new F2(1, 2);
 
-        Verify.checkEQ(f1, f1, false, true);
-        Verify.checkEQ(f1, f2, false, true);
-        Verify.checkEQ(f2, f1, false, true);
-        checkNE(f1, f3, false, true);
-        checkNE(f1, f4, false, true);
-        checkNE(f3, f1, false, true);
-        checkNE(f4, f1, false, true);
-        checkNE(f3, f4, false, true);
-        checkNE(f4, f3, false, true);
+        Verify.checkEQ(f1, f1, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(f1, f2, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(f2, f1, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(f1, f3, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(f1, f4, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(f3, f1, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(f4, f1, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(f3, f4, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(f4, f3, new Verify.Options().enableCheckWithArbitraryClasses());
 
         G g1 = new G(1.0f, 1.0f);
         G g2 = new G(1.0f, 1.0f);
         G g3 = new G(Float.NaN, Float.NaN);
         G g4 = new G(Float.NaN, Float.NaN);
 
-        Verify.checkEQ(g1, g1, false, true);
-        Verify.checkEQ(g2, g1, false, true);
-        Verify.checkEQ(g1, g2, false, true);
-        Verify.checkEQ(g3, g3, false, true);
-        Verify.checkEQ(g3, g4, false, true);
-        Verify.checkEQ(g4, g3, false, true);
-        checkNE(g1, g3, false, true);
-        checkNE(g3, g1, false, true);
+        Verify.checkEQ(g1, g1, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(g2, g1, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(g1, g2, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(g3, g3, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(g3, g4, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(g4, g3, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(g1, g3, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(g3, g1, new Verify.Options().enableCheckWithArbitraryClasses());
 
         // Nested class with primitive types, where the boxed types may not be cached,
         // and so they would create different boxed objects.
-        Verify.checkEQ(new H2(), new H2(), false, true);
+        Verify.checkEQ(new H2(), new H2(), new Verify.Options().enableCheckWithArbitraryClasses());
 
         // Records.
         R1 r11 = new R1();
@@ -652,18 +652,18 @@ public class TestVerify {
         R3 r33 = new R3(1, 2);
         R3 r34 = new R3(2, 1);
 
-        Verify.checkEQ(r11, r11, false, true);
-        Verify.checkEQ(r11, r12, false, true);
-        Verify.checkEQ(r12, r11, false, true);
-        checkNE(r11, r21, false, true);
-        Verify.checkEQ(r31, r31, false, true);
-        Verify.checkEQ(r31, r32, false, true);
-        Verify.checkEQ(r32, r31, false, true);
-        checkNE(r31, r33, false, true);
-        checkNE(r33, r31, false, true);
-        checkNE(r31, r34, false, true);
-        checkNE(r34, r31, false, true);
-        checkNE(r33, r34, false, true);
+        Verify.checkEQ(r11, r11, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(r11, r12, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(r12, r11, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(r11, r21, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(r31, r31, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(r31, r32, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(r32, r31, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(r31, r33, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(r33, r31, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(r31, r34, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(r34, r31, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(r33, r34, new Verify.Options().enableCheckWithArbitraryClasses());
 
         R4 r41 = new R4(null, null);
         R4 r42 = new R4(null, null);
@@ -673,22 +673,22 @@ public class TestVerify {
         R4 r46 = new R4(r44, r42);
         R4 r47 = new R4(r44, r41);
 
-        Verify.checkEQ(r45, r46, false, true);
-        Verify.checkEQ(r46, r45, false, true);
-        checkNE(r45, r47, false, true);
-        checkNE(r47, r45, false, true);
-        checkNE(r46, r47, false, true);
-        checkNE(r47, r46, false, true);
+        Verify.checkEQ(r45, r46, new Verify.Options().enableCheckWithArbitraryClasses());
+        Verify.checkEQ(r46, r45, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(r45, r47, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(r47, r45, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(r46, r47, new Verify.Options().enableCheckWithArbitraryClasses());
+        checkNE(r47, r46, new Verify.Options().enableCheckWithArbitraryClasses());
     }
 
-    public static void checkNE(Object a, Object b, boolean isFloatCheckWithRawBits, boolean isCheckWithArbitraryClasses) {
+    public static void checkNE(Object a, Object b, Verify.Options verifyOptions) {
          try {
-            Verify.checkEQ(a, b, isFloatCheckWithRawBits, isCheckWithArbitraryClasses);
+            Verify.checkEQ(a, b, verifyOptions);
             throw new RuntimeException("Should have thrown: " + a + " vs " + b);
         } catch (VerifyException e) {}
     }
 
     public static void checkNE(Object a, Object b) {
-        checkNE(a, b, false, false);
+        checkNE(a, b, new Verify.Options());
     }
 }
