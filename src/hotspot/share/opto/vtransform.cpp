@@ -57,7 +57,7 @@ bool VTransformGraph::schedule() {
   VectorSet pre_visited;
   VectorSet post_visited;
 
-  collect_nodes_without_req_or_dependency(stack);
+  collect_nodes_without_strong_dependency(stack);
 
   // We create a reverse-post-visit order. This gives us a linearization, if there are
   // no cycles. Then, we simply reverse the order, and we have a schedule.
@@ -72,8 +72,8 @@ bool VTransformGraph::schedule() {
       //   No  -> we are mid-visit.
       bool all_uses_already_visited = true;
 
-      for (int i = 0; i < vtn->outs(); i++) {
-        VTransformNode* use = vtn->out(i);
+      for (uint i = 0; i < vtn->out_strongs(); i++) {
+        VTransformNode* use = vtn->out_strong(i);
         if (post_visited.test(use->_idx)) { continue; }
         if (pre_visited.test(use->_idx)) {
           // Cycle detected!
@@ -109,11 +109,11 @@ bool VTransformGraph::schedule() {
   return true;
 }
 
-// Push all "root" nodes, i.e. those that have no inputs (req or dependency):
-void VTransformGraph::collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const {
+// Push all "root" nodes, i.e. those that have no strong input dependencies (req or strong memory dependency):
+void VTransformGraph::collect_nodes_without_strong_dependency(GrowableArray<VTransformNode*>& stack) const {
   for (int i = 0; i < _vtnodes.length(); i++) {
     VTransformNode* vtn = _vtnodes.at(i);
-    if (!vtn->has_req_or_dependency()) {
+    if (!vtn->has_strong_dependency()) {
       stack.push(vtn);
     }
   }
@@ -494,7 +494,7 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
 }
 
 Node* VTransformNode::find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  Node* n = vnode_idx_to_transformed_node.at(in(i)->_idx);
+  Node* n = vnode_idx_to_transformed_node.at(in_req(i)->_idx);
   assert(n != nullptr, "must find input IR node");
   return n;
 }
@@ -611,7 +611,7 @@ VTransformApplyResult VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop
   BasicType bt = vloop_analyzer.types().velt_basic_type(first);
 
   // Cmp + Bool -> VectorMaskCmp
-  VTransformElementWiseVectorNode* vtn_cmp = in(1)->isa_ElementWiseVector();
+  VTransformElementWiseVectorNode* vtn_cmp = in_req(1)->isa_ElementWiseVector();
   assert(vtn_cmp != nullptr && vtn_cmp->nodes().at(0)->is_Cmp(),
          "bool vtn expects cmp vtn as input");
 

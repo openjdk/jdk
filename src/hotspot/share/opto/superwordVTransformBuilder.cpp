@@ -88,7 +88,7 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
       } else if (p0->is_CMove()) {
         // Cmp + Bool + CMove -> VectorMaskCmp + VectorBlend.
         set_all_req_with_vectors(pack, vtn, vtn_dependencies);
-        VTransformBoolVectorNode* vtn_mask_cmp = vtn->in(1)->isa_BoolVector();
+        VTransformBoolVectorNode* vtn_mask_cmp = vtn->in_req(1)->isa_BoolVector();
         if (vtn_mask_cmp->test()._is_negated) {
           vtn->swap_req(2, 3); // swap if test was negated.
         }
@@ -315,6 +315,6 @@ void SuperWordVTransformBuilder::add_dependencies_of_node_to_vtnode(Node*n, VTra
     if (vtn == dependency && _vloop_analyzer.reductions().is_marked_reduction(n)) { continue; }
 
     if (vtn_dependencies.test_set(dependency->_idx)) { continue; }
-    vtn->add_dependency(dependency); // Add every dependency only once per vtn.
+    vtn->add_strong_memory_dependency(dependency); // Add every dependency only once per vtn.
   }
 }

@@ -173,7 +173,7 @@ private:
   PhaseIterGVN& igvn()        const { return _vloop.phase()->igvn(); }
   bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
 
-  void collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const;
+  void collect_nodes_without_strong_dependency(GrowableArray<VTransformNode*>& stack) const;
 
   template<typename Callback>
   void for_each_memop_in_schedule(Callback callback) const;
@@ -312,7 +312,7 @@ public:
     assert(i < _req, "must be a req");
     assert(_in.at(i) == nullptr && n != nullptr, "only set once");
     _in.at_put(i, n);
-    n->add_out(this);
+    n->add_out_weak(this);
   }
 
   void swap_req(uint i, uint j) {
@@ -323,23 +323,65 @@ public:
     _in.at_put(j, tmp);
   }
 
-  void add_dependency(VTransformNode* n) {
+  void add_strong_memory_dependency(VTransformNode* n) {
     assert(n != nullptr, "no need to add nullptr");
-    _in.push(n);
-    n->add_out(this);
+    if (_in_strong_dep < (uint)_in.length()) {
+      // Put n in place of first weak dependency, and move weak
+      // the weak dependency to the end.
+      VTransformNode* first_weak = _in.at(_in_strong_dep);
+      _in.at_put(_in_strong_dep, n);
+      _in.push(first_weak);
+    } else {
+      _in.push(n);
+    }
+    _in_strong_dep++;
+    n->add_out_strong(this);
   }
 
-  void add_out(VTransformNode* n) {
+  void add_weak_memory_dependency(VTransformNode* n) {
+    assert(n != nullptr, "no need to add nullptr");
+    _in.push(n);
+    n->add_out_weak(this);
+  }
+
+  void add_out_strong(VTransformNode* n) {
+    if (_out_strong_dep < (uint)_out.length()) {
+      // Put n in place of first weak dependency, and move weak
+      // the weak dependency to the end.
+      VTransformNode* first_weak = _out.at(_out_strong_dep);
+      _out.at_put(_out_strong_dep, n);
+      _out.push(first_weak);
+    } else {
+      _out.push(n);
+    }
+    _out_strong_dep++;
+  }
+
+  void add_out_weak(VTransformNode* n) {
     _out.push(n);
   }
 
   uint req() const { return _req; }
-  VTransformNode* in(int i) const { return _in.at(i); }
-  int outs() const { return _out.length(); }
-  VTransformNode* out(int i) const { return _out.at(i); }
+  uint out_strongs() const { return _out_strong_dep; }
+  uint out_weaks() const { return _out.length() - _out_strong_dep; }
 
-  bool has_req_or_dependency() const {
-    for (int i = 0; i < _in.length(); i++) {
+  VTransformNode* in_req(uint i) const {
+    assert(i < _req, "must be a req");
+    return _in.at(i);
+  }
+
+  VTransformNode* out_strong(uint i) const {
+    assert(i < out_strongs(), "must be a strong dependency");
+    return _out.at(i);
+  }
+
+  VTransformNode* out_weak(uint i) const {
+    assert(i < out_weaks(), "must be a strong dependency");
+    return _out.at(_out_strong_dep + i);
+  }
+
+  bool has_strong_dependency() const {
+    for (uint i = 0; i < _in_strong_dep; i++) {
       if (_in.at(i) != nullptr) { return true; }
     }
     return false;
