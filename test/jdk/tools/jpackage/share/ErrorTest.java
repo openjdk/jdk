@@ -410,6 +410,7 @@ public final class ErrorTest {
     @ParameterSupplier("basic")
     @ParameterSupplier(value="testWindows", ifOS = WINDOWS)
     @ParameterSupplier(value="testMac", ifOS = MACOS)
+    @ParameterSupplier(value="testLinux", ifOS = LINUX)
     @ParameterSupplier(value="winOption", ifNotOS = WINDOWS)
     @ParameterSupplier(value="linuxOption", ifNotOS = LINUX)
     @ParameterSupplier(value="macOption", ifNotOS = MACOS)
@@ -583,6 +584,23 @@ public final class ErrorTest {
         }
 
         cmd.execute(1);
+    }
+
+    public static Collection<Object[]> testLinux() {
+        final List<TestSpec> testCases = new ArrayList<>();
+
+        testCases.addAll(Stream.of(
+                testSpec().type(PackageType.LINUX_DEB).addArgs("--linux-package-name", "#")
+                        .error("error.deb-invalid-value-for-package-name", "#")
+                        .error("error.deb-invalid-value-for-package-name.advice"),
+                testSpec().type(PackageType.LINUX_RPM).addArgs("--linux-package-name", "#")
+                        .error("error.rpm-invalid-value-for-package-name", "#")
+                        .error("error.rpm-invalid-value-for-package-name.advice")
+        ).map(TestSpec.Builder::create).filter(spec -> {
+            return spec.type().orElseThrow().isSupported();
+        }).toList());
+
+        return toTestArgs(testCases.stream());
     }
 
     private static void duplicate(TestSpec.Builder builder, Consumer<TestSpec> accumulator, Consumer<TestSpec.Builder> mutator) {
