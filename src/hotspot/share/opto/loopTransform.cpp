@@ -812,7 +812,7 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
   }
 
   // Step 5: Assertion Predicates initialization
-  if (counted_loop && UseLoopPredicate) {
+  if (counted_loop) {
     initialize_assertion_predicates_for_peeled_loop(new_head->as_CountedLoop(), head->as_CountedLoop(),
                                                     first_node_index_in_post_loop_body, old_new);
  }
@@ -1450,11 +1450,9 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   DEBUG_ONLY(const uint last_node_index_from_backedge_goo = Compile::current()->unique() - 1);
 
   DEBUG_ONLY(ensure_zero_trip_guard_proj(outer_main_head->in(LoopNode::EntryControl), true);)
-  if (UseLoopPredicate) {
-    initialize_assertion_predicates_for_main_loop(pre_head, main_head, first_node_index_in_pre_loop_body,
-                                                  last_node_index_in_pre_loop_body,
-                                                  DEBUG_ONLY(last_node_index_from_backedge_goo COMMA) old_new);
-  }
+  initialize_assertion_predicates_for_main_loop(pre_head, main_head, first_node_index_in_pre_loop_body,
+                                                last_node_index_in_pre_loop_body,
+                                                DEBUG_ONLY(last_node_index_from_backedge_goo COMMA) old_new);
 
   // Step B4: Shorten the pre-loop to run only 1 iteration (for now).
   // RCE and alignment may change this later.
@@ -1683,9 +1681,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   }
 
   DEBUG_ONLY(ensure_zero_trip_guard_proj(post_head->in(LoopNode::EntryControl), false);)
-  if (UseLoopPredicate) {
-    initialize_assertion_predicates_for_post_loop(main_head, post_head, first_node_index_in_cloned_loop_body);
-  }
+  initialize_assertion_predicates_for_post_loop(main_head, post_head, first_node_index_in_cloned_loop_body);
   return new_main_exit;
 }
 
@@ -1719,7 +1715,7 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_peeled_loop(CountedLoop
                                                                      const uint first_node_index_in_cloned_loop_body,
                                                                      const Node_List& old_new) {
   const NodeInOriginalLoopBody node_in_original_loop_body(first_node_index_in_cloned_loop_body, old_new);
-  create_assertion_predicates_at_loop(peeled_loop_head, remaining_loop_head, node_in_original_loop_body, false);
+  create_assertion_predicates_at_loop(peeled_loop_head, remaining_loop_head, node_in_original_loop_body, true);
 }
 
 // Source Loop: Cloned   - pre_loop_head
@@ -1739,6 +1735,9 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_main_loop(CountedLoopNo
 
 // Source Loop: Original - main_loop_head
 // Target Loop: Cloned   - post_loop_head
+//
+// The post loop is cloned before the pre loop. Do not kill the old Template Assertion Predicates, yet. We need to clone
+// from them when creating the pre loop. Only then we can kill them.
 void PhaseIdealLoop::initialize_assertion_predicates_for_post_loop(CountedLoopNode* main_loop_head,
                                                                    CountedLoopNode* post_loop_head,
                                                                    const uint first_node_index_in_cloned_loop_body) {
@@ -1749,9 +1748,9 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_post_loop(CountedLoopNo
 void PhaseIdealLoop::create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head,
                                                          CountedLoopNode* target_loop_head,
                                                          const NodeInLoopBody& _node_in_loop_body,
-                                                         const bool clone_template) {
+                                                         const bool kill_old_template) {
   CreateAssertionPredicatesVisitor create_assertion_predicates_visitor(target_loop_head, this, _node_in_loop_body,
-                                                                       clone_template);
+                                                                       kill_old_template);
   Node* source_loop_entry = source_loop_head->skip_strip_mined()->in(LoopNode::EntryControl);
   PredicateIterator predicate_iterator(source_loop_entry);
   predicate_iterator.for_each(create_assertion_predicates_visitor);
@@ -1760,11 +1759,11 @@ void PhaseIdealLoop::create_assertion_predicates_at_loop(CountedLoopNode* source
 void PhaseIdealLoop::create_assertion_predicates_at_main_or_post_loop(CountedLoopNode* source_loop_head,
                                                                       CountedLoopNode* target_loop_head,
                                                                       const NodeInLoopBody& _node_in_loop_body,
-                                                                      bool clone_template) {
+                                                                      const bool kill_old_template) {
   Node* old_target_loop_head_entry = target_loop_head->skip_strip_mined()->in(LoopNode::EntryControl);
   const uint node_index_before_new_assertion_predicate_nodes = C->unique();
   const bool need_to_rewire_old_target_loop_entry_dependencies = old_target_loop_head_entry->outcnt() > 1;
-  create_assertion_predicates_at_loop(source_loop_head, target_loop_head, _node_in_loop_body, clone_template);
+  create_assertion_predicates_at_loop(source_loop_head, target_loop_head, _node_in_loop_body, kill_old_template);
   if (need_to_rewire_old_target_loop_entry_dependencies) {
     rewire_old_target_loop_entry_dependency_to_new_entry(target_loop_head, old_target_loop_head_entry,
                                                          node_index_before_new_assertion_predicate_nodes);

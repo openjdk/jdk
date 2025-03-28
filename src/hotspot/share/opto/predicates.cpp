@@ -960,41 +960,24 @@ void Predicates::dump_for_loop(LoopNode* loop_node) {
 CreateAssertionPredicatesVisitor::CreateAssertionPredicatesVisitor(CountedLoopNode* target_loop_head,
                                                                    PhaseIdealLoop* phase,
                                                                    const NodeInLoopBody& node_in_loop_body,
-                                                                   const bool clone_template)
+                                                                   bool kill_old_template)
     : _init(target_loop_head->init_trip()),
       _stride(target_loop_head->stride()),
       _target_loop_head(target_loop_head),
       _old_target_loop_entry(target_loop_head->skip_strip_mined()->in(LoopNode::EntryControl)),
       _current_predicate_chain_head(target_loop_head->skip_strip_mined()), // Initially no predicates, yet.
       _phase(phase),
-      _has_hoisted_check_parse_predicates(false),
       _node_in_loop_body(node_in_loop_body),
-      _clone_template(clone_template) {}
+      _kill_old_template(kill_old_template) {}
 
-// Keep track of whether we are in the correct Predicate Block where Template Assertion Predicates can be found.
-// The PredicateIterator will always start at the loop entry and first visits the Loop Limit Check Predicate Block.
-void CreateAssertionPredicatesVisitor::visit(const ParsePredicate& parse_predicate) {
-  Deoptimization::DeoptReason deopt_reason = parse_predicate.head()->deopt_reason();
-  if (deopt_reason == Deoptimization::Reason_predicate ||
-      deopt_reason == Deoptimization::Reason_profile_predicate) {
-    _has_hoisted_check_parse_predicates = true;
-  }
-}
-
+// Clone Template Assertion Predicate and create an Initialized Assertion Predicate from it.
 void CreateAssertionPredicatesVisitor::visit(const TemplateAssertionPredicate& template_assertion_predicate) {
-  if (!_has_hoisted_check_parse_predicates) {
-    // Only process if we are in the correct Predicate Block.
-    return;
-  }
-  if (_clone_template) {
-    TemplateAssertionPredicate cloned_template_assertion_predicate =
-        clone_template_and_replace_init_input(template_assertion_predicate);
-    initialize_from_template(template_assertion_predicate, cloned_template_assertion_predicate.tail());
-    _current_predicate_chain_head = cloned_template_assertion_predicate.head();
-  } else {
-    InitializedAssertionPredicate initialized_assertion_predicate =
-        initialize_from_template(template_assertion_predicate, _old_target_loop_entry);
-    _current_predicate_chain_head = initialized_assertion_predicate.head();
+  TemplateAssertionPredicate cloned_template_assertion_predicate =
+      clone_template_and_replace_init_input(template_assertion_predicate);
+  initialize_from_template(template_assertion_predicate, cloned_template_assertion_predicate.tail());
+  _current_predicate_chain_head = cloned_template_assertion_predicate.head();
+  if (_kill_old_template) {
+    template_assertion_predicate.kill(_phase->igvn());
   }
 }
 
@@ -1110,18 +1093,11 @@ CloneUnswitchedLoopPredicatesVisitor::CloneUnswitchedLoopPredicatesVisitor(
     PhaseIdealLoop* phase)
     : _clone_predicate_to_true_path_loop(true_path_loop_head, node_in_true_path_loop_body, phase),
       _clone_predicate_to_false_path_loop(false_path_loop_head, node_in_false_path_loop_body, phase),
-      _phase(phase),
-      _has_hoisted_check_parse_predicates(false) {}
+      _phase(phase) {}
 
 // Keep track of whether we are in the correct Predicate Block where Template Assertion Predicates can be found.
 // The PredicateIterator will always start at the loop entry and first visits the Loop Limit Check Predicate Block.
 void CloneUnswitchedLoopPredicatesVisitor::visit(const ParsePredicate& parse_predicate) {
-  Deoptimization::DeoptReason deopt_reason = parse_predicate.head()->deopt_reason();
-  if (deopt_reason == Deoptimization::Reason_predicate ||
-      deopt_reason == Deoptimization::Reason_profile_predicate) {
-    _has_hoisted_check_parse_predicates = true;
-  }
-
   _clone_predicate_to_true_path_loop.clone_parse_predicate(parse_predicate, false);
   _clone_predicate_to_false_path_loop.clone_parse_predicate(parse_predicate, true);
   parse_predicate.kill(_phase->igvn());
@@ -1130,11 +1106,6 @@ void CloneUnswitchedLoopPredicatesVisitor::visit(const ParsePredicate& parse_pre
 // Clone the Template Assertion Predicate, which is currently found before the newly added unswitched loop selector,
 // to the true path and false path loop.
 void CloneUnswitchedLoopPredicatesVisitor::visit(const TemplateAssertionPredicate& template_assertion_predicate) {
-  if (!_has_hoisted_check_parse_predicates) {
-    // Only process if we are in the correct Predicate Block.
-    return;
-  }
-
   _clone_predicate_to_true_path_loop.clone_template_assertion_predicate(template_assertion_predicate);
   _clone_predicate_to_false_path_loop.clone_template_assertion_predicate(template_assertion_predicate);
   template_assertion_predicate.kill(_phase->igvn());

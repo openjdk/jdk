@@ -1091,9 +1091,8 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   Node* const _old_target_loop_entry;
   Node* _current_predicate_chain_head;
   PhaseIdealLoop* const _phase;
-  bool _has_hoisted_check_parse_predicates;
   const NodeInLoopBody& _node_in_loop_body;
-  const bool _clone_template;
+  const bool _kill_old_template;
 
   TemplateAssertionPredicate
   clone_template_and_replace_init_input(const TemplateAssertionPredicate& template_assertion_predicate) const;
@@ -1104,12 +1103,11 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
 
  public:
   CreateAssertionPredicatesVisitor(CountedLoopNode* target_loop_head, PhaseIdealLoop* phase,
-                                   const NodeInLoopBody& node_in_loop_body, bool clone_template);
+                                   const NodeInLoopBody& node_in_loop_body, bool kill_old_template);
   NONCOPYABLE(CreateAssertionPredicatesVisitor);
 
   using PredicateVisitor::visit;
 
-  void visit(const ParsePredicate& parse_predicate) override;
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
 };
 
@@ -1178,7 +1176,6 @@ class CloneUnswitchedLoopPredicatesVisitor : public PredicateVisitor {
   ClonePredicateToTargetLoop _clone_predicate_to_false_path_loop;
 
   PhaseIdealLoop* const _phase;
-  bool _has_hoisted_check_parse_predicates;
 
  public:
   CloneUnswitchedLoopPredicatesVisitor(LoopNode* true_path_loop_head,
