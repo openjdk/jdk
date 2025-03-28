@@ -2108,7 +2108,7 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
     return 0;
   }
 
-  if (type->is_con()) {
+  if (expr->Opcode() == Op_ConI || expr->Opcode() == Op_ConL) {
     jlong con = type->get_con_as_long(bt);
     return con == 0L ? (type2aelembytes(bt) * BitsPerByte) : count_trailing_zeros(con);
   }
