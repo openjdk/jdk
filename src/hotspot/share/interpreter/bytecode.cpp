@@ -130,17 +130,26 @@ int Bytecode_invoke::size_of_parameters() const {
 
 
 Symbol* Bytecode_member_ref::klass() const {
-  return constants()->klass_ref_at_noresolve(index(), _code);
+  FMReference ref(constants(), index(), _code);
+  return ref.klass_name(constants());
 }
 
 
 Symbol* Bytecode_member_ref::name() const {
-  return constants()->name_ref_at(index(), Bytecodes::java_code(_code));
+  // FIXME: The following line seems useless; compare signature() method.
+  Bytecodes::Code bc = Bytecodes::java_code(_code);
+  ConstantPool *cp = constants();
+  // RawReference covers field, method, and indy.
+  RawReference ref(cp, cp->to_cp_index(index(), bc));
+  return ref.name(cp);
 }
 
 
 Symbol* Bytecode_member_ref::signature() const {
-  return constants()->signature_ref_at(index(), _code);
+  ConstantPool *cp = constants();
+  // RawReference covers field, method, and indy.
+  RawReference ref(cp, cp->to_cp_index(index(), _code));
+  return ref.signature(cp);
 }
 
 

@@ -81,6 +81,7 @@ class Rewriter: public StackObj {
   int  cp_entry_to_cp_cache(int i) { assert(has_cp_cache(i), "oob"); return _cp_map.at(i); }
   bool has_cp_cache(int i) { return (uint) i < (uint) _cp_map.length() && _cp_map.at(i) >= 0; }
 
+  // FIXME: inline add_map_entry into its single use point
   int add_map_entry(int cp_index, GrowableArray<int>* cp_map, GrowableArray<int>* cp_cache_map) {
     assert(cp_map->at(cp_index) == -1, "not twice on same cp_index");
     int cache_index = cp_cache_map->append(cp_index);
@@ -103,16 +104,7 @@ class Rewriter: public StackObj {
     return ref_index;
   }
 
-  // add a new entry to the resolved_references map (for invokedynamic and invokehandle only)
-  int add_invokedynamic_resolved_references_entry(int cp_index, int cache_index) {
-    assert(_resolved_reference_limit >= 0, "must add indy refs after first iteration");
-    int ref_index = _resolved_references_map.append(cp_index);  // many-to-one
-    assert(ref_index >= _resolved_reference_limit, "");
-    if (_pool->tag_at(cp_index).value() != JVM_CONSTANT_InvokeDynamic) {
-      _invokedynamic_references_map.at_put_grow(ref_index, cache_index, -1);
-    }
-    return ref_index;
-  }
+  int add_invokedynamic_resolved_references_entry(int cp_index, int cache_index);
 
   int resolved_references_entry_to_pool_index(int ref_index) {
     int cp_index = _resolved_references_map.at(ref_index);
@@ -130,7 +122,7 @@ class Rewriter: public StackObj {
   void rewrite_method_reference(address bcp, int offset, bool reverse);
   void rewrite_member_reference(address bcp, int offset, bool reverse);
   void maybe_rewrite_invokehandle(address opc, int cp_index, int cache_index, bool reverse);
-  void rewrite_invokedynamic(address bcp, int offset, bool reverse);
+  void rewrite_invokedynamic(address bcp, int offset, bool reverse, Method* method);
   void maybe_rewrite_ldc(address bcp, int offset, bool is_wide, bool reverse);
   void rewrite_invokespecial(address bcp, int offset, bool reverse, bool* invokespecial_error);
 
