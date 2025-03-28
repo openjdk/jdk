@@ -191,7 +191,7 @@ public final class StreamFrame extends QuicFrame {
     public int size() {
         int size = getVLFieldLengthFor(getTypeField())
                 + getVLFieldLengthFor(streamID);
-        if (offset != 0) {
+        if (typeFieldHasOFF) {
             size += getVLFieldLengthFor(offset);
         }
         if (hasLength()) {
