@@ -298,6 +298,17 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       }
 #endif
 
+      // SIGTRAP-based nmethod entry barriers.
+      else if (sig == SIGTRAP && TrapBasedNMethodEntryBarriers &&
+               nativeInstruction_at(pc)->is_sigtrap_nmethod_entry_barrier() &&
+               CodeCache::contains((void*) pc)) {
+        if (TraceTraps) {
+          tty->print_cr("trap: nmethod entry barrier at " INTPTR_FORMAT " (SIGTRAP)", p2i(pc));
+        }
+        stub = StubRoutines::method_entry_barrier();
+        uc->uc_mcontext.jmp_context.lr = (uintptr_t)(pc + BytesPerInstWord); // emulate call by setting LR
+      }
+
       else if (sig == SIGFPE /* && info->si_code == FPE_INTDIV */) {
         if (TraceTraps) {
           tty->print_raw_cr("Fix SIGFPE handler, trying divide by zero handler.");
