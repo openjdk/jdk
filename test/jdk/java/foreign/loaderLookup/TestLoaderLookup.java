@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @compile lookup/Lookup.java
  * @compile invoker/Invoker.java
  * @run main/othervm/native --enable-native-access=ALL-UNNAMED TestLoaderLookup

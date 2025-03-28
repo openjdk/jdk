@@ -25,6 +25,7 @@
 /**
  * @test
  * @bug 8231584
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @run main/othervm LoadLibraryTest
  */

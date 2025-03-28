@@ -25,6 +25,7 @@
  * @test
  * @bug 8333258
  * @summary C2: high memory usage in PhaseCFG::insert_anti_dependences()
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @run main/othervm -XX:CompileOnly=TestAntiDependenciesHighMemUsage2::test1 -XX:-ClipInlining
  *                   -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:-UseOnStackReplacement TestAntiDependenciesHighMemUsage2
  */

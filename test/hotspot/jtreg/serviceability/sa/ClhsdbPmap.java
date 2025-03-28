@@ -35,6 +35,7 @@ import jtreg.SkippedException;
  * @bug 8190198
  * @summary Test clhsdb pmap command on a live process
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm ClhsdbPmap false
  */
@@ -44,6 +45,7 @@ import jtreg.SkippedException;
  * @bug 8190198
  * @summary Test clhsdb pmap command on a core file
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm/timeout=480 ClhsdbPmap true
  */

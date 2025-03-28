@@ -35,6 +35,7 @@
  * @bug 8335269
  * @summary Test that Thread.yield loop polls for safepoints
  * @requires vm.continuations & vm.compMode != "Xcomp"
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @run junit/othervm/native --enable-native-access=ALL-UNNAMED -Xcomp -XX:-TieredCompilation
  *                           -XX:CompileCommand=inline,*::yield* -XX:CompileCommand=inline,*::*Yield ThreadPollOnYield

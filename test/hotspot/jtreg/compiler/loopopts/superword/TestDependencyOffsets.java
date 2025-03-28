@@ -25,6 +25,7 @@
  * @test id=vanilla-A
  * @bug 8298935 8308606 8310308 8312570 8310190
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vanilla-A
@@ -34,6 +35,7 @@
  * @test id=vanilla-U
  * @bug 8298935 8308606 8310308 8312570 8310190
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vanilla-U
@@ -309,6 +311,7 @@
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v064-A
@@ -320,6 +323,7 @@
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v064-U
@@ -331,6 +335,7 @@
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v032-A
@@ -342,6 +347,7 @@
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v032-U
@@ -375,6 +381,7 @@
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v008-A
@@ -386,6 +393,7 @@
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v008-U
@@ -397,6 +405,7 @@
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v004-A
@@ -408,6 +417,7 @@
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
+ * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v004-U
