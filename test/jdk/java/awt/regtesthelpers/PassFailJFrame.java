@@ -1714,7 +1714,7 @@ public final class PassFailJFrame {
          *
          * @throws IllegalStateException if a {@code PanelCreator} is
          *              already set
-         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         * @throws IllegalArgumentException if {@code panelCreator} is {@code null}
          */
         public Builder splitUI(PanelCreator panelCreator) {
             return splitUIRight(panelCreator);
@@ -1731,7 +1731,7 @@ public final class PassFailJFrame {
          *
          * @throws IllegalStateException if a {@code PanelCreator} is
          *              already set
-         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         * @throws IllegalArgumentException if {@code panelCreator} is {@code null}
          */
         public Builder splitUIRight(PanelCreator panelCreator) {
             return splitUI(panelCreator, JSplitPane.HORIZONTAL_SPLIT);
@@ -1748,7 +1748,7 @@ public final class PassFailJFrame {
          *
          * @throws IllegalStateException if a {@code PanelCreator} is
          *              already set
-         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         * @throws IllegalArgumentException if {@code panelCreator} is {@code null}
          */
         public Builder splitUIBottom(PanelCreator panelCreator) {
             return splitUI(panelCreator, JSplitPane.VERTICAL_SPLIT);
@@ -1764,7 +1764,7 @@ public final class PassFailJFrame {
          *
          * @throws IllegalStateException if a {@code PanelCreator} is
          *              already set
-         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         * @throws IllegalArgumentException if {@code panelCreator} is {@code null}
          */
         private Builder splitUI(PanelCreator panelCreator,
                                 int splitUIOrientation) {

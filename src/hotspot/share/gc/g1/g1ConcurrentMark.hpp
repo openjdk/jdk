@@ -562,6 +562,8 @@ public:
   size_t live_bytes(uint region) const { return _region_mark_stats[region]._live_words * HeapWordSize; }
   // Set live bytes for concurrent marking.
   void set_live_bytes(uint region, size_t live_bytes) { _region_mark_stats[region]._live_words = live_bytes / HeapWordSize; }
+  // Approximate number of incoming references found during marking.
+  size_t incoming_refs(uint region) const { return _region_mark_stats[region]._incoming_refs; }
 
   // Update the TAMS for the given region to the current top.
   inline void update_top_at_mark_start(G1HeapRegion* r);
@@ -951,6 +953,8 @@ public:
            G1RegionMarkStats* mark_stats);
 
   inline void update_liveness(oop const obj, size_t const obj_size);
+
+  inline void inc_incoming_refs(oop const obj);
 
   // Clear (without flushing) the mark cache entry for the given region.
   void clear_mark_stats_cache(uint region_idx);
