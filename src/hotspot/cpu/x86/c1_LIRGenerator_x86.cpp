@@ -92,13 +92,8 @@ LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
     case intTag:     opr = FrameMap::rax_opr;          break;
     case objectTag:  opr = FrameMap::rax_oop_opr;      break;
     case longTag:    opr = FrameMap::long0_opr;        break;
-#ifdef _LP64
     case floatTag:   opr = FrameMap::xmm0_float_opr;   break;
     case doubleTag:  opr = FrameMap::xmm0_double_opr;  break;
-#else
-    case floatTag:   opr = UseSSE >= 1 ? FrameMap::xmm0_float_opr  : FrameMap::fpu0_float_opr;  break;
-    case doubleTag:  opr = UseSSE >= 2 ? FrameMap::xmm0_double_opr : FrameMap::fpu0_double_opr;  break;
-#endif // _LP64
     case addressTag:
     default: ShouldNotReachHere(); return LIR_OprFact::illegalOpr;
   }
@@ -870,62 +865,6 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
     value.load_item_force(cc->at(0));
   }
 
-#ifndef _LP64
-  LIR_Opr tmp = FrameMap::fpu0_double_opr;
-  result_reg = tmp;
-  switch(x->id()) {
-    case vmIntrinsics::_dexp:
-      if (StubRoutines::dexp() != nullptr) {
-        __ call_runtime_leaf(StubRoutines::dexp(), getThreadTemp(), result_reg, cc->args());
-      } else {
-        __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dexp), getThreadTemp(), result_reg, cc->args());
-      }
-      break;
-    case vmIntrinsics::_dlog:
-      if (StubRoutines::dlog() != nullptr) {
-        __ call_runtime_leaf(StubRoutines::dlog(), getThreadTemp(), result_reg, cc->args());
-      } else {
-        __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dlog), getThreadTemp(), result_reg, cc->args());
-      }
-      break;
-    case vmIntrinsics::_dlog10:
-      if (StubRoutines::dlog10() != nullptr) {
-       __ call_runtime_leaf(StubRoutines::dlog10(), getThreadTemp(), result_reg, cc->args());
-      } else {
-        __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dlog10), getThreadTemp(), result_reg, cc->args());
-      }
-      break;
-    case vmIntrinsics::_dpow:
-      if (StubRoutines::dpow() != nullptr) {
-        __ call_runtime_leaf(StubRoutines::dpow(), getThreadTemp(), result_reg, cc->args());
-      } else {
-        __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dpow), getThreadTemp(), result_reg, cc->args());
-      }
-      break;
-    case vmIntrinsics::_dsin:
-      if (VM_Version::supports_sse2() && StubRoutines::dsin() != nullptr) {
-        __ call_runtime_leaf(StubRoutines::dsin(), getThreadTemp(), result_reg, cc->args());
-      } else {
-        __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dsin), getThreadTemp(), result_reg, cc->args());
-      }
-      break;
-    case vmIntrinsics::_dcos:
-      if (VM_Version::supports_sse2() && StubRoutines::dcos() != nullptr) {
-        __ call_runtime_leaf(StubRoutines::dcos(), getThreadTemp(), result_reg, cc->args());
-      } else {
-        __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dcos), getThreadTemp(), result_reg, cc->args());
-      }
-      break;
-    case vmIntrinsics::_dtan:
-      if (StubRoutines::dtan() != nullptr) {
-        __ call_runtime_leaf(StubRoutines::dtan(), getThreadTemp(), result_reg, cc->args());
-      } else {
-        __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtan), getThreadTemp(), result_reg, cc->args());
-      }
-      break;
-    default:  ShouldNotReachHere();
-  }
-#else
   switch (x->id()) {
     case vmIntrinsics::_dexp:
       if (StubRoutines::dexp() != nullptr) {
@@ -984,7 +923,7 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
       break;
     default:  ShouldNotReachHere();
   }
-#endif // _LP64
+
   __ move(result_reg, calc_result);
 }
 
@@ -1273,20 +1212,6 @@ void LIRGenerator::do_vectorizedMismatch(Intrinsic* x) {
   __ call_runtime_leaf(StubRoutines::vectorizedMismatch(), getThreadTemp(), result_reg, cc->args());
   __ move(result_reg, result);
 }
-
-#ifndef _LP64
-// _i2l, _i2f, _i2d, _l2i, _l2f, _l2d, _f2i, _f2l, _f2d, _d2i, _d2l, _d2f
-// _i2b, _i2c, _i2s
-static LIR_Opr fixed_register_for(BasicType type) {
-  switch (type) {
-    case T_FLOAT:  return FrameMap::fpu0_float_opr;
-    case T_DOUBLE: return FrameMap::fpu0_double_opr;
-    case T_INT:    return FrameMap::rax_opr;
-    case T_LONG:   return FrameMap::long0_opr;
-    default:       ShouldNotReachHere(); return LIR_OprFact::illegalOpr;
-  }
-}
-#endif
 
 void LIRGenerator::do_Convert(Convert* x) {
 #ifdef _LP64
