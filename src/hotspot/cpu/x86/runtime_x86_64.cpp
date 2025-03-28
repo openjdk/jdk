@@ -274,8 +274,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
     oop_maps->add_gc_map(pc_offset, new OopMap(SimpleRuntimeFrame::framesize, 0));
 
     // Set exception blob
-    _exception_blob =  ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
-    return;
+    return ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
   }
 
   MacroAssembler* masm = new MacroAssembler(&buffer);
