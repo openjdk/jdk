@@ -6,7 +6,7 @@
  *
  * @compile Warn1.java
  * @compile/ref=Warn1.out -XDrawDiagnostics Warn1.java
- * @compile -Werror -Xlint:none Warn1.java
+ * @compile -Werror -nowarn Warn1.java
  */
 
 package varargs.warn1;

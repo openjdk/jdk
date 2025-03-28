@@ -1,5 +1,4 @@
 NoWarn.java:16:13: compiler.warn.sun.proprietary: sun.misc.Unsafe
-NoWarn.java:17:32: compiler.warn.diamond.redundant.args
 - compiler.note.unchecked.filename: NoWarn.java
 - compiler.note.unchecked.recompile
-2 warnings
+1 warning
