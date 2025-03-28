@@ -329,7 +329,7 @@ void LIR_Assembler::clinit_barrier(ciMethod* method) {
   assert(thread != noreg, "x86_32 not implemented");
 
   __ mov_metadata(klass, method->holder()->constant_encoding());
-  __ clinit_barrier(klass, thread, &L_skip_barrier /*L_fast_path*/);
+  __ clinit_barrier(klass, &L_skip_barrier /*L_fast_path*/);
 
   __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
 
@@ -499,7 +499,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
 #endif
   code_stub->set_safepoint_offset(__ offset());
   __ relocate(relocInfo::poll_return_type);
-  __ safepoint_poll(*code_stub->entry(), thread, true /* at_return */, true /* in_nmethod */);
+  __ safepoint_poll(*code_stub->entry(), true /* at_return */, true /* in_nmethod */);
   __ ret(0);
 }
 
