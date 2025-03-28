@@ -256,7 +256,7 @@
 
   // Is SIMD sort supported for this CPU?
   static bool supports_simd_sort(BasicType bt) {
-    if (VM_Version::supports_avx512dq()) {
+    if (VM_Version::supports_avx512_simd_sort()) {
       return true;
     }
     else if (VM_Version::supports_avx2() && !is_double_word_type(bt)) {
