@@ -112,6 +112,7 @@ class ConstantPoolCache;
 class Dictionary;
 class DumpTimeClassInfo;
 class DumpTimeSharedClassTable;
+class KlassClosure;
 class RunTimeClassInfo;
 class RunTimeSharedDictionary;
 
@@ -141,6 +142,7 @@ class SystemDictionaryShared: public SystemDictionary {
 
     void print_on(const char* prefix, outputStream* st, bool is_static_archive);
     void print_table_statistics(const char* prefix, outputStream* st, bool is_static_archive);
+    void iterate_klasses(ConstKlassClosure* klassClosure) const;
   };
 
 private:
@@ -264,10 +266,11 @@ public:
   static void serialize_dictionary_headers(class SerializeClosure* soc,
                                            bool is_static_archive = true);
   static void serialize_vm_classes(class SerializeClosure* soc);
-  static const char* loader_type_for_shared_class(Klass* k);
+  static const char* loader_type_for_shared_class(const Klass* k);
   static void print() { return print_on(tty); }
   static void print_on(outputStream* st) NOT_CDS_RETURN;
   static void print_shared_archive(outputStream* st, bool is_static = true) NOT_CDS_RETURN;
+  static void iterate_klasses_in_shared_archive(ConstKlassClosure* klassClosure, bool is_static);
   static void print_table_statistics(outputStream* st) NOT_CDS_RETURN;
   static bool is_dumptime_table_empty() NOT_CDS_RETURN_(true);
   DEBUG_ONLY(static bool class_loading_may_happen() {return _class_loading_may_happen;})

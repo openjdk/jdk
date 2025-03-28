@@ -47,6 +47,7 @@
 // resolved in the AOT cache assembly phase. No extra resolution is needed in the production run.
 
 class InstanceKlass;
+class KlassClosure;
 class Method;
 class MetaspaceClosure;
 class Symbol;
@@ -246,6 +247,8 @@ public:
 #ifndef PRODUCT
   void print_on(outputStream* st) const;
 #endif
+
+  void iterate_klasses(ConstKlassClosure* cl) const;
 };
 
 class DumpTimeLambdaProxyClassDictionary
@@ -327,8 +330,8 @@ public:
     }
   }
 
-  static void print_on(const char* prefix, outputStream* st,
-                       int start_index, bool is_static_archive);
+  // iterate all klasses of all lambdas
+  static void iterate_klasses(ConstKlassClosure* cl, bool is_static_archive);
   static void print_statistics(outputStream* st,  bool is_static_archive);
 };
 

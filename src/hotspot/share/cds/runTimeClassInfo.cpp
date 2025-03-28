@@ -26,6 +26,9 @@
 #include "cds/dumpTimeClassInfo.hpp"
 #include "cds/runTimeClassInfo.hpp"
 #include "classfile/systemDictionaryShared.hpp"
+#include "memory/iterator.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/objArrayKlass.hpp"
 
 void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
   ArchiveBuilder* builder = ArchiveBuilder::current();
@@ -85,10 +88,35 @@ InstanceKlass* RunTimeClassInfo::klass() const {
   }
 }
 
+
+// Iterate over the klass and all its array classes, in order of dimension
+void RunTimeClassInfo::iterate_klasses(ConstKlassClosure* c) const {
+  const InstanceKlass* const ik = klass();
+  c->do_klass(ik);
+  for (ObjArrayKlass* oak = ik->array_klasses(); oak != nullptr; oak = oak->higher_dimension()) {
+    if (oak->is_shared()) {
+      c->do_klass(oak);
+    }
+  }
+}
+
 size_t RunTimeClassInfo::crc_size(InstanceKlass* klass) {
   if (!SystemDictionaryShared::is_builtin(klass)) {
     return sizeof(CrcInfo);
   } else {
     return 0;
   }
+}
+
+void RunTimeSharedDictionary::iterate_klasses(ConstKlassClosure* cl) const {
+  // Needed for RunTimeClassInfo->Klass translation
+  struct ValueIterator {
+    ConstKlassClosure* const _cl;
+    ValueIterator(ConstKlassClosure* cl) : _cl(cl) {}
+    void do_value(const RunTimeClassInfo* record) {
+      record->iterate_klasses(_cl);
+    }
+  } vit(cl);
+
+  iterate(&vit);
 }
