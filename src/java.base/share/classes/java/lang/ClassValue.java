@@ -25,6 +25,8 @@
 
 package java.lang;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.WeakHashMap;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -124,48 +126,18 @@ public abstract class ClassValue<T> {
      * This may result in an additional invocation of the
      * {@code computeValue} method for the given class.
      * <p>
-     * In order to explain the interaction between {@code get} and {@code remove} calls,
-     * we must model the state transitions of a class value to take into account
-     * the alternation between uninitialized and initialized states.
-     * To do this, number these states sequentially from zero, and note that
-     * uninitialized (or removed) states are numbered with even numbers,
-     * while initialized (or re-initialized) states have odd numbers.
+     * For a particular association, a {@code remove} call happens-before (JLS
+     * {@jls 17.4.5}) any subsequent {@code get}, including any contingent {@code
+     * computeValue} invocation that computed the associated value.  Naturally,
+     * any {@code computeValue} that began before the {@code remove} call must
+     * have its result discarded, because the removal must happen-before the
+     * computation of the associated value.  The {@code get} call that invoked
+     * the stale {@code computeValue} may retry to re-establish this
+     * happens-before relationship.
      * <p>
-     * When a thread {@code T} removes a class value in state {@code 2N},
-     * nothing happens, since the class value is already uninitialized.
-     * Otherwise, the state is advanced atomically to {@code 2N+1}.
-     * <p>
-     * When a thread {@code T} queries a class value in state {@code 2N},
-     * the thread first attempts to initialize the class value to state {@code 2N+1}
-     * by invoking {@code computeValue} and installing the resulting value.
-     * <p>
-     * When {@code T} attempts to install the newly computed value,
-     * if the state is still at {@code 2N}, the class value will be initialized
-     * with the computed value, advancing it to state {@code 2N+1}.
-     * <p>
-     * Otherwise, whether the new state is even or odd,
-     * {@code T} will discard the newly computed value
-     * and retry the {@code get} operation.
-     * <p>
-     * Discarding and retrying is an important proviso,
-     * since otherwise {@code T} could potentially install
-     * a disastrously stale value.  For example:
-     * <ul>
-     * <li>{@code T} calls {@code CV.get(C)} and sees state {@code 2N}
-     * <li>{@code T} quickly computes a time-dependent value {@code V0} and gets ready to install it
-     * <li>{@code T} is hit by an unlucky paging or scheduling event, and goes to sleep for a long time
-     * <li>...meanwhile, {@code T2} also calls {@code CV.get(C)} and sees state {@code 2N}
-     * <li>{@code T2} quickly computes a similar time-dependent value {@code V1} and installs it on {@code CV.get(C)}
-     * <li>{@code T2} (or a third thread) then calls {@code CV.remove(C)}, undoing {@code T2}'s work
-     * <li> the previous actions of {@code T2} are repeated several times
-     * <li> also, the relevant computed values change over time: {@code V1}, {@code V2}, ...
-     * <li>...meanwhile, {@code T} wakes up and attempts to install {@code V0}; <em>this must fail</em>
-     * </ul>
-     * We can assume in the above scenario that {@code CV.computeValue} uses locks to properly
-     * observe the time-dependent states as it computes {@code V1}, etc.
-     * This does not remove the threat of a stale value, since there is a window of time
-     * between the return of {@code computeValue} in {@code T} and the installation
-     * of the new value.  No user synchronization is possible during this time.
+     * If this is invoked through {@code computeValue}, which can happen due to
+     * side effects like class initialization, this will be no-op to the caller
+     * thread.
      *
      * @param type the type whose class value must be removed
      * @throws NullPointerException if the argument is null
@@ -304,14 +276,16 @@ public abstract class ClassValue<T> {
     void bumpVersion() { version = new Version<>(this); }
     static class Version<T> {
         private final ClassValue<T> classValue;
-        private final Entry<T> promise = new Entry<>(this);
         Version(ClassValue<T> classValue) { this.classValue = classValue; }
         ClassValue<T> classValue() { return classValue; }
-        Entry<T> promise() { return promise; }
+        Entry<T> createPromise() { return new Entry<>(this); }
         boolean isLive() { return classValue.version() == this; }
     }
 
     /** One binding of a value to a class via a ClassValue.
+     *  Shared for the map and the cache array.
+     *  The states are only meaningful for the cache array; whatever in the map
+     *  is authentic, but state informs the cache an entry may be out-of-date.
      *  States are:<ul>
      *  <li> promise if value == Entry.this
      *  <li> else dead if version == null
@@ -332,12 +306,56 @@ public abstract class ClassValue<T> {
         /** For creating a promise. */
         Entry(Version<T> version) {
             super(version);
-            this.value = this;  // for a promise, value is not of type T, but Entry!
+            this.value = new PromiseInfo();  // for a promise, value is not of type T, but PromiseInfo!
         }
         /** Fetch the value.  This entry must not be a promise. */
         @SuppressWarnings("unchecked")  // if !isPromise, type is T
         T value() { assertNotPromise(); return (T) value; }
-        boolean isPromise() { return value == this; }
+
+        boolean isPromise() { return value instanceof PromiseInfo; }
+
+        void registerOwner() {
+            ((PromiseInfo) value).add();
+        }
+
+        boolean hasOwnership() {
+            return ((PromiseInfo) value).contains();
+        }
+
+        // Must be accessed in synchronization blocks on the ClassValueMap (otherThreads)
+        // Compared to ThreadTracker, this optimizes optimistically for
+        // single-thread accessors and uses plain instead of concurrent data structures.
+        static final class PromiseInfo {
+            private final Thread initialThread;
+            private Map<Thread, Object> otherThreads; // Must be identity/thread ID-based
+
+            PromiseInfo() {
+                initialThread = Thread.currentThread();
+            }
+
+            boolean add() {
+                Thread t = Thread.currentThread();
+                if (initialThread == t) {
+                    return false;
+                }
+
+                var others = this.otherThreads;
+                if (others == null) {
+                    others = new IdentityHashMap<>();
+                    this.otherThreads = others;
+                }
+                return others.put(t, int.class) == null;
+            }
+
+            boolean contains() {
+                Thread t = Thread.currentThread();
+                if (initialThread == t)
+                    return true;
+                var map = otherThreads;
+                return map != null && map.containsKey(t);
+            }
+        }
+
         Version<T> version() { return get(); }
         ClassValue<T> classValueOrNull() {
             Version<T> v = version();
@@ -440,7 +458,7 @@ public abstract class ClassValue<T> {
             Entry<T> e = (Entry<T>) get(classValue.identity);
             Version<T> v = classValue.version();
             if (e == null) {
-                e = v.promise();
+                e = v.createPromise();
                 // The presence of a promise means that a value is pending for v.
                 // Eventually, finishEntry will overwrite the promise.
                 put(classValue.identity, e);
@@ -450,8 +468,10 @@ public abstract class ClassValue<T> {
                 // Somebody else has asked the same question.
                 // Let the races begin!
                 if (e.version() != v) {
-                    e = v.promise();
+                    e = v.createPromise();
                     put(classValue.identity, e);
+                } else {
+                    e.registerOwner();
                 }
                 return e;
             } else {
@@ -477,9 +497,10 @@ public abstract class ClassValue<T> {
             if (e == e0) {
                 // We can get here during exception processing, unwinding from computeValue.
                 assert(e.isPromise());
+                // Other threads can retry if successful or just propagate their exceptions.
                 remove(classValue.identity);
                 return null;
-            } else if (e0 != null && e0.isPromise() && e0.version() == e.version()) {
+            } else if (e0 != null && e0.isPromise() && e0.version() == e.version() && e0.hasOwnership()) {
                 // If e0 matches the intended entry, there has not been a remove call
                 // between the previous startEntry and now.  So now overwrite e0.
                 Version<T> v = classValue.version();
@@ -491,7 +512,9 @@ public abstract class ClassValue<T> {
                 addToCache(classValue, e);
                 return e;
             } else {
-                // Some sort of mismatch; caller must try again.
+                // Some sort of mismatch; caller must try again. This can happen when:
+                // 1. Another thread computes and finishes exceptionally.
+                // 2. A remove() is issued after computation started.
                 return null;
             }
         }
@@ -502,16 +525,20 @@ public abstract class ClassValue<T> {
             Entry<?> e = remove(classValue.identity);
             // e == null: Uninitialized, and no pending calls to computeValue.
             // remove(identity) didn't change anything.  No change.
-            // e.isPromise(): computeValue already used outdated values.
-            // remove(identity) discarded the outdated computation promise.
-            // finishEntry will retry when it discovers the promise is removed.
-            // No cache invalidation.  No further action needed.
-            if (e != null && !e.isPromise()) {
-                // Initialized.
-                // Bump forward to invalidate racy-read cached entries.
-                classValue.bumpVersion();
-                // Make all cache elements for this guy go stale.
-                removeStaleEntries(classValue);
+            if (e != null) {
+                if (e.isPromise()) {
+                    // Remove the outdated promise to force recomputation.
+                    if (e.hasOwnership()) {
+                        // Notify myself that I am still up-to-date. All other guys are stale
+                        put(classValue.identity, classValue.version().createPromise());
+                    }
+                } else {
+                    // Initialized.
+                    // Bump forward to invalidate racy-read cached entries.
+                    classValue.bumpVersion();
+                    // Make all cache elements for this guy go stale.
+                    removeStaleEntries(classValue);
+                }
             }
         }
 
