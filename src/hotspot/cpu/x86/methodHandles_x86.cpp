@@ -125,7 +125,6 @@ void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Registe
 void MethodHandles::verify_method(MacroAssembler* _masm, Register method, Register temp, vmIntrinsics::ID iid) {
   BLOCK_COMMENT("verify_method {");
   __ verify_method_ptr(method);
-#ifdef _LP64
   if (VerifyMethodHandles) {
     Label L_ok;
 
@@ -166,8 +165,7 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, Regist
 
     __ BIND(L_ok);
     __ pop(method_holder); // restore stack layout
-}
-#endif // _LP64
+  }
   BLOCK_COMMENT("} verify_method");
 }
 #endif // ASSERT
