@@ -73,8 +73,7 @@ public:
                        BasicType type,
                        Register dst,
                        Address src,
-                       Register tmp1,
-                       Register tmp_thread);
+                       Register tmp1);
 
   virtual void store_at(MacroAssembler* masm,
                         DecoratorSet decorators,
