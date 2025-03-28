@@ -2111,6 +2111,9 @@ public final class System {
             public void putCharUTF16(byte[] bytes, int index, int ch) {
                 StringUTF16.putChar(bytes, index, ch);
             }
+            public void appendPair(StringBuilder buf, int v) {
+                buf.appendPair(v);
+            }
             public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
                 return String.getBytesNoRepl(s, cs);
             }
