@@ -59,7 +59,7 @@ namespace {
   static void test_reserved_size(size_t size) {
     ASSERT_PRED2(is_size_aligned, size, os::vm_allocation_granularity());
 
-    ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
+    ReservedSpace rs = MemoryReserver::reserve(size, mtNone);
     MemoryReleaser releaser(&rs);
 
     EXPECT_TRUE(rs.base() != nullptr) << "rs.special: " << rs.special();
@@ -73,7 +73,7 @@ namespace {
   static void test_reserved_size_alignment(size_t size, size_t alignment) {
     ASSERT_PRED2(is_size_aligned, size, alignment) << "Incorrect input parameters";
     size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
-    ReservedSpace rs = MemoryReserver::reserve(size, alignment, page_size);
+    ReservedSpace rs = MemoryReserver::reserve(size, alignment, page_size, mtNone);
 
     ASSERT_TRUE(rs.base() != nullptr) << "rs.special = " << rs.special();
     ASSERT_EQ(size, rs.size()) << "rs.special = " << rs.special();
@@ -101,7 +101,7 @@ namespace {
     bool large = maybe_large && UseLargePages && size >= os::large_page_size();
     size_t page_size = large ? os::large_page_size() : os::vm_page_size();
 
-    ReservedSpace rs = MemoryReserver::reserve(size, alignment, page_size);
+    ReservedSpace rs = MemoryReserver::reserve(size, alignment, page_size, mtNone);
     MemoryReleaser releaser(&rs);
 
     EXPECT_TRUE(rs.base() != nullptr) << "rs.special: " << rs.special();
@@ -212,12 +212,13 @@ namespace {
       default:
       case Default:
       case Reserve:
-        return MemoryReserver::reserve(reserve_size_aligned, mtTest);
+        return MemoryReserver::reserve(reserve_size_aligned, mtNone);
       case Disable:
       case Commit:
         return MemoryReserver::reserve(reserve_size_aligned,
                                        os::vm_allocation_granularity(),
-                                       os::vm_page_size());
+                                       os::vm_page_size(),
+                                       mtNone);
     }
   }
 
@@ -296,7 +297,7 @@ TEST_VM(VirtualSpace, actual_committed_space_one_large_page) {
 
   size_t large_page_size = os::large_page_size();
 
-  ReservedSpace reserved = MemoryReserver::reserve(large_page_size, large_page_size, large_page_size);
+  ReservedSpace reserved = MemoryReserver::reserve(large_page_size, large_page_size, large_page_size, mtNone);
   ReservedSpaceReleaser releaser(&reserved);
   ASSERT_TRUE(reserved.is_reserved());
 
@@ -365,7 +366,8 @@ class TestReservedSpace : AllStatic {
     size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
     ReservedSpace rs = MemoryReserver::reserve(size,
                                                alignment,
-                                               page_size);
+                                               page_size,
+                                               mtNone);
 
     EXPECT_TRUE(rs.base() != nullptr);
     EXPECT_EQ(rs.size(), size) <<  "rs.size: " << rs.size();
@@ -383,7 +385,7 @@ class TestReservedSpace : AllStatic {
   static void test_reserved_space2(size_t size) {
     ASSERT_TRUE(is_aligned(size, os::vm_allocation_granularity())) << "Must be at least AG aligned";
 
-    ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
+    ReservedSpace rs = MemoryReserver::reserve(size, mtNone);
 
     EXPECT_TRUE(rs.base() != nullptr);
     EXPECT_EQ(rs.size(), size) <<  "rs.size: " << rs.size();
@@ -410,7 +412,8 @@ class TestReservedSpace : AllStatic {
 
     ReservedSpace rs = MemoryReserver::reserve(size,
                                                alignment,
-                                               page_size);
+                                               page_size,
+                                               mtNone);
 
     EXPECT_TRUE(rs.base() != nullptr);
     EXPECT_EQ(rs.size(), size) <<  "rs.size: " << rs.size();
@@ -514,12 +517,14 @@ class TestVirtualSpace : AllStatic {
     default:
     case Default:
     case Reserve:
-      return MemoryReserver::reserve(reserve_size_aligned, mtTest);
+      return MemoryReserver::reserve(reserve_size_aligned,
+                                     mtNone);
     case Disable:
     case Commit:
       return MemoryReserver::reserve(reserve_size_aligned,
                                      os::vm_allocation_granularity(),
-                                     os::vm_page_size());
+                                     os::vm_page_size(),
+                                     mtNone);
     }
   }
 
@@ -576,7 +581,8 @@ class TestVirtualSpace : AllStatic {
 
     ReservedSpace reserved = MemoryReserver::reserve(large_page_size,
                                                      large_page_size,
-                                                     large_page_size);
+                                                     large_page_size,
+                                                     mtNone);
 
     ASSERT_TRUE(reserved.is_reserved());
 
