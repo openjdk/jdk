@@ -3426,6 +3426,20 @@ public final class URI
             int p = start;
             int q = scan(p, n, L_DIGIT, H_DIGIT);
             if (q <= p) return q;
+
+            // Handle leading zeros
+            int i = p;
+            while ((i = scan(i, q, '0')) > i);
+
+            // Calculate the number of significant digits (after leading zeros)
+            int significantDigits = q - i;
+
+            // If no significant digits (all zeros), the value is 0
+            if (significantDigits == 0)  return q;
+
+            // If more than 3 significant digits, it's definitely > 255
+            if (significantDigits > 3) return p;
+
             if (Integer.parseInt(input, p, q, 10) > 255) return p;
             return q;
         }
