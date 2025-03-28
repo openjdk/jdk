@@ -27,7 +27,7 @@
  * @summary tests that drag events continue to arrive to heavyweight
  *          when the mouse is moved to lightweight while dragging.
  * @key headful
- * @library /test/jdk/lib/client /test/jdk/java/awt/regtesthelpers
+ * @library /lib/client /java/awt/regtesthelpers
  * @build ExtendedRobot Util
  * @run main DragToLightweightTest
 */

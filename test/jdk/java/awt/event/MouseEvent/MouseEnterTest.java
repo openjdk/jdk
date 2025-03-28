@@ -26,7 +26,7 @@
  * @bug 4095172
  * @summary Test for no proper mouse coordinates on MOUSE_ENTER/MOUSE_EXIT events for Win boxes.
  * @key headful
- * @library /test/jdk/lib/client /test/jdk/java/awt/regtesthelpers
+ * @library /lib/client /java/awt/regtesthelpers
  * @build ExtendedRobot Util
  * @run main MouseEnterTest
  */
