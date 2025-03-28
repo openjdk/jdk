@@ -32,14 +32,12 @@ import java.net.UnknownHostException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -127,9 +125,8 @@ public final class QuicTransportParameters {
          * defined, an empty optional otherwise}
          * @param idx a parameter identifier
          */
-        static Optional<ParameterId> valueOf(int idx) {
-            if (idx < 0 || idx >= PARAMETERS_COUNT) return Optional.empty();
-            return Optional.of(ParameterId.valueOf(idx));
+        static Optional<ParameterId> valueOf(long idx) {
+            return ParameterId.valueOf(idx);
         }
     }
 
@@ -491,6 +488,13 @@ public final class QuicTransportParameters {
         // ignored if received (see
         // sun.security.ssl.QuicTransportParametersExtension).
 
+        /**
+         * The number of known transport parameters.
+         * This is also the number of enum values defined by the
+         * {@link ParameterId} enumeration.
+         */
+        private static final int PARAMETERS_COUNT = ParameterId.values().length;
+
         ParameterId(int idx) {
             assert idx == ordinal();
         }
@@ -505,51 +509,20 @@ public final class QuicTransportParameters {
             return name().toLowerCase(Locale.ROOT);
         }
 
-        private static ParameterId valueOf(int idx) {
-            if (idx >= PARAMETERS_COUNT || idx < 0)
-                throw new IllegalArgumentException("no such parameter index: " + idx);
-            return values()[idx];
+       private static Optional<ParameterId> valueOf(long idx) {
+            if (idx < 0 || idx >= PARAMETERS_COUNT) return Optional.empty();
+            return Optional.of(values()[(int)idx]);
         }
     }
 
     public record VersionInformation(int chosenVersion, int[] availableVersions) { }
 
     /**
-     * The number of known transport parameters.
-     * This is also the number of enum values defined by the
-     * {@link ParameterId} enumeration.
+     * A map to store transport parameter values.
+     * Contains a byte array corresponding to the encoded value
+     * of the parameter.
      */
-    public static final int PARAMETERS_COUNT = ParameterId.values().length;
-
-    // Maps a TransportParameterId (interface) to a ParameterId (enum value).
-    // Returns an empty optional if the TransportParameterId key does not match
-    // any standard ParameterId. Both key and index must match, otherwise
-    // an empty optional is returned. The parameter id name is ignored.
-    private static Optional<ParameterId> map(TransportParameterId id) {
-        if (id instanceof ParameterId pid) return Optional.of(pid);
-        return TransportParameterId.valueOf(id.idx());
-    }
-
-    // Maps a TransportParameterId to a ParameterId.
-    // throws IllegalArgumentException if none match.
-    private static ParameterId mapOrThrow(TransportParameterId id) {
-        var pid = ParameterId.valueOf(id.idx());
-        assert pid != null; // valueOf would already have thrown IAE
-        int idx = id.idx();
-        if (pid.idx() != idx) {
-            throw new IllegalArgumentException("bad id %d for %s"
-                    .formatted(idx, id));
-        }
-        return pid;
-    }
-
-    /**
-     * An array to store transport parameter values.
-     * values[i] contains a byte array corresponding to the encoded value
-     * of the parameter whose {@linkplain ParameterId#idx() index}
-     * is {@code i}, or {@code null} if the parameter is absent.
-     */
-    private final byte[][] values;
+    private final Map<ParameterId, byte[]> values;
 
     /**
      * Constructs a new empty array of Quic transport parameters.
@@ -564,7 +537,7 @@ public final class QuicTransportParameters {
      * those methods.
      */
     public QuicTransportParameters() {
-        values = new byte[PARAMETERS_COUNT][];
+        values = new EnumMap<>(ParameterId.class);
     }
 
     /**
@@ -575,7 +548,7 @@ public final class QuicTransportParameters {
      * @param id the parameter id
      */
     public boolean isPresent(TransportParameterId id) {
-        byte[] value = unsafeMappedValue(id);
+        byte[] value = values.get((ParameterId) id);
         return value != null;
     }
 
@@ -585,7 +558,7 @@ public final class QuicTransportParameters {
      * @param id the parameter id
      */
     public byte[] getParameter(TransportParameterId id) {
-        byte[] value = unsafeMappedValue(id);
+        byte[] value = values.get((ParameterId) id);
         return value == null ? null : value.clone();
     }
 
@@ -595,7 +568,7 @@ public final class QuicTransportParameters {
      * @param connectionId the connection id to match against
      */
     public boolean matches(TransportParameterId id, QuicConnectionId connectionId) {
-        byte[] value = unsafeMappedValue(id);
+        byte[] value = values.get((ParameterId) id);
         return connectionId.matches(ByteBuffer.wrap(value).asReadOnlyBuffer());
     }
 
@@ -609,24 +582,11 @@ public final class QuicTransportParameters {
      */
     public void setParameter(TransportParameterId id, byte[] value) {
         ParameterId pid = checkParameterValue(id, value);
-        values[pid.idx()] = value == null ? null : value.clone();
-    }
-
-    /**
-     * {@return  the quic transport parameters array}
-     * The returned array contains all {@link #PARAMETERS_COUNT} value.
-     * A value at an index {@code idx} correspond to the
-     * {@linkplain TransportParameterId#valueOf(int) parameter whose id is {@code idx}}
-     * A {@code null} value indicates that the corresponding parameter is
-     * absent.
-     */
-    public byte[][] getValues() {
-        byte[][] values = new byte[PARAMETERS_COUNT][];
-        for (int i=0; i<PARAMETERS_COUNT; i++) {
-            var value = this.values[i];
-            values[i] = value == null ? null : value.clone();
+        if (value != null) {
+            values.put(pid, value.clone());
+        } else {
+            values.remove(pid);
         }
-        return values;
     }
 
     /**
@@ -662,7 +622,7 @@ public final class QuicTransportParameters {
             var value = entry.getValue();
             var idx = VariableLengthEncoder.decode(ByteBuffer.wrap(key));
             if (idx != (int)idx) continue;
-            var tid = TransportParameterId.valueOf((int)idx).orElse(null);
+            var tid = TransportParameterId.valueOf(idx).orElse(null);
             if (tid == null) continue; // ignore
             setParameter(tid, value);
         }
@@ -677,8 +637,7 @@ public final class QuicTransportParameters {
      * cannot be decoded as a variable length unsigned int
      */
     public long getIntParameter(TransportParameterId id) {
-        final ParameterId pid = mapOrThrow(id);
-        return getIntParameter(pid);
+        return getIntParameter((ParameterId)id);
     }
 
     private long getIntParameter(final ParameterId pid) {
@@ -688,7 +647,7 @@ public final class QuicTransportParameters {
                     initial_max_stream_data_uni, initial_max_streams_bidi,
                     initial_max_streams_uni, ack_delay_exponent, max_ack_delay,
                     active_connection_id_limit -> {
-                byte[] value = values[pid.idx()];
+                byte[] value = values.get(pid);
                 final long res;
                 if (value == null) {
                     res = switch (pid) {
@@ -723,14 +682,14 @@ public final class QuicTransportParameters {
                     + " exceeds maximum allowed variable length"
                     + " integer value " + VariableLengthEncoder.MAX_ENCODED_INTEGER);
         }
-        ParameterId pid = mapOrThrow(id);
+        ParameterId pid = (ParameterId)id;
         return switch (pid) {
             case max_idle_timeout, max_udp_payload_size, initial_max_data,
                     initial_max_stream_data_bidi_local, initial_max_stream_data_bidi_remote,
                     initial_max_stream_data_uni, initial_max_streams_bidi,
                     initial_max_streams_uni, ack_delay_exponent, max_ack_delay,
                     active_connection_id_limit -> {
-                byte[] value = values[id.idx()];
+                byte[] value = values.get(pid);
                 final long res;
                 if (value == null) {
                     res = defaultValue;
@@ -754,7 +713,7 @@ public final class QuicTransportParameters {
      * not an int, or if the provided value is out of range
      */
     public void setIntParameter(TransportParameterId id, long value) {
-        ParameterId pid = mapOrThrow(id);
+        ParameterId pid = (ParameterId)id;
         switch (pid) {
             case max_idle_timeout, max_udp_payload_size, initial_max_data,
                     initial_max_stream_data_bidi_local, initial_max_stream_data_bidi_remote,
@@ -769,7 +728,7 @@ public final class QuicTransportParameters {
                     assert size == length;
                     checkParameterValue(pid, v);
                 }
-                values[pid.idx()] = v;
+                values.put(pid, v);
             }
             default -> throw new IllegalArgumentException(String.valueOf(pid));
         }
@@ -786,11 +745,11 @@ public final class QuicTransportParameters {
      * is not a boolean
      */
     public boolean getBooleanParameter(TransportParameterId id) {
-        ParameterId pid = mapOrThrow(id);
+        ParameterId pid = (ParameterId)id;
         if (pid != ParameterId.disable_active_migration) {
             throw new IllegalArgumentException(String.valueOf(id));
         }
-        return values[pid.idx()] != null;
+        return values.get(pid) != null;
     }
 
     /**
@@ -806,11 +765,15 @@ public final class QuicTransportParameters {
      * not a boolean
      */
     public void setBooleanParameter(TransportParameterId id, boolean value) {
-        ParameterId pid = mapOrThrow(id);
+        ParameterId pid = (ParameterId)id;
         if (pid != ParameterId.disable_active_migration) {
             throw new IllegalArgumentException(String.valueOf(id));
         }
-        values[pid.idx()] = value ? NOBYTES : null;
+        if (value) {
+            values.put(pid, NOBYTES);
+        } else {
+            values.remove(pid);
+        }
     }
 
     /**
@@ -826,11 +789,11 @@ public final class QuicTransportParameters {
      */
     public VersionInformation getVersionInformationParameter(TransportParameterId id)
             throws QuicTransportException {
-        ParameterId pid = mapOrThrow(id);
+        ParameterId pid = (ParameterId)id;
         if (pid != ParameterId.version_information) {
             throw new IllegalArgumentException(String.valueOf(id));
         }
-        byte[] val = values[pid.idx()];
+        byte[] val = values.get(pid);
         if (val == null) {
             return null;
         }
@@ -868,7 +831,7 @@ public final class QuicTransportParameters {
      * not a version information
      */
     public void setVersionInformationParameter(TransportParameterId id, VersionInformation value) {
-        ParameterId pid = mapOrThrow(id);
+        ParameterId pid = (ParameterId)id;
         if (pid != ParameterId.version_information) {
             throw new IllegalArgumentException(String.valueOf(id));
         }
@@ -880,7 +843,7 @@ public final class QuicTransportParameters {
             bbval.putInt(available);
         }
         assert !bbval.hasRemaining();
-        values[pid.idx()] = val;
+        values.put(pid, val);
     }
 
     /**
@@ -917,7 +880,7 @@ public final class QuicTransportParameters {
                                              Inet6Address ipv6, int port6,
                                              ByteBuffer connectionId,
                                              ByteBuffer statelessToken) {
-        ParameterId pid = mapOrThrow(id);
+        ParameterId pid = (ParameterId)id;
         if (pid != ParameterId.preferred_address) {
             throw new IllegalArgumentException(String.valueOf(id));
         }
@@ -950,7 +913,7 @@ public final class QuicTransportParameters {
         assert size - CID_OFFSET - cidlen == TOKEN_SIZE : (size - CID_OFFSET - cidlen);
         assert tklen == TOKEN_SIZE;
         buffer.put(CID_OFFSET + cidlen, statelessToken, statelessToken.position(), tklen);
-        values[pid.idx()] = value;
+        values.put(pid, value);
     }
 
     /**
@@ -959,8 +922,9 @@ public final class QuicTransportParameters {
      */
     public int size() {
         int size = 0;
-        for (int i=0; i<PARAMETERS_COUNT; i++) {
-            var value = values[i];
+        for (var kv : values.entrySet()) {
+            var i = kv.getKey().idx();
+            var value = kv.getValue();
             if (value == null) continue;
             assert value.length > 0 || i == ParameterId.disable_active_migration.idx();
             size += VariableLengthEncoder.getEncodedSize(i);
@@ -1009,8 +973,9 @@ public final class QuicTransportParameters {
      */
     public int encode(ByteBuffer buffer) {
         int start = buffer.position();
-        for (int i=0; i<PARAMETERS_COUNT; i++) {
-            var value = values[i];
+        for (var kv : values.entrySet()) {
+            var i = kv.getKey().idx();
+            var value = kv.getValue();
             if (value == null) continue;
 
             VariableLengthEncoder.encode(buffer, i);
@@ -1030,12 +995,14 @@ public final class QuicTransportParameters {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("Quic Transport Params[");
-        for (final var known : ParameterId.values()) {
-            if (this.values[known.idx()] != null) {
+        for (var kv : values.entrySet()) {
+            var param = kv.getKey();
+            var value = kv.getValue();
+            if (value != null) {
                 // param is set
                 // we just return the string representation of the param ids and don't include
                 // the encoded values
-                sb.append(known);
+                sb.append(param);
                 sb.append(", ");
             }
         }
@@ -1047,11 +1014,13 @@ public final class QuicTransportParameters {
     // toString() implementation)
     public String toStringWithValues() {
         final StringBuilder sb = new StringBuilder("Quic Transport Params[");
-        for (final var known : ParameterId.values()) {
-            if (this.values[known.idx()] != null) {
+        for (var kv : values.entrySet()) {
+            var param = kv.getKey();
+            var value = kv.getValue();
+            if (value != null) {
                 // param is set, so include it in the string representation
-                sb.append(known);
-                final String valAsString = valueToString(known);
+                sb.append(param);
+                final String valAsString = valueToString(param);
                 // TODO: val can be null because our implementation currently only
                 // returns string representation for (variable length) integer params.
                 // for other params, like connection ids, we need to add the implementation
@@ -1066,7 +1035,7 @@ public final class QuicTransportParameters {
     }
 
     private String valueToString(final ParameterId parameterId) {
-        assert this.values[parameterId.idx()] != null : "param " + parameterId + " not set";
+        assert this.values.get(parameterId) != null : "param " + parameterId + " not set";
         return switch (parameterId) {
             // int params
             case max_idle_timeout, max_udp_payload_size, initial_max_data,
@@ -1099,7 +1068,7 @@ public final class QuicTransportParameters {
         QuicTransportParameters parameters = new QuicTransportParameters();
         while (buffer.hasRemaining()) {
             final long id = VariableLengthEncoder.decode(buffer);
-            final TransportParameterId pid = TransportParameterId.valueOf((int) id)
+            final ParameterId pid = TransportParameterId.valueOf(id)
                     .orElse(null);
             final String name = pid == null ? String.valueOf(id) : pid.toString();
             long length = VariableLengthEncoder.decode(buffer);
@@ -1128,12 +1097,12 @@ public final class QuicTransportParameters {
                 throw new QuicTransportException(e.getMessage(),
                         null, 0, QuicTransportErrors.TRANSPORT_PARAMETER_ERROR);
             }
-            if (parameters.values[pid.idx()] != null) {
+            if (parameters.values.get(pid) != null) {
                 throw new QuicTransportException(
                         "Duplicate transport parameter " + name,
                         null, 0, QuicTransportErrors.TRANSPORT_PARAMETER_ERROR);
             }
-            parameters.values[pid.idx()] = value;
+            parameters.values.put(pid, value);
         }
         return parameters;
     }
@@ -1227,17 +1196,6 @@ public final class QuicTransportParameters {
         return statelessResetToken;
     }
 
-
-    private byte[] unsafeGetValue(ParameterId id) {
-        return values[id.idx()];
-    }
-
-    private byte[] unsafeMappedValue(TransportParameterId id) {
-        return map(id)
-                .map(this::unsafeGetValue)
-                .orElse(null);
-    }
-
     static final byte[] NOBYTES = new byte[0];
     static final int IPV6_SIZE = 16;
     static final int IPV4_SIZE = 4;
@@ -1291,7 +1249,7 @@ public final class QuicTransportParameters {
      * {@link IllegalArgumentException}
      */
     private static ParameterId checkParameterValue(TransportParameterId tpid, byte[] value) {
-        ParameterId id = mapOrThrow(tpid);
+        ParameterId id = (ParameterId)tpid;
         if (value != null) {
             switch (id) {
                 case disable_active_migration -> {
