@@ -32,14 +32,12 @@
 
 class ScavengeHelper {
   DefNewGeneration* _young_gen;
-  HeapWord*         _young_gen_end;
 public:
   ScavengeHelper(DefNewGeneration* young_gen) :
-    _young_gen(young_gen),
-    _young_gen_end(young_gen->reserved().end()) {}
+    _young_gen(young_gen) {}
 
   bool is_in_young_gen(void* p) const {
-    return p < _young_gen_end;
+    return _young_gen->is_in_reserved(p);
   }
 
   template <typename T, typename Func>
