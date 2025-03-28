@@ -25,6 +25,7 @@
  * @test
  * @bug 8303737
  * @summary C2: cast nodes from PhiNode::Ideal() cause "Base pointers must match" assert failure
+ * @requires vm.compiler2.enabled
  * @run main/othervm -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:+StressCCP -Xcomp
  *                   -XX:CompileOnly=TestAddPChainMismatchedBase2::* -XX:StressSeed=1581936900 TestAddPChainMismatchedBase2
  * @run main/othervm -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:+StressCCP -Xcomp

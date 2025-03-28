@@ -37,6 +37,7 @@ import java.lang.foreign.*;
  * @bug 8343685 8331659
  * @summary Test vectorization with various invariants that are equivalent, but not trivially so,
  *          i.e. where the invariants have the same summands, but in a different order.
+ * @requires vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver/timeout=1200 compiler.loopopts.superword.TestEquivalentInvariants

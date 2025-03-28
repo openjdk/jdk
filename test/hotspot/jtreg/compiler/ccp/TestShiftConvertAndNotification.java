@@ -26,6 +26,7 @@
  * @bug 8313672
  * @summary Test CCP notification for value update of AndL through LShiftI and
  *          ConvI2L.
+ * @requires vm.compiler2.enabled
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions
  *                   -XX:RepeatCompilation=20 -XX:-TieredCompilation
  *                   -XX:+StressIGVN -Xcomp

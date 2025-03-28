@@ -31,6 +31,7 @@
  *          4. The dataflow can die when a type becomes impossible.
  *          5. The rangecheck is still before the peeling, and is not copied to the peeled loop. Hence
  *             we do not statically realize that the peeled loop can never be entered.
+ * @requires vm.compiler2.enabled
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM -XX:+StressGCM -XX:+StressCCP -XX:+StressIGVN
  *                   -Xcomp -XX:-TieredCompilation

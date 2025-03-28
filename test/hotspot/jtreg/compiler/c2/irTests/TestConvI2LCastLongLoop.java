@@ -34,6 +34,7 @@ import java.util.Random;
  * @bug 8286197
  * @key randomness
  * @summary C2: Optimize MemorySegment shape in int loop
+ * @requires vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestConvI2LCastLongLoop

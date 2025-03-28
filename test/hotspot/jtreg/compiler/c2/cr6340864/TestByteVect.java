@@ -25,6 +25,7 @@
  * @test
  * @bug 6340864
  * @summary Implement vectorization optimizations in hotspot-server
+ * @requires vm.compiler2.enabled
  *
  * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m compiler.c2.cr6340864.TestByteVect
  * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:MaxVectorSize=8 compiler.c2.cr6340864.TestByteVect

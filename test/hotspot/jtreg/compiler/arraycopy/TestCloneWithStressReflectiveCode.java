@@ -25,7 +25,7 @@
  * @test
  * @bug 8284951
  * @summary Test clone intrinsic with StressReflectiveCode.
- * @requires vm.debug
+ * @requires vm.compiler2.enabled & vm.debug
  * @run main/othervm -XX:-InlineUnsafeOps -XX:-ReduceInitialCardMarks -XX:+StressReflectiveCode -Xbatch -XX:-TieredCompilation
  *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestCloneWithStressReflectiveCode::test
  *                   compiler.arraycopy.TestCloneWithStressReflectiveCode

@@ -33,7 +33,7 @@ import java.lang.ref.SoftReference;
  *          Extracted from java.lang.invoke.LambdaFormEditor::getInCache.
  * @key randomness
  * @library /test/lib /
- * @requires vm.gc.G1 & vm.bits == 64 & vm.opt.final.UseCompressedOops == true
+ * @requires vm.gc.G1 & vm.bits == 64 & vm.opt.final.UseCompressedOops == true & vm.compiler2.enabled
  * @run driver compiler.runtime.safepoints.TestMachTempsAcrossSafepoints
  */
 

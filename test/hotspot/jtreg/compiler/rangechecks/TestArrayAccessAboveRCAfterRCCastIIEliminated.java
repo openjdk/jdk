@@ -25,6 +25,7 @@
  * @test
  * @bug 8332827
  * @summary [REDO] C2: crash in compiled code because of dependency on removed range check CastIIs
+ * @requires vm.compiler2.enabled
  *
  * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
  *                   -XX:CompileCommand=dontinline,TestArrayAccessAboveRCAfterRCCastIIEliminated::notInlined

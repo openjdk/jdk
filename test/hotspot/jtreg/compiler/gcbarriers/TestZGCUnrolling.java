@@ -34,7 +34,7 @@ import java.lang.invoke.MethodHandles;
  *          The tests use volatile memory accesses to prevent C2 from simply
  *          optimizing them away.
  * @library /test/lib /
- * @requires vm.gc.Z
+ * @requires vm.gc.Z & vm.compiler2.enabled
  * @run driver compiler.gcbarriers.TestZGCUnrolling
  */
 
