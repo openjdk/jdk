@@ -5888,7 +5888,6 @@ bool LinearScanWalker::activate_current() {
 
   } else if (allocator()->gen()->is_vreg_flag_set(cur->reg_num(), LIRGenerator::must_start_in_memory)) {
     // activating an interval that must start in a stack slot, but may get a register later
-    // used for lir_roundfp: rounding is done by store to stack and reload later
     TRACE_LINEAR_SCAN(4, tty->print_cr("      interval must start in stack slot -> split it before first use"));
     assert(cur->assigned_reg() == any_reg && cur->assigned_regHi() == any_reg, "register already assigned");
 
@@ -6770,7 +6769,6 @@ void LinearScanStatistic::collect(LinearScan* allocator) {
         case lir_push:
         case lir_pop:
         case lir_convert:
-        case lir_roundfp:
         case lir_cmove:           inc_counter(counter_misc_inst); break;
 
         default:                  inc_counter(counter_other_inst); break;
