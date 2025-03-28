@@ -50,6 +50,12 @@ void G1IHOPControl::update_allocation_info(double allocation_time_s, size_t addi
   _last_allocation_time_s = allocation_time_s;
 }
 
+size_t G1IHOPControl::default_conc_mark_start_threshold() {
+  guarantee(_target_occupancy > 0, "Target occupancy must have been initialized.");
+  size_t actual_target_occupancy = MIN2(G1CollectedHeap::heap()->soft_max_capacity(), _target_occupancy);
+  return (size_t) (_initial_ihop_percent * actual_target_occupancy / 100.0);
+}
+
 void G1IHOPControl::print() {
   assert(_target_occupancy > 0, "Target occupancy still not updated yet.");
   size_t cur_conc_mark_start_threshold = get_conc_mark_start_threshold();
@@ -109,7 +115,7 @@ size_t G1AdaptiveIHOPControl::actual_target_threshold() const {
   double safe_total_heap_percentage = MIN2((double)(_heap_reserve_percent + _heap_waste_percent), 100.0);
 
   return (size_t)MIN2(
-    G1CollectedHeap::heap()->max_capacity() * (100.0 - safe_total_heap_percentage) / 100.0,
+    G1CollectedHeap::heap()->soft_max_capacity() * (100.0 - safe_total_heap_percentage) / 100.0,
     _target_occupancy * (100.0 - _heap_waste_percent) / 100.0
     );
 }
@@ -142,7 +148,7 @@ size_t G1AdaptiveIHOPControl::get_conc_mark_start_threshold() {
     return predicted_initiating_threshold;
   } else {
     // Use the initial value.
-    return (size_t)(_initial_ihop_percent * _target_occupancy / 100.0);
+    return default_conc_mark_start_threshold();
   }
 }
 
