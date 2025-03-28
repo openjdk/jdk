@@ -295,6 +295,16 @@ public class SparseCodeCache {
             var regionStart = firstNmethodInPrevGroup.address & ~(codeRegionSize - 1);
             var regionEnd = regionStart + codeRegionSize;
             var lastNmethodInPrevGroup = methods[j - 1].getNMethod();
+
+            // We have disabled code cache flushing. This should guarantee our just compiled
+            // not yet used code will not be flushed.
+            // Besides our test methods, we don't use a lot of Java methods in this benchmark.
+            // This should guarantee that most of code in the code cache is our test methods.
+            // If C2 occasionally compiles other methods, it should not affect test methods code placement much.
+            // We don't expect a lot of deoptimizations in this benchmark. So we don't expect
+            // CodeCache to be fragmented.
+            // We assume addresses of our compiled methods and dummy code blobs are in increasing order.
+            // Methods compiled during the same iteration are in the same code region.
             if ((lastNmethodInPrevGroup.address + lastNmethodInPrevGroup.size) < regionEnd) {
                 var dummyBlob = getWhiteBox().allocateCodeBlob(regionEnd - lastNmethodInPrevGroup.address - lastNmethodInPrevGroup.size,
                                                                lastNmethodInPrevGroup.code_blob_type.id);
