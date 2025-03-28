@@ -440,7 +440,7 @@ void Type::Initialize_shared(Compile* current) {
   // locking.
 
   Arena* save = current->type_arena();
-  Arena* shared_type_arena = new (mtCompiler)Arena(mtCompiler);
+  Arena* shared_type_arena = new (mtCompiler)Arena(mtCompiler, Arena::Tag::tag_type);
 
   current->set_type_arena(shared_type_arena);
 
@@ -1697,6 +1697,10 @@ const TypeInteger* TypeInteger::make(jlong lo, jlong hi, int w, BasicType bt) {
   }
   assert(bt == T_LONG, "basic type not an int or long");
   return TypeLong::make(lo, hi, w);
+}
+
+const TypeInteger* TypeInteger::make(jlong con, BasicType bt) {
+  return make(con, con, WidenMin, bt);
 }
 
 jlong TypeInteger::get_con_as_long(BasicType bt) const {

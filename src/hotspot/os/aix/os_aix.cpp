@@ -796,6 +796,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // OSThread::thread_id is the pthread id.
   osthread->set_thread_id(tid);
 
+  // child thread synchronization is not done here on AIX, a thread is started in suspended state
+
   return true;
 }
 
@@ -836,13 +838,6 @@ bool os::create_attached_thread(JavaThread* thread) {
   osthread->set_state(RUNNABLE);
 
   thread->set_osthread(osthread);
-
-  if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
-  }
 
   // initialize signal mask for this thread
   // and save the caller's signal mask

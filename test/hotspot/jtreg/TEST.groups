@@ -363,6 +363,7 @@ tier1_runtime = \
  -runtime/ErrorHandling/ReattemptErrorTest.java \
  -runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryError.java \
  -runtime/ErrorHandling/TimeoutInErrorHandlingTest.java \
+ -runtime/interpreter/CountBytecodesTest.java \
  -runtime/InvocationTests \
  -runtime/logging/MonitorMismatchTest.java \
  -runtime/memory/ReserveMemory.java \
@@ -405,6 +406,7 @@ hotspot_cds_only = \
 
 hotspot_appcds_dynamic = \
   runtime/cds/appcds/ \
+ -runtime/cds/appcds/aotClassLinking \
  -runtime/cds/appcds/applications \
  -runtime/cds/appcds/cacheObject \
  -runtime/cds/appcds/complexURI \
@@ -423,7 +425,6 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/jvmti/redefineClasses/OldClassAndRedefineClass.java \
  -runtime/cds/appcds/lambdaForm/DefaultClassListLFInvokers.java \
  -runtime/cds/appcds/methodHandles \
- -runtime/cds/appcds/aotClassLinking/BulkLoaderTest.java \
  -runtime/cds/appcds/sharedStrings \
  -runtime/cds/appcds/resolvedConstants \
  -runtime/cds/appcds/ArchiveRelocationTest.java \

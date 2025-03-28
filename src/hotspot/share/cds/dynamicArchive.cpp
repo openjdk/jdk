@@ -31,6 +31,7 @@
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -159,8 +160,10 @@ public:
       ArchiveBuilder::serialize_dynamic_archivable_items(&wc);
     }
 
-    log_info(cds)("Adjust lambda proxy class dictionary");
-    SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
+    if (CDSConfig::is_dumping_lambdas_in_legacy_mode()) {
+      log_info(cds)("Adjust lambda proxy class dictionary");
+      LambdaProxyClassDictionary::adjust_dumptime_table();
+    }
 
     relocate_to_requested();
 
@@ -388,8 +391,9 @@ public:
   void doit() {
     ResourceMark rm;
     if (AllowArchivingWithJavaAgent) {
-      log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
-              "for testing purposes only and should not be used in a production environment");
+      log_warning(cds)("This %s was created with AllowArchivingWithJavaAgent. It should be used "
+                       "for testing purposes only and should not be used in a production environment",
+                       CDSConfig::type_of_archive_being_loaded());
     }
     AOTClassLocationConfig::dumptime_check_nonempty_dirs();
     _builder.doit();
