@@ -34,8 +34,6 @@ include LibCommon.gmk
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT, \
     NAME := management, \
     OPTIMIZATION := HIGH, \
-    DISABLED_WARNINGS_gcc_VMManagementImpl.c := unused-variable, \
-    DISABLED_WARNINGS_clang_VMManagementImpl.c := unused-variable, \
     JDK_LIBS := java.base:libjava java.base:libjvm, \
     LIBS_aix := -lperfstat, \
     LIBS_windows := advapi32.lib psapi.lib, \
