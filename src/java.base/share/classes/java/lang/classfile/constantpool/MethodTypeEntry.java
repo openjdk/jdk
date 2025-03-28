@@ -70,6 +70,19 @@ public sealed interface MethodTypeEntry
     /**
      * {@return a symbolic descriptor for the {@linkplain #descriptor() method
      * type}}
+     *
+     * @apiNote
+     * If only symbol equivalence is desired, {@link #equalsSymbol(MethodTypeDesc)
+     * equalsSymbol} should be used.  It requires reduced parsing and can
+     * improve {@code class} file reading performance.
      */
     MethodTypeDesc asSymbol();
+
+    /**
+     * {@return whether this entry describes the given method type}
+     *
+     * @param desc the method type descriptor
+     * @since 25
+     */
+    boolean equalsSymbol(MethodTypeDesc desc);
 }
