@@ -66,7 +66,7 @@ void SafepointMechanism::pd_initialize() {
         (char*) 0x62000000, (char*) 0x63000000
     };
     int address_wishes_length = sizeof(address_wishes)/sizeof(char*);
-
+    MemTracker::NmtVirtualMemoryLocker nvml;
     // iterate over the list of address wishes:
     for (int i = 0; i < address_wishes_length; i++) {
       // Try to map with current address wish.
