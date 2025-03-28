@@ -142,7 +142,7 @@ public class bug6513492 {
                                 UIManager.getBoolean("Menu.preserveTopLevelSelection"));
             PassFailJFrame.log("");
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 }
