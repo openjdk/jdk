@@ -301,6 +301,7 @@ void SuperWordVTransformBuilder::add_dependencies_of_node_to_vtnode(Node*n, VTra
   // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
   bool with_unknown_aliasing_edges = !_vloop.are_speculative_checks_possible();
 
+  // TODO: consider carrying the unknown dependency, and deduce the checks after scheduling, for "backwards" edges!
   for (VLoopDependencyGraph::PredsIterator preds(_vloop_analyzer.dependency_graph(), n, with_unknown_aliasing_edges); !preds.done(); preds.next()) {
     Node* pred = preds.current();
     if (!_vloop.in_bb(pred)) { continue; }
