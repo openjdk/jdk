@@ -1082,9 +1082,7 @@ void JavaThread::handle_special_runtime_exit_condition() {
     frame_anchor()->make_walkable();
     wait_for_object_deoptimization();
   }
-  JFR_ONLY(SUSPEND_THREAD_CONDITIONAL(this);)
 }
-
 
 // Asynchronous exceptions support
 //

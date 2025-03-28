@@ -277,9 +277,9 @@ JVM_ENTRY_NO_ENV(void, jfr_set_method_sampling_period(JNIEnv* env, jclass jvm, j
   assert(EventExecutionSample::eventId == typed_event_id || EventNativeMethodSample::eventId == typed_event_id, "invariant");
   JfrEventSetting::set_enabled(typed_event_id, periodMillis > 0);
   if (EventExecutionSample::eventId == type) {
-    JfrThreadSampling::set_java_sample_period(periodMillis);
+    JfrThreadSampler::set_java_sample_period(periodMillis);
   } else {
-    JfrThreadSampling::set_native_sample_period(periodMillis);
+    JfrThreadSampler::set_native_sample_period(periodMillis);
   }
 JVM_END
 
