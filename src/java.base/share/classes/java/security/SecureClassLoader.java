@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 package java.security;
-
-import sun.security.util.Debug;
 
 import java.util.Map;
 import java.util.Objects;
@@ -182,13 +180,6 @@ public class SecureClassLoader extends ClassLoader {
     }
 
     /*
-     * holder class for the static field "debug" to delay its initialization
-     */
-    private static class DebugHolder {
-        private static final Debug debug = Debug.getInstance("scl");
-    }
-
-    /*
      * Returned cached ProtectionDomain for the specified CodeSource.
      */
     private ProtectionDomain getProtectionDomain(CodeSource cs) {
@@ -209,10 +200,6 @@ public class SecureClassLoader extends ClassLoader {
                         = SecureClassLoader.this.getPermissions(key.cs);
                 ProtectionDomain pd = new ProtectionDomain(
                         key.cs, perms, SecureClassLoader.this, null);
-                if (DebugHolder.debug != null) {
-                    DebugHolder.debug.println(" getPermissions " + pd);
-                    DebugHolder.debug.println("");
-                }
                 return pd;
             }
         });
