@@ -24,6 +24,7 @@
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Rectangle;
+import java.awt.Robot;
 import java.awt.Toolkit;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -42,7 +43,6 @@ import javax.swing.plaf.metal.MetalLookAndFeel;
  * @author Alexey Ivanov
  * @summary Selected tab should be scrolled into view.
  * @library /lib/client/
- * @build ExtendedRobot
  * @run main bug7170310
  */
 
@@ -125,7 +125,7 @@ public class bug7170310 {
     }
     private static void sync() {
         try {
-             ExtendedRobot robot = new ExtendedRobot();
+             Robot robot = new Robot();
              robot.waitForIdle(300);
          }catch(Exception ex) {
              ex.printStackTrace();
