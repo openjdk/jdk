@@ -25,6 +25,8 @@
 
 package sun.security.ssl;
 
+import static sun.security.ssl.SignatureScheme.HANDSHAKE_SCOPE;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
@@ -188,8 +190,7 @@ final class SignatureAlgorithmsExtension {
             if (chc.localSupportedSignAlgs == null) {
                 chc.localSupportedSignAlgs =
                     SignatureScheme.getSupportedAlgorithms(
-                            chc.sslConfig,
-                            chc.algorithmConstraints, chc.activeProtocols);
+                            chc, HANDSHAKE_SCOPE);
             }
 
             int vectorLen = SignatureScheme.sizeInRecord() *
@@ -276,9 +277,8 @@ final class SignatureAlgorithmsExtension {
             // update the context
             List<SignatureScheme> sss =
                     SignatureScheme.getSupportedAlgorithms(
-                            shc.sslConfig,
-                            shc.algorithmConstraints, shc.negotiatedProtocol,
-                            spec.signatureSchemes);
+                            shc, spec.signatureSchemes, HANDSHAKE_SCOPE);
+
             if (sss == null || sss.isEmpty()) {
                 throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "No supported signature algorithm");
@@ -414,9 +414,7 @@ final class SignatureAlgorithmsExtension {
             // Produce the extension.
             List<SignatureScheme> sigAlgs =
                     SignatureScheme.getSupportedAlgorithms(
-                            shc.sslConfig,
-                            shc.algorithmConstraints,
-                            List.of(shc.negotiatedProtocol));
+                            shc, HANDSHAKE_SCOPE);
 
             int vectorLen = SignatureScheme.sizeInRecord() * sigAlgs.size();
             byte[] extData = new byte[vectorLen + 2];
@@ -504,9 +502,8 @@ final class SignatureAlgorithmsExtension {
             // update the context
             List<SignatureScheme> sss =
                     SignatureScheme.getSupportedAlgorithms(
-                            chc.sslConfig,
-                            chc.algorithmConstraints, chc.negotiatedProtocol,
-                            spec.signatureSchemes);
+                            chc, spec.signatureSchemes, HANDSHAKE_SCOPE);
+
             if (sss == null || sss.isEmpty()) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "No supported signature algorithm");
