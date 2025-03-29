@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8023651 8044629
+ * @bug 8023651 8044629 8162500
  * @summary Test that the receiver annotations and the return annotations of
  *          constructors behave correctly.
  * @run testng ConstructorReceiverTest
@@ -62,6 +62,7 @@ public class ConstructorReceiverTest {
         { ConstructorReceiverTest.Nested.NestedMiddle.NestedInner.class, ConstructorReceiverTest.Nested.NestedMiddle.class, Integer.valueOf(2000), Integer.valueOf(2500)},
         { ConstructorReceiverTest.Nested.NestedMiddle.NestedInnerNoReceiver.class, ConstructorReceiverTest.Nested.NestedMiddle.class, Integer.valueOf(4000), EMPTY_ANNOTATED_TYPE},
         { ConstructorReceiverTest.Nested.NestedMiddle.SecondNestedInnerNoReceiver.class, ConstructorReceiverTest.Nested.NestedMiddle.class, Integer.valueOf(5000), EMPTY_ANNOTATED_TYPE},
+        { getLocalsMember(), getLocalsMember().getDeclaringClass(), Integer.valueOf(2635), Integer.valueOf(2732)},
     };
 
 
@@ -167,6 +168,15 @@ public class ConstructorReceiverTest {
                 @Annot(5000) public SecondNestedInnerNoReceiver(NestedMiddle NestedMiddle.this) {}
             }
         }
+    }
+
+    public static Class<?> getLocalsMember() {
+        class Local {
+            class Member {
+                @Annot(2635) Member(@Annot(2732) Local Local.this) {}
+            }
+        }
+        return Local.Member.class;
     }
 
     @Retention(RetentionPolicy.RUNTIME)
