@@ -53,7 +53,8 @@ public class TestRoundVectRiscv64 {
   }
 
   @Test
-  @IR(counts = {IRNode.ROUND_VD, "> 0"})
+  @IR(counts = {IRNode.ROUND_VD, "> 0"},
+      applyIf = {"MaxVectorSize", ">= 64"})
   public void test_round_double(long[] lout, double[] dinp) {
       for (int i = 0; i < lout.length; i+=1) {
           lout[i] = Math.round(dinp[i]);
@@ -73,7 +74,8 @@ public class TestRoundVectRiscv64 {
   }
 
   @Test
-  @IR(counts = {IRNode.ROUND_VF, "> 0"})
+  @IR(counts = {IRNode.ROUND_VF, "> 0"},
+      applyIf = {"MaxVectorSize", ">= 32"})
   public void test_round_float(int[] iout, float[] finp) {
       for (int i = 0; i < finp.length; i+=1) {
           iout[i] = Math.round(finp[i]);

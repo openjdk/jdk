@@ -89,7 +89,7 @@ public class Main {
     // for i18n
     private static final java.util.ResourceBundle rb =
         java.util.ResourceBundle.getBundle
-        ("sun.security.tools.jarsigner.Resources");
+        ("sun.security.tools.jarsigner.resources.jarsigner");
     private static final Collator collator = Collator.getInstance();
     static {
         // this is for case insensitive string comparisions
@@ -237,6 +237,7 @@ public class Main {
     private boolean badNetscapeCertType = false;
     private boolean signerSelfSigned = false;
     private boolean allAliasesFound = true;
+    private boolean hasMultipleManifests = false;
 
     private Throwable chainNotValidatedReason = null;
     private Throwable tsaChainNotValidatedReason = null;
@@ -1252,6 +1253,11 @@ public class Main {
                         rb.getString("The.full.keyAlgName.signing.key.is.considered.a.security.risk.and.is.disabled."),
                         fullDisplayKeyName(privateKey)));
             }
+
+            if (hasMultipleManifests) {
+                warnings.add(String.format(rb.getString("multiple.manifest.warning.")));
+            }
+
         } else {
             if ((legacyAlg & 1) != 0) {
                 warnings.add(String.format(
@@ -1964,6 +1970,15 @@ public class Main {
 
         Throwable failedCause = null;
         String failedMessage = null;
+
+        try (JarFile asJar = new JarFile(jarFile)) {
+            if (JUZFA.getManifestNum(asJar) > 1) {
+                hasMultipleManifests = true;
+            }
+        } catch (IOException ioe) {
+            // intentionally "eat" this, since we don't want to fail, if we
+            // cannot perform the multiple manifest check to output the warning
+        }
 
         try {
             Event.setReportListener(Event.ReporterCategory.ZIPFILEATTRS,
