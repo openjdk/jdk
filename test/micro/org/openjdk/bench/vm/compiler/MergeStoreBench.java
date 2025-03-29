@@ -693,7 +693,7 @@ public class MergeStoreBench {
     public void str5Utf16ArrayCopy(Blackhole BH) {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            System.arraycopy(STR_5_BYTES_UTF16, 0, bytes8, off, 10);
+            System.arraycopy(STR_5_BYTES_UTF16, 0, bytes10, off, 10);
             off += 10;
         }
         BH.consume(off);
