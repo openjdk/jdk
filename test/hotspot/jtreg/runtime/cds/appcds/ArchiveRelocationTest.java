@@ -45,7 +45,7 @@ public class ArchiveRelocationTest {
     static int relocationMode = -1;
     public static void main(String... args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
-	relocationMode = wb.getArchiveRelocationMode();
+        relocationMode = wb.getArchiveRelocationMode();
         try {
             test(false);
             test(true);
