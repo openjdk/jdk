@@ -152,6 +152,9 @@ constexpr Register r15_thread   = r15; // callee-saved
 // or compiled lambda forms. We indicate that by setting rbp_mh_SP_save to noreg.
 constexpr Register rbp_mh_SP_save = noreg;
 
+// State for randomized profile counters. Used by C1.
+extern Register r_profile_rng;
+
 // Address is an abstraction used to represent a memory location
 // using any of the amd64 addressing modes with one object.
 //

@@ -898,6 +898,7 @@ private:
   static ByteSize preemption_cancelled_offset()  { return byte_offset_of(JavaThread, _preemption_cancelled); }
   static ByteSize preempt_alternate_return_offset() { return byte_offset_of(JavaThread, _preempt_alternate_return); }
   static ByteSize unlocked_inflated_monitor_offset() { return byte_offset_of(JavaThread, _unlocked_inflated_monitor); }
+  static ByteSize profile_rng_offset()        { return byte_offset_of(JavaThread, _profile_rng); }
 
 #if INCLUDE_JVMTI
   static ByteSize is_in_VTMS_transition_offset()     { return byte_offset_of(JavaThread, _is_in_VTMS_transition); }
@@ -1260,6 +1261,9 @@ public:
 private:
   LockStack _lock_stack;
   OMCache _om_cache;
+
+  // Random value for randomized profile counters.
+  uint32_t _profile_rng;
 
 public:
   LockStack& lock_stack() { return _lock_stack; }

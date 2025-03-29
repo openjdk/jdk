@@ -10956,4 +10956,5 @@ void MacroAssembler::setcc(Assembler::Condition comparison, Register dst) {
     movzbl(dst, dst);
   }
 }
+
 #endif
