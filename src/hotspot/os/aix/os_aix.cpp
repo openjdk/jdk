@@ -1311,9 +1311,8 @@ void os::jvm_path(char *buf, jint buflen) {
     // value for buf is "<JAVA_HOME>/jre/lib/<vmtype>/libjvm.so".
     // If "/jre/lib/" appears at the right place in the string, then
     // assume we are installed in a JDK and we're done. Otherwise, check
-    // for a JAVA_HOME environment variable and fix up the path so it
-    // looks like libjvm.so is installed there (append a fake suffix
-    // hotspot/libjvm.so).
+    // for a JAVA_HOME environment variable and construct a path to the JVM
+    // being overridden.
     const char *p = buf + strlen(buf) - 1;
     for (int count = 0; p > buf && count < 4; ++count) {
       for (--p; p > buf && *p != '/'; --p)
@@ -1352,7 +1351,8 @@ void os::jvm_path(char *buf, jint buflen) {
         if (0 == access(buf, F_OK)) {
           // Use current module name "libjvm.so"
           len = strlen(buf);
-          snprintf(buf + len, buflen-len, "/hotspot/libjvm.so");
+          snprintf(buf + len, buflen-len, "/%s/libjvm%s",
+                   Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
         } else {
           // Go back to path of .so
           rp = os::realpath((char *)dlinfo.dli_fname, buf, buflen);
