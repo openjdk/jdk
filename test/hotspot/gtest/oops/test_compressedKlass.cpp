@@ -31,7 +31,7 @@ TEST_VM(CompressedKlass, basics) {
   if (!UseCompressedClassPointers) {
     return;
   }
-  ASSERT_LE((address)0, CompressedKlassPointers::base());
+  ASSERT_LE((address)nullptr, CompressedKlassPointers::base());
   ASSERT_LE(CompressedKlassPointers::base(), CompressedKlassPointers::klass_range_start());
   ASSERT_LT(CompressedKlassPointers::klass_range_start(), CompressedKlassPointers::klass_range_end());
   ASSERT_LE(CompressedKlassPointers::klass_range_end(), CompressedKlassPointers::encoding_range_end());

@@ -90,7 +90,7 @@ public:
 private:
     // Assert Base is derived from std::runtime_error
     enum { isDerivedFromStdException =
-                        sizeof(static_cast<std::runtime_error*>((Base*)0)) };
+                        sizeof(static_cast<std::runtime_error*>((Base*)NULL)) };
 
     std::string msg;
 };
