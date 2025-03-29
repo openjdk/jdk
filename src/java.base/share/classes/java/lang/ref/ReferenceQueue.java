@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,19 +145,6 @@ public class ReferenceQueue<T> {
         }
     }
 
-    private boolean tryDisablePreempt() {
-        if (Thread.currentThread().isVirtual() && ContinuationSupport.isSupported()) {
-            Continuation.pin();
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private void enablePreempt() {
-        Continuation.unpin();
-    }
-
     /**
      * Polls this queue to see if a reference object is available.  If one is
      * available without further delay then it is removed from the queue and
@@ -173,13 +160,13 @@ public class ReferenceQueue<T> {
 
         // Prevent a virtual thread from being preempted as this could potentially
         // deadlock with a carrier that is polling the same reference queue.
-        boolean disabled = tryDisablePreempt();
+        boolean pinned = Thread.currentThread().isVirtual() && ContinuationSupport.pinIfSupported();
         try {
             synchronized (lock) {
                 return poll0();
             }
         } finally {
-            if (disabled) enablePreempt();
+            if (pinned) Continuation.unpin();
         }
     }
 
