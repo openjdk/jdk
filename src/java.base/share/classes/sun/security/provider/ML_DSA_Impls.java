@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,23 @@
 package sun.security.provider;
 
 import sun.security.jca.JCAUtil;
+import sun.security.util.DerValue;
+
+import java.io.IOException;
 import java.security.*;
 import java.security.SecureRandom;
-import java.util.Arrays;
 
 public class ML_DSA_Impls {
+
+    public static byte[] seedToTransformed(String pname, byte[] seed) {
+        var impl = new ML_DSA(name2int(pname));
+        var sk = impl.generateKeyPairInternal(seed).privateKey();
+        try {
+            return impl.skEncode(sk);
+        } finally {
+            sk.destroy();
+        }
+    }
 
     public enum Version {
         DRAFT, FINAL
@@ -78,11 +90,11 @@ public class ML_DSA_Impls {
             try {
                 return new byte[][]{
                         mlDsa.pkEncode(kp.publicKey()),
+                        seed,
                         mlDsa.skEncode(kp.privateKey())
                 };
             } finally {
                 kp.privateKey().destroy();
-                Arrays.fill(seed, (byte)0);
             }
         }
     }
@@ -112,6 +124,21 @@ public class ML_DSA_Impls {
         public KF(String name) {
             super("ML-DSA", name);
         }
+
+        @Override
+        protected byte[] implTransform(String name, byte[] input) {
+            if (input.length == 32) { // seed
+                return seedToTransformed(name, input);
+            } else if (input.length > 1 && input[0] == 4) { // jdk24
+                try {
+                    return new DerValue(input).getOctetString();
+                } catch (IOException e) {
+                    return null;
+                }
+            } else {
+                return null;
+            }
+        }
     }
 
     public final static class KF2 extends KF {
@@ -134,10 +161,10 @@ public class ML_DSA_Impls {
 
     public sealed static class SIG extends NamedSignature permits SIG2, SIG3, SIG5 {
         public SIG() {
-            super("ML-DSA", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87");
+            super("ML-DSA", new KF(), "ML-DSA-44", "ML-DSA-65", "ML-DSA-87");
         }
         public SIG(String name) {
-            super("ML-DSA", name);
+            super("ML-DSA", new KF(name), name);
         }
 
         @Override

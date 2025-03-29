@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package sun.security.pkcs;
 
-import sun.security.util.DerInputStream;
-import sun.security.util.DerValue;
 import sun.security.x509.AlgorithmId;
 
 import javax.security.auth.DestroyFailedException;
@@ -39,6 +37,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
 import java.security.spec.NamedParameterSpec;
 import java.util.Arrays;
+import java.util.function.BiFunction;
 
 /// Represents a private key from an algorithm family that is specialized
 /// with a named parameter set.
@@ -50,6 +49,30 @@ import java.util.Arrays;
 /// identifier in the PKCS #8 encoding of the key is always a single OID derived
 /// from the parameter set name.
 ///
+/// Besides the existing [PKCS8Key#key] field, this class optionally supports a
+/// transformed format stored in [#transformed]. While `key` always represents
+/// the base format used for encoding, an algorithm may perform pre-computation
+/// to derive a transformed format, which may accelerate future operations.
+/// The transformed format must be self-sufficient for cryptographic
+/// computations without requiring the base format.
+///
+/// 1. If only `key` is present, it is used for both encoding and computations.
+/// 2. If both `key` and `transformed` are available, `key` is used for encoding,
+///    and `transformed` is used for computations.
+///
+/// For algorithms that do not define a transformed key format, only `key` is
+/// included, and `transformed` must be `null`.
+///
+/// Note: When a transformed format is not defined, `key` and `transformed`
+/// may hold the same value. However, subtle differences can arise depending
+/// on if they are the same object. To avoid ambiguity, always set `transformed`
+/// to `null`.
+///
+/// The encoding in `NamedPKCS8Key` differs from that of XDH and EdDSA keys.
+/// While `key` is always placed inside an `OneAsymmetricKey` structure as an
+/// OCTET STRING , for XDH and EdDSA, the `key` field itself is an OCTET STRING.
+/// `NamedPKCS8Key` treats `key` as a generic opaque byte array.
+///
 /// @see sun.security.provider.NamedKeyPairGenerator
 public final class NamedPKCS8Key extends PKCS8Key {
     @Serial
@@ -57,42 +80,50 @@ public final class NamedPKCS8Key extends PKCS8Key {
 
     private final String fname;
     private final transient NamedParameterSpec paramSpec;
-    private final byte[] rawBytes;
+    private final transient byte[] transformed;
 
     private transient boolean destroyed = false;
 
-    /// Ctor from family name, parameter set name, raw key bytes.
-    /// Key bytes won't be cloned, caller must relinquish ownership
-    public NamedPKCS8Key(String fname, String pname, byte[] rawBytes) {
+    /// Creates a `NamedPKCS8Key` from raw key bytes.
+    ///
+    /// `rawBytes` and `transformed` won't be cloned, caller
+    /// must relinquish ownership.
+    ///
+    /// @param fname family name
+    /// @param pname parameter set name
+    /// @param rawBytes raw key bytes
+    /// @param transformed transformed key format, can be `null`.
+    public NamedPKCS8Key(String fname, String pname, byte[] rawBytes, byte[] transformed) {
         this.fname = fname;
         this.paramSpec = new NamedParameterSpec(pname);
+        this.transformed = transformed;
         try {
             this.algid = AlgorithmId.get(pname);
         } catch (NoSuchAlgorithmException e) {
             throw new ProviderException(e);
         }
-        this.rawBytes = rawBytes;
-
-        DerValue val = new DerValue(DerValue.tag_OctetString, rawBytes);
-        try {
-            this.key = val.toByteArray();
-        } finally {
-            val.clear();
-        }
+        this.key = rawBytes;
     }
 
-    /// Ctor from family name, and PKCS #8 bytes
-    public NamedPKCS8Key(String fname, byte[] encoded) throws InvalidKeyException {
+    /// Creates a `NamedPKCS8Key` from family name and PKCS #8 encoding.
+    ///
+    /// @param fname family name
+    /// @param encoded PKCS #8 encoding. It is copied so caller can modify
+    ///     it after the method call.
+    /// @param transform a function that is able to calculate the transformed
+    ///     format from the base format inside `encoded`. If it recognizes
+    ///     the input already in transformed format, it must return `null`.
+    ///     If there is no transformed key format, `transform` must be `null`.
+    ///     Whatever the case, the ownership of the result is fully granted
+    ///     to this `NamedPKCS8Key` object.
+    public NamedPKCS8Key(String fname, byte[] encoded,
+            BiFunction<String, byte[], byte[]> transform) throws InvalidKeyException {
         super(encoded);
         this.fname = fname;
-        try {
-            paramSpec = new NamedParameterSpec(algid.getName());
-            if (algid.getEncodedParams() != null) {
-                throw new InvalidKeyException("algorithm identifier has params");
-            }
-            rawBytes = new DerInputStream(key).getOctetString();
-        } catch (IOException e) {
-            throw new InvalidKeyException("Cannot parse input", e);
+        this.transformed = transform == null ? null : transform.apply(algid.getName(), this.key);
+        paramSpec = new NamedParameterSpec(algid.getName());
+        if (algid.getEncodedParams() != null) {
+            throw new InvalidKeyException("algorithm identifier has params");
         }
     }
 
@@ -104,9 +135,16 @@ public final class NamedPKCS8Key extends PKCS8Key {
     }
 
     /// Returns the reference to the internal key. Caller must not modify
-    /// the content or keep a reference.
+    /// the content or pass the reference to untrusted application code.
     public byte[] getRawBytes() {
-        return rawBytes;
+        return key;
+    }
+
+    /// Returns the reference to the key that will be used in computations.
+    /// Caller must not modify the content or pass the reference to untrusted
+    /// application code.
+    public byte[] getTransformed() {
+        return transformed == null ? key : transformed;
     }
 
     @Override
@@ -128,8 +166,10 @@ public final class NamedPKCS8Key extends PKCS8Key {
 
     @Override
     public void destroy() throws DestroyFailedException {
-        Arrays.fill(rawBytes, (byte)0);
         Arrays.fill(key, (byte)0);
+        if (transformed != null) {
+            Arrays.fill(transformed, (byte)0);
+        }
         if (encodedKey != null) {
             Arrays.fill(encodedKey, (byte)0);
         }
