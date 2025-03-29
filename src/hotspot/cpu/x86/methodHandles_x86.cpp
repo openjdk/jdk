@@ -127,6 +127,7 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, Regist
   __ verify_method_ptr(method);
   if (VerifyMethodHandles) {
     Label L_ok;
+    assert_different_registers(method, temp);
 
     const Register method_holder = temp;
     __ load_method_holder(method_holder, method);
