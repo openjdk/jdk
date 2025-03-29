@@ -2529,8 +2529,6 @@ void Compile::Optimize() {
   }
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
- check_no_dead_use();
-
  // We will never use the NodeHash table any more. Clear it so that final_graph_reshaping does not have
  // to remove hashes to unlock nodes for modifications.
  C->node_hash()->clear();
@@ -2543,6 +2541,8 @@ void Compile::Optimize() {
      return;
    }
  }
+
+ check_no_dead_use();
 
  print_method(PHASE_OPTIMIZE_FINISHED, 2);
  DEBUG_ONLY(set_phase_optimize_finished();)
