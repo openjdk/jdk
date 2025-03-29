@@ -613,6 +613,22 @@ public class MergeStoreBench {
     }
 
     /**
+     * Test whether StringBuilder is MergeStored when appending 4 constant characters
+     */
+    @Benchmark
+    public void str4StringBuilderAppendChar(Blackhole BH) {
+        sb.setLength(0);
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            sb.append((char) STR_4_BYTES_LATIN1_BYTE_0);
+            sb.append((char) STR_4_BYTES_LATIN1_BYTE_1);
+            sb.append((char) STR_4_BYTES_LATIN1_BYTE_2);
+            sb.append((char) STR_4_BYTES_LATIN1_BYTE_3);
+        }
+        BH.consume(sb.length());
+    }
+
+    /**
      * Test whether the constant String with a length of 4 calls the getChars method to mergestore
      */
     @Benchmark
@@ -676,6 +692,22 @@ public class MergeStoreBench {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
             sb_utf16.append(STR_4);
+        }
+        BH.consume(sb_utf16.length());
+    }
+
+    /**
+     * Test whether the UTF16 StringBuilder is MergeStored when appending 4 constant characters
+     */
+    @Benchmark
+    public void str4Utf16StringBuilderAppendChar(Blackhole BH) {
+        sb_utf16.setLength(0);
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            sb_utf16.append((char) STR_4_BYTES_LATIN1_BYTE_0);
+            sb_utf16.append((char) STR_4_BYTES_LATIN1_BYTE_1);
+            sb_utf16.append((char) STR_4_BYTES_LATIN1_BYTE_2);
+            sb_utf16.append((char) STR_4_BYTES_LATIN1_BYTE_3);
         }
         BH.consume(sb_utf16.length());
     }
@@ -752,6 +784,23 @@ public class MergeStoreBench {
     }
 
     /**
+     * Test whether StringBuilder is MergeStored when appending 5 constant characters
+     */
+    @Benchmark
+    public void str5StringBuilderAppendChar(Blackhole BH) {
+        sb.setLength(0);
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            sb.append((char) STR_5_BYTES_LATIN1_BYTE_0);
+            sb.append((char) STR_5_BYTES_LATIN1_BYTE_1);
+            sb.append((char) STR_5_BYTES_LATIN1_BYTE_2);
+            sb.append((char) STR_5_BYTES_LATIN1_BYTE_3);
+            sb.append((char) STR_5_BYTES_LATIN1_BYTE_4);
+        }
+        BH.consume(sb.length());
+    }
+
+    /**
      * Test whether the constant String with a length of 5 calls the getChars method to mergestore
      */
     @Benchmark
@@ -817,6 +866,23 @@ public class MergeStoreBench {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
             sb_utf16.append(STR_5);
+        }
+        BH.consume(sb_utf16.length());
+    }
+
+    /**
+     * Test whether the UTF16 StringBuilder is MergeStored when appending 5 constant characters
+     */
+    @Benchmark
+    public void str5Utf16StringBuilderAppendChar(Blackhole BH) {
+        sb_utf16.setLength(0);
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            sb_utf16.append((char) STR_5_BYTES_LATIN1_BYTE_0);
+            sb_utf16.append((char) STR_5_BYTES_LATIN1_BYTE_1);
+            sb_utf16.append((char) STR_5_BYTES_LATIN1_BYTE_2);
+            sb_utf16.append((char) STR_5_BYTES_LATIN1_BYTE_3);
+            sb_utf16.append((char) STR_5_BYTES_LATIN1_BYTE_4);
         }
         BH.consume(sb_utf16.length());
     }
@@ -896,6 +962,25 @@ public class MergeStoreBench {
     }
 
     /**
+     * Test whether StringBuilder is MergeStored when appending 7 constant characters
+     */
+    @Benchmark
+    public void str7StringBuilderAppendChar(Blackhole BH) {
+        sb.setLength(0);
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            sb.append((char) STR_7_BYTES_LATIN1_BYTE_0);
+            sb.append((char) STR_7_BYTES_LATIN1_BYTE_1);
+            sb.append((char) STR_7_BYTES_LATIN1_BYTE_2);
+            sb.append((char) STR_7_BYTES_LATIN1_BYTE_3);
+            sb.append((char) STR_7_BYTES_LATIN1_BYTE_4);
+            sb.append((char) STR_7_BYTES_LATIN1_BYTE_5);
+            sb.append((char) STR_7_BYTES_LATIN1_BYTE_6);
+        }
+        BH.consume(sb.length());
+    }
+
+    /**
      * Test whether the constant String with a length of 7 calls the getChars method to mergestore
      */
     @Benchmark
@@ -964,6 +1049,25 @@ public class MergeStoreBench {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
             sb_utf16.append(STR_7);
+        }
+        BH.consume(sb_utf16.length());
+    }
+
+    /**
+     * Test whether the UTF16 StringBuilder is MergeStored when appending 7 constant characters
+     */
+    @Benchmark
+    public void str7Utf16StringBuilderAppendChar(Blackhole BH) {
+        sb_utf16.setLength(0);
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            sb_utf16.append((char) STR_7_BYTES_LATIN1_BYTE_0);
+            sb_utf16.append((char) STR_7_BYTES_LATIN1_BYTE_1);
+            sb_utf16.append((char) STR_7_BYTES_LATIN1_BYTE_2);
+            sb_utf16.append((char) STR_7_BYTES_LATIN1_BYTE_3);
+            sb_utf16.append((char) STR_7_BYTES_LATIN1_BYTE_4);
+            sb_utf16.append((char) STR_7_BYTES_LATIN1_BYTE_5);
+            sb_utf16.append((char) STR_7_BYTES_LATIN1_BYTE_6);
         }
         BH.consume(sb_utf16.length());
     }
