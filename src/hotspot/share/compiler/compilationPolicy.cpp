@@ -55,8 +55,6 @@
 int64_t CompilationPolicy::_start_time = 0;
 int CompilationPolicy::_c1_count = 0;
 int CompilationPolicy::_c2_count = 0;
-int CompilationPolicy::_c3_count = 0;
-int CompilationPolicy::_sc_count = 0;
 double CompilationPolicy::_increase_threshold_at_ratio = 0;
 
 CompilationPolicy::TrainingReplayQueue CompilationPolicy::_training_replay_queue;

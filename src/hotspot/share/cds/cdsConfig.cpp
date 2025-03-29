@@ -564,10 +564,6 @@ void CDSConfig::setup_compiler_args() {
     // JEP 483 workflow -- production
     FLAG_SET_ERGO(RecordTraining, false);
     FLAG_SET_ERGO_IF_DEFAULT(ReplayTraining, true);
-    if (UseSharedSpaces && FLAG_IS_DEFAULT(AOTMode)) {
-      log_info(cds)("Enabled -XX:AOTMode=on by default for troubleshooting Leyden prototype");
-      RequireSharedSpaces = true;
-    }
   } else {
     FLAG_SET_ERGO(ReplayTraining, false);
     FLAG_SET_ERGO(RecordTraining, false);

@@ -42,27 +42,26 @@ class MethodCounters : public Metadata {
  template <class T> friend class CppVtableCloner;
 
  private:
-  InvocationCounter   _invocation_counter;         // Incremented before each activation of the method - used to trigger frequency-based optimizations
-  InvocationCounter   _backedge_counter;           // Incremented before each backedge taken - used to trigger frequency-based optimizations
+  InvocationCounter _invocation_counter;         // Incremented before each activation of the method - used to trigger frequency-based optimizations
+  InvocationCounter _backedge_counter;           // Incremented before each backedge taken - used to trigger frequency-based optimizations
 
   // Back pointer to the Method*
   Method* _method;
 
-  Metadata*           _method_training_data;
-  jlong               _prev_time;                   // Previous time the rate was acquired
-  float               _rate;                        // Events (invocation and backedge counter increments) per millisecond
-  int                 _invoke_mask;                 // per-method Tier0InvokeNotifyFreqLog
-  int                 _backedge_mask;               // per-method Tier0BackedgeNotifyFreqLog
-  int                 _prev_event_count;            // Total number of events saved at previous callback
+  Metadata*         _method_training_data;
+  jlong             _prev_time;                   // Previous time the rate was acquired
+  float             _rate;                        // Events (invocation and backedge counter increments) per millisecond
+  int               _invoke_mask;                 // per-method Tier0InvokeNotifyFreqLog
+  int               _backedge_mask;               // per-method Tier0BackedgeNotifyFreqLog
+  int               _prev_event_count;            // Total number of events saved at previous callback
 #if COMPILER2_OR_JVMCI
-  u2                  _interpreter_throwout_count; // Count of times method was exited via exception while interpreting
+  u2                _interpreter_throwout_count; // Count of times method was exited via exception while interpreting
 #endif
 #if INCLUDE_JVMTI
-  u2                  _number_of_breakpoints;      // fullspeed debugging support
+  u2                _number_of_breakpoints;      // fullspeed debugging support
 #endif
-  u1                  _highest_comp_level;          // Highest compile level this method has ever seen.
-  u1                  _highest_osr_comp_level;      // Same for OSR level
-  bool                _training_data_lookup_failed;
+  u1                _highest_comp_level;          // Highest compile level this method has ever seen.
+  u1                _highest_osr_comp_level;      // Same for OSR level
 
   MethodCounters(const methodHandle& mh);
   MethodCounters();

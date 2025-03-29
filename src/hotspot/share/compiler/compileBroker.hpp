@@ -258,7 +258,6 @@ class CompileBroker: AllStatic {
     training_replay_t
   };
 
-  static Handle create_thread_oop(const char* name, TRAPS);
   static JavaThread* make_thread(ThreadType type, jobject thread_oop, CompileQueue* queue, AbstractCompiler* comp, JavaThread* THREAD);
   static void init_compiler_threads();
   static void init_training_replay();

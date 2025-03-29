@@ -372,7 +372,7 @@ private:
   static void iterate_roots(MetaspaceClosure* it);
   static void dump_training_data();
   static void cleanup_training_data();
-  static void serialize_training_data(SerializeClosure* soc);
+  static void serialize(SerializeClosure* soc);
   static void print_archived_training_data_on(outputStream* st);
   static void write_training_data_dictionary(TrainingDataDictionary* dictionary);
   static TrainingData* lookup_archived_training_data(const Key* k);
@@ -761,6 +761,10 @@ class MethodTrainingData : public TrainingData {
       _was_toplevel = true;
     }
     _level_mask |= level_mask(level);
+  }
+
+  void notice_toplevel_compilation(int level) {
+    _highest_top_level = MAX2(_highest_top_level, level);
   }
 
   static MethodTrainingData* make(const methodHandle& method,

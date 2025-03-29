@@ -474,7 +474,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   SystemDictionaryShared::serialize_dictionary_headers(soc);
   AOTLinkedClassBulkLoader::serialize(soc, true);
   FinalImageRecipes::serialize(soc);
-  TrainingData::serialize_training_data(soc);
+  TrainingData::serialize(soc);
   InstanceMirrorKlass::serialize_offsets(soc);
 
   // Dump/restore well known classes (pointers)
@@ -952,7 +952,7 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
   link_shared_classes(false/*not from jcmd*/, CHECK);
   log_info(cds)("Rewriting and linking classes: done");
   if (CDSConfig::is_dumping_final_static_archive()) {
-    assert(RecordTraining == false, "must be");
+    assert(!RecordTraining, "must be");
     if (CDSConfig::is_dumping_aot_linked_classes()) {
       RecordTraining = true;
     }

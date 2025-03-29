@@ -624,7 +624,6 @@ bool Method::install_training_method_data(const methodHandle& method) {
 // Build a MethodData* object to hold profiling information collected on this
 // method when requested.
 void Method::build_profiling_method_data(const methodHandle& method, TRAPS) {
-  ResourceMark rm;
   if (install_training_method_data(method)) {
     return;
   }

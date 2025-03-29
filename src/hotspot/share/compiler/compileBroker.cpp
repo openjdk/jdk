@@ -791,11 +791,6 @@ void CompileBroker::compilation_init(JavaThread* THREAD) {
   _initialized = true;
 }
 
-Handle CompileBroker::create_thread_oop(const char* name, TRAPS) {
-  Handle thread_oop = JavaThread::create_system_thread_object(name, CHECK_NH);
-  return thread_oop;
-}
-
 void TrainingReplayThread::training_replay_thread_entry(JavaThread* thread, TRAPS) {
   CompilationPolicy::replay_training_at_init_loop(thread);
 }
@@ -1041,7 +1036,7 @@ void CompileBroker::init_training_replay() {
   // Ensure any exceptions lead to vm_exit_during_initialization.
   EXCEPTION_MARK;
   if (TrainingData::have_data()) {
-    Handle thread_oop = create_thread_oop("Training replay thread", CHECK);
+    Handle thread_oop = JavaThread::create_system_thread_object("Training replay thread", CHECK);
     jobject thread_handle = JNIHandles::make_local(THREAD, thread_oop());
     make_thread(training_replay_t, thread_handle, nullptr, nullptr, THREAD);
   }
