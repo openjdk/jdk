@@ -141,6 +141,11 @@ class KlassClosure : public Closure {
   virtual void do_klass(Klass* k) = 0;
 };
 
+class ConstKlassClosure : public Closure {
+ public:
+  virtual void do_klass(const Klass* k) = 0;
+};
+
 class CLDClosure : public Closure {
  public:
   virtual void do_cld(ClassLoaderData* cld) = 0;
