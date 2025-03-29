@@ -701,11 +701,11 @@ public class MergeStoreBench {
     public void str5ArraySetConst(Blackhole BH) {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            bytes8[off    ] = STR_7_BYTES_LATIN1_BYTE_0;
-            bytes8[off + 1] = STR_7_BYTES_LATIN1_BYTE_1;
-            bytes8[off + 2] = STR_7_BYTES_LATIN1_BYTE_2;
-            bytes8[off + 3] = STR_7_BYTES_LATIN1_BYTE_3;
-            bytes8[off + 4] = STR_7_BYTES_LATIN1_BYTE_4;
+            bytes8[off    ] = STR_5_BYTES_LATIN1_BYTE_0;
+            bytes8[off + 1] = STR_5_BYTES_LATIN1_BYTE_1;
+            bytes8[off + 2] = STR_5_BYTES_LATIN1_BYTE_2;
+            bytes8[off + 3] = STR_5_BYTES_LATIN1_BYTE_3;
+            bytes8[off + 4] = STR_5_BYTES_LATIN1_BYTE_4;
             off += 6; // disable auto vector
         }
         BH.consume(off);
