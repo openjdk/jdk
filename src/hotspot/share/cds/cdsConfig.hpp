@@ -64,7 +64,7 @@ class CDSConfig : public AllStatic {
   static void check_aotmode_auto_or_on();
   static void check_aotmode_record();
   static void check_aotmode_create();
-
+  static void setup_compiler_args();
 public:
   // Used by jdk.internal.misc.CDS.getCDSConfigStatus();
   static const int IS_DUMPING_ARCHIVE              = 1 << 0;

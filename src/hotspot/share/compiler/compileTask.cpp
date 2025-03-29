@@ -125,6 +125,7 @@ void CompileTask::initialize(int compile_id,
   _nm_total_size = 0;
   _failure_reason = nullptr;
   _failure_reason_on_C_heap = false;
+  _training_data = nullptr;
   _arena_bytes = 0;
 
   if (LogCompilation) {
