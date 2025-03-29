@@ -1187,21 +1187,11 @@ public class Main {
                 compareSigners(cenEntry, locEntry);
             }
 
-            List<String> cenEntries = jarFile.stream()
+            jarFile.stream()
                     .map(JarEntry::getName)
-                    .collect(Collectors.toList());
-
-            Set<String> cenEntrySet = cenEntries.getFirst().equals(JarFile.MANIFEST_NAME)
-                    ? new HashSet<>(cenEntries.subList(1, cenEntries.size()))
-                    : new HashSet<>(cenEntries);
-
-            for (String cenEntry : cenEntrySet) {
-                if (!locEntries.contains(cenEntry)) {
-                    crossChkWarnings.add(String.format(rb.getString(
-                            "entry.1.present.when.reading.jarfile.but.missing.via.jarinputstream"),
-                            cenEntry));
-                }
-            }
+                    .filter(n -> !locEntries.contains(n) && !n.equals(JarFile.MANIFEST_NAME))
+                    .forEach(n -> crossChkWarnings.add(String.format(rb.getString(
+                            "entry.1.present.when.reading.jarfile.but.missing.via.jarinputstream"), n)));
         }
     }
 
