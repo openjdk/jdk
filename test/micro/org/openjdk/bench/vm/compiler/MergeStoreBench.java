@@ -59,16 +59,28 @@ public class MergeStoreBench {
     private static final int STR_4_BYTES_LATIN1_INT = UNSAFE.getInt(STR_4_BYTES_LATIN1, Unsafe.ARRAY_BYTE_BASE_OFFSET);
     private static final long STR_4_BYTES_UTF16_LONG = UNSAFE.getLong(STR_4_BYTES_UTF16, Unsafe.ARRAY_BYTE_BASE_OFFSET);
 
+    private static final String STR_5 = "false";
+    private static final byte[] STR_5_BYTES_LATIN1 = STR_5.getBytes(java.nio.charset.StandardCharsets.ISO_8859_1);
+    private static final byte[] STR_5_BYTES_UTF16 = STR_5.getBytes(
+            ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN ? StandardCharsets.UTF_16BE : StandardCharsets.UTF_16LE);
+    private static final int STR_5_BYTES_LATIN1_INT = UNSAFE.getInt(STR_5_BYTES_LATIN1, Unsafe.ARRAY_BYTE_BASE_OFFSET);
+    private static final byte STR_5_BYTES_LATIN1_BYTE = STR_5_BYTES_LATIN1[4];
+    private static final long STR_5_BYTES_UTF16_LONG = UNSAFE.getLong(STR_5_BYTES_UTF16, Unsafe.ARRAY_BYTE_BASE_OFFSET);
+    private static final short STR_5_BYTES_UTF16_SHORT = UNSAFE.getShort(STR_5_BYTES_UTF16, Unsafe.ARRAY_BYTE_BASE_OFFSET + 8);
+
     final static int NUMBERS = 8192;
 
     final byte[] bytes4 = new byte[NUMBERS * 4];
+    final byte[] bytes5 = new byte[NUMBERS * 5];
     final byte[] bytes8 = new byte[NUMBERS * 8];
+    final byte[] bytes10 = new byte[NUMBERS * 10];
     final int [] ints   = new int [NUMBERS    ];
     final long[] longs  = new long[NUMBERS    ];
     final char[] chars  = new char[NUMBERS    ];
     final char[] chars4 = new char[NUMBERS * 4];
-    final StringBuilder sb = new StringBuilder(NUMBERS * 4);
-    final StringBuilder sb_utf16 = new StringBuilder(NUMBERS * 8).append('\u4e2d');
+    final char[] chars5 = new char[NUMBERS * 5];
+    final StringBuilder sb = new StringBuilder(NUMBERS * 5);
+    final StringBuilder sb_utf16 = new StringBuilder(NUMBERS * 10).append('\u4e2d');
 
     @Setup
     public void setup() {
@@ -530,7 +542,7 @@ public class MergeStoreBench {
     }
 
     /**
-     * Test the performance of Unsafe.putInt, used as a benchmark for comparison with other putNull Benchmarks
+     * Test the performance of Unsafe.putInt, used as a benchmark for comparison with other str4 Benchmarks
      */
     @Benchmark
     public void str4UnsafePutInt(Blackhole BH) {
@@ -552,7 +564,7 @@ public class MergeStoreBench {
         for (int i = 0; i < NUMBERS; i++) {
             sb.append(STR_4);
         }
-        BH.consume(sb_utf16.length());
+        BH.consume(sb.length());
     }
 
     /**
@@ -569,7 +581,7 @@ public class MergeStoreBench {
     }
 
     /**
-     * Test the performance of putLong for comparison with other putNull_utf16 benchmarks
+     * Test the performance of putLong for comparison with other str4Utf16 benchmarks
      */
     @Benchmark
     public void str4Utf16UnsafePutLong(Blackhole BH) {
@@ -603,6 +615,99 @@ public class MergeStoreBench {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
             sb_utf16.append(STR_4);
+        }
+        BH.consume(sb_utf16.length());
+    }
+
+    /**
+     * Test whether a constant byte[] with a length of 5 is MergeStored when arraycopy is called
+     */
+    @Benchmark
+    public void str5Arraycopy(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            System.arraycopy(STR_5_BYTES_LATIN1, 0, bytes5, off, 5);
+            off += 5;
+        }
+        BH.consume(off);
+    }
+
+    /**
+     * Test the performance of Unsafe.putInt, used as a benchmark for comparison with other str5 Benchmarks
+     */
+    @Benchmark
+    public void str5UnsafePutInt(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            UNSAFE.putInt(bytes5, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, STR_5_BYTES_LATIN1_INT);
+            UNSAFE.putByte(bytes5, Unsafe.ARRAY_BYTE_BASE_OFFSET + off + 4, STR_5_BYTES_LATIN1_BYTE);
+            off += 5;
+        }
+        BH.consume(off);
+    }
+
+    /**
+     * Test whether StringBuilder is MergeStored when appending a constant String of length 5
+     */
+    @Benchmark
+    public void str5StringBuilder(Blackhole BH) {
+        sb.setLength(0);
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            sb.append(STR_5);
+        }
+        BH.consume(sb.length());
+    }
+
+    /**
+     * Test whether the constant String with a length of 5 calls the getChars method to mergestore
+     */
+    @Benchmark
+    public void str5GetChars(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            STR_5.getChars(0, 5, chars5, off);
+            off += 5;
+        }
+        BH.consume(off);
+    }
+
+    /**
+     * Test the performance of putLong for comparison with other str5Utf16 benchmarks
+     */
+    @Benchmark
+    public void str5Utf16UnsafePutLong(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            UNSAFE.putLong(bytes8, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, STR_5_BYTES_UTF16_LONG);
+            UNSAFE.putShort(bytes8, Unsafe.ARRAY_BYTE_BASE_OFFSET + off + 8, STR_5_BYTES_UTF16_SHORT);
+            off += 10;
+        }
+        BH.consume(off);
+    }
+
+    /**
+     * Test whether the byte[] arraycopy with a length of 10 is MergeStore
+     */
+    @Benchmark
+    public void str5Utf16ArrayCopy(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            System.arraycopy(STR_5_BYTES_UTF16, 0, bytes8, off, 10);
+            off += 10;
+        }
+        BH.consume(off);
+    }
+
+    /**
+     * Test whether the UTF16 StringBuilder appends a constant String of length 5 to MergeStore
+     */
+    @Benchmark
+    public void str5Utf16StringBuilder(Blackhole BH) {
+        sb_utf16.setLength(0);
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            sb_utf16.append(STR_5);
         }
         BH.consume(sb_utf16.length());
     }
