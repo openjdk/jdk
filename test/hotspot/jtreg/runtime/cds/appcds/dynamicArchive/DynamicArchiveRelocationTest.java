@@ -39,10 +39,14 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
+import jdk.test.whitebox.WhiteBox;
 import jtreg.SkippedException;
 
 public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
+    static int relocationMode = -1;
     public static void main(String... args) throws Exception {
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        relocationMode = wb.getArchiveRelocationMode();
         try {
             testOuter();
         } catch (SkippedException s) {
@@ -104,7 +108,7 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
               logArg,
               "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
-                    if (dump_top_reloc) {
+                    if (dump_top_reloc && relocationMode != 0 /* ArchiveRelocationMode could be set via -javaoptions */) {
                         output.shouldContain(runtimeMsg);
                     } else {
                         output.shouldContain(relocationModeMsg);
@@ -117,7 +121,7 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
              logArg,
             "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
-                    if (run_reloc) {
+                    if (run_reloc && relocationMode != 0 /* ArchiveRelocationMode could be set via -javaoptions */) {
                         output.shouldContain(runtimeMsg);
                     } else {
                         output.shouldContain(relocationModeMsg);
