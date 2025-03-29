@@ -26,7 +26,6 @@
  * @bug 8174994
  * @summary Test the clhsdb commands 'jstack', 'printall', 'where' with CDS enabled
  * @requires vm.hasSA & vm.cds
- * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm/timeout=2400 -Xmx1g ClhsdbCDSJstackPrintAll
  */

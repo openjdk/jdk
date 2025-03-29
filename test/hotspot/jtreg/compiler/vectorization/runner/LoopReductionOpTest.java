@@ -37,7 +37,6 @@
  *
  * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64") | (os.simpleArch == "riscv64")
  * @requires vm.compiler2.enabled
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  *
  */
 

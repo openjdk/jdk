@@ -42,7 +42,6 @@
  * @test id=Xcomp
  * @library /test/lib
  * @requires vm.continuations & vm.opt.LockingMode != 1
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @modules java.base/java.lang:+open
  * @run junit/othervm -Xcomp MiscMonitorTests
  */
@@ -51,7 +50,6 @@
  * @test id=Xcomp-TieredStopAtLevel3
  * @library /test/lib
  * @requires vm.continuations & vm.opt.LockingMode != 1
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @modules java.base/java.lang:+open
  * @run junit/othervm -Xcomp -XX:TieredStopAtLevel=3 MiscMonitorTests
  */
@@ -61,7 +59,6 @@
  * @summary Test virtual threads using synchronized
  * @library /test/lib
  * @requires vm.continuations & vm.opt.LockingMode != 1
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @modules java.base/java.lang:+open
  * @run junit/othervm -Xcomp -XX:-TieredCompilation MiscMonitorTests
  */
@@ -69,7 +66,6 @@
 /*
  * @test id=gc
  * @requires vm.debug == true & vm.continuations & vm.opt.LockingMode != 1
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @modules java.base/java.lang:+open
  * @run junit/othervm -XX:+UnlockDiagnosticVMOptions -XX:+FullGCALot -XX:FullGCALotInterval=1000 MiscMonitorTests

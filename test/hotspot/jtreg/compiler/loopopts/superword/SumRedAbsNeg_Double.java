@@ -25,7 +25,6 @@
  * @test
  * @bug 8138583
  * @summary Add C2 AArch64 Superword support for scalar sum reduction optimizations : double abs & neg test
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.SumRedAbsNeg_Double
  */

@@ -28,7 +28,6 @@
  * @requires vm.flagless
  * @requires vm.cds
  * @requires (os.family != "windows") & (os.family != "aix")
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

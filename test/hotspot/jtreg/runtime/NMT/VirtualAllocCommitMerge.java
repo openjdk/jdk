@@ -27,7 +27,6 @@
  * @comment needs to be executed with -Xint (or, alternatively, -Xcomp -Xbatch) since it relies on comparing
  *          NMT call stacks, and we must make sure that all functions on the stack that NMT sees are either compiled
  *          from the get-go or stay always interpreted.
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

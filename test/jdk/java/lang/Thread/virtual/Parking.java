@@ -41,7 +41,6 @@
 /*
  * @test id=Xcomp
  * @modules java.base/java.lang:+open jdk.management
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @build LockingMode
  * @run junit/othervm -Xcomp Parking
@@ -50,7 +49,6 @@
 /*
  * @test id=Xcomp-noTieredCompilation
  * @modules java.base/java.lang:+open jdk.management
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @build LockingMode
  * @run junit/othervm -Xcomp -XX:-TieredCompilation Parking

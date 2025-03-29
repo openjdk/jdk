@@ -31,7 +31,6 @@ import compiler.lib.ir_framework.*;
  * @test
  * @bug 8275847
  * @requires vm.compiler2.enabled
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @summary Test that small method with runtime calls can be scheduled.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestScheduleSmallMethod

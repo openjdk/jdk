@@ -37,7 +37,6 @@ import jdk.test.lib.SA.SATestUtils;
  * @test
  * @bug 8214226 8243500
  * @requires vm.hasSA
- * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @requires os.family=="windows" | os.family == "linux" | os.family == "mac"
  * @requires vm.flagless

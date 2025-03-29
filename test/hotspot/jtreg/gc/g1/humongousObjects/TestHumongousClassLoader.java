@@ -42,7 +42,6 @@ import java.nio.file.Paths;
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @requires vm.opt.ClassUnloading  != false
  * @requires vm.opt.ClassUnloadingWithConcurrentMark  != false
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management

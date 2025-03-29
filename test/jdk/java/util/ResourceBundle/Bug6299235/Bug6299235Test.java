@@ -27,7 +27,6 @@
  * @summary test Bug 6299235 to make sure the third-party provided sun resources
  *          could be picked up.
  * @modules java.desktop
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library patches
  * @build java.desktop/sun.awt.resources.awt_ru_RU
  * @run main Bug6299235Test

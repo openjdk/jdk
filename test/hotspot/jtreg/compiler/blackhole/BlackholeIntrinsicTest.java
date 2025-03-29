@@ -26,7 +26,6 @@
  * @library /test/lib /
  * @requires vm.flagless
  * @requires vm.compMode != "Xint"
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @run driver compiler.blackhole.BlackholeIntrinsicTest
  */
 

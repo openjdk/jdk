@@ -32,7 +32,6 @@ import sun.awt.SunToolkit;
  *          a child of the main root group doesn't throw an exception.
  * @modules java.desktop/sun.awt
  *          java.logging
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @build TestMainAppContext
  * @run main/othervm TestMainAppContext
  * @author danielfuchs

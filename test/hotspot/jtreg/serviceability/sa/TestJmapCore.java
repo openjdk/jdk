@@ -25,7 +25,6 @@
  * @test TestJmapCore
  * @summary Test verifies that jhsdb jmap could generate heap dump from core when heap is full
  * @requires vm.hasSA
- * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver/timeout=480 TestJmapCore run heap
  */

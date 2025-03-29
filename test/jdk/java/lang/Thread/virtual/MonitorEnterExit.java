@@ -65,7 +65,6 @@
 /*
  * @test id=Xcomp-LM_LEGACY
  * @modules java.base/java.lang:+open jdk.management
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @build LockingMode
  * @run junit/othervm/native -Xcomp -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
@@ -74,7 +73,6 @@
 /*
  * @test id=Xcomp-LM_LIGHTWEIGHT
  * @modules java.base/java.lang:+open jdk.management
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @build LockingMode
  * @run junit/othervm/native -Xcomp -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
@@ -83,7 +81,6 @@
 /*
  * @test id=Xcomp-TieredStopAtLevel1-LM_LEGACY
  * @modules java.base/java.lang:+open jdk.management
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @build LockingMode
  * @run junit/othervm/native -Xcomp -XX:TieredStopAtLevel=1 -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
@@ -92,7 +89,6 @@
 /*
  * @test id=Xcomp-TieredStopAtLevel1-LM_LIGHTWEIGHT
  * @modules java.base/java.lang:+open jdk.management
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @build LockingMode
  * @run junit/othervm/native -Xcomp -XX:TieredStopAtLevel=1 -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
@@ -101,7 +97,6 @@
 /*
  * @test id=Xcomp-noTieredCompilation-LM_LEGACY
  * @modules java.base/java.lang:+open jdk.management
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @build LockingMode
  * @run junit/othervm/native -Xcomp -XX:-TieredCompilation -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
@@ -110,7 +105,6 @@
 /*
  * @test id=Xcomp-noTieredCompilation-LM_LIGHTWEIGHT
  * @modules java.base/java.lang:+open jdk.management
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @library /test/lib
  * @build LockingMode
  * @run junit/othervm/native -Xcomp -XX:-TieredCompilation -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit

@@ -27,7 +27,6 @@
  * @summary Ensure that ConnectionGraph::find_inst_mem does not cause a stack
  *          overflow.
  *
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @run main/othervm -Xcomp -XX:CompileThreshold=10 -XX:-TieredCompilation
  *                   -XX:CompileCommand=CompileOnly,javax.swing.plaf.basic.BasicLookAndFeel::initComponentDefaults
  *                   compiler.escapeAnalysis.TestFindInstMemRecursion

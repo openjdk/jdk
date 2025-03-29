@@ -33,7 +33,6 @@ import javax.imageio.ImageIO;
  *          VM mode: it would not test the intended behavior.
  * @modules java.desktop
  *          java.logging
- * @requires os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*")
  * @run main/othervm TestLoggingWithMainAppContext
  */
 public class TestLoggingWithMainAppContext {

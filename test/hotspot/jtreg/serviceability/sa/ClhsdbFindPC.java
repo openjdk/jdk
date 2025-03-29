@@ -50,7 +50,6 @@ import jtreg.SkippedException;
  * @summary Test the clhsdb 'findpc' command with Xcomp on core file
  * @requires vm.compMode != "Xcomp"
  * @requires vm.hasSA
- * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires vm.compiler1.enabled
  * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
@@ -73,7 +72,6 @@ import jtreg.SkippedException;
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command w/o Xcomp on core file
  * @requires vm.hasSA
- * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires vm.compiler1.enabled
  * @library /test/lib
  * @run main/othervm/timeout=480 ClhsdbFindPC false true
