@@ -52,6 +52,16 @@ public class MergeStoreBench {
             CHAR_L = MethodHandles.byteArrayViewVarHandle(char[].class, ByteOrder.LITTLE_ENDIAN),
             CHAR_B = MethodHandles.byteArrayViewVarHandle(char[].class, ByteOrder.BIG_ENDIAN);
 
+    final static long FIELD_OFFSET_STR_BUILDER_VALUE;
+    final static long FIELD_OFFSET_STR_BUILDER_CODER;
+    final static long FIELD_OFFSET_STR_BUILDER_COUNT;
+    static {
+        Class<?> clazz = StringBuilder.class.getSuperclass();
+        FIELD_OFFSET_STR_BUILDER_VALUE = UNSAFE.objectFieldOffset(clazz, "value");
+        FIELD_OFFSET_STR_BUILDER_CODER = UNSAFE.objectFieldOffset(clazz, "coder");
+        FIELD_OFFSET_STR_BUILDER_COUNT = UNSAFE.objectFieldOffset(clazz, "count");
+    }
+
     private static final String STR_4 = "null";
     private static final byte[] STR_4_BYTES_LATIN1 = STR_4.getBytes(java.nio.charset.StandardCharsets.ISO_8859_1);
     private static final byte[] STR_4_BYTES_UTF16 = STR_4.getBytes(
@@ -108,8 +118,8 @@ public class MergeStoreBench {
     final char[] chars  = new char[NUMBERS    ];
     final char[] chars5 = new char[NUMBERS * 5];
     final char[] chars10 = new char[NUMBERS * 10];
-    final StringBuilder sb = new StringBuilder(NUMBERS * 7);
-    final StringBuilder sb_utf16 = new StringBuilder(NUMBERS * 14).append('\u4e2d');
+    final StringBuilder sb = new StringBuilder(NUMBERS * 10);
+    final StringBuilder sb_utf16 = new StringBuilder(NUMBERS * 10).append('\u4e2d');
 
     @Setup
     public void setup() {
@@ -628,6 +638,47 @@ public class MergeStoreBench {
         BH.consume(sb.length());
     }
 
+    private static void str4AppendUnsafePut(StringBuilder sb, char c0, char c1, char c2, char c3) {
+        byte[] value = (byte[]) UNSAFE.getReference(sb, FIELD_OFFSET_STR_BUILDER_VALUE);
+        byte coder = UNSAFE.getByte(sb, FIELD_OFFSET_STR_BUILDER_CODER);
+        int count = UNSAFE.getInt(sb, FIELD_OFFSET_STR_BUILDER_COUNT);
+        if (count + 4 >= (value.length >> coder)) {
+            sb.ensureCapacity(count + 4);
+            value = (byte[]) UNSAFE.getReference(sb, FIELD_OFFSET_STR_BUILDER_VALUE);
+        }
+        if (coder == 0) {
+            value[count    ] = (byte) c0;
+            value[count + 1] = (byte) c1;
+            value[count + 2] = (byte) c2;
+            value[count + 3] = (byte) c3;
+        } else {
+            long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) count << 1);
+            UNSAFE.putChar(value, address    , c0);
+            UNSAFE.putChar(value, address + 2, c1);
+            UNSAFE.putChar(value, address + 4, c2);
+            UNSAFE.putChar(value, address + 6, c3);
+        }
+        UNSAFE.putInt(sb, FIELD_OFFSET_STR_BUILDER_COUNT, count + 5); // disable auto vector
+    }
+
+    /**
+     * Test whether StringBuilder is MergeStored when appending 4 constant characters
+     */
+    @Benchmark
+    public void str4StringBuilderUnsafePut(Blackhole BH) {
+        sb.setLength(0);
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            str4AppendUnsafePut(
+                    sb,
+                    (char) STR_4_BYTES_LATIN1_BYTE_0,
+                    (char) STR_4_BYTES_LATIN1_BYTE_1,
+                    (char) STR_4_BYTES_LATIN1_BYTE_2,
+                    (char) STR_4_BYTES_LATIN1_BYTE_3);
+        }
+        BH.consume(sb.length());
+    }
+
     /**
      * Test whether the constant String with a length of 4 calls the getChars method to mergestore
      */
@@ -688,12 +739,13 @@ public class MergeStoreBench {
      */
     @Benchmark
     public void str4Utf16StringBuilder(Blackhole BH) {
-        sb_utf16.setLength(0);
+        var sb = sb_utf16;
+        sb.setLength(0);
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            sb_utf16.append(STR_4);
+            sb.append(STR_4);
         }
-        BH.consume(sb_utf16.length());
+        BH.consume(sb.length());
     }
 
     /**
@@ -701,15 +753,35 @@ public class MergeStoreBench {
      */
     @Benchmark
     public void str4Utf16StringBuilderAppendChar(Blackhole BH) {
-        sb_utf16.setLength(0);
+        var sb = sb_utf16;
+        sb.setLength(0);
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            sb_utf16.append((char) STR_4_BYTES_LATIN1_BYTE_0);
-            sb_utf16.append((char) STR_4_BYTES_LATIN1_BYTE_1);
-            sb_utf16.append((char) STR_4_BYTES_LATIN1_BYTE_2);
-            sb_utf16.append((char) STR_4_BYTES_LATIN1_BYTE_3);
+            sb.append((char) STR_4_BYTES_LATIN1_BYTE_0);
+            sb.append((char) STR_4_BYTES_LATIN1_BYTE_1);
+            sb.append((char) STR_4_BYTES_LATIN1_BYTE_2);
+            sb.append((char) STR_4_BYTES_LATIN1_BYTE_3);
         }
-        BH.consume(sb_utf16.length());
+        BH.consume(sb.length());
+    }
+
+    /**
+     * Test whether StringBuilder is MergeStored when appending 4 constant characters
+     */
+    @Benchmark
+    public void str4Utf16StringBuilderUnsafePut(Blackhole BH) {
+        StringBuilder sb = sb_utf16;
+        sb.setLength(0);
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            str4AppendUnsafePut(
+                    sb,
+                    (char) STR_4_BYTES_LATIN1_BYTE_0,
+                    (char) STR_4_BYTES_LATIN1_BYTE_1,
+                    (char) STR_4_BYTES_LATIN1_BYTE_2,
+                    (char) STR_4_BYTES_LATIN1_BYTE_3);
+        }
+        BH.consume(sb.length());
     }
 
     /**
@@ -800,6 +872,50 @@ public class MergeStoreBench {
         BH.consume(sb.length());
     }
 
+    private static void str5AppendUnsafePut(StringBuilder sb, char c0, char c1, char c2, char c3, char c4) {
+        byte[] value = (byte[]) UNSAFE.getReference(sb, FIELD_OFFSET_STR_BUILDER_VALUE);
+        byte coder = UNSAFE.getByte(sb, FIELD_OFFSET_STR_BUILDER_CODER);
+        int count = UNSAFE.getInt(sb, FIELD_OFFSET_STR_BUILDER_COUNT);
+        if (count + 4 >= (value.length >> coder)) {
+            sb.ensureCapacity(count + 4);
+            value = (byte[]) UNSAFE.getReference(sb, FIELD_OFFSET_STR_BUILDER_VALUE);
+        }
+        if (coder == 0) {
+            value[count    ] = (byte) c0;
+            value[count + 1] = (byte) c1;
+            value[count + 2] = (byte) c2;
+            value[count + 3] = (byte) c3;
+            value[count + 4] = (byte) c4;
+        } else {
+            long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) count << 1);
+            UNSAFE.putChar(value, address    , c0);
+            UNSAFE.putChar(value, address + 2, c1);
+            UNSAFE.putChar(value, address + 4, c2);
+            UNSAFE.putChar(value, address + 6, c3);
+            UNSAFE.putChar(value, address + 8, c4);
+        }
+        UNSAFE.putInt(sb, FIELD_OFFSET_STR_BUILDER_COUNT, count + 6); // disable auto vector
+    }
+
+    /**
+     * Test whether StringBuilder is MergeStored when appending 4 constant characters
+     */
+    @Benchmark
+    public void str5StringBuilderUnsafePut(Blackhole BH) {
+        sb.setLength(0);
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            str5AppendUnsafePut(
+                    sb,
+                    (char) STR_5_BYTES_LATIN1_BYTE_0,
+                    (char) STR_5_BYTES_LATIN1_BYTE_1,
+                    (char) STR_5_BYTES_LATIN1_BYTE_2,
+                    (char) STR_5_BYTES_LATIN1_BYTE_3,
+                    (char) STR_5_BYTES_LATIN1_BYTE_4);
+        }
+        BH.consume(sb.length());
+    }
+
     /**
      * Test whether the constant String with a length of 5 calls the getChars method to mergestore
      */
@@ -862,12 +978,13 @@ public class MergeStoreBench {
      */
     @Benchmark
     public void str5Utf16StringBuilder(Blackhole BH) {
-        sb_utf16.setLength(0);
+        StringBuilder sb = sb_utf16;
+        sb.setLength(0);
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            sb_utf16.append(STR_5);
+            sb.append(STR_5);
         }
-        BH.consume(sb_utf16.length());
+        BH.consume(sb.length());
     }
 
     /**
@@ -875,16 +992,36 @@ public class MergeStoreBench {
      */
     @Benchmark
     public void str5Utf16StringBuilderAppendChar(Blackhole BH) {
-        sb_utf16.setLength(0);
+        StringBuilder sb = sb_utf16;
+        sb.setLength(0);
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            sb_utf16.append((char) STR_5_BYTES_LATIN1_BYTE_0);
-            sb_utf16.append((char) STR_5_BYTES_LATIN1_BYTE_1);
-            sb_utf16.append((char) STR_5_BYTES_LATIN1_BYTE_2);
-            sb_utf16.append((char) STR_5_BYTES_LATIN1_BYTE_3);
-            sb_utf16.append((char) STR_5_BYTES_LATIN1_BYTE_4);
+            sb.append((char) STR_5_BYTES_LATIN1_BYTE_0);
+            sb.append((char) STR_5_BYTES_LATIN1_BYTE_1);
+            sb.append((char) STR_5_BYTES_LATIN1_BYTE_2);
+            sb.append((char) STR_5_BYTES_LATIN1_BYTE_3);
+            sb.append((char) STR_5_BYTES_LATIN1_BYTE_4);
         }
-        BH.consume(sb_utf16.length());
+        BH.consume(sb.length());
+    }
+
+    /**
+     * Test whether StringBuilder is MergeStored when appending 4 constant characters
+     */
+    @Benchmark
+    public void str5Utf16StringBuilderUnsafePut(Blackhole BH) {
+        sb.setLength(0);
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            str5AppendUnsafePut(
+                    sb,
+                    (char) STR_5_BYTES_LATIN1_BYTE_0,
+                    (char) STR_5_BYTES_LATIN1_BYTE_1,
+                    (char) STR_5_BYTES_LATIN1_BYTE_2,
+                    (char) STR_5_BYTES_LATIN1_BYTE_3,
+                    (char) STR_5_BYTES_LATIN1_BYTE_4);
+        }
+        BH.consume(sb.length());
     }
 
     /**
@@ -980,6 +1117,56 @@ public class MergeStoreBench {
         BH.consume(sb.length());
     }
 
+    private static void str7AppendUnsafePut(StringBuilder sb, char c0, char c1, char c2, char c3, char c4, char c5, char c6) {
+        byte[] value = (byte[]) UNSAFE.getReference(sb, FIELD_OFFSET_STR_BUILDER_VALUE);
+        byte coder = UNSAFE.getByte(sb, FIELD_OFFSET_STR_BUILDER_CODER);
+        int count = UNSAFE.getInt(sb, FIELD_OFFSET_STR_BUILDER_COUNT);
+        if (count + 4 >= (value.length >> coder)) {
+            sb.ensureCapacity(count + 4);
+            value = (byte[]) UNSAFE.getReference(sb, FIELD_OFFSET_STR_BUILDER_VALUE);
+        }
+        if (coder == 0) {
+            value[count    ] = (byte) c0;
+            value[count + 1] = (byte) c1;
+            value[count + 2] = (byte) c2;
+            value[count + 3] = (byte) c3;
+            value[count + 4] = (byte) c4;
+            value[count + 5] = (byte) c5;
+            value[count + 6] = (byte) c6;
+        } else {
+            long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) count << 1);
+            UNSAFE.putChar(value, address     , c0);
+            UNSAFE.putChar(value, address +  2, c1);
+            UNSAFE.putChar(value, address +  4, c2);
+            UNSAFE.putChar(value, address +  6, c3);
+            UNSAFE.putChar(value, address +  8, c4);
+            UNSAFE.putChar(value, address + 10, c5);
+            UNSAFE.putChar(value, address + 12, c6);
+        }
+        UNSAFE.putInt(sb, FIELD_OFFSET_STR_BUILDER_COUNT, count + 8); // disable auto vector
+    }
+
+    /**
+     * Test whether StringBuilder is MergeStored when appending 4 constant characters
+     */
+    @Benchmark
+    public void str7StringBuilderUnsafePut(Blackhole BH) {
+        sb.setLength(0);
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            str7AppendUnsafePut(
+                    sb,
+                    (char) STR_7_BYTES_LATIN1_BYTE_0,
+                    (char) STR_7_BYTES_LATIN1_BYTE_1,
+                    (char) STR_7_BYTES_LATIN1_BYTE_2,
+                    (char) STR_7_BYTES_LATIN1_BYTE_3,
+                    (char) STR_7_BYTES_LATIN1_BYTE_4,
+                    (char) STR_7_BYTES_LATIN1_BYTE_5,
+                    (char) STR_7_BYTES_LATIN1_BYTE_6);
+        }
+        BH.consume(sb.length());
+    }
+
     /**
      * Test whether the constant String with a length of 7 calls the getChars method to mergestore
      */
@@ -1045,12 +1232,13 @@ public class MergeStoreBench {
      */
     @Benchmark
     public void str7Utf16StringBuilder(Blackhole BH) {
-        sb_utf16.setLength(0);
+        var sb = sb_utf16;
+        sb.setLength(0);
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            sb_utf16.append(STR_7);
+            sb.append(STR_7);
         }
-        BH.consume(sb_utf16.length());
+        BH.consume(sb.length());
     }
 
     /**
@@ -1058,18 +1246,41 @@ public class MergeStoreBench {
      */
     @Benchmark
     public void str7Utf16StringBuilderAppendChar(Blackhole BH) {
-        sb_utf16.setLength(0);
+        var sb = sb_utf16;
+        sb.setLength(0);
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            sb_utf16.append((char) STR_7_BYTES_LATIN1_BYTE_0);
-            sb_utf16.append((char) STR_7_BYTES_LATIN1_BYTE_1);
-            sb_utf16.append((char) STR_7_BYTES_LATIN1_BYTE_2);
-            sb_utf16.append((char) STR_7_BYTES_LATIN1_BYTE_3);
-            sb_utf16.append((char) STR_7_BYTES_LATIN1_BYTE_4);
-            sb_utf16.append((char) STR_7_BYTES_LATIN1_BYTE_5);
-            sb_utf16.append((char) STR_7_BYTES_LATIN1_BYTE_6);
+            sb.append((char) STR_7_BYTES_LATIN1_BYTE_0);
+            sb.append((char) STR_7_BYTES_LATIN1_BYTE_1);
+            sb.append((char) STR_7_BYTES_LATIN1_BYTE_2);
+            sb.append((char) STR_7_BYTES_LATIN1_BYTE_3);
+            sb.append((char) STR_7_BYTES_LATIN1_BYTE_4);
+            sb.append((char) STR_7_BYTES_LATIN1_BYTE_5);
+            sb.append((char) STR_7_BYTES_LATIN1_BYTE_6);
         }
-        BH.consume(sb_utf16.length());
+        BH.consume(sb.length());
+    }
+
+    /**
+     * Test whether StringBuilder is MergeStored when appending 4 constant characters
+     */
+    @Benchmark
+    public void str7Utf16StringBuilderUnsafePut(Blackhole BH) {
+        var sb = sb_utf16;
+        sb.setLength(0);
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            str7AppendUnsafePut(
+                    sb,
+                    (char) STR_7_BYTES_LATIN1_BYTE_0,
+                    (char) STR_7_BYTES_LATIN1_BYTE_1,
+                    (char) STR_7_BYTES_LATIN1_BYTE_2,
+                    (char) STR_7_BYTES_LATIN1_BYTE_3,
+                    (char) STR_7_BYTES_LATIN1_BYTE_4,
+                    (char) STR_7_BYTES_LATIN1_BYTE_5,
+                    (char) STR_7_BYTES_LATIN1_BYTE_6);
+        }
+        BH.consume(sb.length());
     }
 
     static void setIntB(byte[] array, int offset, int value) {
