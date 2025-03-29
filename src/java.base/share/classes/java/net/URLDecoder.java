@@ -29,6 +29,7 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.HexFormat;
 import java.util.Objects;
 
 /**
@@ -204,7 +205,7 @@ public final class URLDecoder {
 
                     while ( ((i+2) < numChars) &&
                             (c=='%')) {
-                        int v = Integer.parseInt(s, i + 1, i + 3, 16);
+                        int v = HexFormat.fromHexDigits(s, i + 1, i + 3);
                         if (v < 0)
                             throw new IllegalArgumentException(
                                     "URLDecoder: Illegal hex characters in escape "
