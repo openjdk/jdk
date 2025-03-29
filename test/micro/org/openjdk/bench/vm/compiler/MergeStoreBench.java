@@ -58,6 +58,10 @@ public class MergeStoreBench {
             ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN ? StandardCharsets.UTF_16BE : StandardCharsets.UTF_16LE);
     private static final int STR_4_BYTES_LATIN1_INT = UNSAFE.getInt(STR_4_BYTES_LATIN1, Unsafe.ARRAY_BYTE_BASE_OFFSET);
     private static final long STR_4_BYTES_UTF16_LONG = UNSAFE.getLong(STR_4_BYTES_UTF16, Unsafe.ARRAY_BYTE_BASE_OFFSET);
+    private static final byte STR_4_BYTES_LATIN1_BYTE_0 = STR_4_BYTES_LATIN1[0];
+    private static final byte STR_4_BYTES_LATIN1_BYTE_1 = STR_4_BYTES_LATIN1[1];
+    private static final byte STR_4_BYTES_LATIN1_BYTE_2 = STR_4_BYTES_LATIN1[2];
+    private static final byte STR_4_BYTES_LATIN1_BYTE_3 = STR_4_BYTES_LATIN1[3];
 
     private static final String STR_5 = "false";
     private static final byte[] STR_5_BYTES_LATIN1 = STR_5.getBytes(java.nio.charset.StandardCharsets.ISO_8859_1);
@@ -67,6 +71,11 @@ public class MergeStoreBench {
     private static final byte STR_5_BYTES_LATIN1_BYTE = STR_5_BYTES_LATIN1[4];
     private static final long STR_5_BYTES_UTF16_LONG = UNSAFE.getLong(STR_5_BYTES_UTF16, Unsafe.ARRAY_BYTE_BASE_OFFSET);
     private static final short STR_5_BYTES_UTF16_SHORT = UNSAFE.getShort(STR_5_BYTES_UTF16, Unsafe.ARRAY_BYTE_BASE_OFFSET + 8);
+    private static final byte STR_5_BYTES_LATIN1_BYTE_0 = STR_5_BYTES_LATIN1[0];
+    private static final byte STR_5_BYTES_LATIN1_BYTE_1 = STR_5_BYTES_LATIN1[1];
+    private static final byte STR_5_BYTES_LATIN1_BYTE_2 = STR_5_BYTES_LATIN1[2];
+    private static final byte STR_5_BYTES_LATIN1_BYTE_3 = STR_5_BYTES_LATIN1[3];
+    private static final byte STR_5_BYTES_LATIN1_BYTE_4 = STR_5_BYTES_LATIN1[4];
 
     private static final String STR_7 = "truefalse";
     private static final byte[] STR_7_BYTES_LATIN1 = STR_7.getBytes(java.nio.charset.StandardCharsets.ISO_8859_1);
@@ -78,6 +87,14 @@ public class MergeStoreBench {
     private static final long STR_7_BYTES_UTF16_LONG = UNSAFE.getLong(STR_7_BYTES_UTF16, Unsafe.ARRAY_BYTE_BASE_OFFSET);
     private static final int STR_7_BYTES_UTF16_INT = UNSAFE.getInt(STR_7_BYTES_UTF16, Unsafe.ARRAY_BYTE_BASE_OFFSET + 8);
     private static final short STR_7_BYTES_UTF16_SHORT = UNSAFE.getShort(STR_7_BYTES_UTF16, Unsafe.ARRAY_BYTE_BASE_OFFSET + 12);
+    private static final byte STR_7_BYTES_LATIN1_BYTE_0 = STR_7_BYTES_LATIN1[0];
+    private static final byte STR_7_BYTES_LATIN1_BYTE_1 = STR_7_BYTES_LATIN1[1];
+    private static final byte STR_7_BYTES_LATIN1_BYTE_2 = STR_7_BYTES_LATIN1[2];
+    private static final byte STR_7_BYTES_LATIN1_BYTE_3 = STR_7_BYTES_LATIN1[3];
+    private static final byte STR_7_BYTES_LATIN1_BYTE_4 = STR_7_BYTES_LATIN1[4];
+    private static final byte STR_7_BYTES_LATIN1_BYTE_5 = STR_7_BYTES_LATIN1[5];
+    private static final byte STR_7_BYTES_LATIN1_BYTE_6 = STR_7_BYTES_LATIN1[6];
+
 
     final static int NUMBERS = 8192;
 
@@ -85,12 +102,12 @@ public class MergeStoreBench {
     final byte[] bytes5 = new byte[NUMBERS * 5];
     final byte[] bytes8 = new byte[NUMBERS * 8];
     final byte[] bytes10 = new byte[NUMBERS * 10];
-    final byte[] bytes14 = new byte[NUMBERS * 14];
+    final byte[] bytes16 = new byte[NUMBERS * 16];
     final int [] ints   = new int [NUMBERS    ];
     final long[] longs  = new long[NUMBERS    ];
     final char[] chars  = new char[NUMBERS    ];
     final char[] chars5 = new char[NUMBERS * 5];
-    final char[] chars7 = new char[NUMBERS * 7];
+    final char[] chars10 = new char[NUMBERS * 10];
     final StringBuilder sb = new StringBuilder(NUMBERS * 7);
     final StringBuilder sb_utf16 = new StringBuilder(NUMBERS * 14).append('\u4e2d');
 
@@ -541,6 +558,22 @@ public class MergeStoreBench {
     }
 
     /**
+     * Test the performance of array set 4 constant byte, used as a benchmark for comparison with other str4 Benchmarks
+     */
+    @Benchmark
+    public void str4ArraySetConst(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            bytes5[off    ] = STR_4_BYTES_LATIN1_BYTE_0;
+            bytes5[off + 1] = STR_4_BYTES_LATIN1_BYTE_1;
+            bytes5[off + 2] = STR_4_BYTES_LATIN1_BYTE_2;
+            bytes5[off + 3] = STR_4_BYTES_LATIN1_BYTE_3;
+            off += 5; // disable auto vector
+        }
+        BH.consume(off);
+    }
+
+    /**
      * Test whether a constant byte[] with a length of 4 is MergeStored when arraycopy is called
      */
     @Benchmark
@@ -593,14 +626,30 @@ public class MergeStoreBench {
     }
 
     /**
+     * Test the performance of array set 4 constant byte, used as a benchmark for comparison with other str4 Benchmarks
+     */
+    @Benchmark
+    public void str4Utf16ArraySetConst(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            chars5[off    ] = (char) STR_4_BYTES_LATIN1_BYTE_0;
+            chars5[off + 1] = (char) STR_4_BYTES_LATIN1_BYTE_1;
+            chars5[off + 2] = (char) STR_4_BYTES_LATIN1_BYTE_2;
+            chars5[off + 3] = (char) STR_4_BYTES_LATIN1_BYTE_3;
+            off += 5; // disable auto vector
+        }
+        BH.consume(off);
+    }
+
+    /**
      * Test the performance of putLong for comparison with other str4Utf16 benchmarks
      */
     @Benchmark
     public void str4Utf16UnsafePut(Blackhole BH) {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            UNSAFE.putLong(bytes10, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, STR_4_BYTES_UTF16_LONG);
-            off += 10; // disable auto vector
+            UNSAFE.putLong(bytes16, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, STR_4_BYTES_UTF16_LONG);
+            off += 9; // disable auto vector
         }
         BH.consume(off);
     }
@@ -612,8 +661,8 @@ public class MergeStoreBench {
     public void str4Utf16ArrayCopy(Blackhole BH) {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            System.arraycopy(STR_4_BYTES_UTF16, 0, bytes10, off, 8);
-            off += 10;
+            System.arraycopy(STR_4_BYTES_UTF16, 0, bytes16, off, 8);
+            off += 9; // disable auto vector
         }
         BH.consume(off);
     }
@@ -639,8 +688,25 @@ public class MergeStoreBench {
     public void str5GetBytes(Blackhole BH) {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            STR_5.getBytes(0, 4, bytes5, off);
-            off += 5;
+            STR_5.getBytes(0, 4, bytes8, off);
+            off += 6; // disable auto vector
+        }
+        BH.consume(off);
+    }
+
+    /**
+     * Test the performance of array set 5 constant byte, used as a benchmark for comparison with other str5 Benchmarks
+     */
+    @Benchmark
+    public void str5ArraySetConst(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            bytes8[off    ] = STR_7_BYTES_LATIN1_BYTE_0;
+            bytes8[off + 1] = STR_7_BYTES_LATIN1_BYTE_1;
+            bytes8[off + 2] = STR_7_BYTES_LATIN1_BYTE_2;
+            bytes8[off + 3] = STR_7_BYTES_LATIN1_BYTE_3;
+            bytes8[off + 4] = STR_7_BYTES_LATIN1_BYTE_4;
+            off += 6; // disable auto vector
         }
         BH.consume(off);
     }
@@ -652,8 +718,8 @@ public class MergeStoreBench {
     public void str5Arraycopy(Blackhole BH) {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            System.arraycopy(STR_5_BYTES_LATIN1, 0, bytes5, off, 5);
-            off += 5;
+            System.arraycopy(STR_5_BYTES_LATIN1, 0, bytes8, off, 5);
+            off += 6; // disable auto vector
         }
         BH.consume(off);
     }
@@ -667,7 +733,7 @@ public class MergeStoreBench {
         for (int i = 0; i < NUMBERS; i++) {
             UNSAFE.putInt(bytes5, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, STR_5_BYTES_LATIN1_INT);
             UNSAFE.putByte(bytes5, Unsafe.ARRAY_BYTE_BASE_OFFSET + off + 4, STR_5_BYTES_LATIN1_BYTE);
-            off += 5;
+            off += 6; // disable auto vector
         }
         BH.consume(off);
     }
@@ -692,8 +758,8 @@ public class MergeStoreBench {
     public void str5GetChars(Blackhole BH) {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            STR_5.getChars(0, 5, chars5, off);
-            off += 5;
+            STR_5.getChars(0, 5, chars10, off);
+            off += 6; // disable auto vector
         }
         BH.consume(off);
     }
@@ -705,9 +771,26 @@ public class MergeStoreBench {
     public void str5Utf16UnsafePut(Blackhole BH) {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            UNSAFE.putLong(bytes10, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, STR_5_BYTES_UTF16_LONG);
-            UNSAFE.putShort(bytes10, Unsafe.ARRAY_BYTE_BASE_OFFSET + off + 8, STR_5_BYTES_UTF16_SHORT);
-            off += 10;
+            UNSAFE.putLong(bytes16, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, STR_5_BYTES_UTF16_LONG);
+            UNSAFE.putShort(bytes16, Unsafe.ARRAY_BYTE_BASE_OFFSET + off + 8, STR_5_BYTES_UTF16_SHORT);
+            off += 11; // disable auto vector
+        }
+        BH.consume(off);
+    }
+
+    /**
+     * Test the performance of array set 5 constant char, used as a benchmark for comparison with other str5 Benchmarks
+     */
+    @Benchmark
+    public void str5Utf16ArraySetConst(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            chars10[off    ] = (char) STR_5_BYTES_LATIN1_BYTE_0;
+            chars10[off + 1] = (char) STR_5_BYTES_LATIN1_BYTE_1;
+            chars10[off + 2] = (char) STR_5_BYTES_LATIN1_BYTE_2;
+            chars10[off + 3] = (char) STR_5_BYTES_LATIN1_BYTE_3;
+            chars10[off + 4] = (char) STR_5_BYTES_LATIN1_BYTE_4;
+            off += 6; // disable auto vector
         }
         BH.consume(off);
     }
@@ -719,8 +802,8 @@ public class MergeStoreBench {
     public void str5Utf16ArrayCopy(Blackhole BH) {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            System.arraycopy(STR_5_BYTES_UTF16, 0, bytes10, off, 10);
-            off += 10;
+            System.arraycopy(STR_5_BYTES_UTF16, 0, bytes16, off, 10);
+            off += 11; // disable auto vector
         }
         BH.consume(off);
     }
@@ -746,8 +829,27 @@ public class MergeStoreBench {
     public void str7GetBytes(Blackhole BH) {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            STR_7.getBytes(0, 7, bytes8, off);
-            off += 7;
+            STR_7.getBytes(0, 7, bytes10, off);
+            off += 9; // disable auto vector
+        }
+        BH.consume(off);
+    }
+
+    /**
+     * Test the performance of array set 7 constant byte, used as a benchmark for comparison with other str7 Benchmarks
+     */
+    @Benchmark
+    public void str7ArraySetConst(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            bytes10[off    ] = STR_7_BYTES_LATIN1_BYTE_0;
+            bytes10[off + 1] = STR_7_BYTES_LATIN1_BYTE_1;
+            bytes10[off + 2] = STR_7_BYTES_LATIN1_BYTE_2;
+            bytes10[off + 3] = STR_7_BYTES_LATIN1_BYTE_3;
+            bytes10[off + 4] = STR_7_BYTES_LATIN1_BYTE_4;
+            bytes10[off + 5] = STR_7_BYTES_LATIN1_BYTE_5;
+            bytes10[off + 6] = STR_7_BYTES_LATIN1_BYTE_6;
+            off += 9; // disable auto vector
         }
         BH.consume(off);
     }
@@ -759,8 +861,8 @@ public class MergeStoreBench {
     public void str7Arraycopy(Blackhole BH) {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            System.arraycopy(STR_7_BYTES_LATIN1, 0, bytes8, off, 7);
-            off += 7;
+            System.arraycopy(STR_7_BYTES_LATIN1, 0, bytes10, off, 7);
+            off += 9; // disable auto vector
         }
         BH.consume(off);
     }
@@ -772,10 +874,10 @@ public class MergeStoreBench {
     public void str7UnsafePut(Blackhole BH) {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            UNSAFE.putInt(bytes8, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, STR_7_BYTES_LATIN1_INT);
-            UNSAFE.putShort(bytes8, Unsafe.ARRAY_BYTE_BASE_OFFSET + off + 4, STR_7_BYTES_LATIN1_SHORT);
-            UNSAFE.putByte(bytes8, Unsafe.ARRAY_BYTE_BASE_OFFSET + off + 6, STR_7_BYTES_LATIN1_BYTE);
-            off += 7;
+            UNSAFE.putInt(bytes10, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, STR_7_BYTES_LATIN1_INT);
+            UNSAFE.putShort(bytes10, Unsafe.ARRAY_BYTE_BASE_OFFSET + off + 4, STR_7_BYTES_LATIN1_SHORT);
+            UNSAFE.putByte(bytes10, Unsafe.ARRAY_BYTE_BASE_OFFSET + off + 6, STR_7_BYTES_LATIN1_BYTE);
+            off += 9; // disable auto vector
         }
         BH.consume(off);
     }
@@ -800,8 +902,27 @@ public class MergeStoreBench {
     public void str7GetChars(Blackhole BH) {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            STR_7.getChars(0, 7, chars7, off);
-            off += 7;
+            STR_7.getChars(0, 7, chars10, off);
+            off += 9; // disable auto vector
+        }
+        BH.consume(off);
+    }
+
+    /**
+     * Test the performance of array set 7 constant char, used as a benchmark for comparison with other str7 Benchmarks
+     */
+    @Benchmark
+    public void str7Utf16ArraySetConst(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            chars10[off    ] = (char) STR_7_BYTES_LATIN1_BYTE_0;
+            chars10[off + 1] = (char) STR_7_BYTES_LATIN1_BYTE_1;
+            chars10[off + 2] = (char) STR_7_BYTES_LATIN1_BYTE_2;
+            chars10[off + 3] = (char) STR_7_BYTES_LATIN1_BYTE_3;
+            chars10[off + 4] = (char) STR_7_BYTES_LATIN1_BYTE_4;
+            chars10[off + 5] = (char) STR_7_BYTES_LATIN1_BYTE_5;
+            chars10[off + 6] = (char) STR_7_BYTES_LATIN1_BYTE_6;
+            off += 9; // disable auto vector
         }
         BH.consume(off);
     }
@@ -813,10 +934,10 @@ public class MergeStoreBench {
     public void str7Utf16UnsafePut(Blackhole BH) {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            UNSAFE.putLong(bytes14, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, STR_7_BYTES_UTF16_LONG);
-            UNSAFE.putInt(bytes14, Unsafe.ARRAY_BYTE_BASE_OFFSET + off + 8, STR_7_BYTES_UTF16_INT);
-            UNSAFE.putShort(bytes14, Unsafe.ARRAY_BYTE_BASE_OFFSET + off + 12, STR_7_BYTES_UTF16_SHORT);
-            off += 14;
+            UNSAFE.putLong(bytes16, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, STR_7_BYTES_UTF16_LONG);
+            UNSAFE.putInt(bytes16, Unsafe.ARRAY_BYTE_BASE_OFFSET + off + 8, STR_7_BYTES_UTF16_INT);
+            UNSAFE.putShort(bytes16, Unsafe.ARRAY_BYTE_BASE_OFFSET + off + 12, STR_7_BYTES_UTF16_SHORT);
+            off += 15; // disable auto vector
         }
         BH.consume(off);
     }
@@ -828,8 +949,8 @@ public class MergeStoreBench {
     public void str7Utf16ArrayCopy(Blackhole BH) {
         int off = 0;
         for (int i = 0; i < NUMBERS; i++) {
-            System.arraycopy(STR_7_BYTES_UTF16, 0, bytes14, off, 14);
-            off += 14;
+            System.arraycopy(STR_7_BYTES_UTF16, 0, bytes16, off, 14);
+            off += 15; // disable auto vector
         }
         BH.consume(off);
     }
