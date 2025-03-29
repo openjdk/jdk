@@ -211,6 +211,22 @@ bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
   if (unprocessed_old_collection_candidates() == 0) {
     return false;
   }
+
+  // Between consecutive mixed-evacuation cycles, the live data within each candidate region may change due to
+  // promotions and old-gen evacuations.  Re-sort the candidate regions in order to first evacuate regions that have
+  // the smallest amount of live data.  These are easiest to evacuate with least effort.  Doing these first allows
+  // us to more quickly replenish free memory with empty regions.
+  size_t total_live_data;
+  for (uint i = _next_old_collection_candidate; i < _last_old_collection_candidate; i++) {
+    ShenandoahHeapRegion* r = _region_data[i].get_region();
+    size_t region_live = r->get_mixed_candidate_live_data_bytes();
+    total_live_data += region_live;
+    _region_data[i].update_livedata(region_live);
+  }
+  QuickSort::sort<RegionData>(_region_data + _next_old_collection_candidate, unprocessed_old_collection_candidates(),
+                              compare_by_live);
+  _live_bytes_in_unprocessed_candidates = total_live_data;
+
   _first_pinned_candidate = NOT_FOUND;
 
   // The number of old-gen regions that were selected as candidates for collection at the end of the most recent old-gen
@@ -218,7 +234,7 @@ bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
   // Candidate regions are ordered according to increasing amount of live data.  If there is not sufficient room to
   // evacuate region N, then there is no need to even consider evacuating region N+1.
   while (unprocessed_old_collection_candidates() > 0) {
-    // Old collection candidates are sorted in order of decreasing garbage contained therein.
+    // Old collection candidates are sorted in order of increasing live-data contained therein.
     ShenandoahHeapRegion* r = next_old_collection_candidate();
     if (r == nullptr) {
       break;
@@ -228,7 +244,7 @@ bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
     // If region r is evacuated to fragmented memory (to free memory within a partially used region), then we need
     // to decrease the capacity of the fragmented memory by the scaled loss.
 
-    size_t live_data_for_evacuation = r->get_live_data_bytes();
+    size_t live_data_for_evacuation = r->get_mixed_candidate_live_data_bytes();
     size_t lost_available = r->free();
     if ((lost_available > 0) && (_excess_fragmented_available > 0)) {
       if (lost_available < _excess_fragmented_available) {
@@ -277,11 +293,12 @@ bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
     _mixed_evac_cset->add_region(r);
     _included_old_regions++;
     _evacuated_old_bytes += live_data_for_evacuation;
-    _collected_old_bytes += r->garbage();
+    size_t region_garbage = r->used() - live_data_for_evacuation;
+    _collected_old_bytes += region_garbage;
 #define KELVIN_CANDIDATE_GARBAGE
 #ifdef KELVIN_CANDIDATE_GARBAGE
     log_info(gc)("Adding old candidate region %zu to cset with live: %zu (of total: %zu), garbage: %zu (of total: %zu)",
-                 r->index(), live_data_for_evacuation, _evacuated_old_bytes, r->garbage(), _collected_old_bytes);
+                 r->index(), live_data_for_evacuation, _evacuated_old_bytes, region_garbage, _collected_old_bytes);
 #endif
     consume_old_collection_candidate();
   }
@@ -470,12 +487,14 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     ShenandoahHeapRegion* r = candidates[i].get_region();
     size_t region_garbage = r->garbage();
     size_t region_free = r->free();
+
+    r->capture_mixed_candidate_garbage();
     candidates_garbage += region_garbage;
     unfragmented += region_free;
 #define KELVIN_CANDIDATE_GARBAGE
 #ifdef KELVIN_CANDIDATE_GARBAGE
-    log_info(gc)("Legit candidate region %zu has garbage: %zu (out of total: %zu), free: %zu (out of total: %zu)",
-                 r->index(), region_garbage, candidates_garbage, region_free, unfragmented);
+    log_info(gc)("Legit candidate region %zu has garbage: %zu (out of total: %zu), free: %zu (out of total: %zu), live: %zu",
+                 r->index(), region_garbage, candidates_garbage, region_free, unfragmented, live);
 #endif
   }
 
@@ -517,6 +536,8 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
              r->index(), ShenandoahHeapRegion::region_state_to_string(r->state()));
       const size_t region_garbage = r->garbage();
       const size_t region_free = r->free();
+
+      r->capture_mixed_candidate_garbage();
       candidates_garbage += region_garbage;
       unfragmented += region_free;
 #ifdef KELVIN_CANDIDATE_GARBAGE
