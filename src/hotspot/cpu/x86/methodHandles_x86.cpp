@@ -153,7 +153,7 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, Regist
         // init_state check failed, but it may be an abstract interface method
         __ load_unsigned_short(temp, Address(method, Method::access_flags_offset()));
         __ testl(temp, JVM_ACC_ABSTRACT);
-        __ jcc(Assembler::notZero, L_ok);
+        __ jccb(Assembler::notZero, L_ok);
         break;
 
       default:
