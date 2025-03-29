@@ -303,10 +303,9 @@ public interface CharSequence {
     }
 
     /**
-     * Characters are copied from this sequence into the
-     * destination character array {@code dst}. The first character to
-     * be copied is at index {@code srcBegin}; the last character to
-     * be copied is at index {@code srcEnd-1}. The total number of
+     * Copies characters from this sequence into the given destination array.
+     * The first character to be copied is at index {@code srcBegin}; the last
+     * character to be copied is at index {@code srcEnd-1}. The total number of
      * characters to be copied is {@code srcEnd-srcBegin}. The
      * characters are copied into the subarray of {@code dst} starting
      * at index {@code dstBegin} and ending at index:
