@@ -331,7 +331,8 @@ public interface CharSequence {
      * @throws     NullPointerException if {@code dst} is {@code null}
      *
      * @implSpec
-     * The default implementation iterates over {@link #charAt(int)}.
+     * The default implementation invokes {@link #charAt(int index)} in a loop
+     * iterating {@code index} from {@code srcBegin} to {@code srcEnd-1}
      *
      * @since 25
      */
