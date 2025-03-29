@@ -1897,10 +1897,35 @@ public abstract sealed class $Type$Buffer
 #if[char]
 
     /**
-     * {@inheritDoc}
+     * Absolute bulk <i>get</i> method.
+     *
+     * <p> This method transfers {@code srcEnd-srcBegin} characters from this
+     * buffer into the given array, starting at index {@code srcBegin} in this
+     * buffer and at offset {@code dstBegin} in the array. The position of this
+     * buffer is unchanged.
+     *
+     * @param  srcBegin
+     *         The index in this buffer from which the first character will be
+     *         read; must be non-negative and less than {@code limit()}
+     *
+     * @param  srcEnd
+     *         The index in this buffer directly before the last character to
+     *         read; must be non-negative and less or equal than {@code limit()}
+     *         and must be greater or equal than {@code srcBegin}
+     *
+     * @param  dst
+     *         The destination array
+     *
+     * @param  dstBegin
+     *         The offset within the array of the first character to be
+     *         written; must be non-negative and less than {@code dst.length}
+     *
+     * @throws  IndexOutOfBoundsException
+     *          If the preconditions on the {@code srcBegin}, {@code srcEnd},
+     *          and {@code dstBegin} parameters do not hold
      *
      * @implSpec This method is equivalent to
-     * {@code get(srcBegin, dst, dstBegin, srcEnd - srcBegin)}.
+     *           {@code get(srcBegin, dst, dstBegin, srcEnd - srcBegin)}.
      *
      * @since 25
      */
