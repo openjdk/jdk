@@ -374,7 +374,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             String dirName;
             if (!TKit.isOSX()) {
                 dirName = name();
-            } else if (macSignPredefinedAppImage()) {
+            } else if (MacHelper.signPredefinedAppImage(this)) {
                 // Request to sign external app image, not to build a new one
                 dirName = getArgumentValue("--app-image");
             } else {
@@ -942,7 +942,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
 
         if (TKit.isOSX()) {
-            if (macSignPredefinedAppImage()) {
+            if (MacHelper.signPredefinedAppImage(this)) {
                 // Request to sign external app image, ".jpackage.xml" file should exist.
                 return true;
             }
@@ -955,30 +955,6 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
 
         return isImagePackageType();
-    }
-
-    boolean macSignPredefinedAppImage() {
-        if (!TKit.isOSX()) {
-            throw new UnsupportedOperationException();
-        }
-        return hasArgument("--mac-sign") && hasArgument("--app-image");
-    }
-
-    boolean macAppImageSigned() {
-        if (!TKit.isOSX()) {
-            throw new UnsupportedOperationException();
-        }
-
-        if (!hasArgument("--mac-sign")) {
-            return false;
-        }
-
-        if (Optional.ofNullable(getArgumentValue("--app-image")).map(Path::of).map(AppImageFile::load).map(AppImageFile::macSigned).orElse(false)) {
-            // The external app image is signed, so the app image is signed too.
-            return true;
-        }
-
-        return (hasArgument("--mac-signing-key-user-name") || hasArgument("--mac-app-image-sign-identity"));
     }
 
     private void assertAppImageFile() {
@@ -999,7 +975,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
                 AppImageFile aif = AppImageFile.load(rootDir);
 
-                boolean expectedValue = macAppImageSigned();
+                boolean expectedValue = MacHelper.appImageSigned(this);
                 boolean actualValue = aif.macSigned();
                 TKit.assertEquals(expectedValue, actualValue,
                     "Check for unexpected value of <signed> property in app image file");
