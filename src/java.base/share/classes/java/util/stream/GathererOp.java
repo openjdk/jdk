@@ -37,6 +37,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.LongFunction;
 import java.util.function.Supplier;
 import java.util.stream.Gatherer.Integrator;
 
@@ -77,13 +78,16 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
     static final class NodeBuilder<X> implements Consumer<X> {
         private static final int LINEAR_APPEND_MAX = 8; // TODO revisit
         static final class Builder<X> extends SpinedBuffer<X> implements Node<X> {
-            Builder() {
+            Builder(int initialCapacity) {
+                super(initialCapacity);
             }
         }
 
-        NodeBuilder() {
+        NodeBuilder(long exactSizeIfKnown) {
+            initialCapacity = exactSizeIfKnown != -1 ? (int) Math.min(exactSizeIfKnown, Integer.MAX_VALUE) : 16;
         }
 
+        private final int initialCapacity;
         private Builder<X> rightMost;
         private Node<X> leftMost;
 
@@ -94,7 +98,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
         @Override
         public void accept(X x) {
             final var b = rightMost;
-            (b == null ? (rightMost = new NodeBuilder.Builder<>()) : b).accept(x);
+            (b == null ? (rightMost = new NodeBuilder.Builder<>(initialCapacity)) : b).accept(x);
         }
 
         public NodeBuilder<X> join(NodeBuilder<X> that) {
@@ -311,7 +315,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
             u.wrapSpliterator(u.sourceSpliterator(0)),
             parallel,
             gatherer,
-            c.supplier(),
+            c.sizedSupplier(),
             c.accumulator(),
             parallel ? c.combiner() : null,
             c.characteristics().contains(Collector.Characteristics.IDENTITY_FINISH)
@@ -331,7 +335,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
             u.wrapSpliterator(u.sourceSpliterator(0)),
             parallel,
             gatherer,
-            supplier,
+            _ -> supplier.get(),
             accumulator,
             parallel ? (l, r) -> {
                 combiner.accept(l, r);
@@ -349,7 +353,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
     private <CA, CR> CR evaluate(final Spliterator<T> spliterator,
                                  final boolean parallel,
                                  final Gatherer<T, A, R> gatherer,
-                                 final Supplier<CA> collectorSupplier,
+                                 final LongFunction<CA> collectorSizedSupplier,
                                  final BiConsumer<CA, ? super R> collectorAccumulator,
                                  final BinaryOperator<CA> collectorCombiner,
                                  final Function<CA, CR> collectorFinisher) {
@@ -371,10 +375,10 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
             CA collectorState;
             boolean proceed;
 
-            Sequential() {
+            Sequential(long exactSizeIfKnown) {
                 if (initializer != Gatherer.defaultInitializer())
                     state = initializer.get();
-                collectorState = collectorSupplier.get();
+                collectorState = collectorSizedSupplier.apply(exactSizeIfKnown);
                 proceed = true;
             }
 
@@ -433,7 +437,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
          * strategy.
          */
         if (!parallel)
-            return new Sequential().evaluateUsing(spliterator).get();
+            return new Sequential(spliterator.getExactSizeIfKnown()).evaluateUsing(spliterator).get();
 
         // Parallel section starts here:
 
@@ -460,9 +464,12 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
             protected Hybrid(Spliterator<T> spliterator) {
                 super(null);
                 this.spliterator = spliterator;
+                long estimatedSize = spliterator.estimateSize();
                 this.targetSize =
-                    AbstractTask.suggestTargetSize(spliterator.estimateSize());
-                this.localResult = new Sequential();
+                    AbstractTask.suggestTargetSize(estimatedSize);
+                this.localResult = new Sequential(spliterator.hasCharacteristics(Spliterator.SIZED)
+                                                  ? estimatedSize
+                                                  : -1);
                 this.cancelled = greedy ? null : new AtomicBoolean(false);
                 this.leftPredecessor = null;
             }
@@ -564,7 +571,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
                  */
                 if (greedy && task.getPendingCount() > 0) {
                     // Upstream elements are buffered
-                    NodeBuilder<T> nb = new NodeBuilder<>();
+                    NodeBuilder<T> nb = new NodeBuilder<>(rightSplit.getExactSizeIfKnown());
                     rightSplit.forEachRemaining(nb); // Run the upstream
                     task.spliterator = nb.build().spliterator();
                 }
@@ -640,7 +647,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
             }
 
             private void doProcess() {
-                if (!(localResult = new Sequential()).evaluateUsing(spliterator).proceed
+                if (!(localResult = new Sequential(spliterator.getExactSizeIfKnown())).evaluateUsing(spliterator).proceed
                     && !greedy)
                     cancelLaterTasks();
             }
