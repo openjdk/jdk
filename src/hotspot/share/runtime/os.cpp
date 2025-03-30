@@ -1810,8 +1810,6 @@ int os::create_binary_file(const char* path, bool rewrite_existing) {
   return ::open(path, oflags, S_IREAD | S_IWRITE);
 }
 
-#define trace_page_size_params(size) byte_size_in_exact_unit(size), exact_unit_for_byte_size(size)
-
 void os::trace_page_sizes(const char* str,
                           const size_t region_min_size,
                           const size_t region_max_size,
@@ -1820,17 +1818,17 @@ void os::trace_page_sizes(const char* str,
                           const size_t page_size) {
 
   log_info(pagesize)("%s: "
-                     " min=%zu%s"
-                     " max=%zu%s"
+                     " min=" EXACTFMT
+                     " max=" EXACTFMT
                      " base=" PTR_FORMAT
-                     " size=%zu%s"
-                     " page_size=%zu%s",
+                     " size=" EXACTFMT
+                     " page_size=" EXACTFMT,
                      str,
-                     trace_page_size_params(region_min_size),
-                     trace_page_size_params(region_max_size),
+                     EXACTFMTARGS(region_min_size),
+                     EXACTFMTARGS(region_max_size),
                      p2i(base),
-                     trace_page_size_params(size),
-                     trace_page_size_params(page_size));
+                     EXACTFMTARGS(size),
+                     EXACTFMTARGS(page_size));
 }
 
 void os::trace_page_sizes_for_requested_size(const char* str,
@@ -1841,17 +1839,17 @@ void os::trace_page_sizes_for_requested_size(const char* str,
                                              const size_t page_size) {
 
   log_info(pagesize)("%s:"
-                     " req_size=%zu%s"
-                     " req_page_size=%zu%s"
+                     " req_size=" EXACTFMT
+                     " req_page_size=" EXACTFMT
                      " base=" PTR_FORMAT
-                     " size=%zu%s"
-                     " page_size=%zu%s",
+                     " size=" EXACTFMT
+                     " page_size=" EXACTFMT,
                      str,
-                     trace_page_size_params(requested_size),
-                     trace_page_size_params(requested_page_size),
+                     EXACTFMTARGS(requested_size),
+                     EXACTFMTARGS(requested_page_size),
                      p2i(base),
-                     trace_page_size_params(size),
-                     trace_page_size_params(page_size));
+                     EXACTFMTARGS(size),
+                     EXACTFMTARGS(page_size));
 }
 
 
