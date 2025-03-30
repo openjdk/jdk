@@ -64,7 +64,7 @@ class JfrStackTraceRepository : public JfrCHeapObj {
 
   static const JfrStackTrace* lookup_for_leak_profiler(traceid hash, traceid id);
   static void record_for_leak_profiler(JavaThread* thread, int skip = 0);
-    static void write_leak_profiler(GrowableArray<traceid>* leakp_set, Thread* t);
+  static void write_leak_profiler(GrowableArray<traceid>* leakp_set, Thread* t);
   static void clear_leak_profiler();
 
   static traceid next_id();
