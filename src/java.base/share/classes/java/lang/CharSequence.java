@@ -332,7 +332,10 @@ public interface CharSequence {
      *
      * @implSpec
      * The default implementation invokes {@link #charAt(int index)} in a loop
-     * iterating {@code index} from {@code srcBegin} to {@code srcEnd-1}
+     * iterating {@code index} from {@code srcBegin} to {@code srcEnd-1}.
+     * Concurrent truncation of this character sequence can throw
+     * {@code IndexOutOfBoundsException}. In this case, some characters, but not
+     * all, may be already transferred.
      *
      * @since 25
      */
