@@ -1,6 +1,7 @@
 #ifndef SHARE_OPTO_ADDNODEXORUTIL_HPP
 #define SHARE_OPTO_ADDNODEXORUTIL_HPP
 
+#include "utilities/powerOfTwo.hpp"
 // Code separated into its own header to allow access from GTEST
 
 // Given 2 non-negative values in the ranges [0, hi_0] and [0, hi_1], respectively. The bitwise
