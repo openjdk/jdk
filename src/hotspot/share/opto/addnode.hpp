@@ -252,7 +252,6 @@ public:
   virtual const Type *Value(PhaseGVN *phase) const;
   virtual uint ideal_reg() const { return Op_RegI; }
 private:
-  friend jint test_calc_max(const jint, const jint);
   static jint calc_max(const jint hi_0, const jint hi_1);
 };
 
@@ -271,7 +270,6 @@ public:
   virtual const Type *Value(PhaseGVN *phase) const;
   virtual uint ideal_reg() const { return Op_RegL; }
 private:
-  friend jlong test_calc_max(const jlong, const jlong);
   static jlong calc_max(const jlong hi_0, const jlong hi_1);
 };
 
