@@ -82,7 +82,6 @@ class JfrStackTrace : public JfrCHeapObj {
 
   const JfrStackTrace* next() const { return _next; }
 
-  bool should_write() const { return !_written; }
   void write(JfrChunkWriter& cw) const;
   void write(JfrCheckpointWriter& cpw) const;
   bool equals(const JfrStackTrace& rhs) const;
@@ -107,6 +106,7 @@ class JfrStackTrace : public JfrCHeapObj {
  public:
   traceid hash() const { return _hash; }
   traceid id() const { return _id; }
+  bool should_write() const { return !_written; }
 };
 
 #endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACE_HPP
