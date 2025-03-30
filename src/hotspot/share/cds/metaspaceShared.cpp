@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotArtifactFinder.hpp"
+#include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
@@ -42,6 +43,7 @@
 #include "cds/finalImageRecipes.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderDataShared.hpp"
@@ -664,7 +666,10 @@ void VM_PopulateDumpSharedSpace::doit() {
   AOTClassLocationConfig* cl_config;
   char* serialized_data = dump_read_only_tables(cl_config);
 
-  SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
+  if (CDSConfig::is_dumping_lambdas_in_legacy_mode()) {
+    log_info(cds)("Adjust lambda proxy class dictionary");
+    LambdaProxyClassDictionary::adjust_dumptime_table();
+  }
 
   // The vtable clones contain addresses of the current process.
   // We don't want to write these addresses into the archive.
@@ -740,6 +745,7 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
 
 void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
   AOTClassLinker::initialize();
+  AOTClassInitializer::init_test_class(CHECK);
 
   if (!jcmd_request && !CDSConfig::is_dumping_final_static_archive()) {
     LambdaFormInvokers::regenerate_holder_classes(CHECK);
@@ -848,37 +854,16 @@ void MetaspaceShared::adjust_heap_sizes_for_dumping() {
 #endif // INCLUDE_CDS_JAVA_HEAP && _LP64
 
 void MetaspaceShared::get_default_classlist(char* default_classlist, const size_t buf_size) {
-  // Construct the path to the class list (in jre/lib)
-  // Walk up two directories from the location of the VM and
-  // optionally tack on "lib" (depending on platform)
-  os::jvm_path(default_classlist, (jint)(buf_size));
-  for (int i = 0; i < 3; i++) {
-    char *end = strrchr(default_classlist, *os::file_separator());
-    if (end != nullptr) *end = '\0';
-  }
-  size_t classlist_path_len = strlen(default_classlist);
-  if (classlist_path_len >= 3) {
-    if (strcmp(default_classlist + classlist_path_len - 3, "lib") != 0) {
-      if (classlist_path_len < buf_size - 4) {
-        jio_snprintf(default_classlist + classlist_path_len,
-                     buf_size - classlist_path_len,
-                     "%slib", os::file_separator());
-        classlist_path_len += 4;
-      }
-    }
-  }
-  if (classlist_path_len < buf_size - 10) {
-    jio_snprintf(default_classlist + classlist_path_len,
-                 buf_size - classlist_path_len,
-                 "%sclasslist", os::file_separator());
-  }
+  const char* filesep = os::file_separator();
+  jio_snprintf(default_classlist, buf_size, "%s%slib%sclasslist",
+               Arguments::get_java_home(), filesep, filesep);
 }
 
 void MetaspaceShared::preload_classes(TRAPS) {
   char default_classlist[JVM_MAXPATHLEN];
   const char* classlist_path;
 
-  get_default_classlist(default_classlist, sizeof(default_classlist));
+  get_default_classlist(default_classlist, JVM_MAXPATHLEN);
   if (SharedClassListFile == nullptr) {
     classlist_path = default_classlist;
   } else {
@@ -933,7 +918,7 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
   if (CDSConfig::is_dumping_preimage_static_archive()) {
     log_info(cds)("Reading lambda form invokers from JDK default classlist ...");
     char default_classlist[JVM_MAXPATHLEN];
-    get_default_classlist(default_classlist, sizeof(default_classlist));
+    get_default_classlist(default_classlist, JVM_MAXPATHLEN);
     struct stat statbuf;
     if (os::stat(default_classlist, &statbuf) == 0) {
       ClassListParser::parse_classlist(default_classlist,
@@ -1152,6 +1137,8 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   if (static_mapinfo != nullptr) {
     log_info(cds)("Core region alignment: %zu", static_mapinfo->core_region_alignment());
     dynamic_mapinfo = open_dynamic_archive();
+
+    log_info(cds)("ArchiveRelocationMode: %d", ArchiveRelocationMode);
 
     // First try to map at the requested address
     result = map_archives(static_mapinfo, dynamic_mapinfo, true);

@@ -624,16 +624,6 @@ void FpuStackAllocator::handle_op1(LIR_Op1* op1) {
       break;
     }
 
-    case lir_roundfp: {
-      assert(in->is_fpu_register() && !in->is_xmm_register(), "input must be in register");
-      assert(res->is_stack(), "result must be on stack");
-
-      insert_exchange(in);
-      new_in = to_fpu_stack_top(in);
-      pop_if_last_use(op1, in);
-      break;
-    }
-
     case lir_abs:
     case lir_sqrt:
     case lir_neg: {
