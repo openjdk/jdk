@@ -1339,8 +1339,8 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
         // Mark as not reserved
         archive_space_rs = {};
         // The protection zone is part of the archive:
-        // See comment above, the windows way of loading CDS is to mmap the individual
-        // parts of the archive into the adress region we just vacated. The protection
+        // See comment above, the Windows way of loading CDS is to mmap the individual
+        // parts of the archive into the address region we just vacated. The protection
         // zone will not be mapped (and, in fact, does not exist as physical region in
         // the archive). Therefore, after removing the archive space above, we must
         // re-reserve the protection zone part lest something else gets mapped into that
@@ -1435,7 +1435,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           encoding_base, ArchiveBuilder::precomputed_narrow_klass_shift() // precomputed encoding, see ArchiveBuilder
         );
       } else {
-        // Let JVM freely chose encoding base and shift
+        // Let JVM freely choose encoding base and shift
         CompressedKlassPointers::initialize(klass_range_start, klass_range_size);
       }
       CompressedKlassPointers::establish_protection_zone(encoding_base, prot_zone_size);

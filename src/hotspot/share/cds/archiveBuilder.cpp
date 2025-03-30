@@ -326,11 +326,10 @@ address ArchiveBuilder::reserve_buffer() {
 
   if (CDSConfig::is_dumping_static_archive()) {
     _current_dump_region = &_pz_region;
-    _current_dump_region->init(&_shared_rs, &_shared_vs);
   } else {
     _current_dump_region = &_rw_region;
-    _current_dump_region->init(&_shared_rs, &_shared_vs);
   }
+  _current_dump_region->init(&_shared_rs, &_shared_vs);
 
   ArchivePtrMarker::initialize(&_ptrmap, &_shared_vs);
 

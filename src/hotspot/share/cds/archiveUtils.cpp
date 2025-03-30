@@ -82,7 +82,7 @@ void ArchivePtrMarker::initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap
   size_t ro_start = ro_bottom - buff_bottom;
 
   // The number of bits used by the rw/ro ptrmaps. We might have lots of zero
-  // bits at the bottom and top of rrw/ro ptrmaps, but these zeros will be
+  // bits at the bottom and top of rw/ro ptrmaps, but these zeros will be
   // removed by FileMapInfo::write_bitmap_region().
   size_t rw_size = ArchiveBuilder::current()->rw_region()->used() / sizeof(address);
   size_t ro_size = ArchiveBuilder::current()->ro_region()->used() / sizeof(address);
