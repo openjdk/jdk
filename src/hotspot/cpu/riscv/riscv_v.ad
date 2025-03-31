@@ -138,6 +138,10 @@ source %{
   bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
     return false;
   }
+
+  bool Matcher::gather_scatter_needs_vector_index(BasicType elem_bt, int vlen) {
+    return !is_subword_type(elem_bt);
+  }
 %}
 
 definitions %{

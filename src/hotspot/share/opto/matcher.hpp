@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -343,6 +343,9 @@ public:
 
   static bool vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen);
 
+  // Return true if gather/scatter needs vector index as input.
+  static bool gather_scatter_needs_vector_index(BasicType elem_bt, int vlen);
+
   static const RegMask* predicate_reg_mask(void);
 
   // Vector width in bytes
@@ -365,6 +368,8 @@ public:
 
   // Vector ideal reg
   static uint vector_ideal_reg(int len);
+  // Vector ideal reg size
+  static uint vector_ideal_reg_size(int len);
 
   // Vector length
   static uint vector_length(const Node* n);

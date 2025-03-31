@@ -722,9 +722,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_VectorStoreMaskedOp:
     return inline_vector_mem_masked_operation(/*is_store=*/true);
   case vmIntrinsics::_VectorGatherOp:
-    return inline_vector_gather_scatter(/*is_scatter*/ false);
+    return inline_vector_gather_scatter(/*is_scatter=*/ false);
   case vmIntrinsics::_VectorScatterOp:
-    return inline_vector_gather_scatter(/*is_scatter*/ true);
+    return inline_vector_gather_scatter(/*is_scatter=*/ true);
   case vmIntrinsics::_VectorReductionCoerced:
     return inline_vector_reduction();
   case vmIntrinsics::_VectorTest:

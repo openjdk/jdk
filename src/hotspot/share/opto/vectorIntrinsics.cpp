@@ -1124,18 +1124,144 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   return true;
 }
 
-// <C,
-//  V extends Vector<?>,
-//  W extends Vector<Integer>,
-//  S extends VectorSpecies<E>,
-//  M extends VectorMask<E>,
-//  E>
-// V loadWithMap(Class<? extends V> vectorClass, Class<M> maskClass, Class<E> elementType, int length,
-//               Class<? extends Vector<Integer>> vectorIndexClass,
-//               Object base, long offset, // Unsafe addressing
-//               W index_vector, M m,
-//               C container, int index, int[] indexMap, int indexM, S s, // Arguments for default implementation
-//               LoadVectorOperationWithMap<C, V, E, S, M> defaultImpl)
+Node* LibraryCallKit::gen_gather_load_subword(Node* addr, Node* indexes, Node* indexes1, Node* indexes2,
+                                              Node* indexes3, const TypeVect* vector_type) {
+  BasicType elem_bt = vector_type->element_basic_type();
+  uint elem_num = vector_type->length();
+  const TypeVect* index_vect_type = indexes->bottom_type()->isa_vect();
+  const TypePtr* addr_type = gvn().type(addr)->isa_ptr();
+  Node* addr_mem = memory(addr);
+
+  // The first gather.
+  Node* vgather = gvn().transform(new LoadVectorGatherNode(control(), addr_mem, addr, addr_type, vector_type, indexes));
+
+  uint index_elem_num = index_vect_type != nullptr ? index_vect_type->length() : 0;
+  uint vector_reg_size = Matcher::vector_ideal_reg_size(vector_type->length_in_bytes());
+  uint max_elem_num = vector_reg_size / type2aelembytes(elem_bt);
+  // The second gather.
+  if (indexes1 != nullptr) {
+    assert(index_vect_type != nullptr, "indexes must be a vector");
+    assert(Type::equals(indexes1->bottom_type(), index_vect_type), "invalid vector type");
+    Node* vgather1 = gvn().transform(new LoadVectorGatherNode(control(), addr_mem, addr, addr_type, vector_type, indexes1));
+    // Merge the second gather with the first gather result.
+    Node* idx = gvn().makecon(TypeInt::make(max_elem_num - index_elem_num));
+    Node* vslice = gvn().transform(new VectorSliceNode(vgather1, vgather1, idx));
+    vgather = gvn().transform(new OrVNode(vgather, vslice, vector_type));
+  }
+
+  // The third and fourth gathers for byte type.
+  if (indexes2 != nullptr) {
+    assert(elem_bt == T_BYTE, "only byte vector needs more than 2 times of gather load");
+    assert(indexes3 != nullptr, "indexes3 must be non-null");
+    assert(Type::equals(indexes2->bottom_type(), index_vect_type), "invalid vector type");
+    assert(Type::equals(indexes3->bottom_type(), index_vect_type), "invalid vector type");
+    Node* vgather2 = gvn().transform(new LoadVectorGatherNode(control(), addr_mem, addr, addr_type, vector_type, indexes2));
+    // Merge the third gather with previous results.
+    Node* idx = gvn().makecon(TypeInt::make(max_elem_num - 2 * index_elem_num));
+    Node* vslice = gvn().transform(new VectorSliceNode(vgather2, vgather2, idx));
+    vgather = gvn().transform(new OrVNode(vgather, vslice, vector_type));
+
+    Node* vgather3 = gvn().transform(new LoadVectorGatherNode(control(), addr_mem, addr, addr_type, vector_type, indexes3));
+    // Merge the fourth gather with previous results.
+    idx = gvn().makecon(TypeInt::make(max_elem_num - 3 * index_elem_num));
+    vslice = gvn().transform(new VectorSliceNode(vgather3, vgather3, idx));
+    vgather = gvn().transform(new OrVNode(vgather, vslice, vector_type));
+  }
+  return vgather;
+}
+
+Node* LibraryCallKit::gen_gather_load_masked_subword(Node* addr, Node* indexes, Node* indexes1,
+                                                     Node* indexes2, Node* indexes3, Node* mask,
+                                                     const TypeVect* vector_type) {
+  BasicType elem_bt = vector_type->element_basic_type();
+  const TypeVect* index_vect_type = indexes->bottom_type()->isa_vect();
+  const TypePtr* addr_type = gvn().type(addr)->isa_ptr();
+  Node* addr_mem = memory(addr);
+
+  // Case for architectures that do not support subword vector gather with vector index.
+  // The mask needs to be kept as it is.
+  if (index_vect_type == nullptr) {
+    return gvn().transform(new LoadVectorGatherMaskedNode(control(), addr_mem, addr, addr_type, vector_type, indexes, mask));
+  }
+
+  // The mask input with subword type needs to be widened to int type. And the element
+  // number of the new mask is the same as the index vector.
+  uint index_elem_num = index_vect_type->length();
+  const TypeVect* mask_vt = TypeVect::makemask(T_INT, index_elem_num);
+  Node* vmask_temp = mask;
+  Node* vmask = nullptr;
+
+  // The first masked vector gather with vector index. Generate a new vector mask by widening
+  // the lower half of the mask to int type. For byte vector, it maybe the lowest 1/4 part of
+  // the mask.
+  if (elem_bt == T_BYTE) {
+    const TypeVect* mask_vt_s = TypeVect::makemask(T_SHORT, MaxVectorSize / type2aelembytes(T_SHORT));
+    vmask_temp = gvn().transform(new VectorMaskWidenNode(mask, mask_vt_s, /* is_lo */true));
+    vmask = gvn().transform(new VectorMaskWidenNode(vmask_temp, mask_vt, /* is_lo */true));
+  } else {
+    vmask = gvn().transform(new VectorMaskWidenNode(mask, mask_vt, /* is_lo */true));
+  }
+  Node* vgather = gvn().transform(new LoadVectorGatherMaskedNode(control(), addr_mem, addr, addr_type, vector_type, indexes, vmask));
+
+  // The second masked vector gather with vector index.
+  uint vector_reg_size = Matcher::vector_ideal_reg_size(vector_type->length_in_bytes());
+  uint max_elem_num = vector_reg_size / type2aelembytes(elem_bt);
+  if (indexes1 != nullptr) {
+    assert(index_vect_type != nullptr, "indexes must be a vector");
+    assert(Type::equals(indexes1->bottom_type(), index_vect_type), "invalid vector type");
+
+    // Generate a new vector mask by widening the higher half of the mask to int type. For byte vector,
+    // it maybe the 2/4 part of the mask starting from the lowest bit.
+    vmask = gvn().transform(new VectorMaskWidenNode(vmask_temp, mask_vt, /* is_lo */false));
+    Node* vgather1 = gvn().transform(new LoadVectorGatherMaskedNode(control(), addr_mem, addr, addr_type, vector_type, indexes1, vmask));
+    // Merge the second gather with the first gather result.
+    Node* idx = gvn().makecon(TypeInt::make(max_elem_num - index_elem_num));
+    Node* slice = gvn().transform(new VectorSliceNode(vgather1, vgather1, idx));
+    vgather = gvn().transform(new OrVNode(vgather, slice, vector_type));
+  }
+
+  // The third and fourth masked vector gathers for byte vector.
+  if (indexes2 != nullptr) {
+    assert(elem_bt == T_BYTE, "only byte vector needs more than 2 times of gather load");
+    assert(indexes3 != nullptr, "indexes3 must be non-null");
+    assert(Type::equals(indexes2->bottom_type(), index_vect_type), "invalid vector type");
+    assert(Type::equals(indexes3->bottom_type(), index_vect_type), "invalid vector type");
+
+    // The third masked vector gather with vector index. The new vector mask is widened from the 3/4
+    // part of the input mask.
+    const TypeVect* mask_vt_s = TypeVect::makemask(T_SHORT, MaxVectorSize / type2aelembytes(T_SHORT));
+    vmask_temp = gvn().transform(new VectorMaskWidenNode(mask, mask_vt_s, /* is_lo */false));
+    vmask = gvn().transform(new VectorMaskWidenNode(vmask_temp, mask_vt, /* is_lo */true));
+    Node* vgather2 = gvn().transform(new LoadVectorGatherMaskedNode(control(), addr_mem, addr, addr_type, vector_type, indexes2, vmask));
+    // Merge the third gather with previous results.
+    Node* idx = gvn().makecon(TypeInt::make(max_elem_num - 2 * index_elem_num));
+    Node* slice = gvn().transform(new VectorSliceNode(vgather2, vgather2, idx));
+    vgather = gvn().transform(new OrVNode(vgather, slice, vector_type));
+
+    // The fourth masked vector gather with vector index. The new vector mask is widened from the 4/4
+    // part of the input mask.
+    vmask = gvn().transform(new VectorMaskWidenNode(vmask_temp, mask_vt, /* is_lo */false));
+    Node* vgather3 = gvn().transform(new LoadVectorGatherMaskedNode(control(), addr_mem, addr, addr_type, vector_type, indexes3, vmask));
+    // Merge the fourth gather with previous results.
+    idx = gvn().makecon(TypeInt::make(max_elem_num - 3 * index_elem_num));
+    slice = gvn().transform(new VectorSliceNode(vgather3, vgather3, idx));
+    vgather = gvn().transform(new OrVNode(vgather, slice, vector_type));
+  }
+  return vgather;
+}
+
+//
+//  <C,
+//   V extends Vector<E>,
+//   W extends Vector<Integer>,
+//   M extends VectorMask<E>,_
+//   E>
+//   V loadWithMap(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass, int length,
+//                 Class<? extends Vector<Integer>> vectorIndexClass, int indexLength,
+//                 Object base, long offset,
+//                 W indexVector1, W index_vector2, W index_vector3, W index_vector4,
+//                 M m, C container, int index, int[] indexMap, int indexM, S s,
+//                 LoadVectorOperationWithMap<C, V, S, M> defaultImpl)
 //
 //  <C,
 //   V extends Vector<E>,
@@ -1143,7 +1269,8 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
 //   M extends VectorMask<E>,
 //   E>
 //  void storeWithMap(Class<? extends V> vectorClass, Class<M> maskClass, Class<E> elementType,
-//                    int length, Class<? extends Vector<Integer>> vectorIndexClass, Object base, long offset,    // Unsafe addressing
+//                    int length, Class<? extends Vector<Integer>> vectorIndexClass,
+//                    int indexLength, Object base, long offset, // Unsafe addressing
 //                    W index_vector, V v, M m,
 //                    C container, int index, int[] indexMap, int indexM, // Arguments for default implementation
 //                    StoreVectorOperationWithMap<C, V, M, E> defaultImpl)
@@ -1154,14 +1281,17 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   const TypeInstPtr* elem_klass       = gvn().type(argument(2))->isa_instptr();
   const TypeInt*     vlen             = gvn().type(argument(3))->isa_int();
   const TypeInstPtr* vector_idx_klass = gvn().type(argument(4))->isa_instptr();
+  const TypeInt*     idx_vlen         = gvn().type(argument(5))->isa_int();
 
   if (vector_klass == nullptr || elem_klass == nullptr || vector_idx_klass == nullptr || vlen == nullptr ||
-      vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr || vector_idx_klass->const_oop() == nullptr || !vlen->is_con()) {
-    log_if_needed("  ** missing constant: vclass=%s etype=%s vlen=%s viclass=%s",
+      idx_vlen == nullptr || vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr ||
+      vector_idx_klass->const_oop() == nullptr || !vlen->is_con() || !idx_vlen->is_con()) {
+    log_if_needed("  ** missing constant: vclass=%s etype=%s vlen=%s viclass=%s idx_vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(2)->Opcode()],
                     NodeClassNames[argument(3)->Opcode()],
-                    NodeClassNames[argument(4)->Opcode()]);
+                    NodeClassNames[argument(4)->Opcode()],
+                    NodeClassNames[argument(5)->Opcode()]);
     return false; // not enough info for intrinsification
   }
 
@@ -1178,8 +1308,10 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
 
   BasicType elem_bt = elem_type->basic_type();
   int num_elem = vlen->get_con();
+  int idx_num_elem = idx_vlen->get_con();
 
-  const Type* vmask_type = gvn().type(is_scatter ? argument(10) : argument(9));
+  Node* m = is_scatter ? argument(11) : argument(13);
+  const Type* vmask_type = gvn().type(m);
   bool is_masked_op = vmask_type != TypePtr::NULL_PTR;
   if (is_masked_op) {
     if (mask_klass == nullptr || mask_klass->const_oop() == nullptr) {
@@ -1215,25 +1347,50 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     }
   }
 
-  // Check that the vector holding indices is supported by architecture
-  // For sub-word gathers expander receive index array.
-  if (!is_subword_type(elem_bt) && !arch_supports_vector(Op_LoadVector, num_elem, T_INT, VecMaskNotUsed)) {
+  bool needs_vector_index = Matcher::gather_scatter_needs_vector_index(elem_bt, num_elem);
+  if (needs_vector_index) {
+    // Check that the vector holding indices is supported by architecture
+    if (!arch_supports_vector(Op_LoadVector, idx_num_elem, T_INT, VecMaskNotUsed)) {
       log_if_needed("  ** not supported: arity=%d op=%s/loadindex vlen=%d etype=int is_masked_op=%d",
-                      is_scatter, is_scatter ? "scatter" : "gather",
-                      num_elem, is_masked_op ? 1 : 0);
+                    is_scatter, is_scatter ? "scatter" : "gather",
+                    idx_num_elem, is_masked_op ? 1 : 0);
       return false; // not supported
+    }
+
+    // Check more ops that are necessary to finish the whole subword gather with vector indexes.
+    if (!is_scatter && gvn().type(argument(10)) != TypePtr::NULL_PTR) {
+      if (!arch_supports_vector(Op_VectorSlice, num_elem, elem_bt, VecMaskNotUsed) ||
+          !arch_supports_vector(Op_OrV, num_elem, elem_bt, VecMaskNotUsed)) {
+        log_if_needed("  ** not supported: op=gather/merge vlen=%d etype=%s is_masked_op=%d",
+                      num_elem, type2name(elem_bt), is_masked_op ? 1 : 0);
+        return false; // not supported
+      }
+      if (is_masked_op && !arch_supports_vector(Op_VectorMaskWiden, idx_num_elem, T_INT, VecMaskNotUsed)) {
+        log_if_needed("  ** not supported: op=gather/maskwiden vlen=%d etype=%s is_masked_op=1",
+                      idx_num_elem, type2name(elem_bt));
+        return false; // not supported
+      }
+    }
   }
 
-  Node* base = argument(5);
-  Node* offset = ConvL2X(argument(6));
+  Node* base = argument(6);
+  Node* offset = ConvL2X(argument(7));
 
   // Save state and restore on bailout
   uint old_sp = sp();
   SafePointNode* old_map = clone_map();
 
-  Node* addr = make_unsafe_address(base, offset, elem_bt, true);
+  Node* addr = nullptr;
+  if (needs_vector_index) {
+    addr = make_unsafe_address(base, offset, elem_bt, true);
+  } else {
+    assert(is_subword_type(elem_bt), "Only subword gather operation supports non-vector indexes");
+    assert(!is_scatter, "Only supports gather operation for subword types now");
+    Node* index = argument(15);
+    addr = array_element_address(base, index, elem_bt);
+  }
 
-  const TypePtr *addr_type = gvn().type(addr)->isa_ptr();
+  const TypePtr* addr_type = gvn().type(addr)->isa_ptr();
   const TypeAryPtr* arr_type = addr_type->isa_aryptr();
 
   // The array must be consistent with vector type
@@ -1255,26 +1412,66 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     return false;
   }
 
-  Node* index_vect = nullptr;
+  // Get the indexes for gather/scatter.
+  Node* indexes = nullptr;
   const TypeInstPtr* vbox_idx_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_idx_klass);
-  if (!is_subword_type(elem_bt)) {
-    index_vect = unbox_vector(argument(8), vbox_idx_type, T_INT, num_elem);
-    if (index_vect == nullptr) {
+  if (!needs_vector_index) {
+    Node* indexMap = argument(16);
+    Node* indexM   = argument(17);
+    indexes = array_element_address(indexMap, indexM, T_INT);
+  } else {
+    // Get the first index vector.
+    indexes = unbox_vector(argument(9), vbox_idx_type, T_INT, idx_num_elem);
+    if (indexes == nullptr) {
       set_map(old_map);
       set_sp(old_sp);
       return false;
     }
   }
 
+  // Get other index vectors if they are not nullptr for subword gather operation.
+  Node* indexes1 = nullptr;
+  Node* indexes2 = nullptr;
+  Node* indexes3 = nullptr;
+  if (!is_scatter && needs_vector_index) {
+    // Get the second index vector if they are not nullptr.
+    if (gvn().type(argument(10)) != TypePtr::NULL_PTR) {
+      assert(is_subword_type(elem_bt), "Only subword gather needs more index vectors");
+      indexes1 = unbox_vector(argument(10), vbox_idx_type, T_INT, idx_num_elem);
+      if (indexes1 == nullptr) {
+        set_map(old_map);
+        set_sp(old_sp);
+        return false;
+      }
+    }
+
+    // Get the third and fourth index vectors if they are not nullptr.
+    if (gvn().type(argument(11)) != TypePtr::NULL_PTR) {
+      assert(elem_bt == T_BYTE, "Only byte gather needs more than 2 index vectors");
+      if (gvn().type(argument(12)) == TypePtr::NULL_PTR) {
+        set_map(old_map);
+        set_sp(old_sp);
+        return false;
+      }
+
+      indexes2 = unbox_vector(argument(11), vbox_idx_type, T_INT, idx_num_elem);
+      indexes3 = unbox_vector(argument(12), vbox_idx_type, T_INT, idx_num_elem);
+      if (indexes2 == nullptr || indexes3 == nullptr) {
+        set_map(old_map);
+        set_sp(old_sp);
+        return false;
+      }
+    }
+  }
+
+  // Get the vector mask value.
   Node* mask = nullptr;
   if (is_masked_op) {
     ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
     const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
-    mask = unbox_vector(is_scatter ? argument(10) : argument(9), mbox_type, elem_bt, num_elem);
+    mask = unbox_vector(m, mbox_type, elem_bt, num_elem);
     if (mask == nullptr) {
-      log_if_needed("  ** unbox failed mask=%s",
-                    is_scatter ? NodeClassNames[argument(10)->Opcode()]
-                               : NodeClassNames[argument(9)->Opcode()]);
+      log_if_needed("  ** unbox failed mask=%s", NodeClassNames[m->Opcode()]);
       set_map(old_map);
       set_sp(old_sp);
       return false;
@@ -1283,7 +1480,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
 
   const TypeVect* vector_type = TypeVect::make(elem_bt, num_elem);
   if (is_scatter) {
-    Node* val = unbox_vector(argument(9), vbox_type, elem_bt, num_elem);
+    Node* val = unbox_vector(argument(10), vbox_type, elem_bt, num_elem);
     if (val == nullptr) {
       set_map(old_map);
       set_sp(old_sp);
@@ -1293,29 +1490,24 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
 
     Node* vstore = nullptr;
     if (mask != nullptr) {
-      vstore = gvn().transform(new StoreVectorScatterMaskedNode(control(), memory(addr), addr, addr_type, val, index_vect, mask));
+      vstore = gvn().transform(new StoreVectorScatterMaskedNode(control(), memory(addr), addr, addr_type, val, indexes, mask));
     } else {
-      vstore = gvn().transform(new StoreVectorScatterNode(control(), memory(addr), addr, addr_type, val, index_vect));
+      vstore = gvn().transform(new StoreVectorScatterNode(control(), memory(addr), addr, addr_type, val, indexes));
     }
     set_memory(vstore, addr_type);
   } else {
     Node* vload = nullptr;
-    Node* index    = argument(11);
-    Node* indexMap = argument(12);
-    Node* indexM   = argument(13);
     if (mask != nullptr) {
       if (is_subword_type(elem_bt)) {
-        Node* index_arr_base = array_element_address(indexMap, indexM, T_INT);
-        vload = gvn().transform(new LoadVectorGatherMaskedNode(control(), memory(addr), addr, addr_type, vector_type, index_arr_base, mask, index));
+        vload = gen_gather_load_masked_subword(addr, indexes, indexes1, indexes2, indexes3, mask, vector_type);
       } else {
-        vload = gvn().transform(new LoadVectorGatherMaskedNode(control(), memory(addr), addr, addr_type, vector_type, index_vect, mask));
+        vload = gvn().transform(new LoadVectorGatherMaskedNode(control(), memory(addr), addr, addr_type, vector_type, indexes, mask));
       }
     } else {
       if (is_subword_type(elem_bt)) {
-        Node* index_arr_base = array_element_address(indexMap, indexM, T_INT);
-        vload = gvn().transform(new LoadVectorGatherNode(control(), memory(addr), addr, addr_type, vector_type, index_arr_base, index));
+        vload = gen_gather_load_subword(addr, indexes, indexes1, indexes2, indexes3, vector_type);
       } else {
-        vload = gvn().transform(new LoadVectorGatherNode(control(), memory(addr), addr, addr_type, vector_type, index_vect));
+        vload = gvn().transform(new LoadVectorGatherNode(control(), memory(addr), addr, addr_type, vector_type, indexes));
       }
     }
     Node* box = box_vector(vload, vbox_type, elem_bt, num_elem);
@@ -1323,7 +1515,6 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   }
 
   destruct_map_clone(old_map);
-
   C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
   return true;
 }

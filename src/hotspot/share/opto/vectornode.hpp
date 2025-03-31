@@ -1112,25 +1112,18 @@ class LoadVectorNode : public LoadNode {
 // Load Vector from memory via index map
 class LoadVectorGatherNode : public LoadVectorNode {
  public:
-  LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* offset = nullptr)
+  LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGather);
     add_req(indices);
     DEBUG_ONLY(bool is_subword = is_subword_type(vt->element_basic_type()));
     assert(is_subword || indices->bottom_type()->is_vect(), "indices must be in vector");
-    assert(is_subword || !offset, "");
     assert(req() == MemNode::ValueIn + 1, "match_edge expects that index input is in MemNode::ValueIn");
-    if (offset) {
-      add_req(offset);
-    }
   }
 
   virtual int Opcode() const;
   virtual uint match_edge(uint idx) const {
-     return idx == MemNode::Address ||
-            idx == MemNode::ValueIn ||
-            ((is_subword_type(vect_type()->element_basic_type())) &&
-              idx == MemNode::ValueIn + 1);
+     return idx == MemNode::Address || idx == MemNode::ValueIn;
   }
   virtual int store_Opcode() const {
     // Ensure it is different from any store opcode to avoid folding when indices are used
@@ -1249,23 +1242,19 @@ class LoadVectorMaskedNode : public LoadVectorNode {
 // Load Vector from memory via index map under the influence of a predicate register(mask).
 class LoadVectorGatherMaskedNode : public LoadVectorNode {
  public:
-  LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask, Node* offset = nullptr)
+  LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGatherMasked);
     add_req(indices);
     add_req(mask);
     assert(req() == MemNode::ValueIn + 2, "match_edge expects that last input is in MemNode::ValueIn+1");
-    if (is_subword_type(vt->element_basic_type())) {
-      add_req(offset);
-    }
+    assert(is_subword_type(vt->element_basic_type()) || indices->bottom_type()->is_vect(), "indices must be in vector");
   }
 
   virtual int Opcode() const;
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                    idx == MemNode::ValueIn ||
-                                                   idx == MemNode::ValueIn + 1 ||
-                                                   (is_subword_type(vect_type()->is_vect()->element_basic_type()) &&
-                                                   idx == MemNode::ValueIn + 2); }
+                                                   idx == MemNode::ValueIn + 1; }
   virtual int store_Opcode() const {
     // Ensure it is different from any store opcode to avoid folding when indices and mask are used
     return -1;
@@ -1745,6 +1734,24 @@ class VectorRearrangeNode : public VectorNode {
   Node* vec_shuffle() const { return in(2); }
 };
 
+// Generate a vector by slicing the two source vectors based on an index.
+//
+// Copy the indexed byte up to the last byte of the first source vector
+// to the bottom of the result vector, then fill the remainder of the
+// result starting from the first byte of the second source vector.
+//
+// E.g. src1 = [hgfedcba] src2 = [ponmlkji] index = 3
+//      dst = [kjihgfed]
+class VectorSliceNode : public VectorNode {
+ public:
+  VectorSliceNode(Node* vec1, Node* vec2, Node* index)
+    : VectorNode(vec1, vec2, index, vec1->bottom_type()->is_vect()) {
+    assert(index->bottom_type()->isa_int(), "index must be an integral value");
+    assert(index->is_Con(), "index must be a constant");
+  }
+
+  virtual int Opcode() const;
+};
 
 // Select elements from two source vectors based on the wrapped indexes held in
 // the first vector.
@@ -1802,6 +1809,28 @@ class VectorMaskCastNode : public VectorNode {
     assert(in_vt->length() == vt->length(), "vector length must match");
   }
   virtual int Opcode() const;
+};
+
+// Unpack the elements to twice size.
+class VectorMaskWidenNode : public VectorNode {
+ private:
+  // "_is_lo" is used to denote whether the lower half or
+  // the upper half of the elements are widened.
+  // E.g. src = [1111 0101]
+  //      _is_lo = true, dst = [0001 0001]
+  //      _is_lo = false, dst = [0101 0101]
+  bool _is_lo;
+
+ public:
+  VectorMaskWidenNode(Node* in, const TypeVect* vt, bool is_lo) : VectorNode(in, vt), _is_lo(is_lo) {
+    init_class_id(Class_VectorMaskWiden);
+    const TypeVect* in_vt = in->bottom_type()->is_vect();
+    assert(type2aelembytes(in_vt->element_basic_type()) == type2aelembytes(vt->element_basic_type()) / 2, "must be half size");
+  }
+
+  bool is_lo() const { return _is_lo; }
+  virtual int Opcode() const;
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 // This is intended for use as a simple reinterpret node that has no cast.
