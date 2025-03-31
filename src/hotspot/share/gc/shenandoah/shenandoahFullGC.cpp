@@ -197,16 +197,11 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
       update_roots(true /*full_gc*/);
     }
 
-    // d. Reset the bitmaps for new marking
-    heap->global_generation()->reset_mark_bitmap();
-    assert(heap->marking_context()->is_bitmap_clear(), "sanity");
-    assert(!heap->global_generation()->is_mark_complete(), "sanity");
-
-    // e. Abandon reference discovery and clear all discovered references.
+    // d. Abandon reference discovery and clear all discovered references.
     ShenandoahReferenceProcessor* rp = heap->global_generation()->ref_processor();
     rp->abandon_partial_discovery();
 
-    // f. Sync pinned region status from the CP marks
+    // e. Sync pinned region status from the CP marks
     heap->sync_pinned_region_status();
 
     if (heap->mode()->is_generational()) {
@@ -287,30 +282,15 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   }
 }
 
-class ShenandoahPrepareForMarkClosure: public ShenandoahHeapRegionClosure {
-private:
-  ShenandoahMarkingContext* const _ctx;
-
-public:
-  ShenandoahPrepareForMarkClosure() : _ctx(ShenandoahHeap::heap()->marking_context()) {}
-
-  void heap_region_do(ShenandoahHeapRegion *r) override {
-    _ctx->capture_top_at_mark_start(r);
-    r->clear_live_data();
-  }
-
-  bool is_thread_safe() override { return true; }
-};
-
 void ShenandoahFullGC::phase1_mark_heap() {
   GCTraceTime(Info, gc, phases) time("Phase 1: Mark live objects", _gc_timer);
   ShenandoahGCPhase mark_phase(ShenandoahPhaseTimings::full_gc_mark);
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  ShenandoahPrepareForMarkClosure prepare_for_mark;
-  ShenandoahExcludeRegionClosure<FREE> cl(&prepare_for_mark);
-  heap->parallel_heap_region_iterate(&cl);
+  heap->global_generation()->reset_mark_bitmap<true, true>();
+  assert(heap->marking_context()->is_bitmap_clear(), "sanity");
+  assert(!heap->global_generation()->is_mark_complete(), "sanity");
 
   heap->set_unload_classes(heap->global_generation()->heuristics()->can_unload_classes());
 
@@ -1176,6 +1156,9 @@ void ShenandoahFullGC::phase5_epilog() {
     }
 
     heap->free_set()->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
+
+    // Set mark incomplete because the marking bitmaps have been reset except pinned regions.
+    heap->global_generation()->set_mark_incomplete();
 
     heap->clear_cancelled_gc(true /* clear oom handler */);
   }

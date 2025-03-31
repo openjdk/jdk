@@ -5452,8 +5452,8 @@ void JavaClasses::serialize_offsets(SerializeClosure* soc) {
 bool JavaClasses::is_supported_for_archiving(oop obj) {
   Klass* klass = obj->klass();
 
-  if (!CDSConfig::is_dumping_invokedynamic()) {
-    // These are supported by CDS only when CDSConfig::is_dumping_invokedynamic() is enabled.
+  if (!CDSConfig::is_dumping_method_handles()) {
+    // These are supported by CDS only when CDSConfig::is_dumping_method_handles() is enabled.
     if (klass == vmClasses::ResolvedMethodName_klass() ||
         klass == vmClasses::MemberName_klass()) {
       return false;

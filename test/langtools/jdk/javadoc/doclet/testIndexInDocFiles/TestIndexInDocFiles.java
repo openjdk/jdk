@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8235414
+ * @bug 8235414 8345555
  * @summary Module level doc-files show "unnamed package" as holder
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -114,12 +114,11 @@ public class TestIndexInDocFiles extends JavadocTester {
                 """
                     {"l":"package-index","h":"package p.q","d":"additional info","u":"p/q/doc-files/package-file.html#package-index"}""",
                 """
-                    {"l":"package.property","h":"package p.q","d":"System Property","u":"p/q/doc-files/package-file.html#package.property"}""",
+                    {"l":"package.property","h":"package p.q","k":"15","u":"p/q/doc-files/package-file.html#package.property"}""",
                 """
                     {"l":"top-level-index","h":"unnamed package","d":"additional info","u":"doc-files/top-level-file.html#top-level-index"}""",
                 """
-                    {"l":"top.level.property","h":"unnamed package","d":"System Property","u":"doc-f\
-                    iles/top-level-file.html#top.level.property"}""");
+                    {"l":"top.level.property","h":"unnamed package","k":"15","u":"doc-files/top-level-file.html#top.level.property"}""");
     }
 
     /**
@@ -186,9 +185,8 @@ public class TestIndexInDocFiles extends JavadocTester {
                 """
                     {"l":"package-index","h":"package p.q","d":"additional info","u":"m.n/p/q/doc-files/package-file.html#package-index"}""",
                 """
-                    {"l":"module.property","h":"module m.n","d":"System Property","u":"m.n/doc-files/module-file.html#module.property"}""",
+                    {"l":"module.property","h":"module m.n","k":"15","u":"m.n/doc-files/module-file.html#module.property"}""",
                 """
-                    {"l":"package.property","h":"package p.q","d":"System Property","u":"m.n/p/q/doc\
-                    -files/package-file.html#package.property"}""");
+                    {"l":"package.property","h":"package p.q","k":"15","u":"m.n/p/q/doc-files/package-file.html#package.property"}""");
     }
 }

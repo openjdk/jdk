@@ -50,7 +50,7 @@ class JfrJavaEventWriter : AllStatic {
   static jobject event_writer(JavaThread* t);
   static jobject new_event_writer(TRAPS);
   static void flush(jobject writer, jint used, jint requested, JavaThread* jt);
-  static jlong commit(jlong next_position);
+  static jlong commit(jlong next_position, JavaThread* jt);
 };
 
 #endif // SHARE_JFR_WRITERS_JFRJAVAEVENTWRITER_HPP

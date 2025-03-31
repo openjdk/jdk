@@ -241,7 +241,6 @@ typedef ResizeableResourceHashtable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompi
 // whenever I have phase-specific information.
 
 class Node {
-  friend class VMStructs;
 
   // Lots of restrictions on cloning Nodes
   NONCOPYABLE(Node);
@@ -336,8 +335,11 @@ protected:
   void grow( uint len );
   // Grow the output array to the next larger power-of-2 bigger than len.
   void out_grow( uint len );
+  // Resize input or output array to grow it to the next larger power-of-2
+  // bigger than len.
+  void resize_array(Node**& array, node_idx_t& max_size, uint len, bool needs_clearing);
 
- public:
+public:
   // Each Node is assigned a unique small/dense number. This number is used
   // to index into auxiliary arrays of data and bit vectors.
   // The value of _idx can be changed using the set_idx() method.
@@ -831,8 +833,9 @@ public:
     Flag_is_expensive                = 1 << 13,
     Flag_is_predicated_vector        = 1 << 14,
     Flag_for_post_loop_opts_igvn     = 1 << 15,
-    Flag_is_removed_by_peephole      = 1 << 16,
-    Flag_is_predicated_using_blend   = 1 << 17,
+    Flag_for_merge_stores_igvn       = 1 << 16,
+    Flag_is_removed_by_peephole      = 1 << 17,
+    Flag_is_predicated_using_blend   = 1 << 18,
     _last_flag                       = Flag_is_predicated_using_blend
   };
 
@@ -1076,6 +1079,7 @@ public:
   bool is_scheduled() const { return (_flags & Flag_is_scheduled) != 0; }
 
   bool for_post_loop_opts_igvn() const { return (_flags & Flag_for_post_loop_opts_igvn) != 0; }
+  bool for_merge_stores_igvn() const { return (_flags & Flag_for_merge_stores_igvn) != 0; }
 
   // Is 'n' possibly a loop entry (i.e. a Parse Predicate projection)?
   static bool may_be_loop_entry(Node* n) {
@@ -1283,6 +1287,10 @@ public:
   bool is_memory_phi() const { return is_Phi() && bottom_type() == Type::MEMORY; }
 
   bool is_div_or_mod(BasicType bt) const;
+
+  bool is_pure_function() const;
+
+  bool is_data_proj_of_pure_function(const Node* maybe_pure_function) const;
 
 //----------------- Printing, etc
 #ifndef PRODUCT
@@ -1615,7 +1623,6 @@ class SimpleDUIterator : public StackObj {
 // Note that the constructor just zeros things, and since I use Arena
 // allocation I do not need a destructor to reclaim storage.
 class Node_Array : public AnyObj {
-  friend class VMStructs;
 protected:
   Arena* _a;                    // Arena to allocate in
   uint   _max;
@@ -1660,7 +1667,6 @@ public:
 };
 
 class Node_List : public Node_Array {
-  friend class VMStructs;
   uint _cnt;
 public:
   Node_List(uint max = OptoNodeListSize) : Node_Array(Thread::current()->resource_area(), max), _cnt(0) {}
@@ -1727,7 +1733,6 @@ void Node::visit_uses(Callback callback, Check is_boundary) const {
 
 //------------------------------Unique_Node_List-------------------------------
 class Unique_Node_List : public Node_List {
-  friend class VMStructs;
   VectorSet _in_worklist;
   uint _clock_index;            // Index in list where to pop from next
 public:
@@ -1740,7 +1745,7 @@ public:
   Unique_Node_List(Unique_Node_List&&) = default;
 
   void remove( Node *n );
-  bool member( Node *n ) { return _in_worklist.test(n->_idx) != 0; }
+  bool member(const Node* n) const { return _in_worklist.test(n->_idx) != 0; }
   VectorSet& member_set(){ return _in_worklist; }
 
   void push(Node* b) {
@@ -1867,7 +1872,6 @@ inline void Compile::remove_for_igvn(Node* n) {
 
 //------------------------------Node_Stack-------------------------------------
 class Node_Stack {
-  friend class VMStructs;
 protected:
   struct INode {
     Node *node; // Processed node
@@ -1943,7 +1947,6 @@ public:
 // Debugging or profiling annotations loosely and sparsely associated
 // with some nodes.  See Compile::node_notes_at for the accessor.
 class Node_Notes {
-  friend class VMStructs;
   JVMState* _jvms;
 
 public:
@@ -2061,6 +2064,7 @@ public:
 }
 
 Op_IL(Add)
+Op_IL(And)
 Op_IL(Sub)
 Op_IL(Mul)
 Op_IL(URShift)
