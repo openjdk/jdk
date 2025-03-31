@@ -232,6 +232,11 @@ private:
   // statistics
   DumpAllocStats _alloc_stats;
   size_t _total_heap_region_size;
+  struct {
+    size_t _num_ptrs;
+    size_t _num_tagged_ptrs;
+    size_t _num_implicitly_nulled_ptrs;
+  } _relocated_ptr_info;
 
   void print_region_stats(FileMapInfo *map_info, ArchiveHeapInfo* heap_info);
   void print_bitmap_region_stats(size_t size, size_t total_size);
@@ -251,6 +256,8 @@ public:
     }
     ~OtherROAllocMark();
   };
+
+  void count_relocated_pointer(bool tagged, bool implicitly_nulled);
 
 private:
   FollowMode get_follow_mode(MetaspaceClosure::Ref *ref);

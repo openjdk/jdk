@@ -132,13 +132,23 @@ public:
     size_t field_offset = size_t(bit_offset - _start_idx) * sizeof(address);
     address* ptr_loc = (address*)(_buffered_obj + field_offset);
 
-    address old_p = *ptr_loc;
+    address old_p_with_tags = *ptr_loc;
+    address old_p = MetaspaceClosure::strip_tags(old_p_with_tags);
+    uintx tags = MetaspaceClosure::decode_tags(old_p_with_tags);
     address new_p = _builder->get_buffered_addr(old_p);
+    bool implicitly_nulled = false;
+    if (new_p != nullptr) {
+      new_p = MetaspaceClosure::add_tags(new_p, tags);
+    } else if (old_p != nullptr) {
+      implicitly_nulled = true;
+    }
 
-    log_trace(cds)("Ref: [" PTR_FORMAT "] -> " PTR_FORMAT " => " PTR_FORMAT,
-                   p2i(ptr_loc), p2i(old_p), p2i(new_p));
+    log_trace(cds)("Ref: [" PTR_FORMAT "] -> " PTR_FORMAT " => " PTR_FORMAT " %zu%s",
+                   p2i(ptr_loc), p2i(old_p) + tags, p2i(new_p), tags,
+                   implicitly_nulled ?  ", ref to excluded objects is implicitly nulled" : "");
 
     ArchivePtrMarker::set_and_mark_pointer(ptr_loc, new_p);
+    ArchiveBuilder::current()->count_relocated_pointer(tags != 0, implicitly_nulled);
     return true; // keep iterating the bitmap
   }
 };
@@ -178,6 +188,9 @@ ArchiveBuilder::ArchiveBuilder() :
   _klasses = new (mtClassShared) GrowableArray<Klass*>(4 * K, mtClassShared);
   _symbols = new (mtClassShared) GrowableArray<Symbol*>(256 * K, mtClassShared);
   _entropy_seed = 0x12345678;
+  _relocated_ptr_info._num_ptrs = 0;
+  _relocated_ptr_info._num_tagged_ptrs = 0;
+  _relocated_ptr_info._num_implicitly_nulled_ptrs = 0;
   assert(_current == nullptr, "must be");
   _current = this;
 }
@@ -741,6 +754,10 @@ void ArchiveBuilder::relocate_metaspaceobj_embedded_pointers() {
   log_info(cds)("Relocating embedded pointers in core regions ... ");
   relocate_embedded_pointers(&_rw_src_objs);
   relocate_embedded_pointers(&_ro_src_objs);
+  log_info(cds)("Relocating %zu pointers, %zu tagged, %zu implicitly nulled",
+                _relocated_ptr_info._num_ptrs,
+                _relocated_ptr_info._num_tagged_ptrs,
+                _relocated_ptr_info._num_implicitly_nulled_ptrs);
 }
 
 #define ADD_COUNT(x) \
@@ -1581,6 +1598,12 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
 
 void ArchiveBuilder::write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region, bool read_only,  bool allow_exec) {
   mapinfo->write_region(region_idx, dump_region->base(), dump_region->used(), read_only, allow_exec);
+}
+
+void ArchiveBuilder::count_relocated_pointer(bool tagged, bool implicitly_nulled) {
+  _relocated_ptr_info._num_ptrs ++;
+  _relocated_ptr_info._num_tagged_ptrs += tagged ? 1 : 0;
+  _relocated_ptr_info._num_implicitly_nulled_ptrs += implicitly_nulled ? 1 : 0;
 }
 
 void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo, ArchiveHeapInfo* heap_info) {

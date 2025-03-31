@@ -337,10 +337,8 @@ void TypeStackSlotEntries::clean_weak_klass_links(bool always_clean) {
 
 void TypeStackSlotEntries::metaspace_pointers_do(MetaspaceClosure* it) {
   for (int i = 0; i < _number_of_entries; i++) {
-    set_type(i, klass_part(type(i))); // reset tag; FIXME: properly handle tagged pointers
-    Klass** k = (Klass**)type_adr(i);
+    Klass** k = (Klass**)type_adr(i); // tagged
     it->push(k);
-//    it->push_tagged(k);
   }
 }
 
@@ -359,9 +357,7 @@ void ReturnTypeEntry::clean_weak_klass_links(bool always_clean) {
 
 void ReturnTypeEntry::metaspace_pointers_do(MetaspaceClosure* it) {
   Klass** k = (Klass**)type_adr(); // tagged
-  set_type(klass_part(type())); // reset tag; FIXME: properly handle tagged pointers
   it->push(k);
-//  it->push_tagged(k);
 }
 
 bool TypeEntriesAtCall::return_profiling_enabled() {
