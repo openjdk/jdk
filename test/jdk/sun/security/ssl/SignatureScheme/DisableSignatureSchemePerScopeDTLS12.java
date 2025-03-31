@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,38 @@
  * questions.
  */
 
-package jdk.jfr.api.metadata.annotations;
-
-import jdk.jfr.Event;
-import jdk.jfr.EventType;
-import jdk.jfr.Period;
-import jdk.jfr.FlightRecorder;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.jfr.Events;
-
-/**
+/*
  * @test
- * @requires vm.flagless
- * @requires vm.hasJFR
- * @library /test/lib
- * @run main/othervm jdk.jfr.api.metadata.annotations.TestPeriod
+ * @bug 8349583
+ * @summary Add mechanism to disable signature schemes based on their TLS scope.
+ *          This test only covers DTLS 1.2.
+ * @library /javax/net/ssl/templates
+ *          /test/lib
+ * @run main/othervm DisableSignatureSchemePerScopeDTLS12
  */
-public class TestPeriod {
 
-    @Period("47 s")
-    static class PeriodicEvent extends Event {
+import java.security.Security;
+
+public class DisableSignatureSchemePerScopeDTLS12
+        extends DisableSignatureSchemePerScopeTLS12 {
+
+    protected DisableSignatureSchemePerScopeDTLS12() throws Exception {
+        super();
     }
 
     public static void main(String[] args) throws Exception {
-        EventType periodicEvent = EventType.getEventType(PeriodicEvent.class);
-        FlightRecorder.addPeriodicEvent(PeriodicEvent.class, () -> {});
-        String defaultValue = Events.getSetting(periodicEvent, Period.NAME).getDefaultValue();
-        Asserts.assertEQ(defaultValue, "47 s", "Incorrect default value for period");
+        Security.setProperty(
+                "jdk.tls.disabledAlgorithms", DISABLED_CONSTRAINTS);
+        new DisableSignatureSchemePerScopeDTLS12().run();
+    }
+
+    @Override
+    protected String getProtocol() {
+        return "DTLSv1.2";
+    }
+
+    // No CertificateRequest in DTLS server flight.
+    @Override
+    protected void checkCertificateRequest() {
     }
 }

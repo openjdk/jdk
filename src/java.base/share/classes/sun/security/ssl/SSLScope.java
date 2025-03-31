@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,33 @@
  * questions.
  */
 
-package jdk.internal.access;
+package sun.security.ssl;
 
-public interface JavaUtilConcurrentTLRAccess {
-    int nextSecondaryThreadLocalRandomSeed();
-    int getThreadLocalRandomProbe();
-    int advanceThreadLocalRandomProbe(int r);
+/*
+ * Scopes defining different parts of TLS protocol.
+ */
+
+public enum SSLScope {
+    // Handshake signature scope as in signature_algorithms extension.
+    HANDSHAKE_SIGNATURE("HandshakeSignature"),
+
+    // Certificate signature scope as in signature_algorithms_cert extension.
+    CERTIFICATE_SIGNATURE("CertificateSignature");
+
+    private final String name;
+
+    SSLScope(String name) {
+        this.name = name;
+    }
+
+    // Note: the SSLScope name is case-insensitive.
+    public static SSLScope nameOf(String scopeName) {
+        for (SSLScope scope : SSLScope.values()) {
+            if (scope.name.equalsIgnoreCase(scopeName)) {
+                return scope;
+            }
+        }
+
+        return null;
+    }
 }
