@@ -33,7 +33,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
- *                   -XX:-KillPathsReachableByDeadTypeNode
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates Xbatch
  */
 
@@ -44,7 +44,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
- *                   -XX:-KillPathsReachableByDeadTypeNode
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates NoTieredCompilation
  */
 
@@ -56,7 +56,7 @@
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=inline,compiler.predicates.assertion.TestAssertionPredicates::inline
- *                   -XX:-KillPathsReachableByDeadTypeNode
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates Xcomp
  */
 
@@ -68,7 +68,7 @@
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=inline,compiler.predicates.assertion.TestAssertionPredicates::inline
- *                   -XX:-KillPathsReachableByDeadTypeNode
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates XcompNoTiered
  */
 
@@ -80,7 +80,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
- *                   -XX:-KillPathsReachableByDeadTypeNode
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates LoopMaxUnroll0
  */
 
@@ -92,7 +92,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
- *                   -XX:-KillPathsReachableByDeadTypeNode
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates LoopMaxUnroll2
  */
 
@@ -104,7 +104,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
- *                   -XX:-KillPathsReachableByDeadTypeNode
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates LoopUnrollLimit40
  */
 
@@ -116,7 +116,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
- *                   -XX:-KillPathsReachableByDeadTypeNode
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates LoopUnrollLimit150
  */
 
@@ -128,7 +128,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
- *                   -XX:-KillPathsReachableByDeadTypeNode
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates NoProfiledLoopPredicate
  */
 
@@ -140,7 +140,7 @@
  * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
- *                   -XX:-KillPathsReachableByDeadTypeNode
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates DataUpdate
  */
 
@@ -151,7 +151,7 @@
  * @run main/othervm -Xcomp -XX:-BlockLayoutByFrequency -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
- *                   -XX:-KillPathsReachableByDeadTypeNode
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates CloneDown
  */
 
@@ -163,7 +163,7 @@
  * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:+StressGCM -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
- *                   -XX:-KillPathsReachableByDeadTypeNode
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates Stress
  */
 
@@ -175,7 +175,7 @@
  * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:+StressGCM -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
- *                   -XX:-KillPathsReachableByDeadTypeNode
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates Stress
  */
 
@@ -187,7 +187,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
- *                   -XX:-KillPathsReachableByDeadTypeNode
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates NoLoopPredication
  */
 
@@ -199,7 +199,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
- *                   -XX:-KillPathsReachableByDeadTypeNode
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
  *                   compiler.predicates.assertion.TestAssertionPredicates NoLoopPredication
  */
 
