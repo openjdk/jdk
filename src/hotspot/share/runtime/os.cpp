@@ -1291,6 +1291,12 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 
   bool accessible = is_readable_pointer(addr);
 
+  // Check if addr points into the narrow Klass protection zone
+  if (UseCompressedClassPointers && CompressedKlassPointers::is_in_protection_zone(addr)) {
+    st->print_cr(PTR_FORMAT " points into nKlass protection zone", p2i(addr));
+    return;
+  }
+
   // Check if addr is a JNI handle.
   if (align_down((intptr_t)addr, sizeof(intptr_t)) != 0 && accessible) {
     if (JNIHandles::is_global_handle((jobject) addr)) {
