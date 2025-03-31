@@ -788,9 +788,11 @@ public:
 
 void ShenandoahVerifier::verify_at_safepoint(const char* label,
                                              VerifyRememberedSet remembered,
-                                             VerifyForwarded forwarded, VerifyMarked marked,
+                                             VerifyForwarded forwarded,
+                                             VerifyMarked marked,
                                              VerifyCollectionSet cset,
-                                             VerifyLiveness liveness, VerifyRegions regions,
+                                             VerifyLiveness liveness,
+                                             VerifyRegions regions,
                                              VerifySize sizeness,
                                              VerifyGCState gcstate) {
   guarantee(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "only when nothing else happens");
@@ -1186,7 +1188,7 @@ void ShenandoahVerifier::verify_after_fullgc() {
           "After Full GC",
           _verify_remembered_after_full_gc,  // verify read-write remembered set
           _verify_forwarded_none,      // all objects are non-forwarded
-          _verify_marked_complete,     // all objects are marked in complete bitmap
+          _verify_marked_incomplete,   // all objects are marked in incomplete bitmap
           _verify_cset_none,           // no cset references
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_notrash_nocset, // no trash, no cset
