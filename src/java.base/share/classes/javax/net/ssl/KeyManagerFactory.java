@@ -64,7 +64,7 @@ public class KeyManagerFactory {
     public static final String getDefaultAlgorithm() {
         String type = Security.getProperty("ssl.KeyManagerFactory.algorithm");
         if (type == null) {
-            type = "SunX509";
+            type = "NewSunX509";
         }
         return type;
     }
