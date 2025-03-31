@@ -25,6 +25,7 @@
 
 package sun.security.util;
 
+import sun.security.ssl.SSLScope;
 import sun.security.validator.Validator;
 
 import java.lang.ref.SoftReference;
@@ -44,6 +45,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -178,6 +180,12 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
 
         return true;
+    }
+
+    // Checks if algorithm is disabled for the given TLS scopes.
+    public boolean permits(String algorithm, Set<SSLScope> scopes) {
+        List<Constraint> list = algorithmConstraints.getConstraints(algorithm);
+        return list == null || list.stream().allMatch(c -> c.permits(scopes));
     }
 
     /*
@@ -435,7 +443,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                         denyAfterLimit = true;
                     } else if (entry.startsWith("usage")) {
                         String[] s = (entry.substring(5)).trim().split(" ");
-                        c = new UsageConstraint(algorithm, s);
+                        c = new UsageConstraint(algorithm, s, propertyName);
                         if (debug != null) {
                             debug.println("Constraints usage length is " + s.length);
                         }
@@ -603,6 +611,17 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
          *         'false' otherwise.
          */
         public boolean permits(AlgorithmParameters parameters) {
+            return true;
+        }
+
+        /**
+         * Check if the algorithm constraint permits the given TLS scopes.
+         *
+         * @param scopes TLS scopes
+         * @return 'true' if TLS scopes are allowed,
+         *         'false' otherwise.
+         */
+        public boolean permits(Set<SSLScope> scopes) {
             return true;
         }
 
@@ -783,14 +802,49 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
     /*
      * The usage constraint is for the "usage" keyword.  It checks against the
-     * variant value in ConstraintsParameters.
+     * variant value in ConstraintsParameters and against TLS scopes.
      */
     private static class UsageConstraint extends Constraint {
         String[] usages;
+        Set<SSLScope> scopes;
 
-        UsageConstraint(String algorithm, String[] usages) {
+        UsageConstraint(
+                String algorithm, String[] usages, String propertyName) {
             this.algorithm = algorithm;
-            this.usages = usages;
+
+            // Support TLS scopes only for jdk.tls.disabledAlgorithms property.
+            if (PROPERTY_TLS_DISABLED_ALGS.equals(propertyName)) {
+                for (String usage : usages) {
+                    SSLScope scope = SSLScope.nameOf(usage);
+
+                    if (scope != null) {
+                        if (this.scopes == null) {
+                            this.scopes = new HashSet<>(usages.length);
+                        }
+                        this.scopes.add(scope);
+                    } else {
+                        this.usages = usages;
+                    }
+                }
+
+                if (this.scopes != null && this.usages != null) {
+                    throw new IllegalArgumentException(
+                            "Can't mix TLS protocol specific constraints"
+                            + " with other usage constraints");
+                }
+
+            } else {
+                this.usages = usages;
+            }
+        }
+
+        @Override
+        public boolean permits(Set<SSLScope> scopes) {
+            if (this.scopes == null || scopes == null) {
+                return true;
+            }
+
+            return Collections.disjoint(this.scopes, scopes);
         }
 
         @Override
