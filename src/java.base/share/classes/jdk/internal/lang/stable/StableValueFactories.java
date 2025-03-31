@@ -18,7 +18,7 @@ public final class StableValueFactories {
     // Factories
 
     public static <T> StableValueImpl<T> of() {
-        return StableValueImpl.newInstance();
+        return StableValueImpl.of();
     }
 
     public static <T> StableValueImpl<T> of(T value) {
@@ -60,7 +60,7 @@ public final class StableValueFactories {
         @SuppressWarnings("unchecked")
         final var stableValues = (StableValueImpl<T>[]) new StableValueImpl<?>[size];
         for (int i = 0; i < size; i++) {
-            stableValues[i] = StableValueImpl.newInstance();
+            stableValues[i] = StableValueImpl.of();
         }
         return stableValues;
     }
@@ -71,7 +71,7 @@ public final class StableValueFactories {
         final var entries = (Map.Entry<K, StableValueImpl<T>>[]) new Map.Entry<?, ?>[keys.size()];
         int i = 0;
         for (K key : keys) {
-            entries[i++] = Map.entry(key, StableValueImpl.newInstance());
+            entries[i++] = Map.entry(key, StableValueImpl.of());
         }
         return Map.ofEntries(entries);
     }

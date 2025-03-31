@@ -200,7 +200,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     // Factory
 
-    static <T> StableValueImpl<T> newInstance() {
+    static <T> StableValueImpl<T> of() {
         return new StableValueImpl<>();
     }
 

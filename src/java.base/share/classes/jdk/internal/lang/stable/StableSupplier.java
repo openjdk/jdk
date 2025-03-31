@@ -62,7 +62,7 @@ record StableSupplier<T>(StableValueImpl<T> delegate, Supplier<? extends T> orig
     }
 
     static <T> StableSupplier<T> of(Supplier<? extends T> original) {
-        return new StableSupplier<>(StableValueImpl.newInstance(), original);
+        return new StableSupplier<>(StableValueImpl.of(), original);
     }
 
 }
