@@ -649,6 +649,11 @@ public class IRNode {
         fromAfterCountedLoops(COUNTED_LOOP_MAIN, regex);
     }
 
+    public static final String DECODE_HEAP_OOP_NOT_NULL = PREFIX + "DECODE_HEAP_OOP_NOT_NULL" + POSTFIX;
+    static {
+        machOnly(DECODE_HEAP_OOP_NOT_NULL, "decodeHeapOop_not_null");
+    }
+
     public static final String DIV = PREFIX + "DIV" + POSTFIX;
     static {
         beforeMatchingNameRegex(DIV, "Div(I|L|F|D)");
@@ -868,6 +873,24 @@ public class IRNode {
     public static final String IS_INFINITE_F = PREFIX + "IS_INFINITE_F" + POSTFIX;
     static {
         beforeMatchingNameRegex(IS_INFINITE_F, "IsInfiniteF");
+    }
+
+    // Only supported on x86.
+    public static final String LEA_P_COMPRESSED_OOP_OFFSET = PREFIX + "LEA_P_COMPRESSED_OOP_OFFSET" + POSTFIX;
+    static {
+        machOnly(LEA_P_COMPRESSED_OOP_OFFSET, "leaPCompressedOopOffset");
+    }
+
+    // Only supported on x86.
+    public static final String LEA_P_8_NARROW = PREFIX + "LEA_P_8_NARROW" + POSTFIX;
+    static {
+        machOnly(LEA_P_8_NARROW, "leaP8Narrow");
+    }
+
+    // Only supported on x86.
+    public static final String LEA_P_32_NARROW = PREFIX + "LEA_P_32_NARROW" + POSTFIX;
+    static {
+        machOnly(LEA_P_32_NARROW, "leaP32Narrow");
     }
 
     public static final String LOAD = PREFIX + "LOAD" + POSTFIX;
@@ -1206,6 +1229,11 @@ public class IRNode {
     public static final String MEMBAR_VOLATILE = PREFIX + "MEMBAR_VOLATILE" + POSTFIX;
     static {
         beforeMatchingNameRegex(MEMBAR_VOLATILE, "MemBarVolatile");
+    }
+
+    public static final String MEM_TO_REG_SPILL_COPY = PREFIX + "MEM_TO_REG_SPILL_COPY" + POSTFIX;
+    static {
+        machOnly(MEM_TO_REG_SPILL_COPY, "MemToRegSpillCopy");
     }
 
     public static final String MIN = PREFIX + "MIN" + POSTFIX;
