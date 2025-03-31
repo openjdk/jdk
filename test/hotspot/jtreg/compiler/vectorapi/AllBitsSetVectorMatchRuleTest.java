@@ -42,8 +42,8 @@ import jdk.test.lib.Utils;
  * @key randomness
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @requires vm.cpu.features ~= ".*asimd.*"
- * @summary AArch64: [vector] Make all bits set vector sharable for match rules
+ * @requires (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*asimd.*") | (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*zvbb.*")
+ * @summary [vector] Make all bits set vector sharable for match rules
  * @modules jdk.incubator.vector
  *
  * @run driver compiler.vectorapi.AllBitsSetVectorMatchRuleTest
@@ -98,8 +98,9 @@ public class AllBitsSetVectorMatchRuleTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VAND_NOT_L, " >= 1" }, applyIf = {"UseSVE", "0"})
-    @IR(counts = { IRNode.VMASK_AND_NOT_L, " >= 1" }, applyIf = {"UseSVE", "> 0"})
+    @IR(counts = { IRNode.VAND_NOT_L, " >= 1" }, applyIfPlatform = {"aarch64", "true"}, applyIf = {"UseSVE", "0"})
+    @IR(counts = { IRNode.VMASK_AND_NOT_L, " >= 1" }, applyIfPlatform = {"aarch64", "true"}, applyIf = {"UseSVE", "> 0"})
+    @IR(counts = { IRNode.VAND_NOT_L, " >= 1" }, applyIfPlatform = {"riscv64", "true"})
     public static void testAllBitsSetMask() {
         VectorMask<Long> avm = VectorMask.fromArray(L_SPECIES, ma, 0);
         VectorMask<Long> bvm = VectorMask.fromArray(L_SPECIES, mb, 0);
