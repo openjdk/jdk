@@ -762,7 +762,7 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
         server.addHandler((c,s)-> {
             // stateless reset
             QuicConnectionId localConnId = c.localConnectionId();
-            ByteBuffer resetDatagram = c.endpoint().idFactory().statelessReset(localConnId.asReadOnlyBuffer());
+            ByteBuffer resetDatagram = c.endpoint().idFactory().statelessReset(localConnId.asReadOnlyBuffer(), 43);
             ((DatagramChannel)c.channel()).send(resetDatagram, c.peerAddress());
             // ignore the request stream; we're expecting the client to close the connection.
             // The server won't receive any notification from the client here.

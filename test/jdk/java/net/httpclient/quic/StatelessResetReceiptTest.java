@@ -260,7 +260,7 @@ public class StatelessResetReceiptTest {
             throws IOException {
         final QuicConnectionId localConnId = serverConn.localConnectionId();
         final ByteBuffer resetDatagram = serverConn.endpoint().idFactory().statelessReset(
-                localConnId.asReadOnlyBuffer());
+                localConnId.asReadOnlyBuffer(), 43);
         final InetSocketAddress targetAddr = serverConn.peerAddress();
         ((DatagramChannel) serverConn.channel()).send(resetDatagram, targetAddr);
         System.out.println("sent stateless reset from server conn " + serverConn + " to "

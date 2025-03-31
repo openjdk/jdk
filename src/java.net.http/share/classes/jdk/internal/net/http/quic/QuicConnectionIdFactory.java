@@ -289,21 +289,26 @@ public class QuicConnectionIdFactory {
      * Checks if {@code connId} looks like a connection ID we could possibly generate.
      * If it does, returns a stateless reset datagram.
      * @param connId the destination connection id that was received on the packet
+     * @param length maximum length of the stateless reset packet
      * @return stateless reset datagram payload, or null
      */
-    public ByteBuffer statelessReset(ByteBuffer connId) {
-        // 43 bytes:
+    public ByteBuffer statelessReset(ByteBuffer connId, int length) {
+        // 43 bytes max:
         //  first byte bits 01xx xxxx
-        //  followed by 26 random bytes
-        //  followed by 16 bytes reset token
+        //  followed by random bytes
+        //  terminated by 16 bytes reset token
+        length = Math.min(length, 43);
+        if (length < 21) { // minimum QUIC short datagram length
+            return null;
+        }
 
         var cid = (QuicLocalConnectionId)unsafeConnectionIdFor(connId);
         if (cid != null) {
             var localToken = statelessTokenFor(cid);
             assert localToken != null;
-            ByteBuffer buf = ByteBuffer.allocateDirect(43);
+            ByteBuffer buf = ByteBuffer.allocateDirect(length);
             buf.put((byte)(0x40 + RANDOM.nextInt(0x40)));
-            byte[] random = new byte[26];
+            byte[] random = new byte[length - 17];
             RANDOM.nextBytes(random);
             buf.put(random);
             buf.put(localToken);

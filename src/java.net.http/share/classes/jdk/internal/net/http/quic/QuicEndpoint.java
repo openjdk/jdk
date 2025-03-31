@@ -887,9 +887,9 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                 if (connection != null) {
                     // We received a stateless reset, process it later in the readLoop
                     return new StatelessReset(connection, source, copyOnHeap(buffer));
-                } else if (buffer.remaining() >= 44) {
+                } else if (buffer.remaining() > 21) {
                     // check if we should send a stateless reset
-                    final ByteBuffer reset = idFactory.statelessReset(cidbytes);
+                    final ByteBuffer reset = idFactory.statelessReset(cidbytes, buffer.remaining() - 1);
                     if (reset != null) {
                         // will send stateless reset later from the read loop
                         return new SendStatelessReset(source, reset);
