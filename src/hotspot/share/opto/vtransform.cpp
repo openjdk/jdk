@@ -244,6 +244,7 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
             use->print();
           }
 #endif
+          // TODO: optimize so that we do not have too many checks!
           const VPointer& p1 = vtn->vpointer(_vloop_analyzer);
           const VPointer& p2 = use->vpointer(_vloop_analyzer);
           add_speculative_aliasing_check(p1, p2);
@@ -254,8 +255,9 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
   }
 }
 
-
 void VTransform::add_speculative_aliasing_check(const VPointer& p1, const VPointer& p2) {
+  assert(!p1.always_overlaps_with(p2), "check would always be false");
+  assert(!p1.never_overlaps_with(p2), "check would always be true");
 }
 
 void VTransform::add_speculative_check(BoolNode* bol) {
