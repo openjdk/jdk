@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3432,13 +3432,13 @@ public final class URI
             while ((i = scan(i, q, '0')) > i);
 
             // Calculate the number of significant digits (after leading zeros)
-            int significantDigits = q - i;
+            int significantDigitsNum = q - i;
 
             // If no significant digits (all zeros), the value is 0
-            if (significantDigits == 0)  return q;
+            if (significantDigitsNum == 0)  return q;
 
             // If more than 3 significant digits, it's definitely > 255
-            if (significantDigits > 3) return p;
+            if (significantDigitsNum > 3) return p;
 
             if (Integer.parseInt(input, p, q, 10) > 255) return p;
             return q;
