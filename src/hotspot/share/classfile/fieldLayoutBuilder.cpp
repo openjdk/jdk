@@ -591,11 +591,48 @@ void FieldLayoutBuilder::insert_contended_padding(LayoutRawBlock* slot) {
   }
 }
 
+// Helper function for compute_regular_layout()
+static bool class_ends_with_oop(const InstanceKlass* ik) {
+
+  if (ik == nullptr ||
+      ik->nonstatic_oop_map_count() == 0) {
+    return false;
+  }
+
+  fieldDescriptor fd;
+  int offset = -1;
+
+  // Find last nonstatic field
+  for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
+    if (!fs.access_flags().is_static()) {
+      if (offset < fs.offset()) {
+        offset = fs.offset();
+        fd = fs.field_descriptor();
+      }
+    }
+  }
+
+  assert(offset == -1 || offset > 0, "Sanity");
+
+  if (offset > 0) {
+    const BasicType type = fd.field_type();
+    return type == T_OBJECT || type == T_NARROWOOP; // super
+  }
+
+  return false;
+}
+
 // Computation of regular classes layout is an evolution of the previous default layout
 // (FieldAllocationStyle 1):
 //   - primitive fields are allocated first (from the biggest to the smallest)
-//   - then oop fields are allocated, either in existing gaps or at the end of
-//     the layout
+//   - oop fields are allocated, either in existing gaps or at the end of
+//     the layout. We allocate oops in a single block to have a single oop map entry.
+//   - if the super class ended with an oop, we lead with oops. That will cause the
+//     trailing oop map entry of the super class and the oop map entry of this class
+//     to be folded into a single entry later. Correspondingly, if the super class
+//     ends with a primitive field, we gain nothing by leading with oops; therefore
+//     we let oop fields trail, thus giving future derived classes the chance to apply
+//     the same trick.
 void FieldLayoutBuilder::compute_regular_layout() {
   bool need_tail_padding = false;
   prologue();
@@ -608,8 +645,14 @@ void FieldLayoutBuilder::compute_regular_layout() {
     insert_contended_padding(_layout->start());
     need_tail_padding = true;
   }
-  _layout->add(_root_group->primitive_fields());
-  _layout->add(_root_group->oop_fields());
+
+  if (class_ends_with_oop(_super_klass)) {
+    _layout->add(_root_group->oop_fields());
+    _layout->add(_root_group->primitive_fields());
+  } else {
+    _layout->add(_root_group->primitive_fields());
+    _layout->add(_root_group->oop_fields());
+  }
 
   if (!_contended_groups.is_empty()) {
     for (int i = 0; i < _contended_groups.length(); i++) {
