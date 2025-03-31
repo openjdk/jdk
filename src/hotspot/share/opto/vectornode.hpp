@@ -1739,6 +1739,24 @@ class VectorRearrangeNode : public VectorNode {
   Node* vec_shuffle() const { return in(2); }
 };
 
+// Generate a vector by slicing the two source vectors based on an index.
+//
+// Copy the indexed byte up to the last byte of the first source vector
+// to the bottom of the result vector, then fill the remainder of the
+// result starting from the first byte of the second source vector.
+//
+// E.g. src1 = [hgfedcba] src2 = [ponmlkji] index = 3
+//      dst = [kjihgfed]
+class VectorSliceNode : public VectorNode {
+ public:
+  VectorSliceNode(Node* vec1, Node* vec2, Node* index)
+    : VectorNode(vec1, vec2, index, vec1->bottom_type()->is_vect()) {
+    assert(index->bottom_type()->isa_int(), "index must be an integral value");
+    assert(index->is_Con(), "index must be a constant");
+  }
+
+  virtual int Opcode() const;
+};
 
 // Select elements from two source vectors based on the wrapped indexes held in
 // the first vector.
@@ -1796,6 +1814,28 @@ class VectorMaskCastNode : public VectorNode {
     assert(in_vt->length() == vt->length(), "vector length must match");
   }
   virtual int Opcode() const;
+};
+
+// Unpack the elements to twice size.
+class VectorMaskWidenNode : public VectorNode {
+ private:
+  // "_is_lo" is used to denote whether the lower half or
+  // the upper half of the elements are widened.
+  // E.g. src = [1111 0101]
+  //      _is_lo = true, dst = [0001 0001]
+  //      _is_lo = false, dst = [0101 0101]
+  bool _is_lo;
+
+ public:
+  VectorMaskWidenNode(Node* in, const TypeVect* vt, bool is_lo) : VectorNode(in, vt), _is_lo(is_lo) {
+    init_class_id(Class_VectorMaskWiden);
+    const TypeVect* in_vt = in->bottom_type()->is_vect();
+    assert(type2aelembytes(in_vt->element_basic_type()) == type2aelembytes(vt->element_basic_type()) / 2, "must be half size");
+  }
+
+  bool is_lo() const { return _is_lo; }
+  virtual int Opcode() const;
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 // This is intended for use as a simple reinterpret node that has no cast.

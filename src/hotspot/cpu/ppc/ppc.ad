@@ -2285,6 +2285,10 @@ bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen
   return false;
 }
 
+bool Matcher::gather_scatter_needs_vector_index(BasicType bt) {
+  return false;
+}
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return nullptr;
 }
@@ -2319,6 +2323,12 @@ uint Matcher::vector_ideal_reg(int size) {
     assert(MaxVectorSize == 8 && size == 8, "");
     return Op_RegL;
   }
+}
+
+// Vector ideal reg size corresponding to the specified size in bytes
+uint Matcher::vector_ideal_reg_size(int size) {
+  assert(MaxVectorSize == size, "");
+  return size;
 }
 
 // Limits on vector size (number of elements) loaded into vector.
