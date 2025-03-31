@@ -658,14 +658,12 @@ void* os::record_and_clear_bits(void* raw_ptr, size_t size, size_t old_size, Mem
   void* const client_ptr = MemTracker::record_malloc((address)raw_ptr, size, mem_tag, stack);
 
   // Clear bits
-  if (old_size == 0) {
-    if (CDSConfig::is_dumping_static_archive()) {
-      // Need to deterministically fill all the alignment gaps in C++ structures.
-      ::memset((char*)client_ptr, 0, size);
-    } else {
-      DEBUG_ONLY(::memset((char*)client_ptr, uninitBlockPad, size);)
-    }
-  } else if (old_size < size) {
+  if ((size == old_size) && CDSConfig::is_dumping_static_archive()) {
+    // Need to deterministically fill all the alignment gaps in C++ structures.
+    ::memset((char*)client_ptr, 0, size);
+  }
+
+  if (old_size <= size) {
     DEBUG_ONLY(::memset((char*)client_ptr + old_size, uninitBlockPad, size - old_size);)
   }
 
@@ -678,7 +676,6 @@ void* os::malloc(size_t size, MemTag mem_tag) {
 }
 
 void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
-
   void* ptr = nullptr;
   void* old_ptr = nullptr;
   size_t outer_size = os::pre_init_and_check_size(&ptr, old_ptr, size, mem_tag);
@@ -694,7 +691,7 @@ void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
     return nullptr;
   }
 
-  return record_and_clear_bits(outer_ptr, size, 0, mem_tag, stack);
+  return os::record_and_clear_bits(outer_ptr, size, size, mem_tag, stack);
 }
 
 void* os::realloc(void *memblock, size_t size, MemTag mem_tag) {
@@ -702,7 +699,6 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag) {
 }
 
 void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallStack& stack) {
-
   if (memblock == nullptr) {
     return os::malloc(size, mem_tag, stack);
   }
@@ -755,7 +751,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     assert(old_size == free_info.size, "Sanity");
 #endif
 
-    ptr = record_and_clear_bits(outer_ptr, size, old_size, mem_tag, stack);
+    ptr = os::record_and_clear_bits(outer_ptr, size, old_size, mem_tag, stack);
   } else {
     // NMT disabled.
     ALLOW_C_FUNCTION(::realloc, ptr = ::realloc(memblock, size);)
