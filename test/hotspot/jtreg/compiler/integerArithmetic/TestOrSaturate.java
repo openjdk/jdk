@@ -29,7 +29,7 @@
 
  /*
   * @test
-  * @bug 8352839
+  * @bug 8352893
   * @summary Test that an or with all bits set is folded to all bits (x | -1 == -1).
   * @library / /test/lib
   * @run driver compiler.integerArithmetic.TestOrSaturate
