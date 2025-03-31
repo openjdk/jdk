@@ -275,10 +275,10 @@ class GraphKit : public Phase {
 
   // Helper to throw a built-in exception.
   // The JVMS must allow the bytecode to be re-executed via an uncommon trap.
-  // If `exception_object` is nullptr, the exception to throw will be guessed based on `reason`
-  void builtin_throw(Deoptimization::DeoptReason reason, ciInstance* exception_object = nullptr);
-  // Returns the pair (builtin_throw_applies, throw_is_hot) for builtin_throw usage.
+  void builtin_throw(Deoptimization::DeoptReason reason);
+  void builtin_throw(Deoptimization::DeoptReason reason, ciInstance* exception_object);
   Pair<bool, bool> builtin_throw_applies(Deoptimization::DeoptReason reason);
+  ciInstance* guess_exception_from_deopt_reason(Deoptimization::DeoptReason reason) const;
 
   // Helper to check the JavaThread::_should_post_on_exceptions flag
   // and branch to an uncommon_trap if it is true (with the specified reason and must_throw)

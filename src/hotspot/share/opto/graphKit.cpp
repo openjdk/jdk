@@ -551,7 +551,7 @@ Pair<bool, bool> GraphKit::builtin_throw_applies(Deoptimization::DeoptReason rea
 }
 
 //------------------------------builtin_throw----------------------------------
-void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, ciInstance* exception_object) {
+void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, ciInstance* ex_obj) {
   bool must_throw = true;
   Pair<bool, bool> applies_and_treat_throw_as_hot = builtin_throw_applies(reason);
   bool treat_throw_as_hot = applies_and_treat_throw_as_hot.second;
@@ -569,30 +569,6 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, ciInstance* exc
     // for its backtrace.
     // Fixing this remaining case of 4292742 requires some flavor of
     // escape analysis.  Leave that for the future.
-    ciInstance* ex_obj = nullptr;
-    if (exception_object != nullptr) {
-      ex_obj = exception_object;
-    } else {
-      switch (reason) {
-      case Deoptimization::Reason_null_check:
-        ex_obj = env()->NullPointerException_instance();
-        break;
-      case Deoptimization::Reason_div0_check:
-        ex_obj = env()->ArithmeticException_instance();
-        break;
-      case Deoptimization::Reason_range_check:
-        ex_obj = env()->ArrayIndexOutOfBoundsException_instance();
-        break;
-      case Deoptimization::Reason_class_check:
-        ex_obj = env()->ClassCastException_instance();
-        break;
-      case Deoptimization::Reason_array_check:
-        ex_obj = env()->ArrayStoreException_instance();
-        break;
-      default:
-        break;
-      }
-    }
     if (failing()) { stop(); return; }  // exception allocation might fail
     if (ex_obj != nullptr) {
       if (env()->jvmti_can_post_on_exceptions()) {
@@ -660,6 +636,26 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, ciInstance* exc
   uncommon_trap(reason, action, (ciKlass*)nullptr, (char*)nullptr, must_throw);
 }
 
+ciInstance* GraphKit::guess_exception_from_deopt_reason(Deoptimization::DeoptReason reason) const {
+  switch (reason) {
+  case Deoptimization::Reason_null_check:
+    return env()->NullPointerException_instance();
+  case Deoptimization::Reason_div0_check:
+    return env()->ArithmeticException_instance();
+  case Deoptimization::Reason_range_check:
+    return env()->ArrayIndexOutOfBoundsException_instance();
+  case Deoptimization::Reason_class_check:
+    return env()->ClassCastException_instance();
+  case Deoptimization::Reason_array_check:
+    return env()->ArrayStoreException_instance();
+  default:
+    return nullptr;
+  }
+}
+
+void GraphKit::builtin_throw(Deoptimization::DeoptReason reason) {
+  builtin_throw(reason, guess_exception_from_deopt_reason(reason));
+}
 
 //----------------------------PreserveJVMState---------------------------------
 PreserveJVMState::PreserveJVMState(GraphKit* kit, bool clone_map) {
