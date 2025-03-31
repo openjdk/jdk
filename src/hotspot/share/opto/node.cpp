@@ -3129,11 +3129,8 @@ void TypeNode::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loo
 
   stringStream ss;
   ss.print("dead path discovered by TypeNode during %s", phase_str);
-  size_t len = ss.size() + 1;
-  char* arena_str = NEW_ARENA_ARRAY(igvn->C->comp_arena(), char, len);
-  memcpy(arena_str, ss.base(), len);
 
-  Node* halt = new HaltNode(c, frame, arena_str);
+  Node* halt = new HaltNode(c, frame, ss.as_string(igvn->C->comp_arena()));
   if (loop == nullptr) {
     igvn->register_new_node_with_optimizer(halt);
   } else {
