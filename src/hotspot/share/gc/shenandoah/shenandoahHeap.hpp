@@ -123,7 +123,7 @@ typedef ShenandoahLocker  ShenandoahHeapLocker;
 typedef Stack<oop, mtGC>  ShenandoahScanObjectStack;
 
 // Shenandoah GC is low-pause concurrent GC that uses a load reference barrier
-// for concurent evacuation and a snapshot-at-the-beginning write barrier for 
+// for concurent evacuation and a snapshot-at-the-beginning write barrier for
 // concurrent marking. See ShenandoahControlThread for GC cycle structure.
 //
 class ShenandoahHeap : public CollectedHeap {
