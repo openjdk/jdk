@@ -1203,7 +1203,7 @@ void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
 }
 
 
-void LIR_Assembler::reg2stack(LIR_Opr from_reg, LIR_Opr dest, BasicType type, bool pop_fpu_stack) {
+void LIR_Assembler::reg2stack(LIR_Opr from_reg, LIR_Opr dest, BasicType type) {
   Address addr;
   if (dest->is_single_word()) {
     addr = frame_map()->address_for_slot(dest->single_stack_ix());
@@ -1246,7 +1246,7 @@ void LIR_Assembler::reg2reg(LIR_Opr from_reg, LIR_Opr to_reg) {
 
 
 void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
-                            LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack,
+                            LIR_PatchCode patch_code, CodeEmitInfo* info,
                             bool wide) {
   assert(type != T_METADATA, "store of metadata ptr not supported");
   LIR_Address* addr = dest->as_address_ptr();
@@ -1617,7 +1617,7 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
 
 
 void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest,
-                             CodeEmitInfo* info, bool pop_fpu_stack) {
+                             CodeEmitInfo* info) {
   assert(info == nullptr, "unused on this code path");
   assert(left->is_register(), "wrong items state");
   assert(dest->is_register(), "wrong items state");
