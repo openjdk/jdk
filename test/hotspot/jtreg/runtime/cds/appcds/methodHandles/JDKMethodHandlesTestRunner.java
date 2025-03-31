@@ -31,14 +31,14 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 
-import jdk.test.lib.cds.CDSOptions;
-import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 
 import org.junit.Test;
 
+// This class is for running the ../../../../../../jdk/java/lang/invoke/MethodHandles*java tests
+// using CDSAppTester
 public class JDKMethodHandlesTestRunner {
     private static final String classDir = System.getProperty("test.classes");
     private static final String mainClass = "TestMHApp";
@@ -69,10 +69,13 @@ public class JDKMethodHandlesTestRunner {
                 public String[] vmArgs(RunMode runMode) {
                     if (runMode.isProductionRun()) {
                         return new String[] {
-                            "-Xlog:class+load,cds=debug"
+                            "-Xlog:class+load,cds=debug",
+                            verifyOpt,
                         };
                     } else {
-                        return new String[] {};
+                        return new String[] {
+                            verifyOpt,
+                        };
                     }
                 }
 
@@ -96,10 +99,6 @@ public class JDKMethodHandlesTestRunner {
 
         String workflow = System.getProperty("cds.app.tester.workflow");
         tester.run(workflow);
-
-        if (true) {
-            return;
-        }
     }
 }
 
@@ -111,7 +110,6 @@ class TestMHApp {
             Object obj = testClass.newInstance();
             final List<Method> allMethods = new ArrayList<Method>(Arrays.asList(testClass.getDeclaredMethods()));
             for (final Method method : allMethods) {
-                //System.out.println(method.toString());
                 method.setAccessible(true);
                 Annotation[] annotations = null;
                 try {
