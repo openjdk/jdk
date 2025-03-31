@@ -789,13 +789,14 @@ class ImmutableCollections {
         @ForceInline
         @Override
         public E get(int i) {
+            final StableValueImpl<E> delegate;
             try {
-                return delegates[i]
-                        .orElseSet(new Supplier<E>() {
-                            @Override  public E get() { return mapper.apply(i); }});
+                delegate = delegates[i];
             } catch (ArrayIndexOutOfBoundsException aioobe) {
                 throw new IndexOutOfBoundsException(i);
             }
+            return delegate.orElseSet(new Supplier<E>() {
+                        @Override  public E get() { return mapper.apply(i); }});
         }
 
         @Override

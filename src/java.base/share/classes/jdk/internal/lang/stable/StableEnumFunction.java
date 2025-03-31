@@ -64,13 +64,15 @@ record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
             throw new IllegalArgumentException("Input not allowed: " + value);
         }
         final int index = value.ordinal() - firstOrdinal;
+        final StableValueImpl<R> delegate;
         try {
-            return delegates[index]
-                    .orElseSet(new Supplier<R>() {
-                        @Override public R get() { return original.apply(value); }});
+            delegate = delegates[index];
         } catch (ArrayIndexOutOfBoundsException ioob) {
             throw new IllegalArgumentException("Input not allowed: " + value, ioob);
         }
+        return delegate.orElseSet(new Supplier<R>() {
+                    @Override public R get() { return original.apply(value); }});
+
     }
 
     @Override
