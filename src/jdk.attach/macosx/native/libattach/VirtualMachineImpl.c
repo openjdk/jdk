@@ -139,13 +139,11 @@ JNIEXPORT jboolean JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkCatches
         const bool ignored = (kiproc.kp_proc.p_sigignore & sigmask(SIGQUIT)) != 0;
         const bool caught  = (kiproc.kp_proc.p_sigcatch & sigmask(SIGQUIT))  != 0;
 
-        // *only* send QUIT if the target is ready to catch and handle the signal to avoid default "death" if not
-
         // note: obviously the masks could change between testing and signalling however this is not the
         // observed behavior of the current JVM implementation.
 
         if (caught && !ignored) {
-            if (kill((pid_t)pid, SIGQUIT)) {
+            if (kill((pid_t)pid, SIGQUIT) != 0) {
                 JNU_ThrowIOExceptionWithLastError(env, "kill");
             } else {
                 return JNI_TRUE;
