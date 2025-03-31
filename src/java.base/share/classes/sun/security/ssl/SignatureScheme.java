@@ -218,11 +218,11 @@ enum SignatureScheme {
     }
 
     // Handshake signature scope.
-    public static final Set<SSLScope> HANDSHAKE_SCOPE =
+    static final Set<SSLScope> HANDSHAKE_SCOPE =
             Set.of(SSLScope.HANDSHAKE_SIGNATURE);
 
     // Certificate signature scope.
-    public static final Set<SSLScope> CERTIFICATE_SCOPE =
+    static final Set<SSLScope> CERTIFICATE_SCOPE =
             Set.of(SSLScope.CERTIFICATE_SIGNATURE);
 
     // Non-TLS specific SIGNATURE CryptoPrimitive.
@@ -551,7 +551,8 @@ enum SignatureScheme {
 
     // Returns true if this signature scheme is supported for the given
     // protocol version and SSL scopes.
-    boolean isSupportedProtocol(ProtocolVersion version, Set<SSLScope> scopes) {
+    private boolean isSupportedProtocol(
+            ProtocolVersion version, Set<SSLScope> scopes) {
         if (scopes != null && scopes.equals(HANDSHAKE_SCOPE)) {
             return this.handshakeSupportedProtocols.contains(version);
         } else {
@@ -561,7 +562,7 @@ enum SignatureScheme {
 
     // Returns true if this signature scheme is available, supported and
     // permitted for the given constraints, protocol version and SSL scopes.
-    boolean isAllowed(SSLAlgorithmConstraints constraints,
+    private boolean isAllowed(SSLAlgorithmConstraints constraints,
             ProtocolVersion version, Set<SSLScope> scopes) {
         return isAvailable
                 && isSupportedProtocol(version, scopes)
