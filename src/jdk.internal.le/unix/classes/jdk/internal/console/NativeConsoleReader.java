@@ -30,6 +30,12 @@ import java.io.Writer;
 
 public class NativeConsoleReader {
 
+    private static final boolean supported;
+
+    public static boolean isSupported() {
+        return supported;
+    }
+
     public static char[] readline(Reader reader, Writer out, boolean password) throws IOException {
         byte[] originalTermios = switchToRaw();
         Thread restoreConsole = new Thread(() -> {
@@ -47,7 +53,16 @@ public class NativeConsoleReader {
     }
 
     static {
-        loadNativeLibrary();
+        boolean initialized;
+
+        try {
+            loadNativeLibrary();
+            initialized = true;
+        } catch (UnsatisfiedLinkError err) {
+            initialized = false;
+        }
+
+        supported = initialized;
     }
 
     @SuppressWarnings("restricted")

@@ -32,6 +32,10 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
 
     @Override
     public JdkConsole console(boolean isTTY, Charset charset) {
+        if (!NativeConsoleReader.isSupported()) {
+            return null;
+        }
+
         //only supported on Linux, Mac OS/X and Windows:
         return new JdkConsoleImpl(isTTY, charset);
     }

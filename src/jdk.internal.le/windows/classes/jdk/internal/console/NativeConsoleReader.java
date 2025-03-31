@@ -32,6 +32,10 @@ import static jdk.internal.console.WindowsTerminal.*;
 
 public class NativeConsoleReader {
 
+    public static boolean isSupported() {
+        return supported;
+    }
+
     public static char[] readline(Reader reader, Writer out, boolean password) throws IOException {
         byte[] originalModes = switchToRaw();
         try {
