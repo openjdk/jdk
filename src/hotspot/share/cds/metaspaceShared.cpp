@@ -687,7 +687,6 @@ class CollectClassesForLinking : public KlassClosure {
   GrowableArray<OopHandle> _mirrors;
 
 public:
-  CollectClassesForLinking() {}
   ~CollectClassesForLinking() {
     for (int i = 0; i < _mirrors.length(); i++) {
       _mirrors.at(i).release(Universe::vm_global());
