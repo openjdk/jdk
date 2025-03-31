@@ -705,26 +705,14 @@ public class Arguments {
 
         Map<String, ? super Object> localParams = new HashMap<>(params);
         try {
-            try {
-                bundler.validate(localParams);
-                Path result = bundler.execute(localParams,
-                        StandardBundlerParam.OUTPUT_DIR.fetchFrom(params));
-                if (result == null) {
-                    throw new PackagerException("MSG_BundlerFailed",
-                            bundler.getID(), bundler.getName());
-                }
-                Log.verbose(MessageFormat.format(
-                        I18N.getString("message.bundle-created"),
-                        bundler.getName()));
-            } catch (ExceptionBox ex) {
-                if (ex.getCause() instanceof ConfigException cfgEx) {
-                    throw cfgEx;
-                } else if (ex.getCause() instanceof PackagerException pkgEx) {
-                    throw pkgEx;
-                } else {
-                    throw ex;
-                }
+            Path result = executeBundler(bundler, params, localParams);
+            if (result == null) {
+                throw new PackagerException("MSG_BundlerFailed",
+                        bundler.getID(), bundler.getName());
             }
+            Log.verbose(MessageFormat.format(
+                    I18N.getString("message.bundle-created"),
+                    bundler.getName()));
         } catch (ConfigException e) {
             Log.verbose(e);
             if (e.getAdvice() != null)  {
@@ -748,6 +736,24 @@ public class Arguments {
                 // always clean up the temporary directory created
                 // when --temp option not used.
                 bundler.cleanup(localParams);
+            }
+        }
+    }
+
+    private static Path executeBundler(Bundler bundler, Map<String, ? super Object> params,
+            Map<String, ? super Object> localParams) throws ConfigException, PackagerException {
+        try {
+            bundler.validate(localParams);
+            return bundler.execute(localParams, StandardBundlerParam.OUTPUT_DIR.fetchFrom(params));
+        } catch (ConfigException|PackagerException ex) {
+            throw ex;
+        } catch (RuntimeException ex) {
+            if (ex.getCause() instanceof ConfigException cfgEx) {
+                throw cfgEx;
+            } else if (ex.getCause() instanceof PackagerException pkgEx) {
+                throw pkgEx;
+            } else {
+                throw ex;
             }
         }
     }

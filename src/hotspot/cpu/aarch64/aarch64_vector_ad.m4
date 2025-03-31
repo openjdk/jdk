@@ -194,12 +194,6 @@ source %{
           return false;
         }
         break;
-      case Op_VectorLoadShuffle:
-      case Op_VectorRearrange:
-        if (vlen < 4) {
-          return false;
-        }
-        break;
       case Op_ExpandV:
         if (UseSVE < 2 || is_subword_type(bt)) {
           return false;
@@ -4542,61 +4536,24 @@ instruct vtest_alltrue_sve(rFlagsReg cr, pReg src1, pReg src2, pReg ptmp) %{
 
 // ------------------------------ Vector rearrange -----------------------------
 
-// Here is an example that rearranges a NEON vector with 4 ints:
-// Rearrange V1 int[a0, a1, a2, a3] to V2 int[a2, a3, a0, a1]
-//   1. Get the indices of V1 and store them as Vi byte[0, 1, 2, 3].
-//   2. Convert Vi byte[0, 1, 2, 3] to the indices of V2 and also store them as Vi byte[2, 3, 0, 1].
-//   3. Unsigned extend Long Vi from byte[2, 3, 0, 1] to int[2, 3, 0, 1].
-//   4. Multiply Vi int[2, 3, 0, 1] with constant int[0x04040404, 0x04040404, 0x04040404, 0x04040404]
-//      and get tbl base Vm int[0x08080808, 0x0c0c0c0c, 0x00000000, 0x04040404].
-//   5. Add Vm with constant int[0x03020100, 0x03020100, 0x03020100, 0x03020100]
-//      and get tbl index Vm int[0x0b0a0908, 0x0f0e0d0c, 0x03020100, 0x07060504]
-//   6. Use Vm as index register, and use V1 as table register.
-//      Then get V2 as the result by tbl NEON instructions.
-// Notes:
-//   Step 1 matches VectorLoadConst.
-//   Step 3 matches VectorLoadShuffle.
-//   Step 4, 5, 6 match VectorRearrange.
-//   For VectorRearrange short/int, the reason why such complex calculation is
-//   required is because NEON tbl supports bytes table only, so for short/int, we
-//   need to lookup 2/4 bytes as a group. For VectorRearrange long, we use bsl
-//   to implement rearrange.
-
-// Maybe move the shuffle preparation to VectorLoadShuffle
-instruct rearrange_HS_neon(vReg dst, vReg src, vReg shuffle, vReg tmp1, vReg tmp2) %{
-  predicate(UseSVE == 0 &&
-            (Matcher::vector_element_basic_type(n) == T_SHORT ||
-             (type2aelembytes(Matcher::vector_element_basic_type(n)) == 4 &&
-              Matcher::vector_length_in_bytes(n) == 16)));
+instruct rearrange_HSD_neon(vReg dst, vReg src, vReg shuffle, vReg tmp) %{
+  predicate(UseSVE == 0 && Matcher::vector_element_basic_type(n) != T_BYTE);
   match(Set dst (VectorRearrange src shuffle));
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
-  format %{ "rearrange_HS_neon $dst, $src, $shuffle\t# vector (4S/8S/4I/4F). KILL $tmp1, $tmp2" %}
+  effect(TEMP_DEF dst, TEMP tmp);
+  format %{ "rearrange_HSD_neon $dst, $src, $shuffle\t# vector (4H/8H/2S/4S/2D). KILL $tmp" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    if (bt == T_SHORT) {
-      uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-      assert(length_in_bytes == 8 || length_in_bytes == 16, "must be");
-      Assembler::SIMD_Arrangement size1 = length_in_bytes == 16 ? __ T16B : __ T8B;
-      Assembler::SIMD_Arrangement size2 = length_in_bytes == 16 ? __ T8H : __ T4H;
-      __ mov($tmp1$$FloatRegister, size1, 0x02);
-      __ mov($tmp2$$FloatRegister, size2, 0x0100);
-      __ mulv($dst$$FloatRegister, size2, $shuffle$$FloatRegister, $tmp1$$FloatRegister);
-      __ addv($dst$$FloatRegister, size1, $dst$$FloatRegister, $tmp2$$FloatRegister);
-      __ tbl($dst$$FloatRegister, size1, $src$$FloatRegister, 1, $dst$$FloatRegister);
-    } else {
-      assert(bt == T_INT || bt == T_FLOAT, "unsupported type");
-      __ mov($tmp1$$FloatRegister, __ T16B, 0x04);
-      __ mov($tmp2$$FloatRegister, __ T4S, 0x03020100);
-      __ mulv($dst$$FloatRegister, __ T4S, $shuffle$$FloatRegister, $tmp1$$FloatRegister);
-      __ addv($dst$$FloatRegister, __ T16B, $dst$$FloatRegister, $tmp2$$FloatRegister);
-      __ tbl($dst$$FloatRegister, __ T16B, $src$$FloatRegister, 1, $dst$$FloatRegister);
-    }
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    assert(length_in_bytes == 8 || length_in_bytes == 16, "must be");
+    __ neon_rearrange_hsd($dst$$FloatRegister, $src$$FloatRegister,
+                          $shuffle$$FloatRegister, $tmp$$FloatRegister,
+                          bt, length_in_bytes == 16);
   %}
   ins_pipe(pipe_slow);
 %}
 
 instruct rearrange(vReg dst, vReg src, vReg shuffle) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_BYTE || UseSVE > 0);
+  predicate(UseSVE > 0 || Matcher::vector_element_basic_type(n) == T_BYTE);
   match(Set dst (VectorRearrange src shuffle));
   format %{ "rearrange $dst, $src, $shuffle" %}
   ins_encode %{
