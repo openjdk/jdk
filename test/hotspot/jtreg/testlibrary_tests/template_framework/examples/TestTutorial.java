@@ -50,7 +50,7 @@ import static compiler.lib.template_framework.Template.addName;
 import static compiler.lib.template_framework.Template.sampleName;
 import static compiler.lib.template_framework.Template.weighNames;
 
-import compiler.lib.template_library.Library;
+import compiler.lib.template_framework.library.Hooks;
 
 public class TestTutorial {
 
@@ -229,7 +229,7 @@ public class TestTutorial {
     // In this example, we look at the use of Hooks.
     public static String generateWithCustomHooks() {
         // We can define a custom hook.
-        // Note: generally we prefer using the pre-defined Library.CLASS_HOOK and Library.METHOD_HOOK from the Library,
+        // Note: generally we prefer using the pre-defined CLASS_HOOK and METHOD_HOOK from the library,
         //       when ever possible. See also the example after this one.
         var myHook = new Hook("MyHook");
 
@@ -279,7 +279,7 @@ public class TestTutorial {
         return templateClass.withArgs().render();
     }
 
-    // We saw the use of custom hooks above, but now we look at the use of Library.CLASS_HOOK and Library.METHOD_HOOK
+    // We saw the use of custom hooks above, but now we look at the use of CLASS_HOOK and METHOD_HOOK
     // from the Temlate Library.
     public static String generateWithLibraryHooks() {
         var templateStaticField = Template.make("name", "value", (String name, Integer value) -> body(
@@ -300,8 +300,8 @@ public class TestTutorial {
             """
             // Let's define a local variable $var and a static field $field.
             """,
-            Library.CLASS_HOOK.insert(templateStaticField.withArgs($("field"), 5)),
-            Library.METHOD_HOOK.insert(templateLocalVariable.withArgs($("var"), 11)),
+            Hooks.CLASS_HOOK.insert(templateStaticField.withArgs($("field"), 5)),
+            Hooks.METHOD_HOOK.insert(templateLocalVariable.withArgs($("var"), 11)),
             """
             System.out.println("$field: " + $field);
             System.out.println("$var: " + $var);
@@ -316,12 +316,12 @@ public class TestTutorial {
             public class InnerTest5 {
             """,
             // Class Hook for fields.
-            Library.CLASS_HOOK.set(
+            Hooks.CLASS_HOOK.set(
                 """
                 public static void main() {
                 """,
                 // Method Hook for local variables, and earlier computations.
-                Library.METHOD_HOOK.set(
+                Hooks.METHOD_HOOK.set(
                     """
                     // This is the beginning of the "main" method body.
                     System.out.println("Welcome to main!");
@@ -339,7 +339,7 @@ public class TestTutorial {
                 """,
                 // Have a separate method hook for other, so that it can insert
                 // its own local variables.
-                Library.METHOD_HOOK.set(
+                Hooks.METHOD_HOOK.set(
                     """
                     System.out.println("Welcome to other!");
                     """,
@@ -457,10 +457,10 @@ public class TestTutorial {
             System.out.println("Starting inside main...");
             """,
             templateStatus.withArgs(),
-            Library.METHOD_HOOK.insert(templateLocalVariable.withArgs(myInt)),
-            Library.METHOD_HOOK.insert(templateLocalVariable.withArgs(myLong)),
-            Library.CLASS_HOOK.insert(templateStaticField.withArgs(myInt)),
-            Library.CLASS_HOOK.insert(templateStaticField.withArgs(myLong)),
+            Hooks.METHOD_HOOK.insert(templateLocalVariable.withArgs(myInt)),
+            Hooks.METHOD_HOOK.insert(templateLocalVariable.withArgs(myLong)),
+            Hooks.CLASS_HOOK.insert(templateStaticField.withArgs(myInt)),
+            Hooks.CLASS_HOOK.insert(templateStaticField.withArgs(myLong)),
             templateStatus.withArgs(),
             // We should see a mix if fields and variables sampled.
             Collections.nCopies(5, templateSample.withArgs(myInt)),
@@ -492,12 +492,12 @@ public class TestTutorial {
             public class InnerTest7 {
             """,
             // Class Hook for fields.
-            Library.CLASS_HOOK.set(
+            Hooks.CLASS_HOOK.set(
                 """
                 public static void main() {
                 """,
                 // Method Hook for local variables, and earlier computations.
-                Library.METHOD_HOOK.set(
+                Hooks.METHOD_HOOK.set(
                     """
                     // This is the beginning of the "main" method body.
                     System.out.println("Welcome to main!");
@@ -515,7 +515,7 @@ public class TestTutorial {
                 """,
                 // Have a separate method hook for other, so that it can insert
                 // its own local variables.
-                Library.METHOD_HOOK.set(
+                Hooks.METHOD_HOOK.set(
                     """
                     System.out.println("Welcome to other!");
                     """,

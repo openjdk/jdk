@@ -21,15 +21,15 @@
  * questions.
  */
 
-package compiler.lib.template_library;
+package compiler.lib.template_framework.library;
 
 import compiler.lib.template_framework.Hook;
 
 /**
- * The Library provides a collection of helpful Templates and Hooks.
+ * Provides a hook for class and method scopes, to be used in Templates.
  */
-public abstract class Library {
-    private Library() {} // Avoid instanciation and need for documentation.
+public abstract class Hooks {
+    private Hooks() {} // Avoid instanciation and need for documentation.
 
     /**
      * Template {@link Hook} used by the Template Library for class scopes, to insert
