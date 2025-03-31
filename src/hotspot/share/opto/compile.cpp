@@ -687,7 +687,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _java_calls(0),
       _inner_loops(0),
       _FIRST_STACK_mask(&_comp_arena),
-      _regmask_arena(mtCompiler),
+      _regmask_arena(mtCompiler, Arena::Tag::tag_regmask),
       _interpreter_frame_size(0),
       _output(nullptr)
 #ifndef PRODUCT
