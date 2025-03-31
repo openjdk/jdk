@@ -1055,7 +1055,7 @@ instruction_set = {
         ('eaddl', 'add', 32, True),
         ('eandl', 'and', 32, False),
         ('eandl', 'and', 32, True),
-        #('eimull', 'imul', 32, False),
+        ('eimull', 'imul', 32, False), # TODO: re-check
         ('eimull', 'imul', 32, True),
         ('eorl', 'or', 32, False),
         ('eorl', 'or', 32, True),
@@ -1296,8 +1296,9 @@ instruction_set64 = {
         ('emulq', 'mul', 64, False),
         ('emulq', 'mul', 64, True),
     ],
+    # TODO: re-check semantic correctness of RR demotion
     RegRegNddInstruction: [
-        # ('eimulq', 'imul', 64, False),
+        ('eimulq', 'imul', 64, False), # TODO: re-check
         ('eimulq', 'imul', 64, True),
         ('elzcntq', 'lzcnt', 64, False),
         ('elzcntq', 'lzcnt', 64, True),
@@ -1384,7 +1385,7 @@ instruction_set64 = {
         ('eaddq', 'add', 64, True),
         ('eandq', 'and', 64, False),
         ('eandq', 'and', 64, True),
-        #('eimulq', 'imul', 64, False),
+        ('eimulq', 'imul', 64, False), #TODO: re-check
         ('eimulq', 'imul', 64, True),
         ('eorq', 'or', 64, False),
         ('eorq', 'or', 64, True),

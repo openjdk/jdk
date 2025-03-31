@@ -826,6 +826,7 @@ private:
 
   // Helper functions for groups of instructions
   bool is_demotable(bool no_flags, int dst_enc, int nds_enc, int src_enc);
+  bool is_demotable(bool no_flags, int dst_enc, int nds_enc);
   void emit_arith_b(int op1, int op2, Register dst, int imm8);
 
   void emit_arith(int op1, int op2, Register dst, int32_t imm32);
