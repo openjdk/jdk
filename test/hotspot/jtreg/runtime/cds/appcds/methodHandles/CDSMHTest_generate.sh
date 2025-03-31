@@ -21,9 +21,7 @@
 # questions.
 #
 
-echo "// --- start auto-generated"
-
-testnames=( MethodHandlesGeneralTest  MethodHandlesAsCollectorTest MethodHandlesCastFailureTest MethodHandlesInvokersTest MethodHandlesPermuteArgumentsTest MethodHandlesSpreadArgumentsTest )
+testnames=( MethodHandlesGeneralTest MethodHandlesAsCollectorTest MethodHandlesCastFailureTest MethodHandlesInvokersTest MethodHandlesPermuteArgumentsTest MethodHandlesSpreadArgumentsTest )
 name_suffix='.java'
 
 for i in "${testnames[@]}"
@@ -31,7 +29,7 @@ do
     fname="$i$name_suffix"
     cat << EOF > $fname
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,80 +61,23 @@ do
  *          tests aren't executed with -Xcomp in the CI pipeline, so let's exclude
  *          the generated tests from -Xcomp execution as well.
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @compile ../../../../../../jdk/java/lang/invoke/MethodHandlesTest.java
  *        ../../../../../../lib/jdk/test/lib/Utils.java
  *        ../../../../../../jdk/java/lang/invoke/$fname
  *        ../../../../../../jdk/java/lang/invoke/remote/RemoteExample.java
  *        ../../../../../../jdk/java/lang/invoke/common/test/java/lang/invoke/lib/CodeCacheOverflowProcessor.java
- *        ../dynamicArchive/test-classes/TestMHApp.java
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run junit/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. $i
+ * @run junit/othervm/timeout=480 -Dcds.app.tester.workflow=STATIC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. $i
  */
 
 import org.junit.Test;
 
-import java.io.File;
-import java.nio.file.Path;
-
-import jdk.test.lib.cds.CDSOptions;
-import jdk.test.lib.cds.CDSTestUtils;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Platform;
-
 public class $i {
     @Test
     public void test() throws Exception {
-        testImpl();
-    }
-
-    private static final String classDir = System.getProperty("test.classes");
-    private static final String mainClass = "TestMHApp";
-    private static final String javaClassPath = System.getProperty("java.class.path");
-    private static final String ps = System.getProperty("path.separator");
-    private static final String testPackageName = "test.java.lang.invoke";
-    private static final String testClassName = "$i";
-
-    static void testImpl() throws Exception {
-        String appJar = JarBuilder.build("MH", new File(classDir), null);
-        String classList = testClassName + ".list";
-        String archiveName = testClassName + ".jsa";
-        // Disable VerifyDpendencies when running with debug build because
-        // the test requires a lot more time to execute with the option enabled.
-        String verifyOpt =
-            Platform.isDebugBuild() ? "-XX:-VerifyDependencies" : "-showversion";
-
-        String junitJar = Path.of(Test.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
-
-        String jars = appJar + ps + junitJar;
-
-        // dump class list
-        CDSTestUtils.dumpClassList(classList, "-cp", jars, verifyOpt, mainClass,
-                                   testPackageName + "." + testClassName);
-
-        // create archive with the class list
-        CDSOptions opts = (new CDSOptions())
-            .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
-                       "-cp", jars,
-                       "-Xlog:class+load,cds")
-            .setArchiveName(archiveName);
-        OutputAnalyzer output = CDSTestUtils.createArchiveAndCheck(opts);
-        if (testClassName.equals("MethodHandlesInvokersTest")) {
-            output.shouldNotContain("Failed to generate LambdaForm holder classes. Is your classlist out of date?");
-        }
-
-        // run with archive
-        CDSOptions runOpts = (new CDSOptions())
-            .addPrefix("-cp", jars, "-Xlog:class+load,cds=debug", verifyOpt)
-            .setArchiveName(archiveName)
-            .setUseVersion(false)
-            .addSuffix(mainClass, testPackageName + "." + testClassName);
-        output = CDSTestUtils.runWithArchive(runOpts);
-        output.shouldMatch(".class.load. test.java.lang.invoke.$i[$][$]Lambda.*/0x.*source:.*shared.*objects.*file")
-              .shouldHaveExitValue(0);
+        JDKMethodHandlesTestRunner.test($i.class.getName());
     }
 }
 EOF
 done
-echo "// --- end auto-generated"
