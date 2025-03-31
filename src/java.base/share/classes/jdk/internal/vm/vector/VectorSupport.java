@@ -775,6 +775,11 @@ public class VectorSupport {
 
     /* ============================================================================ */
 
+    // query the JVM's supported vector operations
+    public static native boolean isSupported(int opr, Class<?> etype, int length);
+
+    /* ============================================================================ */
+
     public static boolean isNonCapturingLambda(Object o) {
         return o.getClass().getDeclaredFields().length == 0;
     }
