@@ -430,35 +430,38 @@ public:
 private:
   void manage_satb_barrier(bool active);
 
-  enum CancelState {
-    // Normal state. GC has not been cancelled and is open for cancellation.
-    // Worker threads can suspend for safepoint.
-    CANCELLABLE,
-
-    // GC has been cancelled. Worker threads can not suspend for
-    // safepoint but must finish their work as soon as possible.
-    CANCELLED
-  };
-
+  // Records the time of the first successful cancellation request. This is used to measure
+  // the responsiveness of the heuristic when starting a cycle.
   double _cancel_requested_time;
-  ShenandoahSharedEnumFlag<CancelState> _cancelled_gc;
+
+  // Indicates the reason the current GC has been cancelled (GCCause::_no_gc means the gc is not cancelled).
+  ShenandoahSharedEnumFlag<GCCause::Cause> _cancelled_gc;
 
   // Returns true if cancel request was successfully communicated.
   // Returns false if some other thread already communicated cancel
   // request.  A true return value does not mean GC has been
   // cancelled, only that the process of cancelling GC has begun.
-  bool try_cancel_gc();
+  bool try_cancel_gc(GCCause::Cause cause);
 
 public:
+  // True if gc has been cancelled
   inline bool cancelled_gc() const;
+
+  // Used by workers in the GC cycle to detect cancellation and honor STS requirements
   inline bool check_cancelled_gc_and_yield(bool sts_active = true);
 
+  // This indicates the reason the last GC cycle was cancelled.
+  inline GCCause::Cause cancelled_cause() const;
+
+  // Clears the cancellation cause and optionally resets the oom handler (cancelling an
+  // old mark does _not_ touch the oom handler).
   inline void clear_cancelled_gc(bool clear_oom_handler = true);
 
   void cancel_concurrent_mark();
-  void cancel_gc(GCCause::Cause cause);
 
-public:
+  // Returns true if and only if this call caused a gc to be cancelled.
+  bool cancel_gc(GCCause::Cause cause);
+
   // Returns true if the soft maximum heap has been changed using management APIs.
   bool check_soft_max_changed();
 
@@ -478,10 +481,13 @@ private:
   // Concurrent class unloading support
   void do_class_unloading();
   // Reference updating
-  void prepare_update_heap_references(bool concurrent);
+  void prepare_update_heap_references();
 
   // Retires LABs used for evacuation
   void concurrent_prepare_for_update_refs();
+
+  // Turn off weak roots flag, purge old satb buffers in generational mode
+  void concurrent_final_roots(HandshakeClosure* handshake_closure = nullptr);
 
   virtual void update_heap_references(bool concurrent);
   // Final update region states
@@ -689,6 +695,9 @@ private:
   HeapWord* allocate_memory_under_lock(ShenandoahAllocRequest& request, bool& in_new_region);
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
+
+  // We want to retry an unsuccessful attempt at allocation until at least a full gc.
+  bool should_retry_allocation(size_t original_full_gc_count) const;
 
 public:
   HeapWord* allocate_memory(ShenandoahAllocRequest& request);

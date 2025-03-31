@@ -1800,12 +1800,6 @@ address TemplateInterpreterGenerator::generate_currentThread() {
   return entry_point;
 }
 
-// Not supported
-address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
-
 //-----------------------------------------------------------------------------
 // Exceptions
 
@@ -2102,7 +2096,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 
 void TemplateInterpreterGenerator::count_bytecode() {
   __ mov(r10, (address) &BytecodeCounter::_counter_value);
-  __ atomic_addw(noreg, 1, r10);
+  __ atomic_add(noreg, 1, r10);
 }
 
 void TemplateInterpreterGenerator::histogram_bytecode(Template* t) {
@@ -2150,7 +2144,7 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
   __ mov(rscratch1, (address) &BytecodeCounter::_counter_value);
   __ ldr(rscratch1, Address(rscratch1));
   __ mov(rscratch2, StopInterpreterAt);
-  __ cmpw(rscratch1, rscratch2);
+  __ cmp(rscratch1, rscratch2);
   __ br(Assembler::NE, L);
   __ brk(0);
   __ bind(L);

@@ -931,7 +931,9 @@ HeapWord* ShenandoahFreeSet::try_allocate_from_mutator(ShenandoahAllocRequest& r
     ShenandoahHeapRegion* r = _heap->get_region(idx);
     if (can_allocate_from(r)) {
       if (req.is_old()) {
-        flip_to_old_gc(r);
+        if (!flip_to_old_gc(r)) {
+          continue;
+        }
       } else {
         flip_to_gc(r);
       }
@@ -999,7 +1001,10 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   assert (has_alloc_capacity(r), "Performance: should avoid full regions on this path: %zu", r->index());
   if (_heap->is_concurrent_weak_root_in_progress() && r->is_trash()) {
     // We cannot use this region for allocation when weak roots are in progress because the collector may need
-    // to reference unmarked oops during concurrent classunloading.
+    // to reference unmarked oops during concurrent classunloading. The collector also needs accurate marking
+    // information to determine which weak handles need to be null'd out. If the region is recycled before weak
+    // roots processing has finished, weak root processing may fail to null out a handle into a trashed region.
+    // This turns the handle into a dangling pointer and will crash or corrupt the heap.
     return nullptr;
   }
   HeapWord* result = nullptr;
@@ -1281,25 +1286,65 @@ void ShenandoahFreeSet::recycle_trash() {
   heap->parallel_heap_region_iterate(&closure);
 }
 
-void ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
-  size_t idx = r->index();
+bool ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
+  const size_t idx = r->index();
 
   assert(_partitions.partition_id_matches(idx, ShenandoahFreeSetPartitionId::Mutator), "Should be in mutator view");
   assert(can_allocate_from(r), "Should not be allocated");
 
   ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
-  size_t region_capacity = alloc_capacity(r);
-  _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Mutator,
-                                               ShenandoahFreeSetPartitionId::OldCollector, region_capacity);
-  _partitions.assert_bounds();
-  _heap->old_generation()->augment_evacuation_reserve(region_capacity);
+  const size_t region_capacity = alloc_capacity(r);
+
   bool transferred = gen_heap->generation_sizer()->transfer_to_old(1);
-  if (!transferred) {
-    log_warning(gc, free)("Forcing transfer of %zu to old reserve.", idx);
-    gen_heap->generation_sizer()->force_transfer_to_old(1);
+  if (transferred) {
+    _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Mutator,
+                                                 ShenandoahFreeSetPartitionId::OldCollector, region_capacity);
+    _partitions.assert_bounds();
+    _heap->old_generation()->augment_evacuation_reserve(region_capacity);
+    return true;
   }
-  // We do not ensure that the region is no longer trash, relying on try_allocate_in(), which always comes next,
-  // to recycle trash before attempting to allocate anything in the region.
+
+  if (_heap->young_generation()->free_unaffiliated_regions() == 0 && _heap->old_generation()->free_unaffiliated_regions() > 0) {
+    // Old has free unaffiliated regions, but it couldn't use them for allocation (likely because they
+    // are trash and weak roots are in process). In this scenario, we aren't really stealing from the
+    // mutator (they have nothing to steal), but they do have a usable region in their partition. What
+    // we want to do here is swap that region from the mutator partition with one from the old collector
+    // partition.
+    // 1. Find a temporarily unusable trash region in the old collector partition
+    ShenandoahRightLeftIterator iterator(&_partitions, ShenandoahFreeSetPartitionId::OldCollector, true);
+    idx_t unusable_trash = -1;
+    for (unusable_trash = iterator.current(); iterator.has_next(); unusable_trash = iterator.next()) {
+      const ShenandoahHeapRegion* region = _heap->get_region(unusable_trash);
+      if (region->is_trash() && _heap->is_concurrent_weak_root_in_progress()) {
+        break;
+      }
+    }
+
+    if (unusable_trash != -1) {
+      const size_t unusable_capacity = alloc_capacity(unusable_trash);
+      // 2. Move the (temporarily) unusable trash region we found to the mutator partition
+      _partitions.move_from_partition_to_partition(unusable_trash,
+                                                   ShenandoahFreeSetPartitionId::OldCollector,
+                                                   ShenandoahFreeSetPartitionId::Mutator, unusable_capacity);
+
+      // 3. Move this usable region from the mutator partition to the old collector partition
+      _partitions.move_from_partition_to_partition(idx,
+                                                   ShenandoahFreeSetPartitionId::Mutator,
+                                                   ShenandoahFreeSetPartitionId::OldCollector, region_capacity);
+
+      _partitions.assert_bounds();
+
+      // 4. Do not adjust capacities for generations, we just swapped the regions that have already
+      // been accounted for. However, we should adjust the evacuation reserves as those may have changed.
+      shenandoah_assert_heaplocked();
+      const size_t reserve = _heap->old_generation()->get_evacuation_reserve();
+      _heap->old_generation()->set_evacuation_reserve(reserve - unusable_capacity + region_capacity);
+      return true;
+    }
+  }
+
+  // We can't take this region young because it has no free unaffiliated regions (transfer failed).
+  return false;
 }
 
 void ShenandoahFreeSet::flip_to_gc(ShenandoahHeapRegion* r) {
