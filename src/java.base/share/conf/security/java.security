@@ -535,7 +535,10 @@ sun.security.krb5.maxReferrals=5
 #       denyAfter YYYY-MM-DD
 #
 #   UsageConstraint:
-#       usage [TLSServer] [TLSClient] [SignedJAR]
+#       usage UsageType { UsageType }
+#
+#   UsageType:
+#       TLSServer | TLSClient | SignedJAR
 #
 #   IncludeProperty:
 #       include <security property>
@@ -598,9 +601,9 @@ sun.security.krb5.maxReferrals=5
 #       use the following:  "RSA keySize == 2048 & denyAfter 2020-02-03"
 #
 #   UsageConstraint:
-#     usage [TLSServer] [TLSClient] [SignedJAR]
+#     usage UsageType { UsageType }
 #       This constraint prohibits the specified algorithm for
-#       a specified usage.  This should be used when disabling an algorithm
+#       a specified UsageType.  This should be used when disabling an algorithm
 #       for all usages is not practical. 'TLSServer' restricts the algorithm
 #       in TLS server certificate chains when server authentication is
 #       performed. 'TLSClient' restricts the algorithm in TLS client
