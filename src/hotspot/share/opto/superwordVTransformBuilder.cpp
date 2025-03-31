@@ -313,6 +313,7 @@ void SuperWordVTransformBuilder::add_dependencies_of_node_to_vtnode(Node* n, VTr
 
     VTransformNode* dependency = get_vtnode(pred);
 
+    // TODO: bogus check?
     // Reduction self-cycle?
     if (vtn == dependency && _vloop_analyzer.reductions().is_marked_reduction(n)) { continue; }
 

@@ -248,7 +248,8 @@ private:
   void determine_mem_ref_and_aw_for_main_loop_alignment();
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
 
-  void apply_speculative_runtime_checks();
+  void apply_speculative_alignment_runtime_checks();
+  void apply_speculative_aliasing_runtime_checks();
   void add_speculative_alignment_check(Node* node, juint alignment);
   void add_speculative_check(BoolNode* bol);
 

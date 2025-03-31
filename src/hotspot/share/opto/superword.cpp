@@ -1947,7 +1947,8 @@ void VTransform::apply() {
   adjust_pre_loop_limit_to_align_main_loop_vectors();
   C->print_method(PHASE_AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, 4, cl());
 
-  apply_speculative_runtime_checks();
+  apply_speculative_alignment_runtime_checks();
+  apply_speculative_aliasing_runtime_checks();
   C->print_method(PHASE_AUTO_VECTORIZATION4_AFTER_SPECULATIVE_RUNTIME_CHECKS, 4, cl());
 
   apply_vectorization();

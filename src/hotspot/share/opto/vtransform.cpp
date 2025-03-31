@@ -144,7 +144,7 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
 }
 #endif
 
-void VTransform::apply_speculative_runtime_checks() {
+void VTransform::apply_speculative_alignment_runtime_checks() {
   if (VLoop::vectors_should_be_aligned()) {
 #ifdef ASSERT
     if (_trace._align_vector || _trace._speculative_runtime_checks) {
@@ -169,6 +169,9 @@ void VTransform::apply_speculative_runtime_checks() {
       add_speculative_alignment_check(vp.mem_pointer().base().native(), ObjectAlignmentInBytes);
     }
   }
+}
+
+void VTransform::apply_speculative_aliasing_runtime_checks() {
 }
 
 #define TRACE_SPECULATIVE_ALIGNMENT_CHECK(node) {                     \
