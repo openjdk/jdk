@@ -692,25 +692,27 @@ void VM_PopulateDumpSharedSpace::doit() {
   _map_info->header()->set_class_location_config(cl_config);
 }
 
-class CollectCLDClosure : public CLDClosure {
-  GrowableArray<ClassLoaderData*> _loaded_cld;
-  GrowableArray<OopHandle> _loaded_cld_handles; // keep the CLDs alive
-  Thread* _current_thread;
+class CollectClassesForLinking : public KlassClosure {
+  GrowableArray<OopHandle> _mirrors;
+
 public:
-  CollectCLDClosure(Thread* thread) : _current_thread(thread) {}
-  ~CollectCLDClosure() {
-    for (int i = 0; i < _loaded_cld_handles.length(); i++) {
-      _loaded_cld_handles.at(i).release(Universe::vm_global());
+  ~CollectClassesForLinking() {
+    for (int i = 0; i < _mirrors.length(); i++) {
+      _mirrors.at(i).release(Universe::vm_global());
     }
   }
+
   void do_cld(ClassLoaderData* cld) {
     assert(cld->is_alive(), "must be");
-    _loaded_cld.append(cld);
-    _loaded_cld_handles.append(OopHandle(Universe::vm_global(), cld->holder()));
   }
 
-  int nof_cld() const                { return _loaded_cld.length(); }
-  ClassLoaderData* cld_at(int index) { return _loaded_cld.at(index); }
+  void do_klass(Klass* k) {
+    if (k->is_instance_klass()) {
+      _mirrors.append(OopHandle(Universe::vm_global(), k->java_mirror()));
+    }
+  }
+
+  const GrowableArray<OopHandle>* mirrors() const { return &_mirrors; }
 };
 
 // Check if we can eagerly link this class at dump time, so we can avoid the
@@ -751,28 +753,26 @@ void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
     LambdaFormInvokers::regenerate_holder_classes(CHECK);
   }
 
-  // Collect all loaded ClassLoaderData.
-  CollectCLDClosure collect_cld(THREAD);
-  {
-    // ClassLoaderDataGraph::loaded_cld_do requires ClassLoaderDataGraph_lock.
-    // We cannot link the classes while holding this lock (or else we may run into deadlock).
-    // Therefore, we need to first collect all the CLDs, and then link their classes after
-    // releasing the lock.
-    MutexLocker lock(ClassLoaderDataGraph_lock);
-    ClassLoaderDataGraph::loaded_cld_do(&collect_cld);
-  }
 
   while (true) {
+    CollectClassesForLinking collect_classes;
+    {
+      // ClassLoaderDataGraph::loaded_classes_do_keepalive() requires ClassLoaderDataGraph_lock.
+      // We cannot link the classes while holding this lock (or else we may run into deadlock).
+      // Therefore, we need to first collect all the classes, keeping them alive by
+      // holding onto their java_mirrors in global OopHandles. We then link the classes after
+      // releasing the lock.
+      MutexLocker lock(ClassLoaderDataGraph_lock);
+      ClassLoaderDataGraph::loaded_classes_do_keepalive(&collect_classes);
+    }
+
     bool has_linked = false;
-    for (int i = 0; i < collect_cld.nof_cld(); i++) {
-      ClassLoaderData* cld = collect_cld.cld_at(i);
-      for (Klass* klass = cld->klasses(); klass != nullptr; klass = klass->next_link()) {
-        if (klass->is_instance_klass()) {
-          InstanceKlass* ik = InstanceKlass::cast(klass);
-          if (may_be_eagerly_linked(ik)) {
-            has_linked |= link_class_for_cds(ik, CHECK);
-          }
-        }
+    const GrowableArray<OopHandle>* mirrors = collect_classes.mirrors();
+    for (int i = 0; i < mirrors->length(); i++) {
+      OopHandle mirror = mirrors->at(i);
+      InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(mirror.resolve()));
+      if (may_be_eagerly_linked(ik)) {
+        has_linked |= link_class_for_cds(ik, CHECK);
       }
     }
 
