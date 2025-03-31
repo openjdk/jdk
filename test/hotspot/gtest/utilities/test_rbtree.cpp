@@ -92,13 +92,13 @@ struct ArrayAllocator {
     static int cmp(int a, const IntrusiveTreeNode* b) {
       return a - IntrusiveHolder::cast_to_self(b)->key;
     }
-  };
 
-  // true if a < b
-  static bool IntrusiveVerifier(IntrusiveTreeNode* a, IntrusiveTreeNode* b) {
-    return (IntrusiveHolder::cast_to_self(a)->key -
-            IntrusiveHolder::cast_to_self(b)->key) < 0;
-  }
+    // true if a < b
+    static bool cmp(const IntrusiveTreeNode* a, const IntrusiveTreeNode* b) {
+      return (IntrusiveHolder::cast_to_self(a)->key -
+              IntrusiveHolder::cast_to_self(b)->key) < 0;
+    }
+  };
 
   using IntrusiveTreeInt = IntrusiveRBTree<int, IntrusiveCmp>;
   using IntrusiveCursor = IntrusiveTreeInt::Cursor;
@@ -233,11 +233,12 @@ public:
       });
       EXPECT_EQ(3, count);
 
-      // Visiting empty range [0, 0) == {}
-      rbtree.upsert(0, 0); // This node should not be visited.
+      count = 0;
+      rbtree.upsert(0, 0);
       rbtree_const.visit_range_in_order(0, 0, [&](const Node* x) {
-        EXPECT_TRUE(false) << "Empty visiting range should not visit any node";
+        count++;
       });
+      EXPECT_EQ(1, count);
 
       rbtree.remove_all();
       for (int i = 0; i < 11; i++) {
@@ -246,7 +247,7 @@ public:
 
       ResourceMark rm;
       GrowableArray<int> seen;
-      rbtree_const.visit_range_in_order(0, 10, [&](const Node* x) {
+      rbtree_const.visit_range_in_order(0, 9, [&](const Node* x) {
         seen.push(x->key());
       });
       EXPECT_EQ(10, seen.length());
@@ -721,7 +722,7 @@ public:
 
       EXPECT_NOT_NULL(cursor2.node());
 
-      intrusive_tree.verify_self(IntrusiveVerifier);
+      intrusive_tree.verify_self();
     }
 
     // Check inserted values
@@ -741,7 +742,7 @@ public:
 
       EXPECT_NULL(cursor2.node());
 
-      intrusive_tree.verify_self(IntrusiveVerifier);
+      intrusive_tree.verify_self();
     }
 
     // Check removed values
