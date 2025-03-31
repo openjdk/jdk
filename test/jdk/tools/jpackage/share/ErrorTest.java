@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -46,6 +47,7 @@ import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
+import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
@@ -408,6 +410,7 @@ public final class ErrorTest {
     @ParameterSupplier("basic")
     @ParameterSupplier(value="testWindows", ifOS = WINDOWS)
     @ParameterSupplier(value="testMac", ifOS = MACOS)
+    @ParameterSupplier(value="testLinux", ifOS = LINUX)
     @ParameterSupplier(value="winOption", ifNotOS = WINDOWS)
     @ParameterSupplier(value="linuxOption", ifNotOS = LINUX)
     @ParameterSupplier(value="macOption", ifNotOS = MACOS)
@@ -539,23 +542,79 @@ public final class ErrorTest {
         ).map(argGroup -> {
             return testSpec().noAppDesc().addArgs(argGroup.asArray()).addArgs("--app-image", Token.APP_IMAGE.token())
                     .error("ERR_InvalidOptionWithAppImageSigning", argGroup.arg());
-        }).<TestSpec>mapMulti((builder, acc) -> {
-            // It should bail out with the same error message regardless of `--mac-sign` option.
-            acc.accept(builder.create());
-            acc.accept(builder.addArgs("--mac-sign").create());
-        }).toList());
+         // It should bail out with the same error message regardless of `--mac-sign` option.
+        }).mapMulti(ErrorTest::duplicateForMacSign).toList());
 
         testCases.addAll(createMutuallyExclusive(
                 new ArgumentGroup("--mac-signing-key-user-name", "foo"),
                 new ArgumentGroup("--mac-app-image-sign-identity", "bar")
-        ).map(TestSpec.Builder::create).toList());
+        ).mapMulti(ErrorTest::duplicateForMacSign).toList());
 
         testCases.addAll(createMutuallyExclusive(
                 new ArgumentGroup("--mac-signing-key-user-name", "foo"),
                 new ArgumentGroup("--mac-installer-sign-identity", "bar")
-        ).map(TestSpec.Builder::nativeType).map(TestSpec.Builder::create).toList());
+        ).map(TestSpec.Builder::nativeType).mapMulti(ErrorTest::duplicateForMacSign).toList());
 
         return toTestArgs(testCases.stream());
+    }
+
+    @Test(ifOS = MACOS)
+    public static void testAppContentWarning() {
+        // --app-content and --type app-image
+        // Expect `message.codesign.failed.reason.app.content` message in the log.
+        // This is not a fatal error, just a warning.
+        // To make jpackage fail, specify invalid signing identity.
+        final var cmd = JPackageCommand.helloAppImage()
+                .addArguments("--app-content", TKit.TEST_SRC_ROOT.resolve("apps/dukeplug.png"))
+                .addArguments("--mac-sign", "--mac-app-image-sign-identity", "foo");
+
+        final List<CannedFormattedString> expectedStrings = new ArrayList<>();
+        expectedStrings.add(JPackageStringBundle.MAIN.cannedFormattedString("message.codesign.failed.reason.app.content"));
+
+        final var xcodeWarning = JPackageStringBundle.MAIN.cannedFormattedString("message.codesign.failed.reason.xcode.tools");
+        if (!MacHelper.isXcodeDevToolsInstalled()) {
+            expectedStrings.add(xcodeWarning);
+        }
+
+        defaultInit(cmd, expectedStrings);
+
+        if (MacHelper.isXcodeDevToolsInstalled()) {
+            // Check there is no warning about missing xcode command line developer tools.
+            cmd.validateOutput(TKit.assertTextStream(xcodeWarning.getValue()).negate());
+        }
+
+        cmd.execute(1);
+    }
+
+    public static Collection<Object[]> testLinux() {
+        final List<TestSpec> testCases = new ArrayList<>();
+
+        testCases.addAll(Stream.of(
+                testSpec().type(PackageType.LINUX_DEB).addArgs("--linux-package-name", "#")
+                        .error("error.deb-invalid-value-for-package-name", "#")
+                        .error("error.deb-invalid-value-for-package-name.advice"),
+                testSpec().type(PackageType.LINUX_RPM).addArgs("--linux-package-name", "#")
+                        .error("error.rpm-invalid-value-for-package-name", "#")
+                        .error("error.rpm-invalid-value-for-package-name.advice")
+        ).map(TestSpec.Builder::create).filter(spec -> {
+            return spec.type().orElseThrow().isSupported();
+        }).toList());
+
+        return toTestArgs(testCases.stream());
+    }
+
+    private static void duplicate(TestSpec.Builder builder, Consumer<TestSpec> accumulator, Consumer<TestSpec.Builder> mutator) {
+        accumulator.accept(builder.create());
+        mutator.accept(builder);
+        accumulator.accept(builder.create());
+    }
+
+    private static void duplicateAddArgs(TestSpec.Builder builder, Consumer<TestSpec> accumulator, String...args) {
+        duplicate(builder, accumulator, b -> b.addArgs(args));
+    }
+
+    private static void duplicateForMacSign(TestSpec.Builder builder, Consumer<TestSpec> accumulator) {
+        duplicateAddArgs(builder, accumulator, "--mac-sign");
     }
 
     private record UnsupportedPlatformOption(String name, Optional<String> value) {
