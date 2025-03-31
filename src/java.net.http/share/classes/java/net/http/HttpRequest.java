@@ -119,8 +119,8 @@ public abstract class HttpRequest {
          * specific algorithm to find or establish a connection for the exchange.
          * Typically, if no connection was previously established with the origin
          * server defined by the request URI, the {@link HttpClient} implementation
-         * may attempt to establish both an HTTP/3-Quic connection and an HTTP
-         * connection through TCP at the authority present in the request URI,
+         * may attempt to establish both an HTTP/3 connection over QUIC and an HTTP
+         * connection over TLS/TCP at the authority present in the request URI,
          * and use the first that succeeds. The exchange may then be carried out with
          * any of the {@linkplain java.net.http.HttpClient.Version
          * three HTTP protocol versions}, depending on which method succeeded first.
@@ -130,7 +130,7 @@ public abstract class HttpRequest {
          * Version#HTTP_3 HTTP/3}, the {@code HttpClient} will first attempt to
          * establish an HTTP/3 connection, before attempting a TLS connection over TCP.
          * If, after an implementation specific timeout, no reply is obtained to the first
-         * initial Quic packet, the TLS/TCP connection will be attempted.
+         * initial QUIC packet, the TLS/TCP connection will be attempted.
          * <p>
          * When attempting an HTTP/3 connection in this mode, the {@code HttpClient} will
          * use any <a href="https://www.rfc-editor.org/rfc/rfc7838">HTTP Alternative Services</a>
@@ -142,7 +142,7 @@ public abstract class HttpRequest {
         /**
          * This instructs the {@link HttpClient} to only attempt an HTTP/3 connection
          * with the origin server. The connection will only succeed if the origin server
-         * is listening for incoming HTTP/3 Quic connection at the same authority (host, port)
+         * is listening for incoming HTTP/3 connections over QUIC at the same authority (host, port)
          * as defined in the {@linkplain #uri() request URI}. In this mode,
          * <a href="https://www.rfc-editor.org/rfc/rfc7838">HTTP Alternative Services</a>
          * are not used.
