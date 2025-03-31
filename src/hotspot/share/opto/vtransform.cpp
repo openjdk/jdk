@@ -148,7 +148,7 @@ void VTransform::apply_speculative_alignment_runtime_checks() {
   if (VLoop::vectors_should_be_aligned()) {
 #ifdef ASSERT
     if (_trace._align_vector || _trace._speculative_runtime_checks) {
-      tty->print_cr("\nVTransform::apply_speculative_runtime_checks: native memory alignment");
+      tty->print_cr("\nVTransform::apply_speculative_alignment_runtime_checks: native memory alignment");
     }
 #endif
 
@@ -169,9 +169,6 @@ void VTransform::apply_speculative_alignment_runtime_checks() {
       add_speculative_alignment_check(vp.mem_pointer().base().native(), ObjectAlignmentInBytes);
     }
   }
-}
-
-void VTransform::apply_speculative_aliasing_runtime_checks() {
 }
 
 #define TRACE_SPECULATIVE_ALIGNMENT_CHECK(node) {                     \
@@ -217,6 +214,48 @@ void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
   TRACE_SPECULATIVE_ALIGNMENT_CHECK(bol_alignment);
 
   add_speculative_check(bol_alignment);
+}
+
+void VTransform::apply_speculative_aliasing_runtime_checks() {
+
+  if (_vloop.are_speculative_checks_possible()) {
+
+#ifdef ASSERT
+    if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
+      tty->print_cr("\nVTransform::apply_speculative_aliasing_runtime_checks: speculative aliasing analysis runtime checks");
+    }
+#endif
+
+    ResourceMark rm;
+    VectorSet visited;
+
+    const GrowableArray<VTransformNode*>& schedule = _graph.get_schedule();
+    for (int i = 0; i < schedule.length(); i++) {
+      VTransformNode* vtn = schedule.at(i);
+      for (uint i = 0; i < vtn->out_weaks(); i++) {
+        VTransformNode* use = vtn->out_weak(i);
+        if (visited.test(use->_idx)) {
+          // The use node was already visited, i.e. is higher up in the schedule.
+          // The "out" edge thus points backward, i.e. it is violated.
+#ifdef ASSERT
+          if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
+            tty->print_cr("\nViolated Weak Edge:");
+            vtn->print();
+            use->print();
+          }
+#endif
+          const VPointer& p1 = vtn->vpointer(_vloop_analyzer);
+          const VPointer& p2 = use->vpointer(_vloop_analyzer);
+          add_speculative_aliasing_check(p1, p2);
+        }
+      }
+      visited.set(vtn->_idx);
+    }
+  }
+}
+
+
+void VTransform::add_speculative_aliasing_check(const VPointer& p1, const VPointer& p2) {
 }
 
 void VTransform::add_speculative_check(BoolNode* bol) {

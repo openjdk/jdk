@@ -109,19 +109,22 @@ public:
   const bool _verbose;
   const bool _rejections;
   const bool _align_vector;
+  const bool _speculative_aliasing_analysis;
   const bool _speculative_runtime_checks;
   const bool _info;
 
   VTransformTrace(const VTrace& vtrace,
                   const bool is_trace_rejections,
                   const bool is_trace_align_vector,
+                  const bool is_trace_speculative_aliasing_analysis,
                   const bool is_trace_speculative_runtime_checks,
                   const bool is_trace_info) :
     _verbose                   (vtrace.is_trace(TraceAutoVectorizationTag::ALL)),
-    _rejections                (_verbose | is_trace_vtransform(vtrace) | is_trace_rejections),
-    _align_vector              (_verbose | is_trace_vtransform(vtrace) | is_trace_align_vector),
-    _speculative_runtime_checks(_verbose | is_trace_vtransform(vtrace) | is_trace_speculative_runtime_checks),
-    _info                      (_verbose | is_trace_vtransform(vtrace) | is_trace_info) {}
+    _rejections                    (_verbose | is_trace_vtransform(vtrace) | is_trace_rejections),
+    _align_vector                  (_verbose | is_trace_vtransform(vtrace) | is_trace_align_vector),
+    _speculative_aliasing_analysis (_verbose | is_trace_vtransform(vtrace) | is_trace_speculative_aliasing_analysis),
+    _speculative_runtime_checks    (_verbose | is_trace_vtransform(vtrace) | is_trace_speculative_runtime_checks),
+    _info                          (_verbose | is_trace_vtransform(vtrace) | is_trace_info) {}
 
   static bool is_trace_vtransform(const VTrace& vtrace) {
     return vtrace.is_trace(TraceAutoVectorizationTag::VTRANSFORM);
@@ -161,6 +164,7 @@ public:
   DEBUG_ONLY( bool is_empty() const { return _vtnodes.is_empty(); } )
   DEBUG_ONLY( bool is_scheduled() const { return _schedule.is_nonempty(); } )
   const GrowableArray<VTransformNode*>& vtnodes() const { return _vtnodes; }
+  const GrowableArray<VTransformNode*>& get_schedule() const { return _schedule; }
 
   bool schedule();
   bool has_store_to_load_forwarding_failure(const VLoopAnalyzer& vloop_analyzer) const;
@@ -251,6 +255,7 @@ private:
   void apply_speculative_alignment_runtime_checks();
   void apply_speculative_aliasing_runtime_checks();
   void add_speculative_alignment_check(Node* node, juint alignment);
+  void add_speculative_aliasing_check(const VPointer& p1, const VPointer& p2);
   void add_speculative_check(BoolNode* bol);
 
   void apply_vectorization() const;
