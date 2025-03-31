@@ -24,10 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.WinExePackage;
-import jdk.jpackage.internal.model.WinLauncher;
-import jdk.jpackage.internal.model.WinApplication;
-import jdk.jpackage.internal.model.DottedVersion;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -37,15 +33,19 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.ResourceBundle;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.DottedVersion;
+import jdk.jpackage.internal.model.WinApplication;
+import jdk.jpackage.internal.model.WinExePackage;
+import jdk.jpackage.internal.model.WinLauncher;
 
 @SuppressWarnings("restricted")
 final class ExecutableRebrander {
@@ -62,15 +62,15 @@ final class ExecutableRebrander {
             Function<String, OverridableResource> resourceSupplier,
             UpdateResourceAction... extraActions) {
         this(ExecutableProperties.create(app, launcher), resourceSupplier.apply(
-                "WinLauncher.template").setPublicName(
-                        launcher.executableName() + ".properties"), extraActions);
+                "WinLauncher.template").setPublicName(launcher.executableName() + ".properties"),
+                extraActions);
     }
 
     private ExecutableRebrander(ExecutableProperties props,
             OverridableResource propertiesFileResource,
             UpdateResourceAction... extraActions) {
         this.extraActions = List.of(extraActions);
-        this.propertiesFileResource = propertiesFileResource;
+        this.propertiesFileResource = Objects.requireNonNull(propertiesFileResource);
 
         this.props = new HashMap<>();
 
@@ -90,8 +90,7 @@ final class ExecutableRebrander {
 
         UpdateResourceAction versionSwapper = resourceLock -> {
             if (versionSwap(resourceLock, propsArray) != 0) {
-                throw new RuntimeException(MessageFormat.format(I18N.getString(
-                        "error.version-swap"), target));
+                throw I18N.buildException().message("error.version-swap", target).create(RuntimeException::new);
             }
         };
 
@@ -101,32 +100,30 @@ final class ExecutableRebrander {
                 .map(absIcon -> {
                     return resourceLock -> {
                         if (iconSwap(resourceLock, absIcon.toString()) != 0) {
-                            throw new RuntimeException(MessageFormat.format(
-                                    I18N.getString("error.icon-swap"), absIcon));
+                            throw I18N.buildException().message("error.icon-swap", absIcon).create(RuntimeException::new);
                         }
                     };
                 });
 
         try {
-            if (updateIcon.isEmpty()) {
-                rebrandExecutable(env, target, versionSwapper);
-            } else {
-                rebrandExecutable(env, target, versionSwapper, updateIcon.orElseThrow());
-            }
+            final List<UpdateResourceAction> actions = new ArrayList<>();
+            actions.add(versionSwapper);
+            updateIcon.ifPresent(actions::add);
+            actions.addAll(extraActions);
+            rebrandExecutable(env, target, actions);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
     }
 
-    private static void rebrandExecutable(BuildEnv env,
-            final Path target, UpdateResourceAction ... actions) throws IOException {
+    private static void rebrandExecutable(BuildEnv env, final Path target,
+            List<UpdateResourceAction> actions) throws IOException {
+        Objects.requireNonNull(actions);
+        actions.forEach(Objects::requireNonNull);
         try {
             String tempDirectory = env.buildRoot().toAbsolutePath().toString();
-            if (WindowsDefender.isThereAPotentialWindowsDefenderIssue(
-                    tempDirectory)) {
-                Log.verbose(MessageFormat.format(I18N.getString(
-                        "message.potential.windows.defender.issue"),
-                        tempDirectory));
+            if (WindowsDefender.isThereAPotentialWindowsDefenderIssue(tempDirectory)) {
+                Log.verbose(I18N.format("message.potential.windows.defender.issue", tempDirectory));
             }
 
             target.toFile().setWritable(true, true);
@@ -134,8 +131,7 @@ final class ExecutableRebrander {
             var shortTargetPath = ShortPathUtils.toShortPath(target);
             long resourceLock = lockResource(shortTargetPath.orElse(target).toString());
             if (resourceLock == 0) {
-                throw new RuntimeException(MessageFormat.format(
-                    I18N.getString("error.lock-resource"), shortTargetPath.orElse(target)));
+                throw I18N.buildException().message("error.lock-resource", shortTargetPath.orElse(target)).create(RuntimeException::new);
             }
 
             final boolean resourceUnlockedSuccess;
@@ -160,8 +156,7 @@ final class ExecutableRebrander {
             }
 
             if (!resourceUnlockedSuccess) {
-                throw new RuntimeException(MessageFormat.format(I18N.getString(
-                        "error.unlock-resource"), target));
+                throw I18N.buildException().message("error.unlock-resource", target).create(RuntimeException::new);
             }
         } finally {
             target.toFile().setReadOnly();
@@ -242,9 +237,6 @@ final class ExecutableRebrander {
     private final Map<String, String> props;
     private final List<UpdateResourceAction> extraActions;
     private final OverridableResource propertiesFileResource;
-
-    private static final ResourceBundle I18N = ResourceBundle.getBundle(
-            "jdk.jpackage.internal.resources.WinResources");
 
     static {
         System.loadLibrary("jpackage");
