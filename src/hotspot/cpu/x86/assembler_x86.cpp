@@ -1487,6 +1487,9 @@ void Assembler::addl(Register dst, Address src) {
 }
 
 void Assembler::eaddl(Register dst, Register src1, Address src2, bool no_flags) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
+    return addl(dst, src2);
+  }
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -1728,6 +1731,9 @@ void Assembler::andl(Register dst, Address src) {
 }
 
 void Assembler::eandl(Register dst, Register src1, Address src2, bool no_flags) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
+    return andl(dst, src2);
+  }
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -2704,6 +2710,9 @@ void Assembler::imull(Register dst, Address src) {
 }
 
 void Assembler::eimull(Register dst, Register src1, Address src2, bool no_flags) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
+    return imull(dst, src2);
+  }
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -4568,6 +4577,9 @@ void Assembler::orl(Register dst, Address src) {
 }
 
 void Assembler::eorl(Register dst, Register src1, Address src2, bool no_flags) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
+    return orl(dst, src2);
+  }
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
@@ -7249,6 +7261,9 @@ void Assembler::subl(Register dst, Address src) {
 }
 
 void Assembler::esubl(Register dst, Register src1, Address src2, bool no_flags) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
+    return subl(dst, src2);
+  }
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -7578,6 +7593,9 @@ void Assembler::xorl(Register dst, Address src) {
 }
 
 void Assembler::exorl(Register dst, Register src1, Address src2, bool no_flags) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
+    return xorl(dst, src2);
+  }
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -7623,6 +7641,9 @@ void Assembler::xorb(Register dst, Address src) {
 }
 
 void Assembler::exorb(Register dst, Register src1, Address src2, bool no_flags) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
+    return xorb(dst, src2);
+  }
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_8bit);
@@ -7656,6 +7677,9 @@ void Assembler::xorw(Register dst, Address src) {
 }
 
 void Assembler::exorw(Register dst, Register src1, Address src2, bool no_flags) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
+    return xorw(dst, src2);
+  }
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_16bit);
@@ -15248,6 +15272,9 @@ void Assembler::addq(Register dst, Address src) {
 }
 
 void Assembler::eaddq(Register dst, Register src1, Address src2, bool no_flags) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
+    return addq(dst, src2);
+  }
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
@@ -15355,6 +15382,9 @@ void Assembler::andq(Register dst, Address src) {
 }
 
 void Assembler::eandq(Register dst, Register src1, Address src2, bool no_flags) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
+    return andq(dst, src2);
+  }
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
@@ -15844,6 +15874,9 @@ void Assembler::eimulq(Register dst, Address src, bool no_flags) {
 }
 
 void Assembler::eimulq(Register dst, Register src1, Address src2, bool no_flags) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
+    return imulq(dst, src2);
+  }
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_32bit);
@@ -16267,6 +16300,9 @@ void Assembler::orq(Register dst, Address src) {
 }
 
 void Assembler::eorq(Register dst, Register src1, Address src2, bool no_flags) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
+    return orq(dst, src2);
+  }
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
@@ -16956,6 +16992,9 @@ void Assembler::subq(Register dst, Address src) {
 }
 
 void Assembler::esubq(Register dst, Register src1, Address src2, bool no_flags) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
+    return subq(dst, src2);
+  }
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);
@@ -17049,6 +17088,9 @@ void Assembler::xorq(Register dst, Address src) {
 }
 
 void Assembler::exorq(Register dst, Register src1, Address src2, bool no_flags) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
+    return xorq(dst, src2);
+  }
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_64bit);

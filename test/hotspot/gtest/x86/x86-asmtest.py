@@ -408,11 +408,19 @@ class RegRegImmNddInstruction(NFInstruction):
 
 class RegRegMemNddInstruction(NFInstruction):
     def __init__(self, name, aname, width, no_flag, reg1, reg2, mem_base, mem_idx):
-        super().__init__(name, aname, no_flag)
+        super().__init__(name, aname, no_flag, demote=True)
         self.reg1 = Register().generate(reg1, width)
         self.reg2 = Register().generate(reg2, width)
         self.mem = Address().generate(mem_base, mem_idx, width)
         self.generate_operands(self.reg1, self.reg2, self.mem)
+
+    def astr(self):
+        if self.demote:
+            ops = [op.cstr() for op in self.operands]
+            if ops[0] == ops[1] and (not self.no_flag):
+                cl_str = (', cl' if self._name in shift_rot_ops and len(self.operands) == 2 else '')
+                return  f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]]) + cl_str
+        return super().astr()
 
 class RegRegRegNddInstruction(NFInstruction):
     def __init__(self, name, aname, width, no_flag, reg1, reg2, reg3):
@@ -717,14 +725,16 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                     instr = RegOp(*op, reg1=test_reg1, mem_base=test_mem_base, mem_idx=test_mem_idx, reg2=test_reg2)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
             else:
-                filtered_regs = [reg for reg in test_regs if reg != 'rsp']
-                test_reg1 = random.choice(test_regs)
-                test_mem_base = random.choice(test_regs)
-                test_mem_idx = random.choice(filtered_regs)
-                test_reg2 = random.choice(test_regs)
-                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_mem_base, test_mem_idx, test_reg2)
-                instr = RegOp(*op, reg1=test_reg1, mem_base=test_mem_base, mem_idx=test_mem_idx, reg2=test_reg2)
-                print_instruction(instr, lp64_flag, print_lp64_flag)
+                iters = 2 if RegOp in [RegRegMemNddInstruction] else 1
+                for i in range(iters):
+                    filtered_regs = [reg for reg in test_regs if reg != 'rsp']
+                    test_reg1 = random.choice(test_regs)
+                    test_mem_base = random.choice(test_regs)
+                    test_mem_idx = random.choice(filtered_regs)
+                    test_reg2 = random.choice(test_regs) if i == 1 else test_reg1
+                    lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_mem_base, test_mem_idx, test_reg2)
+                    instr = RegOp(*op, reg1=test_reg1, mem_base=test_mem_base, mem_idx=test_mem_idx, reg2=test_reg2)
+                    print_instruction(instr, lp64_flag, print_lp64_flag)
         
         elif RegOp in [RegRegRegImmNddInstruction]:
             if full_set:
