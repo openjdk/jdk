@@ -3428,8 +3428,8 @@ public final class URI
             if (q <= p) return q;
 
             // Handle leading zeros
-            int i = p;
-            while ((i = scan(i, q, '0')) > i);
+            int i = p, j;
+            while ((j = scan(i, q, '0')) > i) i = j;
 
             // Calculate the number of significant digits (after leading zeros)
             int significantDigitsNum = q - i;
