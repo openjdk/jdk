@@ -44,9 +44,9 @@ import java.util.function.Supplier;
 /**
  * A stable value is a deferred holder of shallowly immutable content.
  * <p>
- * A {@linkplain StableValue {@code StableValue<T>}} can be created using the factory
- * method {@linkplain StableValue#of() {@code StableValue.of()}}. When created
- * this way, the stable value is <em>unset</em>, which means it holds no <em>content</em>.
+ * A {@code StableValue<T>} can be created using the factory method
+ * {@linkplain StableValue#of() {@code StableValue.of()}}. When created this way,
+ * the stable value is <em>unset</em>, which means it holds no <em>content</em>.
  * Its content, of type {@code T}, can be <em>set</em> by calling
  * {@linkplain #trySet(Object) trySet()}, {@linkplain #setOrThrow(Object) setOrThrow()},
  * or {@linkplain #orElseSet(Supplier) orElseSet()}. Once set, the content
