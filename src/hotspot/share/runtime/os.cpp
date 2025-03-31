@@ -693,7 +693,7 @@ void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
   if (outer_ptr == nullptr) {
     return nullptr;
   }
- 
+
   return record_and_clear_bits(outer_ptr, size, 0, mem_tag, stack);
 }
 
