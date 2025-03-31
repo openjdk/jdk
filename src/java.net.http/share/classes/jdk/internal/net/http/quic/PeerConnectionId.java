@@ -38,9 +38,6 @@ import java.util.HexFormat;
  * connection id bytes.
  */
 public final class PeerConnectionId extends QuicConnectionId {
-    private final int hashCode;
-    private final ByteBuffer buf;
-    private final byte[] cbytes;
     private final byte[] statelessResetToken;
 
     /**
@@ -48,9 +45,7 @@ public final class PeerConnectionId extends QuicConnectionId {
      * @param connId The connection ID bytes.
      */
     public PeerConnectionId(final byte[] connId) {
-        cbytes = connId.clone();
-        buf = ByteBuffer.wrap(cbytes).asReadOnlyBuffer();
-        hashCode = buf.hashCode();
+        super(ByteBuffer.wrap(connId.clone()));
         this.statelessResetToken = null;
     }
 
@@ -64,11 +59,7 @@ public final class PeerConnectionId extends QuicConnectionId {
      *
      */
     public PeerConnectionId(final ByteBuffer connId, final byte[] statelessResetToken) {
-        final byte[] idBytes = new byte[connId.remaining()];
-        connId.get(idBytes);
-        cbytes = idBytes;
-        buf = ByteBuffer.wrap(cbytes).asReadOnlyBuffer();
-        hashCode = buf.hashCode();
+        super(cloneBuffer(connId));
         if (statelessResetToken != null) {
             if (statelessResetToken.length != 16) {
                 throw new IllegalArgumentException("Invalid stateless reset token length "
@@ -80,20 +71,18 @@ public final class PeerConnectionId extends QuicConnectionId {
         }
     }
 
+    private static ByteBuffer cloneBuffer(ByteBuffer src) {
+        final byte[] idBytes = new byte[src.remaining()];
+        src.get(idBytes);
+        return ByteBuffer.wrap(idBytes);
+    }
+
     @Override
     public int compareTo(QuicConnectionId o) {
         if (o instanceof PeerConnectionId p) {
             return buf.compareTo(p.buf);
         }
         return buf.compareTo(o.asReadOnlyBuffer());
-    }
-
-    @Override
-    public int length() { return cbytes.length; }
-
-    @Override
-    public ByteBuffer asReadOnlyBuffer() {
-        return buf.slice();
     }
 
     @Override
@@ -106,11 +95,6 @@ public final class PeerConnectionId extends QuicConnectionId {
         return buf.compareTo(idbytes);
     }
 
-    @Override
-    public byte[] getBytes() {
-        return cbytes.clone();
-    }
-
     /**
      * {@return the stateless reset token associated with this connection id. returns null if no
      * token exists}
@@ -120,15 +104,7 @@ public final class PeerConnectionId extends QuicConnectionId {
     }
 
     @Override
-    public int hashCode() { return hashCode; }
-
-    @Override
     public String toString() {
         return this.getClass().getSimpleName() + "(length:" + length() + ')';
     }
-
-    public String toHexString() {
-        return HexFormat.of().formatHex(cbytes);
-    }
-
 }

@@ -39,27 +39,39 @@ public abstract class QuicConnectionId implements Comparable<QuicConnectionId> {
      * are going to treat that as a universal constant.
      */
     public static final int MAX_CONNECTION_ID_LENGTH = 20;
+    protected final int hashCode;
+    protected final ByteBuffer buf;
+
+    protected QuicConnectionId(ByteBuffer buf) {
+        this.buf = buf.asReadOnlyBuffer();
+        hashCode = this.buf.hashCode();
+    }
 
     /**
      * Returns the length of this connection id, in bytes;
      * @return the length of this connection id
      */
-    public abstract int length();
+    public int length() {
+        return buf.remaining();
+    }
 
     /**
      * Returns this connection id bytes as a read-only buffer.
      * @return A new read only buffer containing this connection id bytes.
      */
-    public abstract ByteBuffer asReadOnlyBuffer();
+    public ByteBuffer asReadOnlyBuffer() {
+        return buf.asReadOnlyBuffer();
+    }
 
     /**
      * Returns this connection id bytes as a byte array.
      * @return A new byte array containing this connection id bytes.
      */
     public byte[] getBytes() {
-        byte[] connId = new byte[length()];
-        asReadOnlyBuffer().get(connId);
-        return connId;
+        var length = length();
+        byte[] bytes = new byte[length];
+        buf.get(buf.position(), bytes, 0, length);
+        return bytes;
     }
 
     /**
@@ -156,7 +168,7 @@ public abstract class QuicConnectionId implements Comparable<QuicConnectionId> {
 
     @Override
     public int hashCode() {
-        return asReadOnlyBuffer().hashCode();
+        return hashCode;
     }
 
     /**
