@@ -54,8 +54,7 @@ import java.util.stream.IntStream;
         "--enable-preview"
 })
 @Threads(Threads.MAX)   // Benchmark under contention
-@OperationsPerInvocation(100)
-public class StableFunctionBenchmark {
+public class StableFunctionSingleBenchmark {
 
     private static final int SIZE = 100;
     private static final Set<Integer> SET = IntStream.range(0, SIZE).boxed().collect(Collectors.toSet());
@@ -68,38 +67,22 @@ public class StableFunctionBenchmark {
 
     @Benchmark
     public int map() {
-        int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
-            sum += map.get(i);
-        }
-        return sum;
+        return map.get(1);
     }
 
     @Benchmark
     public int function() {
-        int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
-            sum += function.apply(i);
-        }
-        return sum;
+        return function.apply(1);
     }
 
     @Benchmark
     public int staticSMap() {
-        int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
-            sum += MAP.get(i);
-        }
-        return sum;
+        return MAP.get(1);
     }
 
     @Benchmark
     public int staticIntFunction() {
-        int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
-            sum += FUNCTION.apply(i);
-        }
-        return sum;
+        return FUNCTION.apply(1);
     }
 
 }

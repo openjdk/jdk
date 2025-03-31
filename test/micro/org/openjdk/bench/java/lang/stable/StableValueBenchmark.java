@@ -55,6 +55,8 @@ public class StableValueBenchmark {
     private static final AtomicReference<Integer> ATOMIC2 = new AtomicReference<>(VALUE2);
     private static final Holder HOLDER = new Holder(VALUE);
     private static final Holder HOLDER2 = new Holder(VALUE2);
+    private static final RecordHolder RECORD_HOLDER = new RecordHolder(VALUE);
+    private static final RecordHolder RECORD_HOLDER2 = new RecordHolder(VALUE2);
 
     private final StableValue<Integer> stable = init(StableValue.of(), VALUE);
     private final StableValue<Integer> stable2 = init(StableValue.of(), VALUE2);
@@ -71,18 +73,7 @@ public class StableValueBenchmark {
     @Setup
     public void setup() {
         stableNull.trySet(null);
-        stableNull2.trySet(VALUE2);
-        // Create pollution
-        int sum = 0;
-        for (int i = 0; i < 500_000; i++) {
-            final int v = i;
-            Dcl<Integer> dclX = new Dcl<>(() -> v);
-            sum += dclX.get();
-            StableValue<Integer> stableX = StableValue.of();
-            stableX.trySet(i);
-            sum += stableX.orElseThrow();
-        }
-        System.out.println("sum = " + sum);
+        stableNull2.trySet(null);
     }
 
     @Benchmark
@@ -127,6 +118,11 @@ public class StableValueBenchmark {
     }
 
     @Benchmark
+    public int staticRecordHolder() {
+        return RECORD_HOLDER.get() + RECORD_HOLDER2.get();
+    }
+
+    @Benchmark
     public int staticStable() {
         return STABLE.orElseThrow() + STABLE2.orElseThrow();
     }
@@ -137,8 +133,6 @@ public class StableValueBenchmark {
         return m;
     }
 
-    // The VM should be able to constant-fold the value given in the constructor
-    // because StableValue fields have a special meaning.
     private static final class Holder {
 
         private final StableValue<Integer> delegate = StableValue.of();
@@ -152,6 +146,20 @@ public class StableValueBenchmark {
         }
 
     }
+
+    private record RecordHolder(StableValue<Integer> delegate) {
+
+        RecordHolder(int value) {
+            this(StableValue.of());
+            delegate.setOrThrow(value);
+        }
+
+        int get() {
+            return delegate.orElseThrow();
+        }
+
+    }
+
 
     // Handles null values
     private static class Dcl<V> implements Supplier<V> {

@@ -76,7 +76,6 @@ public class StableSupplierBenchmark {
         return supplier.get() + supplier2.get();
     }
 
-/*
     @Benchmark
     public int staticStable() {
         return STABLE.orElseThrow() + STABLE2.orElseThrow();
@@ -86,7 +85,6 @@ public class StableSupplierBenchmark {
     public int staticSupplier() {
         return SUPPLIER.get() + SUPPLIER2.get();
     }
-*/
 
     private static StableValue<Integer> init(StableValue<Integer> m, Integer value) {
         m.trySet(value);
