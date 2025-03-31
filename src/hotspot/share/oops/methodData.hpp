@@ -2042,7 +2042,6 @@ public:
     uint _nof_decompiles;             // count of all nmethod removals
     uint _nof_overflow_recompiles;    // recompile count, excluding recomp. bits
     uint _nof_overflow_traps;         // trap count, excluding _trap_hist
-    uint __gap;
     union {
       intptr_t _align;
       // JVMCI separates trap history for OSR compilations from normal compilations
@@ -2050,7 +2049,7 @@ public:
     } _trap_hist;
 
   public:
-    CompilerCounters() : _nof_decompiles(0), _nof_overflow_recompiles(0), _nof_overflow_traps(0), __gap(0) {
+    CompilerCounters() : _nof_decompiles(0), _nof_overflow_recompiles(0), _nof_overflow_traps(0) {
 #ifndef ZERO
       // Some Zero platforms do not have expected alignment, and do not use
       // this code. static_assert would still fire and fail for them.
