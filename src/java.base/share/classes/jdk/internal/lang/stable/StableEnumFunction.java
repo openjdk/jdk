@@ -33,7 +33,6 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -52,11 +51,11 @@ import java.util.function.Supplier;
  * @param <E>          the type of the input to the function
  * @param <R>          the type of the result of the function
  */
-record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
-                                                int firstOrdinal,
-                                                IntPredicate member,
-                                                @Stable StableValueImpl<R>[] delegates,
-                                                Function<? super E, ? extends R> original) implements Function<E, R> {
+public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
+                                                       int firstOrdinal,
+                                                       IntPredicate member,
+                                                       @Stable StableValueImpl<R>[] delegates,
+                                                       Function<? super E, ? extends R> original) implements Function<E, R> {
     @ForceInline
     @Override
     public R apply(E value) {
@@ -99,8 +98,8 @@ record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
     }
 
     @SuppressWarnings("unchecked")
-    static <T, E extends Enum<E>, R> Function<T, R> of(Set<? extends T> inputs,
-                                                       Function<? super T, ? extends R> original) {
+    public static <T, E extends Enum<E>, R> Function<T, R> of(Set<? extends T> inputs,
+                                                              Function<? super T, ? extends R> original) {
         final BitSet bitSet = new BitSet(inputs.size());
         // The input set is not empty
         int min = Integer.MAX_VALUE;
@@ -115,7 +114,7 @@ record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
         final int size = max - min + 1;
         final Class<E> enumType = (Class<E>)inputs.iterator().next().getClass();
         final IntPredicate member = ImmutableBitSetPredicate.of(bitSet);
-        return (Function<T, R>) new StableEnumFunction<E, R>(enumType, min, member, StableValueFactories.array(size), (Function<E, R>) original);
+        return (Function<T, R>) new StableEnumFunction<E, R>(enumType, min, member, StableUtil.array(size), (Function<E, R>) original);
     }
 
 }

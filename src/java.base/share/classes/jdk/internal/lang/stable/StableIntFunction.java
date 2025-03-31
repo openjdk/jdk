@@ -45,8 +45,8 @@ import java.util.function.Supplier;
  *
  * @param <R> the return type
  */
-record StableIntFunction<R>(@Stable StableValueImpl<R>[] delegates,
-                            IntFunction<? extends R> original) implements IntFunction<R> {
+public record StableIntFunction<R>(@Stable StableValueImpl<R>[] delegates,
+                                   IntFunction<? extends R> original) implements IntFunction<R> {
 
     @ForceInline
     @Override
@@ -76,8 +76,8 @@ record StableIntFunction<R>(@Stable StableValueImpl<R>[] delegates,
         return StableUtil.renderElements(this, "StableIntFunction", delegates);
     }
 
-    static <R> StableIntFunction<R> of(int size, IntFunction<? extends R> original) {
-        return new StableIntFunction<>(StableValueFactories.array(size), original);
+    public static <R> StableIntFunction<R> of(int size, IntFunction<? extends R> original) {
+        return new StableIntFunction<>(StableUtil.array(size), original);
     }
 
 }

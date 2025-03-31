@@ -27,8 +27,6 @@ package jdk.internal.lang.stable;
 
 import jdk.internal.vm.annotation.ForceInline;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -48,8 +46,8 @@ import java.util.function.Supplier;
  * @param <T>      the type of the input to the function
  * @param <R>      the type of the result of the function
  */
-record StableFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
-                            Function<? super T, ? extends R> original) implements Function<T, R> {
+public record StableFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
+                                   Function<? super T, ? extends R> original) implements Function<T, R> {
 
     @ForceInline
     @Override
@@ -77,9 +75,9 @@ record StableFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
         return StableUtil.renderMappings(this, "StableFunction", values.entrySet());
     }
 
-    static <T, R> StableFunction<T, R> of(Set<? extends T> inputs,
-                                          Function<? super T, ? extends R> original) {
-        return new StableFunction<>(StableValueFactories.map(inputs), original);
+    public static <T, R> StableFunction<T, R> of(Set<? extends T> inputs,
+                                                 Function<? super T, ? extends R> original) {
+        return new StableFunction<>(StableUtil.map(inputs), original);
     }
 
 }

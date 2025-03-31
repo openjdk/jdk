@@ -28,8 +28,8 @@
  * @run junit/othervm --enable-preview StableMapTest
  */
 
+import jdk.internal.lang.stable.StableUtil;
 import jdk.internal.lang.stable.StableValueImpl;
-import jdk.internal.lang.stable.StableValueFactories;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -270,7 +270,7 @@ final class StableMapTest {
 
     @Test
     void distinct() {
-        Map<Integer, StableValueImpl<Integer>> map = StableValueFactories.map(Set.of(1, 2, 3));
+        Map<Integer, StableValueImpl<Integer>> map = StableUtil.map(Set.of(1, 2, 3));
         assertEquals(3, map.size());
         // Check, every StableValue is distinct
         Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();

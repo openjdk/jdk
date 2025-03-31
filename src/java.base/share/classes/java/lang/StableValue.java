@@ -25,12 +25,17 @@
 
 package java.lang;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.lang.stable.StableEnumFunction;
+import jdk.internal.lang.stable.StableFunction;
+import jdk.internal.lang.stable.StableIntFunction;
+import jdk.internal.lang.stable.StableSupplier;
 import jdk.internal.lang.stable.StableValueImpl;
-import jdk.internal.lang.stable.StableValueFactories;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -458,7 +463,7 @@ public sealed interface StableValue<T>
      * @param <T> type of the content
      */
     static <T> StableValue<T> of() {
-        return StableValueFactories.of();
+        return StableValueImpl.of();
     }
 
     /**
@@ -470,7 +475,9 @@ public sealed interface StableValue<T>
      * @param <T>     type of the content
      */
     static <T> StableValue<T> of(T content) {
-        return StableValueFactories.of(content);
+        final StableValue<T> stableValue = StableValue.of();
+        stableValue.trySet(content);
+        return stableValue;
     }
 
     /**
@@ -499,7 +506,7 @@ public sealed interface StableValue<T>
      */
     static <T> Supplier<T> supplier(Supplier<? extends T> original) {
         Objects.requireNonNull(original);
-        return StableValueFactories.supplier(original);
+        return StableSupplier.of(original);
     }
 
     /**
@@ -537,7 +544,7 @@ public sealed interface StableValue<T>
             throw new IllegalArgumentException();
         }
         Objects.requireNonNull(original);
-        return StableValueFactories.intFunction(size, original);
+        return StableIntFunction.of(size, original);
     }
 
     /**
@@ -572,7 +579,9 @@ public sealed interface StableValue<T>
                                           Function<? super T, ? extends R> original) {
         Objects.requireNonNull(inputs);
         Objects.requireNonNull(original);
-        return StableValueFactories.function(inputs, original);
+        return inputs instanceof EnumSet<?> && !inputs.isEmpty()
+                ? StableEnumFunction.of(inputs, original)
+                : StableFunction.of(inputs, original);
     }
 
     /**
@@ -613,7 +622,7 @@ public sealed interface StableValue<T>
             throw new IllegalArgumentException();
         }
         Objects.requireNonNull(mapper);
-        return StableValueFactories.list(size, mapper);
+        return SharedSecrets.getJavaUtilCollectionAccess().stableList(size, mapper);
     }
 
     /**
@@ -649,7 +658,7 @@ public sealed interface StableValue<T>
                                 Function<? super K, ? extends V> mapper) {
         Objects.requireNonNull(keys);
         Objects.requireNonNull(mapper);
-        return StableValueFactories.map(keys, mapper);
+        return SharedSecrets.getJavaUtilCollectionAccess().stableMap(keys, mapper);
     }
 
 }

@@ -2,6 +2,8 @@ package jdk.internal.lang.stable;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 public final class StableUtil {
 
@@ -47,4 +49,26 @@ public final class StableUtil {
     }
 
 
+    public static <T> StableValueImpl<T>[] array(int size) {
+        if (size < 0) {
+            throw new IllegalArgumentException();
+        }
+        @SuppressWarnings("unchecked")
+        final var stableValues = (StableValueImpl<T>[]) new StableValueImpl<?>[size];
+        for (int i = 0; i < size; i++) {
+            stableValues[i] = StableValueImpl.of();
+        }
+        return stableValues;
+    }
+
+    public static <K, T> Map<K, StableValueImpl<T>> map(Set<K> keys) {
+        Objects.requireNonNull(keys);
+        @SuppressWarnings("unchecked")
+        final var entries = (Map.Entry<K, StableValueImpl<T>>[]) new Map.Entry<?, ?>[keys.size()];
+        int i = 0;
+        for (K key : keys) {
+            entries[i++] = Map.entry(key, StableValueImpl.of());
+        }
+        return Map.ofEntries(entries);
+    }
 }

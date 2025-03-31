@@ -44,7 +44,6 @@ import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.lang.stable.StableUtil;
 import jdk.internal.lang.stable.StableValueImpl;
-import jdk.internal.lang.stable.StableValueFactories;
 import jdk.internal.misc.CDS;
 import jdk.internal.util.NullableKeyValueHolder;
 import jdk.internal.vm.annotation.ForceInline;
@@ -779,7 +778,7 @@ class ImmutableCollections {
 
         StableList(int size, IntFunction<? extends E> mapper) {
             this.mapper = mapper;
-            this.delegates = StableValueFactories.array(size);
+            this.delegates = StableUtil.array(size);
         }
 
         @Override public boolean  isEmpty() { return delegates.length == 0;}
@@ -1475,7 +1474,7 @@ class ImmutableCollections {
 
         StableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
             this.mapper = mapper;
-            this.delegate = StableValueFactories.map(keys);
+            this.delegate = StableUtil.map(keys);
         }
 
         @Override public boolean              containsKey(Object o) { return delegate.containsKey(o); }

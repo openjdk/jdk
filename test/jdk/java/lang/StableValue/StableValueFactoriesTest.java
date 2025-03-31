@@ -28,7 +28,7 @@
  * @run junit/othervm --enable-preview StableValueFactoriesTest
  */
 
-import jdk.internal.lang.stable.StableValueFactories;
+import jdk.internal.lang.stable.StableUtil;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,7 +37,7 @@ final class StableValueFactoriesTest {
 
     @Test
     void array() {
-        assertThrows(IllegalArgumentException.class, () -> StableValueFactories.array(-1));
+        assertThrows(IllegalArgumentException.class, () -> StableUtil.array(-1));
     }
 
 }
