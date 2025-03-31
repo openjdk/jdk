@@ -278,6 +278,14 @@ final class StableMapTest {
         assertEquals(3, idMap.size());
     }
 
+    @Test
+    void nullResult() {
+        var map = StableValue.map(Set.of(0), _ -> null);
+        assertNull(map.getOrDefault(0, 1));;
+        assertTrue(map.containsKey(0));
+        assertNull(map.get(0));
+    }
+
     // Support constructs
 
     record Operation(String name,
