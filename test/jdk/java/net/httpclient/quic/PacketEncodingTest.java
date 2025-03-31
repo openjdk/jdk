@@ -1154,10 +1154,10 @@ public class PacketEncodingTest {
             }
         };
 
-        int paddedPayLoadSize = Math.max(payloadSize, context.minShortPacketPayloadSize(destid.length));
+        int paddedPayLoadSize = Math.max(payloadSize + packetNumberLength, context.minShortPacketPayloadSize(destid.length));
         System.out.printf("testOneRTTPacket.encode(payload:%d, padded:%d, destid.length: %d)%n",
                 payloadSize, paddedPayLoadSize, destid.length);
-        int expectedSize = 1 + destid.length + paddedPayLoadSize + packetNumberLength;
+        int expectedSize = 1 + destid.length + paddedPayLoadSize;
         // Create an 1-RTT packet
         OneRttPacket packet = encoder.newOneRttPacket(destConnectionId,
                 packetNumber,
