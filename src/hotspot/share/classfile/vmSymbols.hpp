@@ -744,9 +744,6 @@ class SerializeClosure;
   template(dumpThreads_name,                       "dumpThreads")                                                 \
   template(dumpThreadsToJson_name,                 "dumpThreadsToJson")                                           \
                                                                                                                   \
-  /* Stable Values */                                                                                             \
-  template(java_lang_StableValue_signature,        "Ljava/lang/StableValue;")                                     \
-                                                                                                                  \
   /* jcmd Thread.vthread_scheduler and Thread.vthread_pollers */                                                  \
   template(jdk_internal_vm_JcmdVThreadCommands,    "jdk/internal/vm/JcmdVThreadCommands")                         \
   template(printScheduler_name,                    "printScheduler")                                              \

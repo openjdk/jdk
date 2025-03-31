@@ -895,7 +895,13 @@ public final class Unsafe {
         if (f == null) {
             throw new NullPointerException();
         }
-        ensureNotTrusted(f);
+        Class<?> declaringClass = f.getDeclaringClass();
+        if (declaringClass.isHidden()) {
+            throw new UnsupportedOperationException("can't get field offset on a hidden class: " + f);
+        }
+        if (declaringClass.isRecord()) {
+            throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
+        }
         beforeMemoryAccess();
         return theInternalUnsafe.objectFieldOffset(f);
     }
@@ -929,7 +935,13 @@ public final class Unsafe {
         if (f == null) {
             throw new NullPointerException();
         }
-        ensureNotTrusted(f);
+        Class<?> declaringClass = f.getDeclaringClass();
+        if (declaringClass.isHidden()) {
+            throw new UnsupportedOperationException("can't get field offset on a hidden class: " + f);
+        }
+        if (declaringClass.isRecord()) {
+            throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
+        }
         beforeMemoryAccess();
         return theInternalUnsafe.staticFieldOffset(f);
     }
@@ -955,7 +967,13 @@ public final class Unsafe {
         if (f == null) {
             throw new NullPointerException();
         }
-        ensureNotTrusted(f);
+        Class<?> declaringClass = f.getDeclaringClass();
+        if (declaringClass.isHidden()) {
+            throw new UnsupportedOperationException("can't get field offset on a hidden class: " + f);
+        }
+        if (declaringClass.isRecord()) {
+            throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
+        }
         beforeMemoryAccess();
         return theInternalUnsafe.staticFieldBase(f);
     }
@@ -988,16 +1006,6 @@ public final class Unsafe {
         if (declaringClass.isRecord()) {
             throw new UnsupportedOperationException("can't get base address on a record class: " + f);
         }
-        Class<?> fieldType = f.getType();
-        // Todo: Change to "java.lang.StableValue.class.isAssignableFrom(fieldType)" etc. after StableValue exits preview
-        if (fieldType.getName().equals("java.lang.StableValue") || (fieldType.isArray() && deepComponent(fieldType).getName().equals("java.lang.StableValue"))) {
-            throw new UnsupportedOperationException("can't get field offset for a field of type " + fieldType.getName() + ": " + f);
-        }
-    }
-
-    @ForceInline
-    private static Class<?> deepComponent(Class<?> clazz) {
-        return clazz.isArray() ? deepComponent(clazz.getComponentType()) : clazz;
     }
 
     /** The value of {@code arrayBaseOffset(boolean[].class)}.

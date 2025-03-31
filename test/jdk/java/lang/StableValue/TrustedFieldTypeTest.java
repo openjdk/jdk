@@ -45,78 +45,6 @@ import static org.junit.jupiter.api.Assertions.*;
 final class TrustedFieldTypeTest {
 
     @Test
-    void reflection() throws NoSuchFieldException, IllegalAccessException {
-        final class Holder {
-            private final StableValue<Integer> value = StableValue.of();
-        }
-        final class HolderNonFinal {
-            private StableValue<Integer> value = StableValue.of();
-        }
-        final class ArrayHolder {
-            @SuppressWarnings("unchecked")
-            private final StableValue<Integer>[] array = (StableValue<Integer>[]) new StableValue[]{};
-        }
-
-        Field valueField = Holder.class.getDeclaredField("value");
-        valueField.setAccessible(true);
-        Holder holder = new Holder();
-        // We should be able to read the StableValue field
-        Object read = valueField.get(holder);
-        // We should NOT be able to write to the StableValue field
-        assertThrows(IllegalAccessException.class, () ->
-                valueField.set(holder, StableValue.of())
-        );
-
-        Field valueNonFinal = HolderNonFinal.class.getDeclaredField("value");
-        valueNonFinal.setAccessible(true);
-        HolderNonFinal holderNonFinal = new HolderNonFinal();
-        // As the field is not final, both read and write should be ok (not trusted)
-        Object readNonFinal = valueNonFinal.get(holderNonFinal);
-        valueNonFinal.set(holderNonFinal, StableValue.of());
-
-        Field arrayField = ArrayHolder.class.getDeclaredField("array");
-        arrayField.setAccessible(true);
-        ArrayHolder arrayHolder = new ArrayHolder();
-        // We should be able to read the StableValue array
-        read = arrayField.get(arrayHolder);
-        // We should be able to write to the StableValue array
-        assertDoesNotThrow(() -> arrayField.set(arrayHolder, new StableValue[1]));
-    }
-
-    @SuppressWarnings("removal")
-    @Test
-    void sunMiscUnsafe() throws NoSuchFieldException, IllegalAccessException {
-        Field unsafeField = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
-        assertTrue(unsafeField.trySetAccessible());
-        sun.misc.Unsafe unsafe = (sun.misc.Unsafe)unsafeField.get(null);
-
-        final class Holder {
-            private final StableValue<Integer> value = StableValue.of();
-        }
-        final class ArrayHolder {
-            @SuppressWarnings("unchecked")
-            private final StableValue<Integer>[] array = (StableValue<Integer>[]) new StableValue[]{};
-        }
-
-        Field valueField = Holder.class.getDeclaredField("value");
-        assertThrows(UnsupportedOperationException.class, () ->
-                unsafe.objectFieldOffset(valueField)
-        );
-
-        Field arrayField = ArrayHolder.class.getDeclaredField("array");
-
-        assertThrows(UnsupportedOperationException.class, () ->
-                unsafe.objectFieldOffset(arrayField)
-        );
-
-        // Test direct access
-        StableValue<?> stableValue = StableValue.of();
-        Class<?> clazz = stableValue.getClass();
-        System.out.println("clazz = " + clazz);
-        assertThrows(NoSuchFieldException.class, () -> clazz.getField("value"));
-    }
-
-    @Test
     void varHandle() throws NoSuchFieldException, IllegalAccessException {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
 
@@ -196,6 +124,5 @@ final class TrustedFieldTypeTest {
             assertThrows(InaccessibleObjectException.class, ()-> field.setAccessible(true));
         }
     }
-
 
 }
