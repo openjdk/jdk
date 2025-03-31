@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,16 +102,20 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
      static String getInstallDir(
             Map<String, ? super Object>  params, boolean defaultOnly) {
         String returnValue = INSTALL_DIR.fetchFrom(params);
-        if (defaultOnly && returnValue != null) {
-            Log.info(I18N.getString("message.install-dir-ignored"));
+
+        final String defaultInstallDir;
+        if (StandardBundlerParam.isRuntimeInstaller(params)) {
+            defaultInstallDir = "/Library/Java/JavaVirtualMachines";
+        } else {
+            defaultInstallDir = "/Applications";
+        }
+
+        if (defaultOnly && returnValue != null && !Path.of(returnValue).equals(Path.of(defaultInstallDir))) {
+            Log.info(MessageFormat.format(I18N.getString("message.install-dir-ignored"), defaultInstallDir));
             returnValue = null;
         }
         if (returnValue == null) {
-            if (StandardBundlerParam.isRuntimeInstaller(params)) {
-                returnValue = "/Library/Java/JavaVirtualMachines";
-            } else {
-               returnValue = "/Applications";
-            }
+            returnValue = defaultInstallDir;
         }
         return returnValue;
     }
@@ -137,22 +141,6 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             Map<String, ? super Object> params) throws ConfigException {
         if (PREDEFINED_APP_IMAGE.fetchFrom(params) != null) {
             Path applicationImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
-            if (!IOUtils.exists(applicationImage)) {
-                throw new ConfigException(
-                        MessageFormat.format(I18N.getString(
-                                "message.app-image-dir-does-not-exist"),
-                                PREDEFINED_APP_IMAGE.getID(),
-                                applicationImage.toString()),
-                        MessageFormat.format(I18N.getString(
-                                "message.app-image-dir-does-not-exist.advice"),
-                                PREDEFINED_APP_IMAGE.getID()));
-            }
-            if (APP_NAME.fetchFrom(params) == null) {
-                throw new ConfigException(
-                        I18N.getString("message.app-image-requires-app-name"),
-                        I18N.getString(
-                            "message.app-image-requires-app-name.advice"));
-            }
             if (AppImageFile.load(applicationImage).isSigned()) {
                 if (!Files.exists(
                         PackageFile.getPathInAppImage(applicationImage))) {

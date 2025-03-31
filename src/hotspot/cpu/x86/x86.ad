@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1458,6 +1458,20 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_OrReductionV:
     case Op_XorReductionV:
       if (UseSSE < 3) { // requires at least SSSE3
+        return false;
+      }
+      break;
+    case Op_AddHF:
+    case Op_DivHF:
+    case Op_FmaHF:
+    case Op_MaxHF:
+    case Op_MinHF:
+    case Op_MulHF:
+    case Op_ReinterpretS2HF:
+    case Op_ReinterpretHF2S:
+    case Op_SubHF:
+    case Op_SqrtHF:
+      if (!VM_Version::supports_avx512_fp16()) {
         return false;
       }
       break;
@@ -4520,6 +4534,35 @@ instruct vReplS_reg(vec dst, rRegI src) %{
   %}
   ins_pipe( pipe_slow );
 %}
+
+#ifdef _LP64
+instruct ReplHF_imm(vec dst, immH con, rRegI rtmp) %{
+  match(Set dst (Replicate con));
+  effect(TEMP rtmp);
+  format %{ "replicateHF $dst, $con \t! using $rtmp as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(VM_Version::supports_avx512_fp16() && bt == T_SHORT, "");
+    __ movl($rtmp$$Register, $con$$constant);
+    __ evpbroadcastw($dst$$XMMRegister, $rtmp$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct ReplHF_reg(vec dst, regF src, rRegI rtmp) %{
+  predicate(VM_Version::supports_avx512_fp16() && Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst (Replicate src));
+  effect(TEMP rtmp);
+  format %{ "replicateHF $dst, $src \t! using $rtmp as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ vmovw($rtmp$$Register, $src$$XMMRegister);
+    __ evpbroadcastw($dst$$XMMRegister, $rtmp$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+#endif
 
 instruct ReplS_mem(vec dst, memory mem) %{
   predicate(UseAVX >= 2 && Matcher::vector_element_basic_type(n) == T_SHORT);
@@ -10836,4 +10879,81 @@ instruct vector_selectfrom_twovectors_reg_evex(vec index, vec src1, vec src2)
     __ select_from_two_vectors_evex(bt, $index$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
   %}
   ins_pipe(pipe_slow);
+%}
+
+instruct reinterpretS2HF(regF dst, rRegI src)
+%{
+  match(Set dst (ReinterpretS2HF src));
+  format %{ "vmovw $dst, $src" %}
+  ins_encode %{
+    __ vmovw($dst$$XMMRegister, $src$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct convF2HFAndS2HF(regF dst, regF src)
+%{
+  match(Set dst (ReinterpretS2HF (ConvF2HF src)));
+  format %{ "convF2HFAndS2HF $dst, $src" %}
+  ins_encode %{
+    __ vcvtps2ph($dst$$XMMRegister, $src$$XMMRegister, 0x04, Assembler::AVX_128bit);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct convHF2SAndHF2F(regF dst, regF src)
+%{
+  match(Set dst (ConvHF2F (ReinterpretHF2S src)));
+  format %{ "convHF2SAndHF2F $dst, $src" %}
+  ins_encode %{
+    __ vcvtph2ps($dst$$XMMRegister, $src$$XMMRegister, Assembler::AVX_128bit);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reinterpretHF2S(rRegI dst, regF src)
+%{
+  match(Set dst (ReinterpretHF2S src));
+  format %{ "vmovw $dst, $src" %}
+  ins_encode %{
+    __ vmovw($dst$$Register, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct scalar_sqrt_HF_reg(regF dst, regF src)
+%{
+  match(Set dst (SqrtHF src));
+  format %{ "scalar_sqrt_fp16 $dst, $src" %}
+  ins_encode %{
+    __ vsqrtsh($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct scalar_binOps_HF_reg(regF dst, regF src1, regF src2)
+%{
+  match(Set dst (AddHF src1 src2));
+  match(Set dst (DivHF src1 src2));
+  match(Set dst (MaxHF src1 src2));
+  match(Set dst (MinHF src1 src2));
+  match(Set dst (MulHF src1 src2));
+  match(Set dst (SubHF src1 src2));
+  format %{ "scalar_binop_fp16 $dst, $src1, $src2" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    __ efp16sh(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct scalar_fma_HF_reg(regF dst, regF src1, regF src2)
+%{
+  match(Set dst (FmaHF  src2 (Binary dst src1)));
+  effect(DEF dst);
+  format %{ "scalar_fma_fp16 $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
+  ins_encode %{
+    __ vfmadd132sh($dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
 %}

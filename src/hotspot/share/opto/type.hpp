@@ -45,6 +45,7 @@ class Dict;
 class Type;
 class   TypeD;
 class   TypeF;
+class   TypeH;
 class   TypeInteger;
 class     TypeInt;
 class     TypeLong;
@@ -78,7 +79,6 @@ class VerifyMeet;
 // different kind of Type exists.  Types are never modified after creation, so
 // all their interesting fields are constant.
 class Type {
-  friend class VMStructs;
 
 public:
   enum TYPES {
@@ -120,6 +120,9 @@ public:
     Abio,                       // Abstract I/O
     Return_Address,             // Subroutine return address
     Memory,                     // Abstract store
+    HalfFloatTop,               // No float value
+    HalfFloatCon,               // Floating point constant
+    HalfFloatBot,               // Any float value
     FloatTop,                   // No float value
     FloatCon,                   // Floating point constant
     FloatBot,                   // Any float value
@@ -277,7 +280,8 @@ public:
   bool is_ptr_to_narrowklass() const;
 
   // Convenience access
-  float getf() const;
+  short geth() const;
+  virtual float getf() const;
   double getd() const;
 
   const TypeInt    *is_int() const;
@@ -289,6 +293,9 @@ public:
   const TypeD      *isa_double() const;          // Returns null if not a Double{Top,Con,Bot}
   const TypeD      *is_double_constant() const;  // Asserts it is a DoubleCon
   const TypeD      *isa_double_constant() const; // Returns null if not a DoubleCon
+  const TypeH      *isa_half_float() const;          // Returns null if not a Float{Top,Con,Bot}
+  const TypeH      *is_half_float_constant() const;  // Asserts it is a FloatCon
+  const TypeH      *isa_half_float_constant() const; // Returns null if not a FloatCon
   const TypeF      *isa_float() const;           // Returns null if not a Float{Top,Con,Bot}
   const TypeF      *is_float_constant() const;   // Asserts it is a FloatCon
   const TypeF      *isa_float_constant() const;  // Returns null if not a FloatCon
@@ -431,6 +438,7 @@ public:
   static const Type *CONTROL;
   static const Type *DOUBLE;
   static const Type *FLOAT;
+  static const Type *HALF_FLOAT;
   static const Type *HALF;
   static const Type *MEMORY;
   static const Type *MULTI;
@@ -521,6 +529,38 @@ public:
 #endif
 };
 
+// Class of Half Float-Constant Types.
+class TypeH : public Type {
+  TypeH(short f) : Type(HalfFloatCon), _f(f) {};
+public:
+  virtual bool eq(const Type* t) const;
+  virtual uint hash() const;             // Type specific hashing
+  virtual bool singleton(void) const;    // TRUE if type is a singleton
+  virtual bool empty(void) const;        // TRUE if type is vacuous
+public:
+  const short _f;                        // Half Float constant
+
+  static const TypeH* make(float f);
+  static const TypeH* make(short f);
+
+  virtual bool is_finite() const;  // Has a finite value
+  virtual bool is_nan() const;     // Is not a number (NaN)
+
+  virtual float getf() const;
+  virtual const Type* xmeet(const Type* t) const;
+  virtual const Type* xdual() const;    // Compute dual right now.
+  // Convenience common pre-built types.
+  static const TypeH* MAX;
+  static const TypeH* MIN;
+  static const TypeH* ZERO; // positive zero only
+  static const TypeH* ONE;
+  static const TypeH* POS_INF;
+  static const TypeH* NEG_INF;
+#ifndef PRODUCT
+  virtual void dump2(Dict &d, uint depth, outputStream* st) const;
+#endif
+};
+
 //------------------------------TypeD------------------------------------------
 // Class of Double-Constant Types.
 class TypeD : public Type {
@@ -566,6 +606,7 @@ public:
   virtual short widen_limit() const { return _widen; }
 
   static const TypeInteger* make(jlong lo, jlong hi, int w, BasicType bt);
+  static const TypeInteger* make(jlong con, BasicType bt);
 
   static const TypeInteger* bottom(BasicType type);
   static const TypeInteger* zero(BasicType type);
@@ -1943,6 +1984,11 @@ inline float Type::getf() const {
   return ((TypeF*)this)->_f;
 }
 
+inline short Type::geth() const {
+  assert(_base == HalfFloatCon, "Not a HalfFloatCon");
+  return ((TypeH*)this)->_f;
+}
+
 inline double Type::getd() const {
   assert( _base == DoubleCon, "Not a DoubleCon" );
   return ((TypeD*)this)->_d;
@@ -1973,6 +2019,21 @@ inline const TypeLong *Type::is_long() const {
 
 inline const TypeLong *Type::isa_long() const {
   return ( _base == Long ? (TypeLong*)this : nullptr);
+}
+
+inline const TypeH* Type::isa_half_float() const {
+  return ((_base == HalfFloatTop ||
+           _base == HalfFloatCon ||
+           _base == HalfFloatBot) ? (TypeH*)this : nullptr);
+}
+
+inline const TypeH* Type::is_half_float_constant() const {
+  assert( _base == HalfFloatCon, "Not a HalfFloat" );
+  return (TypeH*)this;
+}
+
+inline const TypeH* Type::isa_half_float_constant() const {
+  return (_base == HalfFloatCon ? (TypeH*)this : nullptr);
 }
 
 inline const TypeF *Type::isa_float() const {
@@ -2164,7 +2225,8 @@ inline const TypeNarrowKlass* Type::make_narrowklass() const {
 }
 
 inline bool Type::is_floatingpoint() const {
-  if( (_base == FloatCon)  || (_base == FloatBot) ||
+  if( (_base == HalfFloatCon)  || (_base == HalfFloatBot) ||
+      (_base == FloatCon)  || (_base == FloatBot) ||
       (_base == DoubleCon) || (_base == DoubleBot) )
     return true;
   return false;

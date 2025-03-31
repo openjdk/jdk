@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import java.util.Map;
 public class SQLClientInfoException extends SQLException {
 
         /**
-         * A {@code Map} containing the client info properties that could not be set.
+         * @serial A {@code Map} containing the client info properties that could not be set.
          */
         @SuppressWarnings("serial") // Not statically typed as Serializable
         private Map<String, ClientInfoStatus>   failedProperties;

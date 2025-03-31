@@ -32,7 +32,6 @@ public enum GCCause {
   _scavenge_alot ("ScavengeAlot"),
   _allocation_profiler ("Allocation Profiler"),
   _jvmti_force_gc ("JvmtiEnv ForceGarbageCollection"),
-  _gc_locker ("GCLocker Initiated GC"),
   _heap_inspection ("Heap Inspection Initiated GC"),
   _heap_dump ("Heap Dump Initiated GC"),
   _wb_young_gc ("WhiteBox Initiated Young GC"),
