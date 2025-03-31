@@ -32,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -142,6 +143,32 @@ public final class MacHelper {
                 // Skip leading lines before xml declaration
                 .dropWhile(Pattern.compile("\\s?<\\?xml\\b.+\\?>").asPredicate().negate())
                 .collect(Collectors.joining()).getBytes(StandardCharsets.UTF_8))).get();
+    }
+
+    public static boolean signPredefinedAppImage(JPackageCommand cmd) {
+        Objects.requireNonNull(cmd);
+        if (!TKit.isOSX()) {
+            throw new UnsupportedOperationException();
+        }
+        return cmd.hasArgument("--mac-sign") && cmd.hasArgument("--app-image");
+    }
+
+    public static boolean appImageSigned(JPackageCommand cmd) {
+        Objects.requireNonNull(cmd);
+        if (!TKit.isOSX()) {
+            throw new UnsupportedOperationException();
+        }
+
+        if (Optional.ofNullable(cmd.getArgumentValue("--app-image")).map(Path::of).map(AppImageFile::load).map(AppImageFile::macSigned).orElse(false)) {
+            // The external app image is signed, so the app image is signed too.
+            return true;
+        }
+
+        if (!cmd.hasArgument("--mac-sign")) {
+            return false;
+        }
+
+        return (cmd.hasArgument("--mac-signing-key-user-name") || cmd.hasArgument("--mac-app-image-sign-identity"));
     }
 
     static PackageHandlers createDmgPackageHandlers() {
