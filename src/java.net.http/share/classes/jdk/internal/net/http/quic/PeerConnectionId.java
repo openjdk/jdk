@@ -77,24 +77,6 @@ public final class PeerConnectionId extends QuicConnectionId {
         return ByteBuffer.wrap(idBytes);
     }
 
-    @Override
-    public int compareTo(QuicConnectionId o) {
-        if (o instanceof PeerConnectionId p) {
-            return buf.compareTo(p.buf);
-        }
-        return buf.compareTo(o.asReadOnlyBuffer());
-    }
-
-    @Override
-    public boolean matches(ByteBuffer idbytes) {
-        return buf.mismatch(idbytes) == -1;
-    }
-
-    @Override
-    public int compareBytes(ByteBuffer idbytes) {
-        return buf.compareTo(idbytes);
-    }
-
     /**
      * {@return the stateless reset token associated with this connection id. returns null if no
      * token exists}

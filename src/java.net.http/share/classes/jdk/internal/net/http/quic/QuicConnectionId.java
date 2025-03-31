@@ -94,7 +94,7 @@ public abstract class QuicConnectionId implements Comparable<QuicConnectionId> {
      *         bytes are less, equal, or greater than the provided bytes.
      */
     public int compareBytes(ByteBuffer idbytes) {
-        return asReadOnlyBuffer().compareTo(idbytes);
+        return buf.compareTo(idbytes);
     }
 
     /**
@@ -116,52 +116,19 @@ public abstract class QuicConnectionId implements Comparable<QuicConnectionId> {
      * connection id bytes.
      */
     public boolean matches(ByteBuffer idbytes) {
-        return asReadOnlyBuffer().mismatch(idbytes) == -1;
-    }
-
-    /**
-     * Tells whether the given bytes matches this connection id.
-     *
-     * @implSpec
-     * This is equivalent to calling
-     * {@link #matches(byte[], int, int)
-     * matches(ByteBuffer.wrap(idbytes, 0, idbytes.length)}
-     *
-     * @param idbytes bytes identifying a connection id.
-     * @return true if the given bytes exactly match this
-     * connection id bytes.
-     */
-    public boolean matches(byte[] idbytes) {
-        return matches(idbytes, 0, idbytes.length);
-    }
-
-    /**
-     * Tells whether the given bytes matches this connection id.
-     *
-     * @implSpec
-     * This is equivalent to calling
-     * {@link #matches(ByteBuffer) matches(ByteBuffer.wrap(buffer, offset, length))
-     *
-     * @param buffer a buffer containing bytes identifying a connection id.
-     * @param offset offset of the fisrt byte to match
-     * @param length number of bytes to match
-     * @return true if the bytes starting at the given position and ending
-     *  after the given length exactly match this connection id bytes.
-     */
-    public boolean matches(byte[] buffer, int offset, int length) {
-        return matches(ByteBuffer.wrap(buffer, offset, length));
+        return buf.equals(idbytes);
     }
 
     @Override
     public int compareTo(QuicConnectionId o) {
-        return this.compareBytes(o.asReadOnlyBuffer());
+        return buf.compareTo(o.buf);
     }
 
 
     @Override
     public final boolean equals(Object o) {
         if (o instanceof QuicConnectionId that) {
-            return compareTo(that) == 0;
+            return buf.equals(that.buf);
         }
         return false;
     }

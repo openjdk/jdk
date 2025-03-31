@@ -341,28 +341,6 @@ public class QuicConnectionIdFactory {
         }
 
         @Override
-        public boolean matches(ByteBuffer buffer) {
-            return buf.mismatch(buffer) == -1;
-        }
-
-        @Override
-        public int compareBytes(ByteBuffer buffer) {
-            return buf.compareTo(buffer);
-        }
-
-        @Override
-        public int compareTo(QuicConnectionId o) {
-            if (this == o) return 0;
-            if (o instanceof QuicLocalConnectionId cid) {
-                long diff = token - cid.token;
-                if (diff == 0) return compareBytes(cid.buf);
-                return diff > 0 ? 1 : -1;
-            } else {
-                return compareBytes(o.asReadOnlyBuffer());
-            }
-        }
-
-        @Override
         public String toString() {
             return "%s(length=%s, token=%s, hash=%s)"
                     .formatted(simpleDesc, length(), token, hashCode);
