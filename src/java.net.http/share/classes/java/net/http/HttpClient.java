@@ -189,8 +189,9 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * thrown, either when {@linkplain Builder#build() building} the client with
  * a {@linkplain Builder#version(Version) preferred version} set to HTTP/3,
  * or when attempting to send a request with {@linkplain HttpRequest.Builder#version(Version)
- * HTTP/3 enabled} when {@linkplain HttpRequest.Builder#setOption(HttpRequestOption, Object)
- * HTTP_3_ONLY was specified}. This may typically happen if the {@link #sslContext() SSLContext}
+ * HTTP/3 enabled} when {@link java.net.http.HttpRequest.H3DiscoveryMode#HTTP_3_ONLY HTTP_3_ONLY}
+ * was {@linkplain HttpRequest.Builder#setOption(HttpRequestOption, Object) specified}.
+ * This may typically happen if the {@link #sslContext() SSLContext}
  * or {@link #sslParameters() SSLParameters} configured on the client instance cannot
  * be used with HTTP/3.
  *
