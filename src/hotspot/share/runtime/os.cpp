@@ -621,7 +621,8 @@ static void break_if_ptr_caught(void* ptr) {
 }
 #endif // ASSERT
 
-size_t os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, bool check_limit, MemTag mem_tag) {
+// Use pre-init if too early for NMT and check for size overflow and if we are still under MallocLimit
+size_t os::pre_init_and_check_size(void** raw_ptr, void* old_ptr, size_t size, MemTag mem_tag) {
   // On malloc(0), implementations of malloc(3) have the choice to return either
   // null or a unique non-null pointer. To unify libc behavior across our platforms
   // we chose the latter.
@@ -638,7 +639,7 @@ size_t os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, bool check_limi
   DEBUG_ONLY(check_crash_protection());
 
   // Observe MallocLimit
-  if (check_limit && MemTracker::check_exceeds_limit(size, mem_tag)) {
+  if ((old_ptr == nullptr) && MemTracker::check_exceeds_limit(size, mem_tag)) {
     return 0;
   }
 
@@ -651,10 +652,12 @@ size_t os::pre_alloc(void** raw_ptr, void* old_ptr, size_t size, bool check_limi
   return outer_size;
 }
 
-void* os::post_alloc(void* raw_ptr, size_t size, size_t old_size, MemTag mem_tag, const NativeCallStack& stack) {
+// Record the allocated pointer with NMT and clear bits as needed
+void* os::record_and_clear_bits(void* raw_ptr, size_t size, size_t old_size, MemTag mem_tag, const NativeCallStack& stack) {
   // Register alloc with NMT
   void* const client_ptr = MemTracker::record_malloc((address)raw_ptr, size, mem_tag, stack);
 
+  // Clear bits
   if (old_size == 0) {
     if (CDSConfig::is_dumping_static_archive()) {
       // Need to deterministically fill all the alignment gaps in C++ structures.
@@ -676,10 +679,11 @@ void* os::malloc(size_t size, MemTag mem_tag) {
 
 void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
 
-  void* rc = nullptr;
-  size_t outer_size = os::pre_alloc(&rc, nullptr, size, true, mem_tag);
-  if (rc != nullptr) {
-    return rc;
+  void* ptr = nullptr;
+  void* old_ptr = nullptr;
+  size_t outer_size = os::pre_init_and_check_size(&ptr, old_ptr, size, mem_tag);
+  if (ptr != nullptr) {
+    return ptr;
   }
   if (outer_size == 0) {
     return nullptr;
@@ -689,8 +693,8 @@ void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
   if (outer_ptr == nullptr) {
     return nullptr;
   }
-
-  return post_alloc(outer_ptr, size, 0, mem_tag, stack);
+ 
+  return record_and_clear_bits(outer_ptr, size, 0, mem_tag, stack);
 }
 
 void* os::realloc(void *memblock, size_t size, MemTag mem_tag) {
@@ -708,10 +712,10 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
   // we chose the latter.
   size = MAX2((size_t)1, size);
 
-  void* rc = nullptr;
-  size_t outer_size = os::pre_alloc(&rc, memblock, size, false, mem_tag);
-  if (rc != nullptr) {
-    return rc;
+  void* ptr = nullptr;
+  size_t outer_size = os::pre_init_and_check_size(&ptr, memblock, size, mem_tag);
+  if (ptr != nullptr) {
+    return ptr;
   }
   if (outer_size == 0) {
     return nullptr;
@@ -751,17 +755,17 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     assert(old_size == free_info.size, "Sanity");
 #endif
 
-    rc = post_alloc(outer_ptr, size, old_size, mem_tag, stack);
+    ptr = record_and_clear_bits(outer_ptr, size, old_size, mem_tag, stack);
   } else {
     // NMT disabled.
-    ALLOW_C_FUNCTION(::realloc, rc = ::realloc(memblock, size);)
-    if (rc == nullptr) {
+    ALLOW_C_FUNCTION(::realloc, ptr = ::realloc(memblock, size);)
+    if (ptr == nullptr) {
       return nullptr;
     }
-    DEBUG_ONLY(break_if_ptr_caught(rc);)
+    DEBUG_ONLY(break_if_ptr_caught(ptr);)
   }
 
-  return rc;
+  return ptr;
 }
 
 void os::free(void *memblock) {
