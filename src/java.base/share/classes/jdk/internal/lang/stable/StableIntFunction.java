@@ -51,13 +51,14 @@ record StableIntFunction<R>(@Stable StableValueImpl<R>[] delegates,
     @ForceInline
     @Override
     public R apply(int index) {
+        final StableValueImpl<R> delegate;
         try {
-            return delegates[index]
-                    .orElseSet(new Supplier<R>() {
-                        @Override public R get() { return original.apply(index); }});
+            delegate =  delegates[index];
         } catch (ArrayIndexOutOfBoundsException ioob) {
             throw new IllegalArgumentException("Input not allowed: " + index, ioob);
         }
+        return delegate.orElseSet(new Supplier<R>() {
+                    @Override public R get() { return original.apply(index); }});
     }
 
     @Override
