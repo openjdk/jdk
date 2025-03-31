@@ -7016,7 +7016,7 @@ void Assembler::shldl(Register dst, Register src, int8_t imm8) {
 
 void Assembler::eshldl(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
   if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
-    shldl(dst, src2);
+    shldl(dst, src2, imm8);
   }
   else {
     InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -7051,11 +7051,16 @@ void Assembler::shrdl(Register dst, Register src, int8_t imm8) {
 }
 
 void Assembler::eshrdl(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
-  // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
-  int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags);
-  emit_int24(0x2C, (0xC0 | encode), imm8);
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
+    shrdl(dst, src2, imm8);
+  }
+  else {
+    InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+    // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
+    // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
+    int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags);
+    emit_int24(0x2C, (0xC0 | encode), imm8);
+  }
 }
 
 #ifdef _LP64
@@ -7065,11 +7070,16 @@ void Assembler::shldq(Register dst, Register src, int8_t imm8) {
 }
 
 void Assembler::eshldq(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
-  // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
-  int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags, USE_PREFIXQ);
-  emit_int24(0x24, (0xC0 | encode), imm8);
+   if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
+    shldq(dst, src2, imm8);
+  }
+  else {
+    InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+    // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
+    // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
+    int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags, USE_PREFIXQ);
+    emit_int24(0x24, (0xC0 | encode), imm8);
+  }
 }
 
 void Assembler::shrdq(Register dst, Register src, int8_t imm8) {
@@ -7078,11 +7088,16 @@ void Assembler::shrdq(Register dst, Register src, int8_t imm8) {
 }
 
 void Assembler::eshrdq(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
-  // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
-  int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags, USE_PREFIXQ);
-  emit_int24(0x2C, (0xC0 | encode), imm8);
+   if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
+    shrdq(dst, src2, imm8);
+  }
+  else {
+    InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+    // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
+    // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
+    int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags, USE_PREFIXQ);
+    emit_int24(0x2C, (0xC0 | encode), imm8);
+  }
 }
 #endif
 
