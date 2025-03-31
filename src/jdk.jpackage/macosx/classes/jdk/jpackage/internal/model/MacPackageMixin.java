@@ -39,7 +39,7 @@ public interface MacPackageMixin {
      * <p>
      * Returns any empty {@link Optional} instance if the predefined app image is
      * unavailable.
-     * 
+     *
      * @return sign status of the predefined app image if any
      */
     Optional<Boolean> predefinedAppImageSigned();
