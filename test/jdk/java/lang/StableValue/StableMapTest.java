@@ -286,6 +286,14 @@ final class StableMapTest {
         assertNull(map.get(0));
     }
 
+    @Test
+    void nullKeys() {
+        Set<Integer> inputs = new HashSet<>();
+        inputs.add(0);
+        inputs.add(null);
+        assertThrows(NullPointerException.class, () -> StableValue.map(inputs, IDENTITY));
+    }
+
     // Support constructs
 
     record Operation(String name,

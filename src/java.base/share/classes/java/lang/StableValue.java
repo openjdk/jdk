@@ -563,7 +563,7 @@ public sealed interface StableValue<T>
      * function for the same input, an {@linkplain IllegalStateException} will
      * be thrown.
      *
-     * @param inputs   the set of allowed input values
+     * @param inputs   the set of (non-null) allowed input values
      * @param original Function used to compute cached values
      * @param <T>      the type of the input to the returned Function
      * @param <R>      the type of results delivered by the returned Function
@@ -639,7 +639,7 @@ public sealed interface StableValue<T>
      * If the provided {@code mapper} recursively calls the returned map for
      * the same key, an {@linkplain IllegalStateException} will be thrown.
      *
-     * @param keys   the keys in the returned map
+     * @param keys   the (non-null) keys in the returned map
      * @param mapper to invoke whenever an associated value is first accessed
      *               (may return {@code null})
      * @param <K>    the type of keys maintained by the returned map
