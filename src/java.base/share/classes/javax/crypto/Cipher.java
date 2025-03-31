@@ -109,14 +109,8 @@ import sun.security.util.KnownOIDs;
  * the {@code update} and {@code doFinal} methods).
  * <p>
  * AEAD modes may have a uniqueness requirement on key and IVs when re-initializing the Cipher object to prevent forgery attacks.
- * This may cause Cipher.reset() to fail, potentially leading the provider to throw an InvalidAlgorithmParameterException.
- *
- * The ChaCha20 and ChaCha20-Poly1305 algorithms have a similar requirement
- * for unique nonces with a given key.  After each encryption or decryption
- * operation, callers should re-initialize their ChaCha20 or ChaCha20-Poly1305
- * ciphers with parameters that specify a different nonce value.  Please
- * see <a href="https://tools.ietf.org/html/rfc7539">RFC 7539</a> for more
- * information on the ChaCha20 and ChaCha20-Poly1305 algorithms.
+ * This may cause an {@link IllegalStateException} when calling {@code update} after a {@code doFinal}.
+ * 
  * <p>
  * Every implementation of the Java platform is required to support
  * the following standard {@code Cipher} object transformations with
