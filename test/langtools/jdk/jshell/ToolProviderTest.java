@@ -67,6 +67,16 @@ public class ToolProviderTest extends StartOptionTest {
     }
 
     @Override
+    protected void startCheckCommandUserOutput(Consumer<String> checkCommandOutput,
+            Consumer<String> checkUserOutput,
+            Consumer<String> checkCombinedCommandUserOutput,
+            String... args) {
+        runShell(args);
+        check(cmdout, checkCombinedCommandUserOutput, "userout");
+        check(usererr, null, "usererr");
+    }
+
+    @Override
     protected int runShell(String... args) {
         ServiceLoader<Tool> sl = ServiceLoader.load(Tool.class);
         for (Tool provider : sl) {

@@ -33,6 +33,7 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
+ *          java.desktop
  * @build KullaTesting TestingInputStream
  * @run testng ToolSimpleTest
  */
@@ -566,11 +567,11 @@ public class ToolSimpleTest extends ReplToolTesting {
                         s -> checkLineToList(s, START_UP)),
                 a -> assertCommandCheckOutput(a, "/list -all",
                         s -> checkLineToList(s, startVarList)),
-                a -> assertCommandOutputStartsWith(a, "/list s3",
-                        "s3 : import"),
-                a -> assertCommandCheckOutput(a, "/list 1-2 s3",
+                a -> assertCommandOutputStartsWith(a, "/list s1",
+                        "s1 : import"),
+                a -> assertCommandCheckOutput(a, "/list 1-2 s1",
                         s -> {
-                            assertTrue(Pattern.matches(".*aardvark.*\\R.*weevil.*\\R.*s3.*import.*", s.trim()),
+                            assertTrue(Pattern.matches(".*aardvark.*\\R.*weevil.*\\R.*s1.*import.*", s.trim()),
                                     "No match: " + s);
                         }),
                 a -> assertCommandOutputStartsWith(a, "/list " + arg,
@@ -977,4 +978,14 @@ public class ToolSimpleTest extends ReplToolTesting {
                 (a) -> assertCommandOutputContains(a, "var a = a;", "cannot use 'var' on self-referencing variable")
         );
     }
+
+    @Test
+    public void testModuleImportShortenedTypes() {
+        test(
+                (a) -> assertCommandOutputContains(a, "import module java.desktop;", ""),
+                (a) -> assertCommandOutputContains(a, "var r1 = new JButton()", ""),
+                (a) -> assertCommandOutputContains(a, "/vars r1", "|    JButton r1 =")
+        );
+    }
+
 }

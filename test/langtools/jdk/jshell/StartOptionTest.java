@@ -145,6 +145,7 @@ public class StartOptionTest {
 
     protected void startCheckCommandUserOutput(Consumer<String> checkCommandOutput,
             Consumer<String> checkUserOutput,
+            Consumer<String> checkCombinedCommandUserOutput,
             String... args) {
         runShell(args);
         check(cmdout, checkCommandOutput, "cmdout");
@@ -463,6 +464,7 @@ public class StartOptionTest {
                 """);
         startCheckCommandUserOutput(s -> assertEquals(s, "/set start -retain -default\n"),
                                     s -> assertEquals(s, "prefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
+                                    s -> assertEquals(s, "/set start -retain -default\nprefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
                                     retainTest);
         String retainTest24 = writeToFile(
                 """
@@ -490,6 +492,7 @@ public class StartOptionTest {
                 """);
         startCheckCommandUserOutput(s -> assertEquals(s, "/set start -retain -default\n"),
                                     s -> assertEquals(s, "prefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
+                                    s -> assertEquals(s, "/set start -retain -default\nprefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
                                     checkDefaultAfterSet24Test);
     }
 
