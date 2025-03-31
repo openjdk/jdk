@@ -26,11 +26,114 @@ package compiler.lib.template_framework;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
 import java.util.List;
 
 /**
- * {@link Template}s are used to generate code, based on {@link Token}s which are rendered to {@link String}s.
+ * The Template Framework allows the generation of code with Templates. The goal is that these Templates are
+ * easy to write, and allow regression tests to cover a larger scope, and to make template based fuzzing easy
+ * to extend.
  *
+ * <p>
+ * <strong>Motivation:</strong> We want to make it easy to generate variants of tests. Often, we would like to
+ * have a set of tests, corresponding to a set of types, a set of operators, a set of constants, etc. Writing all
+ * the tests by hand is cumbersome or even impossible. When generating such tests with scripts, it would be
+ * preferable if the code generation happens automatically, and the generator script was checked into the code
+ * base. Code generation can go beyond simple regression tests, and one might want to generate random code from
+ * a list of possible templates, to fuzz individual Java features and compiler optimizations.
+ *
+ * <p>
+ * The Template Framework provides a facility to generate code with Templates. Templates are essencially a list
+ * of tokens that are concatenated (i.e. rendered) to a String. The Templates can have "holes", which are
+ * filled (replaced) by different values at each Template instantiation. For example, these "holes" can
+ * be filled with different types, operators or constants. Templates can also be nested, allowing a modular
+ * use of the Templates.
+ *
+ * <p>
+ * <strong>Example:</strong>
+ * The following are snippets from the example test {@code TestAdvanced.java}.
+ * First, we define a template that generates a {@code @Test} method for a given type, operator and
+ * constant generator. We define two constants {@code con1} and {@code con2}, and then use a multiline
+ * string with hashtag {@code #} "holes" that are then replaced by the template arguments and the
+ * {@link #let} definitions.
+ *
+ * {@snippet lang=java :
+ * var testTemplate = Template.make("typeName", "operator", "generator", (String typeName, String operator, MyGenerator generator) -> body(
+ *     let("con1", generator.next()),
+ *     let("con2", generator.next()),
+ *     """
+ *     // #typeName #operator #con1 #con2
+ *     public static #typeName $GOLD = $test();
+ *
+ *     @Test
+ *     public static #typeName $test() {
+ *         return (#typeName)(#con1 #operator #con2);
+ *     }
+ *
+ *     @Check(test = "$test")
+ *     public static void $check(#typeName result) {
+ *         Verify.checkEQ(result, $GOLD);
+ *     }
+ *     """
+ * ));
+ * }
+ *
+ * To get an executable test, we define a class Template, which takes a list of types,
+ * and calls the test template for each type and operator. We use the {@code TestFramework}
+ * to call our {@code @Test} methods.
+ *
+ * {@snippet lang=java :
+ * var classTemplate = Template.make("types", (List<Type> types) -> body(
+ *     let("classpath", comp.getEscapedClassPathOfCompiledClasses()),
+ *     """
+ *     package p.xyz;
+ *
+ *     import compiler.lib.ir_framework.*;
+ *     import compiler.lib.verify.*;
+ *
+ *     public class InnerTest {
+ *         public static void main() {
+ *             // Set the classpath, so that the TestFramework test VM knows where
+ *             // the CompileFramework put the class files of the compiled source code.
+ *             TestFramework framework = new TestFramework(InnerTest.class);
+ *             framework.addFlags("-classpath", "#classpath");
+ *             framework.start();
+ *         }
+ *
+ *     """,
+ *     // Call the testTemplate for each type and operator, generating a
+ *     // list of list of TemplateWithArgs:
+ *     types.stream().map((Type type) ->
+ *         type.operators().stream().map((String operator) ->
+ *             testTemplate.withArgs(type.name(), operator, type.generator())).toList()
+ *     ).toList(),
+ *     """
+ *     }
+ *     """
+ * ));
+ * }
+ *
+ * Finally, we generate the list of types, and pass it to the class template:
+ *
+ * {@snippet lang=java :
+ * List<Type> types = List.of(
+ *     new Type("byte",   () -> GEN_BYTE.next(),   List.of("+", "-", "*", "&", "|", "^")),
+ *     new Type("char",   () -> GEN_CHAR.next(),   List.of("+", "-", "*", "&", "|", "^")),
+ *     new Type("short",  () -> GEN_SHORT.next(),  List.of("+", "-", "*", "&", "|", "^")),
+ *     new Type("int",    () -> GEN_INT.next(),    List.of("+", "-", "*", "&", "|", "^")),
+ *     new Type("long",   () -> GEN_LONG.next(),   List.of("+", "-", "*", "&", "|", "^")),
+ *     new Type("float",  () -> GEN_FLOAT.next(),  List.of("+", "-", "*", "/")),
+ *     new Type("double", () -> GEN_DOUBLE.next(), List.of("+", "-", "*", "/"))
+ * );
+ *
+ * // Use the template with one arguments, and render it to a String.
+ * return classTemplate.withArgs(types).render();
+ * }
+ *
+ * Once we rendered the source code to a String, we can compiole it with the {@code CompileFramework}.
+ *
+ * <p>
+ * <strong>Details:</strong>
  * <p>
  * A {@link Template} can have zero or more arguments, and for each number of arguments there is an implementation
  * (e.g. {@link ZeroArgs} for zero arguments and {@link TwoArgs} for two arguments). This allows the use of Generics
