@@ -194,9 +194,9 @@ final class MacPackagingPipeline {
         }).get();
     }
 
-    private static void copyAppImage(Package pkg, AppImageDesc srcAppImage,
+    private static void copyAppImage(MacPackage pkg, AppImageDesc srcAppImage,
             AppImageDesc dstAppImage) throws IOException {
-        PackagingPipeline.copyAppImage(srcAppImage, dstAppImage, false/*!((MacApplication)pkg.app()).sign()*/);
+        PackagingPipeline.copyAppImage(srcAppImage, dstAppImage, !pkg.predefinedAppImageSigned().orElse(false));
     }
 
     private static void copyJliLib(
@@ -409,12 +409,6 @@ final class MacPackagingPipeline {
 
         @Override
         public boolean test(TaskID taskID) {
-            if (!forApp && !copyAppImage && taskID == BuildApplicationTaskID.APP_IMAGE_FILE) {
-                // Always create ".jpackage.xml" if not copying predefined app image for compatibility with the tests
-                // TODO: Don't create ".jpackage.xml" when bundling a package like on other platforms
-                return true;
-            }
-
             if (!delegate.test(taskID)) {
                 return false;
             } else if (taskID == MacBuildApplicationTaskID.PACKAGE_FILE) {

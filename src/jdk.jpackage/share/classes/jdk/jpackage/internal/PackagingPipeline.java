@@ -134,8 +134,8 @@ final class PackagingPipeline {
     }
 
     @FunctionalInterface
-    interface CopyAppImageTaskAction extends TaskAction {
-        void execute(Package pkg, AppImageDesc srcAppImage, AppImageDesc dstAppImage) throws IOException, PackagerException;
+    interface CopyAppImageTaskAction<T extends Package> extends TaskAction {
+        void execute(T pkg, AppImageDesc srcAppImage, AppImageDesc dstAppImage) throws IOException, PackagerException;
     }
 
     @FunctionalInterface
@@ -183,7 +183,7 @@ final class PackagingPipeline {
                 return setAction(action);
             }
 
-            TaskBuilder copyAction(CopyAppImageTaskAction action) {
+            <T extends Package> TaskBuilder copyAction(CopyAppImageTaskAction<T> action) {
                 return setAction(action);
             }
 
@@ -514,8 +514,9 @@ final class PackagingPipeline {
         public void execute(TaskAction taskAction) throws IOException, PackagerException {
             if (taskAction instanceof PackageTaskAction<?, ?>) {
                 ((PackageTaskAction<Package, AppImageLayout>)taskAction).execute(env);
-            } else if (taskAction instanceof CopyAppImageTaskAction copyAction) {
-                copyAction.execute(env.pkg(), srcAppImage, new AppImageDesc(env.envLayout(), env.env().appImageDir()));
+            } else if (taskAction instanceof CopyAppImageTaskAction<?>) {
+                ((CopyAppImageTaskAction<Package>)taskAction).execute(env.pkg(),
+                        srcAppImage, new AppImageDesc(env.envLayout(), env.env().appImageDir()));
             } else {
                 throw new IllegalArgumentException();
             }
