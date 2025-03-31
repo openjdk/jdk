@@ -3684,19 +3684,7 @@ bool TypeInterfaces::singleton(void) const {
 bool TypeInterfaces::has_non_array_interface() const {
   assert(TypeAryPtr::_array_interfaces != nullptr, "How come Type::Initialize_shared wasn't called yet?");
 
-  for (const ciInstanceKlass* interface : _interfaces) {
-    bool is_an_array_interface = false;
-    for (const ciInstanceKlass* array_interface : TypeAryPtr::_array_interfaces->_interfaces) {
-      if (interface->equals(array_interface)) {
-        is_an_array_interface = true;
-      }
-    }
-    if (!is_an_array_interface) {
-      return true;
-    }
-  }
-
-  return false;
+  return !TypeAryPtr::_array_interfaces->contains(this);
 }
 
 //------------------------------TypeOopPtr-------------------------------------
