@@ -41,6 +41,8 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.Codesign.CodesignException;
 import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ExceptionBox;
@@ -63,21 +65,22 @@ final class AppImageSigner {
         });
     }
 
-    static Consumer<Path> createUnsigner(MacApplication app) {
-        return toConsumer(appImage -> {
-            new AppImageSigner(Codesigners.nop()).sign(app, appImage);
-        });
-    }
-
-    static final class SignFilter implements Predicate<Path> {
+    private static final class SignFilter implements Predicate<Path> {
 
         SignFilter(Application app, Path appImage) {
             Objects.requireNonNull(appImage);
+
+            // Don't explicitly sign main launcher. It will be implicitly signed when the bundle is signed.
+            otherExcludePaths = app.asApplicationLayout().map(appLayout -> {
+                return appLayout.resolveAt(appImage);
+            }).map(ApplicationLayout::launchersDirectory).flatMap(launchersDir -> {
+                return app.mainLauncher().map(Launcher::executableNameWithSuffix).map(launchersDir::resolve);
+            }).map(Set::of).orElseGet(Set::of);
         }
 
         @Override
         public boolean test(Path path) {
-            if (!Files.isRegularFile(path)) {
+            if (!Files.isRegularFile(path) || otherExcludePaths.contains(path)) {
                 return false;
             }
 
@@ -91,6 +94,8 @@ final class AppImageSigner {
 
             return false;
         }
+
+        private final Set<Path> otherExcludePaths;
     }
 
     private void sign(MacApplication app, Path appImage) throws CodesignException, IOException {
@@ -217,11 +222,6 @@ final class AppImageSigner {
                 }
             }
             return Optional.empty();
-        }
-
-        static Codesigners nop() {
-            Consumer<Path> nop = path -> {};
-            return new Codesigners(nop, nop, nop);
         }
 
         static Codesigners create(CodesignConfig signingCfg) {
