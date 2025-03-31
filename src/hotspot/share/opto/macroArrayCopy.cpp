@@ -674,16 +674,15 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     }
   }
 
-  bool is_partial_array_copy = false;
   if (!(*ctrl)->is_top()) {
     // Generate the fast path, if possible.
     Node* local_ctrl = *ctrl;
     MergeMemNode* local_mem = MergeMemNode::make(mem);
     transform_later(local_mem);
-    is_partial_array_copy = generate_unchecked_arraycopy(&local_ctrl, &local_mem,
-                                                         adr_type, copy_type, disjoint_bases,
-                                                         src, src_offset, dest, dest_offset,
-                                                         ConvI2X(copy_length), acopy_to_uninitialized);
+    generate_unchecked_arraycopy(&local_ctrl, &local_mem,
+                                 adr_type, copy_type, disjoint_bases,
+                                 src, src_offset, dest, dest_offset,
+                                 ConvI2X(copy_length), acopy_to_uninitialized);
 
     // Present the results of the fast call.
     result_region->init_req(fast_path, local_ctrl);
@@ -1188,14 +1187,16 @@ Node* PhaseMacroExpand::generate_generic_arraycopy(Node** ctrl, MergeMemNode** m
 }
 
 // Helper function; generates the fast out-of-line call to an arraycopy stub.
-bool PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** mem,
+void PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** mem,
                                                     const TypePtr* adr_type,
                                                     BasicType basic_elem_type,
                                                     bool disjoint_bases,
                                                     Node* src,  Node* src_offset,
                                                     Node* dest, Node* dest_offset,
                                                     Node* copy_length, bool dest_uninitialized) {
-  if ((*ctrl)->is_top()) return false;
+  if ((*ctrl)->is_top()) {
+    return;
+  }
 
   Node* src_start  = src;
   Node* dest_start = dest;
@@ -1240,9 +1241,7 @@ bool PhaseMacroExpand::generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** 
     }
     transform_later(*mem);
     *ctrl = exit_block;
-    return true;
   }
-  return false;
 }
 
 #undef XTOP

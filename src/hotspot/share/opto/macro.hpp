@@ -171,7 +171,7 @@ private:
                                    Node* src,  Node* src_offset,
                                    Node* dest, Node* dest_offset,
                                    Node* copy_length, bool dest_uninitialized);
-  bool generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** mem,
+  void generate_unchecked_arraycopy(Node** ctrl, MergeMemNode** mem,
                                     const TypePtr* adr_type,
                                     BasicType basic_elem_type,
                                     bool disjoint_bases,
