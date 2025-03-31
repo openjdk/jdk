@@ -334,6 +334,36 @@ public class IRNode {
         beforeMatchingNameRegex(OPAQUE_MULTIVERSIONING, "OpaqueMultiversioning");
     }
 
+    public static final String REARRANGE_VB = VECTOR_PREFIX + "REARRANGE_VB" + POSTFIX;
+    static {
+        vectorNode(REARRANGE_VB, "VectorRearrange", TYPE_BYTE);
+    }
+
+    public static final String REARRANGE_VS = VECTOR_PREFIX + "REARRANGE_VS" + POSTFIX;
+    static {
+        vectorNode(REARRANGE_VS, "VectorRearrange", TYPE_SHORT);
+    }
+
+    public static final String REARRANGE_VI = VECTOR_PREFIX + "REARRANGE_VI" + POSTFIX;
+    static {
+        vectorNode(REARRANGE_VI, "VectorRearrange", TYPE_INT);
+    }
+
+    public static final String REARRANGE_VL = VECTOR_PREFIX + "REARRANGE_VL" + POSTFIX;
+    static {
+        vectorNode(REARRANGE_VL, "VectorRearrange", TYPE_LONG);
+    }
+
+    public static final String REARRANGE_VF = VECTOR_PREFIX + "REARRANGE_VF" + POSTFIX;
+    static {
+        vectorNode(REARRANGE_VF, "VectorRearrange", TYPE_FLOAT);
+    }
+
+    public static final String REARRANGE_VD = VECTOR_PREFIX + "REARRANGE_VD" + POSTFIX;
+    static {
+        vectorNode(REARRANGE_VD, "VectorRearrange", TYPE_DOUBLE);
+    }
+
     public static final String ADD_P_OF = COMPOSITE_PREFIX + "ADD_P_OF" + POSTFIX;
     static {
         String regex = START + "addP_" + IS_REPLACED + MID + ".*" + END;
@@ -1369,6 +1399,16 @@ public class IRNode {
         superWordNodes(MAX_REDUCTION_V, "MaxReductionV");
     }
 
+    public static final String NEG_F = PREFIX + "NEG_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(NEG_F, "NegF");
+    }
+
+    public static final String NEG_D = PREFIX + "NEG_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(NEG_D, "NegD");
+    }
+
     public static final String NEG_VF = VECTOR_PREFIX + "NEG_VF" + POSTFIX;
     static {
         vectorNode(NEG_VF, "NegVF", TYPE_FLOAT);
@@ -1833,7 +1873,7 @@ public class IRNode {
 
     public static final String SUB = PREFIX + "SUB" + POSTFIX;
     static {
-        beforeMatchingNameRegex(SUB, "Sub(I|L|F|D)");
+        beforeMatchingNameRegex(SUB, "Sub(I|L|F|D|HF)");
     }
 
     public static final String SUB_D = PREFIX + "SUB_D" + POSTFIX;
@@ -2014,6 +2054,21 @@ public class IRNode {
     public static final String VECTOR_BLEND_B = VECTOR_PREFIX + "VECTOR_BLEND_B" + POSTFIX;
     static {
         vectorNode(VECTOR_BLEND_B, "VectorBlend", TYPE_BYTE);
+    }
+
+    public static final String VECTOR_BLEND_S = VECTOR_PREFIX + "VECTOR_BLEND_S" + POSTFIX;
+    static {
+        vectorNode(VECTOR_BLEND_S, "VectorBlend", TYPE_SHORT);
+    }
+
+    public static final String VECTOR_BLEND_I = VECTOR_PREFIX + "VECTOR_BLEND_I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_BLEND_I, "VectorBlend", TYPE_INT);
+    }
+
+    public static final String VECTOR_BLEND_L = VECTOR_PREFIX + "VECTOR_BLEND_L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_BLEND_L, "VectorBlend", TYPE_LONG);
     }
 
     public static final String VECTOR_BLEND_F = VECTOR_PREFIX + "VECTOR_BLEND_F" + POSTFIX;
