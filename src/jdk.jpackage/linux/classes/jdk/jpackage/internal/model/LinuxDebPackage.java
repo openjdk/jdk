@@ -26,7 +26,6 @@ package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
 import java.util.Optional;
-
 import jdk.jpackage.internal.util.CompositeProxy;
 
 /**
@@ -51,29 +50,18 @@ public interface LinuxDebPackage extends LinuxPackage, LinuxDebPackageMixin {
     }
 
     /**
-     * Gets the version with the release number of this DEB package.
-     *
-     * @see <a href=
-     *      "https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-version">https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-version</a>
-     * @return the version with the release number of this DEB package
-     */
-    default String versionWithRelease() {
-        return String.format("%s-%s", version(), release());
-    }
-
-    /**
      * Gets the relative path to this DEB package's copyright file. Returns empty
      * {@link Optional} instance if this DEB package has no copyright file.
      *
      * @return the relative path to the copyright file of this DEB package
      */
     default Optional<Path> relativeCopyrightFilePath() {
-        if (isRuntimeInstaller()) {
-            return Optional.empty();
-        } else if (isInstallDirInUsrTree() || Path.of("/").resolve(relativeInstallDir()).startsWith("/usr/")) {
-            return Optional.of(Path.of("/usr/share/doc/", packageName(), "copyright"));
-        } else {
+        if (isInstallDirInUsrTree() || Path.of("/").resolve(relativeInstallDir()).startsWith("/usr/")) {
+            return Optional.of(Path.of("usr/share/doc/", packageName(), "copyright"));
+        } else if (!isRuntimeInstaller()) {
             return Optional.of(relativeInstallDir().resolve("share/doc/copyright"));
+        } else {
+            return Optional.empty();
         }
     }
 

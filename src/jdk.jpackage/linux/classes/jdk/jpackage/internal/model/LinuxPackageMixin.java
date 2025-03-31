@@ -64,11 +64,19 @@ public interface LinuxPackageMixin {
     Optional<String> additionalDependencies();
 
     /**
-     * Gets the release of this package.
+     * Gets the release of this package. Returns an empty {@link Optional} instance
+     * if this package doesn't have a release.
+     * <p>
+     * For RPM packages, this is the value of a "Release" property in spec file. RPM
+     * packages always have a release.
+     * <p>
+     * For DEB packages, this is an optional {@code debian_revision} component of a
+     * package version. See <a href=
+     * "https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-version#">https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-version#</a>.
      *
      * @return the release of this package
      */
-    String release();
+    Optional<String> release();
 
     /**
      * Gets the platform architecture of this package.
@@ -81,7 +89,7 @@ public interface LinuxPackageMixin {
      * Default implementation of {@link LinuxPackageMixin} interface.
      */
     record Stub(AppImageLayout packageLayout, String menuGroupName,
-            String category, Optional<String> additionalDependencies, String release,
-            String arch) implements LinuxPackageMixin {
+            String category, Optional<String> additionalDependencies,
+            Optional<String> release, String arch) implements LinuxPackageMixin {
     }
 }

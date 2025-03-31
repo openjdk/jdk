@@ -119,7 +119,7 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
     protected Map<String, String> createReplacementData(BuildEnv env, LinuxPackage pkg) throws IOException {
         Map<String, String> data = new HashMap<>();
 
-        data.put("APPLICATION_RELEASE", pkg.release());
+        data.put("APPLICATION_RELEASE", pkg.release().orElseThrow());
         data.put("APPLICATION_PREFIX", installPrefix(pkg).toString());
         data.put("APPLICATION_DIRECTORY", Path.of("/").resolve(pkg.relativeInstallDir()).toString());
         data.put("APPLICATION_SUMMARY", pkg.packageName());
@@ -159,7 +159,7 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
                             "APPLICATION_PACKAGE", specFileName),
                     new PackageProperty("Version", pkg.version(),
                             "APPLICATION_VERSION", specFileName),
-                    new PackageProperty("Release", pkg.release(),
+                    new PackageProperty("Release", pkg.release().orElseThrow(),
                             "APPLICATION_RELEASE", specFileName),
                     new PackageProperty("Arch", pkg.arch(), null, specFileName));
 

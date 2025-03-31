@@ -25,7 +25,6 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
-
 import jdk.jpackage.internal.util.CompositeProxy;
 
 /**
@@ -43,10 +42,10 @@ public interface LinuxPackage extends Package, LinuxPackageMixin {
         String packageFileNameTemlate = asStandardPackageType().map(stdType -> {
             switch (stdType) {
                 case LINUX_DEB -> {
-                    return "%s_%s-%s_%s";
+                    return "%s_%s_%s";
                 }
                 case LINUX_RPM -> {
-                    return "%s-%s-%s.%s";
+                    return "%s-%s.%s";
                 }
                 default -> {
                     throw new IllegalStateException();
@@ -54,7 +53,16 @@ public interface LinuxPackage extends Package, LinuxPackageMixin {
             }
         }).orElseThrow(UnsupportedOperationException::new);
 
-        return String.format(packageFileNameTemlate, packageName(), version(), release(), arch());
+        return String.format(packageFileNameTemlate, packageName(), versionWithRelease(), arch());
+    }
+
+    /**
+     * Gets the version with the release component of this Linux package.
+     *
+     * @return the version with the release component of this Linux package
+     */
+    default String versionWithRelease() {
+        return String.format("%s%s", version(), release().map(r -> "-" + r).orElse(""));
     }
 
     /**

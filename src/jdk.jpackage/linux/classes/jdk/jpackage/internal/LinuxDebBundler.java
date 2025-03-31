@@ -326,7 +326,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
                 "resource.deb-postrm-script").setExecutable());
 
         ((LinuxDebPackage)pkg).relativeCopyrightFilePath().ifPresent(copyrightFile -> {
-            debianFiles.add(new DebianFile(Path.of("/").resolve(copyrightFile),
+            debianFiles.add(new DebianFile(env.appImageDir().resolve(copyrightFile),
                     "resource.copyright-file"));
         });
 

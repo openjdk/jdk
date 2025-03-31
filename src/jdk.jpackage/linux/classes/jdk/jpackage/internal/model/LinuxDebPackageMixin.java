@@ -39,6 +39,6 @@ public interface LinuxDebPackageMixin {
     /**
      * Default implementation of {@link LinuxDebPackageMixin} interface.
      */
-    record Stub(String maintainerEmail) {
+    record Stub(String maintainerEmail) implements LinuxDebPackageMixin {
     }
 }

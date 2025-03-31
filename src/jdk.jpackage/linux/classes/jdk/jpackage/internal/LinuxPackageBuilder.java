@@ -73,7 +73,7 @@ final class LinuxPackageBuilder {
                 Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName),
                 Optional.ofNullable(category).orElseGet(DEFAULTS::category),
                 Optional.ofNullable(additionalDependencies),
-                Optional.ofNullable(release).orElseGet(DEFAULTS::release),
+                Optional.ofNullable(release),
                 pkg.asStandardPackageType().map(LinuxPackageArch::getValue).orElseThrow()));
     }
 
@@ -100,6 +100,10 @@ final class LinuxPackageBuilder {
     LinuxPackageBuilder release(String v) {
         release = v;
         return this;
+    }
+
+    Optional<String> release() {
+        return Optional.ofNullable(release);
     }
 
     private static LinuxApplicationLayout usrTreePackageLayout(Path prefix, String packageName) {
@@ -155,10 +159,12 @@ final class LinuxPackageBuilder {
                             .create();
                 }
             }
+            default -> {
+            }
         }
     }
 
-    private record Defaults(String release, String menuGroupName, String category) {
+    private record Defaults(String menuGroupName, String category) {
     }
 
     private String literalName;
@@ -169,7 +175,7 @@ final class LinuxPackageBuilder {
 
     private final PackageBuilder pkgBuilder;
 
-    private static final Defaults DEFAULTS = new Defaults("1", I18N.getString(
+    private static final Defaults DEFAULTS = new Defaults(I18N.getString(
             "param.menu-group.default"), "misc");
 
 }
