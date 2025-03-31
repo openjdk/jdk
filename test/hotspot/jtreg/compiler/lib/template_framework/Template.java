@@ -38,13 +38,14 @@ import java.util.List;
  * String Templates to inject these arguments into the strings. But since String Templates are not (yet) available,
  * the {@link Template}s provide <strong>hashtag replacements</strong> in the Strings: the {@link Template} argument
  * names are captured, and the argument values automatically replace any {@code "#name"} in the Strings. See the
- * different overloads of {@link make} for examples. Additional hashtag replacements can be defined with {@link let}.
+ * different overloads of {@link #make} for examples. Additional hashtag replacements can be defined 
+ * with {@link #let}.
  *
  * <p>
  * When using nested {@link Template}s, there can be collisions with identifiers (e.g. variable names and method names).
  * For this, {@link Template}s provide <strong>dollar replacements</strong>, which automaticall rename any
  * {@code "$name"} in the String with a {@code "name_ID"}, where the {@code "ID"} is unique for every use of
- * a {@link Template}. The dollar replacement can also be captured with {@link $}, and passed to nested
+ * a {@link Template}. The dollar replacement can also be captured with {@link #$}, and passed to nested
  * {@link Template}s, which allows sharing of these identifier names between {@link Template}s.
  *
  * <p>
@@ -61,8 +62,8 @@ import java.util.List;
  * <p>
  * A {@link TemplateBinding} allows the recurisve use of {@link Template}s. With the indirection of such a binding,
  * a {@link Template} can reference itself. To ensure the termination of recursion, the templates are rendered
- * with a certain amount of {@link fuel}, which is decreased at each {@link Template} nesting by a certain amount
- * (can be changed with {@link setFuelCost}). Recursive templates are supposed to terminate once the {@link fuel}
+ * with a certain amount of {@link #fuel}, which is decreased at each {@link Template} nesting by a certain amount
+ * (can be changed with {@link #setFuelCost}). Recursive templates are supposed to terminate once the {@link #fuel}
  * is depleated (i.e. reaches zero).
  *
  * <p>
@@ -70,7 +71,7 @@ import java.util.List;
  * scope, and can be sampled in any nested scope. To allow the use of names for multiple applications (e.g.
  * fields, variables, methods, etc), we define a {@link Name}, which captures the {@link String} representation
  * to be used in code, as well as its type and if it is mutable. One can add such a {@link Name} to the
- * current code scope with {@link addName}, and sample from the current or outer scopes with {@link sampleName}.
+ * current code scope with {@link #addName}, and sample from the current or outer scopes with {@link #sampleName}.
  * When generating code, one might want to create {@link Name}s (variables, fields, etc) in local scope, or
  * in some outer scope with the use of {@link Hook}s.
  */
@@ -78,7 +79,7 @@ public interface Template {
 
     /**
      * Creates a {@link Template} with no arguments.
-     * See {@link body} for more details about how to construct a {@link Template} with {@link Token}s.
+     * See {@link #body} for more details about how to construct a {@link Template} with {@link Token}s.
      *
      * <p>
      * Example:
@@ -99,7 +100,7 @@ public interface Template {
 
     /**
      * Creates a {@link Template} with one argument.
-     * See {@link body} for more details about how to construct a {@link Template} with {@link Token}s.
+     * See {@link #body} for more details about how to construct a {@link Template} with {@link Token}s.
      *
      * <p>
      * Here an example with template argument {@code 'a'}, captured once as string name
@@ -126,7 +127,7 @@ public interface Template {
 
     /**
      * Creates a {@link Template} with two arguments.
-     * See {@link body} for more details about how to construct a {@link Template} with {@link Token}s.
+     * See {@link #body} for more details about how to construct a {@link Template} with {@link Token}s.
      *
      * <p>
      * Here an example with template arguments {@code 'a'} and {@code 'b'}, captured once as string names
@@ -177,7 +178,7 @@ public interface Template {
 
     /**
      * Creates a {@link Template} with three arguments.
-     * See {@link body} for more details about how to construct a {@link Template} with {@link Token}s.
+     * See {@link #body} for more details about how to construct a {@link Template} with {@link Token}s.
      *
      * @param body The {@link TemplateBody} created by {@link Template#body}.
      * @param <A> Type of the first argument.
@@ -338,7 +339,7 @@ public interface Template {
      *
      * Here an example where a {@link Template} creates a local variable {@code 'var'},
      * with an implicit dollar replacement, and then captures that dollar replacement
-     * using {@link $} for the use inside a nested template.
+     * using {@link #$} for the use inside a nested template.
      * {@snippet lang=java :
      * var template = Template.make(() -> body(
      *     """
@@ -369,7 +370,7 @@ public interface Template {
      *
      * @param key Name for the hashtag replacement.
      * @param value The value that the hashtag is replaced with.
-     * @return A token that does nothing, so that the {@link let} cal can easily be put in a list of tokens
+     * @return A token that does nothing, so that the {@link #let} cal can easily be put in a list of tokens
      *         inside a {@link Template#body}.
      * @throws RendererException if there is a duplicate hashtag {@code key}.
      */
@@ -395,7 +396,7 @@ public interface Template {
      * @param value The value that the hashtag is replaced with.
      * @param <T> The type of the value.
      * @param function The function that is applied with the provided {@code 'value'}.
-     * @return A token that does nothing, so that the {@link let} cal can easily be put in a list of tokens
+     * @return A token that does nothing, so that the {@link #let} cal can easily be put in a list of tokens
      *         inside a {@link Template#body}.
      * @throws RendererException if there is a duplicate hashtag {@code key}.
      */
@@ -410,8 +411,8 @@ public interface Template {
     public final static float DEFAULT_FUEL = 100.0f;
 
     /**
-     * The default amount of fuel spent per {@link Template}. It is suptracted from the current {@link fuel} at every
-     * nesting level, and once the {@link fuel} reaches zero, the nesting is supposed to terminate.
+     * The default amount of fuel spent per {@link Template}. It is suptracted from the current {@link #fuel} at every
+     * nesting level, and once the {@link #fuel} reaches zero, the nesting is supposed to terminate.
      */
     public final static float DEFAULT_FUEL_COST = 10.0f;
 
@@ -422,7 +423,7 @@ public interface Template {
      * termination in recursive {@link Template} instantiations.
      *
      * <p>
-     * Example of a recursive {@link Template}, which checks the remaining {@link fuel} at every level,
+     * Example of a recursive {@link Template}, which checks the remaining {@link #fuel} at every level,
      * and terminates if it reaches zero. It also demonstrates the use of {@link TemplateBinding} for
      * the recursive use of {@link Template}s. We {@link TemplateWithArgs#render} with {@code 30} total fuel, and spending {@code 5} fuel at each recursion level.
      * {@snippet lang=java :
@@ -461,8 +462,8 @@ public interface Template {
     /**
      * Add a {@link Name} in the current code frame.
      * Note that there can be duplicate definitions, and they simply increase
-     * the {@link weighNames} weight, and increase the probability of sampling
-     * the name with {@link sampleName}.
+     * the {@link #weighNames} weight, and increase the probability of sampling
+     * the name with {@link #sampleName}.
      *
      * @param name The {@link Name} to be added to the current code frame.
      * @return The token that performs the defining action.

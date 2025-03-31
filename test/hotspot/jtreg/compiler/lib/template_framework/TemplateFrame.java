@@ -29,8 +29,8 @@ import java.util.Map;
 /**
  * The {@link TemplateFrame} is the frame for a {@link TemplateWithArgs}. It ensures
  * that each template use has its own unique {@link id} used to deconflict names
- * using {@link $}. It also has a set of hashtag replacements, which combine the
- * key-value pairs from the template argument and the {@link let} definitions.
+ * using {@link Template#$}. It also has a set of hashtag replacements, which combine the
+ * key-value pairs from the template argument and the {@link Template#let} definitions.
  * The {@link parent} relationship provides a trace for the use chain of templates.
  * The {@link fuel} is reduced over this chain, to give a heuristic on how much time
  * is spend on the code from the template corrsponding to the frame, and to give a

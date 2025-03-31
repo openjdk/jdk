@@ -25,7 +25,7 @@ package compiler.lib.template_framework;
 
 /**
  * Represents a {@link Template} with applied arguments, ready for instantiation, either
- * as a {@link Token} inside another {@link Template} or with {@link render}.
+ * as a {@link Token} inside another {@link Template} or with {@link #render}.
  */
 public sealed abstract class TemplateWithArgs implements Token
                                               permits TemplateWithArgs.ZeroArgsUse,
@@ -37,7 +37,7 @@ public sealed abstract class TemplateWithArgs implements Token
 
     /**
      * Represents a zero-argument {@link Template} with applied arguments, ready for instantiation
-     * either as a {@link Token} inside another {@link Template} or with {@link render}.
+     * either as a {@link Token} inside another {@link Template} or with {@link #render}.
      */
     public static final class ZeroArgsUse extends TemplateWithArgs implements Token {
         private final Template.ZeroArgs zeroArgs;
@@ -57,7 +57,7 @@ public sealed abstract class TemplateWithArgs implements Token
 
     /**
      * Represents a one-argument {@link Template} with applied arguments, ready for instantiation
-     * either as a {@link Token} inside another {@link Template} or with {@link render}.
+     * either as a {@link Token} inside another {@link Template} or with {@link #render}.
      *
      * @param <A> The type of the (first) argument.
      */
@@ -83,7 +83,7 @@ public sealed abstract class TemplateWithArgs implements Token
 
     /**
      * Represents a two-argument {@link Template} with applied arguments, ready for instantiation
-     * either as a {@link Token} inside another {@link Template} or with {@link render}.
+     * either as a {@link Token} inside another {@link Template} or with {@link #render}.
      *
      * @param <A> The type of the first argument.
      * @param <B> The type of the second argument.
@@ -113,7 +113,7 @@ public sealed abstract class TemplateWithArgs implements Token
 
     /**
      * Represents a three-argument {@link Template} with applied arguments, ready for instantiation
-     * either as a {@link Token} inside another {@link Template} or with {@link render}.
+     * either as a {@link Token} inside another {@link Template} or with {@link #render}.
      *
      * @param <A> The type of the first argument.
      * @param <B> The type of the second argument.
