@@ -40,6 +40,7 @@ class Klass;
 class outputStream;
 class Parse;
 class Thread;
+class MetadataClosure;
 
 extern "C" void JNICALL jfr_register_natives(JNIEnv*, jclass);
 
@@ -72,6 +73,7 @@ class Jfr : AllStatic {
   static bool on_start_flight_recording_option(const JavaVMOption** option, char* delimiter);
   static void on_backpatching(const Method* callee_method, JavaThread* jt);
   static void initialize_main_thread(JavaThread* jt);
+
   static bool has_sample_request(JavaThread* jt);
   static void check_and_process_sample_request(JavaThread* jt);
 };

@@ -26,9 +26,11 @@
 #define SHARE_JFR_RECORDER_JFRRECORDER_HPP
 
 #include "jfr/utilities/jfrAllocation.hpp"
+#include "memory/iterator.hpp"
 
 class JavaThread;
 class Thread;
+class MetadataClosure;
 
 //
 // Represents the singleton instance of Flight Recorder.
@@ -53,11 +55,12 @@ class JfrRecorder : public JfrCHeapObj {
   static bool create_stacktrace_repository();
   static bool create_storage();
   static bool create_stringpool();
-  static bool create_thread_sampler();
+  static bool create_cpu_time_thread_sampling();
   static bool create_event_throttler();
   static bool create_components();
   static void destroy_components();
   static void on_recorder_thread_exit();
+  static void metadata_do(MetadataClosure* f);
 
  public:
   static bool is_enabled();

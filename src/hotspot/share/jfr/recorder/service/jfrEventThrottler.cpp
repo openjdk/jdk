@@ -78,7 +78,10 @@ JfrEventThrottler* JfrEventThrottler::for_event(JfrEventId event_id) {
   if (event_id == JfrSafepointLatencyEvent) {
     return _safepoint_latency_throttler;
   }
-  return nullptr;
+  assert(_throttler != nullptr, "JfrEventThrottler has not been properly initialized");
+  if (event_id == JfrCPUTimeSampleEvent) {
+    return nullptr;
+  }
 }
 
 void JfrEventThrottler::configure(JfrEventId event_id, int64_t sample_size, int64_t period_ms) {

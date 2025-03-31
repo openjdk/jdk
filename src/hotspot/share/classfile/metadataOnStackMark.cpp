@@ -34,6 +34,9 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #endif
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 MetadataOnStackBuffer* MetadataOnStackMark::_used_buffers = nullptr;
 MetadataOnStackBuffer* MetadataOnStackMark::_free_buffers = nullptr;
@@ -44,7 +47,6 @@ NOT_PRODUCT(bool MetadataOnStackMark::_is_active = false;)
 class MetadataOnStackClosure : public MetadataClosure {
   void do_metadata(Metadata* m) { Metadata::mark_on_stack(m); }
 };
-
 // Walk metadata on the stack and mark it so that redefinition doesn't delete
 // it.  Class unloading only deletes in-error class files, methods created by
 // the relocator and dummy constant pools.  None of these appear anywhere except
@@ -59,9 +61,15 @@ MetadataOnStackMark::MetadataOnStackMark(bool walk_all_metadata, bool redefiniti
 
   Threads::metadata_handles_do(Metadata::mark_on_stack);
 
+#if INCLUDE_JFR
+  MetadataOnStackClosure closure;
+  Jfr::metadata_do(&closure);
+#endif
+
   if (walk_all_metadata) {
     MetadataOnStackClosure md_on_stack;
     Threads::metadata_do(&md_on_stack);
+
     if (redefinition_walk) {
       // We have to walk the whole code cache during redefinition.
       CodeCache::metadata_do(&md_on_stack);

@@ -34,6 +34,7 @@
 #include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/support/jfrResolution.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
+#include "memory/iterator.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
 

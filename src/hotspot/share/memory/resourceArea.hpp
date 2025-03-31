@@ -43,17 +43,21 @@
 //------------------------------ResourceArea-----------------------------------
 // A ResourceArea is an Arena that supports safe usage of ResourceMark.
 class ResourceArea: public Arena {
+
+  friend class NoResourceMark;
+
 #ifdef ASSERT
-  int _nesting;                 // current # of nested ResourceMarks
+  int _nesting;                  // current # of nested ResourceMarks
+  int _no_resource_mark_nesting; // current # of nested NoResourceMarks
   void verify_has_resource_mark();
 #endif // ASSERT
 
 public:
   ResourceArea(MemTag mem_tag = mtThread) :
-    Arena(mem_tag, Arena::Tag::tag_ra) DEBUG_ONLY(COMMA _nesting(0)) {}
+    Arena(mem_tag, Arena::Tag::tag_ra) DEBUG_ONLY(COMMA _nesting(0) COMMA _no_resource_mark_nesting(0)) {}
 
   ResourceArea(size_t init_size, MemTag mem_tag = mtThread, Arena::Tag arena_tag = Arena::Tag::tag_ra) :
-    Arena(mem_tag, arena_tag, init_size) DEBUG_ONLY(COMMA _nesting(0)) {
+    Arena(mem_tag, arena_tag, init_size) DEBUG_ONLY(COMMA _nesting(0) COMMA _no_resource_mark_nesting(0)) {
   }
 
   ResourceArea(MemTag mem_tag, Arena::Tag arena_tag) :
@@ -62,6 +66,7 @@ public:
 
   char* allocate_bytes(size_t size, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
+  DEBUG_ONLY(void verify_no_NoResourceMark() const { assert(_no_resource_mark_nesting == 0, "Allocating inside NoResourceMark"); })
   DEBUG_ONLY(int nesting() const { return _nesting; })
 
   // Capture the state of a ResourceArea needed by a ResourceMark for
@@ -178,6 +183,8 @@ public:
   }
 };
 
+// ResourceMark to mark that new resource area allocations are allowed
+// Voided by the NoResourceMark stack object
 class ResourceMark: public StackObj {
   const ResourceMarkImpl _impl;
 #ifdef ASSERT
@@ -213,6 +220,21 @@ public:
 #endif // ASSERT
 
   void reset_to_mark() { _impl.reset_to_mark(); }
+};
+
+//------------------------------------------------------------------------------------------------------------------------
+// A NoResourceMark stack object will verify that no resource areas or new chunks are allocated
+// in its scope. Enabled in debug mode only.
+
+class NoResourceMark: public StackObj {
+ public:
+#ifdef ASSERT
+  NoResourceMark();
+  ~NoResourceMark();
+#else
+  NoResourceMark()  {}
+  ~NoResourceMark() {}
+#endif
 };
 
 //------------------------------DeoptResourceMark-----------------------------------

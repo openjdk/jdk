@@ -25,14 +25,6 @@
 #include "runtime/thread.hpp"
 #include "runtime/threadCrashProtection.hpp"
 
-Thread* ThreadCrashProtection::_protected_thread = nullptr;
-ThreadCrashProtection* ThreadCrashProtection::_crash_protection = nullptr;
-
-ThreadCrashProtection::ThreadCrashProtection() {
-  _protected_thread = Thread::current();
-  assert(_protected_thread->is_JfrSampler_thread(), "should be JFRSampler");
-}
-
 /*
  * See the caveats for this class in threadCrashProtection_posix.hpp
  * Protects the callback call so that SIGSEGV / SIGBUS jumps back into this
@@ -46,37 +38,31 @@ bool ThreadCrashProtection::call(CrashProtectionCallback& cb) {
   // since on at least some systems (OS X) siglongjmp will restore the mask
   // for the process, not the thread
   pthread_sigmask(0, nullptr, &saved_sig_mask);
+
+  Thread* current_thread = Thread::current();
+  assert(current_thread->is_JfrSampler_thread(), "should be JFRSampler");
+  assert(current_thread->crash_protection() == nullptr, "not reentrant");
+
   if (sigsetjmp(_jmpbuf, 0) == 0) {
-    // make sure we can see in the signal handler that we have crash protection
-    // installed
-    _crash_protection = this;
+    current_thread->set_crash_protection(this);
     cb.call();
-    // and clear the crash protection
-    _crash_protection = nullptr;
-    _protected_thread = nullptr;
+    current_thread->set_crash_protection(nullptr);
     return true;
   }
   // this happens when we siglongjmp() back
+  current_thread->set_crash_protection(nullptr);
   pthread_sigmask(SIG_SETMASK, &saved_sig_mask, nullptr);
-  _crash_protection = nullptr;
-  _protected_thread = nullptr;
   return false;
 }
 
 void ThreadCrashProtection::restore() {
-  assert(_crash_protection != nullptr, "must have crash protection");
   siglongjmp(_jmpbuf, 1);
 }
 
-void ThreadCrashProtection::check_crash_protection(int sig,
-    Thread* thread) {
-
-  if (thread != nullptr &&
-      thread == _protected_thread &&
-      _crash_protection != nullptr) {
-
+void ThreadCrashProtection::check_crash_protection(int sig, Thread* thread) {
+  if (thread != nullptr && thread->crash_protection() != nullptr) {
     if (sig == SIGSEGV || sig == SIGBUS) {
-      _crash_protection->restore();
+      thread->crash_protection()->restore();
     }
   }
 }

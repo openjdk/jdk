@@ -44,6 +44,7 @@ class JfrStackTraceRepository : public JfrCHeapObj {
   friend class RecordStackTrace;
   friend class StackTraceBlobInstaller;
   friend class StackTraceRepository;
+  friend class JfrCPUTimeThreadSampler;
 
  private:
   static const u4 TABLE_SIZE = 2053;

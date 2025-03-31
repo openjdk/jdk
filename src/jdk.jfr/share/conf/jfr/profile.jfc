@@ -206,6 +206,16 @@
       <setting name="period" control="method-sampling-native-interval">20 ms</setting>
     </event>
 
+    <event name="jdk.CPUTimeSample">
+      <setting name="enabled">false</setting>
+      <setting name="throttle">10ms</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.CPUTimeSampleLoss">
+      <setting name="enabled">true</setting>
+    </event>
+
     <event name="jdk.SafepointLatency">
       <setting name="enabled">false</setting>
       <setting name="stackTrace">false</setting>

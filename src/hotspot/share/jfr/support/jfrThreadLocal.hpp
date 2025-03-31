@@ -33,6 +33,11 @@
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 
+#ifdef LINUX
+// required for timer_t type
+#include <signal.h>
+#endif
+
 class Arena;
 class JavaThread;
 class JfrBuffer;
@@ -78,6 +83,8 @@ class JfrThreadLocal {
   bool _notified;
   bool _dead;
   bool _sampling_critical_section;
+  LINUX_ONLY(bool _has_cpu_timer = false);
+  LINUX_ONLY(timer_t _cpu_timer);
 
   JfrBuffer* install_native_buffer() const;
   JfrBuffer* install_java_buffer() const;
@@ -340,6 +347,26 @@ class JfrThreadLocal {
   bool has_thread_blob() const;
   void set_thread_blob(const JfrBlobHandle& handle);
   const JfrBlobHandle& thread_blob() const;
+
+  // CPU time sampling
+#ifdef LINUX
+  void set_timerid(timer_t timer) {
+    _has_cpu_timer = true;
+    _cpu_timer = timer;
+  }
+
+  void unset_timerid() {
+    _has_cpu_timer = false;
+  }
+
+  timer_t timerid() const {
+    return _cpu_timer;
+  }
+
+  bool has_timerid() const {
+    return _has_cpu_timer;
+  }
+#endif
 
   // Hooks
   static void on_start(Thread* t);
