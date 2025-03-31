@@ -1290,7 +1290,7 @@ public:
   static LoopIvStride loop_iv_stride(const Node* incr);
   static PhiNode* loop_iv_phi(const Node* xphi, const Node* phi_incr, const Node* x);
 
-  bool is_counted_loop(Node* x, IdealLoopTree*&loop, const BasicType iv_bt);
+  bool is_counted_loop(Node* head, IdealLoopTree*&loop, const BasicType iv_bt);
 
   Node* loop_nest_replace_iv(Node* iv_to_replace, Node* inner_iv, Node* outer_phi, Node* inner_head, BasicType bt);
   bool create_loop_nest(IdealLoopTree* loop, Node_List &old_new);
@@ -1303,6 +1303,49 @@ public:
   IdealLoopTree* create_outer_strip_mined_loop(Node *init_control,
                                                IdealLoopTree* loop, float cl_prob, float le_fcnt,
                                                Node*& entry_control, Node*& iffalse);
+
+  // FIXME: move to somewhere more sensible
+  class CountedLoopConverter {
+    PhaseIdealLoop* _phase;
+    Node* _head;
+    IdealLoopTree* _loop;
+    const BasicType _iv_bt;
+
+    // TODO: better naming for these flags?
+    bool _insert_stride_overflow_limit_check = false;
+    bool _insert_init_trip_limit_check = false;
+    jlong _final_correction;
+
+#ifdef ASSERT
+    bool _checked_for_counted_loop = false;
+#endif
+
+    Node* _limit;
+    jlong _stride_con;
+    Node* _phi;
+    Node* _phi_incr;
+    Node* _stride;
+    bool _includes_limit;
+    BoolTest::mask _bt;
+    Node* _increment;
+    Node* _cmp;
+    float _cl_prob;
+    Node* _sfpt;
+
+   public:
+    CountedLoopConverter(PhaseIdealLoop* phase, Node* head, IdealLoopTree* loop, const BasicType iv_bt)
+      : _phase(phase),
+        _head(head),
+        _loop(loop),
+        _iv_bt(iv_bt) {
+      assert(head != nullptr, "");
+      assert(loop != nullptr, "");
+      assert(iv_bt == T_INT || iv_bt == T_LONG, "");
+    }
+
+    bool is_counted_loop();
+    void convert();
+  };
 
   Node* exact_limit( IdealLoopTree *loop );
 
@@ -1853,10 +1896,6 @@ public:
   ConNode* integercon(jlong l, BasicType bt);
 
   ConNode* zerocon(BasicType bt);
-};
-
-class CountedLoopConverter {
-
 };
 
 class AutoNodeBudget : public StackObj
