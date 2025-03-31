@@ -61,7 +61,7 @@ public:
   }
 
   ResourceArea(MemTag mem_tag, Arena::Tag arena_tag) :
-    Arena(mem_tag, arena_tag) DEBUG_ONLY(COMMA _nesting(0)) {
+    Arena(mem_tag, arena_tag) DEBUG_ONLY(COMMA _nesting(0) COMMA _no_resource_mark_nesting(0)) {
   }
 
   char* allocate_bytes(size_t size, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);

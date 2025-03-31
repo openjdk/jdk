@@ -27,6 +27,8 @@
 #include "code/debugInfoRec.hpp"
 #include "code/nmethod.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
+#include "memory/resourceArea.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampling.hpp"
@@ -280,6 +282,33 @@ static void record_thread_in_java(const JfrSampleRequest& request, const JfrTick
   }
 }
 
+#ifdef LINUX
+static void record_cpu_time_thread(const JfrSampleRequest* request, const JfrTicks& now, JavaThread* jt, Thread* current) {
+  assert(jt != nullptr, "invariant");
+  assert(current != nullptr, "invariant");
+  frame top_frame;
+  const traceid tid = JfrThreadLocal::thread_id(jt);
+  if (!compute_top_frame(*request, top_frame, jt)) {
+    JfrCPUTimeThreadSampling::send_empty_event(request->_sample_ticks, now, tid, request->_cpu_time_period);
+    return;
+  }
+  traceid sid;
+  {
+    ResourceMark rm(current);
+    JfrStackTrace stacktrace;
+    if (!stacktrace.record(jt, top_frame, *request)) {
+      // Unable to record stacktrace. Fail.
+      JfrCPUTimeThreadSampling::send_empty_event(request->_sample_ticks, now, tid, request->_cpu_time_period);
+      return;
+    }
+    sid = JfrStackTraceRepository::add(stacktrace);
+  }
+  assert(sid != 0, "invariant");
+  JfrCPUTimeThreadSampling::send_event(request->_sample_ticks, now, sid, tid, request->_cpu_time_period);
+  send_safepoint_latency_event(*request, now, sid, jt);
+}
+#endif
+
 static void drain_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl, JavaThread* jt, Thread* current) {
   assert(tl != nullptr, "invariant");
   assert(jt != nullptr, "invariant");
@@ -293,6 +322,20 @@ static void drain_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl, Jav
     tl->clear_enqueued_requests();
   }
   assert(!tl->has_enqueued_requests(), "invariant");
+
+#ifdef LINUX
+  if (jt->has_cpu_time_jfr_requests()) {
+    jt->acquire_cpu_time_jfr_queue_lock();
+
+    JfrSampleRequest* request;
+    while ((request = jt->cpu_time_jfr_queue().dequeue()) != nullptr) {
+      record_cpu_time_thread(request, now, jt, current);
+    }
+
+    jt->set_has_cpu_time_jfr_requests(false);
+    jt->release_cpu_time_jfr_queue_lock();
+  }
+#endif
 }
 
 class SampleMonitor : public StackObj {

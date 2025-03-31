@@ -322,6 +322,7 @@ static JfrRepository* _repository = nullptr;
 static JfrStackTraceRepository* _stack_trace_repository;
 static JfrStringPool* _stringpool = nullptr;
 static JfrOSInterface* _os_interface = nullptr;
+static JfrThreadSampler* _thread_sampler = nullptr;
 static JfrCPUTimeThreadSampling* _cpu_time_thread_sampling = nullptr;
 static JfrCheckpointManager* _checkpoint_manager = nullptr;
 
@@ -399,12 +400,6 @@ bool JfrRecorder::create_cpu_time_thread_sampling() {
   assert(_cpu_time_thread_sampling == nullptr, "invariant");
   _cpu_time_thread_sampling = JfrCPUTimeThreadSampling::create();
   return _cpu_time_thread_sampling != nullptr;
-}
-
-void JfrRecorder::on_safepoint(JavaThread* jt) {
-  if (_cpu_time_thread_sampling != nullptr) {
-    _cpu_time_thread_sampling->on_safepoint(jt);
-  }
 }
 
 bool JfrRecorder::create_event_throttler() {

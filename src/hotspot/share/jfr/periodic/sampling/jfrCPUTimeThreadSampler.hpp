@@ -26,6 +26,7 @@
 #define SHARE_JFR_PERIODIC_SAMPLING_JFRCPUTIMETHREADSAMPLER_HPP
 
 #include "jfr/utilities/jfrAllocation.hpp"
+#include "jfr/utilities/jfrTypes.hpp"
 
 class JavaThread;
 class NonJavaThread;
@@ -33,8 +34,7 @@ class NonJavaThread;
 #if defined(LINUX)
 
 #include "memory/padded.hpp"
-
-class JfrCPUTimeTrace;
+#include "jfr/periodic/sampling/jfrSampleRequest.hpp"
 
 // Fixed size async-signal-safe MPMC queue backed by an array.
 // Serves for passing traces from a thread being sampled (producer)
@@ -60,7 +60,7 @@ class JfrTraceQueue {
     // Also, establishes happens-before relationship between producer and consumer.
     // Update of this field "commits" enqueue/dequeue transaction.
     u4 _state;
-    JfrCPUTimeTrace* _trace;
+    JfrSampleRequest* _sample_request;
   };
 
   Element* _data;
@@ -92,11 +92,11 @@ public:
 
   ~JfrTraceQueue();
 
-  bool enqueue(JfrCPUTimeTrace* trace);
+  bool enqueue(JfrSampleRequest* trace);
 
   u4 _mark_count = 0;
 
-  JfrCPUTimeTrace* dequeue();
+  JfrSampleRequest* dequeue();
 
 };
 
@@ -127,7 +127,9 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static void on_javathread_terminate(JavaThread* thread);
   void handle_timer_signal(siginfo_t* info, void* context);
 
-  void on_safepoint(JavaThread* thread);
+  static void send_empty_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid tid, Tickspan cpu_time_period);
+  static void send_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid sid, traceid tid, Tickspan cpu_time_period);
+
 };
 
 #else
@@ -148,7 +150,8 @@ private:
   static void on_javathread_create(JavaThread* thread);
   static void on_javathread_terminate(JavaThread* thread);
 
-  void on_safepoint(JavaThread* thread);
+  static void send_empty_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid tid, Tickspan cpu_time_period);
+  static void send_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid sid, traceid tid, Tickspan cpu_time_period);
 };
 
 #endif // defined(LINUX)

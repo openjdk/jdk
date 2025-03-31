@@ -153,7 +153,7 @@ bool Jfr::on_start_flight_recording_option(const JavaVMOption** option, char* de
 }
 
 bool Jfr::has_sample_request(JavaThread* jt) {
-  return jt->jfr_thread_local()->has_sample_request();
+  return jt->jfr_thread_local()->has_sample_request() || jt->has_cpu_time_jfr_requests();
 }
 
 void Jfr::check_and_process_sample_request(JavaThread* jt) {

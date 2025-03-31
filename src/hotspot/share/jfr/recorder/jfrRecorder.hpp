@@ -55,6 +55,7 @@ class JfrRecorder : public JfrCHeapObj {
   static bool create_stacktrace_repository();
   static bool create_storage();
   static bool create_stringpool();
+  static bool create_thread_sampler();
   static bool create_cpu_time_thread_sampling();
   static bool create_event_throttler();
   static bool create_components();
@@ -71,7 +72,6 @@ class JfrRecorder : public JfrCHeapObj {
   static void start_recording();
   static bool is_recording();
   static void stop_recording();
-  static void on_safepoint(JavaThread* jt);
 };
 
 #endif // SHARE_JFR_RECORDER_JFRRECORDER_HPP

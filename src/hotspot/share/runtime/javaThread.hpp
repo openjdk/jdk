@@ -1319,7 +1319,7 @@ public:
 #if INCLUDE_JFR && defined(LINUX)
 private:
   volatile bool _cpu_time_jfr_locked = false;
-  volatile bool _has_cpu_time_jfr_events = false;
+  volatile bool _has_cpu_time_jfr_requests = false;
   JfrTraceQueue _cpu_time_jfr_queue{500};
 
 public:
@@ -1336,12 +1336,12 @@ public:
     return Atomic::load(&_cpu_time_jfr_locked);
   }
 
-  void set_has_cpu_time_jfr_events(bool has_events) {
-    Atomic::store(&_has_cpu_time_jfr_events, has_events);
+  void set_has_cpu_time_jfr_requests(bool has_events) {
+    Atomic::release_store(&_has_cpu_time_jfr_requests, has_events);
   }
 
-  bool has_cpu_time_jfr_events() {
-    return Atomic::load(&_has_cpu_time_jfr_events);
+  bool has_cpu_time_jfr_requests() {
+    return Atomic::load(&_has_cpu_time_jfr_requests);
   }
 
   JfrTraceQueue& cpu_time_jfr_queue() { return _cpu_time_jfr_queue; }
@@ -1350,7 +1350,7 @@ public:
     return false;
   }
 
-  bool has_cpu_time_jfr_events() {
+  bool has_cpu_time_jfr_requests() {
     return false;
   }
 #endif

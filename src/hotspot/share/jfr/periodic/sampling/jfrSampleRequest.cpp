@@ -31,6 +31,7 @@
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/suspendedThreadTask.hpp"
+#include "runtime/thread.hpp"
 
 static inline bool is_entry_frame(address pc) {
   return StubRoutines::returns_to_call_stub(pc);
@@ -172,7 +173,6 @@ static bool build(JfrSampleRequest& request, intptr_t* fp, JavaThread* jt) {
   assert(request._sample_sp != nullptr, "invariant");
   assert(request._sample_pc != nullptr, "invariant");
   assert(jt != nullptr, "invariant");
-  assert(jt->thread_state() == _thread_in_Java, "invariant");
 
   // 1. Interpreter frame?
   if (is_interpreter(request)) {
@@ -264,4 +264,32 @@ JfrSampleResult JfrSampleRequestBuilder::build_java_sample_request(const Suspend
     }
   }
   return set_unbiased_java_sample(request, tl, jt);
+}
+
+
+// A biased sample request is denoted by an empty bcp and an empty pc.
+static inline void set_cpu_time_biased_sample(JfrSampleRequest& request, JavaThread* jt) {
+  if (request._sample_bcp != nullptr) {
+    request._sample_bcp = nullptr;
+  }
+  assert(request._sample_bcp == nullptr, "invariant");
+  request._sample_pc = nullptr;
+}
+
+void JfrSampleRequestBuilder::build_cpu_time_sample_request(JfrSampleRequest& request,
+                                                            void* ucontext,
+                                                            JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  SuspendedThreadTaskContext context(reinterpret_cast<Thread*>(jt), ucontext);
+
+  // Prioritize the ljf, if one exists.
+  request._sample_sp = jt->last_Java_sp();
+  if (request._sample_sp == nullptr || !build_from_ljf(request, context, jt)) {
+    intptr_t* fp;
+    request._sample_pc = os::fetch_frame_from_context(ucontext, reinterpret_cast<intptr_t**>(&request._sample_sp), &fp);
+    assert(sp_in_stack(request, jt), "invariant");
+    if (!build(request, fp, jt)) {
+      set_cpu_time_biased_sample(request, jt);
+    }
+  }
 }

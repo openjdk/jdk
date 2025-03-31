@@ -60,6 +60,7 @@ struct JfrSampleRequest {
   void* _sample_pc;
   void* _sample_bcp;
   JfrTicks _sample_ticks;
+  Tickspan _cpu_time_period;
 
   JfrSampleRequest() :
     _sample_sp(nullptr),
@@ -81,6 +82,9 @@ class JfrSampleRequestBuilder : AllStatic {
   static JfrSampleResult build_java_sample_request(const SuspendedThreadTaskContext& context,
                                                    JfrThreadLocal* tl,
                                                    JavaThread* jt);
+  static void build_cpu_time_sample_request(JfrSampleRequest &request,
+                                            void* ucontext,
+                                            JavaThread* jt);
 };
 
 #endif // SHARE_JFR_PERIODIC_SAMPLING_JFRSAMPLEREQUEST_HPP
