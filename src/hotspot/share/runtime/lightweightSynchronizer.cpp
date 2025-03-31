@@ -39,7 +39,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.hpp"
-#include "runtime/perfData.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/synchronizer.inline.hpp"
@@ -388,9 +387,6 @@ ObjectMonitor* LightweightSynchronizer::get_or_insert_monitor(oop object, JavaTh
   ObjectMonitor* monitor = get_or_insert_monitor_from_table(object, current, &inserted);
 
   if (inserted) {
-    // Hopefully the performance counters are allocated on distinct
-    // cache lines to avoid false sharing on MP systems ...
-    OM_PERFDATA_OP(Inflations, inc());
     log_inflate(current, object, cause);
     if (event.should_commit()) {
       post_monitor_inflate_event(&event, object, cause);
@@ -878,9 +874,6 @@ ObjectMonitor* LightweightSynchronizer::inflate_into_object_header(oop object, O
         // with the ObjectMonitor, it is safe to allow async deflation:
         ObjectSynchronizer::_in_use_list.add(monitor);
 
-        // Hopefully the performance counters are allocated on distinct
-        // cache lines to avoid false sharing on MP systems ...
-        OM_PERFDATA_OP(Inflations, inc());
         log_inflate(current, object, cause);
         if (event.should_commit()) {
           post_monitor_inflate_event(&event, object, cause);
@@ -919,9 +912,6 @@ ObjectMonitor* LightweightSynchronizer::inflate_into_object_header(oop object, O
     // with the ObjectMonitor, it is safe to allow async deflation:
     ObjectSynchronizer::_in_use_list.add(m);
 
-    // Hopefully the performance counters are allocated on distinct
-    // cache lines to avoid false sharing on MP systems ...
-    OM_PERFDATA_OP(Inflations, inc());
     log_inflate(current, object, cause);
     if (event.should_commit()) {
       post_monitor_inflate_event(&event, object, cause);
