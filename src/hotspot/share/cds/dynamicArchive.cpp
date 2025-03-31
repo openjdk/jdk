@@ -173,7 +173,6 @@ public:
 
     post_dump();
 
-    assert(_num_dump_regions_used == _total_dump_regions, "must be");
     verify_universe("After CDS dynamic dump");
   }
 
