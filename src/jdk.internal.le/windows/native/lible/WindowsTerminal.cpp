@@ -29,8 +29,6 @@
 
 #include <stdlib.h>
 #include <Windows.h>
-//#include <wincon.h>
-//#include <winuser.h>
 
 static jclass lastErrorExceptionClass;
 static jmethodID lastErrorExceptionConstructor;

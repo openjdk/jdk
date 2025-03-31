@@ -38,7 +38,11 @@ import jdk.internal.org.jline.utils.WCWidth;
 public class SimpleConsoleReader {
 
     //public, to simplify access from tests:
-    public static char[] doRead(Reader reader, Writer out, boolean password, int firstLineOffset, IntSupplier terminalWidthSupplier) throws IOException {
+    public static char[] doRead(Reader reader,
+                                Writer out,
+                                boolean password,
+                                int firstLineOffset,
+                                IntSupplier terminalWidthSupplier) throws IOException {
         CleanableBuffer result = new CleanableBuffer();
         try {
             doReadImpl(reader, out, password, firstLineOffset, terminalWidthSupplier, result);
@@ -48,7 +52,12 @@ public class SimpleConsoleReader {
         }
     }
 
-    private static void doReadImpl(Reader reader, Writer out, boolean password, int firstLineOffset, IntSupplier terminalWidthSupplier, CleanableBuffer result) throws IOException {
+    private static void doReadImpl(Reader reader,
+                                   Writer out,
+                                   boolean password,
+                                   int firstLineOffset,
+                                   IntSupplier terminalWidthSupplier,
+                                   CleanableBuffer result) throws IOException {
         int caret = 0;
         int r;
         PaintState prevState = new PaintState();
@@ -56,7 +65,8 @@ public class SimpleConsoleReader {
         READ: while (true) {
             //paint:
             if (firstLineOffset != (-1) && !password) {
-                prevState = repaint(out, firstLineOffset, terminalWidthSupplier, result.data, result.length, caret, prevState);
+                prevState = repaint(out, firstLineOffset, terminalWidthSupplier,
+                                    result.data, result.length, caret, prevState);
             }
 
             //read
@@ -141,7 +151,13 @@ public class SimpleConsoleReader {
         out.append("\n\r").flush();
     }
 
-    private static PaintState repaint(Writer out, int firstLineOffset, IntSupplier terminalWidthSupplier, int[] toDisplay, int toDisplayLength, int caret, PaintState prevPaintState) throws IOException {
+    private static PaintState repaint(Writer out,
+                                      int firstLineOffset,
+                                      IntSupplier terminalWidthSupplier,
+                                      int[] toDisplay,
+                                      int toDisplayLength,
+                                      int caret,
+                                      PaintState prevPaintState) throws IOException {
         //for simplicity, repaint the whole input buffer
         //for more efficiency, could compute smaller (ideally minimal) changes,
         //and apply them instead of repainting everything:

@@ -53,7 +53,8 @@ public class JLineConsoleProviderTest {
     }
 
     void testCorrectOutputReadPassword() throws Exception {
-        doRunConsoleTest("testCorrectOutputReadPassword", "inp", "%s" + NL); //see BaseJdkConsoleImpl.readPassword re the NL
+        doRunConsoleTest("testCorrectOutputReadPassword", "inp",
+                         "%s" + NL); //see BaseJdkConsoleImpl.readPassword re the NL
     }
 
     void doRunConsoleTest(String testName,

@@ -169,7 +169,6 @@ module java.base {
         java.management,
         java.rmi,
         jdk.charsets,
-        jdk.internal.le,
         jdk.jartool,
         jdk.jlink,
         jdk.jfr,
@@ -300,8 +299,7 @@ module java.base {
         jdk.net,
         jdk.sctp;
     exports sun.nio.cs to
-        jdk.charsets,
-        jdk.internal.le;
+        jdk.charsets;
     exports sun.nio.fs to
         jdk.net;
     exports sun.reflect.annotation to

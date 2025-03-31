@@ -32,10 +32,9 @@ ifeq ($(call isTargetOs, linux macosx windows), true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBLE, \
       NAME := le, \
       TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
-      OPTIMIZATION := LOW, \
-      JDK_LIBS := java.base:libjava, \
-      LIBS_unix := $(JDKLIB_LIBS) $(LIBCXX), \
-      LIBS_windows := $(JDKLIB_LIBS) user32.lib, \
+      OPTIMIZATION := SIZE, \
+      EXTRA_HEADER_DIRS := java.base:libjava, \
+      LIBS_windows := user32.lib, \
   ))
 
   TARGETS += $(BUILD_LIBLE)
