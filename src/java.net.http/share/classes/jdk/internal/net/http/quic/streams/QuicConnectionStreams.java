@@ -856,6 +856,9 @@ public final class QuicConnectionStreams {
         this.localBidiMaxStreamLimit.tryIncreaseLimitTo(localBidiMaxStreams);
         // set initial parameters on streams
         streams.all().forEach(s -> newInitialPeerParameters(s, params));
+        if (debug.on()) {
+            debug.log("all streams updated (%s)", streams.streams.size());
+        }
     }
 
     /**

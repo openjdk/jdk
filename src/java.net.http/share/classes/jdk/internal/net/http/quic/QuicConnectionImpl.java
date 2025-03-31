@@ -3751,6 +3751,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     .getPreferredStatelessResetToken(val);
             this.peerConnIdManager.handlePreferredAddress(preferredConnId, preferredStatelessResetToken);
         }
+        if (debug.on()) {
+            debug.log("incoming peer parameters handled");
+        }
     }
 
     protected void incomingInitialFrame(final AckFrame frame) throws QuicTransportException {
