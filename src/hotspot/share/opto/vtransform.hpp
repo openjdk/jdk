@@ -312,7 +312,7 @@ public:
     assert(i < _req, "must be a req");
     assert(_in.at(i) == nullptr && n != nullptr, "only set once");
     _in.at_put(i, n);
-    n->add_out_weak(this);
+    n->add_out_strong(this);
   }
 
   void swap_req(uint i, uint j) {

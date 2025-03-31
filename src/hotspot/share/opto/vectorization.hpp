@@ -656,6 +656,7 @@ public:
     const DependencyNode* _dependency_node;
 
     Node* _current;
+    bool _is_current_unknown_aliasing_edge;
 
     // Iterate in node->in(i)
     int _next_pred;
@@ -673,9 +674,15 @@ public:
     NONCOPYABLE(PredsIterator);
     void next();
     bool done() const { return _current == nullptr; }
+
     Node* current() const {
       assert(!done(), "not done yet");
       return _current;
+    }
+
+    bool is_current_unknown_aliasing_edge() const {
+      assert(!done(), "not done yet");
+      return _is_current_unknown_aliasing_edge;
     }
   };
 };

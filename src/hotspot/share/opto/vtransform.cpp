@@ -745,14 +745,26 @@ void VTransformNode::print() const {
     print_node_idx(_in.at(i));
   }
   if ((uint)_in.length() > _req) {
-    tty->print(" |");
-    for (int i = _req; i < _in.length(); i++) {
+    tty->print(" | strong:");
+    for (uint i = _req; i < _in_strong_dep; i++) {
+      print_node_idx(_in.at(i));
+    }
+  }
+  if ((uint)_in.length() > _in_strong_dep) {
+    tty->print(" | weak:");
+    for (uint i = _in_strong_dep; i < (uint)_in.length(); i++) {
       print_node_idx(_in.at(i));
     }
   }
   tty->print(") [");
-  for (int i = 0; i < _out.length(); i++) {
+  for (uint i = 0; i < _out_strong_dep; i++) {
     print_node_idx(_out.at(i));
+  }
+  if ((uint)_out.length() > _out_strong_dep) {
+    tty->print(" | weak:");
+    for (uint i = _out_strong_dep; i < (uint)_out.length(); i++) {
+      print_node_idx(_out.at(i));
+    }
   }
   tty->print("] ");
   print_spec();

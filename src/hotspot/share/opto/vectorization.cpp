@@ -448,14 +448,18 @@ VLoopDependencyGraph::PredsIterator::PredsIterator(const VLoopDependencyGraph& d
 void VLoopDependencyGraph::PredsIterator::next() {
   if (_next_pred < _end_pred) {
     _current = _node->in(_next_pred++);
+    _is_current_unknown_aliasing_edge = false;
   } else if (_next_known_overlap_edge < _end_known_overlap_edge) {
     int pred_bb_idx = _dependency_node->known_overlap_edge(_next_known_overlap_edge++);
     _current = _dependency_graph._body.body().at(pred_bb_idx);
+    _is_current_unknown_aliasing_edge = false;
   } else if (_next_unknown_aliasing_edge < _end_unknown_aliasing_edge) {
     int pred_bb_idx = _dependency_node->unknown_aliasing_edge(_next_unknown_aliasing_edge++);
     _current = _dependency_graph._body.body().at(pred_bb_idx);
+    _is_current_unknown_aliasing_edge = true;
   } else {
     _current = nullptr; // done
+    _is_current_unknown_aliasing_edge = false;
   }
 }
 

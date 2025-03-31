@@ -297,12 +297,14 @@ void SuperWordVTransformBuilder::set_all_req_with_vectors(const Node_List* pack,
   }
 }
 
-void SuperWordVTransformBuilder::add_dependencies_of_node_to_vtnode(Node*n, VTransformNode* vtn, VectorSet& vtn_dependencies) {
-  // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
-  bool with_unknown_aliasing_edges = !_vloop.are_speculative_checks_possible();
+void SuperWordVTransformBuilder::add_dependencies_of_node_to_vtnode(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies) {
+  // If we can speculate (aliasing analysis runtime checks), we can model the unknown aliasing edges
+  // as weak edges. This means that scheduling does not have to respect them, but if they are violated,
+  // then we must add a corresponding aliasing analysis runtime check. If we cannot speculate, then
+  // all dependencies must be strong edges, i.e. scheduling must respect them.
+  bool with_unknown_aliasing_edges_as_weak_dependencies = _vloop.are_speculative_checks_possible();
 
-  // TODO: consider carrying the unknown dependency, and deduce the checks after scheduling, for "backwards" edges!
-  for (VLoopDependencyGraph::PredsIterator preds(_vloop_analyzer.dependency_graph(), n, with_unknown_aliasing_edges); !preds.done(); preds.next()) {
+  for (VLoopDependencyGraph::PredsIterator preds(_vloop_analyzer.dependency_graph(), n, true); !preds.done(); preds.next()) {
     Node* pred = preds.current();
     if (!_vloop.in_bb(pred)) { continue; }
 
@@ -314,7 +316,14 @@ void SuperWordVTransformBuilder::add_dependencies_of_node_to_vtnode(Node*n, VTra
     // Reduction self-cycle?
     if (vtn == dependency && _vloop_analyzer.reductions().is_marked_reduction(n)) { continue; }
 
+    // Add every dependency only once per vtn.
     if (vtn_dependencies.test_set(dependency->_idx)) { continue; }
-    vtn->add_strong_memory_dependency(dependency); // Add every dependency only once per vtn.
+
+    // TODO: verify weak / strong with VPointer of vectors!
+    if (with_unknown_aliasing_edges_as_weak_dependencies && preds.is_current_unknown_aliasing_edge()) {
+      vtn->add_weak_memory_dependency(dependency);
+    } else {
+      vtn->add_strong_memory_dependency(dependency);
+    }
   }
 }
