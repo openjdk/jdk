@@ -493,7 +493,7 @@ static char* chop_extra_memory(size_t size, size_t alignment, char* extra_base, 
 // rather than unmapping and remapping the whole chunk to get requested alignment.
 char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
   size_t extra_size = calculate_aligned_extra_size(size, alignment);
-  char* extra_base = os::reserve_memory(extra_size, exec);
+  char* extra_base = os::reserve_memory(extra_size, mtNone);
   if (extra_base == nullptr) {
     return nullptr;
   }
