@@ -34,6 +34,7 @@
 #include "oops/method.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
+#include "runtime/methodUnloadBlocker.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 
 CompileTask*  CompileTask::_task_free_list = nullptr;
@@ -66,10 +67,8 @@ void CompileTask::free(CompileTask* task) {
   MutexLocker locker(CompileTaskAlloc_lock);
   if (!task->is_free()) {
     assert(!task->lock()->is_locked(), "Should not be locked when freed");
-    task->_method_unload_blocker_strong.release(Universe::vm_global());
-    task->_method_unload_blocker_weak.release(Universe::vm_weak());
-    task->_hot_method_unload_blocker_strong.release(Universe::vm_global());
-    task->_hot_method_unload_blocker_weak.release(Universe::vm_weak());
+    task->_method_unload_blocker.release();
+    task->_hot_method_unload_blocker.release();
     if (task->_failure_reason_on_C_heap && task->_failure_reason != nullptr) {
       os::free((void*) task->_failure_reason);
     }
@@ -80,37 +79,6 @@ void CompileTask::free(CompileTask* task) {
     task->set_next(_task_free_list);
     _task_free_list = task;
   }
-}
-
-oop CompileTask::get_unload_blocker(Method* method) {
-  assert(method != nullptr, "Should be");
-  InstanceKlass* ik = method->method_holder();
-  oop klass_holder = ik->klass_holder();
-  if (klass_holder != nullptr) {
-    // Normal class, return the holder that would block unloading.
-    // This would be either classloader oop for non-hidden classes,
-    // or Java mirror oop for hidden classes.
-    return klass_holder;
-  }
-
-  // Null holder, the relevant class would not be unloaded.
-  return nullptr;
-}
-
-WeakHandle CompileTask::get_unload_blocker_weak(Method* method) {
-  oop obj = get_unload_blocker(method);
-  if (obj != nullptr) {
-    return WeakHandle(Universe::vm_weak(), obj);
-  }
-  return WeakHandle();
-}
-
-OopHandle CompileTask::get_unload_blocker_strong(Method* method) {
-  oop obj = get_unload_blocker(method);
-  if (obj != nullptr) {
-    return OopHandle(Universe::vm_global(), obj);
-  }
-  return OopHandle();
 }
 
 void CompileTask::initialize(int compile_id,
@@ -125,7 +93,7 @@ void CompileTask::initialize(int compile_id,
 
   _compile_id = compile_id;
   _method = method();
-  _method_unload_blocker_weak = get_unload_blocker_weak(_method);
+  _method_unload_blocker = MethodUnloadBlocker(_method);
   _osr_bci = osr_bci;
   _is_blocking = is_blocking;
   JVMCI_ONLY(_has_waiter = CompileBroker::compiler(comp_level)->is_jvmci();)
@@ -159,7 +127,7 @@ void CompileTask::initialize(int compile_id,
       } else {
         _hot_method = hot_method();
         // Only do capture unload blocker if _hot_method is different from _method.
-        _hot_method_unload_blocker_weak = get_unload_blocker_weak(_hot_method);
+        _hot_method_unload_blocker = MethodUnloadBlocker(_hot_method);
       }
     }
   }
@@ -180,25 +148,9 @@ CompileTask* CompileTask::select_for_compilation() {
     return nullptr;
   }
 
-  // Capture method holder by strong handle to avoid unloading during compilation.
-  if (!_method_unload_blocker_weak.is_empty()) {
-    assert(_method_unload_blocker_weak.peek() != nullptr, "Should not be cleared");
-    assert(_method->method_holder()->is_loader_alive(), "Should be alive");
-    assert(_method_unload_blocker_strong.is_empty(), "Should be empty");
-    _method_unload_blocker_strong = get_unload_blocker_strong(_method);
-  }
-
-  // See if hot method holder is still alive. If so, capture it by strong handle.
-  // If not, reset it to nullptr, so downstream logging code does not crash.
-  if (!_hot_method_unload_blocker_weak.is_empty()) {
-    if (_hot_method_unload_blocker_weak.peek() != nullptr) {
-      assert(_hot_method->method_holder()->is_loader_alive(), "Should be alive");
-      assert(_hot_method_unload_blocker_strong.is_empty(), "Should be empty");
-      _hot_method_unload_blocker_strong = get_unload_blocker_strong(_hot_method);
-    } else {
-      _hot_method = nullptr;
-    }
-  }
+  // Block unloading for currently held method holders.
+  _method_unload_blocker.block_unloading();
+  _hot_method_unload_blocker.block_unloading();
 
   return this;
 }
@@ -215,8 +167,7 @@ void CompileTask::mark_on_stack() {
 }
 
 bool CompileTask::is_unloaded() const {
-  // Unloaded if weakly referenced blocker was set, but now had been cleared by GC.
-  return !_method_unload_blocker_weak.is_empty() && _method_unload_blocker_weak.peek() == nullptr;
+  return _method_unload_blocker.is_unloaded();
 }
 
 // RedefineClasses support

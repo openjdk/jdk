@@ -31,6 +31,7 @@
 #include "memory/allocation.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/weakHandle.hpp"
+#include "runtime/methodUnloadBlocker.hpp"
 #include "utilities/xmlstream.hpp"
 
 class DirectiveSet;
@@ -86,8 +87,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   Monitor*             _lock;
   int                  _compile_id;
   Method*              _method;
-  WeakHandle           _method_unload_blocker_weak; // oop that can be used to block unloading method
-  OopHandle            _method_unload_blocker_strong; // oop that *is* used to block unloading method
+  MethodUnloadBlocker  _method_unload_blocker;
   int                  _osr_bci;
   bool                 _is_complete;
   bool                 _is_success;
@@ -110,8 +110,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   jlong                _time_queued;  // time when task was enqueued
   jlong                _time_started; // time when compilation started
   Method*              _hot_method;   // which method actually triggered this task
-  WeakHandle           _hot_method_unload_blocker_weak; // oop that can be used to block unloading hot method
-  OopHandle            _hot_method_unload_blocker_strong; // oop that *is* used to block unloading hot method
+  MethodUnloadBlocker  _hot_method_unload_blocker;
   int                  _hot_count;    // information about its invocation counter
   CompileReason        _compile_reason;      // more info about the task
   const char*          _failure_reason;
