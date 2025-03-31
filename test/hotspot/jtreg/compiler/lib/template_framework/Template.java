@@ -29,7 +29,7 @@ import java.util.function.Supplier;
 import java.util.List;
 
 /**
- * {@link Template}s are used to generate code, based on {@link Token} which are rendered to {@link String}.
+ * {@link Template}s are used to generate code, based on {@link Token}s which are rendered to {@link String}s.
  *
  * <p>
  * A {@link Template} can have zero or more arguments, and for each number of arguments there is an implementation
