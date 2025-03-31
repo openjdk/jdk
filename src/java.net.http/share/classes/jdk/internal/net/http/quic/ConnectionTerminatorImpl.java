@@ -447,7 +447,7 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
         // in theory we don't need this assert, but given the knowledge that this method
         // should only be invoked by a closing QuicEndpoint, we have this assert here to
         // prevent misuse of this makeConnectionCloseDatagram() method
-        assert connection.endpoint.isClosed() : "QUIC endpoint isn't closed";
+        assert connection.endpoint().isClosed() : "QUIC endpoint isn't closed";
         final ConnectionCloseFrame connCloseFrame = new ConnectionCloseFrame(NO_ERROR.code(),
                 QuicFrame.CONNECTION_CLOSE, null);
         final KeySpace keySpace = connection.getTLSEngine().getCurrentSendKeySpace();

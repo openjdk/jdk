@@ -331,7 +331,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         this.pathMTU = Math.clamp(DEFAULT_DATAGRAM_SIZE, SMALLEST_MAXIMUM_DATAGRAM_SIZE, maxConnectionMTU);
         this.cachedToString = String.format("QuicConnection(%s:%s)",
                 Arrays.toString(sslParameters.getApplicationProtocols()), peerAddress);
-        this.connectionId = this.quicInstance.idFactory().newConnectionId();
+        this.connectionId = this.endpoint.idFactory().newConnectionId();
         this.logTag = logTag;
         this.dbgTag = dbgTag(quicInstance, logTag);
         this.congestionController = new QuicRenoCongestionController(dbgTag);
@@ -1444,7 +1444,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
     protected QuicPacketEncoder encoder() { return encoder;}
     protected QuicPacketDecoder decoder() { return decoder; }
-    protected QuicEndpoint endpoint() { return endpoint; }
+    public QuicEndpoint endpoint() { return endpoint; }
     protected final StateHandle stateHandle() { return stateHandle; }
     protected CodingContext codingContext() {
         return codingContext;

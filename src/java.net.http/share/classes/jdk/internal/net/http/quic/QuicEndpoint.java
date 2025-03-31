@@ -254,8 +254,13 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     // use a simple ConcurrentHashMap.
     // the key in this map is a local connection id to which packets will be destined from the
     // peer.
+    // This map must not share the idFactory with other maps,
+    // see RFC 9000 section 21.11. Stateless Reset Oracle
     private final ConcurrentMap<QuicConnectionId, QuicPacketReceiver> connections =
             new ConcurrentHashMap<>();
+
+    // a factory of local connection IDs.
+    private final QuicConnectionIdFactory idFactory;
 
     // Key used to encrypt tokens before storing in {@link #peerIssuedResetTokens}
     private final Key tokenEncryptionKey;
@@ -271,6 +276,10 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
 
     private final AtomicInteger buffered = new AtomicInteger();
     volatile boolean readingStalled;
+
+    public QuicConnectionIdFactory idFactory() {
+        return idFactory;
+    }
 
     public int buffer(int bytes) {
         return buffered.addAndGet(bytes);
@@ -320,6 +329,9 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("AES key generator not available", e);
         }
+        idFactory = isServer()
+                ? QuicConnectionIdFactory.getServer()
+                : QuicConnectionIdFactory.getClient();
     }
 
     public String name() {
@@ -871,7 +883,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             debug.log("headers(%s), connectionId(%d), datagram(%d)",
                     headersType, cidlen, buffer.remaining());
         }
-        QuicPacketReceiver connection = findQuicConnectionFor(source, cidbytes);
+        QuicPacketReceiver connection = findQuicConnectionFor(source, cidbytes, headersType == HeadersType.LONG);
         // check stateless reset
         if (connection == null) {
             if (headersType == HeadersType.SHORT) {
@@ -883,7 +895,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                     return new StatelessReset(connection, source, copyOnHeap(buffer));
                 } else if (buffer.remaining() >= 44) {
                     // check if we should send a stateless reset
-                    final ByteBuffer reset = quicInstance.idFactory().statelessReset(cidbytes);
+                    final ByteBuffer reset = idFactory.statelessReset(cidbytes);
                     if (reset != null) {
                         // will send stateless reset later from the read loop
                         return new SendStatelessReset(source, reset);
@@ -1005,7 +1017,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     }
 
     private ByteBuffer peekConnectionBytes(HeadersType headersType, ByteBuffer payload) {
-        var cidlen = quicInstance.idFactory().connectionIdLength();
+        var cidlen = idFactory.connectionIdLength();
         return switch (headersType) {
             case LONG -> QuicPacket.peekLongConnectionId(payload);
             case SHORT -> QuicPacket.peekShortConnectionId(payload, cidlen);
@@ -1174,7 +1186,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             // a previous long packet in this thread, so we need to
             // check the connection map again here.
             var idbytes = peekConnectionBytes(headersType, buffer);
-            var connection = findQuicConnectionFor(address, idbytes);
+            var connection = findQuicConnectionFor(address, idbytes, true);
             if (connection != null) {
                 // a matching connection was found, this packet is no longer
                 // unmatched
@@ -1211,14 +1223,19 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     //  a throw away QuicConnectionId that wrap our mutable idbytes.
     //  This is OK since the classes that may see these bytes are all internal
     //  and won't mutate them.
-    QuicPacketReceiver findQuicConnectionFor(SocketAddress peerAddress, ByteBuffer idbytes) {
+    QuicPacketReceiver findQuicConnectionFor(SocketAddress peerAddress, ByteBuffer idbytes, boolean longHeaders) {
         if (idbytes == null) return null;
-        var cid = quicInstance.unsafeConnectionIdFor(idbytes);
+        var cid = idFactory.unsafeConnectionIdFor(idbytes);
         if (cid == null) {
-            if (debug.on()) {
-                debug.log("No connection match for: %s", Utils.asHexString(idbytes));
+            if (!longHeaders || isClient()) {
+                if (debug.on()) {
+                    debug.log("No connection match for: %s", Utils.asHexString(idbytes));
+                }
+                return null;
             }
-            return null;
+            // this is a long headers packet and we're the server;
+            // the client might still be using the original connection ID
+            cid = new PeerConnectionId(idbytes, null);
         }
         if (debug.on()) {
             debug.log("Looking up QuicConnection for: %s", cid);

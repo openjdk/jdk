@@ -379,7 +379,7 @@ public final class QuicServerConnection extends QuicConnectionImpl {
         }
         if (!params.isPresent(stateless_reset_token)) {
             params.setParameter(stateless_reset_token,
-                    server.idFactory().statelessTokenFor(localConnectionId()));
+                    endpoint.idFactory().statelessTokenFor(localConnectionId()));
         }
         if (retryData != null && !params.isPresent(retry_source_connection_id)) {
             // include the connection id that was directed by this server's RETRY packet

@@ -68,12 +68,12 @@ final class LocalConnIdManager {
     }
 
     private QuicConnectionId newConnectionId() {
-        return connection.quicInstance().idFactory().newConnectionId();
+        return connection.endpoint().idFactory().newConnectionId();
 
     }
 
     private byte[] statelessTokenFor(QuicConnectionId cid) {
-        return connection.quicInstance().idFactory().statelessTokenFor(cid);
+        return connection.endpoint().idFactory().statelessTokenFor(cid);
     }
 
     void handleRetireConnectionIdFrame(final QuicConnectionId incomingPacketDestConnId,
@@ -124,7 +124,7 @@ final class LocalConnIdManager {
         if (localConnectionIds.size() >= 2) {
             return null;
         }
-        int cidlen = connection.quicInstance().idFactory().connectionIdLength();
+        int cidlen = connection.endpoint().idFactory().connectionIdLength();
         if (cidlen == 0) {
             return null;
         }

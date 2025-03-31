@@ -270,7 +270,7 @@ final class PeerConnIdManager {
             this.peerConnectionIds.put(0L, new PeerConnectionId(handshakeConnId.asReadOnlyBuffer(),
                     statelessResetToken));
             // register with the endpoint
-            connection.endpoint.associateStatelessResetToken(statelessResetToken, connection);
+            connection.endpoint().associateStatelessResetToken(statelessResetToken, connection);
         } finally {
             lock.unlock();
         }
