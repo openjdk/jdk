@@ -1508,6 +1508,11 @@ class ImmutableCollections {
             @Override public int                       size() { return delegateEntrySet.size(); }
             @Override public int                       hashCode() { return StableMap.this.hashCode(); }
 
+            @Override
+            public String toString() {
+                return StableUtil.renderMappings(this, "StableSet", delegateEntrySet);
+            }
+
             @jdk.internal.ValueBased
             final class LazyMapIterator implements Iterator<Map.Entry<K, V>> {
 

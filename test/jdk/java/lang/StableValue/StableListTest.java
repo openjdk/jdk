@@ -224,6 +224,26 @@ final class StableListTest {
     }
 
     @Test
+    void subList2() {
+        var lazy = newList();
+        var lazySubList = lazy.subList(1, SIZE);
+        lazySubList.get(0);
+        var eq = newList();
+        eq.get(1);
+        assertEquals(eq.toString(), lazy.toString());
+    }
+
+    @Test
+    void subListToString() {
+        var lazy = newList();
+        var lazySubList = lazy.subList(1, SIZE);
+        var regularList = newRegularList();
+        var regularSubList = regularList.subList(1, SIZE);
+        // There is no requirement that the lazy sub list's toString method should be lazy
+        assertEquals(regularSubList.toString(), lazySubList.toString());
+    }
+
+    @Test
     void recursiveCall() {
         AtomicReference<IntFunction<Integer>> ref = new AtomicReference<>();
         var lazy = StableValue.list(SIZE, i -> ref.get().apply(i));

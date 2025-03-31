@@ -168,6 +168,46 @@ final class StableMapTest {
     }
 
     @Test
+    void entrySetToString() {
+        var map = newMap();
+        var entrySet = map.entrySet();
+        for (var key : KEYS) {
+            assertTrue(entrySet.toString().contains(key + "=.unset"));
+        }
+        map.get(KEY);
+        for (var key : KEYS) {
+            if (key.equals(KEY)) {
+                continue;
+            }
+            assertTrue(entrySet.toString().contains(key + "=.unset"));
+        }
+        assertTrue(entrySet.toString().contains(KEY + "=" + KEY));
+    }
+
+    @Test
+    void values() {
+        var map = newMap();
+        var values = map.values();
+        // Look at one of the elements
+        var val = values.stream().iterator().next();
+        for (var key : KEYS) {
+            if (key.equals(val)) {
+                assertTrue(map.toString().contains(key + "=" + key));
+            } else {
+                assertTrue(map.toString().contains(key + "=.unset"));
+            }
+        }
+
+        // Mod ops
+        assertThrows(UnsupportedOperationException.class, () -> values.remove(KEY));
+        assertThrows(UnsupportedOperationException.class, () -> values.add(KEY));
+        assertThrows(UnsupportedOperationException.class, values::clear);
+        assertThrows(UnsupportedOperationException.class, () -> values.addAll(Set.of(1)));
+        assertThrows(UnsupportedOperationException.class, () -> values.removeIf(i -> true));
+        assertThrows(UnsupportedOperationException.class, () -> values.retainAll(Set.of(KEY)));
+    }
+
+    @Test
     void iteratorNext() {
         Set<Integer> encountered = new HashSet<>();
         var iterator = newMap().entrySet().iterator();
