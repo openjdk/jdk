@@ -729,7 +729,7 @@ bool Compile::push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, con
 
 
 //------------------------------Ideal------------------------------------------
-Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* ConvI2LNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
     Node* progress = TypeNode::Ideal(phase, can_reshape);
     if (progress != nullptr) {
