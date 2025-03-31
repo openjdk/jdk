@@ -1555,6 +1555,9 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
                 x->direct_compare(), patching_info, x->profiled_method(), x->profiled_bci());
 }
 
+void LIRGenerator::do_IncProfileCtr(ProfileInvoke* x) {
+}
+
 // Intrinsic for Class::isInstance
 address LIRGenerator::isInstance_entry() {
   return Runtime1::entry_for(C1StubId::is_instance_of_id);
@@ -1610,6 +1613,10 @@ void LIRGenerator::do_If(If* x) {
   __ cmp(lir_cond(cond), left, right);
   // Generate branch profiling. Profiling code doesn't kill flags.
   profile_branch(x, cond);
+  // If we're subsampling counter updates, then profiling code kills flags
+  if (ProfileCaptureRatio != 1) {
+    __ cmp(lir_cond(cond), left, right);
+  }
   move_to_phi(x->state());
   if (x->x()->type()->is_float_kind()) {
     __ branch(lir_cond(cond), x->tsux(), x->usux());
