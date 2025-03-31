@@ -86,9 +86,6 @@ else ifeq ($(DEBUG_LEVEL), slowdebug)
   JVM_CFLAGS_DEBUGLEVEL := -DASSERT -D_NMT_NOINLINE_
 endif
 
-# Hotspot currently supports only C++. To prevent compilation conflicts,
-# it is advised not to incorporate EXTRA_CFLAGS into JVM_CFLAGS.
-# Note that EXTRA_CXXFLAGS has already been addressed in the early stages.
 JVM_CFLAGS += \
     $(JVM_CFLAGS_DEBUGLEVEL) \
     $(JVM_CFLAGS_TARGET_DEFINES) \
