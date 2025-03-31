@@ -22,33 +22,34 @@
  *
  */
 
- package compiler.integerArithmetic;
+package compiler.integerArithmetic;
 
- import compiler.lib.ir_framework.*;
- import jdk.test.lib.Asserts;
+import compiler.lib.ir_framework.*;
+import java.util.Random;
+import jdk.test.lib.Utils;
+import jdk.test.lib.Asserts;
 
- /*
-  * @test
-  * @bug 8352893
-  * @summary Test that an or with all bits set is folded to all bits (x | -1 == -1).
-  * @library / /test/lib
-  * @run driver compiler.integerArithmetic.TestOrSaturate
-  */
+/*
+ * @test
+ * @bug 8352893
+ * @summary Test that an or with all bits set is folded to all bits (x | -1 == -1).
+ * @key randomness
+ * @library / /test/lib
+ * @run driver compiler.integerArithmetic.TestOrSaturate
+ */
 
 public class TestOrSaturate {
     public static void main(String[] args) {
         TestFramework.run();
     }
 
-    private final static int WARMUP = 10_000;
+    private static final Random random = Utils.getRandomInstance();
 
     @Run(test = {"testL", "testI", "testDelayed"})
     public static void check() {
-        for (int i = 0; i < WARMUP; i++) {
-            Asserts.assertEQ(-1L, testL(i));
-            Asserts.assertEQ(-1, testI(i));
-            Asserts.assertEQ(-1, testDelayed(i));
-        }
+        Asserts.assertEQ(-1L, testL(random.nextLong()));
+        Asserts.assertEQ(-1, testI(random.nextInt()));
+        Asserts.assertEQ(-1, testDelayed(random.nextInt()));
     }
 
     @Test
