@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,10 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
-import jdk.test.whitebox.WhiteBox;
 import jtreg.SkippedException;
 
 public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
-    static int relocationMode = -1;
     public static void main(String... args) throws Exception {
-        WhiteBox wb = WhiteBox.getWhiteBox();
-        relocationMode = wb.getArchiveRelocationMode();
         try {
             testOuter();
         } catch (SkippedException s) {
@@ -84,8 +80,9 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
         String appJar = ClassFileInstaller.getJarPath("hello.jar");
         String mainClass = "Hello";
         String maybeRelocation = "-XX:ArchiveRelocationMode=0";
-        String dumpTopRelocArg  = dump_top_reloc  ? "-showversion" : maybeRelocation;
-        String runRelocArg      = run_reloc       ? "-showversion" : maybeRelocation;
+        String alwaysRelocation = "-XX:ArchiveRelocationMode=1";
+        String dumpTopRelocArg  = dump_top_reloc  ? alwaysRelocation : maybeRelocation;
+        String runRelocArg      = run_reloc       ? alwaysRelocation : maybeRelocation;
         String logArg = "-Xlog:cds=debug,cds+reloc=debug";
 
         String baseArchiveName = getNewArchiveName("base");
@@ -108,7 +105,7 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
               logArg,
               "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
-                    if (dump_top_reloc && relocationMode != 0 /* ArchiveRelocationMode could be set via -javaoptions */) {
+                    if (dump_top_reloc) {
                         output.shouldContain(runtimeMsg);
                     } else {
                         output.shouldContain(relocationModeMsg);
@@ -121,7 +118,7 @@ public class DynamicArchiveRelocationTest extends DynamicArchiveTestBase {
              logArg,
             "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
-                    if (run_reloc && relocationMode != 0 /* ArchiveRelocationMode could be set via -javaoptions */) {
+                    if (run_reloc) {
                         output.shouldContain(runtimeMsg);
                     } else {
                         output.shouldContain(relocationModeMsg);

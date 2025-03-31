@@ -2131,15 +2131,6 @@ WB_ENTRY(jint, WB_GetCDSCurrentVersion(JNIEnv* env, jobject wb))
 #endif
 WB_END
 
-WB_ENTRY(jint, WB_GetArchiveRelocationMode(JNIEnv* env, jobject wb))
-#if INCLUDE_CDS
-  return (jint)ArchiveRelocationMode;
-#else
-  ShouldNotReachHere();
-  return (jint)-1;
-#endif
-WB_END
-
 WB_ENTRY(jboolean, WB_CDSMemoryMappingFailed(JNIEnv* env, jobject wb))
   return FileMapInfo::memory_mapping_failed();
 WB_END
@@ -2932,7 +2923,6 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_GetDefaultArchivePath},
   {CC"getCDSGenericHeaderMinVersion",     CC"()I",    (void*)&WB_GetCDSGenericHeaderMinVersion},
   {CC"getCurrentCDSVersion",              CC"()I",    (void*)&WB_GetCDSCurrentVersion},
-  {CC"getArchiveRelocationMode",          CC"()I",    (void*)&WB_GetArchiveRelocationMode},
   {CC"isSharingEnabled",   CC"()Z",                   (void*)&WB_IsSharingEnabled},
   {CC"isSharedInternedString", CC"(Ljava/lang/String;)Z", (void*)&WB_IsSharedInternedString },
   {CC"isSharedClass",      CC"(Ljava/lang/Class;)Z",  (void*)&WB_IsSharedClass },

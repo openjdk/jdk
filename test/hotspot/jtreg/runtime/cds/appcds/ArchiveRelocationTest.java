@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,22 +30,16 @@
  * @bug 8231610
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build Hello
- * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar ArchiveRelocationTest
+ * @run driver ArchiveRelocationTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
-import jdk.test.whitebox.WhiteBox;
 import jtreg.SkippedException;
 
 public class ArchiveRelocationTest {
-    static int relocationMode = -1;
     public static void main(String... args) throws Exception {
-        WhiteBox wb = WhiteBox.getWhiteBox();
-        relocationMode = wb.getArchiveRelocationMode();
         try {
             test(false);
             test(true);
@@ -68,7 +62,8 @@ public class ArchiveRelocationTest {
         String appJar = ClassFileInstaller.getJarPath("hello.jar");
         String mainClass = "Hello";
         String maybeRelocation = "-XX:ArchiveRelocationMode=0";
-        String runRelocArg  = run_reloc  ? "-showversion" : maybeRelocation;
+        String alwaysRelocation = "-XX:ArchiveRelocationMode=1";
+        String runRelocArg  = run_reloc  ? alwaysRelocation : maybeRelocation;
         String logArg = "-Xlog:cds=debug,cds+reloc=debug,cds+heap";
         String unlockArg = "-XX:+UnlockDiagnosticVMOptions";
         String nmtArg = "-XX:NativeMemoryTracking=detail";
@@ -80,8 +75,9 @@ public class ArchiveRelocationTest {
 
         TestCommon.run("-cp", appJar, unlockArg, runRelocArg, logArg,  mainClass)
             .assertNormalExit(output -> {
-                    if (run_reloc && relocationMode != 0 /* ArchiveRelocationMode could be set via -javaoptions */) {
-                        output.shouldContain("Try to map archive(s) at an alternative address");
+                    if (run_reloc) {
+                        output.shouldContain("ArchiveRelocationMode == 1: always map archive(s) at an alternative address")
+                              .shouldContain("Try to map archive(s) at an alternative address");
                     } else {
                         output.shouldContain("ArchiveRelocationMode: 0");
                     }
