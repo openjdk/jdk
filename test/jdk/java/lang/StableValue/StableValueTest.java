@@ -184,7 +184,7 @@ final class StableValueTest {
     void toStringCircular() {
         StableValue<StableValue<?>> stable = StableValue.of();
         stable.trySet(stable);
-        String toString = stable.toString();
+        String toString = assertDoesNotThrow(stable::toString);
         assertEquals("(this StableValue)", toString);
         assertDoesNotThrow(stable::hashCode);
         assertDoesNotThrow((() -> stable.equals(stable)));
