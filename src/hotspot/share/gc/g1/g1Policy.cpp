@@ -660,13 +660,6 @@ void G1Policy::record_concurrent_refinement_stats(size_t pending_cards,
 
 bool G1Policy::should_retain_evac_failed_region(uint index) const {
   size_t live_bytes = _g1h->region_at(index)->live_bytes();
-
-#ifdef ASSERT
-  G1HeapRegion* r = _g1h->region_at(index);
-  assert(live_bytes != 0,
-         "live bytes not set for %u used %zu garbage %zu cm-live %zu pinned %d",
-         index, r->used(), r->garbage_bytes(), live_bytes, r->has_pinned_objects());
-#endif
   size_t threshold = G1RetainRegionLiveThresholdPercent * G1HeapRegion::GrainBytes / 100;
   return live_bytes < threshold;
 }
@@ -1105,6 +1098,15 @@ size_t G1Policy::predict_bytes_to_copy(G1HeapRegion* hr) const {
     bytes_to_copy = (size_t) (hr->used() * hr->surv_rate_prediction(_predictor));
   }
   return bytes_to_copy;
+}
+
+double G1Policy::predict_gc_efficiency(G1HeapRegion* hr) {
+
+  double total_based_on_incoming_refs_ms = predict_merge_scan_time(hr->incoming_refs()) + // We use the number of incoming references as an estimate for remset cards.
+                                           predict_non_young_other_time_ms(1) +
+                                           predict_region_copy_time_ms(hr, false /* for_young_only_phase */);
+
+  return hr->reclaimable_bytes() / total_based_on_incoming_refs_ms;
 }
 
 double G1Policy::predict_young_region_other_time_ms(uint count) const {

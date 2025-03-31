@@ -569,7 +569,6 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, ciInstance* ex_
     // for its backtrace.
     // Fixing this remaining case of 4292742 requires some flavor of
     // escape analysis.  Leave that for the future.
-    if (failing()) { stop(); return; }  // exception allocation might fail
     if (ex_obj != nullptr) {
       if (env()->jvmti_can_post_on_exceptions()) {
         // check if we must post exception events, take uncommon trap if so
@@ -637,6 +636,7 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, ciInstance* ex_
 }
 
 ciInstance* GraphKit::guess_exception_from_deopt_reason(Deoptimization::DeoptReason reason) const {
+  // Preconstructed exception objects, to use when we don't need the backtrace.
   switch (reason) {
   case Deoptimization::Reason_null_check:
     return env()->NullPointerException_instance();
@@ -2366,51 +2366,6 @@ void GraphKit::record_profiled_return_for_speculation() {
   }
 }
 
-void GraphKit::round_double_arguments(ciMethod* dest_method) {
-  if (Matcher::strict_fp_requires_explicit_rounding) {
-    // (Note:  TypeFunc::make has a cache that makes this fast.)
-    const TypeFunc* tf    = TypeFunc::make(dest_method);
-    int             nargs = tf->domain()->cnt() - TypeFunc::Parms;
-    for (int j = 0; j < nargs; j++) {
-      const Type *targ = tf->domain()->field_at(j + TypeFunc::Parms);
-      if (targ->basic_type() == T_DOUBLE) {
-        // If any parameters are doubles, they must be rounded before
-        // the call, dprecision_rounding does gvn.transform
-        Node *arg = argument(j);
-        arg = dprecision_rounding(arg);
-        set_argument(j, arg);
-      }
-    }
-  }
-}
-
-// rounding for strict float precision conformance
-Node* GraphKit::precision_rounding(Node* n) {
-  if (Matcher::strict_fp_requires_explicit_rounding) {
-#ifdef IA32
-    if (UseSSE == 0) {
-      return _gvn.transform(new RoundFloatNode(nullptr, n));
-    }
-#else
-    Unimplemented();
-#endif // IA32
-  }
-  return n;
-}
-
-// rounding for strict double precision conformance
-Node* GraphKit::dprecision_rounding(Node *n) {
-  if (Matcher::strict_fp_requires_explicit_rounding) {
-#ifdef IA32
-    if (UseSSE < 2) {
-      return _gvn.transform(new RoundDoubleNode(nullptr, n));
-    }
-#else
-    Unimplemented();
-#endif // IA32
-  }
-  return n;
-}
 
 //=============================================================================
 // Generate a fast path/slow path idiom.  Graph looks like:
