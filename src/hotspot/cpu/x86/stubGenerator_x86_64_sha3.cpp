@@ -38,6 +38,8 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
+#define xmm(i) as_XMMRegister(i)
+
 // Constants
 ATTRIBUTE_ALIGNED(64) static const uint64_t round_consts_arr[24] = {
       0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
@@ -149,28 +151,14 @@ static address generate_sha3_implCompress(StubGenStubId stub_id,
   __ kshiftrwl(k1, k5, 4);
 
   // load the state
-  __ evmovdquq(xmm0, k5, Address(state, 0), false, Assembler::AVX_512bit);
-  __ evmovdquq(xmm1, k5, Address(state, 40), false, Assembler::AVX_512bit);
-  __ evmovdquq(xmm2, k5, Address(state, 80), false, Assembler::AVX_512bit);
-  __ evmovdquq(xmm3, k5, Address(state, 120), false, Assembler::AVX_512bit);
-  __ evmovdquq(xmm4, k5, Address(state, 160), false, Assembler::AVX_512bit);
+  for (int i = 0; i < 5; i++) {
+    __ evmovdquq(xmm(i), k5, Address(state, i * 40), false, Assembler::AVX_512bit);
+  }
 
   // load the permutation and rotation constants
-  __ evmovdquq(xmm17, Address(permsAndRots, 0), Assembler::AVX_512bit);
-  __ evmovdquq(xmm18, Address(permsAndRots, 64), Assembler::AVX_512bit);
-  __ evmovdquq(xmm19, Address(permsAndRots, 128), Assembler::AVX_512bit);
-  __ evmovdquq(xmm20, Address(permsAndRots, 192), Assembler::AVX_512bit);
-  __ evmovdquq(xmm21, Address(permsAndRots, 256), Assembler::AVX_512bit);
-  __ evmovdquq(xmm22, Address(permsAndRots, 320), Assembler::AVX_512bit);
-  __ evmovdquq(xmm23, Address(permsAndRots, 384), Assembler::AVX_512bit);
-  __ evmovdquq(xmm24, Address(permsAndRots, 448), Assembler::AVX_512bit);
-  __ evmovdquq(xmm25, Address(permsAndRots, 512), Assembler::AVX_512bit);
-  __ evmovdquq(xmm26, Address(permsAndRots, 576), Assembler::AVX_512bit);
-  __ evmovdquq(xmm27, Address(permsAndRots, 640), Assembler::AVX_512bit);
-  __ evmovdquq(xmm28, Address(permsAndRots, 704), Assembler::AVX_512bit);
-  __ evmovdquq(xmm29, Address(permsAndRots, 768), Assembler::AVX_512bit);
-  __ evmovdquq(xmm30, Address(permsAndRots, 832), Assembler::AVX_512bit);
-  __ evmovdquq(xmm31, Address(permsAndRots, 896), Assembler::AVX_512bit);
+  for (int i = 0; i < 15; i++) {
+    __ evmovdquq(xmm(i + 17), Address(permsAndRots, i * 64), Assembler::AVX_512bit);
+  }
 
   __ align(OptoLoopAlignment);
   __ BIND(sha3_loop);
@@ -317,11 +305,9 @@ static address generate_sha3_implCompress(StubGenStubId stub_id,
   }
 
   // store the state
-  __ evmovdquq(Address(state, 0), k5, xmm0, true, Assembler::AVX_512bit);
-  __ evmovdquq(Address(state, 40), k5, xmm1, true, Assembler::AVX_512bit);
-  __ evmovdquq(Address(state, 80), k5, xmm2, true, Assembler::AVX_512bit);
-  __ evmovdquq(Address(state, 120), k5, xmm3, true, Assembler::AVX_512bit);
-  __ evmovdquq(Address(state, 160), k5, xmm4, true, Assembler::AVX_512bit);
+  for (int i = 0; i < 5; i++) {
+    __ evmovdquq(Address(state, i * 40), k5, xmm(i), true, Assembler::AVX_512bit);
+  }
 
   __ pop(r14);
   __ pop(r13);
@@ -373,34 +359,18 @@ static address generate_double_keccak(StubGenerator *stubgen, MacroAssembler *_m
   __ kmovbl(k5, rax);
 
   // load the states
-  __ evmovdquq(xmm0, k5, Address(state0, 0), false, Assembler::AVX_512bit);
-  __ evmovdquq(xmm1, k5, Address(state0, 40), false, Assembler::AVX_512bit);
-  __ evmovdquq(xmm2, k5, Address(state0, 80), false, Assembler::AVX_512bit);
-  __ evmovdquq(xmm3, k5, Address(state0, 120), false, Assembler::AVX_512bit);
-  __ evmovdquq(xmm4, k5, Address(state0, 160), false, Assembler::AVX_512bit);
-
-  __ evmovdquq(xmm10, k5, Address(state1, 0), false, Assembler::AVX_512bit);
-  __ evmovdquq(xmm11, k5, Address(state1, 40), false, Assembler::AVX_512bit);
-  __ evmovdquq(xmm12, k5, Address(state1, 80), false, Assembler::AVX_512bit);
-  __ evmovdquq(xmm13, k5, Address(state1, 120), false, Assembler::AVX_512bit);
-  __ evmovdquq(xmm14, k5, Address(state1, 160), false, Assembler::AVX_512bit);
+  for (int i = 0; i < 5; i++) {
+    __ evmovdquq(xmm(i), k5, Address(state0, i * 40), false, Assembler::AVX_512bit);
+  }
+  for (int i = 0; i < 5; i++) {
+    __ evmovdquq(xmm(10 + i), k5, Address(state1, i * 40), false, Assembler::AVX_512bit);
+  }
 
   // load the permutation and rotation constants
-  __ evmovdquq(xmm17, Address(permsAndRots, 0), Assembler::AVX_512bit);
-  __ evmovdquq(xmm18, Address(permsAndRots, 64), Assembler::AVX_512bit);
-  __ evmovdquq(xmm19, Address(permsAndRots, 128), Assembler::AVX_512bit);
-  __ evmovdquq(xmm20, Address(permsAndRots, 192), Assembler::AVX_512bit);
-  __ evmovdquq(xmm21, Address(permsAndRots, 256), Assembler::AVX_512bit);
-  __ evmovdquq(xmm22, Address(permsAndRots, 320), Assembler::AVX_512bit);
-  __ evmovdquq(xmm23, Address(permsAndRots, 384), Assembler::AVX_512bit);
-  __ evmovdquq(xmm24, Address(permsAndRots, 448), Assembler::AVX_512bit);
-  __ evmovdquq(xmm25, Address(permsAndRots, 512), Assembler::AVX_512bit);
-  __ evmovdquq(xmm26, Address(permsAndRots, 576), Assembler::AVX_512bit);
-  __ evmovdquq(xmm27, Address(permsAndRots, 640), Assembler::AVX_512bit);
-  __ evmovdquq(xmm28, Address(permsAndRots, 704), Assembler::AVX_512bit);
-  __ evmovdquq(xmm29, Address(permsAndRots, 768), Assembler::AVX_512bit);
-  __ evmovdquq(xmm30, Address(permsAndRots, 832), Assembler::AVX_512bit);
-  __ evmovdquq(xmm31, Address(permsAndRots, 896), Assembler::AVX_512bit);
+
+  for (int i = 0; i < 15; i++) {
+    __ evmovdquq(xmm(17 + i), Address(permsAndRots, i * 64), Assembler::AVX_512bit);
+  }
 
   // there will be 24 keccak rounds
   // The same operations as the ones in generate_sha3_implCompress are
@@ -519,17 +489,12 @@ static address generate_double_keccak(StubGenerator *stubgen, MacroAssembler *_m
   __ jcc(Assembler::notEqual, rounds24_loop);
 
   // store the states
-  __ evmovdquq(Address(state0, 0), k5, xmm0, true, Assembler::AVX_512bit);
-  __ evmovdquq(Address(state0, 40), k5, xmm1, true, Assembler::AVX_512bit);
-  __ evmovdquq(Address(state0, 80), k5, xmm2, true, Assembler::AVX_512bit);
-  __ evmovdquq(Address(state0, 120), k5, xmm3, true, Assembler::AVX_512bit);
-  __ evmovdquq(Address(state0, 160), k5, xmm4, true, Assembler::AVX_512bit);
-
-  __ evmovdquq(Address(state1, 0), k5, xmm10, true, Assembler::AVX_512bit);
-  __ evmovdquq(Address(state1, 40), k5, xmm11, true, Assembler::AVX_512bit);
-  __ evmovdquq(Address(state1, 80), k5, xmm12, true, Assembler::AVX_512bit);
-  __ evmovdquq(Address(state1, 120), k5, xmm13, true, Assembler::AVX_512bit);
-  __ evmovdquq(Address(state1, 160), k5, xmm14, true, Assembler::AVX_512bit);
+  for (int i = 0; i < 5; i++) {
+    __ evmovdquq(Address(state0, i * 40), k5, xmm(i), true, Assembler::AVX_512bit);
+  }
+  for (int i = 0; i < 5; i++) {
+    __ evmovdquq(Address(state1, i * 40), k5, xmm(10 + i), true, Assembler::AVX_512bit);
+  }
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
