@@ -246,14 +246,8 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             SequentialScheduler.lockingScheduler(this::writeLoop);
 
     // A ConcurrentMap to store registered connections.
-    // This may not be the best collection type to use.
-    // Another possibility would be to create tree where
-    // the id bytes would be used to locate the connection id.
-    // We would however have to provide a multi-thread safe version
-    // of that tree which is a more complex task. For now, let's
-    // use a simple ConcurrentHashMap.
-    // the key in this map is a local connection id to which packets will be destined from the
-    // peer.
+    // The connection IDs might come from external sources. They implement Comparable
+    // to mitigate collision attacks.
     // This map must not share the idFactory with other maps,
     // see RFC 9000 section 21.11. Stateless Reset Oracle
     private final ConcurrentMap<QuicConnectionId, QuicPacketReceiver> connections =

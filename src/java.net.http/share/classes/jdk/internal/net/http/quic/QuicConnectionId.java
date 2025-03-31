@@ -31,6 +31,8 @@ import java.util.HexFormat;
  * Models a Quic Connection id.
  * QuicConnectionId instance are typically created by a Quic client or server.
  */
+// Connection IDs are used as keys in an ID to connection map.
+// They implement Comparable to mitigate the penalty of hash collisions.
 public abstract class QuicConnectionId implements Comparable<QuicConnectionId> {
 
     /**
