@@ -371,9 +371,6 @@ public final class QuicServerConnection extends QuicConnectionImpl {
         if (!params.isPresent(original_destination_connection_id)) {
             params.setParameter(original_destination_connection_id, originalServerConnId.getBytes());
         }
-        if (!params.isPresent(original_destination_connection_id)) {
-            params.setParameter(original_destination_connection_id, originalServerConnId.getBytes());
-        }
         if (!params.isPresent(initial_source_connection_id)) {
             params.setParameter(initial_source_connection_id, localConnectionId().getBytes());
         }
