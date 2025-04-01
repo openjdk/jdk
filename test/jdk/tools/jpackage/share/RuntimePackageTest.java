@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,12 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.RunnablePackageTest.Action;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.LinuxHelper;
@@ -59,7 +61,7 @@ import static jdk.jpackage.test.TKit.assertFalse;
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (jpackage.test.SQETest == null)
- * @compile RuntimePackageTest.java
+ * @compile -Xlint:all -Werror RuntimePackageTest.java
  * @run main/othervm/timeout=1400 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=RuntimePackageTest
  */
@@ -71,7 +73,7 @@ import static jdk.jpackage.test.TKit.assertFalse;
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (jpackage.test.SQETest != null)
- * @compile RuntimePackageTest.java
+ * @compile -Xlint:all -Werror RuntimePackageTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=RuntimePackageTest.test
  */
@@ -83,17 +85,24 @@ public class RuntimePackageTest {
     }
 
     @Test
-    public static void testUsrInstallDir() {
+    @Parameter("/usr")
+    @Parameter("/usr/lib/Java")
+    public static void testUsrInstallDir(String installDir) {
         init(PackageType.LINUX)
         .addInitializer(cmd -> cmd.addArguments("--install-dir", "/usr"))
         .run();
     }
 
     @Test
-    public static void testUsrInstallDir2() {
-        init(PackageType.LINUX)
-        .addInitializer(cmd -> cmd.addArguments("--install-dir", "/usr/lib/Java"))
-        .run();
+    public static void testName() {
+        // Test that jpackage can derive package name from the path to runtime image.
+        init(PackageType.NATIVE)
+        .addInitializer(cmd -> cmd.removeArgumentWithValue("--name"))
+        // Don't attempt to install this package as it may have an odd name derived from
+        // the runtime image path. Say, on Linux for `--runtime-image foo/bar/sed`
+        // command line jpackage will create a package named 'sed' that will conflict
+        // with the default 'sed' package.
+        .run(Action.CREATE_AND_UNPACK);
     }
 
     private static PackageTest init(Set<PackageType> types) {
@@ -157,7 +166,8 @@ public class RuntimePackageTest {
                         "Check the package doesn't deliver [%s] copyright file",
                         copyright));
             }
-        });
+        })
+        .forTypes(types);
     }
 
     private static Set<Path> listFiles(Path root) throws IOException {

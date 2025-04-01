@@ -23,6 +23,7 @@
  */
 
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "classfile/classLoader.hpp"
@@ -54,7 +55,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klassVtable.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
@@ -230,7 +231,7 @@ static void print_method_invocation_histogram() {
 
 static void print_bytecode_count() {
   if (CountBytecodes || TraceBytecodes || StopInterpreterAt) {
-    tty->print_cr("[BytecodeCounter::counter_value = %d]", BytecodeCounter::counter_value());
+    tty->print_cr("[BytecodeCounter::counter_value = %zu]", BytecodeCounter::counter_value());
   }
 }
 
@@ -352,8 +353,8 @@ void print_statistics() {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 
-  if (CompilerOracle::should_print_final_memstat_report()) {
-    CompilationMemoryStatistic::print_all_by_size(tty, false, 0);
+  if (PrintCompilerMemoryStatisticsAtExit) {
+    CompilationMemoryStatistic::print_final_report(tty);
   }
 
   ThreadsSMRSupport::log_statistics();
@@ -440,6 +441,10 @@ void before_exit(JavaThread* thread, bool halt) {
 
 #if INCLUDE_CDS
   ClassListWriter::write_resolved_constants();
+
+  if (CDSConfig::is_dumping_preimage_static_archive()) {
+    MetaspaceShared::preload_and_dump(thread);
+  }
 #endif
 
   // Hang forever on exit if we're reporting an error.
@@ -471,7 +476,6 @@ void before_exit(JavaThread* thread, bool halt) {
   // Print GC/heap related information.
   Log(gc, heap, exit) log;
   if (log.is_info()) {
-    ResourceMark rm;
     LogStream ls_info(log.info());
     Universe::print_on(&ls_info);
     if (log.is_trace()) {

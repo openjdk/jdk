@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.common.NativeImageReinitialize;
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
@@ -182,7 +181,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             throw new JVMCIError("Unknown JvmConstant tag %s", tag);
         }
 
-        @NativeImageReinitialize private static volatile JvmConstants instance;
+        private static volatile JvmConstants instance;
 
         static JvmConstants instance() {
             JvmConstants result = instance;

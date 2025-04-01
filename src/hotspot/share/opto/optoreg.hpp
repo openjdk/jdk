@@ -183,7 +183,6 @@ class OptoReg {
 // and converting that will return OptoReg::Bad losing the identity of the OptoReg.
 
 class OptoRegPair {
-  friend class VMStructs;
 private:
   typedef short Name;
   Name _second;

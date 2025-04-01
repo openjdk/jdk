@@ -23,6 +23,9 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
 ################################################################################
 # This file contains helper functions for Init.gmk.
 ################################################################################
@@ -35,12 +38,6 @@ BUILD_LOG_PIPE := > >($(TEE) -a $(BUILD_LOG)) 2> >($(TEE) -a $(BUILD_LOG) >&2) &
 # Use this for simple echo/printf commands that are never expected to print
 # to stderr.
 BUILD_LOG_PIPE_SIMPLE := | $(TEE) -a $(BUILD_LOG)
-
-ifneq ($(CUSTOM_ROOT), )
-  topdir = $(CUSTOM_ROOT)
-else
-  topdir = $(TOPDIR)
-endif
 
 # Setup the build environment to match the requested specification on
 # level of reproducible builds
@@ -64,7 +61,7 @@ endef
 # FAIL can be set to false to have the return value of compare be ignored.
 define ParseCompareBuild
   ifneq ($$(COMPARE_BUILD), )
-    COMPARE_BUILD_OUTPUTDIR := $(topdir)/build/compare-build/$(CONF_NAME)
+    COMPARE_BUILD_OUTPUTDIR := $(WORKSPACE_ROOT)/build/compare-build/$(CONF_NAME)
     COMPARE_BUILD_FAIL := true
 
     ifneq ($$(findstring :, $$(COMPARE_BUILD)), )
@@ -106,14 +103,14 @@ define ParseCompareBuild
       endif
     endif
     ifneq ($$(COMPARE_BUILD_PATCH), )
-      ifneq ($$(wildcard $$(topdir)/$$(COMPARE_BUILD_PATCH)), )
+      ifneq ($$(wildcard $$(WORKSPACE_ROOT)/$$(COMPARE_BUILD_PATCH)), )
         # Assume relative path, if file exists
-        COMPARE_BUILD_PATCH := $$(wildcard $$(topdir)/$$(COMPARE_BUILD_PATCH))
+        COMPARE_BUILD_PATCH := $$(wildcard $$(WORKSPACE_ROOT)/$$(COMPARE_BUILD_PATCH))
       else ifeq ($$(wildcard $$(COMPARE_BUILD_PATCH)), )
         $$(error Patch file $$(COMPARE_BUILD_PATCH) does not exist)
       endif
       ifneq ($$(COMPARE_BUILD_NODRYRUN), true)
-        PATCH_DRY_RUN := $$(shell cd $$(topdir) && $$(PATCH) --dry-run -p1 < $$(COMPARE_BUILD_PATCH) > /dev/null 2>&1 || $$(ECHO) FAILED)
+        PATCH_DRY_RUN := $$(shell cd $$(WORKSPACE_ROOT) && $$(PATCH) --dry-run -p1 < $$(COMPARE_BUILD_PATCH) > /dev/null 2>&1 || $$(ECHO) FAILED)
         ifeq ($$(PATCH_DRY_RUN), FAILED)
           $$(error Patch file $$(COMPARE_BUILD_PATCH) does not apply cleanly)
         endif
@@ -129,11 +126,11 @@ endef
 define PrepareCompareBuild
 	$(ECHO) "Preparing for comparison rebuild"
         # Apply patch, if any
-	$(if $(COMPARE_BUILD_PATCH), cd $(topdir) && $(PATCH) -p1 < $(COMPARE_BUILD_PATCH))
+	$(if $(COMPARE_BUILD_PATCH), cd $(WORKSPACE_ROOT) && $(PATCH) -p1 < $(COMPARE_BUILD_PATCH))
         # Move the first build away temporarily
-	$(RM) -r $(topdir)/build/.compare-build-temp
-	$(MKDIR) -p $(topdir)/build/.compare-build-temp
-	$(MV) $(OUTPUTDIR) $(topdir)/build/.compare-build-temp
+	$(RM) -r $(WORKSPACE_ROOT)/build/.compare-build-temp
+	$(MKDIR) -p $(WORKSPACE_ROOT)/build/.compare-build-temp
+	$(MV) $(OUTPUTDIR) $(WORKSPACE_ROOT)/build/.compare-build-temp
         # Restore an old compare-build, or create a new compare-build directory.
 	if test -d $(COMPARE_BUILD_OUTPUTDIR); then \
 	  $(MV) $(COMPARE_BUILD_OUTPUTDIR) $(OUTPUTDIR); \
@@ -143,19 +140,19 @@ define PrepareCompareBuild
         # Re-run configure with the same arguments (and possibly some additional),
         # must be done after patching.
 	( cd $(CONFIGURE_START_DIR) && PATH="$(ORIGINAL_PATH)" \
-	    $(BASH) $(topdir)/configure $(CONFIGURE_COMMAND_LINE) $(COMPARE_BUILD_CONF))
+	    $(BASH) $(WORKSPACE_ROOT)/configure $(CONFIGURE_COMMAND_LINE) $(COMPARE_BUILD_CONF))
 endef
 
 # Cleanup after a compare build
 define CleanupCompareBuild
         # If running with a COMPARE_BUILD patch, reverse-apply it, but continue
         # even if that fails (can happen with removed files).
-	$(if $(COMPARE_BUILD_PATCH), cd $(topdir) && $(PATCH) -R -p1 < $(COMPARE_BUILD_PATCH) || true)
+	$(if $(COMPARE_BUILD_PATCH), cd $(WORKSPACE_ROOT) && $(PATCH) -R -p1 < $(COMPARE_BUILD_PATCH) || true)
         # Move this build away and restore the original build
-	$(MKDIR) -p $(topdir)/build/compare-build
+	$(MKDIR) -p $(WORKSPACE_ROOT)/build/compare-build
 	$(MV) $(OUTPUTDIR) $(COMPARE_BUILD_OUTPUTDIR)
-	$(MV) $(topdir)/build/.compare-build-temp/$(CONF_NAME) $(OUTPUTDIR)
-	$(RM) -r $(topdir)/build/.compare-build-temp
+	$(MV) $(WORKSPACE_ROOT)/build/.compare-build-temp/$(CONF_NAME) $(OUTPUTDIR)
+	$(RM) -r $(WORKSPACE_ROOT)/build/.compare-build-temp
 endef
 
 # Do the actual comparison of two builds
@@ -265,7 +262,7 @@ endif
 ##############################################################################
 
 # Store the build times in this directory.
-BUILDTIMESDIR = $(OUTPUTDIR)/make-support/build-times
+BUILDTIMESDIR := $(OUTPUTDIR)/make-support/build-times
 
 # Record starting time for build of a sub repository.
 define RecordStartTime
@@ -318,3 +315,8 @@ define ReportProfileTimes
     $(BUILD_LOG_PIPE_SIMPLE)
   )
 endef
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

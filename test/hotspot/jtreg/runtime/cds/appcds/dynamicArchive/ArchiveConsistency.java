@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,22 +150,6 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
                appJar, mainClass, isAuto ? 0 : 1,
                "Base archive name is damaged");
 
-        startTest("5a. Modify common app classpath size");
-        String wrongCommonAppClasspathOffset = getNewArchiveName("wrongCommonAppClasspathOffset");
-        copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongCommonAppClasspathOffset);
-        int commonAppClasspathPrefixSize = CDSArchiveUtils.commonAppClasspathPrefixSize(copiedJsa);
-        CDSArchiveUtils.writeData(copiedJsa, CDSArchiveUtils.offsetCommonAppClasspathPrefixSize(), -1);
-        runTwo(baseArchiveName, wrongCommonAppClasspathOffset,
-               appJar, mainClass, isAuto ? 0 : 1,
-               "common app classpath prefix len < 0");
-
-        startTest("5b. Modify common app classpath size, run with -XX:-VerifySharedSpaces");
-        VERIFY_CRC = true;
-        runTwo(baseArchiveName, modTop,
-               appJar, mainClass, isAuto ? 0 : 1,
-               "Header checksum verification failed");
-        VERIFY_CRC = false;
-
         startTest("6. Make base archive name not terminated with '\0'");
         String wrongBaseName = getNewArchiveName("wrongBaseName");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongBaseName);
@@ -204,7 +188,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         nonExistBaseFile.delete();
         runTwo(nonExistBase, topArchiveName,
                appJar, mainClass, isAuto ? 0 : 1,
-               "Specified shared archive not found (" + nonExistBase + ")");
+               "Specified shared archive file not found (" + nonExistBase + ")");
 
         startTest("9. Non-exist top archive");
         String nonExistTop = "non-exist-top.jsa";
@@ -212,11 +196,11 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         nonExistTopFile.delete();
         runTwo(baseArchiveName, nonExistTop,
                appJar, mainClass, isAuto ? 0 : 1,
-               "Specified shared archive not found (" + nonExistTop + ")");
+               "Specified shared archive file not found (" + nonExistTop + ")");
 
         startTest("10. nost-exist-base and non-exist-top");
         runTwo(nonExistBase, nonExistTop,
                appJar, mainClass, isAuto ? 0 : 1,
-               "Specified shared archive not found (" + nonExistBase + ")");
+               "Specified shared archive file not found (" + nonExistBase + ")");
     }
 }

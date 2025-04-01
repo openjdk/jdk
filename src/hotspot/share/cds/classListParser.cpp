@@ -26,6 +26,7 @@
 #include "cds/archiveUtils.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/lambdaFormInvokers.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/unregisteredClasses.hpp"
 #include "classfile/classLoaderExt.hpp"
@@ -443,10 +444,9 @@ void ClassListParser::print_diagnostic_info(outputStream* st, const char* msg, v
     error_index = 0;
   }
 
-  jio_fprintf(defaultStream::error_stream(),
-              "An error has occurred while processing class list file %s %zu:%d.\n",
-              _classlist_file, lineno(), (error_index + 1));
-  jio_vfprintf(defaultStream::error_stream(), msg, ap);
+  st->print("An error has occurred while processing class list file %s %zu:%d.\n",
+            _classlist_file, lineno(), (error_index + 1));
+  st->vprint(msg, ap);
 
   if (_line_len <= 0) {
     st->print("\n");
@@ -628,7 +628,7 @@ void ClassListParser::resolve_indy(JavaThread* current, Symbol* class_name_symbo
 }
 
 void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
-  if (CDSConfig::is_dumping_invokedynamic()) {
+  if (CDSConfig::is_dumping_method_handles()) {
     // The CP entry for the invokedynamic instruction will be resolved.
     // No need to do the following.
     return;
@@ -658,7 +658,7 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
       constantPoolHandle pool(THREAD, cp);
       BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
       Handle bsm = bootstrap_specifier.resolve_bsm(CHECK);
-      if (!SystemDictionaryShared::is_supported_invokedynamic(&bootstrap_specifier)) {
+      if (!LambdaProxyClassDictionary::is_supported_invokedynamic(&bootstrap_specifier)) {
         log_debug(cds, lambda)("is_supported_invokedynamic check failed for cp_index %d", pool_index);
         continue;
       }
@@ -845,6 +845,14 @@ void ClassListParser::parse_constant_pool_tag() {
                                        cp_index, cp_tag.internal_name(), cp_tag.value());
       return;
     }
+  }
+
+  if (SystemDictionaryShared::should_be_excluded(ik)) {
+    if (log_is_enabled(Warning, cds, resolve)) {
+      ResourceMark rm;
+      log_warning(cds, resolve)("Cannot aot-resolve constants for %s because it is excluded", ik->external_name());
+    }
+    return;
   }
 
   if (preresolve_class) {

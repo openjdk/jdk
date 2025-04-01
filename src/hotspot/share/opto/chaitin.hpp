@@ -47,7 +47,6 @@ class PhaseChaitin;
 //------------------------------LRG--------------------------------------------
 // Live-RanGe structure.
 class LRG : public ResourceObj {
-  friend class VMStructs;
 public:
   static const uint AllStack_size = 0xFFFFF; // This mask size is used to tell that the mask of this LRG supports stack positions
   enum { SPILL_REG=29999 };     // Register number of a spilled LRG
@@ -252,7 +251,6 @@ public:
 // abstract!  It needs abstraction so I can fiddle with the implementation to
 // get even more speed.
 class PhaseIFG : public Phase {
-  friend class VMStructs;
   // Current implementation: a triangular adjacency list.
 
   // Array of adjacency-lists, indexed by live-range number
@@ -433,7 +431,6 @@ public:
 //------------------------------Chaitin----------------------------------------
 // Briggs-Chaitin style allocation, mostly.
 class PhaseChaitin : public PhaseRegAlloc {
-  friend class VMStructs;
 
   int _trip_cnt;
   int _alternate;

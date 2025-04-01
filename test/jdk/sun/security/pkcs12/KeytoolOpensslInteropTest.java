@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id=GenerateOpensslPKCS12
  * @bug 8076190 8242151 8153005 8266182
  * @summary This is java keytool <-> openssl interop test. This test generates
  *          some openssl keystores on the fly, java operates on it and
@@ -31,13 +31,24 @@
  *          Note: This test executes some openssl command, so need to set
  *          openssl path using system property "test.openssl.path" or it should
  *          be available in /usr/bin or /usr/local/bin
- *          Required OpenSSL version : OpenSSL 1.1.*
+ *          Required OpenSSL version : OpensslArtifactFetcher.OPENSSL_BUNDLE_VERSION
  *
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
- * @library /test/lib
- * @library /sun/security/pkcs11/
- * @run main/othervm/timeout=600 KeytoolOpensslInteropTest
+ * @library /test/lib /sun/security/pkcs11/
+ * @run main/othervm KeytoolOpensslInteropTest true
+ */
+
+/*
+ * @test id=UseExistingPKCS12
+ * @bug 8076190 8242151 8153005 8266182
+ * @summary This is java keytool <-> openssl interop test. This test uses
+ *          the existing PKCS12 files located in ./params dir and java operates on it
+ *
+ * @modules java.base/sun.security.pkcs
+ *          java.base/sun.security.util
+ * @library /test/lib /sun/security/pkcs11/
+ * @run main/othervm KeytoolOpensslInteropTest false
  */
 
 import jdk.test.lib.Asserts;
@@ -67,22 +78,15 @@ import static sun.security.pkcs.ContentInfo.*;
 public class KeytoolOpensslInteropTest {
 
     public static void main(String[] args) throws Throwable {
-        String opensslPath = OpensslArtifactFetcher.getOpenssl1dot1dotStar();
-        if (opensslPath != null) {
-            // if preferred version of openssl is available perform all
-            // keytool <-> openssl interop tests
+        boolean generatePKCS12 = Boolean.parseBoolean(args[0]);
+        if (generatePKCS12) {
+            String opensslPath = OpensslArtifactFetcher.getOpensslPath();
             generateInitialKeystores(opensslPath);
             testWithJavaCommands();
             testWithOpensslCommands(opensslPath);
         } else {
-            // since preferred version of openssl is not available skip all
-            // openssl command dependent tests with a warning
-            System.out.println("\n\u001B[31mWarning: Can't find openssl "
-                    + "(version 1.1.*) binary on this machine, please install"
-                    + " and set openssl path with property "
-                    + "'test.openssl.path'. Now running only half portion of "
-                    + "the test, skipping all tests which depends on openssl "
-                    + "commands.\u001B[0m\n");
+            // since this scenario is using preexisting PKCS12, skip all
+            // openssl command dependent tests
             // De-BASE64 textual files in ./params to `pwd`
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(
                     Path.of(System.getProperty("test.src"), "params"),
@@ -103,6 +107,8 @@ public class KeytoolOpensslInteropTest {
 
     private static void generateInitialKeystores(String opensslPath)
             throws Throwable {
+        Path providerPath = OpensslArtifactFetcher.getProviderPath(opensslPath);
+
         keytool("-keystore ks -keyalg ec -genkeypair -storepass"
                 + " changeit -alias a -dname CN=A").shouldHaveExitValue(0);
 
@@ -123,7 +129,8 @@ public class KeytoolOpensslInteropTest {
         ProcessTools.executeCommand(opensslPath, "pkcs12", "-export", "-in",
                 "kandc", "-out", "os4", "-name", "a", "-passout",
                 "pass:changeit", "-certpbe", "PBE-SHA1-RC4-128", "-keypbe",
-                "PBE-SHA1-RC4-128", "-macalg", "SHA224")
+                "PBE-SHA1-RC4-128", "-macalg", "SHA224",
+                "-legacy", "-provider-path", providerPath.toString())
                 .shouldHaveExitValue(0);
 
         ProcessTools.executeCommand(opensslPath, "pkcs12", "-export", "-in",
@@ -480,12 +487,14 @@ public class KeytoolOpensslInteropTest {
         output1 = ProcessTools.executeCommand(opensslPath, "pkcs12", "-in",
                 "ksnopass", "-passin", "pass:changeit", "-info", "-nokeys",
                 "-nocerts");
-        output1.shouldNotHaveExitValue(0);
+        output1.shouldHaveExitValue(0)
+            .shouldContain("Warning: MAC is absent!");
 
         output1 = ProcessTools.executeCommand(opensslPath, "pkcs12", "-in",
                 "ksnopass", "-passin", "pass:changeit", "-info", "-nokeys",
                 "-nocerts", "-nomacver");
         output1.shouldHaveExitValue(0)
+            .shouldNotContain("Warning: MAC is absent!")
             .shouldNotContain("PKCS7 Encrypted data:")
             .shouldContain("Shrouded Keybag: PBES2, PBKDF2, AES-256-CBC,"
                     + " Iteration 10000, PRF hmacWithSHA256")

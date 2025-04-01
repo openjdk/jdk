@@ -121,7 +121,6 @@ class TypedMethodOptionMatcher;
 
 static TypedMethodOptionMatcher* option_list = nullptr;
 static bool any_set = false;
-static bool print_final_memstat_report = false;
 
 // A filter for quick lookup if an option is set
 static bool option_filter[static_cast<int>(CompileCommandEnum::Unknown) + 1] = { 0 };
@@ -482,10 +481,6 @@ bool CompilerOracle::should_collect_memstat() {
   return has_command(CompileCommandEnum::MemStat) || has_command(CompileCommandEnum::MemLimit);
 }
 
-bool CompilerOracle::should_print_final_memstat_report() {
-  return print_final_memstat_report;
-}
-
 bool CompilerOracle::should_log(const methodHandle& method) {
   if (!LogCompilation) return false;
   if (!has_command(CompileCommandEnum::Log)) {
@@ -711,7 +706,6 @@ static bool parseMemStat(const char* line, uintx& value, int& bytes_read, char* 
   });
   IF_ENUM_STRING("print", {
     value = (uintx)MemStatAction::print;
-    print_final_memstat_report = true;
   });
 #undef IF_ENUM_STRING
 

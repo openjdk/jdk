@@ -1135,6 +1135,7 @@ public:
   void fmul_s(AddressLiteral src) { Assembler::fmul_s(as_Address(src)); }
 #endif // !_LP64
 
+  void cmp32_mxcsr_std(Address mxcsr_save, Register tmp, Register rscratch = noreg);
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }
   void ldmxcsr(AddressLiteral src, Register rscratch = noreg);
 
@@ -1347,6 +1348,14 @@ public:
   void vmovdqu(XMMRegister dst, XMMRegister    src);
   void vmovdqu(XMMRegister dst, AddressLiteral src,                 Register rscratch = noreg);
   void vmovdqu(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
+  void vmovdqu(XMMRegister dst, XMMRegister    src, int vector_len);
+  void vmovdqu(XMMRegister dst, Address        src, int vector_len);
+  void vmovdqu(Address     dst, XMMRegister    src, int vector_len);
+
+  // AVX Aligned forms
+  using Assembler::vmovdqa;
+  void vmovdqa(XMMRegister dst, AddressLiteral src,                 Register rscratch = noreg);
+  void vmovdqa(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
   // AVX512 Unaligned
   void evmovdqu(BasicType type, KRegister kmask, Address     dst, XMMRegister src, bool merge, int vector_len);
@@ -1403,6 +1412,7 @@ public:
   void evmovdquq(XMMRegister dst, Address        src, int vector_len) { Assembler::evmovdquq(dst, src, vector_len); }
   void evmovdquq(Address     dst, XMMRegister    src, int vector_len) { Assembler::evmovdquq(dst, src, vector_len); }
   void evmovdquq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
+  void evmovdqaq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
   void evmovdquq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
     if (dst->encoding() != src->encoding() || mask != k0) {
@@ -1412,6 +1422,7 @@ public:
   void evmovdquq(Address     dst, KRegister mask, XMMRegister    src, bool merge, int vector_len) { Assembler::evmovdquq(dst, mask, src, merge, vector_len); }
   void evmovdquq(XMMRegister dst, KRegister mask, Address        src, bool merge, int vector_len) { Assembler::evmovdquq(dst, mask, src, merge, vector_len); }
   void evmovdquq(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register rscratch = noreg);
+  void evmovdqaq(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register rscratch = noreg);
 
   // Move Aligned Double Quadword
   void movdqa(XMMRegister dst, XMMRegister    src) { Assembler::movdqa(dst, src); }
