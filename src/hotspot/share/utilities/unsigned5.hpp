@@ -261,7 +261,7 @@ class UNSIGNED5 : AllStatic {
     ARR _array;
     OFF _limit;
     OFF _position;
-    int next_length() {
+    int next_length() const {
       return UNSIGNED5::check_length(_array, _position, _limit, GET());
     }
   public:
@@ -270,7 +270,7 @@ class UNSIGNED5 : AllStatic {
     uint32_t next_uint() {
       return UNSIGNED5::read_uint(_array, _position, _limit, GET());
     }
-    bool has_next() {
+    bool has_next() const {
       return next_length() != 0;
     }
     // tries to skip count logical entries; returns actual number skipped
@@ -284,8 +284,9 @@ class UNSIGNED5 : AllStatic {
       return actual;
     }
     ARR array() { return _array; }
-    OFF limit() { return _limit; }
-    OFF position() { return _position; }
+    OFF limit() const { return _limit; }
+    OFF position() const { return _position; }
+    void set_limit(OFF limit) { _limit = limit; }
     void set_position(OFF position) { _position = position; }
 
     // For debugging, even in product builds (see debug.cpp).
@@ -390,6 +391,9 @@ class UNSIGNED5 : AllStatic {
     void accept_uint(uint32_t value) {
       _position += encoded_length(value);
       _count++;
+    }
+    void accept_bytes(OFF bytes) {
+      _position += bytes;
     }
     OFF position() { return _position; }
     int count() { return _count; }

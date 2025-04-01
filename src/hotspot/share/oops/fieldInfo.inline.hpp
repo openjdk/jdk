@@ -56,16 +56,27 @@ inline Symbol* FieldInfo::lookup_symbol(int symbol_index) const {
 
 inline int FieldInfoStream::num_injected_java_fields(const Array<u1>* fis) {
   FieldInfoReader fir(fis);
-  fir.skip(1);
-  return fir.next_uint();
+  int java_fields_count;
+  int injected_fields_count;
+  fir.read_field_counts(&java_fields_count, &injected_fields_count);
+  return injected_fields_count;
 }
 
 inline int FieldInfoStream::num_total_fields(const Array<u1>* fis) {
   FieldInfoReader fir(fis);
-  return fir.next_uint() + fir.next_uint();
+  int java_fields_count;
+  int injected_fields_count;
+  fir.read_field_counts(&java_fields_count, &injected_fields_count);
+  return java_fields_count + injected_fields_count;
 }
 
-inline int FieldInfoStream::num_java_fields(const Array<u1>* fis) { return FieldInfoReader(fis).next_uint(); }
+inline int FieldInfoStream::num_java_fields(const Array<u1>* fis) {
+  FieldInfoReader fir(fis);
+  int java_fields_count;
+  int injected_fields_count;
+  fir.read_field_counts(&java_fields_count, &injected_fields_count);
+  return java_fields_count;
+}
 
 template<typename CON>
 inline void Mapper<CON>::map_field_info(const FieldInfo& fi) {
@@ -94,28 +105,28 @@ inline void Mapper<CON>::map_field_info(const FieldInfo& fi) {
 
 
 inline FieldInfoReader::FieldInfoReader(const Array<u1>* fi)
-  : _r(fi->data(), 0),
+  : _r(fi->data(), fi->length()),
     _next_index(0) { }
 
 inline void FieldInfoReader::read_field_info(FieldInfo& fi) {
   fi._index = _next_index++;
-  fi._name_index = checked_cast<u2>(next_uint());
-  fi._signature_index = checked_cast<u2>(next_uint());
-  fi._offset = next_uint();
-  fi._access_flags = AccessFlags(checked_cast<u2>(next_uint()));
-  fi._field_flags = FieldInfo::FieldFlags(next_uint());
+  fi._name_index = checked_cast<u2>(_r.next_uint());
+  fi._signature_index = checked_cast<u2>(_r.next_uint());
+  fi._offset = _r.next_uint();
+  fi._access_flags = AccessFlags(checked_cast<u2>(_r.next_uint()));
+  fi._field_flags = FieldInfo::FieldFlags(_r.next_uint());
   if (fi._field_flags.is_initialized()) {
-    fi._initializer_index = checked_cast<u2>(next_uint());
+    fi._initializer_index = checked_cast<u2>(_r.next_uint());
   } else {
     fi._initializer_index = 0;
   }
   if (fi._field_flags.is_generic()) {
-    fi._generic_signature_index = checked_cast<u2>(next_uint());
+    fi._generic_signature_index = checked_cast<u2>(_r.next_uint());
   } else {
     fi._generic_signature_index = 0;
   }
   if (fi._field_flags.is_contended()) {
-    fi._contention_group = checked_cast<u2>(next_uint());
+    fi._contention_group = checked_cast<u2>(_r.next_uint());
   } else {
     fi._contention_group = 0;
   }
@@ -125,7 +136,7 @@ inline FieldInfoReader&  FieldInfoReader::skip_field_info() {
   _next_index++;
   const int name_sig_af_off = 4;  // four items
   skip(name_sig_af_off);
-  FieldInfo::FieldFlags ff(next_uint());
+  FieldInfo::FieldFlags ff(_r.next_uint());
   if (ff.has_any_optionals()) {
     const int init_gen_cont = (ff.is_initialized() +
                                 ff.is_generic() +

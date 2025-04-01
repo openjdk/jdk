@@ -3555,7 +3555,7 @@ void VM_RedefineClasses::set_new_constant_pool(
   if (update_required) {
     Array<u1>* old_stream = scratch_class->fieldinfo_stream();
     assert(fields->length() == (java_fields + injected_fields), "Must be");
-    Array<u1>* new_fis = FieldInfoStream::create_FieldInfoStream(fields, java_fields, injected_fields, scratch_class->class_loader_data(), CHECK);
+    Array<u1>* new_fis = FieldInfoStream::create_FieldInfoStream(cp, fields, java_fields, injected_fields, scratch_class->class_loader_data(), CHECK);
     scratch_class->set_fieldinfo_stream(new_fis);
     MetadataFactory::free_array<u1>(scratch_class->class_loader_data(), old_stream);
   }

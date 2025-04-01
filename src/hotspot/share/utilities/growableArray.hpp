@@ -310,6 +310,14 @@ public:
     qsort(_data, length() / stride, sizeof(E) * stride, (_sort_Fn)f);
   }
 
+  // end is exclusive
+  void sort_range(int start, int end, int f(const E*, const E*, void *), void *arg) {
+    if (_data == nullptr) return;
+    assert(start >= 0, "start is negative");
+    assert(end <= length(), "range too long");
+    qsort_r(_data + start, end - start, sizeof(E), (__compar_d_fn_t)f, arg);
+  }
+
   template <typename K, int compare(const K&, const E&)> int find_sorted(const K& key, bool& found) const {
     found = false;
     int min = 0;

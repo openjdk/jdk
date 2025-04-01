@@ -963,7 +963,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
       }
       Array<u1>* old_stream = ik->fieldinfo_stream();
       assert(fields->length() == (java_fields + injected_fields), "Must be");
-      Array<u1>* new_fis = FieldInfoStream::create_FieldInfoStream(fields, java_fields, injected_fields, k->class_loader_data(), CHECK);
+      Array<u1>* new_fis = FieldInfoStream::create_FieldInfoStream(ik->constants(), fields, java_fields, injected_fields, k->class_loader_data(), CHECK);
       ik->set_fieldinfo_stream(new_fis);
       MetadataFactory::free_array<u1>(k->class_loader_data(), old_stream);
     }
