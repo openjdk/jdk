@@ -525,6 +525,7 @@ final class Float512Vector extends FloatVector {
         return Float.intBitsToFloat(bits);
     }
 
+    @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
                      VCLASS, ETYPE, VLENGTH,
@@ -559,6 +560,7 @@ final class Float512Vector extends FloatVector {
         }
     }
 
+    @ForceInline
     public Float512Vector withLaneHelper(int i, float e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,

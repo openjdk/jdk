@@ -76,7 +76,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         prerequisiteActions = new Actions(cmd.prerequisiteActions);
         verifyActions = new Actions(cmd.verifyActions);
         appLayoutAsserts = cmd.appLayoutAsserts;
-        outputValidator = cmd.outputValidator;
+        outputValidators = cmd.outputValidators;
         executeInDirectory = cmd.executeInDirectory;
         winMsiLogFile = cmd.winMsiLogFile;
     }
@@ -218,26 +218,27 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public String name() {
-        String appImage = getArgumentValue("--app-image");
-        if (appImage != null) {
-            String name = AppImageFile.load(Path.of(appImage)).mainLauncherName();
-            // can be null if using foreign app-image
-            return ((name != null) ? name : getArgumentValue("--name"));
-        }
-        return getArgumentValue("--name", () -> getArgumentValue("--main-class"));
+        return nameFromAppImage().or(this::nameFromBasicArgs).or(this::nameFromRuntimeImage).orElseThrow();
     }
 
     public String installerName() {
         verifyIsOfType(PackageType.NATIVE);
-        String installerName = getArgumentValue("--name",
-                () -> getArgumentValue("--main-class", () -> null));
-        if (installerName == null) {
-            String appImage = getArgumentValue("--app-image");
-            if (appImage != null) {
-                installerName = AppImageFile.load(Path.of(appImage)).mainLauncherName();
-            }
-        }
-        return installerName;
+        return nameFromBasicArgs().or(this::nameFromAppImage).or(this::nameFromRuntimeImage).orElseThrow();
+    }
+
+    private Optional<String> nameFromAppImage() {
+        return Optional.ofNullable(getArgumentValue("--app-image"))
+                .map(Path::of).map(AppImageFile::load).map(AppImageFile::mainLauncherName);
+    }
+
+    private Optional<String> nameFromRuntimeImage() {
+        return Optional.ofNullable(getArgumentValue("--runtime-image"))
+                .map(Path::of).map(Path::getFileName).map(Path::toString);
+    }
+
+    private Optional<String> nameFromBasicArgs() {
+        return Optional.ofNullable(getArgumentValue("--name")).or(
+                () -> Optional.ofNullable(getArgumentValue("--main-class")));
     }
 
     public boolean isRuntime() {
@@ -273,7 +274,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         };
 
         addPrerequisiteAction(cmd -> {
-            Path fakeRuntimeDir = TKit.workDir().resolve("fake_runtime");
+            Path fakeRuntimeDir = TKit.createTempDirectory("fake_runtime");
 
             TKit.trace(String.format("Init fake runtime in [%s] directory",
                     fakeRuntimeDir));
@@ -373,7 +374,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             String dirName;
             if (!TKit.isOSX()) {
                 dirName = name();
-            } else if (hasArgument("--app-image") && hasArgument("--mac-sign")) {
+            } else if (MacHelper.signPredefinedAppImage(this)) {
                 // Request to sign external app image, not to build a new one
                 dirName = getArgumentValue("--app-image");
             } else {
@@ -703,21 +704,53 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand validateOutput(TKit.TextStreamVerifier validator) {
-        return JPackageCommand.this.validateOutput(validator::apply);
+        return validateOutput(validator::apply);
     }
 
     public JPackageCommand validateOutput(Consumer<Stream<String>> validator) {
-        if (validator != null) {
-            saveConsoleOutput(true);
-            outputValidator = validator;
-        } else {
-            outputValidator = null;
-        }
+        Objects.requireNonNull(validator);
+        saveConsoleOutput(true);
+        outputValidators.add(validator);
         return this;
     }
 
-    public JPackageCommand validateOutput(CannedFormattedString str) {
-        return JPackageCommand.this.validateOutput(TKit.assertTextStream(str.getValue()));
+    @FunctionalInterface
+    public interface CannedArgument {
+        public String value(JPackageCommand cmd);
+    }
+
+    public static Object cannedArgument(Function<JPackageCommand, Object> supplier, String label) {
+        Objects.requireNonNull(supplier);
+        Objects.requireNonNull(label);
+        return new CannedArgument() {
+            @Override
+            public String value(JPackageCommand cmd) {
+                return supplier.apply(cmd).toString();
+            }
+
+            @Override
+            public String toString( ) {
+                return label;
+            }
+        };
+    }
+
+    public String getValue(CannedFormattedString str) {
+        return new CannedFormattedString(str.formatter(), str.key(), Stream.of(str.args()).map(arg -> {
+            if (arg instanceof CannedArgument cannedArg) {
+                return cannedArg.value(this);
+            } else {
+                return arg;
+            }
+        }).toArray()).getValue();
+    }
+
+    public JPackageCommand validateOutput(CannedFormattedString... str) {
+        // Will look up the given errors in the order they are specified.
+        Stream.of(str).map(this::getValue)
+                .map(TKit::assertTextStream)
+                .reduce(TKit.TextStreamVerifier::andThen).ifPresent(this::validateOutput);
+        return this;
     }
 
     public boolean isWithToolProvider() {
@@ -798,7 +831,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 .createExecutor()
                 .execute(expectedExitCode);
 
-        if (outputValidator != null) {
+        for (final var outputValidator: outputValidators) {
             outputValidator.accept(result.getOutput().stream());
         }
 
@@ -876,6 +909,9 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             copy.immutable = false;
             copy.removeArgumentWithValue("--runtime-image");
             copy.dmgInstallDir = cmd.appInstallationDirectory();
+            if (!copy.hasArgument("--name")) {
+                copy.addArguments("--name", cmd.nameFromRuntimeImage().orElseThrow());
+            }
             return copy;
         }
 
@@ -900,6 +936,27 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    private boolean expectAppImageFile() {
+        if (isRuntime()) {
+            return false;
+        }
+
+        if (TKit.isOSX()) {
+            if (MacHelper.signPredefinedAppImage(this)) {
+                // Request to sign external app image, ".jpackage.xml" file should exist.
+                return true;
+            }
+
+            if (!isImagePackageType() && hasArgument("--app-image")) {
+                // Build native macOS package from an external app image.
+                // If the external app image is signed, ".jpackage.xml" file should be kept, otherwise removed.
+                return AppImageFile.load(Path.of(getArgumentValue("--app-image"))).macSigned();
+            }
+        }
+
+        return isImagePackageType();
+    }
+
     private void assertAppImageFile() {
         Path appImageDir = Path.of("");
         if (isImagePackageType() && hasArgument("--app-image")) {
@@ -907,31 +964,26 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
 
         final Path lookupPath = AppImageFile.getPathInAppImage(appImageDir);
-        if (isRuntime() || (!isImagePackageType() && !TKit.isOSX())) {
+        if (!expectAppImageFile()) {
             assertFileInAppImage(lookupPath, null);
-        } else if (!TKit.isOSX()) {
-            assertFileInAppImage(lookupPath, lookupPath);
         } else {
             assertFileInAppImage(lookupPath, lookupPath);
 
-            // If file exist validated important values based on arguments
-            // Exclude validation when we generating packages from predefined
-            // app images, since we do not know if image is signed or not.
-            if (isImagePackageType() || !hasArgument("--app-image")) {
+            if (TKit.isOSX()) {
                 final Path rootDir = isImagePackageType() ? outputBundle() :
                         pathToUnpackedPackageFile(appInstallationDirectory());
 
                 AppImageFile aif = AppImageFile.load(rootDir);
 
-                boolean expectedValue = hasArgument("--mac-sign");
+                boolean expectedValue = MacHelper.appImageSigned(this);
                 boolean actualValue = aif.macSigned();
-                TKit.assertEquals(Boolean.toString(expectedValue), Boolean.toString(actualValue),
-                    "Check for unexptected value in app image file for <signed>");
+                TKit.assertEquals(expectedValue, actualValue,
+                    "Check for unexpected value of <signed> property in app image file");
 
                 expectedValue = hasArgument("--mac-app-store");
                 actualValue = aif.macAppStore();
-                TKit.assertEquals(Boolean.toString(expectedValue), Boolean.toString(actualValue),
-                    "Check for unexptected value in app image file for <app-store>");
+                TKit.assertEquals(expectedValue, actualValue,
+                    "Check for unexpected value of <app-store> property in app image file");
             }
         }
     }
@@ -1001,11 +1053,17 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     JPackageCommand winMsiLogFile(Path v) {
+        if (!TKit.isWindows()) {
+            throw new UnsupportedOperationException();
+        }
         this.winMsiLogFile = v;
         return this;
     }
 
     public Optional<Path> winMsiLogFile() {
+        if (!TKit.isWindows()) {
+            throw new UnsupportedOperationException();
+        }
         return Optional.ofNullable(winMsiLogFile);
     }
 
@@ -1022,7 +1080,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             // to allow the jlink process to print exception stacktraces on any failure
             addArgument("-J-Djlink.debug=true");
         }
-        if (!hasArgument("--runtime-image") && !hasArgument("--app-image") && DEFAULT_RUNTIME_IMAGE != null && !ignoreDefaultRuntime) {
+        if (!hasArgument("--runtime-image") && !hasArgument("--jlink-options") && !hasArgument("--app-image") && DEFAULT_RUNTIME_IMAGE != null && !ignoreDefaultRuntime) {
             addArguments("--runtime-image", DEFAULT_RUNTIME_IMAGE);
         }
 
@@ -1195,14 +1253,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private Path executeInDirectory;
     private Path winMsiLogFile;
     private Set<AppLayoutAssert> appLayoutAsserts = Set.of(AppLayoutAssert.values());
-    private Consumer<Stream<String>> outputValidator;
+    private List<Consumer<Stream<String>>> outputValidators = new ArrayList<>();
     private static boolean defaultWithToolProvider;
 
     private static final Map<String, PackageType> PACKAGE_TYPES = Functional.identity(
             () -> {
                 Map<String, PackageType> reply = new HashMap<>();
                 for (PackageType type : PackageType.values()) {
-                    reply.put(type.getName(), type);
+                    reply.put(type.getType(), type);
                 }
                 return reply;
             }).get();
