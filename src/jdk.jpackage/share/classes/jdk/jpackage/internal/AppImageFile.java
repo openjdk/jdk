@@ -286,7 +286,7 @@ final class AppImageFile {
             return XmlUtils.queryNodes(e, xPath, xpathExpr)
                     .map(Element.class::cast)
                     .collect(toMap(Node::getNodeName, selectedElement -> {
-                        return XmlUtils.elementValue(selectedElement, xPath);
+                        return selectedElement.getTextContent();
                     }, (a, b) -> b));
         }
 

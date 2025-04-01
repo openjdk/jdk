@@ -31,7 +31,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.xml.parsers.DocumentBuilder;
@@ -48,7 +47,6 @@ import javax.xml.transform.stax.StAXResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
-import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -136,14 +134,5 @@ public final class XmlUtils {
         return Optional.ofNullable(nodes).map(v -> {
             return IntStream.range(0, v.getLength()).mapToObj(v::item);
         }).orElseGet(Stream::of);
-    }
-
-    public static String elementValue(Element e, XPath xPath) {
-        try {
-            return queryNodes(e, xPath, "text()").map(Node::getNodeValue).collect(Collectors.joining());
-        } catch (XPathExpressionException ex) {
-            // Should never happen
-            throw new RuntimeException(ex);
-        }
     }
 }

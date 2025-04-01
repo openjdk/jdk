@@ -229,7 +229,7 @@ public class AppImageFileTest {
                         "<with-comment>a<!-- This is a comment -->b</with-comment>",
                         "<add-launcher name='a'><name>foo</name><bar>foo</bar><service>true</service></add-launcher>",
                         "<other><nested>false</nested></other>",
-                        "<another-other><child/></another-other>")
+                        "<another-other>A<child/>B</another-other>")
                 )
         );
     }
