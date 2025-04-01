@@ -55,20 +55,7 @@ import jdk.internal.net.quic.QuicTLSEngine;
  *    AltService service = ...;
  *    QuicClient client = ...;
  *    QuicConnection connection = client.createConnectionFor(service);
- *    connection.startHandshake().handle((r,t) -> {
- *        if (t == null) {
- *           // check ALPN;
- *           if (checkALPN()) {
- *               return connection.finishConnect();
- *           } else {
- *               connection.close();
- *               return MinimalFuture.failedFuture(
- *                      new SSLHandshakeException("ALPN verification failed));
- *           }
- *        } else {
- *            return MinimalFuture.failedFuture(t);
- *        }
- *    }).thenCompose(Function.identity())
+ *    connection.startHandshake().thenCompose(r -> connection.finishConnect())
  *    .thenApply((r) ->  { ... })
  *    ...;
  * }</pre>
