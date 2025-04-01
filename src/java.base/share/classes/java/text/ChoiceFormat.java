@@ -561,7 +561,7 @@ public class ChoiceFormat extends NumberFormat {
      * Parses a {@code Number} from the input text, the subtype of which is always
      * {@code Double}. The value returned is the {@code limit} corresponding
      * to the {@code format} that is the longest substring of the input text.
-     * Matching is done in ascending order, when multiple {@code formats} match
+     * Matching is done in ascending order, when multiple {@code format}s match
      * the text equivalently in strength, the first matching {@code limit} is
      * returned. If there is no match, {@code Double.NaN} is returned.
      * <p>
@@ -580,8 +580,8 @@ public class ChoiceFormat extends NumberFormat {
      * in the source text.  On exit, if an error did occur,
      * status.index is unchanged and status.errorIndex is set to the
      * first index of the character that caused the parse to fail.
-     * @return A Number which represents the {@code limit} corresponding to the {@code
-     * format} parsed.
+     * @return A Number which represents the {@code limit} corresponding to the
+     * {@code format} parsed, or {@code Double.NaN} if the parse fails.
      * @throws    NullPointerException if {@code status} is {@code null}
      *            or if {@code text} is {@code null} and the list of
      *            choice strings is not empty.
