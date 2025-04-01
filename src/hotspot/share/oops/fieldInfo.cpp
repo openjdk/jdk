@@ -50,7 +50,8 @@ void FieldInfo::print_from_growable_array(outputStream* os, GrowableArray<FieldI
 Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fields, int java_fields, int injected_fields,
                                                           ClassLoaderData* loader_data, TRAPS) {
   // The stream format described in fieldInfo.hpp is:
-  //   FieldInfoStream := j=num_java_fields k=num_injected_fields Field[j+k] End
+  //   FieldInfoStream := j=num_java_fields k=num_injected_fields ControlByte[j+k] Field[j+k] End
+  //   ControlByte := injected_field_flag(1 bit) unused(1 bit) encoded_field_length(6 bits)
   //   Field := name sig offset access flags Optionals(flags)
   //   Optionals(i) := initval?[i&is_init]     // ConstantValue attr
   //                   gsig?[i&is_generic]     // signature attr
@@ -64,6 +65,7 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
 
   sizer.consumer()->accept_uint(java_fields);
   sizer.consumer()->accept_uint(injected_fields);
+  sizer.consumer()->accept_bytes(java_fields + injected_fields);
   for (int i = 0; i < fields->length(); i++) {
     FieldInfo* fi = fields->adr_at(i);
     sizer.map_field_info(*fi);
@@ -78,9 +80,19 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
 
   writer.consumer()->accept_uint(java_fields);
   writer.consumer()->accept_uint(injected_fields);
+  int ctrl = w.position();
+  w.set_position(ctrl + java_fields + injected_fields);
   for (int i = 0; i < fields->length(); i++) {
     FieldInfo* fi = fields->adr_at(i);
+    int pre = w.position();
     writer.map_field_info(*fi);
+    int post = w.position();
+    u1 control_byte = static_cast<u1>(post - pre);
+    assert(control_byte < 64, "size should fit in 6 bits");
+    if (fi->field_flags().is_injected()) {
+      control_byte |= INJECTED_FIELD;
+    }
+    w.array()->at_put(ctrl + i, control_byte);
   }
 
 #ifdef ASSERT
@@ -89,6 +101,7 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
   assert(jfc == java_fields, "Must be");
   int ifc = r.next_uint();
   assert(ifc == injected_fields, "Must be");
+  r.skip_bytes(jfc + ifc);
   for (int i = 0; i < jfc + ifc; i++) {
     FieldInfo fi;
     r.read_field_info(fi);
@@ -114,26 +127,27 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
 }
 
 GrowableArray<FieldInfo>* FieldInfoStream::create_FieldInfoArray(const Array<u1>* fis, int* java_fields_count, int* injected_fields_count) {
-  int length = FieldInfoStream::num_total_fields(fis);
-  GrowableArray<FieldInfo>* array = new GrowableArray<FieldInfo>(length);
   FieldInfoReader r(fis);
   *java_fields_count = r.next_uint();
   *injected_fields_count = r.next_uint();
+  int length = *java_fields_count + *injected_fields_count;
+
+  GrowableArray<FieldInfo>* array = new GrowableArray<FieldInfo>(length);
+  r.skip_bytes(length);
   while (r.has_next()) {
     FieldInfo fi;
     r.read_field_info(fi);
     array->append(fi);
   }
   assert(array->length() == length, "Must be");
-  assert(array->length() == *java_fields_count + *injected_fields_count, "Must be");
   return array;
 }
 
 void FieldInfoStream::print_from_fieldinfo_stream(Array<u1>* fis, outputStream* os, ConstantPool* cp) {
-  int length = FieldInfoStream::num_total_fields(fis);
   FieldInfoReader r(fis);
-  int java_field_count = r.next_uint();
+  int java_fields_count = r.next_uint();
   int injected_fields_count = r.next_uint();
+  r.skip_bytes(java_fields_count + injected_fields_count);
   while (r.has_next()) {
     FieldInfo fi;
     r.read_field_info(fi);

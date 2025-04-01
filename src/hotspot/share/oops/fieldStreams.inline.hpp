@@ -33,6 +33,7 @@
 FieldStreamBase::FieldStreamBase(const Array<u1>* fieldinfo_stream, ConstantPool* constants, int start, int limit) :
          _fieldinfo_stream(fieldinfo_stream),
          _reader(FieldInfoReader(_fieldinfo_stream)),
+         _ctrl_offset(0),
          _constants(constantPoolHandle(Thread::current(), constants)), _index(start) {
   _index = start;
   if (limit < start) {
@@ -43,9 +44,10 @@ FieldStreamBase::FieldStreamBase(const Array<u1>* fieldinfo_stream, ConstantPool
   initialize();
 }
 
-FieldStreamBase::FieldStreamBase(Array<u1>* fieldinfo_stream, ConstantPool* constants) :
+FieldStreamBase::FieldStreamBase(const Array<u1>* fieldinfo_stream, ConstantPool* constants) :
         _fieldinfo_stream(fieldinfo_stream),
         _reader(FieldInfoReader(_fieldinfo_stream)),
+        _ctrl_offset(0),
         _constants(constantPoolHandle(Thread::current(), constants)),
         _index(0),
         _limit(FieldInfoStream::num_total_fields(_fieldinfo_stream)) {
@@ -55,6 +57,7 @@ FieldStreamBase::FieldStreamBase(Array<u1>* fieldinfo_stream, ConstantPool* cons
 FieldStreamBase::FieldStreamBase(InstanceKlass* klass) :
          _fieldinfo_stream(klass->fieldinfo_stream()),
          _reader(FieldInfoReader(_fieldinfo_stream)),
+         _ctrl_offset(0),
          _constants(constantPoolHandle(Thread::current(), klass->constants())),
          _index(0),
          _limit(FieldInfoStream::num_total_fields(_fieldinfo_stream)) {

@@ -97,10 +97,13 @@ inline FieldInfoReader::FieldInfoReader(const Array<u1>* fi)
   : _r(fi->data(), 0),
     _next_index(0) { }
 
-inline void FieldInfoReader::read_field_info(FieldInfo& fi) {
+inline void FieldInfoReader::read_name_signature(FieldInfo& fi) {
   fi._index = _next_index++;
   fi._name_index = checked_cast<u2>(next_uint());
   fi._signature_index = checked_cast<u2>(next_uint());
+}
+
+inline void FieldInfoReader::read_partial_record(FieldInfo& fi) {
   fi._offset = next_uint();
   fi._access_flags = AccessFlags(checked_cast<u2>(next_uint()));
   fi._field_flags = FieldInfo::FieldFlags(next_uint());

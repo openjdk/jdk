@@ -301,7 +301,7 @@ void FieldLayout::reconstruct_layout(const InstanceKlass* ik, bool& has_instance
   BasicType last_type;
   int last_offset = -1;
   while (ik != nullptr) {
-    for (AllFieldStream fs(ik->fieldinfo_stream(), ik->constants()); !fs.done(); fs.next()) {
+    for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
       BasicType type = Signature::basic_type(fs.signature());
       // distinction between static and non-static fields is missing
       if (fs.access_flags().is_static()) continue;
@@ -461,7 +461,7 @@ void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlas
         bool found = false;
         const InstanceKlass* ik = super;
         while (!found && ik != nullptr) {
-          for (AllFieldStream fs(ik->fieldinfo_stream(), ik->constants()); !fs.done(); fs.next()) {
+          for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
             if (fs.offset() == b->offset()) {
               output->print_cr(" @%d \"%s\" %s %d/%d %s",
                   b->offset(),

@@ -30,6 +30,9 @@
 #include "utilities/unsigned5.hpp"
 #include "utilities/vmEnums.hpp"
 
+#define INJECTED_FIELD ((u1) 0x80)
+#define CTRL_LENGTH_MASK ~((int) INJECTED_FIELD)
+
 static constexpr u4 flag_mask(int pos) {
   return (u4)1 << pos;
 }
@@ -239,10 +242,22 @@ class FieldInfoReader {
   void skip(int n) { int s = _r.try_skip(n); assert(s == n,""); }
 
 public:
-  int has_next() { return _r.has_next(); }
-  int position() { return _r.position(); }
-  int next_index() { return _next_index; }
-  void read_field_info(FieldInfo& fi);
+  void skip_bytes(int bytes) {
+    assert(bytes >= 0, "skipping negative");
+    // no bounds checking; r._limit() is not set
+    _r.set_position(_r.position() + bytes);
+  }
+
+  int has_next() const { return _r.has_next(); }
+  int position() const { return _r.position(); }
+  int next_index() const { return _next_index; }
+  void read_name_signature(FieldInfo& fi);
+  void read_partial_record(FieldInfo& fi);
+
+  inline void read_field_info(FieldInfo& fi) {
+    read_name_signature(fi);
+    read_partial_record(fi);
+  }
   // skip a whole field record, both required and optional bits
   FieldInfoReader&  skip_field_info();
 
@@ -257,7 +272,8 @@ public:
 // The format of the stream, after decompression, is a series of
 // integers organized like this:
 //
-//   FieldInfoStream := j=num_java_fields k=num_injected_fields Field[j+k] End
+//   FieldInfoStream := j=num_java_fields k=num_injected_fields ControlByte[j+k] Field[j+k] End
+//   ControlByte := injected_field_flag(1 bit) unused(1 bit) encoded_field_length(6 bits)
 //   Field := name sig offset access flags Optionals(flags)
 //   Optionals(i) := initval?[i&is_init]     // ConstantValue attr
 //                   gsig?[i&is_generic]     // signature attr
