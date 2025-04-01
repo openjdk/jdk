@@ -47,7 +47,6 @@ import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
-import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
@@ -410,6 +409,7 @@ public final class ErrorTest {
     @ParameterSupplier("basic")
     @ParameterSupplier(value="testWindows", ifOS = WINDOWS)
     @ParameterSupplier(value="testMac", ifOS = MACOS)
+    @ParameterSupplier(value="testLinux", ifOS = LINUX)
     @ParameterSupplier(value="winOption", ifNotOS = WINDOWS)
     @ParameterSupplier(value="linuxOption", ifNotOS = LINUX)
     @ParameterSupplier(value="macOption", ifNotOS = MACOS)
@@ -557,32 +557,21 @@ public final class ErrorTest {
         return toTestArgs(testCases.stream());
     }
 
-    @Test(ifOS = MACOS)
-    public static void testAppContentWarning() {
-        // --app-content and --type app-image
-        // Expect `message.codesign.failed.reason.app.content` message in the log.
-        // This is not a fatal error, just a warning.
-        // To make jpackage fail, specify invalid signing identity.
-        final var cmd = JPackageCommand.helloAppImage()
-                .addArguments("--app-content", TKit.TEST_SRC_ROOT.resolve("apps/dukeplug.png"))
-                .addArguments("--mac-sign", "--mac-app-image-sign-identity", "foo");
+    public static Collection<Object[]> testLinux() {
+        final List<TestSpec> testCases = new ArrayList<>();
 
-        final List<CannedFormattedString> expectedStrings = new ArrayList<>();
-        expectedStrings.add(JPackageStringBundle.MAIN.cannedFormattedString("message.codesign.failed.reason.app.content"));
+        testCases.addAll(Stream.of(
+                testSpec().type(PackageType.LINUX_DEB).addArgs("--linux-package-name", "#")
+                        .error("error.deb-invalid-value-for-package-name", "#")
+                        .error("error.deb-invalid-value-for-package-name.advice"),
+                testSpec().type(PackageType.LINUX_RPM).addArgs("--linux-package-name", "#")
+                        .error("error.rpm-invalid-value-for-package-name", "#")
+                        .error("error.rpm-invalid-value-for-package-name.advice")
+        ).map(TestSpec.Builder::create).filter(spec -> {
+            return spec.type().orElseThrow().isSupported();
+        }).toList());
 
-        final var xcodeWarning = JPackageStringBundle.MAIN.cannedFormattedString("message.codesign.failed.reason.xcode.tools");
-        if (!MacHelper.isXcodeDevToolsInstalled()) {
-            expectedStrings.add(xcodeWarning);
-        }
-
-        defaultInit(cmd, expectedStrings);
-
-        if (MacHelper.isXcodeDevToolsInstalled()) {
-            // Check there is no warning about missing xcode command line developer tools.
-            cmd.validateOutput(TKit.assertTextStream(xcodeWarning.getValue()).negate());
-        }
-
-        cmd.execute(1);
+        return toTestArgs(testCases.stream());
     }
 
     private static void duplicate(TestSpec.Builder builder, Consumer<TestSpec> accumulator, Consumer<TestSpec.Builder> mutator) {
