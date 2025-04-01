@@ -1024,10 +1024,6 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeInt::INT;
 }
 
-jint XorINode::calc_max(const jint hi_0, const jint hi_1)  {
-  return xor_upper_bound_for_ranges<jint, juint>(hi_0, hi_1);
-}
-
 //=============================================================================
 //------------------------------add_ring---------------------------------------
 const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
@@ -1048,10 +1044,6 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
   }
 
   return TypeLong::LONG;
-}
-
-jlong XorLNode::calc_max(const jlong hi_0, const jlong hi_1)  {
-  return xor_upper_bound_for_ranges<jlong, julong>(hi_0, hi_1);
 }
 
 Node* XorLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
