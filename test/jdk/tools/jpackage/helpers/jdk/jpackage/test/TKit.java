@@ -518,11 +518,14 @@ public final class TKit {
     }
 
     public static RuntimeException throwSkippedException(String reason) {
-        trace("Skip the test: " + reason);
         RuntimeException ex = ThrowingSupplier.toSupplier(
                 () -> (RuntimeException) Class.forName("jtreg.SkippedException").getConstructor(
                         String.class).newInstance(reason)).get();
+        return throwSkippedException(ex);
+    }
 
+    public static RuntimeException throwSkippedException(RuntimeException ex) {
+        trace("Skip the test: " + ex.getMessage());
         currentTest.notifySkipped(ex);
         throw ex;
     }
