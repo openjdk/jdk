@@ -116,6 +116,7 @@ public:
 
   void close() {
     if (opened()) {
+      // SHUT_RDWR is not available
       ::shutdown(_socket, 2);
       ::close(_socket);
       _socket = -1;

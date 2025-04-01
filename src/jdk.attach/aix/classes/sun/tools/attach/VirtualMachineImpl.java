@@ -112,17 +112,17 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         // - this ensures we throw the permission denied error now rather than
         // later when we attempt to enqueue a command.
         if (isAPIv2Enabled()) {
-             props = getDefaultProps();
+            props = getDefaultProps();
          } else {
-             // Check that we can connect to the process
-             // - this ensures we throw the permission denied error now rather than
-             // later when we attempt to enqueue a command.
-             int s = socket();
-             try {
-                 connect(s, socket_path);
-             } finally {
-                 close(s);
-             }
+            // Check that we can connect to the process
+            // - this ensures we throw the permission denied error now rather than
+            // later when we attempt to enqueue a command.
+            int s = socket();
+            try {
+                connect(s, socket_path);
+            } finally {
+                close(s);
+            }
         }
     }
 
@@ -184,15 +184,15 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     }
 
     private static class SocketOutputStream implements AttachOutputStream {
-         private int fd;
-         public SocketOutputStream(int fd) {
-             this.fd = fd;
-         }
-         @Override
-         public void write(byte[] buffer, int offset, int length) throws IOException {
-             VirtualMachineImpl.write(fd, buffer, offset, length);
-         }
-     }
+        private int fd;
+        public SocketOutputStream(int fd) {
+            this.fd = fd;
+        }
+        @Override
+        public void write(byte[] buffer, int offset, int length) throws IOException {
+            VirtualMachineImpl.write(fd, buffer, offset, length);
+        }
+    }
 
     /*
      * InputStream for the socket connection to get target VM
