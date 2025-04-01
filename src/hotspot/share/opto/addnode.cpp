@@ -1009,16 +1009,16 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeInt *r1 = t1->is_int();
 
   if (r0->is_con() && r1->is_con()) {
-    // Constant fold: (c1 ^ c2) -> c3
+    // compute constant result
     return TypeInt::make(r0->get_con() ^ r1->get_con());
   }
 
   // At least one of the arguments is not constant
 
   if (r0->_lo >= 0 && r1->_lo >= 0) {
-      // Combine [0, lo_1] ^ [0, hi_1] -> [0, max]
-      jint max = xor_upper_bound_for_ranges<jint, juint>(r0->_hi, r1->_hi);
-      return TypeInt::make(0, max, MAX2(r0->_widen, r1->_widen));
+      // Combine [r0->_lo, r0->_hi] ^ [r0->_lo, r1->_hi] -> [0, upper_bound]
+      jint upper_bound = xor_upper_bound_for_ranges<jint, juint>(r0->_hi, r1->_hi);
+      return TypeInt::make(0, upper_bound, MAX2(r0->_widen, r1->_widen));
   }
 
   return TypeInt::INT;
@@ -1031,16 +1031,16 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeLong *r1 = t1->is_long();
 
   if (r0->is_con() && r1->is_con()) {
-    // Constant fold: (c1 ^ c2) -> c3
+    // compute constant result
     return TypeLong::make(r0->get_con() ^ r1->get_con());
   }
 
   // At least one of the arguments is not constant
 
   if (r0->_lo >= 0 && r1->_lo >= 0) {
-      // Combine [0, lo_1] ^ [0, hi_1] -> [0, max]
-      julong max = xor_upper_bound_for_ranges<jlong, julong>(r0->_hi, r1->_hi);
-      return TypeLong::make(0, max, MAX2(r0->_widen, r1->_widen));
+      // Combine [r0->_lo, r0->_hi] ^ [r0->_lo, r1->_hi] -> [0, upper_bound]
+      julong upper_bound = xor_upper_bound_for_ranges<jlong, julong>(r0->_hi, r1->_hi);
+      return TypeLong::make(0, upper_bound, MAX2(r0->_widen, r1->_widen));
   }
 
   return TypeLong::LONG;
