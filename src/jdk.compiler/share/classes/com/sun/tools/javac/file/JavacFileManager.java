@@ -561,11 +561,13 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
         public ArchiveContainer(Path archivePath) throws IOException, ProviderNotFoundException {
             this.archivePath = archivePath;
+            Map<String,String> env = new HashMap<>();
+            // ignores timestamps not stored in ZIP central directory, reducing I/O
+            // This key is handled by ZipFileSystem only.
+            env.put("zipinfo-time", "false");
+
             if (multiReleaseValue != null && archivePath.toString().endsWith(".jar")) {
-                Map<String,String> env = Map.of(
-                    "multi-release", multiReleaseValue,
-                    "zipinfo-time", "false" // ignores timestamps not stored in ZIP central directory, reducing I/O
-                );
+                env.put("multi-release", multiReleaseValue);
                 FileSystemProvider jarFSProvider = fsInfo.getJarFSProvider();
                 Assert.checkNonNull(jarFSProvider, "should have been caught before!");
                 try {
@@ -574,7 +576,10 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                     throw new IOException("ZipException opening \"" + archivePath.getFileName() + "\": " + ze.getMessage(), ze);
                 }
             } else {
-                this.fileSystem = FileSystems.newFileSystem(archivePath, (ClassLoader)null);
+                // Less common case is possible if the file manager was not initialized in JavacTask,
+                // or if non "*.jar" files are on the classpath. At the time of writing, both `javac -cp a.zip`
+                // and `javac -cp x.JAR` file would hit this branch which may warrant investigation.
+                this.fileSystem = FileSystems.newFileSystem(archivePath, env, (ClassLoader)null);
             }
             packages = new HashMap<>();
             for (Path root : fileSystem.getRootDirectories()) {
