@@ -622,7 +622,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     LDCXX="$CXX"
     # Force use of lld, since that is what we expect when setting flags later on
     if test "x$TOOLCHAIN_TYPE" = xclang; then
-      if test "x$OPENJDK_BUILD_OS" != "xmacosx"; then
+      if test "x$OPENJDK_TARGET_OS" = xlinux; then
         LD="$LD -fuse-ld=lld"
         LDCXX="$LDCXX -fuse-ld=lld"
       fi
