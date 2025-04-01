@@ -53,9 +53,6 @@ public class TestFloat16MaxMinSpecialValues {
     }
 
     public static boolean assertionCheck(Float16 actual, Float16 expected) {
-        if (Float16.isNaN(actual) && Float16.isNaN(expected)) {
-            return false;
-        }
         return !actual.equals(expected);
     }
 
