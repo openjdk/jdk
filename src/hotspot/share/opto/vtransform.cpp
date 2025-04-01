@@ -302,7 +302,8 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
   // We can now use this linearity to construct aliasing runtime checks, depending on the
   // different "geometry" of the two VPointer over their iv, i.e. the "slopes" of the linear
   // functions. In the following graphs, the x-axis denotes the values of iv, from init to
-  // limit. And the y-axis denotes the pointer position p(iv).
+  // limit. And the y-axis denotes the pointer position p(iv). Intuitively, this problem
+  // can be seen as having two bands that should not overlap.
   //
   //       Case 1                     Case 2                     Case 3
   //       parallel lines             same sign slope            different sign slope
@@ -324,6 +325,7 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
   //       |         |                |#        |                |#        |
   //       +---------+                +---------+                +---------+
   //
+  //
   // Case 1: parallel lines, i.e. iv_scale = iv_scale1 = iv_scale2
   //
   //   p1(iv)  = p1(init)  - init * iv_scale + iv * iv_scale
@@ -333,8 +335,7 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
   //     p1(iv) + size1 <= p2(iv)      <==>      p1(init) + size1 <= p2(init)
   //     p2(iv) + size2 <= p1(iv)      <==>      p2(init) + size2 <= p1(init)
   //
-  //   Hence, we do not have to check the condition for every iv, but only for
-  //   init. We now have two checks, which could be simple enough.
+  //   Hence, we do not have to check the condition for every iv, but only for init.
   //
   //   p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)
   //   ----------------------------      ----------------------------
@@ -382,14 +383,23 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
   //                       = p2(iv)
   //
   //     The proof for (P1-AFTER-P2) can be done symmetrically.
-  //
 
-  // Case distinction:
-  // 1) parallel
-  // 2) different slopes
+  // TODO: check if limit is really ok, or if we have to adjust slightly.
+
+  Node* init = _vloop.cl()->init_trip();
+  Node* limit = _vloop.cl()->limit();
+  tty->print("init  "); init->dump();
+  tty->print("limit "); limit->dump();
+
   if (vp1.iv_scale() == vp2.iv_scale()) {
+    // p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)
+    Node* p1_init = vp1.make_pointer_expression(init);
+    Node* p2_init = vp2.make_pointer_expression(init);
+    tty->print("p1(init) "); p1_init->dump();
+    tty->print("p2(init) "); p2_init->dump();
     assert(false, "TODO");
   } else {
+    // TODO: check if iv_stride >=, ...
     assert(false, "different slopes not implemented yet");
   }
 }

@@ -671,3 +671,6 @@ bool MemPointer::always_overlaps_with(const MemPointer& other) const {
   return is_always_overlap;
 }
 
+Node* MemPointer::make_pointer_expression(Node* v, Node* v_value) const {
+  return nullptr;
+}
