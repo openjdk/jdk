@@ -34,17 +34,17 @@ import java.util.ArrayList;
 
 /**
  * The {@link Verify} class provides {@link Verify#checkEQ}, which recursively compares the two
- * {@link Object}s by value. It deconstructs {@link Object[]}, compares boxed primitive types,
+ * {@link Object}s by value. It deconstruct an array of objects, compares boxed primitive types,
  * compares the content of arrays and {@link MemorySegment}s, and checks that the messages of two
  * {@link Exception}s are equal. It also checks for the equivalent content in {@code Vector}s from
  * the Vector API.
  *
  * <p>
- * When a comparison fail, then methods print helpful messages, before throwing a {@link VerifyException}.
+ * When a comparison fails, then methods print helpful messages, before throwing a {@link VerifyException}.
  *
  * <p>
- * We have to take special care of {@link Float}s and {@link Double}s, since they have both various
- * encodings for NaN values, but on Java specification they are to be regarded as equal. Hence, we
+ * We have to take special care of {@link Float}s and {@link Double}s, since they both have various
+ * encodings for NaN values while the Java specification regards them as equal. Hence, we
  * have two modes of comparison. By default, different NaN values are regarded as equal. This applies
  * to the boxed floating types, as well as arrays of floating arrays. With {@link Options#enableFloatCheckWithRawBits},
  * we compare the raw bits, and so different NaN encodings are not equal.
@@ -65,7 +65,7 @@ public final class Verify {
         boolean isCheckWithArbitraryClasses;
 
         /**
-         * Generates a {@link Options} with default settings.
+         * Generates an {@link Options} object with default settings.
          */
         public Options() {}
 
@@ -83,7 +83,7 @@ public final class Verify {
         /**
          * By default, we only support the comparison of a limited set of types, but with this option
          * enabled, we can compare arbitrary classes by value, and we compare the Objects by
-         * the recursive structore given by their field values.
+         * the recursive structure given by their field values.
          *
          * @return The {@code this} reference for chaining.
          */
