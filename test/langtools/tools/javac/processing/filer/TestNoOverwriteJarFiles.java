@@ -153,6 +153,23 @@ public class TestNoOverwriteJarFiles {
         assertTrue(Files.exists(OUTPUT_CLASS_FILE), "Output class file missing.");
     }
 
+    // As above, but the JAR is added to the source path instead (with same results).
+    @Test
+    public void jarFileNotModifiedForSourcePath() throws IOException {
+        byte[] originalJarBytes = compileTestLibJar();
+
+        new JavacTask(toolBox)
+                .sources(TARGET_SOURCE)
+                .sourcepath(TEST_LIB_JAR)
+                .run()
+                .writeAll();
+
+        // Assertion 1: The JAR is unchanged.
+        assertArrayEquals(originalJarBytes, Files.readAllBytes(TEST_LIB_JAR), "Jar file was modified.");
+        // Assertion 2: An output class file was written to the current directory.
+        assertTrue(Files.exists(OUTPUT_CLASS_FILE), "Output class file missing.");
+    }
+
     @Test
     public void jarFileNotModifiedAnnotationProcessing() throws IOException {
         byte[] originalJarBytes = compileTestLibJar();
@@ -208,7 +225,8 @@ public class TestNoOverwriteJarFiles {
         }
     }
 
-    static void writeFileObject(FileObject file, String expectedName, String contents) throws IOException {
+    static void writeFileObject(FileObject file, String expectedName, String contents)
+            throws IOException {
         URI fileUri = file.toUri();
         // Check that the file URI doesn't look like it is associated with a JAR.
         assertTrue(fileUri.getSchemeSpecificPart().endsWith("/" + expectedName));
@@ -281,7 +299,8 @@ public class TestNoOverwriteJarFiles {
 
     // Note: JarOutputStream only writes modification time, not creation time, but
     // that's what Javac uses to determine "newness" so it's fine.
-    private static void writeEntry(JarOutputStream jar, String name, byte[] bytes, Instant timestamp) throws IOException {
+    private static void writeEntry(JarOutputStream jar, String name, byte[] bytes, Instant timestamp)
+            throws IOException {
         ZipEntry e = new ZipEntry(name);
         e.setLastModifiedTime(FileTime.from(timestamp));
         jar.putNextEntry(e);
