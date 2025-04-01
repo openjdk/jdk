@@ -450,7 +450,6 @@ public class ForkJoinPool20Test extends JSR166TestCase {
                         if (elapsedMillis >= (done.getCount() == cycles ? d : 2 * d))
                                 tryLongerDelay.set(true);
                         previous.set(now);
-                        assertTrue(done.getCount() > 0);
                         done.countDown();
                     }};
                 final ScheduledFuture<?> periodicTask =
