@@ -26,7 +26,8 @@ package gc.g1;
 /*
  * @test
  * @bug 8236073
- * @requires vm.gc.G1 & vm.opt.ExplicitGCInvokesConcurrent != true
+ * @requires vm.gc.G1
+ * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @library /test/lib
  * @run main/othervm -Xmx200m -XX:MinHeapSize=4m -XX:MinHeapFreeRatio=99
         -XX:MaxHeapFreeRatio=99 gc.g1.TestSoftMaxHeapSize
@@ -42,11 +43,8 @@ public class TestSoftMaxHeapSize {
 
   private static final int OBJECT_SIZE = 1000;
   private static final long ALLOCATED_BYTES = 20_000_000; // About 20M
-  private static final long MAX_HEAP_SIZE =
-      200 * 1024 * 1024; // 200MiB, must match -Xmx on command line.
-
   private static final long SOFT_MAX_HEAP =
-      30 * 1024 * 1024; // 30MiB, leaving ~10MiB headroom above ALLOCATED_BYTES.
+      50 * 1024 * 1024; // 50MiB, leaving ~30MiB headroom above ALLOCATED_BYTES.
 
   private static final List<byte[]> holder = new LinkedList<>();
 
@@ -63,7 +61,7 @@ public class TestSoftMaxHeapSize {
 
     System.gc();
     long heapSize = getCurrentHeapSize();
-    if (heapSize != MAX_HEAP_SIZE) {
+    if (heapSize != ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax()) {
       throw new RuntimeException(
           "Heap size did not fully expand to Xmx after full GC: heapSize = " + heapSize);
     }
