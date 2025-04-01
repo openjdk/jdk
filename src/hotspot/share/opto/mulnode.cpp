@@ -971,11 +971,11 @@ static int maskShiftAmount(PhaseGVN* phase, Node* shiftNode, uint nBits) {
     }
 
     if (count != maskedShift) {
-      shiftNode->set_req(2, phase->intcon(maskedShift)); // Replace shift count with masked value.
       PhaseIterGVN* igvn = phase->is_IterGVN();
       if (igvn) {
         igvn->rehash_node_delayed(shiftNode);
       }
+      shiftNode->set_req(2, phase->intcon(maskedShift)); // Replace shift count with masked value.
     }
     return maskedShift;
   }
@@ -995,12 +995,17 @@ static int maskShiftAmount(PhaseGVN* phase, Node* shiftNode, uint nBits) {
 // if con0 + con1 < nbits => X << (con1 + con0)
 static Node* collapse_nested_shift_left(PhaseGVN* phase, Node* outer_shift, int con0, BasicType bt) {
   assert(bt == T_LONG || bt == T_INT, "Unexpected type");
-  int nbits = static_cast<int>(bits_per_java_integer(bt));
   Node* inner_shift = outer_shift->in(1);
   if (inner_shift->Opcode() != Op_LShift(bt)) {
     return nullptr;
   }
 
+  if (!phase->is_IterGVN()) {
+    phase->record_for_igvn(outer_shift);
+    return nullptr;
+  }
+
+  int nbits = static_cast<int>(bits_per_java_integer(bt));
   int con1 = maskShiftAmount(phase, inner_shift, nbits);
   if (con1 == 0) { // Either non-const, or actually 0 (up to mask) and then delegated to Identity()
     return nullptr;
