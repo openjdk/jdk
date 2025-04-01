@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -558,7 +558,23 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
-     * Parses a Number from the input text.
+     * Parses a {@code Number} from the input text. The value returned is the
+     * {@code limit} corresponding to the {@code format} that is the longest
+     * substring of the input text. Matching is done in ascending order, when
+     * multiple {@code formats} match the text equivalently in strength, the
+     * first matching {@code limit} is returned. If there is no match, {@code
+     * Double.NaN} is returned.
+     * <p>
+     * For example,
+     * {@snippet lang=java :
+     * var fmt = new ChoiceFormat("0#foo|1#bar|2#baz");
+     * fmt.parse("baz"); // returns 2
+     * fmt.parse("quux"); // returns NaN
+     * }
+     *
+     * @implNote The {@code Number} subtype returned by the JDK reference
+     * implementation of this method is always {@code Double}.
+     *
      * @param text the source text.
      * @param status an input-output parameter.  On input, the
      * status.index field indicates the first character of the
@@ -567,7 +583,8 @@ public class ChoiceFormat extends NumberFormat {
      * in the source text.  On exit, if an error did occur,
      * status.index is unchanged and status.errorIndex is set to the
      * first index of the character that caused the parse to fail.
-     * @return A Number representing the value of the number parsed.
+     * @return A Number which represents the {@code limit} corresponding to the {@code
+     * format} parsed.
      * @throws    NullPointerException if {@code status} is {@code null}
      *            or if {@code text} is {@code null} and the list of
      *            choice strings is not empty.
