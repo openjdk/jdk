@@ -38,6 +38,9 @@ import org.openjdk.jmh.annotations.Warmup;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -60,10 +63,13 @@ public class StableMethodHandleBenchmark {
     private static MethodHandle mh = identityHandle();
     private static final Dcl<MethodHandle> DCL = new Dcl<>(StableMethodHandleBenchmark::identityHandle);
     private static final AtomicReference<MethodHandle> ATOMIC_REFERENCE = new AtomicReference<>(identityHandle());
+    private static final Map<String, MethodHandle> MAP = new ConcurrentHashMap<>();
+    private static final Map<String, MethodHandle> STABLE_MAP = StableValue.map(Set.of("identityHandle"), _ -> identityHandle());
 
     static {
         STABLE_MH = StableValue.of();
         STABLE_MH.setOrThrow(identityHandle());
+        MAP.put("identityHandle", identityHandle());
     }
 
     @Benchmark
@@ -82,8 +88,18 @@ public class StableMethodHandleBenchmark {
     }
 
     @Benchmark
+    public int map() throws Throwable {
+        return (int) MAP.get("identityHandle").invokeExact(1);
+    }
+
+    @Benchmark
     public int nonFinalMh() throws Throwable {
         return (int) mh.invokeExact(1);
+    }
+
+    @Benchmark
+    public int stableMap() throws Throwable {
+        return (int) STABLE_MAP.get("identityHandle").invokeExact(1);
     }
 
     @Benchmark
