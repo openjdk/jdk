@@ -51,7 +51,7 @@ public class PListReaderTest {
     enum QueryType {
         STRING(PListReader::queryValue),
         BOOLEAN(PListReader::queryBoolValue),
-        STRING_ARRY(PListReader::queryArrayValue);
+        STRING_ARRAY(PListReader::queryArrayValue);
 
         QueryType(BiFunction<PListReader, String, ?> queryMethod) {
             this.queryMethod = Objects.requireNonNull(queryMethod);
@@ -98,7 +98,7 @@ public class PListReaderTest {
                 } else if (v instanceof Boolean) {
                     queryType(QueryType.BOOLEAN);
                 } else if (v instanceof List<?>) {
-                    queryType(QueryType.STRING_ARRY);
+                    queryType(QueryType.STRING_ARRAY);
                 }
                 return this;
             }
@@ -196,7 +196,7 @@ public class PListReaderTest {
                 testSpecs.add(builder.keyName("string-key").create());
                 testSpecs.add(builder.keyName("array-key").create());
             }
-            case STRING_ARRY -> {
+            case STRING_ARRAY -> {
                 testSpecs.add(builder.keyName("string-key").create());
                 testSpecs.add(builder.keyName("boolean-true-key").create());
                 testSpecs.add(builder.keyName("boolean-false-key").create());
@@ -230,7 +230,7 @@ public class PListReaderTest {
                 testSpec(QueryType.BOOLEAN).xml("<key>foo</key><False/>").create(),
                 testSpec().expectedValue(List.of("foo", "bar")).xml("<key>foo</key><array><string>foo</string><string>bar</string></array>").create(),
                 testSpec().expectedValue(List.of()).xml("<key>foo</key><array/>").create(),
-                testSpec(QueryType.STRING_ARRY).xml("<key>foo</key><Array/>").create(),
+                testSpec(QueryType.STRING_ARRAY).xml("<key>foo</key><Array/>").create(),
                 testSpec().expectedValue("A").xml("<key>foo</key><string>A</string><string>B</string>").create(),
                 testSpec().expectedValue("A").xml("<key>foo</key><string>A</string><key>foo</key><string>B</string>").create()
         );
