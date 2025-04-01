@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,7 @@
 package jdk.internal.net.http.quic;
 
 import java.io.IOException;
-import java.net.ConnectException;
-import java.net.http.HttpConnectTimeoutException;
-import java.net.http.HttpTimeoutException;
 import java.util.Objects;
-
-import javax.net.ssl.SSLHandshakeException;
 
 import jdk.internal.net.quic.QuicTLSEngine;
 import jdk.internal.net.quic.QuicTransportErrors;
@@ -126,17 +121,8 @@ public abstract sealed class TerminationCause {
                     : new IOException(fallbackExceptionMsg);
         } else if (original instanceof QuicTransportException qte) {
             return new IOException(qte.getMessage());
-        } else if (original instanceof SSLHandshakeException) {
-            return new SSLHandshakeException(original.getMessage(), original);
-        } else if (original instanceof ConnectException) {
-            return (ConnectException) new ConnectException(original.getMessage())
-                    .initCause(original);
-        } else if (original instanceof HttpConnectTimeoutException) {
-            return  (IOException) new HttpConnectTimeoutException(original.getMessage()).initCause(original);
-        } else if (original instanceof HttpTimeoutException) {
-            return  (IOException) new HttpTimeoutException(original.getMessage()).initCause(original);
-        } else if (original.getClass() == IOException.class) {
-            return new IOException(original.getMessage(), original);
+        } else if (original instanceof IOException ioe) {
+            return ioe;
         } else {
             return new IOException(original);
         }
