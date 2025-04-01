@@ -325,6 +325,17 @@ WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
                 *(vs.low_boundary() - rhs.noaccess_prefix() / 2 ));
 WB_END
 
+WB_ENTRY(void, WB_DecodeNKlassAndAccessKlass(JNIEnv* env, jobject o, jint nKlass))
+  assert(UseCompressedClassPointers, "Should only call for UseCompressedClassPointers");
+  const narrowKlass nk = (narrowKlass)nKlass;
+  const Klass* const k = CompressedKlassPointers::decode_not_null_without_asserts(nKlass);
+  printf("WB_DecodeNKlassAndAccessKlass: nk %u k " PTR_FORMAT "\n", nk, p2i(k));
+  printf("Will attempt to crash now...\n");
+  fflush(stdout); // flush now - we will crash below
+  // Access k by calling a virtual function - will result in loading the vtable from *k
+  k->print_on(tty);
+WB_END
+
 static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
                                            size_t magnitude, size_t iterations) {
   size_t granularity = os::vm_allocation_granularity();
@@ -2733,6 +2744,7 @@ static JNINativeMethod methods[] = {
       (void*)&WB_GetCompressedOopsMaxHeapSize},
   {CC"printHeapSizes",     CC"()V",                   (void*)&WB_PrintHeapSizes    },
   {CC"readFromNoaccessArea",CC"()V",                  (void*)&WB_ReadFromNoaccessArea},
+  {CC"decodeNKlassAndAccessKlass",CC"(I)V",            (void*)&WB_DecodeNKlassAndAccessKlass},
   {CC"stressVirtualSpaceResize",CC"(JJJ)I",           (void*)&WB_StressVirtualSpaceResize},
 #if INCLUDE_CDS
   {CC"getCDSOffsetForName0", CC"(Ljava/lang/String;)I",  (void*)&WB_GetCDSOffsetForName},

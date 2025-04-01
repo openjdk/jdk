@@ -340,41 +340,47 @@ uint G1Policy::calculate_young_target_length(uint desired_young_length) const {
                               _reserve_regions,
                               max_to_eat_into_reserve);
 
+    uint survivor_regions_count = _g1h->survivor_regions_count();
+    uint desired_eden_length = desired_young_length - survivor_regions_count;
+    uint allocated_eden_length = allocated_young_length - survivor_regions_count;
+
     if (_free_regions_at_end_of_collection <= _reserve_regions) {
       // Fully eat (or already eating) into the reserve, hand back at most absolute_min_length regions.
-      uint receiving_young = MIN3(_free_regions_at_end_of_collection,
-                                  desired_young_length,
+      uint receiving_eden = MIN3(_free_regions_at_end_of_collection,
+                                  desired_eden_length,
                                   max_to_eat_into_reserve);
+      // Ensure that we provision for at least one Eden region.
+      receiving_eden = MAX2(receiving_eden, 1u);
       // We could already have allocated more regions than what we could get
       // above.
-      receiving_additional_eden = allocated_young_length < receiving_young ?
-                                  receiving_young - allocated_young_length : 0;
+      receiving_additional_eden = allocated_eden_length < receiving_eden ?
+                                  receiving_eden - allocated_eden_length : 0;
 
       log_trace(gc, ergo, heap)("Young target length: Fully eat into reserve "
-                                "receiving young %u receiving additional eden %u",
-                                receiving_young,
-                                receiving_additional_eden);
-    } else if (_free_regions_at_end_of_collection < (desired_young_length + _reserve_regions)) {
+                                "receiving eden %u receiving additional eden %u",
+                                receiving_eden, receiving_additional_eden);
+    } else if (_free_regions_at_end_of_collection < (desired_eden_length + _reserve_regions)) {
       // Partially eat into the reserve, at most max_to_eat_into_reserve regions.
       uint free_outside_reserve = _free_regions_at_end_of_collection - _reserve_regions;
-      assert(free_outside_reserve < desired_young_length,
+      assert(free_outside_reserve < desired_eden_length,
              "must be %u %u",
-             free_outside_reserve, desired_young_length);
+             free_outside_reserve, desired_eden_length);
 
-      uint receiving_within_reserve = MIN2(desired_young_length - free_outside_reserve,
+      uint receiving_within_reserve = MIN2(desired_eden_length - free_outside_reserve,
                                            max_to_eat_into_reserve);
-      uint receiving_young = free_outside_reserve + receiving_within_reserve;
+      uint receiving_eden = free_outside_reserve + receiving_within_reserve;
+
       // Again, we could have already allocated more than we could get.
-      receiving_additional_eden = allocated_young_length < receiving_young ?
-                                  receiving_young - allocated_young_length : 0;
+      receiving_additional_eden = allocated_eden_length < receiving_eden ?
+                                  receiving_eden - allocated_eden_length : 0;
 
       log_trace(gc, ergo, heap)("Young target length: Partially eat into reserve "
                                 "free outside reserve %u "
                                 "receiving within reserve %u "
-                                "receiving young %u "
+                                "receiving eden %u "
                                 "receiving additional eden %u",
                                 free_outside_reserve, receiving_within_reserve,
-                                receiving_young, receiving_additional_eden);
+                                receiving_eden, receiving_additional_eden);
     } else {
       // No need to use the reserve.
       receiving_additional_eden = desired_young_length - allocated_young_length;
