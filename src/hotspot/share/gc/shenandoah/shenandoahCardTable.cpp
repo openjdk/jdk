@@ -59,7 +59,7 @@ void ShenandoahCardTable::initialize() {
   _write_byte_map = _byte_map;
   _write_byte_map_base = _byte_map_base;
 
-  ReservedSpace read_space = MemoryReserver::reserve(_byte_map_size, rs_align, _page_size, mtGC);
+  ReservedSpace read_space = MemoryReserver::reserve(_byte_map_size, rs_align, _page_size, mtNone);
   initialize(read_space);
 
   _read_byte_map = (CardValue*) read_space.base();
