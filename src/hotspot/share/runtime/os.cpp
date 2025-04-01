@@ -1913,7 +1913,7 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
 
-char* os::reserve_memory(size_t bytes, MemTag mem_tag, bool executable) {
+char* os::reserve_memory(size_t bytes, bool executable, MemTag mem_tag) {
   char* result = pd_reserve_memory(bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC, mem_tag);
@@ -1924,7 +1924,7 @@ char* os::reserve_memory(size_t bytes, MemTag mem_tag, bool executable) {
   return result;
 }
 
-char* os::attempt_reserve_memory_at(char* addr, size_t bytes, MemTag mem_tag, bool executable) {
+char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, MemTag mem_tag) {
   char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, mem_tag);
