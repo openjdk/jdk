@@ -28,7 +28,6 @@
  * @bug 8352775
  * @requires vm.cds
  * @requires vm.gc.Z
- * @requires vm.gc == null
  * @comment work around JDK-8345635
  * @requires !vm.jvmci.enabled
  * @library /test/lib
