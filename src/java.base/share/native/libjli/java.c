@@ -666,7 +666,10 @@ JavaMain(void* _args)
         ret = 1;
     }
     LEAVE();
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wreturn-type"
 }
+#pragma GCC diagnostic pop
 
 /*
  * Test if the given name is one of the class path options.
