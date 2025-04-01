@@ -1258,28 +1258,59 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
 void LIR_Assembler::type_profile_helper(Register mdo,
                                         ciMethodData *md, ciProfileData *data,
                                         Register recv, Label* update_done) {
-  for (uint i = 0; i < ReceiverTypeData::row_limit(); i++) {
-    Label next_test;
-    // See if the receiver is receiver[n].
-    __ cmpptr(recv, Address(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i))));
-    __ jccb(Assembler::notEqual, next_test);
-    Address data_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i)));
-    __ addptr(data_addr, DataLayout::counter_increment);
-    __ jmp(*update_done);
-    __ bind(next_test);
-  }
+  assert(update_done == nullptr, "Unused");
 
-  // Didn't find receiver; find next empty slot and fill it in
-  for (uint i = 0; i < ReceiverTypeData::row_limit(); i++) {
-    Label next_test;
-    Address recv_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i)));
-    __ cmpptr(recv_addr, NULL_WORD);
-    __ jccb(Assembler::notEqual, next_test);
-    __ movptr(recv_addr, recv);
-    __ movptr(Address(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i))), DataLayout::counter_increment);
-    __ jmp(*update_done);
-    __ bind(next_test);
+  int base_receiver_offset     = md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(0));
+  int end_receiver_offset      = md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(ReceiverTypeData::row_limit()));
+  int step_receiver_offset     = md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(1)) - base_receiver_offset;
+  int receiver_to_count_offset = md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(0)) - base_receiver_offset;
+
+#ifdef ASSERT
+  // We are about to walk the MDO slots without asking for offsets.
+  // Check that our math hits all the right slots.
+  for (uint c = 0; c < ReceiverTypeData::row_limit(); c++) {
+    int real_recv_offset  = md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(c));
+    int real_count_offset = md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(c));
+    int offset = base_receiver_offset + step_receiver_offset*c;
+    assert(offset == real_recv_offset, "receiver slot regularity");
+    assert(offset + receiver_to_count_offset == real_count_offset, "receiver count regularity");
   }
+#endif
+
+  Register offset = rscratch1;
+  assert_different_registers(mdo, recv, offset);
+
+  Label L_loop, L_found, L_not_null, L_update;
+
+  // The slots in MDO are filled sequentially, and the updates are intrinsically imprecise:
+  // under initial slot installations, we may transiently have the same slot for different
+  // receivers. This imprecision skews profile a little, but is otherwise safe.
+  // It also allows us to perform a single scan. When the scan encounters the first nullptr,
+  // it can assume we are in unallocated tail, there were no matching receivers, and thus
+  // we can just take this free slot.
+
+  __ movptr(offset, base_receiver_offset);
+  __ bind(L_loop);
+    __ cmpptr(Address(mdo, offset), NULL_WORD);
+    __ jccb(Assembler::notEqual, L_not_null);
+      __ movptr(Address(mdo, offset), recv);
+    __ bind(L_not_null);
+    __ cmpptr(recv, Address(mdo, offset));
+    __ jccb(Assembler::equal, L_found);
+  __ addptr(offset, step_receiver_offset);
+  __ cmpptr(offset, end_receiver_offset);
+  __ jccb(Assembler::notEqual, L_loop);
+
+  // Receiver did not match any saved receiver and there is no empty row for it.
+  // Increment total counter to indicate polymorphic case.
+  __ movptr(offset, md->byte_offset_of_slot(data, CounterData::count_offset()));
+  __ jmpb(L_update);
+
+  __ bind(L_found);
+  __ addptr(offset, receiver_to_count_offset);
+
+  __ bind(L_update);
+  __ addptr(Address(mdo, offset), DataLayout::counter_increment);
 }
 
 void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, Label* failure, Label* obj_is_null) {
@@ -1337,15 +1368,9 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ jmp(*obj_is_null);
     __ bind(not_null);
 
-    Label update_done;
     Register recv = k_RInfo;
     __ load_klass(recv, obj, tmp_load_klass);
-    type_profile_helper(mdo, md, data, recv, &update_done);
-
-    Address nonprofiled_receiver_count_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-    __ addptr(nonprofiled_receiver_count_addr, DataLayout::counter_increment);
-
-    __ bind(update_done);
+    type_profile_helper(mdo, md, data, recv, nullptr);
   } else {
     __ jcc(Assembler::equal, *obj_is_null);
   }
@@ -1457,14 +1482,9 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       __ jmp(done);
       __ bind(not_null);
 
-      Label update_done;
       Register recv = k_RInfo;
       __ load_klass(recv, value, tmp_load_klass);
-      type_profile_helper(mdo, md, data, recv, &update_done);
-
-      Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-      __ addptr(counter_addr, DataLayout::counter_increment);
-      __ bind(update_done);
+      type_profile_helper(mdo, md, data, recv, nullptr);
     } else {
       __ jcc(Assembler::equal, done);
     }
@@ -2827,13 +2847,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
       }
     } else {
       __ load_klass(recv, recv, tmp_load_klass);
-      Label update_done;
-      type_profile_helper(mdo, md, data, recv, &update_done);
-      // Receiver did not match any saved receiver and there is no empty row for it.
-      // Increment total counter to indicate polymorphic case.
-      __ addptr(counter_addr, DataLayout::counter_increment);
-
-      __ bind(update_done);
+      type_profile_helper(mdo, md, data, recv, nullptr);
     }
   } else {
     // Static call
