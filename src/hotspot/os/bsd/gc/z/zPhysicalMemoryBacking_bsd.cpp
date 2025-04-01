@@ -78,7 +78,7 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity)
     _initialized(false) {
 
   // Reserve address space for backing memory
-  _base = (uintptr_t)os::reserve_memory(max_capacity, mtJavaHeap, false);
+  _base = (uintptr_t)os::reserve_memory(max_capacity, mtJavaHeap);
   if (_base == 0) {
     // Failed
     ZInitialize::error("Failed to reserve address space for backing memory");
