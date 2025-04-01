@@ -807,7 +807,8 @@ static uint next_random() {
 static void print(const char* name, const RegMask& mask) {
   tty->print("%s: ", name);
   mask.print();
-  tty->print_cr(", size: %u, offset: %u, all_stack: %u", mask.rm_size_bits(), mask.offset_bits(), mask.is_AllStack());
+  tty->print_cr(", size: %u, offset: %u, all_stack: %u", mask.rm_size_bits(),
+                mask.offset_bits(), mask.is_AllStack());
 }
 
 static void assert_equivalent(const RegMask& mask,
@@ -826,8 +827,7 @@ static void assert_equivalent(const RegMask& mask,
 
 static void populate_auxiliary_sets(RegMask& mask_aux,
                                     ResourceBitMap& mask_aux_ref,
-                                    uint reg_capacity,
-                                    uint offset,
+                                    uint reg_capacity, uint offset,
                                     bool random_offset) {
   mask_aux.Clear();
   mask_aux_ref.clear();
@@ -846,11 +846,11 @@ static void populate_auxiliary_sets(RegMask& mask_aux,
       break;
     case 1: // within
       new_offset_in_words =
-        (next_random() % capacity_in_words) + offset_in_words;
+          (next_random() % capacity_in_words) + offset_in_words;
       break;
     case 2: // after
       new_offset_in_words = offset_in_words + capacity_in_words +
-        (next_random() % (capacity_in_words));
+                            (next_random() % (capacity_in_words));
       break;
     default:
       FAIL();
@@ -901,11 +901,15 @@ static void populate_auxiliary_sets(RegMask& mask_aux,
   mask_aux.set_AllStack(next_random() % 2);
   assert_equivalent(mask_aux, mask_aux_ref, mask_aux.is_AllStack());
 
-  if (Verbose) { print("mask_aux", mask_aux); }
+  if (Verbose) {
+    print("mask_aux", mask_aux);
+  }
 }
 
-static void stack_extend_ref_masks(ResourceBitMap& mask1, bool all_stack1, uint size_bits1, uint offset1,
-                                   ResourceBitMap& mask2, bool all_stack2, uint size_bits2, uint offset2) {
+static void stack_extend_ref_masks(ResourceBitMap& mask1, bool all_stack1,
+                                   uint size_bits1, uint offset1,
+                                   ResourceBitMap& mask2, bool all_stack2,
+                                   uint size_bits2, uint offset2) {
   uint size_bits_after = MAX2(size_bits1, size_bits2);
   if (all_stack1) {
     mask1.set_range(size_bits1 + offset1, size_bits_after + offset1);
@@ -958,7 +962,8 @@ TEST_VM(RegMask, random) {
       mask_ref.set_bit(reg);
       if (mask.is_AllStack() && reg >= size_bits_before) {
         // Stack-extend reference bitset.
-        mask_ref.set_range(size_bits_before + offset_ref, mask.rm_size_bits() + offset_ref);
+        mask_ref.set_range(size_bits_before + offset_ref,
+                           mask.rm_size_bits() + offset_ref);
       }
       break;
     case 1:
@@ -973,7 +978,9 @@ TEST_VM(RegMask, random) {
       mask_ref.clear_bit(reg);
       break;
     case 2:
-      if (Verbose) { tty->print_cr("action: Clear"); }
+      if (Verbose) {
+        tty->print_cr("action: Clear");
+      }
       mask.Clear();
       mask_ref.clear();
       all_stack_ref = false;
@@ -983,60 +990,85 @@ TEST_VM(RegMask, random) {
         // Set_All expects a zero-offset.
         break;
       }
-      if (Verbose) { tty->print_cr("action: Set_All"); }
+      if (Verbose) {
+        tty->print_cr("action: Set_All");
+      }
       mask.Set_All();
       mask_ref.set_range(0, size_bits_before);
       all_stack_ref = true;
       break;
     case 4:
-      if (Verbose) { tty->print_cr("action: AND"); }
-      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_bits(), offset_ref, /*random_offset*/ false);
+      if (Verbose) {
+        tty->print_cr("action: AND");
+      }
+      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_bits(),
+                              offset_ref, /*random_offset*/ false);
       mask.AND(mask_aux);
-      stack_extend_ref_masks(mask_ref, all_stack_ref, size_bits_before, offset_ref,
-                             mask_aux_ref, mask_aux.is_AllStack(), mask_aux.rm_size_bits(), mask_aux.offset_bits());
+      stack_extend_ref_masks(mask_ref, all_stack_ref, size_bits_before,
+                             offset_ref, mask_aux_ref, mask_aux.is_AllStack(),
+                             mask_aux.rm_size_bits(), mask_aux.offset_bits());
       mask_ref.set_intersection(mask_aux_ref);
       all_stack_ref = all_stack_ref && mask_aux.is_AllStack();
       break;
     case 5:
-      if (Verbose) { tty->print_cr("action: OR"); }
-      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_bits(), offset_ref, /*random_offset*/ false);
+      if (Verbose) {
+        tty->print_cr("action: OR");
+      }
+      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_bits(),
+                              offset_ref, /*random_offset*/ false);
       mask.OR(mask_aux);
-      stack_extend_ref_masks(mask_ref, all_stack_ref, size_bits_before, offset_ref,
-                             mask_aux_ref, mask_aux.is_AllStack(), mask_aux.rm_size_bits(), mask_aux.offset_bits());
+      stack_extend_ref_masks(mask_ref, all_stack_ref, size_bits_before,
+                             offset_ref, mask_aux_ref, mask_aux.is_AllStack(),
+                             mask_aux.rm_size_bits(), mask_aux.offset_bits());
       mask_ref.set_union(mask_aux_ref);
       all_stack_ref = all_stack_ref || mask_aux.is_AllStack();
       break;
     case 6:
-      if (Verbose) { tty->print_cr("action: SUBTRACT"); }
-      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_bits(), offset_ref, /*random_offset*/ false);
+      if (Verbose) {
+        tty->print_cr("action: SUBTRACT");
+      }
+      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_bits(),
+                              offset_ref, /*random_offset*/ false);
       mask.SUBTRACT(mask_aux);
-      stack_extend_ref_masks(mask_ref, all_stack_ref, size_bits_before, offset_ref,
-                             mask_aux_ref, mask_aux.is_AllStack(), mask_aux.rm_size_bits(), mask_aux.offset_bits());
+      stack_extend_ref_masks(mask_ref, all_stack_ref, size_bits_before,
+                             offset_ref, mask_aux_ref, mask_aux.is_AllStack(),
+                             mask_aux.rm_size_bits(), mask_aux.offset_bits());
       mask_ref.set_difference(mask_aux_ref);
       if (mask_aux.is_AllStack()) {
         all_stack_ref = false;
       }
       break;
     case 7:
-      if (Verbose) { tty->print_cr("action: SUBTRACT_inner"); }
-      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_bits(), offset_ref, /*random_offset*/ true);
-      // SUBTRACT_inner expects an argument register mask with all_stack = false.
+      if (Verbose) {
+        tty->print_cr("action: SUBTRACT_inner");
+      }
+      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_bits(),
+                              offset_ref, /*random_offset*/ true);
+      // SUBTRACT_inner expects an argument register mask with all_stack =
+      // false.
       mask_aux.set_AllStack(false);
       mask.SUBTRACT_inner(mask_aux);
       // SUBTRACT_inner does not have "stack-extension semantics".
       mask_ref.set_difference(mask_aux_ref);
       break;
     case 8:
-      if (Verbose) { tty->print_cr("action: overlap"); }
-      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_bits(), offset_ref, /*random_offset*/ false);
+      if (Verbose) {
+        tty->print_cr("action: overlap");
+      }
+      populate_auxiliary_sets(mask_aux, mask_aux_ref, mask.rm_size_bits(),
+                              offset_ref, /*random_offset*/ false);
       // Stack-extend a copy of mask_ref to avoid mutating the original.
-      stack_extend_ref_masks(mask_ref_copy, all_stack_ref, size_bits_before, offset_ref,
-                             mask_aux_ref, mask_aux.is_AllStack(), mask_aux.rm_size_bits(), mask_aux.offset_bits());
-      ASSERT_EQ(mask_ref_copy.intersects(mask_aux_ref) || (all_stack_ref && mask_aux.is_AllStack()),
+      stack_extend_ref_masks(mask_ref_copy, all_stack_ref, size_bits_before,
+                             offset_ref, mask_aux_ref, mask_aux.is_AllStack(),
+                             mask_aux.rm_size_bits(), mask_aux.offset_bits());
+      ASSERT_EQ(mask_ref_copy.intersects(mask_aux_ref) ||
+                    (all_stack_ref && mask_aux.is_AllStack()),
                 mask.overlap(mask_aux));
       break;
     case 9:
-      if (Verbose) { tty->print_cr("action: rollover"); }
+      if (Verbose) {
+        tty->print_cr("action: rollover");
+      }
       // rollover expects the mask to be cleared and with all_stack = true
       mask.Clear();
       mask.set_AllStack(true);
@@ -1048,7 +1080,9 @@ TEST_VM(RegMask, random) {
       }
       break;
     case 10:
-      if (Verbose) { tty->print_cr("action: reset"); }
+      if (Verbose) {
+        tty->print_cr("action: reset");
+      }
       mask.set_offset(0);
       mask.Clear();
       mask_ref.clear();
@@ -1056,7 +1090,9 @@ TEST_VM(RegMask, random) {
       offset_ref = 0;
       break;
     case 11:
-      if (Verbose) { tty->print_cr("action: Set_All_From_Offset"); }
+      if (Verbose) {
+        tty->print_cr("action: Set_All_From_Offset");
+      }
       mask.Set_All_From_Offset();
       mask_ref.set_range(offset_ref, offset_ref + size_bits_before);
       all_stack_ref = true;
