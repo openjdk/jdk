@@ -29,7 +29,6 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "nmt/mallocHeader.inline.hpp"
-#include "nmt/mallocLimit.hpp"
 #include "nmt/mallocSiteTable.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memTracker.hpp"
@@ -97,61 +96,7 @@ void MallocMemorySnapshot::make_adjustment() {
 
 void MallocMemorySummary::initialize() {
   // Uses placement new operator to initialize static area.
-  MallocLimitHandler::initialize(MallocLimit);
-}
-
-bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const malloclimit* limit) {
-
-#define FORMATTED \
-  "MallocLimit: reached global limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
-  PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
-
-  // If we hit the limit during error reporting, we print a short warning but otherwise ignore it.
-  // We don't want to risk recursive assertion or torn hs-err logs.
-  if (VMError::is_error_reported()) {
-    // Print warning, but only the first n times to avoid flooding output.
-    static int stopafter = 10;
-    if (stopafter-- > 0) {
-      log_warning(nmt)(FORMATTED);
-    }
-    return false;
-  }
-
-  if (limit->mode == MallocLimitMode::trigger_fatal) {
-    fatal(FORMATTED);
-  } else {
-    log_warning(nmt)(FORMATTED);
-  }
-#undef FORMATTED
-
-  return true;
-}
-
-bool MallocMemorySummary::category_limit_reached(MemTag mem_tag, size_t s, size_t so_far, const malloclimit* limit) {
-
-#define FORMATTED \
-  "MallocLimit: reached category \"%s\" limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
-  NMTUtil::tag_to_enum_name(mem_tag), PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
-
-  // If we hit the limit during error reporting, we print a short warning but otherwise ignore it.
-  // We don't want to risk recursive assertion or torn hs-err logs.
-  if (VMError::is_error_reported()) {
-    // Print warning, but only the first n times to avoid flooding output.
-    static int stopafter = 10;
-    if (stopafter-- > 0) {
-      log_warning(nmt)(FORMATTED);
-    }
-    return false;
-  }
-
-  if (limit->mode == MallocLimitMode::trigger_fatal) {
-    fatal(FORMATTED);
-  } else {
-    log_warning(nmt)(FORMATTED);
-  }
-#undef FORMATTED
-
-  return true;
+  NMemLimitHandler::initialize(MallocLimit, NMemType::Malloc);
 }
 
 bool MallocTracker::initialize(NMT_TrackingLevel level) {
