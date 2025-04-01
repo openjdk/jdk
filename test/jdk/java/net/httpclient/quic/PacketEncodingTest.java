@@ -43,7 +43,6 @@ import jdk.internal.net.http.quic.packets.QuicPacket.PacketNumberSpace;
 import jdk.internal.net.http.quic.packets.QuicPacket.PacketType;
 import jdk.internal.net.http.quic.packets.QuicPacketDecoder;
 import jdk.internal.net.http.quic.packets.QuicPacketEncoder;
-import jdk.internal.net.http.quic.packets.QuicPacketEncoder.OutgoingQuicPacket;
 import jdk.internal.net.http.quic.packets.QuicPacketNumbers;
 import jdk.internal.net.http.quic.packets.RetryPacket;
 import jdk.internal.net.http.quic.packets.ShortHeaderPacket;
@@ -68,7 +67,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -88,6 +86,7 @@ import static org.testng.Assert.*;
  * @run testng/othervm -Dseed=2906555779406889127 PacketEncodingTest
  * @run testng/othervm -Dseed=902801756808168822 PacketEncodingTest
  * @run testng/othervm -Dseed=5643545543196691308 PacketEncodingTest
+ * @run testng/othervm -Dseed=2646683818688275736 PacketEncodingTest
  * @run testng/othervm -Djdk.internal.httpclient.debug=true PacketEncodingTest
  */
 public class PacketEncodingTest {
@@ -405,8 +404,7 @@ public class PacketEncodingTest {
     private static List<ByteBuffer> getBuffers(List<QuicFrame> payload) {
         return payload.stream().map(QuicFrame::payload).toList();
     }
-    private static List<ByteBuffer> getBuffers(List<QuicFrame> payload, CodingContext context, int peerCidLength) {
-        int minSize = context.minShortPacketPayloadSize(peerCidLength);
+    private static List<ByteBuffer> getBuffers(List<QuicFrame> payload, int minSize) {
         int payloadSize = payload.stream().mapToInt(QuicFrame::size).sum();
         if (payloadSize < minSize) {
             payload = new ArrayList<>(payload);
@@ -503,13 +501,13 @@ public class PacketEncodingTest {
                                         long packetNumber,
                                         QuicConnectionId destConnectionId,
                                         List<QuicFrame> payload,
-                                        CodingContext context) {
+                                        int minSize) {
         // Check created packet
         assertEquals(packet.headersType(), HeadersType.SHORT);
         assertEquals(packet.packetType(), packetType);
         assertEquals(packet.hasLength(), false);
         assertEquals(packet.numberSpace(), packetNumberSpace);
-        assertEquals(getBuffers(packet.frames()), getBuffers(payload, context, destConnectionId.length()));
+        assertEquals(getBuffers(packet.frames()), getBuffers(payload, minSize));
         assertEquals(packet.packetNumber(), packetNumber);
         assertEquals(packet.destinationId(), destConnectionId);
     }
@@ -1165,9 +1163,10 @@ public class PacketEncodingTest {
                 frames,
                 context);
 
+        int minPayloadSize = context.minShortPacketPayloadSize(destConnectionId.length()) - packetNumberLength;
         checkShortHeaderPacket(packet, PacketType.ONERTT,
                 PacketNumberSpace.APPLICATION, packetNumber,
-                destConnectionId, frames, context);
+                destConnectionId, frames, minPayloadSize);
         assertEquals(packet.hasLength(), false);
         assertEquals(packet.size(), expectedSize);
 
@@ -1225,7 +1224,6 @@ public class PacketEncodingTest {
                 // decoder will coalesce padding frames. So instead of finding
                 // two padding frames in the decoded packet we will find just one.
                 // To make the check pass, we should expect a bigger padding frame.
-                int minPayloadSize = context.minShortPacketPayloadSize(destid.length);
                 if (minPayloadSize > frameSizes) {
                     // replace the first frame with a bigger padding frame
                     expectedFrames = new ArrayList<>(frames);
@@ -1240,7 +1238,7 @@ public class PacketEncodingTest {
             }
             checkShortHeaderPacket(oneRttDecoded, PacketType.ONERTT,
                     PacketNumberSpace.APPLICATION, packetNumber,
-                    destConnectionId, expectedFrames, context);
+                    destConnectionId, expectedFrames, minPayloadSize);
             assertEquals(decodedPacket.size(), packet.size());
             assertEquals(decodedPacket.size(), size);
         }
