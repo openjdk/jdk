@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
 
 package org.openjdk.bench.java.lang.stable;
 
+import org.openjdk.bench.java.lang.stable.StableValueBenchmark.Dcl;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
@@ -38,9 +38,8 @@ import org.openjdk.jmh.annotations.Warmup;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.IntFunction;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Benchmark measuring StableValue performance
@@ -59,10 +58,22 @@ public class StableMethodHandleBenchmark {
     private static final MethodHandle FINAL_MH = identityHandle();
     private static final StableValue<MethodHandle> STABLE_MH;
     private static MethodHandle mh = identityHandle();
+    private static final Dcl<MethodHandle> DCL = new Dcl<>(StableMethodHandleBenchmark::identityHandle);
+    private static final AtomicReference<MethodHandle> ATOMIC_REFERENCE = new AtomicReference<>(identityHandle());
 
     static {
         STABLE_MH = StableValue.of();
         STABLE_MH.setOrThrow(identityHandle());
+    }
+
+    @Benchmark
+    public int atomic() throws Throwable {
+        return (int) ATOMIC_REFERENCE.get().invokeExact(1);
+    }
+
+    @Benchmark
+    public int dcl() throws Throwable {
+        return (int) DCL.get().invokeExact(1);
     }
 
     @Benchmark
@@ -71,13 +82,13 @@ public class StableMethodHandleBenchmark {
     }
 
     @Benchmark
-    public int stableMh() throws Throwable {
-        return (int)STABLE_MH.orElseThrow().invokeExact(1);
+    public int nonFinalMh() throws Throwable {
+        return (int) mh.invokeExact(1);
     }
 
     @Benchmark
-    public int mh() throws Throwable {
-        return (int)mh.invokeExact(1);
+    public int stableMh() throws Throwable {
+        return (int) STABLE_MH.orElseThrow().invokeExact(1);
     }
 
     static MethodHandle identityHandle() {
