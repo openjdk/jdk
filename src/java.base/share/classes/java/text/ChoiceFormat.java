@@ -558,22 +558,19 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
-     * Parses a {@code Number} from the input text. The value returned is the
-     * {@code limit} corresponding to the {@code format} that is the longest
-     * substring of the input text. Matching is done in ascending order, when
-     * multiple {@code formats} match the text equivalently in strength, the
-     * first matching {@code limit} is returned. If there is no match, {@code
-     * Double.NaN} is returned.
+     * Parses a {@code Number} from the input text, the subtype of which is always
+     * {@code Double}. The value returned is the {@code limit} corresponding
+     * to the {@code format} that is the longest substring of the input text.
+     * Matching is done in ascending order, when multiple {@code formats} match
+     * the text equivalently in strength, the first matching {@code limit} is
+     * returned. If there is no match, {@code Double.NaN} is returned.
      * <p>
      * For example,
      * {@snippet lang=java :
      * var fmt = new ChoiceFormat("0#foo|1#bar|2#baz");
-     * fmt.parse("baz", new ParsePosition(0)); // returns 2
+     * fmt.parse("baz", new ParsePosition(0)); // returns 2.0
      * fmt.parse("quux", new ParsePosition(0)); // returns NaN
      * }
-     *
-     * @implNote The {@code Number} subtype returned by the JDK reference
-     * implementation of this method is always {@code Double}.
      *
      * @param text the source text.
      * @param status an input-output parameter.  On input, the
