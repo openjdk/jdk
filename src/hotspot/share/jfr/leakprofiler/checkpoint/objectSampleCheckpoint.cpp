@@ -48,7 +48,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
-const unsigned int initial_size = 1009;
+const unsigned int initial_size = 431;
 
 static JfrCHeapTraceIdSet* c_heap_allocate_set(int size = initial_size) {
   return new JfrCHeapTraceIdSet(size);
