@@ -39,6 +39,7 @@ import java.util.AbstractMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.RandomAccess;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -205,6 +206,16 @@ final class StableMapTest {
         assertThrows(UnsupportedOperationException.class, () -> values.addAll(Set.of(1)));
         assertThrows(UnsupportedOperationException.class, () -> values.removeIf(i -> true));
         assertThrows(UnsupportedOperationException.class, () -> values.retainAll(Set.of(KEY)));
+    }
+
+    @Test
+    void valuesToString() {
+        var map = newMap();
+        var values = map.values();
+        assertEquals("[.unset, .unset, .unset]", values.toString());
+        map.get(KEY);
+        var afterGet = values.toString();
+        assertTrue(afterGet.contains(Integer.toString(KEY)), afterGet);
     }
 
     @Test

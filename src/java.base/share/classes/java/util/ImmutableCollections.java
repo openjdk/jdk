@@ -1570,6 +1570,32 @@ class ImmutableCollections {
         }
 
         @Override
+        public Collection<V> values() {
+            return new StableMapValues();
+        }
+
+        final class StableMapValues extends AbstractCollection<V> {
+            @Override public Iterator<V> iterator() { return new ValueIterator(); }
+            @Override public int size() { return StableMap.this.size(); }
+            @Override public boolean isEmpty() { return StableMap.this.isEmpty();}
+            @Override public void clear() { StableMap.this.clear(); }
+            @Override public boolean contains(Object v) { return StableMap.this.containsValue(v); }
+
+            @Override
+            public String toString() {
+                final StableValueImpl<V>[] values = delegate.values().toArray(new IntFunction<StableValueImpl<V>[]>() {
+                    @Override
+                    public StableValueImpl<V>[] apply(int len) {
+                        @SuppressWarnings("unchecked")
+                        var array = (StableValueImpl<V>[]) Array.newInstance(StableValueImpl.class, len);
+                        return array;
+                    }
+                });
+                return StableUtil.renderElements(StableMap.this, "StableMap", values);
+            }
+        }
+
+        @Override
         public String toString() {
             return StableUtil.renderMappings(this, "StableMap", delegate.entrySet());
         }
