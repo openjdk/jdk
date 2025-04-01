@@ -255,9 +255,56 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
   }
 }
 
-void VTransform::add_speculative_aliasing_check(const VPointer& p1, const VPointer& p2) {
-  assert(!p1.always_overlaps_with(p2), "check would always be false");
-  assert(!p1.never_overlaps_with(p2), "check would always be true");
+void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPointer& vp2) {
+  assert(!vp1.always_overlaps_with(vp2), "check would always be false");
+  assert(!vp1.never_overlaps_with(vp2), "check would always be true");
+
+  // We apply the "MemPointer Linearity Corrolary" to VPointer vp and the corresponding
+  // pointer p:
+  //   (C0) is given by the construction of VPointer vp, which simply wraps a MemPointer mp.
+  //   (c1) with v = iv and scale_v = iv_scale
+  //   (C2) with r = [init, init + stride_iv, .., limit] which is the set of possible
+  //        iv values in the loop.
+  //   (C3) the memory accesses for every iv value in the loop must be in bounds, otherwise
+  //        the program has undefined behaviour already.
+  //   (C4) abs(iv_scale * stride_iv) < 2^31 is given by the checks in
+  //        VPointer::init_are_scale_and_stride_not_too_large.
+  //
+  // Hence, it follows that we can see p and vp as linear functions of iv in r, i.e. for
+  // all iv values in the loop:
+  //   p(iv)  = p(init)  - init * iv_scale + iv * iv_scale
+  //   vp(iv) = vp(init) - init * iv_scale + iv * iv_scale
+  //
+  //
+  // We can now use this linearity to construct aliasing runtime checks, depending on the
+  // different "geometry" of the two VPointer over their iv, i.e. the "slopes" of the linear
+  // functions. In the following graphs, the x-axis denotes the values of iv, from init to
+  // limit. And the y-axis denotes the pointer position p(iv).
+  //
+  //       Case 1                     Case 2                     Case 3
+  //       parallel lines             same sign slope            different sign slope
+  //                                  but not parallel
+  //
+  //       +---------+                +---------+                +---------+
+  //       |         |                |        #|                |#        |
+  //       |         |                |       # |                |  #      |
+  //       |        #|                |      #  |                |    #    |
+  //       |      #  |                |     #   |                |      #  |
+  //       |    #    |                |    #    |                |        #|
+  //       |  # ^    |                |   #     |                |        ^|
+  //       |#   |   #|                |  #      |                |        ||
+  //       |    v #  |                | #       |                |        v|
+  //       |    #    |                |#       #|                |        #|
+  //       |  #      |                |^     #  |                |      #  |
+  //       |#        |                ||   #    |                |    #    |
+  //       |         |                |v #      |                |  #      |
+  //       |         |                |#        |                |#        |
+  //       +---------+                +---------+                +---------+
+  //
+  // Case 1: parallel lines, i.e. vp1.iv_scale() == vp2.iv_scale()
+  //
+  //
+  //
 
   // VPointer form is:
   //
@@ -268,7 +315,7 @@ void VTransform::add_speculative_aliasing_check(const VPointer& p1, const VPoint
   // We want check:
   //
   //   for each iv in [init, limit]:
-  //     no overlap between [p1, p1 + size1] and [p2, p2 + size]
+  //     no overlap between [vp1, vp1 + size1] and [vp2, vp2 + size]
   //
   //
   // Linear form ... no overflow?
@@ -276,7 +323,7 @@ void VTransform::add_speculative_aliasing_check(const VPointer& p1, const VPoint
   // Case distinction:
   // 1) parallel
   // 2) different slopes
-  if (p1.iv_scale() == p2.iv_scale()) {
+  if (vp1.iv_scale() == vp2.iv_scale()) {
     assert(false, "TODO");
   } else {
     assert(false, "different slopes not implemented yet");

@@ -407,8 +407,8 @@
 //
 //   Then:
 //     Both p and mp have a linear form for v in r:
-//       p(v)  = p(lo)  + (v - lo) * scale_v                      (Corrolary P)
-//       mp(v) = mp(lo) + (v - lo) * scale_v                      (Corrolary MP)
+//       p(v)  = p(lo)  - lo * scale_v + iv * scale_v              (Corrolary P)
+//       mp(v) = mp(lo) - lo * scale_v + iv * scale_v              (Corrolary MP)
 //
 //     Note: the calculations are done in long, and hence there can be no int overflow.
 //           Thus, p(v) and mp(v) can be considered linear functions for v in r.
@@ -421,15 +421,13 @@
 //
 //   We prove the Corrolary by induction over v:
 //   Base Case: v = lo
-//     p(lo)  = p(lo)  + 0
-//            = p(lo)  + (lo - lo) * scale_v
-//     mp(lo) = mp(lo) + 0
-//            = mp(lo) + (lo - lo) * scale_v
+//     p(lo)  = p(lo)  - lo * scale_v + lo * scale_v
+//     mp(lo) = mp(lo) - lo * scale_v + lo * scale_v
 //
 //   Step Case: v0 and v1 in r, v1 = v0 + stride_v
 //     Assume:
-//       p(v0)  = p(lo)  + (v0 - lo) * scale_v                   (Induction Hypothesis IH-P)
-//       mp(v0) = mp(lo) + (v0 - lo) * scale_v                   (Induction Hypothesis IH-MP)
+//       p(v0)  = p(lo)  - lo * scale_v + v * scale_v          (Induction Hypothesis IH-P)
+//       mp(v0) = mp(lo) - lo * scale_v + v * scale_v          (Induction Hypothesis IH-MP)
 //
 //     We take the form of mp, and further apply SAFE1 decompositions, i.e. long addition,
 //     subtraction and multiplication:
@@ -445,11 +443,11 @@
 //       mp(v1) = summand_rest + scale_v * v0 + con + scale_v * stride_v            (MP-DIFF)
 //
 //     We continue by applying the Induction Hypothesis IH-MP
-//       mp(v1) = mp(v0)                                   + scale_v * stride_v
-//                -------- apply (IH-MP) -----------------
-//              = mp(lo) + (v0            - lo) * scale_v  + scale_v * stride_v
-//              = mp(lo) + (v0 + stride_v - lo) * scale_v
-//              = mp(lo) + (v1            - lo) * scale_v
+//       mp(v1) = mp(v0)                                + scale_v * stride_v
+//                -------- apply (IH-MP) -------------
+//              = mp(lo) - lo * scale_v + v0 * scale_v  + scale_v * stride_v
+//              = mp(lo) - lo * scale_v + (v0 + stride_v) * scale_v
+//              = mp(lo) - lo * scale_v + v1 * scale_v
 //
 //     This proves the Corrolary MP.
 //
@@ -468,13 +466,13 @@
 //       p(v1) - p(v0) = mp(v1) - mp(v0)
 //
 //     Reformulating and applying (MP-DIFF) and (IH-P):
-//       p(v1) = p(v0)                                   + mp(v1) - mp(v1)
-//                                                         apply (MP-DIFF)
-//             = p(v0)                                   + scale_v * stride_v
-//               ------------- apply (IH-P) ------------
-//             = p(lo)  + (v0            - lo) * scale_v + scale_v * stride_v
-//             = p(lo)  + (v0 + stride_v - lo) * scale_v
-//             = p(lo)  + (v1            - lo) * scale_v
+//       p(v1) = p(v0)                                  + mp(v1) - mp(v1)
+//                                                        apply (MP-DIFF)
+//             = p(v0)                                  + scale_v * stride_v
+//               ------------ apply (IH-P) ------------
+//             = p(lo) - lo * scale_v + v0 * scale_v    + scale_v * stride_v
+//             = p(lo) - lo * scale_v + (v0 + stride_v) * scale_v
+//             = p(lo) - lo * scale_v + v1 * scale_v
 //
 //     This proves Corrolary P.
 //
