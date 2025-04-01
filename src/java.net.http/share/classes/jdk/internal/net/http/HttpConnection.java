@@ -100,7 +100,7 @@ abstract class HttpConnection implements Closeable {
      * among instances.
      * </p>
      */
-    final String label;
+    private final String label;
 
     HttpConnection(InetSocketAddress address, HttpClientImpl client, String label) {
         this.address = address;
@@ -118,7 +118,7 @@ abstract class HttpConnection implements Closeable {
      * {@return a label identifying the connection to facilitate
      * {@link HttpResponse#connectionLabel() HttpResponse::connectionLabel}}
      */
-    public String label() {
+    public final String label() {
         return label;
     }
 
