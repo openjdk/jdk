@@ -101,11 +101,6 @@ class JfrSet : public CONFIG::STORAGE {
     return _map->number_of_entries();
   }
 
-  template <typename Callback>
-  void iterate(Callback& cb) {
-    _map->iterate_all(cb);
-  }
-
   void clear() {
     if (is_nonempty()) {
       _map->unlink(this);
