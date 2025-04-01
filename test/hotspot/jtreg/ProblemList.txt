@@ -103,8 +103,6 @@ gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
 
 # :hotspot_runtime
 
-runtime/cds/appcds/SignedJar.java 8353330 generic-all
-
 runtime/jni/terminatedThread/TestTerminatedThread.java 8317789 aix-ppc64
 runtime/handshake/HandshakeSuspendExitTest.java 8294313 generic-all
 runtime/Monitor/SyncOnValueBasedClassTest.java 8340995 linux-s390x
