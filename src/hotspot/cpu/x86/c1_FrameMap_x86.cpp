@@ -32,7 +32,6 @@ const int FrameMap::pd_c_runtime_reserved_arg_size = 0;
 LIR_Opr FrameMap::map_to_opr(BasicType type, VMRegPair* reg, bool) {
   LIR_Opr opr = LIR_OprFact::illegalOpr;
   VMReg r_1 = reg->first();
-  VMReg r_2 = reg->second();
   if (r_1->is_stack()) {
     // Convert stack slot to an SP offset
     // The calling convention does not count the SharedRuntime::out_preserve_stack_slots() value
@@ -41,9 +40,7 @@ LIR_Opr FrameMap::map_to_opr(BasicType type, VMRegPair* reg, bool) {
     opr = LIR_OprFact::address(new LIR_Address(rsp_opr, st_off, type));
   } else if (r_1->is_Register()) {
     Register reg = r_1->as_Register();
-    if (r_2->is_Register() && (type == T_LONG || type == T_DOUBLE)) {
-      Register reg2 = r_2->as_Register();
-      assert(reg2 == reg, "must be same register");
+    if (type == T_LONG || type == T_DOUBLE) {
       opr = as_long_opr(reg);
     } else if (is_reference_type(type)) {
       opr = as_oop_opr(reg);

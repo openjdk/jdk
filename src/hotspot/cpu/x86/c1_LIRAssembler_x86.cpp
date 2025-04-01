@@ -819,13 +819,6 @@ void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
         __ movptr(as_Address(to_addr), src->as_register());
       }
       break;
-    case T_METADATA:
-      // We get here to store a method pointer to the stack to pass to
-      // a dtrace runtime call. This can't work on 64 bit with
-      // compressed klass ptrs: T_METADATA can be a compressed klass
-      // ptr or a 64 bit method pointer.
-      ShouldNotReachHere();
-      break;
     case T_ADDRESS:
       __ movptr(as_Address(to_addr), src->as_register());
       break;
@@ -3060,7 +3053,6 @@ void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp) {
     __ xorpd(dest->as_xmm_double_reg(),
              ExternalAddress((address)double_signflip_pool),
              rscratch1);
-
   } else {
     ShouldNotReachHere();
   }
