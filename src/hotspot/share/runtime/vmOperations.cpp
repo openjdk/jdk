@@ -37,6 +37,7 @@
 #include "memory/metaspace/metaspaceReporter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memLogRecorder.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
@@ -571,6 +572,7 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
 }
 
 void VM_Exit::doit() {
+  NMT_LogRecorder::finish();
 
   if (VerifyBeforeExit) {
     HandleMark hm(VMThread::vm_thread());
