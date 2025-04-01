@@ -36,7 +36,6 @@ import jdk.test.lib.net.SimpleSSLContext;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLServerSocketFactory;
 import java.time.Duration;
 import java.util.Arrays;
@@ -165,17 +164,11 @@ public class TimeoutBasic {
                     out.println("Body (should be null): " + resp.body());
                     throw new RuntimeException("Unexpected response: " + resp.statusCode());
                 } catch (CompletionException e) {
-                    Throwable x = e;
-                    if (x.getCause() instanceof SSLHandshakeException s) {
-                        if (s.getCause() instanceof HttpTimeoutException) {
-                            x = s;
-                        }
-                    }
-                    if (!(x.getCause() instanceof HttpTimeoutException)) {
+                    if (!(e.getCause() instanceof HttpTimeoutException)) {
                         e.printStackTrace(out);
                         throw new RuntimeException("Unexpected exception: " + e.getCause());
                     } else {
-                        out.println("Caught expected timeout: " + x.getCause());
+                        out.println("Caught expected timeout: " + e.getCause());
                     }
                 }
             }
