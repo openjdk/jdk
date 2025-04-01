@@ -1568,7 +1568,8 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
                                                                old_collector_xfer);
     max_xfer_regions -= old_collector_regions;
     if (old_collector_regions > 0) {
-      ShenandoahGenerationalHeap::cast(_heap)->transfer_to_young(old_collector_regions);
+      bool succeeded = ShenandoahGenerationalHeap::cast(_heap)->transfer_to_young(old_collector_regions);
+      assert(succeeded, "Expected to transfer %zu regions from old to young", old_collector_regions);
     }
   }
 

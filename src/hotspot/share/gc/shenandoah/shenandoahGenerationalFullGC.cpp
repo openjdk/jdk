@@ -117,7 +117,8 @@ void ShenandoahGenerationalFullGC::balance_generations_after_gc(ShenandoahHeap* 
 
   if (old_capacity > old_usage) {
     size_t excess_old_regions = (old_capacity - old_usage) / ShenandoahHeapRegion::region_size_bytes();
-    gen_heap->transfer_to_young(excess_old_regions);
+    bool succeeded = gen_heap->transfer_to_young(excess_old_regions);
+    assert(succeeded, "Expected to transfer %zu regions from old to young", excess_old_regions);
   } else if (old_capacity < old_usage) {
     size_t old_regions_deficit = (old_usage - old_capacity) / ShenandoahHeapRegion::region_size_bytes();
     gen_heap->force_transfer_to_old(old_regions_deficit);
