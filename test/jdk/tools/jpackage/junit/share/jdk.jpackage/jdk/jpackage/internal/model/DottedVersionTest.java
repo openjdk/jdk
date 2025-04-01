@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal;
+package jdk.jpackage.internal.model;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -132,7 +132,7 @@ public class DottedVersionTest {
                 expectedErrorMsg = MessageFormat.format(I18N.getString("error.version-string-invalid-component"), version, invalidComponent);
             }
 
-            final var ex = assertThrowsExactly(IllegalArgumentException.class, () -> new DottedVersion(version));
+            final var ex = assertThrowsExactly(IllegalArgumentException.class, () -> DottedVersion.greedy(version));
 
             assertEquals(expectedErrorMsg, ex.getMessage());
         }

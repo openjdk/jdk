@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,38 +22,41 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-package jdk.jpackage.internal;
+package jdk.jpackage.internal.model;
 
 import java.text.MessageFormat;
+import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
+import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.util.MultiResourceBundle;
 
-public class PackagerException extends Exception {
-    private static final long serialVersionUID = 1L;
-    private static final ResourceBundle bundle = ResourceBundle.getBundle(
-            "jdk.jpackage.internal.resources.MainResources");
+final class I18N {
 
-    public PackagerException(Throwable cause) {
-        super(cause);
+    static String getString(String key) {
+        return BUNDLE.getString(key);
     }
 
-    public PackagerException(String key, Throwable cause) {
-        super(bundle.getString(key), cause);
+    static String format(String key, Object ... args) {
+        var str = getString(key);
+        if (args.length != 0) {
+            return MessageFormat.format(str, args);
+        } else {
+            return str;
+        }
     }
 
-    public PackagerException(String key) {
-        super(bundle.getString(key));
-    }
+    private static final ResourceBundle BUNDLE;
 
-    public PackagerException(String key, String ... arguments) {
-        super(MessageFormat.format(
-                bundle.getString(key), (Object[]) arguments));
+    static {
+        var prefix = "jdk.jpackage.internal.resources.";
+        BUNDLE = MultiResourceBundle.create(
+                prefix + "MainResources",
+                Map.of(
+                        OperatingSystem.LINUX, List.of(prefix + "LinuxResources"),
+                        OperatingSystem.MACOS, List.of(prefix + "MacResources"),
+                        OperatingSystem.WINDOWS, List.of(prefix + "WinResources")
+                )
+        );
     }
-
-    public PackagerException(
-            Throwable cause, String key, String ... arguments) {
-        super(MessageFormat.format(bundle.getString(key),
-                (Object[]) arguments), cause);
-    }
-
 }

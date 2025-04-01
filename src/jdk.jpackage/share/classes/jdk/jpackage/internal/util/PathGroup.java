@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal;
+package jdk.jpackage.internal.util;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -35,26 +35,25 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.util.FileUtils;
 
 
 /**
  * Group of paths.
  * Each path in the group is assigned a unique id.
  */
-final class PathGroup {
-    PathGroup(Map<Object, Path> paths) {
+public final class PathGroup {
+    public PathGroup(Map<Object, Path> paths) {
         entries = new HashMap<>(paths);
     }
 
-    Path getPath(Object id) {
+    public Path getPath(Object id) {
         if (id == null) {
             throw new NullPointerException();
         }
         return entries.get(id);
     }
 
-    void setPath(Object id, Path path) {
+    public void setPath(Object id, Path path) {
         if (path != null) {
             entries.put(id, path);
         } else {
@@ -65,14 +64,14 @@ final class PathGroup {
     /**
      * All configured entries.
      */
-    List<Path> paths() {
+    public List<Path> paths() {
         return entries.values().stream().toList();
     }
 
     /**
      * Root entries.
      */
-    List<Path> roots() {
+    public List<Path> roots() {
         // Sort by the number of path components in ascending order.
         List<Map.Entry<Path, Path>> sorted = normalizedPaths().stream().sorted(
                 (a, b) -> a.getKey().getNameCount() - b.getKey().getNameCount()).toList();
@@ -88,7 +87,7 @@ final class PathGroup {
                         v -> v.getValue()).toList();
     }
 
-    long sizeInBytes() throws IOException {
+    public long sizeInBytes() throws IOException {
         long reply = 0;
         for (Path dir : roots().stream().filter(f -> Files.isDirectory(f)).collect(
                 Collectors.toList())) {
@@ -100,25 +99,25 @@ final class PathGroup {
         return reply;
     }
 
-    PathGroup resolveAt(Path root) {
+    public PathGroup resolveAt(Path root) {
         return new PathGroup(entries.entrySet().stream().collect(
                 Collectors.toMap(e -> e.getKey(),
                         e -> root.resolve(e.getValue()))));
     }
 
-    void copy(PathGroup dst) throws IOException {
+    public void copy(PathGroup dst) throws IOException {
         copy(this, dst, null, false);
     }
 
-    void move(PathGroup dst) throws IOException {
+    public void move(PathGroup dst) throws IOException {
         copy(this, dst, null, true);
     }
 
-    void transform(PathGroup dst, TransformHandler handler) throws IOException {
+    public void transform(PathGroup dst, TransformHandler handler) throws IOException {
         copy(this, dst, handler, false);
     }
 
-    static interface Facade<T> {
+    public static interface Facade<T> {
         PathGroup pathGroup();
 
         default Collection<Path> paths() {
@@ -149,9 +148,9 @@ final class PathGroup {
         }
     }
 
-    static interface TransformHandler {
-        public void copyFile(Path src, Path dst) throws IOException;
-        public void createDirectory(Path dir) throws IOException;
+    public static interface TransformHandler {
+        void copyFile(Path src, Path dst) throws IOException;
+        void createDirectory(Path dir) throws IOException;
     }
 
     private static void copy(PathGroup src, PathGroup dst,
@@ -179,7 +178,7 @@ final class PathGroup {
             handler = new TransformHandler() {
                 @Override
                 public void copyFile(Path src, Path dst) throws IOException {
-                    Files.createDirectories(IOUtils.getParent(dst));
+                    Files.createDirectories(dst.getParent());
                     if (move) {
                         Files.move(src, dst);
                     } else {
