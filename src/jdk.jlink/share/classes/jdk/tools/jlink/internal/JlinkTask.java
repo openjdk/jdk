@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,19 @@ public class JlinkTask {
         // be used for linking from the run-time image.
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.generateLinkableRuntime = true;
-        }, true, "--generate-linkable-runtime")
+        }, true, "--generate-linkable-runtime"),
+        new Option<JlinkTask>(true, (task, opt, arg) -> {
+            // Allow multiple values, separated by comma in addition to
+            // multiple times the same option.
+            Arrays.asList(arg.split(",")).stream()
+                .forEach(v -> {
+                    // <module-name>/<file-path>
+                    String[] tokens = v.split("/", 2);
+                    Set<String> moduleSet = task.options.upgradeableFiles.computeIfAbsent(tokens[0],
+                                                                                          k -> new HashSet<>());
+                    moduleSet.add(tokens[1]);
+                });
+        }, true, "--upgrade-files"),
     };
 
 
@@ -235,6 +247,7 @@ public class JlinkTask {
         boolean suggestProviders = false;
         boolean ignoreModifiedRuntime = false;
         boolean generateLinkableRuntime = false;
+        final Map<String, Set<String>> upgradeableFiles = new HashMap<>();
     }
 
     public static final String OPTIONS_RESOURCE = "jdk/tools/jlink/internal/options";
@@ -459,11 +472,14 @@ public class JlinkTask {
             throw taskHelper.newBadArgs("err.runtime.link.packaged.mods");
         }
 
+        LinkableRuntimeImage.Config linkableRuntimeConfig = new LinkableRuntimeImage.Config(
+                options.ignoreModifiedRuntime,
+                isLinkFromRuntime ? options.upgradeableFiles : null);
         return new JlinkConfiguration(options.output,
                                       roots,
                                       finder,
                                       isLinkFromRuntime,
-                                      options.ignoreModifiedRuntime,
+                                      linkableRuntimeConfig,
                                       options.generateLinkableRuntime);
     }
 
@@ -788,7 +804,7 @@ public class JlinkTask {
                         taskHelper.getMessage("err.not.a.module.directory", path));
             }
         } else if (config.linkFromRuntimeImage()) {
-            return LinkableRuntimeImage.newArchive(module, path, config.ignoreModifiedRuntime(), taskHelper);
+            return LinkableRuntimeImage.newArchive(module, path, config.runtimeImageConfig(), taskHelper);
         } else {
             throw new IllegalArgumentException(
                     taskHelper.getMessage("err.not.modular.format", module, path));
