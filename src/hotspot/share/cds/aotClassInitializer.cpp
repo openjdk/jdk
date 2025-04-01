@@ -303,6 +303,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
       {"java/lang/invoke/MethodHandles"},
       {"java/lang/invoke/SimpleMethodHandle"},
       {"java/lang/invoke/StringConcatFactory"},
+      {"java/lang/invoke/VarHandleGuards"},
       {"java/util/Collections"},
       {"java/util/stream/Collectors"},
       {"jdk/internal/constant/ConstantUtils"},
