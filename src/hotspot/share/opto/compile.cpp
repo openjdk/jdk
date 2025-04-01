@@ -67,6 +67,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/node.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/output.hpp"
 #include "opto/parse.hpp"
@@ -394,13 +395,16 @@ void Compile::remove_useless_node(Node* dead) {
     remove_expensive_node(dead);
   }
   if (dead->is_OpaqueTemplateAssertionPredicate()) {
-    remove_template_assertion_predicate_opaq(dead);
+    remove_template_assertion_predicate_opaque(dead->as_OpaqueTemplateAssertionPredicate());
   }
   if (dead->is_ParsePredicate()) {
     remove_parse_predicate(dead->as_ParsePredicate());
   }
   if (dead->for_post_loop_opts_igvn()) {
     remove_from_post_loop_opts_igvn(dead);
+  }
+  if (dead->for_merge_stores_igvn()) {
+    remove_from_merge_stores_igvn(dead);
   }
   if (dead->is_Call()) {
     remove_useless_late_inlines(                &_late_inlines, dead);
@@ -417,7 +421,7 @@ void Compile::remove_useless_node(Node* dead) {
 }
 
 // Disconnect all useless nodes by disconnecting those at the boundary.
-void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist) {
+void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist, const Unique_Node_List* root_and_safepoints) {
   uint next = 0;
   while (next < useful.size()) {
     Node *n = useful.at(next++);
@@ -450,9 +454,11 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
 
   remove_useless_nodes(_macro_nodes,        useful); // remove useless macro nodes
   remove_useless_nodes(_parse_predicates,   useful); // remove useless Parse Predicate nodes
-  remove_useless_nodes(_template_assertion_predicate_opaqs, useful); // remove useless Assertion Predicate opaque nodes
+  // Remove useless Template Assertion Predicate opaque nodes
+  remove_useless_nodes(_template_assertion_predicate_opaques, useful);
   remove_useless_nodes(_expensive_nodes,    useful); // remove useless expensive nodes
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
+  remove_useless_nodes(_for_merge_stores_igvn, useful); // remove useless node recorded for merge stores IGVN pass
   remove_useless_unstable_if_traps(useful);          // remove useless unstable_if traps
   remove_useless_coarsened_locks(useful);            // remove useless coarsened locks nodes
 #ifdef ASSERT
@@ -468,7 +474,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   remove_useless_late_inlines(         &_string_late_inlines, useful);
   remove_useless_late_inlines(         &_boxing_late_inlines, useful);
   remove_useless_late_inlines(&_vector_reboxing_late_inlines, useful);
-  debug_only(verify_graph_edges(true/*check for no_dead_code*/);)
+  debug_only(verify_graph_edges(true /*check for no_dead_code*/, root_and_safepoints);)
 }
 
 // ============================================================================
@@ -627,6 +633,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
+      _merge_stores_phase(false),
       _allow_macro_nodes(true),
       _inlining_progress(false),
       _inlining_incrementally(false),
@@ -648,9 +655,10 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _intrinsics(comp_arena(), 0, 0, nullptr),
       _macro_nodes(comp_arena(), 8, 0, nullptr),
       _parse_predicates(comp_arena(), 8, 0, nullptr),
-      _template_assertion_predicate_opaqs(comp_arena(), 8, 0, nullptr),
+      _template_assertion_predicate_opaques(comp_arena(), 8, 0, nullptr),
       _expensive_nodes(comp_arena(), 8, 0, nullptr),
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
+      _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
       _unstable_if_traps(comp_arena(), 8, 0, nullptr),
       _coarsened_locks(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
@@ -905,6 +913,7 @@ Compile::Compile(ciEnv* ci_env,
       _stub_entry_point(nullptr),
       _max_node_limit(MaxNodeLimit),
       _post_loop_opts_phase(false),
+      _merge_stores_phase(false),
       _allow_macro_nodes(true),
       _inlining_progress(false),
       _inlining_incrementally(false),
@@ -923,6 +932,7 @@ Compile::Compile(ciEnv* ci_env,
       _log(ci_env->log()),
       _first_failure_details(nullptr),
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
+      _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
       NOT_PRODUCT(_igv_printer(nullptr) COMMA)
           _unique(0),
@@ -1824,8 +1834,7 @@ void Compile::mark_parse_predicate_nodes_useless(PhaseIterGVN& igvn) {
   }
   for (int i = 0; i < parse_predicate_count(); i++) {
     ParsePredicateNode* parse_predicate = _parse_predicates.at(i);
-    parse_predicate->mark_useless();
-    igvn._worklist.push(parse_predicate);
+    parse_predicate->mark_useless(igvn);
   }
   _parse_predicates.clear();
 }
@@ -1867,6 +1876,49 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
     if (C->major_progress()) {
       C->clear_major_progress(); // ensure that major progress is now clear
     }
+  }
+}
+
+void Compile::record_for_merge_stores_igvn(Node* n) {
+  if (!n->for_merge_stores_igvn()) {
+    assert(!_for_merge_stores_igvn.contains(n), "duplicate");
+    n->add_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
+    _for_merge_stores_igvn.append(n);
+  }
+}
+
+void Compile::remove_from_merge_stores_igvn(Node* n) {
+  n->remove_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
+  _for_merge_stores_igvn.remove(n);
+}
+
+// We need to wait with merging stores until RangeCheck smearing has removed the RangeChecks during
+// the post loops IGVN phase. If we do it earlier, then there may still be some RangeChecks between
+// the stores, and we merge the wrong sequence of stores.
+// Example:
+//   StoreI RangeCheck StoreI StoreI RangeCheck StoreI
+// Apply MergeStores:
+//   StoreI RangeCheck [   StoreL  ] RangeCheck StoreI
+// Remove more RangeChecks:
+//   StoreI            [   StoreL  ]            StoreI
+// But now it would have been better to do this instead:
+//   [         StoreL       ] [       StoreL         ]
+//
+// Note: we allow stores to merge in this dedicated IGVN round, and any later IGVN round,
+//       since we never unset _merge_stores_phase.
+void Compile::process_for_merge_stores_igvn(PhaseIterGVN& igvn) {
+  C->set_merge_stores_phase();
+
+  if (_for_merge_stores_igvn.length() > 0) {
+    while (_for_merge_stores_igvn.length() > 0) {
+      Node* n = _for_merge_stores_igvn.pop();
+      n->remove_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
+      igvn._worklist.push(n);
+    }
+    igvn.optimize();
+    if (failing()) return;
+    assert(_for_merge_stores_igvn.length() == 0, "no more delayed nodes allowed");
+    print_method(PHASE_AFTER_MERGE_STORES, 3);
   }
 }
 
@@ -2428,6 +2480,8 @@ void Compile::Optimize() {
   C->clear_major_progress(); // ensure that major progress is now clear
 
   process_for_post_loop_opts_igvn(igvn);
+
+  process_for_merge_stores_igvn(igvn);
 
   if (failing())  return;
 
@@ -4199,11 +4253,25 @@ bool Compile::needs_clinit_barrier(ciInstanceKlass* holder, ciMethod* accessing_
 //------------------------------verify_bidirectional_edges---------------------
 // For each input edge to a node (ie - for each Use-Def edge), verify that
 // there is a corresponding Def-Use edge.
-void Compile::verify_bidirectional_edges(Unique_Node_List &visited) {
+void Compile::verify_bidirectional_edges(Unique_Node_List& visited, const Unique_Node_List* root_and_safepoints) const {
   // Allocate stack of size C->live_nodes()/16 to avoid frequent realloc
   uint stack_size = live_nodes() >> 4;
-  Node_List nstack(MAX2(stack_size, (uint)OptoNodeListSize));
-  nstack.push(_root);
+  Node_List nstack(MAX2(stack_size, (uint) OptoNodeListSize));
+  if (root_and_safepoints != nullptr) {
+    assert(root_and_safepoints->member(_root), "root is not in root_and_safepoints");
+    for (uint i = 0, limit = root_and_safepoints->size(); i < limit; i++) {
+      Node* root_or_safepoint = root_and_safepoints->at(i);
+      // If the node is a safepoint, let's check if it still has a control input
+      // Lack of control input signifies that this node was killed by CCP or
+      // recursively by remove_globally_dead_node and it shouldn't be a starting
+      // point.
+      if (!root_or_safepoint->is_SafePoint() || root_or_safepoint->in(0) != nullptr) {
+        nstack.push(root_or_safepoint);
+      }
+    }
+  } else {
+    nstack.push(_root);
+  }
 
   while (nstack.size() > 0) {
     Node* n = nstack.pop();
@@ -4253,12 +4321,12 @@ void Compile::verify_bidirectional_edges(Unique_Node_List &visited) {
 //------------------------------verify_graph_edges---------------------------
 // Walk the Graph and verify that there is a one-to-one correspondence
 // between Use-Def edges and Def-Use edges in the graph.
-void Compile::verify_graph_edges(bool no_dead_code) {
+void Compile::verify_graph_edges(bool no_dead_code, const Unique_Node_List* root_and_safepoints) const {
   if (VerifyGraphEdges) {
     Unique_Node_List visited;
 
     // Call graph walk to check edges
-    verify_bidirectional_edges(visited);
+    verify_bidirectional_edges(visited, root_and_safepoints);
     if (no_dead_code) {
       // Now make sure that no visited node is used by an unvisited node.
       bool dead_nodes = false;

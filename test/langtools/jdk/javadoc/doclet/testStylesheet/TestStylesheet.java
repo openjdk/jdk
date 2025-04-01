@@ -25,7 +25,7 @@
  * @test
  * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549 8072461 8154261 8162363 8160196 8151743 8177417
  *           8175218 8176452 8181215 8182263 8183511 8169819 8183037 8185369 8182765 8196201 8184205 8223378 8241544
- *           8253117 8263528 8289334 8292594 8347058
+ *           8253117 8263528 8289334 8292594 8347058 8344301
  * @summary  Run tests on doclet stylesheet.
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -81,56 +81,13 @@ public class TestStylesheet extends JavadocTester {
                     ul {
                         list-style-type:disc;
                     }""",
-                """
-                    .caption {
-                        position:relative;
-                        text-align:left;
-                        background-repeat:no-repeat;
-                        color:var(--selected-text-color);
-                        clear:none;
-                        overflow:hidden;
-                        padding: 10px 0 0 1px;
-                        margin:0;
-                    }""",
-                """
-                    .caption span {
-                        font-weight:bold;
-                        white-space:nowrap;
-                        padding:5px 12px 7px 12px;
-                        display:inline-block;
-                        float:left;
-                        background-color:var(--selected-background-color);
-                        border: none;
-                        height:16px;
-                    }""",
-                """
-                    div.table-tabs > button {
-                        border: none;
-                        cursor: pointer;
-                        padding: 5px 12px 7px 12px;
-                        font-weight: bold;
-                        margin-right: 8px;
-                    }
-                    div.table-tabs > .active-table-tab {
-                        background: var(--selected-background-color);
-                        color: var(--selected-text-color);
-                    }
-                    div.table-tabs > button.table-tab {
-                        background: var(--navbar-background-color);
-                        color: var(--navbar-text-color);
-                    }""",
                 // Test the formatting styles for proper content display in use and constant values pages.
                 """
-                    .col-first, .col-second, .col-constructor-name {
-                        vertical-align:top;
-                        overflow: auto;
-                    }""",
-                """
                     .summary-table > div, .details-table > div {
-                        text-align:left;
+                        font-size: var(--nav-font-size);
+                        line-height: 1.6;
                         padding: 8px 3px 3px 7px;
                         overflow: auto hidden;
-                        scrollbar-width: thin;
                     }""",
                 "@import url('fonts/dejavu.css');",
                 """
@@ -143,12 +100,8 @@ public class TestStylesheet extends JavadocTester {
                         color:var(--link-color-active);
                     }""",
                 """
-                    .col-first a:link, .col-first a:visited,
-                    .col-second a:link, .col-second a:visited,
-                    .col-first a:link, .col-first a:visited,
-                    .col-second a:link, .col-second a:visited,
-                    .col-constructor-name a:link, .col-constructor-name a:visited,
-                    .col-summary-item-name a:link, .col-summary-item-name a:visited {
+                    body:not(.class-declaration-page) .col-first a:link,
+                    .col-summary-item-name a:link {
                         font-weight:bold;
                     }""",
                 """
@@ -157,24 +110,26 @@ public class TestStylesheet extends JavadocTester {
                         font-family:var(--block-font-family);
                         border-style:solid;
                         border-width:thin;
-                        border-radius:10px;
+                        border-radius:6px;
                         padding:10px;
                         margin-bottom:10px;
                         margin-right:10px;
                         display:inline-block;
                     }""",
                 """
-                    input#reset-search, input.reset-filter {
+                    input#reset-search, input.reset-filter, input#page-search-reset {
                         background-color: transparent;
-                        background-image:url('x.png');
+                        background-image:url('x.svg');
                         background-repeat:no-repeat;
                         background-size:contain;
                         border:0;
                         border-radius:0;
                         width:12px;
                         height:12px;
+                        min-width:12px;
+                        min-height:12px;
                         font-size:0;
-                        display:none;
+                        visibility:hidden;
                     }""",
                 """
                     ::placeholder {
@@ -189,13 +144,13 @@ public class TestStylesheet extends JavadocTester {
                     <link rel="stylesheet" type="text/css" href="../resource-files/stylesheet.css">""",
                 """
                     <div class="block">Test comment for a class which has an <a name="named_anchor">anchor_with_name</a> and
-                     an <a id="named_anchor1">anchor_with_id</a>.</div>""");
+                    an <a id="named_anchor1">anchor_with_id</a>.</div>""");
 
         checkOutput("pkg/package-summary.html", true,
                 """
                     <div class="col-last even-row-color class-summary class-summary-tab2">
                     <div class="block">Test comment for a class which has an <a name="named_anchor">anchor_with_name</a> and
-                     an <a id="named_anchor1">anchor_with_id</a>.</div>
+                    an <a id="named_anchor1">anchor_with_id</a>.</div>
                     </div>""");
 
         checkOutput("index.html", true,
@@ -318,14 +273,11 @@ public class TestStylesheet extends JavadocTester {
                 // entries for <body> elements
                 "all-classes-index-page",
                 "all-packages-index-page",
-                "constants-summary-page",
                 "deprecated-list-page",
                 "help-page",
                 "index-redirect-page",
                 "package-declaration-page",
-                "package-tree-page",
                 "single-index-page",
-                "tree-page",
                 // the following names are matched by [class$='...'] in the stylesheet
                 "constructor-details",
                 "constructor-summary",
@@ -341,7 +293,6 @@ public class TestStylesheet extends JavadocTester {
                 "packages",
                 "return-type",
                 // and others...
-                "hierarchy",        // for the hierarchy on a tree page
                 "index"             // on the index page
         );
         Set<String> all = new TreeSet<>(styles);

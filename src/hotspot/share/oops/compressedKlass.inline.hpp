@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,10 @@ inline Klass* CompressedKlassPointers::decode_not_null_without_asserts(narrowKla
 
 inline narrowKlass CompressedKlassPointers::encode_not_null_without_asserts(Klass* k, address narrow_base, int shift) {
   return (narrowKlass)(pointer_delta(k, narrow_base, 1) >> shift);
+}
+
+inline Klass* CompressedKlassPointers::decode_not_null_without_asserts(narrowKlass v) {
+  return decode_not_null_without_asserts(v, base(), shift());
 }
 
 inline Klass* CompressedKlassPointers::decode_without_asserts(narrowKlass v) {

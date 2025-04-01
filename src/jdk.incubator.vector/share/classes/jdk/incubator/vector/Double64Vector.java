@@ -510,6 +510,7 @@ final class Double64Vector extends DoubleVector {
         return Double.longBitsToDouble(bits);
     }
 
+    @ForceInline
     public long laneHelper(int i) {
         return (long) VectorSupport.extract(
                      VCLASS, ETYPE, VLENGTH,
@@ -529,6 +530,7 @@ final class Double64Vector extends DoubleVector {
         }
     }
 
+    @ForceInline
     public Double64Vector withLaneHelper(int i, double e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
