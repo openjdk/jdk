@@ -83,8 +83,7 @@ public class InflaterOutputStream extends FilterOutputStream {
     /**
      * Creates a new output stream with a default decompressor and buffer
      * size.
-     *
-     * @apiNote
+     * <p>
      * The default decompressor will be closed when this output stream
      * is {@linkplain #close() closed}.
      *
@@ -99,8 +98,7 @@ public class InflaterOutputStream extends FilterOutputStream {
     /**
      * Creates a new output stream with the specified decompressor and a
      * default buffer size.
-     *
-     * @apiNote
+     * <p>
      * {@linkplain #close() Closing} this output stream
      * {@linkplain ##decompressor-usage will not close} the given
      * {@linkplain Inflater decompressor}.
@@ -116,8 +114,7 @@ public class InflaterOutputStream extends FilterOutputStream {
     /**
      * Creates a new output stream with the specified decompressor and
      * buffer size.
-     *
-     * @apiNote
+     * <p>
      * {@linkplain #close() Closing} this output stream
      * {@linkplain ##decompressor-usage will not close} the given
      * {@linkplain Inflater decompressor}.

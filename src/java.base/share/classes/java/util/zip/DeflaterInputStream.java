@@ -83,8 +83,7 @@ public class DeflaterInputStream extends FilterInputStream {
     /**
      * Creates a new input stream with a default compressor and buffer
      * size.
-     *
-     * @apiNote
+     * <p>
      * The default compressor will be closed when this input stream
      * is {@linkplain #close() closed}.
      *
@@ -99,8 +98,7 @@ public class DeflaterInputStream extends FilterInputStream {
     /**
      * Creates a new input stream with the specified compressor and a
      * default buffer size.
-     *
-     * @apiNote
+     * <p>
      * {@linkplain #close() Closing} this input stream
      * {@linkplain ##compressor-usage will not close} the given
      * {@linkplain Deflater compressor}.
@@ -116,8 +114,7 @@ public class DeflaterInputStream extends FilterInputStream {
     /**
      * Creates a new input stream with the specified compressor and buffer
      * size.
-     *
-     * @apiNote
+     * <p>
      * {@linkplain #close() Closing} this input stream
      * {@linkplain ##compressor-usage will not close} the given
      * {@linkplain Deflater compressor}.

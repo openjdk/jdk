@@ -89,8 +89,7 @@ public class InflaterInputStream extends FilterInputStream {
     /**
      * Creates a new input stream with the specified decompressor and
      * buffer size.
-     *
-     * @apiNote
+     * <p>
      * {@linkplain #close() Closing} this input stream
      * {@linkplain ##decompressor-usage will not close} the given
      * {@linkplain Inflater decompressor}.
@@ -114,8 +113,7 @@ public class InflaterInputStream extends FilterInputStream {
     /**
      * Creates a new input stream with the specified decompressor and a
      * default buffer size.
-     *
-     * @apiNote
+     * <p>
      * {@linkplain #close() Closing} this input stream
      * {@linkplain ##decompressor-usage will not close} the given
      * {@linkplain Inflater decompressor}.
@@ -131,8 +129,7 @@ public class InflaterInputStream extends FilterInputStream {
 
     /**
      * Creates a new input stream with a default decompressor and buffer size.
-     *
-     * @apiNote
+     * <p>
      * The default decompressor will be closed when this input stream
      * is {@linkplain #close() closed}.
      *
