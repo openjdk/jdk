@@ -263,15 +263,15 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
   // guarantees that the corresponding pointers p1 and p2 do not overlap (alias) for
   // any iv value in the strided range r = [init, init + iv_stride, .. limit].
   //
-  //   for all iv in r: p1(iv) + p1.size <= p2(iv) OR p2(iv) + p2.size <= p1(iv)
+  //   for all iv in r: p1(iv) + size1 <= p2(iv) OR p2(iv) + size2 <= p1(iv)
   //
   // This would allow situations where for some iv p1 is lower than p2, and for
   // other iv p1 is higher than p2. This is not very useful inpractice. We can
   // the condition, which will make the check simpler later:
   //
-  //   for all iv in r: p1(iv) + p1.size <= p2(iv)                   (P1-BEFORE-P2)
+  //   for all iv in r: p1(iv) + size1 <= p2(iv)                    (P1-BEFORE-P2)
   //   OR
-  //   for all iv in r: p2(iv) + p2.size <= p1(iv)                   (P1-AFTER-P2)
+  //   for all iv in r: p2(iv) + size2 <= p1(iv)                    (P1-AFTER-P2)
   //
   //
   // We apply the "MemPointer Linearity Corrolary" to VPointer vp and the corresponding
@@ -361,7 +361,7 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
   //
   //   Proof:
   //     Assume: (P1-BEFORE-P2):
-  //       for all iv in r: p1(iv) + p1.size <= p2(iv)
+  //       for all iv in r: p1(iv) + size1 <= p2(iv)
   //       => And since init and limit in r =>
   //       p1(init)  + size1 <= p2(init)
   //       p1(limit) + size1 <= p2(limit)
@@ -381,7 +381,7 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
   //                      <= p2(limit) - limit * iv_scale2 + iv * iv_scale2
   //                       = p2(iv)
   //
-  //
+  //     The proof for (P1-AFTER-P2) can be done symmetrically.
   //
 
   // Case distinction:
