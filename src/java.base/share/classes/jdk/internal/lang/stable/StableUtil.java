@@ -12,12 +12,20 @@ public final class StableUtil {
     public static <R> String renderElements(Object self,
                                             String selfName,
                                             StableValueImpl<R>[] delegates) {
+        return renderElements(self, selfName, delegates, 0, delegates.length);
+    }
+
+    public static <R> String renderElements(Object self,
+                                            String selfName,
+                                            StableValueImpl<R>[] delegates,
+                                            int offset,
+                                            int length) {
         final StringBuilder sb = new StringBuilder();
         sb.append("[");
         boolean first = true;
-        for (int i = 0; i < delegates.length; i++) {
+        for (int i = 0; i < length; i++) {
             if (first) { first = false; } else { sb.append(", "); }
-            final Object value = delegates[i].wrappedContentAcquire();
+            final Object value = delegates[i + offset].wrappedContentAcquire();
             if (value == self) {
                 sb.append("(this ").append(selfName).append(")");
             } else {

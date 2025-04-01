@@ -569,6 +569,15 @@ class ImmutableCollections {
             }
             return array;
         }
+
+        @Override
+        public String toString() {
+            if (root instanceof StableList<E> stableList) {
+                return StableUtil.renderElements(root, "StableList", stableList.delegates, offset, size);
+            } else {
+                return super.toString();
+            }
+        }
     }
 
     @jdk.internal.ValueBased
@@ -774,7 +783,7 @@ class ImmutableCollections {
         @Stable
         private final IntFunction<? extends E> mapper;
         @Stable
-        private final StableValueImpl<E>[] delegates;
+        final StableValueImpl<E>[] delegates;
 
         StableList(int size, IntFunction<? extends E> mapper) {
             this.mapper = mapper;

@@ -46,6 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -218,6 +219,7 @@ final class StableListTest {
     void subList() {
         var lazy = newList();
         var lazySubList = lazy.subList(1, SIZE);
+        assertInstanceOf(RandomAccess.class, lazySubList);
         var regularList = newRegularList();
         var regularSubList = regularList.subList(1, SIZE);
         assertEquals(regularSubList, lazySubList);
@@ -235,12 +237,42 @@ final class StableListTest {
 
     @Test
     void subListToString() {
-        var lazy = newList();
-        var lazySubList = lazy.subList(1, SIZE);
-        var regularList = newRegularList();
-        var regularSubList = regularList.subList(1, SIZE);
-        // There is no requirement that the lazy sub list's toString method should be lazy
-        assertEquals(regularSubList.toString(), lazySubList.toString());
+        subListToString0(newList());
+        subListToString0(newList().subList(1, SIZE));
+        subListToString0(newList().subList(1, SIZE).subList(0, SIZE - 2));
+    }
+
+    void subListToString0(List<Integer> subList) {
+        assertEquals(asString(".unset", subList), subList.toString());
+
+        var first = subList.getFirst();
+        assertEquals(asString(first.toString(), subList), subList.toString());
+    }
+
+    @Test
+    void reversed() {
+        var reversed = newList().reversed();
+        assertInstanceOf(RandomAccess.class, reversed);
+        assertEquals(SIZE - 1, reversed.getFirst());
+        assertEquals(0, reversed.getLast());
+
+        var reversed2 = reversed.reversed();
+        assertEquals(0, reversed2.getFirst());
+        assertEquals(SIZE - 1, reversed2.getLast());
+    }
+
+    @Test
+    void reversedToString() {
+        var reversed = newList().reversed();
+        subListToString0(reversed);
+    }
+
+    @Test
+    void subListReversedToString() {
+        var list = newList().subList(1, SIZE - 1).reversed();
+        // This combination is not lazy. There has to be a limit somewhere.
+        var regularList = newRegularList().subList(1, SIZE - 1).reversed();
+        assertEquals(regularList.toString(), list.toString());
     }
 
     @Test
@@ -382,6 +414,12 @@ final class StableListTest {
 
     static List<Integer> newRegularList() {
         return IntStream.range(0, SIZE).boxed().toList();
+    }
+
+    static String asString(String first, List<Integer> list) {
+        return "[" + first + ", " + Stream.generate(() -> ".unset")
+                .limit(list.size() - 1)
+                .collect(Collectors.joining(", ")) + "]";
     }
 
 }
