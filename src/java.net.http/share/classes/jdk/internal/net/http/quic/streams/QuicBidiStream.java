@@ -138,6 +138,6 @@ public non-sealed interface QuicBidiStream extends QuicStream, QuicReceiverStrea
 
     @Override
     default boolean hasError() {
-        return rcvErrorCode() > 0 || sndErrorCode() > 0;
+        return rcvErrorCode() >= 0 || sndErrorCode() >= 0;
     }
 }

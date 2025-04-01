@@ -190,7 +190,7 @@ public non-sealed interface QuicSenderStream extends QuicStream {
 
     @Override
     default boolean hasError() {
-        return sndErrorCode() > 0;
+        return sndErrorCode() >= 0;
     }
 
 

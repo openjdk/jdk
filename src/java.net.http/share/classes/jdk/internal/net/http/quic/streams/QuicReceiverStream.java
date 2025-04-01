@@ -192,6 +192,6 @@ public non-sealed interface QuicReceiverStream extends QuicStream {
 
     @Override
     default boolean hasError() {
-        return rcvErrorCode() > 0;
+        return rcvErrorCode() >= 0;
     }
 }
