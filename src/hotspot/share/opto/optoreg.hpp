@@ -190,7 +190,7 @@ private:
 
 public:
   static constexpr bool can_fit(OptoReg::Name n) {
-    return n <= std::numeric_limits<Name>::max();
+    return n <= std::numeric_limits<OptoRegPair::Name>::max();
   }
   void set_bad() {
     _second = OptoReg::Bad;
@@ -232,8 +232,6 @@ public:
     _second = second;
     _first = first;
   }
-  OptoRegPair(OptoReg::Name f) : OptoRegPair(OptoReg::Bad, f) {}
-  OptoRegPair() : OptoRegPair(OptoReg::Bad, OptoReg::Bad) {}
 };
 
 #endif // SHARE_OPTO_OPTOREG_HPP

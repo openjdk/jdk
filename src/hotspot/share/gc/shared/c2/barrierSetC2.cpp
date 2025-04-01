@@ -1220,7 +1220,7 @@ void BarrierSetC2::compute_liveness_at_stubs() const {
 
     // Now at block top, see if we have any changes
     new_live.SUBTRACT(old_live);
-    if (new_live.is_NotEmpty()) {
+    if (!new_live.is_Empty()) {
       // Liveness has refined, update and propagate to prior blocks
       old_live.OR(new_live);
       for (uint i = 1; i < block->num_preds(); ++i) {

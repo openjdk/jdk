@@ -35,9 +35,9 @@ static void contains_expected_num_of_registers(const RegMask& rm, unsigned int e
 
   ASSERT_TRUE(rm.Size() == expected);
   if (expected > 0) {
-    ASSERT_TRUE(rm.is_NotEmpty());
+    ASSERT_TRUE(!rm.is_Empty());
   } else {
-    ASSERT_TRUE(!rm.is_NotEmpty());
+    ASSERT_TRUE(rm.is_Empty());
     ASSERT_TRUE(!rm.is_AllStack());
   }
 
@@ -86,7 +86,7 @@ TEST_VM(RegMask, Set_ALL) {
   RegMask rm;
   rm.Set_All();
   ASSERT_TRUE(rm.Size() == rm.rm_size_bits());
-  ASSERT_TRUE(rm.is_NotEmpty());
+  ASSERT_TRUE(!rm.is_Empty());
   // Set_All sets AllStack bit
   ASSERT_TRUE(rm.is_AllStack());
   contains_expected_num_of_registers(rm, rm.rm_size_bits());
@@ -556,7 +556,7 @@ TEST_VM(RegMask, Set_ALL_extended) {
   extend(rm);
   rm.Set_All();
   ASSERT_EQ(rm.Size(), rm.rm_size_bits());
-  ASSERT_TRUE(rm.is_NotEmpty());
+  ASSERT_TRUE(!rm.is_Empty());
   // Set_All sets AllStack bit
   ASSERT_TRUE(rm.is_AllStack());
   contains_expected_num_of_registers(rm, rm.rm_size_bits());
@@ -795,13 +795,20 @@ TEST_VM(RegMask, rollover_and_SUBTRACT_inner_overlap_extended) {
   contains_expected_num_of_registers(rm2, 0);
 }
 
-const uint max_reg_capacity = 2048;
 const uint iterations = 50000;
 
 static uint r;
 static uint next_random() {
   r = os::next_random(r);
   return r;
+}
+static void init_random() {
+  if (StressSeed == 0) {
+    r = static_cast<uint>(Ticks::now().nanoseconds());
+    tty->print_cr("seed: %u", r);
+  } else {
+    r = StressSeed;
+  }
 }
 
 static void print(const char* name, const RegMask& mask) {
@@ -856,7 +863,7 @@ static void populate_auxiliary_sets(RegMask& mask_aux,
       FAIL();
     }
     offset = new_offset_in_words * BitsPerWord;
-    if (offset + max_reg_capacity > mask_aux_ref.size()) {
+    if (offset + RegMask::rm_size_max_bits() > mask_aux_ref.size()) {
       // Ensure that there is space in the reference mask.
       offset = 0;
     }
@@ -873,7 +880,7 @@ static void populate_auxiliary_sets(RegMask& mask_aux,
     max_size = reg_capacity;
     break;
   case 2: // larger (if possible)
-    max_size = max_reg_capacity;
+    max_size = RegMask::rm_size_max_bits();
     break;
   default:
     FAIL();
@@ -925,12 +932,7 @@ TEST_VM(RegMask, random) {
   ResourceBitMap mask_ref(std::numeric_limits<short>::max() + 1);
   bool all_stack_ref = false;
   uint offset_ref = 0;
-  if (StressSeed == 0) {
-    r = static_cast<uint>(Ticks::now().nanoseconds());
-    tty->print_cr("seed: %u", r);
-  } else {
-    r = StressSeed;
-  }
+  init_random();
 
   for (uint i = 0; i < iterations; i++) {
     if (Verbose) {
@@ -951,7 +953,7 @@ TEST_VM(RegMask, random) {
     RegMask mask_aux(arena());
     switch (action) {
     case 0:
-      reg = (next_random() % max_reg_capacity) + offset_ref;
+      reg = (next_random() % RegMask::rm_size_max_bits()) + offset_ref;
       if (Verbose) {
         tty->print_cr("action: Insert");
         tty->print("value   : ");
@@ -1113,6 +1115,107 @@ TEST_VM(RegMask, random) {
       FAIL() << "Unimplemented action";
     }
     ASSERT_NO_FATAL_FAILURE(assert_equivalent(mask, mask_ref, all_stack_ref));
+  }
+}
+
+// Randomly sets register mask contents. Does not change register mask size.
+static void randomize(RegMask& rm) {
+  rm.Clear();
+  // Uniform distribution over number of registers.
+  uint regs = next_random() % (rm.rm_size_bits() + 1);
+  for (uint i = 0; i < regs; i++) {
+    uint reg = (next_random() % rm.rm_size_bits()) + rm.offset_bits();
+    rm.Insert(reg);
+  }
+  rm.set_AllStack(next_random() % 2);
+}
+
+static uint grow_randomly(RegMask& rm, uint min_growth = 1,
+                          uint max_growth = 3) {
+  // Grow between min_growth and max_growth times.
+  uint grow = min_growth + (max_growth > 0 ? next_random() % max_growth : 0);
+  for (uint i = 0; i < grow; ++i) {
+    uint reg = rm.rm_size_bits();
+    if (reg >= RegMask::rm_size_max_bits()) {
+      // Cannot grow more
+      break;
+    }
+    // Force grow
+    rm.Insert(reg);
+    if (!rm.is_AllStack()) {
+      // Restore
+      rm.Remove(reg);
+    }
+  }
+  // Return how many times we grew
+  return grow;
+}
+
+TEST_VM(RegMask, random_copy) {
+  init_random();
+
+  auto print_failure = [&](const RegMask& src, const RegMask& dst) {
+    tty->print_cr("Failure, src and dst not equal");
+    tty->print("src: ");
+    src.dump_hex();
+    tty->cr();
+    tty->print("dst: ");
+    dst.dump_hex();
+    tty->cr();
+  };
+
+  // Test copying a larger register mask
+  for (uint i = 0; i < iterations; i++) {
+    ResourceMark rm;
+
+    // Create source RegMask
+    RegMask src(arena());
+
+    // Grow source randomly
+    grow_randomly(src);
+
+    // Randomly initialize source
+    randomize(src);
+
+    // Copy construct source to destination
+    RegMask dst(src, arena());
+
+    // Check equality
+    bool passed = src.equals(dst);
+    if (Verbose && !passed) {
+      print_failure(src, dst);
+    }
+    ASSERT_TRUE(passed);
+  }
+
+  // Test copying a smaller register mask
+  for (uint i = 0; i < iterations; i++) {
+    ResourceMark rm;
+
+    // Create destination RegMask
+    RegMask dst(arena());
+
+    // Grow destination arbitrarily (1-3 times)
+    uint growth = grow_randomly(dst, 1, 3);
+
+    // Create source RegMask
+    RegMask src(arena());
+
+    // Grow source arbitrarily, but not as much as destination
+    grow_randomly(src, 0, growth - 1);
+
+    // Randomly initialize source
+    randomize(src);
+
+    // Copy source to destination
+    dst = src;
+
+    // Check equality
+    bool passed = src.equals(dst);
+    if (Verbose && !passed) {
+      print_failure(src, dst);
+    }
+    ASSERT_TRUE(passed);
   }
 }
 

@@ -193,6 +193,8 @@ void Matcher::match( ) {
   if (C->failing()) {
     return;
   }
+  assert(_return_addr_mask.is_Empty(),
+         "return address mask must be empty initially");
   _return_addr_mask.Insert(return_addr());
 #ifdef _LP64
   // Pointers take 2 slots in 64-bit land
@@ -287,16 +289,10 @@ void Matcher::match( ) {
     // preserve area, locks & pad2.
 
     OptoReg::Name reg1 = warp_incoming_stk_arg(vm_parm_regs[i].first());
-    if (C->failing()) {
-      return;
-    }
     if( OptoReg::is_valid(reg1))
       _calling_convention_mask[i].Insert(reg1);
 
     OptoReg::Name reg2 = warp_incoming_stk_arg(vm_parm_regs[i].second());
-    if (C->failing()) {
-      return;
-    }
     if( OptoReg::is_valid(reg2))
       _calling_convention_mask[i].Insert(reg2);
 
@@ -530,14 +526,12 @@ void Matcher::init_first_stack_mask() {
   idealreg2debugmask  [Op_RegVectMask] = &rms[37];
   idealreg2mhdebugmask[Op_RegVectMask] = &rms[38];
 
-  OptoReg::Name i;
-
   // At first, start with the empty mask
   C->FIRST_STACK_mask().Clear();
 
   // Add in the incoming argument area
   OptoReg::Name init_in = OptoReg::add(_old_SP, C->out_preserve_stack_slots());
-  for (i = init_in; i < _in_arg_limit; i = OptoReg::add(i,1)) {
+  for (OptoReg::Name i = init_in; i < _in_arg_limit; i = OptoReg::add(i, 1)) {
     C->FIRST_STACK_mask().Insert(i);
   }
   // Add in all bits past the outgoing argument area
@@ -979,8 +973,8 @@ void Matcher::init_spill_mask( Node *ret ) {
   // STACK_ONLY_mask is all stack bits
   STACK_ONLY_mask.Set_All_From(OptoReg::stack2reg(0));
 
-  OptoReg::Name i;
-  for (i = OptoReg::Name(0); i < OptoReg::Name(_last_Mach_Reg); i = OptoReg::add(i, 1)) {
+  for (OptoReg::Name i = OptoReg::Name(0); i < OptoReg::Name(_last_Mach_Reg);
+       i = OptoReg::add(i, 1)) {
     // Copy the register names over into the shared world.
     // SharedInfo::regName[i] = regName[i];
     // Handy RegMasks per machine register
@@ -1427,16 +1421,10 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       }
       // Grab first register, adjust stack slots and insert in mask.
       OptoReg::Name reg1 = warp_outgoing_stk_arg(first, begin_out_arg_area, out_arg_limit_per_call );
-      if (C->failing()) {
-        return nullptr;
-      }
       if (OptoReg::is_valid(reg1))
         rm->Insert( reg1 );
       // Grab second register (if any), adjust stack slots and insert in mask.
       OptoReg::Name reg2 = warp_outgoing_stk_arg(second, begin_out_arg_area, out_arg_limit_per_call );
-      if (C->failing()) {
-        return nullptr;
-      }
       if (OptoReg::is_valid(reg2))
         rm->Insert( reg2 );
     } // End of for all arguments
@@ -1459,7 +1447,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     for (int i = begin_out_arg_area; i < out_arg_limit_per_call; i++) {
       proj->_rout.Insert(OptoReg::Name(i));
     }
-    if (proj->_rout.is_NotEmpty()) {
+    if (!proj->_rout.is_Empty()) {
       push_projection(proj);
     }
   }

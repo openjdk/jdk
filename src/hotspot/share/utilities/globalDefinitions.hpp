@@ -1367,12 +1367,4 @@ std::add_rvalue_reference_t<T> declval() noexcept;
 // handled.
 bool IEEE_subnormal_handling_OK();
 
-//----------------------------------------------------------------------------------------------------
-// C2 limits
-
-// To avoid unbounded RegMask growth, we need to set a limit on the number of
-// stack slots used by BoxLockNodes. We reach this limit by deeply nesting
-// synchronized statements in Java.
-const int BoxLockNode_slot_limit = 200;
-
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP

@@ -34,6 +34,11 @@
 
 class LRG;
 
+// To avoid unbounded RegMask growth, we need to set a limit on the number of
+// stack slots used by BoxLockNodes. We reach this limit by, e.g., deeply
+// nesting synchronized statements in Java.
+const int BoxLockNode_slot_limit = 200;
+
 //-------------Non-zero bit search methods used by RegMask---------------------
 // Find lowest 1, undefined if empty/0
 static unsigned int find_lowest_bit(uintptr_t mask) {
@@ -438,15 +443,15 @@ public:
     return _rm_up(r >> _LogWordBits) & (uintptr_t(1) << (r & _WordBitMask));
   }
 
-  // Test for being a not-empty mask. Ignores registers included through the
-  // all-stack flag.
-  bool is_NotEmpty() const {
+  // Empty mask check. Ignores registers included through the all-stack flag.
+  bool is_Empty() const {
     assert(valid_watermarks(), "sanity");
-    uintptr_t tmp = 0;
     for (unsigned i = _lwm; i <= _hwm; i++) {
-      tmp |= _rm_up(i);
+      if (_rm_up(i)) {
+        return false;
+      }
     }
-    return tmp;
+    return true;
   }
 
   // Find lowest-numbered register from mask, or BAD if mask is empty.
@@ -786,6 +791,36 @@ private:
 
 public:
   unsigned int static basic_rm_size() { return _RM_SIZE; }
+  unsigned int static rm_size_max_bits() {
+    return _RM_SIZE_MAX * BitsPerWord;
+  }
+  bool equals(const RegMask& rm) const {
+    assert(_offset == rm._offset, "offset mismatch");
+    if (_all_stack != rm._all_stack) {
+      return false;
+    }
+    // Shared segment
+    for (unsigned int i = 0; i < MIN2(_rm_size, rm._rm_size); i++) {
+      if (_rm_up(i) != rm._rm_up(i)) {
+        return false;
+      }
+    }
+    // If there is a size difference, check the protruding segment against
+    // all-stack.
+    const unsigned int start = MIN2(_rm_size, rm._rm_size);
+    const uintptr_t value = _all_stack ? uintptr_t(-1) : 0;
+    for (unsigned int i = start; i < _rm_size; i++) {
+      if (_rm_up(i) != value) {
+        return false;
+      }
+    }
+    for (unsigned int i = start; i < rm._rm_size; i++) {
+      if (rm._rm_up(i) != value) {
+        return false;
+      }
+    }
+    return true;
+  }
   void set_offset(unsigned int offset) {
     _offset = offset;
   }

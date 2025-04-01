@@ -24,6 +24,7 @@
 
 #include "opto/locknode.hpp"
 #include "opto/parse.hpp"
+#include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 
@@ -42,7 +43,8 @@ BoxLockNode::BoxLockNode(int slot)
     : Node(Compile::current()->root()), _slot(slot),
       // In debug mode, signal that the register mask is constant.
       _inmask(OptoReg::stack2reg(_slot),
-              Compile::current()->comp_arena() DEBUG_ONLY(COMMA true)),
+              Compile::current()->comp_arena()
+              DEBUG_ONLY(COMMA /*orig_const*/ true)),
       _kind(BoxLockNode::Regular) {
   if (_slot > BoxLockNode_slot_limit) {
     Compile::current()->record_method_not_compilable(

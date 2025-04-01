@@ -918,7 +918,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
         // Since rematerializable DEFs are not bound but the live range is,
         // some uses must be bound. If we spill live range 'r', it can
         // rematerialize at each use site according to its bindings.
-        if (lrg.is_bound() && !n->rematerialize() && lrg.mask().is_NotEmpty()) {
+        if (lrg.is_bound() && !n->rematerialize() && !lrg.mask().is_Empty()) {
           remove_bound_register_from_interfering_live_ranges(lrg, &liveout, must_spill);
         }
         interfere_with_live(lid, &liveout);

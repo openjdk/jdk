@@ -760,7 +760,7 @@ void PhaseChaitin::de_ssa() {
       Node *n = block->get_node(j);
       // Pre-color to the zero live range, or pick virtual register
       const RegMask &rm = n->out_RegMask();
-      _lrg_map.map(n->_idx, rm.is_NotEmpty() ? lr_counter++ : 0);
+      _lrg_map.map(n->_idx, !rm.is_Empty() ? lr_counter++ : 0);
     }
   }
 
@@ -781,7 +781,7 @@ void PhaseChaitin::mark_ssa() {
       Node *n = block->get_node(j);
       // Pre-color to the zero live range, or pick virtual register
       const RegMask &rm = n->out_RegMask();
-      _lrg_map.map(n->_idx, rm.is_NotEmpty() ? n->_idx : 0);
+      _lrg_map.map(n->_idx, !rm.is_Empty() ? n->_idx : 0);
       max_idx = (n->_idx > max_idx) ? n->_idx : max_idx;
     }
   }
@@ -1422,7 +1422,8 @@ static OptoReg::Name find_first_set(LRG& lrg, RegMask& mask) {
   if (lrg.is_scalable()) {
     // a physical register is found
     if (OptoReg::is_reg(assigned)) {
-      assert(!lrg.mask().is_offset(), "sanity");
+      assert(!lrg.mask().is_offset(),
+             "offset register masks can only contain stack slots");
       return assigned;
     }
 
@@ -1522,15 +1523,7 @@ OptoReg::Name PhaseChaitin::bias_color(LRG& lrg) {
     lrg.Remove(reg);
     OptoReg::Name reg2 = lrg.mask().find_first_elem();
     lrg.Insert(reg);
-    // The below check is a direct translation of an older version of this code
-    // where the chunk/offset was represented directly (rather than internally
-    // in the register masks). I suspect the check could be replaced by
-    // OptoReg::is_reg(reg2), meaning that we only want to alternate when
-    // dealing with registers in the first "chunk" (and not stack slots). But,
-    // this does change behavior compared to the old version (hence my
-    // hesitation).
-    if (OptoReg::is_valid(reg2) &&
-        OptoReg::is_reg(reg2 - lrg.mask().offset_bits())) {
+    if (OptoReg::is_reg(reg2)) {
       reg = reg2;
     }
   }
@@ -1610,7 +1603,10 @@ uint PhaseChaitin::Select( ) {
         OptoReg::Name nreg = nlrg.reg();
         // The neighbor might be a spill_reg. In this case, exclusion of its
         // color will be a no-op, since the spill_reg is in outer space. In
-        // this case, do not exclude the corresponding mask.
+        // this case, do not exclude the corresponding mask. Later on, if lrg
+        // runs out of possible colors in its chunk, a new chunk of color may
+        // be tried, in which case examination of neighbors is started again,
+        // at retry_next_chunk.
         if (nreg < LRG::SPILL_REG) {
 #ifndef PRODUCT
           uint size = lrg->mask().Size();
@@ -1655,9 +1651,10 @@ uint PhaseChaitin::Select( ) {
       if (!success) {
         // We should never get here in practice. Bail out in product,
         // assert in debug.
-        assert(false, "should not happen");
+        assert(false, "the next available stack slots should be within the "
+                      "OptoRegPair range");
         C->record_method_not_compilable(
-            "chunk-rollover outside of OptoReg range");
+            "chunk-rollover outside of OptoRegPair range");
         return -1;
       }
       goto retry_next_chunk;

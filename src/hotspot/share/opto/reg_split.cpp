@@ -476,7 +476,7 @@ bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
         return true;          // Found 1st use!
       }
     }
-    if (n->out_RegMask().is_NotEmpty()) {
+    if (!n->out_RegMask().is_Empty()) {
       return false;
     }
   }
