@@ -30,8 +30,8 @@ package gc.g1;
  * @library /test/lib
  * @run main/othervm -Xmx100m -XX:MinHeapSize=4m -XX:SoftMaxHeapSize=4m
         gc.g1.TestSoftMaxHeapSizeNoOOM
- * @summary Test that setting TestSoftMaxHeapSize to a small value won't
- *          trigger OutOfMemoryError for normal allocations.
+ * @summary Setting SoftMaxHeapSize to a small value won't trigger
+ *          OutOfMemoryError for normal allocations.
  */
 
 /*
@@ -41,8 +41,8 @@ package gc.g1;
  * @library /test/lib
  * @run main/othervm -Xmx100m -XX:MinHeapSize=4m -XX:SoftMaxHeapSize=4m
         -Dhumongous=true gc.g1.TestSoftMaxHeapSizeNoOOM
- * @summary Test that setting TestSoftMaxHeapSize to a small value won't
- *          trigger OutOfMemoryError for humongous allocations.
+ * @summary Setting SoftMaxHeapSize to a small value won't trigger
+ *          OutOfMemoryError for humongous allocations.
  */
 
 import java.util.ArrayList;

@@ -30,7 +30,7 @@ package gc.g1;
  * @library /test/lib
  * @run main/othervm -Xmx200m -XX:MinHeapSize=4m -XX:MinHeapFreeRatio=99
         -XX:MaxHeapFreeRatio=99 gc.g1.TestSoftMaxHeapSize
- * @summary Test that SoftMaxHeapSize could limit G1's heap size when resizing.
+ * @summary SoftMaxHeapSize should limit G1's heap size when resizing.
  */
 
 import java.lang.management.ManagementFactory;
