@@ -258,7 +258,7 @@ TEST_VM(os, test_print_hex_dump) {
 
   // two pages, first one protected.
   const size_t ps = os::vm_page_size();
-  char* two_pages = os::reserve_memory(ps * 2, mtTest, false);
+  char* two_pages = os::reserve_memory(ps * 2, mtTest);
   os::commit_memory(two_pages, ps * 2, false);
   os::protect_memory(two_pages, ps, os::MEM_PROT_NONE, true);
 
@@ -730,7 +730,7 @@ TEST_VM(os, show_mappings_small_range) {
 TEST_VM(os, show_mappings_full_range) {
   // Reserve a small range and fill it with a marker string, should show up
   // on implementations displaying range snippets
-  char* p = os::reserve_memory(1 * M, mtInternal, false);
+  char* p = os::reserve_memory(1 * M, mtInternal);
   if (p != nullptr) {
     if (os::commit_memory(p, 1 * M, false)) {
       strcpy(p, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -1059,7 +1059,7 @@ TEST_VM(os, open_O_CLOEXEC) {
 }
 
 TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_smallpages) {
-  char* p1 = os::reserve_memory(M, mtTest, false);
+  char* p1 = os::reserve_memory(M, mtTest);
   ASSERT_NE(p1, nullptr);
   char* p2 = os::attempt_reserve_memory_at(p1, M, mtTest);
   ASSERT_EQ(p2, nullptr); // should have failed
@@ -1069,7 +1069,7 @@ TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_smallpages) {
 TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_largepages) {
   if (UseLargePages && !os::can_commit_large_page_memory()) { // aka special
     const size_t lpsz = os::large_page_size();
-    char* p1 = os::reserve_memory_aligned(lpsz, lpsz, mtTest, false);
+    char* p1 = os::reserve_memory_aligned(lpsz, lpsz, mtTest);
     ASSERT_NE(p1, nullptr);
     char* p2 = os::reserve_memory_special(lpsz, lpsz, lpsz, p1, false);
     ASSERT_EQ(p2, nullptr); // should have failed
@@ -1095,7 +1095,7 @@ TEST_VM(os, free_without_uncommit) {
   const size_t pages = 64;
   const size_t size = pages * page_sz;
 
-  char* base = os::reserve_memory(size, mtTest, false);
+  char* base = os::reserve_memory(size, mtTest);
   ASSERT_NE(base, (char*) nullptr);
   ASSERT_TRUE(os::commit_memory(base, size, false));
 
