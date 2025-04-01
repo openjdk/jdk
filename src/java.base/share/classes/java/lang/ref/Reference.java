@@ -354,15 +354,13 @@ public abstract sealed class Reference<T>
      */
     @IntrinsicCandidate
     public T get() {
-        @SuppressWarnings("unchecked")
-        T result = (T) get0();
-        return result;
+        return get0();
     }
 
     /* Implementation of unintrinsified get().  Making get() native may lead
      * C2 to sometimes prefer the native implementation over the intrinsic.
      */
-    private native Object get0();
+    private native T get0();
 
     /**
      * Tests if the referent of this reference object is {@code obj}.
