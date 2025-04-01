@@ -134,7 +134,7 @@ public class Test7029048 extends TestHelper {
     private static enum TestCase {
         NO_DIR(0),                      // Directory does not exist
         NO_LIBJVM(0),                   // Directory exists, but no libjvm.so
-        LIBJVM(3);                      // Directory exists, with a libjvm.so
+        LIBJVM(2);                      // Directory exists, with a libjvm.so
         private final int value;
         TestCase(int i) {
             this.value = i;
