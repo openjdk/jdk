@@ -21,8 +21,12 @@
  * questions.
  */
 
+#include "logging/log.hpp"
 #include "nmt/nMemoryLimitPrinter.hpp"
+#include "nmt/nmtCommon.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/vmError.hpp"
+#include "utilities/debug.hpp"
 
 bool NMemoryLimitPrinter::total_limit_reached(size_t s, size_t so_far, const nMemlimit* limit, const NMemType type) {
 
