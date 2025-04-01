@@ -259,11 +259,26 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
   assert(!vp1.always_overlaps_with(vp2), "check would always be false");
   assert(!vp1.never_overlaps_with(vp2), "check would always be true");
 
+  // We have two VPointer vp1 and vp2, and would like to create a runtime check that
+  // guarantees that the corresponding pointers p1 and p2 do not overlap (alias) for
+  // any iv value in the strided range r = [init, init + iv_stride, .. limit].
+  //
+  //   for all iv in r: p1(iv) + p1.size <= p2(iv) OR p2(iv) + p2.size <= p1(iv)
+  //
+  // This would allow situations where for some iv p1 is lower than p2, and for
+  // other iv p1 is higher than p2. This is not very useful inpractice. We can
+  // the condition, which will make the check simpler later:
+  //
+  //   for all iv in r: p1(iv) + p1.size <= p2(iv)                   (P1-BEFORE-P2)
+  //   OR
+  //   for all iv in r: p2(iv) + p2.size <= p1(iv)                   (P1-AFTER-P2)
+  //
+  //
   // We apply the "MemPointer Linearity Corrolary" to VPointer vp and the corresponding
   // pointer p:
   //   (C0) is given by the construction of VPointer vp, which simply wraps a MemPointer mp.
   //   (c1) with v = iv and scale_v = iv_scale
-  //   (C2) with r = [init, init + stride_iv, .., limit] which is the set of possible
+  //   (C2) with r = [init, init + stride_iv, .. limit] which is the set of possible
   //        iv values in the loop.
   //   (C3) the memory accesses for every iv value in the loop must be in bounds, otherwise
   //        the program has undefined behaviour already.
@@ -274,6 +289,14 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
   // all iv values in the loop:
   //   p(iv)  = p(init)  - init * iv_scale + iv * iv_scale
   //   vp(iv) = vp(init) - init * iv_scale + iv * iv_scale
+  //
+  // Hence, p1 and p2 have the linear form:
+  //   p1(iv)  = p1(init) - init * iv_scale1 + iv * iv_scale1
+  //   p2(iv)  = p2(init) - init * iv_scale2 + iv * iv_scale2
+  //
+  // With the (Alternative Corrolary P) we get the alternative linar form:
+  //   p1(iv)  = p1(limit) - limit * iv_scale1 + iv * iv_scale1
+  //   p2(iv)  = p2(limit) - limit * iv_scale2 + iv * iv_scale2
   //
   //
   // We can now use this linearity to construct aliasing runtime checks, depending on the
@@ -301,24 +324,65 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
   //       |         |                |#        |                |#        |
   //       +---------+                +---------+                +---------+
   //
-  // Case 1: parallel lines, i.e. vp1.iv_scale() == vp2.iv_scale()
+  // Case 1: parallel lines, i.e. iv_scale = iv_scale1 = iv_scale2
+  //
+  //   p1(iv)  = p1(init)  - init * iv_scale + iv * iv_scale
+  //   p2(iv)  = p2(init)  - init * iv_scale + iv * iv_scale
+  //
+  //   Given this, it follows:
+  //     p1(iv) + size1 <= p2(iv)      <==>      p1(init) + size1 <= p2(init)
+  //     p2(iv) + size2 <= p1(iv)      <==>      p2(init) + size2 <= p1(init)
+  //
+  //   Hence, we do not have to check the condition for every iv, but only for
+  //   init. We now have two checks, which could be simple enough.
+  //
+  //   p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)
+  //   ----------------------------      ----------------------------
+  //         (P1-BEFORE-P2)          OR        (P1-AFTER-P2)
+  //
+  //
+  // Case 2 and 3: different slopes, i.e. iv_scale1 != iv_scale2
+  //
+  //   Without loss of generality, we assume iv_scale1 < iv_scale2.
+  //
+  //   If iv_stride >= 0, i.e. init <= iv <= limit:
+  //     (iv - init ) * scale_1 <= (iv - init ) * iv_scale
+  //     (iv - limit) * scale_1 >= (iv - limit) * iv_scale                   (POS-STRIDE)
+  //   If iv_stride <= 0, i.e. limit <= iv <= init:
+  //     (iv - init ) * scale_1 >= (iv - init ) * iv_scale
+  //     (iv - limit) * scale_1 <= (iv - limit) * iv_scale                   (NEG-STRIDE)
+  //
+  //   Below, we show that these conditions are equivalent:
+  //
+  //   p1(init)  + size1 <= p2(init)   OR  p2(limit) + size2 <= p1(limit)    (if iv_stride >= 0)
+  //   p1(limit) + size1 <= p2(limit)  OR  p2(init) + size2 <= p1(init)      (if iv_stride <= 0)
+  //   ------------------------------      ------------------------------
+  //         (P1-BEFORE-P2)            OR         (P1-AFTER-P2)
+  //
+  //   Proof:
+  //     Assume: (P1-BEFORE-P2):
+  //       for all iv in r: p1(iv) + p1.size <= p2(iv)
+  //       => And since init and limit in r =>
+  //       p1(init)  + size1 <= p2(init)
+  //       p1(limit) + size1 <= p2(limit)
+  //
+  //     Assume: p1(init) + size1 <= p2(init)  AND  iv_stride >= 0
+  //       p1(iv) + size1  = p1(init) - init * iv_scale1 + iv * iv_scale1 + size1
+  //                                  ------ apply (POS-STRIDE) ---------
+  //                      <= p1(init) - init * iv_scale2 + iv * iv_scale2 + size1
+  //                      <= p2(init) - init * iv_scale2 + iv * iv_scale2
+  //                       = p2(iv)
+  //
+  //     Assume: p1(limit) + size1 <= p2(limit)  AND  iv_stride <= 0
+  //       We use the alternative linear form.
+  //       p1(iv) + size1  = p1(limit) - limit * iv_scale1 + iv * iv_scale1 + size1
+  //                                   ------ apply (NEG-STRIDE) ---------
+  //                      <= p1(limit) - limit * iv_scale2 + iv * iv_scale2 + size1
+  //                      <= p2(limit) - limit * iv_scale2 + iv * iv_scale2
+  //                       = p2(iv)
   //
   //
   //
-
-  // VPointer form is:
-  //
-  //   pointer = base + invar + iv_scale * iv + con
-  //           = rest + iv_scale * iv
-  //
-  //
-  // We want check:
-  //
-  //   for each iv in [init, limit]:
-  //     no overlap between [vp1, vp1 + size1] and [vp2, vp2 + size]
-  //
-  //
-  // Linear form ... no overflow?
 
   // Case distinction:
   // 1) parallel

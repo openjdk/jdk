@@ -401,7 +401,7 @@
 //   Given:
 //     (C0) pointer p and its MemPointer mp, which is constructed with safe decompositions.
 //     (C1) a summand "scale_v * v" that occurs in mp.
-//     (C2) a strided range r = [lo, lo + stride_v, .., hi] for v.
+//     (C2) a strided range r = [lo, lo + stride_v, .. hi] for v.
 //     (C3) for all v in this strided range r we know that p is within bounds of its memory object.
 //     (C4) abs(scale_v * stride_v) < 2^31.
 //
@@ -412,6 +412,13 @@
 //
 //     Note: the calculations are done in long, and hence there can be no int overflow.
 //           Thus, p(v) and mp(v) can be considered linear functions for v in r.
+//
+//   It can be useful to "anchor" at hi instead of lo:
+//     p(hi) = p(lo) - lo * scale_v + hi * scale_v
+//
+//     p(v) = p(lo) - lo * scale_v + iv * scale_v
+//            --------------------
+//          = p(hi) - hi * scale_v + iv * scale_v             (Alternative Corrolary P)
 //
 //
 // Proof of "MemPointer Linearity Corrolary":
