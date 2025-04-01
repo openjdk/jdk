@@ -568,8 +568,8 @@ public class ChoiceFormat extends NumberFormat {
      * For example,
      * {@snippet lang=java :
      * var fmt = new ChoiceFormat("0#foo|1#bar|2#baz");
-     * fmt.parse("baz"); // returns 2
-     * fmt.parse("quux"); // returns NaN
+     * fmt.parse("baz", new ParsePosition(0)); // returns 2
+     * fmt.parse("quux", new ParsePosition(0)); // returns NaN
      * }
      *
      * @implNote The {@code Number} subtype returned by the JDK reference
