@@ -130,7 +130,7 @@ import java.util.List;
  * return classTemplate.withArgs(types).render();
  * }
  *
- * Once we rendered the source code to a String, we can compiole it with the {@code CompileFramework}.
+ * Once we rendered the source code to a String, we can compile it with the {@code CompileFramework}.
  *
  * <p>
  * <strong>Details:</strong>
