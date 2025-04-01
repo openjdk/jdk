@@ -23,15 +23,15 @@
  */
 
 #include "unittest.hpp"
-#include "opto/addnodeXorUtil.hpp"
+#include "opto/utilities/xor.hpp"
 #include "utilities/globalDefinitions.hpp" // For jint, juint
 
 jint test_calc_max(const jint hi_0, const jint hi_1) {
-  return calc_xor_upper_bound_of_non_neg<jint,juint>(hi_0, hi_1);
+  return xor_upper_bound_for_ranges<jint, juint>(hi_0, hi_1);
 }
 
 jlong test_calc_max(const jlong hi_0, const jlong hi_1) {
-  return calc_xor_upper_bound_of_non_neg<jlong,julong>(hi_0, hi_1);
+  return xor_upper_bound_for_ranges<jlong, julong>(hi_0, hi_1);
 }
 
 template <class S>

@@ -33,7 +33,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "opto/addnodeXorUtil.hpp"
+#include "opto/utilities/xor.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -1017,7 +1017,7 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
 
   if (r0->_lo >= 0 && r1->_lo >= 0) {
       // Combine [0, lo_1] ^ [0, hi_1] -> [0, max]
-      jint max = calc_xor_upper_bound_of_non_neg<jint, juint>(r0->_hi, r1->_hi);
+      jint max = xor_upper_bound_for_ranges<jint, juint>(r0->_hi, r1->_hi);
       return TypeInt::make(0, max, MAX2(r0->_widen, r1->_widen));
   }
 
@@ -1025,7 +1025,7 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
 }
 
 jint XorINode::calc_max(const jint hi_0, const jint hi_1)  {
-  return calc_xor_upper_bound_of_non_neg<jint, juint>(hi_0, hi_1);
+  return xor_upper_bound_for_ranges<jint, juint>(hi_0, hi_1);
 }
 
 //=============================================================================
@@ -1043,7 +1043,7 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
 
   if (r0->_lo >= 0 && r1->_lo >= 0) {
       // Combine [0, lo_1] ^ [0, hi_1] -> [0, max]
-      julong max = calc_xor_upper_bound_of_non_neg<jlong, julong>(r0->_hi, r1->_hi);
+      julong max = xor_upper_bound_for_ranges<jlong, julong>(r0->_hi, r1->_hi);
       return TypeLong::make(0, max, MAX2(r0->_widen, r1->_widen));
   }
 
@@ -1051,7 +1051,7 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
 }
 
 jlong XorLNode::calc_max(const jlong hi_0, const jlong hi_1)  {
-  return calc_xor_upper_bound_of_non_neg<jlong, julong>(hi_0, hi_1);
+  return xor_upper_bound_for_ranges<jlong, julong>(hi_0, hi_1);
 }
 
 Node* XorLNode::Ideal(PhaseGVN* phase, bool can_reshape) {

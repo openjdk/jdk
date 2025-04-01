@@ -1,13 +1,19 @@
-#ifndef SHARE_OPTO_ADDNODEXORUTIL_HPP
-#define SHARE_OPTO_ADDNODEXORUTIL_HPP
+#ifndef SHARE_OPTO_UTILITIES_XOR_HPP
+#define SHARE_OPTO_UTILITIES_XOR_HPP
 
 #include "utilities/powerOfTwo.hpp"
 // Code separated into its own header to allow access from GTEST
 
 // Given 2 non-negative values in the ranges [0, hi_0] and [0, hi_1], respectively. The bitwise
 // xor of these values should also be non-negative. This method calculates an upper bound.
+
+// S and U type parameters correspond to the signed and unsigned
+// variants of an integer to operate on.
 template<class S, class U>
-static S calc_xor_upper_bound_of_non_neg(const S hi_0, const S hi_1) {
+static S xor_upper_bound_for_ranges(const S hi_0, const S hi_1) {
+    static_assert(S(-1) < S(0), "S must be signed");
+    static_assert(U(-1) > U(0), "U must be unsigned");
+
     assert(hi_0 >= 0, "must be non-negative");
     assert(hi_1 >= 0, "must be non-negative");
 
@@ -38,4 +44,4 @@ static S calc_xor_upper_bound_of_non_neg(const S hi_0, const S hi_1) {
     return round_up_power_of_2(U(hi_0 | hi_1) + 1) - 1;
 }
 
-#endif //SHARE_OPTO_ADDNODEXORUTIL_HPP
+#endif // SHARE_OPTO_UTILITIES_XOR_HPP
