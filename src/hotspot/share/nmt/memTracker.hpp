@@ -27,6 +27,7 @@
 
 #include "nmt/mallocTracker.hpp"
 #include "nmt/nmtCommon.hpp"
+#include "nmt/nMemLimit.hpp"
 #include "nmt/memoryFileTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
@@ -268,7 +269,7 @@ class MemTracker : AllStatic {
 
   // MallocLimt: Given an allocation size s, check if mallocing this much
   // for MemTag would hit either the global limit or the limit for MemTag.
-  static inline bool check_exceeds_limit(size_t s, MemTag mem_tag);
+  static inline bool check_exceeds_limit(size_t s, MemTag mem_tag, NMemType type);
 
   // Given an unknown pointer, check if it points into a known region; print region if found
   // and return true; false if not found.

@@ -28,13 +28,14 @@
 
 #include "nmt/mallocHeader.hpp"
 #include "nmt/memTag.hpp"
+#include "nmt/nMemLimit.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/threadCritical.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 class outputStream;
-struct malloclimit;
+struct nMemlimit;
 
 /*
  * This counter class counts memory allocation and deallocation,
@@ -208,14 +209,6 @@ class MallocMemorySummary : AllStatic {
   static MallocMemorySnapshot _snapshot;
   static bool _have_limits;
 
-  // Called when a total limit break was detected.
-  // Will return true if the limit was handled, false if it was ignored.
-  static bool total_limit_reached(size_t s, size_t so_far, const malloclimit* limit);
-
-  // Called when a total limit break was detected.
-  // Will return true if the limit was handled, false if it was ignored.
-  static bool category_limit_reached(MemTag mem_tag, size_t s, size_t so_far, const malloclimit* limit);
-
  public:
    static void initialize();
 
@@ -258,7 +251,6 @@ class MallocMemorySummary : AllStatic {
   // MallocLimit: returns true if allocating s bytes on f would trigger
   // either global or the category limit
   static inline bool check_exceeds_limit(size_t s, MemTag mem_tag);
-
 };
 
 // Main class called from MemTracker to track malloc activities

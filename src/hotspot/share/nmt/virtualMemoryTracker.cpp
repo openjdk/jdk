@@ -25,11 +25,14 @@
 #include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "nmt/memTracker.hpp"
+#include "nmt/memTracker.inline.hpp"
+#include "nmt/nMemLimit.hpp"
 #include "nmt/nativeCallStackPrinter.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/debug.hpp"
 
 VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
 
@@ -141,6 +144,10 @@ bool ReservedMemoryRegion::add_committed_region(address addr, size_t size, const
   // At this point the previous overlapping regions have been
   // cleared, and the full region is guaranteed to be inserted.
   VirtualMemorySummary::record_committed_memory(size, mem_tag());
+
+  if (MemTracker::check_exceeds_limit(size, mem_tag(), NMemType::Mmap)) {
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "ReservedMemoryRegion::add_committed_region");
+  }
 
   // Try to merge with prev and possibly next.
   if (try_merge_with(prev, addr, size, stack)) {
@@ -296,7 +303,12 @@ void ReservedMemoryRegion::set_mem_tag(MemTag new_mem_tag) {
          p2i(base()), p2i(end()), (unsigned)mem_tag(), (unsigned)new_mem_tag);
   if (mem_tag() != new_mem_tag) {
     VirtualMemorySummary::move_reserved_memory(mem_tag(), new_mem_tag, size());
-    VirtualMemorySummary::move_committed_memory(mem_tag(), new_mem_tag, committed_size());
+
+    size_t committed_size = ReservedMemoryRegion::committed_size();
+    VirtualMemorySummary::move_committed_memory(mem_tag(), new_mem_tag, committed_size);
+    if (MemTracker::check_exceeds_limit(committed_size, new_mem_tag, NMemType::Mmap)) {
+      vm_exit_out_of_memory(committed_size, OOM_MMAP_ERROR, "ReservedMemoryRegion::set_mem_tag");
+    }
     _mem_tag = new_mem_tag;
   }
 }
@@ -326,7 +338,8 @@ bool VirtualMemoryTracker::initialize(NMT_TrackingLevel level) {
   if (level >= NMT_summary) {
     _reserved_regions = new (std::nothrow, mtNMT)
       SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>();
-    return (_reserved_regions != nullptr);
+      NMemLimitHandler::initialize(MmapLimit, NMemType::Mmap);
+      return (_reserved_regions != nullptr);
   }
   return true;
 }
@@ -584,7 +597,6 @@ bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size
 
   return true;
 }
-
 
 // Iterate the range, find committed region within its bound.
 class RegionIterator : public StackObj {

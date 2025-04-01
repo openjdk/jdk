@@ -1336,6 +1336,23 @@ const int ObjectAlignmentInBytes = 8;
           "-XX:MallocLimit=2g:oom"                                          \
           "-XX:MallocLimit=compiler:200m:oom,code:100m")                    \
                                                                             \
+  product(ccstr, MmapLimit, nullptr, DIAGNOSTIC,                            \
+          "Limit mmap allocation size from VM. Reaching a limit will "      \
+          "trigger an action (see flag). This feature requires "            \
+          "NativeMemoryTracking=summary or NativeMemoryTracking=detail."    \
+          "Usage:"                                                          \
+          "\"-XX:MmapLimit=<size>[:<flag>]\" sets a total limit."           \
+          "\"-XX:MmapLimit=<category>:<size>[:<flag>][,<category>:<size>[:<flag>] ...]\"" \
+          "sets one or more category-specific limits."                      \
+          "<flag> defines the action upon reaching the limit:"              \
+          "\"fatal\": end VM with a fatal error at the allocation site"     \
+          "\"oom\"  : will mimic a native OOM"                              \
+          "If <flag> is omitted, \"fatal\" is the default."                 \
+        "Examples:\n"                                                       \
+          "-XX:MmapLimit=2g"                                                \
+          "-XX:MmapLimit=2g:oom"                                            \
+          "-XX:MmapLimit=gc:200m:oom,code:100m")                            \
+                                                                            \
   product(intx, TypeProfileWidth, 2,                                        \
           "Number of receiver types to record in call/cast profile")        \
           range(0, 8)                                                       \
