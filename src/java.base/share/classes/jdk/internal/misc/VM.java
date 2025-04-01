@@ -445,6 +445,11 @@ public class VM {
      */
     public static native String[] getRuntimeArguments();
 
+    /**
+     * Return a string containing a list of CPU features VM detected.
+     */
+    public static native String getCPUFeatures();
+
     static {
         initialize();
     }

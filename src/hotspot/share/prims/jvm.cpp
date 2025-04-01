@@ -3836,3 +3836,9 @@ JVM_END
 JVM_LEAF(jboolean, JVM_PrintWarningAtDynamicAgentLoad(void))
   return (EnableDynamicAgentLoading && !FLAG_IS_CMDLINE(EnableDynamicAgentLoading)) ? JNI_TRUE : JNI_FALSE;
 JVM_END
+
+JVM_ENTRY(jstring, JVM_GetCPUFeatures(JNIEnv* env))
+  const char* features = VM_Version::features_string();
+  ThreadToNativeFromVM ttn(thread);
+  return env->NewStringUTF(features);
+JVM_END

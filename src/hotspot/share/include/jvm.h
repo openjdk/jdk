@@ -221,6 +221,9 @@ JVM_DumpDynamicArchive(JNIEnv* env, jstring archiveName);
 JNIEXPORT jboolean JNICALL
 JVM_NeedsClassInitBarrierForCDS(JNIEnv* env, jclass cls);
 
+JNIEXPORT jstring JNICALL
+JVM_GetCPUFeatures(JNIEnv* env);
+
 /*
  * java.lang.Throwable
  */

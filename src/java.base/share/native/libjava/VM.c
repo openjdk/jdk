@@ -55,3 +55,8 @@ JNIEXPORT jobjectArray JNICALL
 Java_jdk_internal_misc_VM_getRuntimeArguments(JNIEnv *env, jclass cls) {
     return JVM_GetVmArguments(env);
 }
+
+JNIEXPORT jobject JNICALL
+Java_jdk_internal_misc_VM_getCPUFeatures(JNIEnv *env, jclass cls) {
+    return JVM_GetCPUFeatures(env);
+}

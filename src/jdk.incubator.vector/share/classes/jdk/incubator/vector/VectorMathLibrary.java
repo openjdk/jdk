@@ -24,6 +24,7 @@
  */
 package jdk.incubator.vector;
 
+import jdk.internal.misc.VM;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
@@ -32,6 +33,9 @@ import jdk.internal.vm.vector.VectorSupport;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.IntFunction;
 
 import static jdk.incubator.vector.VectorOperators.*;
@@ -46,6 +50,29 @@ import static jdk.incubator.vector.VectorOperators.*;
 
     private static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
 
+    static class CPUFeatures {
+        static final Set<String> features = getFeatureSet();
+
+        private static Set<String> getFeatureSet() {
+            String[] features = VM.getCPUFeatures().split(" ");
+            if (DEBUG) {
+                System.out.printf("DEBUG: CPUFeatures: %s\n", Arrays.deepToString(features));
+            }
+            return Set.copyOf(Arrays.asList(features));
+        }
+
+        public static boolean hasFeature(String feature) {
+            return features.contains(feature);
+        }
+
+        public static boolean isX64() {
+            return switch (StaticProperty.osArch()) {
+                case "amd64", "x86_64" -> true;
+                default                -> false;
+                };
+        }
+    }
+
     interface Library {
         String symbolName(Operator op, VectorSpecies<?> vspecies);
         boolean isSupported(Operator op, VectorSpecies<?> vspecies);
@@ -57,13 +84,12 @@ import static jdk.incubator.vector.VectorOperators.*;
         static Library getInstance() {
             String libraryName = System.getProperty("jdk.incubator.vector.VectorMathLib", getDefaultName());
             try {
-                switch (libraryName) {
-                    case SVML:  return new SVML();
-                    case SLEEF: return new SLEEF();
-                    case JAVA:  return new Java();
-
-                    default: return new Java();
-                }
+                return switch (libraryName) {
+                    case SVML  -> new SVML();
+                    case SLEEF -> new SLEEF();
+                    case JAVA  -> new Java();
+                    default    -> new Java();
+                };
             } catch (Throwable e) {
                 if (DEBUG) {
                     System.out.printf("DEBUG: VectorMathLibrary: Error during initialization of %s library: %s\n",
@@ -75,15 +101,11 @@ import static jdk.incubator.vector.VectorOperators.*;
         }
 
         static String getDefaultName() {
-            switch (StaticProperty.osArch()) {
-                case "amd64":
-                case "x86_64":
-                    return SVML;
-                case "aarch64":
-                    return SLEEF;
-                default:
-                    return JAVA;
-            }
+            return switch (StaticProperty.osArch()) {
+                case "amd64", "x86_64" -> SVML;
+                case "aarch64" -> SLEEF;
+                default -> JAVA;
+            };
         }
     }
 
@@ -107,6 +129,7 @@ import static jdk.incubator.vector.VectorOperators.*;
         }
     }
 
+
     // SVML method naming convention
     //   All the methods are named as __jsvml_<op><T><N>_ha_<VV>
     //   Where:
@@ -122,6 +145,8 @@ import static jdk.incubator.vector.VectorOperators.*;
     //      e.g. __jsvml_expf16_ha_z0 is the method for computing 16 element vector float exp using AVX 512 insns
     //           __jsvml_exp8_ha_z0 is the method for computing 8 element vector double exp using AVX 512 insns
     private static class SVML implements Library {
+        static boolean SUPPORTS_AVX512DQ = CPUFeatures.isX64() && CPUFeatures.hasFeature("avx512dq");
+
         static {
             loadNativeLibrary();
         }
@@ -172,7 +197,7 @@ import static jdk.incubator.vector.VectorOperators.*;
                 return false; // not supported
             }
             if (vspecies.vectorBitSize() == 512 && (op == LOG || op == LOG10)) {
-                return false; // FIXME: requires VM_Version::supports_avx512dq())
+                return SUPPORTS_AVX512DQ;
             }
             return true;
         }
