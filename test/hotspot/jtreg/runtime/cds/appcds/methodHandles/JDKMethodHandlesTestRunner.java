@@ -135,7 +135,6 @@ class TestMHApp {
                         System.out.println(iae.getCause());
                     } catch (InvocationTargetException ite) {
                         System.out.println("Got InvocationTargetException!!!");
-                        //System.out.println(ite.getCause());
                         throw ite;
                     }
                }
