@@ -41,6 +41,10 @@
 //  - alignment                  -> find an alignment solution for all memops in a vectorized loop
 //  - detect partial overlap     -> indicates store-to-load-forwarding failures
 //
+// A more advanced use case is proving that some loop induction variable (iv) dependent pointers
+// have a linear form, which allows us to formulate speculative aliasing runtime checks for two
+// or more memory operations in a loop where we cannot statically prove that they never overlap.
+//
 // -----------------------------------------------------------------------------------------
 //
 // Intuition and Examples:
@@ -267,6 +271,10 @@
 //   the idea of a "safe decomposition", and then prove that all the decompositions we apply
 //   are such "safe decompositions".
 //
+//   Even further down, we prove the "MemPointer Linearity Corrolary", where we show that
+//   (under reasonable restrictions) both the MemPointer and the corresponding pointer
+//   can be considered linear functions.
+//
 //
 // Definition: Safe decomposition
 //   Trivial decomposition:
@@ -403,6 +411,7 @@
 //       mp(v) = mp(lo) + (v - lo) * scale_v                      (Corrolary MP)
 //
 //     Note: the calculations are done in long, and hence there can be no int overflow.
+//           Thus, p(v) and mp(v) can be considered linear functions for v in r.
 //
 //
 // Proof of "MemPointer Linearity Corrolary":
