@@ -750,11 +750,12 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
     }
 
     public byte[] getLocalQuicTransportParameters() {
-        if (localQuicTransportParameters == null) {
+        ByteBuffer ltp = localQuicTransportParameters;
+        if (ltp == null) {
             return null;
         }
-        byte[] result = new byte[localQuicTransportParameters.remaining()];
-        localQuicTransportParameters.get(0, result);
+        byte[] result = new byte[ltp.remaining()];
+        ltp.get(0, result);
         return result;
     }
 
