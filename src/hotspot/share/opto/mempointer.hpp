@@ -389,7 +389,7 @@
 //
 // Having proven the "MemPointer Lemma", we can now derive an interesting corrolary.
 //
-// MemPointer Non-Overflow Corrolary:
+// MemPointer Linearity Corrolary:
 //   Given:
 //     (C0) pointer p and its MemPointer mp, which is constructed with safe decompositions.
 //     (C1) a summand "scale_v * v" that occurs in mp.
@@ -398,48 +398,77 @@
 //     (C4) abs(scale_v * stride_v) < 2^31.
 //
 //   Then:
-//     Both p and mp have no overflow in the range r, i.e. both p and mp have a linear form.
+//     Both p and mp have a linear form for v in r:
+//       p(v)  = p(lo)  + (v - lo) * scale_v                      (Corrolary P)
+//       mp(v) = mp(lo) + (v - lo) * scale_v                      (Corrolary MP)
+//
+//     Note: the calculations are done in long, and hence there can be no int overflow.
 //
 //
-// Proof of "MemPointer Non-Overflow Corrolary":
+// Proof of "MemPointer Linearity Corrolary":
 //   We state the form of mp:
 //
 //     mp = summand_rest + scale_v * v + con
 //
-//   Assume (C0-4), and that there is some overflow in the range r. There must be some consecutive
-//   v0 and v1 = v0 + stride_v, where v0 is before the overflow and v1 after the overflow. We define
-//   corresponding mp0 and mp1:
+//   We prove the Corrolary by induction over v:
+//   Base Case: v = lo
+//     p(lo)  = p(lo)  + 0
+//            = p(lo)  + (lo - lo) * scale_v
+//     mp(lo) = mp(lo) + 0
+//            = mp(lo) + (lo - lo) * scale_v
 //
-//     mp0 = summand_rest + scale_v *  v0                                  + con
-//     mp1 = summand_rest + scale_v *  v1                                  + con
-//         = summand_rest + scale_v * (v0 + stride_v)                      + con
-//         = summand_rest + scale_v *  v0             + scale_v * stride_v + con
+//   Step Case: v0 and v1 in r, v1 = v0 + stride_v
+//     Assume:
+//       p(v0)  = p(lo)  + (v0 - lo) * scale_v                   (Induction Hypothesis IH-P)
+//       mp(v0) = mp(lo) + (v0 - lo) * scale_v                   (Induction Hypothesis IH-MP)
 //
-//   Hence, we can reformulate mp0 and mp1 to be two MemPointer that only differ in their constant:
+//     We take the form of mp, and further apply SAFE1 decompositions, i.e. long addition,
+//     subtraction and multiplication:
+//       mp(v1) = summand_rest + scale_v * v1                                    + con
+//              = summand_rest + scale_v * (v0 + stride_v)                       + con
+//              = summand_rest + scale_v * v0              + scale_v * stride_v * con
+//              = summand_rest + scale_v * v0              + scale_v * stride_v * con
+//              = mp(v0)                                   + scale_v * stride_v
 //
-//     mp0 = summand_rest + scale_v * v0 + con0
-//     mp1 = summand_rest + scale_v * v0 + con1
-//     con0 = con
-//     con1 = con + scale_v * stride_v
+//     From this it follows that we can see mp(v0) and mp(v1) as two MemPointer with the
+//     same summands, and only their constants differ by exactly "scale_v * stride_v":
+//       mp(v0) = summand_rest + scale_v * v0 + con
+//       mp(v1) = summand_rest + scale_v * v0 + con + scale_v * stride_v            (MP-DIFF)
 //
-//   Note: the restructuring of terms for mp1 all happens with long addition and multiplication, and is
-//         thus SAFE1.
+//     We continue by applying the Induction Hypothesis IH-MP
+//       mp(v1) = mp(v0)                                   + scale_v * stride_v
+//                -------- apply (IH-MP) -----------------
+//              = mp(lo) + (v0            - lo) * scale_v  + scale_v * stride_v
+//              = mp(lo) + (v0 + stride_v - lo) * scale_v
+//              = mp(lo) + (v1            - lo) * scale_v
 //
-//   We now apply the MemPointer Lemma:
-//     (S0) Let p0 and p1 be the pointers corresponding to v0 and v1, and mp0 and mp1 their MemPointer.
-//          Note: (C0) provides the safe deconstruction, and reformulation of terms happens with long
-//                addition and multiplication only, and is hence SAFE as well.
-//     (S1) According to (C3), p is in bounds of its memory object for all v in r. Since v0 and v1 are
-//          in r, it follows that p0 and p1 are in bounds of the same memory object.
-//     (S2) The difference of constants con0 and con1 is not too large, given (C4).
-//     (S3) All summands of mp0 and mp1 are the same (only the constants differ).
+//     This proves the Corrolary MP.
 //
-//   It follows:
-//     p0 - p1 = mp0 - mp1
+//     To prove the Corrolary P, we now apply the MemPointer Lemma:
+//       (S0) Let p(v0) and p(v1) be the pointers corresponding to v0 and v1, and mp(v0) and mp(v1)
+//            their MemPointer. (C0) provides the safe deconstruction, and reformulation of terms
+//            happens with long addition, subtraction and multiplication only, and is hence SAFE
+//            as well.
+//       (S1) According to (C3), p is in bounds of its memory object for all v in r. Since v0 and
+//            v1 are in r, it follows that p(v0) and p(v1) are in bounds of the same memory object.
+//       (S2) The difference of constants of mp(v0) and mp(v1) is exactly "scale_v * stride_v" (MP-DIFF).
+//            Given (C4), this difference is not too large.
+//       (S3) All summands of mp0 and mp1 are the same (only the constants differ), given (MP-DIFF).
 //
-// TODO: concluseion, linearity / non-overflow
+//     It follows:
+//       p(v1) - p(v0) = mp(v1) - mp(v0)
 //
-
+//     Reformulating and applying (MP-DIFF) and (IH-P):
+//       p(v1) = p(v0)                                   + mp(v1) - mp(v1)
+//                                                         apply (MP-DIFF)
+//             = p(v0)                                   + scale_v * stride_v
+//               ------------- apply (IH-P) ------------
+//             = p(lo)  + (v0            - lo) * scale_v + scale_v * stride_v
+//             = p(lo)  + (v0 + stride_v - lo) * scale_v
+//             = p(lo)  + (v1            - lo) * scale_v
+//
+//     This proves Corrolary P.
+//
 #ifndef PRODUCT
 class TraceMemPointer : public StackObj {
 private:
