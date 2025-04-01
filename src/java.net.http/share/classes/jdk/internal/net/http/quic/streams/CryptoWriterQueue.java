@@ -28,9 +28,9 @@ import jdk.internal.net.http.quic.frames.CryptoFrame;
 import jdk.internal.net.http.quic.VariableLengthEncoder;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Queue;
 
 /**
  * Class that buffers crypto data received from QuicTLSEngine.
@@ -42,7 +42,7 @@ import java.util.List;
  * in the queues.
  */
 public class CryptoWriterQueue {
-    private final List<ByteBuffer> queue = new ArrayList<>();
+    private final Queue<ByteBuffer> queue = new ArrayDeque<>();
     private long position = 0;
     // amount of bytes remaining across all the enqueued buffers
     private int totalRemaining = 0;
