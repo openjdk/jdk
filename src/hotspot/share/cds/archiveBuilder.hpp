@@ -235,7 +235,7 @@ private:
   struct {
     size_t _num_ptrs;
     size_t _num_tagged_ptrs;
-    size_t _num_implicitly_nulled_ptrs;
+    size_t _num_nulled_ptrs;
   } _relocated_ptr_info;
 
   void print_region_stats(FileMapInfo *map_info, ArchiveHeapInfo* heap_info);
@@ -257,7 +257,7 @@ public:
     ~OtherROAllocMark();
   };
 
-  void count_relocated_pointer(bool tagged, bool implicitly_nulled);
+  void count_relocated_pointer(bool tagged, bool nulled);
 
 private:
   FollowMode get_follow_mode(MetaspaceClosure::Ref *ref);
