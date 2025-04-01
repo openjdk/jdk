@@ -25,6 +25,7 @@
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
+#include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -39,13 +40,15 @@
 #include "utilities/formatBuffer.hpp"
 
 bool CDSConfig::_is_dumping_static_archive = false;
+bool CDSConfig::_is_dumping_preimage_static_archive = false;
+bool CDSConfig::_is_dumping_final_static_archive = false;
 bool CDSConfig::_is_dumping_dynamic_archive = false;
 bool CDSConfig::_is_using_optimized_module_handling = true;
 bool CDSConfig::_is_dumping_full_module_graph = true;
 bool CDSConfig::_is_using_full_module_graph = true;
 bool CDSConfig::_has_aot_linked_classes = false;
-bool CDSConfig::_has_archived_invokedynamic = false;
 bool CDSConfig::_old_cds_flags_used = false;
+bool CDSConfig::_new_aot_flags_used = false;
 bool CDSConfig::_disable_heap_dumping = false;
 
 char* CDSConfig::_default_archive_path = nullptr;
@@ -57,16 +60,24 @@ JavaThread* CDSConfig::_dumper_thread = nullptr;
 int CDSConfig::get_status() {
   assert(Universe::is_fully_initialized(), "status is finalized only after Universe is initialized");
   return (is_dumping_archive()              ? IS_DUMPING_ARCHIVE : 0) |
+         (is_dumping_method_handles()       ? IS_DUMPING_METHOD_HANDLES : 0) |
          (is_dumping_static_archive()       ? IS_DUMPING_STATIC_ARCHIVE : 0) |
          (is_logging_lambda_form_invokers() ? IS_LOGGING_LAMBDA_FORM_INVOKERS : 0) |
          (is_using_archive()                ? IS_USING_ARCHIVE : 0);
 }
 
 void CDSConfig::initialize() {
-  if (is_dumping_static_archive()) {
-    if (RequireSharedSpaces) {
-      warning("Cannot dump shared archive while using shared archive");
-    }
+  if (is_dumping_static_archive() && !is_dumping_final_static_archive()) {
+    // Note: -Xshare and -XX:AOTMode flags are mutually exclusive.
+    // - Classic workflow: -Xshare:on and -Xshare:dump cannot take effect at the same time.
+    // - JEP 483 workflow: -XX:AOTMode:record and -XX:AOTMode=on cannot take effect at the same time.
+    // So we can never come to here with RequireSharedSpaces==true.
+    assert(!RequireSharedSpaces, "sanity");
+
+    // If dumping the classic archive, or making an AOT training run (dumping a preimage archive),
+    // for sanity, parse all classes from classfiles.
+    // TODO: in the future, if we want to support re-training on top of an existing AOT cache, this
+    // needs to be changed.
     UseSharedSpaces = false;
   }
 
@@ -85,12 +96,10 @@ void CDSConfig::initialize() {
 
 char* CDSConfig::default_archive_path() {
   if (_default_archive_path == nullptr) {
-    char jvm_path[JVM_MAXPATHLEN];
-    os::jvm_path(jvm_path, sizeof(jvm_path));
-    char *end = strrchr(jvm_path, *os::file_separator());
-    if (end != nullptr) *end = '\0';
     stringStream tmp;
-    tmp.print("%s%sclasses", jvm_path, os::file_separator());
+    const char* subdir = WINDOWS_ONLY("bin") NOT_WINDOWS("lib");
+    tmp.print("%s%s%s%s%s%sclasses", Arguments::get_java_home(), os::file_separator(), subdir,
+              os::file_separator(), Abstract_VM_Version::vm_variant(), os::file_separator());
 #ifdef _LP64
     if (!UseCompressedOops) {
       tmp.print_raw("_nocoops");
@@ -209,6 +218,7 @@ void CDSConfig::init_shared_archive_paths() {
               warning("-XX:+AutoCreateSharedArchive is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
               AutoCreateSharedArchive = false;
             }
+            log_error(cds)("Not a valid %s (%s)", new_aot_flags_used() ? "AOT cache" : "archive", SharedArchiveFile);
             Arguments::no_shared_spaces("invalid archive");
           }
         } else if (base_archive_path == nullptr) {
@@ -332,7 +342,11 @@ bool CDSConfig::has_unsupported_runtime_module_options() {
     if (RequireSharedSpaces) {
       warning("CDS is disabled when the %s option is specified.", option);
     } else {
-      log_info(cds)("CDS is disabled when the %s option is specified.", option);
+      if (new_aot_flags_used()) {
+        log_warning(cds)("AOT cache is disabled when the %s option is specified.", option);
+      } else {
+        log_info(cds)("CDS is disabled when the %s option is specified.", option);
+      }
     }
     return true;
   }
@@ -342,7 +356,7 @@ bool CDSConfig::has_unsupported_runtime_module_options() {
 #define CHECK_ALIAS(f) check_flag_alias(FLAG_IS_DEFAULT(f), #f)
 
 void CDSConfig::check_flag_alias(bool alias_is_default, const char* alias_name) {
-  if (_old_cds_flags_used && !alias_is_default) {
+  if (old_cds_flags_used() && !alias_is_default) {
     vm_exit_during_initialization(err_msg("Option %s cannot be used at the same time with "
                                           "-Xshare:on, -Xshare:auto, -Xshare:off, -Xshare:dump, "
                                           "DumpLoadedClassList, SharedClassListFile, or SharedArchiveFile",
@@ -350,7 +364,7 @@ void CDSConfig::check_flag_alias(bool alias_is_default, const char* alias_name) 
   }
 }
 
-void CDSConfig::check_flag_aliases() {
+void CDSConfig::check_aot_flags() {
   if (!FLAG_IS_DEFAULT(DumpLoadedClassList) ||
       !FLAG_IS_DEFAULT(SharedClassListFile) ||
       !FLAG_IS_DEFAULT(SharedArchiveFile)) {
@@ -362,30 +376,16 @@ void CDSConfig::check_flag_aliases() {
   CHECK_ALIAS(AOTMode);
 
   if (FLAG_IS_DEFAULT(AOTCache) && FLAG_IS_DEFAULT(AOTConfiguration) && FLAG_IS_DEFAULT(AOTMode)) {
-    // Aliases not used.
+    // AOTCache/AOTConfiguration/AOTMode not used.
     return;
+  } else {
+    _new_aot_flags_used = true;
   }
 
   if (FLAG_IS_DEFAULT(AOTMode) || strcmp(AOTMode, "auto") == 0 || strcmp(AOTMode, "on") == 0) {
-    if (!FLAG_IS_DEFAULT(AOTConfiguration)) {
-      vm_exit_during_initialization("AOTConfiguration can only be used with -XX:AOTMode=record or -XX:AOTMode=create");
-    }
-
-    if (!FLAG_IS_DEFAULT(AOTCache)) {
-      assert(FLAG_IS_DEFAULT(SharedArchiveFile), "already checked");
-      FLAG_SET_ERGO(SharedArchiveFile, AOTCache);
-    }
-
-    UseSharedSpaces = true;
-    if (FLAG_IS_DEFAULT(AOTMode) || (strcmp(AOTMode, "auto") == 0)) {
-      RequireSharedSpaces = false;
-    } else {
-      assert(strcmp(AOTMode, "on") == 0, "already checked");
-      RequireSharedSpaces = true;
-    }
+    check_aotmode_auto_or_on();
   } else if (strcmp(AOTMode, "off") == 0) {
-    UseSharedSpaces = false;
-    RequireSharedSpaces = false;
+    check_aotmode_off();
   } else {
     // AOTMode is record or create
     if (FLAG_IS_DEFAULT(AOTConfiguration)) {
@@ -393,32 +393,78 @@ void CDSConfig::check_flag_aliases() {
     }
 
     if (strcmp(AOTMode, "record") == 0) {
-      if (!FLAG_IS_DEFAULT(AOTCache)) {
-        vm_exit_during_initialization("AOTCache must not be specified when using -XX:AOTMode=record");
-      }
-
-      assert(FLAG_IS_DEFAULT(DumpLoadedClassList), "already checked");
-      FLAG_SET_ERGO(DumpLoadedClassList, AOTConfiguration);
-      UseSharedSpaces = false;
-      RequireSharedSpaces = false;
+      check_aotmode_record();
     } else {
       assert(strcmp(AOTMode, "create") == 0, "checked by AOTModeConstraintFunc");
-      if (FLAG_IS_DEFAULT(AOTCache)) {
-        vm_exit_during_initialization("AOTCache must be specified when using -XX:AOTMode=create");
-      }
-
-      assert(FLAG_IS_DEFAULT(SharedClassListFile), "already checked");
-      FLAG_SET_ERGO(SharedClassListFile, AOTConfiguration);
-      assert(FLAG_IS_DEFAULT(SharedArchiveFile), "already checked");
-      FLAG_SET_ERGO(SharedArchiveFile, AOTCache);
-
-      CDSConfig::enable_dumping_static_archive();
+      check_aotmode_create();
     }
   }
 }
 
+void CDSConfig::check_aotmode_off() {
+  UseSharedSpaces = false;
+  RequireSharedSpaces = false;
+}
+
+void CDSConfig::check_aotmode_auto_or_on() {
+  if (!FLAG_IS_DEFAULT(AOTConfiguration)) {
+    vm_exit_during_initialization("AOTConfiguration can only be used with -XX:AOTMode=record or -XX:AOTMode=create");
+  }
+
+  if (!FLAG_IS_DEFAULT(AOTCache)) {
+    assert(FLAG_IS_DEFAULT(SharedArchiveFile), "already checked");
+    FLAG_SET_ERGO(SharedArchiveFile, AOTCache);
+  }
+
+  UseSharedSpaces = true;
+  if (FLAG_IS_DEFAULT(AOTMode) || (strcmp(AOTMode, "auto") == 0)) {
+    RequireSharedSpaces = false;
+  } else {
+    assert(strcmp(AOTMode, "on") == 0, "already checked");
+    RequireSharedSpaces = true;
+  }
+}
+
+void CDSConfig::check_aotmode_record() {
+  if (!FLAG_IS_DEFAULT(AOTCache)) {
+    vm_exit_during_initialization("AOTCache must not be specified when using -XX:AOTMode=record");
+  }
+
+  assert(FLAG_IS_DEFAULT(DumpLoadedClassList), "already checked");
+  assert(FLAG_IS_DEFAULT(SharedArchiveFile), "already checked");
+  FLAG_SET_ERGO(SharedArchiveFile, AOTConfiguration);
+  FLAG_SET_ERGO(DumpLoadedClassList, nullptr);
+  UseSharedSpaces = false;
+  RequireSharedSpaces = false;
+  _is_dumping_static_archive = true;
+  _is_dumping_preimage_static_archive = true;
+
+  // At VM exit, the module graph may be contaminated with program states.
+  // We will rebuild the module graph when dumping the CDS final image.
+  disable_heap_dumping();
+}
+
+void CDSConfig::check_aotmode_create() {
+  if (FLAG_IS_DEFAULT(AOTCache)) {
+    vm_exit_during_initialization("AOTCache must be specified when using -XX:AOTMode=create");
+  }
+
+  assert(FLAG_IS_DEFAULT(SharedArchiveFile), "already checked");
+
+  _is_dumping_final_static_archive = true;
+  FLAG_SET_ERGO(SharedArchiveFile, AOTConfiguration);
+  UseSharedSpaces = true;
+  RequireSharedSpaces = true;
+
+  if (!FileMapInfo::is_preimage_static_archive(AOTConfiguration)) {
+    vm_exit_during_initialization("Must be a valid AOT configuration generated by the current JVM", AOTConfiguration);
+  }
+
+  CDSConfig::enable_dumping_static_archive();
+}
+
 bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_flag_cmd_line) {
-  check_flag_aliases();
+  check_aot_flags();
 
   if (!FLAG_IS_DEFAULT(AOTMode)) {
     // Using any form of the new AOTMode switch enables enhanced optimizations.
@@ -434,7 +480,9 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   }
 
   if (is_dumping_static_archive()) {
-    if (!mode_flag_cmd_line) {
+    if (is_dumping_preimage_static_archive()) {
+      // Don't tweak execution mode
+    } else if (!mode_flag_cmd_line) {
       // By default, -Xshare:dump runs in interpreter-only mode, which is required for deterministic archive.
       //
       // If your classlist is large and you don't care about deterministic dumping, you can use
@@ -498,9 +546,23 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   return true;
 }
 
+bool CDSConfig::is_dumping_classic_static_archive() {
+  return _is_dumping_static_archive &&
+    !is_dumping_preimage_static_archive() &&
+    !is_dumping_final_static_archive();
+}
+
+bool CDSConfig::is_dumping_preimage_static_archive() {
+  return _is_dumping_preimage_static_archive;
+}
+
+bool CDSConfig::is_dumping_final_static_archive() {
+  return _is_dumping_final_static_archive;
+}
+
 bool CDSConfig::allow_only_single_java_thread() {
   // See comments in JVM_StartThread()
-  return is_dumping_static_archive();
+  return is_dumping_classic_static_archive() || is_dumping_final_static_archive();
 }
 
 bool CDSConfig::is_using_archive() {
@@ -531,6 +593,26 @@ CDSConfig::DumperThreadMark::~DumperThreadMark() {
 bool CDSConfig::current_thread_is_vm_or_dumper() {
   Thread* t = Thread::current();
   return t != nullptr && (t->is_VM_thread() || t == _dumper_thread);
+}
+
+const char* CDSConfig::type_of_archive_being_loaded() {
+  if (is_dumping_final_static_archive()) {
+    return "AOT configuration file";
+  } else if (new_aot_flags_used()) {
+    return "AOT cache";
+  } else {
+    return "shared archive file";
+  }
+}
+
+const char* CDSConfig::type_of_archive_being_written() {
+  if (is_dumping_preimage_static_archive()) {
+    return "AOT configuration file";
+  } else if (new_aot_flags_used()) {
+    return "AOT cache";
+  } else {
+    return "shared archive file";
+  }
 }
 
 // If an incompatible VM options is found, return a text message that explains why
@@ -566,19 +648,22 @@ void CDSConfig::log_reasons_for_not_dumping_heap() {
   log_info(cds)("Archived java heap is not supported: %s", reason);
 }
 
+// This is *Legacy* optimization for lambdas before JEP 483. May be removed in the future.
+bool CDSConfig::is_dumping_lambdas_in_legacy_mode() {
+  return !is_dumping_method_handles();
+}
+
 #if INCLUDE_CDS_JAVA_HEAP
 bool CDSConfig::are_vm_options_incompatible_with_dumping_heap() {
   return check_options_incompatible_with_dumping_heap() != nullptr;
 }
 
-
 bool CDSConfig::is_dumping_heap() {
-  if (!is_dumping_static_archive() // heap dump is not supported in dynamic dump
+  if (!(is_dumping_classic_static_archive() || is_dumping_final_static_archive())
       || are_vm_options_incompatible_with_dumping_heap()
       || _disable_heap_dumping) {
     return false;
   }
-
   return true;
 }
 
@@ -626,7 +711,9 @@ void CDSConfig::stop_using_full_module_graph(const char* reason) {
 }
 
 bool CDSConfig::is_dumping_aot_linked_classes() {
-  if (is_dumping_dynamic_archive()) {
+  if (is_dumping_preimage_static_archive()) {
+    return false;
+  } else if (is_dumping_dynamic_archive()) {
     return is_using_full_module_graph() && AOTClassLinking;
   } else if (is_dumping_static_archive()) {
     return is_dumping_full_module_graph() && AOTClassLinking;
@@ -655,8 +742,13 @@ bool CDSConfig::is_dumping_invokedynamic() {
   return AOTInvokeDynamicLinking && is_dumping_aot_linked_classes() && is_dumping_heap();
 }
 
-bool CDSConfig::is_loading_invokedynamic() {
-  return UseSharedSpaces && is_using_full_module_graph() && _has_archived_invokedynamic;
+// When we are dumping aot-linked classes and we are able to write archived heap objects, we automatically
+// enable the archiving of MethodHandles. This will in turn enable the archiving of MethodTypes and hidden
+// classes that are used in the implementation of MethodHandles.
+// Archived MethodHandles are required for higher-level optimizations such as AOT resolution of invokedynamic
+// and dynamic proxies.
+bool CDSConfig::is_dumping_method_handles() {
+  return is_initing_classes_at_dump_time();
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

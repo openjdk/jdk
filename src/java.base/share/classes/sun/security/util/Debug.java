@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,6 @@ public class Debug {
         System.err.println("pkcs12        PKCS12 KeyStore debugging");
         System.err.println("properties    Security property and configuration file debugging");
         System.err.println("sunpkcs11     SunPKCS11 provider debugging");
-        System.err.println("scl           permissions SecureClassLoader assigns");
         System.err.println("securerandom  SecureRandom");
         System.err.println("ts            timestamping");
         System.err.println("x509          X.509 certificate debugging");

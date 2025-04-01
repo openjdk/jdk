@@ -2300,7 +2300,7 @@ static int patch_offset_in_jal(address branch, int64_t offset) {
 
 static int patch_offset_in_conditional_branch(address branch, int64_t offset) {
   assert(Assembler::is_simm13(offset) && ((offset % 2) == 0),
-         "offset is too large to be patched in one beq/bge/bgeu/blt/bltu/bne instruction!\n");
+         "offset (%ld) is too large to be patched in one beq/bge/bgeu/blt/bltu/bne instruction!\n", offset);
   Assembler::patch(branch, 31, 31, (offset >> 12) & 0x1);                       // offset[12]    ==> branch[31]
   Assembler::patch(branch, 30, 25, (offset >> 5)  & 0x3f);                      // offset[10:5]  ==> branch[30:25]
   Assembler::patch(branch, 7,  7,  (offset >> 11) & 0x1);                       // offset[11]    ==> branch[7]
@@ -2594,6 +2594,14 @@ void MacroAssembler::movptr2(Register Rd, uint64_t addr, int32_t &offset, Regist
 }
 
 // floating point imm move
+bool MacroAssembler::can_hf_imm_load(short imm) {
+  jshort h_bits = (jshort)imm;
+  if (h_bits == 0) {
+    return true;
+  }
+  return can_zfa_zli_half_float(imm);
+}
+
 bool MacroAssembler::can_fp_imm_load(float imm) {
   jint f_bits = jint_cast(imm);
   if (f_bits == 0) {
@@ -2608,6 +2616,17 @@ bool MacroAssembler::can_dp_imm_load(double imm) {
     return true;
   }
   return can_zfa_zli_double(imm);
+}
+
+void MacroAssembler::fli_h(FloatRegister Rd, short imm) {
+  jshort h_bits = (jshort)imm;
+  if (h_bits == 0) {
+    fmv_h_x(Rd, zr);
+    return;
+  }
+  int Rs = zfa_zli_lookup_half_float(h_bits);
+  assert(Rs != -1, "Must be");
+  _fli_h(Rd, Rs);
 }
 
 void MacroAssembler::fli_s(FloatRegister Rd, float imm) {
@@ -2892,7 +2911,6 @@ void MacroAssembler::revb(Register Rd, Register Rs, Register tmp1, Register tmp2
     slli(tmp1, tmp1, 8);
   }
   srli(Rd, Rs, 56);
-  zext(Rd, Rd, 8);
   orr(Rd, tmp1, Rd);
 }
 
@@ -3345,71 +3363,6 @@ void MacroAssembler::load_heap_oop_not_null(Register dst, Address src, Register 
 // Used for storing nulls.
 void MacroAssembler::store_heap_oop_null(Address dst) {
   access_store_at(T_OBJECT, IN_HEAP, dst, noreg, noreg, noreg, noreg);
-}
-
-int MacroAssembler::corrected_idivl(Register result, Register rs1, Register rs2,
-                                    bool want_remainder, bool is_signed)
-{
-  // Full implementation of Java idiv and irem.  The function
-  // returns the (pc) offset of the div instruction - may be needed
-  // for implicit exceptions.
-  //
-  // input : rs1: dividend
-  //         rs2: divisor
-  //
-  // result: either
-  //         quotient  (= rs1 idiv rs2)
-  //         remainder (= rs1 irem rs2)
-
-
-  int idivl_offset = offset();
-  if (!want_remainder) {
-    if (is_signed) {
-      divw(result, rs1, rs2);
-    } else {
-      divuw(result, rs1, rs2);
-    }
-  } else {
-    // result = rs1 % rs2;
-    if (is_signed) {
-      remw(result, rs1, rs2);
-    } else {
-      remuw(result, rs1, rs2);
-    }
-  }
-  return idivl_offset;
-}
-
-int MacroAssembler::corrected_idivq(Register result, Register rs1, Register rs2,
-                                    bool want_remainder, bool is_signed)
-{
-  // Full implementation of Java ldiv and lrem.  The function
-  // returns the (pc) offset of the div instruction - may be needed
-  // for implicit exceptions.
-  //
-  // input : rs1: dividend
-  //         rs2: divisor
-  //
-  // result: either
-  //         quotient  (= rs1 idiv rs2)
-  //         remainder (= rs1 irem rs2)
-
-  int idivq_offset = offset();
-  if (!want_remainder) {
-    if (is_signed) {
-      div(result, rs1, rs2);
-    } else {
-      divu(result, rs1, rs2);
-    }
-  } else {
-    // result = rs1 % rs2;
-    if (is_signed) {
-      rem(result, rs1, rs2);
-    } else {
-      remu(result, rs1, rs2);
-    }
-  }
-  return idivq_offset;
 }
 
 // Look up the method for a megamorphic invokeinterface call.

@@ -41,6 +41,7 @@
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
@@ -1090,6 +1091,14 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     if (UseProfiledLoopPredicate) {
       add_parse_predicate(Deoptimization::Reason_profile_predicate, inner_head, outer_ilt, cloned_sfpt);
     }
+
+    // We only want to use the auto-vectorization check as a trap once per bci. And
+    // PhaseIdealLoop::add_parse_predicate only checks trap limits per method, so
+    // we do a custom check here.
+    if (!C->too_many_traps(cloned_sfpt->jvms()->method(), cloned_sfpt->jvms()->bci(), Deoptimization::Reason_auto_vectorization_check)) {
+      add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, inner_head, outer_ilt, cloned_sfpt);
+    }
+
     add_parse_predicate(Deoptimization::Reason_loop_limit_check, inner_head, outer_ilt, cloned_sfpt);
   }
 
@@ -2511,6 +2520,9 @@ void CountedLoopNode::dump_spec(outputStream *st) const {
   if (is_main_loop()) st->print("main of N%d", _idx);
   if (is_post_loop()) st->print("post of N%d", _main_idx);
   if (is_strip_mined()) st->print(" strip mined");
+  if (is_multiversion_fast_loop())         { st->print(" multiversion_fast"); }
+  if (is_multiversion_slow_loop())         { st->print(" multiversion_slow"); }
+  if (is_multiversion_delayed_slow_loop()) { st->print(" multiversion_delayed_slow"); }
 }
 #endif
 
@@ -2717,6 +2729,20 @@ Node* CountedLoopNode::match_incr_with_optional_truncation(Node* expr, Node** tr
   }
 
   // failed
+  return nullptr;
+}
+
+IfNode* CountedLoopNode::find_multiversion_if_from_multiversion_fast_main_loop() {
+  assert(is_main_loop() && is_multiversion_fast_loop(), "must be multiversion fast main loop");
+  CountedLoopEndNode* pre_end = find_pre_loop_end();
+  if (pre_end == nullptr) { return nullptr; }
+  Node* pre_entry = pre_end->loopnode()->in(LoopNode::EntryControl);
+  const Predicates predicates(pre_entry);
+  IfTrueNode* before_predicates = predicates.entry()->isa_IfTrue();
+  if (before_predicates != nullptr &&
+      before_predicates->in(0)->in(1)->is_OpaqueMultiversioning()) {
+    return before_predicates->in(0)->as_If();
+  }
   return nullptr;
 }
 
@@ -3183,10 +3209,10 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
         if (iloop->get_loop(iloop->get_ctrl(in)) != outer_loop_ilt) {
           continue;
         }
-        assert(!loop->_body.contains(in), "");
-        loop->_body.push(in);
         wq.push(in);
       }
+      assert(!loop->_body.contains(n), "Shouldn't append node to body twice");
+      loop->_body.push(n);
     }
     iloop->set_loop(safepoint, loop);
     loop->_body.push(safepoint);
@@ -4303,6 +4329,9 @@ void IdealLoopTree::dump_head() {
     if (cl->is_post_loop()) tty->print(" post");
     if (cl->is_vectorized_loop()) tty->print(" vector");
     if (range_checks_present()) tty->print(" rc ");
+    if (cl->is_multiversion_fast_loop())         { tty->print(" multiversion_fast"); }
+    if (cl->is_multiversion_slow_loop())         { tty->print(" multiversion_slow"); }
+    if (cl->is_multiversion_delayed_slow_loop()) { tty->print(" multiversion_delayed_slow"); }
   }
   if (_has_call) tty->print(" has_call");
   if (_has_sfpt) tty->print(" has_sfpt");
@@ -4370,117 +4399,13 @@ void PhaseIdealLoop::log_loop_tree() {
 
 // Eliminate all Parse and Template Assertion Predicates that are not associated with a loop anymore. The eliminated
 // predicates will be removed during the next round of IGVN.
-void PhaseIdealLoop::eliminate_useless_predicates() {
+void PhaseIdealLoop::eliminate_useless_predicates() const {
   if (C->parse_predicate_count() == 0 && C->template_assertion_predicate_count() == 0) {
     return; // No predicates left.
   }
 
-  eliminate_useless_parse_predicates();
-  eliminate_useless_template_assertion_predicates();
-}
-
-// Eliminate all Parse Predicates that do not belong to a loop anymore by marking them useless. These will be removed
-// during the next round of IGVN.
-void PhaseIdealLoop::eliminate_useless_parse_predicates() {
-  mark_all_parse_predicates_useless();
-  if (C->has_loops()) {
-    mark_loop_associated_parse_predicates_useful();
-  }
-  add_useless_parse_predicates_to_igvn_worklist();
-}
-
-void PhaseIdealLoop::mark_all_parse_predicates_useless() const {
-  for (int i = 0; i < C->parse_predicate_count(); i++) {
-    C->parse_predicate(i)->mark_useless();
-  }
-}
-
-void PhaseIdealLoop::mark_loop_associated_parse_predicates_useful() {
-  for (LoopTreeIterator iterator(_ltree_root); !iterator.done(); iterator.next()) {
-    IdealLoopTree* loop = iterator.current();
-    if (loop->can_apply_loop_predication()) {
-      mark_useful_parse_predicates_for_loop(loop);
-    }
-  }
-}
-
-// This visitor marks all visited Parse Predicates useful.
-class ParsePredicateUsefulMarker : public PredicateVisitor {
- public:
-  using PredicateVisitor::visit;
-
-  void visit(const ParsePredicate& parse_predicate) override {
-    parse_predicate.head()->mark_useful();
-  }
-};
-
-void PhaseIdealLoop::mark_useful_parse_predicates_for_loop(IdealLoopTree* loop) {
-  Node* entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
-  const PredicateIterator predicate_iterator(entry);
-  ParsePredicateUsefulMarker useful_marker;
-  predicate_iterator.for_each(useful_marker);
-}
-
-void PhaseIdealLoop::add_useless_parse_predicates_to_igvn_worklist() {
-  for (int i = 0; i < C->parse_predicate_count(); i++) {
-    ParsePredicateNode* parse_predicate_node = C->parse_predicate(i);
-    if (parse_predicate_node->is_useless()) {
-      _igvn._worklist.push(parse_predicate_node);
-    }
-  }
-}
-
-
-// Eliminate all Template Assertion Predicates that do not belong to their originally associated loop anymore by
-// replacing the OpaqueTemplateAssertionPredicate node of the If node with true. These nodes will be removed during the
-// next round of IGVN.
-void PhaseIdealLoop::eliminate_useless_template_assertion_predicates() {
-  Unique_Node_List useful_predicates;
-  if (C->has_loops()) {
-    collect_useful_template_assertion_predicates(useful_predicates);
-  }
-  eliminate_useless_template_assertion_predicates(useful_predicates);
-}
-
-void PhaseIdealLoop::collect_useful_template_assertion_predicates(Unique_Node_List& useful_predicates) {
-  for (LoopTreeIterator iterator(_ltree_root); !iterator.done(); iterator.next()) {
-    IdealLoopTree* loop = iterator.current();
-    if (loop->can_apply_loop_predication()) {
-      collect_useful_template_assertion_predicates_for_loop(loop, useful_predicates);
-    }
-  }
-}
-
-void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(IdealLoopTree* loop,
-                                                                           Unique_Node_List &useful_predicates) {
-  Node* entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
-  const Predicates predicates(entry);
-  if (UseProfiledLoopPredicate) {
-    const PredicateBlock* profiled_loop_predicate_block = predicates.profiled_loop_predicate_block();
-    if (profiled_loop_predicate_block->has_parse_predicate()) {
-      ParsePredicateSuccessProj* parse_predicate_proj = profiled_loop_predicate_block->parse_predicate_success_proj();
-      get_opaque_template_assertion_predicate_nodes(parse_predicate_proj, useful_predicates);
-    }
-  }
-
-  if (UseLoopPredicate) {
-    const PredicateBlock* loop_predicate_block = predicates.loop_predicate_block();
-    if (loop_predicate_block->has_parse_predicate()) {
-      ParsePredicateSuccessProj* parse_predicate_proj = loop_predicate_block->parse_predicate_success_proj();
-      get_opaque_template_assertion_predicate_nodes(parse_predicate_proj, useful_predicates);
-    }
-  }
-}
-
-void PhaseIdealLoop::eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates) {
-  for (int i = C->template_assertion_predicate_count(); i > 0; i--) {
-    OpaqueTemplateAssertionPredicateNode* opaque_node =
-        C->template_assertion_predicate_opaq_node(i - 1)->as_OpaqueTemplateAssertionPredicate();
-    if (!useful_predicates.member(opaque_node)) { // not in the useful list
-      ConINode* one = intcon(1);
-      _igvn.replace_node(opaque_node, one);
-    }
-  }
+  EliminateUselessPredicates eliminate_useless_predicates(_igvn, _ltree_root);
+  eliminate_useless_predicates.eliminate();
 }
 
 // If a post or main loop is removed due to an assert predicate, the opaque that guards the loop is not needed anymore
@@ -4518,6 +4443,52 @@ void PhaseIdealLoop::eliminate_useless_zero_trip_guard() {
       }
     } else {
       assert(guarded_loop != nullptr, "");
+    }
+  }
+}
+
+void PhaseIdealLoop::eliminate_useless_multiversion_if() {
+  if (_multiversion_opaque_nodes.size() == 0) {
+    return;
+  }
+
+  ResourceMark rm;
+  Unique_Node_List useful_multiversioning_opaque_nodes;
+
+  // The OpaqueMultiversioning is only used from the fast main loop in AutoVectorization, to add
+  // speculative runtime-checks to the multiversion_if. Thus, a OpaqueMultiversioning is only
+  // useful if it can be found from a fast main loop. If it can not be found from a fast main loop,
+  // then we cannot ever use that multiversion_if to add more speculative runtime-checks, and hence
+  // it is useless. If it is still in delayed mode, i.e. has not yet had any runtime-checks added,
+  // then we can let it constant fold towards the fast loop.
+  for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
+    IdealLoopTree* lpt = iter.current();
+    if (lpt->_child == nullptr && lpt->is_counted()) {
+      CountedLoopNode* head = lpt->_head->as_CountedLoop();
+      if (head->is_main_loop() && head->is_multiversion_fast_loop()) {
+        // There are fast_loop pre/main/post loops, but the finding traversal starts at the main
+        // loop, and traverses via the fast pre loop to the multiversion_if.
+        IfNode* multiversion_if = head->find_multiversion_if_from_multiversion_fast_main_loop();
+        if (multiversion_if != nullptr) {
+            useful_multiversioning_opaque_nodes.push(multiversion_if->in(1)->as_OpaqueMultiversioning());
+        } else {
+          // We could not find the multiversion_if, and would never find it again. Remove the
+          // multiversion marking for consistency.
+          head->set_no_multiversion();
+        }
+      }
+    }
+  }
+
+  for (uint i = 0; i < _multiversion_opaque_nodes.size(); i++) {
+    OpaqueMultiversioningNode* opaque = _multiversion_opaque_nodes.at(i)->as_OpaqueMultiversioning();
+    if (!useful_multiversioning_opaque_nodes.member(opaque)) {
+      if (opaque->is_delayed_slow_loop()) {
+        // We cannot hack the node directly, otherwise the slow_loop will complain that it cannot
+        // find the multiversioning opaque node. Instead, we mark the opaque node as useless, and
+        // it can be constant folded during IGVN.
+        opaque->mark_useless(_igvn);
+      }
     }
   }
 }
@@ -4791,6 +4762,7 @@ void PhaseIdealLoop::build_and_optimize() {
   }
 
   eliminate_useless_zero_trip_guard();
+  eliminate_useless_multiversion_if();
 
   if (stop_early) {
     assert(do_expensive_nodes, "why are we here?");
@@ -4948,18 +4920,6 @@ void PhaseIdealLoop::build_and_optimize() {
     C->set_major_progress();
   }
 
-  // Keep loop predicates and perform optimizations with them
-  // until no more loop optimizations could be done.
-  // After that switch predicates off and do more loop optimizations.
-  if (!C->major_progress() && (C->parse_predicate_count() > 0)) {
-    C->mark_parse_predicate_nodes_useless(_igvn);
-    assert(C->parse_predicate_count() == 0, "should be zero now");
-     if (TraceLoopOpts) {
-       tty->print_cr("PredicatesOff");
-     }
-     C->set_major_progress();
-  }
-
   // Auto-vectorize main-loop
   if (C->do_superword() && C->has_loops() && !C->major_progress()) {
     Compile::TracePhase tp(_t_autoVectorize);
@@ -4991,6 +4951,18 @@ void PhaseIdealLoop::build_and_optimize() {
         move_unordered_reduction_out_of_loop(lpt);
       }
     }
+  }
+
+  // Keep loop predicates and perform optimizations with them
+  // until no more loop optimizations could be done.
+  // After that switch predicates off and do more loop optimizations.
+  if (!C->major_progress() && (C->parse_predicate_count() > 0)) {
+    C->mark_parse_predicate_nodes_useless(_igvn);
+    assert(C->parse_predicate_count() == 0, "should be zero now");
+    if (TraceLoopOpts) {
+      tty->print_cr("PredicatesOff");
+    }
+    C->set_major_progress();
   }
 }
 
@@ -6582,6 +6554,9 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     _zero_trip_guard_opaque_nodes.push(n);
   }
 
+  if (!_verify_only && n->Opcode() == Op_OpaqueMultiversioning) {
+    _multiversion_opaque_nodes.push(n);
+  }
 }
 
 #ifdef ASSERT
@@ -6831,7 +6806,7 @@ void PhaseIdealLoop::get_idoms(Node* n, const uint count, Unique_Node_List& idom
 void PhaseIdealLoop::dump_idoms_in_reverse(const Node* n, const Node_List& idom_list) const {
   Node* next;
   uint padding = 3;
-  uint node_index_padding_width = static_cast<int>(log10(static_cast<double>(C->unique()))) + 1;
+  uint node_index_padding_width = (C->unique() == 0 ? 0 : static_cast<int>(log10(static_cast<double>(C->unique())))) + 1;
   for (int i = idom_list.size() - 1; i >= 0; i--) {
     if (i == 9 || i == 99) {
       padding++;

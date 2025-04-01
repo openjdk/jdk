@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,9 @@ public class JarEntry extends ZipEntry {
      * from the entry input stream until the end of the stream has been
      * reached. Otherwise, this method will return {@code null}.
      *
+     * <p>It is recommended to use the {@link getCodeSigners} method instead,
+     * which returns an array of {@code CodeSigner}s.
+     *
      * <p>The returned certificate array comprises all the signer certificates
      * that were used to verify this entry. Each signer certificate is
      * followed by its supporting certificate chain (which may be empty).
@@ -104,8 +107,16 @@ public class JarEntry extends ZipEntry {
      * bottom-to-top (i.e., with the signer certificate first and the (root)
      * certificate authority last).
      *
+     * @apiNote
+     * The verification process does not include validating or establishing
+     * trust in the code signers. A caller should perform additional checks,
+     * such as using a {@link java.security.cert.CertPathValidator} to
+     * validate each signer's certificate chain, and determining whether
+     * to trust the entry signed by the signers.
+     *
      * @return the {@code Certificate} objects for this entry, or
      * {@code null} if none.
+     *
      */
     public Certificate[] getCertificates() {
         return certs == null ? null : certs.clone();
@@ -120,6 +131,13 @@ public class JarEntry extends ZipEntry {
      *
      * <p>The returned array comprises all the code signers that have signed
      * this entry.
+     *
+     * @apiNote
+     * The verification process does not include validating or establishing
+     * trust in the code signers. A caller should perform additional checks,
+     * such as using a {@link java.security.cert.CertPathValidator} to
+     * validate each signer's certificate chain, and determining whether
+     * to trust the entry signed by the signers.
      *
      * @return the {@code CodeSigner} objects for this entry, or
      * {@code null} if none.
