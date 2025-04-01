@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -223,8 +223,6 @@ class JavaThread: public Thread {
   inline void clear_suspend_flag(SuspendFlags f);
 
  public:
-  inline void set_trace_flag();
-  inline void clear_trace_flag();
   inline void set_obj_deopt_flag();
   inline void clear_obj_deopt_flag();
   bool is_trace_suspend()      { return (_suspend_flags & _trace_flag) != 0; }
@@ -594,8 +592,13 @@ private:
   bool has_last_Java_frame() const               { return _anchor.has_last_Java_frame(); }
   intptr_t* last_Java_sp() const                 { return _anchor.last_Java_sp(); }
 
-  // last_Java_pc
+  // last Java fp
+  intptr_t* last_Java_fp() const                 { return _anchor.last_Java_fp(); }
 
+  // This is used by JFR when sampling interpreter frames.
+  JFR_ONLY(intptr_t* sender_Java_fp() const      { return _anchor.last_sender_Java_fp(); })
+
+  // last_Java_pc
   address last_Java_pc(void)                     { return _anchor.last_Java_pc(); }
 
   // Safepoint support
