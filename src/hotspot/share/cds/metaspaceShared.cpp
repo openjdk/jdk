@@ -698,6 +698,16 @@ class CollectClassesForLinking : public KlassClosure {
   GrowableArray<OopHandle> _mirrors;
 
 public:
+   CollectClassesForLinking() : _mirrors() {
+     // ClassLoaderDataGraph::loaded_classes_do_keepalive() requires ClassLoaderDataGraph_lock.
+     // We cannot link the classes while holding this lock (or else we may run into deadlock).
+     // Therefore, we need to first collect all the classes, keeping them alive by
+     // holding onto their java_mirrors in global OopHandles. We then link the classes after
+     // releasing the lock.
+     MutexLocker lock(ClassLoaderDataGraph_lock);
+     ClassLoaderDataGraph::loaded_classes_do_keepalive(this);
+   }
+
   ~CollectClassesForLinking() {
     for (int i = 0; i < _mirrors.length(); i++) {
       _mirrors.at(i).release(Universe::vm_global());
@@ -743,17 +753,8 @@ void MetaspaceShared::link_shared_classes(TRAPS) {
   AOTClassInitializer::init_test_class(CHECK);
 
   while (true) {
+    ResourceMark rm(THREAD);
     CollectClassesForLinking collect_classes;
-    {
-      // ClassLoaderDataGraph::loaded_classes_do_keepalive() requires ClassLoaderDataGraph_lock.
-      // We cannot link the classes while holding this lock (or else we may run into deadlock).
-      // Therefore, we need to first collect all the classes, keeping them alive by
-      // holding onto their java_mirrors in global OopHandles. We then link the classes after
-      // releasing the lock.
-      MutexLocker lock(ClassLoaderDataGraph_lock);
-      ClassLoaderDataGraph::loaded_classes_do_keepalive(&collect_classes);
-    }
-
     bool has_linked = false;
     const GrowableArray<OopHandle>* mirrors = collect_classes.mirrors();
     for (int i = 0; i < mirrors->length(); i++) {
@@ -773,11 +774,8 @@ void MetaspaceShared::link_shared_classes(TRAPS) {
 
   // Resolve constant pool entries -- we don't load any new classes during this stage
   {
+    ResourceMark rm(THREAD);
     CollectClassesForLinking collect_classes;
-    {
-      MutexLocker lock(ClassLoaderDataGraph_lock);
-      ClassLoaderDataGraph::loaded_classes_do_keepalive(&collect_classes);
-    }
     const GrowableArray<OopHandle>* mirrors = collect_classes.mirrors();
     for (int i = 0; i < mirrors->length(); i++) {
       OopHandle mirror = mirrors->at(i);
