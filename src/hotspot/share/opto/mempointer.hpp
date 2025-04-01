@@ -385,6 +385,60 @@
 //
 //        This shows that p1 and p2 have a distance greater than the array size, and hence at least one of the two
 //        pointers must be out of bounds. This contradicts our assumption (S1) and we are done.
+//
+//
+// Having proven the "MemPointer Lemma", we can now derive an interesting corrolary.
+//
+// MemPointer Non-Overflow Corrolary:
+//   Given:
+//     (C0) pointer p and its MemPointer mp, which is constructed with safe decompositions.
+//     (C1) a summand "scale_v * v" that occurs in mp.
+//     (C2) a strided range r = [lo, lo + stride_v, .., hi] for v.
+//     (C3) for all v in this strided range r we know that p is within bounds of its memory object.
+//     (C4) abs(scale_v * stride_v) < 2^31.
+//
+//   Then:
+//     Both p and mp have no overflow in the range r, i.e. both p and mp have a linear form.
+//
+//
+// Proof of "MemPointer Non-Overflow Corrolary":
+//   We state the form of mp:
+//
+//     mp = summand_rest + scale_v * v + con
+//
+//   Assume (C0-4), and that there is some overflow in the range r. There must be some consecutive
+//   v0 and v1 = v0 + stride_v, where v0 is before the overflow and v1 after the overflow. We define
+//   corresponding mp0 and mp1:
+//
+//     mp0 = summand_rest + scale_v *  v0                                  + con
+//     mp1 = summand_rest + scale_v *  v1                                  + con
+//         = summand_rest + scale_v * (v0 + stride_v)                      + con
+//         = summand_rest + scale_v *  v0             + scale_v * stride_v + con
+//
+//   Hence, we can reformulate mp0 and mp1 to be two MemPointer that only differ in their constant:
+//
+//     mp0 = summand_rest + scale_v * v0 + con0
+//     mp1 = summand_rest + scale_v * v0 + con1
+//     con0 = con
+//     con1 = con + scale_v * stride_v
+//
+//   Note: the restructuring of terms for mp1 all happens with long addition and multiplication, and is
+//         thus SAFE1.
+//
+//   We now apply the MemPointer Lemma:
+//     (S0) Let p0 and p1 be the pointers corresponding to v0 and v1, and mp0 and mp1 their MemPointer.
+//          Note: (C0) provides the safe deconstruction, and reformulation of terms happens with long
+//                addition and multiplication only, and is hence SAFE as well.
+//     (S1) According to (C3), p is in bounds of its memory object for all v in r. Since v0 and v1 are
+//          in r, it follows that p0 and p1 are in bounds of the same memory object.
+//     (S2) The difference of constants con0 and con1 is not too large, given (C4).
+//     (S3) All summands of mp0 and mp1 are the same (only the constants differ).
+//
+//   It follows:
+//     p0 - p1 = mp0 - mp1
+//
+// TODO: concluseion, linearity / non-overflow
+//
 
 #ifndef PRODUCT
 class TraceMemPointer : public StackObj {

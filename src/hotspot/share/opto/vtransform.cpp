@@ -258,6 +258,29 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
 void VTransform::add_speculative_aliasing_check(const VPointer& p1, const VPointer& p2) {
   assert(!p1.always_overlaps_with(p2), "check would always be false");
   assert(!p1.never_overlaps_with(p2), "check would always be true");
+
+  // VPointer form is:
+  //
+  //   pointer = base + invar + iv_scale * iv + con
+  //           = rest + iv_scale * iv
+  //
+  //
+  // We want check:
+  //
+  //   for each iv in [init, limit]:
+  //     no overlap between [p1, p1 + size1] and [p2, p2 + size]
+  //
+  //
+  // Linear form ... no overflow?
+
+  // Case distinction:
+  // 1) parallel
+  // 2) different slopes
+  if (p1.iv_scale() == p2.iv_scale()) {
+    assert(false, "TODO");
+  } else {
+    assert(false, "different slopes not implemented yet");
+  }
 }
 
 void VTransform::add_speculative_check(BoolNode* bol) {
