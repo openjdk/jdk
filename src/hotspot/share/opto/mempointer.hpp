@@ -591,6 +591,12 @@ class MemPointerSummand : public StackObj {
 private:
   Node* _variable;
   NoOverflowInt _scale;
+  // TODO: adding info about "int group" would require some fields
+  //       - _scaleL
+  //       - _int_group
+  //       And it would also make comparison more complicated... hmm.
+  //       The alternative is to have two arrays of summands... but that
+  //       seems wasteful as well. Hmm.
 
 public:
   MemPointerSummand() :
