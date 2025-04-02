@@ -60,6 +60,7 @@ public class bug4890934 implements HyperlinkListener {
             System.out.println(file.toURI().toURL());
             jep.setPage(file.toURL());
         } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
         frame.add(jep);

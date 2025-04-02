@@ -48,7 +48,7 @@ public class bug4473401 implements HyperlinkListener {
         If it appears, PASS the test, otherwise FAIL the test.
     """;
 
-    static volatile JEditorPane jep;
+    static JEditorPane jep;
     static JFrame createUI() {
 
         JFrame frame = new JFrame("bug4473401");
@@ -64,6 +64,7 @@ public class bug4473401 implements HyperlinkListener {
             System.out.println(file.toURI().toURL());
             jep.setPage(file.toURL());
         } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
         frame.add(jep);

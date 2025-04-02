@@ -111,72 +111,72 @@ public class BaselineTest {
             tp.setCaretPosition(doc.getLength());
             doc.insertString(doc.getLength(), " Large Size Text ", set);
         } catch (BadLocationException ble) {
+            throw new RuntimeException(ble);
         }
     }
 
-}
+    static class PaintLabel extends JLabel {
 
-class PaintLabel extends JLabel {
+        private int pref = 40;
+        private int min = pref - 30;
+        private int max = pref + 30;
 
-    private int pref = 40;
-    private int min = pref - 30;
-    private int max = pref + 30;
+        public PaintLabel(float align) {
 
-    public PaintLabel(float align) {
+            setAlignmentY(align);
+            String alignStr = String.valueOf(align);
 
-        setAlignmentY(align);
-        String alignStr = String.valueOf(align);
+            setText("align = " + alignStr);
+            setOpaque(true);
+            setBackground(Color.PINK);
+        }
 
-        setText("align = " + alignStr);
-        setOpaque(true);
-        setBackground(Color.PINK);
-    }
+        public Dimension getMinimumSize() {
+            return new Dimension(super.getMinimumSize().width, min);
+        }
 
-    public Dimension getMinimumSize() {
-        return new Dimension(super.getMinimumSize().width, min);
-    }
+        public Dimension getPreferredSize() {
+            return new Dimension(super.getPreferredSize().width, pref);
+        }
 
-    public Dimension getPreferredSize() {
-        return new Dimension(super.getPreferredSize().width, pref);
-    }
+        public Dimension getMaximumSize() {
+            return new Dimension(super.getMaximumSize().width, max);
+        }
 
-    public Dimension getMaximumSize() {
-        return new Dimension(super.getMaximumSize().width, max);
-    }
-
-    public void paintComponent(Graphics g) {
-        g.setColor(Color.PINK);
-        g.fillRect(0, 0, getWidth(), getHeight());
-        int y = (int)(getAlignmentY() * getHeight());
-        g.setColor(Color.BLACK);
-        g.drawLine(0, y, getWidth(), y);
-        g.drawString(getText(), 0, 10);
-    }
-
-}
-
-class CustomComponentView extends ComponentView {
-
-    public CustomComponentView(Element elem) {
-        super(elem);
-    }
-
-    public int getResizeWeight(int axis) {
-        return 1;
-    }
-
-}
-
-class CustomEditorKit extends StyledEditorKit implements ViewFactory {
-    public View create(Element elem) {
-        if (StyleConstants.ComponentElementName.equals(elem.getName())) {
-            return new CustomComponentView(elem);
-        } else {
-            return super.getViewFactory().create(elem);
+        public void paintComponent(Graphics g) {
+            g.setColor(Color.PINK);
+            g.fillRect(0, 0, getWidth(), getHeight());
+            int y = (int)(getAlignmentY() * getHeight());
+            g.setColor(Color.BLACK);
+            g.drawLine(0, y, getWidth(), y);
+            g.drawString(getText(), 0, 10);
         }
     }
 
-    public ViewFactory getViewFactory() {
-        return this;
-    }
+    static class CustomComponentView extends ComponentView {
+
+        public CustomComponentView(Element elem) {
+            super(elem);
+        }
+
+        public int getResizeWeight(int axis) {
+            return 1;
+        }
+}
+
+    static class CustomEditorKit extends StyledEditorKit implements ViewFactory {
+
+        public View create(Element elem) {
+            if (StyleConstants.ComponentElementName.equals(elem.getName())) {
+                return new CustomComponentView(elem);
+            } else {
+                return super.getViewFactory().create(elem);
+            }
+        }
+
+        public ViewFactory getViewFactory() {
+            return this;
+        }
+}
+
 }
