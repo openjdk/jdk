@@ -41,7 +41,7 @@ MemPointer::MemPointer(const MemNode* mem,
 MemPointer MemPointerParser::parse(MemPointerParserCallback& callback
                                    NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
   assert(_worklist.is_empty(), "no prior parsing");
-  assert(_summands.is_empty(), "no prior parsing");
+  assert(_raw_summands.is_empty(), "no prior parsing");
 
   Node* pointer = _mem->in(MemNode::Address);
   const jint size = _mem->memory_size();
@@ -60,29 +60,29 @@ MemPointer MemPointerParser::parse(MemPointerParserCallback& callback
     parse_sub_expression(_worklist.pop(), callback);
   }
 
-  NOT_PRODUCT( if (trace.is_trace_parsing()) { MemPointerRawSummand::print_on(tty, _summands); } )
+  NOT_PRODUCT( if (trace.is_trace_parsing()) { MemPointerRawSummand::print_on(tty, _raw_summands); } )
 
   // We sort by:
   //  - int group id
   //  - variable idx
   // This means that summands of the same int group with the same variable are consecutive.
   // This simplifies the combining of summands below.
-  _summands.sort(MemPointerRawSummand::cmp_by_int_group_and_variable_idx);
+  _raw_summands.sort(MemPointerRawSummand::cmp_by_int_group_and_variable_idx);
 
   // Combine summands of the same int group with the same variable, adding up the scales.
   int pos_put = 0;
   int pos_get = 0;
-  while (pos_get < _summands.length()) {
-    const MemPointerRawSummand& summand = _summands.at(pos_get++);
+  while (pos_get < _raw_summands.length()) {
+    const MemPointerRawSummand& summand = _raw_summands.at(pos_get++);
     Node* variable      = summand.variable();
     NoOverflowInt scaleI = summand.scaleI();
     NoOverflowInt scaleL = summand.scaleL();
     int int_group = summand.int_group();
     // Add up scale of all summands with the same variable.
-    while (pos_get < _summands.length() &&
-           _summands.at(pos_get).int_group() == int_group &&
-           _summands.at(pos_get).variable() == variable) {
-      MemPointerRawSummand s = _summands.at(pos_get++);
+    while (pos_get < _raw_summands.length() &&
+           _raw_summands.at(pos_get).int_group() == int_group &&
+           _raw_summands.at(pos_get).variable() == variable) {
+      MemPointerRawSummand s = _raw_summands.at(pos_get++);
       if (int_group == 0) {
         assert(scaleI.is_one() && s.scaleI().is_one(), "no ConvI2L");
         scaleL = scaleL + s.scaleL();
@@ -97,13 +97,13 @@ MemPointer MemPointerParser::parse(MemPointerParserCallback& callback
     }
     // Keep summands with non-zero scale.
     if (!scaleI.is_zero() && !scaleL.is_NaN()) {
-      _summands.at_put(pos_put++, MemPointerRawSummand(variable, scaleI, scaleL, int_group));
+      _raw_summands.at_put(pos_put++, MemPointerRawSummand(variable, scaleI, scaleL, int_group));
     }
   }
-  _summands.trunc_to(pos_put);
+  _raw_summands.trunc_to(pos_put);
 
-  NOT_PRODUCT( if (trace.is_trace_parsing()) { MemPointerRawSummand::print_on(tty, _summands); } )
-  return MemPointer::make(pointer, _summands, size NOT_PRODUCT(COMMA trace));
+  NOT_PRODUCT( if (trace.is_trace_parsing()) { MemPointerRawSummand::print_on(tty, _raw_summands); } )
+  return MemPointer::make(pointer, _raw_summands, size NOT_PRODUCT(COMMA trace));
 }
 
 // Parse a sub-expression of the pointer, starting at the current summand. We parse the
@@ -125,7 +125,7 @@ void MemPointerParser::parse_sub_expression(const MemPointerRawSummand& summand,
         // Terminal summand.
         NoOverflowInt con = (opc == Op_ConI) ? NoOverflowInt(n->get_int())
                                              : NoOverflowInt(n->get_long());
-        _summands.push(MemPointerRawSummand::make_con(scaleI * con, scaleL, int_group));
+        _raw_summands.push(MemPointerRawSummand::make_con(scaleI * con, scaleL, int_group));
         return;
       }
       case Op_AddP:
@@ -243,7 +243,7 @@ void MemPointerParser::parse_sub_expression(const MemPointerRawSummand& summand,
   }
 
   // Default: we could not parse the "summand" further, i.e. it is terminal.
-  _summands.push(summand);
+  _raw_summands.push(summand);
 }
 
 bool MemPointerParser::sub_expression_has_native_base_candidate(Node* start) {

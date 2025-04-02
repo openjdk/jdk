@@ -1071,7 +1071,7 @@ private:
   // Internal data-structures for parsing.
   int _next_int_group = 1;
   GrowableArray<MemPointerRawSummand> _worklist;
-  GrowableArray<MemPointerRawSummand> _summands;
+  GrowableArray<MemPointerRawSummand> _raw_summands;
 
   // Resulting decomposed-form.
   MemPointer _mem_pointer;
