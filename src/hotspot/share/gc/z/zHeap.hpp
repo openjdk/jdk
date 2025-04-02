@@ -132,7 +132,9 @@ public:
 
   // Printing
   void print_on(outputStream* st) const;
-  void print_extended_on(outputStream* st) const;
+  void print_on_error(outputStream* st) const;
+  void print_globals_on(outputStream* st) const;
+  void print_page_table_on(outputStream* st) const;
   bool print_location(outputStream* st, uintptr_t addr) const;
   bool print_location(outputStream* st, zaddress addr) const;
   bool print_location(outputStream* st, zpointer ptr) const;

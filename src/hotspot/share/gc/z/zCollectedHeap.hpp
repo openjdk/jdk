@@ -117,7 +117,6 @@ public:
 
   void print_on(outputStream* st) const override;
   void print_on_error(outputStream* st) const override;
-  void print_extended_on(outputStream* st) const override;
   void print_tracing_info() const override;
   bool print_location(outputStream* st, void* addr) const override;
 

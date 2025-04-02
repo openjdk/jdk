@@ -440,15 +440,7 @@ protected:
   // The default behavior is to call print_on() on tty.
   virtual void print() const;
 
-  // Print more detailed heap information on the given
-  // outputStream. The default behavior is to call print_on(). It is
-  // up to each subclass to override it and add any additional output
-  // it needs.
-  virtual void print_extended_on(outputStream* st) const {
-    print_on(st);
-  }
-
-  virtual void print_on_error(outputStream* st) const;
+  virtual void print_on_error(outputStream* st) const = 0;
 
   // Used to print information about locations in the hs_err file.
   virtual bool print_location(outputStream* st, void* addr) const = 0;
