@@ -842,6 +842,7 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
       break;
     default:  ShouldNotReachHere();
   }
+
   __ move(result_reg, calc_result);
 }
 
