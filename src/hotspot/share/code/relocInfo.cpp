@@ -367,8 +367,17 @@ void CallRelocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer
   // The enhanced use of pd_call_destination sorts this all out.
   address orig_addr = old_addr_for(addr(), src, dest);
   address callee    = pd_call_destination(orig_addr);
-  // Reassert the callee address, this time in the new copy of the code.
-  pd_set_call_destination(callee);
+
+  if (src->contains(callee)) {
+    // If the original call is to an address in the src CodeBuffer (such as a stub call)
+    // the updated call should be to the corresponding address in dest CodeBuffer
+    int offset = callee - orig_addr;
+    address new_addr = addr() + offset;
+    pd_set_call_destination(new_addr);
+  } else {
+    // Reassert the callee address, this time in the new copy of the code.
+    pd_set_call_destination(callee);
+  }
 }
 
 

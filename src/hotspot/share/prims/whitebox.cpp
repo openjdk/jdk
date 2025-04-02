@@ -1634,7 +1634,8 @@ WB_ENTRY(void, WB_RelocateNMethodTo(JNIEnv* env, jobject o, jobject method, jint
     return;
   }
 
-  nmethod::relocate_to(code, static_cast<CodeBlobType>(blob_type));
+  VM_RelocateNMethod relocate(code, static_cast<CodeBlobType>(blob_type));
+  VMThread::execute(&relocate);
 WB_END
 
 CodeBlob* WhiteBox::allocate_code_blob(int size, CodeBlobType blob_type) {
