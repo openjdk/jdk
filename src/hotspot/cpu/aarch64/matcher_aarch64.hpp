@@ -198,10 +198,6 @@
     }
   }
 
-  static bool is_vector_cast_supported(BasicType from_bt, BasicType to_bt) {
-    return false;
-  }
-
   // Is SIMD sort supported for this CPU?
   static bool supports_simd_sort(BasicType bt) {
     return false;
