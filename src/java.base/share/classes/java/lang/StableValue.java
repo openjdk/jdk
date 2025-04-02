@@ -381,7 +381,19 @@ import java.util.function.Supplier;
  * The at-most-once write operation on a stable value that succeeds
  * (e.g. {@linkplain #trySet(Object) trySet()})
  * {@linkplain java.util.concurrent##MemoryVisibility <em>happens-before</em>}
- * any subsequent read operation (e.g. {@linkplain #orElseThrow()}).
+ * any subsequent read operation (e.g. {@linkplain #orElseThrow()}) that is successful.
+ * A successful write operation can be either:
+ * <ul>
+ *     <li>a {@link #trySet(Object)} that returns {@code true},</li>
+ *     <li>a {@link #setOrThrow(Object)} that does not throw, or</li>
+ *     <li>an {@link #orElseSet(Supplier)} that successfully runs the supplier</li>
+ * </ul>
+ * A successful read operation can be either:
+ * <ul>
+ *     <li>a {@link #orElseThrow()} that does not throw,</li>
+ *     <li>a {@link #orElse(Object) orElse(other)} that does not return the {@code other} value, or</li>
+ *     <li>an {@link #orElseSet(Supplier)} that does not {@code throw}</li>
+ * </ul>
  * <p>
  * The method {@linkplain StableValue#orElseSet(Supplier) orElseSet()} guarantees that
  * the provided {@linkplain Supplier} is invoked successfully at most once even under
