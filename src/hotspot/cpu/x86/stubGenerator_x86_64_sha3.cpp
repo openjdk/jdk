@@ -347,16 +347,12 @@ static address generate_double_keccak(StubGenerator *stubgen, MacroAssembler *_m
   __ lea(round_consts, ExternalAddress(round_constsAddr()));
 
   // set up the masks
-  __ mov64(rax,1);
-  __ kmovbl(k1, rax);
-  __ addl(rax,2);
-  __ kmovbl(k2, rax);
-  __ addl(rax, 4);
-  __ kmovbl(k3, rax);
-  __ addl(rax, 8);
-  __ kmovbl(k4, rax);
-  __ addl(rax, 16);
-  __ kmovbl(k5, rax);
+  __ movl(rax, 0x1F);
+  __ kmovwl(k5, rax);
+  __ kshiftrwl(k4, k5, 1);
+  __ kshiftrwl(k3, k5, 2);
+  __ kshiftrwl(k2, k5, 3);
+  __ kshiftrwl(k1, k5, 4);
 
   // load the states
   for (int i = 0; i < 5; i++) {
