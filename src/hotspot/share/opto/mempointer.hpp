@@ -644,7 +644,7 @@ public:
 #ifndef PRODUCT
   void print_on(outputStream* st) const {
     _scale.print_on(st);
-    tty->print(" * [%d %s]", _variable->_idx, _variable->Name());
+    st->print(" * [%d %s]", _variable->_idx, _variable->Name());
   }
 #endif
 };
@@ -680,25 +680,64 @@ public:
 // to a ConvI2L (i.e. the summands with long variables) have "int group"
 // id = 0, since they do not belong to any such "int group" and can be
 // directly added together. For raw summands belonging to an "int group",
-// we need to track the scale inside and outside the ConvI2L. With the
-// example from above:
+// we need to track the scale inside (scaleI) and outside (scaleL) the
+// ConvI2L. With the example from above:
 //
-//   _variable  = base  _variable  = i  _variable  = j  _variable  = null      _variable  = null
-//   _scale     = 1     _scale     = 2  _scale     = 8  _scale     = 2 * con1  _scale     = con2
-//   _scaleL    = 1     _scaleL    = 2  _scaleL    = 2  _scaleL    = 2         _scaleL    = 1
-//   _int_group = 0     _int_group = 1  _int_group = 1  _int_group = 1         _int_group = 0
+//   _variable  = base  _variable  = i  _variable  = j  _variable  = null  _variable  = null
+//   _scaleI    = 1     _scaleI    = 1  _scaleI    = 4  _scaleI    = con1  _scaleI    = con2
+//   _scaleL    = 1     _scaleL    = 2  _scaleL    = 2  _scaleL    = 2     _scaleL    = 1
+//   _int_group = 0     _int_group = 1  _int_group = 1  _int_group = 1     _int_group = 0
 //
 // Note: we also need to track constants as separate raw summands. For
 //       this, we say that a raw summand tracks a constant iff _variable == null,
-//       and we pretend that _variable is an integer constant with value 1.
+//       and we store the constant value in _scaleI.
+//
+// TODO: move this to the top of the file? Restructure???
 //
 class MemPointerRawSummand : public StackObj {
 private:
   Node* _variable;
-  NoOverflowInt _scale;
+  NoOverflowInt _scaleI;
   NoOverflowInt _scaleL;
-  uint _int_group;
+  int _int_group;
 
+  MemPointerRawSummand(Node* variable, NoOverflowInt scaleI, NoOverflowInt scaleL, int int_group) :
+    _variable(variable), _scaleI(scaleI), _scaleL(scaleL), _int_group(int_group) {}
+
+public:
+  MemPointerRawSummand() :
+    MemPointerRawSummand(nullptr, NoOverflowInt::make_NaN(), NoOverflowInt::make_NaN(), -1) {}
+
+  static MemPointerRawSummand make(Node* variable) {
+    assert(variable != nullptr, "must have variable");
+    return MemPointerRawSummand(variable, NoOverflowInt(1), NoOverflowInt(1), 0);
+  }
+
+  bool is_valid() const { return _int_group >= 0; }
+  bool is_con() const { assert(is_valid(), ""); return _variable == nullptr; }
+  Node* variable() const { assert(!is_con(), ""); return _variable; }
+  NoOverflowInt scaleI() const { assert(is_valid(), ""); return _scaleI; }
+  NoOverflowInt scaleL() const { assert(is_valid(), ""); return _scaleL; }
+  int int_group() const { assert(is_valid(), ""); return _int_group; }
+
+  MemPointerSummand to_summand() const {
+    return MemPointerSummand(variable(), scaleL() * scaleI());
+  }
+
+#ifndef PRODUCT
+  void print_on(outputStream* st) const {
+    if (!is_valid()) {
+      st->print("<invalid>");
+    } else {
+      _scaleL.print_on(st);
+      st->print(" * ");
+      _scaleI.print_on(st);
+      if (!is_con()) {
+        st->print(" * [%d %s]", _variable->_idx, _variable->Name());
+      }
+    }
+  }
+#endif
 };
 
 // Parsing calls the callback on every decomposed node. These are all the
