@@ -618,6 +618,8 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_range_in_order(const 
   if (start != nullptr) {
     assert_leq(from, start);
     assert_geq(to, start);
+  } else {
+    assert(end == nullptr, "end node found but not start node");
   }
 
   while (start != end) {

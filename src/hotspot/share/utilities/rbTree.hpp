@@ -53,7 +53,7 @@
 //     - an int == 0 when a == b
 //     - an int > 0 when a > b
 // A second static function `cmp(const RBNode<K, V>* a, const RBNode<K, V>* b)`
-// used for extra validation can optionally be provided,. This should return:
+// used for extra validation can optionally be provided. This should return:
 //     - true if a < b
 //     - false otherwise
 // ALLOCATOR must check for oom and exit, as RBTree does not handle the allocation failing.
