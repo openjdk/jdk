@@ -286,7 +286,7 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
     st->print   ("SUB    R_SP, R_SP, %zu", framesize);
   }
 
-  if (C->stub_function() == nullptr && BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
+  if (C->stub_function() == nullptr) {
     st->print("ldr t0, [guard]\n\t");
     st->print("ldr t1, [Rthread, #thread_disarmed_guard_value_offset]\n\t");
     st->print("cmp t0, t1\n\t");
@@ -4510,18 +4510,6 @@ instruct unnecessary_membar_volatile() %{
 %}
 
 //----------Register Move Instructions-----------------------------------------
-// instruct roundDouble_nop(regD dst) %{
-//   match(Set dst (RoundDouble dst));
-//   ins_pipe(empty);
-// %}
-
-
-// instruct roundFloat_nop(regF dst) %{
-//   match(Set dst (RoundFloat dst));
-//   ins_pipe(empty);
-// %}
-
-
 
 // Cast Index to Pointer for unsafe natives
 instruct castX2P(iRegX src, iRegP dst) %{

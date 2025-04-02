@@ -113,8 +113,8 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
 
 void PSOldGen::initialize_performance_counters(const char* perf_data_name, int level) {
   // Generation Counters, generation 'level', 1 subspace
-  _gen_counters = new PSGenerationCounters(perf_data_name, level, 1, min_gen_size(),
-                                           max_gen_size(), virtual_space());
+  _gen_counters = new GenerationCounters(perf_data_name, level, 1, min_gen_size(),
+                                         max_gen_size(), virtual_space()->committed_size());
   _space_counters = new SpaceCounters(perf_data_name, 0,
                                       virtual_space()->reserved_size(),
                                       _object_space, _gen_counters);
@@ -189,21 +189,18 @@ bool PSOldGen::expand(size_t bytes) {
   assert_locked_or_safepoint(Heap_lock);
   assert(bytes > 0, "precondition");
 #endif
+  const size_t remaining_bytes = virtual_space()->uncommitted_size();
+  if (remaining_bytes == 0) {
+    return false;
+  }
   const size_t alignment = virtual_space()->alignment();
-  size_t aligned_bytes  = align_up(bytes, alignment);
+  size_t aligned_bytes = align_up(MIN2(bytes, remaining_bytes), alignment);
   size_t aligned_expand_bytes = align_up(MinHeapDeltaBytes, alignment);
 
   if (UseNUMA) {
     // With NUMA we use round-robin page allocation for the old gen. Expand by at least
     // providing a page per lgroup. Alignment is larger or equal to the page size.
     aligned_expand_bytes = MAX2(aligned_expand_bytes, alignment * os::numa_get_groups_num());
-  }
-  if (aligned_bytes == 0) {
-    // The alignment caused the number of bytes to wrap.  A call to expand
-    // implies a best effort to expand by "bytes" but not a guarantee.  Align
-    // down to give a best effort.  This is likely the most that the generation
-    // can expand since it has some capacity to start with.
-    aligned_bytes = align_down(bytes, alignment);
   }
 
   bool success = false;
@@ -217,9 +214,6 @@ bool PSOldGen::expand(size_t bytes) {
     success = expand_to_reserved();
   }
 
-  if (success && GCLocker::is_active_and_needs_gc()) {
-    log_debug(gc)("Garbage collection disabled, expanded heap instead");
-  }
   return success;
 }
 
@@ -243,7 +237,7 @@ bool PSOldGen::expand_by(size_t bytes) {
     post_resize();
     if (UsePerfData) {
       _space_counters->update_capacity();
-      _gen_counters->update_all();
+      _gen_counters->update_all(_virtual_space->committed_size());
     }
   }
 
@@ -379,7 +373,7 @@ void PSOldGen::print_on(outputStream* st) const {
 void PSOldGen::update_counters() {
   if (UsePerfData) {
     _space_counters->update_all();
-    _gen_counters->update_all();
+    _gen_counters->update_all(_virtual_space->committed_size());
   }
 }
 

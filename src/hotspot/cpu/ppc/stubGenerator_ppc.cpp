@@ -4881,20 +4881,19 @@ void generate_lookup_secondary_supers_table_stub() {
     StubRoutines::_verify_oop_subroutine_entry             = generate_verify_oop();
 
     // nmethod entry barriers for concurrent class unloading
-    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != nullptr) {
-      StubRoutines::_method_entry_barrier            = generate_method_entry_barrier();
-    }
+    StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
+#ifdef COMPILER2
     if (UseSecondarySupersTable) {
       StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
       if (!InlineSecondarySupersTest) {
         generate_lookup_secondary_supers_table_stub();
       }
     }
+#endif // COMPILER2
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
     StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();

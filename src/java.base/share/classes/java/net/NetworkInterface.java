@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,7 +366,7 @@ public final class NetworkInterface {
      * this machine.
      *
      * @apiNote This method can be used in combination with
-     * {@link #inetAddresses()}} to obtain a stream of all IP addresses for
+     * {@link #inetAddresses()} to obtain a stream of all IP addresses for
      * this node, for example:
      * <pre> {@code
      * Stream<InetAddress> addrs = NetworkInterface.networkInterfaces()

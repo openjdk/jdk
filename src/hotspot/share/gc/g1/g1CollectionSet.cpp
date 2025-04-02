@@ -383,6 +383,8 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
   uint num_initial_groups = 0;
   uint num_optional_regions = 0;
 
+  assert(_optional_groups.num_regions() == 0, "Optional regions should not already be selected");
+
   double predicted_initial_time_ms = 0.0;
   double predicted_optional_time_ms = 0.0;
 
@@ -483,7 +485,8 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
 
 void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) {
   uint num_initial_regions = 0;
-  uint num_optional_regions = 0;
+  uint prev_num_optional_regions = _optional_groups.num_regions();
+  uint num_optional_regions = prev_num_optional_regions;
   uint num_expensive_regions = 0;
   uint num_pinned_regions = 0;
 
@@ -576,10 +579,13 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
 
   groups_to_abandon.clear(true /* uninstall_group_cardset */);
 
+  assert(num_optional_regions >= prev_num_optional_regions, "Sanity");
+  uint selected_optional_regions = num_optional_regions - prev_num_optional_regions;
+
   log_debug(gc, ergo, cset)("Finish adding retained candidates to collection set. Initial: %u, optional: %u, pinned: %u, "
                             "predicted initial time: %1.2fms, predicted optional time: %1.2fms, "
                             "time remaining: %1.2fms optional time remaining %1.2fms",
-                            num_initial_regions, num_optional_regions, num_pinned_regions,
+                            num_initial_regions, selected_optional_regions, num_pinned_regions,
                             predicted_initial_time_ms, predicted_optional_time_ms, time_remaining_ms, optional_time_remaining_ms);
 }
 

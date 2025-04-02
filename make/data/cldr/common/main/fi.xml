@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2024 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -26,7 +26,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="afh">afrihili</language>
 			<language type="agq">aghem</language>
 			<language type="ain">ainu</language>
-			<language type="ajp">urduni</language>
 			<language type="ak">akan</language>
 			<language type="akk">akkadi</language>
 			<language type="akz">alabama</language>
@@ -38,6 +37,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ang">muinaisenglanti</language>
 			<language type="ann">obolo</language>
 			<language type="anp">angika</language>
+			<language type="apc">urduni</language>
 			<language type="ar">arabia</language>
 			<language type="ar_001">yleisarabia</language>
 			<language type="arc">valtakunnanaramea</language>
@@ -4574,6 +4574,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
