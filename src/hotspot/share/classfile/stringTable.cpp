@@ -26,7 +26,6 @@
 #include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/compactHashtable.hpp"
@@ -745,13 +744,29 @@ struct SizeFunc : StackObj {
 TableStatistics StringTable::get_table_statistics() {
   static TableStatistics ts;
   SizeFunc sz;
-  ts = _local_table->statistics_get(Thread::current(), sz, ts);
+
+  Thread* jt = Thread::current();
+  StringTableHash::StatisticsTask sts(_local_table);
+  if (!sts.prepare(jt)) {
+    return ts;  // return old table statistics
+  }
+  {
+    TraceTime timer("GetStatistics", TRACETIME_LOG(Debug, stringtable, perf));
+    while (sts.do_task(jt, sz)) {
+      sts.pause(jt);
+      if (jt->is_Java_thread()) {
+        ThreadBlockInVM tbivm(JavaThread::cast(jt));
+      }
+      sts.cont(jt);
+    }
+  }
+  ts = sts.done(jt);
   return ts;
 }
 
 void StringTable::print_table_statistics(outputStream* st) {
-  SizeFunc sz;
-  _local_table->statistics_to(Thread::current(), sz, st, "StringTable");
+  TableStatistics ts = get_table_statistics();
+  ts.print(st, "StringTable");
 #if INCLUDE_CDS_JAVA_HEAP
   if (!_shared_table.empty()) {
     _shared_table.print_table_statistics(st, "Shared String Table");

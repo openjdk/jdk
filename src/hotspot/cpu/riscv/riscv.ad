@@ -1348,7 +1348,7 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   if (PreserveFramePointer) { st->print("sub  fp, sp, #%d\n\t", 2 * wordSize); }
   st->print("sub sp, sp, #%d\n\t", framesize);
 
-  if (C->stub_function() == nullptr && BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
+  if (C->stub_function() == nullptr) {
     st->print("ld  t0, [guard]\n\t");
     st->print("membar LoadLoad\n\t");
     st->print("ld  t1, [xthread, #thread_disarmed_guard_value_offset]\n\t");
@@ -1398,25 +1398,23 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
 
   if (C->stub_function() == nullptr) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    if (BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
-      // Dummy labels for just measuring the code size
-      Label dummy_slow_path;
-      Label dummy_continuation;
-      Label dummy_guard;
-      Label* slow_path = &dummy_slow_path;
-      Label* continuation = &dummy_continuation;
-      Label* guard = &dummy_guard;
-      if (!Compile::current()->output()->in_scratch_emit_size()) {
-        // Use real labels from actual stub when not emitting code for purpose of measuring its size
-        C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
-        Compile::current()->output()->add_stub(stub);
-        slow_path = &stub->entry();
-        continuation = &stub->continuation();
-        guard = &stub->guard();
-      }
-      // In the C2 code, we move the non-hot part of nmethod entry barriers out-of-line to a stub.
-      bs->nmethod_entry_barrier(masm, slow_path, continuation, guard);
+    // Dummy labels for just measuring the code size
+    Label dummy_slow_path;
+    Label dummy_continuation;
+    Label dummy_guard;
+    Label* slow_path = &dummy_slow_path;
+    Label* continuation = &dummy_continuation;
+    Label* guard = &dummy_guard;
+    if (!Compile::current()->output()->in_scratch_emit_size()) {
+      // Use real labels from actual stub when not emitting code for purpose of measuring its size
+      C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
+      Compile::current()->output()->add_stub(stub);
+      slow_path = &stub->entry();
+      continuation = &stub->continuation();
+      guard = &stub->guard();
     }
+    // In the C2 code, we move the non-hot part of nmethod entry barriers out-of-line to a stub.
+    bs->nmethod_entry_barrier(masm, slow_path, continuation, guard);
   }
 
   if (VerifyStackAtCalls) {
@@ -1898,6 +1896,10 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_PopCountL:
       return UsePopCountInstruction;
 
+    case Op_ReverseI:
+    case Op_ReverseL:
+      return UseZbkb;
+
     case Op_ReverseBytesI:
     case Op_ReverseBytesL:
     case Op_ReverseBytesS:
@@ -1918,7 +1920,19 @@ bool Matcher::match_rule_supported(int opcode) {
 
     case Op_ConvHF2F:
     case Op_ConvF2HF:
+      return VM_Version::supports_float16_float_conversion();
+    case Op_ReinterpretS2HF:
+    case Op_ReinterpretHF2S:
       return UseZfh || UseZfhmin;
+    case Op_AddHF:
+    case Op_DivHF:
+    case Op_FmaHF:
+    case Op_MaxHF:
+    case Op_MinHF:
+    case Op_MulHF:
+    case Op_SubHF:
+    case Op_SqrtHF:
+      return UseZfh;
   }
 
   return true; // Per default match rules are supported.
@@ -2471,64 +2485,6 @@ encode %{
     }
   %}
 
-  // arithmetic encodings
-
-  enc_class riscv_enc_divw(iRegI dst, iRegI src1, iRegI src2) %{
-    Register dst_reg = as_Register($dst$$reg);
-    Register src1_reg = as_Register($src1$$reg);
-    Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivl(dst_reg, src1_reg, src2_reg, /* want_remainder */ false, /* is_signed */ true);
-  %}
-
-  enc_class riscv_enc_divuw(iRegI dst, iRegI src1, iRegI src2) %{
-    Register dst_reg = as_Register($dst$$reg);
-    Register src1_reg = as_Register($src1$$reg);
-    Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivl(dst_reg, src1_reg, src2_reg, /* want_remainder */ false, /* is_signed */ false);
-  %}
-
-  enc_class riscv_enc_div(iRegI dst, iRegI src1, iRegI src2) %{
-    Register dst_reg = as_Register($dst$$reg);
-    Register src1_reg = as_Register($src1$$reg);
-    Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivq(dst_reg, src1_reg, src2_reg, /* want_remainder */ false, /* is_signed */ true);
-  %}
-
-  enc_class riscv_enc_divu(iRegI dst, iRegI src1, iRegI src2) %{
-    Register dst_reg = as_Register($dst$$reg);
-    Register src1_reg = as_Register($src1$$reg);
-    Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivq(dst_reg, src1_reg, src2_reg, /* want_remainder */ false, /* is_signed */ false);
-  %}
-
-  enc_class riscv_enc_modw(iRegI dst, iRegI src1, iRegI src2) %{
-    Register dst_reg = as_Register($dst$$reg);
-    Register src1_reg = as_Register($src1$$reg);
-    Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivl(dst_reg, src1_reg, src2_reg, /* want_remainder */ true, /* is_signed */ true);
-  %}
-
-  enc_class riscv_enc_moduw(iRegI dst, iRegI src1, iRegI src2) %{
-    Register dst_reg = as_Register($dst$$reg);
-    Register src1_reg = as_Register($src1$$reg);
-    Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivl(dst_reg, src1_reg, src2_reg, /* want_remainder */ true, /* is_signed */ false);
-  %}
-
-  enc_class riscv_enc_mod(iRegI dst, iRegI src1, iRegI src2) %{
-    Register dst_reg = as_Register($dst$$reg);
-    Register src1_reg = as_Register($src1$$reg);
-    Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivq(dst_reg, src1_reg, src2_reg, /* want_remainder */ true, /* is_signed */ true);
-  %}
-
-  enc_class riscv_enc_modu(iRegI dst, iRegI src1, iRegI src2) %{
-    Register dst_reg = as_Register($dst$$reg);
-    Register src1_reg = as_Register($src1$$reg);
-    Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivq(dst_reg, src1_reg, src2_reg, /* want_remainder */ true, /* is_signed */ false);
-  %}
-
   enc_class riscv_enc_tail_call(iRegP jump_target) %{
     Register target_reg = as_Register($jump_target$$reg);
     __ jr(target_reg);
@@ -2916,6 +2872,7 @@ operand immByteMapBase()
 %{
   // Get base of card map
   predicate(BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet) &&
+            SHENANDOAHGC_ONLY(!BarrierSet::barrier_set()->is_a(BarrierSet::ShenandoahBarrierSet) &&)
             (CardTable::CardValue*)n->get_ptr() ==
              ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base());
   match(ConP);
@@ -3051,6 +3008,27 @@ operand immF0()
 %{
   predicate(jint_cast(n->getf()) == 0);
   match(ConF);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Half Float Immediate
+operand immH()
+%{
+  match(ConH);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Half Float Immediate: +0.0f.
+operand immH0()
+%{
+  predicate(jint_cast(n->geth()) == 0);
+  match(ConH);
 
   op_cost(0);
   format %{ %}
@@ -4097,21 +4075,19 @@ pipe_class fp_div_d(fRegD dst, fRegD src1, fRegD src2)
   FPU    : S5;
 %}
 
-pipe_class fp_sqrt_s(fRegF dst, fRegF src1, fRegF src2)
+pipe_class fp_sqrt_s(fRegF dst, fRegF src)
 %{
   single_instruction;
-  src1   : S1(read);
-  src2   : S2(read);
+  src    : S1(read);
   dst    : S5(write);
   DECODE : ID;
   FPU    : S5;
 %}
 
-pipe_class fp_sqrt_d(fRegD dst, fRegD src1, fRegD src2)
+pipe_class fp_sqrt_d(fRegD dst, fRegD src)
 %{
   single_instruction;
-  src1   : S1(read);
-  src2   : S2(read);
+  src    : S1(read);
   dst    : S5(write);
   DECODE : ID;
   FPU    : S5;
@@ -4910,6 +4886,42 @@ instruct loadConNKlass(iRegNNoSp dst, immNKlass con)
   ins_pipe(ialu_imm);
 %}
 
+// Load Half Float Constant
+instruct loadConH(fRegF dst, immH con) %{
+  match(Set dst con);
+
+  ins_cost(LOAD_COST);
+  format %{
+    "flh $dst, [$constantaddress]\t# load from constant table: float=$con, #@loadConH"
+  %}
+
+  ins_encode %{
+    assert(UseZfh || UseZfhmin, "must");
+    if (MacroAssembler::can_hf_imm_load($con$$constant)) {
+      __ fli_h(as_FloatRegister($dst$$reg), $con$$constant);
+    } else {
+      __ flh(as_FloatRegister($dst$$reg), $constantaddress($con));
+    }
+  %}
+
+  ins_pipe(fp_load_constant_s);
+%}
+
+instruct loadConH0(fRegF dst, immH0 con) %{
+  match(Set dst con);
+
+  ins_cost(XFER_COST);
+
+  format %{ "fmv.h.x $dst, zr\t# float, #@loadConH0" %}
+
+  ins_encode %{
+    assert(UseZfh || UseZfhmin, "must");
+    __ fmv_h_x(as_FloatRegister($dst$$reg), zr);
+  %}
+
+  ins_pipe(fp_load_constant_s);
+%}
+
 // Load Float Constant
 instruct loadConF(fRegF dst, immF con) %{
   match(Set dst con);
@@ -4920,11 +4932,11 @@ instruct loadConF(fRegF dst, immF con) %{
   %}
 
   ins_encode %{
-      if (MacroAssembler::can_fp_imm_load($con$$constant)) {
-        __ fli_s(as_FloatRegister($dst$$reg), $con$$constant);
-      } else {
-        __ flw(as_FloatRegister($dst$$reg), $constantaddress($con));
-      }
+    if (MacroAssembler::can_fp_imm_load($con$$constant)) {
+      __ fli_s(as_FloatRegister($dst$$reg), $con$$constant);
+    } else {
+      __ flw(as_FloatRegister($dst$$reg), $constantaddress($con));
+    }
   %}
 
   ins_pipe(fp_load_constant_s);
@@ -4954,11 +4966,11 @@ instruct loadConD(fRegD dst, immD con) %{
   %}
 
   ins_encode %{
-      if (MacroAssembler::can_dp_imm_load($con$$constant)) {
-        __ fli_d(as_FloatRegister($dst$$reg), $con$$constant);
-      } else {
-        __ fld(as_FloatRegister($dst$$reg), $constantaddress($con));
-      }
+    if (MacroAssembler::can_dp_imm_load($con$$constant)) {
+      __ fli_d(as_FloatRegister($dst$$reg), $con$$constant);
+    } else {
+      __ fld(as_FloatRegister($dst$$reg), $constantaddress($con));
+    }
   %}
 
   ins_pipe(fp_load_constant_d);
@@ -6696,7 +6708,9 @@ instruct divI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   ins_cost(IDIVSI_COST);
   format %{ "divw  $dst, $src1, $src2\t#@divI"%}
 
-  ins_encode(riscv_enc_divw(dst, src1, src2));
+  ins_encode %{
+    __ divw(as_Register($dst$$reg), as_Register($src1$$reg), as_Register($src2$$reg));
+  %}
   ins_pipe(idiv_reg_reg);
 %}
 
@@ -6705,7 +6719,9 @@ instruct UdivI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   ins_cost(IDIVSI_COST);
   format %{ "divuw  $dst, $src1, $src2\t#@UdivI"%}
 
-  ins_encode(riscv_enc_divuw(dst, src1, src2));
+  ins_encode %{
+    __ divuw(as_Register($dst$$reg), as_Register($src1$$reg), as_Register($src2$$reg));
+  %}
   ins_pipe(idiv_reg_reg);
 %}
 
@@ -6727,7 +6743,9 @@ instruct divL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
   ins_cost(IDIVDI_COST);
   format %{ "div  $dst, $src1, $src2\t#@divL" %}
 
-  ins_encode(riscv_enc_div(dst, src1, src2));
+  ins_encode %{
+    __ div(as_Register($dst$$reg), as_Register($src1$$reg), as_Register($src2$$reg));
+  %}
   ins_pipe(ldiv_reg_reg);
 %}
 
@@ -6737,7 +6755,9 @@ instruct UdivL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
 
   format %{ "divu $dst, $src1, $src2\t#@UdivL" %}
 
-  ins_encode(riscv_enc_divu(dst, src1, src2));
+  ins_encode %{
+    __ divu(as_Register($dst$$reg), as_Register($src1$$reg), as_Register($src2$$reg));
+  %}
   ins_pipe(ldiv_reg_reg);
 %}
 
@@ -6759,7 +6779,9 @@ instruct modI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   ins_cost(IDIVSI_COST);
   format %{ "remw  $dst, $src1, $src2\t#@modI" %}
 
-  ins_encode(riscv_enc_modw(dst, src1, src2));
+  ins_encode %{
+    __ remw(as_Register($dst$$reg), as_Register($src1$$reg), as_Register($src2$$reg));
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -6768,7 +6790,9 @@ instruct UmodI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   ins_cost(IDIVSI_COST);
   format %{ "remuw  $dst, $src1, $src2\t#@UmodI" %}
 
-  ins_encode(riscv_enc_moduw(dst, src1, src2));
+  ins_encode %{
+    __ remuw(as_Register($dst$$reg), as_Register($src1$$reg), as_Register($src2$$reg));
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -6779,7 +6803,9 @@ instruct modL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
   ins_cost(IDIVDI_COST);
   format %{ "rem  $dst, $src1, $src2\t#@modL" %}
 
-  ins_encode(riscv_enc_mod(dst, src1, src2));
+  ins_encode %{
+    __ rem(as_Register($dst$$reg), as_Register($src1$$reg), as_Register($src2$$reg));
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -6788,7 +6814,9 @@ instruct UmodL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
   ins_cost(IDIVDI_COST);
   format %{ "remu  $dst, $src1, $src2\t#@UmodL" %}
 
-  ins_encode(riscv_enc_modu(dst, src1, src2));
+  ins_encode %{
+    __ remu(as_Register($dst$$reg), as_Register($src1$$reg), as_Register($src2$$reg));
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -7286,15 +7314,30 @@ instruct nmaddD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
 
 // Math.max(FF)F
 instruct maxF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
+  predicate(!UseZfa);
   match(Set dst (MaxF src1 src2));
-  effect(TEMP_DEF dst, KILL cr);
+  effect(KILL cr);
 
   format %{ "maxF $dst, $src1, $src2" %}
 
   ins_encode %{
     __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
-                 false /* is_double */, false /* is_min */);
+                 __ FLOAT_TYPE::single_precision, false /* is_min */);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct maxF_reg_reg_zfa(fRegF dst, fRegF src1, fRegF src2) %{
+  predicate(UseZfa);
+  match(Set dst (MaxF src1 src2));
+
+  format %{ "maxF $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ fmaxm_s(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
   %}
 
   ins_pipe(pipe_class_default);
@@ -7302,15 +7345,30 @@ instruct maxF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
 
 // Math.min(FF)F
 instruct minF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
+  predicate(!UseZfa);
   match(Set dst (MinF src1 src2));
-  effect(TEMP_DEF dst, KILL cr);
+  effect(KILL cr);
 
   format %{ "minF $dst, $src1, $src2" %}
 
   ins_encode %{
     __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
-                 false /* is_double */, true /* is_min */);
+                 __ FLOAT_TYPE::single_precision, true /* is_min */);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct minF_reg_reg_zfa(fRegF dst, fRegF src1, fRegF src2) %{
+  predicate(UseZfa);
+  match(Set dst (MinF src1 src2));
+
+  format %{ "minF $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ fminm_s(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
   %}
 
   ins_pipe(pipe_class_default);
@@ -7318,15 +7376,30 @@ instruct minF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
 
 // Math.max(DD)D
 instruct maxD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
+  predicate(!UseZfa);
   match(Set dst (MaxD src1 src2));
-  effect(TEMP_DEF dst, KILL cr);
+  effect(KILL cr);
 
   format %{ "maxD $dst, $src1, $src2" %}
 
   ins_encode %{
     __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
-                 true /* is_double */, false /* is_min */);
+                 __ FLOAT_TYPE::double_precision, false /* is_min */);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct maxD_reg_reg_zfa(fRegD dst, fRegD src1, fRegD src2) %{
+  predicate(UseZfa);
+  match(Set dst (MaxD src1 src2));
+
+  format %{ "maxD $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ fmaxm_d(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
   %}
 
   ins_pipe(pipe_class_default);
@@ -7334,15 +7407,30 @@ instruct maxD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
 
 // Math.min(DD)D
 instruct minD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
+  predicate(!UseZfa);
   match(Set dst (MinD src1 src2));
-  effect(TEMP_DEF dst, KILL cr);
+  effect(KILL cr);
 
   format %{ "minD $dst, $src1, $src2" %}
 
   ins_encode %{
     __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
-                 true /* is_double */, true /* is_min */);
+                 __ FLOAT_TYPE::double_precision, true /* is_min */);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct minD_reg_reg_zfa(fRegD dst, fRegD src1, fRegD src2) %{
+  predicate(UseZfa);
+  match(Set dst (MinD src1 src2));
+
+  format %{ "minD $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ fminm_d(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
   %}
 
   ins_pipe(pipe_class_default);
@@ -8012,6 +8100,17 @@ instruct checkCastPP(iRegPNoSp dst)
   ins_pipe(pipe_class_empty);
 %}
 
+instruct castHH(fRegF dst)
+%{
+  match(Set dst (CastHH dst));
+
+  size(0);
+  format %{ "# castHH of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
 instruct castFF(fRegF dst)
 %{
   match(Set dst (CastFF dst));
@@ -8172,6 +8271,148 @@ instruct convF2HF_reg_reg(iRegINoSp dst, fRegF src, fRegF ftmp, iRegINoSp xtmp) 
     __ float_to_float16($dst$$Register, $src$$FloatRegister, $ftmp$$FloatRegister, $xtmp$$Register);
   %}
   ins_pipe(pipe_slow);
+%}
+
+// half precision operations
+
+instruct reinterpretS2HF(fRegF dst, iRegI src)
+%{
+  match(Set dst (ReinterpretS2HF src));
+  format %{ "fmv.h.x $dst, $src" %}
+  ins_encode %{
+    __ fmv_h_x($dst$$FloatRegister, $src$$Register);
+  %}
+  ins_pipe(fp_i2f);
+%}
+
+instruct convF2HFAndS2HF(fRegF dst, fRegF src)
+%{
+  match(Set dst (ReinterpretS2HF (ConvF2HF src)));
+  format %{ "convF2HFAndS2HF $dst, $src" %}
+  ins_encode %{
+    __ fcvt_h_s($dst$$FloatRegister, $src$$FloatRegister);
+  %}
+  ins_pipe(fp_uop_s);
+%}
+
+instruct reinterpretHF2S(iRegINoSp dst, fRegF src)
+%{
+  match(Set dst (ReinterpretHF2S src));
+  format %{ "fmv.x.h $dst, $src" %}
+  ins_encode %{
+    __ fmv_x_h($dst$$Register, $src$$FloatRegister);
+  %}
+  ins_pipe(fp_f2i);
+%}
+
+instruct convHF2SAndHF2F(fRegF dst, fRegF src)
+%{
+  match(Set dst (ConvHF2F (ReinterpretHF2S src)));
+  format %{ "convHF2SAndHF2F $dst, $src" %}
+  ins_encode %{
+    __ fcvt_s_h($dst$$FloatRegister, $src$$FloatRegister);
+  %}
+  ins_pipe(fp_uop_s);
+%}
+
+instruct sqrt_HF_reg(fRegF dst, fRegF src)
+%{
+  match(Set dst (SqrtHF src));
+  format %{ "fsqrt.h $dst, $src" %}
+  ins_encode %{
+    __ fsqrt_h($dst$$FloatRegister, $src$$FloatRegister);
+  %}
+  ins_pipe(fp_sqrt_s);
+%}
+
+instruct binOps_HF_reg(fRegF dst, fRegF src1, fRegF src2)
+%{
+  match(Set dst (AddHF src1 src2));
+  match(Set dst (SubHF src1 src2));
+  match(Set dst (MulHF src1 src2));
+  match(Set dst (DivHF src1 src2));
+  format %{ "binop_hf $dst, $src1, $src2" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    switch(opcode) {
+      case Op_AddHF: __ fadd_h($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister); break;
+      case Op_SubHF: __ fsub_h($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister); break;
+      case Op_MulHF: __ fmul_h($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister); break;
+      case Op_DivHF: __ fdiv_h($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister); break;
+      default: assert(false, "%s is not supported here", NodeClassNames[opcode]); break;
+    }
+  %}
+  ins_pipe(fp_dop_reg_reg_s);
+%}
+
+instruct min_HF_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr)
+%{
+  predicate(!UseZfa);
+  match(Set dst (MinHF src1 src2));
+  effect(KILL cr);
+
+  format %{ "min_hf $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ minmax_fp($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
+                 __ FLOAT_TYPE::half_precision, true /* is_min */);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct min_HF_reg_zfa(fRegF dst, fRegF src1, fRegF src2)
+%{
+  predicate(UseZfa);
+  match(Set dst (MinHF src1 src2));
+
+  format %{ "min_hf $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ fminm_h(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct max_HF_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr)
+%{
+  predicate(!UseZfa);
+  match(Set dst (MaxHF src1 src2));
+  effect(KILL cr);
+
+  format %{ "max_hf $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ minmax_fp($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
+                 __ FLOAT_TYPE::half_precision, false /* is_min */);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct max_HF_reg_zfa(fRegF dst, fRegF src1, fRegF src2)
+%{
+  predicate(UseZfa);
+  match(Set dst (MaxHF src1 src2));
+
+  format %{ "max_hf $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ fmaxm_h(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct fma_HF_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3)
+%{
+  match(Set dst (FmaHF src3 (Binary src1 src2)));
+  format %{ "fmadd.h $dst, $src1, $src2, $src3\t# $dst = $src1 * $src2 + $src3 fma packedH" %}
+  ins_encode %{
+    __ fmadd_h($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 // float <-> int
@@ -8795,17 +9036,11 @@ instruct minI_reg_reg(iRegINoSp dst, iRegI src)
   match(Set dst (MinI dst src));
 
   ins_cost(BRANCH_COST + ALU_COST);
-  format %{
-    "ble $dst, $src, skip\t#@minI_reg_reg\n\t"
-    "mv  $dst, $src\n\t"
-    "skip:"
-  %}
+  format %{"minI_reg_reg $dst, $dst, $src\t#@minI_reg_reg\n\t"%}
 
   ins_encode %{
-    Label Lskip;
-    __ ble(as_Register($dst$$reg), as_Register($src$$reg), Lskip);
-    __ mv(as_Register($dst$$reg), as_Register($src$$reg));
-    __ bind(Lskip);
+    __ cmov_gt(as_Register($dst$$reg), as_Register($src$$reg),
+               as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
   ins_pipe(pipe_class_compare);
@@ -8816,17 +9051,11 @@ instruct maxI_reg_reg(iRegINoSp dst, iRegI src)
   match(Set dst (MaxI dst src));
 
   ins_cost(BRANCH_COST + ALU_COST);
-  format %{
-    "bge $dst, $src, skip\t#@maxI_reg_reg\n\t"
-    "mv  $dst, $src\n\t"
-    "skip:"
-  %}
+  format %{"maxI_reg_reg $dst, $dst, $src\t#@maxI_reg_reg\n\t"%}
 
   ins_encode %{
-    Label Lskip;
-    __ bge(as_Register($dst$$reg), as_Register($src$$reg), Lskip);
-    __ mv(as_Register($dst$$reg), as_Register($src$$reg));
-    __ bind(Lskip);
+    __ cmov_lt(as_Register($dst$$reg), as_Register($src$$reg),
+               as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
   ins_pipe(pipe_class_compare);
@@ -8842,17 +9071,11 @@ instruct minI_reg_zero(iRegINoSp dst, immI0 zero)
   match(Set dst (MinI zero dst));
 
   ins_cost(BRANCH_COST + ALU_COST);
-  format %{
-    "blez $dst, skip\t#@minI_reg_zero\n\t"
-    "mv   $dst, zr\n\t"
-    "skip:"
-  %}
+  format %{"minI_reg_zero $dst, $dst, zr\t#@minI_reg_zero\n\t"%}
 
   ins_encode %{
-    Label Lskip;
-    __ blez(as_Register($dst$$reg), Lskip);
-    __ mv(as_Register($dst$$reg), zr);
-    __ bind(Lskip);
+    __ cmov_gt(as_Register($dst$$reg), zr,
+               as_Register($dst$$reg), zr);
   %}
 
   ins_pipe(pipe_class_compare);
@@ -8864,17 +9087,11 @@ instruct maxI_reg_zero(iRegINoSp dst, immI0 zero)
   match(Set dst (MaxI zero dst));
 
   ins_cost(BRANCH_COST + ALU_COST);
-  format %{
-    "bgez $dst, skip\t#@maxI_reg_zero\n\t"
-    "mv   $dst, zr\n\t"
-    "skip:"
-  %}
+  format %{"maxI_reg_zero $dst, $dst, zr\t#@maxI_reg_zero\n\t"%}
 
   ins_encode %{
-    Label Lskip;
-    __ bgez(as_Register($dst$$reg), Lskip);
-    __ mv(as_Register($dst$$reg), zr);
-    __ bind(Lskip);
+    __ cmov_lt(as_Register($dst$$reg), zr,
+               as_Register($dst$$reg), zr);
   %}
 
   ins_pipe(pipe_class_compare);
@@ -8887,23 +9104,12 @@ instruct minI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
   effect(DEF dst, USE src1, USE src2);
 
   ins_cost(BRANCH_COST + ALU_COST * 2);
-  format %{
-    "ble $src1, $src2, Lsrc1\t#@minI_rReg\n\t"
-    "mv $dst, $src2\n\t"
-    "j Ldone\n\t"
-    "Lsrc1:\n\t"
-    "mv $dst, $src1\n\t"
-    "Ldone:"
-  %}
+  format %{"minI_rReg $dst, $src1, $src2\t#@minI_rReg\n\t"%}
 
   ins_encode %{
-    Label Lsrc1, Ldone;
-    __ ble(as_Register($src1$$reg), as_Register($src2$$reg), Lsrc1);
-    __ mv(as_Register($dst$$reg), as_Register($src2$$reg));
-    __ j(Ldone);
-    __ bind(Lsrc1);
     __ mv(as_Register($dst$$reg), as_Register($src1$$reg));
-    __ bind(Ldone);
+    __ cmov_gt(as_Register($src1$$reg), as_Register($src2$$reg),
+               as_Register($dst$$reg), as_Register($src2$$reg));
   %}
 
   ins_pipe(pipe_class_compare);
@@ -8916,24 +9122,12 @@ instruct maxI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
   effect(DEF dst, USE src1, USE src2);
 
   ins_cost(BRANCH_COST + ALU_COST * 2);
-  format %{
-    "bge $src1, $src2, Lsrc1\t#@maxI_rReg\n\t"
-    "mv $dst, $src2\n\t"
-    "j Ldone\n\t"
-    "Lsrc1:\n\t"
-    "mv $dst, $src1\n\t"
-    "Ldone:"
-  %}
+  format %{"maxI_rReg $dst, $src1, $src2\t#@maxI_rReg\n\t"%}
 
   ins_encode %{
-    Label Lsrc1, Ldone;
-    __ bge(as_Register($src1$$reg), as_Register($src2$$reg), Lsrc1);
-    __ mv(as_Register($dst$$reg), as_Register($src2$$reg));
-    __ j(Ldone);
-    __ bind(Lsrc1);
     __ mv(as_Register($dst$$reg), as_Register($src1$$reg));
-    __ bind(Ldone);
-
+    __ cmov_lt(as_Register($src1$$reg), as_Register($src2$$reg),
+               as_Register($dst$$reg), as_Register($src2$$reg));
   %}
 
   ins_pipe(pipe_class_compare);

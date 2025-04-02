@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,19 +151,14 @@ public class Tests {
         }
     }
 
-    /* check the time got is within 50% of the time expected */
-    public static void checkTime (long got, long expected) {
-        checkTime(got, expected, expected);
-    }
 
-    /* check the time got is between start and end, given 50% tolerance */
-    public static void checkTime(long got, long start, long end) {
-        dprintln("checkTime: got = " + got + " start = " + start + " end = " + end);
-        long upper = end + (end / 2);
-        long lower = start - (start / 2);
-        if (got > upper || got < lower) {
-            throw new RuntimeException("checkTime failed: got " + got
-                    + ", expected between " + start + " and " + end);
+    /* check the timeout breached lower bound time rule */
+    public static void checkIfTimeOut(long got, long expected) {
+        dprintln("checkIfTimeOut: got = " + got + " lower bound = " + expected);
+
+        if (got < expected) {
+            throw new RuntimeException("checkIfTimeOut failed: got " + got
+                    + ", expected at least " + expected );
         }
     }
 
