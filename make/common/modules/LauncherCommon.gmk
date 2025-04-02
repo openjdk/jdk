@@ -74,6 +74,13 @@ define SetupBuildLauncherBody
 
   $1_MAIN_MODULE := $(MODULE)
 
+  # Record the fact that this launcher is part of the current module. This
+  # variable stores information about all created launchers, and is read by
+  # ModuleWrapper.
+  $$(MODULE)_INCLUDED_LAUNCHERS += $1
+
+  $1_RELAUNCHER_ARGUMENTS :=
+
   ifneq ($$($1_MAIN_CLASS), )
     $1_JAVA_ARGS += -Xms8m
     $1_LAUNCHER_CLASS := -m $$($1_MAIN_MODULE)/$$($1_MAIN_CLASS)
@@ -83,13 +90,18 @@ define SetupBuildLauncherBody
     $1_CFLAGS += -DDISABLE_ARGFILE=JNI_FALSE
   else
     $1_CFLAGS += -DDISABLE_ARGFILE=JNI_TRUE
+    # This must be the first argument given, if it should be present
+    $1_RELAUNCHER_ARGUMENTS += -DjavaLauncherArgFiles=false
   endif
 
   ifeq ($$($1_EXPAND_CLASSPATH_WILDCARDS), true)
     $1_CFLAGS += -DCLASSPATH_WILDCARDS=JNI_TRUE
   else
     $1_CFLAGS += -DCLASSPATH_WILDCARDS=JNI_FALSE
+    $1_RELAUNCHER_ARGUMENTS += -DjavaLauncherWildcards=false
   endif
+
+  $1_RELAUNCHER_ARGUMENTS += -DjavaLauncherProgname=$1
 
   ifeq ($(call isTargetOs, windows), true)
     ifeq ($$($1_WINDOWS_JAVAW), true)
@@ -98,9 +110,14 @@ define SetupBuildLauncherBody
   endif
 
   ifneq ($$($1_JAVA_ARGS), )
-    $1_JAVA_ARGS_STR := '{ $$(strip $$(foreach a, \
-        $$(addprefix -J, $$($1_JAVA_ARGS)) $$($1_LAUNCHER_CLASS), "$$a"$(COMMA) )) }'
+    $1_PREFIXED_JAVA_ARGS := $$(addprefix -J, $$($1_JAVA_ARGS)) \
+        $$($1_LAUNCHER_CLASS)
+    $1_JAVA_ARGS_STR := '{ $$(strip $$(foreach a, $$($1_PREFIXED_JAVA_ARGS), \
+        "$$a"$(COMMA) )) }'
     $1_CFLAGS += -DJAVA_ARGS=$$($1_JAVA_ARGS_STR)
+    # To preserve spaces, substitute them with a hopefully unique pattern
+    $1_RELAUNCHER_ARGUMENTS += \
+        -DjavaLauncherArgs=$$(subst $$(SPACE),||||,$$($1_PREFIXED_JAVA_ARGS))
   endif
 
   ifeq ($(call isTargetOs, macosx), true)
@@ -176,6 +193,20 @@ define SetupBuildLauncherBody
   ))
 
   $1 += $$(BUILD_LAUNCHER_$1)
+
+  $1_RELAUNCHER_ARGUMENTS_FILE := \
+      $$(SUPPORT_OUTPUTDIR)/static-native/relaunchers/$$(MODULE)/$1-relauncher-arguments.txt
+
+  $1_VARDEPS := $$($1_RELAUNCHER_ARGUMENTS)
+  $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
+      $$($1_RELAUNCHER_ARGUMENTS_FILE).vardeps)
+
+  $$($1_RELAUNCHER_ARGUMENTS_FILE):
+	$$(call MakeDir, $$(@D))
+	$$(ECHO) '$$($1_RELAUNCHER_ARGUMENTS)' > $$@
+
+  $1 += $$($1_RELAUNCHER_ARGUMENTS_FILE)
+
   TARGETS += $$($1)
 
   $$(BUILD_LAUNCHER_$1): $$(BUILD_PLIST_$1)

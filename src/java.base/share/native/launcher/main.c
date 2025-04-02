@@ -53,6 +53,33 @@ static int jargc;
 static jboolean cpwildcard = CLASSPATH_WILDCARDS;
 static jboolean disable_argfile = DISABLE_ARGFILE;
 
+#ifdef STATIC_BUILD
+static void check_relauncher_argument(char* arg) {
+    if (strcmp(arg, "-J-DjavaLauncherWildcards=false") == 0) {
+        cpwildcard = JNI_FALSE;
+    }
+    if (strncmp(arg, "-J-DjavaLauncherProgname=", 26) == 0) {
+        progname = arg + 26;
+    }
+    if (strncmp(arg, "-J-DjavaLauncherArgs=", 21) == 0) {
+        char* java_args_ptr = arg + 21;
+        size_t java_args_len = strlen(arg) - 21;
+
+        JLI_List java_args = JLI_List_new(java_args_len);
+        char* next_space;
+        while ((next_space = strchr(java_args_ptr, ' ')) != NULL) {
+            size_t next_arg_len = next_space - java_args_ptr;
+            JLI_List_addSubstring(java_args, java_args_ptr, next_arg_len);
+            java_args_ptr = next_space + 1;
+        }
+        JLI_List_add(java_args, java_args_ptr);
+
+        jargc = java_args->size;
+        jargs = (const char**) java_args->elements;
+    }
+}
+#endif
+
 /*
  * Entry point.
  */
@@ -80,6 +107,14 @@ main(int argc, char **argv)
     jargc = (sizeof(jargs) / sizeof(char *)) > 1
         ? sizeof(jargs) / sizeof(char *)
         : 0; // ignore the null terminator index
+
+#ifdef STATIC_BUILD
+        // Relaunchers always give -J-DjavaLauncherArgFiles as the first argument, if present
+        // We must check disable_argfile before calling JLI_InitArgProcessing.
+        if (argc > 1 && strcmp(argv[1], "-J-DjavaLauncherArgFiles=false") == 0) {
+            disable_argfile = JNI_TRUE;
+        }
+#endif
 
     JLI_InitArgProcessing(jargc > 0, disable_argfile);
 
@@ -120,6 +155,9 @@ main(int argc, char **argv)
         StdArg *stdargs = JLI_GetStdArgs();
         for (i = 0 ; i < margc ; i++) {
             margv[i] = stdargs[i].arg;
+#ifdef STATIC_BUILD
+            check_relauncher_argument(margv[i]);
+#endif
         }
         margv[i] = NULL;
     }
@@ -144,6 +182,9 @@ main(int argc, char **argv)
         }
         // Iterate the rest of command line
         for (i = 1; i < argc; i++) {
+#ifdef STATIC_BUILD
+            check_relauncher_argument(argv[i]);
+#endif
             JLI_List argsInFile = JLI_PreprocessArg(argv[i], JNI_TRUE);
             if (NULL == argsInFile) {
                 JLI_List_add(args, JLI_StringDup(argv[i]));
