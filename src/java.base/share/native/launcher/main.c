@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,28 @@
  * tools. The rest of the files will be linked in.
  */
 
-#include "defines.h"
+#include "java.h"
 #include "jli_util.h"
 #include "jni.h"
+
+// Unused, but retained for JLI_Launch compatibility
+#define DOT_VERSION "0.0"
+
+// This is reported when requesting a full version
+static char* launcher = LAUNCHER_NAME;
+
+// This is used as the name of the executable in the help message
+static char* progname = PROGNAME;
+
+#ifdef JAVA_ARGS
+static const char* jargs[] = JAVA_ARGS;
+#else
+static const char** jargs = NULL;
+#endif
+static int jargc;
+
+static jboolean cpwildcard = CLASSPATH_WILDCARDS;
+static jboolean disable_argfile = DISABLE_ARGFILE;
 
 /*
  * Entry point.
@@ -44,7 +63,7 @@ char **__initenv;
 int WINAPI
 WinMain(HINSTANCE inst, HINSTANCE previnst, LPSTR cmdline, int cmdshow)
 {
-    const jboolean const_javaw = JNI_TRUE;
+    const jboolean javaw = JNI_TRUE;
 
     __initenv = _environ;
 
@@ -52,19 +71,17 @@ WinMain(HINSTANCE inst, HINSTANCE previnst, LPSTR cmdline, int cmdshow)
 JNIEXPORT int
 main(int argc, char **argv)
 {
-    const jboolean const_javaw = JNI_FALSE;
+    const jboolean javaw = JNI_FALSE;
 #endif /* JAVAW */
 
     int margc;
     char** margv;
-    int jargc;
-    const char** jargv = const_jargs;
 
-    jargc = (sizeof(const_jargs) / sizeof(char *)) > 1
-        ? sizeof(const_jargs) / sizeof(char *)
+    jargc = (sizeof(jargs) / sizeof(char *)) > 1
+        ? sizeof(jargs) / sizeof(char *)
         : 0; // ignore the null terminator index
 
-    JLI_InitArgProcessing(jargc > 0, const_disable_argfile);
+    JLI_InitArgProcessing(jargc > 0, disable_argfile);
 
 #ifdef _WIN32
     {
@@ -148,12 +165,12 @@ main(int argc, char **argv)
     }
 #endif /* WIN32 */
     return JLI_Launch(margc, margv,
-                   jargc, jargv,
+                   jargc, jargs,
                    0, NULL,
                    VERSION_STRING,
                    DOT_VERSION,
-                   (const_progname != NULL) ? const_progname : *margv,
-                   (const_launcher != NULL) ? const_launcher : *margv,
+                   progname,
+                   launcher,
                    jargc > 0,
-                   const_cpwildcard, const_javaw, 0);
+                   cpwildcard, javaw, 0);
 }

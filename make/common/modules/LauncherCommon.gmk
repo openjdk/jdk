@@ -79,12 +79,16 @@ define SetupBuildLauncherBody
     $1_LAUNCHER_CLASS := -m $$($1_MAIN_MODULE)/$$($1_MAIN_CLASS)
   endif
 
-  ifeq ($$($1_EXPAND_CLASSPATH_WILDCARDS), true)
-    $1_CFLAGS += -DEXPAND_CLASSPATH_WILDCARDS
+  ifeq ($$($1_ENABLE_ARG_FILES), true)
+    $1_CFLAGS += -DDISABLE_ARGFILE=JNI_FALSE
+  else
+    $1_CFLAGS += -DDISABLE_ARGFILE=JNI_TRUE
   endif
 
-  ifeq ($$($1_ENABLE_ARG_FILES), true)
-    $1_CFLAGS += -DENABLE_ARG_FILES
+  ifeq ($$($1_EXPAND_CLASSPATH_WILDCARDS), true)
+    $1_CFLAGS += -DCLASSPATH_WILDCARDS=JNI_TRUE
+  else
+    $1_CFLAGS += -DCLASSPATH_WILDCARDS=JNI_FALSE
   endif
 
   ifeq ($(call isTargetOs, windows), true)
