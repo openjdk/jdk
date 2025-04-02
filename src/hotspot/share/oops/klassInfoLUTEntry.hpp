@@ -36,14 +36,14 @@ class outputStream;
 
 //                                     msb                                       lsb
 //
-// invalid_entry (debug zap):             1111 1111 1111 1111 1111 1111 1111 1111  (relies on kind == 0b111 == 7 being invalid)
+// invalid_entry (debug zap):             1111 1111 1111 1111 1111 1111 1111 1111  (relies on ClassKind == 0b111 == 7 being invalid)
 //
 // All valid entries:                     KKKL L... .... .... .... .... .... ....
 //
 // InstanceKlass:                         KKKL LSSS SSSO OOOO CCCC CCOO OOCC CCCC
 //                                                     2 2222 2222 2211 1111 1111
 // InstanceKlass, has_no_addinfo:         KKKL L000 0000 0000 0000 0000 0000 0000  (all IK specific bits 0) (note: means that "0" is a valid IK entry with no add. info)
-// InstanceKlass, has no oopmap entries:  KKKL L... .... .... .... .... 0000 0000  (omb count bits are 0)   (only valid if !has_no_addinfo)
+// InstanceKlass, has no oopmap entries:  KKKL LSSS SSS. .... .... .... 0000 0000  (omb count bits are 0)   (only valid if !has_no_addinfo)
 //
 // ArrayKlass:                            KKKL L--- tttt tttt hhhh hhhh eeee eeee
 //
@@ -170,7 +170,6 @@ public:
   // We use kind=7=0b111 (invalid), and set the rest of the bits also to 1
   static constexpr uint32_t invalid_entry = 0xFFFFFFFF;
 
-//  inline KlassLUTEntry() : _v(invalid_entry) {}
   inline KlassLUTEntry(uint32_t v) : _v(v) {}
   inline KlassLUTEntry(const KlassLUTEntry& other) : _v(other._v) {}
 
@@ -241,6 +240,8 @@ public:
   // Helper function, prints current limits
   static void print_limits(outputStream* st);
 
-}; // KlassInfoLUEntryIK
+  void print(outputStream* st) const;
+
+}; // KlassInfoLUEntry
 
 #endif // SHARE_OOPS_KLASSINFOLUTENTRY_HPP

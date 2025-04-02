@@ -88,11 +88,13 @@ class KlassInfoLUT : public AllStatic {
   static void log_hit(KlassLUTEntry klute);
 #endif
 
+  static KlassLUTEntry late_register_klass(narrowKlass nk);
+
 public:
 
   static void initialize();
 
-  static void register_klass(const Klass* k);
+  static void register_klass(Klass* k);
 
   static inline KlassLUTEntry get_entry(narrowKlass k);
 

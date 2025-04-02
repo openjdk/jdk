@@ -3694,9 +3694,6 @@ void Arguments::set_compact_headers_flags() {
     } else if (ObjectAlignmentInBytes != BytesPerWord) {
       warning("UseKLUT requires default object alignment.");
       FLAG_SET_DEFAULT(UseKLUT, false);
-    } else if (UseSharedSpaces) {
-      warning("UseKLUT, for the moment, won't work with CDS enabled. Please specify -Xshare:off.");
-      // FLAG_SET_DEFAULT(UseKLUT, false);
     }
   }
 #endif
