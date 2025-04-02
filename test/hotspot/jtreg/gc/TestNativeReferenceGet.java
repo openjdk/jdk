@@ -23,6 +23,8 @@
  * questions.
  */
 
+package gc;
+
 /**
  * @test
  * @bug 8352565
