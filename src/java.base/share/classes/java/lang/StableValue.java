@@ -75,7 +75,7 @@ import java.util.function.Supplier;
  *
  *    // Creates a new unset stable value with no content
  *    // @link substring="of" target="#of" :
- *    private final StableValue<Logger> logger = StableValue.of();
+ *    private static final StableValue<Logger> logger = StableValue.of();
  *
  *    private Logger getLogger() {
  *        if (!logger.isSet()) {
@@ -92,8 +92,8 @@ import java.util.function.Supplier;
  *}
  * <p>
  * Note that the holder value can only be set at most once.
- * In the example above, the {@code logger} field is declared {@code final} which is
- * a prerequisite for being treated as a constant by the JVM.
+ * In the example above, the {@code logger} field is declared {@code static final} which
+ * is a prerequisite for being treated as a constant by the JVM.
  *
  * <p>
  * To guarantee that, even under races, only one instance of {@code Logger} is ever
@@ -107,7 +107,7 @@ import java.util.function.Supplier;
  *
  *    // Creates a new unset stable value with no content
  *    // @link substring="of" target="#of" :
- *    private final StableValue<Logger> logger = StableValue.of();
+ *    private static final StableValue<Logger> logger = StableValue.of();
  *
  *    private Logger getLogger() {
  *        return logger.orElseSet( () -> Logger.create(Component.class) );
@@ -143,7 +143,7 @@ import java.util.function.Supplier;
  * {@snippet lang = java:
  * public class Component {
  *
- *     private final Supplier<Logger> logger =
+ *     private static final Supplier<Logger> logger =
  *             // @link substring="supplier" target="#supplier(Supplier)" :
  *             StableValue.supplier( () -> Logger.getLogger(Component.class) );
  *
