@@ -1052,8 +1052,9 @@ public class Introspector {
             }
         }
         if (match) {
-            // Discarding 'default' method as it is already overridden by the 'old'.
-            if (!md.getMethod().isDefault()) {
+            Class<?> oldClass = old.getMethod().getDeclaringClass();
+            Class<?> mdClass = md.getMethod().getDeclaringClass();
+            if (oldClass == mdClass || oldClass.isAssignableFrom(mdClass)) {
                 MethodDescriptor composite = new MethodDescriptor(old, md);
                 methods.put(name, composite);
             }

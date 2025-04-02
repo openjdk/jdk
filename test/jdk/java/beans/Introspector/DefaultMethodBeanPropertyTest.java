@@ -83,6 +83,7 @@ public class DefaultMethodBeanPropertyTest {
 
     public static void testScenario1() {
         verifyMethods(D1.class,
+            "public static int DefaultMethodBeanPropertyTest$A1.getStaticValue()",
             "public default int DefaultMethodBeanPropertyTest$A1.getValue()",
             "public java.lang.Integer DefaultMethodBeanPropertyTest$D1.getFoo()",
             "public java.lang.Float DefaultMethodBeanPropertyTest$D1.getObj()"
@@ -234,6 +235,12 @@ public class DefaultMethodBeanPropertyTest {
         }
         public default void setFoo(String num) {
         }
+        public static int getStaticValue() {
+            return 0;
+        }
+        private int getPrivateValue() {
+            return 0;
+        }
     }
 
     public class B5 implements A5 {
@@ -241,10 +248,14 @@ public class DefaultMethodBeanPropertyTest {
         }
         public void setLocalFoo(Long num) {
         }
+        public static int getStaticValue() {
+            return 0;
+        }
     }
 
     public static void testScenario5() {
         verifyMethods(B5.class,
+            "public static int DefaultMethodBeanPropertyTest$B5.getStaticValue()",
             "public default void DefaultMethodBeanPropertyTest$A5.setFoo(java.lang.String)",
             "public default void DefaultMethodBeanPropertyTest$A5.setParentFoo(java.lang.Integer)",
             "public void DefaultMethodBeanPropertyTest$B5.setFoo(java.lang.Number)",
@@ -269,6 +280,12 @@ public class DefaultMethodBeanPropertyTest {
         }
         public void setFoo(Integer num) {
         }
+        public static int getStaticValue() {
+            return 0;
+        }
+        private int getPrivateValue() {
+            return 0;
+        }
     }
 
     public class B6 extends A6 {
@@ -276,10 +293,14 @@ public class DefaultMethodBeanPropertyTest {
         }
         public void setLocalFoo(Long num) {
         }
+        public static int getStaticValue() {
+            return 0;
+        }
     }
 
     public static void testScenario6() {
         verifyMethods(B6.class,
+            "public static int DefaultMethodBeanPropertyTest$B6.getStaticValue()",
             "public void DefaultMethodBeanPropertyTest$A6.setFoo(java.lang.Integer)",
             "public void DefaultMethodBeanPropertyTest$A6.setParentFoo(java.lang.Integer)",
             "public void DefaultMethodBeanPropertyTest$B6.setFoo(java.lang.String)",
