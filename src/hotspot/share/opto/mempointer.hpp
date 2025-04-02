@@ -701,10 +701,10 @@ private:
   NoOverflowInt _scaleL;
   int _int_group;
 
+public:
   MemPointerRawSummand(Node* variable, NoOverflowInt scaleI, NoOverflowInt scaleL, int int_group) :
     _variable(variable), _scaleI(scaleI), _scaleL(scaleL), _int_group(int_group) {}
 
-public:
   MemPointerRawSummand() :
     MemPointerRawSummand(nullptr, NoOverflowInt::make_NaN(), NoOverflowInt::make_NaN(), -1) {}
 
@@ -717,34 +717,34 @@ public:
     return MemPointerRawSummand(nullptr, scaleI, scaleL, int_group);
   }
 
-  static MemPointerRawSummand make(Node* variable, NoOverflowInt scaleI, NoOverflowInt scaleL, int int_group) {
-    assert(variable != nullptr, "must have variable");
-    return MemPointerRawSummand(variable, scaleI, scaleL, int_group);
-  }
-
   bool is_valid() const { return _int_group >= 0; }
   bool is_con() const { assert(is_valid(), ""); return _variable == nullptr; }
-  Node* variable() const { assert(!is_con(), ""); return _variable; }
+  Node* variable() const { assert(is_valid(), ""); return _variable; }
   NoOverflowInt scaleI() const { assert(is_valid(), ""); return _scaleI; }
   NoOverflowInt scaleL() const { assert(is_valid(), ""); return _scaleL; }
   int int_group() const { assert(is_valid(), ""); return _int_group; }
 
   MemPointerSummand to_summand() const {
+    assert(!is_con(), "must be variable");
     return MemPointerSummand(variable(), scaleL() * scaleI());
   }
 
-  static int cmp_by_variable_idx(MemPointerRawSummand* p1, MemPointerRawSummand* p2) {
-    return cmp_by_variable_idx(*p1, *p2);
+  NoOverflowInt to_con() const {
+    assert(!is_con(), "must be variable");
+    return scaleL() * scaleI();
   }
 
-  static int cmp_by_variable_idx(const MemPointerRawSummand& p1, const MemPointerRawSummand& p2) {
-    if (p1.is_con()) {
-      return p2.is_con() ? 0 : 1;
+  static int cmp_by_int_group_and_variable_idx(MemPointerRawSummand* p1, MemPointerRawSummand* p2) {
+    int int_group_diff = p1->int_group() - p2->int_group();
+    if (int_group_diff != 0) { return int_group_diff; }
+
+    if (p1->is_con()) {
+      return p2->is_con() ? 0 : 1;
     }
-    if (p2.is_con()) {
+    if (p2->is_con()) {
       return -1;
     }
-    return p1.variable()->_idx - p2.variable()->_idx;
+    return p1->variable()->_idx - p2->variable()->_idx;
   }
 
 #ifndef PRODUCT
@@ -759,6 +759,15 @@ public:
         st->print(" * [%d %s]", _variable->_idx, _variable->Name());
       }
     }
+  }
+
+  static void print_on(outputStream* st, const GrowableArray<MemPointerRawSummand>& summands) {
+    st->print("Raw Summands (%d): ", summands.length());
+    for (int i = 0; i < summands.length(); i++) {
+      if (i > 0) { st->print(" + "); }
+      summands.at(i).print_on(tty);
+    }
+    st->cr();
   }
 #endif
 };

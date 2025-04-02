@@ -60,35 +60,49 @@ MemPointer MemPointerParser::parse(MemPointerParserCallback& callback
     parse_sub_expression(_worklist.pop(), callback);
   }
 
-  // Sorting by variable idx means that all summands with the same variable are consecutive.
-  // This simplifies the combining of summands with the same variable below.
-  _summands.sort(MemPointerRawSummand::cmp_by_variable_idx);
+  NOT_PRODUCT( if (trace.is_trace_parsing()) { MemPointerRawSummand::print_on(tty, _summands); } )
 
-  // TODO: sort by variable and _int_group, combine here, and then combine later
-  //       again.
-  // // Combine summands for the same variable, adding up the scales.
-  // int pos_put = 0;
-  // int pos_get = 0;
-  // while (pos_get < _summands.length()) {
-  //   const MemPointerSummand& summand = _summands.at(pos_get++);
-  //   Node* variable      = summand.variable();
-  //   NoOverflowInt scale = summand.scale();
-  //   // Add up scale of all summands with the same variable.
-  //   while (pos_get < _summands.length() && _summands.at(pos_get).variable() == variable) {
-  //     MemPointerSummand s = _summands.at(pos_get++);
-  //     scale = scale + s.scale();
-  //   }
-  //   // Bail out if scale is NaN.
-  //   if (scale.is_NaN()) {
-  //     return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA trace));
-  //   }
-  //   // Keep summands with non-zero scale.
-  //   if (!scale.is_zero()) {
-  //     _summands.at_put(pos_put++, MemPointerSummand(variable, scale));
-  //   }
-  // }
-  // _summands.trunc_to(pos_put);
+  // We sort by:
+  //  - int group id
+  //  - variable idx
+  // This means that summands of the same int group with the same variable are consecutive.
+  // This simplifies the combining of summands below.
+  _summands.sort(MemPointerRawSummand::cmp_by_int_group_and_variable_idx);
 
+  // Combine summands of the same int group with the same variable, adding up the scales.
+  int pos_put = 0;
+  int pos_get = 0;
+  while (pos_get < _summands.length()) {
+    const MemPointerRawSummand& summand = _summands.at(pos_get++);
+    Node* variable      = summand.variable();
+    NoOverflowInt scaleI = summand.scaleI();
+    NoOverflowInt scaleL = summand.scaleL();
+    int int_group = summand.int_group();
+    // Add up scale of all summands with the same variable.
+    while (pos_get < _summands.length() &&
+           _summands.at(pos_get).int_group() == int_group &&
+           _summands.at(pos_get).variable() == variable) {
+      MemPointerRawSummand s = _summands.at(pos_get++);
+      if (int_group == 0) {
+        assert(scaleI.is_one() && s.scaleI().is_one(), "no ConvI2L");
+        scaleL = scaleL + s.scaleL();
+      } else {
+        assert(scaleL.value() == s.scaleL().value(), "same ConvI2L, same scaleL");
+        scaleI = scaleI + s.scaleI();
+      }
+    }
+    // Bail out if scale is NaN.
+    if (scaleI.is_NaN() || scaleL.is_NaN()) {
+      return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA trace));
+    }
+    // Keep summands with non-zero scale.
+    if (!scaleI.is_zero() && !scaleL.is_NaN()) {
+      _summands.at_put(pos_put++, MemPointerRawSummand(variable, scaleI, scaleL, int_group));
+    }
+  }
+  _summands.trunc_to(pos_put);
+
+  NOT_PRODUCT( if (trace.is_trace_parsing()) { MemPointerRawSummand::print_on(tty, _summands); } )
   return MemPointer::make(pointer, _summands, size NOT_PRODUCT(COMMA trace));
 }
 
@@ -121,8 +135,8 @@ void MemPointerParser::parse_sub_expression(const MemPointerRawSummand& summand,
         // Decompose addition.
         Node* a = n->in((opc == Op_AddP) ? 2 : 1);
         Node* b = n->in((opc == Op_AddP) ? 3 : 2);
-        _worklist.push(MemPointerRawSummand::make(a, scaleI, scaleL, int_group));
-        _worklist.push(MemPointerRawSummand::make(b, scaleI, scaleL, int_group));
+        _worklist.push(MemPointerRawSummand(a, scaleI, scaleL, int_group));
+        _worklist.push(MemPointerRawSummand(b, scaleI, scaleL, int_group));
         callback.callback(n);
         return;
       }
@@ -140,8 +154,8 @@ void MemPointerParser::parse_sub_expression(const MemPointerRawSummand& summand,
         NoOverflowInt sub_scaleI = (int_group == 0) ? scaleI : scaleI * NoOverflowInt(-1);
         NoOverflowInt sub_scaleL = (int_group == 0) ? scaleL * NoOverflowInt(-1) : scaleL;
 
-        _worklist.push(MemPointerRawSummand::make(a,     scaleI,     scaleL, int_group));
-        _worklist.push(MemPointerRawSummand::make(b, sub_scaleI, sub_scaleL, int_group));
+        _worklist.push(MemPointerRawSummand(a,     scaleI,     scaleL, int_group));
+        _worklist.push(MemPointerRawSummand(b, sub_scaleI, sub_scaleL, int_group));
         callback.callback(n);
         return;
       }
@@ -180,7 +194,7 @@ void MemPointerParser::parse_sub_expression(const MemPointerRawSummand& summand,
         NoOverflowInt mul_scaleI = (int_group == 0) ? scaleI : scaleI * factor;
         NoOverflowInt mul_scaleL = (int_group == 0) ? scaleL * factor : scaleL;
 
-        _worklist.push(MemPointerRawSummand::make(variable, mul_scaleI, mul_scaleL, int_group));
+        _worklist.push(MemPointerRawSummand(variable, mul_scaleI, mul_scaleL, int_group));
         callback.callback(n);
         return;
       }
@@ -217,7 +231,7 @@ void MemPointerParser::parse_sub_expression(const MemPointerRawSummand& summand,
             cast_int_group = _next_int_group++;
           }
 #endif
-          _worklist.push(MemPointerRawSummand::make(a, scaleI, scaleL, cast_int_group));
+          _worklist.push(MemPointerRawSummand(a, scaleI, scaleL, cast_int_group));
           callback.callback(n);
           return;
         }
