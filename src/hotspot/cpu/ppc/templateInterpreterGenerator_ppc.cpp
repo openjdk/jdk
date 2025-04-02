@@ -1996,12 +1996,18 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
   return start;
 }
 
-// Not supported
-address TemplateInterpreterGenerator::generate_currentThread() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_currentThread() {
+  address entry_point = __ pc();
+
+  __ ld(R3_RET, JavaThread::vthread_offset(), R16_thread);
+  __ resolve_oop_handle(R3_RET, R11_scratch1, R12_scratch2, MacroAssembler::PRESERVATION_FRAME_LR);
+
+  // restore caller sp for c2i case (from compiled) and for resized sender frame (from interpreted).
+  __ resize_frame_absolute(R21_sender_SP, R11_scratch1, R0);
+  __ blr();
+
+  return entry_point;
+}
 
 // =============================================================================
 // Exceptions
@@ -2316,11 +2322,11 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
   // Support short-cut for TraceBytecodesAt.
   // Don't call into the VM if we don't want to trace to speed up things.
   Label Lskip_vm_call;
-  if (TraceBytecodesAt > 0 && TraceBytecodesAt < max_intx) {
+  if (TraceBytecodesAt > 0) {
     int offs1 = __ load_const_optimized(R11_scratch1, (address) &TraceBytecodesAt, R0, true);
     int offs2 = __ load_const_optimized(R12_scratch2, (address) &BytecodeCounter::_counter_value, R0, true);
     __ ld(R11_scratch1, offs1, R11_scratch1);
-    __ lwa(R12_scratch2, offs2, R12_scratch2);
+    __ ld(R12_scratch2, offs2, R12_scratch2);
     __ cmpd(CR0, R12_scratch2, R11_scratch1);
     __ blt(CR0, Lskip_vm_call);
   }
@@ -2334,7 +2340,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
   __ mtlr(R31);
   __ pop(state);
 
-  if (TraceBytecodesAt > 0 && TraceBytecodesAt < max_intx) {
+  if (TraceBytecodesAt > 0) {
     __ bind(Lskip_vm_call);
   }
   __ blr();
@@ -2344,9 +2350,9 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 
 void TemplateInterpreterGenerator::count_bytecode() {
   int offs = __ load_const_optimized(R11_scratch1, (address) &BytecodeCounter::_counter_value, R12_scratch2, true);
-  __ lwz(R12_scratch2, offs, R11_scratch1);
+  __ ld(R12_scratch2, offs, R11_scratch1);
   __ addi(R12_scratch2, R12_scratch2, 1);
-  __ stw(R12_scratch2, offs, R11_scratch1);
+  __ std(R12_scratch2, offs, R11_scratch1);
 }
 
 void TemplateInterpreterGenerator::histogram_bytecode(Template* t) {
@@ -2395,7 +2401,7 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
   int offs1 = __ load_const_optimized(R11_scratch1, (address) &StopInterpreterAt, R0, true);
   int offs2 = __ load_const_optimized(R12_scratch2, (address) &BytecodeCounter::_counter_value, R0, true);
   __ ld(R11_scratch1, offs1, R11_scratch1);
-  __ lwa(R12_scratch2, offs2, R12_scratch2);
+  __ ld(R12_scratch2, offs2, R12_scratch2);
   __ cmpd(CR0, R12_scratch2, R11_scratch1);
   __ bne(CR0, L);
   __ illtrap();

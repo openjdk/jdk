@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 ################################################################################
 # Initial bootstrapping, copied and stripped down from Makefile and PreInit.gmk.
 ################################################################################
+
+IS_PREINIT_ENV := true
 
 # In Cygwin, the MAKE variable gets prepended with the current directory if the
 # make executable is called using a Windows mixed path (c:/cygwin/bin/make.exe).
@@ -57,7 +59,7 @@ TOPDIR := $(strip $(patsubst %/make/, %, $(dir $(makefile_path))))
 define SetupVariable
   ifeq ($$($1), )
     ifeq ($2, )
-      $$(info Error: Prebuilt variable $1 is missing, needed for run-tests-prebuilt)
+      $$(info Error: Prebuilt variable $1 is missing, needed for test-prebuilt)
       $$(error Cannot continue.)
     else ifeq ($2, OPTIONAL)
       ifneq ($$(findstring $$(LOG), info debug trace), )
@@ -135,11 +137,9 @@ $(eval $(call SetupVariable,JIB_JAR,OPTIONAL))
 # can include the prebuilt spec file ourselves, without an ephemeral spec
 # wrapper. This is required so we can include MakeBase which is needed for
 # CreateNewSpec.
-HAS_SPEC :=
 include $(TOPDIR)/make/PreInitSupport.gmk
 include $(TOPDIR)/make/common/LogUtils.gmk
 
-$(eval $(call CheckDeprecatedEnvironment))
 $(eval $(call CheckInvalidMakeFlags))
 $(eval $(call ParseLogLevel))
 
@@ -246,7 +246,7 @@ endif
 # Now we can include additional custom support.
 # This might define CUSTOM_NEW_SPEC_LINE
 ifneq ($(CUSTOM_MAKE_DIR), )
-  include $(CUSTOM_MAKE_DIR)/RunTestsPrebuilt.gmk
+  include $(CUSTOM_MAKE_DIR)/RunTestsPrebuilt-pre.gmk
 endif
 
 NEW_SPEC := $(OUTPUTDIR)/run-test-spec.gmk
@@ -296,14 +296,10 @@ test-prebuilt:
         # is unfortunately not available at this point.
 	$(call MakeDir, $(MAKESUPPORT_OUTPUTDIR)/failure-logs)
 	@$(RM) -f $(MAKESUPPORT_OUTPUTDIR)/exit-with-error
-        # The lazy initialization of the cache file in FindTests.gmk does not
-        # always work with RunTests.gmk. To guarantee that the jtreg test groups
-        # are always found and parsed, call FindTests.gmk stand alone once
-        # before calling RunTests.gmk.
-	@cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -f make/common/FindTests.gmk \
-	    SPEC=$(SPEC) FINDTESTS_STAND_ALONE=true \
-	    GENERATE_FIND_TESTS_FILE=true
-	@cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -f make/RunTests.gmk run-test \
+        # We need to fill the FindTest cache before entering RunTests.gmk.
+	@cd $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) SPEC=$(SPEC) \
+	    -f RunTestsPrebuiltFindTests.gmk
+	@cd $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test \
 	    TEST="$(TEST)"
 
 test-prebuilt-with-exit-code: test-prebuilt

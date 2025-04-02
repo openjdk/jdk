@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class AppContentTest {
     private final List<String> testPathArgs;
 
     @Parameters
-    public static Collection data() {
+    public static Collection<?> data() {
         return List.of(new String[][]{
             {TEST_JAVA, TEST_DUKE}, // include two files in two options
             {TEST_JAVA, TEST_BAD},  // try to include non-existant content

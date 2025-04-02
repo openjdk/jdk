@@ -3100,11 +3100,12 @@ void SharedRuntime::generate_deopt_blob() {
 }
 
 #ifdef COMPILER2
-void OptoRuntime::generate_uncommon_trap_blob() {
+UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code.
   ResourceMark rm;
   // Setup code generation tools.
-  CodeBuffer buffer("uncommon_trap_blob", 2048, 1024);
+  const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
+  CodeBuffer buffer(name, 2048, 1024);
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   address start = __ pc();
 
@@ -3227,7 +3228,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
 
   masm->flush();
 
-  _uncommon_trap_blob = UncommonTrapBlob::create(&buffer, oop_maps, frame_size_in_bytes/wordSize);
+  return UncommonTrapBlob::create(&buffer, oop_maps, frame_size_in_bytes/wordSize);
 }
 #endif // COMPILER2
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ import org.w3c.dom.NodeList;
  * @requires (jpackage.test.SQETest != null)
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @compile WinLongVersionTest.java
+ * @compile -Xlint:all -Werror WinLongVersionTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinLongVersionTest.test
  */
@@ -87,7 +87,7 @@ import org.w3c.dom.NodeList;
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @compile WinLongVersionTest.java
+ * @compile -Xlint:all -Werror WinLongVersionTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinLongVersionTest
  */
