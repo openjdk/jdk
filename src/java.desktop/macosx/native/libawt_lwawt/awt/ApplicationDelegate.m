@@ -197,6 +197,17 @@ AWT_ASSERT_APPKIT_THREAD;
     self = [super init];
     if (!self) return self;
 
+    // register for the finish launching and system power off notifications by default
+    NSNotificationCenter *ctr = [NSNotificationCenter defaultCenter];
+    Class clz = [ApplicationDelegate class];
+    [ctr addObserver:clz selector:@selector(_willFinishLaunching) name:NSApplicationWillFinishLaunchingNotification object:nil];
+    [ctr addObserver:clz selector:@selector(_systemWillPowerOff) name:NSWorkspaceWillPowerOffNotification object:nil];
+    [ctr addObserver:clz selector:@selector(_appDidActivate) name:NSApplicationDidBecomeActiveNotification object:nil];
+    [ctr addObserver:clz selector:@selector(_appDidDeactivate) name:NSApplicationDidResignActiveNotification object:nil];
+    [ctr addObserver:clz selector:@selector(_appDidHide) name:NSApplicationDidHideNotification object:nil];
+    [ctr addObserver:clz selector:@selector(_appDidUnhide) name:NSApplicationDidUnhideNotification object:nil];
+    [ctr addObserver:clz selector:@selector(_embeddedEvent:) name:@"EmbeddedEvent" object:nil];
+
     // Prep for about and preferences menu
     BOOL usingDefaultNib = YES;
     if ([NSApp isKindOfClass:[NSApplicationAWT class]]) {
@@ -257,16 +268,6 @@ AWT_ASSERT_APPKIT_THREAD;
                                  aboutAvailable, aboutEnabled, prefsAvailable, prefsEnabled);
     CHECK_EXCEPTION();
 
-    // register for the finish launching and system power off notifications by default
-    NSNotificationCenter *ctr = [NSNotificationCenter defaultCenter];
-    Class clz = [ApplicationDelegate class];
-    [ctr addObserver:clz selector:@selector(_willFinishLaunching) name:NSApplicationWillFinishLaunchingNotification object:nil];
-    [ctr addObserver:clz selector:@selector(_systemWillPowerOff) name:NSWorkspaceWillPowerOffNotification object:nil];
-    [ctr addObserver:clz selector:@selector(_appDidActivate) name:NSApplicationDidBecomeActiveNotification object:nil];
-    [ctr addObserver:clz selector:@selector(_appDidDeactivate) name:NSApplicationDidResignActiveNotification object:nil];
-    [ctr addObserver:clz selector:@selector(_appDidHide) name:NSApplicationDidHideNotification object:nil];
-    [ctr addObserver:clz selector:@selector(_appDidUnhide) name:NSApplicationDidUnhideNotification object:nil];
-
     return self;
 }
 
@@ -290,11 +291,16 @@ static jclass sjc_AppEventHandler = NULL;
     GET_CLASS_RETURN(sjc_AppEventHandler, "com/apple/eawt/_AppEventHandler", ret);
 
 - (void)_handleOpenURLEvent:(NSAppleEventDescriptor *)openURLEvent withReplyEvent:(NSAppleEventDescriptor *)replyEvent {
-AWT_ASSERT_APPKIT_THREAD;
     if (!fHandlesURLTypes) return;
 
     NSString *url = [[openURLEvent paramDescriptorForKeyword:keyDirectObject] stringValue];
+    [self _openURL:url];
 
+    [replyEvent insertDescriptor:[NSAppleEventDescriptor nullDescriptor] atIndex:0];
+}
+
++ (void)_openURL:(NSString *)url {
+AWT_ASSERT_APPKIT_THREAD;
     //fprintf(stderr,"jm_handleOpenURL\n");
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     jstring jURL = NSStringToJavaString(env, url);
@@ -303,8 +309,6 @@ AWT_ASSERT_APPKIT_THREAD;
     (*env)->CallStaticVoidMethod(env, sjc_AppEventHandler, jm_handleOpenURI, jURL);
     CHECK_EXCEPTION();
     (*env)->DeleteLocalRef(env, jURL);
-
-    [replyEvent insertDescriptor:[NSAppleEventDescriptor nullDescriptor] atIndex:0];
 }
 
 // Helper for both open file and print file methods
@@ -473,6 +477,15 @@ AWT_ASSERT_APPKIT_THREAD;
 
 + (void)_systemDidWake {
     [self _notifyJava:com_apple_eawt__AppEventHandler_NOTIFY_SYSTEM_WAKE];
+}
+
++ (void)_embeddedEvent:(NSNotification *)notification {
+    NSString *name = notification.userInfo[@"name"];
+
+    if ([name isEqualToString:@"openURL"]) {
+        NSString *url = notification.userInfo[@"url"];
+        [self _openURL:url];
+    }
 }
 
 + (void)_registerForNotification:(NSNumber *)notificationTypeNum {
