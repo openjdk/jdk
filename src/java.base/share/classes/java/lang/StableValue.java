@@ -444,6 +444,8 @@ public sealed interface StableValue<T>
      * @return {@code true} if the content of this StableValue was set to the
      *         provided {@code content}, {@code false} otherwise
      * @param content to set
+     * @throws IllegalStateException if this method is invoked directly by a supplier
+     *         provided to the {@link #orElseSet(Supplier)} method.
      */
     boolean trySet(T content);
 
@@ -483,9 +485,8 @@ public sealed interface StableValue<T>
      * <p>
      * When this method returns successfully, the content is always set.
      * <p>
-     * This method will always return the same witness value regardless if invoked by
-     * several threads. Also, the provided {@code supplier} will only be invoked once even
-     * if invoked from several threads unless the {@code supplier} throws an exception.
+     * The provided {@code supplier} will only be invoked once even if invoked from
+     * several threads unless the {@code supplier} throws an exception.
      *
      * @param  supplier to be used for computing the content, if not previously set
      * @throws IllegalStateException if the provided {@code supplier} recursively
@@ -658,7 +659,7 @@ public sealed interface StableValue<T>
      * {@return a new stable list with the provided {@code size}}
      * <p>
      * The returned list is an {@linkplain Collection##unmodifiable unmodifiable} list
-     * whose size is known at construction. The list's elements are computed via the
+     * with the provided {@code size}. The list's elements are computed via the
      * provided {@code mapper} when they are first accessed
      * (e.g. via {@linkplain List#get(int) List::get}).
      * <p>
@@ -670,8 +671,11 @@ public sealed interface StableValue<T>
      * If the provided {@code mapper} throws an exception, it is relayed to the initial
      * caller and no value for the element is recorded.
      * <p>
-     * The returned list and its {@link List#subList(int, int) subList} views implement
-     * the {@link RandomAccess} interface.
+     * Any direct {@link List#subList(int, int) subList} or {@link List#reversed()} views
+     * of the returned list are also stable.
+     * <p>
+     * The returned list and its {@link List#subList(int, int) subList} or
+     * {@link List#reversed()} views implement the {@link RandomAccess} interface.
      * <p>
      * The returned list is not {@link Serializable} and, as it is unmodifiable, does
      * not implement the {@linkplain Collection##optional-operation optional operations}
