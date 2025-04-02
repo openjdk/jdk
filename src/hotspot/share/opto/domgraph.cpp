@@ -233,9 +233,20 @@ uint Block_Stack::most_frequent_successor( Block *b ) {
   case Op_Jump:
   case Op_Root:
   case Op_Goto:
-  case Op_NeverBranch:
     freq_idx = 0;               // fall thru
     break;
+  case Op_NeverBranch: {
+    Node* succ = n->as_NeverBranch()->proj_out(0)->unique_ctrl_out();
+    int succ_idx = 0; // normal case
+    if (succ == b->_succs[1]->head()) {
+      // edges swapped, rare case
+      succ_idx = 1;
+    } else {
+      assert(succ == b->_succs[0]->head(), "succ not found");
+    }
+    freq_idx = succ_idx;
+    break;
+  }
   case Op_TailCall:
   case Op_TailJump:
   case Op_ForwardException:
