@@ -40,7 +40,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ParseTest {
 
-
     // Ensure that the parsed text produces the expected number
     // i.e. return limit corresponding to format matched
     @ParameterizedTest
@@ -67,6 +66,8 @@ public class ParseTest {
                 Arguments.of("1# ", " ", 1d, 0),
                 Arguments.of("1#a|2#a", "a", 1d, 0),
                 Arguments.of("1#a|2#aa", "aa", 2d, 0),
+                Arguments.of("1#a|2#aa", "aabb", 2d, 0),
+                Arguments.of("1#a|2#aa", "bbaa", Double.NaN, 0),
                 Arguments.of("1#aa|2#aaa", "a", Double.NaN, 0)
         );
     }
