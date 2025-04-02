@@ -33,11 +33,15 @@ import java.util.ArrayList;
 
 
 /**
- * The {@link Verify} class provides {@link Verify#checkEQ}, which recursively compares the two
- * {@link Object}s by value. It deconstruct an array of objects, compares boxed primitive types,
- * compares the content of arrays and {@link MemorySegment}s, and checks that the messages of two
- * {@link Exception}s are equal. It also checks for the equivalent content in {@code Vector}s from
- * the Vector API.
+ * The {@link Verify} class provide {@link Verify#checkEQ} and {@link Verify#checkEQWithRawBits},
+ * which recursively compare the two  {@link Object}s by value. They deconstruct an array of objects,
+ * compare boxed primitive types, compare the content of arrays and {@link MemorySegment}s, and check
+ * that the messages of two {@link Exception}s are equal. They also checks for the equivalent content
+ * in {@code Vector}s from the Vector API.
+ *
+ * <p>
+ * Further, they compare Objects from arbitrary classes, using reflection. We check the fields of the
+ * Objects, and compare their recursive structure. Since we use reflection, this can be slow.
  *
  * <p>
  * When a comparison fails, then methods print helpful messages, before throwing a {@link VerifyException}.
@@ -45,78 +49,36 @@ import java.util.ArrayList;
  * <p>
  * We have to take special care of {@link Float}s and {@link Double}s, since they both have various
  * encodings for NaN values while the Java specification regards them as equal. Hence, we
- * have two modes of comparison. By default, different NaN values are regarded as equal. This applies
- * to the boxed floating types, as well as arrays of floating arrays. With {@link Options#enableFloatCheckWithRawBits},
- * we compare the raw bits, and so different NaN encodings are not equal.
+ * have two modes of comparison. With {@link Verify#checkEQ} different NaN values are regarded as equal.
+ * This applies to the boxed floating types, as well as arrays of floating arrays. With
+ * {@link Verify#checkEQWithRawBits} we compare the raw bits, and so different NaN encodings are not equal.
  * Note: {@link MemorySegment} data is always compared with raw bits.
- *
- * <p>
- * By default, we only support comparison of the types mentioned above. However, in some cases one
- * might want to compare Objects of arbitrary classes by value, i.e. the recursive structure given
- * by their field values. This feature can be enabled with {@link Options#enableCheckWithArbitraryClasses}.
  */
 public final class Verify {
-
-    /**
-     * The {@link Options} class allows the specification of further verification options.
-     */
-    public final static class Options {
-        boolean isFloatCheckWithRawBits;
-        boolean isCheckWithArbitraryClasses;
-
-        /**
-         * Generates an {@link Options} object with default settings.
-         */
-        public Options() {}
-
-        /**
-         * By default, different NaN values are regarded as equal, but with this option enabled,
-         * we compare the raw bits, and different NaN encodings are regarded as not equal.
-         *
-         * @return The {@code this} reference for chaining.
-         */
-        public Options enableFloatCheckWithRawBits() {
-            isFloatCheckWithRawBits = true;
-            return this;
-        }
-
-        /**
-         * By default, we only support the comparison of a limited set of types, but with this option
-         * enabled, we can compare arbitrary classes by value, and we compare the Objects by
-         * the recursive structure given by their field values.
-         *
-         * @return The {@code this} reference for chaining.
-         */
-        public Options enableCheckWithArbitraryClasses() {
-            isCheckWithArbitraryClasses = true;
-            return this;
-        }
-    }
-
-    private final Options verifyOptions;
+    private final boolean isFloatCheckWithRawBits;
     private final HashMap<Object, Object> a2b = new HashMap<>();
     private final HashMap<Object, Object> b2a = new HashMap<>();
 
-    private Verify(Options verifyOptions) {
-        this.verifyOptions = verifyOptions;
+    private Verify(boolean isFloatCheckWithRawBits) {
+        this.isFloatCheckWithRawBits = isFloatCheckWithRawBits;
     }
 
     /**
      * Verify the content of two Objects, possibly recursively.
+     * Different NaN encodins are considered non-qual, since we compare
+     * floating number by their raw bits.
      *
      * @param a First object to be recursively compared with the second.
      * @param b Second object to be recursively compared with the first.
-     * @param verifyOptions Allows specification of further options.
      * @throws VerifyException If the comparison fails.
      */
-    public static void checkEQ(Object a, Object b, Options verifyOptions) {
-        Verify v = new Verify(verifyOptions);
+    public static void checkEQWithRawBits(Object a, Object b) {
+        Verify v = new Verify(true);
         v.checkEQdispatch(a, b, "<root>", null, null);
     }
 
     /**
      * Verify the content of two Objects, possibly recursively.
-     * Only limited types are implemented (no arbitrary classes).
      * Different NaN encodins are considered equal.
      *
      * @param a First object to be recursively compared with the second.
@@ -124,7 +86,8 @@ public final class Verify {
      * @throws VerifyException If the comparison fails.
      */
     public static void checkEQ(Object a, Object b) {
-        checkEQ(a, b, new Options());
+        Verify v = new Verify(false);
+        v.checkEQdispatch(a, b, "<root>", null, null);
     }
 
     private void checkEQdispatch(Object a, Object b, String field, Object aParent, Object bParent) {
@@ -199,14 +162,8 @@ public final class Verify {
                     return;
                 }
 
-                if (verifyOptions.isCheckWithArbitraryClasses) {
-                    checkEQArbitraryClasses(a, b);
-                    return;
-                } else {
-                    System.err.println("ERROR: Verify.checkEQ failed: type not supported: " + ca.getName());
-                    print(a, b, field, aParent, bParent);
-                    throw new VerifyException("Object type not supported: " + ca.getName() + " -- did you mean to 'enableCheckWithArbitraryClasses'?");
-                }
+                checkEQArbitraryClasses(a, b);
+                return;
             }
         }
     }
@@ -277,16 +234,16 @@ public final class Verify {
      * pattern in all cases, except for NaN we project to the canonical NaN, using Float.floatToIntBits.
      */
     private boolean isFloatEQ(float a, float b) {
-        return verifyOptions.isFloatCheckWithRawBits ? Float.floatToRawIntBits(a) != Float.floatToRawIntBits(b)
-                                                     : Float.floatToIntBits(a) != Float.floatToIntBits(b);
+        return isFloatCheckWithRawBits ? Float.floatToRawIntBits(a) != Float.floatToRawIntBits(b)
+                                       : Float.floatToIntBits(a) != Float.floatToIntBits(b);
     }
 
     /**
      * See comments for "isFloatEQ".
      */
     private boolean isDoubleEQ(double a, double b) {
-        return verifyOptions.isFloatCheckWithRawBits ? Double.doubleToRawLongBits(a) != Double.doubleToRawLongBits(b)
-                                                     : Double.doubleToLongBits(a) != Double.doubleToLongBits(b);
+        return isFloatCheckWithRawBits ? Double.doubleToRawLongBits(a) != Double.doubleToRawLongBits(b)
+                                       : Double.doubleToLongBits(a) != Double.doubleToLongBits(b);
     }
 
     /**
@@ -294,7 +251,7 @@ public final class Verify {
      */
     private void checkEQimpl(float a, float b, String field, Object aParent, Object bParent) {
         if (isFloatEQ(a, b)) {
-            System.err.println("ERROR: Verify.checkEQ failed: value mismatch. check raw: " + verifyOptions.isFloatCheckWithRawBits);
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch. check raw: " + isFloatCheckWithRawBits);
             System.err.println("  Values: " + a + " vs " + b);
             System.err.println("  Raw:    " + Float.floatToRawIntBits(a) + " vs " + Float.floatToRawIntBits(b));
             print(a, b, field, aParent, bParent);
@@ -307,7 +264,7 @@ public final class Verify {
      */
     private void checkEQimpl(double a, double b, String field, Object aParent, Object bParent) {
         if (isDoubleEQ(a, b)) {
-            System.err.println("ERROR: Verify.checkEQ failed: value mismatch. check raw: " + verifyOptions.isFloatCheckWithRawBits);
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch. check raw: " + isFloatCheckWithRawBits);
             System.err.println("       Values: " + a + " vs " + b);
             System.err.println("       Raw:    " + Double.doubleToRawLongBits(a) + " vs " + Double.doubleToRawLongBits(b));
             print(a, b, field, aParent, bParent);
@@ -419,7 +376,7 @@ public final class Verify {
 
         for (int i = 0; i < a.length; i++) {
             if (isFloatEQ(a[i], b[i])) {
-                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + ". check raw: " + verifyOptions.isFloatCheckWithRawBits);
+                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + ". check raw: " + isFloatCheckWithRawBits);
                 print(a, b, field, aParent, bParent);
                 throw new VerifyException("Float array value mismatch " + a[i] + " vs " + b[i]);
             }
@@ -438,7 +395,7 @@ public final class Verify {
 
         for (int i = 0; i < a.length; i++) {
             if (isDoubleEQ(a[i], b[i])) {
-                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + ". check raw: " + verifyOptions.isFloatCheckWithRawBits);
+                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + ". check raw: " + isFloatCheckWithRawBits);
                 print(a, b, field, aParent, bParent);
                 throw new VerifyException("Double array value mismatch " + a[i] + " vs " + b[i]);
             }
