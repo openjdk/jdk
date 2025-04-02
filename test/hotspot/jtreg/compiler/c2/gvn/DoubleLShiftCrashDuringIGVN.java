@@ -32,7 +32,7 @@
  */
 
 public class DoubleLShiftCrashDuringIGVN {
-    public static long shift=0;
+    public static long shift = 0;
 
     public static int test() {
         int s = 1;
