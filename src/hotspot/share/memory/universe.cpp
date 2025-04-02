@@ -409,11 +409,6 @@ void Universe::genesis(TRAPS) {
   assert(arrayOopDesc::length_offset_in_bytes() < static_cast<intptr_t>(os::vm_page_size()),
          "Array length offset is expected to be less than the page size");
 
-  // Initialize KLUT before starting to create any Klass
-  if (UseKLUT) {
-    KlassInfoLUT::initialize();
-  }
-
   { AutoModifyRestore<bool> temporarily(_bootstrapping, true);
 
     java_lang_Class::allocate_fixup_lists();
@@ -867,6 +862,11 @@ jint universe_init() {
             "oop size is not not a multiple of HeapWord size");
 
   TraceTime timer("Genesis", TRACETIME_LOG(Info, startuptime));
+
+  // Initialize KLUT before starting to create any Klass
+  if (UseKLUT) {
+    KlassInfoLUT::initialize();
+  }
 
   initialize_global_behaviours();
 
