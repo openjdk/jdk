@@ -38,7 +38,7 @@ package gc;
  *    -Xbootclasspath/a:.
  *    -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *    -XX:DisableIntrinsic=_Reference_get
- *    TestNativeReferenceGet
+ *    gc.TestNativeReferenceGet
  */
 
 import jdk.test.whitebox.WhiteBox;
