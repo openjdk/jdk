@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.io.PrintStream;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -136,7 +137,28 @@ public final class SecuritySettings {
             for (String s : ssls.getEnabledCipherSuites()) {
                 ostream.println(THREEINDENT + s);
             }
+
+            ostream.println("\n" + TWOINDENT + "Enabled Groups:");
+            String [] groups = ssls.getSSLParameters().getNamedGroups();
+            if (groups == null) {
+                ostream.println(THREEINDENT + "<none>");
+            } else {
+                for (String s : groups) {
+                    ostream.println(THREEINDENT + s);
+                }
+            }
+
+            ostream.println("\n" + TWOINDENT + "Enabled Signature Algorithms:");
+            String [] schemes = ssls.getSSLParameters().getSignatureSchemes();
+            if (schemes == null) {
+                ostream.println(THREEINDENT + "<none>");
+            } else {
+                for (String s : schemes) {
+                    ostream.println(THREEINDENT + s);
+                }
+            }
         }
+
         ostream.println();
     }
 
