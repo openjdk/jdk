@@ -120,6 +120,10 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
          }
     }
 
+    public synchronized int charToGlyphRaw(int unicode) {
+        return charToGlyph(unicode); // TODO
+    }
+
     public synchronized void charsToGlyphs(int count, char[] unicodes, int[] glyphs) {
         cache.get(count, unicodes, glyphs);
     }
