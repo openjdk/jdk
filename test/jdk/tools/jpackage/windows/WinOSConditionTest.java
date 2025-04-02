@@ -65,8 +65,10 @@ public class WinOSConditionTest {
             // MSI error code 1603 is generic.
             // Dig into the last msi log file for log messages specific to failed condition.
             try (final var lines = cmd.winMsiLogFileContents().orElseThrow()) {
-                TKit.assertTextStream("Doing action: LaunchConditions").predicate(String::endsWith)
-                    .andThen(TKit.assertTextStream("Not supported on this version of Windows").predicate(String::endsWith)).apply(lines);
+                TKit.TextStreamVerifier.group()
+                        .add(TKit.assertTextStream("Doing action: LaunchConditions").predicate(String::endsWith))
+                        .add(TKit.assertTextStream("Not supported on this version of Windows").predicate(String::endsWith))
+                        .create().accept(lines.iterator());
             }
         })
         .createMsiLog(true)

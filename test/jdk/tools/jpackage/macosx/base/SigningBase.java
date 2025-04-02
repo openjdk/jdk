@@ -211,7 +211,7 @@ public class SigningBase {
 
     private static void checkString(List<String> result, String lookupString) {
         TKit.assertTextStream(lookupString).predicate(
-                (line, what) -> line.trim().contains(what)).apply(result.stream());
+                (line, what) -> line.trim().contains(what)).apply(result);
     }
 
     @SuppressWarnings("fallthrough")
