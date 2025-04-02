@@ -71,6 +71,17 @@ for w in AOT DYNAMIC STATIC; do
  * @test id=$id
  * @summary Run the $fname test in CDSAppTester::$w workflow.
  * @requires vm.cds & vm.compMode != "Xcomp"
+EOF
+
+    if test "$w" == "AOT"; then
+        cat << EOF >> $fname
+ * @requires vm.cds.supports.aot.class.linking
+ * @comment work around JDK-8345635
+ * @requires !vm.jvmci.enabled
+EOF
+    fi
+
+    cat << EOF >> $fname
  * @comment Some of the tests run excessively slowly with -Xcomp. The original
  *          tests aren't executed with -Xcomp in the CI pipeline, so let's exclude
  *          the generated tests from -Xcomp execution as well.
