@@ -36,6 +36,6 @@ pattern=^([124-8][0-9]{6}): (\S.*)$
 dirs=test/jdk|test/langtools|test/lib-test|test/hotspot/jtreg|test/jaxp
 
 [checks "copyright"]
-files=^(?!LICENSE|license\.txt|.*\.bin|.*\.gif|.*\.jpg|.*\.png|.*\.icon|.*\.tiff|.*\.dat|.*\.patch|.*\.wav|.*\.class|.*-header|.*\.jar|).*
+files=^(?!LICENSE|license\.txt|.*\.bin|.*\.gif|.*\.jpg|.*\.png|.*\.icon|.*\.tiff|.*\.dat|.*\.patch|.*\.wav|.*\.class|.*-header|.*\.jar).*
 oracle_locator=.*Copyright \(c\)(.*)Oracle and/or its affiliates\. All rights reserved\.
 oracle_validator=.*Copyright \(c\) (\d{4})(?:, (\d{4}))?, Oracle and/or its affiliates\. All rights reserved\.

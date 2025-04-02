@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 # questions.
 #
 
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
+
 include FindTests.gmk
 
 # We will always run multiple tests serially
@@ -72,9 +72,6 @@ ifeq ($(call isTargetOs, windows), true)
 endif
 
 ################################################################################
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, RunTests.gmk))
-################################################################################
 
 # This is the JDK that we will test
 JDK_UNDER_TEST := $(JDK_IMAGE_DIR)
@@ -111,8 +108,8 @@ ifneq ($(wildcard $(JTREG_FAILURE_HANDLER)), )
       #
 endif
 
-GTEST_LAUNCHER_DIRS := $(patsubst %/gtestLauncher, %, \
-    $(wildcard $(TEST_IMAGE_DIR)/hotspot/gtest/*/gtestLauncher))
+GTEST_LAUNCHER_DIRS := $(patsubst %/gtestLauncher$(EXECUTABLE_SUFFIX), %, \
+    $(wildcard $(TEST_IMAGE_DIR)/hotspot/gtest/*/gtestLauncher$(EXECUTABLE_SUFFIX)))
 GTEST_VARIANTS := $(strip $(patsubst $(TEST_IMAGE_DIR)/hotspot/gtest/%, %, \
     $(GTEST_LAUNCHER_DIRS)))
 
@@ -533,21 +530,34 @@ define SetupRunGtestTestBody
 	$$(call LogWarn, Test report is stored in $$(strip \
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
 	$$(if $$(wildcard $$($1_RESULT_FILE)), \
-	  $$(eval $1_TOTAL := $$(shell $$(AWK) '/==========.* tests? from .* \
-	      test (cases?|suites?) ran/ { print $$$$2 }' $$($1_RESULT_FILE))) \
-	  $$(if $$($1_TOTAL), , $$(eval $1_TOTAL := 0)) \
+	  $$(eval $1_RUN := $$(shell $$(AWK) \
+	      '/==========.* tests? from .* test (cases?|suites?) ran/ { print $$$$2 }' \
+	      $$($1_RESULT_FILE))) \
+	  $$(if $$($1_RUN), , $$(eval $1_RUN := 0)) \
 	  $$(eval $1_PASSED := $$(shell $$(AWK) '/\[  PASSED  \] .* tests?./ \
 	      { print $$$$4 }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_PASSED), , $$(eval $1_PASSED := 0)) \
+	  $$(eval $1_SKIPPED := $$(shell $$(AWK) \
+	      '/YOU HAVE [0-9]+ DISABLED TEST/ { \
+	          if (match($$$$0, /[0-9]+/, arr)) { \
+	            print arr[0]; \
+	            found=1; \
+	          } \
+	       } \
+	       END { if (!found) print 0; }' \
+	      $$($1_RESULT_FILE))) \
 	  $$(eval $1_FAILED := $$(shell $$(AWK) '/\[  FAILED  \] .* tests?, \
 	      listed below/ { print $$$$4 }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_FAILED), , $$(eval $1_FAILED := 0)) \
 	  $$(eval $1_ERROR := $$(shell \
-	      $$(EXPR) $$($1_TOTAL) - $$($1_PASSED) - $$($1_FAILED))) \
+	      $$(EXPR) $$($1_RUN) - $$($1_PASSED) - $$($1_FAILED))) \
+	  $$(eval $1_TOTAL := $$(shell \
+	      $$(EXPR) $$($1_RUN) + $$($1_SKIPPED))) \
 	, \
 	  $$(eval $1_PASSED := 0) \
 	  $$(eval $1_FAILED := 0) \
 	  $$(eval $1_ERROR := 1) \
+	  $$(eval $1_SKIPPED := 0) \
 	  $$(eval $1_TOTAL := 1) \
 	)
 
@@ -671,6 +681,7 @@ define SetupRunMicroTestBody
 	  $$(eval $1_ERROR := 1) \
 	  $$(eval $1_TOTAL := 1) \
 	)
+	$$(eval $1_SKIPPED := 0)
 
   $1: run-test-$1 parse-test-$1
 
@@ -706,6 +717,9 @@ define SetJtregValue
   endif
 endef
 
+################################################################################
+# Helper function for creating a customized AOT cache for running tests
+################################################################################
 
 # Parameter 1 is the name of the rule.
 #
@@ -716,47 +730,49 @@ endef
 #   $1_AOT_TARGETS   List of all targets that the test rule will need to depend on
 #   $1_AOT_JDK_CACHE The AOT cache file to be used to run the test with
 #
-SetupAot = $(NamedParamsMacroTemplate)
-define SetupAotBody
-  $1_AOT_JDK_CONF  := $$($1_TEST_SUPPORT_DIR)/aot/jdk.aotconf
-  $1_AOT_JDK_CACHE := $$($1_TEST_SUPPORT_DIR)/aot/jdk.aotcache
+SetupAOT = $(NamedParamsMacroTemplate)
+define SetupAOTBody
+  $1_AOT_JDK_OUTPUT_DIR := $$($1_TEST_SUPPORT_DIR)/aot
+  $1_AOT_JDK_CONF := $$($1_AOT_JDK_OUTPUT_DIR)/jdk.aotconf
+  $1_AOT_JDK_CACHE := $$($1_AOT_JDK_OUTPUT_DIR)/jdk.aotcache
+  $1_AOT_JDK_LOG := $$($1_AOT_JDK_OUTPUT_DIR)/TestSetupAOT.log
 
-  $1_JAVA_TOOL_OPTS := $$(addprefix -J, $$($1_VM_OPTIONS))
+  # We execute the training run with the TestSetupAOT class from $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.jar
+  # to touch a fair number of classes inside the JDK. Note that we can't specify a classpath,
+  # or else the AOT cache cannot be used with jtreg test cases that use a different value
+  # for their classpaths. Instead, we cd in the $$($1_AOT_JDK_OUTPUT_DIR) directory,
+  # extract the TestSetupAOT.jar there, and run in that directory without specifying a classpath.
+  # The "java" launcher will have an implicit classpath of ".", so it can pick up the TestSetupAOT
+  # class from the JVM's current directory.
+  #
+  # The TestSetupAOT class (or any other classes that are loaded from ".") will be excluded
+  # from the the AOT cache as "." is an unsupported location. As a result, the AOT cache will contain
+  # only classes from the JDK.
 
   $$($1_AOT_JDK_CACHE): $$(JDK_IMAGE_DIR)/release
-	$$(call MakeDir, $$($1_TEST_SUPPORT_DIR)/aot)
+	$$(call MakeDir, $$($1_AOT_JDK_OUTPUT_DIR))
 
-	$(foreach jtool, javac javap jlink jar, \
-	    $(info AOT: Create cache configuration for $(jtool)) \
-	    $$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot.$(jtool), ( \
-	        $$(FIXPATH) $(JDK_UNDER_TEST)/bin/$(jtool) $$($1_JAVA_TOOL_OPTS) \
-	                    -J-XX:AOTMode=record -J-XX:AOTConfiguration=$$($1_AOT_JDK_CONF).$(jtool) --help \
-	    ))
-	)
-
-	$$(info AOT: Copy $(JDK_UNDER_TEST)/lib/classlist to $$($1_AOT_JDK_CONF).jdk )
-	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot, ( \
-		$$(FIXPATH) $(CP) $(JDK_UNDER_TEST)/lib/classlist $$($1_AOT_JDK_CONF).jdk \
+	$$(call LogWarn, AOT: Create cache configuration) \
+	$$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), ( \
+            cd $$($1_AOT_JDK_OUTPUT_DIR); \
+	    $(JAR) --extract --file $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.jar; \
+	    $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java $$($1_VM_OPTIONS) \
+	        -Xlog:class+load,cds,cds+class=debug:file=$$($1_AOT_JDK_CONF).log  -Xlog:cds*=error \
+	        -XX:AOTMode=record -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) \
+	        TestSetupAOT $$($1_AOT_JDK_OUTPUT_DIR) > $$($1_AOT_JDK_LOG) \
 	))
 
-	$$(FIXPATH) $$(CAT) $$($1_AOT_JDK_CONF).* > $$($1_AOT_JDK_CONF).temp
-	$$(FIXPATH) $$(CAT) $$($1_AOT_JDK_CONF).temp | $(GREP) -v '#' | $(GREP) -v '@' | $(SORT) | \
-	        $(SED) -e 's/id:.*//g' | uniq \
-		> $$($1_AOT_JDK_CONF)
-	$$(FIXPATH) $$(CAT) $$($1_AOT_JDK_CONF).temp | $(GREP) '@cp' | $(SORT) \
-	        >> $$($1_AOT_JDK_CONF)
-
-	$$(info AOT: Generate AOT cache $$($1_AOT_JDK_CACHE) with flags: $$($1_VM_OPTIONS))
-	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot, ( \
-		$$(FIXPATH) $(JDK_UNDER_TEST)/bin/java \
-	        $$($1_VM_OPTIONS) -Xlog:cds,cds+class=debug:file=$$($1_AOT_JDK_CACHE).log \
-		-XX:AOTMode=create -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) -XX:AOTCache=$$($1_AOT_JDK_CACHE) \
+	$$(call LogWarn, AOT: Generate AOT cache $$($1_AOT_JDK_CACHE) with flags: $$($1_VM_OPTIONS))
+	$$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), ( \
+	    $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java \
+	        $$($1_VM_OPTIONS) -Xlog:cds,cds+class=debug:file=$$($1_AOT_JDK_CACHE).log -Xlog:cds*=error \
+	        -XX:ExtraSharedClassListFile=$(JDK_UNDER_TEST)/lib/classlist \
+	        -XX:AOTMode=create -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) -XX:AOTCache=$$($1_AOT_JDK_CACHE) \
 	))
 
   $1_AOT_TARGETS += $$($1_AOT_JDK_CACHE)
 
 endef
-
 
 SetupRunJtregTest = $(NamedParamsMacroTemplate)
 define SetupRunJtregTestBody
@@ -949,11 +965,10 @@ define SetupRunJtregTestBody
   endif
 
   ifeq ($$(JTREG_AOT_JDK), true)
-    $$(info Add AOT target for $1)
-    $$(eval $$(call SetupAot, $1, VM_OPTIONS := $$(JTREG_ALL_OPTIONS) ))
+    $$(call LogWarn, Add AOT target for $1)
+    $$(eval $$(call SetupAOT, $1, VM_OPTIONS := $$(JTREG_ALL_OPTIONS) ))
 
-    $$(info AOT_TARGETS=$$($1_AOT_TARGETS))
-    $$(info AOT_JDK_CACHE=$$($1_AOT_JDK_CACHE))
+    $$(call LogWarn, AOT_JDK_CACHE=$$($1_AOT_JDK_CACHE))
 
     $1_JTREG_BASIC_OPTIONS += -vmoption:-XX:AOTCache="$$($1_AOT_JDK_CACHE)"
   endif
@@ -1038,23 +1053,64 @@ define SetupRunJtregTestBody
 	$$(call LogWarn, Finished running test '$$($1_TEST)')
 	$$(call LogWarn, Test report is stored in $$(strip \
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
+
+	# Read jtreg documentation to learn on the test stats categories:
+	# https://github.com/openjdk/jtreg/blob/master/src/share/doc/javatest/regtest/faq.md#what-do-all-those-numbers-in-the-test-results-line-mean
+	# In jtreg, "skipped:" category accounts for tests that threw jtreg.SkippedException at runtime.
+	# At the same time these tests contribute to "passed:" tests.
+	# In here we don't want that and so we substract number of "skipped:" from "passed:".
+
 	$$(if $$(wildcard $$($1_RESULT_FILE)), \
-	  $$(eval $1_PASSED := $$(shell $$(AWK) '{ gsub(/[,;]/, ""); \
+	  $$(eval $1_PASSED_AND_RUNTIME_SKIPPED := $$(shell $$(AWK) '{ gsub(/[,;]/, ""); \
 	      for (i=1; i<=NF; i++) { if ($$$$i == "passed:") \
 	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
-	  $$(if $$($1_PASSED), , $$(eval $1_PASSED := 0)) \
+	  $$(if $$($1_PASSED_AND_RUNTIME_SKIPPED), , $$(eval $1_PASSED_AND_RUNTIME_SKIPPED := 0)) \
 	  $$(eval $1_FAILED := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
 	      for (i=1; i<=NF; i++) { if ($$$$i == "failed:") \
 	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_FAILED), , $$(eval $1_FAILED := 0)) \
+	  $$(eval $1_RUNTIME_SKIPPED := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
+	      for (i=1; i<=NF; i++) { if ($$$$i == "skipped:") \
+	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
+	  $$(if $$($1_RUNTIME_SKIPPED), , $$(eval $1_RUNTIME_SKIPPED := 0)) \
+	  $$(eval $1_SKIPPED := $$(shell \
+	      $$(AWK) \
+	        'BEGIN { \
+	          overall_skipped = 0; \
+	          patterns[1] = "skipped"; \
+	          patterns[2] = "excluded"; \
+	          patterns[3] = "not in match-list"; \
+	          patterns[4] = "did not match keywords"; \
+	          patterns[5] = "did not meet module requirements"; \
+	          patterns[6] = "did not meet platform requirements"; \
+	          patterns[7] = "did not match prior status"; \
+	          patterns[8] = "did not meet time-limit requirements"; \
+	        } { \
+	          split($$$$0, arr, ";"); \
+	          for (item in arr) { \
+	            for (p in patterns) { \
+	              if (match(arr[item], patterns[p] ": [0-9]+")) { \
+	                overall_skipped += substr(arr[item], RSTART + length(patterns[p]) + 2, RLENGTH); \
+	              } \
+	            } \
+	          } \
+	          print overall_skipped; \
+	        }' \
+	        $$($1_RESULT_FILE) \
+	  )) \
 	  $$(eval $1_ERROR := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
 	      for (i=1; i<=NF; i++) { if ($$$$i == "error:") \
 	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_ERROR), , $$(eval $1_ERROR := 0)) \
+	  \
+	  $$(eval $1_PASSED := $$(shell \
+	      $$(EXPR) $$($1_PASSED_AND_RUNTIME_SKIPPED) - $$($1_RUNTIME_SKIPPED))) \
 	  $$(eval $1_TOTAL := $$(shell \
-	      $$(EXPR) $$($1_PASSED) + $$($1_FAILED) + $$($1_ERROR))) \
+	      $$(EXPR) $$($1_PASSED) + $$($1_FAILED) + $$($1_ERROR) + $$($1_SKIPPED))) \
 	, \
-	  $$(eval $1_PASSED := 0) \
+	  $$(eval $1_PASSED_AND_RUNTIME_SKIPPED := 0) \
+	  $$(eval $1_RUNTIME_SKIPPED := 0) \
+	  $$(eval $1_SKIPPED := 0) \
 	  $$(eval $1_FAILED := 0) \
 	  $$(eval $1_ERROR := 1) \
 	  $$(eval $1_TOTAL := 1) \
@@ -1113,8 +1169,6 @@ define SetupRunSpecialTestBody
 	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
 	))
 
-  $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/gtest.txt
-
   # We can not parse the various "special" tests.
   parse-test-$1: run-test-$1
 	$$(call LogWarn, Finished running test '$$($1_TEST)')
@@ -1124,6 +1178,7 @@ define SetupRunSpecialTestBody
 	$$(eval $1_PASSED := $$(shell \
 	  if [ `$(CAT) $$($1_EXITCODE)` = "0" ]; then $(ECHO) 1; else $(ECHO) 0; fi \
 	))
+	$$(eval $1_SKIPPED := 0)
 	$$(eval $1_FAILED := $$(shell \
 	  if [ `$(CAT) $$($1_EXITCODE)` = "0" ]; then $(ECHO) 0; else $(ECHO) 1; fi \
 	))
@@ -1233,8 +1288,8 @@ run-test-report: post-run-test
 	$(ECHO) >> $(TEST_SUMMARY) ==============================
 	$(ECHO) >> $(TEST_SUMMARY) Test summary
 	$(ECHO) >> $(TEST_SUMMARY) ==============================
-	$(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5s %5s %5s %5s %2s\n" "  " \
-	    TEST TOTAL PASS FAIL ERROR " "
+	$(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5s %5s %5s %5s %5s %2s\n" "  " \
+	    TEST TOTAL PASS FAIL ERROR SKIP " "
 	$(foreach test, $(TESTS_TO_RUN), \
 	  $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
 	      $(TR) -cs '[a-z][A-Z][0-9]\n' '[_*1000]')) \
@@ -1246,15 +1301,15 @@ run-test-report: post-run-test
 	  , \
 	    $(eval TEST_NAME := $(test)) \
 	  ) \
-	  $(if $(filter $($(TEST_ID)_PASSED), $($(TEST_ID)_TOTAL)), \
-	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %2s\n" \
-	        "  " "$(TEST_NAME)" $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) \
-	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) "  " $(NEWLINE) \
-	  , \
-	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %2s\n" \
+	  $(if $(filter-out 0, $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR)), \
+	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %5d %2s\n" \
 	         ">>" "$(TEST_NAME)" $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) \
-	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) "<<" $(NEWLINE) \
+	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) $($(TEST_ID)_SKIPPED) "<<" $(NEWLINE) \
 	    $(eval TEST_FAILURE := true) \
+	  , \
+	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %5d %2s\n" \
+	        "  " "$(TEST_NAME)" $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) \
+	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) $($(TEST_ID)_SKIPPED) "  " $(NEWLINE) \
 	  ) \
 	)
 	$(ECHO) >> $(TEST_SUMMARY) ==============================
@@ -1357,4 +1412,8 @@ endif
 
 all: run-test
 
-.PHONY: default all $(TARGETS)
+.PHONY: $(TARGETS)
+
+################################################################################
+
+include MakeFileEnd.gmk

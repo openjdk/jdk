@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,12 @@
     return false;
   }
 
-  // PPC implementation uses VSX load/store instructions (if
-  // SuperwordUseVSX) which support 4 byte but not arbitrary alignment
+  // The PPC implementation uses VSX lxvd2x/stxvd2x instructions (if
+  // SuperwordUseVSX). They do not have alignment requirements.
+  // Some VSX storage access instructions cannot encode arbitrary displacements
+  // (e.g. lxv). None of them is currently used.
   static constexpr bool misaligned_vectors_ok() {
-    return false;
+    return true;
   }
 
   // Whether code generation need accurate ConvI2L types.
@@ -112,9 +114,6 @@
   // piece-by-piece. Only happens when passing doubles into C code as the
   // Java calling convention forces doubles to be aligned.
   static const bool misaligned_doubles_ok = true;
-
-  // Advertise here if the CPU requires explicit rounding operations to implement strictfp mode.
-  static const bool strict_fp_requires_explicit_rounding = false;
 
   // Do floats take an entire double register or just half?
   //

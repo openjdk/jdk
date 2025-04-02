@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 public final class LinuxHelper {
     private static String getReleaseSuffix(JPackageCommand cmd) {
-        String value = null;
+        final String value;
         final PackageType packageType = cmd.packageType();
         switch (packageType) {
             case LINUX_DEB:
@@ -60,6 +60,9 @@ public final class LinuxHelper {
                 value = "-" + cmd.getArgumentValue("--linux-app-release",
                         () -> "1");
                 break;
+
+            default:
+                value = null;
         }
         return value;
     }
@@ -95,7 +98,7 @@ public final class LinuxHelper {
         cmd.verifyIsOfType(PackageType.LINUX);
 
         final PackageType packageType = cmd.packageType();
-        String format = null;
+        final String format;
         switch (packageType) {
             case LINUX_DEB:
                 format = "%s_%s%s_%s";
@@ -104,6 +107,9 @@ public final class LinuxHelper {
             case LINUX_RPM:
                 format = "%s-%s%s.%s";
                 break;
+
+            default:
+                throw new UnsupportedOperationException();
         }
 
         final String releaseSuffix = getReleaseSuffix(cmd);
@@ -119,7 +125,7 @@ public final class LinuxHelper {
         final PackageType packageType = cmd.packageType();
         final Path packageFile = cmd.outputBundle();
 
-        Executor exec = null;
+        final Executor exec;
         switch (packageType) {
             case LINUX_DEB:
                 exec = Executor.of("dpkg", "--contents").addArgument(packageFile);
@@ -128,6 +134,9 @@ public final class LinuxHelper {
             case LINUX_RPM:
                 exec = Executor.of("rpm", "-qpl").addArgument(packageFile);
                 break;
+
+            default:
+                throw new UnsupportedOperationException();
         }
 
         Stream<String> lines = exec.executeAndGetOutput().stream();
@@ -154,9 +163,10 @@ public final class LinuxHelper {
                 return Executor.of("rpm", "-qp", "-R")
                 .addArgument(cmd.outputBundle())
                 .executeAndGetOutput();
+
+            default:
+                throw new UnsupportedOperationException();
         }
-        // Unreachable
-        return null;
     }
 
     public static String getBundleProperty(JPackageCommand cmd,
@@ -178,64 +188,68 @@ public final class LinuxHelper {
             case LINUX_RPM:
                 return getRpmBundleProperty(cmd.outputBundle(), propertyName.get(
                         packageType));
+
+            default:
+                throw new UnsupportedOperationException();
         }
-        // Unrechable
-        return null;
     }
 
     static PackageHandlers createDebPackageHandlers() {
-        PackageHandlers deb = new PackageHandlers();
-        deb.installHandler = cmd -> {
-            cmd.verifyIsOfType(PackageType.LINUX_DEB);
-            Executor.of("sudo", "dpkg", "-i")
-            .addArgument(cmd.outputBundle())
-            .execute();
-        };
-        deb.uninstallHandler = cmd -> {
-            cmd.verifyIsOfType(PackageType.LINUX_DEB);
-            var packageName = getPackageName(cmd);
-            String script = String.format("! dpkg -s %s || sudo dpkg -r %s",
-                    packageName, packageName);
-            Executor.of("sh", "-c", script).execute();
-        };
-        deb.unpackHandler = (cmd, destinationDir) -> {
-            cmd.verifyIsOfType(PackageType.LINUX_DEB);
-            Executor.of("dpkg", "-x")
-            .addArgument(cmd.outputBundle())
-            .addArgument(destinationDir)
-            .execute();
-            return destinationDir;
-        };
-        return deb;
+        return new PackageHandlers(LinuxHelper::installDeb, LinuxHelper::uninstallDeb, LinuxHelper::unpackDeb);
+    }
+
+    private static int installDeb(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.LINUX_DEB);
+        return Executor.of("sudo", "dpkg", "-i")
+                .addArgument(cmd.outputBundle())
+                .execute().getExitCode();
+    }
+
+    private static void uninstallDeb(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.LINUX_DEB);
+        var packageName = getPackageName(cmd);
+        String script = String.format("! dpkg -s %s || sudo dpkg -r %s",
+                packageName, packageName);
+        Executor.of("sh", "-c", script).execute();
+    }
+
+    private static Path unpackDeb(JPackageCommand cmd, Path destinationDir) {
+        cmd.verifyIsOfType(PackageType.LINUX_DEB);
+        Executor.of("dpkg", "-x")
+        .addArgument(cmd.outputBundle())
+        .addArgument(destinationDir)
+        .execute(0);
+        return destinationDir;
     }
 
     static PackageHandlers createRpmPackageHandlers() {
-        PackageHandlers rpm = new PackageHandlers();
-        rpm.installHandler = cmd -> {
-            cmd.verifyIsOfType(PackageType.LINUX_RPM);
-            Executor.of("sudo", "rpm", "-U")
-            .addArgument(cmd.outputBundle())
-            .execute();
-        };
-        rpm.uninstallHandler = cmd -> {
-            cmd.verifyIsOfType(PackageType.LINUX_RPM);
-            var packageName = getPackageName(cmd);
-            String script = String.format("! rpm -q %s || sudo rpm -e %s",
-                    packageName, packageName);
-            Executor.of("sh", "-c", script).execute();
-        };
-        rpm.unpackHandler = (cmd, destinationDir) -> {
-            cmd.verifyIsOfType(PackageType.LINUX_RPM);
-            Executor.of("sh", "-c", String.format(
-                    "rpm2cpio '%s' | cpio -idm --quiet",
-                    JPackageCommand.escapeAndJoin(
-                            cmd.outputBundle().toAbsolutePath().toString())))
-            .setDirectory(destinationDir)
-            .execute();
-            return destinationDir;
-        };
+        return new PackageHandlers(LinuxHelper::installRpm, LinuxHelper::uninstallRpm, LinuxHelper::unpackRpm);
+    }
 
-        return rpm;
+    private static int installRpm(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.LINUX_RPM);
+        return Executor.of("sudo", "rpm", "-U")
+                .addArgument(cmd.outputBundle())
+                .execute().getExitCode();
+    }
+
+    private static void uninstallRpm(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.LINUX_RPM);
+        var packageName = getPackageName(cmd);
+        String script = String.format("! rpm -q %s || sudo rpm -e %s",
+                packageName, packageName);
+        Executor.of("sh", "-c", script).execute();
+    }
+
+    private static Path unpackRpm(JPackageCommand cmd, Path destinationDir) {
+        cmd.verifyIsOfType(PackageType.LINUX_RPM);
+        Executor.of("sh", "-c", String.format(
+                "rpm2cpio '%s' | cpio -idm --quiet",
+                JPackageCommand.escapeAndJoin(
+                        cmd.outputBundle().toAbsolutePath().toString())))
+        .setDirectory(destinationDir)
+        .execute(0);
+        return destinationDir;
     }
 
     static Path getLauncherPath(JPackageCommand cmd) {
@@ -275,9 +289,9 @@ public final class LinuxHelper {
                 String size = getRpmBundleProperty(packageFile, "Size");
                 return (Long.parseLong(size) + 1023L) >> 10; // in KB rounded up
 
+            default:
+                throw new UnsupportedOperationException();
         }
-
-        return 0;
     }
 
     static String getDebBundleProperty(Path bundle, String fieldName) {
@@ -425,7 +439,7 @@ public final class LinuxHelper {
             return null;
         }));
 
-        final Set<String> mandatoryKeys = new HashSet(Set.of("Name", "Comment",
+        final Set<String> mandatoryKeys = new HashSet<>(Set.of("Name", "Comment",
                 "Exec", "Icon", "Terminal", "Type", "Categories"));
         mandatoryKeys.removeAll(data.keySet());
         TKit.assertTrue(mandatoryKeys.isEmpty(), String.format(
@@ -626,10 +640,10 @@ public final class LinuxHelper {
 
             case LINUX_RPM:
                 return getRpmScriptlets(cmd, scriptletSet);
-        }
 
-        // Unreachable
-        return null;
+            default:
+                throw new UnsupportedOperationException();
+        }
     }
 
     private static Map<Scriptlet, List<String>> getDebScriptlets(
@@ -703,7 +717,7 @@ public final class LinuxHelper {
 
         String arch = archs.get(type);
         if (arch == null) {
-            Executor exec = null;
+            final Executor exec;
             switch (type) {
                 case LINUX_DEB:
                     exec = Executor.of("dpkg", "--print-architecture");
@@ -712,6 +726,9 @@ public final class LinuxHelper {
                 case LINUX_RPM:
                     exec = Executor.of("rpmbuild", "--eval=%{_target_cpu}");
                     break;
+
+                default:
+                    throw new UnsupportedOperationException();
             }
             arch = exec.executeAndGetFirstLineOfOutput();
             archs.put(type, arch);

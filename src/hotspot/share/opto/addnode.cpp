@@ -32,6 +32,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
+#include "runtime/stubRoutines.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -555,6 +556,22 @@ Node *AddFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return commute(phase, this) ? this : nullptr;
 }
 
+//=============================================================================
+//------------------------------add_of_identity--------------------------------
+// Check for addition of the identity
+const Type* AddHFNode::add_of_identity(const Type* t1, const Type* t2) const {
+  return nullptr;
+}
+
+// Supplied function returns the sum of the inputs.
+// This also type-checks the inputs for sanity.  Guaranteed never to
+// be passed a TOP or BOTTOM type, these are filtered out by pre-check.
+const Type* AddHFNode::add_ring(const Type* t0, const Type* t1) const {
+  if (!t0->isa_half_float_constant() || !t1->isa_half_float_constant()) {
+    return bottom_type();
+  }
+  return TypeH::make(t0->getf() + t1->getf());
+}
 
 //=============================================================================
 //------------------------------add_of_identity--------------------------------
@@ -837,6 +854,12 @@ const Type *OrINode::add_ring( const Type *t0, const Type *t1 ) const {
     }
   }
 
+  // If either input is all ones, the output is all ones.
+  // x | ~0 == ~0 <==> x | -1 == -1
+  if (r0 == TypeInt::MINUS_1 || r1 == TypeInt::MINUS_1) {
+    return TypeInt::MINUS_1;
+  }
+
   // If either input is not a constant, just return all integers.
   if( !r0->is_con() || !r1->is_con() )
     return TypeInt::INT;        // Any integer, but still no symbols.
@@ -893,6 +916,12 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 const Type *OrLNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeLong *r0 = t0->is_long(); // Handy access
   const TypeLong *r1 = t1->is_long();
+
+  // If either input is all ones, the output is all ones.
+  // x | ~0 == ~0 <==> x | -1 == -1
+  if (r0 == TypeLong::MINUS_1 || r1 == TypeLong::MINUS_1) {
+    return TypeLong::MINUS_1;
+  }
 
   // If either input is not a constant, just return all integers.
   if( !r0->is_con() || !r1->is_con() )
@@ -1505,6 +1534,33 @@ Node* MaxNode::Identity(PhaseGVN* phase) {
 }
 
 //------------------------------add_ring---------------------------------------
+const Type* MinHFNode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeH* r0 = t0->isa_half_float_constant();
+  const TypeH* r1 = t1->isa_half_float_constant();
+  if (r0 == nullptr || r1 == nullptr) {
+    return bottom_type();
+  }
+
+  if (r0->is_nan()) {
+    return r0;
+  }
+  if (r1->is_nan()) {
+    return r1;
+  }
+
+  float f0 = r0->getf();
+  float f1 = r1->getf();
+  if (f0 != 0.0f || f1 != 0.0f) {
+    return f0 < f1 ? r0 : r1;
+  }
+
+  // As per IEEE 754 specification, floating point comparison consider +ve and -ve
+  // zeros as equals. Thus, performing signed integral comparison for min value
+  // detection.
+  return (jint_cast(f0) < jint_cast(f1)) ? r0 : r1;
+}
+
+//------------------------------add_ring---------------------------------------
 const Type* MinFNode::add_ring(const Type* t0, const Type* t1 ) const {
   const TypeF* r0 = t0->isa_float_constant();
   const TypeF* r1 = t1->isa_float_constant();
@@ -1553,6 +1609,34 @@ const Type* MinDNode::add_ring(const Type* t0, const Type* t1) const {
   // handle min of 0.0, -0.0 case.
   return (jlong_cast(d0) < jlong_cast(d1)) ? r0 : r1;
 }
+
+//------------------------------add_ring---------------------------------------
+const Type* MaxHFNode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeH* r0 = t0->isa_half_float_constant();
+  const TypeH* r1 = t1->isa_half_float_constant();
+  if (r0 == nullptr || r1 == nullptr) {
+    return bottom_type();
+  }
+
+  if (r0->is_nan()) {
+    return r0;
+  }
+  if (r1->is_nan()) {
+    return r1;
+  }
+
+  float f0 = r0->getf();
+  float f1 = r1->getf();
+  if (f0 != 0.0f || f1 != 0.0f) {
+    return f0 > f1 ? r0 : r1;
+  }
+
+  // As per IEEE 754 specification, floating point comparison consider +ve and -ve
+  // zeros as equals. Thus, performing signed integral comparison for max value
+  // detection.
+  return (jint_cast(f0) > jint_cast(f1)) ? r0 : r1;
+}
+
 
 //------------------------------add_ring---------------------------------------
 const Type* MaxFNode::add_ring(const Type* t0, const Type* t1) const {
