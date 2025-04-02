@@ -67,7 +67,6 @@ public class FPModWithoutControlProj {
                 } while (f1 < 234);
             }
         }
-
     }
 
     @Test
@@ -90,6 +89,5 @@ public class FPModWithoutControlProj {
                 } while (f1 < 234);
             }
         }
-
     }
 }
