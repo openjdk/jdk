@@ -37,6 +37,7 @@ inline unsigned KlassInfoLUT::num_entries() {
 }
 
 ALWAYSINLINE uint32_t KlassInfoLUT::at(unsigned index) {
+  assert(_entries != nullptr, "LUT table does not exist");
   assert(index < num_entries(), "oob (%x vs %x)", index, num_entries());
   return _entries[index];
 }
