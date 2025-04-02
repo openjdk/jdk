@@ -26,7 +26,6 @@
 #define SHARE_RUNTIME_BASICLOCK_INLINE_HPP
 
 #include "runtime/basicLock.hpp"
-#include "runtime/objectMonitor.inline.hpp"
 
 inline markWord BasicLock::displaced_header() const {
   assert(LockingMode == LM_LEGACY, "must be");
@@ -38,15 +37,10 @@ inline void BasicLock::set_displaced_header(markWord header) {
   Atomic::store(&_metadata, header.value());
 }
 
-inline ObjectMonitor* BasicLock::object_monitor_cache() {
+inline ObjectMonitor* BasicLock::object_monitor_cache() const {
   assert(UseObjectMonitorTable, "must be");
 #if !defined(ZERO) && (defined(X86) || defined(AARCH64) || defined(RISCV64) || defined(PPC64) || defined(S390))
-  ObjectMonitor* monitor = reinterpret_cast<ObjectMonitor*>(get_metadata());
-  if (monitor != nullptr && monitor->is_being_async_deflated()) {
-    clear_object_monitor_cache();
-    return nullptr;
-  }
-  return monitor;
+  return reinterpret_cast<ObjectMonitor*>(get_metadata());
 #else
   // Other platforms do not make use of the cache yet,
   // and are not as careful with maintaining the invariant
