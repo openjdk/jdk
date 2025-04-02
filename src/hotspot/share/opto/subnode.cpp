@@ -2021,6 +2021,36 @@ const Type* SqrtHFNode::Value(PhaseGVN* phase) const {
   return TypeH::make((float)sqrt((double)f));
 }
 
+template<typename T, BasicType B>
+const Type* reverse_bytes(const Node* node, PhaseGVN* phase) {
+  const Type* type = phase->type(node->in(1));
+  if (type == Type::TOP) {
+    return Type::TOP;
+  }
+  const TypeInteger* typeInteger = type->isa_integer(B);
+  if (typeInteger != nullptr && typeInteger->is_con()) {
+    const T res = byteswap<T>(static_cast<T>(typeInteger->get_con_as_long(B)));
+    return TypeInteger::make(res, B);
+  }
+  return node->bottom_type();
+}
+
+const Type* ReverseBytesINode::Value(PhaseGVN* phase) const {
+  return reverse_bytes<jint, T_INT>(this, phase);
+}
+
+const Type* ReverseBytesSNode::Value(PhaseGVN* phase) const {
+  return reverse_bytes<jshort, T_INT>(this, phase);
+}
+
+const Type* ReverseBytesUSNode::Value(PhaseGVN* phase) const {
+  return reverse_bytes<jchar, T_INT>(this, phase);
+}
+
+const Type* ReverseBytesLNode::Value(PhaseGVN* phase) const {
+  return reverse_bytes<jlong, T_LONG>(this, phase);
+}
+
 const Type* ReverseINode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
   if (t1 == Type::TOP) {

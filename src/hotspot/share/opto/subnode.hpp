@@ -569,6 +569,7 @@ public:
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //-------------------------------ReverseBytesLNode--------------------------------
@@ -579,6 +580,7 @@ public:
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //-------------------------------ReverseBytesUSNode--------------------------------
@@ -589,6 +591,7 @@ public:
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::CHAR; }
   virtual uint ideal_reg() const { return Op_RegI; }
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //-------------------------------ReverseBytesSNode--------------------------------
@@ -599,6 +602,7 @@ public:
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::SHORT; }
   virtual uint ideal_reg() const { return Op_RegI; }
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //-------------------------------ReverseINode--------------------------------
