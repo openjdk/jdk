@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,7 +143,7 @@ public class LocalExecutionControl extends DirectExecutionControl {
         });
 
         final Object[] res = new Object[1];
-        Thread snippetThread = new Thread(execThreadGroup, () -> {
+        Thread snippetThread = new Thread(execThreadGroup, decorateExecution(() -> {
             try {
                 res[0] = doitMethod.invoke(null, new Object[0]);
             } catch (InvocationTargetException e) {
@@ -157,7 +157,7 @@ public class LocalExecutionControl extends DirectExecutionControl {
             } catch (ThreadDeath e) {
                 stopped.set(true);
             }
-        });
+        }));
 
         snippetThread.start();
         Thread[] threadList = new Thread[execThreadGroup.activeCount()];
@@ -224,4 +224,18 @@ public class LocalExecutionControl extends DirectExecutionControl {
         }
     }
 
+    /**
+     * Decorate the task that executes the snippet within the execution thread.
+     *
+     * <p>
+     * Subclasses may configure thread-specific context for snippet execution here.
+     * The implementation in {@link LocalExecutionControl} just returns {@code task}.
+     *
+     * @param task the task to be performed in the snippet execution thread
+     * @return the possibly decorated task
+     * @since 25
+     */
+    protected Runnable decorateExecution(Runnable task) {
+        return task;
+    }
 }
