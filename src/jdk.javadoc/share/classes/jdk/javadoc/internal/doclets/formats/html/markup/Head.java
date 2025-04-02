@@ -70,6 +70,7 @@ public class Head extends Content {
     private final List<Content> extraContent;
     private boolean addDefaultScript = true;
     private DocPath canonicalLink;
+    private boolean syntaxHighlight = false;
 
     /**
      * Creates a {@code Head} object, for a given file and HTML version.
@@ -239,6 +240,16 @@ public class Head extends Content {
     }
 
     /**
+     * Enables or disables support for syntax highlighting.
+     * @param value {@code true} to enable syntax highligting
+     * @return this object
+     */
+    public Head setSyntaxHighlight(boolean value) {
+        this.syntaxHighlight = value;
+        return this;
+    }
+
+    /**
      * Adds additional content to be included in the HEAD element.
      *
      * @param contents the content
@@ -337,6 +348,11 @@ public class Head extends Content {
 
         for (DocPath path : additionalStylesheets) {
             addStylesheet(head, DocPaths.RESOURCE_FILES.resolve(path));
+        }
+
+        if (syntaxHighlight) {
+            addStylesheet(head, DocPaths.RESOURCE_FILES.resolve(DocPaths.HIGHLIGHT_CSS));
+            addScriptElement(head, DocPaths.HIGHLIGHT_JS);
         }
 
         for (DocPath path : localStylesheets) {

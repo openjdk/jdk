@@ -23,11 +23,11 @@
     /* Base font sizes for body and code elements */
     --body-font-size: 14.2px;
     --block-font-size: 14.4px;
-    --code-font-size: 14px;
+    --code-font-size: 13.9px;
     --nav-font-size: 13.4px;
     /* Line height for continuous text blocks */
     --block-line-height: 1.5;
-    --code-line-height: 1.55;
+    --code-line-height: 1.7;
     /* Text colors for body and block elements */
     --body-text-color: #282828;
     --block-text-color: #282828;
@@ -63,7 +63,7 @@
     --toc-highlight-color: var(--subnav-background-color);
     --toc-hover-color: #e9ecf0;
     /* Snippet and pre colors */
-    --snippet-background-color: #f0f0f2;
+    --snippet-background-color: #f2f2f4;
     --snippet-text-color: var(--block-text-color);
     --snippet-highlight-color: #f7c590;
     --pre-background-color: #f3f3f5;
@@ -564,9 +564,6 @@ li.circle {
 ul.horizontal li {
     display:inline;
     font-size:0.9em;
-}
-div.inheritance {
-    font-size: 0.99em;
 }
 div.inheritance div.inheritance {
     margin-left:2em;
@@ -1389,8 +1386,8 @@ button#page-search-copy span {
 /* snippet copy button */
 button.snippet-copy {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: 4px;
+    right: 1px;
     height: 32px;
 }
 button.snippet-copy img {
@@ -1651,9 +1648,9 @@ table.striped > tbody > tr > th {
     }
 }
 pre.snippet {
-    background-color: var(--snippet-background-color);
+    background-color: var(--code-background-color);
     color: var(--snippet-text-color);
-    padding: 10px;
+    padding: 16px;
 }
 div.snippet-container {
     position: relative;
