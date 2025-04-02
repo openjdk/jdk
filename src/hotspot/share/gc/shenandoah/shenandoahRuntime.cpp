@@ -39,6 +39,7 @@ JRT_LEAF(void, ShenandoahRuntime::arraycopy_barrier_narrow_oop(narrowOop* src, n
 JRT_END
 
 JRT_LEAF(void, ShenandoahRuntime::write_ref_field_pre(oopDesc * orig, JavaThread * thread))
+  //tty->print_cr("ShenandoahRuntime::write_ref_field_pre: " PTR_FORMAT, p2i(orig));
   assert(thread == JavaThread::current(), "pre-condition");
   assert(orig != nullptr, "should be optimized out");
   shenandoah_assert_correct(nullptr, orig);
@@ -49,6 +50,7 @@ JRT_LEAF(void, ShenandoahRuntime::write_ref_field_pre(oopDesc * orig, JavaThread
 JRT_END
 
 JRT_LEAF(oopDesc*, ShenandoahRuntime::load_reference_barrier_strong(oopDesc* src, oop* load_addr))
+  //tty->print_cr("LRB-strong on oop: " PTR_FORMAT ", load_addr: " PTR_FORMAT, p2i(src), p2i(load_addr));
   return ShenandoahBarrierSet::barrier_set()->load_reference_barrier_mutator(src, load_addr);
 JRT_END
 

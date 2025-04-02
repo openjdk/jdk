@@ -53,6 +53,12 @@
 #include "gc/z/zBarrierSetRuntime.hpp"
 #include "gc/z/zThreadLocalData.hpp"
 #endif
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
+#include "gc/shenandoah/shenandoahRuntime.hpp"
+#endif
 
 #define VM_STRUCTS(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field) \
   static_field(CompilerToVM::Data,             oopDesc_klass_offset_in_bytes,          int)                                          \
@@ -129,6 +135,8 @@
   static_field(CompilerToVM::Data,             sizeof_arrayOopDesc,                    int)                                          \
   static_field(CompilerToVM::Data,             sizeof_BasicLock,                       int)                                          \
   ZGC_ONLY(static_field(CompilerToVM::Data,    sizeof_ZStoreBarrierEntry,              int))                                         \
+  SHENANDOAHGC_ONLY(static_field(CompilerToVM::Data, shenandoah_in_cset_fast_test_addr, address))                                      \
+  SHENANDOAHGC_ONLY(static_field(CompilerToVM::Data, shenandoah_region_size_bytes_shift,int))                                        \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             dsin,                                   address)                                      \
   static_field(CompilerToVM::Data,             dcos,                                   address)                                      \
@@ -888,6 +896,13 @@
   declare_function(JVMCIRuntime::load_and_clear_exception)                \
   G1GC_ONLY(declare_function(JVMCIRuntime::write_barrier_pre))            \
   G1GC_ONLY(declare_function(JVMCIRuntime::write_barrier_post))           \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_strong))           \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_strong_narrow))    \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_weak))           \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_weak_narrow))    \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_phantom))           \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::load_reference_barrier_phantom_narrow))    \
+  SHENANDOAHGC_ONLY(declare_function(ShenandoahRuntime::pre_barrier))           \
   declare_function(JVMCIRuntime::validate_object)                         \
                                                                           \
   declare_function(JVMCIRuntime::test_deoptimize_call_int)
@@ -934,6 +949,14 @@
 
 #endif // INCLUDE_ZGC
 
+#if INCLUDE_SHENANDOAHGC
+
+#define VM_INT_CONSTANTS_JVMCI_SHENANDOAH(declare_constant, declare_constant_with_value, declare_preprocessor_constant) \
+   declare_constant_with_value("ShenandoahThreadLocalData::gc_state_offset", in_bytes(ShenandoahThreadLocalData::gc_state_offset())) \
+   declare_constant_with_value("ShenandoahThreadLocalData::satb_mark_queue_index_offset", in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset())) \
+   declare_constant_with_value("ShenandoahThreadLocalData::satb_mark_queue_buffer_offset", in_bytes(ShenandoahThreadLocalData::satb_mark_queue_buffer_offset())) \
+
+#endif
 
 #ifdef LINUX
 
@@ -1055,6 +1078,11 @@ VMIntConstantEntry JVMCIVMStructs::localHotSpotVMIntConstants[] = {
   VM_INT_CONSTANTS_JVMCI_ZGC(GENERATE_VM_INT_CONSTANT_ENTRY,
                               GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY,
                               GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
+#endif
+#if INCLUDE_SHENANDOAHGC
+  VM_INT_CONSTANTS_JVMCI_SHENANDOAH(GENERATE_VM_INT_CONSTANT_ENTRY,
+                                    GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY,
+                                    GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 #endif
 #ifdef VM_INT_CPU_FEATURE_CONSTANTS
   VM_INT_CPU_FEATURE_CONSTANTS
