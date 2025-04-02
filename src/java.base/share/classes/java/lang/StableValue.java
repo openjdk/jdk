@@ -47,7 +47,7 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A stable value is a deferred holder of shallowly immutable content.
+ * A stable value is a holder of shallowly immutable content that can be lazily computed.
  * <p>
  * A {@code StableValue<T>} can be created using the factory method
  * {@linkplain StableValue#of() {@code StableValue.of()}}. When created this way,
