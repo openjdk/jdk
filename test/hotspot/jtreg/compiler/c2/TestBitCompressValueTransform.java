@@ -23,8 +23,6 @@
 
 /*
  * @test
- * @key stress randomness
- * @requires vm.compiler2.enabled & os.simpleArch == "x64"
  * @bug 8350896
  * @library /test/lib /
  * @summary C2: wrong result: Integer/Long.compress gets wrong type from CompressBitsNode::Value.
@@ -90,15 +88,15 @@ public class TestBitCompressValueTransform {
         for (int i = 1; i < 100000; i++) {
             res |= test3(i);
         }
-        Asserts.assertGT(res, 0);
+        Asserts.assertLTE(0, res);
     }
 
     @Test
     @IR (counts = { IRNode.COMPRESS_BITS, " 0 "} , failOn = { IRNode.UNSTABLE_IF_TRAP }, applyIfCPUFeature = { "bmi2", "true" })
     public long test4(long value) {
-        long filter_bits = value & 0xF;
-        long compress_bits = Long.compress(15, filter_bits);
-        if (compress_bits > 15) {
+        long filter_bits = value & 0xFL;
+        long compress_bits = Long.compress(15L, filter_bits);
+        if (compress_bits > 15L) {
             value = -1;
         }
         return value;
@@ -110,7 +108,151 @@ public class TestBitCompressValueTransform {
         for (long i = 1; i < 100000; i++) {
             res |= test4(i);
         }
-        Asserts.assertGT(res, 0L);
+        Asserts.assertLTE(0L, res);
+    }
+
+    @Test
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    public long test5(long value) {
+        // Since value range includes -1 hence with mask
+        // and value as -1 all the result bits will be set.
+        long mask = Long.min(10000L, Long.max(-10000L, value));
+        return Long.compress(value, mask);
+    }
+
+    @Run(test = "test5")
+    public void run5(RunInfo info) {
+        long res = 0;
+        for (int i = -10000; i < 100000; i++) {
+            res |= test5((long)i);
+        }
+        Asserts.assertEQ(-1L, res);
+    }
+
+    @Test
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    public long test6(long value) {
+        // For mask within a strictly -ve value range less than -1,
+        // result of compression will always be a +ve value.
+        long mask = Long.min(-2L, Long.max(-10000L, value));
+        return Long.compress(value, mask);
+    }
+
+    @Run(test = "test6")
+    public void run6(RunInfo info) {
+        long res = 0;
+        for (int i = -10000; i < 100000; i++) {
+            res |= test6((long)i);
+        }
+        Asserts.assertLTE(0L, res);
+    }
+
+    @Test
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    public long test7(long value) {
+        // For mask within a strictly +ve value range,
+        // result of compression will always be a +ve value with
+        // upper bound capped at max mask value.
+        long mask = Long.min(10000L, Long.max(0L, value));
+        return Long.compress(value, mask);
+    }
+
+    @Run(test = "test7")
+    public void run7(RunInfo info) {
+        long res = Long.MIN_VALUE;
+        for (int i = -10000; i < 100000; i++) {
+            res = Long.max(test7((long)i), res);
+        }
+        Asserts.assertGTE(10000L, res);
+    }
+
+    @Test
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    public int test8(int value) {
+        // Since value range includes -1 hence with mask
+        // and value as -1 all the result bits will be set.
+        int mask = Integer.min(10000, Integer.max(-10000, value));
+        return Integer.compress(value, mask);
+    }
+
+    @Run(test = "test8")
+    public void run8(RunInfo info) {
+        int res = 0;
+        for (int i = -10000; i < 100000; i++) {
+            res |= test8(i);
+        }
+        Asserts.assertEQ(-1, res);
+    }
+
+    @Test
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    public int test9(int value) {
+        // For mask within a strictly -ve value range less than -1,
+        // result of compression will always be a +ve value.
+        int mask = Integer.min(-2, Integer.max(-10000, value));
+        return Integer.compress(value, mask);
+    }
+
+    @Run(test = "test9")
+    public void run9(RunInfo info) {
+        int res = 0;
+        for (int i = -10000; i < 100000; i++) {
+            res |= test9(i);
+        }
+        Asserts.assertLTE(0, res);
+    }
+
+    @Test
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    public int test10(int value) {
+        // For mask within a strictly +ve value range,
+        // result of compression will always be a +ve value with
+        // upper bound capped at max mask value.
+        int mask = Integer.min(10000, Integer.max(0, value));
+        return Integer.compress(value, mask);
+    }
+
+    @Run(test = "test10")
+    public void run10(RunInfo info) {
+        int res = Integer.MIN_VALUE;
+        for (int i = -10000; i < 100000; i++) {
+            res = Integer.max(test10(i), res);
+        }
+        Asserts.assertGTE(10000, res);
+    }
+
+    @Test
+    @IR (counts = { IRNode.COMPRESS_BITS, " 0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    public int test11(int value) {
+        // For constant zero input, compress is folded to zero
+        int mask = Integer.min(10000, Integer.max(0, value));
+        return Integer.compress(0, mask);
+    }
+
+    @Run(test = "test11")
+    public void run11(RunInfo info) {
+        int res = 0;
+        for (int i = -10000; i < 100000; i++) {
+            res |= test11(i);
+        }
+        Asserts.assertEQ(0, res);
+    }
+
+    @Test
+    @IR (counts = { IRNode.COMPRESS_BITS, " 0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    public long test12(long value) {
+        // For constant zero input, compress is folded to zero
+        long mask = Long.min(10000L, Long.max(0L, value));
+        return Long.compress(0L, mask);
+    }
+
+    @Run(test = "test12")
+    public void run12(RunInfo info) {
+        long res = 0;
+        for (int i = -10000; i < 100000; i++) {
+            res |= test12(i);
+        }
+        Asserts.assertEQ(0L, res);
     }
 
     public static void main(String[] args) {
