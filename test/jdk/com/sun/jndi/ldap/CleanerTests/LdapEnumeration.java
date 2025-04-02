@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,13 +146,17 @@ public class LdapEnumeration {
             if (!gc.wait(() -> whm.size() == 0)) {
                 throw new RuntimeException("NamingEnumeration is still strongly reachable");
             }
-
-            // The enum count should have been decremented
-            int enumCountAfter = (Integer) getField(homeCtx.getClass(), "enumCount", homeCtx);
-            int expected = enumCountBefore - 1;
-            if (enumCountAfter != expected) {
+            // Check that the enum count was decremented by the cleaning action
+            final int expected = enumCountBefore - 1;
+            final Object finalHomeCtx = homeCtx;
+            if (!gc.wait(() -> {
+                    int enumCountAfter = (Integer)getField(finalHomeCtx.getClass(), "enumCount", finalHomeCtx);
+                    System.out.println("enumCountAfter: " + enumCountAfter);
+                    return expected == enumCountAfter;
+                }
+            )) {
                 throw new RuntimeException("enumCount was not decremented. Expected: " +
-                        expected + ", Got:" + enumCountAfter);
+                        expected);
             }
         } finally {
             LDAPTestUtils.cleanupSubcontext(ctx, entryDN);
