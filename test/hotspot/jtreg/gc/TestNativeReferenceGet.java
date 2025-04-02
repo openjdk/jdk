@@ -32,6 +32,7 @@ package gc;
  * Reference.get() works as expected.  Disable the intrinsic implementation to
  * force use of the native method.
  * @library /test/lib
+ * @modules java.base/jdk.internal.access
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
@@ -41,11 +42,13 @@ package gc;
  *    gc.TestNativeReferenceGet
  */
 
-import jdk.test.whitebox.WhiteBox;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+import jdk.internal.access.JavaLangRefAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.test.whitebox.WhiteBox;
 
 public final class TestNativeReferenceGet {
 
@@ -116,15 +119,21 @@ public final class TestNativeReferenceGet {
         }
     }
 
-    private static final long TIMEOUT = 10 * 1000; // 10 seconds, in millis.
+    private static void checkQueue() {
+        if (queue.poll() != null) {
+            throw new RuntimeException("Reference enqueued");
+        }
+    }
 
     private static void check() {
         // None of the references should have been cleared and enqueued,
         // because we have strong references to all the referents.
         try {
-            if (queue.remove(TIMEOUT) != null) {
-                throw new RuntimeException("Reference enqueued");
+            JavaLangRefAccess jlra = SharedSecrets.getJavaLangRefAccess();
+            while (jlra.waitForReferenceProcessing()) {
+                checkQueue();
             }
+            checkQueue();       // One last check after refproc complete.
         } catch (InterruptedException e) {
             throw new RuntimeException("Test interrupted");
         }
