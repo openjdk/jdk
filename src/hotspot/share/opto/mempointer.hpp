@@ -591,12 +591,6 @@ class MemPointerSummand : public StackObj {
 private:
   Node* _variable;
   NoOverflowInt _scale;
-  // TODO: adding info about "int group" would require some fields
-  //       - _scaleL
-  //       - _int_group
-  //       And it would also make comparison more complicated... hmm.
-  //       The alternative is to have two arrays of summands... but that
-  //       seems wasteful as well. Hmm.
 
 public:
   MemPointerSummand() :
@@ -653,6 +647,58 @@ public:
     tty->print(" * [%d %s]", _variable->_idx, _variable->Name());
   }
 #endif
+};
+
+// The MemPointerSummand is designed to allow the simplification of
+// the MemPointer form as much as possible, to allow aliasing checks
+// to be as simple as possible. For example, the pointer:
+//
+//   pointer = base + 2L * ConvI2L(i + 4 * j + con1) + con2
+//
+// is simplified to this MemPointer form:
+//
+//   pointer = base + 2L * ConvI2L(i) + 8L * ConvI2L(j) + con
+//   con = 2L * con1 + con2
+//
+// This is really convenient, because this way we are able to ignore
+// the ConvI2L in the aliasing anaylsis computation, and we can collect
+// all constants to a single constant. Even with this simplicication,
+// we are able to prove the correctness of the aliasing checks.
+//
+// However, there is one thing we are not able to do with this simplification:
+// we cannot reconstruct the original pointer expression, because the
+// simplification ignores overflows that could happen inside the ConvI2L:
+//
+//   2L * ConvI2L(i + 4 * j + con1) != 2L * ConvI2L(i) + 8L * ConvI2L(j) + 2L * con1
+//
+// The MemPointerRawSummand is designed to keep track of the original form
+// of the pointer, preserving its overflow behaviour. We observe that the
+// only critical point for overflows is at the ConvI2L. Thus, we give each
+// ConvI2L a "int group" id > 0, and all raw summands belonging to that ConvI2L
+// have that id. This allows us to reconstruct which raw summands need to
+// be added together before the ConvI2L. Any raw summands that do not belong
+// to a ConvI2L (i.e. the summands with long variables) have "int group"
+// id = 0, since they do not belong to any such "int group" and can be
+// directly added together. For raw summands belonging to an "int group",
+// we need to track the scale inside and outside the ConvI2L. With the
+// example from above:
+//
+//   _variable  = base  _variable  = i  _variable  = j  _variable  = null      _variable  = null
+//   _scale     = 1     _scale     = 2  _scale     = 8  _scale     = 2 * con1  _scale     = con2
+//   _scaleL    = 1     _scaleL    = 2  _scaleL    = 2  _scaleL    = 2         _scaleL    = 1
+//   _int_group = 0     _int_group = 1  _int_group = 1  _int_group = 1         _int_group = 0
+//
+// Note: we also need to track constants as separate raw summands. For
+//       this, we say that a raw summand tracks a constant iff _variable == null,
+//       and we pretend that _variable is an integer constant with value 1.
+//
+class MemPointerRawSummand : public StackObj {
+private:
+  Node* _variable;
+  NoOverflowInt _scale;
+  NoOverflowInt _scaleL;
+  uint _int_group;
+
 };
 
 // Parsing calls the callback on every decomposed node. These are all the
