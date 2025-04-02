@@ -73,7 +73,7 @@ ifeq ($(call isTargetOs, linux), true)
 
   $(eval $(call SetupJdkExecutable, BUILD_JEXEC, \
       NAME := jexec, \
-      SRC := $(TOPDIR)/src/$(MODULE)/unix/native/launcher, \
+      EXTRA_FILES := $(TOPDIR)/src/$(MODULE)/unix/native/launcher/jexec.c, \
       OPTIMIZATION := LOW, \
       EXTRA_HEADER_DIRS := libjli, \
       CFLAGS_linux := -fPIC, \
