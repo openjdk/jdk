@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,9 @@ import java.security.SecureRandom;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Locale;
+import javax.crypto.KDF;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.net.ssl.SSLHandshakeException;
 import sun.security.ssl.PskKeyExchangeModesExtension.PskKeyExchangeMode;
 import sun.security.ssl.PskKeyExchangeModesExtension.PskKeyExchangeModesSpec;
@@ -286,11 +288,12 @@ final class NewSessionTicket {
     private static SecretKey derivePreSharedKey(CipherSuite.HashAlg hashAlg,
             SecretKey resumptionMasterSecret, byte[] nonce) throws IOException {
         try {
-            HKDF hkdf = new HKDF(hashAlg.name);
+            KDF hkdf = KDF.getInstance(Utilities.digest2HKDF(hashAlg.name));
             byte[] hkdfInfo = SSLSecretDerivation.createHkdfInfo(
                     "tls13 resumption".getBytes(), nonce, hashAlg.hashLength);
-            return hkdf.expand(resumptionMasterSecret, hkdfInfo,
-                    hashAlg.hashLength, "TlsPreSharedKey");
+            return hkdf.deriveKey("TlsPreSharedKey",
+                    HKDFParameterSpec.expandOnly(resumptionMasterSecret,
+                    hkdfInfo, hashAlg.hashLength));
         } catch (GeneralSecurityException gse) {
             throw new SSLHandshakeException("Could not derive PSK", gse);
         }

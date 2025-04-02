@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.spec.AlgorithmParameterSpec;
+import javax.crypto.KDF;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.net.ssl.SSLHandshakeException;
 import sun.security.ssl.CipherSuite.HashAlg;
 
@@ -107,11 +109,11 @@ final class SSLSecretDerivation implements SSLKeyDerivation {
             } else {
                 expandContext = transcriptHash;
             }
+            KDF hkdf = KDF.getInstance(Utilities.digest2HKDF(hashAlg.name));
             byte[] hkdfInfo = createHkdfInfo(ks.label,
                     expandContext, hashAlg.hashLength);
-
-            HKDF hkdf = new HKDF(hashAlg.name);
-            return hkdf.expand(secret, hkdfInfo, hashAlg.hashLength, algorithm);
+            return hkdf.deriveKey(algorithm, HKDFParameterSpec.expandOnly(
+                    secret, hkdfInfo, hashAlg.hashLength));
         } catch (GeneralSecurityException gse) {
             throw new SSLHandshakeException("Could not generate secret", gse);
         }

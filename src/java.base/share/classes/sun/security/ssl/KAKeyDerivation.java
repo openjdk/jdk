@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,10 @@
  */
 package sun.security.ssl;
 
+import javax.crypto.KDF;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
@@ -106,15 +108,16 @@ public class KAKeyDerivation implements SSLKeyDerivation {
 
             CipherSuite.HashAlg hashAlg = context.negotiatedCipherSuite.hashAlg;
             SSLKeyDerivation kd = context.handshakeKeyDerivation;
-            HKDF hkdf = new HKDF(hashAlg.name);
+            KDF hkdf = KDF.getInstance(Utilities.digest2HKDF(hashAlg.name));
             if (kd == null) {   // No PSK is in use.
-                // If PSK is not in use Early Secret will still be
+                // If PSK is not in use, Early Secret will still be
                 // HKDF-Extract(0, 0).
                 byte[] zeros = new byte[hashAlg.hashLength];
                 SecretKeySpec ikm
                         = new SecretKeySpec(zeros, "TlsPreSharedSecret");
-                SecretKey earlySecret
-                        = hkdf.extract(zeros, ikm, "TlsEarlySecret");
+                SecretKey earlySecret = hkdf.deriveKey("TlsEarlySecret",
+                        HKDFParameterSpec.ofExtract().addSalt(zeros)
+                        .addIKM(ikm).extractOnly());
                 kd = new SSLSecretDerivation(context, earlySecret);
             }
 
@@ -122,7 +125,9 @@ public class KAKeyDerivation implements SSLKeyDerivation {
             SecretKey saltSecret = kd.deriveKey("TlsSaltSecret", null);
 
             // derive handshake secret
-            return hkdf.extract(saltSecret, sharedSecret, algorithm);
+            return hkdf.deriveKey(algorithm, HKDFParameterSpec.ofExtract()
+                    .addSalt(saltSecret).addIKM(sharedSecret).extractOnly());
+
         } catch (GeneralSecurityException gse) {
             throw new SSLHandshakeException("Could not generate secret", gse);
         }

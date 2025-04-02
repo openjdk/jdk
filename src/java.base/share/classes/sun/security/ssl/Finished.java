@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,11 @@ import java.security.ProviderException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.text.MessageFormat;
 import java.util.Locale;
+import javax.crypto.KDF;
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -809,12 +811,14 @@ final class Finished {
 
                 // derive application secrets
                 HashAlg hashAlg = shc.negotiatedCipherSuite.hashAlg;
-                HKDF hkdf = new HKDF(hashAlg.name);
+                KDF hkdf = KDF.getInstance(Utilities.digest2HKDF(hashAlg.name));
                 byte[] zeros = new byte[hashAlg.hashLength];
                 SecretKeySpec sharedSecret =
                         new SecretKeySpec(zeros, "TlsZeroSecret");
-                SecretKey masterSecret =
-                    hkdf.extract(saltSecret, sharedSecret, "TlsMasterSecret");
+                SecretKey masterSecret = hkdf.deriveKey("TlsMasterSecret",
+                        HKDFParameterSpec.ofExtract()
+                                         .addSalt(saltSecret)
+                                         .addIKM(sharedSecret).extractOnly());
 
                 SSLKeyDerivation secretKD =
                         new SSLSecretDerivation(shc, masterSecret);
@@ -967,13 +971,14 @@ final class Finished {
 
                 // derive application secrets
                 HashAlg hashAlg = chc.negotiatedCipherSuite.hashAlg;
-                HKDF hkdf = new HKDF(hashAlg.name);
+                KDF hkdf = KDF.getInstance(Utilities.digest2HKDF(hashAlg.name));
                 byte[] zeros = new byte[hashAlg.hashLength];
                 SecretKeySpec sharedSecret =
                         new SecretKeySpec(zeros, "TlsZeroSecret");
-                SecretKey masterSecret =
-                    hkdf.extract(saltSecret, sharedSecret, "TlsMasterSecret");
-
+                SecretKey masterSecret = hkdf.deriveKey("TlsMasterSecret",
+                        HKDFParameterSpec.ofExtract()
+                                         .addSalt(saltSecret)
+                                         .addIKM(sharedSecret).extractOnly());
                 SSLKeyDerivation secretKD =
                         new SSLSecretDerivation(chc, masterSecret);
 
