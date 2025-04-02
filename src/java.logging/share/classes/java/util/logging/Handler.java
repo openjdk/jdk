@@ -55,10 +55,10 @@ import java.io.UnsupportedEncodingException;
  * formatting. Holding a lock around any such callbacks creates a deadlock risk
  * between logging code and user code.
  * <p>
- * As such, general purpose {@code Handler} subclasses should never synchronize
- * their {@link #publish(LogRecord)} method, or calls to {@code
- * super.publish()}, since these are always expected to need to process and
- * format user-supplied arguments.
+ * As such, general purpose {@code Handler} subclasses should not synchronize
+ * their {@link #publish(LogRecord)} methods, or call {@code super.publish()}
+ * while holding locks, since these are typically expected to need to process
+ * and format user-supplied arguments.
  *
  * @since 1.4
  */
