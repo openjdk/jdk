@@ -1667,6 +1667,9 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
           // was fast_locked to restore the valid lock stack.
           ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
           if (deoptee_thread->lock_stack().contains(obj())) {
+            if (UseObjectMonitorTable) {
+              lock->clear_object_monitor_cache();
+            }
             LightweightSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
                                                                 deoptee_thread, thread);
           }
