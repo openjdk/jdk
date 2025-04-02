@@ -4136,10 +4136,7 @@ void StubGenerator::generate_final_stubs() {
   // arraycopy stubs used by compilers
   generate_arraycopy_stubs();
 
-  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != nullptr) {
-    StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
-  }
+  StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
 
 #ifdef COMPILER2
   if (UseSecondarySupersTable) {
@@ -4315,7 +4312,7 @@ void StubGenerator::generate_compiler_stubs() {
 
   // Load x86_64_sort library on supported hardware to enable SIMD sort and partition intrinsics
 
-  if (VM_Version::is_intel() && (VM_Version::supports_avx512dq() || VM_Version::supports_avx2())) {
+  if (VM_Version::supports_avx512dq() || VM_Version::supports_avx2()) {
     void *libsimdsort = nullptr;
     char ebuf_[1024];
     char dll_name_simd_sort[JVM_MAXPATHLEN];
@@ -4326,10 +4323,10 @@ void StubGenerator::generate_compiler_stubs() {
     if (libsimdsort != nullptr) {
       log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "simdsort" JNI_LIB_SUFFIX, p2i(libsimdsort));
 
-      snprintf(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512dq() ? "avx512_sort" : "avx2_sort");
+      snprintf(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512_simd_sort() ? "avx512_sort" : "avx2_sort");
       StubRoutines::_array_sort = (address)os::dll_lookup(libsimdsort, ebuf_);
 
-      snprintf(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512dq() ? "avx512_partition" : "avx2_partition");
+      snprintf(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512_simd_sort() ? "avx512_partition" : "avx2_partition");
       StubRoutines::_array_partition = (address)os::dll_lookup(libsimdsort, ebuf_);
     }
   }
