@@ -2637,13 +2637,11 @@ void Assembler::imull(Register dst, Register src) {
 
 void Assembler::eimull(Register dst, Register src1, Register src2, bool no_flags) {
   if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
-    imull(dst, src2);
+    return imull(dst, src2);
   }
-  else {
-    InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-    int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags);
-    emit_int16((unsigned char)0xAF, (0xC0 | encode));
-  }
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags);
+  emit_int16((unsigned char)0xAF, (0xC0 | encode));
 }
 
 void Assembler::imull(Register dst, Address src, int32_t value) {
@@ -2688,17 +2686,15 @@ void Assembler::imull(Register dst, Register src, int value) {
 
 void Assembler::eimull(Register dst, Register src, int value, bool no_flags) {
   if (is_demotable(no_flags, dst->encoding(), src->encoding())) {
-    imull(dst, src, value);
+    return imull(dst, src, value);
   }
-  else  {
-    InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-    int encode = evex_prefix_and_encode_nf(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags);
-    if (is8bit(value)) {
-      emit_int24(0x6B, (0xC0 | encode), value & 0xFF);
-    } else {
-      emit_int16(0x69, (0xC0 | encode));
-      emit_int32(value);
-    }
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = evex_prefix_and_encode_nf(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags);
+  if (is8bit(value)) {
+    emit_int24(0x6B, (0xC0 | encode), value & 0xFF);
+  } else {
+    emit_int16(0x69, (0xC0 | encode));
+    emit_int32(value);
   }
 }
 
@@ -7024,15 +7020,13 @@ void Assembler::shldl(Register dst, Register src) {
 
 void Assembler::eshldl(Register dst, Register src1, Register src2, bool no_flags) {
   if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
-    shldl(dst, src2);
+    return shldl(dst, src2);
   }
-  else {
-    InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-    // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
-    // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
-    int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags);
-    emit_int16(0xA5, (0xC0 | encode));
-  }
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
+  // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
+  int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags);
+  emit_int16(0xA5, (0xC0 | encode));
 }
 
 void Assembler::shldl(Register dst, Register src, int8_t imm8) {
@@ -7042,15 +7036,13 @@ void Assembler::shldl(Register dst, Register src, int8_t imm8) {
 
 void Assembler::eshldl(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
   if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
-    shldl(dst, src2, imm8);
+    return shldl(dst, src2, imm8);
   }
-  else {
-    InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-    // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
-    // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
-    int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags);
-    emit_int24(0x24, (0xC0 | encode), imm8);
-  }
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
+  // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
+  int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags);
+  emit_int24(0x24, (0xC0 | encode), imm8);
 }
 
 void Assembler::shrdl(Register dst, Register src) {
@@ -7060,15 +7052,13 @@ void Assembler::shrdl(Register dst, Register src) {
 
 void Assembler::eshrdl(Register dst, Register src1, Register src2, bool no_flags) {
   if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
-    shrdl(dst, src2);
+    return shrdl(dst, src2);
   }
-  else {
-    InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-    // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
-    // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
-    int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags);
-    emit_int16(0xAD, (0xC0 | encode));
-  }
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
+  // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
+  int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags);
+  emit_int16(0xAD, (0xC0 | encode));
 }
 
 void Assembler::shrdl(Register dst, Register src, int8_t imm8) {
@@ -7078,15 +7068,13 @@ void Assembler::shrdl(Register dst, Register src, int8_t imm8) {
 
 void Assembler::eshrdl(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
   if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
-    shrdl(dst, src2, imm8);
+    return shrdl(dst, src2, imm8);
   }
-  else {
-    InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-    // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
-    // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
-    int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags);
-    emit_int24(0x2C, (0xC0 | encode), imm8);
-  }
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
+  // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
+  int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags);
+  emit_int24(0x2C, (0xC0 | encode), imm8);
 }
 
 #ifdef _LP64
@@ -7096,16 +7084,14 @@ void Assembler::shldq(Register dst, Register src, int8_t imm8) {
 }
 
 void Assembler::eshldq(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
-   if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
-    shldq(dst, src2, imm8);
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
+    return shldq(dst, src2, imm8);
   }
-  else {
-    InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-    // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
-    // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
-    int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags, USE_PREFIXQ);
-    emit_int24(0x24, (0xC0 | encode), imm8);
-  }
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
+  // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
+  int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags, USE_PREFIXQ);
+  emit_int24(0x24, (0xC0 | encode), imm8);
 }
 
 void Assembler::shrdq(Register dst, Register src, int8_t imm8) {
@@ -7114,16 +7100,14 @@ void Assembler::shrdq(Register dst, Register src, int8_t imm8) {
 }
 
 void Assembler::eshrdq(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
-   if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
-    shrdq(dst, src2, imm8);
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
+    return shrdq(dst, src2, imm8);
   }
-  else {
-    InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-    // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
-    // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
-    int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags, USE_PREFIXQ);
-    emit_int24(0x2C, (0xC0 | encode), imm8);
-  }
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
+  // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
+  int encode = evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags, USE_PREFIXQ);
+  emit_int24(0x2C, (0xC0 | encode), imm8);
 }
 #endif
 
@@ -15323,13 +15307,11 @@ void Assembler::adcxq(Register dst, Register src) {
 
 void Assembler::eadcxq(Register dst, Register src1, Register src2) {
   if (is_demotable(false, dst->encoding(), src1->encoding(), src2->encoding())) {
-    adcxq(dst, src2);
+    return adcxq(dst, src2);
   }
-  else {
-    InstructionAttr attributes(AVX_128bit, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-    int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3C, &attributes, false, USE_PREFIXQ, false);
-    emit_int16((unsigned char)0x66, (0xC0 | encode));
-  }
+  InstructionAttr attributes(AVX_128bit, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3C, &attributes, false, USE_PREFIXQ, false);
+  emit_int16((unsigned char)0x66, (0xC0 | encode));
 }
 
 void Assembler::adoxq(Register dst, Register src) {
@@ -15350,13 +15332,11 @@ void Assembler::adoxq(Register dst, Register src) {
 
 void Assembler::eadoxq(Register dst, Register src1, Register src2) {
   if (is_demotable(false, dst->encoding(), src1->encoding(), src2->encoding())) {
-    adoxq(dst, src2);
+    return adoxq(dst, src2);
   }
-  else {
-    InstructionAttr attributes(AVX_128bit, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-    int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F_3C, &attributes, false, USE_PREFIXQ, false);
-    emit_int16((unsigned char)0x66, (0xC0 | encode));
-  }
+  InstructionAttr attributes(AVX_128bit, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F_3C, &attributes, false, USE_PREFIXQ, false);
+  emit_int16((unsigned char)0x66, (0xC0 | encode));
 }
 
 void Assembler::andq(Address dst, int32_t imm32) {
@@ -15778,24 +15758,20 @@ void Assembler::imulq(Register dst, Register src) {
 
 void Assembler::eimulq(Register dst, Register src, bool no_flags) {
   if (is_demotable(no_flags, dst->encoding(), src->encoding())) {
-    imulq(dst);
+    return imulq(dst);
   }
-  else {
-    InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-    int encode = evex_prefix_and_encode_nf(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags, USE_PREFIXQ);
-    emit_int16((unsigned char)0xAF, (0xC0 | encode));
-  }
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = evex_prefix_and_encode_nf(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags, USE_PREFIXQ);
+  emit_int16((unsigned char)0xAF, (0xC0 | encode));
 }
 
 void Assembler::eimulq(Register dst, Register src1, Register src2, bool no_flags) {
   if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
-    imulq(dst, src2);
+    return imulq(dst, src2);
   }
-  else {
-    InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-    int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags, USE_PREFIXQ);
-    emit_int16((unsigned char)0xAF, (0xC0 | encode));
-  }
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags, USE_PREFIXQ);
+  emit_int16((unsigned char)0xAF, (0xC0 | encode));
 }
 
 void Assembler::imulq(Register src) {
@@ -15851,17 +15827,15 @@ void Assembler::imulq(Register dst, Register src, int value) {
 
 void Assembler::eimulq(Register dst, Register src, int value, bool no_flags) {
   if (is_demotable(no_flags, dst->encoding(), src->encoding())) {
-    imulq(dst, src, value);
+    return imulq(dst, src, value);
   }
-  else {
-    InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-    int encode = evex_prefix_and_encode_nf(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags, USE_PREFIXQ, true);
-    if (is8bit(value)) {
-      emit_int24(0x6B, (0xC0 | encode), (value & 0xFF));
-    } else {
-      emit_int16(0x69, (0xC0 | encode));
-      emit_int32(value);
-    }
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = evex_prefix_and_encode_nf(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags, USE_PREFIXQ, true);
+  if (is8bit(value)) {
+    emit_int24(0x6B, (0xC0 | encode), (value & 0xFF));
+  } else {
+    emit_int16(0x69, (0xC0 | encode));
+    emit_int32(value);
   }
 }
 
