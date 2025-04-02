@@ -25,9 +25,9 @@
 
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.PackagerException;
-import jdk.internal.util.OperatingSystem;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_DATA;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -35,10 +35,9 @@ import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Objects;
-import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
-import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
-import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_DATA;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
 
 
 class AppImageBundler extends AbstractBundler {
