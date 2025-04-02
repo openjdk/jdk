@@ -414,6 +414,11 @@ import java.util.function.Supplier;
  * @implNote A {@linkplain StableValue} is mainly intended to be a non-public field in
  *           a class and is usually neither exposed directly via accessors nor passed as
  *           a method parameter.
+ *           Stable functions and collections make all reasonable efforts to provide
+ *           {@link Object#toString()} operations that do not trigger evaluation
+ *           of the internal stable values when called.
+ *           Stable collections have {@link Object#equals(Object)} operations that tries
+ *           to minimize evaluation of the internal stable values when called.
  *           As objects can be set via stable values but never removed, this can be a source
  *           of unintended memory leaks. A stable value's content is
  *           {@linkplain java.lang.ref##reachability strongly reachable}. Clients are
