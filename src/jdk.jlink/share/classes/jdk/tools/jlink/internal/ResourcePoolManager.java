@@ -67,7 +67,7 @@ public class ResourcePoolManager {
     }
 
     /**
-     * Returns true if a resource name corresponding to a package name.
+     * Returns true if a resource is located in a named package.
      */
     public static boolean isNamedPackageResource(String name) {
         int index = name.lastIndexOf("/");
