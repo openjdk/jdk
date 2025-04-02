@@ -49,7 +49,7 @@ import java.util.function.Supplier;
 /**
  * A stable value is a holder of shallowly immutable content that can be lazily computed.
  * <p>
- * A {@code StableValue<T>} can be created using the factory method
+ * A {@code StableValue<T>} is typically created using the factory method
  * {@linkplain StableValue#of() {@code StableValue.of()}}. When created this way,
  * the stable value is <em>unset</em>, which means it holds no <em>content</em>.
  * Its content, of type {@code T}, can be <em>set</em> by calling
@@ -161,21 +161,33 @@ import java.util.function.Supplier;
  * uses it to compute a result that is then cached by the backing stable value storage
  * for that parameter value. A stable int function is created via the
  * {@linkplain StableValue#intFunction(int, IntFunction) StableValue.intFunction()}
- * factory. Upon creation, the input range (i.e. [0, size)) is specified together with
- * an original {@linkplain IntFunction} which is invoked at most once per input value. In
- * effect, the stable int function will act like a cache for the original {@linkplain IntFunction}:
+ * factory. Upon creation, the input range (i.e. {@code [0, size)}) is specified together
+ * with an original {@linkplain IntFunction} which is invoked at most once per input value.
+ * In effect, the stable int function will act like a cache for the original
+ * {@linkplain IntFunction}:
  *
  * {@snippet lang = java:
  * public final class SqrtUtil {
  *
  *      private SqrtUtil(){}
  *
+ *      private static final int CACHED_SIZE = 10;
+ *
  *      private static final IntFunction<Double> SQRT =
  *              // @link substring="intFunction" target="#intFunction(int,IntFunction)" :
- *              StableValue.intFunction(10, StrictMath::sqrt);
+ *              StableValue.intFunction(CACHED_SIZE, StrictMath::sqrt);
  *
- *      public static double sqrt9() {
- *          return SQRT.apply(9); // May eventually constant fold to 3.0 at runtime
+ *      public static double sqrt(int a) {
+ *           if (a < CACHED_SIZE) {
+ *                return SQRT.apply(a);
+ *           } else {
+ *                return StrictMath.sqrt(a);
+ *           }
+ *      }
+ *
+ *      public static void computeSomeValues() {
+ *          double sqrt9 = sqrt(9);   // May eventually constant fold to 3.0 at runtime
+ *          double sqrt81 = sqrt(81); // Will not constant fold
  *      }
  *
  *  }
@@ -194,12 +206,23 @@ import java.util.function.Supplier;
  *
  *     private SqrtUtil(){}
  *
+ *     private static final Set<Integer> CACHED_KEYS = Set.of(1, 2, 4, 8, 16, 32);
+ *
  *     private static final Function<Integer, Double> SQRT =
  *             // @link substring="function" target="#function(Set,Function)" :
- *             StableValue.function(Set.of(1, 2, 4, 8, 16, 32), StrictMath::sqrt);
+ *             StableValue.function(CACHED_KEYS, StrictMath::sqrt);
  *
- *     public static double sqrt16() {
- *         return SQRT.apply(16); // May eventually constant fold to 4.0 at runtime
+ *     public static double sqrt(int a) {
+ *          if (CACHED_KEYS.contains(a)) {
+ *              return SQRT.apply(a);
+ *          } else {
+ *              return StrictMath.sqrt(a);
+ *          }
+ *     }
+ *
+ *     public static double computeSomeValues() {
+ *         double sqrt16 = sqrt(16); // May eventually constant fold to 4.0 at runtime
+ *         double sqrt81 = sqrt(81); // Will not constant fold
  *     }
  *
  * }
@@ -214,15 +237,26 @@ import java.util.function.Supplier;
  * {@snippet lang = java:
  * public final class SqrtUtil {
  *
+ *      private static final int CACHED_SIZE = 10;
+ *
  *     private SqrtUtil(){}
  *
  *     private static final List<Double> SQRT =
  *             // @link substring="list" target="#list(int,IntFunction)" :
- *             StableValue.list(10, StrictMath::sqrt);
+ *             StableValue.list(CACHED_SIZE, StrictMath::sqrt);
  *
- *     public static double sqrt9() {
- *         return SQRT.get(9); // May eventually constant fold to 3.0 at runtime
- *     }
+ *      public static double sqrt(int a) {
+ *           if (a < CACHED_SIZE) {
+ *                return SQRT.get(a);
+ *           } else {
+ *                return StrictMath.sqrt(a);
+ *           }
+ *      }
+ *
+ *      public static void computeSomeValues() {
+ *          double sqrt9 = sqrt(9);   // May eventually constant fold to 3.0 at runtime
+ *          double sqrt81 = sqrt(81); // Will not constant fold
+ *      }
  *
  * }
  *}
@@ -236,12 +270,23 @@ import java.util.function.Supplier;
  *
  *     private SqrtUtil(){}
  *
+ *     private static final Set<Integer> CACHED_KEYS = Set.of(1, 2, 4, 8, 16, 32);
+ *
  *     private static final Map<Integer, Double> SQRT =
  *             // @link substring="map" target="#map(Set,Function)" :
  *             StableValue.map(Set.of(1, 2, 4, 8, 16, 32), StrictMath::sqrt);
  *
- *     public static double sqrt16() {
- *         return SQRT.get(16); // May eventually constant fold to 4.0 at runtime
+ *     public static double sqrt(int a) {
+ *          if (CACHED_KEYS.contains(a)) {
+ *              return SQRT.get(a);
+ *          } else {
+ *              return StrictMath.sqrt(a);
+ *          }
+ *     }
+ *
+ *     public static double computeSomeValues() {
+ *         double sqrt16 = sqrt(16); // May eventually constant fold to 4.0 at runtime
+ *         double sqrt81 = sqrt(81); // Will not constant fold
  *     }
  *
  * }
