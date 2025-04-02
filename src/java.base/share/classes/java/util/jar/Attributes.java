@@ -368,7 +368,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
 
     int read(Manifest.FastInputStream is, byte[] lbuf, String filename, int lineNumber) throws IOException {
         String name = null, value;
-        ByteArrayOutputStream fullLine = new ByteArrayOutputStream();
+        ByteArrayOutputStream fullLine = ByteArrayOutputStream.unsynchronizedInstance();
 
         int len;
         while ((len = is.readLine(lbuf)) != -1) {

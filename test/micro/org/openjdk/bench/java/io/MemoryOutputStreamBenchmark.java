@@ -20,7 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.io;
+
+package micro.org.openjdk.bench.java.io;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -44,18 +45,9 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-/**
- * Microbenchmark for {@code MemoryOutputStream}. Primarily built to compare
- * performance against {@code ByteArrayOutputStream}. Considers primitive
- * writes, array-based writes, and both output modes ({@code writeTo} and
- * {@code getBytes()}.
- *
- * @since 29
- * @author John Engebretson
- */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(2)
+@Fork(1)
 @Warmup(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 @State(Scope.Benchmark)
@@ -74,45 +66,47 @@ public class MemoryOutputStreamBenchmark {
 
     }
 
-    @Param(value = { "4096", "" + (64 * 1024), "" + (1024 * 1024), "" + (16 * 1024 * 1024), "" + (256 * 1024 * 1024) })
-    public long responseSize;
+    public byte currentByte;
 
-    @Param(value = { "512", "8192" })
-    public int inputArraySize;
-
-    @Param(value = { "16", "512", "8192" })
+    @Param(value = { "32", "8192" })
     public int initialSize;
 
-    public NoOpOutputStream noopOut;
+    @Param(value = { "512", "" + (1 * 1024 * 1024) })
+    public int inputArraySize;
 
     public byte[] inputBytes;
 
-    @Param(value = { "true", "false" })
-    public boolean useMemoryOutputStream;
+    public OutputStream noopOut;
+
+    public ByteArrayOutputStream out;
+
+    @Param(value = { "base", "unsync", "memory" })
+    public String outputStreamType;
+
+    public ByteArrayOutputStream populatedOutputStream;
+
+    @Param(value = { "4096", "" + (1024 * 1024), "" + (16 * 1024 * 1024), "" + (512 * 1024 * 1024) })
+    public long responseSize;
 
     public Serializable serializableTarget;
 
-    public OutputStream populatedOutputStream;
+    @Benchmark
+    public Object toByteArray() throws IOException {
+        return populatedOutputStream.toByteArray();
+    }
 
-    // @Benchmark
-    public Object getByteArray() throws IOException {
-        if (useMemoryOutputStream) {
-            return ((MemoryOutputStream) populatedOutputStream).toByteArray();
-        } else {
-            return ((ByteArrayOutputStream) populatedOutputStream).toByteArray();
+    private ByteArrayOutputStream getNewOutputStream() {
+        switch (outputStreamType) {
+        case "base":
+            return ByteArrayOutputStream.synchronizedInstance();
+        case "unsync":
+            return ByteArrayOutputStream.unsynchronizedInstance();
+        case "memory":
+            return ByteArrayOutputStream.memoryOptimizedInstance();
+        default:
+            throw new RuntimeException("Unrecognized type parameter: " + outputStreamType);
         }
-    }
 
-    private OutputStream getNewOutputStream() {
-        return (useMemoryOutputStream ? new MemoryOutputStream(initialSize) : new ByteArrayOutputStream(initialSize));
-    }
-
-    // @Benchmark
-    public void serializeObjectToMemory() throws IOException {
-        OutputStream out = getNewOutputStream();
-        ObjectOutputStream objectOut = new ObjectOutputStream(out);
-        objectOut.writeObject(serializableTarget);
-        objectOut.close();
     }
 
     @Setup
@@ -132,16 +126,13 @@ public class MemoryOutputStreamBenchmark {
             map.put("hashSet_" + i, new HashSet<>());
         }
 
-//        populatedOutputStream = getNewOutputStream();
-//        for (int i = 0; i < responseSize; i++) {
-//            populatedOutputStream.write(i);
-//        }
+        populatedOutputStream = getNewOutputStream();
+        while (populatedOutputStream.size() < responseSize) {
+            populatedOutputStream.write(inputBytes);
+        }
 
     }
 
-    public byte currentByte;
-
-    @Measurement(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
     @Benchmark
     public void writeArrays() throws IOException {
         out = getNewOutputStream();
@@ -151,29 +142,24 @@ public class MemoryOutputStreamBenchmark {
         }
     }
 
-    public OutputStream out;
-
     /**
-     * This test is prone to the loop being inlined; using the weird formula avoids
+     * This test is prone to the loop being optimized; calculating each byte avoids
      * that.
-     * 
+     *
      * @throws IOException
      */
-    @Measurement(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
+    @Measurement(iterations = 4, time = 1, timeUnit = TimeUnit.SECONDS)
     @Benchmark
     public void writePrimitives() throws IOException {
         out = getNewOutputStream();
         for (int i = 0; i < responseSize; i++) {
+            // logic below provides unpredictable data to avoid low-level shortcuts
             out.write(inputBytes[Math.abs(i + i * 17) % inputBytes.length]);
         }
     }
 
     @Benchmark
     public void writeTo() throws IOException {
-        if (useMemoryOutputStream) {
-            ((MemoryOutputStream) populatedOutputStream).writeTo(noopOut);
-        } else {
-            ((ByteArrayOutputStream) populatedOutputStream).writeTo(noopOut);
-        }
+        populatedOutputStream.writeTo(noopOut);
     }
 }

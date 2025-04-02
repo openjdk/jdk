@@ -243,7 +243,7 @@ public class BitArray {
             return "";
         }
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream out = ByteArrayOutputStream.unsynchronizedInstance();
 
         for (int i = 0; i < repn.length - 1; i++) {
             out.write(NYBBLE[(repn[i] >> 4) & 0x0F], 0, 4);

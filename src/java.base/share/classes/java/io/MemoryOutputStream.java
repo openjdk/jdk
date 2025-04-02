@@ -23,10 +23,6 @@
 
 package java.io;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 
@@ -35,15 +31,19 @@ import java.util.Arrays;
  * series of byte arrays ("segments"). Data can be accessed by reconstructing a
  * unified {@code byte[]} via {@code toByteArray}, or efficiently writing the
  * segments to another {@code OutputStream} via {@code writeTo}. {@code writeTo}
- * is preferred for large payloads because no further object allocation is
- * required.
+ * is necessary when the payload size exceeds {@code Integer.MAX_VALUE} and
+ * preferred at other times.
  * <p>
  * This class is interchangeable with {@code ByteArrayOutputStream}, with the
  * following exceptions:
  * <ol>
  * <li>Methods are not synchronized, so the class is not thread-safe.</li>
- * <li>The exposed fields from {@code ByteArrayOutputStream} are invalid. Reads
- * will return 0 or null, and writes will have no effect.</li>
+ * <li>The exposed fields from {@code ByteArrayOutputStream} are unused. Reads
+ * will return 0 or null, and writes will have no effect.</li> *
+ * <li>{@code size()} and {@code toByteArray()} cannot meet the contract if the
+ * payload exceeds {@code Integer.MAX_VALUE}, and will instead throw
+ * {@code java.lang.IllegalStateException}. Use {@code writeTo()} to output
+ * large contents.</li>
  * </ol>
  * <p>
  * In exchange for these incompatibilities, performance is significantly
@@ -56,11 +56,14 @@ import java.util.Arrays;
  * can be called after the stream has been closed without generating an
  * {@code IOException}.
  *
- * @since 29
+ * @see java.lang.IllegalStateException
+ * @see java.io.ByteArrayOutputStream
+ * @see Integer.MAX_VALUE
+ * @since 25
  * @author John Engebretson
  */
 
-public final class MemoryOutputStream extends ByteArrayOutputStream {
+class MemoryOutputStream extends ByteArrayOutputStream {
 
     /**
      * Reusable zero-length array. Used where necessary to avoid recreating a
@@ -82,18 +85,6 @@ public final class MemoryOutputStream extends ByteArrayOutputStream {
     private static final int INITIAL_SEGMENT_ARRAY_SIZE = 16;
 
     /**
-     * The minimum size of each allocated segment. Value can increase over time as
-     * the structure scales up.
-     */
-    private int minimumSegmentSize;
-
-    /**
-     * The total number of valid bytes written into completed segments. Used for
-     * calculating overall size.
-     */
-    private int completedSegmentsTotalBytes;
-
-    /**
      * The number of completed segments stored within {@code completedSegments}.
      */
     private int completedSegmentCount;
@@ -106,6 +97,12 @@ public final class MemoryOutputStream extends ByteArrayOutputStream {
      * Doubles in length when extra capacity is required.
      */
     private byte[][] completedSegments;
+
+    /**
+     * The total number of valid bytes written into completed segments. Used for
+     * calculating overall size.
+     */
+    private long completedSegmentsTotalBytes;
 
     /**
      * The in-progress buffer where the most recent data is stored.
@@ -123,11 +120,18 @@ public final class MemoryOutputStream extends ByteArrayOutputStream {
     private int currentSegmentLengthInBytes;
 
     /**
+     * The minimum size of each allocated segment. Value can increase over time as
+     * the structure scales up.
+     */
+    private int minimumSegmentSize;
+
+    /**
      * Creates a new {@code MemoryOutputStream} with a default initial size.
      *
-     * @since 29
+     * @see java.io.ByteArrayOutputStream#memoryOptimizedInstance
+     * @since 25
      */
-    public MemoryOutputStream() {
+    MemoryOutputStream() {
         this(32);
     }
 
@@ -137,9 +141,10 @@ public final class MemoryOutputStream extends ByteArrayOutputStream {
      *
      * @param size the minimum segment.
      * @throws IllegalArgumentException if size is negative.
-     * @since 29
+     * @see java.io.ByteArrayOutputStream#memoryOptimizedInstance
+     * @since 25
      */
-    public MemoryOutputStream(int size) {
+    MemoryOutputStream(int size) {
         if (size < 0) {
             throw new IllegalArgumentException("Negative initial size: " + size);
         } else {
@@ -176,7 +181,7 @@ public final class MemoryOutputStream extends ByteArrayOutputStream {
             minimumSegmentSize *= 4;
         }
         completedSegments[completedSegmentCount++] = currentSegment;
-        completedSegmentsTotalBytes += currentSegmentCount;
+        completedSegmentsTotalBytes += currentSegmentLengthInBytes;
 
         currentSegmentLengthInBytes = Math.max(minimumSegmentSize, extraSpaceRequired);
         currentSegment = new byte[currentSegmentLengthInBytes];
@@ -184,110 +189,52 @@ public final class MemoryOutputStream extends ByteArrayOutputStream {
     }
 
     /**
-     * Writes the specified byte to this {@code MemoryOutputStream}.
-     *
-     * @param b the byte to be written.
-     * @since 29
-     */
-    @Override
-    public void write(int b) {
-        if (currentSegmentCount == currentSegmentLengthInBytes) {
-            allocateExtraCapacity(1);
-        }
-        currentSegment[currentSegmentCount] = (byte) b;
-        currentSegmentCount = (currentSegmentCount + 1);
-    }
-
-    /**
-     * Writes the complete contents of the specified byte array to this
-     * {@code MemoryOutputStream}.
-     *
-     * @apiNote This method is equivalent to {@link #write(byte[],int,int) write(b,
-     *          0, b.length)}.
-     *
-     * @param b the data.
-     * @throws NullPointerException if {@code b} is {@code null}.
-     * @since 29
-     */
-    public void writeBytes(byte b[]) {
-        write(b, 0, b.length);
-    }
-
-    /**
-     * Writes {@code len} bytes from the specified byte array starting at offset
-     * {@code off} to this {@code MemoryOutputStream}.
-     *
-     * @param b   {@inheritDoc}
-     * @param off {@inheritDoc}
-     * @param len {@inheritDoc}
-     * @throws NullPointerException      if {@code b} is {@code null}.
-     * @throws IndexOutOfBoundsException if {@code off} is negative, {@code len} is
-     *                                   negative, or {@code len} is greater than
-     *                                   {@code b.length - off}
-     * @since 29
-     */
-    @Override
-    public void write(byte[] b, int off, int len) {
-        int currentSegmentSpaceAvailable = currentSegmentLengthInBytes - currentSegmentCount;
-        if (currentSegmentSpaceAvailable >= len) {
-            // Sufficient space exists, copy it in
-            System.arraycopy(b, off, currentSegment, currentSegmentCount, len);
-            currentSegmentCount += len;
-        } else {
-            // some portion must overflow across segments
-            if (currentSegmentSpaceAvailable > 0) {
-                // copy what we can
-                System.arraycopy(b, off, currentSegment, currentSegmentCount, currentSegmentSpaceAvailable);
-            }
-
-            // calculate how much data overflowed and allocate a new segment large enough to
-            // accommodate
-            int overflowLength = len - currentSegmentSpaceAvailable;
-            allocateExtraCapacity(overflowLength);
-
-            // calculate the offset of the remaining data, then copy into the new segment
-            int remainingInputOffset = off + currentSegmentSpaceAvailable;
-            System.arraycopy(b, remainingInputOffset, currentSegment, 0, overflowLength);
-            currentSegmentCount = overflowLength;
-        }
-    }
-
-    /**
-     * Writes the contents of this {@code MemoryOutputStream} to the specified
-     * output stream argument by calling the output stream's
-     * {@code out.write(buf, 0, count)} once per segment.
-     *
-     * @param out the output stream to which to write the data.
-     * @throws NullPointerException if {@code out} is {@code null}.
-     * @throws IOException          if an I/O error occurs.
-     * @since 29
-     */
-    public void writeTo(OutputStream out) throws IOException {
-        // write each of the previous, fully-populated segments
-        for (int i = 0; i < completedSegmentCount; i++) {
-            byte[] segment = completedSegments[i];
-            out.write(segment, 0, segment.length);
-        }
-
-        // write the valid portion of the current segment
-        out.write(currentSegment, 0, currentSegmentCount);
-    }
-
-    /**
      * Resets the various fields of this {@code MemoryOutputStream} such that length
-     * is zero and unnecessary objects are released.
+     * is zero and all objects are released.
      * 
-     * @since 29
+     * @since 25
      */
+    @Override
     public void reset() {
+        // release all completed segments
+        completedSegments = null;
+        completedSegmentCount = 0;
+        completedSegmentsTotalBytes = 0;
+
         // reset the index for current segment but keep it around for reuse
         currentSegmentCount = 0;
+    }
 
-        // release the past segments but keep the the array
-        Arrays.fill(completedSegments, 0, completedSegmentCount, null);
-        completedSegmentCount = 0;
+    /**
+     * Returns the current size of the accumulated contents. Throws
+     * {@code  IllegalStateException} if the payload size is higher than the maximum
+     * possible return value {@code Integer.MAX_VALUE}.
+     *
+     * @return the value of the {@code overallLength} field, which is the number of
+     *         valid bytes in this {@code MemoryOutputStream}.
+     * @see java.io.MemoryOutputStream#currentSegmentCount
+     * @see java.io.MemoryOutputStream#completedSegmentsTotalBytes
+     * @since 25
+     */
+    @Override
+    public int size() {
+        long size = sizeAsLong();
+        if (size > Integer.MAX_VALUE) {
+            throw new IllegalStateException("Contents are larger than be expressed as an int " + size + "L");
+        }
+        return (int) size;
+    }
 
-        completedSegmentsTotalBytes = 0;
+    /**
+     * Returns the current payload size as a {@code long}.
+     *
+     * @return current payload size
+     * @see java.io.ByteArrayOutputStream#sizeAsLong
+     * @since 25
+     */
+    @Override
+    public long sizeAsLong() {
+        return completedSegmentsTotalBytes + currentSegmentLengthInBytes;
     }
 
     /**
@@ -296,17 +243,23 @@ public final class MemoryOutputStream extends ByteArrayOutputStream {
      * <p>
      * The output of this method is likely to be the single largest object
      * associated with the stream.
+     * <p>
+     * Throws {@code  IllegalStateException} if the payload size is greater than the
+     * maximum possible return value {@code Integer.MAX_VALUE}.
      *
-     * @return the current contents of this {@code MemoryOutputStream}, as a byte
+     * @return the current contents of this {@code MemoryOutputStream} as a byte
      *         array.
      * @see java.io.MemoryOutputStream#size()
-     * @since 29
+     * @since 25
      */
+    @Override
     public byte[] toByteArray() {
-        if (size() == 0) {
+        // calling size() verifies that the payload fits in the maximum array size
+        int currentSize = size();
+        if (currentSize == 0) {
             return EMPTY_BYTE_ARRAY;
         }
-        byte[] out = new byte[size()];
+        byte[] out = new byte[currentSize];
         int nextWritePosition = 0;
 
         // copy in each previous segment, remembering they are guaranteed to be full
@@ -323,99 +276,123 @@ public final class MemoryOutputStream extends ByteArrayOutputStream {
     }
 
     /**
-     * Returns the current size of the accumulated contents.
+     * {@inheritDoc}
      *
-     * @return the value of the {@code overallLength} field, which is the number of
-     *         valid bytes in this {@code MemoryOutputStream}.
-     * @see java.io.MemoryOutputStream#currentSegmentCount
-     * @see java.io.MemoryOutputStream#completedSegmentsTotalBytes
-     * @since 29
-     */
-    public int size() {
-        return completedSegmentsTotalBytes + currentSegmentCount;
-    }
-
-    /**
-     * Converts this {@code MemoryOutputStream} contents into a string decoding
-     * bytes using the default charset. The length of the new {@code String} is a
-     * function of the charset, and hence may not be equal to the size of the
-     * buffer.
-     * <p>
-     * This method always replaces malformed-input and unmappable-character
-     * sequences with the default replacement string for the default charset. The
-     * {@linkplain java.nio.charset.CharsetDecoder} class should be used when more
-     * control over the decoding process is required.
-     *
-     * @see Charset#defaultCharset()
      * @return String decoded from this {@code MemoryOutputStream} contents.
-     * @since 29
+     * @since 25
      */
     @Override
     public String toString() {
-        return new String(toByteArray(), 0, size());
+        return new String(toByteArray());
     }
 
     /**
-     * Converts this {@code MemoryOutputStream}'s contents into a string by decoding
-     * the bytes using the named {@link Charset charset}.
-     * <p>
-     * This method is equivalent to {@code #toString(charset)} that takes a
-     * {@link Charset charset}. *
-     *
-     * @param charsetName the name of a supported {@link Charset charset}
-     * @return String decoded from this {@code MemoryOutputStream}'s contents.
-     * @throws UnsupportedEncodingException If the named charset is not supported
-     * @since 29
+     * {@inheritDoc}
+     * 
+     * @since 25
      */
-    public String toString(String charsetName) throws UnsupportedEncodingException {
-        return new String(toByteArray(), 0, size(), charsetName);
-    }
-
-    /**
-     * Converts this {@code MemoryOutputStream}'s contents into a string by decoding
-     * the bytes using the specified {@link Charset charset}. The length of the new
-     * {@code String} is a function of the charset, and hence may not be equal to
-     * the length of the byte array.
-     *
-     * <p>
-     * This method always replaces malformed-input and unmappable-character
-     * sequences with the charset's default replacement string. The
-     * {@link java.nio.charset.CharsetDecoder} class should be used when more
-     * control over the decoding process is required.
-     *
-     * @param charset the {@linkplain Charset charset} to be used to decode the
-     *                {@code bytes}
-     * @return String decoded from this {@code MemoryOutputStream}'s contents.
-     * @since 29
-     */
+    @Override
     public String toString(Charset charset) {
-        return new String(toByteArray(), 0, size(), charset);
+        return new String(toByteArray(), charset);
     }
 
     /**
-     * Creates a newly allocated string containing the contents of this
-     * {@code MemoryOutputStream}. Each character <i>c</i> in the resulting string
-     * is constructed from the corresponding element <i>b</i> in the byte array such
-     * that:
+     * {@inheritDoc}
      *
-     * @deprecated This method does not properly convert bytes into characters. As
-     *             of JDK&nbsp;1.1, the preferred way to do this is via the
-     *             {@link #toString(String charsetName)} or
-     *             {@link #toString(Charset charset)} method, which takes an
-     *             encoding-name or charset argument, or the {@code toString()}
-     *             method, which uses the default charset.
-     *
-     * @param hibyte the high byte of each resulting Unicode character.
-     * @return the current contents of the output stream, as a string.
-     * @see java.io.MemoryOutputStream#size()
-     * @see java.io.MemoryOutputStream#toString(String)
-     * @see java.io.MemoryOutputStream#toString()
-     * @see Charset#defaultCharset()
-     * @since 29
+     * @since 25
      */
+    @Override
     @Deprecated
     public String toString(int hibyte) {
-        return new String(toByteArray(), hibyte, 0, size());
+        return new String(toByteArray(), hibyte);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 25
+     */
+    @Override
+    public String toString(String charsetName) throws UnsupportedEncodingException {
+        return new String(toByteArray(), charsetName);
+    }
+
+    /**
+     * Writes {@code len} bytes from the specified byte array starting at offset
+     * {@code off} to this {@code MemoryOutputStream}. Guaranteed to allocate 0 or 1
+     * segments.
+     *
+     * @param b   {@inheritDoc}
+     * @param off {@inheritDoc}
+     * @param len {@inheritDoc}
+     * @throws NullPointerException      if {@code b} is {@code null}.
+     * @throws IndexOutOfBoundsException if {@code off} is negative, {@code len} is
+     *                                   negative, or {@code len} is greater than
+     *                                   {@code b.length - off}
+     * @since 25
+     */
+    @Override
+    public void write(byte[] b, int off, int len) {
+        int currentSegmentSpaceAvailable = currentSegmentLengthInBytes - currentSegmentCount;
+        if (currentSegmentSpaceAvailable >= len) {
+            // Sufficient space exists, copy it in
+            System.arraycopy(b, off, currentSegment, currentSegmentCount, len);
+            currentSegmentCount += len;
+        } else {
+            // some portion must overflow across segments
+            if (currentSegmentSpaceAvailable > 0) {
+                // copy what we can
+                System.arraycopy(b, off, currentSegment, currentSegmentCount, currentSegmentSpaceAvailable);
+                currentSegmentSpaceAvailable = 0;
+                currentSegmentCount = currentSegmentLengthInBytes;
+            }
+
+            // calculate how much data overflowed and allocate a new segment large enough to
+            // accommodate
+            int overflowLength = len - currentSegmentSpaceAvailable;
+            allocateExtraCapacity(overflowLength);
+
+            // calculate the offset of the remaining data, then copy into the new segment
+            int remainingInputOffset = off + currentSegmentSpaceAvailable;
+            System.arraycopy(b, remainingInputOffset, currentSegment, 0, overflowLength);
+            currentSegmentCount = overflowLength;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 25
+     */
+    @Override
+    public void write(int b) {
+        if (currentSegmentCount == currentSegmentLengthInBytes) {
+            allocateExtraCapacity(1);
+        }
+        currentSegment[currentSegmentCount] = (byte) b;
+        currentSegmentCount = (currentSegmentCount + 1);
+    }
+
+    /**
+     * Writes the contents of this {@code MemoryOutputStream} to the specified
+     * output stream argument by calling the output stream's
+     * {@code out.write(buf, 0, count)} once per segment.
+     *
+     * @param out the output stream to which to write the data.
+     * @throws NullPointerException if {@code out} is {@code null}.
+     * @throws IOException          if an I/O error occurs.
+     * @since 25
+     */
+    @Override
+    public void writeTo(OutputStream out) throws IOException {
+        // write each of the previous, fully-populated segments
+        for (int i = 0; i < completedSegmentCount; i++) {
+            byte[] segment = completedSegments[i];
+            out.write(segment, 0, segment.length);
+        }
+
+        // write the valid portion of the current segment
+        out.write(currentSegment, 0, currentSegmentCount);
     }
 
 }
