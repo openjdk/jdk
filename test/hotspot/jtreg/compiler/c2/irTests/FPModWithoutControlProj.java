@@ -62,7 +62,6 @@ public class FPModWithoutControlProj {
                             x -= y;
                         }
                         iArr[1] += 5;
-
                     }
                 } while (f1 < 234);
             }
@@ -84,7 +83,6 @@ public class FPModWithoutControlProj {
                             x -= y;
                         }
                         iArr[1] += 5;
-
                     }
                 } while (f1 < 234);
             }
