@@ -979,7 +979,7 @@ private:
  private:
   static void get_opaque_template_assertion_predicate_nodes(ParsePredicateSuccessProj* parse_predicate_proj,
                                                             Unique_Node_List& list);
-  void update_main_loop_assertion_predicates(CountedLoopNode* main_loop_head);
+  void update_main_loop_assertion_predicates(CountedLoopNode* new_main_loop_head, int stride_con_before_unroll);
   void initialize_assertion_predicates_for_peeled_loop(CountedLoopNode* peeled_loop_head,
                                                        CountedLoopNode* remaining_loop_head,
                                                        uint first_node_index_in_cloned_loop_body,

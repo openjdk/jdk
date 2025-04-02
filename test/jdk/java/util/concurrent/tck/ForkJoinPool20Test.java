@@ -447,14 +447,10 @@ public class ForkJoinPool20Test extends JSR166TestCase {
                         long now = System.nanoTime();
                         long elapsedMillis
                             = NANOSECONDS.toMillis(now - previous.get());
-                        if (done.getCount() == cycles) { // first execution
-                            if (elapsedMillis >= d)
+                        if (elapsedMillis >= (done.getCount() == cycles ? d : 2 * d))
                                 tryLongerDelay.set(true);
-                        } else {
-                            if (elapsedMillis >= 2 * d)
-                                tryLongerDelay.set(true);
-                        }
                         previous.set(now);
+                        assertTrue(done.getCount() > 0);
                         done.countDown();
                     }};
                 final ScheduledFuture<?> periodicTask =
