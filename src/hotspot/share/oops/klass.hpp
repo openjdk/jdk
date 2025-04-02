@@ -151,6 +151,9 @@ class Klass : public Metadata {
   // because it is frequently queried.
   jint _layout_helper;
 
+  // KLUT entry
+  uint32_t _klute;
+
   // Klass kind used to resolve the runtime type of the instance.
   //  - Used to implement devirtualized oop closure dispatching.
   //  - Various type checking in the JVM
@@ -251,6 +254,9 @@ protected:
   enum class OverpassLookupMode { find, skip };
   enum class StaticLookupMode   { find, skip };
   enum class PrivateLookupMode  { find, skip };
+
+  uint32_t klute() const { return _klute; }
+  void set_klute(uint32_t v) { _klute = v; }
 
   virtual bool is_klass() const { return true; }
 

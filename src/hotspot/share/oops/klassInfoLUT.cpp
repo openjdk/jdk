@@ -85,12 +85,13 @@ int KlassInfoLUT::try_register_perma_cld(ClassLoaderData* cld) {
   return 0;
 }
 
-void KlassInfoLUT::register_klass(const Klass* k) {
+void KlassInfoLUT::register_klass(Klass* k) {
   assert(UseKLUT, "?");
   const narrowKlass nk = CompressedKlassPointers::encode(const_cast<Klass*>(k)); // grr why is this nonconst
   assert(nk < num_entries(), "oob");
-  KlassLUTEntry e(k);
+  KlassLUTEntry e(k); // This calculates the klute entry from Klass properties
   _entries[nk] = e.value();
+  k->set_klute(e.value());   // also store in class itself
   char tmp[1024];
   log_debug(klut)("registered Klass with KLUT: Klass*=" PTR_FORMAT ", nKlass %u, "
                   "Klute: " INT32_FORMAT_X_0 ", %s",
@@ -118,6 +119,23 @@ void KlassInfoLUT::register_klass(const Klass* k) {
   if (k->is_abstract() || k->is_interface()) {
     inc_registered_IK_for_abstract_or_interface();
   }
+}
+
+KlassLUTEntry KlassInfoLUT::late_register_klass(narrowKlass nk) {
+  const Klass* k = CompressedKlassPointers::decode(nk);
+  // We only tolerate this for CDS. In that case, we expect the original class - during dumptime -
+  // to be registered already, so it should have a valid KLUTE entry set which we only need to copy.
+  // Note: we cannot calculate the klute here, since at this point the Klass has no associated
+  // class loader data...
+  assert(k->is_shared(), "Only for CDS classes");
+  KlassLUTEntry e(k->klute());
+  char tmp[1024];
+  log_debug(klut)("late-register Klass with KLUT: Klass*=" PTR_FORMAT ", nKlass %u, "
+                  "Klute: " INT32_FORMAT_X_0 ", %s",
+                  p2i(k), nk, e.value(), k->name()->as_C_string(tmp, sizeof(tmp)));
+  assert(!e.is_invalid(), "Cannot be");
+  _entries[nk] = e.value();
+  return e;
 }
 
 // Counters and incrementors
