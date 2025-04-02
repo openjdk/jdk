@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,6 @@
  *
  */
 
-#ifndef SHARE_C1_C1_FPUSTACKSIM_HPP
-#define SHARE_C1_C1_FPUSTACKSIM_HPP
-
-#include "c1/c1_FrameMap.hpp"
-#include "utilities/macros.hpp"
-
-// Provides location for forward declaration of this class, which is
-// only implemented on Intel
-class FpuStackSim;
-
-#include CPU_HEADER(c1_FpuStackSim)
-
-#endif // SHARE_C1_C1_FPUSTACKSIM_HPP
+module com.needsjdkaddexport {
+    exports com.needsjdkaddexport;
+}

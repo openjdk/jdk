@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +22,12 @@
  *
  */
 
-#ifndef CPU_PPC_C1_FPUSTACKSIM_PPC_HPP
-#define CPU_PPC_C1_FPUSTACKSIM_PPC_HPP
+package com.nomodule.needsjdkaddexport;
 
-// No FPU stack on PPC.
-class FpuStackSim;
+import jdk.internal.misc.CDS;
 
-#endif // CPU_PPC_C1_FPUSTACKSIM_PPC_HPP
+public class Main {
+    public static void main(String ... args) {
+        System.out.println("CDS.isDumpingArchive() = " + CDS.isDumpingArchive());
+    }
+}

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +22,12 @@
  *
  */
 
-#ifndef CPU_RISCV_C1_FPUSTACKSIM_RISCV_HPP
-#define CPU_RISCV_C1_FPUSTACKSIM_RISCV_HPP
+package com.needsfoosaddexport;
 
-// No FPU stack on RISCV
-class FpuStackSim;
+import com.foos.internal.FoosInternal;
 
-#endif // CPU_RISCV_C1_FPUSTACKSIM_RISCV_HPP
+public class Main {
+    public static void main(String ... args) {
+        System.out.println("FoosInternal.test() = " + FoosInternal.test());
+    }
+}
