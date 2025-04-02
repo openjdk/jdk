@@ -35,14 +35,19 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static java.lang.constant.ConstantDescs.*;
 
 /**
  * Benchmark measuring StableValue performance
@@ -105,6 +110,14 @@ public class StableMethodHandleBenchmark {
     @Benchmark
     public int stableMh() throws Throwable {
         return (int) STABLE_MH.orElseThrow().invokeExact(1);
+    }
+
+    Object cp() {
+        CodeBuilder cob = null;
+        ConstantPoolBuilder cp = ConstantPoolBuilder.of();
+        cob.ldc(cp.constantDynamicEntry(cp.bsmEntry(cp.methodHandleEntry(BSM_CLASS_DATA), List.of()),
+                cp.nameAndTypeEntry(DEFAULT_NAME, CD_MethodHandle)));
+        return null;
     }
 
     static MethodHandle identityHandle() {
