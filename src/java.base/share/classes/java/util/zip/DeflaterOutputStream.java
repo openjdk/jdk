@@ -39,11 +39,12 @@ import java.io.IOException;
  * thrown.
  *
  * <h2 id="compressor-usage">Compressor Usage</h2>
- * An {@linkplain DeflaterOutputStream output stream} that is created without specifying
- * a {@linkplain Deflater compressor} will use a default compressor. The default
- * compressor will be closed when the output stream is {@linkplain #close closed}.
+ * A {@linkplain DeflaterOutputStream} created without
+ * specifying a {@linkplain Deflater compressor} will create a compressor
+ * at construction time, and close the compressor when the output stream
+ * is {@linkplain #close closed}.
  * <p>
- * If a compressor is specified when creating the output stream, it is the
+ * If a compressor is specified when creating the {@code DeflaterOutputStream}, it is the
  * responsibility of the caller to {@linkplain Deflater#close close} the
  * compressor after closing the output stream.
  *
@@ -177,10 +178,11 @@ public class DeflaterOutputStream extends FilterOutputStream {
 
 
     /**
-     * Creates a new output stream with a default compressor, a default
-     * buffer size and the specified flush mode.
+     * Creates a new output stream and compressor with the
+     * default compression level, a default buffer size and
+     * the specified flush mode.
      * <p>
-     * The default compressor will be closed when this output stream
+     * The compressor will be closed when this output stream
      * is {@linkplain #close() closed}.
      *
      * @param out the output stream
@@ -198,12 +200,13 @@ public class DeflaterOutputStream extends FilterOutputStream {
     }
 
     /**
-     * Creates a new output stream with a default compressor and buffer size.
+     * Creates a new output stream and compressor with the
+     * default compression level and a default buffer size.
      *
      * <p>The new output stream instance is created as if by invoking
      * the 2-argument constructor {@code DeflaterOutputStream(out, false)}.
      * <p>
-     * The default compressor will be closed when this output stream
+     * The compressor will be closed when this output stream
      * is {@linkplain #close() closed}.
      *
      * @param out the output stream

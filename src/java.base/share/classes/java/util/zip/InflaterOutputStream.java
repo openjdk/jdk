@@ -35,11 +35,12 @@ import java.util.Objects;
  * "deflate" compression format.
  *
  * <h2 id="decompressor-usage">Decompressor Usage</h2>
- * An {@linkplain InflaterOutputStream output stream} that is created without specifying
- * a {@linkplain Inflater decompressor} will use a default decompressor. The default
- * decompressor will be closed when the output stream is {@linkplain #close closed}.
+ * An {@linkplain InflaterOutputStream} created without
+ * specifying a {@linkplain Inflater decompressor} will create a decompressor
+ * at construction time, and close the decompressor when the output stream
+ * is {@linkplain #close closed}.
  * <p>
- * If a decompressor is specified when creating the output stream, it is the
+ * If a decompressor is specified when creating the {@code InflaterOutputStream}, it is the
  * responsibility of the caller to {@linkplain Inflater#close close} the
  * decompressor after closing the output stream.
  *
@@ -81,10 +82,10 @@ public class InflaterOutputStream extends FilterOutputStream {
     }
 
     /**
-     * Creates a new output stream with a default decompressor and buffer
-     * size.
+     * Creates a new output stream and decompressor with a
+     * default buffer size.
      * <p>
-     * The default decompressor will be closed when this output stream
+     * The decompressor will be closed when this output stream
      * is {@linkplain #close() closed}.
      *
      * @param out output stream to write the uncompressed data to

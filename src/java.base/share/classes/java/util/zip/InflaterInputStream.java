@@ -40,11 +40,12 @@ import java.util.Objects;
  * thrown.
  *
  * <h2 id="decompressor-usage">Decompressor Usage</h2>
- * An {@linkplain InflaterInputStream input stream} that is created without specifying
- * a {@linkplain Inflater decompressor} will use a default decompressor. The default
- * decompressor will be closed when the input stream is {@linkplain #close closed}.
+ * An {@linkplain InflaterInputStream} created without
+ * specifying a {@linkplain Inflater decompressor} will create a decompressor
+ * at construction time, and close the decompressor when the input stream
+ * is {@linkplain #close closed}.
  * <p>
- * If a decompressor is specified when creating the input stream, it is the
+ * If a decompressor is specified when creating the {@code InflaterInputStream}, it is the
  * responsibility of the caller to {@linkplain Inflater#close close} the
  * decompressor after closing the input stream.
  *
@@ -128,9 +129,10 @@ public class InflaterInputStream extends FilterInputStream {
     boolean usesDefaultInflater = false;
 
     /**
-     * Creates a new input stream with a default decompressor and buffer size.
+     * Creates a new input stream and decompressor with a
+     * default buffer size.
      * <p>
-     * The default decompressor will be closed when this input stream
+     * The decompressor will be closed when this input stream
      * is {@linkplain #close() closed}.
      *
      * @param in the input stream

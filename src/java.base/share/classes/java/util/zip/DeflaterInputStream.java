@@ -35,11 +35,12 @@ import java.util.Objects;
  * compression format.
  *
  * <h2 id="compressor-usage">Compressor Usage</h2>
- * An {@linkplain DeflaterInputStream input stream} that is created without specifying
- * a {@linkplain Deflater compressor} will use a default compressor. The default
- * compressor will be closed when the input stream is {@linkplain #close closed}.
+ * A {@linkplain DeflaterInputStream} created without
+ * specifying a {@linkplain Deflater compressor} will create a compressor
+ * at construction time, and close the compressor when the input stream
+ * is {@linkplain #close closed}.
  * <p>
- * If a compressor is specified when creating the input stream, it is the
+ * If a compressor is specified when creating the {@code DeflaterInputStream}, it is the
  * responsibility of the caller to {@linkplain Deflater#close close} the
  * compressor after closing the input stream.
  *
@@ -81,10 +82,10 @@ public class DeflaterInputStream extends FilterInputStream {
     }
 
     /**
-     * Creates a new input stream with a default compressor and buffer
-     * size.
+     * Creates a new input stream and compressor with the
+     * default compression level and a default buffer size.
      * <p>
-     * The default compressor will be closed when this input stream
+     * The compressor will be closed when this input stream
      * is {@linkplain #close() closed}.
      *
      * @param in input stream to read the uncompressed data to
