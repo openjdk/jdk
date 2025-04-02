@@ -558,8 +558,8 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
-     * Parses a {@code Number} from the input text, the subtype of which is always
-     * {@code Double}. The value returned is the {@code limit} corresponding
+     * Parses the input text starting at the index given by the {@code ParsePosition}
+     * as a {@code Double}. The value returned is the {@code limit} corresponding
      * to the {@code format} that is the longest substring of the input text.
      * Matching is done in ascending order, when multiple {@code format}s match
      * the text equivalently in strength, the first matching {@code limit} is
