@@ -31,4 +31,4 @@ void ICacheStubGenerator::generate_icache_flush(const char* name,
   *flush_icache_stub = nullptr;
 }
 
-void ICache::initialize() {}
+void ICache::initialize(int phase) {}
