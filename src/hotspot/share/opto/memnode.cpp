@@ -1962,11 +1962,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  if (progress) {
-    return this;
-  }
-
-  return nullptr;
+  return progress ? this : nullptr;
 }
 
 // Helper to recognize certain Klass fields which are invariant across

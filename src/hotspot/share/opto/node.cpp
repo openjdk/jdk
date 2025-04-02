@@ -971,16 +971,6 @@ Node* Node::find_out_with(int opcode) {
   return nullptr;
 }
 
-Node* Node::find_out_with(int opcode1, int opcode2) const {
-  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
-    Node* use = fast_out(i);
-    if (use->Opcode() == opcode1 || use->Opcode() == opcode2) {
-      return use;
-    }
-  }
-  return nullptr;
-}
-
 // Return true if the current node has an out that matches opcode.
 bool Node::has_out_with(int opcode) {
   return (find_out_with(opcode) != nullptr);
