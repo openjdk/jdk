@@ -1072,6 +1072,7 @@ private:
   int _next_int_group = 1;
   GrowableArray<MemPointerRawSummand> _worklist;
   GrowableArray<MemPointerRawSummand> _raw_summands;
+  GrowableArray<MemPointerSummand> _summands;
 
   // Resulting decomposed-form.
   MemPointer _mem_pointer;

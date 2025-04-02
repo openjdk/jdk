@@ -42,6 +42,7 @@ MemPointer MemPointerParser::parse(MemPointerParserCallback& callback
                                    NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
   assert(_worklist.is_empty(), "no prior parsing");
   assert(_raw_summands.is_empty(), "no prior parsing");
+  assert(_summands.is_empty(), "no prior parsing");
 
   Node* pointer = _mem->in(MemNode::Address);
   const jint size = _mem->memory_size();
@@ -98,6 +99,7 @@ MemPointer MemPointerParser::parse(MemPointerParserCallback& callback
     // Keep summands with non-zero scale.
     if (!scaleI.is_zero() && !scaleL.is_NaN()) {
       _raw_summands.at_put(pos_put++, MemPointerRawSummand(variable, scaleI, scaleL, int_group));
+      // TODO: _summands !!!!
     }
   }
   _raw_summands.trunc_to(pos_put);
