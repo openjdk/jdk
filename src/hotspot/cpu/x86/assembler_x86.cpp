@@ -4536,11 +4536,20 @@ void Assembler::enotl(Register dst, Register src) {
   emit_int16((unsigned char)0xF7, (0xD0 | encode));
 }
 
+void Assembler::orw(Register dst, Register src) {
+  emit_int8(0x66);
+  (void) prefix_and_encode(dst->encoding(), src->encoding());
+  emit_arith(0x0B, 0xC0, dst, src);
+}
+
 void Assembler::eorw(Register dst, Register src1, Register src2, bool no_flags) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
+    return orw(dst, src2);
+  }
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
   // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
-  (void) evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_66, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags, !USE_PREFIXQ, true);
+  (void) evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_66, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags);
   emit_arith(0x0B, 0xC0, src1, src2);
 }
 

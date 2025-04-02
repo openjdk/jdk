@@ -1921,6 +1921,7 @@ private:
 #endif
   void btq(Register dst, Register src);
 
+  void orw(Register dst, Register src);
   void eorw(Register dst, Register src1, Register src2, bool no_flags);
 
   void orl(Address dst, int32_t imm32);
