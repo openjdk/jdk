@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 4198022
- * @summary Tests that JTextPane with HTMLEditorKit handles the HEAD tag properly
+ * @summary Tests if HTML tags <sup>, <sub> and <nobr> are supported in JEditorPane
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4198022

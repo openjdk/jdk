@@ -58,6 +58,7 @@ public class bug4245401 {
             String text = "HTML Test... Test is a test...";
             kit.read(new StringReader(text), doc, 0);
         } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
         frame.add(ep);

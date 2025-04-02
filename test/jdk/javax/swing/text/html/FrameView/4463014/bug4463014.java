@@ -42,8 +42,8 @@ public class bug4463014 {
         Follow the instructions displayed in the left frame to perform testing.
         The test PASSES only if the test behaves as per instructions.
     """;
-    static JFrame createUI() {
 
+    static JFrame createUI() {
         JFrame frame = new JFrame("bug4463014");
         JEditorPane jep = new JEditorPane();
         jep.setEditorKit(new HTMLEditorKit());

@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 4102068
- * @summary Tests that JTextPane with HTMLEditorKit handles the HEAD tag properly
+ * @summary Tests HTML editor JEditorPane change mouse icon over the link
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4102068
