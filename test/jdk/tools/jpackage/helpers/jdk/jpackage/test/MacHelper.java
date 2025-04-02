@@ -33,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -147,6 +148,32 @@ public final class MacHelper {
                 // Skip leading lines before xml declaration
                 .dropWhile(Pattern.compile("\\s?<\\?xml\\b.+\\?>").asPredicate().negate())
                 .collect(Collectors.joining()))).get();
+    }
+
+    public static boolean signPredefinedAppImage(JPackageCommand cmd) {
+        Objects.requireNonNull(cmd);
+        if (!TKit.isOSX()) {
+            throw new UnsupportedOperationException();
+        }
+        return cmd.hasArgument("--mac-sign") && cmd.hasArgument("--app-image");
+    }
+
+    public static boolean appImageSigned(JPackageCommand cmd) {
+        Objects.requireNonNull(cmd);
+        if (!TKit.isOSX()) {
+            throw new UnsupportedOperationException();
+        }
+
+        if (Optional.ofNullable(cmd.getArgumentValue("--app-image")).map(Path::of).map(AppImageFile::load).map(AppImageFile::macSigned).orElse(false)) {
+            // The external app image is signed, so the app image is signed too.
+            return true;
+        }
+
+        if (!cmd.hasArgument("--mac-sign")) {
+            return false;
+        }
+
+        return (cmd.hasArgument("--mac-signing-key-user-name") || cmd.hasArgument("--mac-app-image-sign-identity"));
     }
 
     static PackageHandlers createDmgPackageHandlers() {
@@ -397,6 +424,10 @@ public final class MacHelper {
         private final org.w3c.dom.Document doc;
     }
 
+    public static boolean isXcodeDevToolsInstalled() {
+        return Inner.XCODE_DEV_TOOLS_INSTALLED;
+    }
+
     private static DocumentBuilder createDocumentBuilder() throws
                 ParserConfigurationException {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newDefaultInstance();
@@ -430,6 +461,11 @@ public final class MacHelper {
         } catch (NoSuchMethodException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    private static final class Inner {
+        private static final boolean XCODE_DEV_TOOLS_INSTALLED =
+                Executor.of("/usr/bin/xcrun", "--help").executeWithoutExitCodeCheck().getExitCode() == 0;
     }
 
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
