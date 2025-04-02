@@ -42,15 +42,26 @@ import java.io.UnsupportedEncodingException;
  * default values for the {@code Handler}'s {@code Filter}, {@code Formatter},
  * and {@code Level}.  See the specific documentation for each concrete
  * {@code Handler} class.
- * <p>
+ *
+ * <h2><a id=threadSafety>Thread Safety and Deadlock Risk in Handlers</a></h2>
+ *
  * Implementations of {@code Handler} should be thread-safe. Handlers are
  * expected to be invoked concurrently from arbitrary threads. However,
  * over-use of synchronization may result in unwanted thread contention,
  * performance issues or even deadlocking.
+ * <p>
+ * In particular, subclasses should avoid acquiring locks around code which
+ * calls back to arbitrary user-supplied objects, especially during log record
+ * formatting. Holding a lock around any such callbacks creates a deadlock risk
+ * between logging code and user code.
+ * <p>
+ * As such, general purpose {@code Handler} subclasses should never synchronize
+ * their {@link #publish(LogRecord)} method, or calls to {@code
+ * super.publish()}, since these are always expected to need to process and
+ * format user-supplied arguments.
  *
  * @since 1.4
  */
-
 public abstract class Handler {
     private static final int offValue = Level.OFF.intValue();
 
