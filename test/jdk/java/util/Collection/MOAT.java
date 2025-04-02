@@ -30,8 +30,8 @@
  * @summary Run many tests on many Collection and Map implementations
  * @author  Martin Buchholz
  * @modules java.base/java.util:open
- * @compile --enable-preview -source ${jdk.version} MOAT.java
- * @run main/othervm --enable-preview MOAT
+ * @enablePreview
+ * @run main MOAT
  * @key randomness
  */
 
