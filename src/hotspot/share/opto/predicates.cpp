@@ -1247,6 +1247,7 @@ void EliminateUselessPredicates::mark_maybe_useful_predicates_useless() const {
 // All now useless Template Assertion Predicates should not refer to any CountedLoopNode that can still be found in the
 // graph (otherwise, they would have been marked useful instead). This is verified in this method.
 void EliminateUselessPredicates::verify_loop_nodes_of_useless_templates_assertion_predicates_are_dead() const {
+  ResourceMark rm;
   Unique_Node_List loop_nodes_of_useless_template_assertion_predicates =
        collect_loop_nodes_of_useless_template_assertion_predicates();
   verify_associated_loop_nodes_are_dead(loop_nodes_of_useless_template_assertion_predicates);
