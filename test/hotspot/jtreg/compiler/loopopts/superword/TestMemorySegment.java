@@ -774,9 +774,10 @@ class TestMemorySegmentImpl {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
-                  IRNode.ADD_VI,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfAnd = { "ShortRunningLongLoop", "true", "AlignVector", "false" },
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // FAILS: invariants are sorted differently, because of differently inserted Cast.
@@ -792,9 +793,10 @@ class TestMemorySegmentImpl {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
-                  IRNode.ADD_VI,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfAnd = { "ShortRunningLongLoop", "true", "AlignVector", "false" },
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // FAILS: invariants are sorted differently, because of differently inserted Cast.
