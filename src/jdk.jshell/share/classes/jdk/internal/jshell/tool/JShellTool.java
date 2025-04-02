@@ -643,8 +643,8 @@ public class JShellTool implements MessageHandler {
             } else {
                 String packedStartup = prefs.get(STARTUP_KEY);
                 boolean preview = previewEnabled(options);
-                int sourceLevel = detectSourceLevel(options.valuesOf(argC)
-                                                           .toArray(String[]::new));
+                String sourceLevel = detectSourceLevel(options.valuesOf(argC)
+                                                              .toArray(String[]::new));
                 initialStartup = Startup.unpack(packedStartup, sourceLevel,
                                                 preview, new InitMessageHandler());
             }
@@ -2312,7 +2312,7 @@ public class JShellTool implements MessageHandler {
             }
         } else if (defaultOption) {
             boolean preview = options.hasOption(OptionKind.ENABLE_PREVIEW);
-            int sourceLevel = detectSourceLevel(options.compilerOptions());
+            String sourceLevel = detectSourceLevel(options.compilerOptions());
             startup = Startup.defaultStartup(sourceLevel, preview, this);
         } else if (noneOption) {
             startup = Startup.noStartup();
@@ -2331,7 +2331,7 @@ public class JShellTool implements MessageHandler {
         String retained = prefs.get(STARTUP_KEY);
         if (retained != null) {
             boolean preview = options.hasOption(OptionKind.ENABLE_PREVIEW);
-            int sourceLevel = detectSourceLevel(options.compilerOptions());
+            String sourceLevel = detectSourceLevel(options.compilerOptions());
             Startup retainedStart = Startup.unpack(retained, sourceLevel, preview, this);
             boolean currentDifferent = !startup.equals(retainedStart);
             sb.append(retainedStart.show(true));
@@ -2349,17 +2349,17 @@ public class JShellTool implements MessageHandler {
         hard(escape(sb));
     }
 
-    private int detectSourceLevel(String[] compilerOptions) {
+    private String detectSourceLevel(String[] compilerOptions) {
         for (int i = 0; i < compilerOptions.length; i++) {
             switch (compilerOptions[i]) {
                 case "-source", "--source", "--release":
                     if (i + 1 < compilerOptions.length) {
-                        return Integer.parseInt(compilerOptions[i + 1]);
+                        return compilerOptions[i + 1];
                     }
             }
         }
 
-        return SourceVersion.latest().runtimeVersion().feature();
+        return Integer.toString(SourceVersion.latest().runtimeVersion().feature());
     }
 
     private void showIndent() {

@@ -25,6 +25,8 @@
 
 package jdk.internal.jshell.tool;
 
+import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.code.Source.Feature;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -118,7 +120,7 @@ class Startup {
     }
 
     private static final String DEFAULT_STARTUP_NAME = "DEFAULT";
-    private static final String DEFAULT_24_STARTUP_NAME = "DEFAULT_24";
+    private static final String DEFAULT_STARTUP_NAME_NO_MODULE_IMPORTS = "DEFAULT_NO_MODULE_IMPORTS";
     private static final String PREVIEW_DEFAULT_STARTUP_NAME = "PREVIEW_DEFAULT";
 
     // cached DEFAULT start-up
@@ -173,7 +175,7 @@ class Startup {
         if (entries.size() == 1) {
             StartupEntry sue = entries.get(0);
             if (sue.isBuiltIn && (sue.name.equals(DEFAULT_STARTUP_NAME) ||
-                                  sue.name.equals(DEFAULT_24_STARTUP_NAME) ||
+                                  sue.name.equals(DEFAULT_STARTUP_NAME_NO_MODULE_IMPORTS) ||
                                   sue.name.equals(PREVIEW_DEFAULT_STARTUP_NAME))) {
                 return true;
             }
@@ -225,7 +227,7 @@ class Startup {
      * @param mh handler for error messages
      * @return Startup, or default startup when error (message has been printed)
      */
-    static Startup unpack(String storedForm, int sourceLevel, boolean preview, MessageHandler mh) {
+    static Startup unpack(String storedForm, String sourceLevel, boolean preview, MessageHandler mh) {
         if (storedForm != null) {
             if (storedForm.isEmpty()) {
                 return noStartup();
@@ -336,16 +338,18 @@ class Startup {
      * @param mh handler for error messages
      * @return The default Startup, or empty startup when error (message has been printed)
      */
-    static Startup defaultStartup(int sourceLevel, boolean preview, MessageHandler mh) {
-        boolean startup24 = sourceLevel < 25;
-        int idx = preview ? 2 : startup24 ? 1 : 0;
+    static Startup defaultStartup(String sourceLevel, boolean preview, MessageHandler mh) {
+        Source source = Source.lookup(sourceLevel);
+        boolean hasModuleImports = source == null ||
+                                   Feature.MODULE_IMPORTS.allowedInSource(source);
+        int idx = preview ? 2 : !hasModuleImports ? 1 : 0;
 
         if (defaultStartup[idx] != null) {
             return defaultStartup[idx];
         }
         String resourceName = preview ? PREVIEW_DEFAULT_STARTUP_NAME
-                                      : startup24 ? DEFAULT_24_STARTUP_NAME
-                                                  : DEFAULT_STARTUP_NAME;
+                                      : !hasModuleImports ? DEFAULT_STARTUP_NAME_NO_MODULE_IMPORTS
+                                                          : DEFAULT_STARTUP_NAME;
         try {
             String content = readResource(resourceName);
             return defaultStartup[idx] = new Startup(
