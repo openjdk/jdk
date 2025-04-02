@@ -72,7 +72,7 @@ public record StableFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
 
     @Override
     public String toString() {
-        return StableUtil.renderMappings(this, "StableFunction", values.entrySet());
+        return StableUtil.renderMappings(this, "StableFunction", values.entrySet(), true);
     }
 
     public static <T, R> StableFunction<T, R> of(Set<? extends T> inputs,

@@ -94,7 +94,7 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
                 entries.add(new AbstractMap.SimpleImmutableEntry<>(enumElements[ordinal], delegates[i]));
             }
         }
-        return StableUtil.renderMappings(this, "StableFunction", entries);
+        return StableUtil.renderMappings(this, "StableFunction", entries, true);
     }
 
     @SuppressWarnings("unchecked")

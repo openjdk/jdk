@@ -1530,7 +1530,7 @@ class ImmutableCollections {
 
             @Override
             public String toString() {
-                return StableUtil.renderMappings(this, "StableSet", delegateEntrySet);
+                return StableUtil.renderMappings(this, "StableSet", delegateEntrySet, false);
             }
 
             @jdk.internal.ValueBased
@@ -1597,7 +1597,7 @@ class ImmutableCollections {
 
         @Override
         public String toString() {
-            return StableUtil.renderMappings(this, "StableMap", delegate.entrySet());
+            return StableUtil.renderMappings(this, "StableMap", delegate.entrySet(), true);
         }
 
     }

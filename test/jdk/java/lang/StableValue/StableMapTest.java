@@ -175,6 +175,9 @@ final class StableMapTest {
         for (var key : KEYS) {
             assertTrue(entrySet.toString().contains(key + "=.unset"));
         }
+        assertTrue(entrySet.toString().startsWith("["));
+        assertTrue(entrySet.toString().endsWith("]"));
+
         map.get(KEY);
         for (var key : KEYS) {
             if (key.equals(KEY)) {

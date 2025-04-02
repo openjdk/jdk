@@ -38,9 +38,10 @@ public final class StableUtil {
 
     public static <K, V> String renderMappings(Object self,
                                                String selfName,
-                                               Iterable<Map.Entry<K, StableValueImpl<V>>> delegates) {
+                                               Iterable<Map.Entry<K, StableValueImpl<V>>> delegates,
+                                               boolean curly) {
         final StringBuilder sb = new StringBuilder();
-        sb.append("{");
+        sb.append(curly ? "{" : "[");
         boolean first = true;
         for (var e : delegates) {
             if (first) { first = false; } else { sb.append(", "); }
@@ -52,7 +53,7 @@ public final class StableUtil {
                 sb.append(StableValueImpl.renderWrapped(value));
             }
         }
-        sb.append("}");
+        sb.append(curly ? "}" : "]");
         return sb.toString();
     }
 
