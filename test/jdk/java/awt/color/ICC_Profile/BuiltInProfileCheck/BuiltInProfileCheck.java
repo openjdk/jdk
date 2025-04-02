@@ -53,37 +53,37 @@ public class BuiltInProfileCheck {
     public static void main(String[] args) throws Exception {
         System.out.println("CASE 1: Testing BuiltIn Profile");
         for (int cs : colorSpace.keySet()) {
-            prepareTestProfile("BuiltIn", true, cs);
+            prepareTestProfile("Default", true, cs);
             testProfile(true, cs);
         }
         System.out.println("Passed\n");
 
         System.out.println("CASE 2: Testing Custom Profile");
-        prepareTestProfile("Custom", false, ColorSpace.CS_sRGB);
+        prepareTestProfile("Default", false, ColorSpace.CS_sRGB);
         testProfile(false, ColorSpace.CS_sRGB);
         System.out.println("Passed\n");
 
         System.out.println("CASE 3: Testing Built-In Profile"
                             + " Serialization & Deserialization");
         for (int cs : colorSpace.keySet()) {
-            prepareTestProfile("SerializeBuiltIn", true, cs);
+            prepareTestProfile("Serialize", true, cs);
             testProfile(true, cs);
         }
         System.out.println("Passed\n");
 
         System.out.println("CASE 4: Testing Custom Profile"
                             + " Serialization & Deserialization");
-        prepareTestProfile("SerializeCustom", false, ColorSpace.CS_sRGB);
+        prepareTestProfile("Serialize", false, ColorSpace.CS_sRGB);
         testProfile(false, ColorSpace.CS_sRGB);
         System.out.println("Passed\n");
 
         System.out.println("CASE 5: Test reading Built-In profile from .icc file");
-        prepareTestProfile("ReadBuiltIn", true, ColorSpace.CS_sRGB);
+        prepareTestProfile("ReadFromFile", true, ColorSpace.CS_sRGB);
         testProfile(true, ColorSpace.CS_sRGB);
         System.out.println("Passed\n");
 
         System.out.println("CASE 6: Test reading Custom profile from .icc file");
-        prepareTestProfile("ReadCustom", false, ColorSpace.CS_sRGB);
+        prepareTestProfile("ReadFromFile", false, ColorSpace.CS_sRGB);
         testProfile(false, ColorSpace.CS_sRGB);
         System.out.println("Passed\n");
     }
@@ -97,11 +97,11 @@ public class BuiltInProfileCheck {
                       : ICC_Profile.getInstance(builtInProfile.getData());
 
         switch (testCase) {
-            case "BuiltIn", "Custom" -> {
+            case "Default" -> {
                 // empty case block
-                // no further processing of testProfile required in these 2 cases.
+                // no further processing of testProfile required for default case
             }
-            case "SerializeBuiltIn", "SerializeCustom" -> {
+            case "Serialize" -> {
                 try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
                      ObjectOutputStream oos = new ObjectOutputStream(baos)) {
                     oos.writeObject(testProfile);
@@ -116,7 +116,7 @@ public class BuiltInProfileCheck {
                                                + " case failed", e);
                 }
             }
-            case "ReadBuiltIn", "ReadCustom" -> {
+            case "ReadFromFile" -> {
                 // .icc files serialized on older JDK version
                 String filename = isBuiltIn ? "builtIn.icc" : "custom.icc";
                 String testDir = System.getProperty("test.src")
