@@ -53,7 +53,7 @@ class ClassFileInMetaInfo {
     @BeforeAll
     static void setup() throws Exception {
         out = System.err; // inline with Junit
-        
+
         // Create module foo containing
         //     module-info.class
         //     p/C.class
