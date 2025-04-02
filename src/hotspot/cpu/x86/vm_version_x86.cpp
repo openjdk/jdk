@@ -1089,6 +1089,27 @@ void VM_Version::get_processor_features() {
     _has_intel_jcc_erratum = IntelJccErratumMitigation;
   }
 
+  if (ICacheFlush == 0) {
+    // Requested auto-detection.
+    if (VM_Version::supports_clwb()) {
+      FLAG_SET_ERGO(ICacheFlush, 3);
+    } else if (VM_Version::supports_clflushopt()) {
+      FLAG_SET_ERGO(ICacheFlush, 2);
+    } else if (VM_Version::supports_clflush()) {
+      FLAG_SET_ERGO(ICacheFlush, 1);
+    }
+  } else {
+    if (!VM_Version::supports_clflush() && (ICacheFlush == 1)) {
+      vm_exit_during_initialization("CPU does not support CLFLUSH, unable to use ICacheFlush=1");
+    }
+    if (!VM_Version::supports_clflushopt() && (ICacheFlush == 2)) {
+      vm_exit_during_initialization("CPU does not support CLFLUSHOPT, unable to use ICacheFlush=2");
+    }
+    if (!VM_Version::supports_clwb() && (ICacheFlush == 3)) {
+      vm_exit_during_initialization("CPU does not support CLWB, unable to use ICacheFlush=3");
+    }
+  }
+
   char buf[1024];
   int res = jio_snprintf(
               buf, sizeof(buf),
@@ -3097,6 +3118,8 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
       result |= CPU_LZCNT;
     if (ext_cpuid1_ecx.bits.sse4a != 0)
       result |= CPU_SSE4A;
+    if (sef_cpuid7_ebx.bits.clwb != 0) // JDK-8353572, yank before integration
+      result |= CPU_CLWB;
   }
 
   // Intel features.
