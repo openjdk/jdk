@@ -160,6 +160,9 @@ public final class TestNativeReferenceGet {
 
     private static void testNonconcurrent() {
         System.out.println("Testing nonconcurrent GC");
+        // A GC between clearing and strengthening will result in test failure.
+        // We try to make that unlikely via this immediately preceeding GC.
+        WB.fullGC();
         clearReferents();
         strengthenReferents();
         WB.fullGC();
