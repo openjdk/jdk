@@ -91,7 +91,7 @@ import java.util.function.Supplier;
  * }
  *}
  * <p>
- * Note that the holder value can only be set at most once.
+ * Note that the content can only be set at most once.
  * In the example above, the {@code logger} field is declared {@code static final} which
  * is a prerequisite for being treated as a constant by the JVM.
  *
@@ -437,14 +437,15 @@ public sealed interface StableValue<T>
     // Principal methods
 
     /**
-     * {@return {@code true} if the content was set to the provided {@code value},
-     *          {@code false} otherwise}
+     * Tries to set the content of this StableValue to the provided {@code content}.
      * <p>
-     * When this method returns, the content is always set.
+     * When this method returns, the content of this StableValue is always set.
      *
-     * @param value to set
+     * @return {@code true} if the content of this StableValue was set to the
+     *         provided {@code content}, {@code false} otherwise
+     * @param content to set
      */
-    boolean trySet(T value);
+    boolean trySet(T content);
 
     /**
      * {@return the content if set, otherwise, returns the provided {@code other} value}
@@ -495,15 +496,15 @@ public sealed interface StableValue<T>
     // Convenience methods
 
     /**
-     * Sets the content to the provided {@code value}, or, if already set,
-     * throws {@code IllegalStateException}.
+     * Sets the content of this StableValue to the provided {@code content}, or, if
+     * already set, throws {@code IllegalStateException}.
      * <p>
      * When this method returns (or throws an exception), the content is always set.
      *
-     * @param value to set
+     * @param content to set
      * @throws IllegalStateException if the content was already set
      */
-    void setOrThrow(T value);
+    void setOrThrow(T content);
 
     // Object methods
 

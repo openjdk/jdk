@@ -72,7 +72,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @ForceInline
     @Override
-    public boolean trySet(T value) {
+    public boolean trySet(T content) {
         if (wrappedContentAcquire() != null) {
             return false;
         }
@@ -81,15 +81,15 @@ public final class StableValueImpl<T> implements StableValue<T> {
         // Mutual exclusion is required here as `orElseSet` might also
         // attempt to modify the `wrappedValue`
         synchronized (this) {
-            return wrapAndSet(value);
+            return wrapAndSet(content);
         }
     }
 
     @ForceInline
     @Override
-    public void setOrThrow(T value) {
-        if (!trySet(value)) {
-            throw new IllegalStateException("Cannot set the content to " + value +
+    public void setOrThrow(T content) {
+        if (!trySet(content)) {
+            throw new IllegalStateException("Cannot set the content to " + content +
                     " because the content is already set: " + orElseThrow());
         }
     }
