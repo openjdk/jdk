@@ -2006,7 +2006,7 @@ bool LibraryCallKit::inline_min_max(vmIntrinsics::ID id) {
 bool LibraryCallKit::inline_math_mathExact(Node* math, Node* test) {
   if (builtin_throw_too_many_traps(Deoptimization::Reason_intrinsic,
                                    env()->ArithmeticException_instance())) {
-    // It has been already too many times, but we cannot use builtin_throw care (e.g. we care about backtraces),
+    // It has been already too many times, but we cannot use builtin_throw (e.g. we care about backtraces),
     // so let's bail out intrinsic rather than risking deopting again.
     return false;
   }
