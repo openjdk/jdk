@@ -720,6 +720,9 @@ public sealed interface StableValue<T>
      * If the provided {@code mapper} throws an exception, it is relayed to the initial
      * caller and no value associated with the provided key is recorded.
      * <p>
+     * Any direct {@link Map#values()} or {@link Map#entrySet()} views
+     * of the returned map are also stable.
+     * <p>
      * The returned map is not {@link Serializable} and, as it is unmodifiable, does
      * not implement the {@linkplain Collection##optional-operations optional operations}
      * in the {@linkplain Map} interface.
