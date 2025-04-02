@@ -67,6 +67,8 @@ public class TestMergeLoads {
     short[] aS = new short[RANGE];
     int[] aI = new int[RANGE];
 
+    long aN = UNSAFE.allocateMemory(RANGE);
+
     interface TestFunction {
         Object run(boolean isWarmUp, int rnd);
     }
@@ -99,6 +101,7 @@ public class TestMergeLoads {
         testGroups.get("test1").put("test1e", (_,_) -> { return test1e(aB.clone()); });
         testGroups.get("test1").put("test1f", (_,_) -> { return test1f(aB.clone()); });
         testGroups.get("test1").put("test1g", (_,_) -> { return test1g(aB.clone()); });
+        testGroups.get("test1").put("test1h", (_,_) -> { return test1h(aN); });
 
         // Get long in little endian
         testGroups.put("test2", new HashMap<String,TestFunction>());
@@ -110,6 +113,7 @@ public class TestMergeLoads {
         testGroups.get("test2").put("test2e", (_,_) -> { return test2e(aB.clone()); });
         testGroups.get("test2").put("test2f", (_,_) -> { return test2f(aB.clone()); });
         testGroups.get("test2").put("test2g", (_,_) -> { return test2g(aB.clone()); });
+        testGroups.get("test2").put("test2h", (_,_) -> { return test2h(aN); });
 
         // Get int in big endian
         testGroups.put("test3", new HashMap<String,TestFunction>());
@@ -171,11 +175,22 @@ public class TestMergeLoads {
         testGroups.put("test11", new HashMap<String,TestFunction>());
         testGroups.get("test11").put("test11R", (_,_) -> { return test11R(aB.clone(), aC.clone(), aS.clone(), aI.clone()); });
         testGroups.get("test11").put("test11a", (_,_) -> { return test11a(aB.clone(), aC.clone(), aS.clone(), aI.clone()); });
+
+        // Load value has other usage
+        testGroups.put("test12", new HashMap<String,TestFunction>());
+        testGroups.get("test12").put("test12R", (_,_) -> { return test12R(aB.clone()); });
+        testGroups.get("test12").put("test12a", (_,_) -> { return test12a(aB.clone()); });
+
+        // Mix different loads
+        testGroups.put("test13", new HashMap<String,TestFunction>());
+        testGroups.get("test13").put("test13R", (_,_) -> { return test13R(aB.clone(), aC.clone(), aS.clone(), aI.clone()); });
+        testGroups.get("test13").put("test13a", (_,_) -> { return test13a(aB.clone(), aC.clone(), aS.clone(), aI.clone()); });
     }
 
-    static void set_random(byte[] a) {
+    static void set_random(byte[] a, long addr) {
         for (int i = 0; i < a.length; i++) {
             a[i] = (byte)RANDOM.nextInt();
+            UNSAFE.putByte(addr + i, a[i]);
         }
     }
 
@@ -205,6 +220,7 @@ public class TestMergeLoads {
                  "test1e",
                  "test1f",
                  "test1g",
+                 "test1h",
 
                  "test2a",
                  "test2b",
@@ -213,6 +229,7 @@ public class TestMergeLoads {
                  "test2e",
                  "test2f",
                  "test2g",
+                 "test2h",
 
                  "test3a",
                  "test3b",
@@ -247,13 +264,17 @@ public class TestMergeLoads {
                  "test10a",
 
                  "test11a",
+
+                 "test12a",
+
+                 "test13a",
                 })
     public void runTests(RunInfo info) {
         // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
         int iters = info.isWarmUp() ? 1_000 : 50_000;
         for (int iter = 0; iter < iters; iter++) {
             // Write random values to inputs
-            set_random(aB);
+            set_random(aB, aN);     // setup for both byte array and natvie
             set_random(aC);
             set_random(aS);
 
@@ -454,6 +475,23 @@ public class TestMergeLoads {
              ((UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1) & 0xff) << 8 )|
              ((UNSAFE.getByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2) & 0xff) << 16)|
              ((UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3) & 0xff) << 24);
+    }
+
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B,  "0",
+          IRNode.LOAD_UB, "0",
+          IRNode.LOAD_S,  "0",
+          IRNode.LOAD_US, "0",
+          IRNode.LOAD_I,  "1",
+          IRNode.LOAD_L,  "0",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static int test1h(long address) {
+      return  (UNSAFE.getByte(address + 0) & 0xff)       |
+             ((UNSAFE.getByte(address + 1) & 0xff) << 8 )|
+             ((UNSAFE.getByte(address + 2) & 0xff) << 16)|
+             ((UNSAFE.getByte(address + 3) & 0xff) << 24);
     }
 
     /**
@@ -660,6 +698,27 @@ public class TestMergeLoads {
             (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 5) & 0xff)) << 40)|
             (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6) & 0xff)) << 48)|
             (((long)(UNSAFE.getByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 7) & 0xff)) << 56);
+    }
+
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B,  "0",
+          IRNode.LOAD_UB, "0",
+          IRNode.LOAD_S,  "0",
+          IRNode.LOAD_US, "0",
+          IRNode.LOAD_I,  "0",
+          IRNode.LOAD_L,  "1",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static long test2h(long address) {
+      return  ((long)(UNSAFE.getByte(address + 0) & 0xff))       |
+             (((long)(UNSAFE.getByte(address + 1) & 0xff)) << 8 )|
+             (((long)(UNSAFE.getByte(address + 2) & 0xff)) << 16)|
+             (((long)(UNSAFE.getByte(address + 3) & 0xff)) << 24)|
+             (((long)(UNSAFE.getByte(address + 4) & 0xff)) << 32)|
+             (((long)(UNSAFE.getByte(address + 5) & 0xff)) << 40)|
+             (((long)(UNSAFE.getByte(address + 6) & 0xff)) << 48)|
+             (((long)(UNSAFE.getByte(address + 7) & 0xff)) << 56);
     }
 
     /**
@@ -1635,5 +1694,150 @@ public class TestMergeLoads {
       long i4 = ((long)(aI[0]  & 0xffffffff))        |
                (((long)(aI[1]  & 0xfffffff0)) << 32);     // unaligned mask
       return new long[] {i1, i2, i3, i4};
+    }
+
+    /**
+     * Group 12: load value has other usage
+     */
+    @DontCompile
+    static long[] test12R(byte[] aB) {
+      long i1 = ((long)(aB[0] & 0xff))        |
+               (((long)(aB[1] & 0xff)) << 8 ) |
+               (((long)(aB[2] & 0xff)) << 16) |
+               (((long)(aB[3] & 0xff)) << 24) |
+               (((long)(aB[4] & 0xff)) << 32) |
+               (((long)(aB[5] & 0xff)) << 40) |
+               (((long)(aB[6] & 0xff)) << 48) |
+               (((long)(aB[7] )) << 56);
+      return new long[] {i1, aB[7]};
+    }
+
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "7",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static long[] test12a(byte[] aB) {
+      long i1 = ((long)(aB[0] & 0xff))        |
+               (((long)(aB[1] & 0xff)) << 8 ) |
+               (((long)(aB[2] & 0xff)) << 16) |
+               (((long)(aB[3] & 0xff)) << 24) |
+               (((long)(aB[4] & 0xff)) << 32) |
+               (((long)(aB[5] & 0xff)) << 40) |
+               (((long)(aB[6] & 0xff)) << 48) |
+               (((long)(aB[7] )) << 56);
+      return new long[] {i1, aB[7]};
+    }
+
+    /**
+     * Group 13: Mix different patterns
+     */
+    @DontCompile
+    static long[] test13R(byte[] aB, char[] aC, short[] aS, int[] aI) {
+      long i1 = ((long)(aB[0] & 0xff))        |
+               (((long)(aB[1] & 0xff)) << 8 ) |
+               (((long)(aB[2] & 0xff)) << 16) |
+               (((long)(aB[3] & 0xff)) << 24) |
+               (((long)(aB[4] & 0xff)) << 32) |
+               (((long)(aB[5] & 0xff)) << 40) |
+               (((long)(aB[6] & 0xff)) << 48) |
+               (((long)(aB[7] & 0xff)) << 56);
+      long i2 = ((long)(aB[2] & 0xff))        |
+               (((long)(aB[3] & 0xff)) << 8 ) |
+               (((long)(aB[4] & 0xff)) << 16) |
+               (((long)(aB[5] & 0xff)) << 24) |
+               (((long)(aB[6] & 0xff)) << 32) |
+               (((long)(aB[7] & 0xff)) << 40) |
+               (((long)(aB[8] & 0xff)) << 48) |
+               (((long)(aB[9] & 0xff)) << 56);
+      int i3 =  (aB[10] & 0xff)        +
+               ((aB[11] & 0xff) << 8 ) +
+               ((aB[12] & 0xff) << 16) +
+               ((aB[13] & 0xff) << 24);
+      int i4 =  (aB[14] & 0xff)        |
+               ((aB[15] & 0xff) << 8 ) |
+               ((aB[16] & 0xff) << 16) |
+               ((aB[17] & 0xff) << 24);
+      int i5 = (UNSAFE.getByte(aB, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 20) & 0xff)        |  // it can be merged
+              ((UNSAFE.getByte(aB, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 21) & 0xff) << 8 ) |
+              ((UNSAFE.getByte(aB, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 22) & 0xff) << 16) |
+              ((UNSAFE.getByte(aB, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 23) & 0xff) << 24);
+      long i6 = (((long)(aC[0] & 0xffff)) << 48)|
+                (((long)(aC[1] & 0xffff)) << 32)|
+                (((long)(aC[2] & 0xffff)) << 16)|
+                 ((long)(aC[3] & 0xffff));
+      long i7 =  ((long)(aC[4] & 0xffff))       |
+                (((long)(aC[5] & 0xffff)) << 16)|
+                (((long)(aC[6] & 0xffff)) << 32)|
+                (((long)(aC[7] & 0xffff)) << 48);
+      return new long[] {i1, i2, i3, i4, i5, i6, i7};
+    }
+
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "13",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+
+          IRNode.LOAD_S_OF_CLASS,  "char\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "char\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "4",
+          IRNode.LOAD_I_OF_CLASS,  "char\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "char\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+
+          IRNode.LOAD_S_OF_CLASS,  "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+
+          IRNode.LOAD_I_OF_CLASS,  "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static long[] test13a(byte[] aB, char[] aC, short[] aS, int[] aI) {
+      long i1 = ((long)(aB[0] & 0xff))        |
+               (((long)(aB[1] & 0xff)) << 8 ) |
+               (((long)(aB[2] & 0xff)) << 16) |
+               (((long)(aB[3] & 0xff)) << 24) |
+               (((long)(aB[4] & 0xff)) << 32) |
+               (((long)(aB[5] & 0xff)) << 40) |
+               (((long)(aB[6] & 0xff)) << 48) |
+               (((long)(aB[7] & 0xff)) << 56);
+      long i2 = ((long)(aB[2] & 0xff))        |
+               (((long)(aB[3] & 0xff)) << 8 ) |
+               (((long)(aB[4] & 0xff)) << 16) |
+               (((long)(aB[5] & 0xff)) << 24) |
+               (((long)(aB[6] & 0xff)) << 32) |
+               (((long)(aB[7] & 0xff)) << 40) |
+               (((long)(aB[8] & 0xff)) << 48) |
+               (((long)(aB[9] & 0xff)) << 56);
+      int i3 =  (aB[10] & 0xff)        +
+               ((aB[11] & 0xff) << 8 ) +
+               ((aB[12] & 0xff) << 16) +
+               ((aB[13] & 0xff) << 24);
+      int i4 =  (aB[14] & 0xff)        |     // it can be merged
+               ((aB[15] & 0xff) << 8 ) |
+               ((aB[16] & 0xff) << 16) |
+               ((aB[17] & 0xff) << 24);
+      int i5 = (UNSAFE.getByte(aB, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 20) & 0xff)        |  // it can be merged
+              ((UNSAFE.getByte(aB, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 21) & 0xff) << 8 ) |
+              ((UNSAFE.getByte(aB, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 22) & 0xff) << 16) |
+              ((UNSAFE.getByte(aB, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 23) & 0xff) << 24);
+      long i6 = (((long)(aC[0] & 0xffff)) << 48)|
+                (((long)(aC[1] & 0xffff)) << 32)|
+                (((long)(aC[2] & 0xffff)) << 16)|
+                 ((long)(aC[3] & 0xffff));
+      long i7 =  ((long)(aC[4] & 0xffff))       |
+                (((long)(aC[5] & 0xffff)) << 16)|
+                (((long)(aC[6] & 0xffff)) << 32)|
+                (((long)(aC[7] & 0xffff)) << 48);
+      return new long[] {i1, i2, i3, i4, i5, i6, i7};
     }
 }
