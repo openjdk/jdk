@@ -1617,37 +1617,17 @@ bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, const Node* phi, const Idea
 
 //------------------------------try_convert_to_counted_loop--------------------------------
 bool PhaseIdealLoop::try_convert_to_counted_loop(Node* head, IdealLoopTree*& loop, const BasicType iv_bt) {
-  if (strcmp(Compile::current()->method()->name()->as_utf8(), "testIR") == 0) {
-    Compile::current()->igv_print_method_to_network("BEFORE");
-  }
-
-  bool ret = false;
-
   if (UseNewCode || true) { // FIXME: remove
     CountedLoopConverter converter(this, head, loop, iv_bt);
     if (converter.is_counted_loop()) {
       loop = converter.convert();
-      ret = true;
+      return true;
     } else {
-      ret = false;
+      return false;
     }
-  } else if (UseNewCode2) {
-    CountedLoopConverter converter(this, head, loop, iv_bt);
-    bool found = converter.is_counted_loop();
-    bool expected = try_convert_to_counted_loop_old(head, loop, iv_bt);
-
-    assert(found == expected, "should be the same");
-    ret = found;
-  } else {
-    ret = try_convert_to_counted_loop_old(head, loop, iv_bt);
   }
 
-
-  if (strcmp(Compile::current()->method()->name()->as_utf8(), "testIR") == 0) {
-    Compile::current()->igv_print_method_to_network("AFTER");
-  }
-
-  return ret;
+  return try_convert_to_counted_loop_old(head, loop, iv_bt);
 }
 
 bool PhaseIdealLoop::try_convert_to_counted_loop_old(Node* head, IdealLoopTree*& loop, const BasicType iv_bt) {
