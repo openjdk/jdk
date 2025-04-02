@@ -84,14 +84,6 @@ public class Compliance {
         // identifiers must be in range
         HPKEParameterSpec.of(65535, 65535, 65535);
         Asserts.assertThrows(IllegalArgumentException.class,
-                () -> HPKEParameterSpec.of(-1, 0));
-        Asserts.assertThrows(IllegalArgumentException.class,
-                () -> HPKEParameterSpec.of(0, -1));
-        Asserts.assertThrows(IllegalArgumentException.class,
-                () -> HPKEParameterSpec.of(65536, 0));
-        Asserts.assertThrows(IllegalArgumentException.class,
-                () -> HPKEParameterSpec.of(0, 65536));
-        Asserts.assertThrows(IllegalArgumentException.class,
                 () -> HPKEParameterSpec.of(-1, 0, 0));
         Asserts.assertThrows(IllegalArgumentException.class,
                 () -> HPKEParameterSpec.of(0, -1, 0));
@@ -135,6 +127,7 @@ public class Compliance {
 
         // Still at BEGIN, not initialized
         Asserts.assertEQ(c1.getIV(), null);
+        Asserts.assertEQ(c1.getParameters(), null);
         Asserts.assertThrows(IllegalStateException.class, () -> c1.getBlockSize());
         Asserts.assertThrows(IllegalStateException.class, () -> c1.getOutputSize(100));
         Asserts.assertThrows(IllegalStateException.class, () -> c1.update(new byte[1]));
@@ -151,6 +144,9 @@ public class Compliance {
         var encap = c1.getIV();
         c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(),
                 defaultParams.encapsulation(encap));
+
+        var params = c1.getParameters().getParameterSpec(HPKEParameterSpec.class);
+        Asserts.assertEqualsByteArray(encap, params.encapsulation());
 
         // Does not support WRAP and UNWRAP mode
         Asserts.assertThrows(UnsupportedOperationException.class,
@@ -216,7 +212,6 @@ public class Compliance {
 
         c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(),
                 defaultParams.encapsulation(c1.getIV()));
-        Asserts.assertEQ(c2.getIV(), null);
         c2.getBlockSize();
         c2.getOutputSize(100);
         c2.updateAAD(aad);

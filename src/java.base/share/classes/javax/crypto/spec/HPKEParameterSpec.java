@@ -86,8 +86,10 @@ import java.util.Objects;
  * In HPKE, a shared secret is negotiated during the KEM step and a key
  * encapsulation message must be transmitted from the sender to the recipient
  * so that the recipient can recover this shared secret. On the sender side,
- * the key encapsulation message can be retrieved using the {@link Cipher#getIV()}
- * method after the cipher is initialized. On the recipient side, the key
+ * after the cipher is initialized, the key encapsulation message can be
+ * retrieved directly using the {@link Cipher#getIV()} method, or from the
+ * {@code HPKEParameterSpec} object contained in the returned value of the
+ * {@link Cipher#getParameters} method. On the recipient side, the key
  * encapsulation message must be provided using the {@link #encapsulation(byte[])}
  * method.
  * </ul>
@@ -122,7 +124,9 @@ import java.util.Objects;
  * actual {@code HPKEParameterSpec} object used by the cipher. Users can call
  * {@link #kem_id()}, {@link #kdf_id()}, and {@link #aead_id()} on the
  * {@code HPKEParameterSpec} object to obtain the algorithm identifiers
- * selected during initialization.
+ * selected during initialization. On the sender side, the key encapsulation
+ * message is also included in this {@code HPKEParameterSpec} object,
+ * even if it was not provided to the cipher initialization.
  * <p>
  * Example:
  * {@snippet lang=java class="PackageSnippets" region="hpke-spec-example"}
@@ -274,29 +278,6 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      */
     public static HPKEParameterSpec of() {
         return new HPKEParameterSpec(-1, -1, -1,
-                new byte[0], null, new byte[0], null, null);
-    }
-
-    /**
-     * A factory method to create a new {@code HPKEParameterSpec} object with
-     * specified KDF and AEAD algorithm identifiers in {@code mode_base}
-     * mode with an empty {@code info}. The KEM algorithm identifier is not
-     * specified and will be determined by the key used in cipher initialization.
-     *
-     * @param kdf_id identifier for KDF, must be between 0 and 65535 (inclusive)
-     * @param aead_id identifier for AEAD, must be between 0 and 65535 (inclusive)
-     * @return a new {@code HPKEParameterSpec} object
-     * @throws IllegalArgumentException if any input value
-     *      is out of range (must be between 0 and 65535, inclusive).
-     */
-    public static HPKEParameterSpec of(int kdf_id, int aead_id) {
-        if (kdf_id < 0 || kdf_id > 65535) {
-            throw new IllegalArgumentException("Invalid kdf_id: " + kdf_id);
-        }
-        if (aead_id < 0 || aead_id > 65535) {
-            throw new IllegalArgumentException("Invalid aead_id: " + aead_id);
-        }
-        return new HPKEParameterSpec(-1, kdf_id, aead_id,
                 new byte[0], null, new byte[0], null, null);
     }
 

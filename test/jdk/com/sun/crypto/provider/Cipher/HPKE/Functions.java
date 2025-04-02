@@ -25,7 +25,6 @@ import jdk.test.lib.Asserts;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.HPKEParameterSpec;
-import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
@@ -62,11 +61,10 @@ public class Functions {
             var kp2 = genKeyPair(param.name());
 
             c.init(Cipher.ENCRYPT_MODE, kp.getPublic());
-            var enc = c.getIV();
             var ct = c.doFinal(msg);
             var params = c.getParameters().getParameterSpec(HPKEParameterSpec.class);
 
-            c.init(Cipher.DECRYPT_MODE, kp.getPrivate(), params.encapsulation(enc));
+            c.init(Cipher.DECRYPT_MODE, kp.getPrivate(), params);
             Asserts.assertEqualsByteArray(msg, c.doFinal(ct));
 
             c.init(Cipher.ENCRYPT_MODE, kp.getPublic(), HPKEParameterSpec.of()
@@ -77,8 +75,7 @@ public class Functions {
             params = c.getParameters().getParameterSpec(HPKEParameterSpec.class);
 
             c.init(Cipher.DECRYPT_MODE, kp.getPrivate(), params
-                    .authKey(kp2.getPublic())
-                    .encapsulation(c.getIV()));
+                    .authKey(kp2.getPublic()));
             Asserts.assertEqualsByteArray(msg, c.doFinal(ct));
         }
     }

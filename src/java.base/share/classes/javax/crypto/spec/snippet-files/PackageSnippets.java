@@ -43,12 +43,13 @@ class PackageSnippets {
                 .info("app_info".getBytes(StandardCharsets.UTF_8));
         sender.init(Cipher.ENCRYPT_MODE, kp.getPublic(), ps);
 
-        // Retrieve the key encapsulation message (the KEM output) from the sender
-        byte[] kemEncap = sender.getIV();
-
         // Retrieve the actual parameters used from the sender.
         HPKEParameterSpec actual = sender.getParameters()
                 .getParameterSpec(HPKEParameterSpec.class);
+
+        // Retrieve the key encapsulation message (the KEM output) from the sender.
+        // It can also be retrieved using sender.getIV().
+        byte[] kemEncap = actual.encapsulation();
 
         // The HPKE recipient side is initialized with its own private key,
         // the same algorithm identifiers as used by the sender,
