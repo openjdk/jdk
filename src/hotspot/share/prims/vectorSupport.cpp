@@ -614,30 +614,26 @@ JVM_ENTRY(jint, VectorSupport_GetMaxLaneCount(JNIEnv *env, jclass vsclazz, jobje
   return -1;
 } JVM_END
 
-JVM_ENTRY(jint, VectorSupport_IsVectorOperationSupported(JNIEnv *env, jclass vsclazz, jint opr, jobject clazz, jint vlen)) {
-#ifdef COMPILER2
-    oop mirror = JNIHandles::resolve_non_null(clazz);
-    if (java_lang_Class::is_primitive(mirror)) {
-      BasicType elem_bt = java_lang_Class::primitive_type(mirror);
-      int opc = VectorSupport::vop2ideal(opr, elem_bt);
-      int sopc = VectorNode::opcode(opc, elem_bt);
-      return Matcher::match_rule_supported_vector(sopc, vlen, elem_bt);
-    }
-#endif // COMPILER2
-    return JNI_FALSE;
-  } JVM_END
+JVM_ENTRY(jstring, VectorSupport_GetCPUFeatures(JNIEnv* env, jclass ignored))
+  const char* features_string = VM_Version::features_string();
+  assert(features_string != nullptr, "missing cpu features info");
+
+  ThreadToNativeFromVM ttn(thread);
+  return env->NewStringUTF(features_string);
+JVM_END
 
 // JVM_RegisterVectorSupportMethods
 
 #define LANG "Ljava/lang/"
 #define CLS LANG "Class;"
+#define LSTR LANG "String;"
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
 static JNINativeMethod jdk_internal_vm_vector_VectorSupport_methods[] = {
-    {CC "getMaxLaneCount",   CC "(" CLS ")I", FN_PTR(VectorSupport_GetMaxLaneCount)},
-    {CC "isVectorOperationSupported",       CC "(I" CLS "I)I", FN_PTR(VectorSupport_IsVectorOperationSupported)}
+    {CC "getMaxLaneCount", CC "(" CLS ")I", FN_PTR(VectorSupport_GetMaxLaneCount)},
+    {CC "getCPUFeatures",  CC "()" LSTR,    FN_PTR(VectorSupport_GetCPUFeatures)}
 };
 
 #undef CC
@@ -645,6 +641,7 @@ static JNINativeMethod jdk_internal_vm_vector_VectorSupport_methods[] = {
 
 #undef LANG
 #undef CLS
+#undef LSTR
 
 // This function is exported, used by NativeLookup.
 

@@ -1533,7 +1533,7 @@ WB_ENTRY(void, WB_ReadReservedMemory(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(jstring, WB_GetCPUFeatures(JNIEnv* env, jobject o))
-  const char* features = VM_Version::features_string();
+  const char* features = VM_Version::cpu_info_string();
   ThreadToNativeFromVM ttn(thread);
   jstring features_string = env->NewStringUTF(features);
 

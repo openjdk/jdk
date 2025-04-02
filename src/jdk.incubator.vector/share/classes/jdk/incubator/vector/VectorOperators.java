@@ -33,6 +33,8 @@ import jdk.internal.vm.annotation.Stable;
 
 import jdk.internal.vm.vector.VectorSupport;
 
+import static jdk.internal.vm.vector.Utils.isNonCapturingLambda;
+
 /**
  * This class consists solely of static constants
  * that describe lane-wise vector operations, plus nested interfaces
@@ -1374,7 +1376,7 @@ public abstract class VectorOperators {
             if (fn != null)  return fn;
             fn = supplier.apply(opc);
             if (fn == null)  throw badOp(op);
-            assert(VectorSupport.isNonCapturingLambda(fn)) : fn;
+            assert(isNonCapturingLambda(fn)) : fn;
             // The JIT can see into this cache:
             cache[opc] = fn;
             return fn;

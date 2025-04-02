@@ -24,7 +24,6 @@
  */
 package jdk.incubator.vector;
 
-import jdk.internal.misc.VM;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
@@ -33,45 +32,19 @@ import jdk.internal.vm.vector.VectorSupport;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.function.IntFunction;
 
+import static jdk.incubator.vector.Util.requires;
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.util.Architecture.isX64;
+import static jdk.internal.vm.vector.Utils.debug;
 
-// TODO:
-//   * refactor native library API: a single registerNatives() call which returns a vector of entry points
-//   * SVML: // FIXME: requires VM_Version::supports_avx512dq())
-//   * invoke native library as a fallback implementation
-//
+/**
+ * A wrapper for native vector math libraries bundled with the JDK (SVML and SLEEF).
+ * Binds vector operations to native implementations provided by the libraries.
+ */
 /*package-private*/ class VectorMathLibrary {
-    private static final boolean DEBUG = Boolean.getBoolean("jdk.incubator.vector.VectorMathLibrary.DEBUG");
-
     private static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
-
-    static class CPUFeatures {
-        static final Set<String> features = getFeatureSet();
-
-        private static Set<String> getFeatureSet() {
-            String[] features = VM.getCPUFeatures().split(" ");
-            if (DEBUG) {
-                System.out.printf("DEBUG: CPUFeatures: %s\n", Arrays.deepToString(features));
-            }
-            return Set.copyOf(Arrays.asList(features));
-        }
-
-        public static boolean hasFeature(String feature) {
-            return features.contains(feature);
-        }
-
-        public static boolean isX64() {
-            return switch (StaticProperty.osArch()) {
-                case "amd64", "x86_64" -> true;
-                default                -> false;
-                };
-        }
-    }
 
     interface Library {
         String symbolName(Operator op, VectorSpecies<?> vspecies);
@@ -82,20 +55,16 @@ import static jdk.incubator.vector.VectorOperators.*;
         String JAVA  = "java";
 
         static Library getInstance() {
-            String libraryName = System.getProperty("jdk.incubator.vector.VectorMathLib", getDefaultName());
+            String libraryName = System.getProperty("jdk.incubator.vector.VectorMathLibrary", getDefaultName());
             try {
                 return switch (libraryName) {
                     case SVML  -> new SVML();
                     case SLEEF -> new SLEEF();
                     case JAVA  -> new Java();
-                    default    -> new Java();
+                    default    -> throw new IllegalArgumentException("Unsupported vector math library: " + libraryName);
                 };
             } catch (Throwable e) {
-                if (DEBUG) {
-                    System.out.printf("DEBUG: VectorMathLibrary: Error during initialization of %s library: %s\n",
-                                      libraryName, e);
-                    e.printStackTrace(System.out);
-                }
+                debug("Error during initialization of %s library: %s", libraryName, e);
                 return new Java(); // fallback
             }
         }
@@ -112,9 +81,7 @@ import static jdk.incubator.vector.VectorOperators.*;
     private static final Library LIBRARY = Library.getInstance();
 
     static {
-        if (DEBUG) {
-            System.out.printf("DEBUG: VectorMathLibrary: %s library is used\n", LIBRARY.getClass().getSimpleName());
-        }
+        debug("%s library is used (cpu features: %s)", LIBRARY.getClass().getSimpleName(), CPUFeatures.features());
     }
 
     private static class Java implements Library {
@@ -129,44 +96,40 @@ import static jdk.incubator.vector.VectorOperators.*;
         }
     }
 
-
-    // SVML method naming convention
-    //   All the methods are named as __jsvml_<op><T><N>_ha_<VV>
-    //   Where:
-    //      ha stands for high accuracy
-    //      <T> is optional to indicate float/double
-    //              Set to f for vector float operation
-    //              Omitted for vector double operation
-    //      <N> is the number of elements in the vector
-    //              1, 2, 4, 8, 16
-    //              e.g. 128 bit float vector has 4 float elements
-    //      <VV> indicates the avx/sse level:
-    //              z0 is AVX512, l9 is AVX2, e9 is AVX1 and ex is for SSE2
-    //      e.g. __jsvml_expf16_ha_z0 is the method for computing 16 element vector float exp using AVX 512 insns
-    //           __jsvml_exp8_ha_z0 is the method for computing 8 element vector double exp using AVX 512 insns
+    /**
+     * Naming convention in SVML vector math library.
+     * All the methods are named as __jsvml_<op><T><N>_ha_<VV> where:
+     *      ha stands for high accuracy
+     *      <T> is optional to indicate float/double
+     *              Set to f for vector float operation
+     *              Omitted for vector double operation
+     *      <N> is the number of elements in the vector
+     *              1, 2, 4, 8, 16
+     *              e.g. 128 bit float vector has 4 float elements
+     *      <VV> indicates the avx/sse level:
+     *              z0 is AVX512, l9 is AVX2, e9 is AVX1 and ex is for SSE2
+     *      e.g. __jsvml_expf16_ha_z0 is the method for computing 16 element vector float exp using AVX 512 insns
+     *           __jsvml_exp8_ha_z0 is the method for computing 8 element vector double exp using AVX 512 insns
+     */
     private static class SVML implements Library {
-        static boolean SUPPORTS_AVX512DQ = CPUFeatures.isX64() && CPUFeatures.hasFeature("avx512dq");
-
         static {
             loadNativeLibrary();
         }
 
-        @SuppressWarnings({"removal", "restricted"})
         private static void loadNativeLibrary() {
-            System.loadLibrary("jsvml");
+            requires(isX64(), "SVML library is x64-specific");
+            VectorSupport.loadNativeLibrary("jsvml");
         }
 
         private static String suffix(VectorSpecies<?> vspecies) {
             assert vspecies.vectorBitSize() <= VectorShape.getMaxVectorBitSize(vspecies.elementType());
 
-            boolean hasAVX2 = VectorShape.getMaxVectorBitSize(byte.class)  >= 256;
-            boolean hasAVX1 = VectorShape.getMaxVectorBitSize(float.class) >= 256;
-
             if (vspecies.vectorBitSize() == 512) {
+                assert CPUFeatures.X64.SUPPORTS_AVX512F;
                 return "z0";
-            } else if (hasAVX2) {
+            } else if (CPUFeatures.X64.SUPPORTS_AVX2) {
                 return "l9";
-            } else if (hasAVX1) {
+            } else if (CPUFeatures.X64.SUPPORTS_AVX) {
                 return "e9";
             } else {
                 return "ex";
@@ -192,25 +155,41 @@ import static jdk.incubator.vector.VectorOperators.*;
             }
             if (vspecies.vectorBitSize() < 128) {
                 return false; // 64-bit vectors are not supported
-            }
-            if (op == POW) {
-                return false; // not supported
-            }
-            if (vspecies.vectorBitSize() == 512 && (op == LOG || op == LOG10)) {
-                return SUPPORTS_AVX512DQ;
+            } else if (vspecies.vectorBitSize() < 512) {
+                if (op == POW) {
+                    return false; // not supported
+                }
+            } else if (vspecies.vectorBitSize() == 512) {
+                if (op == LOG || op == LOG10 || op == POW) {
+                    return CPUFeatures.X64.SUPPORTS_AVX512DQ; // requires AVX512DQ CPU support
+                }
+            } else {
+                throw new InternalError("unsupported vector shape: " + vspecies);
             }
             return true;
         }
     }
 
+    /**
+     * Naming convention in SLEEF-based vector math library .
+     * All the methods are named as <OP><T><N>_<U><suffix> where:
+     *     <OP>     is the operation name, e.g. sin
+     *     <T>      is optional to indicate float/double
+     *              "f/d" for vector float/double operation
+     *     <N>      is the number of elements in the vector
+     *              "2/4" for neon, and "x" for sve
+     *     <U>      is the precision level
+     *              "u10/u05" represents 1.0/0.5 ULP error bounds
+     *               We use "u10" for all operations by default
+     *               But for those functions do not have u10 support, we use "u05" instead
+     *     <suffix> indicates neon/sve
+     *              "sve/advsimd" for sve/neon implementations
+     *     e.g. sinfx_u10sve is the method for computing vector float sin using SVE instructions
+     *          cosd2_u10advsimd is the method for computing 2 elements vector double cos using NEON instructions
+     */
     private static class SLEEF implements Library {
         static {
-            loadNativeLibrary();
-        }
-
-        @SuppressWarnings({"removal", "restricted"})
-        private static void loadNativeLibrary() {
-            System.loadLibrary("sleef");
+            VectorSupport.loadNativeLibrary("sleef");
         }
 
         private static String suffix(VectorShape vshape) {
@@ -221,22 +200,6 @@ import static jdk.incubator.vector.VectorOperators.*;
             return (op == HYPOT ? "u05" : "u10");
         }
 
-        // Method naming convention
-        //   All the methods are named as <OP><T><N>_<U><suffix>
-        //   Where:
-        //     <OP>     is the operation name, e.g. sin
-        //     <T>      is optional to indicate float/double
-        //              "f/d" for vector float/double operation
-        //     <N>      is the number of elements in the vector
-        //              "2/4" for neon, and "x" for sve
-        //     <U>      is the precision level
-        //              "u10/u05" represents 1.0/0.5 ULP error bounds
-        //               We use "u10" for all operations by default
-        //               But for those functions do not have u10 support, we use "u05" instead
-        //     <suffix> indicates neon/sve
-        //              "sve/advsimd" for sve/neon implementations
-        //     e.g. sinfx_u10sve is the method for computing vector float sin using SVE instructions
-        //          cosd2_u10advsimd is the method for computing 2 elements vector double cos using NEON instructions
         @Override
         public String symbolName(Operator op, VectorSpecies<?> vspecies) {
             return String.format("%s%s%d_%s%s", op.operatorName(),
@@ -281,7 +244,7 @@ import static jdk.incubator.vector.VectorOperators.*;
         Entry<T> entry = (Entry<T>)LIBRARY_ENTRIES[idx][elem_idx][shape_idx];
         if (entry == null) {
             entry = constructEntry(op, opc, vspecies, implSupplier);
-            LIBRARY_ENTRIES[idx][elem_idx][shape_idx] = entry; // FIXME: CAS
+            LIBRARY_ENTRIES[idx][elem_idx][shape_idx] = entry;
         }
         return entry;
     }
@@ -292,11 +255,10 @@ import static jdk.incubator.vector.VectorOperators.*;
     Entry<T> constructEntry(Operator op, int opc, VectorSpecies<E> vspecies, IntFunction<T> implSupplier) {
         if (LIBRARY.isSupported(op, vspecies)) {
             String symbol = LIBRARY.symbolName(op, vspecies);
-            MemorySegment addr = LOOKUP.find(symbol).orElseThrow(() -> new InternalError("not supported: " + op + " " + vspecies + " " + symbol));
-            if (DEBUG) {
-                System.out.printf("DEBUG: VectorMathLibrary: %s %s => 0x%016x\n", op, symbol, addr.address());
-            }
-            T impl = implSupplier.apply(opc); // TODO: should call the very same native implementation
+            MemorySegment addr = LOOKUP.find(symbol)
+                                       .orElseThrow(() -> new InternalError("not supported: " + op + " " + vspecies + " " + symbol));
+            debug("%s %s => 0x%016x\n", op, symbol, addr.address());
+            T impl = implSupplier.apply(opc); // TODO: should call the very same native implementation eventually (once FFM API supports vectors)
             return new Entry<>(symbol, addr, impl);
         } else {
             return new Entry<>(null, MemorySegment.NULL, implSupplier.apply(opc));

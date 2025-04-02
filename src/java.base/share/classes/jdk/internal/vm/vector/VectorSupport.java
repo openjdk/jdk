@@ -28,8 +28,9 @@ package jdk.internal.vm.vector;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.misc.Unsafe;
 
-import java.lang.foreign.MemorySegment;
 import java.util.function.*;
+
+import static jdk.internal.vm.vector.Utils.isNonCapturingLambda;
 
 public class VectorSupport {
     static {
@@ -770,18 +771,19 @@ public class VectorSupport {
 
     /* ============================================================================ */
 
+    // Returns a string containing a list of CPU features VM detected.
+    public static native String getCPUFeatures();
+
+    /* ============================================================================ */
+
     // query the JVM's supported vector sizes and types
     public static native int getMaxLaneCount(Class<?> etype);
 
     /* ============================================================================ */
 
-    // query the JVM's supported vector operations
-    public static native boolean isSupported(int opr, Class<?> etype, int length);
-
-    /* ============================================================================ */
-
-    public static boolean isNonCapturingLambda(Object o) {
-        return o.getClass().getDeclaredFields().length == 0;
+    @SuppressWarnings({"restricted"})
+    public static void loadNativeLibrary(String name) {
+        System.loadLibrary(name);
     }
 
     /* ============================================================================ */
