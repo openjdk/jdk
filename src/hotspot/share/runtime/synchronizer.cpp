@@ -678,8 +678,7 @@ void ObjectSynchronizer::jni_enter(Handle obj, JavaThread* current) {
     ObjectMonitor* monitor;
     bool entered;
     if (LockingMode == LM_LIGHTWEIGHT) {
-      BasicLock lock;
-      entered = LightweightSynchronizer::inflate_and_enter(obj(), &lock, inflate_cause_jni_enter, current, current) != nullptr;
+      entered = LightweightSynchronizer::inflate_and_enter(obj(), inflate_cause_jni_enter, current, current) != nullptr;
     } else {
       monitor = inflate(current, obj(), inflate_cause_jni_enter);
       entered = monitor->enter(current);
