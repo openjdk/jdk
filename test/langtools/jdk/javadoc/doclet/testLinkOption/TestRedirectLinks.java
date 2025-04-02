@@ -293,7 +293,7 @@ public class TestRedirectLinks extends JavadocTester {
                 + x.getRequestMethod() + " "
                 + x.getRequestURI());
         String newProtocol = (newServer instanceof HttpsServer) ? "https" : "http";
-        String redirectTo = null;
+        String redirectTo;
         try {
             redirectTo = URIBuilder.newBuilder().scheme(newProtocol)
                     .host(newServer.getAddress().getAddress())
