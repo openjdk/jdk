@@ -29,7 +29,7 @@ package gc.g1;
  * @requires vm.gc.G1
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @library /test/lib
- * @run main/othervm -Xmx200m -XX:MinHeapSize=4m -XX:MinHeapFreeRatio=99
+ * @run main/othervm -Xmx256m -XX:MinHeapSize=4m -XX:MinHeapFreeRatio=99
         -XX:MaxHeapFreeRatio=99 gc.g1.TestSoftMaxHeapSize
  * @summary SoftMaxHeapSize should limit G1's heap size when resizing.
  */
@@ -43,8 +43,10 @@ public class TestSoftMaxHeapSize {
 
   private static final int OBJECT_SIZE = 1000;
   private static final long ALLOCATED_BYTES = 20_000_000; // About 20M
+
+  // Uses power-of-two value so it is aligned and is the actual effective value.
   private static final long SOFT_MAX_HEAP =
-      50 * 1024 * 1024; // 50MiB, leaving ~30MiB headroom above ALLOCATED_BYTES.
+      32 * 1024 * 1024; // 32MiB, leaving ~12MiB headroom above ALLOCATED_BYTES.
 
   private static final List<byte[]> holder = new LinkedList<>();
 
