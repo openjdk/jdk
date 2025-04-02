@@ -708,9 +708,18 @@ public:
   MemPointerRawSummand() :
     MemPointerRawSummand(nullptr, NoOverflowInt::make_NaN(), NoOverflowInt::make_NaN(), -1) {}
 
-  static MemPointerRawSummand make(Node* variable) {
+  static MemPointerRawSummand make_trivial(Node* variable) {
     assert(variable != nullptr, "must have variable");
     return MemPointerRawSummand(variable, NoOverflowInt(1), NoOverflowInt(1), 0);
+  }
+
+  static MemPointerRawSummand make_con(NoOverflowInt scaleI, NoOverflowInt scaleL, int int_group) {
+    return MemPointerRawSummand(nullptr, scaleI, scaleL, int_group);
+  }
+
+  static MemPointerRawSummand make(Node* variable, NoOverflowInt scaleI, NoOverflowInt scaleL, int int_group) {
+    assert(variable != nullptr, "must have variable");
+    return MemPointerRawSummand(variable, scaleI, scaleL, int_group);
   }
 
   bool is_valid() const { return _int_group >= 0; }
@@ -722,6 +731,20 @@ public:
 
   MemPointerSummand to_summand() const {
     return MemPointerSummand(variable(), scaleL() * scaleI());
+  }
+
+  static int cmp_by_variable_idx(MemPointerRawSummand* p1, MemPointerRawSummand* p2) {
+    return cmp_by_variable_idx(*p1, *p2);
+  }
+
+  static int cmp_by_variable_idx(const MemPointerRawSummand& p1, const MemPointerRawSummand& p2) {
+    if (p1.is_con()) {
+      return p2.is_con() ? 0 : 1;
+    }
+    if (p2.is_con()) {
+      return -1;
+    }
+    return p1.variable()->_idx - p2.variable()->_idx;
   }
 
 #ifndef PRODUCT
@@ -928,15 +951,16 @@ public:
   }
 
   static MemPointer make(Node* pointer,
-                         const GrowableArray<MemPointerSummand>& summands,
-                         const NoOverflowInt& con,
+                         const GrowableArray<MemPointerRawSummand>& raw_summands,
                          const jint size
                          NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
-    if (summands.length() <= SUMMANDS_SIZE) {
-      return MemPointer(pointer, summands, con, size NOT_PRODUCT(COMMA trace));
-    } else {
+    // TODO: continue here!
+    assert(false, "TODO wip");
+    // if (summands.length() <= SUMMANDS_SIZE) {
+    //   return MemPointer(pointer, summands, con, size NOT_PRODUCT(COMMA trace));
+    // } else {
       return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA trace));
-    }
+    //}
   }
 
   MemPointer make_with_size(const jint new_size) const {
@@ -1036,9 +1060,9 @@ private:
   const MemNode* _mem;
 
   // Internal data-structures for parsing.
-  NoOverflowInt _con;
-  GrowableArray<MemPointerSummand> _worklist;
-  GrowableArray<MemPointerSummand> _summands;
+  int _next_int_group = 1;
+  GrowableArray<MemPointerRawSummand> _worklist;
+  GrowableArray<MemPointerRawSummand> _summands;
 
   // Resulting decomposed-form.
   MemPointer _mem_pointer;
@@ -1047,7 +1071,6 @@ private:
                    MemPointerParserCallback& callback
                    NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
     _mem(mem),
-    _con(NoOverflowInt(0)),
     _mem_pointer(parse(callback NOT_PRODUCT(COMMA trace))) {}
 
 public:
@@ -1078,7 +1101,7 @@ private:
   MemPointer parse(MemPointerParserCallback& callback
                    NOT_PRODUCT(COMMA const TraceMemPointer& trace));
 
-  void parse_sub_expression(const MemPointerSummand& summand, MemPointerParserCallback& callback);
+  void parse_sub_expression(const MemPointerRawSummand& summand, MemPointerParserCallback& callback);
   static bool sub_expression_has_native_base_candidate(Node* n);
 
   bool is_safe_to_decompose_op(const int opc, const NoOverflowInt& scale) const;
