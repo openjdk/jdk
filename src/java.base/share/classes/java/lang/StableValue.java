@@ -357,9 +357,21 @@ import java.util.function.Supplier;
  * constant-fold expressions like {@code Fibonacci.fib(10)}.
  * <p>
  * The fibonacci example above is a dependency graph with no circular dependencies (i.e.,
- * it is a dependency tree). If there are circular dependencies in a dependency graph,
- * a stable value will eventually throw a {@linkplain StackOverflowError} upon referencing
- * elements in a circularity.
+ * it is a dependency tree):
+ *{@snippet lang=text :
+ *
+ *              ___________fib(5)____________
+ *             /                             \
+ *       ____fib(4)____                  ____fib(3)____
+ *      /              \                /              \
+ *    fib(3)          fib(2)          fib(2)          fib(1)
+ *   /     \         /     \         /     \
+ * fib(2) fib(1)   fib(1) fib(0)   fib(1) fib(0)
+ *}
+ *
+ * If there are circular dependencies in a dependency graph, a stable value will
+ * eventually throw a {@linkplain StackOverflowError} upon referencing elements in
+ * a circularity.
  *
  * <h2 id="thread-safety">Thread Safety</h2>
  * The content of a stable value is guaranteed to be set at most once. If competing
