@@ -228,6 +228,7 @@ public:
   Tickspan trim_ticks() const;
   void reset_trim_ticks();
 
+  void record_evacuation_failed_region(G1HeapRegion* r, uint worker_id, bool cause_pinned);
   // An attempt to evacuate "obj" has failed; take necessary steps.
   oop handle_evacuation_failure_par(oop obj, markWord m, size_t word_sz, bool cause_pinned);
 
