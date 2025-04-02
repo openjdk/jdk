@@ -82,10 +82,9 @@ public class MethodFinder {
      * @jls 12.1.4 Invoke a main method
      */
     public static Method findMainMethod(Class<?> cls) {
-        boolean isPreview = PreviewFeatures.isEnabled();
-        Method mainMethod = JLA.findMethod(cls, !isPreview, "main", String[].class);
+        Method mainMethod = JLA.findMethod(cls, false, "main", String[].class);
 
-        if (isPreview && mainMethod == null) {
+        if (mainMethod == null) {
             mainMethod = JLA.findMethod(cls, false, "main");
         }
 
@@ -97,8 +96,7 @@ public class MethodFinder {
 
         if (Modifier.isAbstract(mods) ||
                 mainMethod.getReturnType() != void.class ||
-                (isPreview && Modifier.isPrivate(mods)) ||
-                (!isPreview && !Modifier.isStatic(mods))) {
+                Modifier.isPrivate(mods)) {
             return null;
         }
 
