@@ -44,6 +44,11 @@ public:
   zoffset_end end() const;
   size_t size() const;
 
+  bool operator==(const ZMemory& other) const;
+  bool operator!=(const ZMemory& other) const;
+
+  bool contains(const ZMemory& other) const;
+
   void shrink_from_front(size_t size);
   void shrink_from_back(size_t size);
   void grow_from_front(size_t size);
@@ -51,17 +56,19 @@ public:
 };
 
 class ZMemoryManager {
+  friend class ZVirtualMemoryManagerTest;
+
 public:
-  typedef void (*CreateDestroyCallback)(const ZMemory* area);
-  typedef void (*ResizeCallback)(const ZMemory* area, size_t size);
+  typedef void (*CallbackInsert)(const ZMemory& area);
+  typedef void (*CallbackRemove)(const ZMemory& area);
+  typedef void (*CallbackGrow)(const ZMemory& from, const ZMemory& to);
+  typedef void (*CallbackShrink)(const ZMemory& from, const ZMemory& to);
 
   struct Callbacks {
-    CreateDestroyCallback _create;
-    CreateDestroyCallback _destroy;
-    ResizeCallback        _shrink_from_front;
-    ResizeCallback        _shrink_from_back;
-    ResizeCallback        _grow_from_front;
-    ResizeCallback        _grow_from_back;
+    CallbackInsert _insert;
+    CallbackRemove _remove;
+    CallbackGrow   _grow;
+    CallbackShrink _shrink;
 
     Callbacks();
   };
@@ -71,12 +78,12 @@ private:
   ZList<ZMemory> _freelist;
   Callbacks      _callbacks;
 
-  ZMemory* create(zoffset start, size_t size);
-  void destroy(ZMemory* area);
   void shrink_from_front(ZMemory* area, size_t size);
   void shrink_from_back(ZMemory* area, size_t size);
   void grow_from_front(ZMemory* area, size_t size);
   void grow_from_back(ZMemory* area, size_t size);
+
+  void move_into(zoffset start, size_t size);
 
 public:
   ZMemoryManager();
@@ -92,6 +99,8 @@ public:
   zoffset alloc_high_address(size_t size);
 
   void free(zoffset start, size_t size);
+  void register_range(zoffset start, size_t size);
+  bool unregister_first(zoffset* start_out, size_t* size_out);
 };
 
 #endif // SHARE_GC_Z_ZMEMORY_HPP
