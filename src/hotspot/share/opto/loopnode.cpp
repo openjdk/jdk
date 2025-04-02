@@ -1613,18 +1613,44 @@ bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, const Node* phi, const Idea
 }
 #endif
 
-//------------------------------is_counted_loop--------------------------------
-bool PhaseIdealLoop::is_counted_loop(Node* head, IdealLoopTree*& loop, const BasicType iv_bt) {
+
+
+//------------------------------try_convert_to_counted_loop--------------------------------
+bool PhaseIdealLoop::try_convert_to_counted_loop(Node* head, IdealLoopTree*& loop, const BasicType iv_bt) {
+  if (strcmp(Compile::current()->method()->name()->as_utf8(), "testIR") == 0) {
+    Compile::current()->igv_print_method_to_network("BEFORE");
+  }
+
+  bool ret = false;
+
   if (UseNewCode || true) { // FIXME: remove
     CountedLoopConverter converter(this, head, loop, iv_bt);
     if (converter.is_counted_loop()) {
-      converter.convert();
-      return true;
+      loop = converter.convert();
+      ret = true;
+    } else {
+      ret = false;
     }
+  } else if (UseNewCode2) {
+    CountedLoopConverter converter(this, head, loop, iv_bt);
+    bool found = converter.is_counted_loop();
+    bool expected = try_convert_to_counted_loop_old(head, loop, iv_bt);
 
-    return false;
+    assert(found == expected, "should be the same");
+    ret = found;
+  } else {
+    ret = try_convert_to_counted_loop_old(head, loop, iv_bt);
   }
 
+
+  if (strcmp(Compile::current()->method()->name()->as_utf8(), "testIR") == 0) {
+    Compile::current()->igv_print_method_to_network("AFTER");
+  }
+
+  return ret;
+}
+
+bool PhaseIdealLoop::try_convert_to_counted_loop_old(Node* head, IdealLoopTree*& loop, const BasicType iv_bt) {
   PhaseGVN *gvn = &_igvn;
 
   Node* back_control = loop_exit_control(head, loop);
@@ -2005,8 +2031,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* head, IdealLoopTree*& loop, const Bas
   const Predicates predicates(init_control);
   const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
 
-  // TODO: add to context
-  bool insert_stride_overflow_limit_check = false; // TODO: replace with sov < 0?
+  bool insert_stride_overflow_limit_check = false;
   bool insert_init_trip_limit_check = false;
 
   if (sov < 0) {
@@ -2367,7 +2392,7 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
   }
 
   // Trip-counter increment must be commutative & associative.
-  Node* incr = exit_test.incr; // TODO: save to context
+  Node* incr = exit_test.incr;
   if (exit_test.incr->Opcode() == Op_Cast(_iv_bt)) {
     incr = incr->in(1);
   }
@@ -2390,7 +2415,7 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
     return false;
   }
 
-  Node* xphi = stride.xphi; // TODO: save to context?
+  Node* xphi = stride.xphi;
   if (xphi->Opcode() == Op_Cast(_iv_bt)) {
     xphi = xphi->in(1);
   }
@@ -2407,7 +2432,7 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
     return false;
   }
 
-  const Node* iftrue = back_control; // TODO: save to context?
+  const Node* iftrue = back_control;
   uint iftrue_op = iftrue->Opcode();
   Node* iff = iftrue->in(0);
   BoolNode* test = iff->in(1)->as_Bool();
@@ -2720,8 +2745,7 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
   const jlong limit_correction_for_pre_iv_exit_check = (iv_incr.phi_incr != nullptr) ? stride_con : 0;
 
   // Accounting for (LE2) and (LE4) where we use <= or >= in the loop exit check.
-  const bool
-      includes_limit = (exit_test.mask == BoolTest::le || exit_test.mask == BoolTest::ge); // TODO: save to context
+  const bool includes_limit = (exit_test.mask == BoolTest::le || exit_test.mask == BoolTest::ge);
   const jlong limit_correction_for_le_ge_exit_check = (includes_limit ? (stride_con > 0 ? 1 : -1) : 0);
 
   const jlong limit_correction = limit_correction_for_pre_iv_exit_check + limit_correction_for_le_ge_exit_check;
@@ -2733,10 +2757,6 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
 
   const Predicates predicates(init_control);
   const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
-
-  // TODO: add to context
-//  bool insert_stride_overflow_limit_check = false; // TODO: replace with sov < 0?
-//  bool insert_init_trip_limit_check = false;
 
   if (sov < 0) {
     return false; // Bailout: integer overflow is certain.
@@ -2814,7 +2834,7 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
     _insert_init_trip_limit_check = true;
   }
 
-  BoolTest::mask bt = exit_test.mask; // TODO: save bt to context
+  BoolTest::mask bt = exit_test.mask;
   if (bt == BoolTest::ne) {
     // Now we need to canonicalize the loop condition if it is 'ne'.
     assert(stride_con == 1 || stride_con == -1, "simple increment only - checked before");
@@ -2828,7 +2848,7 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
     }
   }
 
-  Node* sfpt = nullptr; // TODO: save sfpt to context
+  Node* sfpt = nullptr;
   if (_loop->_child == nullptr) {
     sfpt = _phase->find_safepoint(back_control, _head, _loop);
   } else {
@@ -2883,7 +2903,7 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
   return true;
 }
 
-void PhaseIdealLoop::CountedLoopConverter::convert() {
+IdealLoopTree* PhaseIdealLoop::CountedLoopConverter::convert() {
 #ifdef ASSERT
   assert(_checked_for_counted_loop, "must check for counted loop before conversion");
 #endif
@@ -2974,8 +2994,8 @@ void PhaseIdealLoop::CountedLoopConverter::convert() {
   Node* iftrue = back_control;
   const uint iftrue_op = iftrue->Opcode();
   Node* iff = iftrue->in(0);
-  BoolNode* test = iff->in(1)->clone()->as_Bool();
   Node* cmp = _cmp->clone();
+  BoolNode* test = iff->in(1)->clone()->as_Bool();
 
   cmp->set_req(1, incr_clone);
   cmp->set_req(2, adjusted_limit);
@@ -3122,6 +3142,8 @@ void PhaseIdealLoop::CountedLoopConverter::convert() {
   if (_iv_bt == T_LONG && _head->as_Loop()->is_loop_nest_outer_loop()) {
     l->mark_loop_nest_outer_loop();
   }
+
+  return _loop;
 }
 
 
@@ -4946,7 +4968,7 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
 
   IdealLoopTree* loop = this;
   if (_head->is_CountedLoop() ||
-      phase->is_counted_loop(_head, loop, T_INT)) {
+      phase->try_convert_to_counted_loop(_head, loop, T_INT)) {
 
     if (LoopStripMiningIter == 0 || _head->as_CountedLoop()->is_strip_mined()) {
       // Indicate we do not need a safepoint here
@@ -4960,7 +4982,7 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
     // Look for induction variables
     phase->replace_parallel_iv(this);
   } else if (_head->is_LongCountedLoop() ||
-             phase->is_counted_loop(_head, loop, T_LONG)) {
+      phase->try_convert_to_counted_loop(_head, loop, T_LONG)) {
     remove_safepoints(phase, true);
   } else {
     assert(!_head->is_Loop() || !_head->as_Loop()->is_loop_nest_inner_loop(), "transformation to counted loop should not fail");

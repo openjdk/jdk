@@ -1290,7 +1290,8 @@ public:
   static LoopIvStride loop_iv_stride(const Node* incr);
   static PhiNode* loop_iv_phi(const Node* xphi, const Node* phi_incr, const Node* x);
 
-  bool is_counted_loop(Node* head, IdealLoopTree*&loop, const BasicType iv_bt);
+  bool try_convert_to_counted_loop_old(Node* head, IdealLoopTree*& loop, const BasicType iv_bt);
+  bool try_convert_to_counted_loop(Node* head, IdealLoopTree*&loop, const BasicType iv_bt);
 
   Node* loop_nest_replace_iv(Node* iv_to_replace, Node* inner_iv, Node* outer_phi, Node* inner_head, BasicType bt);
   bool create_loop_nest(IdealLoopTree* loop, Node_List &old_new);
@@ -1314,7 +1315,6 @@ public:
     // TODO: better naming for these flags?
     bool _insert_stride_overflow_limit_check = false;
     bool _insert_init_trip_limit_check = false;
-    jlong _final_correction;
 
 #ifdef ASSERT
     bool _checked_for_counted_loop = false;
@@ -1331,6 +1331,7 @@ public:
     Node* _cmp;
     float _cl_prob;
     Node* _sfpt;
+    jlong _final_correction;
 
    public:
     CountedLoopConverter(PhaseIdealLoop* phase, Node* head, IdealLoopTree* loop, const BasicType iv_bt)
@@ -1344,7 +1345,7 @@ public:
     }
 
     bool is_counted_loop();
-    void convert();
+    IdealLoopTree* convert();
   };
 
   Node* exact_limit( IdealLoopTree *loop );
