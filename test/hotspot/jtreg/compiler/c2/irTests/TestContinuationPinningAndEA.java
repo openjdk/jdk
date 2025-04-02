@@ -38,49 +38,37 @@ import jdk.internal.vm.Continuation;
 
 public class TestContinuationPinningAndEA {
     public static void main(String[] args) {
-        TestFramework.run();
+        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.vm=ALL-UNNAMED");
     }
 
     @Run(test = {
-            "test_FailsEA", "test_Crashes",
-            "test_FailsEANoInline", "test_CrashesNoInline",
+            "test_AllocPinUnpin", "test_PinUnpinAlloc",
+            "test_AllocPinUnpinNoInline", "test_PinUnpinAllocNoInline",
     })
     public void runMethod() {
-        try {
-            test_FailsEA();
-        } catch (Throwable _) {
-        }
-        try {
-            test_Crashes();
-        } catch (Throwable _) {
-        }
-        try {
-            test_FailsEANoInline();
-        } catch (Throwable _) {
-        }
-        try {
-            test_CrashesNoInline();
-        } catch (Throwable _) {
-        }
+        test_AllocPinUnpin();
+        test_PinUnpinAlloc();
+        test_AllocPinUnpinNoInline();
+        test_PinUnpinAllocNoInline();
     }
 
     // ===Cases where allocations are removed===
-    static class FailsEA {
+    static class AllocPinUnpin {
         final Object o;
 
         @ForceInline
-        public FailsEA() throws Throwable {
+        public AllocPinUnpin() {
             o = new Object();
             Continuation.pin();
             Continuation.unpin();
         }
     }
 
-    static class Crashes {
+    static class PinUnpinAlloc {
         final Object o;
 
         @ForceInline
-        public Crashes() throws Throwable {
+        public PinUnpinAlloc() {
             Continuation.pin();
             Continuation.unpin();
             o = new Object();
@@ -89,33 +77,33 @@ public class TestContinuationPinningAndEA {
 
     @Test
     @IR(failOn = {IRNode.ALLOC})
-    static void test_FailsEA() throws Throwable {
-        new FailsEA();
+    void test_AllocPinUnpin() {
+        new AllocPinUnpin();
     }
 
     @Test
     @IR(failOn = {IRNode.ALLOC})
-    static void test_Crashes() throws Throwable {
-        new Crashes();
+    void test_PinUnpinAlloc() {
+        new PinUnpinAlloc();
     }
 
     // ===Sanity check that allocations would happen===
-    static class FailsEANoInline {
+    static class AllocPinUnpinNoInline {
         final Object o;
 
         @DontInline
-        public FailsEANoInline() throws Throwable {
+        public AllocPinUnpinNoInline() {
             o = new Object();
             Continuation.pin();
             Continuation.unpin();
         }
     }
 
-    static class CrashesNoInline {
+    static class PinUnpinAllocNoInline {
         final Object o;
 
         @DontInline
-        public CrashesNoInline() throws Throwable {
+        public PinUnpinAllocNoInline() {
             Continuation.pin();
             Continuation.unpin();
             o = new Object();
@@ -124,13 +112,13 @@ public class TestContinuationPinningAndEA {
 
     @Test
     @IR(counts = {IRNode.ALLOC, ">0"})
-    static void test_FailsEANoInline() throws Throwable {
-        new FailsEANoInline();
+    void test_AllocPinUnpinNoInline() {
+        new AllocPinUnpinNoInline();
     }
 
     @Test
     @IR(counts = {IRNode.ALLOC, ">0"})
-    static void test_CrashesNoInline() throws Throwable {
-        new CrashesNoInline();
+    void test_PinUnpinAllocNoInline() {
+        new PinUnpinAllocNoInline();
     }
 }
