@@ -303,12 +303,18 @@ class CondRegRegRegInstruction(Instruction):
         self.reg3 = Register().generate(reg3, width)
         self.cond = cond
         self.generate_operands(self.reg1, self.reg2, self.reg3)
+        self.demote = True
     
     def cstr(self):
         return f'__ {self._name} (' + 'Assembler::Condition::' + self.cond + ', ' + ', '.join([reg.cstr() for reg in self.operands]) + ');'
     
     def astr(self):
-        return f'{self._aname}' + cond_to_suffix[self.cond] + ' ' + ', '.join([reg.astr() for reg in self.operands])
+        operands = self.operands
+        if self.demote:
+            ops = [op.cstr() for op in self.operands]
+            if ops[0] == ops[1]:
+                operands = operands[1:]
+        return f'{self._aname}' + cond_to_suffix[self.cond] + ' ' + ', '.join([reg.astr() for reg in operands])
 
 class CondRegRegMemInstruction(Instruction):
     def __init__(self, name, aname, width, cond, reg1, reg2, mem_base, mem_idx):
@@ -318,12 +324,18 @@ class CondRegRegMemInstruction(Instruction):
         self.mem = Address().generate(mem_base, mem_idx, width)
         self.cond = cond
         self.generate_operands(self.reg1, self.reg2, self.mem)
+        self.demote = True
     
     def cstr(self):
         return f'__ {self._name} (' + 'Assembler::Condition::' + self.cond + ', ' + ', '.join([reg.cstr() for reg in self.operands]) + ');'
     
     def astr(self):
-        return f'{self._aname}' + cond_to_suffix[self.cond] + ' ' + ', '.join([reg.astr() for reg in self.operands])
+        operands = self.operands
+        if self.demote:
+            ops = [op.cstr() for op in self.operands]
+            if ops[0] == ops[1]:
+                operands = operands[1:]
+        return f'{self._aname}' + cond_to_suffix[self.cond] + ' ' + ', '.join([reg.astr() for reg in operands])
 
 class MoveRegMemInstruction(Instruction):
     def __init__(self, name, aname, width, mem_width, reg, mem_base, mem_idx):
