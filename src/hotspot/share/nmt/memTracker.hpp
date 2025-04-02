@@ -130,6 +130,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
+      NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, mem_tag);
     }
   }
@@ -155,6 +156,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
+      NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, mem_tag);
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
@@ -165,6 +167,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
+      NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
   }
@@ -292,7 +295,7 @@ class MemTracker : AllStatic {
     ConditionalMutexLocker _cml;
 
   public:
-    NmtVirtualMemoryLocker(): _cml(NmtVirtualMemory_lock, _safe_to_use && enabled(), Mutex::_no_safepoint_check_flag){}
+    NmtVirtualMemoryLocker(): _cml(NmtVirtualMemory_lock, _safe_to_use, Mutex::_no_safepoint_check_flag){}
 
     static inline bool is_safe_to_use()  {
       return _safe_to_use;

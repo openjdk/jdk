@@ -1051,14 +1051,9 @@ static char* mmap_create_shared(size_t size) {
     FREE_C_HEAP_ARRAY(char, filename);
     return nullptr;
   }
-  {
-    MemTracker::NmtVirtualMemoryLocker nvml;
-    mapAddress = (char *) ::mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    // it does not go through os api, the operation has to record from here
-    if (mapAddress != MAP_FAILED) {
-      MemTracker::record_virtual_memory_reserve_and_commit((address) mapAddress, size, CURRENT_PC, mtInternal);
-    }
-  }
+
+  mapAddress = (char*)::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+
   result = ::close(fd);
   assert(result != OS_ERR, "could not close file");
 
@@ -1077,6 +1072,8 @@ static char* mmap_create_shared(size_t size) {
   // clear the shared memory region
   (void)::memset((void*) mapAddress, 0, size);
 
+  // it does not go through os api, the operation has to record from here
+  MemTracker::record_virtual_memory_reserve_and_commit((address)mapAddress, size, CURRENT_PC, mtInternal);
 
   log_info(perf, memops)("Successfully opened");
 
@@ -1087,12 +1084,14 @@ static char* mmap_create_shared(size_t size) {
 //
 static void unmap_shared(char* addr, size_t bytes) {
   int res;
-  {
+  if (MemTracker::enabled()) {
     MemTracker::NmtVirtualMemoryLocker nvml;
     res = ::munmap(addr, bytes);
     if (res == 0) {
       MemTracker::record_virtual_memory_release(addr, bytes);
     }
+  } else {
+    res = ::munmap(addr, bytes);
   }
   if (res != 0) {
     log_info(os)("os::release_memory failed (" PTR_FORMAT ", %zu)", p2i(addr), bytes);
@@ -1207,16 +1206,9 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   }
 
   assert(size > 0, "unexpected size <= 0");
-  char* mapAddress;
-  {
-    MemTracker::NmtVirtualMemoryLocker nvml;
-    mapAddress = (char *) ::mmap(nullptr, size, mmap_prot, MAP_SHARED, fd, 0);
 
-    // it does not go through os api, the operation has to record from here
-    if (mapAddress != MAP_FAILED) {
-      MemTracker::record_virtual_memory_reserve_and_commit((address) mapAddress, size, CURRENT_PC, mtInternal);
-    }
-  }
+  char* mapAddress = (char*)::mmap(nullptr, size, mmap_prot, MAP_SHARED, fd, 0);
+
   int result = ::close(fd);
   assert(result != OS_ERR, "could not close file");
 
@@ -1227,6 +1219,9 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(),
               "Could not map PerfMemory");
   }
+
+  // it does not go through os api, the operation has to record from here
+  MemTracker::record_virtual_memory_reserve_and_commit((address)mapAddress, size, CURRENT_PC, mtInternal);
 
   *addr = mapAddress;
   *sizep = size;

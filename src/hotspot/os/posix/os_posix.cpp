@@ -383,7 +383,6 @@ static char* reserve_mmapped_memory(size_t bytes, char* requested_addr, MemTag m
   // Map reserved/uncommitted pages PROT_NONE so we fail early if we
   // touch an uncommitted page. Otherwise, the read/write might
   // succeed if we have enough swap space to back the physical page.
-  MemTracker::NmtVirtualMemoryLocker nvml;
   addr = (char*)::mmap(requested_addr, bytes, PROT_NONE,
                        flags, -1, 0);
 
@@ -437,7 +436,7 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
     return nullptr;
   }
   if (base != nullptr && addr != base) {
-    if (!os::pd_release_memory(addr, size)) {
+    if (!os::release_memory(addr, size)) {
       warning("Could not release memory on unsuccessful file mapping");
     }
     return nullptr;
@@ -515,15 +514,11 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
   }
   char* aligned_base = chop_extra_memory(size, alignment, extra_base, extra_size);
   // After we have an aligned address, we can replace anonymous mapping with file mapping
-  {
-    MemTracker::NmtVirtualMemoryLocker nvml;
-    if (replace_existing_mapping_with_file_mapping(aligned_base, size, file_desc) != nullptr) {
-      MemTracker::record_virtual_memory_commit((address) aligned_base, size, CALLER_PC);
-      return aligned_base;
-    }
+  if (replace_existing_mapping_with_file_mapping(aligned_base, size, file_desc) == nullptr) {
+    vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
   }
-  vm_exit_during_initialization(err_msg("Error in mapping Java heap at the given filesystem directory"));
-  return nullptr;
+  MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC);
+  return aligned_base;
 }
 
 int os::get_fileno(FILE* fp) {

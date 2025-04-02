@@ -33,7 +33,6 @@
 #include "memory/memoryReserver.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
-#include "threadHelper.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "unittest.hpp"
@@ -567,67 +566,6 @@ TEST_VM(NMT_VirtualMemoryTracker, add_committed_region) {
 TEST_VM(NMT_VirtualMemoryTracker, remove_uncommitted_region) {
   if (MemTracker::tracking_level() >= NMT_detail) {
     VirtualMemoryTrackerTest::test_remove_uncommitted_region();
-  } else {
-    tty->print_cr("skipped.");
-  }
-}
-
-#ifdef ASSERT
-TEST_VM_ASSERT_MSG(NMT_VirtualMemoryTracker, bad_reserve, "Error: ShouldNotReachHere") {
-  if (MemTracker::tracking_level() >= NMT_summary) {
-    const size_t size = 4 * os::vm_page_size();
-
-    address base = (address)0x1234;
-    address frame = (address)0x1235;
-    NativeCallStack stack(&frame, 1);
-    MemTracker::NmtVirtualMemoryLocker nvml;
-
-    ASSERT_EQ(VirtualMemoryTracker::add_reserved_region(base, size, stack, mtTest), true);
-    // This operation should fail, but should not result in NMT/tty lock rank errors.
-    ASSERT_EQ(VirtualMemoryTracker::add_reserved_region(base, size - 1, stack, mtTest), false);
-  } else {
-    tty->print_cr("skipped.");
-    ShouldNotReachHere();
-  }
-}
-#endif
-
-
-TEST_VM(NMT_VirtualMemoryTracker, reserved_region_accounting_atomicity) {
-  if (MemTracker::tracking_level() >= NMT_summary) {
-    // This tests whether virtual memory reserve operations are atomic with NMT accounting.
-    const size_t page_sz = os::vm_page_size();
-    const size_t size = 4 * page_sz;
-    volatile bool _proceed;
-    char* base;
-
-    auto release_memory = [&](Thread*, int) {
-        Atomic::release_store_fence(&_proceed, true);
-        os::release_memory(base, size);
-    };
-
-    for(int i = 0; i < 10; i++) {
-      // First, reserve a region.
-      base = os::reserve_memory(size, false, mtTest);
-      ASSERT_NE(base, (char*) nullptr);
-
-      TestThreadGroup<decltype(release_memory)> release_memory_thread{release_memory, 1};
-      // T2 will first release the region, then update NMT accounting. This should be atomic.
-      release_memory_thread.doit();
-      while(!Atomic::load_acquire(&_proceed));
-      // T1 tries to reserve the same region between when T2 releases it and updates NMT accounting.
-      char* second_reservation = os::attempt_reserve_memory_at(base, size);
-      release_memory_thread.join();
-
-      if(second_reservation != nullptr){
-        // If the 2nd reservation succeeded, then NMT should have recorded the region as reserved.
-        // If NMT views the region as already released, then T2's procedure of releasing the region and updating NMT accounting is not atomic.
-        MemTracker::NmtVirtualMemoryLocker nvml;
-        ASSERT_TRUE(VirtualMemoryTracker::remove_released_region((address) base, size));
-      } else {
-        // If the 2nd reservation failed, then release_memory_thread was too slow.
-      }
-    }
   } else {
     tty->print_cr("skipped.");
   }

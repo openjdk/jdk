@@ -67,8 +67,6 @@ class os::win32 {
   static bool   is_windows_server_2022_or_greater();
   static bool   request_lock_memory_privilege();
   static size_t large_page_init_decide_size();
-  static char*  allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
-    DWORD prot, bool should_inject_error = false);
   static int windows_major_version() {
     assert(_major_version > 0, "windows version not initialized.");
     return _major_version;
