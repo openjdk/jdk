@@ -60,7 +60,7 @@ class AbstractICache : AllStatic {
     log2_line_size = 0  // log2(line_size)
   };
 
-  static void initialize();
+  static void initialize(int phase);
   static void invalidate_word(address addr);
   static void invalidate_range(address start, int nbytes);
 };
@@ -117,7 +117,7 @@ class ICacheStubGenerator : public StubCodeGenerator {
   // flush_icache_stub to the address of the stub it generates before
   // the StubCodeMark destructor is invoked.
 
-  void generate_icache_flush(ICache::flush_icache_stub_t* flush_icache_stub);
+  void generate_icache_flush(const char* name, ICache::flush_icache_stub_t* flush_icache_stub);
 };
 
 #endif // SHARE_RUNTIME_ICACHE_HPP

@@ -191,6 +191,13 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   product(bool, IntelJccErratumMitigation, true, DIAGNOSTIC,                \
              "Turn off JVM mitigations related to Intel micro code "        \
              "mitigations for the Intel JCC erratum")                       \
+                                                                            \
+  product(int, X86ICacheSync, -1, DIAGNOSTIC,                               \
+             "Select the X86 ICache sync mechanism: -1 = auto-select; "     \
+             "0 = none (dangerous); 1 = CLFLUSH loop; 2 = CLFLUSHOPT loop; "\
+             "3 = CLWB loop; 4 = single CPUID.")                            \
+             range(-1, 4)                                                   \
+                                                                            \
 // end of ARCH_FLAGS
 
 #endif // CPU_X86_GLOBALS_X86_HPP
