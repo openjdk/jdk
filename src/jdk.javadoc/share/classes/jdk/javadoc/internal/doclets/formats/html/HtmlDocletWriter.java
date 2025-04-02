@@ -1890,7 +1890,7 @@ public abstract class HtmlDocletWriter {
         }
         // Generate index item
         if (!headingContent.isEmpty() && configuration.indexBuilder != null) {
-            String tagText = headingContent.replaceAll("\\s+", " ");
+            String tagText = utils.normalizeWhitespace(headingContent);
             IndexItem item = IndexItem.of(element, node, tagText,
                     getTagletWriterInstance(context).getHolderName(element),
                     "",

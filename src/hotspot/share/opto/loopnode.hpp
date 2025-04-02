@@ -993,10 +993,11 @@ private:
   void initialize_assertion_predicates_for_post_loop(CountedLoopNode* main_loop_head, CountedLoopNode* post_loop_head,
                                                      uint first_node_index_in_cloned_loop_body);
   void create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head, CountedLoopNode* target_loop_head,
-                                           const NodeInLoopBody& _node_in_loop_body, bool clone_template);
+                                           const NodeInLoopBody& _node_in_loop_body, bool kill_old_template);
   void create_assertion_predicates_at_main_or_post_loop(CountedLoopNode* source_loop_head,
                                                         CountedLoopNode* target_loop_head,
-                                                        const NodeInLoopBody& _node_in_loop_body, bool clone_template);
+                                                        const NodeInLoopBody& _node_in_loop_body,
+                                                        bool kill_old_template);
   void rewire_old_target_loop_entry_dependency_to_new_entry(LoopNode* target_loop_head,
                                                             const Node* old_target_loop_entry,
                                                             uint node_index_before_new_assertion_predicate_nodes);
