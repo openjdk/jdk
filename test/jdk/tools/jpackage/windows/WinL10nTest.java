@@ -120,7 +120,7 @@ public class WinL10nTest {
         return getWixTypeFromVerboseJPackageOutput(result) == WIX3;
     }
 
-    private final static Predicate<String> createToolCommandLinePredicate(String wixToolName) {
+    private static final Predicate<String> createToolCommandLinePredicate(String wixToolName) {
         var toolFileName = wixToolName + ".exe";
         return (s) -> {
             s = s.trim();
@@ -198,12 +198,12 @@ public class WinL10nTest {
                         return String.join(" ", "-culture", culture);
                     }).collect(Collectors.joining(" "));
                 }
-                TKit.assertTextStream(expected).apply(wixCmdline.stream());
+                TKit.assertTextStream(expected).apply(wixCmdline);
             }
 
             if (expectedErrorMessage != null) {
                 TKit.assertTextStream(expectedErrorMessage)
-                        .apply(result.getOutput().stream());
+                        .apply(result.getOutput());
             }
 
             if (wxlFileInitializers != null) {
@@ -213,18 +213,18 @@ public class WinL10nTest {
                 if (allWxlFilesValid) {
                     for (var v : wxlFileInitializers) {
                         if (!v.name.startsWith("MsiInstallerStrings_")) {
-                            v.createCmdOutputVerifier(wixSrcDir).apply(wixCmdline.stream());
+                            v.createCmdOutputVerifier(wixSrcDir).apply(wixCmdline);
                         }
                     }
 
                     for (var v : createDefaultL10nFilesLocVerifiers(wixSrcDir)) {
-                        v.apply(wixCmdline.stream());
+                        v.apply(wixCmdline);
                     }
                 } else {
                     Stream.of(wxlFileInitializers)
                             .filter(Predicate.not(WixFileInitializer::isValid))
                             .forEach(v -> v.createCmdOutputVerifier(
-                                    wixSrcDir).apply(result.getOutput().stream()));
+                                    wixSrcDir).apply(result.getOutput()));
                     TKit.assertTrue(wixCmdline.stream().findAny().isEmpty(),
                             String.format("Check %s.exe was not invoked",
                                     isWix3 ? "light" : "wix"));
@@ -251,12 +251,12 @@ public class WinL10nTest {
         test.run();
     }
 
-    final private WixFileInitializer[] wxlFileInitializers;
-    final private String[] expectedCultures;
-    final private String expectedErrorMessage;
-    final private String userLanguage;
-    final private String userCountry;
-    final private boolean enableWixUIExtension;
+    private final WixFileInitializer[] wxlFileInitializers;
+    private final String[] expectedCultures;
+    private final String expectedErrorMessage;
+    private final String userLanguage;
+    private final String userCountry;
+    private final boolean enableWixUIExtension;
     private Path resourceDir;
 
     private static class WixFileInitializer {

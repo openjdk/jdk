@@ -248,7 +248,7 @@ public final class MainClassTest {
                         .execute().getOutput();
                 TKit.assertTextStream(String.format(
                         "Error: Could not find or load main class %s",
-                        nonExistingMainClass)).apply(output.stream());
+                        nonExistingMainClass)).apply(output);
             }
         }
 
