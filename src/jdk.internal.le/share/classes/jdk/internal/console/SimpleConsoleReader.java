@@ -41,11 +41,10 @@ public class SimpleConsoleReader {
     public static char[] doRead(Reader reader,
                                 Writer out,
                                 boolean password,
-                                int firstLineOffset,
-                                IntSupplier terminalWidthSupplier) throws IOException {
+                                TerminalConfiguration terminalConfig) throws IOException {
         CleanableBuffer result = new CleanableBuffer();
         try {
-            doReadImpl(reader, out, password, firstLineOffset, terminalWidthSupplier, result);
+            doReadImpl(reader, out, password, terminalConfig, result);
             return result.getData();
         } finally {
             result.zeroOut();
@@ -55,33 +54,38 @@ public class SimpleConsoleReader {
     private static void doReadImpl(Reader reader,
                                    Writer out,
                                    boolean password,
-                                   int firstLineOffset,
-                                   IntSupplier terminalWidthSupplier,
+                                   TerminalConfiguration terminalConfiguration,
                                    CleanableBuffer result) throws IOException {
         int caret = 0;
         int r;
         PaintState prevState = new PaintState();
+        int firstLineOffset = terminalConfiguration.firstLineOffset();
 
         READ: while (true) {
             //paint:
             if (firstLineOffset != (-1) && !password) {
-                prevState = repaint(out, firstLineOffset, terminalWidthSupplier,
+                prevState = repaint(out, firstLineOffset,
+                                    terminalConfiguration.terminalWidthSupplier(),
                                     result.data, result.length, caret, prevState);
             }
 
             //read
             r = reader.read();
+
+            if (r == terminalConfiguration.eraseControlCharacter()) {
+                //backspace:
+                if (caret > 0) {
+                    result.delete(caret - 1, caret);
+                    caret--;
+                }
+                continue READ;
+            } else if (r == terminalConfiguration.eofControlCharacter()) {
+                break READ;
+            }
+
             switch (r) {
                 case -1: continue READ;
                 case '\n', '\r': break READ;
-                case 4: break READ; //EOF/Ctrl-D
-                case 127:
-                    //backspace:
-                    if (caret > 0) {
-                        result.delete(caret - 1, caret);
-                        caret--;
-                    }
-                    continue READ;
                 case '\033':
                     r = reader.read();
                     switch (r) {
@@ -145,7 +149,9 @@ public class SimpleConsoleReader {
 
         if (!password) {
             //show the final state:
-            repaint(out, firstLineOffset, terminalWidthSupplier, result.data, result.length, caret, prevState);
+            repaint(out, firstLineOffset,
+                    terminalConfiguration.terminalWidthSupplier(),
+                    result.data, result.length, caret, prevState);
         }
 
         out.append("\n\r").flush();
@@ -252,6 +258,10 @@ public class SimpleConsoleReader {
     }
 
     public record Size(int width, int height) {}
+    public record TerminalConfiguration(int firstLineOffset,
+                                        int eofControlCharacter,
+                                        int eraseControlCharacter,
+                                        IntSupplier terminalWidthSupplier) {}
     record PaintState(int lines, int caretLine) {
 
         public PaintState() {

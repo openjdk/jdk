@@ -27,8 +27,13 @@ package jdk.internal.console;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import jdk.internal.console.SimpleConsoleReader.TerminalConfiguration;
 
 public class NativeConsoleReader {
+
+    private static final int CONTROL_EOF_OFFSET = 0;
+    private static final int CONTROL_ERASE_OFFSET = 1;
+    private static final int CONTROL_CHARS_LEN = 2;
 
     private static final boolean supported;
 
@@ -37,7 +42,8 @@ public class NativeConsoleReader {
     }
 
     public static char[] readline(Reader reader, Writer out, boolean password) throws IOException {
-        byte[] originalTermios = switchToRaw();
+        int[] controlCharacters = new int[CONTROL_CHARS_LEN];
+        byte[] originalTermios = switchToRaw(controlCharacters);
         Thread restoreConsole = new Thread(() -> {
             restore(originalTermios);
         });
@@ -45,7 +51,12 @@ public class NativeConsoleReader {
             Runtime.getRuntime().addShutdownHook(restoreConsole);
             int width = terminalWidth();
             out.append("\033[6n").flush(); //ask the terminal to provide cursor location
-            return SimpleConsoleReader.doRead(reader, out, password, -1, () -> width);
+            TerminalConfiguration terminalConfig = new TerminalConfiguration(
+                    -1,
+                    controlCharacters[CONTROL_EOF_OFFSET],
+                    controlCharacters[CONTROL_ERASE_OFFSET],
+                    () -> width);
+            return SimpleConsoleReader.doRead(reader, out, password, terminalConfig);
         } finally {
             restoreConsole.run();
             Runtime.getRuntime().removeShutdownHook(restoreConsole);
@@ -72,7 +83,7 @@ public class NativeConsoleReader {
     }
 
     private static native void initIDs();
-    private static native byte[] switchToRaw();
+    private static native byte[] switchToRaw(int[] controlCharacters);
     private static native void restore(byte[] termios);
     private static native int terminalWidth();
 }

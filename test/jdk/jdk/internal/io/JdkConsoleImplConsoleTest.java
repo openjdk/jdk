@@ -41,6 +41,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import jdk.internal.console.SimpleConsoleReader;
+import jdk.internal.console.SimpleConsoleReader.TerminalConfiguration;
 
 public class JdkConsoleImplConsoleTest {
     public static void main(String... args) throws IOException {
@@ -59,7 +60,10 @@ public class JdkConsoleImplConsoleTest {
                        12345\033[D\033[D\033[3~6\033[1~7\033[4~8\033[H9\033[FA\r
                        """;
         String expectedResult = "97123658A";
-        char[] read = SimpleConsoleReader.doRead(new StringReader(input), new StringWriter(), false, 0, () -> Integer.MAX_VALUE);
+        char[] read = SimpleConsoleReader.doRead(new StringReader(input),
+                                                 new StringWriter(),
+                                                 false,
+                                                 createTerminalConfig(Integer.MAX_VALUE));
         assertEquals(expectedResult, new String(read));
     }
 
@@ -67,7 +71,10 @@ public class JdkConsoleImplConsoleTest {
         Terminal terminal = new Terminal(5, 5);
         Thread.ofVirtual().start(() -> {
             try {
-                SimpleConsoleReader.doRead(terminal.getInput(), terminal.getOutput(), false, 0, () -> terminal.width);
+                SimpleConsoleReader.doRead(terminal.getInput(),
+                                           terminal.getOutput(),
+                                           false,
+                                           createTerminalConfig(terminal.width));
             } catch (IOException ex) {
                 throw new IllegalStateException(ex);
             }
@@ -97,7 +104,10 @@ public class JdkConsoleImplConsoleTest {
                            1\uD83D\uDE032
                            """;
             String expectedResult = "1\uD83D\uDE032";
-            char[] read = SimpleConsoleReader.doRead(new StringReader(input), new StringWriter(), false, 0, () -> Integer.MAX_VALUE);
+            char[] read = SimpleConsoleReader.doRead(new StringReader(input),
+                                                     new StringWriter(),
+                                                     false,
+                                                     createTerminalConfig(Integer.MAX_VALUE));
             assertEquals(expectedResult, new String(read));
         }
         {
@@ -105,7 +115,10 @@ public class JdkConsoleImplConsoleTest {
                            1\uD83D\uDE032\u007F\u007F3
                            """;
             String expectedResult = "13";
-            char[] read = SimpleConsoleReader.doRead(new StringReader(input), new StringWriter(), false, 0, () -> Integer.MAX_VALUE);
+            char[] read = SimpleConsoleReader.doRead(new StringReader(input),
+                                                     new StringWriter(),
+                                                     false,
+                                                     createTerminalConfig(Integer.MAX_VALUE));
             assertEquals(expectedResult, new String(read));
         }
 
@@ -113,7 +126,10 @@ public class JdkConsoleImplConsoleTest {
             Terminal terminal = new Terminal(5, 5);
             Thread.ofVirtual().start(() -> {
                 try {
-                    SimpleConsoleReader.doRead(terminal.getInput(), terminal.getOutput(), false, 0, () -> terminal.width);
+                    SimpleConsoleReader.doRead(terminal.getInput(),
+                                               terminal.getOutput(),
+                                               false,
+                                               createTerminalConfig(terminal.width));
                 } catch (IOException ex) {
                     throw new IllegalStateException(ex);
                 }
@@ -141,7 +157,10 @@ public class JdkConsoleImplConsoleTest {
             Terminal terminal = new Terminal(5, 5);
             Thread.ofVirtual().start(() -> {
                 try {
-                    SimpleConsoleReader.doRead(terminal.getInput(), terminal.getOutput(), false, 0, () -> terminal.width);
+                    SimpleConsoleReader.doRead(terminal.getInput(),
+                                               terminal.getOutput(),
+                                               false,
+                                               createTerminalConfig(terminal.width));
                 } catch (IOException ex) {
                     throw new IllegalStateException(ex);
                 }
@@ -171,7 +190,10 @@ public class JdkConsoleImplConsoleTest {
             Terminal terminal = new Terminal(5, 5);
             Thread.ofVirtual().start(() -> {
                 try {
-                    SimpleConsoleReader.doRead(terminal.getInput(), terminal.getOutput(), false, 0, () -> terminal.width);
+                    SimpleConsoleReader.doRead(terminal.getInput(),
+                                               terminal.getOutput(),
+                                               false,
+                                               createTerminalConfig(terminal.width));
                 } catch (IOException ex) {
                     throw new IllegalStateException(ex);
                 }
@@ -186,6 +208,10 @@ public class JdkConsoleImplConsoleTest {
                          """,
                          terminal.getDisplay());
         }
+    }
+
+    private static TerminalConfiguration createTerminalConfig(int width) {
+        return new TerminalConfiguration(0, 4, 127, () -> width);
     }
 
     private static void assertEquals(Object expected, Object actual) {

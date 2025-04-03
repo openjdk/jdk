@@ -28,6 +28,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
+import jdk.internal.console.SimpleConsoleReader.TerminalConfiguration;
 import static jdk.internal.console.WindowsTerminal.*;
 
 public class NativeConsoleReader {
@@ -44,7 +45,12 @@ public class NativeConsoleReader {
             Reader in = new ConsoleInputStream(() -> {
                 width.set(terminalWidth());
             });
-            return SimpleConsoleReader.doRead(in, out, password, firstLineOffset, () -> width.get());
+            TerminalConfiguration terminalConfig = new TerminalConfiguration(
+                    firstLineOffset,
+                    VEOF,
+                    VERASE,
+                    () -> width.get());
+            return SimpleConsoleReader.doRead(in, out, password, terminalConfig);
         } finally {
             restore(originalModes);
         }

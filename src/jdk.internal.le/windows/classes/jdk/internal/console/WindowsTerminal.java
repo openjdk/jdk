@@ -24,6 +24,9 @@ public class WindowsTerminal {
     public static final int LEFT_CTRL_PRESSED = 0x0008;
     public static final int SHIFT_PRESSED = 0x0010;
 
+    public static final int VEOF = 4;
+    public static final int VERASE = 127;
+
     static {
         loadNativeLibrary();
     }
@@ -160,7 +163,7 @@ public class WindowsTerminal {
             String escapeSequence = null;
             switch (keyCode) {
                 case 0x08: // VK_BACK BackSpace
-                    escapeSequence = "\u007F";
+                    escapeSequence = Character.toString(VERASE);
                     break;
                 case 0x09:
                     return null;

@@ -33,6 +33,9 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 
+#define CONTROL_EOF_OFFSET 0
+#define CONTROL_ERASE_OFFSET 1
+
 static jclass lastErrorExceptionClass;
 static jmethodID lastErrorExceptionConstructor;
 
@@ -49,7 +52,7 @@ JNIEXPORT void JNICALL Java_jdk_internal_console_NativeConsoleReader_initIDs
 }
 
 JNIEXPORT jbyteArray JNICALL Java_jdk_internal_console_NativeConsoleReader_switchToRaw
-  (JNIEnv *env, jclass) {
+  (JNIEnv *env, jclass, jintArray controlCharacters) {
     int fd = 0;
     termios data;
 
@@ -69,6 +72,13 @@ JNIEXPORT jbyteArray JNICALL Java_jdk_internal_console_NativeConsoleReader_switc
         throw_errno(env);
         return NULL;
     }
+
+    jint controlChars[2] = {
+        data.c_cc[VEOF],
+        data.c_cc[VERASE],
+    };
+
+    env->SetIntArrayRegion(controlCharacters, 0, 2, controlChars);
 
     return result;
 }
