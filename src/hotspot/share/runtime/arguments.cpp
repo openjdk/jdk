@@ -3661,9 +3661,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     Arguments::print_on(&st);
   }
 
-  // cache the release file of the JDK image
-  os::read_image_release_file();
-
   return JNI_OK;
 }
 
