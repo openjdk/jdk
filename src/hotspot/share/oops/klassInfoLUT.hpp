@@ -90,7 +90,10 @@ class KlassInfoLUT : public AllStatic {
   static void log_hit(KlassLUTEntry klute);
 #endif
 
+#if INCLUDE_CDS
+  // only allowed (grudgingly) when built with CDS, until I figure out a better solution.
   static KlassLUTEntry late_register_klass(narrowKlass nk);
+#endif
 
 public:
 

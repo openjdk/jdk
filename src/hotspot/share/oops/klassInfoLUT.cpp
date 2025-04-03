@@ -156,19 +156,21 @@ KlassLUTEntry KlassInfoLUT::register_klass(Klass* k) {
   return KlassLUTEntry(klute);
 }
 
+#if INCLUDE_CDS
+// We only tolerate this for CDS. In that case, we expect the original class - during dumptime -
+// to be registered already, so it should have a valid KLUTE entry set which we only need to copy.
+// Note: we cannot calculate the klute here, since at this point the Klass has no associated
+// class loader data...
 KlassLUTEntry KlassInfoLUT::late_register_klass(narrowKlass nk) {
   const Klass* k = CompressedKlassPointers::decode(nk);
-  // We only tolerate this for CDS. In that case, we expect the original class - during dumptime -
-  // to be registered already, so it should have a valid KLUTE entry set which we only need to copy.
-  // Note: we cannot calculate the klute here, since at this point the Klass has no associated
-  // class loader data...
   assert(k->is_shared(), "Only for CDS classes");
-  const uint32_t klute = k->klute();
-  assert(!KlassLUTEntry(klute).is_invalid(), "Must be a valid klute");
-  _entries[nk] = klute;
-  log_klass_registration(k, nk, klute, "late-registered");
-  return KlassLUTEntry(klute);
+  const KlassLUTEntry klute(k->klute());
+  assert(!klute.is_invalid(), "Must be a valid klute");
+  _entries[nk] = klute.value();
+  log_klass_registration(k, nk, klute.value(), "late-registered");
+  return klute;
 }
+#endif // INCLUDE_CDS
 
 // Counters and incrementors
 #define XX(xx)                      \

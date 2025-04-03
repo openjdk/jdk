@@ -42,18 +42,26 @@ ALWAYSINLINE KlassLUTEntry KlassInfoLUT::get_entry(narrowKlass nk) {
 
   const uint32_t v = at(nk);
   KlassLUTEntry e(v);
+#if INCLUDE_CDS
   if (e.is_invalid()) {
-    // This path only exists because it is so very difficult to iterate CDS classes after loading
+    // This branch only exists because it is so very difficult to iterate CDS classes after loading
     // CDS archives. See discussion surrounding 8353225. Hopefully we can remove this in the future.
     // And equally hopefully branch prediction takes the sting out of this branch in real oop iteration.
+    // In order to measure without this branch, build without CDS.
     return late_register_klass(nk);
   }
+#else
+  assert(!e.is_invalid(), "must never be invalid");
+#endif
+
 #ifdef KLUT_ENABLE_EXPENSIVE_STATS
   update_hit_stats(e);
 #endif
+
 #ifdef KLUT_ENABLE_EXPENSIVE_LOG
   log_hit(e);
 #endif
+
   return e;
 }
 
