@@ -418,11 +418,11 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
 }
 
 JvmtiThreadState*
-JvmtiExport::get_jvmti_thread_state(JavaThread *thread) {
+JvmtiExport::get_jvmti_thread_state(JavaThread *thread, bool allow_suspend) {
   assert(thread == JavaThread::current(), "must be current thread");
   if (thread->is_vthread_mounted() && thread->jvmti_thread_state() == nullptr) {
     JvmtiEventController::thread_started(thread);
-    if (thread->is_suspended()) {
+    if (allow_suspend && thread->is_suspended()) {
       // suspend here if there is a suspend request
       ThreadBlockInVM tbivm(thread, true /* allow suspend */);
     }
@@ -2632,7 +2632,7 @@ void JvmtiExport::post_dynamic_code_generated_while_holding_locks(const char* na
   // jvmti thread state.
   // The collector and/or state might be null if JvmtiDynamicCodeEventCollector
   // has been initialized while JVMTI_EVENT_DYNAMIC_CODE_GENERATED was disabled.
-  JvmtiThreadState *state = get_jvmti_thread_state(thread);
+  JvmtiThreadState *state = get_jvmti_thread_state(thread, false /* allow_suspend */);
   if (state != nullptr) {
     JvmtiDynamicCodeEventCollector *collector = state->get_dynamic_code_event_collector();
     if (collector != nullptr) {
