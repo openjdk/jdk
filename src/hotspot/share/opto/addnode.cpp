@@ -829,7 +829,7 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
     Node* tn = phase->transform(and_a_b);
     return AddNode::make_not(phase, tn, T_INT);
   }
-  return nullptr;
+  return AddNode::Ideal(phase, can_reshape);
 }
 
 //------------------------------add_ring---------------------------------------
@@ -852,6 +852,12 @@ const Type *OrINode::add_ring( const Type *t0, const Type *t1 ) const {
     if ( r1 == TypeInt::BOOL ) {
       return TypeInt::ONE;
     }
+  }
+
+  // If either input is all ones, the output is all ones.
+  // x | ~0 == ~0 <==> x | -1 == -1
+  if (r0 == TypeInt::MINUS_1 || r1 == TypeInt::MINUS_1) {
+    return TypeInt::MINUS_1;
   }
 
   // If either input is not a constant, just return all integers.
@@ -903,13 +909,19 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return AddNode::make_not(phase, tn, T_LONG);
   }
 
-  return nullptr;
+  return AddNode::Ideal(phase, can_reshape);
 }
 
 //------------------------------add_ring---------------------------------------
 const Type *OrLNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeLong *r0 = t0->is_long(); // Handy access
   const TypeLong *r1 = t1->is_long();
+
+  // If either input is all ones, the output is all ones.
+  // x | ~0 == ~0 <==> x | -1 == -1
+  if (r0 == TypeLong::MINUS_1 || r1 == TypeLong::MINUS_1) {
+    return TypeLong::MINUS_1;
+  }
 
   // If either input is not a constant, just return all integers.
   if( !r0->is_con() || !r1->is_con() )

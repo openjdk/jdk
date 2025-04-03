@@ -43,8 +43,8 @@
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
-#include "runtime/jniHandles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
 
 JVMCICompileState::JVMCICompileState(CompileTask* task, JVMCICompiler* compiler):
