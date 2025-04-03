@@ -2062,7 +2062,7 @@ size_t G1CollectedHeap::max_capacity() const {
 }
 
 size_t G1CollectedHeap::soft_max_capacity() const {
-  return clamp(align_up(SoftMaxHeapSize, HeapAlignment), MinHeapSize,
+  return clamp(align_up(Atomic::load(&SoftMaxHeapSize), HeapAlignment), MinHeapSize,
                max_capacity());
 }
 
