@@ -30,6 +30,7 @@ OBJDUMP = "objdump"
 X86_AS = "as"
 X86_OBJCOPY = "objcopy"
 SEED = 1327
+ENABLE_DEMOTION = True
 
 random.seed(SEED)
 
@@ -166,10 +167,9 @@ class Instruction(object):
         return f'{self._aname} ' + ', '.join([op.astr() for op in self.operands]) + cl_str
 
 class NFInstruction(Instruction):
-    def __init__(self, name, aname, no_flag, demote=False):
+    def __init__(self, name, aname, no_flag):
         super().__init__(name, aname)
         self.no_flag = no_flag
-        self.demote = demote
     
     def cstr(self):
         return f'__ {self._name}(' + ', '.join([op.cstr() for op in self.operands]) + (f', {str(self.no_flag).lower()}' if self.no_flag is not None else '') + ');'
@@ -303,7 +303,7 @@ class CondRegRegRegInstruction(Instruction):
         self.reg3 = Register().generate(reg3, width)
         self.cond = cond
         self.generate_operands(self.reg1, self.reg2, self.reg3)
-        self.demote = True
+        self.demote = ENABLE_DEMOTION
     
     def cstr(self):
         return f'__ {self._name} (' + 'Assembler::Condition::' + self.cond + ', ' + ', '.join([reg.cstr() for reg in self.operands]) + ');'
@@ -324,7 +324,7 @@ class CondRegRegMemInstruction(Instruction):
         self.mem = Address().generate(mem_base, mem_idx, width)
         self.cond = cond
         self.generate_operands(self.reg1, self.reg2, self.mem)
-        self.demote = True
+        self.demote = ENABLE_DEMOTION
     
     def cstr(self):
         return f'__ {self._name} (' + 'Assembler::Condition::' + self.cond + ', ' + ', '.join([reg.cstr() for reg in self.operands]) + ');'
@@ -365,10 +365,11 @@ class MemNddInstruction(NFInstruction):
 
 class RegRegNddInstruction(NFInstruction):
     def __init__(self, name, aname, width, no_flag, reg1, reg2):
-        super().__init__(name, aname, no_flag, demote=True)
+        super().__init__(name, aname, no_flag)
         self.reg1 = Register().generate(reg1, width)
         self.reg2 = Register().generate(reg2, width)
         self.generate_operands(self.reg1, self.reg2)
+        self.demote = ENABLE_DEMOTION
 
     def astr(self):
         if self.demote and self._aname not in ['popcnt', 'lzcnt', 'tzcnt']:
@@ -403,43 +404,44 @@ class RegMemRegNddInstruction(NFInstruction):
 
 class RegRegImmNddInstruction(NFInstruction):
     def __init__(self, name, aname, width, no_flag, reg1, reg2, imm):
-        super().__init__(name, aname, no_flag, demote=True)
+        super().__init__(name, aname, no_flag)
         self.reg1 = Register().generate(reg1, width)
         self.reg2 = Register().generate(reg2, width)
         self.imm = Immediate().generate(imm)
         self.generate_operands(self.reg1, self.reg2, self.imm)
+        self.demote = ENABLE_DEMOTION
 
     def astr(self):
         if self.demote:
             ops = [op.cstr() for op in self.operands]
             if ops[0] == ops[1] and (not self.no_flag):
-                cl_str = (', cl' if self._name in shift_rot_ops and len(self.operands) == 2 else '')
-                return  f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]]) + cl_str
+                return  f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]])
         return super().astr()
 
 class RegRegMemNddInstruction(NFInstruction):
     def __init__(self, name, aname, width, no_flag, reg1, reg2, mem_base, mem_idx):
-        super().__init__(name, aname, no_flag, demote=True)
+        super().__init__(name, aname, no_flag)
         self.reg1 = Register().generate(reg1, width)
         self.reg2 = Register().generate(reg2, width)
         self.mem = Address().generate(mem_base, mem_idx, width)
         self.generate_operands(self.reg1, self.reg2, self.mem)
+        self.demote = ENABLE_DEMOTION
 
     def astr(self):
         if self.demote:
             ops = [op.cstr() for op in self.operands]
             if ops[0] == ops[1] and (not self.no_flag):
-                cl_str = (', cl' if self._name in shift_rot_ops and len(self.operands) == 2 else '')
-                return  f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]]) + cl_str
+                return  f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]])
         return super().astr()
 
 class RegRegRegNddInstruction(NFInstruction):
     def __init__(self, name, aname, width, no_flag, reg1, reg2, reg3):
-        super().__init__(name, aname, no_flag, demote=True)
+        super().__init__(name, aname, no_flag)
         self.reg1 = Register().generate(reg1, width)
         self.reg2 = Register().generate(reg2, width)
         self.reg3 = Register().generate(reg3, width)
         self.generate_operands(self.reg1, self.reg2, self.reg3)
+        self.demote = ENABLE_DEMOTION
 
     def astr(self):
         hdr = f'{{load}}'
@@ -451,24 +453,19 @@ class RegRegRegNddInstruction(NFInstruction):
 
 class RegRegRegImmNddInstruction(NFInstruction):
     def __init__(self, name, aname, width, no_flag, reg1, reg2, reg3, imm):
-        super().__init__(name, aname, no_flag, demote=True)
+        super().__init__(name, aname, no_flag)
         self.reg1 = Register().generate(reg1, width)
         self.reg2 = Register().generate(reg2, width)
         self.reg3 = Register().generate(reg3, width)
         self.imm = Immediate().generate(imm)
         self.generate_operands(self.reg1, self.reg2, self.reg3, self.imm)
+        self.demote = ENABLE_DEMOTION
 
     def astr(self):
         if self.demote:
             ops = [op.cstr() for op in self.operands]
             if ops[0] == ops[1] and (not self.no_flag):
-                # JDK assembler uses 'cl' for shift instructions with one operand by default
-                cl_str = (', cl' if self._name in shift_rot_ops and len(self.operands) == 2 else '')
-                # special case for shift instructions with three operands
-                all_reg = all([isinstance(op, Register) for op in self.operands])
-                if (self._name == 'eshldl' or self._name == 'eshldq' or self._name == 'eshrdl' or self._name == 'eshrdq') and all_reg:
-                    cl_str = ', cl'
-                return (f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]])) + cl_str
+                return (f'{self._aname} ' + ', '.join([op.astr() for op in self.operands[1:]]))
         return super().astr()
 
 
