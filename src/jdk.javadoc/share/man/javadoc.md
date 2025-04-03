@@ -869,9 +869,9 @@ The following options are provided by the standard doclet.
 
 <span id="option-syntax-highlight">`--syntax-highlight`</span>
 :   Enables syntax highlighting for code fragments in `{@snippet}` tags and
-    `<pre><code>` elements. For snippets, the `lang` attribute is used to 
-    determine the language of code fragments, which defaults to "java" for 
-    inline snippets and is derived from the file extension for external 
+    `<pre><code>` elements. For snippets, the `lang` attribute is used to
+    determine the language of code fragments, which defaults to "java" for
+    inline snippets and is derived from the file extension for external
     snippets. In HTML `<pre><code>` tags, the `class` attribute can be used
     to specify the language of the contained code fragment as shown below:
 
@@ -881,7 +881,7 @@ The following options are provided by the standard doclet.
 
     If neither of these attributes is available automatic language detection is
     applied. To disable syntax highlighting for a code fragment set the language
-    to "text" using one of the mechanisms described above. The languages and 
+    to "text" using one of the mechanisms described above. The languages and
     formats supported by this option are Java, Properties, JSON, HTML and XML.
 
 <span id="option-tag">`-tag` *name*:*locations*:*header*</span>
