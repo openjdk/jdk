@@ -7116,7 +7116,7 @@ void C2_MacroAssembler::scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegi
 }
 
 void C2_MacroAssembler::vector_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
-                                          KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc) {
+                                            KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc) {
   if (opcode == Op_MaxVHF || opcode == Op_MaxHF) {
     // Move sign bits of src2 to mask register.
     evpmovw2m(ktmp, src2, vlen_enc);
@@ -7130,7 +7130,7 @@ void C2_MacroAssembler::vector_max_min_fp16(int opcode, XMMRegister dst, XMMRegi
     // the second source operand, either a NaN or a valid floating-point value, is returned
     // dst = max(xtmp1, xtmp2)
     evmaxph(dst, xtmp1, xtmp2, vlen_enc);
-    // isNaN = is_unordered_quite(xtmp1)
+    // isNaN = is_unordered_quiet(xtmp1)
     evcmpph(ktmp, k0, xtmp1, xtmp1, Assembler::UNORD_Q, vlen_enc);
     // Final result is same as first source if its a NaN value,
     // in case second operand holds a NaN value then as per above semantics
@@ -7151,7 +7151,7 @@ void C2_MacroAssembler::vector_max_min_fp16(int opcode, XMMRegister dst, XMMRegi
     // or a valid floating-point value, is written to the result.
     // dst = min(xtmp1, xtmp2)
     evminph(dst, xtmp1, xtmp2, vlen_enc);
-    // isNaN = is_unordered_quite(xtmp1)
+    // isNaN = is_unordered_quiet(xtmp1)
     evcmpph(ktmp, k0, xtmp1, xtmp1, Assembler::UNORD_Q, vlen_enc);
     // Final result is same as first source if its a NaN value,
     // in case second operand holds a NaN value then as per above semantics

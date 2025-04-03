@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,16 +89,32 @@ public class StartOptionTest {
     }
 
     protected void check(ByteArrayOutputStream str, Consumer<String> checkOut, String label) {
-        byte[] bytes = str.toByteArray();
-        str.reset();
-        String out = new String(bytes, StandardCharsets.UTF_8);
-        out = stripAnsi(out);
-        out = out.replaceAll("[\r\n]+", "\n");
-        if (checkOut != null) {
-            checkOut.accept(out);
-        } else {
-            assertEquals(out, "", label + ": Expected empty -- ");
+        try {
+            byte[] bytes = str.toByteArray();
+            str.reset();
+            String out = new String(bytes, StandardCharsets.UTF_8);
+            out = stripAnsi(out);
+            out = out.replaceAll("[\r\n]+", "\n");
+            if (checkOut != null) {
+                checkOut.accept(out);
+            } else {
+                assertEquals(out, "", label + ": Expected empty -- ");
+            }
+        } catch (Throwable t) {
+            logOutput("cmdout", cmdout);
+            logOutput("cmderr", cmderr);
+            logOutput("console", console);
+            logOutput("userout", userout);
+            logOutput("usererr", usererr);
+
+            throw t;
         }
+    }
+
+    private void logOutput(String outName, ByteArrayOutputStream out) {
+        System.err.println(outName + ": " +
+                           new String(out.toByteArray(),
+                                      StandardCharsets.UTF_8));
     }
 
     protected void checkExit(int ec, Consumer<Integer> checkCode) {

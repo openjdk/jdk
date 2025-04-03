@@ -31,6 +31,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/ostream.hpp"
+
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci_globals.hpp"
 #endif
